@@ -270,6 +270,13 @@ module caliptra_ss_top_tb
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_mcu_lsu_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    // MCU LSU AXI Interface (downsized)
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(64), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_mcu_lsu_ds_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     // MCU SB AXI Interface
     axi_if #(
@@ -338,6 +345,15 @@ module caliptra_ss_top_tb
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arqos;
     // ----- FIXME remove these signals once interconnect supports downsizing
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_awcache;
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_arcache;
+    logic [2:0] cptra_ss_mcu_lsu_ds_m_axi_if_awprot;
+    logic [2:0] cptra_ss_mcu_lsu_ds_m_axi_if_arprot;
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_awregion;
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_arregion;
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_awqos;
+    logic [3:0] cptra_ss_mcu_lsu_ds_m_axi_if_arqos;
+
     logic [3:0] cptra_ss_mcu_ifu_ds_m_axi_if_awcache;
     logic [3:0] cptra_ss_mcu_ifu_ds_m_axi_if_arcache;
     logic [2:0] cptra_ss_mcu_ifu_ds_m_axi_if_awprot;
@@ -424,59 +440,76 @@ module caliptra_ss_top_tb
 
 
     //Interconnect 0 - MCU LSU
-    // FIXME
-    // Require wsize < 3 so that we can force wsize to '2' in the hack below
-    // This is a workaround for the issue in the interconnect where (wsize == 0) && (wstrb == 0x2)
-    // gets erroneously manipulated into an output with (wsize == 2), but the address remains
-    // unaligned.
-    // That condition violates AXI spec.
-    // The workaround here is to force aligned accesses, and use _only_ wstrb
-    // for lane control, which is compliant to AXI.
-    `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BITlsu, (cptra_ss_mcu_lsu_m_axi_if.awvalid && cptra_ss_mcu_lsu_m_axi_if.awready) -> (cptra_ss_mcu_lsu_m_axi_if.awsize < 3), core_clk, !cptra_ss_rst_b_i)
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWVALID = cptra_ss_mcu_lsu_m_axi_if.awvalid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.awaddr[31:0] & 32'hFFFF_FFFC /*FIXME*/;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWID    = cptra_ss_mcu_lsu_m_axi_if.awid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLEN   = cptra_ss_mcu_lsu_m_axi_if.awlen;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWSIZE  = 2; // FIXME cptra_ss_mcu_lsu_m_axi_if.awsize;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWBURST = cptra_ss_mcu_lsu_m_axi_if.awburst;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLOCK  = cptra_ss_mcu_lsu_m_axi_if.awlock;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWUSER  = cptra_ss_mcu_lsu_m_axi_if.awuser;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWCACHE  = cptra_ss_mcu_lsu_m_axi_if_awcache;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWPROT   = cptra_ss_mcu_lsu_m_axi_if_awprot;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWQOS    = cptra_ss_mcu_lsu_m_axi_if_awqos;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWREGION = cptra_ss_mcu_lsu_m_axi_if_awregion;
-    assign cptra_ss_mcu_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWREADY;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WVALID  = cptra_ss_mcu_lsu_m_axi_if.wvalid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WDATA   = cptra_ss_mcu_lsu_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WSTRB   = cptra_ss_mcu_lsu_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WLAST   = cptra_ss_mcu_lsu_m_axi_if.wlast;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WUSER  = cptra_ss_mcu_lsu_m_axi_if.wuser;
-    assign cptra_ss_mcu_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WREADY;
-    assign cptra_ss_mcu_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BVALID;
-    assign cptra_ss_mcu_lsu_m_axi_if.bresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BRESP;
-    assign cptra_ss_mcu_lsu_m_axi_if.buser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BUSER;
-    assign cptra_ss_mcu_lsu_m_axi_if.bid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BID;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BREADY  = cptra_ss_mcu_lsu_m_axi_if.bready;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARVALID = cptra_ss_mcu_lsu_m_axi_if.arvalid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.araddr;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARID    = cptra_ss_mcu_lsu_m_axi_if.arid;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARLEN   = cptra_ss_mcu_lsu_m_axi_if.arlen;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARSIZE  = cptra_ss_mcu_lsu_m_axi_if.arsize;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARBURST = cptra_ss_mcu_lsu_m_axi_if.arburst;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARLOCK  = cptra_ss_mcu_lsu_m_axi_if.arlock;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARUSER  = cptra_ss_mcu_lsu_m_axi_if.aruser;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARCACHE  = cptra_ss_mcu_lsu_m_axi_if_arcache;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARPROT   = cptra_ss_mcu_lsu_m_axi_if_arprot;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARQOS    = cptra_ss_mcu_lsu_m_axi_if_arqos;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARREGION = cptra_ss_mcu_lsu_m_axi_if_arregion;
-    assign cptra_ss_mcu_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARREADY;
-    assign cptra_ss_mcu_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RVALID;
-    assign cptra_ss_mcu_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RDATA;// Native 64-bit width, no dwidth conversion
-    assign cptra_ss_mcu_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RRESP;
-    assign cptra_ss_mcu_lsu_m_axi_if.ruser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RUSER;
-    assign cptra_ss_mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RID;
-    assign cptra_ss_mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RLAST;
-    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RREADY  = cptra_ss_mcu_lsu_m_axi_if.rready;
+
+    // FIXME remove this downsizer once Avery VIP supports downsizing
+    caliptra_ss_top_tb_axi_64_to_32_downsizer i_cptra_ss_mcu_lsu_m_axi_if_downsizer (
+        .clk              (core_clk                          ),
+        .rst_n            (cptra_ss_rst_b_i                  ),
+        .m_axi_if         (cptra_ss_mcu_lsu_m_axi_if         ),
+        .m_axi_if_arcache (cptra_ss_mcu_lsu_m_axi_if_arcache ),
+        .m_axi_if_arprot  (cptra_ss_mcu_lsu_m_axi_if_arprot  ),
+        .m_axi_if_arregion(cptra_ss_mcu_lsu_m_axi_if_arregion),
+        .m_axi_if_arqos   (cptra_ss_mcu_lsu_m_axi_if_arqos   ),
+        .m_axi_if_awcache (cptra_ss_mcu_lsu_m_axi_if_awcache ),
+        .m_axi_if_awprot  (cptra_ss_mcu_lsu_m_axi_if_awprot  ),
+        .m_axi_if_awregion(cptra_ss_mcu_lsu_m_axi_if_awregion),
+        .m_axi_if_awqos   (cptra_ss_mcu_lsu_m_axi_if_awqos   ),
+        .s_axi_if         (cptra_ss_mcu_lsu_ds_m_axi_if         ),
+        .s_axi_if_arcache (cptra_ss_mcu_lsu_ds_m_axi_if_arcache ),
+        .s_axi_if_arprot  (cptra_ss_mcu_lsu_ds_m_axi_if_arprot  ),
+        .s_axi_if_arregion(cptra_ss_mcu_lsu_ds_m_axi_if_arregion),
+        .s_axi_if_arqos   (cptra_ss_mcu_lsu_ds_m_axi_if_arqos   ),
+        .s_axi_if_awcache (cptra_ss_mcu_lsu_ds_m_axi_if_awcache ),
+        .s_axi_if_awprot  (cptra_ss_mcu_lsu_ds_m_axi_if_awprot  ),
+        .s_axi_if_awregion(cptra_ss_mcu_lsu_ds_m_axi_if_awregion),
+        .s_axi_if_awqos   (cptra_ss_mcu_lsu_ds_m_axi_if_awqos   )
+    );
+
+
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWVALID = cptra_ss_mcu_lsu_ds_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWADDR[31:0]  = cptra_ss_mcu_lsu_ds_m_axi_if.awaddr[31:0];
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWID    = cptra_ss_mcu_lsu_ds_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLEN   = cptra_ss_mcu_lsu_ds_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWSIZE  = cptra_ss_mcu_lsu_ds_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWBURST = cptra_ss_mcu_lsu_ds_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWLOCK  = cptra_ss_mcu_lsu_ds_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWUSER  = cptra_ss_mcu_lsu_ds_m_axi_if.awuser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWCACHE  = cptra_ss_mcu_lsu_ds_m_axi_if_awcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWPROT   = cptra_ss_mcu_lsu_ds_m_axi_if_awprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWQOS    = cptra_ss_mcu_lsu_ds_m_axi_if_awqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWREGION = cptra_ss_mcu_lsu_ds_m_axi_if_awregion;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.awready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWREADY;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WVALID  = cptra_ss_mcu_lsu_ds_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WDATA   = cptra_ss_mcu_lsu_ds_m_axi_if.wdata;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WSTRB   = cptra_ss_mcu_lsu_ds_m_axi_if.wstrb;// Native 64-bit width, no dwidth conversion
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WLAST   = cptra_ss_mcu_lsu_ds_m_axi_if.wlast;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WUSER  = cptra_ss_mcu_lsu_ds_m_axi_if.wuser;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.wready               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].WREADY;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.bvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BVALID;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.bresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BRESP;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.buser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BUSER;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.bid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BID;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].BREADY  = cptra_ss_mcu_lsu_ds_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARVALID = cptra_ss_mcu_lsu_ds_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARADDR[31:0]  = cptra_ss_mcu_lsu_ds_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARID    = cptra_ss_mcu_lsu_ds_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARLEN   = cptra_ss_mcu_lsu_ds_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARSIZE  = cptra_ss_mcu_lsu_ds_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARBURST = cptra_ss_mcu_lsu_ds_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARLOCK  = cptra_ss_mcu_lsu_ds_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARUSER  = cptra_ss_mcu_lsu_ds_m_axi_if.aruser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARCACHE  = cptra_ss_mcu_lsu_ds_m_axi_if_arcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARPROT   = cptra_ss_mcu_lsu_ds_m_axi_if_arprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARQOS    = cptra_ss_mcu_lsu_ds_m_axi_if_arqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARREGION = cptra_ss_mcu_lsu_ds_m_axi_if_arregion;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.arready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].ARREADY;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.rvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RVALID;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.rdata                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RDATA;// Native 64-bit width, no dwidth conversion
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.rresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RRESP;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.ruser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RUSER;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RID;
+    assign cptra_ss_mcu_lsu_ds_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RLAST;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RREADY  = cptra_ss_mcu_lsu_ds_m_axi_if.rready;
 
     //Interconnect 1 - MCU IFU
     // FIXME remove this downsizer once Avery VIP supports downsizing
