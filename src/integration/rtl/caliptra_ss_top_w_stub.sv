@@ -530,6 +530,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_strap_caliptra_base_addr_i,
         .cptra_ss_strap_mci_base_addr_i,
         .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_external_staging_area_base_addr_i('0),
         .cptra_ss_strap_otp_fc_base_addr_i,
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,

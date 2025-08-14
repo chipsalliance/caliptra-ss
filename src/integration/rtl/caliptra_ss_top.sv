@@ -141,7 +141,7 @@ module caliptra_ss_top
 // Caliptra Memory Export Interface
 // Caliptra Core, ICCM and DCCM interface
     el2_mem_if.veer_sram_src           cptra_ss_cptra_core_el2_mem_export,
-    mldsa_mem_if.req                   mldsa_memory_export_req,
+    abr_mem_if.req                   abr_memory_export_req,
 
 // SRAM interface for mbox
 // Caliptra SS mailbox sram interface
@@ -212,6 +212,7 @@ module caliptra_ss_top
     input logic [63:0]  cptra_ss_strap_caliptra_base_addr_i,
     input logic [63:0]  cptra_ss_strap_mci_base_addr_i,
     input logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i,
+    input logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i,
     input logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i,
     input logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i,
     input logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
@@ -473,7 +474,7 @@ module caliptra_ss_top
         .m_axi_r_if(cptra_ss_cptra_core_m_axi_if_r_mgr),
 
         .el2_mem_export(cptra_ss_cptra_core_el2_mem_export),
-        .mldsa_memory_export(mldsa_memory_export_req),
+        .abr_memory_export(abr_memory_export_req),
 
         .ready_for_fuses(),             // -- unused in caliptra ss
         .ready_for_mb_processing(),     // -- unused in caliptra ss
@@ -514,6 +515,7 @@ module caliptra_ss_top
         .strap_ss_caliptra_base_addr                            ( cptra_ss_strap_caliptra_base_addr_i ),
         .strap_ss_mci_base_addr                                 ( cptra_ss_strap_mci_base_addr_i ),
         .strap_ss_recovery_ifc_base_addr                        ( cptra_ss_strap_recovery_ifc_base_addr_i ),
+        .strap_ss_external_staging_area_base_addr               ( cptra_ss_strap_external_staging_area_base_addr_i ),
         .strap_ss_otp_fc_base_addr                              ( cptra_ss_strap_otp_fc_base_addr_i ),
         .strap_ss_uds_seed_base_addr                            ( cptra_ss_strap_uds_seed_base_addr_i ),
         .strap_ss_prod_debug_unlock_auth_pk_hash_reg_bank_offset( cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i ),

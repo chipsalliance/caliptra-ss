@@ -187,7 +187,7 @@ module dmi_jtag_tap #(
   // ----------------
   logic tck_n;
 
- caliptra_prim_clock_inv #(
+ caliptra_prim_generic_clock_inv #(
     .HasScanMode(1'b1),
     .NoFpgaBufG(1'b1)
   ) i_tck_inv (
