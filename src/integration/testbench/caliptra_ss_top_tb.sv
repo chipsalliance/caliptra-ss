@@ -102,7 +102,7 @@ module caliptra_ss_top_tb
     int                         cycleCnt;
 
 
-    mldsa_mem_if mldsa_memory_export();
+    abr_mem_if abr_memory_export();
 
 
 // ----------------- MCI Connections within Subsystem -----------------------
@@ -1116,7 +1116,7 @@ module caliptra_ss_top_tb
 
         // Caliptra Memory Export Interface
         .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
-        .mldsa_memory_export (mldsa_memory_export.resp),
+        .abr_memory_export (abr_memory_export.resp),
 
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
@@ -1623,7 +1623,7 @@ module caliptra_ss_top_tb
 
     // Caliptra Memory Export Interface
         .cptra_ss_cptra_core_el2_mem_export,
-        .mldsa_memory_export_req(mldsa_memory_export.req),
+        .abr_memory_export_req(abr_memory_export.req),
 
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,

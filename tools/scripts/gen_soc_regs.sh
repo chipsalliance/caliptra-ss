@@ -29,5 +29,5 @@ if [ -z "$SCRIPT_PATH" ]; then
 fi
 
 # Run the Python script with the appropriate paths
-python3 ${SCRIPT_PATH}/third_party/caliptra-rtl/tools/scripts/reg_doc_gen.py \
+python3 ${SCRIPT_PATH}/tools/scripts/reg_doc_gen.py \
 ${SCRIPT_PATH}/src/integration/rtl/soc_address_map.rdl

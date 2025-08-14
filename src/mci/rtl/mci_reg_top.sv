@@ -13,7 +13,7 @@
 // limitations under the License.
 
 
-module mci_reg_top 
+module mci_reg_top
     import mci_reg_pkg::*;
     import mci_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
@@ -21,7 +21,7 @@ module mci_reg_top
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
-    
+
         //Mailbox configuration
         ,parameter MCU_MBOX0_SIZE_KB = 128
         ,parameter [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
@@ -29,9 +29,9 @@ module mci_reg_top
         ,parameter MCU_MBOX1_SIZE_KB = 4
         ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
         ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
-        
-        ,parameter MCU_SRAM_SIZE_KB = 512 
-        ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4 
+
+        ,parameter MCU_SRAM_SIZE_KB = 512
+        ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
 
     )
     (
@@ -61,7 +61,7 @@ module mci_reg_top
     input  logic t2_timeout,
     input  logic t1_timeout_p,
     input  logic t2_timeout_p,
-    
+
     // Generic in/out
     input  logic [63:0] mci_generic_input_wires,
     output logic [63:0] mci_generic_output_wires,
@@ -70,7 +70,7 @@ module mci_reg_top
     input logic [31:0] agg_error_fatal,
     input logic [31:0] agg_error_non_fatal,
 
-    
+
     // DMI
     output logic        mcu_dmi_core_enable,
     output logic        mcu_dmi_uncore_enable,
@@ -85,6 +85,7 @@ module mci_reg_top
     output logic [31:0]  mcu_trace_buffer_dmi_reg_wdata,
     output logic [6:0]   mcu_trace_buffer_dmi_reg_addr,
     input mci_mcu_trace_buffer_dmi_reg_t mcu_trace_buffer_dmi_reg,
+    output logic [2:0]   trace_mux_select,
 
     // MBOX
     // unused in 2.0 input  mbox_dmi_reg_t mbox0_dmi_reg,
@@ -108,6 +109,10 @@ module mci_reg_top
     input  logic mbox0_sram_double_ecc_error,
     input  logic mbox1_sram_single_ecc_error,
     input  logic mbox1_sram_double_ecc_error,
+
+    // Caliptra-top lockstep control
+    output el2_mubi_pkg::el2_mubi_t disable_corruption_detection,
+    output el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en,
 
     // LCC Gasket
     input soc_ifc_pkg::security_state_t     security_state_o,
@@ -143,7 +148,7 @@ module mci_reg_top
     input  logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
 
-    // MISC 
+    // MISC
     input  logic mcu_sram_fw_exec_region_lock,
     output logic mcu_sram_fw_exec_region_lock_dmi_override,
 
@@ -159,9 +164,9 @@ module mci_reg_top
 
     // Boot status
     input  logic mcu_reset_once,
-    input  mci_boot_fsm_state_e boot_fsm, 
+    input  mci_boot_fsm_state_e boot_fsm,
 
-    
+
     // Caliptra internal fabric response interface
     cif_if.response  cif_resp_if
 
@@ -171,10 +176,10 @@ module mci_reg_top
 logic pwrgood_toggle_hint;
 logic Warm_Reset_Capture_Flag;
 
-// Interrupts 
+// Interrupts
 logic mci_error_intr;
 logic mci_notif_intr;
-    
+
 // Security
 logic security_state_debug_locked_d;
 logic security_state_debug_locked_edge;
@@ -200,10 +205,10 @@ logic mci_reg_read_error;
 logic mci_reg_write_error;
 logic unmasked_hw_error_fatal_write;
 logic unmasked_agg_error_fatal_write;
-logic unmasked_hw_error_non_fatal_write; 
-logic unmasked_hw_error_non_fatal_is_set; 
-logic unmasked_agg_error_non_fatal_write; 
-logic unmasked_agg_error_non_fatal_is_set; 
+logic unmasked_hw_error_non_fatal_write;
+logic unmasked_hw_error_non_fatal_is_set;
+logic unmasked_agg_error_non_fatal_write;
+logic unmasked_agg_error_non_fatal_is_set;
 logic [31:0] agg_error_fatal_sync;
 logic [31:0] agg_error_non_fatal_sync;
 
@@ -217,7 +222,7 @@ logic   error_wdt_timer2_timeout_sts_prev;
 // Byte Enable mapping
 logic [MCI_REG_DATA_WIDTH-1:0] c_cpuif_wr_biten;
 
-// MCU Reset Request interrupt 
+// MCU Reset Request interrupt
 logic cptra_mcu_rst_req;
 logic mcu_sram_fw_exec_region_lock_posedge;
 logic mcu_sram_fw_exec_region_lock_negedge;
@@ -268,14 +273,14 @@ caliptra_prim_flop_2sync #(
 // Map CIF WSTRB to BITEN of CSR block
 ///////////////////////////////////////////////
 genvar i;
-generate 
+generate
     for (i = 0; i < MCI_REG_DATA_WIDTH; i = i + 1) begin : map_wstrb_to_biten
         assign c_cpuif_wr_biten[i] = cif_resp_if.req_data.wstrb[i/8];
     end
 endgenerate
 
 ///////////////////////////////////////////////
-// GENERIC Wires        
+// GENERIC Wires
 ///////////////////////////////////////////////
 caliptra_prim_flop_2sync #(
   .Width(64)
@@ -309,10 +314,10 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 
 // Reads and writes occur in 1 clock cycles
 assign cif_resp_if.hold = '0;
-    
+
 
 ///////////////////////////////////////////////
-// STRAPS / TAP ACCESS 
+// STRAPS / TAP ACCESS
 ///////////////////////////////////////////////
 
 // Subsystem straps capture the initial value on mci_rst_b deassertion.
@@ -331,17 +336,20 @@ assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done
 always_comb begin
     // STRAP with TAP ACCESS
     mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ;
     mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.next  = FIPS_ZEROIZATION_PPD_i;
 
     // REGISTERS WITH TAP ACCESS
-    mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.next              = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.CPTRA_BOOT_GO.go.next               = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.SS_CONFIG_DONE.done.next            = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.next     = mcu_dmi_uncore_wdata[0] ; 
-    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ; 
-    mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ; 
+    mci_reg_hwif_in.RESET_REQUEST.mcu_req.next          = mcu_dmi_uncore_wdata[0] ;
+    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.next              = mcu_dmi_uncore_wdata[0] ;
+    mci_reg_hwif_in.CPTRA_BOOT_GO.go.next               = mcu_dmi_uncore_wdata[0] ;
+    mci_reg_hwif_in.SS_CONFIG_DONE.done.next            = mcu_dmi_uncore_wdata[0] ;
+    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.next     = mcu_dmi_uncore_wdata[0] ;
+    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.next  = mcu_dmi_uncore_wdata[15:0] ;
+    mci_reg_hwif_in.MCU_NMI_VECTOR.vec.next             = mcu_dmi_uncore_wdata ;
+    mci_reg_hwif_in.SS_TRACE_SELECT.mux.next            = mcu_dmi_uncore_wdata[2:0] ;
+    mci_reg_hwif_in.CPTRA_DCLS_CTRL.disable_detect.next = mcu_dmi_uncore_wdata[1:0] ;
+    mci_reg_hwif_in.CPTRA_DCLS_CTRL.inject.next         = mcu_dmi_uncore_wdata[3:2] ;
 
     // Straps with no override
     mci_reg_hwif_in.MCU_IFU_AXI_USER.value.next = { {(32-$bits(strap_mcu_ifu_axi_user)){1'b0}}, strap_mcu_ifu_axi_user};
@@ -354,28 +362,32 @@ end
 // Write enable
 always_comb begin
     // STRAPS with TAP ACCESS
-    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
-    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
-    
     mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.we  = strap_we;
-    
     // REGISTERS WITH TAP ACCESS
-    mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.RESET_REQUEST.mcu_req.we            =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_RESET_REQUEST));
-    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_locked_wr_en & 
+    mci_reg_hwif_in.MCI_BOOTFSM_GO.go.we                =  (mcu_dmi_uncore_locked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO));
-    mci_reg_hwif_in.CPTRA_BOOT_GO.go.we                 =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.CPTRA_BOOT_GO.go.we                 =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_CPTRA_BOOT_GO));
-    mci_reg_hwif_in.SS_CONFIG_DONE.done.we              =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.SS_CONFIG_DONE.done.we              =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE));
-    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.we       =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.SS_CONFIG_DONE_STICKY.done.we       =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY));
-    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.FW_SRAM_EXEC_REGION_SIZE.size.we    =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_FW_SRAM_EXEC_REGION_SIZE));
-    mci_reg_hwif_in.MCU_NMI_VECTOR.vec.we               =  (mcu_dmi_uncore_dbg_unlocked_wr_en & 
+    mci_reg_hwif_in.MCU_NMI_VECTOR.vec.we               =  (mcu_dmi_uncore_dbg_unlocked_wr_en &
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR));
+    mci_reg_hwif_in.SS_TRACE_SELECT.mux.we              = (mcu_dmi_uncore_dbg_unlocked_wr_en &
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_TRACE_SELECT));
+    mci_reg_hwif_in.CPTRA_DCLS_CTRL.disable_detect.we   = (mcu_dmi_uncore_dbg_unlocked_wr_en &
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_CPTRA_DCLS_CTRL));
+    mci_reg_hwif_in.CPTRA_DCLS_CTRL.inject.we           = (mcu_dmi_uncore_dbg_unlocked_wr_en &
+                                                            (mcu_dmi_uncore_addr == MCI_DMI_CPTRA_DCLS_CTRL));
 end
 
 always_ff @(posedge clk or negedge mci_rst_b) begin
@@ -383,7 +395,7 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         MCI_DMI_MCI_HW_OVERRIDE_REG <= '0;
     end
     else begin
-        if(mcu_dmi_uncore_dbg_unlocked_wr_en & 
+        if(mcu_dmi_uncore_dbg_unlocked_wr_en &
             (mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE)) begin
             MCI_DMI_MCI_HW_OVERRIDE_REG <= mcu_dmi_uncore_wdata;
         end
@@ -402,7 +414,7 @@ assign mci_reg_hwif_in.HW_CONFIG1.MCU_SRAM_SIZE.next = MCU_SRAM_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_COUNTER_WIDTH;
 
 ///////////////////////////////////////////////
-// Security Related      
+// Security Related
 ///////////////////////////////////////////////
 assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
 assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
@@ -436,11 +448,15 @@ always_comb scan_mode_p = scan_mode & ~scan_mode_f;
 assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_scan_mode_sts.hwset = scan_mode_p;
 assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_sts.hwset = security_state_debug_locked_edge;
 
+///////////////////////////////////////////////
+// Caliptra-top lockstep control
+///////////////////////////////////////////////
 
-
+assign disable_corruption_detection = {mci_reg_hwif_out.CPTRA_DCLS_CTRL.disable_detect.value ^ 2'b01};
+assign lockstep_err_injection_en    = {mci_reg_hwif_out.CPTRA_DCLS_CTRL.inject.value ^ 2'b01};
 
 ///////////////////////////////////////////////
-// DMI                   
+// DMI
 ///////////////////////////////////////////////
 
 assign mcu_dmi_core_enable          = !security_state_o.debug_locked;
@@ -449,9 +465,9 @@ assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (secur
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
-//Uncore registers only open for debug unlock 
-always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked)  
+//Uncore registers only open for debug unlock
+always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en &
+                                                (~(security_state_o.debug_locked)
                                                  );
 
 
@@ -461,19 +477,19 @@ always_comb mcu_dmi_uncore_locked_wr_en         = (mcu_dmi_uncore_wr_en & mcu_dm
 
 //DMI unlocked register read mux
 // NOTE - must contain a super set of the uncore_locked_rdata_in
-always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                        )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                        )  | 
-                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
-                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
+always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_ADDR              )}}   &  mcu_sram_dmi_uncore_rdata                        )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_SRAM_DATA              )}}   &  mcu_sram_dmi_uncore_rdata                        )  |
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  |
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  |
                                                     // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
-                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
-                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
-                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  |
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  |
+                                                    // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_STATUS           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_STATUS)            )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_CONFIG           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_CONFIG)            )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_CONFIG           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_CONFIG)            )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_WR_PTR           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_WR_PTR)            )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_RD_PTR           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_RD_PTR)            )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_DATA             )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_DATA)              )  | 
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_RD_PTR           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_RD_PTR)            )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_DATA             )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_DATA)              )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   &  32'({mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   &  32'({mci_reg_hwif_out.RESET_REASON.WARM_RESET.value,
                                                                                                                                   mci_reg_hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value,
@@ -509,16 +525,19 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE             )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE.done.value)          )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_CONFIG_DONE_STICKY      )}}   &  32'(mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value)   )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_NMI_VECTOR             )}}   &  32'(mci_reg_hwif_out.MCU_NMI_VECTOR.vec.value)           )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE            )}}   &  32'(MCI_DMI_MCI_HW_OVERRIDE_REG)                             )  ;
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_HW_OVERRIDE            )}}   &  32'(MCI_DMI_MCI_HW_OVERRIDE_REG)                         )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_SS_TRACE_SELECT            )}}   &  32'(mci_reg_hwif_out.SS_TRACE_SELECT.mux.value)          )  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_CPTRA_DCLS_CTRL            )}}   &  32'({mci_reg_hwif_out.CPTRA_DCLS_CTRL.disable_detect.value,
+                                                                                                                                  mci_reg_hwif_out.CPTRA_DCLS_CTRL.inject.value})      )  ;
 
 
 // Registers accessable while in a locked state
-always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  | 
-                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  | 
+always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DLEN             )}}   &  mbox0_dmi_reg.MBOX_DLEN                     )  |
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT             )}}   &  mbox0_dmi_reg.MBOX_DOUT                     )  |
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_STATUS           )}}   &  mbox0_dmi_reg.MBOX_STATUS                   )  |
-                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  | 
-                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
-                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DLEN             )}}   &  mbox1_dmi_reg.MBOX_DLEN                     )  |
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  |
+                                              // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   & 32'(mci_reg_hwif_out.MCI_BOOTFSM_GO.go.value) )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & 32'(mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   & 32'({mci_reg_hwif_out.RESET_REASON.WARM_RESET.value,
@@ -545,8 +564,8 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_4   )}}   & 32'(mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[4].error_info.value))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_5   )}}   & 32'(mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[5].error_info.value))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_6   )}}   & 32'(mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[6].error_info.value))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   & 32'(mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7].error_info.value));  
-                                           
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_EXTENDED_ERROR_INFO_7   )}}   & 32'(mci_reg_hwif_out.FW_EXTENDED_ERROR_INFO[7].error_info.value));
+
 // unused in 2.0 always_comb dmi_mbox0_inc_rdptr = mcu_dmi_uncore_mbox0_dout_access_f & ~mcu_dmi_uncore_locked_en;
 // unused in 2.0 always_comb dmi_mbox0_inc_wrptr = mcu_dmi_uncore_mbox0_din_access_f &  ~mcu_dmi_uncore_locked_en;
 // unused in 2.0 always_comb dmi_mbox1_inc_rdptr = mcu_dmi_uncore_mbox1_dout_access_f & ~mcu_dmi_uncore_locked_en;
@@ -558,6 +577,7 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
 always_comb mcu_trace_buffer_dmi_reg_wen = mcu_dmi_uncore_dbg_unlocked_en & mcu_dmi_uncore_wr_en;
 always_comb mcu_trace_buffer_dmi_reg_wdata = mcu_dmi_uncore_wdata;
 always_comb mcu_trace_buffer_dmi_reg_addr = mcu_dmi_uncore_addr;
+always_comb trace_mux_select =  mci_reg_hwif_out.SS_TRACE_SELECT.mux;
 
 // MCU SRAM DMI
 always_comb mcu_sram_dmi_uncore_en = mcu_dmi_uncore_dbg_unlocked_en;
@@ -566,7 +586,7 @@ always_comb mcu_sram_dmi_uncore_addr = mcu_dmi_uncore_addr;
 always_comb mcu_sram_dmi_uncore_wdata = mcu_dmi_uncore_wdata;
 
 always_comb mci_reg_hwif_in.intr_block_rf.error0_internal_intr_r.error_mcu_sram_dmi_axi_collision_sts.hwset           = mcu_sram_dmi_axi_collision_error; // Set by any protocol error violation (mirrors the bits in CPTRA_HW_ERROR_NON_FATAL)
-                                              
+
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (~mci_pwrgood) begin
       mcu_dmi_uncore_rdata <= '0;
@@ -574,19 +594,19 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
       // unused in 2.0 mcu_dmi_uncore_mbox0_din_access_f  <= '0;
       // unused in 2.0 mcu_dmi_uncore_mbox1_dout_access_f <= '0;
       // unused in 2.0 mcu_dmi_uncore_mbox1_din_access_f  <= '0;
-    end  
+    end
     else begin
-        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in : 
-                                mcu_dmi_uncore_locked_en       ? mcu_dmi_uncore_locked_rdata_in : 
+        mcu_dmi_uncore_rdata <= mcu_dmi_uncore_dbg_unlocked_en ? mcu_dmi_uncore_dbg_unlocked_rdata_in :
+                                mcu_dmi_uncore_locked_en       ? mcu_dmi_uncore_locked_rdata_in :
                                                                  mcu_dmi_uncore_rdata;
 
         // unused in 2.0 mcu_dmi_uncore_mbox0_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DOUT);
         // unused in 2.0 mcu_dmi_uncore_mbox0_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX0_DIN);
         // unused in 2.0 mcu_dmi_uncore_mbox1_dout_access_f <= mcu_dmi_uncore_locked_en & ~mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT);
         // unused in 2.0 mcu_dmi_uncore_mbox1_din_access_f  <= mcu_dmi_uncore_locked_en &  mcu_dmi_uncore_wr_en & (mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DIN);
-  end  
+  end
 end
-                                            
+
 
 // Resets
 assign mci_reg_hwif_in.mci_rst_b = mci_rst_b;
@@ -596,6 +616,7 @@ assign mci_reg_hwif_in.mci_pwrgood = mci_pwrgood;
 assign mci_reg_hwif_in.axi_mcu_req              = axi_mcu_req;
 assign mci_reg_hwif_in.ss_config_unlock         = ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
 assign mci_reg_hwif_in.ss_config_unlock_sticky  = ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+assign mci_reg_hwif_in.debug_unlocked           = ~security_state_o.debug_locked;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req                            = (axi_mcu_req | axi_mci_soc_config_req);
 assign mci_reg_hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock            = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.CAP_LOCK.lock.value;
 assign mci_reg_hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock          = (axi_mcu_req | axi_mci_soc_config_req) & ~mci_reg_hwif_out.SS_CONFIG_DONE.done.value;
@@ -605,7 +626,7 @@ assign mci_reg_hwif_in.axi_mcu_or_mcu_sram_config_req                           
 
 
 ///////////////////////////////////////////////
-// MTIME                       
+// MTIME
 ///////////////////////////////////////////////
 // mtime always increments, but if it's being written by software the write
 // value will update the register. Deasserting incr in this case prevents the
@@ -616,7 +637,7 @@ assign mcu_timer_int  =  {mci_reg_hwif_out.MCU_RV_MTIME_H.count_h.value     ,mci
                      >=
                      {mci_reg_hwif_out.MCU_RV_MTIMECMP_H.compare_h.value,mci_reg_hwif_out.MCU_RV_MTIMECMP_L.compare_l.value};
 ///////////////////////////////////////////////
-// Filtering by AXI_USER       
+// Filtering by AXI_USER
 ///////////////////////////////////////////////
 
 
@@ -650,7 +671,7 @@ always_comb begin
 end
 
 ///////////////////////////////////////////////
-// MCU Reset Request interrupt 
+// MCU Reset Request interrupt
 ///////////////////////////////////////////////
 
 
@@ -666,7 +687,7 @@ end
 assign mcu_sram_fw_exec_region_lock_posedge = mcu_sram_fw_exec_region_lock & (~mcu_sram_fw_exec_region_lock_prev);
 assign mcu_sram_fw_exec_region_lock_negedge = (~mcu_sram_fw_exec_region_lock) & mcu_sram_fw_exec_region_lock_prev;
 
-// On first boot (mcu_reset_once) we expect region_lock to transition 0->1 indicating 
+// On first boot (mcu_reset_once) we expect region_lock to transition 0->1 indicating
 // a FW update is available for MCU. This will trigger MCU ROM to reset itself.
 // On all subsequence update (hitless FW Update) we expect region_lock to go 1->0
 // which will trigger MCU RT FW to be interrupted and reset itself. While the MCU
@@ -752,16 +773,16 @@ assign mci_reg_hwif_in.RESET_REASON.WARM_RESET.next = 1'b1;
 
 
 ////////////////////////////////////////////////////////
-// MAILBOX 
+// MAILBOX
 ////////////////////////////////////////////////////////
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_mbox0_data_avail_d <= '0;
-    end  
+    end
     else begin
         mcu_mbox0_data_avail_d <= mcu_mbox0_data_avail;
-    end  
+    end
 end
 
 always_comb mcu_mbox0_cmd_avail_p = mcu_mbox0_data_avail & !mcu_mbox0_data_avail_d;
@@ -771,10 +792,10 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_cmd
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_mbox1_data_avail_d <= '0;
-    end  
+    end
     else begin
         mcu_mbox1_data_avail_d <= mcu_mbox1_data_avail;
-    end  
+    end
 end
 
 always_comb mcu_mbox1_cmd_avail_p = mcu_mbox1_data_avail & !mcu_mbox1_data_avail_d;
@@ -783,10 +804,10 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_cmd
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_mbox0_target_user_done_d <= '0;
-    end  
+    end
     else begin
         mcu_mbox0_target_user_done_d <= mcu_mbox0_target_user_done;
-    end  
+    end
 end
 
 always_comb mcu_mbox0_target_user_done_p = mcu_mbox0_target_user_done & !mcu_mbox0_target_user_done_d;
@@ -795,10 +816,10 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox0_tar
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         mcu_mbox1_target_user_done_d <= '0;
-    end  
+    end
     else begin
         mcu_mbox1_target_user_done_d <= mcu_mbox1_target_user_done;
-    end  
+    end
 end
 
 always_comb mcu_mbox1_target_user_done_p = mcu_mbox1_target_user_done & !mcu_mbox1_target_user_done_d;
@@ -816,10 +837,10 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mbox1_ecc
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
         cptra_mbox_data_avail_d <= '0;
-    end  
+    end
     else begin
         cptra_mbox_data_avail_d <= cptra_mbox_data_avail;
-    end  
+    end
 end
 
 always_comb cptra_mbox_cmd_avail_p = cptra_mbox_data_avail & !cptra_mbox_data_avail_d;
@@ -831,9 +852,9 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_cptra_mbo
 always_comb mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_otp_operation_done_sts.hwset       = intr_otp_operation_done;
 
 ///////////////////////////////////////////////
-// NMI Vector   
+// NMI Vector
 ///////////////////////////////////////////////
-assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;  
+assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
@@ -924,41 +945,41 @@ always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next = 1'b1;
 always_comb mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_agg_error_fatal_write = (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.we          && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal0       && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal0.next) ||
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal1     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal2     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal3     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal4     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal5     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal7     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal8     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal9     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal10     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal11     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal15     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal16     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal17     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal26     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal27     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal28     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal29     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal30     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal31     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next)  
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal1     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal1.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal2     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal2.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal3     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal3.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal4     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal4.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal5     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal5.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal6     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal6.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal7     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal7.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal8     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal8.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal9     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal9.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal10     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal10.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal11     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal11.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal12     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal12.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal13     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal13.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal14     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal14.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal15     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal15.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal16     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal16.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal17     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal17.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal18     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal18.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal19     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal19.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal20     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal20.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal21     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal21.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal22     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal22.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal23     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal23.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal24     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal24.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal25     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal25.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal26     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal26.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal27     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal27.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal28     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal28.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal29     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal29.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal30     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal30.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_fatal_mask.mask_agg_error_fatal31     && |mci_reg_hwif_in.AGG_ERROR_FATAL.agg_error_fatal31.next)
                                              ;
-                                              
-                                              
-                                              
+
+
+
 
 
 always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .we = mbox0_sram_double_ecc_error;
@@ -968,10 +989,10 @@ always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .we = mbox1_sra
 always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .next = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
-always_comb unmasked_hw_error_non_fatal_write =  
+always_comb unmasked_hw_error_non_fatal_write =
                                                 (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc     .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .next) ||
                                                 (mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .we && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc     .value && |mci_reg_hwif_in.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .next);
-always_comb unmasked_hw_error_non_fatal_is_set = 
+always_comb unmasked_hw_error_non_fatal_is_set =
                                                     (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc     .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc     .value) ||
                                                     (mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc     .value && ~mci_reg_hwif_out.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc     .value);
 
@@ -1043,37 +1064,37 @@ always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next = 1'b
 always_comb mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_agg_error_non_fatal_write = (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.we          && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0       && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.next) ||
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next) ||  
-                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next)  
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal2     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal2.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal3     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal3.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal4     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal4.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal5     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal5.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal6     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal6.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal7     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal7.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal8     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal8.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal9     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal9.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal10     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal10.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal11     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal11.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal12     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal12.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal13     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal13.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal14     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal14.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal15     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal15.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal16     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal16.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal17     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal17.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal18     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal18.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal19     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal19.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal20     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal20.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal21     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal21.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal22     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal22.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal23     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal23.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal24     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal24.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal25     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal25.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal26     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal26.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal27     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal27.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal28     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal28.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal29     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal29.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal30     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal30.next) ||
+                                             (mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.we   && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal31     && |mci_reg_hwif_in.AGG_ERROR_NON_FATAL.agg_error_non_fatal31.next)
                                              ;
 always_comb unmasked_agg_error_non_fatal_is_set = (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal0.value  && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal0.value) ||
                                              (mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal1.value && ~mci_reg_hwif_out.internal_agg_error_non_fatal_mask.mask_agg_error_non_fatal1.value) ||
@@ -1158,7 +1179,7 @@ always_ff@(posedge clk or negedge mci_rst_b) begin
         all_error_non_fatal <= 1'b1;
     end
     // If FW performs a write that clears all outstanding (unmasked) ERROR_NON_FATAL events, deassert interrupt
-    else if (~unmasked_hw_error_non_fatal_is_set && ~unmasked_agg_error_non_fatal_is_set && 
+    else if (~unmasked_hw_error_non_fatal_is_set && ~unmasked_agg_error_non_fatal_is_set &&
              ~|(~mci_reg_hwif_out.internal_fw_error_non_fatal_mask.mask.value & mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value)) begin
         all_error_non_fatal <= 1'b0;
     end
@@ -1247,9 +1268,9 @@ always_comb mci_reg_hwif_in.intr_block_rf.notif1_internal_intr_r.notif_agg_error
 ////////////////////////////////////////////////////////
 // WDT
 ////////////////////////////////////////////////////////
- 
+
 //  Looking for negedge on the wdt_timer*-timeout_sts register
-//  meaning the interrupt has been serviced by SW. We then 
+//  meaning the interrupt has been serviced by SW. We then
 //  propagate this to the WDT to clear it's status
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if(!mci_rst_b) begin
@@ -1281,24 +1302,24 @@ end
 assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.hwset = mcu_sram_single_ecc_error;
 
 ///////////////////////////////////////////////
-// MCI REG Module      
+// MCI REG Module
 ///////////////////////////////////////////////
 mci_reg i_mci_reg (
 
         .clk  (clk),
-        .rst  ('0), 
+        .rst  ('0),
 
         .s_cpuif_req            (cif_resp_if.dv),
         .s_cpuif_req_is_wr      (cif_resp_if.req_data.write),
         .s_cpuif_addr           (cif_resp_if.req_data.addr[MCI_REG_MIN_ADDR_WIDTH-1:0]),
         .s_cpuif_wr_data        (cif_resp_if.req_data.wdata),
         .s_cpuif_wr_biten       (c_cpuif_wr_biten),
-        .s_cpuif_req_stall_wr   (),  
-        .s_cpuif_req_stall_rd   (),  
-        .s_cpuif_rd_ack         (),  
+        .s_cpuif_req_stall_wr   (),
+        .s_cpuif_req_stall_rd   (),
+        .s_cpuif_rd_ack         (),
         .s_cpuif_rd_err         (mci_reg_read_error),
-        .s_cpuif_rd_data        (cif_resp_if.rdata),   
-        .s_cpuif_wr_ack         (),    
+        .s_cpuif_rd_data        (cif_resp_if.rdata),
+        .s_cpuif_wr_ack         (),
         .s_cpuif_wr_err         (mci_reg_write_error),
 
         .hwif_in                (mci_reg_hwif_in),

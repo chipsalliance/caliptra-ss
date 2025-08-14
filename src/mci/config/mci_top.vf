@@ -139,6 +139,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_pde
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/include/el2_def.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/common_defines.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/beh_lib.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_mubi_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_macros.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_reg_pkg.sv
