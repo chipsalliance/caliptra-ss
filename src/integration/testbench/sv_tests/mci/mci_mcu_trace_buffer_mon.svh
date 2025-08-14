@@ -24,17 +24,17 @@ task mcu_trace_buffer_mon();
             trace_buffer_rd_ptr_f <= '0;
             trace_buffer_wr_ptr_f <= '0;
         end else begin
-            if(`CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
+            if(`CPTRA_SS_TOP_PATH.trace_rv_i_valid_ip) begin
                 mcu_trace_buffer_valid  <= 1;
                 mcu_trace_buffer_wr_ptr <= (mcu_trace_buffer_wr_ptr + 4) % 256;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <=    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_insn_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_address_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_tval_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <=    `CPTRA_SS_TOP_PATH.trace_rv_i_insn_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `CPTRA_SS_TOP_PATH.trace_rv_i_address_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `CPTRA_SS_TOP_PATH.trace_rv_i_tval_ip;
                 mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 3]   <= {
                                             21'h0,
-                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_interrupt_ip, 
-                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_ecause_ip,
-                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_exception_ip};
+                                            `CPTRA_SS_TOP_PATH.trace_rv_i_interrupt_ip, 
+                                            `CPTRA_SS_TOP_PATH.trace_rv_i_ecause_ip,
+                                            `CPTRA_SS_TOP_PATH.trace_rv_i_exception_ip};
 
                 if ((mcu_trace_buffer_wr_ptr + 4) >= 256) begin
                     mcu_trace_buffer_wrapped <= 1'b1;
@@ -147,7 +147,7 @@ end
 
 // Verify write pointer matches monitor
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_WRITE_PTR_A,
-    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip |=> 
+    `CPTRA_SS_TOP_PATH.trace_rv_i_valid_ip |=> 
     (mcu_trace_buffer_wr_ptr === `MCI_PATH.i_mci_mcu_trace_buffer.trace_buffer_hwif_out.WRITE_PTR.ptr.value) && 
     (mcu_trace_buffer_wr_ptr === `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg_pre_security.TRACE_WR_PTR), 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -156,7 +156,7 @@ end
 
 // Verify Wrapped matches monitor
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_WRAPPED_A,
-    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip |=> 
+    `CPTRA_SS_TOP_PATH.trace_rv_i_valid_ip |=> 
     (mcu_trace_buffer_wrapped === `MCI_PATH.i_mci_mcu_trace_buffer.trace_buffer_hwif_out.STATUS.wrapped) && 
     (mcu_trace_buffer_wrapped === `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg_pre_security.TRACE_STATUS[1]), 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -166,7 +166,7 @@ end
 
 // Verify Valid data matches monitor
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_VALID_A,
-    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip |=> 
+    `CPTRA_SS_TOP_PATH.trace_rv_i_valid_ip |=> 
     (mcu_trace_buffer_valid === `MCI_PATH.i_mci_mcu_trace_buffer.trace_buffer_hwif_out.STATUS.valid_data) && 
     (mcu_trace_buffer_valid === `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg_pre_security.TRACE_STATUS[0]), 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -175,7 +175,7 @@ end
 
 // Verify Config matches monitor
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_CONFIG_DEPTH_A,
-    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip |=> 
+    `CPTRA_SS_TOP_PATH.trace_rv_i_valid_ip |=> 
     (32'h100 === `MCI_PATH.i_mci_mcu_trace_buffer.trace_buffer_hwif_out.CONFIG.trace_buffer_depth.value) && 
     (32'h100 === `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg_pre_security.TRACE_CONFIG), 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
