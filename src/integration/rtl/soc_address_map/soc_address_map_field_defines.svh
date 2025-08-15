@@ -6778,6 +6778,11 @@
 `ifndef MCI_REG_FC_FIPS_ZEROZATION
 `define MCI_REG_FC_FIPS_ZEROZATION                                                                  (32'h318)
 `endif
+`ifndef MCI_REG_FC_FIPS_ZEROZATION_STS
+`define MCI_REG_FC_FIPS_ZEROZATION_STS                                                              (32'h31c)
+`define MCI_REG_FC_FIPS_ZEROZATION_STS_STATUS_LOW                                                   (0)
+`define MCI_REG_FC_FIPS_ZEROZATION_STS_STATUS_MASK                                                  (32'h1)
+`endif
 `ifndef MCI_REG_GENERIC_INPUT_WIRES_0
 `define MCI_REG_GENERIC_INPUT_WIRES_0                                                               (32'h400)
 `endif
