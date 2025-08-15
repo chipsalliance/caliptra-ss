@@ -1256,6 +1256,7 @@ module caliptra_ss_top_tb
    // driven by lc_ctrl_bfm
    logic cptra_ss_lc_esclate_scrap_state0_i;
    logic cptra_ss_lc_esclate_scrap_state1_i;
+   logic cptra_ss_lc_sec_volatile_raw_unlock_en_i;
 
 
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_clk_byp_ack_i;
@@ -1285,6 +1286,8 @@ module caliptra_ss_top_tb
 
     initial begin
         cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b0;
+        cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
+
     end
 
     // JTAG DPI
@@ -1507,8 +1510,7 @@ module caliptra_ss_top_tb
         .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
         .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
         .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
-        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
-        .LCC_SecVolatileRawUnlockEn(LCC_SecVolatileRawUnlockEn)
+        .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER)
     )
     caliptra_ss_dut (
 
@@ -1699,6 +1701,7 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
         .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
+        .cptra_ss_lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
 
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,

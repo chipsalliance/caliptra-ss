@@ -8,12 +8,11 @@
 module lc_ctrl_state_transition
   import lc_ctrl_pkg::*;
   import lc_ctrl_state_pkg::*;
-#(
-  parameter bit             SecVolatileRawUnlockEn = 0
-) (
+ (
   // Life cycle state vector.
   input  lc_state_e         lc_state_i,
   input  lc_cnt_e           lc_cnt_i,
+  input lc_sec_volatile_raw_unlock_en_i,
   // Main FSM state.
   input  fsm_state_e        fsm_state_i,
   // Decoded lc state input
@@ -23,7 +22,7 @@ module lc_ctrl_state_transition
   // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
   // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
   // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-  // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+  // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   input  logic              volatile_raw_unlock_i,
   input  logic              trans_cmd_i,
@@ -40,10 +39,6 @@ module lc_ctrl_state_transition
   // Signal Decoder Logic //
   //////////////////////////
 
-  if (!SecVolatileRawUnlockEn) begin : gen_no_volatile_unlock
-    logic unused_trans_cmd;
-    assign unused_trans_cmd = trans_cmd_i;
-  end
 
   // The decoder logic below checks whether a given transition edge
   // is valid and computes the next lc counter ans state vectors.
@@ -57,10 +52,10 @@ module lc_ctrl_state_transition
     // ---------- VOLATILE_TEST_UNLOCKED CODE SECTION START ----------
     // NOTE THAT THIS IS A FEATURE FOR TEST CHIPS ONLY TO MITIGATE
     // THE RISK OF A BROKEN OTP MACRO. THIS WILL BE DISABLED VIA
-    // SecVolatileRawUnlockEn AT COMPILETIME FOR PRODUCTION DEVICES.
+    // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
     // ---------------------------------------------------------------
     // Only enter here if volatile RAW unlock is available and enabled.
-    if (SecVolatileRawUnlockEn && volatile_raw_unlock_i && trans_cmd_i && fsm_state_i == IdleSt)
+    if (lc_sec_volatile_raw_unlock_en_i && volatile_raw_unlock_i && trans_cmd_i && fsm_state_i == IdleSt)
     begin
       // We only allow transitions from RAW -> TEST_UNLOCKED0
       if (dec_lc_state_i != {DecLcStateNumRep{DecLcStRaw}} ||

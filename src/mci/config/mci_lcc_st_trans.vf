@@ -59,7 +59,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/calip
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_ram_1p.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_and2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_mux2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_clock_inv.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_inv.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xor2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xnor2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_en.sv
