@@ -51,7 +51,10 @@ files:
   - third_party/caliptra-rtl/submodules/adams-bridge/src/rej_bounded/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/exp_mask/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/sample_in_ball/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/cbd_sampler/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/decompose/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/compress/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/decompress/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/sk_encode/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/sk_decode/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/makehint/config/compile.yml
@@ -61,11 +64,12 @@ files:
   - third_party/caliptra-rtl/submodules/adams-bridge/src/sigdecode_h/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/pk_decode/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/power2round/config/compile.yml
-  - third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_sampler_top/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_sampler_top/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/config/compile.yml
-  - third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/barrett_reduction/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/config/compile.yml
   # UVMF TBs
-  - third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/config/compile.yml
+  - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/config/compile.yml
 
   # UVMF TBs
 # - third_party/caliptra-rtl/src/aes_secworks/uvmf_cbc_AllKAT/config/compile.yml

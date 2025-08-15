@@ -96,11 +96,11 @@ void main (void) {
     ////////////////////////////////////
     // Fuse and Boot Bringup
     //
-    uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
-    for (int i = 0; i < 16; i++) {
-        VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
-        lsu_write_32(base_address + (i * 4), vector[i]);
-    }
+    // uint32_t base_address = SOC_SOC_IFC_REG_FUSE_MANUF_DBG_UNLOCK_TOKEN_0;
+    // for (int i = 0; i < 16; i++) {
+    //     VPRINTF(LOW, "MCU: writing 0x%x to address of 0x%x\n", vector[i], base_address + (i * 4));
+    //     lsu_write_32(base_address + (i * 4), vector[i]);
+    // }
 
 
     for (uint32_t ii = 0; ii < 600; ii++) {
@@ -120,8 +120,8 @@ void main (void) {
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK){
-        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
+    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK){
+        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
         for (uint32_t ii = 0; ii < 500; ii++) {
             __asm__ volatile ("nop"); // Sleep loop as "nop"
         }
