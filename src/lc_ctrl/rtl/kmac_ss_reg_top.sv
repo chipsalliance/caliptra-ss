@@ -6,7 +6,7 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_reg_top (
+module kmac_ss_reg_top (
   input clk_i,
   input rst_ni,
   input rst_shadowed_ni,
@@ -18,8 +18,8 @@ module kmac_reg_top (
   input  tlul_pkg::tl_d2h_t tl_win_i  [2],
 
   // To HW
-  output kmac_reg_pkg::kmac_reg2hw_t reg2hw, // Write
-  input  kmac_reg_pkg::kmac_hw2reg_t hw2reg, // Read
+  output kmac_ss_reg_pkg::kmac_reg2hw_t reg2hw, // Write
+  input  kmac_ss_reg_pkg::kmac_hw2reg_t hw2reg, // Read
 
   output logic shadowed_storage_err_o,
   output logic shadowed_update_err_o,
@@ -28,7 +28,7 @@ module kmac_reg_top (
   output logic intg_err_o
 );
 
-  import kmac_reg_pkg::* ;
+  import kmac_ss_reg_pkg::* ;
 
   localparam int AW = 12;
   localparam int DW = 32;

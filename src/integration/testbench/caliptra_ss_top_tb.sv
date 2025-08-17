@@ -1450,6 +1450,9 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_ifu_axi_user_i;
     logic [31:0]  cptra_ss_strap_mcu_sram_config_axi_user_i;
     logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
+    logic [15:0]  cptra_ss_strap_key_release_key_size_i;
+    logic [63:0]  cptra_ss_strap_key_release_base_addr_i;
+    logic         cptra_ss_strap_ocp_lock_en_i; 
     logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
@@ -1487,6 +1490,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
     assign cptra_ss_strap_external_staging_area_base_addr_i = '0; // FIXME: This needs to be connected to the correct value @Clayton
+    assign cptra_ss_strap_key_release_key_size_i = 16'h40; // FIXME: Add plusargs @Clayton
+    assign cptra_ss_strap_key_release_base_addr_i = '0; // FIXME: Add plusargs @Clayton
 
     // JTAG DPI
     jtagdpi #(
@@ -1689,6 +1694,9 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_recovery_ifc_base_addr_i,
         .cptra_ss_strap_external_staging_area_base_addr_i,
         .cptra_ss_strap_otp_fc_base_addr_i,
+        .cptra_ss_strap_key_release_key_size_i,
+        .cptra_ss_strap_key_release_base_addr_i,
+        .cptra_ss_strap_ocp_lock_en_i,
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
         .cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i,
@@ -1746,6 +1754,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_sram_config_axi_user_i,
         .cptra_ss_strap_mci_soc_config_axi_user_i,
         .cptra_ss_strap_caliptra_dma_axi_user_i,
+        .cptra_ss_strap_ocp_lock_en_i,
 
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,

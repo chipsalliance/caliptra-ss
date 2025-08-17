@@ -548,6 +548,9 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_debug_intent_i,
         .cptra_ss_dbg_manuf_enable_o,
         .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
+        .cptra_ss_strap_key_release_key_size_i(16'h40),
+        .cptra_ss_strap_key_release_base_addr_i('0),
+        .cptra_ss_strap_ocp_lock_en_i(1'b1),
     
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),

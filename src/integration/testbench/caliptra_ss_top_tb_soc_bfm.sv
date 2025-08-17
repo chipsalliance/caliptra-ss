@@ -43,6 +43,7 @@ import trace_buffer_csr_pkg::*;
     output logic         cptra_ss_mci_boot_seq_brkpoint_i,
     output logic         cptra_ss_mcu_no_rom_config_i,
     output logic [31:0]  cptra_ss_strap_mcu_reset_vector_i,
+    output logic         cptra_ss_strap_ocp_lock_en_i,
 
     input  logic cptra_ss_mcu_halt_status_o,
     output logic cptra_ss_mcu_halt_status_i,
@@ -275,6 +276,23 @@ always @(posedge core_clk) begin
         tb_services_if.assert_rst_flag_done <= 1'b0;
     end
 end
+
+///////////////////////////////////
+// OCP LOCK EN             
+//////////////////////////////////
+initial begin
+    if ($test$plusargs("CLP_OCP_LOCK_EN")) begin
+        cptra_ss_strap_ocp_lock_en_i = 1'b1;
+    end
+    else if ($test$plusargs("CLP_OCP_LOCK_DIS")) begin
+        cptra_ss_strap_ocp_lock_en_i = 1'b0;
+    end
+    else begin
+        // Randomize when neither plusarg is set
+        cptra_ss_strap_ocp_lock_en_i = $urandom();
+    end
+end
+
 
 ///////////////////////////////////
 // AXI USER VALUES         

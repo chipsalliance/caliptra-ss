@@ -8,8 +8,8 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_msgfifo
-  import kmac_pkg::*;
+module kmac_ss_msgfifo
+  import kmac_ss_pkg::*;
 #(
   // OutWidth is MsgFIFO data width. caliptra_prim_packer converts InW to OutW prior to
   // pushing to MsgFIFO
@@ -241,7 +241,7 @@ module kmac_msgfifo
   always_comb begin : error_logic
     err_o = '{
       valid: 1'b 0,
-      code: kmac_pkg::ErrNone,
+      code: kmac_ss_pkg::ErrNone,
       info: '0
     };
 
@@ -250,14 +250,14 @@ module kmac_msgfifo
       err_o = '{
         // If EnProtection is 0, packer_err is tied to 0
         valid: 1'b 1,
-        code:  kmac_pkg::ErrPackerIntegrity,
-        info:  kmac_pkg::ErrInfoW'(flush_st)
+        code:  kmac_ss_pkg::ErrPackerIntegrity,
+        info:  kmac_ss_pkg::ErrInfoW'(flush_st)
       };
     end else if (fifo_err) begin
       err_o = '{
         valid: 1'b 1,
-        code:  kmac_pkg::ErrMsgFifoIntegrity,
-        info:  kmac_pkg::ErrInfoW'(flush_st)
+        code:  kmac_ss_pkg::ErrMsgFifoIntegrity,
+        info:  kmac_ss_pkg::ErrInfoW'(flush_st)
       };
     end
   end : error_logic

@@ -2,9 +2,9 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 //
-// kmac_pkg
+// kmac_ss_pkg
 
-package kmac_pkg;
+package kmac_ss_pkg;
   parameter int MsgWidth = caliptra_ss_sha3_pkg::MsgWidth;
   parameter int MsgStrbW = caliptra_ss_sha3_pkg::MsgStrbW;
 
@@ -41,7 +41,7 @@ package kmac_pkg;
   parameter int MsgWindowDepth = 512; // 2kB space
 
   // Key related definitions
-  // If this value is changed, please modify the logic inside kmac_core
+  // If this value is changed, please modify the logic inside kmac_ss_core
   // that assigns the value into `encoded_key`
   parameter int MaxKeyLen = 512;
 
@@ -115,7 +115,7 @@ package kmac_pkg;
     EntropyModeSw   = 2'h 2
   } entropy_mode_e;
 
-  // PRNG (kmac_entropy)
+  // PRNG (kmac_ss_entropy)
   parameter int unsigned EntropyOutputW = 800;
   parameter int unsigned EntropyStateW = 288;
 
@@ -474,4 +474,4 @@ package kmac_pkg;
     conv_endian32 = (swap) ? conv_data : v ;
   endfunction : conv_endian32
 
-endpackage : kmac_pkg
+endpackage : kmac_ss_pkg

@@ -20,6 +20,7 @@ files:
   - third_party/caliptra-rtl/src/riscv_core/veer_el2/config/compile.yml
   - third_party/caliptra-rtl/src/sha512/config/compile.yml
   - third_party/caliptra-rtl/src/sha256/config/compile.yml
+  - third_party/caliptra-rtl/src/sha3/config/compile.yml
   - third_party/caliptra-rtl/src/doe/config/compile.yml
   - third_party/caliptra-rtl/src/hmac/config/compile.yml
   - third_party/caliptra-rtl/src/soc_ifc/config/compile.yml
