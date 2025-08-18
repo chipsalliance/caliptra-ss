@@ -282,6 +282,9 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
 | External | input     | 1      | `cptra_ss_debug_intent_i`                 | Physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](CaliptraSSHardwareSpecification.md#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
+| External | input     | 16     | `cptra_ss_strap_key_release_key_size_i`   | OCP L.O.C.K. MEK byte size. Expected to be 0x40.  |
+| External | input     | 64     | `cptra_ss_strap_key_release_base_addr_i`  | OCP L.O.C.K. MEK release base address.  |
+| External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i             | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling specific OCP L.O.C.K. HW like AES write ability to Keyvault.  |
 
 ### AXI Interface (axi_if)
 
