@@ -38,9 +38,9 @@
 #endif
 
 #ifdef MY_RANDOM_SEED
-    uint32_t state = (unsigned) MY_RANDOM_SEED;
+    __attribute__((weak)) uint32_t state = (unsigned) MY_RANDOM_SEED;
 #else
-    uint32_t state = 0xabcd;
+    __attribute__((weak)) uint32_t state = 0xabcd;
 #endif
 
 void handle_error(const char *format, ...) {
@@ -53,7 +53,7 @@ void handle_error(const char *format, ...) {
     while (1); // Infinite loop to halt execution
 }
 
-uint32_t xorshift32(void)
+__attribute__((weak)) uint32_t xorshift32(void)
 {
     state ^= state << 13;
     state ^= state >> 17;
