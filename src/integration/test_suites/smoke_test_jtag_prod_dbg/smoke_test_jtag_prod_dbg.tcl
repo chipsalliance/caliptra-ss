@@ -113,7 +113,7 @@ for {set i 0} {$i < 0x2} {incr i} {
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #NOTE: The following code is commented out because it is not used in mimicked ROM.
-#NOTE, FIXME: Please uncomment it if you use the actual ROM.
+#NOTE, FIXME: Actual ROM is not available. When ROM is available uncomment the below code
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
