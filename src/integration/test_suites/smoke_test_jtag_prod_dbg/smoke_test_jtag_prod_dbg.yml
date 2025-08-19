@@ -16,6 +16,7 @@
 seed: 1
 testname: smoke_test_jtag_prod_dbg
 pre-exec: |
+  set -eu
   echo "Running pre_exec for [smoke_test_jtag_prod_dbg]" &&
   echo "Generate FIXED LC start state and LC counter value." &&
   rm -rf otp-img.2048.vmem &&
