@@ -10632,6 +10632,8 @@
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_LMS_ACC_EN_MASK                                                 (0x10)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_LOW                                           (5)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_MASK                                          (0x20)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_LOW                                            (6)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (0x40)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                         (0xa00300e4)
 #ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN
@@ -11187,6 +11189,38 @@
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_LOW                                               (0)
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_MASK                                              (0xff)
 #endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_0                                                             (0xa00303a4)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_0
+#define SOC_IFC_REG_FUSE_HEK_SEED_0                                                                 (0x3a4)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_1                                                             (0xa00303a8)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_1
+#define SOC_IFC_REG_FUSE_HEK_SEED_1                                                                 (0x3a8)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_2                                                             (0xa00303ac)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_2
+#define SOC_IFC_REG_FUSE_HEK_SEED_2                                                                 (0x3ac)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_3                                                             (0xa00303b0)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_3
+#define SOC_IFC_REG_FUSE_HEK_SEED_3                                                                 (0x3b0)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_4                                                             (0xa00303b4)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_4
+#define SOC_IFC_REG_FUSE_HEK_SEED_4                                                                 (0x3b4)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_5                                                             (0xa00303b8)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_5
+#define SOC_IFC_REG_FUSE_HEK_SEED_5                                                                 (0x3b8)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_6                                                             (0xa00303bc)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_6
+#define SOC_IFC_REG_FUSE_HEK_SEED_6                                                                 (0x3bc)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_7                                                             (0xa00303c0)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_7
+#define SOC_IFC_REG_FUSE_HEK_SEED_7                                                                 (0x3c0)
+#endif
 #define SOC_SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L                                                     (0xa0030500)
 #ifndef SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L
 #define SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L                                                         (0x500)
@@ -11252,6 +11286,26 @@
 #define SOC_SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H                                        (0xa003053c)
 #ifndef SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H
 #define SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H                                            (0x53c)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L                                                  (0xa0030540)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L
+#define SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L                                                      (0x540)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H                                                  (0xa0030544)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H
+#define SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H                                                      (0x544)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_SIZE                                                         (0xa0030548)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_SIZE
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE                                                             (0x548)
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE_SIZE_LOW                                                    (0)
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE_SIZE_MASK                                                   (0xffff)
+#endif
+#define SOC_SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                            (0xa003054c)
+#ifndef SOC_IFC_REG_SS_OCP_LOCK_CTRL
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                                (0x54c)
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (0x1)
 #endif
 #define SOC_SOC_IFC_REG_SS_STRAP_GENERIC_0                                                          (0xa00305a0)
 #ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
