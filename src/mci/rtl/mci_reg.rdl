@@ -41,6 +41,9 @@ addrmap mci_reg {
     signal {
         desc = "Indicates when SS sticky configuration is unlocked, inverse of SS_CONFIG_DONE_STICKY.";
     } ss_config_unlock_sticky;
+    signal {
+        desc = "Indicates when SS is in the life cycle that allows debug.";
+    } debug_unlocked;
     
     // Capabilities Lock Signals
     signal {
@@ -857,6 +860,35 @@ addrmap mci_reg {
         field strap {sw = r; hw = rw; we; resetsignal = mci_pwrgood;} debug_intent=1'b0;
     } SS_DEBUG_INTENT;
 
+    reg {
+        name = "Subsystem Trace Source Select";
+        desc = "Selects which trace source is connected to the trace buffer.
+                [br]3'b100 - MCU core is connected to the trace buffer
+                [br]3'b010 - Caliptra-top main core is connected to the trace buffer
+                [br]3'b001 - Caliptra-top shadow core is connected to the trace buffer
+                [br]Any other value connects the trace buffer inputs to GND
+                [br]TAP Access [in debug/manuf mode]: RW";
+        field {sw = rw; hw=rw; we; swwe=debug_unlocked; swmod=true; resetsignal = mci_rst_b;} mux[3]=3'h0;
+    } SS_TRACE_SELECT;
+
+    reg {
+        name = "Caliptra-top Dual-Core Lockstep Control";
+        desc = "Controls dual-core locksetp error reporting and allows for error injection.";
+        field {desc = "Disable error reporting. Bit field encoding is:
+                       [br] 2'b00 - error detection is enabled
+                       [br] 2'b11 - error detection is disabled
+                       [br] 2'b10 or 2'b01 - incorrect encoding, causes error
+                       [br]TAP Access [in debug/manuf mode]: RW";
+               sw = rw; hw=rw; we; swwe=debug_unlocked; swmod=true; resetsignal = mci_rst_b;
+        } disable_detect[2]=2'h0;
+        field {desc = "Disable error reporting. Bit field encoding is:
+                       [br] 2'b00 - error injection disabled
+                       [br] 2'b11 - error injection enabled
+                       [br] 2'b10 or 2'b01 - incorrect encoding, causes error
+                       [br]TAP Access [in debug/manuf mode]: RW";
+               sw = rw; hw=rw; we; swwe=debug_unlocked; swmod=true; resetsignal = mci_rst_b;
+        } inject[2]=2'h0;
+    } CPTRA_DCLS_CTRL;
 
     reg {
         name = "Subsystem Config Done Sticky";

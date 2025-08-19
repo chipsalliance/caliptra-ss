@@ -354,6 +354,30 @@ package mci_reg_pkg;
     } mci_reg__SS_DEBUG_INTENT__in_t;
 
     typedef struct packed{
+        logic [2:0] next;
+        logic we;
+    } mci_reg__SS_TRACE_SELECT__mux__in_t;
+
+    typedef struct packed{
+        mci_reg__SS_TRACE_SELECT__mux__in_t mux;
+    } mci_reg__SS_TRACE_SELECT__in_t;
+
+    typedef struct packed{
+        logic [1:0] next;
+        logic we;
+    } mci_reg__CPTRA_DCLS_CTRL__disable_detect__in_t;
+
+    typedef struct packed{
+        logic [1:0] next;
+        logic we;
+    } mci_reg__CPTRA_DCLS_CTRL__inject__in_t;
+
+    typedef struct packed{
+        mci_reg__CPTRA_DCLS_CTRL__disable_detect__in_t disable_detect;
+        mci_reg__CPTRA_DCLS_CTRL__inject__in_t inject;
+    } mci_reg__CPTRA_DCLS_CTRL__in_t;
+
+    typedef struct packed{
         logic next;
         logic we;
     } mci_reg__SS_CONFIG_DONE_STICKY__done__in_t;
@@ -821,6 +845,7 @@ package mci_reg_pkg;
         logic axi_mcu_req;
         logic ss_config_unlock;
         logic ss_config_unlock_sticky;
+        logic debug_unlocked;
         logic axi_mcu_req_or_mci_soc_config_req__cap_unlock;
         logic axi_mcu_or_mcu_sram_config_req;
         logic axi_mcu_or_mci_soc_config_req;
@@ -858,6 +883,8 @@ package mci_reg_pkg;
         mci_reg__FC_FIPS_ZEROZATION_STS__in_t FC_FIPS_ZEROZATION_STS;
         mci_reg__GENERIC_INPUT_WIRES__in_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__in_t SS_DEBUG_INTENT;
+        mci_reg__SS_TRACE_SELECT__in_t SS_TRACE_SELECT;
+        mci_reg__CPTRA_DCLS_CTRL__in_t CPTRA_DCLS_CTRL;
         mci_reg__SS_CONFIG_DONE_STICKY__in_t SS_CONFIG_DONE_STICKY;
         mci_reg__SS_CONFIG_DONE__in_t SS_CONFIG_DONE;
         mci_reg__intr_block_t__in_t intr_block_rf;
@@ -1378,6 +1405,30 @@ package mci_reg_pkg;
     } mci_reg__SS_DEBUG_INTENT__out_t;
 
     typedef struct packed{
+        logic [2:0] value;
+        logic swmod;
+    } mci_reg__SS_TRACE_SELECT__mux__out_t;
+
+    typedef struct packed{
+        mci_reg__SS_TRACE_SELECT__mux__out_t mux;
+    } mci_reg__SS_TRACE_SELECT__out_t;
+
+    typedef struct packed{
+        logic [1:0] value;
+        logic swmod;
+    } mci_reg__CPTRA_DCLS_CTRL__disable_detect__out_t;
+
+    typedef struct packed{
+        logic [1:0] value;
+        logic swmod;
+    } mci_reg__CPTRA_DCLS_CTRL__inject__out_t;
+
+    typedef struct packed{
+        mci_reg__CPTRA_DCLS_CTRL__disable_detect__out_t disable_detect;
+        mci_reg__CPTRA_DCLS_CTRL__inject__out_t inject;
+    } mci_reg__CPTRA_DCLS_CTRL__out_t;
+
+    typedef struct packed{
         logic value;
         logic swmod;
     } mci_reg__SS_CONFIG_DONE_STICKY__done__out_t;
@@ -1496,6 +1547,8 @@ package mci_reg_pkg;
         mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;
+        mci_reg__SS_TRACE_SELECT__out_t SS_TRACE_SELECT;
+        mci_reg__CPTRA_DCLS_CTRL__out_t CPTRA_DCLS_CTRL;
         mci_reg__SS_CONFIG_DONE_STICKY__out_t SS_CONFIG_DONE_STICKY;
         mci_reg__SS_CONFIG_DONE__out_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;

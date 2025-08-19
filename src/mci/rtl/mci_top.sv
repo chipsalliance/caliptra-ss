@@ -16,19 +16,19 @@
 `include "caliptra_sva.svh"
 
 
-module mci_top 
+module mci_top
     import mci_reg_pkg::*;
     import mci_pkg::*;
     import mci_dmi_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
-    #(    
+    #(
     parameter AXI_ADDR_WIDTH = 32,
     parameter AXI_DATA_WIDTH = 32,
     parameter AXI_USER_WIDTH = 32,
     parameter AXI_ID_WIDTH   = 8,
 
-    parameter MCU_SRAM_SIZE_KB = 512, 
-                                      
+    parameter MCU_SRAM_SIZE_KB = 512,
+
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
                                             // to come out of reset during a FW RT Update
@@ -45,7 +45,7 @@ module mci_top
     (
     input logic clk,
     output logic mcu_clk_cg, // Gated when MCU reset or warm reset
-    output logic cptra_ss_rdc_clk_cg, // Gated during warm reset. 
+    output logic cptra_ss_rdc_clk_cg, // Gated during warm reset.
 
     // Resets
     input logic mci_rst_b,
@@ -58,15 +58,15 @@ module mci_top
     // MCI AXI Interface
     axi_if.w_sub s_axi_w_if,
     axi_if.r_sub s_axi_r_if,
-    
-    
+
+
     // Straps
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_lsu_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_ifu_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_sram_config_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
-    
+
     // RDC
     output logic rdc_clk_dis,
     output logic fw_update_rdc_clk_dis,
@@ -82,11 +82,11 @@ module mci_top
     // SOC Interrupts
     output logic all_error_fatal,
     output logic all_error_non_fatal,
-    
+
     // Generic in/out
     input  logic [63:0] mci_generic_input_wires,
     output logic [63:0] mci_generic_output_wires,
-    
+
     // MCU interrupts
     output logic mcu_timer_int,
     output logic mci_intr,
@@ -101,7 +101,7 @@ module mci_top
     input  logic mcu_cpu_halt_ack_i,
     input  logic mcu_cpu_halt_status_i,
 
-    // NMI Vector 
+    // NMI Vector
     output logic nmi_intr,
     output logic [31:0] mcu_nmi_vector,
 
@@ -116,13 +116,14 @@ module mci_top
     input  logic        mcu_dmi_active, // Unused - only use if we start using functional CG
 
     // MCU Trace
-    input logic [31:0] mcu_trace_rv_i_insn_ip,
-    input logic [31:0] mcu_trace_rv_i_address_ip,
-    input logic        mcu_trace_rv_i_valid_ip,
-    input logic        mcu_trace_rv_i_exception_ip,
-    input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
-    input logic        mcu_trace_rv_i_interrupt_ip,
-    input logic [31:0] mcu_trace_rv_i_tval_ip,
+    input logic [31:0] trace_rv_i_insn_ip,
+    input logic [31:0] trace_rv_i_address_ip,
+    input logic        trace_rv_i_valid_ip,
+    input logic        trace_rv_i_exception_ip,
+    input logic [ 4:0] trace_rv_i_ecause_ip,
+    input logic        trace_rv_i_interrupt_ip,
+    input logic [31:0] trace_rv_i_tval_ip,
+    output logic [2:0] trace_mux_select,
 
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
@@ -131,7 +132,11 @@ module mci_top
     output logic soc_mcu_mbox0_data_avail,
     output logic soc_mcu_mbox1_data_avail,
 
-    
+    // Caliptra-top lockstep control
+    output el2_mubi_pkg::el2_mubi_t disable_corruption_detection,
+    output el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en,
+
+
     // Reset controls
     output logic mcu_rst_b,
     output logic cptra_rst_b,
@@ -174,10 +179,10 @@ module mci_top
     // Inputs from OTP_Ctrl
     input  otp_ctrl_pkg::otp_lc_data_t                  from_otp_to_lcc_program_i,
     // Inputs from Caliptra_Core
-    input logic                                         ss_dbg_manuf_enable_i,    
+    input logic                                         ss_dbg_manuf_enable_i,
     input logic [63:0]                                  ss_soc_dbg_unlock_level_i,
 
-    // Converted Signals from LCC 
+    // Converted Signals from LCC
     output  logic                                       SOC_DFT_EN,
     output 	logic                                       SOC_HW_DEBUG_EN,
 
@@ -189,7 +194,7 @@ module mci_top
 
     );
 
-    
+
     mci_reg__out_t mci_reg_hwif_out;
 
     // MCU SRAM signals
@@ -216,8 +221,8 @@ module mci_top
     logic timer2_en;
     logic timer1_restart;
     logic timer2_restart;
-    logic wdt_timer1_timeout_serviced; 
-    logic wdt_timer2_timeout_serviced; 
+    logic wdt_timer1_timeout_serviced;
+    logic wdt_timer2_timeout_serviced;
     logic t1_timeout_p;
     logic t2_timeout_p;
     logic t1_timeout;
@@ -257,7 +262,7 @@ module mci_top
 
 
 // Clock gating only using RDC clock gating functionality
-clk_gate cg ( 
+clk_gate cg (
     .clk(clk),
     .cptra_rst_b(cptra_ss_rst_b_o),
     .psel('0),
@@ -275,7 +280,7 @@ clk_gate cg (
     .cptra_dmi_reg_en_preQ('0)
 );
 
-// Caliptra internal fabric interface for MCU SRAM 
+// Caliptra internal fabric interface for MCU SRAM
 // Address width is set to AXI_ADDR_WIDTH and MCU SRAM
 // will mask out upper bits that are "don't care"
 cif_if #(
@@ -284,10 +289,10 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_sram_req_if(
-    .clk(cptra_ss_rdc_clk_cg), 
+    .clk(cptra_ss_rdc_clk_cg),
     .rst_b(cptra_ss_rst_b_o));
 
-// Caliptra internal fabric interface for MCI REG 
+// Caliptra internal fabric interface for MCI REG
 // Address width is set to AXI_ADDR_WIDTH and MCI REG
 // will mask out upper bits that are "don't care"
 cif_if #(
@@ -296,7 +301,7 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mci_reg_req_if(
-    .clk(cptra_ss_rdc_clk_cg), 
+    .clk(cptra_ss_rdc_clk_cg),
     .rst_b(cptra_ss_rst_b_o));
 
 // Caliptra internal fabric interface for TRACE BUFFER
@@ -308,7 +313,7 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_trace_buffer_req_if(
-    .clk(cptra_ss_rdc_clk_cg), 
+    .clk(cptra_ss_rdc_clk_cg),
     .rst_b(cptra_ss_rst_b_o));
 
 caliptra_prim_flop_2sync #(
@@ -320,7 +325,7 @@ caliptra_prim_flop_2sync #(
   .q_o(mcu_sram_fw_exec_region_lock_sync));
 
 assign mcu_sram_fw_exec_region_lock_internal = mcu_sram_fw_exec_region_lock_dmi_override | mcu_sram_fw_exec_region_lock_sync;
-  
+
 // Caliptra internal fabric interface for MCI Mbox0
 // Address width is set to AXI_ADDR_WIDTH and Mbox0
 // will mask out upper bits that are "don't care"
@@ -330,7 +335,7 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_mbox0_req_if(
-    .clk(cptra_ss_rdc_clk_cg), 
+    .clk(cptra_ss_rdc_clk_cg),
     .rst_b(cptra_ss_rst_b_o));
 
 // Caliptra internal fabric interface for MCI Mbox0
@@ -342,7 +347,7 @@ cif_if #(
     ,.ID_WIDTH(AXI_ID_WIDTH)
     ,.USER_WIDTH(AXI_USER_WIDTH)
 ) mcu_mbox1_req_if(
-    .clk(cptra_ss_rdc_clk_cg), 
+    .clk(cptra_ss_rdc_clk_cg),
     .rst_b(cptra_ss_rst_b_o));
 
 //AXI Interface
@@ -350,18 +355,18 @@ cif_if #(
 //The SoC sends read and write requests using AXI Protocol
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
-mci_axi_sub_top #( 
-    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH), 
-    .AXI_DATA_WIDTH(AXI_DATA_WIDTH), 
+mci_axi_sub_top #(
+    .AXI_ADDR_WIDTH(AXI_ADDR_WIDTH),
+    .AXI_DATA_WIDTH(AXI_DATA_WIDTH),
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_USER_WIDTH(AXI_USER_WIDTH),
     .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk
-    .clk  (cptra_ss_rdc_clk_cg), 
+    .clk  (cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(cptra_ss_rst_b_o), 
+    .rst_b(cptra_ss_rst_b_o),
 
     // AXI INF
     .s_axi_w_if(s_axi_w_if),
@@ -382,14 +387,14 @@ mci_axi_sub_top #(
     // MCI Mbox1 Interface
     .mcu_mbox1_req_if ( mcu_mbox1_req_if.request ),
 
-    // Privileged requests 
+    // Privileged requests
     .axi_mci_soc_config_req,
     .axi_mcu_lsu_req,
     .axi_mcu_ifu_req,
     .axi_mcu_req    ,
     .axi_mcu_sram_config_req    ,
 
-    
+
     // Privileged AXI users
     .strap_mci_soc_config_axi_user,
     .strap_mcu_lsu_axi_user,
@@ -401,7 +406,7 @@ mci_boot_seqr #(
     .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH)
 )i_boot_seqr (
     .clk,
-    .mci_rst_b, 
+    .mci_rst_b,
     .mci_pwrgood,
 
     // Clock Controls
@@ -446,15 +451,15 @@ mci_boot_seqr #(
 
 mci_mcu_trace_buffer #(
     .DMI_REG_TRACE_RD_PTR_ADDR(MCI_DMI_MCU_TRACE_RD_PTR)
-) i_mci_mcu_trace_buffer 
+) i_mci_mcu_trace_buffer
     (
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(cptra_ss_rst_b_o), 
+    .rst_b(cptra_ss_rst_b_o),
 
     .debug_en(!security_state_o.debug_locked),
-    
+
     // DMI Access
     .dmi_reg_wen    (mcu_trace_buffer_dmi_reg_wen  ),
     .dmi_reg_wdata  (mcu_trace_buffer_dmi_reg_wdata),
@@ -462,14 +467,14 @@ mci_mcu_trace_buffer #(
     .dmi_reg        (mcu_trace_buffer_dmi_reg      ),
 
     // MCU Trace
-    .mcu_trace_rv_i_insn_ip,
-    .mcu_trace_rv_i_address_ip,
-    .mcu_trace_rv_i_valid_ip,
-    .mcu_trace_rv_i_exception_ip,
-    .mcu_trace_rv_i_ecause_ip,
-    .mcu_trace_rv_i_interrupt_ip,
-    .mcu_trace_rv_i_tval_ip,
-    
+    .mcu_trace_rv_i_insn_ip     (trace_rv_i_insn_ip)     ,
+    .mcu_trace_rv_i_address_ip  (trace_rv_i_address_ip)  ,
+    .mcu_trace_rv_i_valid_ip    (trace_rv_i_valid_ip)    ,
+    .mcu_trace_rv_i_exception_ip(trace_rv_i_exception_ip),
+    .mcu_trace_rv_i_ecause_ip   (trace_rv_i_ecause_ip)   ,
+    .mcu_trace_rv_i_interrupt_ip(trace_rv_i_interrupt_ip),
+    .mcu_trace_rv_i_tval_ip     (trace_rv_i_tval_ip)     ,
+
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_trace_buffer_req_if.response)
 
@@ -484,19 +489,19 @@ mci_mcu_sram_ctrl #(
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b (cptra_ss_rst_b_o), 
-    .mci_pwrgood (mci_pwrgood), 
+    .rst_b (cptra_ss_rst_b_o),
+    .mci_pwrgood (mci_pwrgood),
 
-    
+
     // MCU Reset
     .mcu_rst_b,
 
     // Interface
-    .fw_sram_exec_region_size(mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE.size.value), 
+    .fw_sram_exec_region_size(mci_reg_hwif_out.FW_SRAM_EXEC_REGION_SIZE.size.value),
 
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_sram_req_if.response),
-    
+
     // Debug Mode
     .debug_en(!security_state_o.debug_locked),
 
@@ -506,8 +511,8 @@ mci_mcu_sram_ctrl #(
     .axi_mcu_sram_config_req    ,
 
     // Access lock interface
-    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),  
-    
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
+
     // DMI
     .dmi_uncore_en    (mcu_sram_dmi_uncore_en),
     .dmi_uncore_wr_en (mcu_sram_dmi_uncore_wr_en),
@@ -516,8 +521,8 @@ mci_mcu_sram_ctrl #(
     .dmi_uncore_rdata (mcu_sram_dmi_uncore_rdata),
 
     // ECC Status
-    .sram_single_ecc_error(mcu_sram_single_ecc_error),  
-    .sram_double_ecc_error(mcu_sram_double_ecc_error),  
+    .sram_single_ecc_error(mcu_sram_single_ecc_error),
+    .sram_double_ecc_error(mcu_sram_double_ecc_error),
     .dmi_axi_collision_error(mcu_sram_dmi_axi_collision_error),
 
     // Interface with SRAM
@@ -543,7 +548,7 @@ mci_wdt_top #(
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b (cptra_ss_rst_b_o), 
+    .rst_b (cptra_ss_rst_b_o),
 
     //Timer inputs
     .timer1_en,
@@ -553,12 +558,12 @@ mci_wdt_top #(
     .timer1_timeout_period,
     .timer2_timeout_period,
     //Interrupts
-    .wdt_timer1_timeout_serviced, 
-    .wdt_timer2_timeout_serviced, 
+    .wdt_timer1_timeout_serviced,
+    .wdt_timer2_timeout_serviced,
     //WDT STATUS
-    .t1_timeout, 
+    .t1_timeout,
     .t2_timeout,
-    .t1_timeout_p, 
+    .t1_timeout_p,
     .t2_timeout_p,
     .fatal_timeout(nmi_intr)
 );
@@ -567,48 +572,48 @@ mci_wdt_top #(
 // MCI Reg
 // MCI CSR bank
 mci_reg_top #(
-    .AXI_USER_WIDTH(AXI_USER_WIDTH),   
-    .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
-    .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),   
+    .AXI_USER_WIDTH(AXI_USER_WIDTH),
+    .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
+    .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),
     .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
-    .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),  
+    .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
     .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
     .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB)
 )i_mci_reg_top (
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .mci_rst_b      (cptra_ss_rst_b_o),    
-    .mcu_rst_b      (mcu_rst_b),   
-    .cptra_rst_b    (cptra_rst_b), 
+    .mci_rst_b      (cptra_ss_rst_b_o),
+    .mcu_rst_b      (mcu_rst_b),
+    .cptra_rst_b    (cptra_rst_b),
     .mci_pwrgood    (mci_pwrgood),
 
     // REG HWIF signals
     .mci_reg_hwif_out,
-    
+
     // DFT
     .scan_mode,
-    
+
     // AXI Privileged requests
     .axi_mci_soc_config_req,
     .axi_mcu_sram_config_req,
     .axi_mcu_req,
 
     // WDT specific signals
-    .wdt_timer1_timeout_serviced, 
-    .wdt_timer2_timeout_serviced, 
+    .wdt_timer1_timeout_serviced,
+    .wdt_timer2_timeout_serviced,
     .t1_timeout_p,
     .t2_timeout_p,
     .t1_timeout,
     .t2_timeout,
-    
+
     // Generic IN/OUT
     .mci_generic_input_wires,
     .mci_generic_output_wires,
 
     // OTP
     .intr_otp_operation_done,
-    
+
     // Debug intent
     .ss_debug_intent,
     .mci_ss_debug_intent,
@@ -617,8 +622,8 @@ mci_reg_top #(
     .strap_mcu_ifu_axi_user,
     .strap_mcu_sram_config_axi_user,
     .strap_mci_soc_config_axi_user,
-    
-    
+
+
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
     .mcu_reset_vector,       // reset vector used by MCU
@@ -626,7 +631,7 @@ mci_reg_top #(
     // SS error signals
     .agg_error_fatal,
     .agg_error_non_fatal,
-    
+
     // DMI
     .mcu_dmi_core_enable,
     .mcu_dmi_uncore_enable,
@@ -637,11 +642,11 @@ mci_reg_top #(
     .mcu_dmi_uncore_rdata,
 
     // MCU Trace
-    .mcu_trace_buffer_dmi_reg_wen, 
+    .mcu_trace_buffer_dmi_reg_wen,
     .mcu_trace_buffer_dmi_reg_wdata,
     .mcu_trace_buffer_dmi_reg_addr,
-    .mcu_trace_buffer_dmi_reg,      
-    
+    .mcu_trace_buffer_dmi_reg,
+    .trace_mux_select,
     // MBOX
     .valid_mbox0_users,
     .valid_mbox1_users,
@@ -657,6 +662,10 @@ mci_reg_top #(
     .mbox1_sram_single_ecc_error,
     .mbox1_sram_double_ecc_error,
 
+    // Caliptra-top lockstep control
+    .disable_corruption_detection,
+    .lockstep_err_injection_en,
+
     // LCC Gasket signals
     .security_state_o,
     .FIPS_ZEROIZATION_PPD_i,
@@ -664,7 +673,7 @@ mci_reg_top #(
     // SOC Interrupts
     .all_error_fatal,
     .all_error_non_fatal,
-    
+
 
     // MCU interrupts
     .mcu_timer_int,
@@ -673,7 +682,7 @@ mci_reg_top #(
     // NMI
     .nmi_intr,
     .mcu_nmi_vector,
-    
+
     // MISC
     .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
     .mcu_sram_fw_exec_region_lock_dmi_override,
@@ -691,7 +700,7 @@ mci_reg_top #(
     // Boot status
     .mcu_reset_once,
     .boot_fsm,
-    
+
     // Caliptra internal fabric response interface
     .cif_resp_if (mci_reg_req_if.response)
 
@@ -721,14 +730,14 @@ mcu_mbox0 (
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(cptra_ss_rst_b_o), 
+    .rst_b(cptra_ss_rst_b_o),
 
     // Caliptra internal fabric response interface
     .cif_resp_if(mcu_mbox0_req_if.response),
 
     .strap_root_axi_user(strap_mcu_lsu_axi_user),
 
-    // Mailbox valid users. 
+    // Mailbox valid users.
     .valid_mbox_users(valid_mbox0_users),
 
     // Mailbox Status
@@ -771,14 +780,14 @@ mcu_mbox1 (
     .clk(cptra_ss_rdc_clk_cg),
 
     // MCI Resets
-    .rst_b(cptra_ss_rst_b_o), 
+    .rst_b(cptra_ss_rst_b_o),
 
     // Caliptra internal fabric response interface
     .cif_resp_if(mcu_mbox1_req_if.response),
 
     .strap_root_axi_user(strap_mcu_lsu_axi_user),
 
-    // Mailbox valid users. 
+    // Mailbox valid users.
     .valid_mbox_users(valid_mbox1_users),
 
     // Mailbox Status
@@ -803,7 +812,7 @@ mci_lcc_st_trans LCC_state_translator (
     .clk_i(cptra_ss_rdc_clk_cg),
     .rst_ni(cptra_ss_rst_b_o),
     .early_warm_reset_warn,
-    .state_error(lc_fatal_state_error_i),  
+    .state_error(lc_fatal_state_error_i),
     .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
     .lcc_volatile_raw_unlock_success_i(lcc_volatile_raw_unlock_success_i),
     .lc_dft_en_i(lc_dft_en_i),
@@ -811,10 +820,10 @@ mci_lcc_st_trans LCC_state_translator (
     .from_otp_to_lcc_program_i(from_otp_to_lcc_program_i),
     .ss_dbg_manuf_enable_i(ss_dbg_manuf_enable_i),
     .ss_soc_dbg_unlock_level_i(ss_soc_dbg_unlock_level_i),
-    .ss_soc_dft_en_mask_reg0_1({mci_reg_hwif_out.SOC_DFT_EN[1].MASK.value, mci_reg_hwif_out.SOC_DFT_EN[0].MASK.value}), 
-    .ss_soc_dbg_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[1].MASK.value, mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[0].MASK.value}), 
-    .ss_soc_CLTAP_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_HW_DEBUG_EN[1].MASK.value, mci_reg_hwif_out.SOC_HW_DEBUG_EN[0].MASK.value}), 
-    .ss_soc_MCU_ROM_zeroization_mask_reg(mci_reg_hwif_out.FC_FIPS_ZEROZATION.MASK.value), 
+    .ss_soc_dft_en_mask_reg0_1({mci_reg_hwif_out.SOC_DFT_EN[1].MASK.value, mci_reg_hwif_out.SOC_DFT_EN[0].MASK.value}),
+    .ss_soc_dbg_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[1].MASK.value, mci_reg_hwif_out.SOC_PROD_DEBUG_STATE[0].MASK.value}),
+    .ss_soc_CLTAP_unlock_mask_reg0_1({mci_reg_hwif_out.SOC_HW_DEBUG_EN[1].MASK.value, mci_reg_hwif_out.SOC_HW_DEBUG_EN[0].MASK.value}),
+    .ss_soc_MCU_ROM_zeroization_mask_reg(mci_reg_hwif_out.FC_FIPS_ZEROZATION.MASK.value),
     .FIPS_ZEROIZATION_PPD_i(mci_reg_hwif_out.FC_FIPS_ZEROZATION_STS.status.value),
     .FIPS_ZEROIZATION_CMD_o,
     .SOC_DFT_EN(SOC_DFT_EN),
@@ -836,11 +845,11 @@ mci_lcc_st_trans LCC_state_translator (
 `CALIPTRA_ASSERT_INIT(ERR_MCU_SRAM_MIN_SIZE, MCU_SRAM_SIZE_KB >= 4)
 // Verify max size of MCU SRAM
 `CALIPTRA_ASSERT_INIT(ERR_MCU_SRAM_MAX_SIZE, MCU_SRAM_SIZE_KB <= 2048)
-// Verify min size of MBOX0 
+// Verify min size of MBOX0
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MIN_SIZE, MCU_MBOX0_SIZE_KB >= 0)
 // Verify max size of MBOX0
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX0_MAX_SIZE, MCU_MBOX0_SIZE_KB <= 2048)
-// Verify min size of MBOX1 
+// Verify min size of MBOX1
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MIN_SIZE, MCU_MBOX1_SIZE_KB >= 0)
 // Verify max size of MBOX1
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MAX_SIZE, MCU_MBOX1_SIZE_KB <= 2048)
@@ -864,15 +873,15 @@ mci_lcc_st_trans LCC_state_translator (
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_R_ID_SIZE_MATCH,  AXI_ID_WIDTH == s_axi_r_if.IW)
 
 // MCU SRAM ECC SB
-`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) |=> i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
-`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB_INTR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) && 
-                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value && 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) |=> i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_internal_intr_r.notif_mcu_sram_ecc_cor_sts.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o)
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_SB_INTR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.single_ecc_error) &&
+                i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.notif0_intr_en_r.notif_mcu_sram_ecc_cor_en.value &&
                 i_mci_reg_top.i_mci_reg.field_storage.intr_block_rf.global_intr_en_r.notif_en.value |=>
-                ##2 mci_intr, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+                ##2 mci_intr, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o)
 
-`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) |=> i_mci_reg_top.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
-`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB_ALL_ERR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) && 
-                !i_mci_reg_top.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value |=> 
-                all_error_fatal, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o) 
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) |=> i_mci_reg_top.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o)
+`CALIPTRA_ASSERT(MCU_SRAM_ECC_DB_ALL_ERR_OUT, $rose(i_mci_mcu_sram_ctrl.ecc_decode.double_ecc_error) &&
+                !i_mci_reg_top.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value |=>
+                all_error_fatal, cptra_ss_rdc_clk_cg, !cptra_ss_rst_b_o)
 
 endmodule
