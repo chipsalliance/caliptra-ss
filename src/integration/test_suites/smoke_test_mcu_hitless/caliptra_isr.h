@@ -26,9 +26,7 @@
 #ifndef CALIPTRA_ISR_H
     #define CALIPTRA_ISR_H
 
-#define EN_ISR_PRINTS 1
-
-#include "caliptra_reg.h"
+#include "caliptra_defines.h"
 #include <stdint.h>
 #include "printf.h"
 
