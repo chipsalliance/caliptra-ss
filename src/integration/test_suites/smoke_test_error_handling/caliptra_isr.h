@@ -107,8 +107,8 @@ inline void service_soc_ifc_error_intr() {
         *reg = MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_WDT_TIMER2_TIMEOUT_STS_MASK;
     }
     if (sts == 0) {
-        printf("bad soc_ifc_error_intr sts:%x\n", sts);
-        printf("%c", 0x1);
+        VPRINTF(ERROR, "bad soc_ifc_error_intr sts:%x\n", sts);
+        SEND_STDOUT_CTRL(0x1);
     }
 }
 
@@ -132,8 +132,8 @@ inline void service_soc_ifc_notif_intr () {
         *reg = MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_SOC_REQ_LOCK_STS_MASK;
     }
     if (sts == 0) {
-        printf("bad soc_ifc_notif_intr sts:%x\n", sts);
-        printf("%c", 0x1);
+        VPRINTF(ERROR, "bad soc_ifc_notif_intr sts:%x\n", sts);
+        SEND_STDOUT_CTRL(0x1);
     }
 }
 

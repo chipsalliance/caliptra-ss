@@ -43,7 +43,7 @@ void mcu_sram_print_msg (uint32_t decision) {
     if (rg != 0) {
         VPRINTF(LOW, mcu_sram_msg);
     } else {
-        printf("MCU: DECISION is %d\nMCU: MESSAGE is:\n%s", decision, mcu_sram_msg);
+        VPRINTF(LOW, "MCU: DECISION is %d\nMCU: MESSAGE is:\n%s", decision, mcu_sram_msg);
     }
     // LSU reads from MCU SRAM
     if (mcu_sram_array[0] != 0x0a090807) { VPRINTF(ERROR, "Mismatch 0x%x\n",mcu_sram_array[0]); SEND_STDOUT_CTRL(0x1); while(1); }

@@ -104,7 +104,7 @@ void wait_for_mailbox_cmd() {
         status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK;
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_REQ_CMD);
-        printf("%c", 0x01);
+        SEND_STDOUT_CTRL(0x01);
     }
     VPRINTF(LOW, "CLP_CORE: Received expected mailbox cmd 0x%08X\n", cmd);
 }
@@ -155,7 +155,7 @@ void wait_and_read_token() {
     if (cmd != AUTH_DEBUG_UNLOCK_TOKEN) {
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_TOKEN);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK);
-        printf("%c", 0x01);
+        SEND_STDOUT_CTRL(0x01);
     }
     VPRINTF(LOW, "CLP_CORE: Received expected mailbox cmd 0x%08X\n", cmd);
     VPRINTF(LOW, "CLP_CORE: Reading AUTH_DEBUG_UNLOCK_TOKEN payload...\n");
@@ -197,7 +197,7 @@ void main(void) {
     uint32_t is_production = (state & SOC_IFC_REG_CPTRA_SECURITY_STATE_DEVICE_LIFECYCLE_MASK) == 0x3;
     if (!is_production) {
         VPRINTF(ERROR, "CLP_CORE: Not in production mode\n");
-        printf("%c", 0x01);
+        SEND_STDOUT_CTRL(0x01);
         return;
     }
 
@@ -222,6 +222,6 @@ void main(void) {
         while(1); // Do not complete the execution, wait for MCU terminal cmd
     } else {
         VPRINTF(ERROR, "CLP_CORE: No debug unlock request or intent not set\n");
-        printf("%c", 0xFF);
+        SEND_STDOUT_CTRL(0xFF);
     }
 }

@@ -148,7 +148,7 @@ void main(void) {
         while(1);
     } else {
         VPRINTF(LOW, "CLP_CORE: Error because there is no MANUF DEBUG request...\n");
-        printf("%c",0xff); //End the test
+        SEND_STDOUT_CTRL(0xff); //End the test
     } 
 
 }
