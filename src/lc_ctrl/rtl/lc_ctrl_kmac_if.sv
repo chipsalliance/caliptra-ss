@@ -19,8 +19,8 @@ module lc_ctrl_kmac_if
   input                         rst_kmac_ni,
   // Life cycle hashing interface for raw unlock
   // Synchronized in the life cycle controller.
-  input  kmac_pkg::app_rsp_t    kmac_data_i,
-  output kmac_pkg::app_req_t    kmac_data_o,
+  input  kmac_ss_pkg::app_rsp_t    kmac_data_i,
+  output kmac_ss_pkg::app_req_t    kmac_data_o,
   // Token hashing interface to LC FSM'
   input lc_token_t              transition_token_i,
   input                         token_hash_req_i,
@@ -79,8 +79,8 @@ module lc_ctrl_kmac_if
 
   logic unused_sigs;
   assign unused_sigs = ^{
-    kmac_data_i.digest_share0[LcTokenWidth +: (kmac_pkg::AppDigestW - LcTokenWidth)],
-    kmac_data_i.digest_share1[LcTokenWidth +: (kmac_pkg::AppDigestW - LcTokenWidth)]
+    kmac_data_i.digest_share0[LcTokenWidth +: (kmac_ss_pkg::AppDigestW - LcTokenWidth)],
+    kmac_data_i.digest_share1[LcTokenWidth +: (kmac_ss_pkg::AppDigestW - LcTokenWidth)]
   };
 
   // Hashed Token Register Running on LC Clock

@@ -94,7 +94,7 @@ void wait_dai_op_idle(uint32_t status_mask) {
     status &= ((((uint32_t)1) << (FUSE_CTRL_STATUS_DAI_IDLE_OFFSET - 1)) - 1);
     if (status != status_mask) {
         VPRINTF(LOW, "CLP_CORE ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
         printf("%c",0xff); //End the test
     }
     VPRINTF(LOW, "CLP_CORE: DAI is now idle.\n");
@@ -142,11 +142,19 @@ void calculate_digest(uint32_t partition_base_address) {
 
 void UDS_provision(uint32_t base_address) {
 
+    uint32_t HW_config_value = lsu_read_32(CLP_SOC_IFC_REG_CPTRA_HW_CONFIG); 
+    int granularity = ((HW_config_value & 0x2)>>1) ? 32 : 64; // Check if the granularity is 64-bit or 32-bit
+    int boundry = (granularity == 64) ? 8 : 16; // Set the boundary based on granularity
+    int steps = (granularity == 64) ? 8 : 4; // Calculate the number of steps based on granularity
     // 0x580: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     int i;
-    for (i=0;i<8;i++){
-        dai_wr(base_address+i*8, i*2, i*2+1, 64, 0);
-        VPRINTF(LOW, "CLP_CORE: programming %02d item in UDS partition with 0x%08X and 0x%08X...\n",i, i*2, i*2+1);
+    for (i=0;i<boundry;i++){
+        dai_wr(base_address+i*steps, i*2, i*2+1, granularity, 0);
+        if (steps == 8){
+            VPRINTF(LOW, "CLP_CORE: programming %02d item in UDS partition with 0x%08X and 0x%08X...\n",i, i*2, i*2+1);
+        }else{
+            VPRINTF(LOW, "CLP_CORE: programming %02d item in UDS partition with 0x%08X...\n",i, i*2);
+        }
     }
 
     calculate_digest(base_address);
@@ -161,24 +169,24 @@ void main(void) {
 
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg = 0;
-    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK) == SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK;
+    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK) == SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK;
     if (status_reg){
         VPRINTF(LOW, "CLP_CORE: detected UDS prog request...\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "CLP_CORE: set DBG_MANUF_SERVICE_REG_RSP high...\n");
         uint32_t UDS_low_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_UDS_SEED_BASE_ADDR_L);
         uint32_t UDS_high_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_UDS_SEED_BASE_ADDR_H);
         uint32_t FC_base_addr = lsu_read_32(CLP_SOC_IFC_REG_SS_OTP_FC_BASE_ADDR_H);
         UDS_provision(FC_base_addr+UDS_low_addr);
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "CLP_CORE: set RSP_UDS_PROGRAM_SUCCESS high...\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         while(1);
     } else {
         VPRINTF(LOW, "CLP_CORE: Error because there is no UDS prog request...\n");

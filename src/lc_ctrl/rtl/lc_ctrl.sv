@@ -12,7 +12,7 @@ module lc_ctrl
   import lc_ctrl_reg_pkg::*;
   import lc_ctrl_state_pkg::*;
   import axi_pkg::*;
-  import kmac_pkg::*;
+  import kmac_ss_pkg::*;
 #(
   // Enable asynchronous transitions on alerts.
   parameter logic [NumAlerts-1:0] AlertAsyncOn = {NumAlerts{1'b1}},
@@ -115,8 +115,8 @@ module lc_ctrl
   // Life cycle hashing interface for raw unlock
   // Synchronized in the life cycle controller.
   // SEC_CM: TOKEN.DIGEST
-  //-- input  kmac_pkg::app_rsp_t                         kmac_data_i,
-  //-- output kmac_pkg::app_req_t                         kmac_data_o,
+  //-- input  kmac_ss_pkg::app_rsp_t                         kmac_data_i,
+  //-- output kmac_ss_pkg::app_req_t                         kmac_data_o,
   // OTP broadcast outputs
   // No sync required since LC and OTP are in the same clock domain.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI
@@ -745,8 +745,8 @@ module lc_ctrl
   // KMAC design Instance
   ///////////////////////////////
 
-  kmac_pkg::app_rsp_t                         kmac_data_i;
-  kmac_pkg::app_req_t                         kmac_data_o;
+  kmac_ss_pkg::app_rsp_t                         kmac_data_i;
+  kmac_ss_pkg::app_req_t                         kmac_data_o;
   wire lc_tx_t                                lc_escalate_en_int;
   wire app_req_t  [2:0]            app_req;
   wire app_rsp_t  [2:0]            app_rsp;
@@ -759,7 +759,7 @@ module lc_ctrl
 
   assign kmac_data_i = app_rsp[1];
 
-  kmac #(
+  kmac_ss #(
     .EnMasking(0),
     .SwKeyMasked(0),
     .NumAppIntf(3)

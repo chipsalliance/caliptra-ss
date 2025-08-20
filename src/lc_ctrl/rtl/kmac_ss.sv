@@ -6,9 +6,9 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac
-  import kmac_pkg::*;
-  import kmac_reg_pkg::*;
+module kmac_ss
+  import kmac_ss_pkg::*;
+  import kmac_ss_reg_pkg::*;
 #(
   // EnMasking: Enable masking security hardening inside keccak_round
   // If it is enabled, the result digest will be two set of 1600bit.
@@ -169,7 +169,7 @@ module kmac
 
   caliptra_ss_sha3_pkg::sha3_st_e sha3_fsm;
 
-  // Prefix: kmac_pkg defines Prefix based on N size and S size.
+  // Prefix: kmac_ss_pkg defines Prefix based on N size and S size.
   // Then computes left_encode(len(N)) size and left_encode(len(S))
   // For given default value 32, 256 bits, the max
   // encode_string(N) || encode_string(S) is 328. So 11 Prefix registers are
@@ -177,19 +177,19 @@ module kmac
   logic [caliptra_ss_sha3_pkg::NSRegisterSize*8-1:0] reg_ns_prefix;
   logic [caliptra_ss_sha3_pkg::NSRegisterSize*8-1:0] ns_prefix;
 
-  // NumWordsPrefix from kmac_reg_pkg
+  // NumWordsPrefix from kmac_ss_reg_pkg
   `CALIPTRA_ASSERT_INIT(PrefixRegSameToPrefixPkg_A,
-               kmac_reg_pkg::NumWordsPrefix*4 == caliptra_ss_sha3_pkg::NSRegisterSize)
+               kmac_ss_reg_pkg::NumWordsPrefix*4 == caliptra_ss_sha3_pkg::NSRegisterSize)
 
-  // NumEntriesMsgFifo from kmac_reg_pkg must match calculated MsgFifoDepth
-  // from kmac_pkg.
+  // NumEntriesMsgFifo from kmac_ss_reg_pkg must match calculated MsgFifoDepth
+  // from kmac_ss_pkg.
   `CALIPTRA_ASSERT_INIT(NumEntriesRegSameToNumEntriesPkg_A,
-               kmac_reg_pkg::NumEntriesMsgFifo == kmac_pkg::MsgFifoDepth)
+               kmac_ss_reg_pkg::NumEntriesMsgFifo == kmac_ss_pkg::MsgFifoDepth)
 
-  // NumBytesMsgFifoEntry from kmac_reg_pkg must match the MsgWidth calculated
-  // in kmac_pkg (although MsgWidth is in bits, so we multiply by 8).
+  // NumBytesMsgFifoEntry from kmac_ss_reg_pkg must match the MsgWidth calculated
+  // in kmac_ss_pkg (although MsgWidth is in bits, so we multiply by 8).
   `CALIPTRA_ASSERT_INIT(EntrySizeRegSameToEntrySizePkg_A,
-               kmac_reg_pkg::NumBytesMsgFifoEntry * 8 == kmac_pkg::MsgWidth)
+               kmac_ss_reg_pkg::NumBytesMsgFifoEntry * 8 == kmac_ss_pkg::MsgWidth)
 
   // Output state: this is used to redirect the digest to KeyMgr or Software
   // depends on the configuration.
@@ -208,11 +208,11 @@ module kmac
 
   // FIFO related signals
   logic msgfifo_empty, msgfifo_full;
-  logic [kmac_pkg::MsgFifoDepthW-1:0] msgfifo_depth;
+  logic [kmac_ss_pkg::MsgFifoDepthW-1:0] msgfifo_depth;
 
   logic                          msgfifo_valid       ;
-  logic [kmac_pkg::MsgWidth-1:0] msgfifo_data [Share];
-  logic [kmac_pkg::MsgStrbW-1:0] msgfifo_strb        ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] msgfifo_data [Share];
+  logic [kmac_ss_pkg::MsgStrbW-1:0] msgfifo_strb        ;
   logic                          msgfifo_ready       ;
 
   if (EnMasking) begin : gen_msgfifo_data_masked
@@ -236,21 +236,21 @@ module kmac
   logic [31:0] tlram_wmask_endian;
 
   logic                          sw_msg_valid;
-  logic [kmac_pkg::MsgWidth-1:0] sw_msg_data ;
-  logic [kmac_pkg::MsgWidth-1:0] sw_msg_mask ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] sw_msg_data ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] sw_msg_mask ;
   logic                          sw_msg_ready;
 
   // KeyMgr interface to MSG_FIFO
   logic                          mux2fifo_valid;
-  logic [kmac_pkg::MsgWidth-1:0] mux2fifo_data ;
-  logic [kmac_pkg::MsgWidth-1:0] mux2fifo_mask ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] mux2fifo_data ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] mux2fifo_mask ;
   logic                          mux2fifo_ready;
 
   // KMAC to SHA3 core
   logic                          msg_valid       ;
-  logic [kmac_pkg::MsgWidth-1:0] msg_data [Share];
-  logic [kmac_pkg::MsgWidth-1:0] msg_data_masked [Share];
-  logic [kmac_pkg::MsgStrbW-1:0] msg_strb        ;
+  logic [kmac_ss_pkg::MsgWidth-1:0] msg_data [Share];
+  logic [kmac_ss_pkg::MsgWidth-1:0] msg_data_masked [Share];
+  logic [kmac_ss_pkg::MsgStrbW-1:0] msg_strb        ;
   logic                          msg_ready       ;
 
   // Process control signals
@@ -282,7 +282,7 @@ module kmac
   // SEC_CM: SW_CMD.CTRL.SPARSE
   // Command
   // sw_cmd is the command written by SW
-  // checked_sw_cmd is checked in the kmac_errchk module.
+  // checked_sw_cmd is checked in the kmac_ss_errchk module.
   //   Invalid command is filtered out in the module.
   // kmac_cmd is generated in KeyMgr interface.
   // If SW initiates the KMAC/SHA3, kmac_cmd represents SW command,
@@ -316,16 +316,16 @@ module kmac
   caliptra_ss_sha3_pkg::err_t sha3_err;
 
   // KeyMgr Error response
-  kmac_pkg::err_t app_err;
+  kmac_ss_pkg::err_t app_err;
 
   // Entropy Generator Error
-  kmac_pkg::err_t entropy_err;
+  kmac_ss_pkg::err_t entropy_err;
 
   // Error checker
-  kmac_pkg::err_t errchecker_err;
+  kmac_ss_pkg::err_t errchecker_err;
 
   // MsgFIFO Error
-  kmac_pkg::err_t msgfifo_err;
+  kmac_ss_pkg::err_t msgfifo_err;
 
   logic err_processed;
 
@@ -721,9 +721,9 @@ module kmac
   // Counter errors
   logic counter_error, sha3_count_error, key_index_error;
   logic msgfifo_counter_error;
-  logic kmac_entropy_hash_counter_error;
+  logic kmac_ss_entropy_hash_counter_error;
   assign counter_error = sha3_count_error
-                       | kmac_entropy_hash_counter_error
+                       | kmac_ss_entropy_hash_counter_error
                        | key_index_error
                        | msgfifo_counter_error;
 
@@ -731,14 +731,14 @@ module kmac
 
   // State Errors
   logic sparse_fsm_error;
-  logic sha3_state_error, kmac_errchk_state_error;
-  logic kmac_core_state_error, kmac_app_state_error;
-  logic kmac_entropy_state_error, kmac_state_error;
+  logic sha3_state_error, kmac_ss_errchk_state_error;
+  logic kmac_ss_core_state_error, kmac_ss_app_state_error;
+  logic kmac_ss_entropy_state_error, kmac_state_error;
   assign sparse_fsm_error = sha3_state_error
-                          | kmac_errchk_state_error
-                          | kmac_core_state_error
-                          | kmac_app_state_error
-                          | kmac_entropy_state_error
+                          | kmac_ss_errchk_state_error
+                          | kmac_ss_core_state_error
+                          | kmac_ss_app_state_error
+                          | kmac_ss_entropy_state_error
                           | kmac_state_error;
 
   // Control Signal Integrity Errors
@@ -811,7 +811,7 @@ module kmac
         if (caliptra_prim_mubi_pkg::mubi4_test_true_strict(sha3_absorbed) &&
           caliptra_prim_mubi_pkg::mubi4_test_true_strict(sha3_done)) begin
           // absorbed and done can be asserted at a cycle if Applications have
-          // requested the hash operation. kmac_app FSM issues CmdDone command
+          // requested the hash operation. kmac_ss_app FSM issues CmdDone command
           // if it receives absorbed signal.
           kmac_st_d = KmacIdle;
         end else if (caliptra_prim_mubi_pkg::mubi4_test_true_strict(sha3_absorbed) &&
@@ -857,9 +857,9 @@ module kmac
   ///////////////
 
   // KMAC core
-  kmac_core #(
+  kmac_ss_core #(
     .EnMasking (EnMasking)
-  ) u_kmac_core (
+  ) u_kmac_ss_core (
     .clk_i,
     .rst_ni,
 
@@ -895,7 +895,7 @@ module kmac
     .lc_escalate_en_i (lc_escalate_en[1]),
 
     // Error detection
-    .sparse_fsm_error_o (kmac_core_state_error),
+    .sparse_fsm_error_o (kmac_ss_core_state_error),
     .key_index_error_o  (key_index_error)
   );
 
@@ -1043,7 +1043,7 @@ module kmac
   assign unused_tlram_addr = &{1'b0, tlram_addr};
 
   // Application interface Mux/Demux
-  kmac_app #(
+  kmac_ss_app #(
     .EnMasking(EnMasking),
     .SecIdleAcceptSwMsg(SecIdleAcceptSwMsg),
     .NumAppIntf(NumAppIntf),
@@ -1126,14 +1126,14 @@ module kmac
 
     // Error report
     .error_o            (app_err),
-    .sparse_fsm_error_o (kmac_app_state_error)
+    .sparse_fsm_error_o (kmac_ss_app_state_error)
 
   );
 
   // Message FIFO
-  kmac_msgfifo #(
-    .OutWidth  (kmac_pkg::MsgWidth),
-    .MsgDepth  (kmac_pkg::MsgFifoDepth),
+  kmac_ss_msgfifo #(
+    .OutWidth  (kmac_ss_pkg::MsgWidth),
+    .MsgDepth  (kmac_ss_pkg::MsgFifoDepth),
     .EnMasking (EnMasking)
   ) u_msgfifo (
     .clk_i,
@@ -1169,7 +1169,7 @@ module kmac
   end
 
   // State (Digest) reader
-  kmac_staterd #(
+  kmac_ss_staterd #(
     .AddrW     (9), // 512B
     .EnMasking (EnMasking)
   ) u_staterd (
@@ -1185,7 +1185,7 @@ module kmac
   );
 
   // Error checker
-  kmac_errchk #(
+  kmac_ss_errchk #(
     .EnMasking (EnMasking)
   ) u_errchk (
     .clk_i,
@@ -1220,7 +1220,7 @@ module kmac
     .clear_after_error_i (clear_after_error),
 
     .error_o            (errchecker_err),
-    .sparse_fsm_error_o (kmac_errchk_state_error)
+    .sparse_fsm_error_o (kmac_ss_errchk_state_error)
   );
 
   // Entropy Generator
@@ -1252,7 +1252,7 @@ module kmac
     // We don't track whether the entropy is pre-FIPS or not inside KMAC.
     assign unused_entropy_fips = entropy_i.edn_fips;
 
-    kmac_entropy #(
+    kmac_ss_entropy #(
      .RndCnstLfsrPerm(RndCnstLfsrPerm),
      .RndCnstLfsrSeed(RndCnstLfsrSeed),
      .RndCnstBufferLfsrSeed(RndCnstBufferLfsrSeed)
@@ -1307,8 +1307,8 @@ module kmac
 
       // Error
       .err_o              (entropy_err),
-      .sparse_fsm_error_o (kmac_entropy_state_error),
-      .count_error_o      (kmac_entropy_hash_counter_error),
+      .sparse_fsm_error_o (kmac_ss_entropy_state_error),
+      .count_error_o      (kmac_ss_entropy_hash_counter_error),
       .err_processed_i    (err_processed)
     );
   end else begin : gen_empty_entropy
@@ -1347,8 +1347,8 @@ module kmac
 
     assign entropy_err = '{valid: 1'b 0, code: ErrNone, info: '0};
 
-    assign kmac_entropy_state_error = 1'b 0;
-    assign kmac_entropy_hash_counter_error  = 1'b 0;
+    assign kmac_ss_entropy_state_error = 1'b 0;
+    assign kmac_ss_entropy_hash_counter_error  = 1'b 0;
 
     logic unused_entropy_status;
     assign unused_entropy_status = entropy_in_keyblock;
@@ -1371,7 +1371,7 @@ module kmac
   logic [NumAlerts-1:0] alert_test, alerts, alerts_q;
 
   logic shadowed_storage_err, shadowed_update_err;
-  kmac_reg_top u_reg (
+  kmac_ss_reg_top u_reg (
     .clk_i,
     .rst_ni,
     .rst_shadowed_ni,
@@ -1533,7 +1533,7 @@ module kmac
   `CALIPTRA_ASSERT_KNOWN(EnMaskingKnown_A, en_masking_o)
 
   // Parameter as desired
-  `CALIPTRA_ASSERT_INIT(SecretKeyDivideBy32_A, (kmac_pkg::MaxKeyLen % 32) == 0)
+  `CALIPTRA_ASSERT_INIT(SecretKeyDivideBy32_A, (kmac_ss_pkg::MaxKeyLen % 32) == 0)
 
   // Command input should be sparse
   `CALIPTRA_ASSUME(CmdSparse_M, reg2hw.cmd.cmd.qe |-> reg2hw.cmd.cmd.q inside {CmdStart, CmdProcess,
@@ -1544,11 +1544,11 @@ module kmac
                                          alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(RoundCountCheck_A, u_sha3.u_keccak.u_round_count,
                                          alert_tx_o[1])
-  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(KeyIndexCountCheck_A, u_kmac_core.u_key_index_count,
+  `CALIPTRA_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(KeyIndexCountCheck_A, u_kmac_ss_core.u_key_index_count,
                                          alert_tx_o[1])
 
   // Sparse FSM state error
-  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(KmacCoreFsmCheck_A, u_kmac_core.u_state_regs, alert_tx_o[1])
+  `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(KmacCoreFsmCheck_A, u_kmac_ss_core.u_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(KmacAppFsmCheck_A, u_app_intf.u_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(SHA3FsmCheck_A, u_sha3.u_state_regs, alert_tx_o[1])
   `CALIPTRA_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(SHA3padFsmCheck_A, u_sha3.u_pad.u_state_regs, alert_tx_o[1])

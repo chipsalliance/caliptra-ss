@@ -6,8 +6,8 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_core
-  import kmac_pkg::*;
+module kmac_ss_core
+  import kmac_ss_pkg::*;
 #(
   // EnMasking: Enable masking security hardening inside keccak_round
   // If it is enabled, the result digest will be two set of 1600bit.
@@ -288,7 +288,7 @@ module kmac_core
 
   // left_encode(len(secret_key))
   // encoded length is always byte size. Use MaxEncodedKeyLenByte parameter
-  // from kmac_pkg and add one more byte to indicate how many bytes used to
+  // from kmac_ss_pkg and add one more byte to indicate how many bytes used to
   // represent len(secret_key)
   // Note that if the secret_key is 128 bit, only lower 16 bits of
   // `encode_keylen` are valid. Refer `encoded_key` concatenation logic below.
@@ -364,7 +364,7 @@ module kmac_core
   end : gen_encoded_key
 
   // Above logic assumes MaxKeyLen as 512 bits. Revise if it is not.
-  `CALIPTRA_ASSERT_INIT(MaxKeyLenMatchToKey512_A, kmac_pkg::MaxKeyLen == 512)
+  `CALIPTRA_ASSERT_INIT(MaxKeyLenMatchToKey512_A, kmac_ss_pkg::MaxKeyLen == 512)
 
   // Combine the bytepad `left_encode(w)` and the `encode_string(secret_key)`
   logic [MaxEncodedKeyW + 16 -1 :0] encoded_key_block [Share];
@@ -467,4 +467,4 @@ module kmac_core
   `CALIPTRA_ASSERT(AckOnlyInMessageState_A,
           fifo_valid_i && fifo_ready_o && kmac_en_i |-> st == StKmacMsg)
 
-endmodule : kmac_core
+endmodule : kmac_ss_core
