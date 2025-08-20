@@ -4,5 +4,5 @@ testname: mcu_lmem_exe
 pre-exec: |
   set -eu
   echo "Running pre_exec for [mcu_lmem_exe]"
-  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_lmem_exe AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/rtl/soc_address_map.h TESTNAME=cptra_bringup program.hex
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_lmem_exe AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/rtl/soc_address_map/soc_address_map.h TESTNAME=cptra_bringup program.hex
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_lmem_exe mcu_program.hex

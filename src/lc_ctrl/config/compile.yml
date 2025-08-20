@@ -17,7 +17,7 @@ targets:
       - $COMPILE_ROOT/rtl/top_pkg.sv
       - $COMPILE_ROOT/rtl/alert_handler_reg_pkg.sv
 ---
-provides: [lc_kmac_pkg]
+provides: [lc_kmac_ss_pkg]
 schema_version: 2.4.0
 requires:
   - caliptra_prim_pkg
@@ -27,23 +27,23 @@ targets:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/lc_ctrl_keymgr_pkg.sv
-      - $COMPILE_ROOT/rtl/kmac_reg_pkg.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_reg_pkg.sv
       - $COMPILE_ROOT/rtl/caliptra_ss_sha3_pkg.sv
-      - $COMPILE_ROOT/rtl/kmac_pkg.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_pkg.sv
   tb:
     directories: [$COMPILE_ROOT/rtl]
     files:
       - $COMPILE_ROOT/rtl/lc_ctrl_keymgr_pkg.sv
-      - $COMPILE_ROOT/rtl/kmac_reg_pkg.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_reg_pkg.sv
       - $COMPILE_ROOT/rtl/caliptra_ss_sha3_pkg.sv
-      - $COMPILE_ROOT/rtl/kmac_pkg.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_pkg.sv
 ---
 provides: [lc_ctrl]
 schema_version: 2.4.0
 requires:
   - caliptra_ss_lc_ctrl_pkg
   - lc_ctrl_pkg
-  - lc_kmac_pkg
+  - lc_kmac_ss_pkg
   - axi_pkg
   - axi2tlul
   - tlul_pkg
@@ -63,15 +63,15 @@ targets:
       - $COMPILE_ROOT/rtl/caliptra_ss_keccak_round.sv
       - $COMPILE_ROOT/rtl/caliptra_ss_sha3pad.sv
       - $COMPILE_ROOT/rtl/caliptra_ss_sha3.sv
-      - $COMPILE_ROOT/rtl/kmac_app.sv
-      - $COMPILE_ROOT/rtl/kmac_core.sv
-      - $COMPILE_ROOT/rtl/kmac_entropy.sv
-      - $COMPILE_ROOT/rtl/kmac_errchk.sv
-      - $COMPILE_ROOT/rtl/kmac_msgfifo.sv
-      # - $COMPILE_ROOT/rtl/kmac_reduced.sv
-      - $COMPILE_ROOT/rtl/kmac_reg_top.sv
-      - $COMPILE_ROOT/rtl/kmac_staterd.sv
-      - $COMPILE_ROOT/rtl/kmac.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_app.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_core.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_entropy.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_errchk.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_msgfifo.sv
+      # - $COMPILE_ROOT/rtl/kmac_ss_reduced.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_reg_top.sv
+      - $COMPILE_ROOT/rtl/kmac_ss_staterd.sv
+      - $COMPILE_ROOT/rtl/kmac_ss.sv
       - $COMPILE_ROOT/rtl/lc_ctrl_fsm.sv
       - $COMPILE_ROOT/rtl/lc_ctrl_kmac_if.sv
       - $COMPILE_ROOT/rtl/lc_ctrl_reg_top.sv

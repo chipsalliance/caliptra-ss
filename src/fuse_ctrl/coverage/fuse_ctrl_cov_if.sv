@@ -37,8 +37,8 @@ interface fuse_ctrl_cov_if
 
     logic [31:0] core_axi_wr_req_awaddr;
     logic [31:0] core_axi_wr_req_awuser;
-    assign core_axi_wr_req_awaddr = fuse_ctrl_filter.core_axi_wr_req.awaddr;
-    assign core_axi_wr_req_awuser = fuse_ctrl_filter.core_axi_wr_req.awuser;
+    assign core_axi_wr_req_awaddr = caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awaddr;
+    assign core_axi_wr_req_awuser = caliptra_ss_top_tb.caliptra_ss_dut.u_otp_ctrl.u_fuse_ctrl_filter.core_axi_wr_req.awuser;
 
     covergroup fuse_ctrl_filter_cg @(posedge clk_i);
         option.per_instance = 1;

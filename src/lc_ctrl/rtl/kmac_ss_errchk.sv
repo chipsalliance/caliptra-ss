@@ -34,17 +34,17 @@
 //
 // ## SW Configuration Error
 //
-// `kmac_errchk` module checks if SW configured correct combinations of the
+// `kmac_ss_errchk` module checks if SW configured correct combinations of the
 // configuration registers when the hashing operation begins.
 //
 // 1. Mode & Strength combinations
 // 2. Kmac Prefix
-// * sideload & key_valid -> Checker in kmac_core
+// * sideload & key_valid -> Checker in kmac_ss_core
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_errchk
-  import kmac_pkg::*;
+module kmac_ss_errchk
+  import kmac_ss_pkg::*;
   import caliptra_ss_sha3_pkg::sha3_mode_e;
   import caliptra_ss_sha3_pkg::keccak_strength_e;
 #(
@@ -461,4 +461,4 @@ module kmac_errchk
   end : next_state
   `CALIPTRA_ASSERT_KNOWN(StKnown_A, st)
 
-endmodule : kmac_errchk
+endmodule : kmac_ss_errchk

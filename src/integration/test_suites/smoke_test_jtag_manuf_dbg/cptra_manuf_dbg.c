@@ -27,24 +27,24 @@
 uint32_t read_TOKEN[9];
 uint32_t exp_token[9] = {
     0xFFFFF8E2,
-    0xABCDEFEB,
+    0xEBEFCDAB,
     0x00000000,
     0x00000000,
     0x00000000,
     0x00000000,
     0x00000000,
     0x00000000,
-    0xF888888A
+    0x8A8888F8
 };
 
 
 /*
 #### Debug Unlock
-1. On reset, the ROM checks if the `MANUF_DBG_UNLOCK_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register and the `DEBUG_INTENT` bit in `SS_DEBUG_INTENT` register are set.
+1. On reset, the ROM checks if the `MANUF_DBG_UNLOCK_REQ` bit in the `SS_DBG_SERVICE_REG_REQ` register and the `DEBUG_INTENT` bit in `SS_DEBUG_INTENT` register are set.
 
-2. If they are set, the ROM sets the `TAP_MAILBOX_AVAILABLE` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register, then enters a loop, awaiting a `TOKEN` command on the mailbox. The payload of this command is a 256-bit value.
+2. If they are set, the ROM sets the `TAP_MAILBOX_AVAILABLE` bit in the `SS_DBG_SERVICE_REG_RSP` register, then enters a loop, awaiting a `TOKEN` command on the mailbox. The payload of this command is a 256-bit value.
 
-3. Upon receiving the `TOKEN` command, ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 1.
+3. Upon receiving the `TOKEN` command, ROM sets the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 1.
 
 4. The ROM performs a SHA-512 operation on the token to generate the input token digest.
 
@@ -52,11 +52,11 @@ uint32_t exp_token[9] = {
 
 6. The ROM completes the mailbox command.
 
-7. If the input token digest and fuse token digests match, the ROM authorizes the debug unlock by setting the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_SUCCESS` bit to 1.
+7. If the input token digest and fuse token digests match, the ROM authorizes the debug unlock by setting the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_SUCCESS` bit to 1.
 
-8. If the token digests do not match, the ROM blocks the debug unlock by setting the the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_FAIL` bit to 1.
+8. If the token digests do not match, the ROM blocks the debug unlock by setting the the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_FAIL` bit to 1.
 
-9. The ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 0.
+9. The ROM sets the `SS_DBG_SERVICE_REG_RSP` register `MANUF_DBG_UNLOCK_IN_PROGRESS` bit to 0.
 */
 
 
@@ -73,15 +73,15 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
 void mailbox_available() {
-    // sets the `TAP_MAILBOX_AVAILABLE` bit in the `SS_DBG_MANUF_SERVICE_REG_RSP` register
+    // sets the `TAP_MAILBOX_AVAILABLE` bit in the `SS_DBG_SERVICE_REG_RSP` register
     //make tap mailbox available
     uint32_t status_reg ;
     VPRINTF(LOW, "CLP_CORE: detected MANUF DEBUG request...\n");
-    status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
-    status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK;
+    status_reg = SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
+    status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK;
     VPRINTF(LOW, "CLP_CORE: set MANUF_DBG_UNLOCK_IN_PROGRESS...\n");
     VPRINTF(LOW, "CLP_CORE: set MAILBOX_AVAILABLE...\n");
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     return;
 }
 
@@ -114,22 +114,22 @@ void compare_token() {
         // ROM needs to perform HASH comperision in here.
         if (read_TOKEN[ii] != exp_token[ii]) {
             VPRINTF(ERROR, "ERROR: mailbox data mismatch actual (0x%x) expected (0x%x)\n", read_TOKEN[ii], exp_token[ii]);
-            lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_MASK);
-            status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-            status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-            lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+            lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_MASK);
+            status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+            status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+            lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
             SEND_STDOUT_CTRL( 0x1);
         };
     }
     lsu_write_32(CLP_MBOX_CSR_TAP_MODE,0);
     soc_ifc_clear_execute_reg();
-    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-    status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+    status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "\n\nCLP_CORE: set MANUF_DBG_UNLOCK_SUCCESS high...\n\n");
-    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-    status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+    status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     // deassert in_progress
     return;
 }
@@ -140,7 +140,7 @@ void main(void) {
 
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg = 0;
-    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK) == SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK;
+    status_reg = (lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ) & SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK) == SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK;
     if (status_reg){
         mailbox_available();
         wait_for_token();

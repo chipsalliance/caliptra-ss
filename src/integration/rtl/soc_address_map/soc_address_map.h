@@ -10624,12 +10624,16 @@
 #define SOC_IFC_REG_CPTRA_HW_CONFIG                                                                 (0xe0)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_ITRNG_EN_LOW                                                    (0)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_ITRNG_EN_MASK                                                   (0x1)
-#define SOC_IFC_REG_CPTRA_HW_CONFIG_RSVD_EN_LOW                                                     (1)
-#define SOC_IFC_REG_CPTRA_HW_CONFIG_RSVD_EN_MASK                                                    (0xe)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_FUSE_GRANULARITY_LOW                                            (1)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_FUSE_GRANULARITY_MASK                                           (0x2)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_RSVD_EN_LOW                                                     (2)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_RSVD_EN_MASK                                                    (0xc)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_LMS_ACC_EN_LOW                                                  (4)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_LMS_ACC_EN_MASK                                                 (0x10)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_LOW                                           (5)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_MASK                                          (0x20)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_LOW                                            (6)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (0x40)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                         (0xa00300e4)
 #ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN
@@ -11185,6 +11189,38 @@
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_LOW                                               (0)
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_MASK                                              (0xff)
 #endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_0                                                             (0xa00303a4)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_0
+#define SOC_IFC_REG_FUSE_HEK_SEED_0                                                                 (0x3a4)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_1                                                             (0xa00303a8)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_1
+#define SOC_IFC_REG_FUSE_HEK_SEED_1                                                                 (0x3a8)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_2                                                             (0xa00303ac)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_2
+#define SOC_IFC_REG_FUSE_HEK_SEED_2                                                                 (0x3ac)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_3                                                             (0xa00303b0)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_3
+#define SOC_IFC_REG_FUSE_HEK_SEED_3                                                                 (0x3b0)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_4                                                             (0xa00303b4)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_4
+#define SOC_IFC_REG_FUSE_HEK_SEED_4                                                                 (0x3b4)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_5                                                             (0xa00303b8)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_5
+#define SOC_IFC_REG_FUSE_HEK_SEED_5                                                                 (0x3b8)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_6                                                             (0xa00303bc)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_6
+#define SOC_IFC_REG_FUSE_HEK_SEED_6                                                                 (0x3bc)
+#endif
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_7                                                             (0xa00303c0)
+#ifndef SOC_IFC_REG_FUSE_HEK_SEED_7
+#define SOC_IFC_REG_FUSE_HEK_SEED_7                                                                 (0x3c0)
+#endif
 #define SOC_SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L                                                     (0xa0030500)
 #ifndef SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L
 #define SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L                                                         (0x500)
@@ -11243,6 +11279,34 @@
 #ifndef SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER
 #define SOC_IFC_REG_SS_CALIPTRA_DMA_AXI_USER                                                        (0x534)
 #endif
+#define SOC_SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_L                                        (0xa0030538)
+#ifndef SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_L
+#define SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_L                                            (0x538)
+#endif
+#define SOC_SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H                                        (0xa003053c)
+#ifndef SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H
+#define SOC_IFC_REG_SS_EXTERNAL_STAGING_AREA_BASE_ADDR_H                                            (0x53c)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L                                                  (0xa0030540)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L
+#define SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_L                                                      (0x540)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H                                                  (0xa0030544)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H
+#define SOC_IFC_REG_SS_KEY_RELEASE_BASE_ADDR_H                                                      (0x544)
+#endif
+#define SOC_SOC_IFC_REG_SS_KEY_RELEASE_SIZE                                                         (0xa0030548)
+#ifndef SOC_IFC_REG_SS_KEY_RELEASE_SIZE
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE                                                             (0x548)
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE_SIZE_LOW                                                    (0)
+#define SOC_IFC_REG_SS_KEY_RELEASE_SIZE_SIZE_MASK                                                   (0xffff)
+#endif
+#define SOC_SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                            (0xa003054c)
+#ifndef SOC_IFC_REG_SS_OCP_LOCK_CTRL
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                                (0x54c)
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
+#define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (0x1)
+#endif
 #define SOC_SOC_IFC_REG_SS_STRAP_GENERIC_0                                                          (0xa00305a0)
 #ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
 #define SOC_IFC_REG_SS_STRAP_GENERIC_0                                                              (0x5a0)
@@ -11259,43 +11323,43 @@
 #ifndef SOC_IFC_REG_SS_STRAP_GENERIC_3
 #define SOC_IFC_REG_SS_STRAP_GENERIC_3                                                              (0x5ac)
 #endif
-#define SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ                                                (0xa00305c0)
-#ifndef SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ                                                    (0x5c0)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_LOW                           (0)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK                          (0x1)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_LOW                            (1)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK                           (0x2)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_LOW                                (2)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK                               (0x4)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_RSVD_LOW                                           (3)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_RSVD_MASK                                          (0xfffffff8)
+#define SOC_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ                                                      (0xa00305c0)
+#ifndef SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ                                                          (0x5c0)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_LOW                                 (0)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_MANUF_DBG_UNLOCK_REQ_MASK                                (0x1)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_LOW                                  (1)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK                                 (0x2)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_LOW                                      (2)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_UDS_PROGRAM_REQ_MASK                                     (0x4)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_RSVD_LOW                                                 (3)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_RSVD_MASK                                                (0xfffffff8)
 #endif
-#define SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP                                                (0xa00305c4)
-#ifndef SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP                                                    (0x5c4)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_LOW                       (0)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK                      (0x1)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_LOW                          (1)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_MASK                         (0x2)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_LOW                   (2)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK                  (0x4)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_LOW                        (3)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK                       (0x8)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_LOW                           (4)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK                          (0x10)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_LOW                    (5)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK                   (0x20)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_LOW                            (6)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK                           (0x40)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_LOW                               (7)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK                              (0x80)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_LOW                        (8)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK                       (0x100)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_LOW                          (9)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK                         (0x200)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_RSVD_LOW                                           (10)
-#define SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_RSVD_MASK                                          (0xfffffc00)
+#define SOC_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP                                                      (0xa00305c4)
+#ifndef SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP                                                          (0x5c4)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_LOW                             (0)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_SUCCESS_MASK                            (0x1)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_LOW                                (1)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_FAIL_MASK                               (0x2)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_LOW                         (2)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_MANUF_DBG_UNLOCK_IN_PROGRESS_MASK                        (0x4)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_LOW                              (3)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK                             (0x8)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_LOW                                 (4)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK                                (0x10)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_LOW                          (5)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK                         (0x20)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_LOW                                  (6)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK                                 (0x40)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_LOW                                     (7)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK                                    (0x80)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_LOW                              (8)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_IN_PROGRESS_MASK                             (0x100)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_LOW                                (9)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK                               (0x200)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_RSVD_LOW                                                 (10)
+#define SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_RSVD_MASK                                                (0xfffffc00)
 #endif
 #define SOC_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_0                                                   (0xa00305c8)
 #ifndef SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_0

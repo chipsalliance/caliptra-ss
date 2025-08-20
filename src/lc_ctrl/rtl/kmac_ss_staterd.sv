@@ -6,11 +6,11 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_staterd
-  import kmac_pkg::*;
+module kmac_ss_staterd
+  import kmac_ss_pkg::*;
 #(
   // TL-UL Address Width. Should be bigger than
-  // $clog2(kmac_pkg::StateW) * Share
+  // $clog2(kmac_ss_pkg::StateW) * Share
   parameter int AddrW = 9,
 
   // EnMasking: Enable masking security hardening inside keccak_round

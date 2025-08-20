@@ -37,7 +37,7 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
-uint8_t debug_level = 3;
+uint8_t debug_level = 5;
 uint32_t checksum, ii, lenght_challenge;
 uint32_t expected_unlock_req_payload[2];
 uint32_t expected_token_payload[0x753];
@@ -61,18 +61,18 @@ uint32_t challenge_payload[] = {
 };
 
 uint32_t PROD_dbg_pk[] =  {
-    0x02E66222,
-    0xC1144ED7,
-    0x7F9E0293,
-    0xC99B43E2,
-    0x51741A91,
-    0xD6884787,
-    0x5A00F049,
-    0x443F97C0,
-    0xEF7B24B1,
-    0xDAEE7948,
-    0x97F03CF3,
-    0xD2369D51
+    0x2bb37255, 
+    0x51a4edc7,
+    0xbd948b1e,
+    0x2c2a257e,
+    0x7a694bfd,
+    0xc2d5de4d,
+    0x8adec52a,
+    0xe7aeda4a,
+    0x2761c721,
+    0x98940dae,
+    0xe14e2482,
+    0xd6da39e1
 };
 
 
@@ -86,9 +86,9 @@ uint32_t dma_read_from_lsu(uint32_t address){
 
 void wait_for_mailbox_cmd() {
     uint32_t status_reg ;
-    status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
-    status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg = SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_TAP_MAILBOX_AVAILABLE_MASK;
+    status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "CLP_CORE: set PROD_DBG_UNLOCK_IN_PROGRESS...\n");
     VPRINTF(LOW, "CLP_CORE: set MAILBOX_AVAILABLE...\n");
     // DEBUG UNLOCK should be in in-progress, write a register
@@ -101,8 +101,8 @@ void wait_for_mailbox_cmd() {
     VPRINTF(LOW, "CLP_CORE: Checking cmd from tap\n");
     uint32_t cmd = lsu_read_32(CLP_MBOX_CSR_MBOX_CMD);
     if (cmd != AUTH_DEBUG_UNLOCK_REQ_CMD) {
-        status_reg = SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_REQ_CMD);
         printf("%c", 0x01);
     }
@@ -137,7 +137,7 @@ void send_challenge_response() {
     lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge_payload[0]);
     VPRINTF(LOW, "CLP_CORE:  checksum: 0x%x\n", challenge_payload[0]);
     for (ii = 0; ii < 21; ++ii) {
-        lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge_payload[ii]);
+        lsu_write_32(CLP_MBOX_CSR_MBOX_DATAIN, challenge_payload[ii+1]);
     }
     // soc_ifc_clear_execute_reg();
     status = DATA_READY;
@@ -154,7 +154,7 @@ void wait_and_read_token() {
     uint32_t cmd = lsu_read_32(CLP_MBOX_CSR_MBOX_CMD);
     if (cmd != AUTH_DEBUG_UNLOCK_TOKEN) {
         VPRINTF(ERROR, "ERROR: mailbox command mismatch actual (0x%x) expected (0x%x)\n", cmd, AUTH_DEBUG_UNLOCK_TOKEN);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_FAIL_MASK);
         printf("%c", 0x01);
     }
     VPRINTF(LOW, "CLP_CORE: Received expected mailbox cmd 0x%08X\n", cmd);
@@ -165,28 +165,39 @@ void wait_and_read_token() {
     for (int i = 0; i < 1/*0x753*/; ++i) {
         expected_token_payload[i] = soc_ifc_mbox_read_dataout_single();
     }
+    VPRINTF(LOW, "CLP_CORE: Received token_payload[ 0x%08X\n", expected_token_payload[0]);
 }
 
 
-// void read_pk_hash() {
-//     uint32_t numOfPK = lsu_read_32(CLP_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES);
-//     uint32_t offSet = lsu_read_32(CLP_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET);
+void read_pk_hash() {
+    uint32_t numOfPK = lsu_read_32(CLP_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES);
+    uint32_t offSet = lsu_read_32(CLP_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET);
 
-//     VPRINTF(LOW, "CLP_CORE: Number of debug PK hashes = 0x%02x\n", numOfPK);
-//     VPRINTF(LOW, "CLP_CORE: PK hash register bank offset = 0x%08X\n", offSet);
+    VPRINTF(LOW, "CLP_CORE: Number of debug PK hashes = 0x%02x\n", numOfPK);
+    VPRINTF(LOW, "CLP_CORE: PK hash register bank offset = 0x%08X\n", offSet);
+    if (numOfPK != 8) {
+        VPRINTF(LOW, "ERROR: Number of debug PK does not match\n");
+        printf("%c", 0x01);
+        return;
+    }
+    if (offSet != 0x480) {
+        VPRINTF(LOW, "ERROR: Number of debug PK offset does not match\n");
+        printf("%c", 0x01);
+        return;
+    }
 
-//     uint32_t pk_hash;
-//     uint32_t base_address = offSet + 12 * (debug_level) * 4;
+    uint32_t pk_hash;
+    uint32_t base_address = offSet + 12 * (debug_level-1) * 4+ 0x21000000;
 
-//     for (int i = 0; i < 1; i++) {
-//         uint32_t addr = base_address + (i * 4);
-//         pk_hash = dma_read_from_lsu(addr);
-//         VPRINTF(LOW, "CLP_CORE: reading PROD_dbg_pk[%02d] from address 0x%08X = 0x%08X\n", i, addr, pk_hash);
-//         if (PROD_dbg_pk[i] != pk_hash) {
-//             VPRINTF(LOW, "CLP_CORE: MISMATCH at index %02d! Expected: 0x%08X, Read: 0x%08X\n", i, PROD_dbg_pk[i], pk_hash);
-//         }
-//     }
-// }
+    for (int i = 0; i < 2; i++) {
+        uint32_t addr = base_address + (i * 4);
+        pk_hash = dma_read_from_lsu(addr);
+        VPRINTF(LOW, "CLP_CORE: reading PROD_dbg_pk[%02d] from address 0x%08X = 0x%08X\n", i, addr, pk_hash);
+        if (PROD_dbg_pk[i] != pk_hash) {
+            VPRINTF(LOW, "CLP_CORE: MISMATCH at index %02d! Expected: 0x%08X, Read: 0x%08X\n", i, PROD_dbg_pk[i], pk_hash);
+        }
+    }
+}
 
 
 
@@ -201,22 +212,22 @@ void main(void) {
         return;
     }
 
-    uint32_t req_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ);
+    uint32_t req_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ);
     uint32_t intent = lsu_read_32(CLP_SOC_IFC_REG_SS_DEBUG_INTENT);
-    if ((req_reg == SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK) && intent) {
+    if ((req_reg == SOC_IFC_REG_SS_DBG_SERVICE_REG_REQ_PROD_DBG_UNLOCK_REQ_MASK) && intent) {
         VPRINTF(LOW, "CLP_CORE: PROD DEBUG UNLOCK request detected\n");
         wait_for_mailbox_cmd();
         read_unlock_req_payload();
         send_challenge_response();
         wait_and_read_token();
-        // read_pk_hash();
-        uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        read_pk_hash();
+        uint32_t status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high...\n\n");
-        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+        status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+        status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+        lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         lsu_write_32(CLP_MBOX_CSR_TAP_MODE,0);
         VPRINTF(LOW, "CLP_CORE: Token received and test complete.\n");
         while(1); // Do not complete the execution, wait for MCU terminal cmd

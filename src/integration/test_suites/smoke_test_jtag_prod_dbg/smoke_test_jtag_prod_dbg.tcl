@@ -106,9 +106,24 @@ riscv dmi_write $mbox_cmd_dmi_addr 0x50445554
 riscv dmi_write $mbox_dlen_dmi_addr $auth_resp_dlen_bytes
 # for {set i 0} {$i < $auth_resp_dlen_words} {incr i} {
 # checksum+first_data
-for {set i 0} {$i < 0x754} {incr i} {
+for {set i 0} {$i < 0x2} {incr i} {
     riscv dmi_write $mbox_din_dmi_addr $Auth_resp_array($i)
 }
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#NOTE: The following code is commented out because it is not used in mimicked ROM.
+#NOTE, FIXME: Actual ROM is not available. When ROM is available uncomment the below code
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+# # for {set i 0} {$i < $auth_resp_dlen_words} {incr i} {
+# # checksum+first_data
+# for {set i 0} {$i < 0x754} {incr i} {
+#     riscv dmi_write $mbox_din_dmi_addr $Auth_resp_array($i)
+# }
+
+
 puts "TAP: Set execute..."
 riscv dmi_write $mbox_execute_dmi_addr 0x1
 puts ""
