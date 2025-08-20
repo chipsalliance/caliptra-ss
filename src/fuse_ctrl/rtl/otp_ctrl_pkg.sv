@@ -104,21 +104,16 @@ package otp_ctrl_pkg;
   // OCP Lock Zeroization //
   //////////////////////////
 
-  // A value is deemed to be zeroized if a predefined number of bits are set.
-  // We allow a margin of stuck-at-0 bits.
-  parameter int ZeroizationMargin = 0;
+  // A 64-bit word is recognized as correctly zeroized if and only if the number of
+  // set bits is greater or equal `ZeroizationValidBound`. Integrators should
+  // calibrate these this bounds in line with the macro-specific ratio of potentially
+  // stuck-at-0 bits.
+  parameter int unsigned ZeroizationValidBound = ScrmblBlockWidth - 6; // 90.625%
 
-  // Check whether the zeroization marker is indicated for a given value
-  // and size. The size corresponds to the permitted number of words
-  // by the generic OTP macro.
-  function automatic logic check_zeroized(
-    logic [ScrmblBlockWidth-1:0] value,
-    logic [OtpSizeWidth-1:0] size);
-    return ((size == 2'b00 && $countones(value) >= ((ScrmblBlockWidth / 4 * 1) - ZeroizationMargin)) ||
-            (size == 2'b01 && $countones(value) >= ((ScrmblBlockWidth / 4 * 2) - ZeroizationMargin)) ||
-            (size == 2'b10 && $countones(value) >= ((ScrmblBlockWidth / 4 * 3) - ZeroizationMargin)) ||
-            (size == 2'b11 && $countones(value) >= ((ScrmblBlockWidth / 4 * 4) - ZeroizationMargin)));
-  endfunction : check_zeroized
+  // Check if the zeroization marker falls into the valid range.
+  function automatic logic check_zeroized_valid(logic [ScrmblBlockWidth-1:0] word);
+    return $countones(word) >= ZeroizationValidBound;
+  endfunction : check_zeroized_valid
 
   ///////////////////////////////
   // Typedefs for LC Interface //
