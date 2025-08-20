@@ -52,7 +52,7 @@ void wait_dai_op_idle(uint32_t status_mask) {
         status = lsu_read_32(SOC_OTP_CTRL_STATUS);
         dai_idle = (status >> OTP_CTRL_STATUS_DAI_IDLE_LOW) & 0x1;
         check_pending = (status >> OTP_CTRL_STATUS_CHECK_PENDING_LOW) & 0x1;
-        VPRINTF(LOW, "%08X\n", status);
+        // VPRINTF(LOW, "%08X\n", status);
     } while ((!dai_idle || check_pending) && ((status & error_mask) != error_mask));
 
     // Clear the IDLE bit from the status value
