@@ -28,7 +28,7 @@ package otp_ctrl_part_pkg;
   parameter int NumVendorPkFuses = ${num_vendor_pk_fuses};
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
   parameter int NumVendorNonSecretFuses = ${num_vendor_non_secret_fuses};
-
+  
   ////////////////////////////////////
   // Scrambling Constants and Types //
   ////////////////////////////////////
@@ -126,6 +126,7 @@ package otp_ctrl_part_pkg;
     // Decoded LC state index. A partition can be written as long this index is
     // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
     logic [DecLcStateWidth-1:0] lc_phase;
+    logic zeroizable;       // Whether the partition can be zeroized.
   } part_info_t;
 
   parameter part_info_t PartInfoDefault = '{
@@ -141,7 +142,8 @@ package otp_ctrl_part_pkg;
       integrity:        1'b0,
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
-      lc_phase:         DecLcStRaw
+      lc_phase:         DecLcStRaw,
+      zeroizable:       1'b0
   };
 
   ////////////////////////
@@ -164,7 +166,8 @@ package otp_ctrl_part_pkg;
       integrity:        1'b${"1" if part["integrity"] else "0"},
       iskeymgr_creator: 1'b${"1" if part["iskeymgr_creator"] else "0"},
       iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"},
-      lc_phase:         ${"Dec"+part["lc_phase"]}
+      lc_phase:         ${"Dec"+part["lc_phase"]},
+      zeroizable:       1'b${"1" if part["zeroizable"] else "0"}
     }${"" if loop.last else ","}
 % endfor
   };
