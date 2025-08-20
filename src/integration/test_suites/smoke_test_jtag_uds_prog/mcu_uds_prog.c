@@ -33,6 +33,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -82,8 +83,11 @@ void main (void) {
     }
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG UDS Prov TEST with ROM \n=================\n\n");
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0, 0x1);
-    VPRINTF(LOW, "MCU: Writting  SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0 %x\n", 0x1);
+    // //writting to HW_CONFIG register to indicate that UDS partition has 64-bit granularity
+    // uint32_t HW_config_value = lsu_read_32(SOC_SOC_IFC_REG_CPTRA_HW_CONFIG);
+    // HW_config_value |= 0x2;
+    // lsu_write_32(SOC_SOC_IFC_REG_CPTRA_HW_CONFIG, HW_config_value);
+    // VPRINTF(LOW, "MCU: Writting  SOC_SOC_IFC_REG_CPTRA_HW_CONFIG %x\n",HW_config_value);
     
     // lcc_initialization();
     // transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
@@ -96,8 +100,8 @@ void main (void) {
 
     cptra_boot_go = 0;
     VPRINTF(LOW, "MCU: waits in success loop\n");
-    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK){
-        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
+    while(cptra_boot_go != SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK){
+        cptra_boot_go = lsu_read_32(SOC_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP) & SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK;
     }
 
     VPRINTF(LOW, "MCU: Success done\n");

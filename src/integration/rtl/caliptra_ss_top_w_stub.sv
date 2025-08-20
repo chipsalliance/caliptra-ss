@@ -170,17 +170,17 @@ module caliptra_ss_top_w_stub(
     assign cptra_ss_cptra_core_el2_mem_export.iccm_bank_ecc = '0;
     assign cptra_ss_cptra_core_el2_mem_export.dccm_bank_dout = '0;
     assign cptra_ss_cptra_core_el2_mem_export.iccm_bank_dout = '0;
-    mldsa_mem_if mldsa_memory_export();
-    assign mldsa_memory_export.mem_inst0_bank0_rdata_o = '0;
-    assign mldsa_memory_export.mem_inst0_bank1_rdata_o = '0;
-    assign mldsa_memory_export.mem_inst1_rdata_o = '0;
-    assign mldsa_memory_export.mem_inst2_rdata_o = '0;
-    assign mldsa_memory_export.mem_inst3_rdata_o = '0;
-    assign mldsa_memory_export.sig_z_mem_rdata_o = '0;
-    assign mldsa_memory_export.pk_mem_rdata_o = '0;
-    assign mldsa_memory_export.sk_mem_bank0_rdata_o = '0;
-    assign mldsa_memory_export.sk_mem_bank1_rdata_o = '0;
-    assign mldsa_memory_export.w1_mem_rdata_o = '0;
+    abr_mem_if abr_memory_export();
+    assign abr_memory_export.mem_inst0_bank0_rdata_o = '0;
+    assign abr_memory_export.mem_inst0_bank1_rdata_o = '0;
+    assign abr_memory_export.mem_inst1_rdata_o = '0;
+    assign abr_memory_export.mem_inst2_rdata_o = '0;
+    assign abr_memory_export.mem_inst3_rdata_o = '0;
+    assign abr_memory_export.sig_z_mem_rdata_o = '0;
+    assign abr_memory_export.pk_mem_rdata_o = '0;
+    assign abr_memory_export.sk_mem_bank0_rdata_o = '0;
+    assign abr_memory_export.sk_mem_bank1_rdata_o = '0;
+    assign abr_memory_export.w1_mem_rdata_o = '0;
 
 
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
@@ -472,7 +472,7 @@ module caliptra_ss_top_w_stub(
 
     // Caliptra Memory Export Interface
         .cptra_ss_cptra_core_el2_mem_export(cptra_ss_cptra_core_el2_mem_export),
-        .mldsa_memory_export_req(mldsa_memory_export.req),
+        .abr_memory_export_req(abr_memory_export.req),
     
     //SRAM interface for mbox
         .cptra_ss_cptra_core_mbox_sram_cs_o,
@@ -535,6 +535,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_strap_caliptra_base_addr_i,
         .cptra_ss_strap_mci_base_addr_i,
         .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_external_staging_area_base_addr_i('0),
         .cptra_ss_strap_otp_fc_base_addr_i,
         .cptra_ss_strap_uds_seed_base_addr_i,
         .cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i,
@@ -547,6 +548,9 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_debug_intent_i,
         .cptra_ss_dbg_manuf_enable_o,
         .cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o,
+        .cptra_ss_strap_key_release_key_size_i(16'h40),
+        .cptra_ss_strap_key_release_base_addr_i('0),
+        .cptra_ss_strap_ocp_lock_en_i(1'b1),
     
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),

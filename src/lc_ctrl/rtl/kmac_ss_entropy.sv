@@ -6,9 +6,9 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_entropy
-  import kmac_pkg::*;
-  import kmac_reg_pkg::*;
+module kmac_ss_entropy
+  import kmac_ss_pkg::*;
+  import kmac_ss_reg_pkg::*;
 #(
   parameter lfsr_perm_t RndCnstLfsrPerm = RndCnstLfsrPermDefault,
   parameter lfsr_seed_t RndCnstLfsrSeed = RndCnstLfsrSeedDefault,
@@ -85,7 +85,7 @@ module kmac_entropy
   // Definitions //
   /////////////////
 
-  // Timer Widths are defined in kmac_pkg
+  // Timer Widths are defined in kmac_ss_pkg
 
   // Encoding generated with:
   // $ ./util/design/sparse-fsm-encode.py -d 3 -m 9 -n 10 \
@@ -776,4 +776,4 @@ module kmac_entropy
   end
 `endif
 
-endmodule : kmac_entropy
+endmodule : kmac_ss_entropy

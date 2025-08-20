@@ -101,10 +101,10 @@ import tb_top_pkg::*;
     assign PROD_state = lc_ctrl_state_pkg::lc_state_t'(lc_ctrl_state_pkg::LcStProd);
     initial begin
         if ($test$plusargs("CALIPTRA_SS_UDS_PROG") || $test$plusargs("CALIPTRA_SS_MANUF_DBG") || $test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
-            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_MANUF_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_REQ is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_SERVICE_REG_REQ.UDS_PROGRAM_REQ.value);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP IN PROGRESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_SERVICE_REG_RSP.UDS_PROGRAM_IN_PROGRESS);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_FAIL is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_SERVICE_REG_RSP.UDS_PROGRAM_FAIL);
+            $monitor("CALIPTRA_SS_UDS_PROG: UDS_RESP UDS_PROGRAM_SUCCESS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.SS_DBG_SERVICE_REG_RSP.UDS_PROGRAM_SUCCESS);
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_GO is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_BOOTFSM_GO);
             $monitor("CALIPTRA_SS_UDS_PROG: BootFSM_BrkPoint_Latched is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.BootFSM_BrkPoint_Latched);
             $monitor("CALIPTRA_SS_UDS_PROG: CPTRA_FLOW_STATUS is %x\n",`CPTRA_SS_TOP_PATH.caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_FLOW_STATUS);

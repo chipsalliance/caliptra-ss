@@ -7,9 +7,9 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_reduced
-  import kmac_pkg::*;
-  import kmac_reg_pkg::*;
+module kmac_ss_reduced
+  import kmac_ss_pkg::*;
+  import kmac_ss_reg_pkg::*;
   import caliptra_ss_sha3_pkg::*;
 #(
   // EnMasking: Enable masking security hardening inside keccak_round.
@@ -65,7 +65,7 @@ module kmac_reduced
 
   // Entropy configuration
   input logic          msg_mask_en_i,          // drive to 1
-  input entropy_mode_e entropy_mode_i,         // drive to kmac_pkg::EntropyModeEdn
+  input entropy_mode_e entropy_mode_i,         // drive to kmac_ss_pkg::EntropyModeEdn
   input logic          entropy_fast_process_i, // drive to 0
   input logic          entropy_in_keyblock_i,  // drive to 1
 
@@ -254,7 +254,7 @@ module kmac_reduced
   //////////
   // PRNG //
   //////////
-  kmac_entropy #(
+  kmac_ss_entropy #(
     .RndCnstLfsrPerm(RndCnstLfsrPerm),
     .RndCnstLfsrSeed(RndCnstLfsrSeed),
     .RndCnstBufferLfsrSeed(RndCnstBufferLfsrSeed)

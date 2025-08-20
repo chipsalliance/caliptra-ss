@@ -6,10 +6,10 @@
 
 `include "caliptra_prim_assert.sv"
 
-module kmac_app
-  import kmac_pkg::*;
+module kmac_ss_app
+  import kmac_ss_pkg::*;
 #(
-  // App specific configs are defined in kmac_pkg
+  // App specific configs are defined in kmac_ss_pkg
   parameter  bit          EnMasking          = 1'b0,
   localparam int          Share              = (EnMasking) ? 2 : 1, // derived parameter
   parameter  bit          SecIdleAcceptSwMsg = 1'b0,
@@ -114,7 +114,7 @@ module kmac_app
   output caliptra_prim_mubi_pkg::mubi4_t clear_after_error_o,
 
   // error_o value is pushed to Error FIFO at KMAC/SHA3 top and reported to SW
-  output kmac_pkg::err_t error_o,
+  output kmac_ss_pkg::err_t error_o,
 
   // Life cycle
   input  lc_ctrl_pkg::lc_tx_t lc_escalate_en_i,
@@ -151,10 +151,10 @@ module kmac_app
   localparam key_len_e SideloadedKey = KeyLengths[SelKeySize];
 
   // Define right_encode(outlen) value here
-  // Look at kmac_pkg::key_len_e for the kinds of key size
+  // Look at kmac_ss_pkg::key_len_e for the kinds of key size
   //
   // These values should be exactly the same as the key length encodings
-  // in kmac_core.sv, with the only difference being that the byte representing
+  // in kmac_ss_core.sv, with the only difference being that the byte representing
   // the byte-length of the encoded value is in the MSB position due to right encoding
   // instead of in the LSB position (left encoding).
   localparam int OutLenW = 24;
@@ -211,7 +211,7 @@ module kmac_app
 
   // Error checking logic
 
-  kmac_pkg::err_t fsm_err, mux_err;
+  kmac_ss_pkg::err_t fsm_err, mux_err;
 
   logic service_rejected_error;
   logic service_rejected_error_set, service_rejected_error_clr;
