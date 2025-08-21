@@ -342,8 +342,8 @@ module caliptra_ss_top_w_stub(
         cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = '0;
         cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i = '0;
         cptra_ss_strap_caliptra_dma_axi_user_i = '0;
-        cptra_ss_strap_generic_0_i = '0;
-        cptra_ss_strap_generic_1_i = '0;
+        cptra_ss_strap_generic_0_i = 32'h0016_0010;
+        cptra_ss_strap_generic_1_i = 32'h0000_0060;
         cptra_ss_strap_generic_2_i = '0;
         cptra_ss_strap_generic_3_i = '0;
         cptra_ss_debug_intent_i = '0;
