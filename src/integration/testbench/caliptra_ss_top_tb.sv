@@ -1517,8 +1517,9 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
-    assign cptra_ss_strap_generic_0_i           = 32'h0;
-    assign cptra_ss_strap_generic_1_i           = 32'h0;
+    assign cptra_ss_strap_generic_0_i           = 32'h0016_0010; // {16'hIDLE_BIT_STATUS's bit Location in SOC_OTP_CTRL_STATUS, 
+                                                                // 16'hSOC_OTP_CTRL_STATUS's address in SOC_IFC_REG - SOC_OTP_CTRL_BASE_ADDR}
+    assign cptra_ss_strap_generic_1_i           = 32'h0000_0060; // {32'hSOC_OTP_CTRL_DIRECT_ACCESS_CMD's address in SOC_IFC_REG - SOC_OTP_CTRL_BASE_ADDR}
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
