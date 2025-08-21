@@ -95,7 +95,7 @@ void wait_dai_op_idle(uint32_t status_mask) {
     if (status != status_mask) {
         VPRINTF(LOW, "CLP_CORE ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_FAIL_MASK);
-        printf("%c",0xff); //End the test
+        SEND_STDOUT_CTRL(0xff); //End the test
     }
     VPRINTF(LOW, "CLP_CORE: DAI is now idle.\n");
     return;
@@ -190,7 +190,7 @@ void main(void) {
         while(1);
     } else {
         VPRINTF(LOW, "CLP_CORE: Error because there is no UDS prog request...\n");
-        printf("%c",0xff); //End the test
+        SEND_STDOUT_CTRL(0xff); //End the test
     } 
 
 }

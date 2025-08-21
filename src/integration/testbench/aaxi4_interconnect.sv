@@ -30,6 +30,7 @@ import aaxi_pkg_xactor::*;
 import aaxi_pkg_test::*;
 import aaxi_pll::*;
 import aaxi_pkg_caliptra_test::*;
+import tb_top_pkg::*;
 
 // AXI Reset, Deassert=H, Assert=L
 // bit         rst_l;
@@ -126,16 +127,16 @@ generate
         defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
         defparam monitor.checker0.RecMaxWaitOn= 0;
     end
-    // NC, MCU ROM, FC PRIM (NC)
+    // NC, MCU ROM
     defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     defparam slave_mon[`CSS_INTC_SINTF_MCU_ROM_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
-    defparam slave_mon[`CSS_INTC_SINTF_NC1_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     // I3C, Caliptra SoC IFC, MCI, FC, LCC
     defparam slave_mon[`CSS_INTC_SINTF_I3C_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_MCI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_SOC_SRAM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         
 endgenerate 
 
@@ -292,15 +293,17 @@ initial begin
         slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- Fuse Controller Prim AXI (not connected)
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.passive_mode = 1; 
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.base_address[0] = 64'h7000_0200;
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.limit_address[0] = 64'h7000_03FF;
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.total_outstanding_depth = 4;
-        slave[`CSS_INTC_SINTF_NC1_IDX].cfg_info.id_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.base_address[0]  = {32'h0, SOC_SRAM_BASE_ADDR}; 
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.limit_address[0] = {32'h0, (SOC_SRAM_BASE_ADDR + SOC_SRAM_SIZE_BYTES - 1)}; 
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- Life-cycle Controller Core AXI 
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.passive_mode = 1; 
