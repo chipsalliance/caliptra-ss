@@ -44,6 +44,7 @@ import trace_buffer_csr_pkg::*;
     output logic         cptra_ss_mcu_no_rom_config_i,
     output logic [31:0]  cptra_ss_strap_mcu_reset_vector_i,
     output logic         cptra_ss_strap_ocp_lock_en_i,
+    output logic [15:0]  cptra_ss_strap_key_release_key_size_i,
 
     input  logic cptra_ss_mcu_halt_status_o,
     output logic cptra_ss_mcu_halt_status_i,
@@ -276,6 +277,27 @@ always @(posedge core_clk) begin
         tb_services_if.assert_rst_flag_done <= 1'b0;
     end
 end
+
+///////////////////////////////////
+// MEK KEY SIZE            
+//////////////////////////////////
+initial begin
+    // Initialize cptra_ss_strap_key_release_key_size_i based on plusargs
+    if ($test$plusargs("STRAP_SS_KEY_RELEASE_KEY_SIZE_MANUAL")) begin
+        if (!$value$plusargs("STRAP_SS_KEY_RELEASE_KEY_SIZE_MANUAL=%h", cptra_ss_strap_key_release_key_size_i)) begin
+            $error("Failed to get value for +STRAP_SS_KEY_RELEASE_KEY_SIZE_MANUAL");
+        end
+        $display("STRAP_SS_KEY_RELEASE_KEY_SIZE set manually to 0x%04x", cptra_ss_strap_key_release_key_size_i);
+    end
+    else begin
+        // Default value (already DWORD aligned)
+        cptra_ss_strap_key_release_key_size_i = 16'h40;
+        $display("STRAP_SS_KEY_RELEASE_KEY_SIZE set to default value 0x%04x", cptra_ss_strap_key_release_key_size_i);
+    end
+end
+
+
+
 
 ///////////////////////////////////
 // OCP LOCK EN             

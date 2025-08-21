@@ -30,8 +30,9 @@
     `define CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
     `define CSS_INTC_SINTF_MCI_IDX           4
     `define CSS_INTC_SINTF_FC_IDX            5
-    `define CSS_INTC_SINTF_NC1_IDX           6 /* Currently unconnected */
+    `define CSS_INTC_SINTF_SOC_SRAM_IDX      6 
     `define CSS_INTC_SINTF_LCC_IDX           7
+
 
 
 `endif // CALIPTRA_SS_TOP_TB_INTC_INCLUDES_SVH

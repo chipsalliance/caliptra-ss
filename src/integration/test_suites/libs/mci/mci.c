@@ -1162,7 +1162,7 @@ int exclude_register(uint32_t reg_addr) {
     }
     
     // Collision table is full
-    printf("WARNING: Collision table full, cannot add register 0x%08x\n", reg_addr);
+    VPRINTF(WARNING, "WARNING: Collision table full, cannot add register 0x%08x\n", reg_addr);
     return -1;
 }
 

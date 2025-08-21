@@ -12,6 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+task automatic update_duplicate_addresses(
+    input int current_index,
+    ref logic [$bits(m_axi_bfm_if.araddr)-1:0] write_addrs [9:0],
+    ref logic [31:0] write_data [9:0]
+);
+    logic [$bits(m_axi_bfm_if.araddr)-1:0] new_addr;
+    logic [31:0] new_data;
+    
+    new_addr = write_addrs[current_index];
+    new_data = write_data[current_index];
+    
+    for(int j = 0; j < current_index; j++) begin
+        if(write_addrs[j] == new_addr) begin
+            write_data[j] = new_data;
+            $display("[%t] Updated duplicate address 0x%x at index %0d with new data 0x%x", 
+                     $time, new_addr, j, new_data);
+        end
+    end
+endtask
 
 
 task smoke_test_mcu_sram_execution_region();
@@ -86,6 +105,8 @@ task smoke_test_mcu_sram_execution_region();
     for(int i = 0; i < 10; i++) begin
         get_execution_rand_addr(write_addrs[i]);
         write_data[i]  = $urandom;
+        // Check and update duplicates
+        update_duplicate_addresses(i, write_addrs, write_data);
         $display("[%t] Writing 0x%x: 0x%x with AXI User: 0x%x", $time, write_addrs[i], write_data[i], axi_user);
         m_axi_bfm_if.axi_write_single(write_addrs[i],
                                       axi_user,
@@ -215,6 +236,8 @@ task smoke_test_mcu_sram_execution_region();
     for(int i = 0; i < 10; i++) begin
         get_execution_rand_addr(write_addrs[i]);
         write_data[i]  = $urandom;
+        // Check and update duplicates
+        update_duplicate_addresses(i, write_addrs, write_data);
         $display("[%t] Writing 0x%x: 0x%x with AXI User: 0x%x", $time, write_addrs[i], write_data[i], axi_user);
         m_axi_bfm_if.axi_write_single(write_addrs[i],
                                       axi_user,
@@ -328,6 +351,8 @@ task smoke_test_mcu_sram_execution_region();
     for(int i = 0; i < 10; i++) begin
         get_execution_rand_addr(write_addrs[i]);
         write_data[i]  = $urandom;
+        // Check and update duplicates
+        update_duplicate_addresses(i, write_addrs, write_data);
         $display("[%t] Writing 0x%x: 0x%x with AXI User: 0x%x", $time, write_addrs[i], write_data[i], axi_user);
         m_axi_bfm_if.axi_write_single(write_addrs[i],
                                       axi_user,
@@ -447,6 +472,8 @@ task smoke_test_mcu_sram_execution_region();
     for(int i = 0; i < 10; i++) begin
         get_execution_rand_addr(write_addrs[i]);
         write_data[i]  = $urandom;
+        // Check and update duplicates
+        update_duplicate_addresses(i, write_addrs, write_data);
         $display("[%t] Writing 0x%x: 0x%x with AXI User: 0x%x", $time, write_addrs[i], write_data[i], axi_user);
         m_axi_bfm_if.axi_write_single(write_addrs[i],
                                       axi_user,

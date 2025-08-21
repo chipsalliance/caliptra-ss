@@ -56,22 +56,22 @@ void nmi_handler (void) {
 }
 
 void service_dmi_axi_collision_error_intr() {
-    printf("Polling for collision err bit\n");
+    VPRINTF(LOW, "Polling for collision err bit\n");
     while (!(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_MASK))
     //Clear intr
-    printf("clearing collision err bit\n");
+    VPRINTF(LOW, "clearing collision err bit\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MCU_SRAM_DMI_AXI_COLLISION_STS_MASK);
 }
 
 void service_mbox0_ecc_unc_error_intr() {
-    printf("Polling for mbox0_ecc_unc_err bit\n");
+    VPRINTF(LOW, "Polling for mbox0_ecc_unc_err bit\n");
     while (!(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK))
     //Clear intr
     lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX0_ECC_UNC_STS_MASK);
 }
 
 void service_mbox1_ecc_unc_error_intr() {
-    printf("Polling for mbox1_ecc_unc_err bit\n");
+    VPRINTF(LOW, "Polling for mbox1_ecc_unc_err bit\n");
     while (!(lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_MASK))
     //Clear intr
     lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R, MCI_REG_INTR_BLOCK_RF_ERROR0_INTERNAL_INTR_R_ERROR_MBOX1_ECC_UNC_STS_MASK);
@@ -98,7 +98,7 @@ void service_notif0_intr() {
     while (!data) {
         data = lsu_read_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R);
     }
-    printf("\nnotif0 intr data = %x\n", data);
+    VPRINTF(LOW, "\nnotif0 intr data = %x\n", data);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, data);
 }
 
@@ -128,7 +128,7 @@ uint32_t main(void) {
         for (uint8_t i = 0; i < 100; i++); //wait for all error injections to be done
         //service intr
         service_dmi_axi_collision_error_intr();
-        printf("Done servicing collision err bit");
+        VPRINTF(LOW, "Done servicing collision err bit");
 
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
         //halt core function
@@ -143,7 +143,7 @@ uint32_t main(void) {
         for (uint8_t i = 0; i < 100; i++); //wait for all error injections to be done
         //service intr
         service_dmi_axi_collision_error_intr();
-        printf("Done servicing collision err bit\n");
+        VPRINTF(LOW, "Done servicing collision err bit\n");
 
         // for (uint8_t i = 0; i < 10; i++);
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
@@ -154,10 +154,10 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_NON_FATAL);
 
         service_mbox0_ecc_unc_error_intr();
-        printf("Done servicing mbox0 err bit\n");
+        VPRINTF(LOW, "Done servicing mbox0 err bit\n");
 
         service_mbox1_ecc_unc_error_intr();
-        printf("Done servicing mbox1 err bit\n");
+        VPRINTF(LOW, "Done servicing mbox1 err bit\n");
 
         //Add other stuff here
         VPRINTF(LOW, "------------\nMCI non-ftl err with mask\n------------\n");
@@ -166,15 +166,15 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MCI_ERROR_NON_FATAL);
 
         service_mbox0_ecc_unc_error_intr();
-        printf("Done servicing mbox0 err bit\n");
+        VPRINTF(LOW, "Done servicing mbox0 err bit\n");
         service_mbox1_ecc_unc_error_intr();
-        printf("Done servicing mbox1 err bit\n");
+        VPRINTF(LOW, "Done servicing mbox1 err bit\n");
 
         VPRINTF(LOW, "------------\nAggregate ftl err without mask\n------------\n");
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_FATAL);
 
         service_agg_error_fatal_intr();
-        printf("Done servicing agg err ftl\n");
+        VPRINTF(LOW, "Done servicing agg err ftl\n");
 
         //issue cold reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_COLD_RESET);
@@ -187,7 +187,7 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_FATAL);
 
         service_agg_error_fatal_intr();
-        printf("Done servicing agg err ftl\n");
+        VPRINTF(LOW, "Done servicing agg err ftl\n");
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
@@ -198,7 +198,7 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_NON_FATAL);
 
         service_agg_error_non_fatal_intr();
-        printf("Done servicing agg err non ftl\n");
+        VPRINTF(LOW, "Done servicing agg err non ftl\n");
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
@@ -211,7 +211,7 @@ uint32_t main(void) {
         SEND_STDOUT_CTRL(TB_CMD_INJECT_AGG_ERROR_NON_FATAL);
 
         service_agg_error_non_fatal_intr();
-        printf("Done servicing agg err non ftl\n");
+        VPRINTF(LOW, "Done servicing agg err non ftl\n");
 
         //issue warm reset to clear fatal flag
         SEND_STDOUT_CTRL(TB_CMD_WARM_RESET);
