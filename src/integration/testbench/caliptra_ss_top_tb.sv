@@ -255,6 +255,14 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_mci_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+    // SOC SRAM Sub AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(32),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_soc_sram_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
     // MCU ROM Sub AXI Interface
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
@@ -372,7 +380,7 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC1_IDX          ; // CSS_INTC_SINTF_NC1_IDX           6 /* Currently unconnected */
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6 
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
@@ -387,7 +395,7 @@ module caliptra_ss_top_tb
         SINTF_CPTRA_SOC_IFC_IDX: `CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX,
         SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
         SINTF_FC_IDX           : `CSS_INTC_SINTF_FC_IDX,
-        SINTF_NC1_IDX          : `CSS_INTC_SINTF_NC1_IDX,
+        SINTF_SOC_SRAM_IDX     : `CSS_INTC_SINTF_SOC_SRAM_IDX,
         SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX
     };
 
@@ -774,6 +782,7 @@ module caliptra_ss_top_tb
     assign m_axi_bfm_if.ruser                     = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].RUSER;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].RREADY   = m_axi_bfm_if.rready;
 
+    //Interconnect 4
     assign cptra_ss_mci_s_axi_if.awvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCI_IDX].AWVALID;
     assign cptra_ss_mci_s_axi_if.awaddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCI_IDX].AWADDR[31:0];
     assign cptra_ss_mci_s_axi_if.awid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCI_IDX].AWID;
@@ -849,19 +858,42 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_FC_IDX].RUSER   = '0 ; // FIXME
 
     //Interconnect 6
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].AWREADY = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].WREADY = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].BRESP = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].BID = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].BVALID = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].BUSER  = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].ARREADY = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RDATA = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RRESP = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RID = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RLAST = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RUSER = '0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC1_IDX].RVALID = '0;
+    assign cptra_ss_soc_sram_axi_if.awvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWVALID;
+    assign cptra_ss_soc_sram_axi_if.awaddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWADDR[31:0];
+    assign cptra_ss_soc_sram_axi_if.awid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWID;
+    assign cptra_ss_soc_sram_axi_if.awlen                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWLEN;
+    assign cptra_ss_soc_sram_axi_if.awsize                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWSIZE;
+    assign cptra_ss_soc_sram_axi_if.awburst                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWBURST;
+    assign cptra_ss_soc_sram_axi_if.awlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWLOCK;
+    assign cptra_ss_soc_sram_axi_if.awuser                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].AWREADY = cptra_ss_soc_sram_axi_if.awready;
+    assign cptra_ss_soc_sram_axi_if.wvalid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WVALID;
+    assign cptra_ss_soc_sram_axi_if.wdata                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WDATA;
+    assign cptra_ss_soc_sram_axi_if.wstrb                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WSTRB;
+    assign cptra_ss_soc_sram_axi_if.wlast                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WLAST;
+    assign cptra_ss_soc_sram_axi_if.wuser                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].WREADY      = cptra_ss_soc_sram_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].BVALID      = cptra_ss_soc_sram_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].BRESP       = cptra_ss_soc_sram_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].BUSER       = cptra_ss_soc_sram_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].BID         = cptra_ss_soc_sram_axi_if.bid;
+    assign cptra_ss_soc_sram_axi_if.bready                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].BREADY;
+    assign cptra_ss_soc_sram_axi_if.arvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARVALID;
+    assign cptra_ss_soc_sram_axi_if.araddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARADDR[31:0];
+    assign cptra_ss_soc_sram_axi_if.arid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARID;
+    assign cptra_ss_soc_sram_axi_if.arlen                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARLEN;
+    assign cptra_ss_soc_sram_axi_if.arsize                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARSIZE;
+    assign cptra_ss_soc_sram_axi_if.arburst                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARBURST;
+    assign cptra_ss_soc_sram_axi_if.arlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARLOCK;
+    assign cptra_ss_soc_sram_axi_if.aruser                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].ARREADY       = cptra_ss_soc_sram_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RVALID        = cptra_ss_soc_sram_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RUSER         = cptra_ss_soc_sram_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RDATA         = 64'(cptra_ss_soc_sram_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RRESP         = cptra_ss_soc_sram_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RID           = cptra_ss_soc_sram_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RLAST         = cptra_ss_soc_sram_axi_if.rlast;
+    assign cptra_ss_soc_sram_axi_if.rready                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SOC_SRAM_IDX].RREADY;
 
     //Interconnect 7 - LCC
     assign cptra_ss_lc_axi_wr_req_i.awvalid = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_LCC_IDX].AWVALID;
@@ -1117,6 +1149,7 @@ module caliptra_ss_top_tb
         // Caliptra Memory Export Interface
         .el2_mem_export (cptra_ss_cptra_core_el2_mem_export.veer_sram_sink),
         .abr_memory_export (abr_memory_export.resp),
+
 
         //SRAM interface for mbox
         .mbox_sram_cs   (cptra_ss_cptra_core_mbox_sram_cs_o   ),
@@ -1463,7 +1496,7 @@ module caliptra_ss_top_tb
     logic [63:0]  cptra_ss_strap_caliptra_base_addr_i;
     logic [63:0]  cptra_ss_strap_mci_base_addr_i;
     logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i;
-    logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i; // FIXME: This needs to be connected to the correct value @Clayton
+    logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i; 
     logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i;
     logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
@@ -1489,9 +1522,8 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
-    assign cptra_ss_strap_external_staging_area_base_addr_i = '0; // FIXME: This needs to be connected to the correct value @Clayton
-    assign cptra_ss_strap_key_release_key_size_i = 16'h40; // FIXME: Add plusargs @Clayton
-    assign cptra_ss_strap_key_release_base_addr_i = '0; // FIXME: Add plusargs @Clayton
+    assign cptra_ss_strap_external_staging_area_base_addr_i = 64'(`SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR); 
+    assign cptra_ss_strap_key_release_base_addr_i = 64'(SOC_SRAM_BASE_ADDR); 
 
     // JTAG DPI
     jtagdpi #(
@@ -1755,6 +1787,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mci_soc_config_axi_user_i,
         .cptra_ss_strap_caliptra_dma_axi_user_i,
         .cptra_ss_strap_ocp_lock_en_i,
+        .cptra_ss_strap_key_release_key_size_i,
 
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
@@ -1780,6 +1813,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
         .cptra_ss_mci_generic_input_wires_o(cptra_ss_mci_generic_input_wires_i),
         .soc_bfm_if(i_caliptra_ss_bfm_services_if.tb_services),
+        .cptra_ss_soc_sram_axi_if,
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,

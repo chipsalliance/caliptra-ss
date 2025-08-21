@@ -55,6 +55,11 @@ package tb_top_pkg;
     localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
     localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
 
+    // SOC SRAM
+    localparam SOC_SRAM_SIZE_BYTES   = 16384; // 16KB
+    localparam SOC_SRAM_ADDR_WIDTH   = $clog2(SOC_SRAM_SIZE_BYTES);
+    localparam SOC_SRAM_DEPTH        = SOC_SRAM_SIZE_BYTES / (4);
+    localparam logic [31:0] SOC_SRAM_BASE_ADDR = 32'hF0000000;
     
 
     `ifndef VERILATOR

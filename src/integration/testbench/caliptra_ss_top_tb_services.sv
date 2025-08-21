@@ -38,6 +38,7 @@ import tb_top_pkg::*;
   input logic                        cptra_ss_rdc_clk_cg_o,
   output logic [63:0]                cptra_ss_mci_generic_input_wires_o,
   caliptra_ss_bfm_services_if.tb_services soc_bfm_if,
+  axi_if                             cptra_ss_soc_sram_axi_if,
   css_mcu0_el2_mem_if                cptra_ss_mcu0_el2_mem_export,
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
@@ -898,6 +899,26 @@ end
    // SRAM instances
    //=========================================================================-
 
+    caliptra_axi_sram #(
+        .AW   (SOC_SRAM_ADDR_WIDTH),
+        .DW   (32),
+        .UW   (`CALIPTRA_AXI_USER_WIDTH),
+        .IW   (`CALIPTRA_AXI_ID_WIDTH),
+        .EX_EN(0                       )
+    ) i_soc_sram (
+        .clk(clk),
+        .rst_n(rst_l),
+
+        // AXI INF
+        .s_axi_w_if(cptra_ss_soc_sram_axi_if.w_sub),
+        .s_axi_r_if(cptra_ss_soc_sram_axi_if.r_sub)
+    );   
+    `ifdef VERILATOR
+    initial i_soc_sram.i_sram.ram = '{default:'{default:8'h00}};
+    `else
+    initial i_soc_sram.i_sram.ram = '{default:8'h00};
+    `endif
+
 
     caliptra_sram
     #(
@@ -974,6 +995,7 @@ end
         .wdata_i (        ),
         .rdata_o (        )
     );
+
 
 
 task preload_mcu_sram;
