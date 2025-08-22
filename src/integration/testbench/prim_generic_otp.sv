@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 module prim_generic_otp
-  import caliptra_prim_otp_pkg::*;
+  import prim_generic_otp_pkg::*;
 #(
   // Native OTP word size. This determines the size_i granule.
   parameter  int Width         = 16,
@@ -107,8 +107,8 @@ module prim_generic_otp
   ///////////////////
 
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 9 -n 10 \
-  //      -s 2599950981 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 4 -m 12 -n 10 \
+  //     -s 761853025 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -116,30 +116,33 @@ module prim_generic_otp
   //  1: --
   //  2: --
   //  3: --
-  //  4: --
-  //  5: |||||||||||||||||||| (52.78%)
-  //  6: ||||||||||||||| (41.67%)
-  //  7: | (2.78%)
-  //  8: | (2.78%)
+  //  4: |||||||||||||||||||| (42.42%)
+  //  5: |||| (9.09%)
+  //  6: |||||||||||||||| (34.85%)
+  //  7: ||| (7.58%)
+  //  8: || (6.06%)
   //  9: --
   // 10: --
   //
-  // Minimum Hamming distance: 5
+  // Minimum Hamming distance: 4
   // Maximum Hamming distance: 8
-  // Minimum Hamming weight: 3
+  // Minimum Hamming weight: 2
   // Maximum Hamming weight: 8
   //
   localparam int StateWidth = 10;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt      = 10'b1100000110,
-    InitSt       = 10'b1000110011,
-    IdleSt       = 10'b0101110000,
-    ReadSt       = 10'b0010011111,
-    ReadWaitSt   = 10'b1001001101,
-    WriteCheckSt = 10'b1111101011,
-    WriteWaitSt  = 10'b0011000010,
-    WriteSt      = 10'b0110100101,
-    ErrorSt      = 10'b1110011000
+    ResetSt       = 10'b1111001110,
+    InitSt        = 10'b0011111100,
+    IdleSt        = 10'b1010011011,
+    ReadSt        = 10'b0101010001,
+    ReadWaitSt    = 10'b0010100011,
+    WriteCheckSt  = 10'b1111110011,
+    WriteWaitSt   = 10'b0000000110,
+    WriteSt       = 10'b1001100001,
+    ZerWriteSt    = 10'b0100110111,
+    ZerReadSt     = 10'b0110010010,
+    ZerReadWaitSt = 10'b1001011101,
+    ErrorSt       = 10'b0000111010
   } state_e;
 
   state_e state_d, state_q;
@@ -154,6 +157,7 @@ module prim_generic_otp
   logic cnt_clr, cnt_en;
   logic read_ecc_on, write_ecc_on;
   logic wdata_inconsistent;
+  logic zer_en;
 
 
   assign cnt_d = (cnt_clr) ? '0           :
@@ -176,6 +180,7 @@ module prim_generic_otp
     write_ecc_on = 1'b1;
     fsm_err = 1'b0;
     integrity_en_d = integrity_en_q;
+    zer_en = 1'b0;
 
     unique case (state_q)
       // Wait here until we receive an initialization command.
@@ -216,6 +221,10 @@ module prim_generic_otp
             end
             WriteRaw: begin
               state_d = WriteCheckSt;
+              integrity_en_d = 1'b0;
+            end
+            Zeroize: begin
+              state_d = ZerWriteSt;
               integrity_en_d = 1'b0;
             end
             default: ;
@@ -297,6 +306,38 @@ module prim_generic_otp
           state_d = IdleSt;
         end
       end
+      // Zeroize the word.
+      ZerWriteSt: begin
+        req = 1'b1;
+        wren = 1'b1;
+        cnt_en = 1'b1;
+        zer_en = 1'b1;
+
+        if (cnt_q == size_q) begin
+          state_d = ZerReadSt;
+          cnt_clr = 1'b1;
+        end
+      end
+      // Read back the zeroized word.
+      ZerReadSt: begin
+        state_d = ZerReadWaitSt;
+        req     = 1'b1;
+        read_ecc_on = 1'b0;
+      end
+      // Wait for the read out the complete. Any error will
+      // result in MacroZeroizeError.
+      ZerReadWaitSt: begin
+        read_ecc_on = 1'b0;
+        if (rvalid) begin
+          cnt_en = 1'b1;
+          if (cnt_q == size_q) begin
+            state_d = IdleSt;
+            valid_d = 1'b1;
+          end else begin
+            state_d = ZerReadSt;
+          end
+        end
+      end
       // If the FSM is glitched into an invalid state.
       ErrorSt: begin
         fsm_err = 1'b1;
@@ -337,12 +378,14 @@ module prim_generic_otp
                                  : rdata_ecc;
 
   // Read-modify-write (OTP can only set bits to 1, but not clear to 0).
-  assign wdata_rmw = (write_ecc_on) ? wdata_ecc | rdata_q[cnt_q]
-                                    : {{EccWidth{1'b0}}, wdata_q[cnt_q]} | rdata_q[cnt_q];
+  // If the write is a zeroization simply set ECC and data to 1.
+  assign wdata_rmw = zer_en       ? '1 :
+                     write_ecc_on ? wdata_ecc | rdata_q[cnt_q] : {{EccWidth{1'b0}}, wdata_q[cnt_q]} | rdata_q[cnt_q];
 
   // This indicates if the write data is inconsistent (i.e., if the operation attempts to
-  // clear an already programmed bit to zero).
-  assign wdata_inconsistent = (rdata_q[cnt_q] & wdata_ecc) != rdata_q[cnt_q];
+  // clear an already programmed bit to zero). Disable the writeblank check for zeroization
+  // writes.
+  assign wdata_inconsistent = ((rdata_q[cnt_q] & wdata_ecc) != rdata_q[cnt_q]);
 
   // Output data without ECC bits.
   always_comb begin : p_output_map
@@ -417,7 +460,7 @@ module prim_generic_otp
   // Check that the otp_ctrl FSMs only issue legal commands to the wrapper.
   `CALIPTRA_ASSERT(CheckCommands0_A, state_q == ResetSt && valid_i && ready_o |-> cmd_i == Init)
   `CALIPTRA_ASSERT(CheckCommands1_A, state_q != ResetSt && valid_i && ready_o
-      |-> cmd_i inside {Read, ReadRaw, Write, WriteRaw})
+      |-> cmd_i inside {Read, ReadRaw, Write, WriteRaw, Zeroize})
 
 
 endmodule : prim_generic_otp

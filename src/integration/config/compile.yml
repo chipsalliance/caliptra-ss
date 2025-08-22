@@ -121,6 +121,18 @@ targets:
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_props.sv
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_bind.sv
 --- 
+provides: [prim_generic_otp_pkg]
+schema_version: 2.4.0
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/testbench]
+    files: 
+      - $COMPILE_ROOT/testbench/prim_generic_otp_pkg.sv
+  tb:
+    directories: [$COMPILE_ROOT/testbench]
+    files: 
+      - $COMPILE_ROOT/testbench/prim_generic_otp_pkg.sv
+--- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
