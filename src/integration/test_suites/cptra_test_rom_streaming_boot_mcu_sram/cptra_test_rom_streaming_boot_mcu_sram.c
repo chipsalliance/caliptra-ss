@@ -212,7 +212,7 @@ void read_image_from_fifo(uint32_t fw_image_size) {
 
     // Program DMA to read the payload from the FIFO
     VPRINTF(LOW, "CPTRA: Programming DMA to read DWORDS : 'h %0x , 'd %0d \n", fw_image_size, fw_image_size);
-    soc_ifc_axi_dma_send_axi_to_axi(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0, ss_mci_sram_base_addr, 1, fw_image_size*4, dma_block_size);
+    soc_ifc_axi_dma_send_axi_to_axi(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_INDIRECT_FIFO_DATA, 0, ss_mci_sram_base_addr, 1, fw_image_size*4, dma_block_size, 0, 0);
     VPRINTF(LOW, "CPTRA: reading I3C FIFO and storing the data in MCU SRAM\n");
            
 }
