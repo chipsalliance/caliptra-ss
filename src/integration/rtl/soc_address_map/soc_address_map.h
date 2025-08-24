@@ -11189,37 +11189,37 @@
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_LOW                                               (0)
 #define SOC_IFC_REG_FUSE_SOC_MANIFEST_MAX_SVN_SVN_MASK                                              (0xff)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_0                                                             (0xa00303a4)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_0                                                             (0xa00303c0)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_0
-#define SOC_IFC_REG_FUSE_HEK_SEED_0                                                                 (0x3a4)
+#define SOC_IFC_REG_FUSE_HEK_SEED_0                                                                 (0x3c0)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_1                                                             (0xa00303a8)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_1                                                             (0xa00303c4)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_1
-#define SOC_IFC_REG_FUSE_HEK_SEED_1                                                                 (0x3a8)
+#define SOC_IFC_REG_FUSE_HEK_SEED_1                                                                 (0x3c4)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_2                                                             (0xa00303ac)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_2                                                             (0xa00303c8)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_2
-#define SOC_IFC_REG_FUSE_HEK_SEED_2                                                                 (0x3ac)
+#define SOC_IFC_REG_FUSE_HEK_SEED_2                                                                 (0x3c8)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_3                                                             (0xa00303b0)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_3                                                             (0xa00303cc)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_3
-#define SOC_IFC_REG_FUSE_HEK_SEED_3                                                                 (0x3b0)
+#define SOC_IFC_REG_FUSE_HEK_SEED_3                                                                 (0x3cc)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_4                                                             (0xa00303b4)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_4                                                             (0xa00303d0)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_4
-#define SOC_IFC_REG_FUSE_HEK_SEED_4                                                                 (0x3b4)
+#define SOC_IFC_REG_FUSE_HEK_SEED_4                                                                 (0x3d0)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_5                                                             (0xa00303b8)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_5                                                             (0xa00303d4)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_5
-#define SOC_IFC_REG_FUSE_HEK_SEED_5                                                                 (0x3b8)
+#define SOC_IFC_REG_FUSE_HEK_SEED_5                                                                 (0x3d4)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_6                                                             (0xa00303bc)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_6                                                             (0xa00303d8)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_6
-#define SOC_IFC_REG_FUSE_HEK_SEED_6                                                                 (0x3bc)
+#define SOC_IFC_REG_FUSE_HEK_SEED_6                                                                 (0x3d8)
 #endif
-#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_7                                                             (0xa00303c0)
+#define SOC_SOC_IFC_REG_FUSE_HEK_SEED_7                                                             (0xa00303dc)
 #ifndef SOC_IFC_REG_FUSE_HEK_SEED_7
-#define SOC_IFC_REG_FUSE_HEK_SEED_7                                                                 (0x3c0)
+#define SOC_IFC_REG_FUSE_HEK_SEED_7                                                                 (0x3dc)
 #endif
 #define SOC_SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L                                                     (0xa0030500)
 #ifndef SOC_IFC_REG_SS_CALIPTRA_BASE_ADDR_L
