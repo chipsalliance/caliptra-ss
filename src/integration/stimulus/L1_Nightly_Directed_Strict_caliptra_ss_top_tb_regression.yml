@@ -84,3 +84,5 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock.yml
         - ../test_suites/caliptra_ss_lcc_volatile_unlock_wrong_token/caliptra_ss_lcc_volatile_unlock_wrong_token.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers.yml
+        - ../test_suites/smoke_test_abr_keygen_sign.yml
+        - ../test_suites/smoke_test_mci_prod_dbg.yml

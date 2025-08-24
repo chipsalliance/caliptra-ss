@@ -40,13 +40,13 @@ uint32_t exp_token[9] = {
 
 /*
 #### Debug Unlock
-1. ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_IN_PROGRESS` bit to 1.
+1. ROM sets the `SS_DBG_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_IN_PROGRESS` bit to 1.
 
-2. The ROM authorizes the debug unlock by setting the `SS_DBG_MANUF_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_SUCCESS` bit to 1.
+2. The ROM authorizes the debug unlock by setting the `SS_DBG_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_SUCCESS` bit to 1.
 
 3. Just for testing purposes, the ROM sets the UNLOCK_LEVEL registers to 0xFFFFFFFF.
 
-4. The ROM sets the `SS_DBG_MANUF_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_IN_PROGRESS` bit to 0.
+4. The ROM sets the `SS_DBG_SERVICE_REG_RSP` register `PROD_DBG_UNLOCK_IN_PROGRESS` bit to 0.
 */
 
 
@@ -73,20 +73,20 @@ void main(void) {
 
     VPRINTF(LOW,"----------------------------------\nCaliptra: Mimicking ROM from Subsystem!!\n----------------------------------\n");
     uint32_t status_reg ;
-    status_reg =  SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
+    status_reg =  SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK;
     VPRINTF(LOW, "CLP_CORE: set PROD_DBG_UNLOCK_IN_PROGRESS...\n");
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
-    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
-    status_reg = status_reg | SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
+    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
+    status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high 0x%X...\n\n", status_reg);
-    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP);
+    status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
     status_reg = 0xFFFFFFFF;
     lsu_write_32(CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_0, status_reg);
     lsu_write_32(CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_1, status_reg);
     VPRINTF(LOW, "\n\nCLP_CORE: CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL is 0x%X%X..\n\n", status_reg, status_reg);
-    status_reg = status_reg & (SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
-    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_MANUF_SERVICE_REG_RSP, status_reg);
+    status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
     VPRINTF(LOW, "CLP_CORE: set low to PROD_DBG_UNLOCK_IN_PROGRESS...\n");
     cpt_sleep(50000);
 
