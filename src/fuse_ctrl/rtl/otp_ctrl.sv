@@ -406,6 +406,14 @@ module otp_ctrl
       end
     end
 
+    // Intercept write requests to the ratchet seed partitions and lock them
+    // based on the value in `RATCHET_SEED_VOLATILE_LOCK`.
+    for (int i = 0; i < NumRatchetSeedPartitions; i++) begin
+      if (i < reg2hw.ratchet_seed_volatile_lock) begin
+        part_access_pre[CptraSsLockHekProd0Idx+i].write_lock = MuBi8True;
+      end
+    end
+
     // XXX: Maybe encode the LC state index directly into the LC partition
     // instead of decoding it on-the-fly.
     unique case (otp_lc_data_o.state)
@@ -1324,7 +1332,7 @@ end
   // Output complete hardware config partition.
   // Actual mapping to other IPs is done via the intersignal topgen feature,
   // selection of fields can be done using the otp_hw_cfg_t struct fields.
-  otp_broadcast_t otp_broadcast, otp_broadcast_FIPS_checked;
+  otp_broadcast_t otp_broadcast;
   logic lcc_is_in_SCRAP_mode;
   assign lcc_is_in_SCRAP_mode = (lc_ctrl_state_pkg::lc_state_e'(part_buf_data[LcStateOffset +: LcStateSize])
                             == lc_ctrl_state_pkg::LcStScrap);
@@ -1342,17 +1350,13 @@ end
     if (!rst_ni) begin
       otp_broadcast_o <= '0;
     end else begin
-      if (FIPS_ZEROIZATION_CMD_i || lcc_is_in_SCRAP_mode) begin
+      if (lcc_is_in_SCRAP_mode) begin
         otp_broadcast_o <= '0;
       end else begin        
-        otp_broadcast_o <= otp_broadcast_FIPS_checked;
+        otp_broadcast_o       <= otp_broadcast;
+        otp_broadcast_o.valid <= otp_broadcast_valid_q;
       end
     end
-  end
-
-  always_comb begin : p_otp_broadcast_valid
-    otp_broadcast_FIPS_checked       = otp_broadcast;
-    otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
   // LCC transition tokens.
@@ -1375,9 +1379,13 @@ end
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The transition tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                              mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                              lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                            lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
 
@@ -1444,7 +1452,9 @@ end
   `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
 
-  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
+  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])
+                                            |-> test_tokens_valid == lc_ctrl_pkg::On)
 
   // Redirect error triggers to the state error alert port.
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])

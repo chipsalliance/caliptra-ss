@@ -103,7 +103,12 @@ to non-zero values:
    1. `VENDOR_NON_SECRET_PROD_PARTITION`: Contains `N` non-secret vendor-specific fuses.
     In-field programmable.
 
-For the exact definition of these vendor-specific fuses see `otp_ctrl_mmap.hjson.tpl`.
+### Ratchet Seed Partition
+
+A variable number of ratchet seed partitions (one 256-bit seed per parition) can be inserted before the
+life-cycle partition by setting the `num_ratchet_seed_partitions` parameter in `gen_fuse_ctrl_partitions.yml`.
+
+For the exact definition of these vendor-specific fuses and the ratchet seeds see `otp_ctrl_mmap.hjson.tpl`.
 
 ### Execution
 ```sh

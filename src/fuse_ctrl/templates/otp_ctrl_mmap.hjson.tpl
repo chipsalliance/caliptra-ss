@@ -802,7 +802,39 @@
 % endif
 #############################################################
 ## End vendor-specific fuses
-#############################################################      
+#############################################################
+#############################################################
+## Start ratchet seed fuses
+#############################################################
+% for i in range(num_ratchet_seed_partitions):
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_${i}",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_${i}_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot ${i}."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot ${i}.
+            '''
+        },
+% endfor
+#############################################################
+## End ratchet seed fuses
+#############################################################   
         {
             name:         "LIFE_CYCLE",
             variant:      "LifeCycle",

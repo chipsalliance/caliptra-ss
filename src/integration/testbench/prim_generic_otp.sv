@@ -324,8 +324,7 @@ module prim_generic_otp
         req     = 1'b1;
         read_ecc_on = 1'b0;
       end
-      // Wait for the read out the complete. Any error will
-      // result in MacroZeroizeError.
+      // Wait for the read out the complete.
       ZerReadWaitSt: begin
         read_ecc_on = 1'b0;
         if (rvalid) begin
