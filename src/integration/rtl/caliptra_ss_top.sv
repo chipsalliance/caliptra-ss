@@ -263,7 +263,6 @@ module caliptra_ss_top
     input  logic cptra_i3c_axi_user_id_filtering_enable_i,
 
     input  logic [63:0] cptra_ss_cptra_core_generic_input_wires_i,
-    // -- caliptra DUT instance
     output logic [63:0] cptra_ss_cptra_core_generic_output_wires_o,
     input  logic        cptra_ss_cptra_core_scan_mode_i,
     output logic        cptra_error_fatal,
