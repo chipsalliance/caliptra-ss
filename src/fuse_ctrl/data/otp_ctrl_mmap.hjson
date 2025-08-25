@@ -28,7 +28,7 @@
         key_size:  "16",
         iv_size:   "8",
         cnst_size: "16",
-        keys: [  
+        keys: [
             {
                 name:  "SecretManufKey",
                 value: "<random>",
@@ -93,7 +93,7 @@
                     desc: '''
                     Hashed, Non-secret, value for manufacturing debug unlock authorization.
                     '''
-                },                
+                },
             ],
             desc: '''Software manufacturing partition.
             '''
@@ -121,7 +121,7 @@
                     DICE Unique Device Secret Seed.
                     This seed is unique per device. The seed is scrambled using an obfuscation function.
                     '''
-                },            
+                },
             ],
             desc: '''Secret manufacturing partition.
             '''
@@ -478,7 +478,7 @@
                     desc: '''
                     Used to transition the device to the RMA state.
                     '''
-                },                                        
+                },
             ],
             desc: '''Secret life-cycle unlock token partition.
             '''
@@ -527,7 +527,7 @@
                     desc: '''
                     Maximum value for the SOC authorization manifest SVN..
                     '''
-                },                   
+                },
             ],
             desc: '''SVN Partition.
             '''
@@ -588,7 +588,7 @@
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     '''
-                },                         
+                },
             ],
             desc: '''Vendor hashes manufacturing partition.
             '''
@@ -608,7 +608,7 @@
             lc_phase:     "LcStProd",
             zeroizable:   false,
             items: [
-                           
+
                 {
                     name: "CPTRA_SS_OWNER_PK_HASH",
                     size: "48",
@@ -633,7 +633,7 @@
                     a volatile lock should be implemented on higher order bits).
                     SoC product requirements determine the need of this partition.
                     '''
-                },   
+                },
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_1",
                     size: "48",
@@ -882,7 +882,7 @@
                     a volatile lock should be implemented on higher order bits).
                     SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
-                },                                          
+                },
             ],
             desc: '''Vendor hashes production partition.
             '''
@@ -1560,6 +1560,198 @@
             desc: '''Vendor non-secret production partition.
             '''
         },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_0",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 0."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 0.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_1",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 1."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 1.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_2",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 2."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 2.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_3",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 3."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 3.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_4",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 4."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 4.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_5",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 5."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 5.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_6",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 6."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 6.
+            '''
+        }
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_7",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 7."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 7.
+            '''
+        }
         {
             name:         "LIFE_CYCLE",
             variant:      "LifeCycle",

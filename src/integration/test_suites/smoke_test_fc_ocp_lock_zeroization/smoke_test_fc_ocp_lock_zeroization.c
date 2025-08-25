@@ -60,8 +60,8 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-    // Zeroize digest.
-    dai_zer(hw_part.digest_address, &data[0], &data[1], 64, 0);
+    // Zeroize marker field.
+    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
@@ -79,8 +79,8 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-    // Zeroize digest.
-    dai_zer(sw_part.digest_address, &data[0], &data[1], 64, 0);
+    // Zeroize marker field.
+    dai_zer(sw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
@@ -119,12 +119,23 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
-    // Reading the digest field should still work, now without ECC.
-    dai_rd(hw_part.digest_address, &data[0], &data[1], hw_part.granularity, 0);
+    // Reading the zeroization field should still work, now without ECC.
+    dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
+    memset(data, 0, 2*sizeof(uint32_t));
+    dai_rd(sw_part.zer_address, &data[0], &data[1], 64, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
+        goto epilogue;
+    }
+
+    // Lock the first ratchet seed partition
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x1);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0xFF, 0xFF, 32, 0);
 
 epilogue:
     VPRINTF(LOW, "ocp lock zeroization test finished\n");

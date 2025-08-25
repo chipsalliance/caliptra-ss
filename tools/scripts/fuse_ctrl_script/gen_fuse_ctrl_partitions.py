@@ -101,7 +101,8 @@ def main():
         params={
             "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
             "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
-            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"]
+            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"],
+            "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"]
         }
     )
 
@@ -125,7 +126,8 @@ def main():
             "otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_SV,
             "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
             "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
-            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"]
+            "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"],
+            "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"]
         }
     )
 

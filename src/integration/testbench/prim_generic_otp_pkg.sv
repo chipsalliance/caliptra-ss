@@ -45,8 +45,7 @@ package prim_generic_otp_pkg;
     MacroError           = 3'h1,
     MacroEccCorrError    = 3'h2,
     MacroEccUncorrError  = 3'h3,
-    MacroWriteBlankError = 3'h4,
-    MacroZeroizeError    = 3'h5
+    MacroWriteBlankError = 3'h4
   } err_e;
 
 endpackage : prim_generic_otp_pkg
