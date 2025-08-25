@@ -1769,7 +1769,7 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
         .cptra_ss_cptra_core_generic_input_wires_i,
-        .ptra_ss_cptra_core_generic_output_wires_o,
+        .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,
         .cptra_error_fatal,
         .cptra_error_non_fatal
