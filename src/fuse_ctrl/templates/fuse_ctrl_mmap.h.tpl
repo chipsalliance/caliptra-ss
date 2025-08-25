@@ -29,7 +29,7 @@ typedef enum {
 % for i, p in enumerate(partitions):
     // ${p["name"]}
   % for j, f in enumerate(p["items"]):
-    % if f["isdigest"] == False:
+    % if f["isdigest"] == False and f["iszer"] == False:
       % if i == len(partitions)-1 and j == len(p["items"])-1:
     ${f["name"]} = ${"0x%04X" % f["offset"]}
       % else:
@@ -50,6 +50,7 @@ typedef struct {
     uint32_t index;
     uint32_t address;
     uint32_t digest_address;
+    uint32_t zer_address;
     uint32_t variant;
     uint32_t granularity;
     bool is_secret;
@@ -67,9 +68,17 @@ typedef struct {
 
 % for i, p in enumerate(partitions[:len(partitions)]):
 uint32_t ${p["name"].lower()}_fuses[] = {
-  % if p["hw_digest"] or p["sw_digest"]:
+  % if (p["hw_digest"] or p["sw_digest"]) and not p["zeroizable"]:
     % for j, f in enumerate(p["items"][:len(p["items"])-1]):
       % if j < len(p["items"])-2:
+    ${f["name"]},
+      % else:
+    ${f["name"]}
+      % endif
+    % endfor
+  % elif (p["hw_digest"] or p["sw_digest"]) and p["zeroizable"]:
+    % for j, f in enumerate(p["items"][:len(p["items"])-2]):
+      % if j < len(p["items"])-3:
     ${f["name"]},
       % else:
     ${f["name"]}
@@ -94,9 +103,18 @@ partition_t partitions[NUM_PARTITIONS] = {
         .index = ${i},
         .address = ${"0x%04X" % p["offset"]},
 % if p["sw_digest"] or p["hw_digest"]:
+  % if p["zeroizable"]:
+        .digest_address = ${"0x%04X" % p["items"][len(p["items"])-2]["offset"]},
+  % else:
         .digest_address = ${"0x%04X" % p["items"][len(p["items"])-1]["offset"]},
+  % endif
 % else:
         .digest_address = 0x0000,
+% endif
+% if p["zeroizable"]:
+        .zer_address = ${"0x%04X" % p["items"][len(p["items"])-1]["offset"]},
+% else:
+        .zer_address = 0x0000,
 % endif
         .variant = ${0 if p["variant"] == "Buffered" else (1 if p["variant"] == "Unbuffered" else 2)},
         .granularity = ${64 if p["secret"] else 32},
