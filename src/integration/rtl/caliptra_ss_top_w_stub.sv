@@ -296,6 +296,7 @@ module caliptra_ss_top_w_stub(
 
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
+    logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
     logic cptra_ss_cptra_core_scan_mode_i;
     logic cptra_error_fatal;
     logic cptra_error_non_fatal;
@@ -580,6 +581,7 @@ module caliptra_ss_top_w_stub(
 
     
         .cptra_ss_cptra_core_generic_input_wires_i,
+        .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,
         .cptra_error_fatal,
         .cptra_error_non_fatal
