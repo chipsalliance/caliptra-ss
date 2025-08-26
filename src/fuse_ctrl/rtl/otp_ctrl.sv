@@ -1328,11 +1328,11 @@ end
   //////////////////////////////////
   // Buffered Data Output Mapping //
   //////////////////////////////////
-
+  
   // Output complete hardware config partition.
   // Actual mapping to other IPs is done via the intersignal topgen feature,
   // selection of fields can be done using the otp_hw_cfg_t struct fields.
-  otp_broadcast_t otp_broadcast;
+  otp_broadcast_t otp_broadcast, otp_broadcast_FIPS_checked;
   logic lcc_is_in_SCRAP_mode;
   assign lcc_is_in_SCRAP_mode = (lc_ctrl_state_pkg::lc_state_e'(part_buf_data[LcStateOffset +: LcStateSize])
                             == lc_ctrl_state_pkg::LcStScrap);
@@ -1350,13 +1350,17 @@ end
     if (!rst_ni) begin
       otp_broadcast_o <= '0;
     end else begin
-      if (lcc_is_in_SCRAP_mode) begin
+      if (FIPS_ZEROIZATION_CMD_i || lcc_is_in_SCRAP_mode) begin
         otp_broadcast_o <= '0;
       end else begin        
-        otp_broadcast_o       <= otp_broadcast;
-        otp_broadcast_o.valid <= otp_broadcast_valid_q;
+        otp_broadcast_o <= otp_broadcast_FIPS_checked;
       end
     end
+  end
+
+  always_comb begin : p_otp_broadcast_valid
+    otp_broadcast_FIPS_checked       = otp_broadcast;
+    otp_broadcast_FIPS_checked.valid = otp_broadcast_valid_q;
   end
 
   // LCC transition tokens.
