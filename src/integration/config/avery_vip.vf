@@ -5,7 +5,7 @@
 +incdir+${AVERY_HOME}/2025.1/avery_pli-2025.1
 +incdir+${AVERY_HOME}/2025.1/axixactor-2025.1_20250313/src.axi.VCS
 +incdir+${AVERY_HOME}/2025.1/axixactor-2025.1_20250313/src.axi
-+incdir+/home/ws/caliptra/ekarabulut/ws_08202025/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
++incdir+${MSFT_REPO_ROOT}/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/src
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/src.i3c
@@ -17,7 +17,7 @@
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/testsuite.i3c/dut_slave
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/testsuite.i3c/dut_master
 +incdir+${AVERY_HOME}/2025.1/i3cxactor-2025.1/testsuite.i3c/dut_master_stby
-/home/ws/caliptra/ekarabulut/ws_08202025/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
+${MSFT_REPO_ROOT}/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
 ${AVERY_HOME}/2025.1/avery_sim-2025.1_20250313/src/avery_pkg.sv
 ${AVERY_HOME}/2025.1/avery_sim-2025.1_20250313/src/avery_pkg_test.sv
 ${AVERY_HOME}/2025.1/axixactor-2025.1_20250313/src.axi/aaxi_pkg.sv

@@ -72,7 +72,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_tlul/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts
-+incdir+/home/ws/caliptra/ekarabulut/ws_08202025/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
++incdir+${MSFT_REPO_ROOT}/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha256/coverage
@@ -85,6 +85,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/coverage
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map
@@ -877,6 +878,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_sha3_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/kmac_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/kmac_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_param_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_keccak_2share.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_keccak_round.sv
@@ -895,7 +897,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_top.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/caliptra_top_sva.sv
-/home/ws/caliptra/ekarabulut/ws_08202025/Caliptra/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
+${MSFT_REPO_ROOT}/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb/physical_rng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage/sha512_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage/sha512_ctrl_cov_bind.sv
@@ -922,6 +924,8 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage/axi_dma_top_cov_bi
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage/axi_dma_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/coverage/aes_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/coverage/aes_cov_bind.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/coverage/doe_cov_if.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/coverage/doe_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb/caliptra_top_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb/dma_testcase_generator.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/tb/caliptra_veer_sram_export.sv
