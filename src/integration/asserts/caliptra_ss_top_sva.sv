@@ -338,7 +338,7 @@ module caliptra_ss_top_sva
   // Assert that an DAI write to a partition whose life-cycle phase has expired will result in an error.
   `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
     `FC_PATH.dai_req &&
-    dec_lc_state > PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].lc_phase
+    dec_lc_state > PartInfo[part_idx].lc_phase
     |-> ##10
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
@@ -347,23 +347,31 @@ module caliptra_ss_top_sva
   // fuse_ctrl partition access control
   ////////////////////////////////////////////////////
 
-  localparam [11:0] digest_addrs [0:15] = { 
-    32,   // SECRET_TEST_UNLOCK_PARTITION
-    68,   // SECRET_MANUF_PARTITION
-    76,   // SECRET_PROD_PARTITION_0
-    84,   // SECRET_PROD_PARTITION_1
-    92,   // SECRET_PROD_PARTITION_2
-    100,  // SECRET_PROD_PARTITION_3
-    604,  // SW_MANUF_PARTITION
-    696,  // SECRET_LC_TRANSITION_PARTITION
-    0,    // SVN_PARTITION
-    748,  // VENDOR_TEST_PARTITION
-    780,  // VENDOR_HASHES_MANUF_PARTITION
-    1156, // VENDOR_HASHES_PROD_PARTITION
-    1232, // VENDOR_REVOCATIONS_PROD_PARTITION
-    1492, // VENDOR_SECRET_PROD_PARTITION
-    2000, // VENDOR_NON_SECRET_PROD_PARTITION
-    0     // LIFE_CYCLE
+  localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
+    otp_ctrl_reg_pkg::SwTestUnlockPartitionDigestOffset/2,          // SECRET_TEST_UNLOCK_PARTITION
+    otp_ctrl_reg_pkg::SecretManufPartitionDigestOffset/2,           // SECRET_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretProdPartition0DigestOffset/2,           // SECRET_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::SecretProdPartition1DigestOffset/2,           // SECRET_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::SecretProdPartition2DigestOffset/2,           // SECRET_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::SecretProdPartition3DigestOffset/2,           // SECRET_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::SwManufPartitionDigestOffset/2,               // SW_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretLcTransitionPartitionDigestOffset/2,    // SECRET_LC_TRANSITION_PARTITION
+    0,                                                              // SVN_PARTITION
+    otp_ctrl_reg_pkg::VendorTestPartitionDigestOffset/2,            // VENDOR_TEST_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesManufPartitionDigestOffset/2,     // VENDOR_HASHES_MANUF_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesProdPartitionDigestOffset/2,      // VENDOR_HASHES_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorRevocationsProdPartitionDigestOffset/2, // VENDOR_REVOCATIONS_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorSecretProdPartitionDigestOffset/2,      // VENDOR_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorNonSecretProdPartitionDigestOffset/2,   // VENDOR_NON_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::CptraSsLockHekProd0DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::CptraSsLockHekProd1DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::CptraSsLockHekProd2DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::CptraSsLockHekProd3DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::CptraSsLockHekProd4DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_4
+    otp_ctrl_reg_pkg::CptraSsLockHekProd5DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_5
+    otp_ctrl_reg_pkg::CptraSsLockHekProd6DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_6
+    otp_ctrl_reg_pkg::CptraSsLockHekProd7DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_7
+    0                                                               // LIFE_CYCLE
   };
 
   logic [NumPartWidth-1:0] part_idx;
@@ -371,7 +379,7 @@ module caliptra_ss_top_sva
 
   // Assert that secret partitions are read-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
-    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].secret) &&
+    ((PartInfo[part_idx].secret) &&
      (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) && 
@@ -383,7 +391,7 @@ module caliptra_ss_top_sva
 
   // Assert that partitions are write-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
-    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].hw_digest || PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].sw_digest) &&
+    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
      (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) && 
@@ -394,15 +402,12 @@ module caliptra_ss_top_sva
     )
 
   ////////////////////////////////////////////////////
-  // fuse_ctrl zeroization/escalation
+  // fuse_ctrl zeroization
   ////////////////////////////////////////////////////
 
-  // Assert that a zeroization request results in the broadcast data to be set to zero.
-  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
-    ((`FC_PATH.FIPS_ZEROIZATION_CMD_i) || (`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
-    |=> 
-    `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
-  )
+  ////////////////////////////////////////////////////
+  // fuse_ctrl escalation
+  ////////////////////////////////////////////////////
 
   // Assert that an esclation will transfer the fuse_ctrl into a terminal state.
   `CALIPTRA_ASSERT(FcEscalationTerminalError_A,
@@ -439,6 +444,13 @@ module caliptra_ss_top_sva
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[3]) == DecLcStTestUnlocked0 &&
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[4]) == DecLcStTestUnlocked0 &&
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[5]) == DecLcStTestUnlocked0)
+  )
+
+  // LCC in is SCRAP mode results in the broadcast data to be set to zero.
+  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
+    ((`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
+    |=>
+    `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
   )
 
   ////////////////////////////////////////////////////
