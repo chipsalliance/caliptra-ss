@@ -1255,4 +1255,58 @@ package otp_ctrl_part_pkg;
   parameter int ProdVendorHashStart = CptraCoreVendorPkHash1Offset;
   parameter int ProdVendorHashEnd   = CptraCoreVendorPkHash1Offset + (ProdVendorHashSize * ProdVendorHashNum);
 
+  localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
+    otp_ctrl_reg_pkg::SwTestUnlockPartitionDigestOffset/2,    // SW_TEST_UNLOCK_PARTITION
+    otp_ctrl_reg_pkg::SecretManufPartitionDigestOffset/2,    // SECRET_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretProdPartition0DigestOffset/2,    // SECRET_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::SecretProdPartition1DigestOffset/2,    // SECRET_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::SecretProdPartition2DigestOffset/2,    // SECRET_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::SecretProdPartition3DigestOffset/2,    // SECRET_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::SwManufPartitionDigestOffset/2,    // SW_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretLcTransitionPartitionDigestOffset/2,    // SECRET_LC_TRANSITION_PARTITION
+    0,                                                              // SVN_PARTITION
+    otp_ctrl_reg_pkg::VendorTestPartitionDigestOffset/2,    // VENDOR_TEST_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesManufPartitionDigestOffset/2,    // VENDOR_HASHES_MANUF_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesProdPartitionDigestOffset/2,    // VENDOR_HASHES_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorRevocationsProdPartitionDigestOffset/2,    // VENDOR_REVOCATIONS_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorSecretProdPartitionDigestOffset/2,    // VENDOR_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorNonSecretProdPartitionDigestOffset/2,    // VENDOR_NON_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::CptraSsLockHekProd0DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_0
+    otp_ctrl_reg_pkg::CptraSsLockHekProd1DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_1
+    otp_ctrl_reg_pkg::CptraSsLockHekProd2DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_2
+    otp_ctrl_reg_pkg::CptraSsLockHekProd3DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_3
+    otp_ctrl_reg_pkg::CptraSsLockHekProd4DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_4
+    otp_ctrl_reg_pkg::CptraSsLockHekProd5DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_5
+    otp_ctrl_reg_pkg::CptraSsLockHekProd6DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_6
+    otp_ctrl_reg_pkg::CptraSsLockHekProd7DigestOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_7
+    0                                                               // LIFE_CYCLE
+  };
+
+  localparam [OtpByteAddrWidth-1:0] zero_addrs [0:NumPart-1] = {
+    0,                                                              // SW_TEST_UNLOCK_PARTITION
+    0,                                                              // SECRET_MANUF_PARTITION
+    0,                                                              // SECRET_PROD_PARTITION_0
+    0,                                                              // SECRET_PROD_PARTITION_1
+    0,                                                              // SECRET_PROD_PARTITION_2
+    0,                                                              // SECRET_PROD_PARTITION_3
+    0,                                                              // SW_MANUF_PARTITION
+    0,                                                              // SECRET_LC_TRANSITION_PARTITION
+    0,                                                              // SVN_PARTITION
+    0,                                                              // VENDOR_TEST_PARTITION
+    0,                                                              // VENDOR_HASHES_MANUF_PARTITION
+    0,                                                              // VENDOR_HASHES_PROD_PARTITION
+    0,                                                              // VENDOR_REVOCATIONS_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorSecretProdPartitionZerOffset/2,    // VENDOR_SECRET_PROD_PARTITION
+    0,                                                              // VENDOR_NON_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::CptraSsLockHekProd0ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_0
+    otp_ctrl_reg_pkg::CptraSsLockHekProd1ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_1
+    otp_ctrl_reg_pkg::CptraSsLockHekProd2ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_2
+    otp_ctrl_reg_pkg::CptraSsLockHekProd3ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_3
+    otp_ctrl_reg_pkg::CptraSsLockHekProd4ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_4
+    otp_ctrl_reg_pkg::CptraSsLockHekProd5ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_5
+    otp_ctrl_reg_pkg::CptraSsLockHekProd6ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_6
+    otp_ctrl_reg_pkg::CptraSsLockHekProd7ZerOffset/2,    // CPTRA_SS_LOCK_HEK_PROD_7
+    0                                                               // LIFE_CYCLE
+  };
+
 endpackage : otp_ctrl_part_pkg
