@@ -26,7 +26,7 @@ module caliptra_ss_top_sva
   import lc_ctrl_state_pkg::*;
   import caliptra_prim_mubi_pkg::*;
   ();
-  
+
 `ifdef CALIPTRA_ASSERT_DEFAULT_CLK
 `undef CALIPTRA_ASSERT_DEFAULT_CLK
 `define CALIPTRA_ASSERT_DEFAULT_CLK `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i
@@ -44,7 +44,7 @@ module caliptra_ss_top_sva
   // The fuse_ctrl access control filter must discard an AXI write request when
   // the access control policy is violated.
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
-    ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) && 
+    ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
      (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
      (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0) &&
      (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
@@ -157,10 +157,10 @@ module caliptra_ss_top_sva
         && (`LCC_PATH.trans_success_q)
         |-> `LCC_PATH.Allow_RMA_or_SCRAP_on_PPD);
   endproperty
-  
+
   assert property (Allow_PPD_check_in_LCC)
     else $display("SVA ERROR: Allow_RMA_or_SCRAP_on_PPD was not asserted for SCRAP and RMA.");
-    
+
 
   //Error handling
   mci_error_fatal_check: assert property (
@@ -171,13 +171,13 @@ module caliptra_ss_top_sva
 
   mci_error_fatal_cold_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL=='h0)) 
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL=='h0))
   ) else $display("SVA ERROR: MCI HW ERROR FATAL is expected to reset on cold reset");
 
   mci_error_fatal_warm_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
-    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL)[*5])) 
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL)[*5]))
   ) else $display("SVA ERROR: MCI HW ERROR FATAL is expected to remain unchanged on warm reset");
 
   all_error_fatal_check: assert property (
@@ -186,7 +186,7 @@ module caliptra_ss_top_sva
     ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision) & (`MCI_REG_TOP_PATH.nmi_intr | `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error) & `MCI_REG_TOP_PATH.mci_intr |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
     and ((&`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_fw_error_fatal_mask.mask & |`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL.error_code) |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
   ) else $display("SVA ERROR: all_error_fatal is asserted unexpectedly");
-  
+
   all_error_fatal_sram_doublebit_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
@@ -202,13 +202,13 @@ module caliptra_ss_top_sva
 
   mci_error_non_fatal_cold_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL=='h0)) 
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL=='h0))
   ) else $display("SVA ERROR: MCI HW ERROR NON FATAL is expected to reset on cold reset");
 
   mci_error_non_fatal_warm_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
-    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL)[*5])) 
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_NON_FATAL)[*5]))
   ) else $display("SVA ERROR: MCI HW ERROR NON FATAL is expected to remain unchanged on warm reset");
 
   all_error_non_fatal_check: assert property (
@@ -273,26 +273,26 @@ module caliptra_ss_top_sva
   //----------------------------------------------
   mci_fw_error_fatal_cold_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL=='h0)) 
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL=='h0))
   ) else $display("SVA ERROR: MCI FW ERROR FATAL is expected to reset on cold reset");
 
   mci_fw_error_fatal_warm_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
-    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL)[*5])) 
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL)[*5]))
   ) else $display("SVA ERROR: MCI FW ERROR FATAL is expected to remain unchanged on warm reset");
 
   mci_fw_error_non_fatal_cold_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
-    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_NON_FATAL=='h0)) 
+    (~`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i |-> (`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_NON_FATAL=='h0))
   ) else $display("SVA ERROR: MCI FW ERROR NON FATAL is expected to reset on cold reset");
 
   mci_fw_error_non_fatal_warm_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
-    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_NON_FATAL)[*5])) 
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_NON_FATAL)[*5]))
   ) else $display("SVA ERROR: MCI FW ERROR NON FATAL is expected to remain unchanged on warm reset");
-      
+
   ////////////////////////////////////////////////////
   // fuse_ctrl provisioning
   ////////////////////////////////////////////////////
@@ -346,45 +346,17 @@ module caliptra_ss_top_sva
   ////////////////////////////////////////////////////
   // fuse_ctrl partition access control
   ////////////////////////////////////////////////////
-
-  localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
-    otp_ctrl_reg_pkg::SwTestUnlockPartitionDigestOffset/2,          // SECRET_TEST_UNLOCK_PARTITION
-    otp_ctrl_reg_pkg::SecretManufPartitionDigestOffset/2,           // SECRET_MANUF_PARTITION
-    otp_ctrl_reg_pkg::SecretProdPartition0DigestOffset/2,           // SECRET_PROD_PARTITION_0
-    otp_ctrl_reg_pkg::SecretProdPartition1DigestOffset/2,           // SECRET_PROD_PARTITION_1
-    otp_ctrl_reg_pkg::SecretProdPartition2DigestOffset/2,           // SECRET_PROD_PARTITION_2
-    otp_ctrl_reg_pkg::SecretProdPartition3DigestOffset/2,           // SECRET_PROD_PARTITION_3
-    otp_ctrl_reg_pkg::SwManufPartitionDigestOffset/2,               // SW_MANUF_PARTITION
-    otp_ctrl_reg_pkg::SecretLcTransitionPartitionDigestOffset/2,    // SECRET_LC_TRANSITION_PARTITION
-    0,                                                              // SVN_PARTITION
-    otp_ctrl_reg_pkg::VendorTestPartitionDigestOffset/2,            // VENDOR_TEST_PARTITION
-    otp_ctrl_reg_pkg::VendorHashesManufPartitionDigestOffset/2,     // VENDOR_HASHES_MANUF_PARTITION
-    otp_ctrl_reg_pkg::VendorHashesProdPartitionDigestOffset/2,      // VENDOR_HASHES_PROD_PARTITION
-    otp_ctrl_reg_pkg::VendorRevocationsProdPartitionDigestOffset/2, // VENDOR_REVOCATIONS_PROD_PARTITION
-    otp_ctrl_reg_pkg::VendorSecretProdPartitionDigestOffset/2,      // VENDOR_SECRET_PROD_PARTITION
-    otp_ctrl_reg_pkg::VendorNonSecretProdPartitionDigestOffset/2,   // VENDOR_NON_SECRET_PROD_PARTITION
-    otp_ctrl_reg_pkg::CptraSsLockHekProd0DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_0
-    otp_ctrl_reg_pkg::CptraSsLockHekProd1DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_1
-    otp_ctrl_reg_pkg::CptraSsLockHekProd2DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_2
-    otp_ctrl_reg_pkg::CptraSsLockHekProd3DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_3
-    otp_ctrl_reg_pkg::CptraSsLockHekProd4DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_4
-    otp_ctrl_reg_pkg::CptraSsLockHekProd5DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_5
-    otp_ctrl_reg_pkg::CptraSsLockHekProd6DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_6
-    otp_ctrl_reg_pkg::CptraSsLockHekProd7DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_7
-    0                                                               // LIFE_CYCLE
-  };
-
   logic [NumPartWidth-1:0] part_idx;
   assign part_idx = `FC_PATH.u_otp_ctrl_dai.part_idx;
 
   // Assert that secret partitions are read-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
     ((PartInfo[part_idx].secret) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) && 
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
      |-> ##2
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
     )
@@ -392,11 +364,11 @@ module caliptra_ss_top_sva
   // Assert that partitions are write-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
     ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) && 
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
      |-> ##2
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
     )
@@ -404,6 +376,133 @@ module caliptra_ss_top_sva
   ////////////////////////////////////////////////////
   // fuse_ctrl zeroization
   ////////////////////////////////////////////////////
+
+  // Return whether is a partition is zeroized
+  function bit is_zeroized(int part_idx);
+    logic [ScrmblBlockWidth-1:0] zero_marker;
+    if (part_idx < 0 || part_idx >= NumPart) begin
+      return 0; // Invalid partition index
+    end else if (!PartInfo[part_idx].zeroizable) begin
+      return 0; // Not zeroizable
+    end else begin
+      zero_marker = {`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+1][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+2][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+3][15:0]};
+      return (otp_ctrl_pkg::check_zeroized_valid(zero_marker));
+    end
+  endfunction : is_zeroized
+
+  // Zeroization marker status
+  logic [NumPart-1:0] marker_zeroized_part = 0;
+  always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i) begin : p_marker_zeroized_part
+    if ((`FC_PATH.dai_req) && (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == otp_ctrl_part_pkg::zero_addrs[part_idx])) begin
+      marker_zeroized_part[part_idx] <= 1'b1;
+    end
+  end
+
+  // A zeroized partition must still have the same access privileges: writes fail for a locked partition
+  `CALIPTRA_ASSERT(FcZeroizePartWriteLock_A,
+    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (is_zeroized(part_idx)) &&
+     (mubi8_t'(`FC_PATH.part_access[part_idx].write_lock) == MuBi8True) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // A zeroized partition must still have the same access privileges: reads fails for a locked secret partition
+  `CALIPTRA_ASSERT(FcZeroizePartReadLock_A,
+    ((PartInfo[part_idx].secret) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (is_zeroized(part_idx)) &&
+     (mubi8_t'(`FC_PATH.part_access[part_idx].read_lock) == MuBi8True) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // Make sure that the zeroization command will never return descrambled data for the secret partitions
+  `CALIPTRA_ASSERT(FcZeroizeNoDescrambled_A,
+    ((PartInfo[part_idx].secret) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize))
+    |->
+    not(!`FC_PATH.otp_operation_done[*1:$] ##1
+        (otp_scrmbl_cmd_e'(`FC_PATH.u_otp_ctrl_dai.scrmbl_cmd_o) == Decrypt))
+  )
+
+  // Zeroization must only be possible for zeroizable partitions
+  `CALIPTRA_ASSERT(FcZeroizeOnlyZeroizableAllowed_A,
+    (mubi8_t'(`FC_PATH.part_zer_trigs[part_idx]) == MuBi8True)
+    |->
+    PartInfo[part_idx].zeroizable == 1'b1
+  )
+
+  // Attempt to zeroize a non zeroizable partition must be rejected and an error flag should be raised
+  `CALIPTRA_ASSERT(FcZeroizeNonZeroizableDenied_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+     (!PartInfo[part_idx].zeroizable))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // Zeroization marker field is always readable
+  `CALIPTRA_ASSERT(FcZeroizeMarkerAlwaysReadable_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError
+  )
+
+  // Zeroization marker field is never writable
+  `CALIPTRA_ASSERT(FcZeroizeMarkerNeverWritable_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // For scrambled partitions, when doing a zeroization, an error should be raised if the number of
+  // set bits in the 64-bit word is lower than ZeroizationValidBound
+  `CALIPTRA_ASSERT(FcZeroizeAccessErrWhenBelowThresh_A,
+    first_match((PartInfo[part_idx].secret) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      ##[1:$]
+      (marker_zeroized_part[part_idx]) &&
+      (`FC_PATH.otp_operation_done) &&
+      (!is_zeroized(part_idx)))
+    |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
+  )
+
+  // For scrambled partitions, the zeroized fuse should only be returned if and only if the
+  // number of set bits in the 64-bit word is greater or equal ZeroizationValidBound
+  `CALIPTRA_ASSERT(FcZeroizeMarkerOnlyWhenAboveThresh_A,
+    first_match((PartInfo[part_idx].secret) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      ##[1:$]
+      (marker_zeroized_part[part_idx]) &&
+      (`FC_PATH.otp_operation_done) &&
+      (!is_zeroized(part_idx)))
+    |=>
+    (`FC_PATH.hw2reg.direct_access_rdata == '0)   // This register will always go back to 0 when a new DAI operation is triggered
+  )
 
   ////////////////////////////////////////////////////
   // fuse_ctrl escalation
