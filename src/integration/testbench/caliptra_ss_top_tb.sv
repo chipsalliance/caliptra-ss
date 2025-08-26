@@ -1044,6 +1044,7 @@ module caliptra_ss_top_tb
 
     ras_test_ctrl_t ras_test_ctrl;
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
+    logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
     logic        cptra_ss_cptra_core_etrng_req_o;
     logic  [3:0] cptra_ss_cptra_core_itrng_data_i;
     logic        cptra_ss_cptra_core_itrng_valid_i;
@@ -1768,6 +1769,7 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
         .cptra_ss_cptra_core_generic_input_wires_i,
+        .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,
         .cptra_error_fatal,
         .cptra_error_non_fatal
