@@ -253,7 +253,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStDev",
-            zeroizable:   true,
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -384,7 +384,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStTestUnlocked0",
-            zeroizable:   true,
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
@@ -755,7 +755,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
     % for i in range(num_vendor_secret_fuses):
                 {
