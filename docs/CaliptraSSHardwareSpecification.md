@@ -32,6 +32,11 @@
   - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
   - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
   - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
+- [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
+  - [AXI Streaming Boot flow implementation](#axi-streaming-boot-flow-implementation)
+  - [AXI Streaming Boot procedure](#axi-streaming-boot-procedure)
+  - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
+  - [Secure Firmware Recovery CSRs](#secure-firmware-recovery-csrs)
 - [Caliptra Core AXI Manager \& DMA assist](#caliptra-core-axi-manager--dma-assist)
   - [AXI Feature Support](#axi-feature-support)
   - [Routes](#routes)
@@ -291,6 +296,67 @@ Caliptra ROM & RT firmware must program DMA assist with correct image size (mult
 
 ## I3C and Caliptra-AXI Interactions
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
+
+# AXI Streaming Boot (Recovery) Interface
+
+This feature allows driving the recovery data from within the SoC integrating the I3C core over the AXI bus, bypassing I3C communication.
+
+## AXI Streaming Boot flow implementation
+
+The AXI Streaming Boot flow reuses the logic already present in the I3C core used in the Caliptra-SS design, with a runtime option essentially bypassing most of the I3C core communication logic (including the I3C recovery flow logic).
+The loopback functionality is configurable via a CSR, with the I3C mode set as the default.
+Recovery CSRs are accessible from the internal AXI bus.
+The transactions to the core may be filtered using the AXI ID field.
+The logic is implemented so that the recovery firmware in the Caliptra RoT ROM can operate without any changes.
+In order to enable setting W1C recovery registers, AXI recovery mode introduces additional register - `REC_INTF_REG_W1C_ACCESS`.
+
+### AXI Streaming Boot procedure
+
+The Caliptra MCU RISC-V core is responsible for driving the data copied from an external memory (e.g. QSPI interface) to the recovery FIFOs.
+The ROM running on the MCU core monitors the recovery block registers and performs the recovery flow.
+
+During the boot procedure the ROM will have to follow the following procedure:
+
+1. Set the I3C block to the "direct AXI" mode
+2. Poll the `DEVICE_STATUS` register and wait for the streaming boot to be enabled by the Caliptra core
+3. Read the `RECOVERY_STATUS` register and check if the streaming boot flow started
+4. Write to the `RECOVERY_CONTROL` register to set the recovery image configuration
+5. Write to the `INDIRECT_FIFO_CTRL` register to set the recovery image size
+6. Push the recovery image to the recovery interface FIFOs:
+   1. Read the `INDIRECT_FIFO_STATUS` register to determine remaining space in the indirect FIFO
+   2. If the indirect FIFO is not full, write a chunk of data to the `TX_DATA_PORT` register
+   3. The above steps should be repeated until the whole recovery image is written to the FIFO
+7. Activate the new image setting `RECOVERY_CTRL` register by writing `0xf00` to the `REC_INTF_REG_W1C_ACCESS` register
+8. Read the `RECOVERY_STATUS` register to ensure the image has been activated
+
+The recovery image will be written in chunks with length equal to or less than `Max transfer size` defined in the `INDIRECT_FIFO_STATUS` register.
+Once the last data chunk is written to the FIFO, the Caliptra MCU ROM will write a CSR in the Secure Firmware Recovery register file indicating the transfer is complete.
+
+## AXI Streaming Boot Handler
+
+In the regular (I3C) mode of the core, the Streaming Boot (Recovery) Handler strongly relies on the communication with the I3C Core internal logic by interfacing with TTI Queues.
+The bypass implementation modifies the I3C Core logic to allow direct access over the AXI bus to the structures specified by the OCP Secure Firmware Recovery for compliance with the [Caliptra Subsystem Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-interface-hardware).
+
+The default design of the Streaming Boot Handler includes many blocks specifically designed to translate I3C bus traffic into recovery messages.
+It also automatically responds to the I3C commands by writing transaction descriptors and data for the TTI Queues.
+
+*Figure: Streaming Boot (Recovery) Handler in the I3C Core*
+![](images/AXI-Recovery-Handler.png)
+
+In order enable the AXI recovery mechanism while reusing the existing logic and keeping compliance with Caliptra, the I3C core provides a custom bypass feature allowing direct communication with the Streaming Boot Handler via the AXI bus.
+The bypass disables the I3C communication logic.
+Data is routed from the TTI TX Queue to the Recovery Executor block, and written directly to the Indirect Data FIFO.
+The Caliptra ROM can access the data from the Indirect FIFO over the AXI bus (the same way it does in the regular I3C recovery flow).
+The dataflow in bypass mode (marked with green arrows) is depicted in the diagram below.
+
+*Figure: AXI Streaming Boot Handler in I3C Bypass Mode*
+![](images/AXI-Recovery-Handler-Bypass.png)
+
+## Secure Firmware Recovery CSRs
+
+With the bypass feature enabled, the FIFO status CSRs in the Secure Firmware Recovery CSR file will be updated by the Recovery Handler module.
+However, some registers like e.g. `INDIRECT_FIFO_CTRL` which are updated by I3C commands in a standard recovery flow, will have to be accessed and configured properly from the software running on the Caliptra MCU via the AXI bus.
+All configurable registers are writable from software, read only registers provide status information about Recovery Handler internals, e.g. details about size and fill level of the Indirect FIFO.
 
 # Caliptra Core AXI Manager & DMA assist
 SOC\_IFC includes a hardware-assist block that is capable of initiating DMA transfers to the attached SoC AXI interconnect. The DMA transfers include several modes of operation, including raw transfer between SoC (AXI) addresses, moving data into or out of the SOC\_IFC mailbox, directly encrypting/decrypting images with the AES block, and directly driving data through AHB CSR accesses to datain/dataout registers. One additional operating mode allows the DMA engine to autonomously wait for data availability via the OCP Recovery interface (which will be slowly populated via an I3C or similar interface). 
