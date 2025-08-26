@@ -28,7 +28,7 @@
         key_size:  "16",
         iv_size:   "8",
         cnst_size: "16",
-        keys: [
+        keys: [  
             {
                 name:  "SecretManufKey",
                 value: "<random>",
@@ -93,7 +93,7 @@
                     desc: '''
                     Hashed, Non-secret, value for manufacturing debug unlock authorization.
                     '''
-                },
+                },                
             ],
             desc: '''Software manufacturing partition.
             '''
@@ -121,7 +121,7 @@
                     DICE Unique Device Secret Seed.
                     This seed is unique per device. The seed is scrambled using an obfuscation function.
                     '''
-                },
+                },            
             ],
             desc: '''Secret manufacturing partition.
             '''
@@ -251,7 +251,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStDev",
-            zeroizable:   true,
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -382,7 +382,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStTestUnlocked0",
-            zeroizable:   true,
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
@@ -478,7 +478,7 @@
                     desc: '''
                     Used to transition the device to the RMA state.
                     '''
-                },
+                },                                        
             ],
             desc: '''Secret life-cycle unlock token partition.
             '''
@@ -527,7 +527,7 @@
                     desc: '''
                     Maximum value for the SOC authorization manifest SVN..
                     '''
-                },
+                },                   
             ],
             desc: '''SVN Partition.
             '''
@@ -588,7 +588,7 @@
                     desc: '''
                     One-hot encoded selection of PQC key type for firmware validation. Bit 0 -> MLDSA, Bit 1 -> LMS.
                     '''
-                },
+                },                         
             ],
             desc: '''Vendor hashes manufacturing partition.
             '''
@@ -608,7 +608,7 @@
             lc_phase:     "LcStProd",
             zeroizable:   false,
             items: [
-
+                           
                 {
                     name: "CPTRA_SS_OWNER_PK_HASH",
                     size: "48",
@@ -633,7 +633,7 @@
                     a volatile lock should be implemented on higher order bits).
                     SoC product requirements determine the need of this partition.
                     '''
-                },
+                },   
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_1",
                     size: "48",
@@ -882,7 +882,7 @@
                     a volatile lock should be implemented on higher order bits).
                     SoC product requirements determine the need of this partition; and the number of public keys required.
                     '''
-                },
+                },                                          
             ],
             desc: '''Vendor hashes production partition.
             '''
@@ -1327,7 +1327,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_0",
@@ -1727,7 +1727,7 @@
             ],
             desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 6.
             '''
-        }
+        },
         {
             name: "CPTRA_SS_LOCK_HEK_PROD_7",
             variant:      "Unbuffered",
@@ -1751,7 +1751,7 @@
             ],
             desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 7.
             '''
-        }
+        },
         {
             name:         "LIFE_CYCLE",
             variant:      "LifeCycle",
