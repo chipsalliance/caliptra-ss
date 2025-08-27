@@ -266,7 +266,7 @@ package otp_ctrl_part_pkg;
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
       lc_phase:         DecLcStDev,
-      zeroizable:       1'b1
+      zeroizable:       1'b0
     },
     // SECRET_LC_TRANSITION_PARTITION
     '{
@@ -283,7 +283,7 @@ package otp_ctrl_part_pkg;
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
       lc_phase:         DecLcStTestUnlocked0,
-      zeroizable:       1'b1
+      zeroizable:       1'b0
     },
     // SVN_PARTITION
     '{
@@ -373,8 +373,8 @@ package otp_ctrl_part_pkg;
     // VENDOR_SECRET_PROD_PARTITION
     '{
       variant:          Buffered,
-      offset:           12'd2176,
-      size:             520,
+      offset:           12'd2160,
+      size:             528,
       key_sel:          VendorSecretProdKey,
       secret:           1'b1,
       sw_digest:        1'b0,
@@ -385,12 +385,12 @@ package otp_ctrl_part_pkg;
       iskeymgr_creator: 1'b0,
       iskeymgr_owner:   1'b0,
       lc_phase:         DecLcStProd,
-      zeroizable:       1'b0
+      zeroizable:       1'b1
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
     '{
       variant:          Unbuffered,
-      offset:           12'd2696,
+      offset:           12'd2688,
       size:             520,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -407,7 +407,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_0
     '{
       variant:          Unbuffered,
-      offset:           12'd3216,
+      offset:           12'd3208,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -424,7 +424,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_1
     '{
       variant:          Unbuffered,
-      offset:           12'd3264,
+      offset:           12'd3256,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -441,7 +441,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_2
     '{
       variant:          Unbuffered,
-      offset:           12'd3312,
+      offset:           12'd3304,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -458,7 +458,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_3
     '{
       variant:          Unbuffered,
-      offset:           12'd3360,
+      offset:           12'd3352,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -475,7 +475,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_4
     '{
       variant:          Unbuffered,
-      offset:           12'd3408,
+      offset:           12'd3400,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -492,7 +492,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_5
     '{
       variant:          Unbuffered,
-      offset:           12'd3456,
+      offset:           12'd3448,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -509,7 +509,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_6
     '{
       variant:          Unbuffered,
-      offset:           12'd3504,
+      offset:           12'd3496,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -526,7 +526,7 @@ package otp_ctrl_part_pkg;
     // CPTRA_SS_LOCK_HEK_PROD_7
     '{
       variant:          Unbuffered,
-      offset:           12'd3552,
+      offset:           12'd3544,
       size:             48,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -543,7 +543,7 @@ package otp_ctrl_part_pkg;
     // LIFE_CYCLE
     '{
       variant:          LifeCycle,
-      offset:           12'd3600,
+      offset:           12'd3592,
       size:             88,
       key_sel:          key_sel_e'('0),
       secret:           1'b0,
@@ -656,6 +656,7 @@ package otp_ctrl_part_pkg;
     cptra_core_field_entropy_3: 64'h711D135F59A50322
   };
   typedef struct packed {
+    logic [63:0] vendor_secret_prod_partition_zer;
     logic [63:0] vendor_secret_prod_partition_digest;
     logic [255:0] cptra_ss_vendor_specific_secret_fuse_15;
     logic [255:0] cptra_ss_vendor_specific_secret_fuse_14;
@@ -677,6 +678,7 @@ package otp_ctrl_part_pkg;
 
   // default value used for intermodule
   parameter otp_vendor_secret_prod_partition_data_t OTP_VENDOR_SECRET_PROD_PARTITION_DATA_DEFAULT = '{
+    vendor_secret_prod_partition_zer: 64'h0,
     vendor_secret_prod_partition_digest: 64'hF7024F5AD97A0F9E,
     cptra_ss_vendor_specific_secret_fuse_15: 256'h31CB754A523EAFE90D67C2C55F3D8CE40AF0ADBBE93A5F9BAB97F2A9139A0FFA,
     cptra_ss_vendor_specific_secret_fuse_14: 256'hA1C637588C08C38374903B58BC3484DF9B0E9C2F06F0694CEDAB6BE2563D7C0C,
@@ -721,7 +723,7 @@ package otp_ctrl_part_pkg;
 
 
   // OTP invalid partition default for buffered partitions.
-  parameter logic [29503:0] PartInvDefault = 29504'({
+  parameter logic [29439:0] PartInvDefault = 29440'({
     704'({
       320'h1149EFDC5F023299DFB44D70A9F906859E02C05185213FCF029CB3E62CE6FDDCBA7F6C9D2519EA1A,
       384'h956AEADB13BAAA10D2336E399E5F1AEB58C2A1BA65D13A0FE39B01C95A626001CC969493D06CDB450C26A87F7BF58DDA
@@ -785,7 +787,8 @@ package otp_ctrl_part_pkg;
       256'h0,
       256'h0
     }),
-    4160'({
+    4224'({
+      64'h0,
       64'hF7024F5AD97A0F9E,
       256'h31CB754A523EAFE90D67C2C55F3D8CE40AF0ADBBE93A5F9BAB97F2A9139A0FFA,
       256'hA1C637588C08C38374903B58BC3484DF9B0E9C2F06F0694CEDAB6BE2563D7C0C,

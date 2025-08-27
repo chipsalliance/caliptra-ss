@@ -1328,7 +1328,7 @@ end
   //////////////////////////////////
   // Buffered Data Output Mapping //
   //////////////////////////////////
-
+  
   // Output complete hardware config partition.
   // Actual mapping to other IPs is done via the intersignal topgen feature,
   // selection of fields can be done using the otp_hw_cfg_t struct fields.

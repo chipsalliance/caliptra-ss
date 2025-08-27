@@ -170,41 +170,41 @@ typedef enum {
     CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_14 = 0x0A40,
     CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_15 = 0x0A60,
     // VENDOR_NON_SECRET_PROD_PARTITION
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0 = 0x0A88,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_1 = 0x0AA8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_2 = 0x0AC8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_3 = 0x0AE8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_4 = 0x0B08,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_5 = 0x0B28,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_6 = 0x0B48,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_7 = 0x0B68,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_8 = 0x0B88,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_9 = 0x0BA8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_10 = 0x0BC8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_11 = 0x0BE8,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_12 = 0x0C08,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13 = 0x0C28,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14 = 0x0C48,
-    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15 = 0x0C68,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0 = 0x0A80,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_1 = 0x0AA0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_2 = 0x0AC0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_3 = 0x0AE0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_4 = 0x0B00,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_5 = 0x0B20,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_6 = 0x0B40,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_7 = 0x0B60,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_8 = 0x0B80,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_9 = 0x0BA0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_10 = 0x0BC0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_11 = 0x0BE0,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_12 = 0x0C00,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13 = 0x0C20,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14 = 0x0C40,
+    CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15 = 0x0C60,
     // CPTRA_SS_LOCK_HEK_PROD_0
-    CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED = 0x0C90,
+    CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED = 0x0C88,
     // CPTRA_SS_LOCK_HEK_PROD_1
-    CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED = 0x0CC0,
+    CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED = 0x0CB8,
     // CPTRA_SS_LOCK_HEK_PROD_2
-    CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED = 0x0CF0,
+    CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED = 0x0CE8,
     // CPTRA_SS_LOCK_HEK_PROD_3
-    CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED = 0x0D20,
+    CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED = 0x0D18,
     // CPTRA_SS_LOCK_HEK_PROD_4
-    CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED = 0x0D50,
+    CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED = 0x0D48,
     // CPTRA_SS_LOCK_HEK_PROD_5
-    CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED = 0x0D80,
+    CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED = 0x0D78,
     // CPTRA_SS_LOCK_HEK_PROD_6
-    CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED = 0x0DB0,
+    CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED = 0x0DA8,
     // CPTRA_SS_LOCK_HEK_PROD_7
-    CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED = 0x0DE0,
+    CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED = 0x0DD8,
     // LIFE_CYCLE
-    LC_TRANSITION_CNT = 0x0E10,
-    LC_STATE = 0x0E40
+    LC_TRANSITION_CNT = 0x0E08,
+    LC_STATE = 0x0E38
 } fuse_k;
 
 typedef enum {
@@ -581,7 +581,7 @@ partition_t partitions[NUM_PARTITIONS] = {
         .index = 6,
         .address = 0x00D0,
         .digest_address = 0x02D0,
-        .zer_address = 0x02D8,
+        .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -597,9 +597,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // SECRET_LC_TRANSITION_PARTITION
     {
         .index = 7,
-        .address = 0x02E0,
-        .digest_address = 0x0390,
-        .zer_address = 0x0398,
+        .address = 0x02D8,
+        .digest_address = 0x0388,
+        .zer_address = 0x0000,
         .variant = 0,
         .granularity = 64,
         .is_secret = true,
@@ -633,8 +633,8 @@ partition_t partitions[NUM_PARTITIONS] = {
     // VENDOR_TEST_PARTITION
     {
         .index = 9,
-        .address = 0x03C8,
-        .digest_address = 0x0400,
+        .address = 0x03B8,
+        .digest_address = 0x03F0,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -651,8 +651,8 @@ partition_t partitions[NUM_PARTITIONS] = {
     // VENDOR_HASHES_MANUF_PARTITION
     {
         .index = 10,
-        .address = 0x0408,
-        .digest_address = 0x0440,
+        .address = 0x03F8,
+        .digest_address = 0x0430,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -669,8 +669,8 @@ partition_t partitions[NUM_PARTITIONS] = {
     // VENDOR_HASHES_PROD_PARTITION
     {
         .index = 11,
-        .address = 0x0448,
-        .digest_address = 0x07A0,
+        .address = 0x0438,
+        .digest_address = 0x0790,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -687,8 +687,8 @@ partition_t partitions[NUM_PARTITIONS] = {
     // VENDOR_REVOCATIONS_PROD_PARTITION
     {
         .index = 12,
-        .address = 0x07A8,
-        .digest_address = 0x0878,
+        .address = 0x0798,
+        .digest_address = 0x0868,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -705,9 +705,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // VENDOR_SECRET_PROD_PARTITION
     {
         .index = 13,
-        .address = 0x0880,
-        .digest_address = 0x0A80,
-        .zer_address = 0x0000,
+        .address = 0x0870,
+        .digest_address = 0x0A70,
+        .zer_address = 0x0A78,
         .variant = 0,
         .granularity = 64,
         .is_secret = true,
@@ -717,14 +717,14 @@ partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 16,
+        .num_fuses = 17,
         .fuses = vendor_secret_prod_partition_fuses
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
     {
         .index = 14,
-        .address = 0x0A88,
-        .digest_address = 0x0C88,
+        .address = 0x0A80,
+        .digest_address = 0x0C80,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -741,9 +741,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_0
     {
         .index = 15,
-        .address = 0x0C90,
-        .digest_address = 0x0CB0,
-        .zer_address = 0x0CB8,
+        .address = 0x0C88,
+        .digest_address = 0x0CA8,
+        .zer_address = 0x0CB0,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -759,9 +759,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_1
     {
         .index = 16,
-        .address = 0x0CC0,
-        .digest_address = 0x0CE0,
-        .zer_address = 0x0CE8,
+        .address = 0x0CB8,
+        .digest_address = 0x0CD8,
+        .zer_address = 0x0CE0,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -777,9 +777,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_2
     {
         .index = 17,
-        .address = 0x0CF0,
-        .digest_address = 0x0D10,
-        .zer_address = 0x0D18,
+        .address = 0x0CE8,
+        .digest_address = 0x0D08,
+        .zer_address = 0x0D10,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -795,9 +795,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_3
     {
         .index = 18,
-        .address = 0x0D20,
-        .digest_address = 0x0D40,
-        .zer_address = 0x0D48,
+        .address = 0x0D18,
+        .digest_address = 0x0D38,
+        .zer_address = 0x0D40,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -813,9 +813,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_4
     {
         .index = 19,
-        .address = 0x0D50,
-        .digest_address = 0x0D70,
-        .zer_address = 0x0D78,
+        .address = 0x0D48,
+        .digest_address = 0x0D68,
+        .zer_address = 0x0D70,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -831,9 +831,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_5
     {
         .index = 20,
-        .address = 0x0D80,
-        .digest_address = 0x0DA0,
-        .zer_address = 0x0DA8,
+        .address = 0x0D78,
+        .digest_address = 0x0D98,
+        .zer_address = 0x0DA0,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -849,9 +849,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_6
     {
         .index = 21,
-        .address = 0x0DB0,
-        .digest_address = 0x0DD0,
-        .zer_address = 0x0DD8,
+        .address = 0x0DA8,
+        .digest_address = 0x0DC8,
+        .zer_address = 0x0DD0,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -867,9 +867,9 @@ partition_t partitions[NUM_PARTITIONS] = {
     // CPTRA_SS_LOCK_HEK_PROD_7
     {
         .index = 22,
-        .address = 0x0DE0,
-        .digest_address = 0x0E00,
-        .zer_address = 0x0E08,
+        .address = 0x0DD8,
+        .digest_address = 0x0DF8,
+        .zer_address = 0x0E00,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -885,7 +885,7 @@ partition_t partitions[NUM_PARTITIONS] = {
     // LIFE_CYCLE
     {
         .index = 23,
-        .address = 0x0E10,
+        .address = 0x0E08,
         .digest_address = 0x0000,
         .zer_address = 0x0000,
         .variant = 2,

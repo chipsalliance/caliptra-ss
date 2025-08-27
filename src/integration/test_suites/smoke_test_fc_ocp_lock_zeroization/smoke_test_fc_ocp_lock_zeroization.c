@@ -37,20 +37,22 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 /**
- * SW_MANUF_PARTITION and SECRET_LC_TRANSITION_PARTITION are zeroizable
- * while the others are not. This test verifies basic functionalities
- * of the zeroization flow.
+ * VENDOR_SECRET_PROD_PARTITION and CPTRA_SS_LOCK_HEK_PROD_* partitions
+ * are zeroizable while the others are not. This test verifies basic
+ * functionalities of the zeroization flow.
  */
 void ocp_lock_zeroization(void) {
     uint32_t data[2];
 
-    const partition_t hw_part = partitions[SECRET_LC_TRANSITION_PARTITION];
-    const partition_t sw_part = partitions[SW_MANUF_PARTITION];
+    const partition_t hw_part = partitions[VENDOR_SECRET_PROD_PARTITION];
+    const partition_t sw_part0 = partitions[CPTRA_SS_LOCK_HEK_PROD_0];
+    const partition_t sw_part1 = partitions[CPTRA_SS_LOCK_HEK_PROD_1];
+
     // A partition that is not zeroizable.
-    const partition_t ctrl_part = partitions[VENDOR_SECRET_PROD_PARTITION];
+    const partition_t ctrl_part = partitions[SW_MANUF_PARTITION];
     
-    // Zeroize the first 64-bit word of the hardware SECRET_LC_TRANSITION_PARTITION
-    // and its digest. This partition is buffered, secret and already locked.
+    // Zeroize the first 64-bit word of the hardware partition and its
+    // digest. This partition is buffered, secret and already locked.
     // Zeroization should work normally.
 
     // Zeroize fuse.
@@ -68,28 +70,42 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
-    // Zeroize the first 32-bit word of the software SW_MANUF_PARTITION
-    // and its digest. This partition is unbuffered, unlocked and
+    // Zeroize the first 32-bit word of the software partition and its
+    // digest. This partition is unbuffered, unlocked and
     // software-readable but the zeroization should nonetheless work.
 
     // Zeroize fuse.
-    dai_zer(sw_part.address, &data[0], &data[1], sw_part.granularity, 0);
+    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
     if (data[0] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
     // Zeroize marker field.
-    dai_zer(sw_part.zer_address, &data[0], &data[1], 64, 0);
+    dai_zer(sw_part0.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
+    // Write, then calculate & write digest, then read an unbuffered
+    // partition. Finally, zeroize the partition.
+    uint32_t exp_data = 0xA5A5A5A5;
+    data[0] = exp_data;
+    dai_wr(sw_part1.address, data[0], data[1], sw_part1.granularity, 0);
+    // This is a software partition that needs to be locked manually by firmware.
+    dai_wr(sw_part1.digest_address, 0x12, 0x34, 64, 0);
+    dai_rd(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
+    if (data[0] != exp_data) {
+        VPRINTF(LOW, "ERROR: read data does not match written data\n");
+        goto epilogue;
+    }
+    dai_zer(sw_part1.zer_address, &data[0], &data[1], sw_part1.granularity, 0);
+
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
-    dai_zer(ctrl_part.address, &data[0], &data[1], sw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_zer(ctrl_part.address, &data[0], &data[1], sw_part0.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
     if (data[0] != 0x0 || data[1] != 0x0) {
         VPRINTF(LOW, "ERROR: fuse is not 0.\n");
         goto epilogue;
@@ -112,7 +128,7 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
     // Sw part fuse.
-    dai_zer(sw_part.address, &data[0], &data[1], sw_part.granularity, 0);
+    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
     if (data[0] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
@@ -126,16 +142,16 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-    dai_rd(sw_part.zer_address, &data[0], &data[1], 64, 0);
+    dai_rd(sw_part0.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
 
-    // Lock the first ratchet seed partition
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x1);
-    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0xFF, 0xFF, 32, 0);
+    // Lock the first three ratchet seed partition
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0xFF, 0xFF, 32, 0);
 
 epilogue:
     VPRINTF(LOW, "ocp lock zeroization test finished\n");
