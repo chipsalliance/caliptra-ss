@@ -73,6 +73,8 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb
++incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_path_defines.svh
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map/soc_address_map_defines.svh
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
@@ -839,6 +841,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_sha3_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/kmac_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/kmac_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_param_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_keccak_2share.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_keccak_round.sv
@@ -858,5 +861,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_top.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_w_stub.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb/icache_macros.svh
+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/rtl/aes_clp_reg_pkg.sv
