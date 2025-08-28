@@ -88,7 +88,7 @@ void ocp_lock_zeroization(void) {
     // software-readable but the zeroization should nonetheless work.
 
     // Write some data, read it back, and compare the data read back
-    uint32_t exp_data = 0xA5A5A5A5;
+    exp_data = 0xA5A5A5A5;
     data[0] = exp_data;
     dai_wr(sw_part0.address, data[0], data[1], sw_part0.granularity, 0);
     dai_rd(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
@@ -119,7 +119,7 @@ void ocp_lock_zeroization(void) {
 
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
-    uint32_t exp_data = 0xA5A5A5A5;
+    exp_data = 0xA5A5A5A5;
     data[0] = exp_data;
     dai_wr(sw_part1.address, data[0], data[1], sw_part1.granularity, 0);
     // This is a software partition that needs to be locked manually by firmware.
@@ -129,7 +129,19 @@ void ocp_lock_zeroization(void) {
         VPRINTF(LOW, "ERROR: read data does not match written data\n");
         goto epilogue;
     }
-    dai_zer(sw_part1.zer_address, &data[0], &data[1], sw_part1.granularity, 0);
+    // Zeroize marker before data, as recommended.
+    dai_zer(sw_part1.zer_address, &data[0], &data[1], 64, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: marker is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
+    dai_zer(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
+    if (data[0] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: data is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
 
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
@@ -182,7 +194,7 @@ void ocp_lock_zeroization(void) {
     // Check that for a locked partition, neither the data nor the
     // digest can be written.
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    calculate_digest(partitions[CPTA_SS_LOCK_HEK_PROD2].address, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].digest_address, 0xFF, 0xFF,64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
     // Check that a non-locked partition can still be written.
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0xFF, 0xFF, 32, 0);
