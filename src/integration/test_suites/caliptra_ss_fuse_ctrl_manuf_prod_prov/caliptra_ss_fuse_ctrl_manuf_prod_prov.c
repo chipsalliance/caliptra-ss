@@ -72,7 +72,7 @@ void manuf_prod_provision() {
     dai_wr(prod_token_address, prod_token_hash[0], prod_token_hash[1], 64, 0);
     dai_wr(prod_token_address + 0x08, prod_token_hash[2], prod_token_hash[3], 64, 0);
 
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);

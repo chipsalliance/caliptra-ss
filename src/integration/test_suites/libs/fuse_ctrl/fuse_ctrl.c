@@ -156,7 +156,7 @@ void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granular
     return;
 }
 
-void calculate_digest(uint32_t partition_base_address) {
+void calculate_digest(uint32_t partition_base_address, uint32_t exp_status) {
     // Step 1: Check if DAI is idle
     wait_dai_op_idle(0);
 
@@ -167,8 +167,8 @@ void calculate_digest(uint32_t partition_base_address) {
     // Step 3: Trigger a digest calculation command
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, 0x4);
 
-    // Step 4: Poll STATUS until DAI state goes back to idle    
-    wait_dai_op_idle(0);
+    // Step 4: Poll STATUS until the DAI is idle and check that it matches the expected status
+    wait_dai_op_idle(exp_status);
     return;
 }
 

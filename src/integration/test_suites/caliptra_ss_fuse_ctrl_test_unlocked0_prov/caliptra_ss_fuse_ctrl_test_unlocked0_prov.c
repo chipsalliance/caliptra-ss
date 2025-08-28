@@ -69,7 +69,7 @@ void test_unlocked0_provision() {
         if (partitions[i].sw_digest) {
             dai_wr(partitions[i].digest_address, sentinel, 0, 64, 0);
         } else if (partitions[i].hw_digest) {
-            calculate_digest(partitions[i].address);
+            calculate_digest(partitions[i].address, 0);
         }
     } 
 
