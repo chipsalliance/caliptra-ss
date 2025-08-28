@@ -100,7 +100,9 @@ void ocp_lock_zeroization(void) {
     // This test does *not* lock the partition, to ensure that also
     // unlocked partitions can be zeroized.
 
-    // Zeroize fuse.
+    // Zeroize fuse. This test doesn't zeroize the marker field first,
+    // to check that this also works. The next test will first zeroize
+    // the marker field, which is the recommended flow.
     dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
     if (data[0] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
