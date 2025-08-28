@@ -51,9 +51,22 @@ void ocp_lock_zeroization(void) {
     // A partition that is not zeroizable.
     const partition_t ctrl_part = partitions[SW_MANUF_PARTITION];
     
-    // Zeroize the first 64-bit word of the hardware partition and its
-    // digest. This partition is buffered, secret and already locked.
-    // Zeroization should work normally.
+    // The hardware partition gets locked for reads and writes after its
+    // digest has been calculated via the DAI. Zeroization still needs
+    // to work.
+
+    // Write some data, read it back, and compare the data read back.
+    uint32_t exp_data = 0xA5A5A5A5;
+    data[0] = exp_data;
+    dai_wr(hw_part.address, data[0], data[1], hw_part.granularity, 0);
+    dai_rd(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
+    if (data[0] != exp_data) {
+        VPRINTF(LOW, "ERROR: read data does not match written data\n");
+        goto epilogue;
+    }
+
+    // Lock the partition with a HW digest calculation.
+    calculate_digest(hw_part.address);
 
     // Zeroize fuse.
     dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
