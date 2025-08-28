@@ -1,0 +1,9 @@
+---
+seed: 1
+testname: caliptra_ss_fuse_ctrl_zeroization_reset
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_fc_ocp_lock_zeroization]"
+    rm -rf otp-img.2048.vmem
+  $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py --lc-state 1 --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson --token-configuration $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/test_unlock_token.hjson -o otp-img.2048.vmem
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=caliptra_ss_fuse_ctrl_zeroization_reset mcu_program.hex
