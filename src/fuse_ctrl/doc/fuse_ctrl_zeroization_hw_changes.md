@@ -6,16 +6,16 @@ That is, all the FSM flows present before the introduction of the zeroization fe
 Below, we list two noticeable changes to the state machines of buffered/unbuffered partitions and the direct-access interface (DAI):
 
  - _Partition FSMs_: Upon reset, and only if the partition is configured as zeroizable, the partition state machines will now first read the zeroization marker before launching the initialization sequence to determine whether a partition is zeroized which will disable the peroidic consistency/integrity checks.
-Three new sequential states are added to both the buffered and unbuffered partitions:
+    Three new sequential states are added to both the buffered and unbuffered partitions:
 	```
 	            + --------------------------------------------------- +
 	 ResetSt -> | InitChkZerSt -> InitChkZerWaitSt -> InitChkZerCnfSt | -> InitSt
 	            + --------------------------------------------------- +
 	```
 	- _InitChkZerSt_: Read out the zeroization marker. Wait here until the OTP request has been granted.
-	- _InitChkZerWaitSt_: Wait for the OTP response and and write read out marker into a register.
+	- _InitChkZerWaitSt_: Wait for the OTP response and write the marker that has been read out into a register.
 	- _InitChkZerCnfSt_:  Configurations based on the read out and flopped zeroization marker.
-- _DAI FSM_: Initiating a zeroization request through the direct-acccess interface comes in the form of a new `DaiZeroize` command and two new FSM states that resemble the existing`DaiRead` and `DaiWrite` flows:
+ - _DAI FSM_: Initiating a zeroization request through the direct-acccess interface comes in the form of a new `DaiZeroize` command and two new FSM states that resemble the existing`DaiRead` and `DaiWrite` flows:
 	```
 	            + ------------------ +
 	 IdleSt  -> | ZerSt -> ZerWaitSt | -> IdleSt
