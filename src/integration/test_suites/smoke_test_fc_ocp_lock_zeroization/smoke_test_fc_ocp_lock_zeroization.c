@@ -166,8 +166,6 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    initialize_otp_controller();
-
     ocp_lock_zeroization();
 
     for (uint8_t ii = 0; ii < 160; ii++) {
