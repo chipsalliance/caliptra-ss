@@ -129,7 +129,19 @@ void ocp_lock_zeroization(void) {
         VPRINTF(LOW, "ERROR: read data does not match written data\n");
         goto epilogue;
     }
-    dai_zer(sw_part1.zer_address, &data[0], &data[1], sw_part1.granularity, 0);
+    // Zeroize marker before data, as recommended.
+    dai_zer(sw_part1.zer_address, &data[0], &data[1], 64, 0);
+    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: marker is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
+    dai_zer(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
+    if (data[0] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: data is not zeroized\n");
+        goto epilogue;
+    }
+    memset(data, 0, 2*sizeof(uint32_t));
 
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
