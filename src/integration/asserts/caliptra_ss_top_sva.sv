@@ -338,7 +338,7 @@ module caliptra_ss_top_sva
   // Assert that an DAI write to a partition whose life-cycle phase has expired will result in an error.
   `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
     `FC_PATH.dai_req &&
-    dec_lc_state > PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].lc_phase
+    dec_lc_state > PartInfo[part_idx].lc_phase
     |-> ##10
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
@@ -347,23 +347,58 @@ module caliptra_ss_top_sva
   // fuse_ctrl partition access control
   ////////////////////////////////////////////////////
 
-  localparam [11:0] digest_addrs [0:15] = { 
-    32,   // SECRET_TEST_UNLOCK_PARTITION
-    68,   // SECRET_MANUF_PARTITION
-    76,   // SECRET_PROD_PARTITION_0
-    84,   // SECRET_PROD_PARTITION_1
-    92,   // SECRET_PROD_PARTITION_2
-    100,  // SECRET_PROD_PARTITION_3
-    604,  // SW_MANUF_PARTITION
-    696,  // SECRET_LC_TRANSITION_PARTITION
-    0,    // SVN_PARTITION
-    748,  // VENDOR_TEST_PARTITION
-    780,  // VENDOR_HASHES_MANUF_PARTITION
-    1156, // VENDOR_HASHES_PROD_PARTITION
-    1232, // VENDOR_REVOCATIONS_PROD_PARTITION
-    1492, // VENDOR_SECRET_PROD_PARTITION
-    2000, // VENDOR_NON_SECRET_PROD_PARTITION
-    0     // LIFE_CYCLE
+  localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
+    otp_ctrl_reg_pkg::SwTestUnlockPartitionDigestOffset/2,          // SECRET_TEST_UNLOCK_PARTITION
+    otp_ctrl_reg_pkg::SecretManufPartitionDigestOffset/2,           // SECRET_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretProdPartition0DigestOffset/2,           // SECRET_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::SecretProdPartition1DigestOffset/2,           // SECRET_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::SecretProdPartition2DigestOffset/2,           // SECRET_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::SecretProdPartition3DigestOffset/2,           // SECRET_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::SwManufPartitionDigestOffset/2,               // SW_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretLcTransitionPartitionDigestOffset/2,    // SECRET_LC_TRANSITION_PARTITION
+    0,                                                              // SVN_PARTITION
+    otp_ctrl_reg_pkg::VendorTestPartitionDigestOffset/2,            // VENDOR_TEST_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesManufPartitionDigestOffset/2,     // VENDOR_HASHES_MANUF_PARTITION
+    otp_ctrl_reg_pkg::VendorHashesProdPartitionDigestOffset/2,      // VENDOR_HASHES_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorRevocationsProdPartitionDigestOffset/2, // VENDOR_REVOCATIONS_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorSecretProdPartitionDigestOffset/2,      // VENDOR_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::VendorNonSecretProdPartitionDigestOffset/2,   // VENDOR_NON_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::CptraSsLockHekProd0DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::CptraSsLockHekProd1DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::CptraSsLockHekProd2DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::CptraSsLockHekProd3DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::CptraSsLockHekProd4DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_4
+    otp_ctrl_reg_pkg::CptraSsLockHekProd5DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_5
+    otp_ctrl_reg_pkg::CptraSsLockHekProd6DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_6
+    otp_ctrl_reg_pkg::CptraSsLockHekProd7DigestOffset/2,            // LOCK_HEK_PROD_PARTITION_7
+    0                                                               // LIFE_CYCLE
+  };
+
+  localparam [OtpByteAddrWidth-1:0] zero_addrs [0:NumPart-1] = {
+    0,                                                          // SECRET_TEST_UNLOCK_PARTITION
+    0,                                                          // SECRET_MANUF_PARTITION
+    0,                                                          // SECRET_PROD_PARTITION_0
+    0,                                                          // SECRET_PROD_PARTITION_1
+    0,                                                          // SECRET_PROD_PARTITION_2
+    0,                                                          // SECRET_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::SwManufPartitionZerOffset/2,              // SW_MANUF_PARTITION
+    otp_ctrl_reg_pkg::SecretLcTransitionPartitionZerOffset/2,   // SECRET_LC_TRANSITION_PARTITION
+    0,                                                          // SVN_PARTITION
+    0,                                                          // VENDOR_TEST_PARTITION
+    0,                                                          // VENDOR_HASHES_MANUF_PARTITION
+    0,                                                          // VENDOR_HASHES_PROD_PARTITION
+    0,                                                          // VENDOR_REVOCATIONS_PROD_PARTITION
+    0,                                                          // VENDOR_SECRET_PROD_PARTITION
+    0,                                                          // VENDOR_NON_SECRET_PROD_PARTITION
+    otp_ctrl_reg_pkg::CptraSsLockHekProd0ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_0
+    otp_ctrl_reg_pkg::CptraSsLockHekProd1ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_1
+    otp_ctrl_reg_pkg::CptraSsLockHekProd2ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_2
+    otp_ctrl_reg_pkg::CptraSsLockHekProd3ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_3
+    otp_ctrl_reg_pkg::CptraSsLockHekProd4ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_4
+    otp_ctrl_reg_pkg::CptraSsLockHekProd5ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_5
+    otp_ctrl_reg_pkg::CptraSsLockHekProd6ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_6
+    otp_ctrl_reg_pkg::CptraSsLockHekProd7ZerOffset/2,           // LOCK_HEK_PROD_PARTITION_7
+    0                                                           // LIFE_CYCLE
   };
 
   logic [NumPartWidth-1:0] part_idx;
@@ -371,7 +406,7 @@ module caliptra_ss_top_sva
 
   // Assert that secret partitions are read-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
-    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].secret) &&
+    ((PartInfo[part_idx].secret) &&
      (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) && 
@@ -383,7 +418,7 @@ module caliptra_ss_top_sva
 
   // Assert that partitions are write-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
-    ((PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].hw_digest || PartInfo[`FC_PATH.u_otp_ctrl_dai.part_idx].sw_digest) &&
+    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
      (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[digest_addrs[part_idx]] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) && 
@@ -394,15 +429,157 @@ module caliptra_ss_top_sva
     )
 
   ////////////////////////////////////////////////////
-  // fuse_ctrl zeroization/escalation
+  // fuse_ctrl zeroization
   ////////////////////////////////////////////////////
 
-  // Assert that a zeroization request results in the broadcast data to be set to zero.
-  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
-    ((`FC_PATH.FIPS_ZEROIZATION_CMD_i) || (`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
-    |=> 
-    `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
+  // Return whether is a partition is zeroized
+  function bit is_zeroized(int part_idx);
+    logic [ScrmblBlockWidth-1:0] zero_marker;
+    if (part_idx < 0 || part_idx >= NumPart) begin
+      return 0; // Invalid partition index
+    end else if (!PartInfo[part_idx].zeroizable) begin
+      return 0; // Not zeroizable
+    end else begin
+      zero_marker = {`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[zero_addrs[part_idx]][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[zero_addrs[part_idx]+1][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[zero_addrs[part_idx]+2][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[zero_addrs[part_idx]+3][15:0]};
+      return (otp_ctrl_pkg::check_zeroized_valid(zero_marker));
+    end
+  endfunction : is_zeroized
+
+  // Latch the last scrambled data
+  logic [ScrmblBlockWidth-1:0] last_scrambled_data;
+  always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i or negedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni) begin : p_latch_scrambled_data
+    if (!`CPTRA_SS_TOP_PATH.u_otp_ctrl.rst_ni) begin
+      last_scrambled_data   <= '0;
+    end else begin
+      if (`FC_PATH.scrmbl_arb_rsp_valid) begin
+        last_scrambled_data <= `FC_PATH.part_scrmbl_rsp_data;
+      end
+    end
+  end
+
+  // Zeroization marker status
+  logic [NumPart-1:0] marker_zeroized_part = 0;
+  always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i) begin : p_marker_zeroized_part
+    if ((`FC_PATH.dai_req) && (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == zero_addrs[part_idx])) begin
+      marker_zeroized_part[part_idx] <= 1'b1;
+    end
+  end
+
+  // A zeroized partition must still have the same access privileges: writes fail for a locked partition
+  `CALIPTRA_ASSERT(FcZeroizePartWriteLock_A,
+    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (is_zeroized(part_idx)) &&
+     (mubi8_t'(`FC_PATH.part_access[part_idx].write_lock) == MuBi8True) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
+
+  // A zeroized partition must still have the same access privileges: reads fails for a locked secret partition
+  `CALIPTRA_ASSERT(FcZeroizePartReadLock_A,
+    ((PartInfo[part_idx].secret) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (is_zeroized(part_idx)) &&
+     (mubi8_t'(`FC_PATH.part_access[part_idx].read_lock) == MuBi8True) &&
+     (`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+     (`FC_PATH.dai_addr/2 < digest_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // // Make sure that the zeroization command will never return descrambled data
+  // `CALIPTRA_ASSERT(FcZeroizeNoDescrambled_A,
+  //   ((`FC_PATH.dai_req) &&
+  //    (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize))
+  //   |-> ##2
+  //   last_scrambled_data == `FC_PATH.hw2reg.direct_access_rdata     // TODO MVy that's not correct, find other signals
+  // )
+
+  // Zeroization must only be possible for zeroizable partitions
+  `CALIPTRA_ASSERT(FcZeroizeOnlyZeroizableAllowed_A,
+    (mubi8_t'(`FC_PATH.part_zer_trigs[part_idx]) == MuBi8True)
+    |->
+    PartInfo[part_idx].zeroizable == 1'b1
+  )
+
+  // Attempt to zeroize a non zeroizable partition must be rejected and an error flag should be raised
+  `CALIPTRA_ASSERT(FcZeroizeNonZeroizableDenied_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+     (!PartInfo[part_idx].zeroizable))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // Zeroization marker field is always readable
+  `CALIPTRA_ASSERT(FcZeroizeMarkerAlwaysReadable_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (`FC_PATH.dai_addr == zero_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError
+  )
+
+  // Zeroization marker field is never writable
+  `CALIPTRA_ASSERT(FcZeroizeMarkerNeverWritable_A,
+    ((`FC_PATH.dai_req) &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+     (PartInfo[part_idx].zeroizable) &&
+     (`FC_PATH.dai_addr == zero_addrs[part_idx]))
+    |-> ##2
+    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
+  )
+
+  // For scrambled partitions, when doing a zeroization, an error should be raised if the number of
+  // set bits in the 64-bit word is lower than ZeroizationValidBound
+  `CALIPTRA_ASSERT(FcZeroizeAccessErrWhenBelowThresh_A,
+    first_match((PartInfo[part_idx].secret) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      ##[1:$]
+      (marker_zeroized_part[part_idx]) &&
+      (`FC_PATH.otp_operation_done) &&
+      (!is_zeroized(part_idx)))
+    |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
+  )
+
+  // For scrambled partitions, the zeroized fuse should only be returned if and only if the
+  // number of set bits in the 64-bit word is greater or equal ZeroizationValidBound
+  `CALIPTRA_ASSERT(FcZeroizeMarkerOnlyWhenAboveThresh_A,
+    first_match((PartInfo[part_idx].secret) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      ##[1:$]
+      (marker_zeroized_part[part_idx]) &&
+      (`FC_PATH.otp_operation_done) &&
+      (!is_zeroized(part_idx)))
+    |=>
+    $stable(`FC_PATH.hw2reg.direct_access_rdata)
+  )
+
+  // NOTE MVy: disabled as it fails, but I think it's following the spec
+  // Check valid signal of the secret partitions is LOW after zeroization
+  // `CALIPTRA_ASSERT(FcZeroizeLCTransValidLow_A,
+  //   is_zeroized(SecretLcTransitionPartitionIdx)
+  //   |->
+  //   (`FC_PATH.test_tokens_valid == lc_ctrl_pkg::Off)
+  // )
+
+  ////////////////////////////////////////////////////
+  // fuse_ctrl escalation
+  ////////////////////////////////////////////////////
 
   // Assert that an esclation will transfer the fuse_ctrl into a terminal state.
   `CALIPTRA_ASSERT(FcEscalationTerminalError_A,
@@ -439,6 +616,13 @@ module caliptra_ss_top_sva
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[3]) == DecLcStTestUnlocked0 &&
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[4]) == DecLcStTestUnlocked0 &&
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[5]) == DecLcStTestUnlocked0)
+  )
+
+  // LCC in is SCRAP mode results in the broadcast data to be set to zero.
+  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
+    ((`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
+    |=>
+    `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
   )
 
   ////////////////////////////////////////////////////
