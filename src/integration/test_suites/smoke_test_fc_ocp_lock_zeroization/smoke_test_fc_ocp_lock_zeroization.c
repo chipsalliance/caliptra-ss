@@ -87,6 +87,19 @@ void ocp_lock_zeroization(void) {
     // digest. This partition is unbuffered, unlocked and
     // software-readable but the zeroization should nonetheless work.
 
+    // Write some data, read it back, and compare the data read back
+    uint32_t exp_data = 0xA5A5A5A5;
+    data[0] = exp_data;
+    dai_wr(sw_part0.address, data[0], data[1], sw_part0.granularity, 0);
+    dai_rd(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
+    if (data[0] != exp_data) {
+        VPRINTF(LOW, "ERROR: read data does not match written data\n");
+        goto epilogue;
+    }
+
+    // This test does *not* lock the partition, to ensure that also
+    // unlocked partitions can be zeroized.
+
     // Zeroize fuse.
     dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
     if (data[0] != 0xFFFFFFFF) {
