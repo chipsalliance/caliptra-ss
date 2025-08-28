@@ -76,7 +76,7 @@ void main (void) {
         goto epilogue;
     }
 
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
