@@ -176,7 +176,13 @@ void ocp_lock_zeroization(void) {
 
     // Lock the first three ratchet seed partition
     lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
+
+    // Check that for a locked partition, neither the data nor the
+    // digest can be written.
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].digest_address, 0x12, 0x34, 64, 0);
+
+    // Check that a non-locked partition can still be written.
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0xFF, 0xFF, 32, 0);
 
 epilogue:
