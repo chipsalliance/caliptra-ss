@@ -66,7 +66,7 @@ void ocp_lock_zeroization(void) {
     }
 
     // Lock the partition with a HW digest calculation.
-    calculate_digest(hw_part.address);
+    calculate_digest(hw_part.address, 0);
 
     // Zeroize fuse.
     dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
