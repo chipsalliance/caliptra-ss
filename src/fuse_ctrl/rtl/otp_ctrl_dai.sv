@@ -355,6 +355,7 @@ module otp_ctrl_dai
             end
             DaiZeroize: begin
               state_d = ZerSt;
+              base_sel_d = DaiOffset;
             end
             default: ; // Ignore invalid commands
           endcase // dai_cmd_i
