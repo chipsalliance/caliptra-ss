@@ -159,14 +159,14 @@ module otp_ctrl
   `CALIPTRA_ASSERT_INIT(OtpIfWidth_A, OtpIfWidth == ScrmblBlockWidth)
 
   // These error codes need to be identical.
-  `CALIPTRA_ASSERT_INIT(ErrorCodeWidth_A, OtpErrWidth == caliptra_prim_otp_pkg::ErrWidth)
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode0_A,  int'(NoError) == int'(caliptra_prim_otp_pkg::NoError))
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode1_A,  int'(MacroError) == int'(caliptra_prim_otp_pkg::MacroError))
-  `CALIPTRA_ASSERT_INIT(OtpErrorCode2_A,  int'(MacroEccCorrError) == int'(caliptra_prim_otp_pkg::MacroEccCorrError))
+  `CALIPTRA_ASSERT_INIT(ErrorCodeWidth_A, OtpErrWidth == prim_generic_otp_pkg::ErrWidth)
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode0_A,  int'(NoError) == int'(prim_generic_otp_pkg::NoError))
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode1_A,  int'(MacroError) == int'(prim_generic_otp_pkg::MacroError))
+  `CALIPTRA_ASSERT_INIT(OtpErrorCode2_A,  int'(MacroEccCorrError) == int'(prim_generic_otp_pkg::MacroEccCorrError))
   `CALIPTRA_ASSERT_INIT(OtpErrorCode3_A,
-               int'(MacroEccUncorrError) == int'(caliptra_prim_otp_pkg::MacroEccUncorrError))
+               int'(MacroEccUncorrError) == int'(prim_generic_otp_pkg::MacroEccUncorrError))
   `CALIPTRA_ASSERT_INIT(OtpErrorCode4_A,
-               int'(MacroWriteBlankError) == int'(caliptra_prim_otp_pkg::MacroWriteBlankError))
+               int'(MacroWriteBlankError) == int'(prim_generic_otp_pkg::MacroWriteBlankError))
 
   /////////////
   // Regfile //
@@ -406,6 +406,14 @@ module otp_ctrl
       end
     end
 
+    // Intercept write requests to the ratchet seed partitions and lock them
+    // based on the value in `RATCHET_SEED_VOLATILE_LOCK`.
+    for (int i = 0; i < NumRatchetSeedPartitions; i++) begin
+      if (i < reg2hw.ratchet_seed_volatile_lock) begin
+        part_access_pre[CptraSsLockHekProd0Idx+i].write_lock = MuBi8True;
+      end
+    end
+
     // XXX: Maybe encode the LC state index directly into the LC partition
     // instead of decoding it on-the-fly.
     unique case (otp_lc_data_o.state)
@@ -477,11 +485,13 @@ module otp_ctrl
                                    !reg2hw.direct_access_regwen.q) ? 1'b0 : direct_access_regwen_q;
 
   // Any write to this register triggers a DAI command.
-  assign dai_req = reg2hw.direct_access_cmd.digest.qe |
+  assign dai_req = reg2hw.direct_access_cmd.zeroize.qe |
+                   reg2hw.direct_access_cmd.digest.qe |
                    reg2hw.direct_access_cmd.wr.qe  |
                    reg2hw.direct_access_cmd.rd.qe;
 
-  assign dai_cmd = dai_cmd_e'({reg2hw.direct_access_cmd.digest.q,
+  assign dai_cmd = dai_cmd_e'({reg2hw.direct_access_cmd.zeroize.q,
+                               reg2hw.direct_access_cmd.digest.q,
                                reg2hw.direct_access_cmd.wr.q,
                                reg2hw.direct_access_cmd.rd.q});
 
@@ -762,7 +772,7 @@ end
   ///////////////////////////////
 
   typedef struct packed {
-    caliptra_prim_otp_pkg::cmd_e          cmd;
+    prim_generic_otp_pkg::cmd_e          cmd;
     logic [OtpSizeWidth-1:0]     size; // Number of native words to write.
     logic [OtpIfWidth-1:0]       wdata;
     logic [OtpAddrWidth-1:0]     addr; // Halfword address.
@@ -799,7 +809,7 @@ end
   assign otp_prim_valid     = otp_arb_valid & otp_rsp_fifo_ready;
   assign otp_rsp_fifo_valid = otp_prim_ready & otp_prim_valid;
 
-  caliptra_prim_otp_pkg::err_e          part_otp_err;
+  prim_generic_otp_pkg::err_e          part_otp_err;
   logic [OtpIfWidth-1:0]       part_otp_rdata;
   logic                        otp_rvalid;
   tlul_pkg::tl_h2d_t           prim_tl_h2d_gated;
@@ -989,6 +999,8 @@ end
   logic                           part_init_req;
   logic [NumPart-1:0]             part_init_done;
   part_access_t [NumPart-1:0]     part_access_dai;
+  mubi8_t [NumPart-1:0]           part_zer_trigs;
+  mubi8_t [NumPart-1:0]           part_is_zer;
 
   // The init request comes from the power manager, which lives in the AON clock domain.
   logic pwr_otp_req_synced;
@@ -1066,7 +1078,9 @@ end
     .scrmbl_valid_o   ( part_scrmbl_req_bundle[DaiIdx].valid  ),
     .scrmbl_ready_i   ( part_scrmbl_req_ready[DaiIdx]         ),
     .scrmbl_valid_i   ( part_scrmbl_rsp_valid[DaiIdx]         ),
-    .scrmbl_data_i    ( part_scrmbl_rsp_data                  )
+    .scrmbl_data_i    ( part_scrmbl_rsp_data                  ),
+    .zer_trigs_o      ( part_zer_trigs                        ),
+    .zer_i            ( part_is_zer                           )
   );
 
   ////////////////////////////////////
@@ -1128,29 +1142,31 @@ end
       ) u_part_unbuf (
         .clk_i,
         .rst_ni,
-        .init_req_i    ( part_init_req                ),
-        .init_done_o   ( part_init_done[k]            ),
-        .escalate_en_i ( lc_escalate_en[k]            ),
-        .error_o       ( part_error[k]                ),
-        .fsm_err_o     ( part_fsm_err[k]              ),
-        .access_i      ( part_access[k]               ),
-        .access_o      ( part_access_dai[k]           ),
-        .digest_o      ( part_digest[k]               ),
-        .tlul_req_i    ( part_tlul_req[k]             ),
-        .tlul_gnt_o    ( part_tlul_gnt[k]             ),
-        .tlul_addr_i   ( part_tlul_addr               ),
-        .tlul_rerror_o ( part_tlul_rerror[k]          ),
-        .tlul_rvalid_o ( part_tlul_rvalid[k]          ),
-        .tlul_rdata_o  ( part_tlul_rdata[k]           ),
-        .otp_req_o     ( part_otp_arb_req[k]          ),
-        .otp_cmd_o     ( part_otp_arb_bundle[k].cmd   ),
-        .otp_size_o    ( part_otp_arb_bundle[k].size  ),
-        .otp_wdata_o   ( part_otp_arb_bundle[k].wdata ),
-        .otp_addr_o    ( part_otp_arb_bundle[k].addr  ),
-        .otp_gnt_i     ( part_otp_arb_gnt[k]          ),
-        .otp_rvalid_i  ( part_otp_rvalid[k]           ),
-        .otp_rdata_i   ( part_otp_rdata               ),
-        .otp_err_i     ( part_otp_err                 )
+        .init_req_i      ( part_init_req                ),
+        .init_done_o     ( part_init_done[k]            ),
+        .escalate_en_i   ( lc_escalate_en[k]            ),
+        .error_o         ( part_error[k]                ),
+        .fsm_err_o       ( part_fsm_err[k]              ),
+        .access_i        ( part_access[k]               ),
+        .access_o        ( part_access_dai[k]           ),
+        .digest_o        ( part_digest[k]               ),
+        .tlul_req_i      ( part_tlul_req[k]             ),
+        .tlul_gnt_o      ( part_tlul_gnt[k]             ),
+        .tlul_addr_i     ( part_tlul_addr               ),
+        .tlul_rerror_o   ( part_tlul_rerror[k]          ),
+        .tlul_rvalid_o   ( part_tlul_rvalid[k]          ),
+        .tlul_rdata_o    ( part_tlul_rdata[k]           ),
+        .otp_req_o       ( part_otp_arb_req[k]          ),
+        .otp_cmd_o       ( part_otp_arb_bundle[k].cmd   ),
+        .otp_size_o      ( part_otp_arb_bundle[k].size  ),
+        .otp_wdata_o     ( part_otp_arb_bundle[k].wdata ),
+        .otp_addr_o      ( part_otp_arb_bundle[k].addr  ),
+        .otp_gnt_i       ( part_otp_arb_gnt[k]          ),
+        .otp_rvalid_i    ( part_otp_rvalid[k]           ),
+        .otp_rdata_i     ( part_otp_rdata               ),
+        .otp_err_i       ( part_otp_err                 ),
+        .zer_trig_i      ( part_zer_trigs[k]            ),
+        .zer_o           ( part_is_zer[k]               )
       );
 
       // Tie off unused connections.
@@ -1215,7 +1231,9 @@ end
         .scrmbl_valid_o    ( part_scrmbl_req_bundle[k].valid ),
         .scrmbl_ready_i    ( part_scrmbl_req_ready[k]        ),
         .scrmbl_valid_i    ( part_scrmbl_rsp_valid[k]        ),
-        .scrmbl_data_i     ( part_scrmbl_rsp_data            )
+        .scrmbl_data_i     ( part_scrmbl_rsp_data            ),
+        .zer_trig_i        ( part_zer_trigs[k]               ),
+        .zer_o             ( part_is_zer[k]                  )
       );
 
       // Buffered partitions are not accessible via the TL-UL window.
@@ -1273,7 +1291,9 @@ end
         .scrmbl_valid_o    (                                 ),
         .scrmbl_ready_i    ( 1'b0                            ),
         .scrmbl_valid_i    ( 1'b0                            ),
-        .scrmbl_data_i     ( '0                              )
+        .scrmbl_data_i     ( '0                              ),
+        .zer_trig_i        ( part_zer_trigs[k]               ),
+        .zer_o             ( part_is_zer[k]                  )
       );
 
       // Buffered partitions are not accessible via the TL-UL window.
@@ -1308,7 +1328,7 @@ end
   //////////////////////////////////
   // Buffered Data Output Mapping //
   //////////////////////////////////
-
+  
   // Output complete hardware config partition.
   // Actual mapping to other IPs is done via the intersignal topgen feature,
   // selection of fields can be done using the otp_hw_cfg_t struct fields.
@@ -1363,9 +1383,13 @@ end
 
   lc_ctrl_pkg::lc_tx_t test_tokens_valid, rma_token_valid, secrets_valid;
   // The transition tokens have been provisioned.
-  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign test_tokens_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                              mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                              lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The rma token has been provisioned.
-  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0) ? lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
+  assign rma_token_valid = (part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])) ?
+                            lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
 
@@ -1432,7 +1456,9 @@ end
   `CALIPTRA_ASSERT_KNOWN(OtpLcDataKnown_A,            otp_lc_data_o)
   `CALIPTRA_ASSERT_KNOWN(OtpBroadcastKnown_A,         otp_broadcast_o)
 
-  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 |-> test_tokens_valid == lc_ctrl_pkg::On)
+  `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 &&
+                                            mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])
+                                            |-> test_tokens_valid == lc_ctrl_pkg::On)
 
   // Redirect error triggers to the state error alert port.
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])

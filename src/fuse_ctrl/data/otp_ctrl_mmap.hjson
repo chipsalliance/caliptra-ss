@@ -85,6 +85,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN",
@@ -110,6 +111,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_UDS_SEED",
@@ -137,6 +139,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_0",
@@ -164,6 +167,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_1",
@@ -191,6 +195,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_2",
@@ -218,6 +223,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_3",
@@ -245,6 +251,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStDev",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_ANTI_ROLLBACK_DISABLE",
@@ -375,6 +382,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStTestUnlocked0",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_SS_TEST_UNLOCK_TOKEN_1",
@@ -490,6 +498,7 @@
             integrity:    false,
             bkout_type:   false,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
@@ -537,6 +546,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name: "VENDOR_TEST",
@@ -563,6 +573,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStDev",
+            zeroizable:   false,
             items: [
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_0",
@@ -595,6 +606,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                            
                 {
@@ -888,6 +900,7 @@
             integrity:    false, // Do not use integrity (ECC) on this partition.
             bkout_type:   false, // Do not generate a breakout type for this partition.
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                 {
                     name:   "CPTRA_SS_OWNER_ECC_REVOCATION",
@@ -1314,6 +1327,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_SS_VENDOR_SPECIFIC_SECRET_FUSE_0",
@@ -1444,6 +1458,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStProd",
+            zeroizable:   false,
             items: [
                {
                     name: "CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0",
@@ -1546,6 +1561,198 @@
             '''
         },
         {
+            name: "CPTRA_SS_LOCK_HEK_PROD_0",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 0."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 0.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_1",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 1."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 1.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_2",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 2."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 2.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_3",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 3."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 3.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_4",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 4."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 4.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_5",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 5."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 5.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_6",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 6."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 6.
+            '''
+        },
+        {
+            name: "CPTRA_SS_LOCK_HEK_PROD_7",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "CSR",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStProd",
+            zeroizable:   true,
+            items: [
+               {
+                    name: "CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED",
+                    size: "32",
+                    desc: "OCP L.O.C.K HEK ratchet seed slot 7."
+                },
+            ],
+            desc: '''OCP L.O.C.K Hard Epoch Key (HEK) ratchet seed slot 7.
+            '''
+        },
+        {
             name:         "LIFE_CYCLE",
             variant:      "LifeCycle",
             absorb:       false,
@@ -1558,6 +1765,7 @@
             integrity:    true,
             bkout_type:   false,
             lc_phase:     "LcStRaw",
+            zeroizable:   false,
             items: [
                 // The life cycle transition count is specified
                 // first such that any programming attempt of the life cycle

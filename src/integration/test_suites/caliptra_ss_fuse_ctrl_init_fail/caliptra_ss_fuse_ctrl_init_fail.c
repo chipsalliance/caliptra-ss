@@ -64,7 +64,7 @@ void init_fail() {
 
     // Write one word in the selected partition and lock it afterwards.
     dai_wr(partition.address, 0x1, 0x2, partition.granularity, 0);
-    calculate_digest(partition.address);
+    calculate_digest(partition.address, 0);
 
     // Inject either a correctable or uncorrectable error into the written partition.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, fault);
