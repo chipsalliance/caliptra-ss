@@ -74,7 +74,7 @@ void iterate_test_unlock_states() {
         dai_wr(base_address + 0x08 + 0x10*i, hashed_tokens[i][2], hashed_tokens[i][3], 64, 0);
     }
 
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);

@@ -1,3 +1,4 @@
 num_vendor_pk_fuses: 16
 num_vendor_secret_fuses: 16
 num_vendor_non_secret_fuses: 16
+num_ratchet_seed_partitions: 8

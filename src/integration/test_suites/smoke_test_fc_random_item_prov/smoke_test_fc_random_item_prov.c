@@ -147,7 +147,7 @@ void program_vendor_secret_prod_partition(uint32_t seed) {
     }
 
     // Step 4
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
 
     // Step 5
     reset_fc_lcc_rtl();

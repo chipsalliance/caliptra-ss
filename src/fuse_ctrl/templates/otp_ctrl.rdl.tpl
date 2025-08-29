@@ -439,6 +439,16 @@ addrmap otp_ctrl {
         } PERIOD [31:0];
     } VENDOR_PK_HASH_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
 
+    reg {
+        desc = "Volatile write lock for ratchet seed partitions.";
+        default sw = rw;
+        default hw = r;
+        field {
+            desc = "One-hot encoded";
+            reset = 0x0;
+        } PERIOD [31:0];
+    } RATCHET_SEED_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
+
     regfile digest_t {
         /* -----------------------------------
         * Default prperties for Register File
