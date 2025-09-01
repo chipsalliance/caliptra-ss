@@ -70,6 +70,10 @@ void ocp_lock_zeroization(void) {
     // Lock the partition with a HW digest calculation.
     calculate_digest(hw_part.address, 0);
 
+    // Reset to activate the write lock of the partition.
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+
     // Zeroize fuse.
     dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
@@ -121,16 +125,24 @@ void ocp_lock_zeroization(void) {
 
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
+
     exp_data = 0xA5A5A5A5;
     data[0] = exp_data;
     dai_wr(sw_part1.address, data[0], data[1], sw_part1.granularity, 0);
+
     // This is a software partition that needs to be locked manually by firmware.
     dai_wr(sw_part1.digest_address, 0x12, 0x34, 64, 0);
+
     dai_rd(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
     if (data[0] != exp_data) {
         VPRINTF(LOW, "ERROR: read data does not match written data\n");
         goto epilogue;
     }
+    
+    // Reset to activate the write lock of the partition.
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+
     // Zeroize marker before data, as recommended.
     dai_zer(sw_part1.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
