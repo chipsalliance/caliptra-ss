@@ -151,7 +151,7 @@
     { name: "NumErrorEntries",
       desc: "Number of error register entries.",
       type: "int",
-      default: "18", // partitions + DAI/LCI
+      default: "26", // partitions + DAI/LCI
       local: "true"
     },
     { name: "NumDaiWords",
@@ -177,13 +177,13 @@
     { name: "NumPart",
       desc: "Number of partitions",
       type: "int",
-      default: "16",
+      default: "24",
       local: "true"
     },
     { name: "NumPartUnbuf",
       desc: "Number of unbuffered partitions",
       type: "int",
-      default: "7",
+      default: "15",
       local: "true"
     },
     { name: "NumPartBuf",
@@ -1965,7 +1965,7 @@
     { name: "VendorSecretProdPartitionSize",
       desc: "Size of the VENDOR_SECRET_PROD_PARTITION partition",
       type: "int",
-      default: "520",
+      default: "528",
       local: "true"
     },
     { name: "CptraSsVendorSpecificSecretFuse0Offset",
@@ -2172,10 +2172,22 @@
       default: "8",
       local: "true"
     },
+    { name: "VendorSecretProdPartitionZerOffset",
+      desc: "Offset of VENDOR_SECRET_PROD_PARTITION_ZER",
+      type: "int",
+      default: "2680",
+      local: "true"
+    },
+    { name: "VendorSecretProdPartitionZerSize",
+      desc: "Size of VENDOR_SECRET_PROD_PARTITION_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
     { name: "VendorNonSecretProdPartitionOffset",
       desc: "Offset of the VENDOR_NON_SECRET_PROD_PARTITION partition",
       type: "int",
-      default: "2680",
+      default: "2688",
       local: "true"
     },
     { name: "VendorNonSecretProdPartitionSize",
@@ -2187,7 +2199,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse0Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0",
       type: "int",
-      default: "2680",
+      default: "2688",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse0Size",
@@ -2199,7 +2211,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse1Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_1",
       type: "int",
-      default: "2712",
+      default: "2720",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse1Size",
@@ -2211,7 +2223,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse2Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_2",
       type: "int",
-      default: "2744",
+      default: "2752",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse2Size",
@@ -2223,7 +2235,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse3Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_3",
       type: "int",
-      default: "2776",
+      default: "2784",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse3Size",
@@ -2235,7 +2247,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse4Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_4",
       type: "int",
-      default: "2808",
+      default: "2816",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse4Size",
@@ -2247,7 +2259,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse5Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_5",
       type: "int",
-      default: "2840",
+      default: "2848",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse5Size",
@@ -2259,7 +2271,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse6Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_6",
       type: "int",
-      default: "2872",
+      default: "2880",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse6Size",
@@ -2271,7 +2283,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse7Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_7",
       type: "int",
-      default: "2904",
+      default: "2912",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse7Size",
@@ -2283,7 +2295,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse8Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_8",
       type: "int",
-      default: "2936",
+      default: "2944",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse8Size",
@@ -2295,7 +2307,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse9Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_9",
       type: "int",
-      default: "2968",
+      default: "2976",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse9Size",
@@ -2307,7 +2319,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse10Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_10",
       type: "int",
-      default: "3000",
+      default: "3008",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse10Size",
@@ -2319,7 +2331,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse11Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_11",
       type: "int",
-      default: "3032",
+      default: "3040",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse11Size",
@@ -2331,7 +2343,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse12Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_12",
       type: "int",
-      default: "3064",
+      default: "3072",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse12Size",
@@ -2343,7 +2355,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse13Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_13",
       type: "int",
-      default: "3096",
+      default: "3104",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse13Size",
@@ -2355,7 +2367,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse14Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_14",
       type: "int",
-      default: "3128",
+      default: "3136",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse14Size",
@@ -2367,7 +2379,7 @@
     { name: "CptraSsVendorSpecificNonSecretFuse15Offset",
       desc: "Offset of CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_15",
       type: "int",
-      default: "3160",
+      default: "3168",
       local: "true"
     },
     { name: "CptraSsVendorSpecificNonSecretFuse15Size",
@@ -2379,7 +2391,7 @@
     { name: "VendorNonSecretProdPartitionDigestOffset",
       desc: "Offset of VENDOR_NON_SECRET_PROD_PARTITION_DIGEST",
       type: "int",
-      default: "3192",
+      default: "3200",
       local: "true"
     },
     { name: "VendorNonSecretProdPartitionDigestSize",
@@ -2388,10 +2400,394 @@
       default: "8",
       local: "true"
     },
+    { name: "CptraSsLockHekProd0Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_0 partition",
+      type: "int",
+      default: "3208",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_0 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED",
+      type: "int",
+      default: "3208",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_0_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_0_DIGEST",
+      type: "int",
+      default: "3240",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_0_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_0_ZER",
+      type: "int",
+      default: "3248",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd0ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_0_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_1 partition",
+      type: "int",
+      default: "3256",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_1 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED",
+      type: "int",
+      default: "3256",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_1_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_1_DIGEST",
+      type: "int",
+      default: "3288",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_1_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_1_ZER",
+      type: "int",
+      default: "3296",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd1ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_1_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_2 partition",
+      type: "int",
+      default: "3304",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_2 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED",
+      type: "int",
+      default: "3304",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_2_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_2_DIGEST",
+      type: "int",
+      default: "3336",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_2_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_2_ZER",
+      type: "int",
+      default: "3344",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd2ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_2_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_3 partition",
+      type: "int",
+      default: "3352",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_3 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED",
+      type: "int",
+      default: "3352",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_3_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_3_DIGEST",
+      type: "int",
+      default: "3384",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_3_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_3_ZER",
+      type: "int",
+      default: "3392",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd3ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_3_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_4 partition",
+      type: "int",
+      default: "3400",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_4 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED",
+      type: "int",
+      default: "3400",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_4_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_4_DIGEST",
+      type: "int",
+      default: "3432",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_4_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_4_ZER",
+      type: "int",
+      default: "3440",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd4ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_4_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_5 partition",
+      type: "int",
+      default: "3448",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_5 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED",
+      type: "int",
+      default: "3448",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_5_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_5_DIGEST",
+      type: "int",
+      default: "3480",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_5_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_5_ZER",
+      type: "int",
+      default: "3488",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd5ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_5_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_6 partition",
+      type: "int",
+      default: "3496",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_6 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED",
+      type: "int",
+      default: "3496",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_6_DIGEST",
+      type: "int",
+      default: "3528",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_6_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_6_ZER",
+      type: "int",
+      default: "3536",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd6ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_6_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7Offset",
+      desc: "Offset of the CPTRA_SS_LOCK_HEK_PROD_7 partition",
+      type: "int",
+      default: "3544",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7Size",
+      desc: "Size of the CPTRA_SS_LOCK_HEK_PROD_7 partition",
+      type: "int",
+      default: "48",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7RatchetSeedOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED",
+      type: "int",
+      default: "3544",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7RatchetSeedSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED",
+      type: "int",
+      default: "32",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7DigestOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_7_DIGEST",
+      type: "int",
+      default: "3576",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7DigestSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_7_DIGEST",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7ZerOffset",
+      desc: "Offset of CPTRA_SS_LOCK_HEK_PROD_7_ZER",
+      type: "int",
+      default: "3584",
+      local: "true"
+    },
+    { name: "CptraSsLockHekProd7ZerSize",
+      desc: "Size of CPTRA_SS_LOCK_HEK_PROD_7_ZER",
+      type: "int",
+      default: "8",
+      local: "true"
+    },
     { name: "LifeCycleOffset",
       desc: "Offset of the LIFE_CYCLE partition",
       type: "int",
-      default: "3200",
+      default: "3592",
       local: "true"
     },
     { name: "LifeCycleSize",
@@ -2403,7 +2799,7 @@
     { name: "LcTransitionCntOffset",
       desc: "Offset of LC_TRANSITION_CNT",
       type: "int",
-      default: "3200",
+      default: "3592",
       local: "true"
     },
     { name: "LcTransitionCntSize",
@@ -2415,7 +2811,7 @@
     { name: "LcStateOffset",
       desc: "Offset of LC_STATE",
       type: "int",
-      default: "3248",
+      default: "3640",
       local: "true"
     },
     { name: "LcStateSize",
@@ -3025,59 +3421,115 @@
                   '''
           }
           { bits: "15"
-            name: "LIFE_CYCLE_ERROR"
+            name: "CPTRA_SS_LOCK_HEK_PROD_0_ERROR"
             desc: '''
                   Set to 1 if an error occurred in this partition.
                   If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
                   '''
           }
           { bits: "16"
+            name: "CPTRA_SS_LOCK_HEK_PROD_1_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "17"
+            name: "CPTRA_SS_LOCK_HEK_PROD_2_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "18"
+            name: "CPTRA_SS_LOCK_HEK_PROD_3_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "19"
+            name: "CPTRA_SS_LOCK_HEK_PROD_4_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "20"
+            name: "CPTRA_SS_LOCK_HEK_PROD_5_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "21"
+            name: "CPTRA_SS_LOCK_HEK_PROD_6_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "22"
+            name: "CPTRA_SS_LOCK_HEK_PROD_7_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "23"
+            name: "LIFE_CYCLE_ERROR"
+            desc: '''
+                  Set to 1 if an error occurred in this partition.
+                  If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
+                  '''
+          }
+          { bits: "24"
             name: "DAI_ERROR"
             desc: '''
                   Set to 1 if an error occurred in the DAI.
                   If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
                   '''
           }
-          { bits: "17"
+          { bits: "25"
             name: "LCI_ERROR"
             desc: '''
                   Set to 1 if an error occurred in the LCI.
                   If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
                   '''
           }
-          { bits: "18"
+          { bits: "26"
             name: "TIMEOUT_ERROR"
             desc: '''
                   Set to 1 if an integrity or consistency check times out.
                   This raises an fatal_check_error alert and is an unrecoverable error condition.
                   '''
           }
-          { bits: "19"
+          { bits: "27"
             name: "LFSR_FSM_ERROR"
             desc: '''
                   Set to 1 if the LFSR timer FSM has reached an invalid state.
                   This raises an fatal_check_error alert and is an unrecoverable error condition.
                   '''
           }
-          { bits: "20"
+          { bits: "28"
             name: "SCRAMBLING_FSM_ERROR"
             desc: '''
                   Set to 1 if the scrambling datapath FSM has reached an invalid state.
                   This raises an fatal_check_error alert and is an unrecoverable error condition.
                   '''
           }
-          { bits: "21"
+          { bits: "29"
             name: "BUS_INTEG_ERROR"
             desc: '''
                   This bit is set to 1 if a fatal bus integrity fault is detected.
                   This error triggers a fatal_bus_integ_error alert.
                   '''
           }
-          { bits: "22"
+          { bits: "30"
             name: "DAI_IDLE"
             desc: "Set to 1 if the DAI is idle and ready to accept commands."
           }
-          { bits: "23"
+          { bits: "31"
             name: "CHECK_PENDING"
             desc: "Set to 1 if an integrity or consistency check triggered by the LFSR timer or via !!CHECK_TRIGGER is pending."
           }
@@ -3239,6 +3691,14 @@
             desc: '''
                   Initiates the digest calculation and locking sequence for the partition specified by
                   !!DIRECT_ACCESS_ADDRESS.
+                  '''
+          }
+          { bits: "3",
+            name: "ZEROIZE",
+            desc: '''
+                  Initiates the zeroization sequence of location specified by !!DIRECT_ACCESS_ADDRESS.
+                  The command places the zeroized data into !!DIRECT_ACCESS_RDATA_0 and
+                  !!DIRECT_ACCESS_RDATA_1 (for 64bit partitions) if the execution is successful.
                   '''
           }
         ]
@@ -3589,6 +4049,174 @@
           },
         ]
       },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_0_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_0 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_0 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_1_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_1 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_1 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_2_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_2 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_2 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_3_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_3 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_3 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_4_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_4 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_4 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_5 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_5 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_6 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_6 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
+      { name: "CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK",
+        desc: '''
+              Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_7 partition.
+              ''',
+        swaccess: "rw0c",
+        hwaccess: "hro",
+        regwen:   "DIRECT_ACCESS_REGWEN",
+        tags:     [ // The value of this register can affect the read access of the this
+                    // partition's memory window. Excluding this register from writing can ensure
+                    // memories have read and write access.
+                    "excl:CsrNonInitTests:CsrExclWrite"],
+        fields: [
+          { bits:   "0",
+            desc: '''
+            When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_7 partition is locked.
+            Write 0 to clear this bit.
+            '''
+            resval: 1,
+          },
+        ]
+      },
 
       { name: "VENDOR_PK_HASH_VOLATILE_LOCK",
         desc: "Address register for direct accesses.",
@@ -3599,6 +4227,20 @@
           { bits: "31:0",
             desc: '''
                   Volatile write lock for vendor public key hashes.
+                  '''
+          }
+        ]
+      }
+
+      { name: "RATCHET_SEED_VOLATILE_LOCK",
+        desc: "Address register for direct accesses.",
+        swaccess: "rw",
+        hwaccess: "hro",
+        resval:   0,
+        fields: [
+          { bits: "31:0",
+            desc: '''
+                  Volatile write lock for ratchet seed partitions.
                   '''
           }
         ]
@@ -3897,6 +4539,190 @@
                     The integrity digest is 0 by default. Software must write this
                     digest value via the direct access interface in order to lock the partition.
                     After a reset, write access to the VENDOR_NON_SECRET_PROD_PARTITION partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_0_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_0 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_0 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_1_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_1 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_1 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_2_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_2 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_2 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_3_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_3 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_3 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_4_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_4 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_4 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_5_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_5 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_5 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_6_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_6 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_6 partition is locked and
+                    the digest becomes visible in this CSR.
+                    ''',
+          count:     "NumDigestWords",
+          swaccess:  "ro",
+          hwaccess:  "hwo",
+          hwext:     "true",
+          cname:     "WORD",
+          resval:    0,
+          tags: [ // OTP internal HW will update status so can not auto-predict its value.
+                  "excl:CsrAllTests:CsrExclCheck"],
+          fields: [
+            { bits: "31:0"
+            }
+          ]
+        }
+      },
+      { multireg: {
+          name:     "CPTRA_SS_LOCK_HEK_PROD_7_DIGEST",
+          desc:     '''
+                    Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_7 partition.
+                    The integrity digest is 0 by default. Software must write this
+                    digest value via the direct access interface in order to lock the partition.
+                    After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_7 partition is locked and
                     the digest becomes visible in this CSR.
                     ''',
           count:     "NumDigestWords",

@@ -18,3 +18,11 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 | [VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST](#Reg_vendor_revocations_prod_partition_digest_0) | VENDOR_REVOCATIONS_PROD_PARTITION |         no         |
 |      [VENDOR_SECRET_PROD_PARTITION_DIGEST](#Reg_vendor_secret_prod_partition_digest_0)      |   VENDOR_SECRET_PROD_PARTITION    |        yes         |
 |  [VENDOR_NON_SECRET_PROD_PARTITION_DIGEST](#Reg_vendor_non_secret_prod_partition_digest_0)  | VENDOR_NON_SECRET_PROD_PARTITION  |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_0_DIGEST](#Reg_cptra_ss_lock_hek_prod_0_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_0      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_1_DIGEST](#Reg_cptra_ss_lock_hek_prod_1_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_1      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_2_DIGEST](#Reg_cptra_ss_lock_hek_prod_2_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_2      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_3_DIGEST](#Reg_cptra_ss_lock_hek_prod_3_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_3      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_4_DIGEST](#Reg_cptra_ss_lock_hek_prod_4_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_4      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_5_DIGEST](#Reg_cptra_ss_lock_hek_prod_5_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_5      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_6_DIGEST](#Reg_cptra_ss_lock_hek_prod_6_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_6      |         no         |
+|          [CPTRA_SS_LOCK_HEK_PROD_7_DIGEST](#Reg_cptra_ss_lock_hek_prod_7_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_7      |         no         |

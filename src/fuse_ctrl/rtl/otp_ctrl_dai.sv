@@ -51,14 +51,14 @@ module otp_ctrl_dai
   output logic [NumDaiWords-1:0][31:0]   dai_rdata_o,
   // OTP interface
   output logic                           otp_req_o,
-  output caliptra_prim_otp_pkg::cmd_e             otp_cmd_o,
+  output prim_generic_otp_pkg::cmd_e     otp_cmd_o,
   output logic [OtpSizeWidth-1:0]        otp_size_o,
   output logic [OtpIfWidth-1:0]          otp_wdata_o,
   output logic [OtpAddrWidth-1:0]        otp_addr_o,
   input                                  otp_gnt_i,
   input                                  otp_rvalid_i,
   input  [ScrmblBlockWidth-1:0]          otp_rdata_i,
-  input  caliptra_prim_otp_pkg::err_e             otp_err_i,
+  input  prim_generic_otp_pkg::err_e     otp_err_i,
   // Scrambling mutex request
   output logic                           scrmbl_mtx_req_o,
   input                                  scrmbl_mtx_gnt_i,
@@ -70,7 +70,12 @@ module otp_ctrl_dai
   output logic                           scrmbl_valid_o,
   input  logic                           scrmbl_ready_i,
   input  logic                           scrmbl_valid_i,
-  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i
+  input  logic [ScrmblBlockWidth-1:0]    scrmbl_data_i,
+  // Zeroization trigger indicators for each partition.
+  // The first successful zeroization request will set the
+  // corresponding MuBi in the array.
+  output mubi8_t [NumPart-1:0] zer_trigs_o,
+  input mubi8_t [NumPart-1:0] zer_i
 );
 
   ////////////////////////
@@ -90,10 +95,9 @@ module otp_ctrl_dai
   // DAI Control FSM //
   /////////////////////
 
-  // SEC_CM: DAI.FSM.SPARSE
   // Encoding generated with:
-  // $ ./util/design/sparse-fsm-encode.py -d 5 -m 20 -n 12 \
-  //      -s 3011551511 --language=sv
+  // $ ./util/design/sparse-fsm-encode.py -d 4 -m 22 -n 12 \
+  //     -s 803253351 --language=sv
   //
   // Hamming distance histogram:
   //
@@ -101,43 +105,45 @@ module otp_ctrl_dai
   //  1: --
   //  2: --
   //  3: --
-  //  4: --
-  //  5: |||||||||||||||| (31.05%)
-  //  6: |||||||||||||||||||| (36.84%)
-  //  7: |||||||| (15.26%)
-  //  8: |||| (8.95%)
-  //  9: || (5.26%)
-  // 10:  (1.58%)
-  // 11:  (1.05%)
+  //  4: |||||||||| (12.99%)
+  //  5: |||||||||||||||||||| (25.11%)
+  //  6: |||||||||||||||| (21.21%)
+  //  7: |||||||||||||||| (20.35%)
+  //  8: |||||||||| (12.99%)
+  //  9: |||| (6.06%)
+  // 10:  (0.87%)
+  // 11:  (0.43%)
   // 12: --
   //
-  // Minimum Hamming distance: 5
+  // Minimum Hamming distance: 4
   // Maximum Hamming distance: 11
-  // Minimum Hamming weight: 2
+  // Minimum Hamming weight: 3
   // Maximum Hamming weight: 9
   //
   localparam int StateWidth = 12;
   typedef enum logic [StateWidth-1:0] {
-    ResetSt       = 12'b101111010100,
-    InitOtpSt     = 12'b110000110010,
-    InitPartSt    = 12'b000111111001,
-    IdleSt        = 12'b111010000011,
-    ErrorSt       = 12'b100010001110,
-    ReadSt        = 12'b100101100110,
-    ReadWaitSt    = 12'b001100000000,
-    DescrSt       = 12'b011000101111,
-    DescrWaitSt   = 12'b110101011111,
-    WriteSt       = 12'b110111001000,
-    WriteWaitSt   = 12'b111001111100,
-    ScrSt         = 12'b000000010101,
-    ScrWaitSt     = 12'b010110110100,
-    DigClrSt      = 12'b001111001111,
-    DigReadSt     = 12'b001001110011,
-    DigReadWaitSt = 12'b101110111010,
-    DigSt         = 12'b011111100010,
-    DigPadSt      = 12'b011010011000,
-    DigFinSt      = 12'b110011100101,
-    DigWaitSt     = 12'b100000101001
+    ResetSt       = 12'b111001101100,
+    InitOtpSt     = 12'b000011010001,
+    InitPartSt    = 12'b101100000010,
+    IdleSt        = 12'b101011110010,
+    ErrorSt       = 12'b110010101001,
+    ReadSt        = 12'b001111011011,
+    ReadWaitSt    = 12'b000000111101,
+    DescrSt       = 12'b100110010100,
+    DescrWaitSt   = 12'b010100010001,
+    WriteSt       = 12'b010111001100,
+    WriteWaitSt   = 12'b101100100101,
+    ScrSt         = 12'b110001010011,
+    ScrWaitSt     = 12'b000101010110,
+    DigClrSt      = 12'b011010111100,
+    DigReadSt     = 12'b101011011100,
+    DigReadWaitSt = 12'b101001001001,
+    DigSt         = 12'b001110101001,
+    DigPadSt      = 12'b001101100000,
+    DigFinSt      = 12'b010010110111,
+    DigWaitSt     = 12'b110101101111,
+    ZerSt         = 12'b000100111010,
+    ZerWaitSt     = 12'b001000001100
   } state_e;
 
   typedef enum logic [1:0] {
@@ -163,7 +169,9 @@ module otp_ctrl_dai
   logic [ScrmblBlockWidth-1:0] data_q;
   logic [NumPartWidth-1:0] part_idx;
   logic [NumPart-1:0][OtpAddrWidth-1:0] digest_addr_lut;
+  logic [NumPart-1:0][OtpAddrWidth-1:0] zeroize_addr_lut;
   logic part_sel_valid;
+  mubi8_t [NumPart-1:0] zer_trigs_d;
 
   // Depending on the partition configuration, the wrapper is instructed to ignore integrity
   // calculations and checks. To be on the safe side, the partition filters error responses at this
@@ -187,6 +195,42 @@ module otp_ctrl_dai
   // after digest and write ops.
   assign dai_rdata_o   = (state_q == IdleSt) ? data_q : '0;
 
+  ///////////////////////
+  // Zeroization Check //
+  ///////////////////////
+
+  // The read-out data is is buffered and replicated, then screened for the
+  // zeroization marker. This is only relevant for the `ZEROIZE` command to
+  // prevent exposing scrambled data to software.
+
+  localparam int ZerFanout = 4;
+
+  // Compose several individual MuBis into a larger MuBi. The resulting
+  // value must always be a valid MuBi constant (either `true` or `false`).
+  logic   [ZerFanout-1:0][ScrmblBlockWidth-1:0] otp_rdata_post;
+  mubi4_t [ZerFanout-1:0] zeroized_valid_pre;
+  mubi16_t zeroized_valid;
+  for (genvar k = 0; k < ZerFanout; k++) begin
+    caliptra_prim_buf #(
+      .Width(ScrmblBlockWidth)
+    ) u_rdata_buf (
+      .in_i  ( otp_rdata_i       ),
+      .out_o ( otp_rdata_post[k] )
+    );
+
+    // Interleave MuBi4 chunks to create a higher-order MuBi.
+    // Even indices: (MuBi4True, MuBi4False)
+    // Odd indices:  (MuBi4False, MuBi4True)
+    assign zeroized_valid_pre[k] = (check_zeroized_valid(otp_rdata_post[k]) ^~ (k % 2 == 0)) ? MuBi4True : MuBi4False;
+  end
+
+  caliptra_prim_buf #(
+    .Width(MuBi16Width)
+  ) u_zeroized_valid_buf (
+    .in_i  ( zeroized_valid_pre ),
+    .out_o ( {zeroized_valid}   )
+  );
+
   always_comb begin : p_fsm
     state_d = state_q;
 
@@ -201,7 +245,7 @@ module otp_ctrl_dai
 
     // OTP signals
     otp_req_o = 1'b0;
-    otp_cmd_o = caliptra_prim_otp_pkg::Init;
+    otp_cmd_o = prim_generic_otp_pkg::Init;
 
     // Scrambling mutex
     scrmbl_mtx_req_o = 1'b0;
@@ -226,6 +270,9 @@ module otp_ctrl_dai
     // Error Register
     error_d = error_q;
     fsm_err_o = 1'b0;
+
+    // Zeroization trigger
+    zer_trigs_d = zer_trigs_o;
 
     unique case (state_q)
       ///////////////////////////////////////////////////////////////////
@@ -306,6 +353,10 @@ module otp_ctrl_dai
               scrmbl_mtx_req_o = 1'b1;
               base_sel_d = PartOffset;
             end
+            DaiZeroize: begin
+              state_d = ZerSt;
+              base_sel_d = DaiOffset;
+            end
             default: ; // Ignore invalid commands
           endcase // dai_cmd_i
         end // dai_req_i
@@ -317,16 +368,17 @@ module otp_ctrl_dai
       // request a block of data from OTP.
       ReadSt: begin
         if (part_sel_valid && (mubi8_test_false_strict(part_access_i[part_idx].read_lock) ||
-                               // HW digests always remain readable.
-                               PartInfo[part_idx].hw_digest && otp_addr_o ==
-                                                               digest_addr_lut[part_idx])) begin
+                               // HW digests and zeroization marker always remain readable.
+                               (PartInfo[part_idx].hw_digest && otp_addr_o == digest_addr_lut[part_idx]) ||
+                               (PartInfo[part_idx].zeroizable && otp_addr_o == zeroize_addr_lut[part_idx]))) begin
           otp_req_o = 1'b1;
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
-          if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Read;
+          if (PartInfo[part_idx].integrity && mubi8_test_false_loose(zer_i[part_idx]) &&
+              !(otp_addr_o == zeroize_addr_lut[part_idx])) begin
+            otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+            otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
           end
           if (otp_gnt_i) begin
             state_d = ReadWaitSt;
@@ -345,15 +397,15 @@ module otp_ctrl_dai
       ReadWaitSt: begin
         // Continuously check read access and bail out if this is not consistent.
         if (part_sel_valid && (mubi8_test_false_strict(part_access_i[part_idx].read_lock) ||
-                               // HW digests always remain readable.
-                               PartInfo[part_idx].hw_digest && otp_addr_o ==
-                                                               digest_addr_lut[part_idx])) begin
+                               // HW digests and zeroization marker always remain readable.
+                               (PartInfo[part_idx].hw_digest && otp_addr_o == digest_addr_lut[part_idx]) ||
+                               (PartInfo[part_idx].zeroizable && otp_addr_o == zeroize_addr_lut[part_idx]))) begin
           if (otp_rvalid_i) begin
             // Check OTP return code.
             if (otp_err inside {NoError, MacroEccCorrError}) begin
               data_en = 1'b1;
-              // We do not need to descramble the digest values.
-              if (PartInfo[part_idx].secret && otp_addr_o != digest_addr_lut[part_idx]) begin
+              // We do not need to descramble the digest and zeroization fields..
+              if (PartInfo[part_idx].secret && otp_addr_o != digest_addr_lut[part_idx] && otp_addr_o != zeroize_addr_lut[part_idx]) begin
                 state_d = DescrSt;
               end else begin
                 state_d = IdleSt;
@@ -428,9 +480,9 @@ module otp_ctrl_dai
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
           if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Write;
+            otp_cmd_o = prim_generic_otp_pkg::Write;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::WriteRaw;
+            otp_cmd_o = prim_generic_otp_pkg::WriteRaw;
           end
           if (otp_gnt_i) begin
             state_d = WriteWaitSt;
@@ -562,9 +614,9 @@ module otp_ctrl_dai
           // Depending on the partition configuration,
           // the wrapper is instructed to ignore integrity errors.
           if (PartInfo[part_idx].integrity) begin
-            otp_cmd_o = caliptra_prim_otp_pkg::Read;
+            otp_cmd_o = prim_generic_otp_pkg::Read;
           end else begin
-            otp_cmd_o = caliptra_prim_otp_pkg::ReadRaw;
+            otp_cmd_o = prim_generic_otp_pkg::ReadRaw;
           end
           if (otp_gnt_i) begin
             state_d = DigReadWaitSt;
@@ -668,6 +720,80 @@ module otp_ctrl_dai
           data_en = 1'b1;
         end
       end
+
+      ///////////////////////////////////////////////////////////////////
+      // Check whether partition is zeroizable and transition into the
+      // wait state once the OTP request has been granted.
+      ZerSt: begin
+        dai_prog_idle_o = 1'b0;
+        if (// Fuses in a partition can only be zeroized if the partition
+            // is parametrized to allow it.
+            PartInfo[part_idx].zeroizable &&
+            // Check that the address is not out-of-bounds.
+            part_sel_valid &&
+            // Check that the AXI user ID is correct.
+            !discard_fuse_write_i &&
+            // The entire address space of a zeroizable partition can be cleared
+            base_sel_q == DaiOffset) begin
+          otp_req_o = 1'b1;
+          otp_cmd_o = prim_generic_otp_pkg::Zeroize;
+          if (otp_gnt_i) begin
+            state_d = ZerWaitSt;
+          end
+        end else begin
+          // Clear working register state.
+          discarded_fuse_write_d = 1'b1;
+          data_clr = 1'b1;
+          state_d = IdleSt;
+          error_d = AccessError; // Signal this error, but do not go into terminal error state.
+          dai_cmd_done_o = 1'b1;
+        end
+      end
+
+      ///////////////////////////////////////////////////////////////////
+      // Wait for OTP response to the zeroization request. An error or
+      // a non-zeroized value will not be returned to software. Note that
+      // in order to retry a failed zeroization requeset all errors are
+      // treated as recoverable.
+      ZerWaitSt: begin
+        dai_prog_idle_o = 1'b0;
+        // Continuously check write access and bail out if this is not consistent.
+        if (PartInfo[part_idx].zeroizable &&
+            // The entire address space of a zeroizable partition is writable.
+            base_sel_q == DaiOffset) begin
+          if (otp_rvalid_i) begin
+
+            dai_cmd_done_o = 1'b1;
+            state_d = IdleSt;
+
+            if (otp_err == NoError) begin
+              if (PartInfo[part_idx].secret) begin
+                // Only release the zeroized fuse when the read out data reaches
+                // the valid threshold.
+                if (mubi16_test_true_strict(zeroized_valid)) begin
+                  data_en = 1'b1;
+                  // Flop trigger for the affected partition such that it can disable
+                  // periodic checks that could fail.
+                  zer_trigs_d[part_idx] = MuBi8True;
+                end
+              // For software partitions, the read out data is always released.
+              end else begin
+                data_en = 1'b1;
+              end
+
+            end else begin
+              error_d = otp_err;
+            end
+          end
+        // At this point, this check MUST succeed - otherwise this means that
+        // there was a tampering attempt. Hence we go into a terminal error state
+        // when this check fails.
+        end else begin
+          state_d = ErrorSt;
+          error_d = FsmStateError;
+        end
+      end
+
       ///////////////////////////////////////////////////////////////////
       // Terminal Error State. This locks access to the DAI. Make sure
       // an FsmStateError error code is assigned here, in case no error code has
@@ -696,6 +822,15 @@ module otp_ctrl_dai
         error_d = FsmStateError;
       end
     end
+    // Unconditionally jump into the terminal error state when a zeroization
+    // indicator takes on an invalid value.
+    for (int k = 0; k < NumPart; k++) begin
+      if (mubi8_test_invalid(zer_trigs_o[k]) || mubi16_test_invalid(zeroized_valid)) begin
+        state_d = ErrorSt;
+        fsm_err_o = 1'b1;
+        error_d = FsmStateError;
+      end
+    end
   end
 
   ////////////////////////////
@@ -710,8 +845,11 @@ module otp_ctrl_dai
   logic [NumPart-1:0] part_sel_oh;
   for (genvar k = 0; k < NumPart; k++) begin : gen_part_sel
     localparam int unsigned PartEndInt = 32'(PartInfo[k].offset) + 32'(PartInfo[k].size);
-    localparam int unsigned DigestOffsetInt = PartEndInt - ScrmblBlockWidth / 8;
+    localparam int unsigned DigestOffsetInt = PartEndInt - (ScrmblBlockWidth / 8) - (PartInfo[k].zeroizable ? 8 : 0);
     localparam int unsigned DigestAddrLutInt = DigestOffsetInt >> OtpAddrShift;
+
+    localparam int unsigned ZeroizeOffsetInt = PartEndInt - (ScrmblBlockWidth / 8);
+    localparam int unsigned ZeroizeAddrLutInt = ZeroizeOffsetInt >> OtpAddrShift;
 
     // PartEnd has an extra bit to cope with the case where offset + size overflows. However, we
     // arrange the address map to make sure that PartEndInt is at most 1 << OtpByteAddrWidth. Check
@@ -721,6 +859,7 @@ module otp_ctrl_dai
     // The shift right by OtpAddrShift drops exactly the bottom bits that are needed to convert
     // between OtpAddrWidth and OtpByteAddrWidth, so we know that we can slice safely here.
     localparam bit [OtpAddrWidth-1:0] DigestAddrLut = DigestAddrLutInt[OtpAddrWidth-1:0];
+    localparam bit [OtpAddrWidth-1:0] ZeroizeAddrLut = ZeroizeAddrLutInt[OtpAddrWidth-1:0];
 
     if (PartInfo[k].offset == 0) begin : gen_zero_offset
       assign part_sel_oh[k] = ({1'b0, dai_addr_i} < PartEndInt[OtpByteAddrWidth:0]);
@@ -730,6 +869,7 @@ module otp_ctrl_dai
                               ({1'b0, dai_addr_i} < PartEndInt[OtpByteAddrWidth:0]);
     end
     assign digest_addr_lut[k] = DigestAddrLut;
+    assign zeroize_addr_lut[k] = ZeroizeAddrLut;
   end
 
   `CALIPTRA_ASSERT(ScrmblBlockWidthGe8_A, ScrmblBlockWidth >= 8)
@@ -773,6 +913,12 @@ module otp_ctrl_dai
     end else if ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
         (base_sel_q == DaiOffset) &&
         ({dai_addr_i[OtpByteAddrWidth-1:3], 2'b0} == digest_addr_lut[part_idx])) begin
+      otp_size_o = OtpSizeWidth'(unsigned'(ScrmblBlockWidth / OtpWidth - 1));
+      addr_base = {dai_addr_i[OtpByteAddrWidth-1:3], 3'h0};
+    // 64bit transaction if the DAI address points to the partition's zeroization marker.
+    end else if ((PartInfo[part_idx].zeroizable) &&
+        (base_sel_q == DaiOffset) &&
+        ({dai_addr_i[OtpByteAddrWidth-1:3], 2'b0} == zeroize_addr_lut[part_idx])) begin
       otp_size_o = OtpSizeWidth'(unsigned'(ScrmblBlockWidth / OtpWidth - 1));
       addr_base = {dai_addr_i[OtpByteAddrWidth-1:3], 3'h0};
     end
@@ -841,6 +987,17 @@ module otp_ctrl_dai
       discarded_fuse_write_o        <= discarded_fuse_write_d;
     end
   end
+
+  // Flop the array of zeroization triggers.
+  caliptra_prim_flop #(
+    .Width(NumPart*MuBi8Width),
+    .ResetValue({NumPart{MuBi8False}})
+  ) u_zeroized_flop(
+    .clk_i,
+    .rst_ni,
+    .d_i(zer_trigs_d),
+    .q_o({zer_trigs_o})
+  );
 
   ////////////////
   // Assertions //
