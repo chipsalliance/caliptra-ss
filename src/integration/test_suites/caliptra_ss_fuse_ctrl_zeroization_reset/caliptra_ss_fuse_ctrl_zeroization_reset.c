@@ -108,12 +108,17 @@ int part_zeroize(const partition_t* part, uint32_t exp_status) {
     return mismatches;
 }
 
-int check_part_zeroized(const partition_t* part, uint32_t exp_status) {
+int check_part_zeroized(
+        const partition_t* part,
+        uint8_t only_marker,
+        uint32_t exp_status) {
     uint32_t exp_ones[] = {0xFFFFFFFF, 0xFFFFFFFF};
     int mismatches = 0;
 
-    // Read and compare the data and digest.
-    mismatches += part_read_compare(part, exp_ones, 0);
+    if (!only_marker) {
+        // Read and compare the data and digest.
+        mismatches += part_read_compare(part, exp_ones, 0);
+    }
 
     // Read the partition zeroization marker and check that the result
     // is all ones.
@@ -184,19 +189,31 @@ void test_main (void) {
         goto epilogue;
     }
 
-    // Note that the zeroized partition cannot be read without a reset,
-    // as this would result in ECC errors. This is not a problem because
-    // in the previous step, SW checked the result of zeroization and
-    // ensured that all fuses are now set to `1`.
+    // Step 9: Read the zeroization marker through the DAI. In the
+    // previous step, SW already checked that the zeroization marker
+    // returned by the zeroization command is all ones. A different
+    // piece of SW might at a later point before a reset want to check
+    // the zeroization status for a partition, and this is what this
+    // step emulates.
+    if (check_part_zeroized(&part, /*only_marker=*/1, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 9 failed!\n");
+        goto epilogue;
+    }
 
-    // Step 9: Reset.
+    // Note that the data and digest of the zeroized partition cannot be
+    // read without a reset, as this would result in ECC errors. This is
+    // not a problem because in Step 8, SW checked the result of
+    // zeroization and ensured that all fuses are now set to `1` also
+    // for the data and digest part of the partition.
+
+    // Step 10: Reset.
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    // Step 10: Read and check that everything in the partition is all
+    // Step 11: Read and check that everything in the partition is all
     // ones.
-    if (check_part_zeroized(&part, 0) != 0) {
-        VPRINTF(LOW, "ERROR: Step 10 failed!\n");
+    if (check_part_zeroized(&part, /*only_marker=*/0, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 11 failed!\n");
         goto epilogue;
     }
 
