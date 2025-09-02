@@ -84,6 +84,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/abr/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/aes/coverage
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/coverage
@@ -928,6 +929,8 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/keyvault_cov_
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/keyvault_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage/abr_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage/abr_top_cov_bind.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/abr/coverage/clp_abr_top_cov_if.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/abr/coverage/clp_abr_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage/axi_dma_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage/axi_dma_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/coverage/axi_dma_top_cov_props.sv
