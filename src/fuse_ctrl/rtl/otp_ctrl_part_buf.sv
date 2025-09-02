@@ -212,7 +212,7 @@ module otp_ctrl_part_buf
   end else begin : gen_no_integrity
     always_comb begin
       if (otp_err_e'(otp_err_i) inside {MacroEccCorrError, MacroEccUncorrError}) begin
-        otp_err = prim_generic_otp_pkg::NoError;
+        otp_err = otp_ctrl_pkg::NoError;
       end else begin
         otp_err = otp_err_e'(otp_err_i);
       end
