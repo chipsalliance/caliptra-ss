@@ -75,7 +75,10 @@ int part_read_compare(
     return mismatches;
 }
 
-int part_zeroize(const partition_t* part, uint32_t exp_status) {
+int part_zeroize(
+        const partition_t* part,
+        uint8_t only_until_half_data,
+        uint32_t exp_status) {
     uint32_t rdata[2];
     int mismatches = 0;
 
@@ -87,8 +90,15 @@ int part_zeroize(const partition_t* part, uint32_t exp_status) {
 
     // Secondly, zeroize the data, for which the granularity and size
     // depend on the partition.
+    uint32_t addr_bound = part->digest_address;
+    if (only_until_half_data) {
+        // In this case, set the address bound half way between the
+        // digest address and the base address.
+        addr_bound -= (part->digest_address - part->address) / 2;
+    }
+
     for (uint32_t addr = part->address;
-            addr < part->digest_address;
+            addr < addr_bound;
             addr += part->granularity / 8) {
         dai_zer(addr, &rdata[0], &rdata[1], part->granularity, exp_status);
         mismatches += compare(rdata[0], 0xFFFFFFFF, addr);
@@ -99,11 +109,13 @@ int part_zeroize(const partition_t* part, uint32_t exp_status) {
         }
     }
 
-    // Finally, zeroize the digest, which always has a granularity and
-    // size of 64 bit.
-    dai_zer(part->digest_address, &rdata[0], &rdata[1], 64, exp_status);
-    mismatches += compare(rdata[0], 0xFFFFFFFF, part->digest_address);
-    mismatches += compare(rdata[1], 0xFFFFFFFF, part->digest_address + 4);
+    if (!only_until_half_data) {
+        // Finally, zeroize the digest, which always has a granularity and
+        // size of 64 bit.
+        dai_zer(part->digest_address, &rdata[0], &rdata[1], 64, exp_status);
+        mismatches += compare(rdata[0], 0xFFFFFFFF, part->digest_address);
+        mismatches += compare(rdata[1], 0xFFFFFFFF, part->digest_address + 4);
+    }
 
     return mismatches;
 }
@@ -130,25 +142,20 @@ int check_part_zeroized(
     return mismatches;
 }
 
-int test_normal_zeroization (void) {
+int prepare_test(const partition_t* part, uint32_t rd_lock_csr_addr) {
     // Initialize test constants.
     const uint32_t exp_data[] = {0xA5A5A5A5, 0x96969696};
 
-    // Choose one of the zeroizable SW partitions with a CSR read lock.
-    const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_3];
-    const uint32_t rd_lock_csr_addr =
-            SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_READ_LOCK;
-
     // Step 1: Write the partition.
-    for (uint32_t addr = part.address;
-            addr < part.digest_address;
-            addr += part.granularity / 8) {
-        dai_wr(addr, exp_data[0], exp_data[1], part.granularity, 0);
+    for (uint32_t addr = part->address;
+            addr < part->digest_address;
+            addr += part->granularity / 8) {
+        dai_wr(addr, exp_data[0], exp_data[1], part->granularity, 0);
     }
 
     // Step 2: Write the digest (doesn't have to be and isn't a real
     // digest value).
-    dai_wr(part.digest_address, exp_data[0], exp_data[1], 64, 0);
+    dai_wr(part->digest_address, exp_data[0], exp_data[1], 64, 0);
 
     // Step 3: Reset.
     reset_fc_lcc_rtl();
@@ -162,7 +169,7 @@ int test_normal_zeroization (void) {
         return 2;
     }
     // Then read the value back and compare it.
-    if (part_read_compare(&part, exp_data, 0) != 0) {
+    if (part_read_compare(part, exp_data, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 4 failed!\n");
         return 1;
     }
@@ -173,7 +180,7 @@ int test_normal_zeroization (void) {
     // Step 6: Verify that reading the partition now gives an access
     // error and returns zeros.
     uint32_t exp_zeros[] = {0, 0};
-    if (part_read_compare(&part, exp_zeros, OTP_CTRL_STATUS_DAI_ERROR_MASK)
+    if (part_read_compare(part, exp_zeros, OTP_CTRL_STATUS_DAI_ERROR_MASK)
             != 0) {
         VPRINTF(LOW, "ERROR: Step 6 failed!\n");
         return 1;
@@ -183,8 +190,41 @@ int test_normal_zeroization (void) {
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
+    return 0;
+}
+
+int end_test(const partition_t* part) {
+    // Note that the data and digest of the zeroized partition cannot be
+    // read without a reset, as this would result in ECC errors. This is
+    // not a problem because in Step 8, SW checked the result of
+    // zeroization and ensured that all fuses are now set to `1` also
+    // for the data and digest part of the partition.
+
+    // Step 10: Reset.
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+
+    // Step 11: Read and check that everything in the partition is all
+    // ones.
+    if (check_part_zeroized(part, /*only_marker=*/0, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Final step failed!\n");
+        return 1;
+    }
+}
+
+int test_normal_zeroization (void) {
+    // Choose one of the zeroizable SW partitions with a CSR read lock.
+    const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_3];
+    const uint32_t rd_lock_csr_addr =
+            SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_READ_LOCK;
+
+    int retval = prepare_test(&part, rd_lock_csr_addr);
+    if (retval != 0) {
+        return retval;
+    }
+
     // Step 8: Zeroize the partition.
-    if (part_zeroize(&part, 0) != 0) {
+    if (part_zeroize(&part, /*only_until_half_data=*/0, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 8 failed!\n");
         return 1;
     }
@@ -200,24 +240,45 @@ int test_normal_zeroization (void) {
         return 1;
     }
 
-    // Note that the data and digest of the zeroized partition cannot be
-    // read without a reset, as this would result in ECC errors. This is
-    // not a problem because in Step 8, SW checked the result of
-    // zeroization and ensured that all fuses are now set to `1` also
-    // for the data and digest part of the partition.
+    return end_test(&part);
+}
 
-    // Step 10: Reset.
+int test_half_zeroization (void) {
+    // Choose another zeroizable SW partition with a CSR read lock.
+    const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_5];
+    const uint32_t rd_lock_csr_addr =
+            SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK;
+
+    int retval = prepare_test(&part, rd_lock_csr_addr);
+    if (retval != 0) {
+        return retval;
+    }
+
+    // Step 8: Zeroize the partition, but only until half the data.
+    if (part_zeroize(&part, /*only_until_half_data=*/1, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 8 failed!\n");
+        return 1;
+    }
+
+    // Step 9: Reset. This is to emulate that a reset happened while
+    // SW was zeroizing the partition.
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    // Step 11: Read and check that everything in the partition is all
-    // ones.
-    if (check_part_zeroized(&part, /*only_marker=*/0, 0) != 0) {
+    // Step 10: Read the zeroization marker, which should indicate that
+    // zeroization has been started on the partition.
+    if (check_part_zeroized(&part, /*only_marker=*/1, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 10 failed!\n");
+        return 1;
+    }
+
+    // Step 11: Zeroize the entire partition again, this time entirely.
+    if (part_zeroize(&part, /*only_until_half_data=*/0, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 11 failed!\n");
         return 1;
     }
 
-    return 0;
+    return end_test(&part);
 }
 
 void main (void) {
@@ -229,12 +290,22 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-    int result = test_normal_zeroization();
+    VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_reset code.\n");
 
+    VPRINTF(LOW, "INFO: Starting normal zeroization test.\n");
+    int result = test_normal_zeroization();
     if (result == 0) {
-        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_reset test PASSED\n");
+        VPRINTF(LOW, "INFO: Test PASSED\n");
     } else {
-        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_reset test FAILED\n")
+        VPRINTF(LOW, "ERROR: Test FAILED\n")
+    }
+
+    VPRINTF(LOW, "INFO: Starting half-partition zeroization test.\n");
+    result = test_half_zeroization();
+    if (result == 0) {
+        VPRINTF(LOW, "INFO: Test PASSED\n");
+    } else {
+        VPRINTF(LOW, "ERROR: Test FAILED\n")
     }
 
     for (uint8_t ii = 0; ii < 160; ii++) {
