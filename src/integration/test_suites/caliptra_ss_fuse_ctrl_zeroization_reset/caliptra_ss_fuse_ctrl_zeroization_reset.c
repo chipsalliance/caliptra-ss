@@ -130,7 +130,7 @@ int check_part_zeroized(
     return mismatches;
 }
 
-void test_main (void) {
+int test_normal_zeroization (void) {
     // Initialize test constants.
     const uint32_t exp_data[] = {0xA5A5A5A5, 0x96969696};
 
@@ -159,12 +159,12 @@ void test_main (void) {
     uint32_t csr = lsu_read_32(rd_lock_csr_addr);
     if (csr != 1) {
         VPRINTF(LOW, "TEST BUG: Partition is read-locked!\n");
-        goto epilogue;
+        return 2;
     }
     // Then read the value back and compare it.
     if (part_read_compare(&part, exp_data, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 4 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 5: Activate the read lock CSR.
@@ -176,7 +176,7 @@ void test_main (void) {
     if (part_read_compare(&part, exp_zeros, OTP_CTRL_STATUS_DAI_ERROR_MASK)
             != 0) {
         VPRINTF(LOW, "ERROR: Step 6 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 7: Reset again.
@@ -186,7 +186,7 @@ void test_main (void) {
     // Step 8: Zeroize the partition.
     if (part_zeroize(&part, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 8 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 9: Read the zeroization marker through the DAI. In the
@@ -197,7 +197,7 @@ void test_main (void) {
     // step emulates.
     if (check_part_zeroized(&part, /*only_marker=*/1, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 9 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Note that the data and digest of the zeroized partition cannot be
@@ -214,11 +214,10 @@ void test_main (void) {
     // ones.
     if (check_part_zeroized(&part, /*only_marker=*/0, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 11 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
-epilogue:
-    VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_reset test finished\n");
+    return 0;
 }
 
 void main (void) {
@@ -230,7 +229,13 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-    test_main();
+    int result = test_normal_zeroization();
+
+    if (result == 0) {
+        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_reset test PASSED\n");
+    } else {
+        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_reset test FAILED\n")
+    }
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
