@@ -8,6 +8,7 @@ contents:
         - ../test_suites/mcu_cptra_bringup/mcu_cptra_bringup.yml
         - ../test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation.yml
         - ../test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock.yml
+        - ../test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.yml
         - ../test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens.yml
         - ../test_suites/mcu_hello_world/mcu_hello_world.yml
         - ../test_suites/mcu_intr_handler/mcu_intr_handler.yml
@@ -86,4 +87,3 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers.yml
         - ../test_suites/smoke_test_abr_keygen_sign/smoke_test_abr_keygen_sign.yml
         - ../test_suites/smoke_test_mci_prod_dbg/smoke_test_mci_prod_dbg.yml
-        - ../test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization.yml
