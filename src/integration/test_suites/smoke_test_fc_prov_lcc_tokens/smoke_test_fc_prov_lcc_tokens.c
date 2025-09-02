@@ -85,7 +85,7 @@ void program_secret_lc_transition_partition() {
     }
 
     // Step 4
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
 
     // Step 5
     reset_fc_lcc_rtl();

@@ -50,9 +50,9 @@ void main (void) {
     
     initialize_otp_controller();
 
-    const uint32_t base_address = CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN;
+    const uint32_t base_address = partitions[CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN].address;
     const uint32_t fuse_address = base_address;
-    const uint32_t digest_address = SW_TEST_UNLOCK_PARTITION_DIGEST;
+    const uint32_t digest_address = partitions[CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN].digest_address;
 
     const uint32_t sentinel = 0xAB;
 
@@ -76,7 +76,7 @@ void main (void) {
         goto epilogue;
     }
 
-    calculate_digest(base_address);
+    calculate_digest(base_address, 0);
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 

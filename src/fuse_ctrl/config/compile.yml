@@ -5,6 +5,7 @@ requires:
   - caliptra_prim
   - lc_ctrl_pkg
   - ast_pkg
+  - prim_generic_otp_pkg
 targets:
   rtl:
     directories: [$COMPILE_ROOT/rtl]
