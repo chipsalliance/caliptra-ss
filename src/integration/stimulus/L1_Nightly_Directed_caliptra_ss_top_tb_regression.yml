@@ -91,6 +91,6 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_token/caliptra_ss_lcc_volatile_unlock_wrong_token: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_abr_keygen_sign: { weight: 1 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_prod_dbg: { weight: 1 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_abr_keygen_sign/smoke_test_abr_keygen_sign: { weight: 1 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_prod_dbg/smoke_test_mci_prod_dbg: { weight: 1 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization: { weight: 100 }
