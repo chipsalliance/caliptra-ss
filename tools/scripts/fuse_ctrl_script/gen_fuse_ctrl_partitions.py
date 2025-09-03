@@ -18,6 +18,7 @@ from mako.template import Template
 from lib.otp_mem_map import OtpMemMap
 from lib.reggen.ip_block import IpBlock
 from lib.reggen import gen_rtl
+from lib.reggen import gen_dv
 from lib.reggen import gen_md
 
 HEADER_COMMENT = '''
@@ -32,8 +33,9 @@ HEADER_COMMENT_HTML = "<!--"+HEADER_COMMENT+"\n-->\n"
 DATA_OUTPUT_PATH = Path("src") / "fuse_ctrl" / "data"
 DOC_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "doc"
 RTL_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "rtl"
+DV_OUTPUT_PATH   = Path("src") / "fuse_ctrl" / "dv"
 C_OUTPUT_PATH    = Path("src") / "integration" / "rtl"
-RDL_OUTPUT_PATH    = Path("src") / "fuse_ctrl" / "rtl"
+RDL_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "rtl"
 
 ## Doc table files
 PARTITIONS_TABLE_FILE = "otp_ctrl_partitions.md"
@@ -43,7 +45,8 @@ DESC_TABLE_FILE       = "otp_ctrl_field_descriptions.md"
 REGISTER_TABLE_FILE   = "otp_ctrl_registers.md"
 
 ## Templates
-TEMPLATES_PATH = Path("src") / "fuse_ctrl" / "templates"
+TEMPLATES_PATH    = Path("src") / "fuse_ctrl" / "templates"
+DV_TEMPLATES_PATH = Path("src") / "fuse_ctrl" / "templates" / "dv"
 
 # Config templates
 MMAP_TEMPLATE  = "otp_ctrl_mmap.hjson.tpl"
@@ -54,6 +57,29 @@ RDL_TEMPLATE   = "otp_ctrl.rdl.tpl"
 PART_PKG_TEMPLATE = "otp_ctrl_part_pkg.sv.tpl"
 REG_PKG_TEMPLATE  = "reg_pkg.sv.tpl"
 REG_TOP_TEMPLATE  = "reg_top.sv.tpl"
+
+# DV templates
+DV_README_TEMPLATE                = "README.md.tpl"
+DV_BASE_VSEQ_TEMPLATE             = "otp_ctrl_base_vseq.sv.tpl"
+DV_COMMON_VSEQ_TEMPLATE           = "otp_ctrl_common_vseq.sv.tpl"
+DV_COV_TEMPLATE                   = "otp_ctrl_cov.core.tpl"
+DV_COV_BIND_TEMPLATE              = "otp_ctrl_cov_bind.sv.tpl"
+DV_COV_IF_TEMPLATE                = "otp_ctrl_cov_if.sv.tpl"
+DV_DAI_LOCK_VSEQ_TEMPLATE         = "otp_ctrl_dai_lock_vseq.sv.tpl"
+DV_ENV_TEMPLATE                   = "otp_ctrl_env.core.tpl"
+DV_ENV_TEMPLATE                   = "otp_ctrl_env.sv.tpl"
+DV_ENV_CFG_TEMPLATE               = "otp_ctrl_env_cfg.sv.tpl"
+DV_ENV_COV_TEMPLATE               = "otp_ctrl_env_cov.sv.tpl"
+DV_ENV_PKG_TEMPLATE               = "otp_ctrl_env_pkg.sv.tpl"
+DV_IF_TEMPLATE                    = "otp_ctrl_if.sv.tpl"
+DV_MEM_BKDR_UTIL_TEMPLATE         = "otp_ctrl_mem_bkdr_util.core.tpl"
+DV_MEM_BKDR_UTIL_PKG_TEMPLATE     = "otp_ctrl_mem_bkdr_util_pkg.sv.tpl"
+DV_PARALLEL_KEY_REQ_VSEQ_TEMPLATE = "otp_ctrl_parallel_key_req_vseq.sv.tpl"
+DV_PARALLEL_LC_ESC_VSEQ_TEMPLATE  = "otp_ctrl_parallel_lc_esc_vseq.sv.tpl"
+DV_SCOREBOARD_TEMPLATE            = "otp_ctrl_scoreboard.sv.tpl"
+DV_SMOKE_VSEQ_TEMPLATE            = "otp_ctrl_smoke_vseq.sv.tpl"
+DV_VIRTUAL_SEQUENCER_TEMPLATE     = "otp_ctrl_virtual_sequencer.sv.tpl"
+DV_TB_TEMPLATE                    = "tb.sv.tpl"
 
 # C templates
 C_MMAP_TEMPLATE   = "fuse_ctrl_mmap.h.tpl"
@@ -116,7 +142,7 @@ def main():
         params={"otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_HJSON}
     )
 
-    output_path = Path("src") / "fuse_ctrl" / "rtl" 
+    output_path = Path("src") / "fuse_ctrl" / "rtl"
 
     # Render partition package
     render_template(
@@ -134,6 +160,10 @@ def main():
     # Render register files
     ip_block = IpBlock.from_path(str(DATA_OUTPUT_PATH / HJSON_TEMPLATE.replace(".tpl", "")), [])
     gen_rtl.gen_rtl(ip_block, str(RTL_OUTPUT_PATH))
+
+    # Render DV files
+    ip_block = IpBlock.from_path(str(DATA_OUTPUT_PATH / HJSON_TEMPLATE.replace(".tpl", "")), [])
+    gen_dv.gen_dv(ip_block, str(DV_OUTPUT_PATH))
 
     # Render RDL
     render_template(
