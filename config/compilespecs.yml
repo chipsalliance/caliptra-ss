@@ -48,6 +48,7 @@ files:
   - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim_generic/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_sha3/config/compile.yml
+  - third_party/caliptra-rtl/src/abr/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/rej_sampler/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/rej_bounded/config/compile.yml
   - third_party/caliptra-rtl/submodules/adams-bridge/src/exp_mask/config/compile.yml

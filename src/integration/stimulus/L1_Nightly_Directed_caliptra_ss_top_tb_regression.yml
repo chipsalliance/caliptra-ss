@@ -15,6 +15,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_hello_world/mcu_hello_world: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_intr_handler/mcu_intr_handler: { weight: 100 }
@@ -91,6 +92,9 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_read_lock/caliptra_ss_fuse_ctrl_read_lock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_token/caliptra_ss_lcc_volatile_unlock_wrong_token: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_abr_keygen_sign: { weight: 1 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_prod_dbg: { weight: 1 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_abr_keygen_sign/smoke_test_abr_keygen_sign: { weight: 1 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_prod_dbg/smoke_test_mci_prod_dbg: { weight: 1 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_partition_write_zeroize/smoke_test_fc_partition_write_zeroize: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_volatile_lock/smoke_test_fc_ratchet_seed_volatile_lock: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_write_read/smoke_test_fc_ratchet_seed_write_read: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_secret_partition_zeroization/smoke_test_fc_secret_partition_zeroization: { weight: 10 }
