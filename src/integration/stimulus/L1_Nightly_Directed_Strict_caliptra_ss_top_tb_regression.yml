@@ -87,3 +87,7 @@ contents:
         - ../test_suites/caliptra_ss_fuse_ctrl_registers/caliptra_ss_fuse_ctrl_registers.yml
         - ../test_suites/smoke_test_abr_keygen_sign/smoke_test_abr_keygen_sign.yml
         - ../test_suites/smoke_test_mci_prod_dbg/smoke_test_mci_prod_dbg.yml
+        - ../test_suites/smoke_test_fc_partition_write_zeroize/smoke_test_fc_partition_write_zeroize.yml
+        - ../test_suites/smoke_test_fc_ratchet_seed_volatile_lock/smoke_test_fc_ratchet_seed_volatile_lock.yml
+        - ../test_suites/smoke_test_fc_ratchet_seed_write_read/smoke_test_fc_ratchet_seed_write_read.yml
+        - ../test_suites/smoke_test_fc_secret_partition_zeroization/smoke_test_fc_secret_partition_zeroization.yml
