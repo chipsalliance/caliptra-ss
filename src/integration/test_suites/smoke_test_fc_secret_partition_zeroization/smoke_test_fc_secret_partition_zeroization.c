@@ -58,8 +58,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 
 
-#define FLAG 1
-
 void secret_partition_zeroization(void) {
   const uint32_t base_address = partitions[VENDOR_SECRET_PROD_PARTITION].address;
   const uint32_t fuse_address = base_address;//CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
@@ -69,12 +67,9 @@ void secret_partition_zeroization(void) {
   uint32_t zero_r_data[2];
   uint32_t zeroize_num_times = 3;
 
-#ifndef FLAG
-
   // Step 1. Write a full transition token into the partition.
   dai_wr(fuse_address, data[0], data[1], 64, 0);
   dai_wr(fuse_address+8, data[2], data[3], 64, 0);
-  VPRINTF(LOW, "Afte step1\n");
 
 
   // Step 2. Read back the token and verify it is equal to the token written in Step 1.
@@ -87,57 +82,40 @@ void secret_partition_zeroization(void) {
       goto epilogue;
     }
   }
-  VPRINTF(LOW, "Afte step2\n");
-
-#endif
 
   // Step 3. Verify that the partition's digest register is 0.
   uint32_t digest[2];
-  digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0);
+  digest[0] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0);
   VPRINTF(LOW, "Afte step3\n");
-  digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1);
+  digest[1] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1);
   if (digest[0] != 0 || digest[1] != 0) {
     VPRINTF(LOW, "ERROR: digest is not 0\n");
     goto epilogue;
   }
-  VPRINTF(LOW, "Afte step4\n");
 
   // Step 4. Lock the partition by calculating a hardware digest.
   calculate_digest(base_address, 0);
-  VPRINTF(LOW, "Afte step5\n");
 
   // Step 5. Reset the RTL.
   reset_fc_lcc_rtl();
   wait_dai_op_idle(0);
-  VPRINTF(LOW, "Afte step6\n");
-
-#ifndef FLAG
-
 
   // Step 6. Try to read the token and verify that it results in an error as the
   //         partition is secret and locked, thus not accessible by software anymore.
   dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-  VPRINTF(LOW, "Afte step7\n");
 
   // Step 7. Try to write a value into the partition and verify that it results in an error
   //         as the partition has been locked in Step 5.
   dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-  VPRINTF(LOW, "Afte step8\n");
-
-#endif
 
   // Step 8. Read back the digest from the partition's digest register and verify it
   //         is non-zero.
-  digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0);
-  digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1);
+  digest[0] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0);
+  digest[1] = lsu_read_32(SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1);
   if (digest[0] == 0 || digest[1] == 0) {
     VPRINTF(LOW, "ERROR: digest is 0 - digest[0]=%0d, digest[1]=%0d\n", digest[0], digest[1]);
     goto epilogue;
   }
-  VPRINTF(LOW, "Afte step9\n");
-
-#ifndef FLAG
-
 
   // Step 9. Apply zeroization multiple_times
   for(uint32_t num_times = 0; num_times < zeroize_num_times; num_times++) {
@@ -165,8 +143,6 @@ void secret_partition_zeroization(void) {
     }
     memset(read_data, 0, sizeof(read_data));
   }
-  VPRINTF(LOW, "Afte step10");
-#endif
 
  epilogue:
   VPRINTF(LOW, "secret_partition_zeroization test finished\n");
