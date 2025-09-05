@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+---
+seed: 1
+testname: smoke_test_fc_ratchet_seed_lock_en
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_fc_ratchet_seed_lock_en]"
+  echo "Generate FIXED LC start state and LC counter value." &&
+  rm -rf otp-img.2048.vmem &&
+  $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
+      --seed ${PLAYBOOK_RANDOM_SEED} --lc-state 1 --lc-state-def \
+      $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson \
+      --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson \
+      --token-configuration \
+      $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_en/test_unlock_token.hjson \
+      -o otp-img.2048.vmem &&
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl \
+      make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile \
+      CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_en \
+      AUX_HEADER_FILES=$CALIPTRA_SS_ROOT/src/integration/rtl/soc_address_map/soc_address_map.h \
+      TESTNAME=cptra_ratchet_seed_lock_en program.hex &&
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_fc_ratchet_seed_lock_en mcu_program.hex
+plusargs:
+    - '+CLP_OCP_LOCK_EN'
