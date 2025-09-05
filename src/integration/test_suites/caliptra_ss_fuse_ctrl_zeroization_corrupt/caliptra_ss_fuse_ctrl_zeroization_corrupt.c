@@ -58,7 +58,7 @@ int part_read_compare(
     // depend on the partition.
     for (uint32_t addr = part->address;
             addr < part->digest_address;
-            addr += part->granularity) {
+            addr += part->granularity / 8) {
         dai_rd(addr, &act_data[0], &act_data[1], part->granularity, exp_status);
         mismatches += compare(act_data[0], exp_data[0], addr);
         // Check second 32 bit only if the partition has a granularity
@@ -93,7 +93,7 @@ int part_zeroize(const partition_t* part, uint32_t exp_status) {
     // depend on the partition.
     for (uint32_t addr = part->address;
             addr < part->digest_address;
-            addr += part->granularity) {
+            addr += part->granularity / 8) {
         dai_zer(addr, &rdata[0], &rdata[1], part->granularity, exp_status);
         mismatches += compare(rdata[0], 0xFFFFFFFF, addr);
         // Check second 32 bit only if the partition has a granularity
