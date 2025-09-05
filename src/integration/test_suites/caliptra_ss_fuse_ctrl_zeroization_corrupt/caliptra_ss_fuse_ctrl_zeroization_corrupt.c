@@ -133,7 +133,7 @@ int check_part_zeroized(const partition_t* part, uint32_t exp_status) {
  * This test emulates OTP corruption due to reset during programming
  * and checks that zeroization is still possible in this case.
  */
-void test_main (void) {
+int test_main (void) {
     // Initialize test constants.
     const uint32_t wr_data0[] = {0x11111111, 0x44444444};
     const uint32_t wr_data1[] = {0x33333333, 0xCCCCCCCC};
@@ -168,7 +168,7 @@ void test_main (void) {
     // the ECC part of each word.
     if (part_read_compare(&part, exp_data, OTP_CTRL_STATUS_DAI_ERROR_MASK, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 2 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 3: Reset.
@@ -178,7 +178,7 @@ void test_main (void) {
     // Step 4: Zeroize and check that zeroization succeeded.
     if (part_zeroize(&part, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 4 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 5: Reset.
@@ -188,11 +188,10 @@ void test_main (void) {
     // Step 6: Read the partition back and ensure its now all ones.
     if (check_part_zeroized(&part, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 6 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
-epilogue:
-    VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_corrupt test finished\n");
+    return 0;
 }
 
 void main (void) {
@@ -204,7 +203,11 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-    test_main();
+    if (test_main() == 0) {
+        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_corrupt test PASSED\n");
+    } else {
+        VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_corrupt test FAILED\n");
+    }
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
