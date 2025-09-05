@@ -32,6 +32,14 @@ void grant_mcu_for_fc_writes(void) {
     }
 }
 
+void revoke_grant_mcu_for_fc_writes(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_AWUSER);
+    VPRINTF(LOW, "MCU_LSU_AXI_USER forcing signal is released!\n");
+    for (uint16_t ii = 0; ii < 160; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
+
 void grant_caliptra_core_for_fc_writes(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_CPTR_CORE);
     VPRINTF(LOW, "LCC & Fuse_CTRL is under CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER!\n");
