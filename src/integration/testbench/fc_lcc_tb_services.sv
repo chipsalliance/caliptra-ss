@@ -64,6 +64,7 @@ module fc_lcc_tb_services (
             force `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
             force `MCI_PATH.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'hFFFFFFFF;
             force `FC_PATH.lcc_is_in_SCRAP_mode = 1'b0;
+            force `FC_PATH.FIPS_ZEROIZATION_CMD_i = 1'b1;
           end
           CMD_FC_FORCE_ZEROIZATION_RESET: begin
             $display("fc_lcc_tb_services: Forcing FIPS_ZEROIZATION_PPD_i = 0, ROM mask = 32'h0, and lcc_is_in_SCRAP_mode = 1");
