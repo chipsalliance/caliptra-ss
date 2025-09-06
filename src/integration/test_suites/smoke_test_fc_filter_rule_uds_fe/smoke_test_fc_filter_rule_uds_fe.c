@@ -36,7 +36,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define SHORT_TEST
+// #define SHORT_TEST
 
 void invalid_secret_zeroization(void) {
     uint32_t data[2];
@@ -227,24 +227,24 @@ void main(void) {
     secret_prov();
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    // for (uint8_t ii = 0; ii < 20; ii++) {
-    //     __asm__ volatile ("nop"); // Sleep loop
-    // }
+    for (uint8_t ii = 0; ii < 20; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop
+    }
 
-    // VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
-    // revoke_grant_mcu_for_fc_writes();
+    VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
+    revoke_grant_mcu_for_fc_writes();
 
-    // for (uint8_t ii = 0; ii < 20; ii++) {
-    //     __asm__ volatile ("nop"); // Sleep loop
-    // }
+    for (uint8_t ii = 0; ii < 20; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop
+    }
 
-    // VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    // invalid_secret_zeroization();
-    // VPRINTF(LOW, "\n\n------------------------------\n\n");
+    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
+    invalid_secret_zeroization();
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    // for (uint8_t ii = 0; ii < 20; ii++) {
-    //     __asm__ volatile ("nop"); // Sleep loop
-    // }
+    for (uint8_t ii = 0; ii < 20; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop
+    }
 
     VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
     grant_caliptra_core_for_fc_writes();
