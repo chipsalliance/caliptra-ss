@@ -119,6 +119,10 @@ void main(void) {
   wait_dai_op_idle(0);
   initialize_otp_controller();
 
+  // Grant permission to perform writes even though we are expecting the
+  // operation to fail.
+  grant_mcu_for_fc_writes();
+
   // Before releasing Caliptra core, test that we are unable to zeroize any of
   // the partitions with or without PPD set.
   for (uint32_t i = 0; i < kNumPartitions; i++) {
@@ -146,10 +150,15 @@ void main(void) {
     wait_dai_op_idle(0);
   }
 
+  revoke_grant_mcu_for_fc_writes();
+
   // Releases the Caliptra core by setting CPTRA_FUSE_WR_DONE.
   lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE,
                SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
   LOG_INFO("Set FUSE_WR_DONE\n");
+
+
+  grant_caliptra_core_for_fc_writes();
 
   // Expect zeroization to FAIL when PPD IS NOT set.
   for (uint32_t i = 0; i < kNumPartitions; i++) {
@@ -180,6 +189,8 @@ void main(void) {
 
   lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
   wait_dai_op_idle(0);
+
+  revoke_grant_mcu_for_fc_writes();
 
   // TODO(moidx): Should we issue reset and verify that the partitions are
   // zeroized?
