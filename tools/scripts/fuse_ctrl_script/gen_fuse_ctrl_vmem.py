@@ -3,7 +3,7 @@
 exec /usr/bin/env python3w -r requirements.txt "$0" "$@"
 '''
 # SPDX-License-Identifier: Apache-2.0
-# 
+#
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ exec /usr/bin/env python3w -r requirements.txt "$0" "$@"
 # Generates a VMEM memory image that can be loaded into `fuse_ctrl`.
 #
 # To create `otp-img.24.vmem`, execute the following:
-# 
+#
 # ```sh
 # cd ${CALIPTRA_SS_ROOT}
 # python3 -m pip install -r tools/scripts/fuse_ctrl_script/requirements.txt
@@ -32,7 +32,7 @@ exec /usr/bin/env python3w -r requirements.txt "$0" "$@"
 #     --lc-state "PROD" --lc-cnt 5 \
 #     --token-header token_header.h
 # ```
-# 
+#
 # * `--lc-state-def`: Contains information about the life cycle state encoding
 # * `--mmap-def`: Defines the format of the vmem file.
 # * `--lc-state`: The desired life cycle state number (0...20). This value is encoded by the script.
@@ -42,11 +42,12 @@ exec /usr/bin/env python3w -r requirements.txt "$0" "$@"
 # * `--token-configuration`: HJSON that contains a list of unhashed tokens for the state transitions.
 # * `--token-header`: If provided, a C header file containing an array of the token will be generated.
 #                     If not provided, the tokens provided in `--token-configuration` are used.
-# * `--token-tpl`:  Template file for the C header file that contains the unhased token. 
+# * `--token-tpl`:  Template file for the C header file that contains the unhased token.
 #                     If not provided, the tokens provided in `--token-configuration` are used.
 # * `--seed`:  Seed for the random() function that is used for generating LC counter, LC state, and
 #              unlock tockens.
-#  
+# * `--add-cfg`: Additional image configuration in hjson format.
+#
 
 import argparse
 import datetime
@@ -196,6 +197,23 @@ def main():
                         Optional. When passed, the random function for generating LC state,
                         LC count, and unlock tokens is seeded with the provided seed.
                         ''')
+    parser.add_argument('--add-cfg',
+                        type=Path,
+                        metavar='<path>',
+                        action='append',
+                        default=[],
+                        help='''
+                        Additional image configuration file in Hjson format.
+
+                        This switch can be specified multiple times.
+                        Image configuration files are parsed in the same
+                        order as they are specified on the command line,
+                        and partition item values that are specified multiple
+                        times are overridden in that order.
+
+                        Note that seed values in additional configuration files
+                        are ignored.
+                        ''')
 
     args = parser.parse_args()
 
@@ -214,7 +232,7 @@ def main():
     log.info('Loading OTP memory map definition file {}'.format(args.mmap_def))
     with open(args.mmap_def, 'r') as infile:
         otp_mmap_cfg = hjson.load(infile)
-    
+
     token_cfg = None
     token_tpl = {}
     if args.token_configuration is not None:
@@ -245,7 +263,7 @@ def main():
         token_tpl['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] = [(token_cfg['CPTRA_SS_PROD_TO_PROD_END_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
         token_cfg['CPTRA_SS_RMA_TOKEN'] = random.getrandbits(128)
         token_tpl['CPTRA_SS_RMA_TOKEN'] = [(token_cfg['CPTRA_SS_RMA_TOKEN'] >> x) & 0xFFFFFFFF for x in reversed(range(0, 128, 32))]
- 
+
     if args.token_header is not None and args.token_tpl is not None:
         render_template(template = Path(args.token_tpl),
                         target_path=Path(args.token_header),
@@ -253,7 +271,7 @@ def main():
 
      # If specified, override the seed.
     _override_seed(args, 'otp_seed', otp_mmap_cfg)
-    
+
     lc_state_idx = 0
     # Take LC state from command line arguments or choose a random one.
     if args.lc_state is not None:
@@ -325,6 +343,14 @@ def main():
 
     try:
         otp_mem_img = OtpMemImg(lc_state_cfg, otp_mmap_cfg, img_config, '')
+        for f in args.add_cfg:
+            log.info(
+                'Processing additional image configuration file {}'.format(f))
+            log.info('')
+            with open(f, 'r') as infile:
+                cfg = hjson.load(infile)
+                otp_mem_img.override_data(cfg)
+            log.info('')
 
     except RuntimeError as err:
         log.error(err)
