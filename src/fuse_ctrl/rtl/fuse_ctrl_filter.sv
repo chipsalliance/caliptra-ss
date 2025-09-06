@@ -168,12 +168,6 @@ always_comb begin
                 latch_addr_id      = 1'b1;
                 latch_cmd_id       = 1'b0;
                 table_fsm_next_st  = FUSE_ADDR_AXI_ADDR_ST;
-            end else if (first_write_addr || second_read_addr) begin
-                latch_data_id0     = 1'b0;
-                latch_data_id1     = 1'b0;
-                latch_addr_id      = 1'b0;
-                latch_cmd_id       = 1'b0;
-                table_fsm_next_st  = RDATA_ADDR_ST;
             end else if (partition_cmd_axi_addr) begin
                 latch_data_id0     = 1'b0;
                 latch_data_id1     = 1'b0;
@@ -206,23 +200,6 @@ always_comb begin
             end
         end   
         //-------------------------------------------------------------------------
-        // RDATA_ADDR_ST: Wait for a valid write event that carries the data.
-        // Remain in this state until the write event is detected, then move to RDATA_ST.
-        RDATA_ADDR_ST: begin
-            latch_addr        = 1'b0;
-            latch_data_id0    = 1'b0;
-            latch_data_id1    = 1'b0;
-            latch_addr_id     = 1'b0;
-            latch_cmd_id      = 1'b0;
-            clear_records     = 1'b0;
-            discard_fuse_write= 1'b0;
-            if (write_event) begin
-                table_fsm_next_st = RDATA_ST;
-            end else begin
-                table_fsm_next_st = RDATA_ADDR_ST;
-            end
-        end 
-        //-------------------------------------------------------------------------
         // WDATA_ST: Process the write data.
         // If a table check is triggered, latch the address ID and transition to the fuse address phase.
         // Otherwise, if additional data writes occur due to the granulartiy, latch the corresponding data ID.
@@ -248,12 +225,6 @@ always_comb begin
                 latch_addr_id       = 1'b0;
                 latch_cmd_id        = 1'b0;
                 table_fsm_next_st   = WDATA_ADDR_ST;
-            end else if (first_write_addr || second_read_addr) begin
-                latch_data_id0     = 1'b0;
-                latch_data_id1     = 1'b0;
-                latch_addr_id      = 1'b0;
-                latch_cmd_id       = 1'b0;
-                table_fsm_next_st  = RDATA_ADDR_ST;
             end else if (partition_cmd_axi_addr) begin
                 latch_data_id0     = 1'b0;
                 latch_data_id1     = 1'b0;
@@ -294,12 +265,6 @@ always_comb begin
                 latch_addr_id       = 1'b0;
                 latch_cmd_id        = 1'b0;
                 table_fsm_next_st   = WDATA_ADDR_ST;
-            end else if (first_write_addr || second_read_addr) begin
-                latch_data_id0     = 1'b0;
-                latch_data_id1     = 1'b0;
-                latch_addr_id      = 1'b0;
-                latch_cmd_id       = 1'b0;
-                table_fsm_next_st  = RDATA_ADDR_ST;
             end else if (partition_cmd_axi_addr) begin
                 latch_data_id0     = 1'b0;
                 latch_data_id1     = 1'b0;
@@ -357,12 +322,6 @@ always_comb begin
                 latch_addr_id       = 1'b0;
                 latch_cmd_id        = 1'b0;
                 table_fsm_next_st   = WDATA_ADDR_ST;
-            end else if (first_write_addr || second_read_addr) begin
-                latch_data_id0     = 1'b0;
-                latch_data_id1     = 1'b0;
-                latch_addr_id      = 1'b0;
-                latch_cmd_id       = 1'b0;
-                table_fsm_next_st  = RDATA_ADDR_ST;
             end else if (partition_cmd_axi_addr) begin
                 latch_data_id0     = 1'b0;
                 latch_data_id1     = 1'b0;
