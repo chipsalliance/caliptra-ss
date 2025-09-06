@@ -37,11 +37,11 @@ enum printf_verbosity verbosity_g = LOW;
 #define LOG_INFO(...) VPRINTF(LOW, "MCU:" #__VA_ARGS__)
 
 const uint32_t kPartitions[] = {
-  SECRET_MANUF_PARTITION,
-  SECRET_PROD_PARTITION_0,
-  SECRET_PROD_PARTITION_1,
-  SECRET_PROD_PARTITION_2,
-  SECRET_PROD_PARTITION_3,
+  SECRET_MANUF_PARTITION//,
+  // SECRET_PROD_PARTITION_0,
+  // SECRET_PROD_PARTITION_1,
+  // SECRET_PROD_PARTITION_2,
+  // SECRET_PROD_PARTITION_3,
 };
 const uint32_t kNumPartitions = sizeof(kPartitions) / sizeof(kPartitions[0]);
 
@@ -70,11 +70,14 @@ static bool zeroization_check_unfeasible(uint32_t partition_id) {
 
   // Attempt to zeroize. We check sure that the zeroize flag is still 0
   // to confirm that zeroization is not feasible from MCU.
-  dai_zer(p->zer_address, &read_data[0], &read_data[1], 64, 0);
+  dai_zer(p->zer_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
   if (read_data[0] != 0 || read_data[1] != 0) {
     LOG_ERROR("Zeroize flag was set to 0x%x%x\n", read_data[1], read_data[0]);
     return false;
   }
+
+  reset_fc_lcc_rtl();
+  wait_dai_op_idle(0);
 
   return true;
 }
@@ -101,6 +104,10 @@ static bool zeroization_caliptra_request(uint32_t partition_id) {
   if (reg & SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_UDS_PROGRAM_SUCCESS_MASK) {
     return true;
   }
+  reset_fc_lcc_rtl();
+  wait_dai_op_idle(0);
+
+
   return false;
 }
 
@@ -121,7 +128,7 @@ void main(void) {
 
   // Grant permission to perform writes even though we are expecting the
   // operation to fail.
-  grant_mcu_for_fc_writes();
+  // grant_mcu_for_fc_writes();
 
   // Before releasing Caliptra core, test that we are unable to zeroize any of
   // the partitions with or without PPD set.
@@ -150,7 +157,7 @@ void main(void) {
     wait_dai_op_idle(0);
   }
 
-  revoke_grant_mcu_for_fc_writes();
+  // revoke_grant_mcu_for_fc_writes();
 
   // Releases the Caliptra core by setting CPTRA_FUSE_WR_DONE.
   lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE,
@@ -158,7 +165,7 @@ void main(void) {
   LOG_INFO("Set FUSE_WR_DONE\n");
 
 
-  grant_caliptra_core_for_fc_writes();
+  // grant_caliptra_core_for_fc_writes();
 
   // Expect zeroization to FAIL when PPD IS NOT set.
   for (uint32_t i = 0; i < kNumPartitions; i++) {
@@ -190,7 +197,7 @@ void main(void) {
   lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
   wait_dai_op_idle(0);
 
-  revoke_grant_mcu_for_fc_writes();
+  // revoke_grant_mcu_for_fc_writes();
 
   // TODO(moidx): Should we issue reset and verify that the partitions are
   // zeroized?

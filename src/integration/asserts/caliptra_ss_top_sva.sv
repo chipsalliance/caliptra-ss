@@ -338,6 +338,7 @@ module caliptra_ss_top_sva
   // Assert that an DAI write to a partition whose life-cycle phase has expired will result in an error.
   `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
     `FC_PATH.dai_req &&
+     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
     dec_lc_state > PartInfo[part_idx].lc_phase
     |-> ##10
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
