@@ -437,7 +437,7 @@ always_comb begin
     write_event                 = (core_axi_wr_req.wvalid && core_axi_wr_rsp.wready);
     trigger_table_check         = (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready && core_axi_wr_req.awaddr[CoreAw-1:0] == OTP_CTRL_DIRECT_ACCESS_ADDRESS_OFFSET);
     partition_cmd_axi_addr      = (core_axi_wr_req.awvalid && core_axi_wr_rsp.awready && core_axi_wr_req.awaddr[CoreAw-1:0] == OTP_CTRL_DIRECT_ACCESS_CMD_OFFSET);
-    all_same_id                 = (latched_data_id1 == latched_data_id0) && (latched_data_id0 == latched_addr_id) &&  (latched_addr_id == latched_cmd_id);
+    all_same_id                 = ((latched_data_id1 == latched_data_id0) | !caliptra_secret_access) && (latched_data_id0 == latched_addr_id) &&  (latched_addr_id == latched_cmd_id);
 
     addr_and_cmd_same_id        = (latched_addr_id == latched_cmd_id);
     fuse_cmd                    = dai_cmd_e'(core_axi_wr_req.wdata[31:0]);
