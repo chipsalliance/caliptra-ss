@@ -1030,6 +1030,7 @@ end
   fuse_ctrl_filter u_fuse_ctrl_filter (
     .clk_i                              (clk_i),
     .rst_n_i                            (rst_ni),
+    .FIPS_ZEROIZATION_CMD_i             (FIPS_ZEROIZATION_CMD_i),
     .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
     .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_cptra_axi_user_i),
     .fc_init_done            (pwr_otp_rsp_d),

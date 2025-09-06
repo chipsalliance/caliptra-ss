@@ -113,7 +113,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStDev",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_CORE_UDS_SEED",
@@ -141,7 +141,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_0",
@@ -169,7 +169,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_1",
@@ -197,7 +197,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_2",
@@ -225,7 +225,7 @@
             integrity:    true,
             bkout_type:   true,
             lc_phase:     "LcStProd",
-            zeroizable:   false,
+            zeroizable:   true,
             items: [
                 {
                     name: "CPTRA_CORE_FIELD_ENTROPY_3",

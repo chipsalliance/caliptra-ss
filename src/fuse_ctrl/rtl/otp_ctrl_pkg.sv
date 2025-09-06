@@ -348,15 +348,17 @@ package otp_ctrl_pkg;
 
 
   
-  typedef enum logic [2:0] {
-    RESET_ST                   = 3'd0,
-    IDLE_ST                    = 3'd1,
-    WDATA_ADDR_ST              = 3'd2,
-    WDATA_ST                   = 3'd3,
-    FUSE_ADDR_AXI_ADDR_ST      = 3'd4,
-    FUSE_ADDR_AXI_WR_ST        = 3'd5,
-    FUSE_CMD_AXI_ADDR_ST       = 3'd6,
-    DISCARD_FUSE_CMD_AXI_WR_ST = 3'd7
+  typedef enum logic [3:0] {
+    RESET_ST                   = 4'd0,
+    IDLE_ST                    = 4'd1,
+    WDATA_ADDR_ST              = 4'd2,
+    RDATA_ADDR_ST              = 4'd3,
+    WDATA_ST                   = 4'd4,
+    RDATA_ST                   = 4'd5,
+    FUSE_ADDR_AXI_ADDR_ST      = 4'd6,
+    FUSE_ADDR_AXI_WR_ST        = 4'd7,
+    FUSE_CMD_AXI_ADDR_ST       = 4'd8,
+    DISCARD_FUSE_CMD_AXI_WR_ST = 4'd9
   } fc_table_state_t;
 
 
@@ -369,9 +371,12 @@ package otp_ctrl_pkg;
   
   localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
     '{ lower_addr: 32'h00000000, upper_addr: 32'h00003FD8}, // Caliptra core
-    '{ lower_addr: 32'h000000D0, upper_addr: 32'h00003FD8},  // MCU core
+    '{ lower_addr: 32'h000000F8, upper_addr: 32'h00003FD8},  // MCU core
     '{ lower_addr: 32'h00000000, upper_addr: 32'h00000040}  // MCU core
   };
+
+  localparam int CALIPTRA_SECRET_ACCESS_LOWER_ADDR = 32'h48;
+  localparam int CALIPTRA_SECRET_ACCESS_UPPER_ADDR = 32'hF0;
 
     //------------------------------------------------------------------
     // Typedef for PRIM GENERIC Module Inputs
