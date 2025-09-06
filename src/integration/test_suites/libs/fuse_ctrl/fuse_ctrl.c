@@ -60,9 +60,9 @@ void wait_dai_op_idle(uint32_t status_mask) {
         status = lsu_read_32(SOC_OTP_CTRL_STATUS);
         dai_idle = (status >> OTP_CTRL_STATUS_DAI_IDLE_LOW) & 0x1;
         check_pending = (status >> OTP_CTRL_STATUS_CHECK_PENDING_LOW) & 0x1;
-        VPRINTF(LOW, "%08X\n", status);
+        
     } while ((!dai_idle || check_pending) && ((status & error_mask) != error_mask));
-
+    VPRINTF(LOW, "%08X\n", status);
     // Clear the IDLE bit from the status value
     status &= ((((uint32_t)1) << (OTP_CTRL_STATUS_DAI_IDLE_LOW - 1)) - 1);
     if ((status & error_mask) != status_mask) {
@@ -186,7 +186,7 @@ void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granula
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
 
-    VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
+    VPRINTF(LOW, "DEBUG: Triggering DAI Zeroize command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
 
     wait_dai_op_idle(exp_status);
@@ -199,5 +199,132 @@ void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granula
         VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
     }
 
+    return;
+}
+
+
+void shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
+    VPRINTF(LOW, "DEBUG: Starting DAI write operation with permutation %d...\n", permutation_index);
+
+    switch (permutation_index) {
+        case 0: // Original order
+            lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
+            if (granularity == 64)
+                lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata1);
+            lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+            break;
+
+        case 1: // Swap wdata0 and wdata1
+            if (granularity == 64)
+                lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata1);
+            lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
+            lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+            break;
+
+        case 2: // Address first
+            lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+            lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
+            if (granularity == 64)
+                lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata1);
+            break;
+
+        case 3: // wdata0, address, wdata1
+            lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
+            lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+            if (granularity == 64)
+                lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata1);
+            break;
+
+        case 4: // wdata1, address, wdata0
+            if (granularity == 64)
+                lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata1);
+            lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+            lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
+            break;
+
+        default:
+            VPRINTF(LOW, "ERROR: Invalid permutation index %d\n", permutation_index);
+            return;
+    }
+
+    VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
+
+    wait_dai_op_idle(exp_status);
+}
+
+
+void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
+    VPRINTF(LOW, "DEBUG: Starting DAI read operation with permutation %d...\n", permutation_index);
+
+    VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+
+    VPRINTF(LOW, "DEBUG: Triggering DAI read command.\n");
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_READ);
+
+    wait_dai_op_idle(exp_status);
+
+    switch (permutation_index) {
+        case 0: // Read rdata0 first, then rdata1
+            *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
+            VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
+
+            if (granularity == 64) {
+                *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
+                VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
+            }
+            break;
+
+        case 1: // Read rdata1 first, then rdata0
+            if (granularity == 64) {
+                *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
+                VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
+            }
+
+            *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
+            VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
+            break;
+
+        default:
+            VPRINTF(LOW, "WARNING: Unsupported permutation index %d. Defaulting to standard read order.\n", permutation_index);
+            *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
+            VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
+
+            if (granularity == 64) {
+                *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
+                VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
+            }
+            break;
+    }
+
+    return;
+}
+
+
+void calculate_digest_without_addr(uint32_t exp_status) {
+    // Step 1: Check if DAI is idle
+    wait_dai_op_idle(0);
+
+    VPRINTF(LOW, "INFO: Triggering DIGEST WITHOUT ADDRESS.\n");
+
+    // Step 3: Trigger a digest calculation command
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, 0x4);
+
+    // Step 4: Poll STATUS until the DAI is idle and check that it matches the expected status
+    wait_dai_op_idle(exp_status);
+    return;
+}
+
+
+void zeroize_without_addr(uint32_t exp_status) {
+    // Step 1: Check if DAI is idle
+    wait_dai_op_idle(0);
+
+    VPRINTF(LOW, "INFO: Triggering ZEROIZE WITHOUT ADDRESS.\n");
+
+    lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
+
+    wait_dai_op_idle(exp_status);
     return;
 }

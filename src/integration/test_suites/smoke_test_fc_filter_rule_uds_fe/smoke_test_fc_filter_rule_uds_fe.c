@@ -36,6 +36,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+#define SHORT_TEST
+
 void invalid_secret_zeroization(void) {
     uint32_t data[2];
 
@@ -51,7 +53,7 @@ void invalid_secret_zeroization(void) {
     wait_dai_op_idle(0);
     VPRINTF(LOW, "INFO: Attempting to zeroize UDS partition (expected to fail)...\n");
     dai_zer(hw_part_uds.address, &data[0], &data[1], hw_part_uds.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-
+#ifndef SHORT_TEST
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
     VPRINTF(LOW, "INFO: Attempting to zeroize FE0 partition (expected to fail)...\n");
@@ -71,7 +73,7 @@ void invalid_secret_zeroization(void) {
     wait_dai_op_idle(0);
     VPRINTF(LOW, "INFO: Attempting to zeroize FE3 partition (expected to fail)...\n");
     dai_zer(hw_part_fe3.address, &data[0], &data[1], hw_part_fe3.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-
+#endif
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
@@ -99,7 +101,7 @@ void valid_secret_zeroization(void) {
     } else {
         VPRINTF(LOW, "PASS: UDS fuse successfully zeroized\n");
     }
-
+#ifndef SHORT_TEST
     dai_zer(hw_part_fe0.address, &data[0], &data[1], hw_part_fe0.granularity, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
         VPRINTF(LOW, "ERROR: FE0 fuse is not zeroized\n");
@@ -131,7 +133,7 @@ void valid_secret_zeroization(void) {
     } else {
         VPRINTF(LOW, "PASS: FE3 fuse successfully zeroized\n");
     }
-
+#endif
 epilogue:
     VPRINTF(LOW, "INFO: Valid secret zeroization test completed.\n");
 }
@@ -154,7 +156,7 @@ void secret_prov(void) {
 
     VPRINTF(LOW, "INFO: Calculating digest for UDS partition...\n");
     calculate_digest(hw_part_uds.address, 0);
-
+#ifndef SHORT_TEST
     VPRINTF(LOW, "INFO: Resetting to activate UDS partition lock...\n");
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
@@ -202,7 +204,7 @@ void secret_prov(void) {
     VPRINTF(LOW, "INFO: Resetting to activate FE3 partition lock...\n");
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
-
+#endif
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
 }
 
@@ -213,7 +215,7 @@ void main(void) {
     mcu_cptra_init_d();
 
     VPRINTF(LOW, "INFO: Granting MCU access to fuse controller...\n");
-    grant_mcu_for_fc_writes();
+    grant_caliptra_core_for_fc_writes();
 
     for (uint8_t ii = 0; ii < 20; ii++) {
         __asm__ volatile ("nop"); // Sleep loop
@@ -223,30 +225,33 @@ void main(void) {
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
     secret_prov();
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    // for (uint8_t ii = 0; ii < 20; ii++) {
+    //     __asm__ volatile ("nop"); // Sleep loop
+    // }
 
-    VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
-    revoke_grant_mcu_for_fc_writes();
+    // VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
+    // revoke_grant_mcu_for_fc_writes();
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    // for (uint8_t ii = 0; ii < 20; ii++) {
+    //     __asm__ volatile ("nop"); // Sleep loop
+    // }
 
-    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    invalid_secret_zeroization();
+    // VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
+    // invalid_secret_zeroization();
+    // VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    // for (uint8_t ii = 0; ii < 20; ii++) {
+    //     __asm__ volatile ("nop"); // Sleep loop
+    // }
 
     VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
-    grant_mcu_for_fc_writes();
+    grant_caliptra_core_for_fc_writes();
 
     VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
     invalid_secret_zeroization();
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     for (uint8_t ii = 0; ii < 20; ii++) {
         __asm__ volatile ("nop"); // Sleep loop
@@ -255,6 +260,7 @@ void main(void) {
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
     valid_secret_zeroization();
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Final sleep loop

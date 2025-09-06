@@ -73,7 +73,6 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
         latched_addr_id         <= '0;
         latched_cmd_id          <= '0;
         discard_fuse_write_o    <= '0;
-        fuse_cmd                <= DaiRead;
         caliptra_secret_access  <= '0;
     end else begin
         table_fsm_current_st <= table_fsm_next_st;
@@ -85,11 +84,12 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
             latched_data_id1        <= '0;
             latched_addr_id         <= '0;
             latched_cmd_id          <= '0;
-            fuse_cmd                <= DaiRead;
             caliptra_secret_access  <= '0;
         end else begin
-            if (latch_addr)
+            if (latch_addr) begin
                 latched_fuse_addr <= core_axi_wr_req.wdata;
+                caliptra_secret_access  <= (core_axi_wr_req.wdata >= CALIPTRA_SECRET_ACCESS_LOWER_ADDR && core_axi_wr_req.wdata <= CALIPTRA_SECRET_ACCESS_UPPER_ADDR) ? 1'b1 : 1'b0;
+            end
 
             if (latch_data_id0) 
                 latched_data_id0 <= req_axi_user_id;
@@ -97,14 +97,13 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
             if (latch_data_id1)
                 latched_data_id1 <= req_axi_user_id;
             
-            if (latch_addr_id) begin
+            if (latch_addr_id) 
                 latched_addr_id         <= req_axi_user_id;
-                caliptra_secret_access  <= (core_axi_wr_req.wdata >= CALIPTRA_SECRET_ACCESS_LOWER_ADDR && core_axi_wr_req.wdata >= CALIPTRA_SECRET_ACCESS_UPPER_ADDR) ? 1'b1 : 1'b0;
-            end
+
 
             if (latch_cmd_id) begin
                 latched_cmd_id  <= req_axi_user_id;
-                fuse_cmd        <= dai_cmd_e'(core_axi_wr_req.wdata[31:0]);
+                
             end
         end
     end
@@ -375,7 +374,7 @@ always_comb begin
                 latch_data_id1    = 1'b0;
                 latch_addr_id     = 1'b0;
                 latch_cmd_id      = 1'b0;
-                table_fsm_next_st = RDATA_ST;
+                table_fsm_next_st = FUSE_ADDR_AXI_WR_ST;
             end
         end
         //-------------------------------------------------------------------------
@@ -401,15 +400,15 @@ always_comb begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 
-            end else if (fuse_cmd == DaiDigest && write_event && (caliptra_secret_access && !FIPS_ZEROIZATION_CMD_i))begin
-                discard_fuse_write= 1'b1;
-                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
-
             end else if (fuse_cmd == DaiDigest && write_event && !wr_req_allowed)begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 
             end else if (fuse_cmd == DaiDigest && write_event && !addr_and_cmd_same_id)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
+
+            end else if (fuse_cmd == DaiZeroize && write_event && (caliptra_secret_access && !FIPS_ZEROIZATION_CMD_i))begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 
@@ -482,6 +481,7 @@ always_comb begin
     all_same_id                 = (latched_data_id1 == latched_data_id0) && (latched_data_id0 == latched_addr_id) &&  (latched_addr_id == latched_cmd_id);
 
     addr_and_cmd_same_id        = (latched_addr_id == latched_cmd_id);
+    fuse_cmd                    = dai_cmd_e'(core_axi_wr_req.wdata[31:0]);
 end
 
 
