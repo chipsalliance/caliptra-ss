@@ -158,6 +158,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: releasing esc_scrap_state1 escalation");
             release `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state1_i;
           end
+          CMD_FC_FORCE_FUSE_FAULT: begin
+            $display("fc_lcc_tb_services: Fault 2 LSBs of the HEK_PROD_1 zeroization marker");
+            force `FC_MEM[CptraSsLockHekProd1ZerOffset/2][1:0] = '0;
+          end
+          CMD_FC_RELEASE_FUSE_FAULT: begin
+            $display("fc_lcc_tb_services: Release fault on the HEK_PROD_1 zeroization marker");
+            release `FC_MEM[CptraSsLockHekProd1ZerOffset/2][1:0];
+          end
           default: begin
             // No action for unrecognized commands.
           end

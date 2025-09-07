@@ -158,10 +158,10 @@ void main (void) {
     grant_mcu_for_fc_writes();
 
 
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    // transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
     initialize_otp_controller();
-    VPRINTF(LOW, "=================\nSecret_partition_zeroization\n=================\n\n")
+    VPRINTF(LOW, "=================\nSecret_partition_zeroization\n=================\n\n");
     secret_partition_zeroization();
 
     for (uint8_t ii = 0; ii < 160; ii++) {

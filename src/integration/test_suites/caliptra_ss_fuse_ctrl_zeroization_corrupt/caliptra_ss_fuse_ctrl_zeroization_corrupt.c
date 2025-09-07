@@ -58,7 +58,7 @@ int part_read_compare(
     // depend on the partition.
     for (uint32_t addr = part->address;
             addr < part->digest_address;
-            addr += part->granularity) {
+            addr += part->granularity / 8) {
         dai_rd(addr, &act_data[0], &act_data[1], part->granularity, exp_status);
         mismatches += compare(act_data[0], exp_data[0], addr);
         // Check second 32 bit only if the partition has a granularity
@@ -79,21 +79,23 @@ int part_read_compare(
     return mismatches;
 }
 
-int part_zeroize(const partition_t* part, uint32_t exp_status) {
+int part_zeroize(const partition_t* part, uint32_t exp_status, uint8_t check_marker) {
     uint32_t rdata[2];
     int mismatches = 0;
 
     // Firstly, zeroize the zeroization marker, which always has a
     // granularity and size of 64 bit.
     dai_zer(part->zer_address, &rdata[0], &rdata[1], 64, exp_status);
-    mismatches += compare(rdata[0], 0xFFFFFFFF, part->zer_address);
-    mismatches += compare(rdata[1], 0xFFFFFFFF, part->zer_address + 4);
+    if (check_marker) {
+      mismatches += compare(rdata[0], 0xFFFFFFFF, part->zer_address);
+      mismatches += compare(rdata[1], 0xFFFFFFFF, part->zer_address + 4);
+    }
 
     // Secondly, zeroize the data, for which the granularity and size
     // depend on the partition.
     for (uint32_t addr = part->address;
             addr < part->digest_address;
-            addr += part->granularity) {
+            addr += part->granularity / 8) {
         dai_zer(addr, &rdata[0], &rdata[1], part->granularity, exp_status);
         mismatches += compare(rdata[0], 0xFFFFFFFF, addr);
         // Check second 32 bit only if the partition has a granularity
@@ -112,12 +114,17 @@ int part_zeroize(const partition_t* part, uint32_t exp_status) {
     return mismatches;
 }
 
-int check_part_zeroized(const partition_t* part, uint32_t exp_status) {
+int check_part_zeroized(
+        const partition_t* part,
+        uint8_t only_data_and_digest,
+        uint32_t exp_status) {
     uint32_t exp_ones[] = {0xFFFFFFFF, 0xFFFFFFFF};
     int mismatches = 0;
 
     // Read and compare the data and digest.
     mismatches += part_read_compare(part, exp_ones, 0, 1);
+
+    if (only_data_and_digest) return mismatches;
 
     // Read the partition zeroization marker and check that the result
     // is all ones.
@@ -130,10 +137,11 @@ int check_part_zeroized(const partition_t* part, uint32_t exp_status) {
 }
 
 /**
- * This test emulates OTP corruption due to reset during programming
- * and checks that zeroization is still possible in this case.
+ * This test emulates OTP corruption due to a SW bug (writing the same
+ * data fuses twice with different values, which will corrupt ECC) and
+ * checks that zeroization is still possible in this case.
  */
-void test_main (void) {
+int test_sw_corruption (void) {
     // Initialize test constants.
     const uint32_t wr_data0[] = {0x11111111, 0x44444444};
     const uint32_t wr_data1[] = {0x33333333, 0xCCCCCCCC};
@@ -168,7 +176,7 @@ void test_main (void) {
     // the ECC part of each word.
     if (part_read_compare(&part, exp_data, OTP_CTRL_STATUS_DAI_ERROR_MASK, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 2 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 3: Reset.
@@ -176,9 +184,9 @@ void test_main (void) {
     wait_dai_op_idle(0);
 
     // Step 4: Zeroize and check that zeroization succeeded.
-    if (part_zeroize(&part, 0) != 0) {
+    if (part_zeroize(&part, 0, /*check_marker*/1) != 0) {
         VPRINTF(LOW, "ERROR: Step 4 failed!\n");
-        goto epilogue;
+        return 1;
     }
 
     // Step 5: Reset.
@@ -186,13 +194,61 @@ void test_main (void) {
     wait_dai_op_idle(0);
 
     // Step 6: Read the partition back and ensure its now all ones.
-    if (check_part_zeroized(&part, 0) != 0) {
+    if (check_part_zeroized(&part, /*only_data_and_digest=*/0, 0) != 0) {
         VPRINTF(LOW, "ERROR: Step 6 failed!\n");
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
+ * This test emulates OTP corruption due to a HW problem (fuse stuck at
+ * 0) and checks that zeroization is still possible in this case (the
+ * stuck-at fuse won't get "zeroized" to 1).
+ */
+int test_stuck_at_corruption (void) {
+    int retval = 0;
+    const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_1];
+
+    // Step 1: Enable the fault.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_FUSE_FAULT);
+
+    // Step 2: Zeroize -- this should still succeed because the number
+    // of bits stuck at 0 is lower than the threshold that would cause
+    // zeroization to fail.
+    if (part_zeroize(&part, 0, /*check_marker*/0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 2 failed!\n");
+        retval = 1;
+        goto epilogue;
+    }
+
+    // Step 3: Reset.
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+
+    // Step 4: Check that data and digest have been completely zeroized.
+    if (check_part_zeroized(&part, /*only_data_and_digest=*/1, 0) != 0) {
+        VPRINTF(LOW, "ERROR: Step 4 failed!\n");
+        retval = 1;
+        goto epilogue;
+    }
+
+    // Step 5: Read the zeroization marker and check that it has been
+    // zeroized except for the two bits stuck at 0.
+    uint32_t act_data[2];
+    dai_rd(part.zer_address, &act_data[0], &act_data[1], 64, 0);
+    if (act_data[0] != 0xFFFFFFFC || act_data[1] != 0xFFFFFFFF) {
+        VPRINTF(LOW, "ERROR: Step 5 failed (0x%08x 0x%08x)!\n",
+                act_data[0], act_data[1]);
+        retval = 1;
         goto epilogue;
     }
 
 epilogue:
-    VPRINTF(LOW, "caliptra_ss_fuse_ctrl_zeroization_corrupt test finished\n");
+    // Disable the fault.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_RELEASE_FUSE_FAULT);
+    return retval;
 }
 
 void main (void) {
@@ -204,7 +260,19 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-    test_main();
+    VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_corrupt code.\n");
+
+    if (test_sw_corruption() == 0) {
+        VPRINTF(LOW, "test_sw_corruption PASSED\n");
+    } else {
+        VPRINTF(LOW, "test_sw_corruption FAILED\n");
+    }
+
+    if (test_stuck_at_corruption() == 0) {
+        VPRINTF(LOW, "test_stuck_at_corruption PASSED\n");
+    } else {
+        VPRINTF(LOW, "test_stuck_at_corruption FAILED\n");
+    }
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
