@@ -61,6 +61,8 @@
   - [Programming interface](#programming-interface-1)
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
+  - [FIPS Zeroization Sequence](#fips-zeroization-sequence)
+  - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
