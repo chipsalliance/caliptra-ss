@@ -156,16 +156,17 @@ static bool mcu_zeroization_test(void) {
 }
 
 void main(void) {
+  mcu_cptra_init_d();
+
   VPRINTF(LOW, "=====================================\n"
                "MCU Caliptra Boot Go\n"
                "=====================================\n\n");
 
-  // Wait for ready_for_fuses
-  while (!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) &
-           SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK))
-    ;
 
-  mcu_cptra_init_d(.cfg_skip_set_fuse_done = true);
+  wait_dai_op_idle(0);
+  initialize_otp_controller();
+
+  
   wait_dai_op_idle(0);
   initialize_otp_controller();
 
@@ -184,7 +185,7 @@ void main(void) {
     uint32_t partition_id = kPartitionsInfo[i].id;
     if (!check_digest(partition_id, /*expected_zeroized=*/false)) {
       LOG_ERROR("Partition %d is not zeroized\n", partition_id);
-      return false;
+      break;
     }
   }
 
