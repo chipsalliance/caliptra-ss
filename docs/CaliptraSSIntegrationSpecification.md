@@ -999,13 +999,29 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
 ## FIPS Zeroization Sequence
+Follow these steps in order to correctly zeroize the fuses and verify the operation for any partition that requires FIPS zeroization to be set (determined by zeroizable flag when a partition is generated).
+1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization.
+2. Issue Zeroization Commands: Trigger zeroization by sending a zeroization command to Caliptra core. Caliptra core will send a sequence of DAI (Direct Access Commands) commands to the fuse controller to perform the zeroization. The recommended order is:
+   - Clear the Partition Zeroization Flag: First, send a DAI command to clear this 64-bit flag within the target partition. Executing this step first is critical, as it masks potential ECC or integrity errors if the process is interrupted by a power failure.
+   - Zeroize Data Words: Send DAI zeroization commands for all data words within the partition.
+   - Clear the Partition Digest: Finally, send a DAI command to clear the partition's digest.
+6. Reset the Subsystem: Apply a full reset to the Caliptra subsystem. This reset is required for the fuse_ctrl block to latch the new state before the status can be checked.
+7. De-assert Physical Presence: The FIPS_zeroization_PPD pin can now be cleared (set low).
+8. Verify the Operation: From the main MCU, read the partition's digest value from the associated fuse_ctrl digest registers.
+   - Success: If the register returns the expected zeroized digest value, the operation is complete.
+   - Failure: If the digest does not match the zeroized value, repeat the entire sequence starting from Step 1.
 
 ## Miscellanious Fuse Integration Guidelines
 - If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
 - Whenever a secret partition is programmed, it requires a FC reset, implying it requires a SOC reset
-- Partitions 0-5 should not be changed by SOC
 - ECC bits inside fuse macros MUST be zeroized per FIPS guidelines. Since these bits are implemented by SOC a a part of OTP gasket, SOC should also implement FIPS zeroization of the ECC for UDS, FE, Ratchet Seeds (OCP lock), any vendor secrets (if required by FIPS).
 - FIPS zeroization of the ECC bits of a given partition must be done after the FIPS zeroization of the partition data, zeroization marker and digest.
+- UDS & FE MUST ONLY be FIPS zeroized by Caliptra Core (by Subsystem default design construction doesnt allow anyone else to do this operation).
+  - DAI Command Error Checking: The Caliptra core is responsible for checking the result of each DAI zeroization command to ensure it completed successfully. Any errors must be handled appropriately.
+  - Partitions 0-5 should not be changed by SOC. Don’t add or remove any fields, re-adjust sizes of these partitions as Caliptra ROM may expect them to be of a fixed size.
+- Fuse Macro Wrapper Requirements: The fuse_ctrl macro wrapper must implement a retry mechanism for the zeroization process. To prevent damage to the fuses, the wrapper must also avoid double writes to bits that have already been programmed. Please follow the specific integration guidelines provided by your fuse macro vendor.
+- OCP Lock ratchet seeds can be FIPS zeroized by MCU
+- If FIPS zeroization is required for Vendor Secret Partitions, then SOC shall generate the partition with zeroization flag, validate that the zeroization sequence documented above works as expected and uses MCU to do the FIPS zeroization. Any additional physical security protection of this partition is SOC's responsibility since the use cases are SOC defined.
 
 ## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
