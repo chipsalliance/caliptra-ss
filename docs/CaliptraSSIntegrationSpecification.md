@@ -1007,8 +1007,7 @@ Follow these steps in order to correctly zeroize the fuses and verify the operat
    - Clear the Partition Zeroization Flag: First, send a DAI command to clear this 64-bit flag within the target partition. Executing this step first is critical, as it masks potential ECC or integrity errors if the process is interrupted by a power failure.
    - Zeroize Data Words: Send DAI zeroization commands for all data words within the partition.
    - Clear the Partition Digest: Finally, send a DAI command to clear the partition's digest.
-6. Reset the Subsystem: Apply a full reset to the Caliptra subsystem. This reset is required for the fuse_ctrl block to latch the new state before the status can be checked.
-7. De-assert Physical Presence: The FIPS_zeroization_PPD pin can now be cleared (set low).
+6. Power Cycle the SOC (including Caliptra SS): Apply a cold reset to the Caliptra subsystem. FIPS_zeroization_PPD pin should now be cleared (set low).
 8. Verify the Operation: From the main MCU, read the partition's digest value from the associated fuse_ctrl digest registers.
    - Success: If the register returns the expected zeroized digest value, the operation is complete.
    - Failure: If the digest does not match the zeroized value, repeat the entire sequence starting from Step 1.
