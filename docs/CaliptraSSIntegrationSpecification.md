@@ -998,7 +998,9 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
    - Perform a full integrity check by triggering `FUSE_CTRL_CHECK_TRIGGER` and ensure the system is error-free before proceeding.
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
-## FIPS Zeroization Sequence
+## UDS & Field Entropy FIPS Zeroization Sequence
+This sequence follows the "theory of operation" stated in this ['fuse-zeroization-programmer's-guide'](https://github.com/chipsalliance/caliptra-ss/blob/main/src/fuse_ctrl/doc/fuse_ctrl_zeroization_programmers_guide.md)
+
 Follow these steps in order to correctly zeroize the fuses and verify the operation for any partition that requires FIPS zeroization to be set (determined by zeroizable flag when a partition is generated).
 1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization.
 2. Issue Zeroization Commands: Trigger zeroization by sending a zeroization command to Caliptra core. Caliptra core will send a sequence of DAI (Direct Access Commands) commands to the fuse controller to perform the zeroization. The recommended order is:
