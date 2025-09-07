@@ -93,3 +93,4 @@ contents:
         - ../test_suites/smoke_test_fc_secret_partition_zeroization/smoke_test_fc_secret_partition_zeroization.yml
         - ../test_suites/smoke_test_fc_filter_rule_OOO_exec/smoke_test_fc_filter_rule_OOO_exec.yml
         - ../test_suites/smoke_test_fc_filter_rule_uds_fe/smoke_test_fc_filter_rule_uds_fe.yml
+        - ../test_suites/caliptra_ss_fuse_ctrl_zeroization_corrupt/caliptra_ss_fuse_ctrl_zeroization_corrupt.yml
