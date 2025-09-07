@@ -64,6 +64,7 @@ module fc_lcc_tb_services (
             force `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
             force `MCI_PATH.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg = 32'hFFFFFFFF;
             force `FC_PATH.lcc_is_in_SCRAP_mode = 1'b0;
+            force `FC_PATH.FIPS_ZEROIZATION_CMD_i = 1'b1;
           end
           CMD_FC_FORCE_ZEROIZATION_RESET: begin
             $display("fc_lcc_tb_services: Forcing FIPS_ZEROIZATION_PPD_i = 0, ROM mask = 32'h0, and lcc_is_in_SCRAP_mode = 1");
@@ -191,26 +192,44 @@ module fc_lcc_tb_services (
   //-------------------------------------------------------------------------
   reg  [3:0] fc_lcc_reset_counter;
   reg        fc_lcc_reset_active;
+  reg        fc_lcc_reset_0ing_active;
 
   always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
+          fc_lcc_reset_0ing_active <= 1'b0;
           fc_lcc_reset_active  <= 1'b0;
           fc_lcc_reset_counter <= '0;
           disable_lcc_sva      <= 1'b0;
       end
       else begin
-          // Detect the fc_lcc reset command from the mailbox
-          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_LCC_RESET && !fc_lcc_reset_active) begin
+          // Detect CMD_FC_LCC_EN_RESET_WHILE_0ING command.
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_LCC_EN_RESET_WHILE_0ING) begin
+              fc_lcc_reset_0ing_active <= 1'b1;
+          end
+
+          // Detect CMD_FC_LCC_DIS_RESET_WHILE_0ING command.
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_LCC_DIS_RESET_WHILE_0ING) begin
+              fc_lcc_reset_0ing_active <= 1'b0;
+          end
+
+          // Reset FC_LCC if it isn't currently active and one of the following happens:
+          // - the CMD_FC_LCC_RESET is detected;
+          // - reset-while-zeroizing is active and zeroization is detected.
+          if (!fc_lcc_reset_active && (
+                  (tb_service_cmd_valid && tb_service_cmd == CMD_FC_LCC_RESET) ||
+                  (fc_lcc_reset_0ing_active &&
+                      `FC_OTP_PRIM.state_q == 10'b0100110111 /* ZerWriteSt */ &&
+                      `FC_OTP_PRIM.cnt_q != '0)
+          )) begin
               fc_lcc_reset_active  <= 1'b1;
               fc_lcc_reset_counter <= '0;
-              $display("Top-level: Received fc_lcc reset command. Forcing reset for 10 cycles.");
+              $display("Top-level: Forcing FC_LCC reset for 10 cycles.");
           end
-          else if (fc_lcc_reset_active) begin
+          if (fc_lcc_reset_active) begin
               if (fc_lcc_reset_counter == 10) begin
                 fc_lcc_reset_active    <= 1'b0;
                 fc_lcc_reset_counter   <= '0;
-              end
-              else begin
+              end else begin
                   fc_lcc_reset_active <= 1'b1;
                   fc_lcc_reset_counter <= fc_lcc_reset_counter + 1;
               end

@@ -399,4 +399,28 @@ package otp_ctrl_part_pkg;
   parameter int ProdVendorHashEnd   = CptraCoreVendorPkHash1Offset + (ProdVendorHashSize * ProdVendorHashNum);
 % endif
 
+  localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
+% for part in otp_mmap.config["partitions"]:
+  % if part["sw_digest"] or part["hw_digest"]:
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}DigestOffset,    // ${part["name"]}
+  % elif part["variant"] == "LifeCycle":
+    0                                                               // ${part["name"]}
+  % else:
+    0,                                                              // ${part["name"]}
+  % endif
+% endfor
+  };
+
+  localparam [OtpByteAddrWidth-1:0] zero_addrs [0:NumPart-1] = {
+% for part in otp_mmap.config["partitions"]:
+  % if part["zeroizable"]:
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}ZerOffset,    // ${part["name"]}
+  % elif part["variant"] == "LifeCycle":
+    0                                                               // ${part["name"]}
+  % else:
+    0,                                                              // ${part["name"]}
+  % endif
+% endfor
+  };
+
 endpackage : otp_ctrl_part_pkg

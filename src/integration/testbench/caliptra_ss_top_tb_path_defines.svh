@@ -40,8 +40,11 @@
     `ifndef FC_PATH
       `define FC_PATH      `CPTRA_SS_TOP_PATH.u_otp_ctrl
     `endif
+    `ifndef FC_OTP_PRIM
+      `define FC_OTP_PRIM `CPTRA_SS_TB_TOP_NAME.u_otp
+    `endif
     `ifndef FC_MEM
-      `define FC_MEM `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem
+      `define FC_MEM `FC_OTP_PRIM.u_prim_ram_1p_adv.u_mem.mem
     `endif
     `ifndef CPTRA_CORE_TOP_PATH
       `define CPTRA_CORE_TOP_PATH      `CPTRA_SS_TOP_PATH.caliptra_top_dut
