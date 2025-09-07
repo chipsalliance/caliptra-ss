@@ -127,6 +127,12 @@ import tb_top_pkg::*;
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
         end 
+        if ($test$plusargs("CALIPTRA_SS_PROD_DBG_ZEROIZATION")) begin
+            force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
+        end
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
             //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;

@@ -32,3 +32,5 @@ pre-exec: |
       CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=${CALIPTRA_SS_ROOT}/src/integration/test_suites/smoke_test_fc_cptra_zeroization \
       AUX_HEADER_FILES=${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map/soc_address_map.h \
       TESTNAME=cptra_zeroization program.hex
+plusargs:
+    - '+CALIPTRA_SS_PROD_DBG_ZEROIZATION'

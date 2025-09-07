@@ -41,7 +41,7 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 #define LOG_INFO(...) VPRINTF(LOW, "CLP_CORE:" #__VA_ARGS__)
 
 static inline void sleep(const uint32_t cycles) {
-  for (uint8_t ii = 0; ii < cycles; ii++) {
+  for (uint32_t ii = 0; ii < cycles; ii++) {
     __asm__ volatile("nop");
   }
 }
@@ -254,5 +254,5 @@ void main(void) {
   VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high 0x%X...\n\n",
           reg);
 
-  sleep(50000);
+  sleep(500000);
 }

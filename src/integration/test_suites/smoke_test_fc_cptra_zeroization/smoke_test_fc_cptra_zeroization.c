@@ -115,6 +115,8 @@ void main(void) {
                SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
   LOG_INFO("Set FUSE_WR_DONE\n");
 
+  mcu_cptra_advance_brkpoint();
+
   // Enable ss_soc_dft_en_mask_reg
   lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_DFT_EN_0, 0x1);
   lsu_write_32(SOC_MCI_TOP_MCI_REG_SOC_HW_DEBUG_EN_0, 0x1);
