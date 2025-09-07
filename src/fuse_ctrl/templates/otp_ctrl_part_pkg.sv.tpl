@@ -402,7 +402,7 @@ package otp_ctrl_part_pkg;
   localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
 % for part in otp_mmap.config["partitions"]:
   % if part["sw_digest"] or part["hw_digest"]:
-    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}DigestOffset/2,    // ${part["name"]}
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}DigestOffset,    // ${part["name"]}
   % elif part["variant"] == "LifeCycle":
     0                                                               // ${part["name"]}
   % else:
@@ -414,7 +414,7 @@ package otp_ctrl_part_pkg;
   localparam [OtpByteAddrWidth-1:0] zero_addrs [0:NumPart-1] = {
 % for part in otp_mmap.config["partitions"]:
   % if part["zeroizable"]:
-    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}ZerOffset/2,    // ${part["name"]}
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}ZerOffset,    // ${part["name"]}
   % elif part["variant"] == "LifeCycle":
     0                                                               // ${part["name"]}
   % else:
