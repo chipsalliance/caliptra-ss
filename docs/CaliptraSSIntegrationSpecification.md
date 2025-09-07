@@ -996,7 +996,14 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
    - Perform a full integrity check by triggering `FUSE_CTRL_CHECK_TRIGGER` and ensure the system is error-free before proceeding.
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
+## FIPS Zeroization Sequence
 
+## Miscellanious Fuse Integration Guidelines
+- If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
+- Whenever a secret partition is programmed, it requires a FC reset, implying it requires a SOC reset
+- Partitions 0-5 should not be changed by SOC
+- ECC bits inside fuse macros MUST be zeroized per FIPS guidelines. Since these bits are implemented by SOC a a part of OTP gasket, SOC should also implement FIPS zeroization of the ECC for UDS, FE, Ratchet Seeds (OCP lock), any vendor secrets (if required by FIPS).
+- FIPS zeroization of the ECC bits of a given partition must be done after the FIPS zeroization of the partition data, zeroization marker and digest.
 
 ## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
