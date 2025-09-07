@@ -11,7 +11,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage
@@ -181,7 +180,7 @@ ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_sram_byte.sv
 ${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp_pkg.sv
+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/prim_generic_otp_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
