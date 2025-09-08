@@ -54,6 +54,7 @@ void ocp_lock_zeroization(void) {
     // The hardware partition gets locked for reads and writes after its
     // digest has been calculated via the DAI. Zeroization still needs
     // to work.
+    VPRINTF(LOW, "================= Start testing zeroization on hw_part =================\n")
 
     // Write some data, read it back, and compare the data read back.
     uint32_t exp_data = 0xA5A5A5A5;
@@ -67,12 +68,24 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
 
+    // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
+    // Before the HW gets locked.
+    dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
+
+
     // Lock the partition with a HW digest calculation.
     calculate_digest(hw_part.address, 0);
 
     // Reset to activate the write lock of the partition.
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
+
+    // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
+    // After the HW gets locked, but before the zeroization.
+    dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
+
 
     // Zeroize fuse.
     dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
@@ -81,17 +94,35 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
+
     // Zeroize marker field.
+    // Attempt to zeroize marker field, but introduce defective bits to be below the threshold.
+    VPRINTF(LOW, "DEBUG: Starting DAI defective zeroization operation (via HW forces)...\n");
+    // Force to defective bits on the zeroization marker of the fuse memory on partition VENDOR_SECRET_PROD_PARTITION to be below the threshold
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_FUSE_UNZEROIZ);
+    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
+    // Release defective bits on the zeroization marker of the fuse memory of VENDOR_SECRET_PROD_PARTITION
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_RELEASE_FUSE_UNZEROIZ);
+    memset(data, 0, 2*sizeof(uint32_t));
     dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: digest is not zeroized\n");
+        VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
+    
+    // Check that for a secret zeroized locked partition, the data cannot be read.
+    dai_rd(hw_part.address, &data[0], &data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+
+    // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
+    // After the HW gets locked and after the zeroization.
+    dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
 
     // Zeroize the first 32-bit word of the software partition and its
     // digest. This partition is unbuffered, unlocked and
     // software-readable but the zeroization should nonetheless work.
+    VPRINTF(LOW, "================= Start testing zeroization on sw_part0 =================\n")
 
     // Write some data, read it back, and compare the data read back
     exp_data = 0xA5A5A5A5;
@@ -118,13 +149,14 @@ void ocp_lock_zeroization(void) {
     // Zeroize marker field.
     dai_zer(sw_part0.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: digest is not zeroized\n");
+        VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
-
+    
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
+    VPRINTF(LOW, "================= Start testing zeroization on sw_part1 =================\n")
 
     exp_data = 0xA5A5A5A5;
     data[0] = exp_data;
@@ -157,9 +189,17 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
+    VPRINTF(LOW, "================= Start testing more zeroization cases =================\n")
+    // Lock the first three ratchet seed partition
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
+
+    // Check that for a zeroized locked partition, neither the data nor the digest can be written.
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].digest_address, 0x12, 0x34, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
-    dai_zer(ctrl_part.address, &data[0], &data[1], sw_part0.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    dai_zer(ctrl_part.address, &data[0], &data[1], ctrl_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
     if (data[0] != 0x0 || data[1] != 0x0) {
         VPRINTF(LOW, "ERROR: fuse is not 0.\n");
         goto epilogue;

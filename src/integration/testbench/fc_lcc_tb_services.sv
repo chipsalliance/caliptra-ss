@@ -29,6 +29,7 @@ module fc_lcc_tb_services (
   `include "soc_address_map_defines.svh"
 
   import otp_ctrl_reg_pkg::*;
+  import otp_ctrl_pkg::*;
 
   logic disable_lcc_sva;
 
@@ -165,6 +166,14 @@ module fc_lcc_tb_services (
           CMD_FC_RELEASE_FUSE_FAULT: begin
             $display("fc_lcc_tb_services: Release fault on the HEK_PROD_1 zeroization marker");
             release `FC_MEM[CptraSsLockHekProd1ZerOffset/2][1:0];
+          end
+          CMD_FC_FORCE_FUSE_UNZEROIZ: begin
+            $display("fc_lcc_tb_services: Fault %0d LSBs of the VENDOR_SECRET_PROD_PARTITION zeroization marker to be below the threshold", otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound+1);
+            force `FC_MEM[VendorSecretProdPartitionZerOffset/2][otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound:0] = '0;
+          end
+          CMD_FC_RELEASE_FUSE_UNZEROIZ: begin
+            $display("fc_lcc_tb_services: Release fault on the VENDOR_SECRET_PROD_PARTITION zeroization marker");
+            release `FC_MEM[VendorSecretProdPartitionZerOffset/2][otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound+1:0];
           end
           default: begin
             // No action for unrecognized commands.
