@@ -57,6 +57,17 @@
                 }
 
             ]
+        },
+        {
+            name: "SECRET_PROD_PARTITION_3",
+            lock: "True",
+            items: [
+                {
+                    name: "CPTRA_CORE_FIELD_ENTROPY_3",
+                    value: "<random>"
+                }
+
+            ]
         }
     ]
 }
