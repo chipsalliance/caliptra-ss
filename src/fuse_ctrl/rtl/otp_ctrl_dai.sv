@@ -367,7 +367,8 @@ module otp_ctrl_dai
       // that is the case, we immediately bail out. Otherwise, we
       // request a block of data from OTP.
       ReadSt: begin
-        if (part_sel_valid && (mubi8_test_false_strict(part_access_i[part_idx].read_lock) ||
+        if ( !discard_fuse_write_i &&
+          part_sel_valid && (mubi8_test_false_strict(part_access_i[part_idx].read_lock) ||
                                // HW digests and zeroization marker always remain readable.
                                (PartInfo[part_idx].hw_digest && otp_addr_o == digest_addr_lut[part_idx]) ||
                                (PartInfo[part_idx].zeroizable && otp_addr_o == zeroize_addr_lut[part_idx]))) begin
@@ -384,6 +385,7 @@ module otp_ctrl_dai
             state_d = ReadWaitSt;
           end
         end else begin
+          discarded_fuse_write_d = 1'b1;
           state_d = IdleSt;
           error_d = AccessError; // Signal this error, but do not go into terminal error state.
           dai_cmd_done_o = 1'b1;
