@@ -53,7 +53,10 @@ void wait_dai_op_idle(uint32_t status_mask) {
     uint32_t dai_idle;
     uint32_t check_pending;
 
-    const uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
+    // This mask should contain all the partition errors (and nothing
+    // else). We compute the mask like this because LIFE_CYCLE_ERROR
+    // is the first error after them in the status register.
+    const uint32_t error_mask = OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_MASK - 1;
 
     VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
     do {
