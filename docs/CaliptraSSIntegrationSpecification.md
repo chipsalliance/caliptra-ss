@@ -272,11 +272,12 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_mci_soc_config_axi_user_i`       | MCI SOC Configuration AXI user strap input             |
 | External | input     | 32     | `cptra_ss_strap_caliptra_dma_axi_user_i`           | Caliptra DMA AXI user strap input                 |
 | External | input     | 32     | `cptra_ss_strap_mcu_reset_vector_i`       | MCU reset vector strap input             |
-| External | input     | 32     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
-| External | input     | 32     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
-| External | input     | 32     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
-| External | input     | 32     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
-| External | input     | 32     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
+| External | input     | 64     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
+| External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i` | External staging area base address input |
+| External | input     | 64     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
+| External | input     | 64     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
 | External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
 | External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
