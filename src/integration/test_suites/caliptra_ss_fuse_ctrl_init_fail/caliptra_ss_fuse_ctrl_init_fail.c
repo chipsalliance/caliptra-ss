@@ -42,6 +42,9 @@ void init_fail() {
         CMD_FC_LCC_UNCORRECTABLE_FAULT
     };
 
+    const uint32_t partition_lower_addr_bound = partitions[SECRET_MANUF_PARTITION].address;
+    const uint32_t partition_upper_addr_bound = partitions[SECRET_PROD_PARTITION_3].zer_address;
+
     // Collect all buffered partitions with ECC enabled. Their content
     // will be read out after bringup which will trigger the ECC errors.
     partition_t part_sel[NUM_PARTITIONS];
@@ -56,7 +59,7 @@ void init_fail() {
     partition_t partition = part_sel[xorshift32() % count];
     uint32_t fault = faults[xorshift32() % 2];
 
-    if (partition.address > 0x40 && partition.address < 0xD0) {
+    if (partition.address > partition_lower_addr_bound && partition.address < partition_upper_addr_bound) {
         grant_caliptra_core_for_fc_writes();
     } else {
         grant_mcu_for_fc_writes();
@@ -72,7 +75,7 @@ void init_fail() {
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(
-        fault == CMD_FC_LCC_CORRECTABLE_FAULT ? 1 << partition.index : 0x3FFFF
+                     fault == CMD_FC_LCC_CORRECTABLE_FAULT ? 1 << partition.index : OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_MASK - 1 //0x3FFFFFF
     );
 
     uint32_t err_reg = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);
