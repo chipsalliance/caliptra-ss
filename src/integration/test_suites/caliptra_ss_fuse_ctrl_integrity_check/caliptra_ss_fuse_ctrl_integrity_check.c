@@ -53,7 +53,10 @@ void main (void) {
 
     initialize_otp_controller();
 
-    wait_dai_op_idle(0x3FFFF);
+    // This mask should contain all the partition errors (and nothing else). We compute the mask like this because LIFE_CYCLE_ERROR
+    // is the first error after them in the status register.
+    wait_dai_op_idle(OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_MASK - 1);
+
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
