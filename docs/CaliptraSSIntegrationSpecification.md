@@ -103,6 +103,7 @@
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
+      - [MCU Mailbox Doorbell Command DLEN](#mcu-mailbox-doorbell-command-dlen)
       - [MCI Debug Lock Status](#mci-debug-lock-status)
       - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
       - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
@@ -288,6 +289,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 16     | `cptra_ss_strap_key_release_key_size_i`   | OCP L.O.C.K. MEK byte size. Expected to be 0x40.  |
 | External | input     | 64     | `cptra_ss_strap_key_release_base_addr_i`  | OCP L.O.C.K. MEK release base address.  |
 | External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i`            | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling hardware features specific to OCP L.O.C.K. such as AES Keyvault write path, Keyvault filtering rules, and Key Release via AXI DMA. Must be driven with a constant value 0 or 1.  |
+| External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i`            | Base AXI address for the external staging area used by Caliptra Core FW to stage FW images due to reduced MBOX SRAM size. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area) for more details.    |
+
 
 ### AXI Interface (axi_if)
 
@@ -1702,21 +1705,24 @@ The two regions have different access protection. The size of the regions is dyn
 
     The interface signals `mci_generic_input_wires` and  `mci_generic_output_wires` are placeholders on the SoC interface reserved for late binding features. This may include any feature that is required for correct operation of the design in the final integrated SoC and that may not be accommodated through existing interface signaling (such as the mailbox).
 
-    While these late binding interface pins are generic in nature until assigned a function, integrators must not define non-standard use cases for these pins. Defining standard use cases ensures that the security posture of MCI/MCU in the final implementation is not degraded relative to the consortium design intent. Bits in `mci_generic_input_wires` that don't have a function defined in MCI must be tied to a 0-value. These undefined input bits shall not be connected to any flip flops (which would allow run-time transitions on the value).
-
     Each wire connects to a register in the MCI register bank through which communication to the MCU may be facilitated. Each of the generic wire signals is 64 bits in size.These signals are considered ASYNC and each of the 64 bits are considered separate adhoc signals. Meaning there is no bus synchronization which means the connections to this port need to be thoroughly thought through to ensure the MCU doesn’t drop any requests.
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following table describes the allocation of functionality on `mci_generic_input_wires` . All bits not listed in this table must be tied to 0.
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
 
     **Table: MCI Generic Input Allocation**
 
     | Bits | Name | Description |
     | :---- | :---- | :---- |
-    | 63:1 | RESERVED | No allocated function |
-    | 0 | FIPS_ZEROIZATION_PPD_i | [FIPS zeroization](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses) request sampled by MCU ROM. If FIPS zeroization is required, this signal shall be set before Caliptra SS is out of reset. If set, MCU ROM will set MASK register triggering FIPS zeroization flow. If this signal is toggled at runtime it shall be ignored. |
+    | 63:0 | RESERVED | No allocated function |
 
+    **Table: MCI Generic Output Allocation**
+
+    | Bits | Name | Description |
+    | :---- | :---- | :---- |
+    | 63:0 | RESERVED | No allocated function |
+    
 ### Error Aggregation Connectivity Requirements
 
 MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg_error_fatal` and `agg_error_non_fatal`. These errors are:
@@ -1894,6 +1900,10 @@ See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptr
 #### Reset
 
 The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set `MBOX_DLEN` to MBOX SRAM size and write 0 to `MBOX_EXECUTE` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+
+#### MCU Mailbox Doorbell Command DLEN
+
+An MBOX doorbell command has no data. When MBOX_DLEN = 0 and MBOX_EXECUTION is cleared, the clearing logic erases the entire MBOX SRAM. To avoid long delays caused by this clearing, firmware should set MBOX_DLEN = 1 when issuing doorbell commands.
 
 #### MCI Debug Lock Status
 

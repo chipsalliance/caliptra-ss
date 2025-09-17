@@ -353,11 +353,11 @@ module caliptra_ss_top_sva
   // Assert that secret partitions are read-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
     ((PartInfo[part_idx].secret) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]] != 0) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]/2] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
      |-> ##2
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
     )
@@ -365,11 +365,11 @@ module caliptra_ss_top_sva
   // Assert that partitions are write-locked after the digest has been computed.
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
     ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]] != 0) &&
+     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]/2] != 0) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
      |-> ##2
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
     )
@@ -386,20 +386,39 @@ module caliptra_ss_top_sva
     end else if (!PartInfo[part_idx].zeroizable) begin
       return 0; // Not zeroizable
     end else begin
-      zero_marker = {`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]][15:0],
-                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+1][15:0],
-                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+2][15:0],
-                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]+3][15:0]};
+      zero_marker = {`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]/2][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]/2+1][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]/2+2][15:0],
+                     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::zero_addrs[part_idx]/2+3][15:0]};
       return (otp_ctrl_pkg::check_zeroized_valid(zero_marker));
     end
   endfunction : is_zeroized
 
   // Zeroization marker status
-  logic [NumPart-1:0] marker_zeroized_part = 0;
+  logic [NumPart-1:0] pre_marker_zeroized_part = 0;
+  logic [NumPart-1:0] marker_zeroized_part     = 0;
   always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i) begin : p_marker_zeroized_part
     if ((`FC_PATH.dai_req) && (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
-        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == otp_ctrl_part_pkg::zero_addrs[part_idx])) begin
-      marker_zeroized_part[part_idx] <= 1'b1;
+        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == otp_ctrl_part_pkg::zero_addrs[part_idx]/2)) begin
+      pre_marker_zeroized_part[part_idx]  <= 1'b1;
+    end
+    if (pre_marker_zeroized_part[part_idx] && !marker_zeroized_part[part_idx] && `FC_PATH.otp_operation_done) begin
+      if (is_zeroized(part_idx)) begin
+        marker_zeroized_part[part_idx]      <= 1'b1;
+      end else begin
+        pre_marker_zeroized_part[part_idx]  <= 1'b0;
+      end 
+    end
+  end
+
+  // Store the latest direct_access_rdata release by the otp_ctrl_dai block after a successful access.
+  logic [NumDaiWords-1:0][31:0] past_direct_access_rdata = 0;
+  initial begin
+    forever begin
+      @(posedge `FC_PATH.clk_i);
+      if ((`FC_PATH.dai_req)) begin
+        past_direct_access_rdata = `FC_PATH.hw2reg.direct_access_rdata;
+      end
     end
   end
 
@@ -412,7 +431,7 @@ module caliptra_ss_top_sva
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
     |-> ##2
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
@@ -422,11 +441,11 @@ module caliptra_ss_top_sva
     ((PartInfo[part_idx].secret) &&
      (PartInfo[part_idx].zeroizable) &&
      (is_zeroized(part_idx)) &&
-     (mubi8_t'(`FC_PATH.part_access[part_idx].read_lock) == MuBi8True) &&
+     (mubi8_t'(`FC_PATH.part_access_dai[part_idx].read_lock) == MuBi8True) &&
      (`FC_PATH.dai_req) &&
      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr/2 < otp_ctrl_part_pkg::digest_addrs[part_idx]))
+     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
     |-> ##2
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
@@ -477,18 +496,17 @@ module caliptra_ss_top_sva
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
 
-  // For scrambled partitions, when doing a zeroization, an error should be raised if the number of
+  // When doing a zeroization, the zeroized_valid flag should be kept as invalid if the number of
   // set bits in the 64-bit word is lower than ZeroizationValidBound
-  `CALIPTRA_ASSERT(FcZeroizeAccessErrWhenBelowThresh_A,
-    first_match((PartInfo[part_idx].secret) &&
-      (`FC_PATH.dai_req) &&
+  `CALIPTRA_ASSERT(FcZeroizeInvalidWhenBelowThresh_A,
+    first_match((`FC_PATH.dai_req) &&
       (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
       ##[1:$]
-      (marker_zeroized_part[part_idx]) &&
+      (pre_marker_zeroized_part[part_idx]) &&
       (`FC_PATH.otp_operation_done) &&
       (!is_zeroized(part_idx)))
     |=>
-    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
+    (mubi16_t'(`FC_PATH.u_otp_ctrl_dai.zeroized_valid) == MuBi16False)
   )
 
   // For scrambled partitions, the zeroized fuse should only be returned if and only if the
@@ -498,11 +516,13 @@ module caliptra_ss_top_sva
       (`FC_PATH.dai_req) &&
       (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
       ##[1:$]
-      (marker_zeroized_part[part_idx]) &&
+      (pre_marker_zeroized_part[part_idx]) &&
       (`FC_PATH.otp_operation_done) &&
       (!is_zeroized(part_idx)))
     |=>
-    (`FC_PATH.hw2reg.direct_access_rdata == '0)   // This register will always go back to 0 when a new DAI operation is triggered
+    // In this case, this register will only get updated for a successful and complete zeroization (above the threshold),
+    // otherswise, it will take back the previous value.
+    (`FC_PATH.hw2reg.direct_access_rdata == past_direct_access_rdata)
   )
 
   ////////////////////////////////////////////////////
@@ -546,8 +566,12 @@ module caliptra_ss_top_sva
      dec_lc_state_e'(`LCC_PATH.dec_lc_state[5]) == DecLcStTestUnlocked0)
   )
 
+  ////////////////////////////////////////////////////
+  // LCC in SCRAP mode
+  ////////////////////////////////////////////////////
+
   // LCC in is SCRAP mode results in the broadcast data to be set to zero.
-  `CALIPTRA_ASSERT(FcZeroizeBroadcastData_A,
+  `CALIPTRA_ASSERT(LccScrapBroadcastData_A,
     ((`FC_PATH.lcc_is_in_SCRAP_mode) && (!`FC_PATH.rst_ni))
     |=>
     `FC_PATH.otp_broadcast_o == otp_broadcast_t'('0)
