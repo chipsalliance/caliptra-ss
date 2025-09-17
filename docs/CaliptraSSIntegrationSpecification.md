@@ -1708,15 +1708,20 @@ The two regions have different access protection. The size of the regions is dyn
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following table describes the allocation of functionality on `mci_generic_input_wires`. Bits not assigned to a function can be used by the SOC for their own needs. Any unused bits shall be tied off to 0.  
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by Chips Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
 
     **Table: MCI Generic Input Allocation**
 
     | Bits | Name | Description |
     | :---- | :---- | :---- |
-    | 63:1 | RESERVED | No allocated function |
-    | 0 | FIPS_ZEROIZATION_PPD_i | [FIPS zeroization](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses) request sampled by MCU ROM. If FIPS zeroization is required, this signal shall be set before Caliptra SS is out of reset. If set, MCU ROM will set MASK register triggering FIPS zeroization flow. If this signal is toggled at runtime it shall be ignored. |
+    | 63:0 | RESERVED | No allocated function |
 
+    **Table: MCI Generic Output Allocation**
+
+    | Bits | Name | Description |
+    | :---- | :---- | :---- |
+    | 63:0 | RESERVED | No allocated function |
+    
 ### Error Aggregation Connectivity Requirements
 
 MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg_error_fatal` and `agg_error_non_fatal`. These errors are:
