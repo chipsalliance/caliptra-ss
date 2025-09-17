@@ -1708,7 +1708,7 @@ The two regions have different access protection. The size of the regions is dyn
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by Chips Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
 
     **Table: MCI Generic Input Allocation**
 
