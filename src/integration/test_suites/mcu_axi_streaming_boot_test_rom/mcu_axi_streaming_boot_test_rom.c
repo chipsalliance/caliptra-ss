@@ -167,7 +167,11 @@ void main (void) {
     while(1){
         
         loop_count = loop_count + 1;
-        if(loop_count >= 100) break;
+        if(loop_count >= 100) {
+          VPRINTF(LOW, "ERROR: Loop count beyond 100");
+          err_count++;
+          break;
+        }
 
         i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS);
         if( i3c_reg_data != 0x00000002 || i3c_reg_data != 0x00000003 || i3c_reg_data != 0x00000004) { 
@@ -181,6 +185,10 @@ void main (void) {
         // Wait for the I3C core to finish the test
         VPRINTF(LOW, "Waiting for recovery status update\n");
         mcu_sleep(1000);
+    }
+
+    if(err_count > 0) {
+      VPRINTF(FATAL, "Test fails due to error");
     }
 
 
