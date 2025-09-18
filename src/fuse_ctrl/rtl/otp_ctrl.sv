@@ -440,9 +440,17 @@ module otp_ctrl
       default:                              lc_state_idx = 20;
     endcase
 
-    // Write-lock partitions whose LC phase has expired.
+    // Write-lock partitions when in RAW or TEST_LOCKED state or whose LC phase has expired.
     for (int k = 0; k < NumPart-1; k++) begin
-      if ((lc_state_idx == 0) || (lc_state_idx > PartInfo[k].lc_phase)) begin
+      if ((lc_state_idx == 0)  || // LcStRaw
+          (lc_state_idx == 2)  || // LcStTestLocked0
+          (lc_state_idx == 4)  || // LcStTestLocked1
+          (lc_state_idx == 6)  || // LcStTestLocked2
+          (lc_state_idx == 8)  || // LcStTestLocked3
+          (lc_state_idx == 10) || // LcStTestLocked4
+          (lc_state_idx == 12) || // LcStTestLocked5
+          (lc_state_idx == 14) || // LcStTestLocked6
+          (lc_state_idx > PartInfo[k].lc_phase)) begin
         part_access_pre[k].write_lock = MuBi8True;
       end
     end

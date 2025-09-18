@@ -25,6 +25,7 @@ module lc_ctrl_state_transition
   // lc_sec_volatile_raw_unlock_en_i AT COMPILETIME FOR PRODUCTION DEVICES.
   // ---------------------------------------------------------------
   input  logic              volatile_raw_unlock_i,
+  input  lc_tx_t            test_tokens_valid_i,
   input  logic              trans_cmd_i,
   // ----------- VOLATILE_TEST_UNLOCKED CODE SECTION END -----------
   // Updated state vector.
@@ -198,6 +199,19 @@ module lc_ctrl_state_transition
         default: trans_invalid_error_o = 1'b1;
       endcase // trans_target_i
     end
+
+    // Only allow transition into TEST_LOCKED state if unlock tokens are provisioned.
+    if (lc_tx_test_false_strict(test_tokens_valid_i) && next_lc_state_o inside {
+          LcStTestLocked0,
+          LcStTestLocked1,
+          LcStTestLocked2,
+          LcStTestLocked3,
+          LcStTestLocked4,
+          LcStTestLocked5,
+          LcStTestLocked6}) begin
+      trans_invalid_error_o = 1'b1;
+    end
+    
   end
 
 endmodule : lc_ctrl_state_transition
