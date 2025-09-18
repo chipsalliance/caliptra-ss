@@ -56,6 +56,7 @@ void main (void) {
     char *argv[1];
     uint32_t i3c_reg_data;
     int err_count = 0;
+    int loop_count = 0;
 
     // Initialize the printf library   
     VPRINTF(LOW, "=== MCU boot.. started == \n");
@@ -164,6 +165,10 @@ void main (void) {
 
     // -- Read Recovery Status register to indicate RECOVERY SUCCESS by reading value 0x00000003
     while(1){
+        
+        loop_count = loop_count + 1;
+        if(loop_count >= 100) break;
+
         i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS);
         if( i3c_reg_data != 0x00000002 || i3c_reg_data != 0x00000003 || i3c_reg_data != 0x00000004) { 
             VPRINTF(LOW, "I3C core recovery status is not set to expected value\n");
