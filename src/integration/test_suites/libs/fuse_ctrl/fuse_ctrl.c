@@ -331,3 +331,11 @@ void zeroize_without_addr(uint32_t exp_status) {
     wait_dai_op_idle(exp_status);
     return;
 }
+
+bool is_caliptra_secret_addr(uint32_t addr) {
+    // This mirrors CALIPTRA_SECRET_ACCESS_LOWER_ADDR and CALIPTRA_SECRET_ACCESS_UPPER_ADDR in
+    // otp_ctrl_pkg. Here, we're using the fact that the secret partitions are a contiguous block,
+    // starting with SECRET_MANUF_PARTITION and ending with SECRET_PROD_PARTITION_3.
+    return ((addr >= partitions[SECRET_MANUF_PARTITION].address) &&
+            (addr <= partitions[SECRET_PROD_PARTITION_3].zer_address));
+}

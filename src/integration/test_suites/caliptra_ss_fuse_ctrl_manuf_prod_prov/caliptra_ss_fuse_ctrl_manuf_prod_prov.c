@@ -90,7 +90,7 @@ void manuf_prod_provision() {
 
     // Check that all the MANUF and PROD partitionss are writeable.
     for (uint32_t i = 0; i < count; i++) {
-        if (part_sel[i].address > 0x40 && part_sel[i].address < 0xF8) {
+	if (is_caliptra_secret_addr(part_sel[i].address)) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
