@@ -56,7 +56,7 @@ void init_fail() {
     partition_t partition = part_sel[xorshift32() % count];
     uint32_t fault = faults[xorshift32() % 2];
 
-    if (partition.address > 0x40 && partition.address < 0xD0) {
+    if (is_caliptra_secret_addr(partition.address)) {
         grant_caliptra_core_for_fc_writes();
     } else {
         grant_mcu_for_fc_writes();
@@ -72,7 +72,7 @@ void init_fail() {
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(
-        fault == CMD_FC_LCC_CORRECTABLE_FAULT ? 1 << partition.index : 0x3FFFF
+                     fault == CMD_FC_LCC_CORRECTABLE_FAULT ? 1 << partition.index : OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_MASK - 1 //0x3FFFFFF
     );
 
     uint32_t err_reg = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);

@@ -41,5 +41,8 @@ void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t
 void calculate_digest_without_addr(uint32_t exp_status);
 void zeroize_without_addr(uint32_t exp_status);
 
+// Returns true if addr is in the range of addresses that are visible
+// to the Caliptra core but not the MCU.
+bool is_caliptra_secret_addr(uint32_t addr);
 
 #endif // FUSE_CTRL_H
