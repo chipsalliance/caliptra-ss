@@ -331,3 +331,8 @@ void zeroize_without_addr(uint32_t exp_status) {
     wait_dai_op_idle(exp_status);
     return;
 }
+
+bool is_caliptra_secret_addr(uint32_t addr) {
+    // This mirrors CALIPTRA_SECRET_ACCESS_LOWER_ADDR and CALIPTRA_SECRET_ACCESS_UPPER_ADDR in otp_ctrl_pkg
+    return addr >= 0x48 && addr <= 0xf0;
+}
