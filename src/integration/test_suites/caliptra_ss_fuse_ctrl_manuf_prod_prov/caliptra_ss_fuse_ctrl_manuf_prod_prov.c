@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ void manuf_prod_provision() {
         if (partitions[i].lc_phase == MANUF || partitions[i].lc_phase == PROD) {
             part_sel[count++] = partitions[i];
         }
-    } 
+    }
 
     // 0x2C88: CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN
     const uint32_t base_address  = CPTRA_SS_TEST_UNLOCK_TOKEN_1;
@@ -90,10 +90,10 @@ void manuf_prod_provision() {
 
     // Check that all the MANUF and PROD partitionss are writeable.
     for (uint32_t i = 0; i < count; i++) {
-        if (part_sel[i].address > 0x40 && part_sel[i].address < 0xF8) {
+        if (is_caliptra_secret_addr(part_sel[i].address)) {
             grant_caliptra_core_for_fc_writes();
         } else {
-            grant_mcu_for_fc_writes(); 
+            grant_mcu_for_fc_writes();
         }
         dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, 0);
     }
@@ -111,10 +111,10 @@ void manuf_prod_provision() {
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
     for (uint32_t i = 0; i < count; i++) {
-        if (part_sel[i].address > 0x40 && part_sel[i].address < 0xF8) {
+        if (is_caliptra_secret_addr(part_sel[i].address)) {
             grant_caliptra_core_for_fc_writes();
         } else {
-            grant_mcu_for_fc_writes(); 
+            grant_mcu_for_fc_writes();
         }
         dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, part_sel[i].lc_phase == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
     }
@@ -122,12 +122,12 @@ void manuf_prod_provision() {
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-      
+
     lcc_initialization();
-    grant_mcu_for_fc_writes(); 
+    grant_mcu_for_fc_writes();
 
     transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
 
