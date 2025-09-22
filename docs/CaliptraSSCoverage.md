@@ -358,8 +358,8 @@ To re-run the block-level tests you can use the following command:
 util/dvsim/dvsim.py hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson -i all --cov
 ```
 
-The results are very good with line coverage at 95.9, conditional coverage at 93.79 and branch coverage at 94.25.
-The toggle coverage is 100% for all the sub-modules but for the DUT itself it's at 75.34.
+The results are very good with line coverage at 95.9, conditional coverage at 93.8 and branch coverage at 94.2.
+The toggle coverage is 100 for all the sub-modules but for the DUT itself it's at 78.5.
 This is mainly because certain TileLink fields and Alert fields are unreachable, and this functionality is tested in the TileLink and Alert tests in OpenTitan.
 
 ### Top-level coverage
