@@ -347,7 +347,20 @@ There are some new files that do not need to be covered, like [sha3_param_pkg.sv
 The KMAC register file has changed, mainly becuase registers have been removed, but that does not mean we cannot use the coverage from the block-level verification enviornment here.
 So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these don't need to be covered in top-level testing.
 
+The other aspect that is worth mentioning is that we should check the code coverage of all the blocks where "EnFullKmac" parameter is set to zero and where the "CALIPTRA" macro is defined.
+The code related to those configurations are unique to Caliptra, although most of these are turning complicated logic into assign statements since it strips out functionality.
+
 ### Block-level coverage
+
+The block-level coverage is run on [a modified fork of OpenTitan](https://github.com/marnovandermaas/opentitan/tree/kmac-stripped-down-cfg).
+To re-run the block-level tests you can use the following command:
+```sh
+util/dvsim/dvsim.py hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson -i all --cov
+```
+
+The results are very good with line coverage at 95.9, conditional coverage at 93.79 and branch coverage at 94.25.
+The toggle coverage is 100% for all the sub-modules but for the DUT itself it's at 75.34.
+This is mainly because certain TileLink fields and Alert fields are unreachable, and this functionality is tested in the TileLink and Alert tests in OpenTitan.
 
 ### Top-level coverage
 
