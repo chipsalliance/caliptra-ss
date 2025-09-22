@@ -35,6 +35,7 @@ This section provides an overview of the coverage for the Caliptra Core and its 
 | **AES (Instance)**                 | AES instance-level coverage                                       | [AES Instance Coverage](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/src%2Faes?flatFileList=false&hideNotCovered=false&testsAsTotal=false) |                                                                                               |
 | **AES GCM**                        | AES GCM delta changes for Caliptra Core                           | [AES GCM DV Report](https://chipsalliance.github.io/caliptra-cov/?path=caliptra-rtl.zip#/src%2Faes?flatFileList=false&hideNotCovered=false&testsAsTotal=false)     |                                                                                               |
 | **Cryptos (ECC, HMAC, SHA, DOE)**  | Legacy cryptographic blocks from Caliptra 1.x, silicon-proven     | [Crypto FPV Coverage](/docs/coverage_reports/Caliptra%20FPV%20Coverage%20Report%20from%20Lubis.pdf)                                                                | Proven in silicon through Caliptra 1.x.                                                       |
+| **SHA3**                  | SHA3 coverage based on KMAC block from OpenTitan                           | [SHA3 coverage analysis](#sha3-coverage-analysis) | |
 
 ---
 
@@ -332,6 +333,23 @@ as they cannot be triggered with the existing testbench.
 
 The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
+
+---
+## SHA3 Coverage Analysis
+
+The coverage on the SHA3 core is a combination of the block-level coverage derived from OpenTitan and top-level tests in the Caliptra environment.
+Before we discuss the results from the block-level verification, there are a few files that are in Caliptra RTL that are not in OpenTitan.
+Some of these files need to be tested in the top-level DV, these are:
+- [sha3_ctrl.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv)
+- [sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)
+
+There are some new files that do not need to be covered, like [sha3_param_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_param_pkg.sv) is new but only contains two parameters, and [sha3_reg_uvm.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg_uvm.sv) which is a DV specific file.
+The KMAC register file has changed, mainly becuase registers have been removed, but that does not mean we cannot use the coverage from the block-level verification enviornment here.
+So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these don't need to be covered in top-level testing.
+
+### Block-level coverage
+
+### Top-level coverage
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
