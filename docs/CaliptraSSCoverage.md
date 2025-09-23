@@ -342,8 +342,8 @@ Before we discuss the results from the block-level verification, there are a few
 The main one that needs coverage is [sha3_ctrl.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv).
 
 There are some new files that do not need to be covered, like [sha3_param_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_param_pkg.sv) is new but only contains two parameters, and [sha3_reg_uvm.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg_uvm.sv) which is a DV specific file.
-The SHA3 register file ([sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)) is auto-generated and the PeakRDL output for this is tested elsewhere in the chip.
-The KMAC register file has changed, mainly becuase registers have been removed, but that does not mean we cannot use the coverage from the block-level verification enviornment here.
+The SHA3 register file ([sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)) is auto-generated and the PeakRDL generated RTL is tested elsewhere in the chip.
+The KMAC register file has changed, mainly because registers have been removed, but that does not mean we cannot use the coverage from the block-level verification environment here.
 So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these don't need to be covered in top-level testing.
 
 The other aspect that is worth mentioning is that we should check the code coverage of all the blocks where "EnFullKmac" parameter is set to zero and where the "CALIPTRA" macro is defined.
@@ -364,6 +364,8 @@ This is mainly because certain TileLink fields and Alert fields are unreachable,
 ### Top-level coverage
 
 Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 97.8, conditional 57.1, toggle 50.9 and branch 80.0.
+
+In terms of line coverage for "EnFullKmac", the following logic should be covered in kmac.sv lines 866 and 867 and in kmac_app.sv lines 399, 402, 419, 438, 439 and 684-686.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
