@@ -339,11 +339,10 @@ to be uncovered.
 
 The coverage on the SHA3 core is a combination of the block-level coverage derived from OpenTitan and top-level tests in the Caliptra environment.
 Before we discuss the results from the block-level verification, there are a few files that are in Caliptra RTL that are not in OpenTitan.
-Some of these files need to be tested in the top-level DV, these are:
-- [sha3_ctrl.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv)
-- [sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)
+The main one that needs coverage is [sha3_ctrl.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv).
 
 There are some new files that do not need to be covered, like [sha3_param_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_param_pkg.sv) is new but only contains two parameters, and [sha3_reg_uvm.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg_uvm.sv) which is a DV specific file.
+The SHA3 register file ([sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)) is auto-generated and the PeakRDL output for this is tested elsewhere in the chip.
 The KMAC register file has changed, mainly becuase registers have been removed, but that does not mean we cannot use the coverage from the block-level verification enviornment here.
 So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these don't need to be covered in top-level testing.
 
@@ -363,6 +362,8 @@ The toggle coverage is 100 for all the sub-modules but for the DUT itself it's a
 This is mainly because certain TileLink fields and Alert fields are unreachable, and this functionality is tested in the TileLink and Alert tests in OpenTitan.
 
 ### Top-level coverage
+
+Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 97.8, conditional 57.1, toggle 50.9 and branch 80.0.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
