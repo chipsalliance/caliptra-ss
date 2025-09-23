@@ -359,13 +359,18 @@ util/dvsim/dvsim.py hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson -i all --cov
 
 The results are very good with line coverage at 95.9, conditional coverage at 93.8 and branch coverage at 94.2.
 The toggle coverage is 100 for all the sub-modules but for the DUT itself it's at 78.5.
-This is mainly because certain TileLink fields and Alert fields are unreachable, and this functionality is tested in the TileLink and Alert tests in OpenTitan.
+This is mainly because certain TileLink fields and alert fields are unreachable, this is acceptable in OpenTitan because this functionality is implemented by common wrappers that are tested elsewhere.
+These gaps are also acceptable in Caliptra because it doesn't use TileLink nor alerts like OpenTitan does.
 
 ### Top-level coverage
 
 Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 97.8, conditional 57.1, toggle 50.9 and branch 80.0.
+The main conditional holes are line 139 which should be covered by the sha3 smoke test, line 298 and 300 which should be covered by the interrupt test.
+The main toggle holes are haddr_i[1:0] and hsize_i[2] which should be hit by SHA3 smoke test, and err_intr which should be hit by interrupt test.
+Since I believe these holes should be covered, the coverage collection needs to be investigated and if this is correct then the tests need adjusting.
 
 In terms of line coverage for "EnFullKmac", the following logic should be covered in kmac.sv lines 866 and 867 and in kmac_app.sv lines 399, 402, 419, 438, 439 and 684-686.
+These lines need to be either waived or new tests should be written to cover them.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
