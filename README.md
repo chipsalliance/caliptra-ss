@@ -283,19 +283,6 @@ After modifying the configuration:
 2. **Run smoke tests** to verify the new configuration works correctly
 3. **Check simulation logs** for any configuration-related warnings or errors
 
-### Common Configuration Examples ###
-
-- **Larger Cache Configuration**: Increase ICACHE and DCACHE sizes for better performance
-- **Debug Configuration**: Enable additional debug features for development
-- **Minimal Configuration**: Reduce features for area-optimized designs
-- **High-Performance Configuration**: Enable advanced features like branch prediction and performance counters
-
-### Troubleshooting ###
-
-- **Build Errors**: Ensure all environment variables are correctly set and the commit hash matches the expected version
-- **Simulation Failures**: Verify that firmware and hardware configurations are consistent
-- **File Conflicts**: Always review differences before copying files to avoid overwriting important changes
-
 ## **Regression Tests** ##
 
 ### Standalone SystemVerilog Testbench Regression ###
