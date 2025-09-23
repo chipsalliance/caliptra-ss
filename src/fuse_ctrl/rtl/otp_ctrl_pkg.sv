@@ -121,8 +121,8 @@ package otp_ctrl_pkg;
   endfunction : countones
 
   // Check if the zeroization marker fulfills the zeroization criterion.
-  function automatic logic check_zeroized_valid(logic [ScrmblBlockWidth-1:0] word);
-    return countones(word) >= ZeroizationValidBound;
+  function automatic logic check_zeroized_valid(logic [$clog2(ScrmblBlockWidth+1)-1:0] count);
+    return count >= ZeroizationValidBound;
   endfunction : check_zeroized_valid
 
   ///////////////////////////////
