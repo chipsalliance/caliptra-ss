@@ -46,6 +46,7 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -67,6 +68,9 @@
   - [Overview](#overview-4)
   - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+    - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
+      - [Why These Straps Are Needed](#why-these-straps-are-needed)
+      - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
@@ -779,7 +783,6 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
 
-There are two main requirements for the MCU integration.
 
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
@@ -788,6 +791,24 @@ There are two main requirements for the MCU integration.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+## MCU Core Configuration Customization
+
+The MCU VeeR-EL2 core can be customized by integrators to optimize for specific SoC requirements.
+
+**Common Use Cases:**
+
+* **Memory Architecture**: Modify ICCM/DCCM addresses and sizes for SoC memory integration
+* **Power/Area Optimization**: Remove or modify features (caching, number of interrupts)
+* **Performance Tuning**: Adjust cache sizes and pipeline configurations for application workloads
+
+**Configuration Instructions:**
+
+Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-configuration) section in the project README for complete step-by-step procedures.
+
+**Validation:**
+
+Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
 
 ## MCU Programming interface
 
