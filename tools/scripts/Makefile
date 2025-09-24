@@ -76,6 +76,7 @@ COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_mmap.h \
+		$(RTL_DIR)/fuse_ctrl_read_lock_map.h \
 		$(RTL_DIR)/caliptra_ss_lc_ctrl_address_map.h \
 		$(INCLUDES_DIR)/caliptra_ss_defines.h \
 		$(RISCV_HW_IF_DIR)/riscv_hw_if.h \
@@ -127,8 +128,8 @@ endif
 HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
-# Add the data from fuse_ctrl_mmap.c to the link
-OFILES += $(BUILD_DIR)/fuse_ctrl_mmap.o
+# Add the data from fuse_ctrl mmaps to the link
+OFILES += $(BUILD_DIR)/fuse_ctrl_mmap.o $(BUILD_DIR)/fuse_ctrl_read_lock_map.o
 
 # Verilator trace format
 VERILATOR_TRACE=vcd
@@ -482,8 +483,12 @@ mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	cp $(filter-out %/caliptra_ss_clk_freq.h, $(HEADER_FILES)) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
-# A specialised version of the compile rule above, building a shared source file from $(RTL_DIR).
+# Specialised versions of the compile rule above, building named shared source files from $(RTL_DIR).
 $(BUILD_DIR)/fuse_ctrl_mmap.o: $(RTL_DIR)/fuse_ctrl_mmap.c
+	cp $(filter-out %/caliptra_ss_clk_freq.h, $(HEADER_FILES)) $(BUILD_DIR)
+	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
+
+$(BUILD_DIR)/fuse_ctrl_read_lock_map.o: $(RTL_DIR)/fuse_ctrl_read_lock_map.c
 	cp $(filter-out %/caliptra_ss_clk_freq.h, $(HEADER_FILES)) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 

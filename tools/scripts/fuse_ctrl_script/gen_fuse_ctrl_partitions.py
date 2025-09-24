@@ -55,8 +55,9 @@ PART_PKG_TEMPLATE = "otp_ctrl_part_pkg.sv.tpl"
 REG_PKG_TEMPLATE  = "reg_pkg.sv.tpl"
 REG_TOP_TEMPLATE  = "reg_top.sv.tpl"
 
-# C templates
-C_MMAP_TEMPLATES   = ["fuse_ctrl_mmap.h.tpl", "fuse_ctrl_mmap.c.tpl"]
+# C templates for the memory map
+C_MMAP_TEMPLATES   = ["fuse_ctrl_mmap.h.tpl", "fuse_ctrl_mmap.c.tpl",
+                      "fuse_ctrl_read_lock_map.c.tpl"]
 
 def render_template(template: str, target_path: Path, params: Dict[str, object]):
     try:
