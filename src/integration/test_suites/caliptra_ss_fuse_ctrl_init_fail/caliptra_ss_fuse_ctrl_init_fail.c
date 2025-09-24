@@ -71,9 +71,14 @@ void init_fail() {
     wait_dai_op_idle(0);
 
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(
-        fault == CMD_FC_LCC_CORRECTABLE_FAULT ? 1 << partition.index : 0x3FFFF
-    );
+
+    // If the fault was correctable, we expect the DAI to stop with an error on the bit
+    // corresponding to the partition (which will be 1 << partition.index). If it was uncorrectable,
+    // we expect the DAI to stop with all error bits set.
+    uint32_t part_error_mask = 1 << partition.index;
+    uint32_t exp_dai_error = (fault == CMD_FC_LCC_CORRECTABLE_FAULT) ? part_error_mask : UINT32_MAX;
+
+    wait_dai_op_idle(exp_dai_error);
 
     uint32_t err_reg = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);
     uint32_t status_reg = lsu_read_32(SOC_OTP_CTRL_STATUS);
