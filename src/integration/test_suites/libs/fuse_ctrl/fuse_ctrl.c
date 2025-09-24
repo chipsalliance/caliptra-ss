@@ -50,25 +50,39 @@ void grant_caliptra_core_for_fc_writes(void) {
     }
 }
 
-void wait_dai_op_idle(uint32_t status_mask) {
+void wait_dai_op_idle(uint32_t exp_mask) {
     uint32_t status;
-    uint32_t dai_idle;
-    uint32_t check_pending;
 
-    const uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
+    // Repeatedly read SOC_OTP_CTRL_STATUS and wait until one of the following is true:
+    //
+    //  - An error is reported
+    //  - The DAI_IDLE bit becomes high
+    //  - The CHECK_PENDING bit becomes low.
+    //
+    // The error bits are all the bits of status below DAI_IDLE and CHECK_PENDING. Since DAI_IDLE is
+    // lower, we can use it to make a mask for all the error bits.
+    uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
 
-    VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
-    do {
+    for (;;) {
         status = lsu_read_32(SOC_OTP_CTRL_STATUS);
-        dai_idle = (status >> OTP_CTRL_STATUS_DAI_IDLE_LOW) & 0x1;
-        check_pending = (status >> OTP_CTRL_STATUS_CHECK_PENDING_LOW) & 0x1;
-        
-    } while ((!dai_idle || check_pending) && ((status & error_mask) != error_mask));
-    VPRINTF(LOW, "%08X\n", status);
-    // Clear the IDLE bit from the status value
-    status &= ((((uint32_t)1) << (OTP_CTRL_STATUS_DAI_IDLE_LOW - 1)) - 1);
-    if ((status & error_mask) != status_mask) {
-        VPRINTF(LOW, "ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
+
+        // Has an error been reported?
+        if (status & error_mask) break;
+
+        // Has the DAI become idle, with no check pending?
+        if ((status & OTP_CTRL_STATUS_DAI_IDLE_MASK) &&
+            ! (status & OTP_CTRL_STATUS_CHECK_PENDING_MASK)) break;
+    }
+
+    VPRINTF(LOW, "wait_dai_op_idle: 0x%08X\n", status);
+
+    // At this point status contains the last read of SOC_OTP_CTRL_STATUS. Look at just the error
+    // bits (ignoring DAI_IDLE and CHECK_PENDING) and check they match exp_mask.
+    if ((status ^ exp_mask) & error_mask) {
+        VPRINTF(LOW,
+                "ERROR: DAI stopped unexpected status: expected: 0x%08X actual: 0x%08X\n",
+                exp_mask & error_mask,
+                status & error_mask);
     }
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
     return;
