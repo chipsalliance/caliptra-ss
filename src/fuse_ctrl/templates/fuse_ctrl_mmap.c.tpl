@@ -50,7 +50,6 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .is_secret = ${"true" if p["secret"] else "false"},
         .hw_digest = ${"true" if p["hw_digest"] else "false"},
         .sw_digest = ${"true" if p["sw_digest"] else "false"},
-        .has_read_lock = ${"true" if p["read_lock"] == "CSR" else "false"},
         .has_ecc = ${"true" if p["integrity"] else "false"},
         .lc_phase = ${lc_state_decode(p["lc_phase"])},
         .is_lifecycle = ${"true" if p["variant"] == "LifeCycle" else "false"},
