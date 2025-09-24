@@ -5,7 +5,7 @@
 [submodule "third_party/i3c-core"]
 	path = third_party/i3c-core
 	url = https://github.com/chipsalliance/i3c-core.git
-	branch = main
+	branch = v1p3-rc-patch
 [submodule "third_party/cocotbext-i3c"]
 	path = third_party/cocotbext-i3c
 	url = https://github.com/antmicro/cocotbext-i3c.git
