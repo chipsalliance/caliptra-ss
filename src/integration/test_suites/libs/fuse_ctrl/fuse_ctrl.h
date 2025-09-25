@@ -31,25 +31,48 @@ void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_31_0,
                         uint32_t conditional);
                         
-void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_mask);
-void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_mask);
+// Write wdata0/wdata1 to addr, using granularity to control whether to bother setting the upper
+// word. The DAI write command is expected to respond with STATUS equal to exp_status.
+//
+// On completion, return whether the status was as expected.
+bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
+            uint32_t granularity, uint32_t exp_status);
+
+// Read from addr, storing the response in *rdata0/*rdata1, where the upper word is only copied back
+// if granularity > 32. The DAI read command is expected to respond with STATUS equal to exp_status.
+//
+// On completion, return whether the status was as expected.
+bool dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+            uint32_t granularity, uint32_t exp_status);
 
 // Wait until the DAI becomes idle (or there is no longer a check pending) or until an error is
-// reported.
+// reported. On completion, return whether the status matched exp_status (described below).
 //
-//   exp_mask     If this is zero, the DAI is expected to become idle. If it is nonzero, it contains
+//   exp_status   If this is zero, the DAI is expected to become idle. If it is nonzero, it contains
 //                the error bits that are expected to be set in the first error status that is seen
 //                (which will cause the wait to stop). Note that the only bits of this mask that are
 //                checked are genuine error bits, so a caller can check that all errors are set by
 //                passing UINT32_MAX.
-void wait_dai_op_idle(uint32_t exp_mask);
+bool wait_dai_op_idle(uint32_t exp_mask);
 
-void calculate_digest(uint32_t partition_base_address, uint32_t exp_status);
-void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status);
-void shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index);
-void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) ;
-void calculate_digest_without_addr(uint32_t exp_status);
-void zeroize_without_addr(uint32_t exp_status);
+// Trigger a digest calculation command for the partition with the given base address. Return
+// whether the eventual DAI status matched exp_status.
+bool calculate_digest(uint32_t partition_base_address, uint32_t exp_status);
+
+// Zeroize the fuse at the given addr, writing the DAI response to *rdata0/*rdata1. Return whether
+// the eventual DAI status matched exp_status.
+bool dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+             uint32_t granularity, uint32_t exp_status);
+
+bool shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
+                     uint32_t granularity, uint32_t exp_status, uint8_t permutation_index);
+
+bool shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+                     uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) ;
+
+bool calculate_digest_without_addr(uint32_t exp_status);
+
+bool zeroize_without_addr(uint32_t exp_status);
 
 // Returns true if addr is in the range of addresses that are visible
 // to the Caliptra core but not the MCU.
