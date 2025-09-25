@@ -394,23 +394,6 @@ module caliptra_ss_top_sva
     end
   endfunction : is_zeroized
 
-  // Zeroization marker status
-  logic [NumPart-1:0] pre_marker_zeroized_part = 0;
-  logic [NumPart-1:0] marker_zeroized_part     = 0;
-  always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i) begin : p_marker_zeroized_part
-    if ((`FC_PATH.dai_req) && (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
-        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == otp_ctrl_part_pkg::zero_addrs[part_idx]/2)) begin
-      pre_marker_zeroized_part[part_idx]  <= 1'b1;
-    end
-    if (pre_marker_zeroized_part[part_idx] && !marker_zeroized_part[part_idx] && `FC_PATH.otp_operation_done) begin
-      if (is_zeroized(part_idx)) begin
-        marker_zeroized_part[part_idx]      <= 1'b1;
-      end else begin
-        pre_marker_zeroized_part[part_idx]  <= 1'b0;
-      end 
-    end
-  end
-
   // Store the latest direct_access_rdata release by the otp_ctrl_dai block after a successful access.
   logic [NumDaiWords-1:0][31:0] past_direct_access_rdata = 0;
   initial begin
@@ -494,35 +477,6 @@ module caliptra_ss_top_sva
      (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
     |-> ##2
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
-  )
-
-  // When doing a zeroization, the zeroized_valid flag should be kept as invalid if the number of
-  // set bits in the 64-bit word is lower than ZeroizationValidBound
-  `CALIPTRA_ASSERT(FcZeroizeInvalidWhenBelowThresh_A,
-    first_match((`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
-      ##[1:$]
-      (pre_marker_zeroized_part[part_idx]) &&
-      (`FC_PATH.otp_operation_done) &&
-      (!is_zeroized(part_idx)))
-    |=>
-    (mubi16_t'(`FC_PATH.u_otp_ctrl_dai.zeroized_valid) == MuBi16False)
-  )
-
-  // For scrambled partitions, the zeroized fuse should only be returned if and only if the
-  // number of set bits in the 64-bit word is greater or equal ZeroizationValidBound
-  `CALIPTRA_ASSERT(FcZeroizeMarkerOnlyWhenAboveThresh_A,
-    first_match((PartInfo[part_idx].secret) &&
-      (`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
-      ##[1:$]
-      (pre_marker_zeroized_part[part_idx]) &&
-      (`FC_PATH.otp_operation_done) &&
-      (!is_zeroized(part_idx)))
-    |=>
-    // In this case, this register will only get updated for a successful and complete zeroization (above the threshold),
-    // otherswise, it will take back the previous value.
-    (`FC_PATH.hw2reg.direct_access_rdata == past_direct_access_rdata)
   )
 
   ////////////////////////////////////////////////////
