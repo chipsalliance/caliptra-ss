@@ -33,7 +33,17 @@ void sw_transition_req(uint32_t next_lc_state,
                         
 void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_mask);
 void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_mask);
+
+// Wait until the DAI becomes idle (or there is no longer a check pending) or until an error is
+// reported.
+//
+//   exp_mask     If this is zero, the DAI is expected to become idle. If it is nonzero, it contains
+//                the error bits that are expected to be set in the first error status that is seen
+//                (which will cause the wait to stop). Note that the only bits of this mask that are
+//                checked are genuine error bits, so a caller can check that all errors are set by
+//                passing UINT32_MAX.
 void wait_dai_op_idle(uint32_t exp_mask);
+
 void calculate_digest(uint32_t partition_base_address, uint32_t exp_status);
 void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status);
 void shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index);
@@ -41,5 +51,8 @@ void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t
 void calculate_digest_without_addr(uint32_t exp_status);
 void zeroize_without_addr(uint32_t exp_status);
 
+// Returns true if addr is in the range of addresses that are visible
+// to the Caliptra core but not the MCU.
+bool is_caliptra_secret_addr(uint32_t addr);
 
 #endif // FUSE_CTRL_H
