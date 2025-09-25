@@ -28,9 +28,7 @@ For example, the digest field is never writable through the `WRITE` command in a
     > Side effect: A fuse macro usually signals an error if a write attempts to clear an already set data or ECC bit.
     > Such an unintended bit flip can occur in the ECC part of a word during a zeroization (when only the data part is zeroized), hence the `ZEROIZE` command disables ECC when zeroizing a word, setting all bits in both the data and ECC part of a fuse word.
 
-  2. A successful zeroization of a fuse word results in the zeroized word being returned to software in the `DIRECT_ACCESS_RDATA` registers for inspection bypassing the
-  descrambling mechanism if the word belongs to a secret partition.
-  This is the only way firmware can confirm, in the absence of a malicious tampering attempt, whether a fuse has been cleared.
+  2. A successful zeroization of a fuse word results an all-1s word being returned to software in the `DIRECT_ACCESS_RDATA` registers, independent of any potential stuck-at-0 fuses in the word.
   The `ZEROIZE` command is idempotent, i.e., it can be retried multiple times such that a zeroization of an already zeroized word has no effect.
 
   3. When firmware determines that a partition has been sufficiently zeroized, it should reset the `fuse_ctrl` such that the zeroized data is also reflected in the buffer registers.
@@ -40,19 +38,8 @@ For example, the digest field is never writable through the `WRITE` command in a
 
 ## Zeroization Detection
 
-There are two distinct cases when the `fuse_ctrl` performs a zeroization detection by counting the number of set bits in a word and comparing the resulting value against predefined thresholds that account for potentially stuck-at-0 bits.
-
-  1. _Initialization_: As mentioned above, the periodic consistency and integrity checks need to be disabled for a zeroized partition, furthermore when reading out the content of buffered partitions, the ECC checks need to be disabled.
-  This means that the zeroization indicator field has to be checked first before performing the remaining initialization steps.
-  A partition is said to be in a zeroized state if and only if the number of set bits in the indicator field is greater or equal the macro-specific value `ZeroizationValidBound`.
-  This bound should include a margin that accounts for defects where certain fuse bits are perpetually stuck at 0.
-  2. _Scrambled Zeroization_: As the zeroization flow requires that zeroized words are returned back to firmware for inspection, there is a possibility that scrambled data is released unintentionally either through an error case or a malicious fault attack.
-  The `fuse_ctrl` guards against this case with by screening each zeroized word.
-  First, whenever the OTP macro signals an error in response to a zeroization request, no data is released.
-  Second, for scrambled partitions, the zeroized fuse is only returned if and only if the number of set bits in the 64-bit word is greater or equal `ZeroizationValidBound`.
-  If a zeroized word does not meet this criterion, then firmware should continue erasing the remaining parts of a partition and retry the faulty erasure at a later point.
-  An escalation should be triggered, if repeated zeroizations fall below `ZeroizationValidBound`.
-  The `ZeroizationValidBound` should be chosen such that the probability that a scrambled word is accidentally recognized as zeroized is as small as possible while still accounting for potentially stuck-at-0 bits.
-  The problem of returning a zeroized word makes it impossible to have a mechanism that has a 0% probability of ever releasing a scrambled word to firmware, however even if this low-probability case occurs, the scrambling key remains secret making it unlikely that the word can be descrambled.
-  Assuming that most bits are set after a zeroization, even if the scrambling key became compromised, it would be impossible to retrieve individual bits of a zeroized word.
-  Note that is is impossible that the `fuse_ctrl` ever releases a descrambled word in any scenario.
+As mentioned above, the periodic consistency and integrity checks need to be disabled for a zeroized partition.
+Furthermore when reading out the content of both buffered and unbuffered partitions, the ECC checks need to be disabled when dealing with zeroized partitions.
+This means that the zeroization indicator field has to be checked first before performing the remaining initialization steps.
+A partition is said to be in a zeroized state if and only if the number of set bits in the indicator field is greater or equal the macro-specific value `ZeroizationValidBound`.
+This bound should include a margin that accounts for defects where certain fuse bits are perpetually stuck at 0.

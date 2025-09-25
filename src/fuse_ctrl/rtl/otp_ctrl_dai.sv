@@ -735,7 +735,7 @@ module otp_ctrl_dai
             state_d = IdleSt;
 
             if (otp_err == NoError) begin
-              // Unconditionally release the `countones` value of the zeroized word.
+              // Unconditionally return all-ones.
               data_en = 1'b1;
               // Flop trigger for the affected partition such that it can disable
               // periodic checks that could fail.
@@ -933,7 +933,7 @@ module otp_ctrl_dai
         end else if (data_sel == DaiData) begin
           data_q <= dai_wdata_i;
         end else if (data_sel == ZerData) begin
-          data_q <= countones(otp_rdata_i);
+          data_q <= {ScrmblBlockWidth{1'b1}};
         end else begin
           data_q <= otp_rdata_i;
         end
