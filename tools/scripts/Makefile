@@ -127,6 +127,9 @@ endif
 HEADER_FILES += $(ISR_DIR)/riscv-interrupts.h
 endif
 
+# Add the data from fuse_ctrl_mmap.c to the link
+OFILES += $(BUILD_DIR)/fuse_ctrl_mmap.o
+
 # Verilator trace format
 VERILATOR_TRACE=vcd
 
@@ -476,6 +479,11 @@ mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-as $(ABI) $*.cpp.s -o $@
 
 %.o : %.c $(HEADER_FILES)
+	cp $(filter-out %/caliptra_ss_clk_freq.h, $(HEADER_FILES)) $(BUILD_DIR)
+	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
+
+# A specialised version of the compile rule above, building a shared source file from $(RTL_DIR).
+$(BUILD_DIR)/fuse_ctrl_mmap.o: $(RTL_DIR)/fuse_ctrl_mmap.c
 	cp $(filter-out %/caliptra_ss_clk_freq.h, $(HEADER_FILES)) $(BUILD_DIR)
 	$(GCC_PREFIX)-gcc $(includes) $(TEST_CFLAGS) -DCOMPILER_FLAGS="\"$(TEST_CFLAGS)\"" $(ABI) -nostdlib -c $< -o $@
 
