@@ -13,7 +13,7 @@
 // limitations under the License.
 //
 
-#ifndef FUSE_CTRL_MMAP_HEADER
+#ifndef FUSE_CTRL_MMAP_HEADERS
 #define FUSE_CTRL_MMAP_HEADERS
 
 typedef enum {
@@ -246,8 +246,8 @@ typedef struct {
     bool sw_digest;
     bool has_read_lock;
     bool has_ecc;
-    bool is_lifecycle;
     uint32_t lc_phase;
+    bool is_lifecycle;
     uint32_t num_fuses;
     uint32_t *fuses;
 } partition_t;
@@ -902,4 +902,4 @@ partition_t partitions[NUM_PARTITIONS] = {
     },
 };
 
-#endif // FUSE_CTRL_MMAP_HEADER
+#endif // FUSE_CTRL_MMAP_HEADERS
