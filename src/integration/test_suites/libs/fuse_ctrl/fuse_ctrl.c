@@ -16,12 +16,14 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
+#include "fuse_ctrl_mmap.h"
 #include "fuse_ctrl.h"
 
 void grant_mcu_for_fc_writes(void) {
@@ -48,28 +50,45 @@ void grant_caliptra_core_for_fc_writes(void) {
     }
 }
 
-void wait_dai_op_idle(uint32_t status_mask) {
+bool wait_dai_op_idle(uint32_t exp_status) {
     uint32_t status;
-    uint32_t dai_idle;
-    uint32_t check_pending;
+    bool     status_matched = true;
 
-    const uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
+    // Repeatedly read SOC_OTP_CTRL_STATUS and wait until one of the following is true:
+    //
+    //  - An error is reported
+    //  - The DAI_IDLE bit becomes high
+    //  - The CHECK_PENDING bit becomes low.
+    //
+    // The error bits are all the bits of status below DAI_IDLE and CHECK_PENDING. Since DAI_IDLE is
+    // lower, we can use it to make a mask for all the error bits.
+    uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
 
-    VPRINTF(LOW, "DEBUG: Waiting for DAI to become idle...\n");
-    do {
+    for (;;) {
         status = lsu_read_32(SOC_OTP_CTRL_STATUS);
-        dai_idle = (status >> OTP_CTRL_STATUS_DAI_IDLE_LOW) & 0x1;
-        check_pending = (status >> OTP_CTRL_STATUS_CHECK_PENDING_LOW) & 0x1;
-        
-    } while ((!dai_idle || check_pending) && ((status & error_mask) != error_mask));
-    VPRINTF(LOW, "%08X\n", status);
-    // Clear the IDLE bit from the status value
-    status &= ((((uint32_t)1) << (OTP_CTRL_STATUS_DAI_IDLE_LOW - 1)) - 1);
-    if ((status & error_mask) != status_mask) {
-        VPRINTF(LOW, "ERROR: unexpected status: expected: %08X actual: %08X\n", status_mask, status);
+
+        // Has an error been reported?
+        if (status & error_mask) break;
+
+        // Has the DAI become idle, with no check pending?
+        if ((status & OTP_CTRL_STATUS_DAI_IDLE_MASK) &&
+            ! (status & OTP_CTRL_STATUS_CHECK_PENDING_MASK)) break;
     }
+
+    VPRINTF(LOW, "wait_dai_op_idle: 0x%08X\n", status);
+
+    // At this point status contains the last read of SOC_OTP_CTRL_STATUS. Look at just the error
+    // bits (ignoring DAI_IDLE and CHECK_PENDING) and check they match exp_status.
+    if ((status ^ exp_status) & error_mask) {
+        VPRINTF(LOW,
+                "ERROR: DAI stopped unexpected status: expected: 0x%08X actual: 0x%08X\n",
+                exp_status & error_mask,
+                status & error_mask);
+        status_matched = false;
+    }
+
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
-    return;
+    return status_matched;
 }
 
 void initialize_otp_controller(void) {
@@ -118,10 +137,9 @@ void initialize_otp_controller(void) {
 #define FUSE_CTRL_CMD_DAI_WRITE 0x2
 #define FUSE_CTRL_CMD_DAI_READ  0x1
 
-void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status) {
+bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
+            uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI write operation...\n");
-
-    //wait_dai_op_idle(0);
 
     VPRINTF(LOW, "DEBUG: Writing wdata0: 0x%08X to DIRECT_ACCESS_WDATA_0.\n", wdata0);
     lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata0);
@@ -137,14 +155,12 @@ void dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularit
     VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
 
-    wait_dai_op_idle(exp_status);
-    return;
+    return wait_dai_op_idle(exp_status);
 }
 
-void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status) {
+bool dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+            uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI read operation...\n");
-
-    //wait_dai_op_idle(0);
 
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
@@ -152,21 +168,22 @@ void dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granular
     VPRINTF(LOW, "DEBUG: Triggering DAI read command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_READ);
 
-    wait_dai_op_idle(exp_status);
+    bool matched = wait_dai_op_idle(exp_status);
 
     *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
     VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
 
-    if (granularity == 64) {
+    if (granularity > 32) {
         *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
         VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
     }
-    return;
+
+    return matched;
 }
 
-void calculate_digest(uint32_t partition_base_address, uint32_t exp_status) {
+bool calculate_digest(uint32_t partition_base_address, uint32_t exp_status) {
     // Step 1: Check if DAI is idle
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     // Step 2: Write the partition base address to DIRECT_ACCESS_ADDRESS
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, partition_base_address);
@@ -176,11 +193,11 @@ void calculate_digest(uint32_t partition_base_address, uint32_t exp_status) {
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, 0x4);
 
     // Step 4: Poll STATUS until the DAI is idle and check that it matches the expected status
-    wait_dai_op_idle(exp_status);
-    return;
+    return wait_dai_op_idle(exp_status);
 }
 
-void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status) {
+bool dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+             uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI zeroization operation...\n");
 
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
@@ -189,7 +206,7 @@ void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granula
     VPRINTF(LOW, "DEBUG: Triggering DAI Zeroize command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
 
-    wait_dai_op_idle(exp_status);
+    bool ret = wait_dai_op_idle(exp_status);
 
     *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
     VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
@@ -199,11 +216,12 @@ void dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granula
         VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
     }
 
-    return;
+    return ret;
 }
 
 
-void shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
+bool shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
+                     uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
     VPRINTF(LOW, "DEBUG: Starting DAI write operation with permutation %d...\n", permutation_index);
 
     switch (permutation_index) {
@@ -244,17 +262,18 @@ void shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1, uint32_t g
 
         default:
             VPRINTF(LOW, "ERROR: Invalid permutation index %d\n", permutation_index);
-            return;
+            return false;
     }
 
     VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
 
-    wait_dai_op_idle(exp_status);
+    return wait_dai_op_idle(exp_status);
 }
 
 
-void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
+bool shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
+                     uint32_t granularity, uint32_t exp_status, uint8_t permutation_index) {
     VPRINTF(LOW, "DEBUG: Starting DAI read operation with permutation %d...\n", permutation_index);
 
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
@@ -263,7 +282,7 @@ void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t
     VPRINTF(LOW, "DEBUG: Triggering DAI read command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_READ);
 
-    wait_dai_op_idle(exp_status);
+    if (!wait_dai_op_idle(exp_status)) return false;
 
     switch (permutation_index) {
         case 0: // Read rdata0 first, then rdata1
@@ -298,13 +317,13 @@ void shuffled_dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1, uint32_t
             break;
     }
 
-    return;
+    return true;
 }
 
 
-void calculate_digest_without_addr(uint32_t exp_status) {
+bool calculate_digest_without_addr(uint32_t exp_status) {
     // Step 1: Check if DAI is idle
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     VPRINTF(LOW, "INFO: Triggering DIGEST WITHOUT ADDRESS.\n");
 
@@ -312,19 +331,25 @@ void calculate_digest_without_addr(uint32_t exp_status) {
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, 0x4);
 
     // Step 4: Poll STATUS until the DAI is idle and check that it matches the expected status
-    wait_dai_op_idle(exp_status);
-    return;
+    return wait_dai_op_idle(exp_status);
 }
 
 
-void zeroize_without_addr(uint32_t exp_status) {
+bool zeroize_without_addr(uint32_t exp_status) {
     // Step 1: Check if DAI is idle
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     VPRINTF(LOW, "INFO: Triggering ZEROIZE WITHOUT ADDRESS.\n");
 
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
 
-    wait_dai_op_idle(exp_status);
-    return;
+    return wait_dai_op_idle(exp_status);
+}
+
+bool is_caliptra_secret_addr(uint32_t addr) {
+    // This mirrors CALIPTRA_SECRET_ACCESS_LOWER_ADDR and CALIPTRA_SECRET_ACCESS_UPPER_ADDR in
+    // otp_ctrl_pkg. Here, we're using the fact that the secret partitions are a contiguous block,
+    // starting with SECRET_MANUF_PARTITION and ending with SECRET_PROD_PARTITION_3.
+    return ((addr >= partitions[SECRET_MANUF_PARTITION].address) &&
+            (addr <= partitions[SECRET_PROD_PARTITION_3].zer_address));
 }
