@@ -77,7 +77,7 @@ void main (void) {
         SEND_STDOUT_CTRL(0xFF);
         while(1);
     } else {
-        VPRINTF(LOW, "=================\nMCU: MCU SRAM Exec Test\n=================\n\n")
+        VPRINTF(LOW, "=================\nMCU: MCU SRAM Exec Test\n=================\n\n");
 
         VPRINTF(LOW, "MCU: Bringing Caliptra out of Reset\n");
         mcu_cptra_init_d(.cfg_mcu_fw_sram_exec_reg_size=true, .mcu_fw_sram_exec_reg_size=0x8000);

@@ -54,7 +54,7 @@ void ocp_lock_zeroization(void) {
     // The hardware partition gets locked for reads and writes after its
     // digest has been calculated via the DAI. Zeroization still needs
     // to work.
-    VPRINTF(LOW, "================= Start testing zeroization on hw_part =================\n")
+    VPRINTF(LOW, "================= Start testing zeroization on hw_part =================\n");
 
     // Write some data, read it back, and compare the data read back.
     uint32_t exp_data = 0xA5A5A5A5;
@@ -122,7 +122,7 @@ void ocp_lock_zeroization(void) {
     // Zeroize the first 32-bit word of the software partition and its
     // digest. This partition is unbuffered, unlocked and
     // software-readable but the zeroization should nonetheless work.
-    VPRINTF(LOW, "================= Start testing zeroization on sw_part0 =================\n")
+    VPRINTF(LOW, "================= Start testing zeroization on sw_part0 =================\n");
 
     // Write some data, read it back, and compare the data read back
     exp_data = 0xA5A5A5A5;
@@ -156,7 +156,7 @@ void ocp_lock_zeroization(void) {
     
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
-    VPRINTF(LOW, "================= Start testing zeroization on sw_part1 =================\n")
+    VPRINTF(LOW, "================= Start testing zeroization on sw_part1 =================\n");
 
     exp_data = 0xA5A5A5A5;
     data[0] = exp_data;
@@ -189,7 +189,7 @@ void ocp_lock_zeroization(void) {
     }
     memset(data, 0, 2*sizeof(uint32_t));
 
-    VPRINTF(LOW, "================= Start testing more zeroization cases =================\n")
+    VPRINTF(LOW, "================= Start testing more zeroization cases =================\n");
     // Lock the first three ratchet seed partition
     lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
 
@@ -258,7 +258,7 @@ epilogue:
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);

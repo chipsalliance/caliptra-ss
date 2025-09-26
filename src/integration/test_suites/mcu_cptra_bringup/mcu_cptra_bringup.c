@@ -37,10 +37,10 @@ void main (void) {
     uint32_t reg_data;
     uint32_t sram_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n");
 
     if (lsu_read_32(SOC_MCI_TOP_MCI_REG_RESET_REASON) & MCI_REG_RESET_REASON_FW_BOOT_UPD_RESET_MASK) {
-        VPRINTF(LOW, "=================\nMCU SRAM Testing\n=================\n\n")
+        VPRINTF(LOW, "=================\nMCU SRAM Testing\n=================\n\n");
         lsu_write_32( (SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1000), 0xDEADBEEF);
         VPRINTF(LOW, "MCU: Writing to MCU SRAM\n");
         
@@ -81,7 +81,7 @@ void main (void) {
 
     } else {
 
-        VPRINTF(LOW, "MCU: Caliptra bringup\n")
+        VPRINTF(LOW, "MCU: Caliptra bringup\n");
 
         mcu_cptra_init_d(.cfg_enable_cptra_mbox_user_init=true);
 

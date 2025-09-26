@@ -84,7 +84,7 @@ void main (void) {
     uint32_t base_address = partitions[CPTRA_SS_LOCK_HEK_PROD_3].address;
     uint32_t fuse_address = base_address;
 
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
