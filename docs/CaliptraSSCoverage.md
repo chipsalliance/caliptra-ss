@@ -364,9 +364,10 @@ These gaps are also acceptable in Caliptra because it doesn't use TileLink nor a
 
 ### Top-level coverage
 
-Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 97.8, conditional 57.1, toggle 50.9 and branch 80.0.
-The main conditional holes are line 139 which should be covered by the sha3 smoke test, line 298 and 300 which should be covered by the interrupt test.
-The main toggle holes are haddr_i[1:0] and hsize_i[2] which should be hit by SHA3 smoke test, and err_intr which should be hit by interrupt test.
+Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 100, conditional 64.2, toggle 50.9 and branch 90.0.
+The conditional holes are line 139 related to `ahb_addr[1]` (also the only hole in branch) which should be covered by the SHA3 smoke test, and line 298 related to `intr_kmac_err` and line 300 related to `intr_fifo_empty` which should be covered by the interrupt test.
+The main toggle holes are `haddr_i[1:0]` which should be hit by the SHA3 smoke test and `hsize_i[2]` which cannot be hit with our current bus implementation, and `err_intr` which should be hit by interrupt test.
+Other toggle coverage are `htrans[0]` which indicate bus bursts, reset, power good and debug unlock which are chip-wide signals.
 Since I believe these holes should be covered, the coverage collection needs to be investigated and if this is correct then the tests need adjusting.
 
 In terms of line coverage for "EnFullKmac", the following logic should be covered in kmac.sv lines 866 and 867 and in kmac_app.sv lines 399, 402, 419, 438, 439 and 684-686.
