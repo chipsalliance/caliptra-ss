@@ -42,10 +42,10 @@ uint8_t main (void) {
     if (dccm_msg[0] != '=') {
         VPRINTF(FATAL, "MCU: DCCM does not contain expected message!\nExpected: '=', saw '%c'\n", dccm_msg[0]);
     } else {
-        VPRINTF(LOW, dccm_msg)
+        VPRINTF(LOW, dccm_msg);
     }
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "MCU: Caliptra bringup\n");
     mcu_cptra_init_d();
 
     mcu_cptra_poll_mb_ready();

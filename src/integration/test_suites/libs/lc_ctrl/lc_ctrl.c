@@ -373,7 +373,7 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
         reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
         loop_ctrl = reg_value & CLAIM_TRANS_VAL;
         VPRINTF(LOW, "Claim Mutex Register [0x%08x]: Read 0x%08x, expected 0x%08x\n",
-        LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, reg_value, CLAIM_TRANS_VAL);
+                LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, reg_value, CLAIM_TRANS_VAL);
     }
     VPRINTF(LOW, "LC_CTRL: Mutex successfully acquired.\n");
     // Step 3: Set Target Lifecycle State

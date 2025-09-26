@@ -33,8 +33,8 @@ enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define LOG_ERROR(...) VPRINTF(LOW, "MCU ERROR:" #__VA_ARGS__)
-#define LOG_INFO(...) VPRINTF(LOW, "MCU:" #__VA_ARGS__)
+#define LOG_ERROR(...) VPRINTF(LOW, "MCU ERROR:" #__VA_ARGS__);
+#define LOG_INFO(...) VPRINTF(LOW, "MCU:" #__VA_ARGS__);
 
 // This struct is used to store the partition information used in the test.
 typedef struct partition_info {

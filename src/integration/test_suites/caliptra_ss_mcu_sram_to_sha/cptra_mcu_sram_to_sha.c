@@ -48,7 +48,7 @@ void sha_accel_acquire_lock(uint64_t base_addr) {
     soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_LOCK, 0, &data, 4, 0);
     while((data & SHA512_ACC_CSR_LOCK_LOCK_MASK) == 1) {
         if (cnt++ > 100) {
-            VPRINTF(FATAL, "FW: Failed to acquire SHA Lock via AXI after 100 attempts!\n")
+            VPRINTF(FATAL, "FW: Failed to acquire SHA Lock via AXI after 100 attempts!\n");
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
@@ -91,7 +91,7 @@ void sha_accel_poll_status(uint64_t base_addr) {
     soc_ifc_axi_dma_read_ahb_payload(base_addr + SHA512_ACC_CSR_STATUS, 0, &sts, 4, 0);
     while ((sts & SHA512_ACC_CSR_STATUS_VALID_MASK) != SHA512_ACC_CSR_STATUS_VALID_MASK) {
         if (cnt++ > 10000) {
-            VPRINTF(FATAL, "FW: SHA accel failed to report digest valid after 10000 attempts!\n")
+            VPRINTF(FATAL, "FW: SHA accel failed to report digest valid after 10000 attempts!\n");
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }

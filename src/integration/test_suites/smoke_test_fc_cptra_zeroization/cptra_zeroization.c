@@ -37,8 +37,8 @@ enum printf_verbosity verbosity_g = LOW;
 #endif
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
-#define LOG_ERROR(...) VPRINTF(LOW, "CLP_CORE ERROR:" #__VA_ARGS__)
-#define LOG_INFO(...) VPRINTF(LOW, "CLP_CORE:" #__VA_ARGS__)
+#define LOG_ERROR(...) VPRINTF(LOW, "CLP_CORE ERROR:" #__VA_ARGS__);
+#define LOG_INFO(...) VPRINTF(LOW, "CLP_CORE:" #__VA_ARGS__);
 
 static inline void sleep(const uint32_t cycles) {
   for (uint32_t ii = 0; ii < cycles; ii++) {
