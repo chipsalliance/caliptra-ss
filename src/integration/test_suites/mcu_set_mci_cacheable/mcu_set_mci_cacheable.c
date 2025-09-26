@@ -87,6 +87,9 @@ uint8_t main (void) {
     lsu_write_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020, reg_data);
     lsu_write_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044, reg_data2);
 
+    VPRINTF(LOW, "MCU: READ DATA0: 0x%x expected 0x%x\n", lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020), reg_data);
+    VPRINTF(LOW, "MCU: READ DATA1: 0x%x expected 0x%x\n", lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044), reg_data2);
+
     if (lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020) != reg_data) {
         handle_error("Data mismatch on MCU SRAM offset 0x%x. Data [0x%x] != Exp [0x%x]\n", 0x1020, lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1020), reg_data);
     }
@@ -94,6 +97,7 @@ uint8_t main (void) {
         handle_error("Data mismatch on MCU SRAM offset 0x%x. Data [0x%x] != Exp [0x%x]\n", 0x1044, lsu_read_32(SOC_MCI_TOP_MCU_SRAM_BASE_ADDR + 0x1044), reg_data2);
     }
 
+    SEND_STDOUT_CTRL(0xff);
     // return status is treated as an 'exit' code by mcu_crt0
     // 0-value indicates success, non-zero is error
     return 0;
