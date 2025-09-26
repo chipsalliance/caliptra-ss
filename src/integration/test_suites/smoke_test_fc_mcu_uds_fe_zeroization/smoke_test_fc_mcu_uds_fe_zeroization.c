@@ -155,6 +155,41 @@ static bool mcu_zeroization_test(void) {
   return true;
 }
 
+bool test(void) {
+  VPRINTF(LOW, "@@@ Step 1/5: Initializing OTP controller 1/2\n");
+  if (!wait_dai_op_idle(0)) return false;
+  initialize_otp_controller();
+
+  VPRINTF(LOW, "@@@ Step 2/5: Initializing OTP controller 2/2\n");
+  if (!wait_dai_op_idle(0)) return false;
+  initialize_otp_controller();
+
+  // Before releasing Caliptra core, test that we are unable to zeroize any of
+  // the partitions with or without PPD set.
+  VPRINTF(LOW, "@@@ Step 3/5: Running zeroization test\n");
+  if (!mcu_zeroization_test()) {
+    LOG_ERROR("MCU zeroization test failed\n");
+    return false;
+  }
+
+  // Reset.
+  VPRINTF(LOW, "@@@ Step 4/5: Applying reset\n");
+  reset_fc_lcc_rtl();
+  if (!wait_dai_op_idle(0)) return false;
+
+  // At this point, the partitions should not be zeroized.
+  VPRINTF(LOW, "@@@ Step 5/5: Checking partitions not zeroized\n");
+  for (uint32_t i = 0; i < kNumPartitions; i++) {
+    uint32_t partition_id = kPartitionsInfo[i].id;
+    if (!check_digest(partition_id, /*expected_zeroized=*/false)) {
+      LOG_ERROR("Partition %d is unexpectedly zeroized\n", partition_id);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void main(void) {
   mcu_cptra_init_d();
 
@@ -162,32 +197,7 @@ void main(void) {
                "MCU Caliptra Boot Go\n"
                "=====================================\n\n");
 
-
-  wait_dai_op_idle(0);
-  initialize_otp_controller();
-
-  
-  wait_dai_op_idle(0);
-  initialize_otp_controller();
-
-  // Before releasing Caliptra core, test that we are unable to zeroize any of
-  // the partitions with or without PPD set.
-  if (!mcu_zeroization_test()) {
-    LOG_ERROR("MCU zeroization test failed\n");
-  }
-
-  // Reset.
-  reset_fc_lcc_rtl();
-  wait_dai_op_idle(0);
-
-  // At this point, the partitions should not be zeroized.
-  for (uint32_t i = 0; i < kNumPartitions; i++) {
-    uint32_t partition_id = kPartitionsInfo[i].id;
-    if (!check_digest(partition_id, /*expected_zeroized=*/false)) {
-      LOG_ERROR("Partition %d is not zeroized\n", partition_id);
-      break;
-    }
-  }
+  test();
 
   for (uint8_t ii = 0; ii < 160; ii++) {
     // Sleep loop as "nop".
