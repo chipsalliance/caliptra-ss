@@ -119,7 +119,7 @@ uint32_t main(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR, (uint32_t) (nmi_handler));
 
     rst_count++;
-    VPRINTF(LOW, "------------\nrst_count = %0d\n------------\n", rst_count)
+    VPRINTF(LOW, "------------\nrst_count = %0d\n------------\n", rst_count);
 
     if (rst_count == 1) {
         VPRINTF(LOW, "------------\nMCI err without mask\n------------\n");

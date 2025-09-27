@@ -114,7 +114,7 @@ void vendor_revocations_prod_partition() {
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
