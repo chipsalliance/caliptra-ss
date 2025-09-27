@@ -371,20 +371,28 @@ package otp_ctrl_pkg;
     DISCARD_FUSE_CMD_AXI_WR_ST = 4'd9
   } fc_table_state_t;
 
-
+  // A structure to represent an address range in the access control table. The bounds are both
+  // inclusive, so a 256 byte window starting at address zero would have lower_addr=0 and
+  // upper_addr=32'hff.
+  //
+  // Note that these are compared with the starting address for a transaction, which works because
+  // all accesses on the interface are the same size (64 bit). As such, the example above should be
+  // encoded with upper_addr=32'f8.
   typedef struct packed {
-    logic [31:0] lower_addr;  // Lower bound of the address range
-    logic [31:0] upper_addr;  // Upper bound of the address range
+    logic [31:0] lower_addr;  // Lower bound
+    logic [31:0] upper_addr;  // Upper bound (inclusive)
   } access_control_entry_t;
   
   localparam int FC_TABLE_NUM_RANGES = 3;
   
   localparam access_control_entry_t access_control_table [FC_TABLE_NUM_RANGES] = '{
-    '{ lower_addr: 32'h00000000, upper_addr: 32'h00003FD8}, // Caliptra core
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h00003FD8},  // Caliptra core
     '{ lower_addr: 32'h000000F8, upper_addr: 32'h00003FD8},  // MCU core
-    '{ lower_addr: 32'h00000000, upper_addr: 32'h00000040}  // MCU core
+    '{ lower_addr: 32'h00000000, upper_addr: 32'h00000040}   // MCU core
   };
 
+  // The range of addresses that are available to the Caliptra core but not the MCU (corresponding
+  // to a gap between two ranges in access_control_table). The upper bound is inclusive.
   localparam int CALIPTRA_SECRET_ACCESS_LOWER_ADDR = 32'h48;
   localparam int CALIPTRA_SECRET_ACCESS_UPPER_ADDR = 32'hF0;
 

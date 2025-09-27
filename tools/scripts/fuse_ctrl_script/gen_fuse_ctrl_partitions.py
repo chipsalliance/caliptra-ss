@@ -55,8 +55,9 @@ PART_PKG_TEMPLATE = "otp_ctrl_part_pkg.sv.tpl"
 REG_PKG_TEMPLATE  = "reg_pkg.sv.tpl"
 REG_TOP_TEMPLATE  = "reg_top.sv.tpl"
 
-# C templates
-C_MMAP_TEMPLATE   = "fuse_ctrl_mmap.h.tpl"
+# C templates for the memory map
+C_MMAP_TEMPLATES   = ["fuse_ctrl_mmap.h.tpl", "fuse_ctrl_mmap.c.tpl",
+                      "fuse_ctrl_read_lock_map.c.tpl"]
 
 def render_template(template: str, target_path: Path, params: Dict[str, object]):
     try:
@@ -142,12 +143,15 @@ def main():
         params={"partitions": otp_mmap.config["partitions"]}
     )
 
-    # Render C header files
-    render_template(
-        template=TEMPLATES_PATH / C_MMAP_TEMPLATE,
-        target_path=C_OUTPUT_PATH / C_MMAP_TEMPLATE.replace(".tpl", ""),
-        params={"partitions": otp_mmap.config["partitions"]}
-    )
+    # Render C header and source file
+    for tpl_basename in C_MMAP_TEMPLATES:
+        tgt_basename = tpl_basename.replace(".tpl", "")
+
+        render_template(
+            template=TEMPLATES_PATH / tpl_basename,
+            target_path=C_OUTPUT_PATH / tgt_basename,
+            params={"partitions": otp_mmap.config["partitions"]}
+        )
 
     # Render doc tables
     with open(DOC_OUTPUT_PATH/ PARTITIONS_TABLE_FILE, 'wb', buffering=2097152) as outfile:
