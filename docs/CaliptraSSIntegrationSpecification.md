@@ -1120,7 +1120,7 @@ Signal                                        | Type   | Width                 |
 ----------------------------------------------|--------|-----------------------|---------------
 `cptra_ss_fuse_macro_inputs_o.valid_i`        | Input  | 1                     | Valid signal for the command handshake.
 `cptra_ss_fuse_macro_inputs_o.size_i`         | Input  | [`SizeWidth`-1:0]     | Number of native OTP words to transfer, minus one: `2'b00 = 1 native word` ... `2'b11 = 4 native words`.
-`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1000101 = read`, `7'b0110111 = write`, `7'b1111001 = read raw`, `7'b1100010 = write raw`,  `7'b0101100 = initialize`
+`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1111010 = read`, `7'b1001001 = write`, `7'b1010100 = read raw`, `7'b1100111 = write raw`,  `7'b0100000 = initialize`, `7'b0111101 = zeroize`
 `cptra_ss_fuse_macro_inputs_o.addr_i`         | Input  | [`$clog2(Depth)`-1:0] | OTP word address.
 `cptra_ss_fuse_macro_inputs_o.wdata_i`        | Input  | [`IfWidth`-1:0]       | Write data for write commands.
 `cptra_ss_fuse_macro_outputs_i.fatal_alert_o` | Output | 1                     | Fatal alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. The instantiating IP latches the alert indication and continuously outputs alert events until reset.
@@ -1134,6 +1134,10 @@ The `write raw` and `read raw` command instructs the Fuse Controller Macro
 wrapper to store / read the data in raw format without generating nor checking
 integrity information. That means that the wrapper must return the raw,
 uncorrected data and no integrity errors.
+
+The `zeroize` command instructs the Fuse Macro wrapper to "erase" the addressed
+value. As fuses cannot be unset, the typical erase behavior is to set all fuses
+of the addressed value to `1`, ideally including the ECC bits.
 
 The Fuse Controller Macro wrapper implements the error codes (0x0 - 0x4).
 
