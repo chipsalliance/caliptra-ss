@@ -833,7 +833,7 @@ The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/
 
 1. **MCU SRAM Mapping**: The MCU SRAM (located in [MCI address map](#memory-map-address-map)) must be mapped to a dedicated 256MB region that can have caching enabled.
 
-2. **MCI Register Space**: The remaining MCI address space (CSRs, Mailboxes, Trace Buffer) must be mapped to a different 256MB region with caching disabled to ensure proper register access behavior.
+2. **MCI Register Space**: The remaining MCI address space (CSRs, Mailboxes, Trace Buffer) must be mapped to a different 256MB region with caching disabled and side effects enabled to ensure proper register access behavior.
 
 **Note**: If MCU iCache is not required for your implementation, the standard contiguous [MCI address map](#memory-map-address-map) can be used without these special considerations.
 
