@@ -828,7 +828,7 @@ MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap.
 
 ## MCU iCache Integration Requirements
 
-The MCU's Memory Region Access Control (MRAC) regions are hard coded to 256MB boundaries. This means everything inside the 256MB boundary must be cachable in order to enable iCache. MCU SRAM lives inside MCI and not all regions of MCI are cachable. In order to enable MCU iCache the SOC must implement a split memory mapping scheme to separate the MCU SRAM from other MCI component: 
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. This means everything inside the 256MB boundary must be cachable in order to enable iCache. MCU SRAM lives inside MCI and not all regions of MCI are cachable. In order to enable MCU iCache the SOC must implement a split memory mapping scheme to separate the MCU SRAM from other MCI component: 
 
 
 1. **MCU SRAM Mapping**: The MCU SRAM (located in [MCI address map](#memory-map-address-map)) must be mapped to a dedicated 256MB region that can have caching enabled.
