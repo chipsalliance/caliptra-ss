@@ -47,6 +47,7 @@
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
   - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
   - [MCU iCache Integration Requirements](#mcu-icache-integration-requirements)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
@@ -781,7 +782,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -820,6 +821,10 @@ Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-co
 **Validation:**
 
 Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
 
 ## MCU iCache Integration Requirements
 
