@@ -47,6 +47,11 @@
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
   - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
+  - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
+    - [Split Memory Mapping](#split-memory-mapping)
+    - [Side Effect Considerations](#side-effect-considerations)
+    - [iCache Considerations](#icache-considerations)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -780,7 +785,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -819,6 +824,38 @@ Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-co
 **Validation:**
 
 Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
+
+## MCU SRAM MRAC Considerations
+
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. Each 256MB region is configured with uniform attributes - everything within a region is labeled as either "side effect" or "cachable". This affects how MCU SRAM and MCU MBOX SRAM (both located within MCI) should be integrated into the SoC memory map, as different components within MCI may require different access attributes.
+
+### Split Memory Mapping
+
+Integrators have two main approaches for handling MCI memory mapping:
+
+**Option 1: Contiguous MCI Address Region** - If integrators don't care about the MRAC limitations described in the following sections, they can use a standard contiguous [MCI address map](#memory-map-address-map) where all MCI components (including MCU SRAM and MCU MBOX SRAM) reside within a single 256MB region.
+
+**Option 2: Split Memory Mapping** - Integrators can optionally split MCU SRAM and MCU MBOX SRAMs into their own dedicated 256MB regions, separate from other MCI components. This allows firmware to enable caching or disable side effects for these specific SRAMs.
+
+### Side Effect Considerations
+
+When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
+
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+
+### iCache Considerations
+
+When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
+
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cachable. Since not all regions of MCI are cachable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+
+If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cachable region separate from other MCI components.
 
 ## MCU Programming interface
 
