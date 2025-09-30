@@ -343,11 +343,12 @@ The main one that needs coverage is [sha3_ctrl.sv](https://github.com/chipsallia
 
 There are some new files that do not need to be covered, like [sha3_param_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_param_pkg.sv) is new but only contains two parameters, and [sha3_reg_uvm.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg_uvm.sv) which is a DV specific file.
 The SHA3 register file ([sha3_reg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_reg.sv)) is auto-generated and the PeakRDL generated RTL is tested elsewhere in the chip.
-The KMAC register file has changed, mainly because registers have been removed, but that does not mean we cannot use the coverage from the block-level verification environment here.
-So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these don't need to be covered in top-level testing.
+The KMAC register file has changed because registers have been removed, but that does not mean we cannot use the coverage from the block-level verification environment here.
+So even though there are changes to [kmac_reg_top](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_top.sv) and [kmac_reg_pkg](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_reg_pkg.sv), these do not need to be covered in top-level testing.
 
-The other aspect that is worth mentioning is that we should check the code coverage of all the blocks where "EnFullKmac" parameter is set to zero and where the "CALIPTRA" macro is defined.
+The other aspect that is worth mentioning is that we should check the code coverage of all the blocks where ["EnFullKmac" parameter](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac.sv#L21) is set to zero and where the ["CALIPTRA" macro](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L627) is defined.
 The code related to those configurations are unique to Caliptra, although most of these are turning complicated logic into assign statements since it strips out functionality.
+For more detailed discussion of this look at the top-level coverage section.
 
 ### Block-level coverage
 
@@ -358,9 +359,14 @@ util/dvsim/dvsim.py hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson -i all --cov
 ```
 
 The results are very good with line coverage at 95.9, conditional coverage at 93.8 and branch coverage at 94.2.
-The toggle coverage is 100 for all the sub-modules but for the DUT itself it's at 78.5.
+The toggle coverage is 100 for all the sub-modules but for the DUT itself is at 78.5.
 This is mainly because certain TileLink fields and alert fields are unreachable, this is acceptable in OpenTitan because this functionality is implemented by common wrappers that are tested elsewhere.
 These gaps are also acceptable in Caliptra because it doesn't use TileLink nor alerts like OpenTitan does.
+
+Functional coverage is at 94.4.
+Most of the holes are in agents that are covered elsewhere in OpenTitan like the push pull agent and TileLink agent.
+The only cover groups below 80 are the [error cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L297-L300) and the [state read mask cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L278-L282).
+The error cover group can be covered by running more error tests and the state read mask covergroup is a cross for reading the state with one, two and three byte masks, which is unlikely to contain bugs since it uses standard logic used elsewhere in OpenTitan.
 
 ### Top-level coverage
 
@@ -368,10 +374,20 @@ Running all the existing SHA3 tests gets the following coverage for SHA3 control
 The conditional holes are line 139 related to `ahb_addr[1]` (also the only hole in branch) which should be covered by the SHA3 smoke test, and line 298 related to `intr_kmac_err` and line 300 related to `intr_fifo_empty` which should be covered by the interrupt test.
 The main toggle holes are `haddr_i[1:0]` which should be hit by the SHA3 smoke test and `hsize_i[2]` which cannot be hit with our current bus implementation, and `err_intr` which should be hit by interrupt test.
 Other toggle coverage are `htrans[0]` which indicate bus bursts, reset, power good and debug unlock which are chip-wide signals.
-Since I believe these holes should be covered, the coverage collection needs to be investigated and if this is correct then the tests need adjusting.
 
-In terms of line coverage for "EnFullKmac", the following logic should be covered in kmac.sv lines 866 and 867 and in kmac_app.sv lines 399, 402, 419, 438, 439 and 684-686.
-These lines need to be either waived or new tests should be written to cover them.
+In terms of line coverage for "EnFullKmac" parameter, the following logic are non-trivial assignments:
+- `kmac.sv` lines [866 and 867](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac.sv#L865-L867) this code is an error condition and should not be reachable without fault injection.
+- `kmac_app.sv` lines [399 and 402](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_app.sv#L398-L402) these are a copy of lines [392 and 395](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_app.sv#L391-L395) which are covered in block-level DV.
+- `kmac_app.sv` line [419](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L419) which is a copy of line [415](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L415) which is covered by block-levelDV.
+- `kmac_app.sv` line [438 and 439](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L437-L439) which is an error condition and should not be reachable without fault injection
+- `kmac_app.sv` lines [684 to 686](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L683-L686) which is an error condition and should not be reachable without fault injection.
+
+### TODO items
+
+Some of the holes identified above should have been covered so here are some concrete action items, these should be investigated before doing a formal sign-off for SHA3:
+- Check whether running more iterations of the error test covers the error cover group on the block-level DV.
+- Find out why the ahb_addr[1] and haddr_i[1:0] is not being hit by the SHA3 smoke test.
+- Find out why the interrupt conditions and toggles are not hit by the interrupt test.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
