@@ -139,44 +139,22 @@ bool write_read_block_of_digests(uint32_t part0, uint32_t partN) {
     return true;
 }
 
-bool zeroize_fuse(const partition_t *p, uint32_t addr, unsigned granularity) {
-    uint32_t r_data[2] = {0, 0};
-    dai_zer(addr, &r_data[0], &r_data[1], granularity, 0);
-
-    if (r_data[0] != 0xffffffff) {
-        VPRINTF(LOW,
-                ("ERROR: Zeroize returned an wrong value for lower bytes of word at address "
-                 "0x%0X in partition %0d. Expected 0xffffffff but read 0x%0X"),
-                addr, p->index, r_data[0]);
-        return false;
-    }
-    if (granularity > 32 && r_data[1] != 0xffffffff) {
-        VPRINTF(LOW,
-                ("ERROR: Zeroize returned an wrong value for upper bytes of word at address "
-                 "0x%0X in partition %0d. Expected 0xffffffff but read 0x%0X"),
-                addr, p->index, r_data[1]);
-        return false;
-    }
-
-    return true;
-}
-
 // Zeroizes the fuse, marker and digest
 bool zeroize_partition(const partition_t *p) {
     // Zeroize each fuse, reading back the response from the zeroize command. Check that is all
     // ones.
     VPRINTF(LOW, "  Zeroizing all the fuses in partition %0d\n", p->index);
     for (uint32_t addr = p->address; addr < p->digest_address; addr += p->granularity / 8) {
-        if (!zeroize_fuse(p, addr, p->granularity)) return false;
+        if (!dai_zer(addr, p->granularity, 0, false)) return false;
     }
 
     // Zeroize marker field.
     VPRINTF(LOW, "  Zeroizing the marker field of partition %0d\n", p->index);
-    if (!zeroize_fuse(p, p->zer_address, 64)) return false;
+    if (!dai_zer(p->zer_address, 64, 0, false)) return false;
 
     // Zeroize digest field.
     VPRINTF(LOW, "  Zeroizing the digest field of partition %0d\n", p->index);
-    if (!zeroize_fuse(p, p->digest_address, 64)) return false;
+    if (!dai_zer(p->digest_address, 64, 0, false)) return false;
 
     return true;
 }

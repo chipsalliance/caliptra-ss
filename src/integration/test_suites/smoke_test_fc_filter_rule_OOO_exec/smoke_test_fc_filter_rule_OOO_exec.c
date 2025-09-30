@@ -116,19 +116,15 @@ void ocp_lock_zeroization(void) {
     wait_dai_op_idle(0);
 
     // Zeroize fuse.
-    dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(hw_part.address, hw_part.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
     // Zeroize marker field.
-    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(hw_part.zer_address, 64, 0, false)) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
 
     // Zeroize the first 32-bit word of the software partition and its
     // digest. This partition is unbuffered, unlocked and
@@ -150,20 +146,15 @@ void ocp_lock_zeroization(void) {
     // Zeroize fuse. This test doesn't zeroize the marker field first,
     // to check that this also works. The next test will first zeroize
     // the marker field, which is the recommended flow.
-    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
-    if (data[0] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part0.address, sw_part0.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
     // Zeroize marker field.
-    dai_zer(sw_part0.zer_address, &data[0], &data[1], 64, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part0.zer_address, 64, 0, false)) {
         VPRINTF(LOW, "ERROR: digest is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
-
 
 epilogue:
     VPRINTF(LOW, "ocp lock zeroization test finished\n");

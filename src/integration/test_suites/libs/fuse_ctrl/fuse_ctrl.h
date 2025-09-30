@@ -61,10 +61,15 @@ bool wait_dai_op_idle(uint32_t exp_mask);
 // whether the eventual DAI status matched exp_status.
 bool calculate_digest(uint32_t partition_base_address, uint32_t exp_status);
 
-// Zeroize the fuse at the given addr, writing the DAI response to *rdata0/*rdata1. Return whether
-// the eventual DAI status matched exp_status.
-bool dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
-             uint32_t granularity, uint32_t exp_status);
+// Zeroize the fuse at the given addr, checking the eventual DAI status matched exp_status.
+//
+// If the eventual DAI status doesn't report an error, check that the rdata registers claim that the
+// whole fuse was zeroized. As a special case, the disable_rdata_check argument can be true. If so,
+// the check is skipped (used by a test if it wants to inject a reset half-way through the
+// zeroization).
+//
+// Return true if all these checks passed.
+bool dai_zer(uint32_t addr, uint32_t granularity, uint32_t exp_status, bool disable_rdata_check);
 
 bool shuffled_dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
                      uint32_t granularity, uint32_t exp_status, uint8_t permutation_index);

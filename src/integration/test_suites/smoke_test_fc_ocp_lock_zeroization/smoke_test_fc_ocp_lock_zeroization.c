@@ -88,12 +88,10 @@ void ocp_lock_zeroization(void) {
 
 
     // Zeroize fuse.
-    dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(hw_part.address, hw_part.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
 
     // Zeroize marker field.
     // Attempt to zeroize marker field, but introduce defective bits to be below the threshold.
@@ -102,18 +100,19 @@ void ocp_lock_zeroization(void) {
     disable_fc_all_ones_sva();
     // Force to defective bits on the zeroization marker of the fuse memory on partition VENDOR_SECRET_PROD_PARTITION to be below the threshold
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_FUSE_UNZEROIZ);
-    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
+    if (!dai_zer(hw_part.zer_address, 64, 0, false)) {
+        VPRINTF(LOW, "ERROR: Didn't zeroize with defective bits\n");
+        goto epilogue;
+    }
     // Release defective bits on the zeroization marker of the fuse memory of VENDOR_SECRET_PROD_PARTITION
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_RELEASE_FUSE_UNZEROIZ);
     // Re-enable FcZeroizeFuseAllOnes_A assertion
     enable_fc_all_ones_sva();
-    memset(data, 0, 2*sizeof(uint32_t));
-    dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+
+    if (!dai_zer(hw_part.zer_address, 64, 0, false)) {
         VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
     
     // Check that for a secret zeroized locked partition, the data cannot be read.
     dai_rd(hw_part.address, &data[0], &data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
@@ -144,19 +143,16 @@ void ocp_lock_zeroization(void) {
     // Zeroize fuse. This test doesn't zeroize the marker field first,
     // to check that this also works. The next test will first zeroize
     // the marker field, which is the recommended flow.
-    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
-    if (data[0] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part0.address, sw_part0.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
+
     // Zeroize marker field.
-    dai_zer(sw_part0.zer_address, &data[0], &data[1], 64, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part0.zer_address, 64, 0, false)) {
         VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
     
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
@@ -180,18 +176,15 @@ void ocp_lock_zeroization(void) {
     wait_dai_op_idle(0);
 
     // Zeroize marker before data, as recommended.
-    dai_zer(sw_part1.zer_address, &data[0], &data[1], 64, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part1.zer_address, 64, 0, false)) {
         VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
-    dai_zer(sw_part1.address, &data[0], &data[1], sw_part1.granularity, 0);
-    if (data[0] != 0xFFFFFFFF) {
+
+    if (!dai_zer(sw_part1.address, sw_part1.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: data is not zeroized\n");
         goto epilogue;
     }
-    memset(data, 0, 2*sizeof(uint32_t));
 
     VPRINTF(LOW, "================= Start testing more zeroization cases =================\n");
     // Lock the first three ratchet seed partition
@@ -203,8 +196,7 @@ void ocp_lock_zeroization(void) {
 
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
-    dai_zer(ctrl_part.address, &data[0], &data[1], ctrl_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    if (data[0] != 0x0 || data[1] != 0x0) {
+    if (!dai_zer(ctrl_part.address, ctrl_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK, false)) {
         VPRINTF(LOW, "ERROR: fuse is not 0.\n");
         goto epilogue;
     }
@@ -219,15 +211,13 @@ void ocp_lock_zeroization(void) {
     // have the same effect.
 
     // Hw part fuse.
-    dai_zer(hw_part.address, &data[0], &data[1], hw_part.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(hw_part.address, hw_part.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }
     memset(data, 0, 2*sizeof(uint32_t));
     // Sw part fuse.
-    dai_zer(sw_part0.address, &data[0], &data[1], sw_part0.granularity, 0);
-    if (data[0] != 0xFFFFFFFF) {
+    if (!dai_zer(sw_part0.address, sw_part0.granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: fuse is not zeroized\n");
         goto epilogue;
     }

@@ -38,104 +38,64 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 // #define SHORT_TEST
 
-void invalid_secret_zeroization(void) {
-    uint32_t data[2];
-
-    const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
-    const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
-    const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
-    const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
-    const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
-
-    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-
+bool try_to_zeroize_secret_partition(const char        *name,
+                                     const partition_t *part,
+                                     uint32_t           exp_status) {
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    VPRINTF(LOW, "INFO: Attempting to zeroize UDS partition (expected to fail)...\n");
-    dai_zer(hw_part_uds.address, &data[0], &data[1], hw_part_uds.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-#ifndef SHORT_TEST
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    VPRINTF(LOW, "INFO: Attempting to zeroize FE0 partition (expected to fail)...\n");
-    dai_zer(hw_part_fe0.address, &data[0], &data[1], hw_part_fe0.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    if (!wait_dai_op_idle(0)) return false;
 
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    VPRINTF(LOW, "INFO: Attempting to zeroize FE1 partition (expected to fail)...\n");
-    dai_zer(hw_part_fe1.address, &data[0], &data[1], hw_part_fe1.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    if (!dai_zer(part->address, part->granularity, exp_status, false)) {
+        VPRINTF(LOW, "ERROR: Unexpected status zeroizing %s partition\n", name);
+        return false;
+    }
 
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    VPRINTF(LOW, "INFO: Attempting to zeroize FE2 partition (expected to fail)...\n");
-    dai_zer(hw_part_fe2.address, &data[0], &data[1], hw_part_fe2.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    VPRINTF(LOW, "INFO: Attempting to zeroize FE3 partition (expected to fail)...\n");
-    dai_zer(hw_part_fe3.address, &data[0], &data[1], hw_part_fe3.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-#endif
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    VPRINTF(LOW, "INFO: Invalid secret zeroization steps completed.\n");
+    return true;
 }
 
-
-
-
-void valid_secret_zeroization(void) {
-    uint32_t data[2];
-
+bool try_to_zeroize_secret_partitions(uint32_t exp_status) {
     const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
     const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
     const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
     const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
     const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
 
+    if (!try_to_zeroize_secret_partition("UDS", hw_part_uds, exp_status))
+        return false;
+#ifndef SHORT_TEST
+    if (!try_to_zeroize_secret_partition("FE0", hw_part_fe0, exp_status))
+        return false;
+    if (!try_to_zeroize_secret_partition("FE1", hw_part_fe1, exp_status))
+        return false;
+    if (!try_to_zeroize_secret_partition("FE2", hw_part_fe2, exp_status))
+        return false;
+    if (!try_to_zeroize_secret_partition("FE3", hw_part_fe3, exp_status))
+        return false;
+#endif
+
+    return true;
+}
+
+bool invalid_secret_zeroization(void) {
+    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
+
+    if (!try_to_zeroize_secret_partitions(OTP_CTRL_STATUS_DAI_ERROR_MASK))
+        return false;
+
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) return false;
+
+    VPRINTF(LOW, "INFO: Invalid secret zeroization steps completed.\n");
+    return true;
+}
+
+bool valid_secret_zeroization(void) {
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
 
-    dai_zer(hw_part_uds.address, &data[0], &data[1], hw_part_uds.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: UDS fuse is not zeroized\n");
-        goto epilogue;
-    } else {
-        VPRINTF(LOW, "PASS: UDS fuse successfully zeroized\n");
-    }
-#ifndef SHORT_TEST
-    dai_zer(hw_part_fe0.address, &data[0], &data[1], hw_part_fe0.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: FE0 fuse is not zeroized\n");
-        goto epilogue;
-    } else {
-        VPRINTF(LOW, "PASS: FE0 fuse successfully zeroized\n");
-    }
+    if (!try_to_zeroize_secret_partitions(0))
+        return false;
 
-    dai_zer(hw_part_fe1.address, &data[0], &data[1], hw_part_fe1.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: FE1 fuse is not zeroized\n");
-        goto epilogue;
-    } else {
-        VPRINTF(LOW, "PASS: FE1 fuse successfully zeroized\n");
-    }
-
-    dai_zer(hw_part_fe2.address, &data[0], &data[1], hw_part_fe2.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: FE2 fuse is not zeroized\n");
-        goto epilogue;
-    } else {
-        VPRINTF(LOW, "PASS: FE2 fuse successfully zeroized\n");
-    }
-
-    dai_zer(hw_part_fe3.address, &data[0], &data[1], hw_part_fe3.granularity, 0);
-    if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
-        VPRINTF(LOW, "ERROR: FE3 fuse is not zeroized\n");
-        goto epilogue;
-    } else {
-        VPRINTF(LOW, "PASS: FE3 fuse successfully zeroized\n");
-    }
-#endif
-epilogue:
     VPRINTF(LOW, "INFO: Valid secret zeroization test completed.\n");
+    return true;
 }
 
 void secret_prov(void) {
@@ -208,7 +168,15 @@ void secret_prov(void) {
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
 }
 
-void main(void) {
+// Run num_nops nop instructions as a sleep loop.
+void sleep(unsigned num_nops)
+{
+    for (unsigned i = 0; i < num_nops; i++) {
+        __asm__ volatile ("nop");
+    }
+}
+
+void body(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     VPRINTF(LOW, "INFO: Initializing Caliptra subsystem...\n");
@@ -217,55 +185,47 @@ void main(void) {
     VPRINTF(LOW, "INFO: Granting MCU access to fuse controller...\n");
     grant_caliptra_core_for_fc_writes();
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
-
-    wait_dai_op_idle(0);
+    sleep(20);
+    if (!wait_dai_op_idle(0)) return;
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
     secret_prov();
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    sleep(20);
 
     VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
     revoke_grant_mcu_for_fc_writes();
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    sleep(20);
 
     VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    invalid_secret_zeroization();
+    if (!invalid_secret_zeroization()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    sleep(20);
 
     VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
     grant_caliptra_core_for_fc_writes();
 
     VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    invalid_secret_zeroization();
+    if (!invalid_secret_zeroization()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    for (uint8_t ii = 0; ii < 20; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop
-    }
+    sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    valid_secret_zeroization();
+    if (!valid_secret_zeroization()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
+}
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Final sleep loop
-    }
+void main(void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
+    body();
+
+    sleep(160);
     VPRINTF(LOW, "INFO: MCU Caliptra Boot sequence completed.\n");
     SEND_STDOUT_CTRL(0xff);
 }
