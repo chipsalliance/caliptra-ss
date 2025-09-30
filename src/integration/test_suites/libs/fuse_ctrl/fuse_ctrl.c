@@ -16,12 +16,14 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "riscv_hw_if.h"
+#include "fuse_ctrl_mmap.h"
 #include "fuse_ctrl.h"
 
 void grant_mcu_for_fc_writes(void) {
@@ -327,4 +329,12 @@ void zeroize_without_addr(uint32_t exp_status) {
 
     wait_dai_op_idle(exp_status);
     return;
+}
+
+bool is_caliptra_secret_addr(uint32_t addr) {
+    // This mirrors CALIPTRA_SECRET_ACCESS_LOWER_ADDR and CALIPTRA_SECRET_ACCESS_UPPER_ADDR in
+    // otp_ctrl_pkg. Here, we're using the fact that the secret partitions are a contiguous block,
+    // starting with SECRET_MANUF_PARTITION and ending with SECRET_PROD_PARTITION_3.
+    return ((addr >= partitions[SECRET_MANUF_PARTITION].address) &&
+            (addr <= partitions[SECRET_PROD_PARTITION_3].zer_address));
 }
