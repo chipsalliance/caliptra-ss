@@ -845,9 +845,9 @@ Integrators have two main approaches for handling MCI memory mapping:
 
 When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
 
-**DWORD Access Requirement**: If the containing memory region has the "side effect" attribute enabled, then **dword-aligned accesses are required** for both MCU SRAM and MCU MBOX SRAM. Unaligned accesses to either SRAM are not permitted in this configuration.
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
 
-If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
 
 ### iCache Considerations
 
