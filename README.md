@@ -189,6 +189,100 @@ caliptra-ss GitHub repository.
     - $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
 1. Simulate project with `caliptra_ss_top_tb` as the top target
 
+## **MCU Veer-EL2 Core Configuration** ##
+
+The Caliptra Subsystem includes an MCU based on the Veer-EL2 RISC-V core. Users can customize the MCU configuration to meet specific requirements such as cache sizes, memory configurations, or feature enablement. This section describes how to modify the MCU Veer-EL2 core configuration.
+
+### Prerequisites ###
+- Git access to the Cores-VeeR-EL2 repository
+- Basic understanding of Veer-EL2 configuration options
+
+### Configuration Modification Steps ###
+
+1. **Clone the Veer-EL2 Repository**
+   ```bash
+   git clone git@github.com:chipsalliance/Cores-VeeR-EL2.git
+   ```
+
+2. **Set RV_ROOT Environment Variable**
+   
+   Set RV_ROOT to the root of the repository cloned in step 1:
+   ```bash
+   export RV_ROOT="/path/to/Cores-VeeR-EL2"
+   ```
+
+3. **Backup prefix_macros.sh (Workaround)**
+   
+   This file was not committed to the repository until after the 2.0 tag, so it needs to be backed up before checking out the specific commit. The command below is just an example - use any safe backup location:
+   ```bash
+   cp $RV_ROOT/tools/prefix_macros.sh ~/backup/prefix_macros.sh
+   ```
+
+4. **Checkout Required Commit**
+   
+   First, find the required commit hash in `$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/riscv_rev_info`, then checkout that specific version:
+   ```bash
+   cd $RV_ROOT
+   git checkout <commit_hash_from_riscv_rev_info>
+   ```
+   
+   Example:
+   ```bash
+   cd $RV_ROOT
+   git checkout c5c004589ee0a308b63278ee609e1597f61a4143
+   ```
+
+5. **Restore prefix_macros.sh**
+   ```bash
+   mv ~/backup/prefix_macros.sh $RV_ROOT/tools/prefix_macros.sh
+   ```
+
+6. **Modify Veer Build Configuration**
+   
+   Edit the build command script to specify your desired MCU configuration:
+   ```bash
+   $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh
+   ```
+
+7. **Generate New Configuration**
+   
+   Run the build command script with a descriptive snapshot directory name:
+   ```bash
+   $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh new-mcu-config
+   ```
+
+8. **Set Environment Variables for Prefix Script**
+   
+   Configure the required environment variables for the prefix macro script:
+   ```bash
+   export PREFIX="css_mcu0_"
+   export DESIGN_DIR="$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/design"
+   export DEFINES_PATH="$RV_ROOT/snapshots/new-mcu-config"
+   ```
+
+9. **Run Prefix Macros Script**
+   ```bash
+   $RV_ROOT/tools/prefix_macros.sh
+   ```
+
+10. **Update Caliptra SS Design Files**
+    
+    Compare and copy the generated configuration files to the Caliptra SS repository:
+    ```bash
+    # Review differences
+    diff -r $DEFINES_PATH $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
+    
+    # Copy updated files (review changes first!)
+    cp $DEFINES_PATH/* $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
+    ```
+
+### Verification ###
+After modifying the configuration:
+
+1. **Rebuild the project** using the standard [simulation flow](#simulation-flow)
+2. **Run smoke tests** to verify the new configuration works correctly
+3. **Check simulation logs** for any configuration-related warnings or errors
+
 ## **Regression Tests** ##
 
 ### Standalone SystemVerilog Testbench Regression ###

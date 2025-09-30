@@ -406,7 +406,7 @@ void main (void) {
     }
 
     VPRINTF(LOW, "INFO: Starting test with interrupted data zeroization.\n");
-    int result = test_data_interrupted_zeroization();
+    result = test_data_interrupted_zeroization();
     if (result == 0) {
         VPRINTF(LOW, "INFO: Test PASSED\n");
     } else {

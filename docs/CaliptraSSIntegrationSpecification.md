@@ -46,6 +46,7 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -61,7 +62,7 @@
   - [Programming interface](#programming-interface-1)
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
-  - [FIPS Zeroization Sequence](#fips-zeroization-sequence)
+  - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
   - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
@@ -69,6 +70,9 @@
   - [Overview](#overview-4)
   - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+    - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
+      - [Why These Straps Are Needed](#why-these-straps-are-needed)
+      - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
@@ -146,6 +150,8 @@
 - [Synthesis](#synthesis)
   - [Recommended LINT rules](#recommended-lint-rules)
     - [Known Lint Issue](#known-lint-issue)
+      - [Signal Width Mismatches](#signal-width-mismatches)
+      - [Undriven signals](#undriven-signals)
 - [Terminology](#terminology)
 
 
@@ -787,7 +793,6 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
 
-There are two main requirements for the MCU integration.
 
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
@@ -796,6 +801,24 @@ There are two main requirements for the MCU integration.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+## MCU Core Configuration Customization
+
+The MCU VeeR-EL2 core can be customized by integrators to optimize for specific SoC requirements.
+
+**Common Use Cases:**
+
+* **Memory Architecture**: Modify ICCM/DCCM addresses and sizes for SoC memory integration
+* **Power/Area Optimization**: Remove or modify features (caching, number of interrupts)
+* **Performance Tuning**: Adjust cache sizes and pipeline configurations for application workloads
+
+**Configuration Instructions:**
+
+Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-configuration) section in the project README for complete step-by-step procedures.
+
+**Validation:**
+
+Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
 
 ## MCU Programming interface
 
@@ -2509,8 +2532,23 @@ A standardized set of lint rules is used to sign off on each release. The lint p
 
 ### Known Lint Issue
 
-- Signal width mismatch in [Line 271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) of mcu_mbox_csr.sv
-  - MSB on RHS will be optimized out during synthesis
+The following lint violations are known and expected in the current implementation:
+
+#### Signal Width Mismatches
+| Location | Description | Justification |
+|----------|-------------|---------------|
+| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+
+#### Undriven signals
+These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
+
+| Location | Signal | Justification |
+|----------|--------|---------------|
+| [`caliptra_ss_top.sv`](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv) | `cptra_ss_mcu0_el2_mem_export.ic_bank_way_clken_final_up` | MCU ICACHE packed. The *_up signals are unused. See ICACHE_WAYPACK parameter in src/riscv_core |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `sb_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design.|
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design. |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design. |
+
 
 # Terminology
 
