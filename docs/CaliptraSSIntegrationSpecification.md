@@ -47,6 +47,11 @@
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
   - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
+  - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
+    - [Split Memory Mapping](#split-memory-mapping)
+    - [Side Effect Considerations](#side-effect-considerations)
+    - [iCache Considerations](#icache-considerations)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -780,7 +785,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -819,6 +824,38 @@ Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-co
 **Validation:**
 
 Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
+
+## MCU SRAM MRAC Considerations
+
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. Each 256MB region is configured with uniform attributes - everything within a region is labeled as either "side effect" or "cachable". This affects how MCU SRAM and MCU MBOX SRAM (both located within MCI) should be integrated into the SoC memory map, as different components within MCI may require different access attributes.
+
+### Split Memory Mapping
+
+Integrators have two main approaches for handling MCI memory mapping:
+
+**Option 1: Contiguous MCI Address Region** - If integrators don't care about the MRAC limitations described in the following sections, they can use a standard contiguous [MCI address map](#memory-map-address-map) where all MCI components (including MCU SRAM and MCU MBOX SRAM) reside within a single 256MB region.
+
+**Option 2: Split Memory Mapping** - Integrators can optionally split MCU SRAM and MCU MBOX SRAMs into their own dedicated 256MB regions, separate from other MCI components. This allows firmware to enable caching or disable side effects for these specific SRAMs.
+
+### Side Effect Considerations
+
+When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
+
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+
+### iCache Considerations
+
+When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
+
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cachable. Since not all regions of MCI are cachable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+
+If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cachable region separate from other MCI components.
 
 ## MCU Programming interface
 
@@ -1122,7 +1159,7 @@ Signal                                        | Type   | Width                 |
 ----------------------------------------------|--------|-----------------------|---------------
 `cptra_ss_fuse_macro_inputs_o.valid_i`        | Input  | 1                     | Valid signal for the command handshake.
 `cptra_ss_fuse_macro_inputs_o.size_i`         | Input  | [`SizeWidth`-1:0]     | Number of native OTP words to transfer, minus one: `2'b00 = 1 native word` ... `2'b11 = 4 native words`.
-`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1000101 = read`, `7'b0110111 = write`, `7'b1111001 = read raw`, `7'b1100010 = write raw`,  `7'b0101100 = initialize`
+`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1111010 = read`, `7'b1001001 = write`, `7'b1010100 = read raw`, `7'b1100111 = write raw`,  `7'b0100000 = initialize`, `7'b0111101 = zeroize`
 `cptra_ss_fuse_macro_inputs_o.addr_i`         | Input  | [`$clog2(Depth)`-1:0] | OTP word address.
 `cptra_ss_fuse_macro_inputs_o.wdata_i`        | Input  | [`IfWidth`-1:0]       | Write data for write commands.
 `cptra_ss_fuse_macro_outputs_i.fatal_alert_o` | Output | 1                     | Fatal alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. The instantiating IP latches the alert indication and continuously outputs alert events until reset.
@@ -1136,6 +1173,10 @@ The `write raw` and `read raw` command instructs the Fuse Controller Macro
 wrapper to store / read the data in raw format without generating nor checking
 integrity information. That means that the wrapper must return the raw,
 uncorrected data and no integrity errors.
+
+The `zeroize` command instructs the Fuse Macro wrapper to "erase" the addressed
+value. As fuses cannot be unset, the typical erase behavior is to set all fuses
+of the addressed value to `1`, ideally including the ECC bits.
 
 The Fuse Controller Macro wrapper implements the error codes (0x0 - 0x4).
 
