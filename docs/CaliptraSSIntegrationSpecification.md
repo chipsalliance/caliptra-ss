@@ -277,8 +277,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
 | External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
-| External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Generic strap input 0                    |
-| External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Generic strap input 1                    |
+| External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
+| External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Provides the Caliptra ROM with a 32-bit pointer to the fuse controller’s command register (CMD), enabling ROM-level control or triggering of fuse operations. |
 | External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
 | External | input     | 1      | `cptra_ss_debug_intent_i`                 | Physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](CaliptraSSHardwareSpecification.md#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
@@ -1135,6 +1135,30 @@ stage).
 
 The Fuse Controller Macro uses the following signals to interface with the
 Fuse Controller.
+
+### Generic Strap Port Usage for FC Register Locations
+
+To support flexible integration across varying fuse partition generations, Caliptra ROM uses two generic strap ports to locate fuse controller registers.
+
+#### Why These Straps Are Needed
+
+Each fuse partition generation introduces new error bits into the status register. This causes the **idle bit** to shift leftward, changing its position within the `SOC_OTP_CTRL_STATUS` register. Similarly, the **CMD register** may shift downward in memory if new fuse partition definitions introduce additional registers like `ADDR`, `WDATA0`, `RDATA0`, etc.
+
+Because of these dynamic shifts:
+- The **idle bit location** cannot be hardcoded.
+- The **CMD register address** must be explicitly provided, even though the other fuse controller registers are laid out consecutively.
+
+#### Strap Definitions
+- **`cptra_ss_strap_generic_0_i`**  
+  A 32-bit input strap that encodes:
+  - **Upper 16 bits**: Bit index of the idle status bit (`IDLE_BIT_STATUS`) within `SOC_OTP_CTRL_STATUS`.
+  - **Lower 16 bits**: Offset address of `SOC_OTP_CTRL_STATUS` within the `SOC_IFC_REG` space, relative to `SOC_OTP_CTRL_BASE_ADDR`.
+
+  This allows the ROM to accurately monitor the fuse controller's idle state regardless of partition-induced shifts.
+
+- **`cptra_ss_strap_generic_1_i`**  
+  A 32-bit input strap that provides the address of the **CMD register**.  
+  Since the fuse controller registers are laid out consecutively, specifying the CMD register is sufficient for the ROM to infer the locations of adjacent registers like `ADDR`, `WDATA0`, and `RDATA0`.
 
 ## FC Macro Test Interface
 
