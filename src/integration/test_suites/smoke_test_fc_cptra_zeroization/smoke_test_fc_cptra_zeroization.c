@@ -77,15 +77,15 @@ const uint32_t kNumPartitions =
     sizeof(kPartitionsInfo) / sizeof(kPartitionsInfo[0]);
 
 // Check that the digest is zeroized or not.
-static bool check_digest(uint32_t partition_id, bool expected_zeroized) {
+static bool check_digest(const partition_info_t *partition_info, bool expected_zeroized) {
   uint32_t digest[2];
-  digest[0] = lsu_read_32(kPartitionsInfo[partition_id].digest0);
-  digest[1] = lsu_read_32(kPartitionsInfo[partition_id].digest1);
+  digest[0] = lsu_read_32(partition_info->digest0);
+  digest[1] = lsu_read_32(partition_info->digest1);
   if (expected_zeroized) {
     return digest[0] == UINT32_MAX && digest[1] == UINT32_MAX;
   }
   // If not zeroized, the digest should not be all ones.
-  return digest[0] != UINT32_MAX && digest[1] != UINT32_MAX;
+  return digest[0] != UINT32_MAX || digest[1] != UINT32_MAX;
 }
 
 void main(void) {
@@ -143,9 +143,8 @@ void main(void) {
 
   // At this point, the partitions should be zeroized.
   for (uint32_t i = 0; i < kNumPartitions; i++) {
-    uint32_t partition_id = kPartitionsInfo[i].id;
-    if (!check_digest(partition_id, /*expected_zeroized=*/true)) {
-      LOG_ERROR("Partition %d is not zeroized\n", partition_id);
+    if (!check_digest(&kPartitionsInfo[i], /*expected_zeroized=*/true)) {
+      LOG_ERROR("Partition %d is not zeroized\n", kPartitionsInfo[i].id);
       break;
     }
   }
