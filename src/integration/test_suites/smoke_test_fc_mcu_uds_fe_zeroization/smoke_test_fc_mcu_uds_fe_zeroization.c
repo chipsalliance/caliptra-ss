@@ -33,9 +33,6 @@ enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define LOG_ERROR(...) VPRINTF(LOW, "MCU ERROR:" #__VA_ARGS__);
-#define LOG_INFO(...) VPRINTF(LOW, "MCU:" #__VA_ARGS__);
-
 // This struct is used to store the partition information used in the test.
 typedef struct partition_info {
   // Partition identifier. Used to access partition in the partitions array.
@@ -82,21 +79,21 @@ static bool zeroization_check_unfeasible(uint32_t partition_id) {
   uint32_t read_data[2];
 
   if (p->zer_address == 0) {
-    LOG_ERROR("Partition %d is not zeroizable\n", partition_id);
+    VPRINTF(LOW, "MCU ERROR: Partition %d is not zeroizable\n", partition_id);
     return false;
   }
 
   // Read the digest to determine if the partition is locked
   dai_rd(p->digest_address, &read_data[0], &read_data[1], 64, 0);
   if (read_data[0] == 0 && read_data[1] == 0) {
-    LOG_ERROR("Partition %d is not locked\n", partition_id);
+    VPRINTF(LOW, "MCU ERROR: Partition %d is not locked\n", partition_id);
     return false;
   }
 
   // Check that the partition has not been zeroized already.
   dai_rd(p->zer_address, &read_data[0], &read_data[1], 64, 0);
   if (read_data[0] == 0xFFFFFFFF || read_data[1] == 0xFFFFFFFF) {
-    LOG_ERROR("Partition %d has already been zeroized\n", partition_id);
+    VPRINTF(LOW, "MCU ERROR: Partition %d has already been zeroized\n", partition_id);
     return false;
   }
 
@@ -105,7 +102,7 @@ static bool zeroization_check_unfeasible(uint32_t partition_id) {
   dai_zer(p->zer_address, &read_data[0], &read_data[1], 64,
           OTP_CTRL_STATUS_DAI_ERROR_MASK);
   if (read_data[0] != 0 || read_data[1] != 0) {
-    LOG_ERROR("Zeroize flag was set to 0x%x%x\n", read_data[1], read_data[0]);
+    VPRINTF(LOW, "MCU ERROR: Zeroize flag was set to 0x%x%x\n", read_data[1], read_data[0]);
     return false;
   }
 
@@ -131,10 +128,10 @@ static bool mcu_zeroization_test(void) {
   for (uint32_t i = 0; i < kNumPartitions; i++) {
     uint32_t partition_id = kPartitionsInfo[i].id;
     if (!zeroization_check_unfeasible(partition_id)) {
-      LOG_ERROR(
-          "Unexpected zeroization success for partition_id: %d from MCU - PPD "
-          "not set\n",
-          partition_id);
+      VPRINTF(LOW,
+              "MCU ERROR: Unexpected zeroization success for partition %d from MCU: "
+              "PPD not set\n",
+              partition_id);
       return false;
     }
 
@@ -142,10 +139,10 @@ static bool mcu_zeroization_test(void) {
     wait_dai_op_idle(0);
 
     if (!zeroization_check_unfeasible(partition_id)) {
-      LOG_ERROR(
-          "Unexpected zeroization success for partition_id: %d from MCU - PPD "
-          "set\n",
-          partition_id);
+      VPRINTF(LOW,
+              "MCU ERROR: Unexpected zeroization success for partition %d from MCU: "
+              "PPD not set\n",
+              partition_id);
       return false;
     }
 
@@ -168,7 +165,7 @@ bool test(void) {
   // the partitions with or without PPD set.
   VPRINTF(LOW, "@@@ Step 3/5: Running zeroization test\n");
   if (!mcu_zeroization_test()) {
-    LOG_ERROR("MCU zeroization test failed\n");
+    VPRINTF(LOW, "MCU ERROR: Zeroization test failed\n");
     return false;
   }
 
@@ -182,7 +179,7 @@ bool test(void) {
   for (uint32_t i = 0; i < kNumPartitions; i++) {
     uint32_t partition_id = kPartitionsInfo[i].id;
     if (!check_digest(partition_id, /*expected_zeroized=*/false)) {
-      LOG_ERROR("Partition %d is unexpectedly zeroized\n", partition_id);
+      VPRINTF(LOW, "MCU ERROR: Partition %d unexpectedly zeroized\n", kPartitionsInfo[i].id);
       return false;
     }
   }
