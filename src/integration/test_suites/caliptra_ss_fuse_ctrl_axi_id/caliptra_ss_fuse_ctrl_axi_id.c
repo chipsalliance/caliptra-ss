@@ -41,16 +41,13 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * fuse controller access table entries with randomized fuse writes and
  * random AXI user ids.
  */
-void axi_id() {
+bool axi_id() {
     const uint32_t sentinel = 0xAB;
-
-    partition_t partition;
-    uint32_t axi_user;
 
     for (int i = 0; i < 4; i++) {
         // Exclude life-cycle partition as it is not writable.
-        partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
-        axi_user = xorshift32() % 2;
+        partition_t partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
+        bool axi_user = xorshift32() % 2;
         
         if (axi_user) {
             grant_mcu_for_fc_writes();
@@ -58,14 +55,16 @@ void axi_id() {
             grant_caliptra_core_for_fc_writes();
         }
 
-        // Both CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN and CPTRA_CORE_UDS_SEED must not
-        // be modified by the AXI requests stemming from the MCU.
-        if (partition.address > 0x40 && partition.address < 0xD0 && axi_user) {
-            dai_wr(partition.address, sentinel, sentinel, partition.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-        } else {
-            dai_wr(partition.address, sentinel, sentinel, partition.granularity, 0);
-        }
+        // There are some secret partitions that can't be modified with an AXI request from the MCU.
+        // If this is a partition, we expect the DAI transaction to end with a status of DAI_ERROR.
+        uint32_t exp_status = ((is_caliptra_secret_addr(partition.address) && axi_user) ?
+                               OTP_CTRL_STATUS_DAI_ERROR_MASK :
+                               0);
+        if (!dai_wr(partition.address, sentinel, sentinel, partition.granularity, exp_status))
+            return false;
     }
+
+    return true;
 }
 
 void main (void) {
