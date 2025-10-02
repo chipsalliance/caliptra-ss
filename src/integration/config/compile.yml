@@ -68,10 +68,27 @@ targets:
       - $COMPILE_ROOT/rtl/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
+provides: [caliptra_ss_top_pkg]
+schema_version: 2.4.0
+requires:
+  - lc_ctrl_pkg
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_pkg.sv
+  rtl:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_pkg.sv
+---
 provides: [caliptra_ss_top]
 schema_version: 2.4.0
 requires:
   - caliptra_ss_top_defines
+  - caliptra_ss_top_pkg
   - caliptra_ss_lc_ctrl_pkg
   - css_mcu0_veer_el2_rtl_pkg
   - tlul_pkg
