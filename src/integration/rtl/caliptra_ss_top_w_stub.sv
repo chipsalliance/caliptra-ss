@@ -439,6 +439,8 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_lc_axi_rd_req_i,
         .cptra_ss_lc_axi_rd_rsp_o,
     
+        .cptra_ss_raw_unlock_token_hashed_i (caliptra_ss_top_pkg::RndCnstRawUnlockTokenHashed),
+
         .cptra_ss_otp_core_axi_wr_req_i,
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
