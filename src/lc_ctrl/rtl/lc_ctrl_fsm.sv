@@ -24,6 +24,7 @@ module lc_ctrl_fsm
   input                         clk_i,
   input                         rst_ni,
   input                         Allow_RMA_or_SCRAP_on_PPD,
+  input lc_token_t              raw_unlock_token_hashed_i,
   // Initialization request from power manager.
   input                         init_req_i,
   output logic                  init_done_o,
@@ -301,7 +302,7 @@ module lc_ctrl_fsm
               trans_target_i == {DecLcStateNumRep{DecLcStTestUnlocked0}} &&
               !trans_invalid_error_o) begin
             // 128bit token check (without passing it through the KMAC)
-            if (unhashed_token_i == RndCnstRawUnlockTokenHashed) begin
+            if (unhashed_token_i == raw_unlock_token_hashed_i) begin
               // We stay in Idle, but update the life cycle state register (volatile).
               lc_state_d = LcStTestUnlocked0;
               // If the count is 0, we set it to 1 - otherwise we just leave it as is so that the
@@ -473,7 +474,7 @@ module lc_ctrl_fsm
       // Flash RMA state. Note that we check the flash response again
       // two times later below.
       FlashRmaSt: begin
-        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_or_SCRAP_on_PPD) begin // Note: Addded another condition to RMA transition 
+        if (trans_target_i == {DecLcStateNumRep{DecLcStRma}} && Allow_RMA_or_SCRAP_on_PPD) begin // Note: Addded another condition to RMA transition
           lc_flash_rma_req = On;
           if (lc_tx_test_true_strict(lc_flash_rma_ack_buf[0])) begin
             fsm_state_d = TokenCheck0St;
@@ -509,7 +510,7 @@ module lc_ctrl_fsm
               (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                lc_tx_test_true_strict(lc_flash_rma_req_o) &&
                lc_tx_test_true_strict(lc_flash_rma_ack_buf[1])
-               && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition 
+               && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition
             if (hashed_token_i == hashed_token_mux &&
                 !token_hash_err_i &&
                 &hashed_token_valid_mux) begin
@@ -550,7 +551,7 @@ module lc_ctrl_fsm
                       (lc_flash_rma_req_o != Off || lc_flash_rma_ack_buf[2] != Off)) ||
                      (trans_target_i == {DecLcStateNumRep{DecLcStRma}} &&
                       (lc_flash_rma_req_o != On || lc_flash_rma_ack_buf[2] != On)
-                      && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition 
+                      && Allow_RMA_or_SCRAP_on_PPD)) begin // Note: Addded another condition to RMA transition
           fsm_state_d = PostTransSt;
           flash_rma_error_o = 1'b1;
         end else if (otp_prog_ack_i) begin
@@ -704,7 +705,7 @@ module lc_ctrl_fsm
     {hashed_tokens_lower[ZeroTokenIdx],
      hashed_tokens_upper[ZeroTokenIdx]} = AllZeroTokenHashed;
     {hashed_tokens_lower[RawUnlockTokenIdx],
-     hashed_tokens_upper[RawUnlockTokenIdx]} = RndCnstRawUnlockTokenHashed;
+     hashed_tokens_upper[RawUnlockTokenIdx]} = raw_unlock_token_hashed_i;
     // This mux has two separate halves, steered with separately buffered life cycle signals.
     if (lc_tx_test_true_strict(test_tokens_valid[0])) begin
       hashed_tokens_lower[TestUnlockTokenIdx] = test_unlock_token_lower;
