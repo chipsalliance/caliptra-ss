@@ -20,7 +20,7 @@ source [file join $script_dir common.tcl]
 
 # Taken from caliptra_ss_lcc_st_trans.c
 array set tokens {
-    0,0 0xef1fadea  0,1 0xadfc9693  0,2 0x421748a2  0,3 0xf12a5911
+    0,0 0xb532a0ca  0,1 0x74ce9687  0,2 0xa2ecef9a  0,3 0x6141be65
     1,0 0x72f04808  1,1 0x05f493b4  1,2 0x7790628a  1,3 0x318372c8
     2,0 0x17c78a78  2,1 0xc7b443ef  2,2 0xd6931045  2,3 0x55e74f3c
     3,0 0x1644aa12  3,1 0x79925802  3,2 0xdbc26815  3,3 0x8597a5fa
