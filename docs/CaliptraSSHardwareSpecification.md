@@ -567,6 +567,7 @@ During firmware authentication, the ROM validates the vendor public keys provide
 - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
 - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
 - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
+- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
   - **Example:**
 
        ```c
