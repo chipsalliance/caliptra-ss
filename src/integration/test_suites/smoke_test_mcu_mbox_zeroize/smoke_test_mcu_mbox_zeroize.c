@@ -58,8 +58,8 @@ void main (void) {
     uint32_t sram_data;
     uint32_t mbox_num = decode_single_valid_mbox();
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n")
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup Test\n=================\n\n");
+    VPRINTF(LOW, "MCU: Caliptra bringup\n");
 
     mcu_cptra_init_d();
 
@@ -70,7 +70,7 @@ void main (void) {
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
-    VPRINTF(LOW, "=================\nMCU MBOX%x SRAM Testing\n=================\n\n", mbox_num)
+    VPRINTF(LOW, "=================\nMCU MBOX%x SRAM Testing\n=================\n\n", mbox_num);
 
     // MBOX: Acquire lock
     while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));

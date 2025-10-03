@@ -58,7 +58,7 @@ void main (void) {
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
-    VPRINTF(LOW, "=================\nMCU MBOX%x Lock Testing\n=================\n\n", mbox_num)
+    VPRINTF(LOW, "=================\nMCU MBOX%x Lock Testing\n=================\n\n", mbox_num);
 
     // MBOX: Acquire lock
     while((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK));

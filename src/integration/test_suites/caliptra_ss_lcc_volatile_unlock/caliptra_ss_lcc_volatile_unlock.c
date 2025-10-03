@@ -39,7 +39,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * A test to verify that the volatile raw unlock state transition is working.
  */
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     // In volatile raw unlock mode the token has to be passed in hashed form.
     const uint32_t unhashed_raw_unlock_token[4] = {

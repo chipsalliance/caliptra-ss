@@ -48,7 +48,7 @@ void main (void) {
     uint32_t caliptra_uc_axi_id = axi_user_id[axi_select];
     VPRINTF(LOW, "MCU: Valid AXI USER for test AXI: 0x%x;\n", caliptra_uc_axi_id);
 
-    VPRINTF(LOW, "=================\nMCU Warm Reset CSR Test\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Warm Reset CSR Test\n=================\n\n");
 
     if(mbox_num) {
         mbox0_sel = false;

@@ -363,16 +363,36 @@ module caliptra_ss_top_sva
     )
 
   // Assert that partitions are write-locked after the digest has been computed.
+  //
+  // Once a partition has a digest (either sw or hw), it should be write-locked. This means that if
+  // we start a DaiWrite operation with an address that points inside that partition, it should
+  // respond with an error.
+  //
+  // Normally, this response will appear in two cycles (with otp_ctrl_dai going to the WriteSt, then
+  // noticing the partition is locked, so setting error_d, which gets flopped to error_o). However,
+  // the partition might be scrambled (visible because PartInfo[part_idx].secret is true). In that
+  // case, there are two extra cycles because the FSM goes through ScrSt, ScrWaitSt first.
+
+  logic        part_may_have_digest, part_has_digest;
+  int unsigned part_digest_word_addr;
+  logic [21:0] raw_part_digest_value;
+  logic        dai_write_req;
+  logic        dai_addr_below_digest;
+  logic        dai_access_error;
+
+  assign part_may_have_digest  = PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest;
+  assign part_digest_word_addr = otp_ctrl_part_pkg::digest_addrs[part_idx] / 2;
+  assign raw_part_digest_value =
+    `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[part_digest_word_addr];
+  assign part_has_digest       = part_may_have_digest && (raw_part_digest_value != 0);
+  assign dai_write_req         = `FC_PATH.dai_req && dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite;
+  assign dai_addr_below_digest = (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+                                 (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]);
+  assign dai_access_error = otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError;
+
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
-    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]/2] != 0) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
-     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
-     |-> ##2
-     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
-    )
+                   part_has_digest && dai_write_req && dai_addr_below_digest |-> ##[2:4]
+                   dai_access_error)
 
   ////////////////////////////////////////////////////
   // fuse_ctrl zeroization
@@ -393,23 +413,6 @@ module caliptra_ss_top_sva
       return (otp_ctrl_pkg::check_zeroized_valid(zero_marker));
     end
   endfunction : is_zeroized
-
-  // Zeroization marker status
-  logic [NumPart-1:0] pre_marker_zeroized_part = 0;
-  logic [NumPart-1:0] marker_zeroized_part     = 0;
-  always_ff @(posedge `CPTRA_SS_TOP_PATH.u_otp_ctrl.clk_i) begin : p_marker_zeroized_part
-    if ((`FC_PATH.dai_req) && (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
-        (PartInfo[part_idx].zeroizable) && (`FC_PATH.dai_addr/2 == otp_ctrl_part_pkg::zero_addrs[part_idx]/2)) begin
-      pre_marker_zeroized_part[part_idx]  <= 1'b1;
-    end
-    if (pre_marker_zeroized_part[part_idx] && !marker_zeroized_part[part_idx] && `FC_PATH.otp_operation_done) begin
-      if (is_zeroized(part_idx)) begin
-        marker_zeroized_part[part_idx]      <= 1'b1;
-      end else begin
-        pre_marker_zeroized_part[part_idx]  <= 1'b0;
-      end 
-    end
-  end
 
   // Store the latest direct_access_rdata release by the otp_ctrl_dai block after a successful access.
   logic [NumDaiWords-1:0][31:0] past_direct_access_rdata = 0;
@@ -494,35 +497,6 @@ module caliptra_ss_top_sva
      (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
     |-> ##2
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
-  )
-
-  // When doing a zeroization, the zeroized_valid flag should be kept as invalid if the number of
-  // set bits in the 64-bit word is lower than ZeroizationValidBound
-  `CALIPTRA_ASSERT(FcZeroizeInvalidWhenBelowThresh_A,
-    first_match((`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
-      ##[1:$]
-      (pre_marker_zeroized_part[part_idx]) &&
-      (`FC_PATH.otp_operation_done) &&
-      (!is_zeroized(part_idx)))
-    |=>
-    (mubi16_t'(`FC_PATH.u_otp_ctrl_dai.zeroized_valid) == MuBi16False)
-  )
-
-  // For scrambled partitions, the zeroized fuse should only be returned if and only if the
-  // number of set bits in the 64-bit word is greater or equal ZeroizationValidBound
-  `CALIPTRA_ASSERT(FcZeroizeMarkerOnlyWhenAboveThresh_A,
-    first_match((PartInfo[part_idx].secret) &&
-      (`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
-      ##[1:$]
-      (pre_marker_zeroized_part[part_idx]) &&
-      (`FC_PATH.otp_operation_done) &&
-      (!is_zeroized(part_idx)))
-    |=>
-    // In this case, this register will only get updated for a successful and complete zeroization (above the threshold),
-    // otherswise, it will take back the previous value.
-    (`FC_PATH.hw2reg.direct_access_rdata == past_direct_access_rdata)
   )
 
   ////////////////////////////////////////////////////

@@ -142,7 +142,7 @@ void main (void) {
     uint32_t caliptra_uc_axi_id = axi_user_id[axi_select];
     VPRINTF(LOW, "MCU: Caliptra Target User AXI for test: 0x%x;\n", caliptra_uc_axi_id);
 
-    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Configure MCI mailboxes\n=================\n\n");
     
     if(mbox_num) {
         mbox0_sel = false;

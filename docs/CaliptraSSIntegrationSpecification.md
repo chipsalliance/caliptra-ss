@@ -46,6 +46,12 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
+  - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
+    - [Split Memory Mapping](#split-memory-mapping)
+    - [Side Effect Considerations](#side-effect-considerations)
+    - [iCache Considerations](#icache-considerations)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -61,7 +67,7 @@
   - [Programming interface](#programming-interface-1)
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
-  - [FIPS Zeroization Sequence](#fips-zeroization-sequence)
+  - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
   - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
@@ -69,6 +75,9 @@
   - [Overview](#overview-4)
   - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+    - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
+      - [Why These Straps Are Needed](#why-these-straps-are-needed)
+      - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
@@ -146,6 +155,8 @@
 - [Synthesis](#synthesis)
   - [Recommended LINT rules](#recommended-lint-rules)
     - [Known Lint Issue](#known-lint-issue)
+      - [Signal Width Mismatches](#signal-width-mismatches)
+      - [Undriven signals](#undriven-signals)
 - [Terminology](#terminology)
 
 
@@ -273,11 +284,12 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_mci_soc_config_axi_user_i`       | MCI SOC Configuration AXI user strap input             |
 | External | input     | 32     | `cptra_ss_strap_caliptra_dma_axi_user_i`           | Caliptra DMA AXI user strap input                 |
 | External | input     | 32     | `cptra_ss_strap_mcu_reset_vector_i`       | MCU reset vector strap input             |
-| External | input     | 32     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
-| External | input     | 32     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
-| External | input     | 32     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
-| External | input     | 32     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
-| External | input     | 32     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
+| External | input     | 64     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
+| External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i` | External staging area base address input |
+| External | input     | 64     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
+| External | input     | 64     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
 | External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
 | External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
@@ -773,7 +785,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -786,7 +798,6 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
 
-There are two main requirements for the MCU integration.
 
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
@@ -795,6 +806,56 @@ There are two main requirements for the MCU integration.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+## MCU Core Configuration Customization
+
+The MCU VeeR-EL2 core can be customized by integrators to optimize for specific SoC requirements.
+
+**Common Use Cases:**
+
+* **Memory Architecture**: Modify ICCM/DCCM addresses and sizes for SoC memory integration
+* **Power/Area Optimization**: Remove or modify features (caching, number of interrupts)
+* **Performance Tuning**: Adjust cache sizes and pipeline configurations for application workloads
+
+**Configuration Instructions:**
+
+Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-configuration) section in the project README for complete step-by-step procedures.
+
+**Validation:**
+
+Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
+
+## MCU SRAM MRAC Considerations
+
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. Each 256MB region is configured with uniform attributes - everything within a region is labeled as either "side effect" or "cachable". This affects how MCU SRAM and MCU MBOX SRAM (both located within MCI) should be integrated into the SoC memory map, as different components within MCI may require different access attributes.
+
+### Split Memory Mapping
+
+Integrators have two main approaches for handling MCI memory mapping:
+
+**Option 1: Contiguous MCI Address Region** - If integrators don't care about the MRAC limitations described in the following sections, they can use a standard contiguous [MCI address map](#memory-map-address-map) where all MCI components (including MCU SRAM and MCU MBOX SRAM) reside within a single 256MB region.
+
+**Option 2: Split Memory Mapping** - Integrators can optionally split MCU SRAM and MCU MBOX SRAMs into their own dedicated 256MB regions, separate from other MCI components. This allows firmware to enable caching or disable side effects for these specific SRAMs.
+
+### Side Effect Considerations
+
+When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
+
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+
+### iCache Considerations
+
+When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
+
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cachable. Since not all regions of MCI are cachable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+
+If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cachable region separate from other MCI components.
 
 ## MCU Programming interface
 
@@ -1098,7 +1159,7 @@ Signal                                        | Type   | Width                 |
 ----------------------------------------------|--------|-----------------------|---------------
 `cptra_ss_fuse_macro_inputs_o.valid_i`        | Input  | 1                     | Valid signal for the command handshake.
 `cptra_ss_fuse_macro_inputs_o.size_i`         | Input  | [`SizeWidth`-1:0]     | Number of native OTP words to transfer, minus one: `2'b00 = 1 native word` ... `2'b11 = 4 native words`.
-`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1000101 = read`, `7'b0110111 = write`, `7'b1111001 = read raw`, `7'b1100010 = write raw`,  `7'b0101100 = initialize`
+`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1111010 = read`, `7'b1001001 = write`, `7'b1010100 = read raw`, `7'b1100111 = write raw`,  `7'b0100000 = initialize`, `7'b0111101 = zeroize`
 `cptra_ss_fuse_macro_inputs_o.addr_i`         | Input  | [`$clog2(Depth)`-1:0] | OTP word address.
 `cptra_ss_fuse_macro_inputs_o.wdata_i`        | Input  | [`IfWidth`-1:0]       | Write data for write commands.
 `cptra_ss_fuse_macro_outputs_i.fatal_alert_o` | Output | 1                     | Fatal alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. The instantiating IP latches the alert indication and continuously outputs alert events until reset.
@@ -1112,6 +1173,10 @@ The `write raw` and `read raw` command instructs the Fuse Controller Macro
 wrapper to store / read the data in raw format without generating nor checking
 integrity information. That means that the wrapper must return the raw,
 uncorrected data and no integrity errors.
+
+The `zeroize` command instructs the Fuse Macro wrapper to "erase" the addressed
+value. As fuses cannot be unset, the typical erase behavior is to set all fuses
+of the addressed value to `1`, ideally including the ECC bits.
 
 The Fuse Controller Macro wrapper implements the error codes (0x0 - 0x4).
 
@@ -2508,8 +2573,23 @@ A standardized set of lint rules is used to sign off on each release. The lint p
 
 ### Known Lint Issue
 
-- Signal width mismatch in [Line 271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) of mcu_mbox_csr.sv
-  - MSB on RHS will be optimized out during synthesis
+The following lint violations are known and expected in the current implementation:
+
+#### Signal Width Mismatches
+| Location | Description | Justification |
+|----------|-------------|---------------|
+| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+
+#### Undriven signals
+These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
+
+| Location | Signal | Justification |
+|----------|--------|---------------|
+| [`caliptra_ss_top.sv`](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv) | `cptra_ss_mcu0_el2_mem_export.ic_bank_way_clken_final_up` | MCU ICACHE packed. The *_up signals are unused. See ICACHE_WAYPACK parameter in src/riscv_core |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `sb_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design.|
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design. |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | No AXI interface in Caliptra Core. Unused in design. |
+
 
 # Terminology
 

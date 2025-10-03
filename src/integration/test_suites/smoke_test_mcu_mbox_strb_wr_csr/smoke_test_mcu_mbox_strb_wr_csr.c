@@ -49,7 +49,7 @@ void main (void) {
     // MBOX: clear the lock on MBOX that is there from reset
     mcu_mbox_clear_lock_out_of_reset(mbox_num);
 
-    VPRINTF(LOW, "=================\nMCU MBOX%x CSR STRBW Test\n=================\n\n", mbox_num)
+    VPRINTF(LOW, "=================\nMCU MBOX%x CSR STRBW Test\n=================\n\n", mbox_num);
 
     // MBOX: Acquire lock
     mcu_mbox_acquire_lock(mbox_num, 1000);

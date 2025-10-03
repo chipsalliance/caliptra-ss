@@ -120,7 +120,7 @@ epilogue:
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -130,7 +130,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    VPRINTF(LOW, "=================\nBefore ratchet_seed_write_read\n=================\n\n")
+    VPRINTF(LOW, "=================\nBefore ratchet_seed_write_read\n=================\n\n");
     write_partition_zeroize();
 
     for (uint8_t ii = 0; ii < 160; ii++) {

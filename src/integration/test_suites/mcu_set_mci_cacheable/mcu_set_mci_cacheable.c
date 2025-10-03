@@ -39,7 +39,7 @@ uint8_t main (void) {
     char *argv[1];
     uint32_t reg_data, reg_data2;
 
-    VPRINTF(LOW, "=================\nMCU: Cacheable MCI Test\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU: Cacheable MCI Test\n=================\n\n");
 
     // Configure MCI as cacheable
     // MRAC

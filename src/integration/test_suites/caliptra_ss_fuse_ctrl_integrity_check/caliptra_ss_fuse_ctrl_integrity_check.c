@@ -36,7 +36,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     /*
      * The transition tokens partitions is initialized with random data
@@ -45,15 +45,29 @@ void main (void) {
      * the fuse controller into a terminal state after triggering a new
      * integrity check by setting the period and timeout registers.
      */
-    
+
+    VPRINTF(LOW, "1/4: Initialising\n");
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
 
+    VPRINTF(LOW, "2/4: Injecting digest fault\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_DIGEST);
 
+    VPRINTF(LOW, "3/4: Initialising OTP controller\n");
     initialize_otp_controller();
 
-    wait_dai_op_idle(0x3FFFF);
+    // After injecting an error into a digest, we expect all the partitions to report an error which
+    // will also cause several other errors to be reported. We do not, however, expect a bus
+    // integrity error or a timeout error.
+    //
+    // The bus integrity error doesn't take partition integrity into account, so won't be generated.
+    // The timeout error error is caused by a partition not responding in time. Again, that isn't
+    // caused by injecting a fault in a partition so won't be reported here.
+    uint32_t exp_error = ~(OTP_CTRL_STATUS_BUS_INTEG_ERROR_MASK |
+                           OTP_CTRL_STATUS_TIMEOUT_ERROR_MASK);
+
+    VPRINTF(LOW, "4/4: Checking for DAI status\n");
+    wait_dai_op_idle(exp_error);
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

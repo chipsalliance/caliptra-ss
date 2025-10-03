@@ -154,7 +154,7 @@ void boot_mcu(){
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
     
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -164,7 +164,7 @@ void boot_mcu(){
     cptra_boot_go = lsu_read_32(SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO);
     VPRINTF(LOW, "MCU: Reading SOC_MCI_TOP_MCI_REG_CALIPTRA_BOOT_GO %x\n", cptra_boot_go);
 
-    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Bringup\n=================\n\n");
 
     ////////////////////////////////////
     // Fuse and Boot Bringup
