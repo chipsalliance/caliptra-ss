@@ -25,6 +25,7 @@ module lc_ctrl_fsm
   input                         Allow_RMA_or_SCRAP_on_PPD,
   input                         lc_sec_volatile_raw_unlock_en_i, // Note: This is GPIO strap pin. This pin should be high if volatile unlock wants to be
                                                                        // enabled. This pin should be low if volatile unlock is not needed. 
+  input lc_token_t              raw_unlock_token_hashed_i,
   // Initialization request from power manager.
   input                         init_req_i,
   output logic                  init_done_o,
@@ -302,7 +303,7 @@ module lc_ctrl_fsm
               trans_target_i == {DecLcStateNumRep{DecLcStTestUnlocked0}} &&
               !trans_invalid_error_o) begin
             // 128bit token check (without passing it through the KMAC)
-            if (unhashed_token_i == RndCnstRawUnlockTokenHashed) begin
+            if (unhashed_token_i == raw_unlock_token_hashed_i) begin
               // We stay in Idle, but update the life cycle state register (volatile).
               lc_state_d = LcStTestUnlocked0;
               // If the count is 0, we set it to 1 - otherwise we just leave it as is so that the
@@ -701,7 +702,7 @@ module lc_ctrl_fsm
     {hashed_tokens_lower[ZeroTokenIdx],
      hashed_tokens_upper[ZeroTokenIdx]} = AllZeroTokenHashed;
     {hashed_tokens_lower[RawUnlockTokenIdx],
-     hashed_tokens_upper[RawUnlockTokenIdx]} = RndCnstRawUnlockTokenHashed;
+     hashed_tokens_upper[RawUnlockTokenIdx]} = raw_unlock_token_hashed_i;
     // This mux has two separate halves, steered with separately buffered life cycle signals.
     if (lc_tx_test_true_strict(test_tokens_valid[0])) begin
       hashed_tokens_lower[TestUnlockTokenIdx] = test_unlock_token_lower;
