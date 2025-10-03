@@ -212,6 +212,9 @@ int test_stuck_at_corruption (void) {
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_1];
 
     // Step 1: Enable the fault.
+    // Start by disabling FcZeroizeFuseAllOnes_A assertion, as it'll check that all
+    // bits from the OTP memory will be set to "1"
+    disable_fc_all_ones_sva();
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_FUSE_FAULT);
 
     // Step 2: Zeroize -- this should still succeed because the number
@@ -248,6 +251,8 @@ int test_stuck_at_corruption (void) {
 epilogue:
     // Disable the fault.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_RELEASE_FUSE_FAULT);
+    // Re-enable FcZeroizeFuseAllOnes_A assertion
+    enable_fc_all_ones_sva();
     return retval;
 }
 

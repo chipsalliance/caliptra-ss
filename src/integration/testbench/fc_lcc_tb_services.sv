@@ -32,6 +32,7 @@ module fc_lcc_tb_services (
   import otp_ctrl_pkg::*;
 
   logic disable_lcc_sva;
+  logic disable_fc_all_ones_sva;
 
   logic ecc_fault_en = 1'b0;
   logic lcc_bus_error_en = 1'b0;
@@ -145,11 +146,11 @@ module fc_lcc_tb_services (
           end
           CMD_LC_FAULT_CNTR: begin
             $display("fc_lcc_tb_services: fault lcc cntr fuse");
-          force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
+            force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
           end
           CMD_DISABLE_CLK_BYP_ACK: begin
             $display("fc_lcc_tb_services: disable clk_byp_ack");
-          force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_clk_byp_ack_i = '0;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_clk_byp_ack_i = '0;
           end
           CMD_LC_TRIGGER_ESCALATION0_DIS: begin
             $display("fc_lcc_tb_services: releasing esc_scrap_state0 escalation");
@@ -214,9 +215,10 @@ module fc_lcc_tb_services (
   always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
           fc_lcc_reset_0ing_active <= 1'b0;
-          fc_lcc_reset_active  <= 1'b0;
-          fc_lcc_reset_counter <= '0;
-          disable_lcc_sva      <= 1'b0;
+          fc_lcc_reset_active      <= 1'b0;
+          fc_lcc_reset_counter     <= '0;
+          disable_lcc_sva          <= 1'b0;
+          disable_fc_all_ones_sva  <= 1'b0;
       end
       else begin
           // Detect CMD_FC_LCC_EN_RESET_WHILE_0ING command.
@@ -260,6 +262,16 @@ module fc_lcc_tb_services (
           if (tb_service_cmd_valid && tb_service_cmd == CMD_LC_ENABLE_SVA && disable_lcc_sva) begin
             disable_lcc_sva  <= 1'b0;
             $display("Top-level: Received enable LCC's Assertions.");
+          end
+
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_ALL_ONES_DISABLE_SVA && !disable_fc_all_ones_sva) begin
+            disable_fc_all_ones_sva  <= 1'b1;
+            $display("Top-level: Received disable FC_all_ones assertion.");
+          end
+          
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_ALL_ONES_ENABLE_SVA && disable_fc_all_ones_sva) begin
+            disable_fc_all_ones_sva  <= 1'b0;
+            $display("Top-level: Received enable FC_all_ones assertion.");
           end
       end
   end

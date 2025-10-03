@@ -30,7 +30,9 @@ void sw_transition_req(uint32_t next_lc_state,
                         uint32_t token_63_32,
                         uint32_t token_31_0,
                         uint32_t conditional);
-                        
+void disable_fc_all_ones_sva(void);
+void enable_fc_all_ones_sva(void);
+
 // Write wdata0/wdata1 to addr, using granularity to control whether to bother setting the upper
 // word. The DAI write command is expected to respond with STATUS equal to exp_status.
 //
