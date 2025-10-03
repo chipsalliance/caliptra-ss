@@ -23,6 +23,9 @@
 #define NUM_LC_STATES 21
 #define NUM_TOKENS 12
 
+#define CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN \
+    0xef1fadea, 0xadfc9693, 0x421748a2, 0xf12a5911
+
 typedef enum {
     RAU, // RAW_UNLOCK
     TU1, // TEST_UNLOCKED1
