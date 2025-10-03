@@ -398,7 +398,7 @@ module caliptra_ss_top_sva
   // fuse_ctrl zeroization
   ////////////////////////////////////////////////////
 
-  // Return whether is a partition is zeroized
+  // Return whether a partition is zeroized
   function bit is_zeroized(int part_idx);
     logic [ScrmblBlockWidth-1:0] zero_marker;
     if (part_idx < 0 || part_idx >= NumPart) begin
@@ -414,16 +414,79 @@ module caliptra_ss_top_sva
     end
   endfunction : is_zeroized
 
-  // Store the latest direct_access_rdata release by the otp_ctrl_dai block after a successful access.
-  logic [NumDaiWords-1:0][31:0] past_direct_access_rdata = 0;
+  // Return whether a specific address in a partition is zeroized
+  function bit data_and_ecc_zeroized(int part_idx, bit [OtpByteAddrWidth-1:0] addr);
+    if (part_idx < 0 || part_idx >= NumPart) begin
+      return 0; // Invalid partition index
+    end else if (!PartInfo[part_idx].zeroizable) begin
+      return 0; // Not zeroizable
+    end else if (addr < PartInfo[part_idx].offset ||
+                 addr > otp_ctrl_part_pkg::zero_addrs[part_idx]) begin
+      return 0; // Invalid address
+    end else begin
+      // When secret, the granularity will be 64 bits
+      if (PartInfo[part_idx].secret) begin
+        // The address forwarded from the DAI is a byte address. We then divide by two to get a half-word address.
+        return &{`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2],
+                `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2+1],
+                `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2+2],
+                `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2+3]};
+      // Otherwise, 32-bits
+      end else begin
+        // The address forwarded from the DAI is a byte address. We then divide by two to get a half-word address.
+        return &{`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2],
+                 `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[addr/2+1]};
+      end
+    end
+  endfunction : data_and_ecc_zeroized
+
+  // Store the latest dai_addr and part_idx before the otp_operation_done, as it may have changed since.
+  logic [OtpByteAddrWidth-1:0] past_dai_addr;
+  logic [NumPartWidth-1:0]     past_part_idx;
   initial begin
     forever begin
       @(posedge `FC_PATH.clk_i);
       if ((`FC_PATH.dai_req)) begin
-        past_direct_access_rdata = `FC_PATH.hw2reg.direct_access_rdata;
+        past_dai_addr = `FC_PATH.dai_addr;
+        past_part_idx = part_idx;
       end
     end
   end
+
+  // After a zeroize command, the corresponding fuse bits must turn to all ones.
+  // Note: this assertion has to be disabled when injecting corrupted zeroization in the OTP memory.
+  `CALIPTRA_ASSERT(FcZeroizeFuseAllOnes_A,
+    (
+      (PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
+      (PartInfo[part_idx].zeroizable) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+      (`FC_PATH.dai_addr <= otp_ctrl_part_pkg::zero_addrs[part_idx])
+      ##[1:50]
+      (`FC_PATH.otp_operation_done)
+    )
+    |=>
+    data_and_ecc_zeroized(past_part_idx, past_dai_addr),
+    `CALIPTRA_ASSERT_DEFAULT_CLK,
+    (`CALIPTRA_ASSERT_DEFAULT_RST || `FC_LCC_TB_SERV_PATH.disable_fc_all_ones_sva)
+  )
+
+  // For scrambled partitions, a successful zeroization of a fuse word should result in an all-1s word
+  // being returned to software in the `DIRECT_ACCESS_RDATA` registers, independent of any potential
+  // stuck-at-0 fuses in the word.
+  `CALIPTRA_ASSERT(FcZeroizeRegRdAllOnes_A,
+    (
+      (PartInfo[part_idx].secret) &&
+      (PartInfo[part_idx].zeroizable) &&
+      (`FC_PATH.dai_req) &&
+      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      ##[1:50]
+      (`FC_PATH.otp_operation_done)
+    )
+    |=>
+    (`FC_PATH.hw2reg.direct_access_rdata == '1)
+  )
 
   // A zeroized partition must still have the same access privileges: writes fail for a locked partition
   `CALIPTRA_ASSERT(FcZeroizePartWriteLock_A,
