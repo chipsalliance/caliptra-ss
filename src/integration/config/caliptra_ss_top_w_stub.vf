@@ -2,6 +2,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines
@@ -10,7 +11,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/edn/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/tlul/rtl
-+incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
@@ -103,6 +103,10 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_esc_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_count_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/keymgr_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/jtag_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
@@ -166,9 +170,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/edn/rtl/edn_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert_multiple.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
