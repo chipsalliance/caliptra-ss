@@ -92,7 +92,7 @@ void main (void) {
         0x28abfbfa, 0x5a8f41,   0x44901cee, 0x4961df3f,
         0x8db3e5ea, 0x8d489c51, 0x90e26b42, 0xaf9369e
     };
-    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly

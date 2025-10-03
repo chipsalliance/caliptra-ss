@@ -363,16 +363,36 @@ module caliptra_ss_top_sva
     )
 
   // Assert that partitions are write-locked after the digest has been computed.
+  //
+  // Once a partition has a digest (either sw or hw), it should be write-locked. This means that if
+  // we start a DaiWrite operation with an address that points inside that partition, it should
+  // respond with an error.
+  //
+  // Normally, this response will appear in two cycles (with otp_ctrl_dai going to the WriteSt, then
+  // noticing the partition is locked, so setting error_d, which gets flopped to error_o). However,
+  // the partition might be scrambled (visible because PartInfo[part_idx].secret is true). In that
+  // case, there are two extra cycles because the FSM goes through ScrSt, ScrWaitSt first.
+
+  logic        part_may_have_digest, part_has_digest;
+  int unsigned part_digest_word_addr;
+  logic [21:0] raw_part_digest_value;
+  logic        dai_write_req;
+  logic        dai_addr_below_digest;
+  logic        dai_access_error;
+
+  assign part_may_have_digest  = PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest;
+  assign part_digest_word_addr = otp_ctrl_part_pkg::digest_addrs[part_idx] / 2;
+  assign raw_part_digest_value =
+    `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[part_digest_word_addr];
+  assign part_has_digest       = part_may_have_digest && (raw_part_digest_value != 0);
+  assign dai_write_req         = `FC_PATH.dai_req && dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite;
+  assign dai_addr_below_digest = (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
+                                 (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]);
+  assign dai_access_error = otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError;
+
   `CALIPTRA_ASSERT(FcLockedPartitionWriteLock_A,
-    ((PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
-     (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]/2] != 0) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
-     (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
-     (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
-     |-> ##2
-     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
-    )
+                   part_has_digest && dai_write_req && dai_addr_below_digest |-> ##[2:4]
+                   dai_access_error)
 
   ////////////////////////////////////////////////////
   // fuse_ctrl zeroization
