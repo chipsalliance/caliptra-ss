@@ -353,3 +353,13 @@ bool is_caliptra_secret_addr(uint32_t addr) {
     return ((addr >= partitions[SECRET_MANUF_PARTITION].address) &&
             (addr <= partitions[SECRET_PROD_PARTITION_3].zer_address));
 }
+
+void disable_fc_all_ones_sva(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_ALL_ONES_DISABLE_SVA);
+    VPRINTF(LOW, "MCU: FC_all_ones SVA is turned off!\n");
+}
+
+void enable_fc_all_ones_sva(void) {
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_ALL_ONES_ENABLE_SVA);
+    VPRINTF(LOW, "MCU: FC_all_ones SVA is turned on!\n");
+}

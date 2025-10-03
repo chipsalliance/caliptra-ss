@@ -98,11 +98,15 @@ void ocp_lock_zeroization(void) {
     // Zeroize marker field.
     // Attempt to zeroize marker field, but introduce defective bits to be below the threshold.
     VPRINTF(LOW, "DEBUG: Starting DAI defective zeroization operation (via HW forces)...\n");
+    // Disable FcZeroizeFuseAllOnes_A assertion, as it'll check that all bits from the OTP memory will be set to "1"
+    disable_fc_all_ones_sva();
     // Force to defective bits on the zeroization marker of the fuse memory on partition VENDOR_SECRET_PROD_PARTITION to be below the threshold
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_FUSE_UNZEROIZ);
     dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
     // Release defective bits on the zeroization marker of the fuse memory of VENDOR_SECRET_PROD_PARTITION
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_RELEASE_FUSE_UNZEROIZ);
+    // Re-enable FcZeroizeFuseAllOnes_A assertion
+    enable_fc_all_ones_sva();
     memset(data, 0, 2*sizeof(uint32_t));
     dai_zer(hw_part.zer_address, &data[0], &data[1], 64, 0);
     if (data[0] != 0xFFFFFFFF || data[1] != 0xFFFFFFFF) {
