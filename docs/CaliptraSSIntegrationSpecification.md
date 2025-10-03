@@ -403,6 +403,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | na    | `cptra_ss_lc_axi_wr_rsp_o`           | LC controller AXI write response output  |
 | External | input     | na    | `cptra_ss_lc_axi_rd_req_i`           | LC controller AXI read request input     |
 | External | output    | na    | `cptra_ss_lc_axi_rd_rsp_o`           | LC controller AXI read response output   |
+| External | input     | 128   | `cptra_ss_raw_unlock_token_hashed_i` | Hashed token for RAW unlock              |
 | External | input     | na    | `cptra_ss_otp_core_axi_wr_req_i`     | OTP controller AXI write request input   |
 | External | output    | na    | `cptra_ss_otp_core_axi_wr_rsp_o`     | OTP controller AXI write response output |
 | External | input     | na    | `cptra_ss_otp_core_axi_rd_req_i`     | OTP controller AXI read request input    |
@@ -1300,6 +1301,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
 External    |input       |   1    | `lc_sec_volatile_raw_unlock_en_i`              | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`                  | Enables Volatile TEST_UNLOCKED0 state transition infra|
+External    |input       |   1    | `raw_unlock_token_hashed_i`    | `cptra_ss_raw_unlock_token_hashed_i`         | Hashed token for RAW unlock |
 External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|

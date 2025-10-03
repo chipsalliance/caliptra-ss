@@ -109,7 +109,7 @@ uint8_t use_token[] = {
 };
 
 uint32_t raw_unlock_token[4] = {
-    0xef1fadea, 0xadfc9693, 0x421748a2, 0xf12a5911
+    CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN
 };
 
 void lcc_initialization(void) {

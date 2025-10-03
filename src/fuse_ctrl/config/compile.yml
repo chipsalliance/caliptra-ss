@@ -60,7 +60,6 @@ targets:
       - $COMPILE_ROOT/rtl/otp_ctrl_part_buf.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_part_unbuf.sv
       - $COMPILE_ROOT/rtl/otp_ctrl_scrmbl.sv
-      # - $COMPILE_ROOT/rtl/otp_ctrl_token_const.sv
       # - $COMPILE_ROOT/rtl/prim_generic_otp.sv
       - $COMPILE_ROOT/rtl/otp_ctrl.sv
       #- $COMPILE_ROOT/rtl/otp_ctrl_top.sv
