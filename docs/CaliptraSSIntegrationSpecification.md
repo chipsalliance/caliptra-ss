@@ -68,6 +68,7 @@
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
+  - [FIPS Zeroization Sequence For ECC](#fips-zeroization-sequence-for-ecc)
   - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
@@ -1075,6 +1076,9 @@ Follow these steps in order to correctly zeroize the fuses and verify the operat
 8. Verify the Operation: From the main MCU, read the partition's digest value from the associated fuse_ctrl digest registers.
    - Success: If the register returns the expected zeroized digest value, the operation is complete.
    - Failure: If the digest does not match the zeroized value, repeat the entire sequence starting from Step 1.
+
+## FIPS Zeroization Sequence For ECC
+Zeroization is implemented within the fuse controller RTL module. It is therefore the integrator’s responsibility to ensure that the ECC bits in the corresponding fuse partition are also zeroized when a zeroization command is issued to the fuse macro. To achieve this, the integrator must provide a dedicated implementation in the fuse macro wrapper to handle zeroization of the ECC bits.
 
 ## Miscellanious Fuse Integration Guidelines
 - If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
