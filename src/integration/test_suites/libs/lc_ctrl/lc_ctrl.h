@@ -24,7 +24,7 @@
 #define NUM_TOKENS 12
 
 #define CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN \
-    0xef1fadea, 0xadfc9693, 0x421748a2, 0xf12a5911
+    0xb532a0ca, 0x74ce9687, 0xa2ecef9a, 0x6141be65
 
 typedef enum {
     RAU, // RAW_UNLOCK
