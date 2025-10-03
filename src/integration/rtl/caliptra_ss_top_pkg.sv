@@ -15,7 +15,7 @@
 package caliptra_ss_top_pkg;
 
   parameter lc_ctrl_state_pkg::lc_token_t RndCnstRawUnlockTokenHashed = {
-    128'h4748d3f5_358f685c_1e213794_3c8ff2b6
+    128'h896e4a11_d1c8cbba_de8a30e6_f0930a4d
   };
 
 endpackage
