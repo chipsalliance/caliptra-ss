@@ -52,10 +52,6 @@
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
-  - [Zeroization Flow for Secret FUSEs](#zeroization-flow-for-secret-fuses)
-    - [Conditions for Zeroization](#conditions-for-zeroization)
-    - [Zeroization Process](#zeroization-process)
-    - [Cold Reset and Final Zeroization](#cold-reset-and-final-zeroization)
   - [Notes](#notes)
   - [General Guidance](#general-guidance)
     - [Reset Considerations](#reset-considerations)
@@ -596,42 +592,6 @@ Once partitions are locked, the hardware integrity checker performs two primary 
 ### Purpose
 
 These integrity checks verify whether the contents of the buffer registers remain consistent with the calculated digest. They do not verify the consistency between storage flops and the FUSE.
-
-## Zeroization Flow for Secret FUSEs
-
-The secret FUSE partitions are **zeroized** when the Caliptra-SS Life Cycle Controller (LCC) enters the **SCRAP** state. However, due to lifecycle constraints, the zeroization process requires a **transient condition** before the system reaches the **SCRAP** state.
-
-### Conditions for Zeroization
-
-Zeroization occurs under the following conditions:
-
-1. **Persistent Condition:**  
-   - The **Life Cycle Controller (LCC)** must be in the **SCRAP** state.
-   - This transition to SCRAP occurs only **after a cold reset** followed by **SCRAP** state transition request.
-
-2. **Transient Condition (Before Cold Reset):**  
-   - The **`cptra_ss_FIPS_ZEROIZATION_PPD_i`** GPIO pin must be **asserted high**.
-   - MCU ROM support is needed.
-
-### Zeroization Process
-
-1. A new input port, `cptra_ss_FIPS_ZEROIZATION_PPD_i`, is introduced in the Caliptra Subsystem. SoC integrator needs to connect this signal to MCI generic input wires (see [MCI Generic Input Allocation](./CaliptraSSIntegrationSpecification.md#mci-integration-requirements)).
-2. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs before the SCRAP state transition.
-3. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value in MCI.
-4. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM executes the following sequence:
-   1. Writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**.
-   2. Creates a **Life Cycle Controller (LCC) transition request** to switch to the **SCRAP** state.
-
-- **Note:** The LCC state transition to SCRAP is completed **only after a cold reset**.
-
-### Cold Reset and Final Zeroization
-
-- The system remains in a **transient zeroization state** managed by:
-  - `cptra_ss_FIPS_ZEROIZATION_PPD_i`
-  - `ss_soc_MCU_ROM_zeroization_mask_reg`
-- After the **cold reset**, the **LCC enters SCRAP state**.
-- All secret FUSEs are permanently zeroized as a direct result of the **SCRAP state transition**.
-
 ---
 
 ## Notes
