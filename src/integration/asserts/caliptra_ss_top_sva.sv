@@ -50,7 +50,7 @@ module caliptra_ss_top_sva
   // the access control policy is violated.
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
     ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
+     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
      (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0) &&
      (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
      |-> ##2
