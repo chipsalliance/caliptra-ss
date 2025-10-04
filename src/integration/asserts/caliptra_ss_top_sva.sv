@@ -41,25 +41,39 @@ module caliptra_ss_top_sva
   // fuse_ctrl_filter
   ////////////////////////////////////////////////////
 
+  logic dai_for_secret_partition;
+  assign dai_for_secret_partition = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
+                                    (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr ==
+                                     `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
+                                    (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0);
+
+  logic user_other_than_caliptra;
+  assign user_other_than_caliptra = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser !=
+                                     `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i);
+
+  logic unpriv_dai_access;
+  assign unpriv_dai_access = dai_for_secret_partition && user_other_than_caliptra;
+
+  // The fuse_ctrl access control filter must discard an AXI write request when
+  // the access control policy is violated.
+  //
+  // The discard behaviour works by setting the discard_fuse_write signal in otp_ctrl and this
+  // assertion checks that the signal gets set.
+  `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
+                   unpriv_dai_access |-> ##2 `FC_PATH.discard_fuse_write)
+
+  // When the fuse_ctrl access control filter discards an AXI write request, the DAI must signal a
+  // recoverable AccessError in its response (which becomes visible exactly one cycle after
+  // u_otp_ctrl_dai signals that the operation has completed).
+  `CALIPTRA_ASSERT(FcAxiFilterDaiAccessError_A,
+                   `FC_PATH.discard_fuse_write ##1
+                   `FC_PATH.otp_operation_done[->1] |=>
+                   `FC_PATH.u_otp_ctrl_dai.error_o == {AccessError})
+
   logic dai_read_req, dai_write_req, dai_zeroize_req;
   assign dai_read_req    = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiRead});
   assign dai_write_req   = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiWrite});
   assign dai_zeroize_req = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiZeroize});
-
-  // The fuse_ctrl access control filter must discard an AXI write request when
-  // the access control policy is violated.
-  `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
-    ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
-     (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
-     |-> ##2
-     `FC_PATH.discard_fuse_write)
-
-  // When the fuse_ctrl access control filter discards an AXI write request, the DAI
-  // must signal a recoverable AccessError.
-  `CALIPTRA_ASSERT(FcAxiFilterDaiAccessError_A,
-    ($fell(`FC_PATH.discard_fuse_write)) |-> otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
 
   //WDT checks:
   cascade_wdt_t1_pet: assert property (
@@ -535,14 +549,22 @@ module caliptra_ss_top_sva
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
 
-  // Zeroization marker field is always readable
+  // The zeroization marker field is always readable
+  //
+  // As such, a DaiRead request on a zeroization marker of a zeroizable partition shouldn't ever be
+  // stopped by the partition's read lock. It should only fail if the partition is secret (and the
+  // AXI user doesn't have permission to read it) or if the partition isn't zeroizable. This can be
+  // seen because unpriv_dai_access was high on the previous cycle.
+  //
+  // The assertion is phrased as "If we see a DAI read that we don't expect to fail, it won't". We
+  // don't expect a failure when the partition is zeroizable and is not secret.
   `CALIPTRA_ASSERT(FcZeroizeMarkerAlwaysReadable_A,
-    (dai_read_req &&
-     (PartInfo[part_idx].zeroizable) &&
-     (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
-    |-> ##2
-    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError
-  )
+                   (dai_read_req &&
+                    !$past(unpriv_dai_access) &&
+                    (PartInfo[part_idx].zeroizable) &&
+                    (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
+                   |-> ##2
+                   otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError)
 
   // Zeroization marker field is never writable
   `CALIPTRA_ASSERT(FcZeroizeMarkerNeverWritable_A,
