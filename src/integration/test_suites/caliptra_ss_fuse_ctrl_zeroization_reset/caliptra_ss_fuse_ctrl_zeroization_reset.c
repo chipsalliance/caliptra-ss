@@ -136,13 +136,16 @@ bool check_part_zeroized(const partition_t* part,
              compare(act_data[1], exp_ones[1], part->zer_address));
 }
 
-bool prepare_test(const partition_t* part, uint32_t rd_lock_csr_addr) {
+bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_csr_addr) {
     // Initialize test constants.
     const uint32_t exp_data[] = {0xA5A5A5A5, 0x96969696};
 
-    // Step 1: Write the partition.
-    VPRINTF(LOW, "INFO: Step 1: Write {%x, %x} to each word of partition %d.\n",
-            exp_data[0], exp_data[1], part->index);
+    VPRINTF(LOW, "INFO: Preparing test %d (steps %d.0 to %d.6).\n",
+            test_idx, test_idx, test_idx);
+
+    // Step 0: Write the partition.
+    VPRINTF(LOW, "INFO: Step %d.0: Write {%x, %x} to each word of partition %d.\n",
+            test_idx, exp_data[0], exp_data[1], part->index);
     for (uint32_t addr = part->address;
             addr < part->digest_address;
             addr += part->granularity / 8) {
@@ -150,18 +153,20 @@ bool prepare_test(const partition_t* part, uint32_t rd_lock_csr_addr) {
             return false;
     }
 
-    // Step 2: Write the digest (doesn't have to be and isn't a real
+    // Step 1: Write the digest (doesn't have to be and isn't a real
     // digest value).
-    VPRINTF(LOW, "INFO: Step 2: Write {%x, %x} to the digest for partition %d.\n",
-            exp_data[0], exp_data[1], part->index);
+    VPRINTF(LOW, "INFO: Step %d.1: Write {%x, %x} to the digest for partition %d.\n",
+            test_idx, exp_data[0], exp_data[1], part->index);
     if (!dai_wr(part->digest_address, exp_data[0], exp_data[1], 64, 0)) return false;
 
-    // Step 3: Reset.
+    // Step 2: Reset.
+    VPRINTF(LOW, "INFO: Step %d.2: Inject reset.\n", test_idx);
     reset_fc_lcc_rtl();
     if (!wait_dai_op_idle(0)) return false;
 
-    // Step 4: Read the written value back.
+    // Step 3: Read the written value back.
     // First ensure that the read lock CSR is currently not set.
+    VPRINTF(LOW, "INFO: Step %d.3: Read written value back.\n", test_idx);
     uint32_t csr = lsu_read_32(rd_lock_csr_addr);
     if (csr != 1) {
         VPRINTF(LOW, "TEST BUG: Partition is read-locked!\n");
@@ -169,22 +174,25 @@ bool prepare_test(const partition_t* part, uint32_t rd_lock_csr_addr) {
     }
     // Then read the value back and compare it.
     if (!part_read_compare(part, exp_data, 0)) {
-        VPRINTF(LOW, "ERROR: Step 4 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.3 failed!\n", test_idx);
         return false;
     }
 
-    // Step 5: Activate the read lock CSR.
+    // Step 4: Activate the read lock CSR.
+    VPRINTF(LOW, "INFO: Step %d.4: Set read lock.\n", test_idx);
     lsu_write_32(rd_lock_csr_addr, 0);
 
-    // Step 6: Verify that reading the partition now gives an access
+    // Step 5: Verify that reading the partition now gives an access
     // error and returns zeros.
     uint32_t exp_zeros[] = {0, 0};
+    VPRINTF(LOW, "INFO: Step %d.5: Check reading now gives error and zeros.\n", test_idx);
     if (!part_read_compare(part, exp_zeros, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
-        VPRINTF(LOW, "ERROR: Step 6 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.5 failed!\n", test_idx);
         return false;
     }
 
-    // Step 7: Reset again.
+    // Step 6: Reset again.
+    VPRINTF(LOW, "INFO: Step %d.6: Reset again.\n", test_idx);
     reset_fc_lcc_rtl();
     return wait_dai_op_idle(0);
 }
@@ -210,13 +218,15 @@ bool end_test(const partition_t* part) {
     return true;
 }
 
-bool test_normal_zeroization (void) {
+bool test_normal_zeroization (unsigned test_idx) {
     // Choose one of the zeroizable SW partitions with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_3];
     const uint32_t rd_lock_csr_addr =
             SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_READ_LOCK;
 
-    if (!prepare_test(&part, rd_lock_csr_addr)) return false;
+    VPRINTF(LOW, "INFO: Starting test %d: normal zeroization.\n", test_idx);
+
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
     // Step 8: Zeroize the partition.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
@@ -238,13 +248,15 @@ bool test_normal_zeroization (void) {
     return end_test(&part);
 }
 
-bool test_half_zeroization (void) {
+bool test_half_zeroization (unsigned test_idx) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_4];
     const uint32_t rd_lock_csr_addr =
             SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_READ_LOCK;
 
-    if (!prepare_test(&part, rd_lock_csr_addr)) return false;
+    VPRINTF(LOW, "INFO: Starting test %d: half-partition zeroization.\n", test_idx);
+
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
     // Step 8: Zeroize the partition, but only until half the data.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/1, 0)) {
@@ -273,13 +285,15 @@ bool test_half_zeroization (void) {
     return end_test(&part);
 }
 
-bool test_marker_interrupted_zeroization (void) {
+bool test_marker_interrupted_zeroization (unsigned test_idx) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_5];
     const uint32_t rd_lock_csr_addr =
             SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK;
 
-    if (!prepare_test(&part, rd_lock_csr_addr)) return false;
+    VPRINTF(LOW, "INFO: Starting test %d: interrupted marker zeroization.\n", test_idx);
+
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
     // Step 8: Arm the trigger that will reset the fuse controller
     // during the next zeroization.
@@ -312,13 +326,15 @@ bool test_marker_interrupted_zeroization (void) {
     return end_test(&part);
 }
 
-bool test_data_interrupted_zeroization (void) {
+bool test_data_interrupted_zeroization (unsigned test_idx) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_6];
     const uint32_t rd_lock_csr_addr =
             SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK;
 
-    if (!prepare_test(&part, rd_lock_csr_addr)) return false;
+    VPRINTF(LOW, "INFO: Starting test %d: interrupted data zeroization.\n", test_idx);
+
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
     // Step 8: Zeroize the marker.
     if (!part_zeroize(&part, /*only_marker=*/1, /*only_until_half_data=*/0, 0)) {
@@ -355,36 +371,18 @@ bool test_data_interrupted_zeroization (void) {
 void body (void) {
     VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_reset code.\n");
 
-    VPRINTF(LOW, "INFO: Starting normal zeroization test.\n");
-    if (test_normal_zeroization()) {
-        VPRINTF(LOW, "INFO: Test PASSED\n");
-    } else {
-        VPRINTF(LOW, "ERROR: Test FAILED\n");
-        return;
-    }
+    bool (*tests[])() = {test_normal_zeroization,
+                         test_half_zeroization,
+                         test_marker_interrupted_zeroization,
+                         test_data_interrupted_zeroization};
 
-    VPRINTF(LOW, "INFO: Starting half-partition zeroization test.\n");
-    if (test_half_zeroization()) {
-        VPRINTF(LOW, "INFO: Test PASSED\n");
-    } else {
-        VPRINTF(LOW, "ERROR: Test FAILED\n");
-        return;
-    }
-
-    VPRINTF(LOW, "INFO: Starting test with interrupted marker zeroization.\n");
-    if (test_marker_interrupted_zeroization()) {
-        VPRINTF(LOW, "INFO: Test PASSED\n");
-    } else {
-        VPRINTF(LOW, "ERROR: Test FAILED\n");
-        return;
-    }
-
-    VPRINTF(LOW, "INFO: Starting test with interrupted data zeroization.\n");
-    if (test_data_interrupted_zeroization()) {
-        VPRINTF(LOW, "INFO: Test PASSED\n");
-    } else {
-        VPRINTF(LOW, "ERROR: Test FAILED\n");
-        return;
+    for (int i = 0; i < 4; ++i) {
+        if (tests[i](i)) {
+            VPRINTF(LOW, "INFO: Test %d PASSED\n", i);
+        } else {
+            VPRINTF(LOW, "ERROR: Test %d FAILED\n", i);
+            return;
+        }
     }
 }
 
