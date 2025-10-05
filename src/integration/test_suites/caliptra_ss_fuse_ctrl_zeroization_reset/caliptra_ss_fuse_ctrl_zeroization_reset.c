@@ -53,7 +53,7 @@ bool compare_part_data(const partition_t *partition,
 {
     if (!compare(actual[0], expected[0], address)) {
         VPRINTF(LOW,
-                ("ERROR: Mismatch at low bits of word starting at 0x%08X in partition %0d. "
+                ("ERROR: Mismatch at low bits of word starting at 0x%08X in partition %d. "
                  "Expected 0x%08x; Actual 0x%08x\n"),
                 address, partition->index, expected[0], actual[0]);
         return false;
@@ -63,7 +63,7 @@ bool compare_part_data(const partition_t *partition,
 
     if (!compare(actual[1], expected[1], address)) {
         VPRINTF(LOW,
-                ("ERROR: Mismatch at high bits of word starting at 0x%08X in partition %0d. "
+                ("ERROR: Mismatch at high bits of word starting at 0x%08X in partition %d. "
                  "Expected 0x%08x; Actual 0x%08x\n"),
                 address, partition->index, expected[1], actual[1]);
         return false;
@@ -217,18 +217,15 @@ bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_c
 }
 
 bool end_test(const partition_t* part) {
-    // Note that the data and digest of the zeroized partition cannot be
-    // read without a reset, as this would result in ECC errors. This is
-    // not a problem because in Step 8, SW checked the result of
-    // zeroization and ensured that all fuses are now set to `1` also
-    // for the data and digest part of the partition.
+    // Note that the data and digest of the zeroized partition cannot be read without a reset, as
+    // this would result in ECC errors. This is not a problem because in the last step SW checked
+    // the result of zeroization and ensured that all fuses are now set to `1` also for the data and
+    // digest part of the partition.
 
-    // Step 10: Reset.
     reset_fc_lcc_rtl();
     if (!wait_dai_op_idle(0)) return false;
 
-    // Step 11: Read and check that everything in the partition is all
-    // ones.
+    // Last step: Read and check that everything in the partition is all ones.
     if (!check_part_zeroized(part, /*only_marker=*/0, 0)) {
         VPRINTF(LOW, "ERROR: Final step failed!\n");
         return false;
@@ -247,20 +244,20 @@ bool test_normal_zeroization (unsigned test_idx) {
 
     if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
-    // Step 8: Zeroize the partition.
+    // Step 7: Zeroize the partition.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
-        VPRINTF(LOW, "ERROR: Step 8 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.7 failed!\n", test_idx);
         return false;
     }
 
-    // Step 9: Read the zeroization marker through the DAI. In the
+    // Step 8: Read the zeroization marker through the DAI. In the
     // previous step, SW already checked that the zeroization marker
     // returned by the zeroization command is all ones. A different
     // piece of SW might at a later point before a reset want to check
     // the zeroization status for a partition, and this is what this
     // step emulates.
     if (!check_part_zeroized(&part, /*only_marker=*/1, 0)) {
-        VPRINTF(LOW, "ERROR: Step 9 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.8 failed!\n", test_idx);
         return false;
     }
 
@@ -277,27 +274,27 @@ bool test_half_zeroization (unsigned test_idx) {
 
     if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
-    // Step 8: Zeroize the partition, but only until half the data.
+    // Step 7: Zeroize the partition, but only until half the data.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/1, 0)) {
-        VPRINTF(LOW, "ERROR: Step 8 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.7 failed!\n", test_idx);
         return false;
     }
 
-    // Step 9: Reset. This is to emulate that a reset happened while
+    // Step 8: Reset. This is to emulate that a reset happened while
     // SW was zeroizing the partition.
     reset_fc_lcc_rtl();
     if (!wait_dai_op_idle(0)) return false;
 
-    // Step 10: Read the zeroization marker, which should indicate that
+    // Step 9: Read the zeroization marker, which should indicate that
     // zeroization has been started on the partition.
     if (!check_part_zeroized(&part, /*only_marker=*/1, 0)) {
-        VPRINTF(LOW, "ERROR: Step 10 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.9 failed!\n", test_idx);
         return false;
     }
 
-    // Step 11: Zeroize the entire partition again, this time entirely.
+    // Step 10: Zeroize the entire partition again, this time entirely.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
-        VPRINTF(LOW, "ERROR: Step 11 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.10 failed!\n");
         return false;
     }
 
@@ -314,14 +311,14 @@ bool test_marker_interrupted_zeroization (unsigned test_idx) {
 
     if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
-    // Step 8: Arm the trigger that will reset the fuse controller
+    // Step 7: Arm the trigger that will reset the fuse controller
     // during the next zeroization.
-    VPRINTF(LOW, "DEBUG: Step 8: arming trigger\n");
+    VPRINTF(LOW, "DEBUG: Step %d.7: arming trigger\n", test_idx);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_EN_RESET_WHILE_0ING);
 
-    // Step 9: Zeroize the marker, which will only partially succeed. Pass true for
+    // Step 8: Zeroize the marker, which will only partially succeed. Pass true for
     // disable_rdata_check: we don't expect it to have worked.
-    VPRINTF(LOW, "DEBUG: Step 9: partially zeroize marker\n");
+    VPRINTF(LOW, "DEBUG: Step %d.8: partially zeroize marker\n", test_idx);
     if (!dai_zer(part.zer_address, 64, 0, true)) return false;
 
     // Due to the interruption of the zeroization, it does not complete the read-back.
@@ -331,14 +328,14 @@ bool test_marker_interrupted_zeroization (unsigned test_idx) {
     VPRINTF(LOW, "DEBUG: Zeroization marker read back as {0x%08x, 0x%08x}\n",
             zer_data[0], zer_data[1]);
 
-    // Step 10: Disable the reset trigger from Step 8.
-    VPRINTF(LOW, "DEBUG: Step 10: disabling reset trigger\n");
+    // Step 9: Disable the reset trigger from Step 8.
+    VPRINTF(LOW, "DEBUG: Step %d.9: disabling reset trigger\n", test_idx);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_DIS_RESET_WHILE_0ING);
 
-    //Step 11: Just zeroize everything again.
-    VPRINTF(LOW, "DEBUG: Step 11: zeroizing partition again\n");
+    // Step 10: Just zeroize everything again.
+    VPRINTF(LOW, "DEBUG: Step %d.10: zeroizing partition again\n");
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
-        VPRINTF(LOW, "ERROR: Step 11 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.10 failed!\n", test_idx);
         return false;
     }
 
@@ -355,17 +352,17 @@ bool test_data_interrupted_zeroization (unsigned test_idx) {
 
     if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
 
-    // Step 8: Zeroize the marker.
+    // Step 7: Zeroize the marker.
     if (!part_zeroize(&part, /*only_marker=*/1, /*only_until_half_data=*/0, 0)) {
-        VPRINTF(LOW, "ERROR: Step 8 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.7 failed!\n");
         return false;
     }
 
-    // Step 9: Arm the trigger that will reset the fuse controller
+    // Step 8: Arm the trigger that will reset the fuse controller
     // during the next zeroization.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_EN_RESET_WHILE_0ING);
 
-    // Step 10: Zeroize the first data fuses, which will only partially
+    // Step 9: Zeroize the first data fuses, which will only partially
     // succeed.
     uint32_t zer_data[2];
     if (!dai_zer(part.address, part.granularity, 0, true)) return false;
@@ -373,14 +370,14 @@ bool test_data_interrupted_zeroization (unsigned test_idx) {
     // Due to the interruption of the zeroization, it does not complete the read-back.
     // A separate read is necessary to get the partially zeroized data.
     if (!dai_rd(part.address, &zer_data[0], &zer_data[1], part.granularity, 0)) return false;
-    VPRINTF(LOW, "DEBUG: Step 10 fuses [0] = 0x%08x\n", zer_data[0]);
+    VPRINTF(LOW, "DEBUG: Step %d.9 fuses [0] = 0x%08x\n", test_idx, zer_data[0]);
 
-    // Step 11: Disable the reset trigger from Step 9.
+    // Step 10: Disable the reset trigger from Step 8.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_DIS_RESET_WHILE_0ING);
 
-    // Step 12: Just zeroize everything again.
+    // Step 11: Just zeroize everything again.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
-        VPRINTF(LOW, "ERROR: Step 12 failed!\n");
+        VPRINTF(LOW, "ERROR: Step %d.11 failed!\n", test_idx);
         return false;
     }
 
