@@ -1257,6 +1257,17 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
    - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token is different from other LC transition tokens as it is stored in the plaintext in gates, not in hashed form.
      To exclude it from scan, the following hierarchies must be excluded: `*::lc_ctrl_fsm::hashed_tokens_{higher, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
 
+4. **RAW Unlock Token**:
+   - The `cptra_ss_raw_unlock_token_hashed_i` top-level input defines the *hashed* value of the
+     RAW unlock token. The hashed value is generated from the *unhashed* RAW unlock token, which
+     the integrator must obtain from a cryptographically secure random number generator. Both the
+     hashed and the unhashed token must be kept secret. To generate the hashed token (and
+     optionally also the unhashed token), `tools/scripts/lc_ctrl_script/gen_lc_ctrl_token.py` can
+     be used.
+   - The *unhashed* RAW unlock token is required in SW that performs a *non-volatile* RAW unlock.
+   - The *hashed* RAW unlock token is stored in HW (see first bullet point) and required in SW
+     that performs a *volatile* RAW unlock.
+
 ## Programming Interface
 
 The LC Controller's programming interface facilitates lifecycle state transitions, secure token authentication, and system initialization. Below are the key programming steps:
