@@ -36,13 +36,40 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-int compare(uint32_t actual, uint32_t expected, uint32_t address) {
+bool compare(uint32_t actual, uint32_t expected, uint32_t address) {
     if (actual != expected) {
         VPRINTF(LOW, "ERROR: @0x%08X: 0x%08X != 0x%08X\n",
                 address, actual, expected);
-        return 1;
+        return false;
     }
-    return 0;
+    return true;
+}
+
+bool compare_part_data(const partition_t *partition,
+                       const uint32_t    *actual,
+                       const uint32_t    *expected,
+                       uint32_t           address,
+                       bool               force_big_word)
+{
+    if (!compare(actual[0], expected[0], address)) {
+        VPRINTF(LOW,
+                ("ERROR: Mismatch at low bits of word starting at 0x%08X in partition %0d. "
+                 "Expected 0x%08x; Actual 0x%08x\n"),
+                address, partition->index, expected[0], actual[0]);
+        return false;
+    }
+
+    if (partition->granularity <= 32 && !force_big_word) return true;
+
+    if (!compare(actual[1], expected[1], address)) {
+        VPRINTF(LOW,
+                ("ERROR: Mismatch at high bits of word starting at 0x%08X in partition %0d. "
+                 "Expected 0x%08x; Actual 0x%08x\n"),
+                address, partition->index, expected[1], actual[1]);
+        return false;
+    }
+
+    return true;
 }
 
 bool part_read_compare(const partition_t* part,
@@ -56,16 +83,11 @@ bool part_read_compare(const partition_t* part,
     for (uint32_t addr = part->address;
             addr < part->digest_address;
             addr += part->granularity / 8) {
+
         if (!dai_rd(addr, &act_data[0], &act_data[1], part->granularity, exp_status))
             return false;
 
-        if (compare(act_data[0], exp_data[0], addr)) return false;
-
-        // Check second 32 bit only if the partition has a granularity
-        // of more than 32 bit.
-        if (part->granularity > 32) {
-            if (compare(act_data[1], exp_data[1], addr + 4)) return false;
-        }
+        if (!compare_part_data(part, act_data, exp_data, addr, false)) return false;
     }
 
     // Read and compare the digest, which always has a granularity and
@@ -73,8 +95,7 @@ bool part_read_compare(const partition_t* part,
     if (!dai_rd(part->digest_address, &act_data[0], &act_data[1], 64, exp_status))
         return false;
 
-    return !(compare(act_data[0], exp_data[0], part->digest_address) ||
-             compare(act_data[1], exp_data[1], part->digest_address + 4));
+    return compare_part_data(part, act_data, exp_data, part->digest_address, true);
 }
 
 bool part_zeroize(const partition_t* part,
@@ -132,8 +153,7 @@ bool check_part_zeroized(const partition_t* part,
     if (!dai_rd(part->zer_address, &act_data[0], &act_data[1], 64, 0))
         return false;
 
-    return !(compare(act_data[0], exp_ones[0], part->zer_address) ||
-             compare(act_data[1], exp_ones[1], part->zer_address));
+    return compare_part_data(part, act_data, exp_ones, part->zer_address, true);
 }
 
 bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_csr_addr) {
