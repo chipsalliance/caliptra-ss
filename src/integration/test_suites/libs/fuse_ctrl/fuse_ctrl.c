@@ -158,6 +158,39 @@ bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
     return wait_dai_op_idle(exp_status);
 }
 
+bool dai_wr_array(uint32_t        first_fuse,
+                  uint32_t        last_fuse,
+                  const uint32_t *wdata,
+                  unsigned        granularity) {
+    VPRINTF(LOW, "DEBUG: Starting DAI array write operation (0x%0x .. 0x%0x)\n",
+            first_fuse, last_fuse);
+
+    VPRINTF(LOW, "DEBUG: Writing wdata[0]: 0x%08X to DIRECT_ACCESS_WDATA_0.\n", wdata[0]);
+    lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata[0]);
+
+    if (granularity > 32) {
+        VPRINTF(LOW, "DEBUG: Writing wdata[1]: 0x%08X to DIRECT_ACCESS_WDATA_1.\n", wdata[1]);
+        lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata[1]);
+    }
+
+    // Each fuse takes up either 4 or 8 bytes of address space (depending on whether granularity is
+    // at most 32)
+    uint32_t fuse_addr_inc = (granularity <= 32) ? 4 : 8;
+
+    for (uint32_t addr = first_fuse; addr <= last_fuse; addr += fuse_addr_inc) {
+        VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
+        lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+
+        VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
+        lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
+
+        if (!wait_dai_op_idle(0)) return false;
+    }
+
+    VPRINTF(LOW, "DEBUG: Fuse array written.\n");
+    return true;
+}
+
 bool dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
             uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI read operation...\n");

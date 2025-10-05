@@ -166,12 +166,11 @@ bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_c
     // Step 0: Write the partition.
     VPRINTF(LOW, "INFO: Step %d.0: Write {%x, %x} to each word of partition %d.\n",
             test_idx, exp_data[0], exp_data[1], part->index);
-    for (uint32_t addr = part->address;
-            addr < part->digest_address;
-            addr += part->granularity / 8) {
-        if (!dai_wr(addr, exp_data[0], exp_data[1], part->granularity, 0))
-            return false;
-    }
+    if (!dai_wr_array(part->address,
+                      part->digest_address - 1,
+                      exp_data,
+                      part->granularity))
+        return false;
 
     // Step 1: Write the digest (doesn't have to be and isn't a real
     // digest value).

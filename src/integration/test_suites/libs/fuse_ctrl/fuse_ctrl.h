@@ -40,6 +40,23 @@ void enable_fc_all_ones_sva(void);
 bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
             uint32_t granularity, uint32_t exp_status);
 
+// A version of dai_wr that writes an entire array of fuses with a particular value
+//
+// This is a bit more efficient than calling dai_wr in a loop, because it doesn't have to set
+// wdata0/wdata1 each time.
+//
+//   first_fuse   The address of the first fuse in the array
+//
+//   last_fuse   The address of the last fuse in the array
+//
+//   wdata        A pointer to a pair of uint32_t objects, giving the value to write
+//
+//   granularity  The number of bits in a fuse.
+bool dai_wr_array(uint32_t        first_fuse,
+                  uint32_t        last_fuse,
+                  const uint32_t *wdata,
+                  unsigned        granularity);
+
 // Read from addr, storing the response in *rdata0/*rdata1, where the upper word is only copied back
 // if granularity > 32. The DAI read command is expected to respond with STATUS equal to exp_status.
 //
