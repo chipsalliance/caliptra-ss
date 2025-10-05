@@ -466,7 +466,12 @@ module caliptra_ss_top_sva
     end
   end
 
-  // After a zeroize command, the corresponding fuse bits must turn to all ones.
+  // After a successful zeroize command, the corresponding fuse bits must turn to all ones.
+  //
+  // We detect a zeroize command by seeing a zeroize request appearing through the DAI, then see it
+  // complete in at most 50 cycles through otp_operation_done. The response might be an error. If
+  // not, we check that the partition has indeed been zeroized at the requested address.
+  //
   // Note: this assertion has to be disabled when injecting corrupted zeroization in the OTP memory.
   `CALIPTRA_ASSERT(FcZeroizeFuseAllOnes_A,
     (
@@ -479,14 +484,16 @@ module caliptra_ss_top_sva
       (`FC_PATH.otp_operation_done)
     )
     |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError) ||
     data_and_ecc_zeroized(past_part_idx, past_dai_addr),
     `CALIPTRA_ASSERT_DEFAULT_CLK,
     (`CALIPTRA_ASSERT_DEFAULT_RST || `FC_LCC_TB_SERV_PATH.disable_fc_all_ones_sva)
   )
 
-  // For scrambled partitions, a successful zeroization of a fuse word should result in an all-1s word
-  // being returned to software in the `DIRECT_ACCESS_RDATA` registers, independent of any potential
-  // stuck-at-0 fuses in the word.
+  // For scrambled partitions, a successful zeroization of a fuse word should always get an all-1s
+  // result, independent of any potential stuck-at-0 fuses in the word.
+  //
+  // Note that this doesn't apply to the case where the command responds with an error code.
   `CALIPTRA_ASSERT(FcZeroizeRegRdAllOnes_A,
     (
       (PartInfo[part_idx].secret) &&
@@ -496,6 +503,7 @@ module caliptra_ss_top_sva
       (`FC_PATH.otp_operation_done)
     )
     |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError) ||
     (`FC_PATH.hw2reg.direct_access_rdata == '1)
   )
 
