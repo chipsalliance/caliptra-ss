@@ -156,7 +156,10 @@ bool check_part_zeroized(const partition_t* part,
     return compare_part_data(part, act_data, exp_ones, part->zer_address, true);
 }
 
-bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_csr_addr) {
+bool prepare_test(unsigned           test_idx,
+                  const partition_t* part,
+                  uint32_t           rd_lock_csr_addr,
+                  bool               skip_post_prep_check) {
     // Initialize test constants.
     const uint32_t exp_data[] = {0xA5A5A5A5, 0x96969696};
 
@@ -182,6 +185,14 @@ bool prepare_test(unsigned test_idx, const partition_t* part, uint32_t rd_lock_c
     VPRINTF(LOW, "INFO: Step %d.2: Inject reset.\n", test_idx);
     reset_fc_lcc_rtl();
     if (!wait_dai_op_idle(0)) return false;
+
+    if (skip_post_prep_check) {
+        VPRINTF(LOW,
+                ("INFO: Skipping steps %d.3 .. %d.6: "
+                 "We checked we could write fuses on another partition.\n"),
+                test_idx, test_idx);
+        return true;
+    }
 
     // Step 3: Read the written value back.
     // First ensure that the read lock CSR is currently not set.
@@ -234,7 +245,7 @@ bool end_test(const partition_t* part) {
     return true;
 }
 
-bool test_normal_zeroization (unsigned test_idx) {
+bool test_normal_zeroization (unsigned test_idx, bool skip_post_prep_check) {
     // Choose one of the zeroizable SW partitions with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_3];
     const uint32_t rd_lock_csr_addr =
@@ -242,7 +253,8 @@ bool test_normal_zeroization (unsigned test_idx) {
 
     VPRINTF(LOW, "INFO: Starting test %d: normal zeroization.\n", test_idx);
 
-    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr, skip_post_prep_check))
+        return false;
 
     // Step 7: Zeroize the partition.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/0, 0)) {
@@ -264,7 +276,7 @@ bool test_normal_zeroization (unsigned test_idx) {
     return end_test(&part);
 }
 
-bool test_half_zeroization (unsigned test_idx) {
+bool test_half_zeroization (unsigned test_idx, bool skip_post_prep_check) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_4];
     const uint32_t rd_lock_csr_addr =
@@ -272,7 +284,8 @@ bool test_half_zeroization (unsigned test_idx) {
 
     VPRINTF(LOW, "INFO: Starting test %d: half-partition zeroization.\n", test_idx);
 
-    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr, skip_post_prep_check))
+        return false;
 
     // Step 7: Zeroize the partition, but only until half the data.
     if (!part_zeroize(&part, /*only_marker=*/0, /*only_until_half_data=*/1, 0)) {
@@ -301,7 +314,7 @@ bool test_half_zeroization (unsigned test_idx) {
     return end_test(&part);
 }
 
-bool test_marker_interrupted_zeroization (unsigned test_idx) {
+bool test_marker_interrupted_zeroization (unsigned test_idx, bool skip_post_prep_check) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_5];
     const uint32_t rd_lock_csr_addr =
@@ -309,7 +322,8 @@ bool test_marker_interrupted_zeroization (unsigned test_idx) {
 
     VPRINTF(LOW, "INFO: Starting test %d: interrupted marker zeroization.\n", test_idx);
 
-    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr, skip_post_prep_check))
+        return false;
 
     // Step 7: Arm the trigger that will reset the fuse controller
     // during the next zeroization.
@@ -342,7 +356,7 @@ bool test_marker_interrupted_zeroization (unsigned test_idx) {
     return end_test(&part);
 }
 
-bool test_data_interrupted_zeroization (unsigned test_idx) {
+bool test_data_interrupted_zeroization (unsigned test_idx, bool skip_post_prep_check) {
     // Choose another zeroizable SW partition with a CSR read lock.
     const partition_t part = partitions[CPTRA_SS_LOCK_HEK_PROD_6];
     const uint32_t rd_lock_csr_addr =
@@ -350,7 +364,8 @@ bool test_data_interrupted_zeroization (unsigned test_idx) {
 
     VPRINTF(LOW, "INFO: Starting test %d: interrupted data zeroization.\n", test_idx);
 
-    if (!prepare_test(test_idx, &part, rd_lock_csr_addr)) return false;
+    if (!prepare_test(test_idx, &part, rd_lock_csr_addr, skip_post_prep_check))
+        return false;
 
     // Step 7: Zeroize the marker.
     if (!part_zeroize(&part, /*only_marker=*/1, /*only_until_half_data=*/0, 0)) {
@@ -387,13 +402,17 @@ bool test_data_interrupted_zeroization (unsigned test_idx) {
 void body (void) {
     VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_reset code.\n");
 
-    bool (*tests[])() = {test_normal_zeroization,
-                         test_half_zeroization,
-                         test_marker_interrupted_zeroization,
-                         test_data_interrupted_zeroization};
+    bool (*tests[])(unsigned, bool) = {
+        test_normal_zeroization,
+        test_half_zeroization,
+        test_marker_interrupted_zeroization,
+        test_data_interrupted_zeroization
+    };
 
     for (int i = 0; i < 4; ++i) {
-        if (tests[i](i)) {
+        bool skip_post_prep_check = i > 0;
+
+        if (tests[i](i, skip_post_prep_check)) {
             VPRINTF(LOW, "INFO: Test %d PASSED\n", i);
         } else {
             VPRINTF(LOW, "ERROR: Test %d FAILED\n", i);
