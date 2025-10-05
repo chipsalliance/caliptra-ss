@@ -110,6 +110,9 @@ module caliptra_ss_top
     input  axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i,
     output axi_struct_pkg::axi_rd_rsp_t cptra_ss_lc_axi_rd_rsp_o,
 
+// Caliptra SS LC Controller Raw Unlock Token (hashed)
+    input  lc_ctrl_state_pkg::lc_token_t cptra_ss_raw_unlock_token_hashed_i,
+
 // Caliptra SS FC / OTP Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_otp_core_axi_wr_req_i,
     output axi_struct_pkg::axi_wr_rsp_t cptra_ss_otp_core_axi_wr_rsp_o,
@@ -1178,6 +1181,7 @@ module caliptra_ss_top
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
             .lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
+            .raw_unlock_token_hashed_i(cptra_ss_raw_unlock_token_hashed_i),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),

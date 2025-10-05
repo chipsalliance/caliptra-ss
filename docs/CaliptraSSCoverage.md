@@ -178,7 +178,6 @@ OpenTitan counterparts:
  - otp_ctrl_part_buf
  - otp_ctrl_part_unbuf
  - otp_ctrl_scrmbl
- - otp_ctrl_token_const
 
 For these units, the reader can refer to the OpenTitan coverage dashboard.
 

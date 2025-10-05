@@ -38,11 +38,11 @@ void main (void) {
     uint32_t reg_data;
     uint32_t sram_data;
 
-    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup\n=================\n\n")
-    VPRINTF(LOW, "MCU: Load SHA vector to MCU SRAM for testing\n")
+    VPRINTF(LOW, "=================\nMCU: Subsytem Bringup\n=================\n\n");
+    VPRINTF(LOW, "MCU: Load SHA vector to MCU SRAM for testing\n");
     SEND_STDOUT_CTRL(TB_CMD_SHA_VECTOR_TO_MCU_SRAM);
 
-    VPRINTF(LOW, "MCU: Caliptra bringup\n")
+    VPRINTF(LOW, "MCU: Caliptra bringup\n");
 
     mcu_cptra_init_d(.mcu_fw_sram_exec_reg_size=32, .cfg_mcu_fw_sram_exec_reg_size=true); // Set to 128KB 
 

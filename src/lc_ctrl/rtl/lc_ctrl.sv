@@ -38,6 +38,10 @@ module lc_ctrl
                                                                        // transition to RMA or SCRAP.
   input                                             lc_sec_volatile_raw_unlock_en_i, // Note: This is GPIO strap pin. This pin should be high if volatile unlock wants to be
                                                                        // enabled. This pin should be low if volatile unlock is not needed.
+
+  // Raw Unlock Token (hashed)
+  input  lc_ctrl_state_pkg::lc_token_t              raw_unlock_token_hashed_i,
+
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -172,6 +176,13 @@ module lc_ctrl
   import caliptra_prim_mubi_pkg::MuBi8False;
   import caliptra_prim_mubi_pkg::mubi8_test_true_strict;
   import caliptra_prim_mubi_pkg::mubi8_test_false_loose;
+
+  // Assert that the width of tokens equals the width of the `raw_unlock_token_hashed_i` input
+  // signal. If this assertion fails, either the lc_ctrl RTL (and hence `LcTokenWidth`) needs to be
+  // changed to handle an input signal of a different width, or the width of the input signal needs
+  // to be changed (also in all hierarchies above this module through which the signal propagates).
+  `CALIPTRA_ASSERT_INIT(RawUnlockTokenHashedWidth_A,
+                        LcTokenWidth == $bits(raw_unlock_token_hashed_i))
 
   // AXI2TLUL interface signals
   tlul_pkg::tl_h2d_t      regs_tl_i;
@@ -915,6 +926,7 @@ module lc_ctrl
     .rst_ni,
     .Allow_RMA_or_SCRAP_on_PPD,
     .lc_sec_volatile_raw_unlock_en_i,
+    .raw_unlock_token_hashed_i ( lc_token_t'(raw_unlock_token_hashed_i) ),
     .init_req_i             ( lc_init                          ),
     .init_done_o            ( lc_done_d                        ),
     .idle_o                 ( lc_idle_d                        ),

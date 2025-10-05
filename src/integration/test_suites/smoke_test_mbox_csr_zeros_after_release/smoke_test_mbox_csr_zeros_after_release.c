@@ -46,7 +46,7 @@ void main (void) {
     ////////////////////////////////////
     // Mailbox command test
     //
-    VPRINTF(LOW, "=================\nMCU MBOX%x CSR Testing\n=================\n\n", mbox_num)
+    VPRINTF(LOW, "=================\nMCU MBOX%x CSR Testing\n=================\n\n", mbox_num);
 
     // MBOX: Confim MCU already has lock out of reset
     if((lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK) == 0) {

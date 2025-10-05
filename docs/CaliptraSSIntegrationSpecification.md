@@ -68,6 +68,7 @@
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
+  - [FIPS Zeroization Sequence For ECC](#fips-zeroization-sequence-for-ecc)
   - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
@@ -403,6 +404,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | na    | `cptra_ss_lc_axi_wr_rsp_o`           | LC controller AXI write response output  |
 | External | input     | na    | `cptra_ss_lc_axi_rd_req_i`           | LC controller AXI read request input     |
 | External | output    | na    | `cptra_ss_lc_axi_rd_rsp_o`           | LC controller AXI read response output   |
+| External | input     | 128   | `cptra_ss_raw_unlock_token_hashed_i` | Hashed token for RAW unlock              |
 | External | input     | na    | `cptra_ss_otp_core_axi_wr_req_i`     | OTP controller AXI write request input   |
 | External | output    | na    | `cptra_ss_otp_core_axi_wr_rsp_o`     | OTP controller AXI write response output |
 | External | input     | na    | `cptra_ss_otp_core_axi_rd_req_i`     | OTP controller AXI read request input    |
@@ -1066,7 +1068,7 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
 This sequence follows the "theory of operation" stated in this ['fuse-zeroization-programmer's-guide'](https://github.com/chipsalliance/caliptra-ss/blob/main/src/fuse_ctrl/doc/fuse_ctrl_zeroization_programmers_guide.md)
 
 Follow these steps in order to correctly zeroize the fuses and verify the operation for any partition that requires FIPS zeroization to be set (determined by zeroizable flag when a partition is generated).
-1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization.
+1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value in MCI. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**. If this mask register is not set by MCU, the zeroization request is aborted by the fuse controller.
 2. Issue Zeroization Commands: Trigger zeroization by sending a zeroization command to Caliptra core. Caliptra core will send a sequence of DAI (Direct Access Commands) commands to the fuse controller to perform the zeroization. The recommended order is:
    - Clear the Partition Zeroization Flag: First, send a DAI command to clear this 64-bit flag within the target partition. Executing this step first is critical, as it masks potential ECC or integrity errors if the process is interrupted by a power failure.
    - Zeroize Data Words: Send DAI zeroization commands for all data words within the partition.
@@ -1075,6 +1077,9 @@ Follow these steps in order to correctly zeroize the fuses and verify the operat
 8. Verify the Operation: From the main MCU, read the partition's digest value from the associated fuse_ctrl digest registers.
    - Success: If the register returns the expected zeroized digest value, the operation is complete.
    - Failure: If the digest does not match the zeroized value, repeat the entire sequence starting from Step 1.
+
+## FIPS Zeroization Sequence For ECC
+Zeroization is implemented within the fuse controller RTL module. It is therefore the integrator’s responsibility to ensure that the ECC bits in the corresponding fuse partition are also zeroized when a zeroization command is issued to the fuse macro. To achieve this, the integrator must provide a dedicated implementation in the fuse macro wrapper to handle zeroization of the ECC bits.
 
 ## Miscellanious Fuse Integration Guidelines
 - If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
@@ -1300,6 +1305,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
 External    |input       |   1    | `lc_sec_volatile_raw_unlock_en_i`              | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`                  | Enables Volatile TEST_UNLOCKED0 state transition infra|
+External    |input       |   1    | `raw_unlock_token_hashed_i`    | `cptra_ss_raw_unlock_token_hashed_i`         | Hashed token for RAW unlock |
 External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
