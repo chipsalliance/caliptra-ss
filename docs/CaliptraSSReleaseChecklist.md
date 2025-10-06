@@ -67,6 +67,10 @@ For each release, the following steps are followed to ensure code functionality 
 - Pre-Silicon Regressions
   - [L0 regression](../src/integration/stimulus/L0_Promote_caliptra_ss_top_tb_regression.yml)
   - Directed/Random regression per the [Test Plan](./Caliptra_Gen2_SS_TestPlan.xlsx)
+    - [L1 Directed regression](../src/integration/stimulus/L1_Nightly_Directed_Strict_caliptra_ss_top_tb_regression.yml)
+    - [L1 Directed Pseudo-random regression](../src/integration/stimulus/L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml)
+    - [L1 Random regression](../src/integration/stimulus/L1_Nightly_Random_caliptra_ss_top_tb_regression.yml)
+    - [L1 JTAG tests](../src/integration/stimulus/L1_JTAG_caliptra_ss_top_tb_regression.csv)
 - Coverage Review
   - Coverage database is manually reviewed to ensure all required coverpoints are exercised
 - FPGA Validation
