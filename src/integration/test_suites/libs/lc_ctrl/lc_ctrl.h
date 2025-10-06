@@ -77,32 +77,49 @@ typedef enum {
 void lcc_initialization(void);
 void force_lcc_tokens(void);
 
+uint32_t calc_lc_state_mnemonic(uint8_t state);
+
 // Request an LC state transition to next_lc_state. If token is not
 // null, it will be written to the four transition token registers
 // beforehand.
 //
 // This returns true if the transition was successful.
 //
-//   next_lc_state:    The target LC state, described as a "mnemonic" (by replicating a 5-bit
-//                     value).
+//   next_lc_state:    The target LC state, described as the replicated mnemonic value.
 //
 //   token:            A list of four 32-bit words with a token to perform the transition, or NULL
 //                     if there is no token.
 bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4]);
-                        
-uint32_t calc_lc_state_mnemonic(uint32_t state);
-void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
-void transition_state_req_with_expec_error(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
-void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
-void test_all_lc_transitions_no_RMA_no_SCRAP(void);
-void sw_transition_req_with_expec_error(uint32_t next_lc_state,
-    uint32_t token_31_0,
-    uint32_t token_63_32,
-    uint32_t token_95_64,
-    uint32_t token_127_96,
-    uint32_t conditional);
-void force_PPD_pin(void);
 
+// Analogous to sw_transition_req, but expecting the transition to fail.
+bool sw_transition_req_with_expec_error(uint32_t next_lc_state, const uint32_t token[4]);
+
+// Request an LC state transition to next_lc_state. If token is not
+// null, it will be written to the four transition token registers
+// beforehand.
+//
+// If the request succeeded, reset fuse_ctrl and lc_ctrl before
+// returning (so that lc_ctrl can read in the new LC state).
+//
+// This returns true if the transition suceeded.
+//
+//   next_lc_state:    The target LC state, described a 5-bit index that will
+//                     be replicated to form a mnemonic.
+//
+//   token:            A list of four 32-bit words with a token to perform the
+//                     transition, or NULL if there is no token.
+bool transition_state(uint8_t next_lc_state, const uint32_t token[4]);
+
+// Analogous to transition_state, but expecting the transition to fail.
+bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t token[4]);
+
+// The same as transition_state (not expecting an error), but followed
+// by a check that the LC state is as requested.
+bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]);
+
+void test_all_lc_transitions_no_RMA_no_SCRAP(void);
+
+void force_PPD_pin(void);
 
 uint32_t read_lc_state(void);
 

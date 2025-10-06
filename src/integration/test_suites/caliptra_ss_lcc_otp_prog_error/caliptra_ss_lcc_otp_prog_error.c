@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -89,11 +90,7 @@ void main (void) {
             lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
             // We should see: OTP E**or detected.
             transition_state_req_with_expec_error(lc_state_next,
-                         tokens[token_type][0],
-                         tokens[token_type][1],
-                         tokens[token_type][2],
-                         tokens[token_type][3],
-                         token_type != ZER);
+                                                  token_type == ZER ? NULL : tokens[token_type]);
             goto epilogue;
         }
     }
