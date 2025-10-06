@@ -370,18 +370,45 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 //  | RMA 					            | High 		        | High 		                | High 			                | Prod Debug                           |
 //  | SCRAP 				            | Low 		        | Low 		                | Low 			                | Prod Non-Debug                       |
 
-//-----------------------------------------------------
-// 1. If SOC_DFT_EN is Low and SOC_HW_DEBUG_EN is Low,
-//    then the core security must be Prod Non‑Debug:
-//    DEVICE_PRODUCTION with debug_locked == 1.
-//-----------------------------------------------------
-`CALIPTRA_ASSERT(ProdSIGNAL_Decoding_A,
-    $rose((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-        & (security_state_o.debug_locked == 1)
-        & (mci_trans_st_current != TRANSLATOR_RESET))
-    |=> ##1
-    ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
-)
+`ifdef CALIPTRA_INC_ASSERT
+begin : gen_soc_lc_assertions
+  // If assertions are enabled, this is not the synthesis flow. Factor out some signals to make the
+  // assertions easier to state.
+
+  // This signal tracks when the translator has calculated a security state that expects the SoC to
+  // be in production mode and have debug locked.
+  logic locked_in_soc_production;
+  assign locked_in_soc_production = (security_state_o.debug_locked &&
+                                     (security_state_o.device_lifecycle == DEVICE_PRODUCTION));
+
+  // This assertion is about the interaction between our state tracking and the surrounding system.
+  // If we have seen LCC signals that convince us debug should be locked and we are and in the
+  // production lifecycle state, we don't expect lc_ctrl to tell us to enable DFT.
+  `CALIPTRA_ASSERT(NoLcDftInProduction_A,
+                   locked_in_soc_production |-> (lc_dft_en_i != lc_ctrl_pkg::On))
+
+  // This assertion is about the interaction between our state tracking and the surrounding system.
+  // If we have seen LCC signals that convince us debug should be locked and we are and in the
+  // production lifecycle state, we don't expect lc_ctrl to tell us to enable debug.
+  `CALIPTRA_ASSERT(NoLcDbgInProduction_A,
+                   locked_in_soc_production |-> (lc_hw_debug_en_i != lc_ctrl_pkg::On))
+
+  // An assertion that gives an upper bound for how long the "debug locked and in production" state
+  // takes to be reflected in SOC_DFT_EN and SOC_HW_DEBUG_EN.
+  //
+  // Note that this also depends on the behaviour of lc_ctrl, but this dependency is factored out
+  // into separate assertions (NoLcDftInProduction_A, NoLcDbgInProduction_A).
+  `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_A,
+                   $rose(locked_in_soc_production) |-> ##2 !(SOC_DFT_EN || SOC_HW_DEBUG_EN))
+
+  // These assertions tie into ProdSIGNAL_Decoding_A. When locked_in_soc_production is true, the
+  // only way that SOC_DFT_EN can be asserted is through SOC_DFT_EN_AND. Assert that this signal not
+  // true (a cycle earler than SOC_DFT_EN). Similarly, the only way that SOC_HW_DEBUG_EN can be
+  // asserted is through SOC_HW_DEBUG_EN_AND which cannot be true.
+  `CALIPTRA_ASSERT(NoDftEnAndInProduction_A, locked_in_soc_production |=> !SOC_DFT_EN_AND)
+  `CALIPTRA_ASSERT(NoDebugEnAndInProduction_A, locked_in_soc_production |=> !SOC_HW_DEBUG_EN_AND)
+end
+`endif
 
 `CALIPTRA_ASSERT(MANUF_HW_EN_A,
     $rose((security_state_o.device_lifecycle == DEVICE_MANUFACTURING)
