@@ -40,7 +40,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void trans_cnt_oflw_error(void) {
     // Fault the lc counter fuse to trigger a overflow error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FAULT_CNTR);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), NULL);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_COUNT_ERROR_LOW) & 0x1)) {
@@ -51,7 +51,7 @@ void trans_cnt_oflw_error(void) {
 // Trigger a trans_invalid_error in the lc_ctrl FSM.
 void trans_invalid_error(void) {
     // Reverting back to the RAW state from TEST_UNLOCKED0 is not allowed.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RAW), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RAW), NULL);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_ERROR_LOW) & 0x1)) {
@@ -67,9 +67,11 @@ void token_invalid_error(void) {
         return;
     }
 
+    uint32_t invalid_token[4] = {0, 0, 0, 0};
+
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_UNLOCKED1), 0, 0, 0, 0, 1);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_UNLOCKED1), invalid_token);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TOKEN_ERROR_LOW) & 0x1)) {
@@ -80,7 +82,7 @@ void token_invalid_error(void) {
 // Trigger a flash_rma_error in the lc_ctrl FSM.
 void flash_rma_error(void) {
     // Transitioning into the RMA state without forcing PPD pin will result in a flash_rma_error.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RMA), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RMA), NULL);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_FLASH_RMA_ERROR_LOW) & 0x1)) {
@@ -93,7 +95,7 @@ void otp_prog_error(void) {
     // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), NULL);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_OTP_ERROR_LOW) & 0x1)) {
@@ -104,7 +106,7 @@ void otp_prog_error(void) {
 // Trigger a state_invalid_error in the lc_ctrl FSM.
 void state_invalid_error(void) {
     // Transitioning into the SCRAP state without forcing the PPD pin will result in a state_invalid_error.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(SCRAP), 0, 0, 0, 0, 0);
+    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(SCRAP), NULL);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_STATE_ERROR_LOW) & 0x1)) {

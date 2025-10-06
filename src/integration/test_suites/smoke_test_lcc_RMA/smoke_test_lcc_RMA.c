@@ -50,9 +50,7 @@ void no_PPD_from_Raw_to_RMA(void) {
             from_state, to_state);
     // Pack the 5-bit repeated code
     next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req_with_expec_error(next_lc_state_30,
-                                0, 0, 0, 0,
-                                0 /*use_token*/);
+    sw_transition_req_with_expec_error(next_lc_state_30, NULL);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in not RMA state!\n");
     reset_fc_lcc_rtl();
     enable_lcc_SVAs(); 

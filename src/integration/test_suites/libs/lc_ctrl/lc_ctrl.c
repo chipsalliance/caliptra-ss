@@ -137,15 +137,17 @@ void force_lcc_tokens(void) {
     VPRINTF(LOW, "MCU: LCC TOKENs are forced to certain values!\n");
 }
 
-bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
+static void
+start_transition_command(uint32_t next_lc_state, const uint32_t token[4])
 {
     uint32_t reg_value;
     uint32_t status_val;
     uint32_t loop_ctrl;
-    int trigger_alert = 0;
+
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
     loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-    while(!loop_ctrl){
+
+    while(!loop_ctrl) {
         VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n",
                 LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
@@ -186,67 +188,80 @@ bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
     VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
     lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
 
-    // Step 7: Poll Status Register
-    VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
-    bool success = false;
+    for (uint16_t ii = 0; ii < 1000; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
 
-    while (1) {
-        status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        uint32_t TRANSITION_SUCCESSFUL = ((status_val & 0x8) >> 3);
-        uint32_t TRANSITION_COUNT_ERROR = ((status_val & 0x10) >> 4);
-        uint32_t TRANSITION_ERROR = ((status_val & 0x20) >> 5);
-        uint32_t TOKEN_ERROR = ((status_val & 0x40) >> 6);
-        uint32_t RMA_ERROR = ((status_val & 0x80) >> 7);
-        uint32_t OTP_ERROR = ((status_val & 0x100) >> 8);
-        uint32_t STATE_ERROR = ((status_val & 0x200) >> 9);
-        uint32_t BUS_INTG_ERROR = ((status_val & 0x400) >> 10);
-        uint32_t OTP_PARTITION_ERROR = ((status_val & 0x800) >> 11);
-    
+static bool
+poll_transition_status(bool expected_fail)
+{
+    const char *expected_adj = expected_fail ? "Expected" : "Unexpected";
+    const char *error_noun   = expected_fail ? "e**or" : "error";
+
+    bool transition_successful = false;
+
+    VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
+    while (1)
+    {
+        uint32_t status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+
+        bool TRANSITION_SUCCESSFUL  = (status_val >> 3) & 1;
+        bool TRANSITION_COUNT_ERROR = (status_val >> 4) & 1;
+        bool TRANSITION_ERROR       = (status_val >> 5) & 1;
+        bool TOKEN_ERROR            = (status_val >> 6) & 1;
+        bool RMA_ERROR              = (status_val >> 7) & 1;
+        bool OTP_ERROR              = (status_val >> 8) & 1;
+        bool STATE_ERROR            = (status_val >> 9) & 1;
+        bool BUS_INTG_ERROR         = (status_val >> 10) & 1;
+        bool OTP_PARTITION_ERROR    = (status_val >> 11) & 1;
 
         if (TRANSITION_SUCCESSFUL) {
-            VPRINTF(LOW, "Transition successful.\n");
-            success = true;
+            if (expected_fail) {
+                VPRINTF(LOW, "Error: Transition unexpectedly successful\n");
+            } else {
+                VPRINTF(LOW, "Transition successful.\n");
+                transition_successful = true;
+            }
             break;
         }
-        if (TRANSITION_ERROR) {
-            VPRINTF(LOW, "Transition error detected.\n");
-            break;
-        }
-        if (TOKEN_ERROR) {
-            VPRINTF(LOW, "Token error detected.\n");
-            break;
-        }
-        if (OTP_ERROR) {
-            VPRINTF(LOW, "OTP error detected.\n");
-            break;
-        }
-        if (RMA_ERROR) {
-            VPRINTF(LOW, "FLASH RMA error detected.\n");
-            break;
-        }
-        if (TRANSITION_COUNT_ERROR) {
-            VPRINTF(LOW, "Transition count error detected.\n");
-            break;
-        }
-        if (STATE_ERROR) {
-            VPRINTF(LOW, "State error detected.\n");
-            break;
-        }
-        if (BUS_INTG_ERROR) {
-            VPRINTF(LOW, "Bus integrity error detected.\n");
-            break;
-        }
-        if (OTP_PARTITION_ERROR) {
-            VPRINTF(LOW, "OTP partition error detected.\n");
+
+        const char *error_type = NULL;
+
+        if (TRANSITION_ERROR) error_type = "transition";
+        else if (TOKEN_ERROR) error_type = "token";
+        else if (OTP_ERROR) error_type = "OTP";
+        else if (RMA_ERROR) error_type = "RMA / RMA condition";
+        else if (TRANSITION_COUNT_ERROR) error_type = "transition count";
+        else if (STATE_ERROR) error_type = "state";
+        else if (BUS_INTG_ERROR) error_type = "bus integrity";
+        else if (OTP_PARTITION_ERROR) error_type = "OTP partition";
+
+        if (error_type) {
+            VPRINTF(LOW, "%s %s %s detected.\n", expected_adj, error_type, error_noun);
             break;
         }
     }
-    
+
+    return transition_successful ^ expected_fail;
+}
+
+bool sw_transition_req_core(uint32_t next_lc_state, const uint32_t token[4], bool expected_fail)
+{
+    start_transition_command(next_lc_state, token);
+
+    bool had_expected_behaviour = poll_transition_status(expected_fail);
+
     lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
 
     VPRINTF(LOW, "sw_transition_req completed.\n");
 
-    return success;
+    return had_expected_behaviour;
+}
+
+bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
+{
+    return sw_transition_req_core(next_lc_state, token, false);
 }
 
 uint32_t calc_lc_state_mnemonic(uint32_t state) {
@@ -272,13 +287,6 @@ void transition_state(uint32_t next_lc_state,
     reset_fc_lcc_rtl();
 
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL %s state %d.\n", movement, next_lc_state);
-}
-
-void transition_state_req_with_expec_error(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
-    uint32_t next_lc_state_mne = calc_lc_state_mnemonic(next_lc_state);
-    sw_transition_req_with_expec_error(next_lc_state_mne, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
-    reset_fc_lcc_rtl();
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in state %d.\n", next_lc_state);
 }
 
 void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
@@ -326,117 +334,9 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
     VPRINTF(LOW, "All transitions complete.\n");
 }
 
-void sw_transition_req_with_expec_error(uint32_t next_lc_state,
-        uint32_t token_31_0,
-        uint32_t token_63_32,
-        uint32_t token_95_64,
-        uint32_t token_127_96,
-        uint32_t conditional) {
-    uint32_t reg_value;
-    uint32_t status_val;
-    uint32_t loop_ctrl;
-    int trigger_alert = 0;
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-
-    while(!loop_ctrl){
-    VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
-    VPRINTF(LOW, "Starting sw_transition_req...\n");
-
-    // Step 1: Set Claim Transition Register
-    loop_ctrl = 0;
-    while (loop_ctrl != CLAIM_TRANS_VAL) {
-        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, CLAIM_TRANS_VAL);
-        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
-        loop_ctrl = reg_value & CLAIM_TRANS_VAL;
-        VPRINTF(LOW, "Claim Mutex Register [0x%08x]: Read 0x%08x, expected 0x%08x\n",
-                LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, reg_value, CLAIM_TRANS_VAL);
-    }
-    VPRINTF(LOW, "LC_CTRL: Mutex successfully acquired.\n");
-    // Step 3: Set Target Lifecycle State
-    VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
-    lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
-    // Step 4: Write Transition Tokens
-    if (conditional == 1) {        
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, token_63_32);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_95_64);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, token_95_64);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_127_96);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, token_127_96);
-    }
-
-    // Step 6: Trigger the Transition Command
-    VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
-    lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
-
-    for (uint16_t ii = 0; ii < 1000; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-    // Step 7: Poll Status Register
-    VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
-    while (1)
-    {
-        status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        uint32_t TRANSITION_SUCCESSFUL = ((status_val & 0x8) >> 3);
-        uint32_t TRANSITION_COUNT_ERROR = ((status_val & 0x10) >> 4);
-        uint32_t TRANSITION_ERROR = ((status_val & 0x20) >> 5);
-        uint32_t TOKEN_ERROR = ((status_val & 0x40) >> 6);
-        uint32_t RMA_ERROR = ((status_val & 0x80) >> 7);
-        uint32_t OTP_ERROR = ((status_val & 0x100) >> 8);
-        uint32_t STATE_ERROR = ((status_val & 0x200) >> 9);
-        uint32_t BUS_INTG_ERROR = ((status_val & 0x400) >> 10);
-        uint32_t OTP_PARTITION_ERROR = ((status_val & 0x800) >> 11);
-
-
-        if (TRANSITION_SUCCESSFUL) {
-            VPRINTF(LOW, "Transition successful but ERROR was expected...\n");
-            VPRINTF(LOW, "Transition successful but the test should FAIL\n");
-            break;
-        }
-        else if (TRANSITION_ERROR) {
-            VPRINTF(LOW, "Expected Transition E**or detected.\n");
-            break;
-        }
-        else if (TOKEN_ERROR) {
-            VPRINTF(LOW, "Expected Token E**or detected.\n");
-            break;
-        }
-        else if (OTP_ERROR) {
-            VPRINTF(LOW, "Expected OTP E**or detected.\n");
-            break;
-        }
-        else if (RMA_ERROR) {
-            VPRINTF(LOW, "Expected RMA/RMA condition E**or detected.\n");
-            break;
-        }
-        else if (TRANSITION_COUNT_ERROR) {
-            VPRINTF(LOW, "Expected Transition Count E**or detected.\n");
-            break;
-        }
-        else if (STATE_ERROR) {
-            VPRINTF(LOW, "Expected State E**or detected.\n");
-            break;
-        }
-        else if (BUS_INTG_ERROR) {
-            VPRINTF(LOW, "Expected Bus Integrity E**or detected.\n");
-            break;
-        }
-        else if (OTP_PARTITION_ERROR) {
-            VPRINTF(LOW, "Expected OTP Partition E**or detected.\n");
-            break;
-        }
-    }
-
-    lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
-
-    VPRINTF(LOW, "sw_transition_req completed.\n");
+bool transition_state_req_with_expec_error(uint32_t next_lc_state, const uint32_t token[4])
+{
+    return sw_transition_req_core(next_lc_state, token, true);
 }
 
 void force_PPD_pin(void) {
