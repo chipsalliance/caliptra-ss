@@ -24,12 +24,6 @@ void grant_mcu_for_fc_writes(void);
 void revoke_grant_mcu_for_fc_writes(void);
 void grant_caliptra_core_for_fc_writes(void);
 void initialize_otp_controller(void);
-void sw_transition_req(uint32_t next_lc_state,
-                        uint32_t token_127_96,
-                        uint32_t token_95_64,
-                        uint32_t token_63_32,
-                        uint32_t token_31_0,
-                        uint32_t conditional);
 void disable_fc_all_ones_sva(void);
 void enable_fc_all_ones_sva(void);
 
