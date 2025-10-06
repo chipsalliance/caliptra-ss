@@ -62,7 +62,11 @@ void trans_invalid_error(void) {
 // Trigger a token_invalid_error in the lc_ctrl FSM.
 void token_invalid_error(void) {
     // Transitioning from TEST_LOCKED0 to TEST_UNLOCKED1 needs a correct token.
-    sw_transition_req(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    if (sw_transition_req(calc_lc_state_mnemonic(TEST_LOCKED0), NULL)) {
+        VPRINTF(LOW, "ERROR: Successful transition with no token.\n");
+        return;
+    }
+
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
     sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_UNLOCKED1), 0, 0, 0, 0, 1);
