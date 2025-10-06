@@ -14,7 +14,7 @@ This document provides the signoff checklist that is used when finalizing any Ca
 
 ## Versioning
 
-Caliptra Core releases may be created for new major, minor, or patch versions, as described in the [semantic versioning specification](https://semver.org/spec/v2.0.0.html). The version number is reflected in the CPTRA_HW_REV_ID register. Caliptra Subsystem releases follow any Caliptra Core releases, and version numbers are coupled. In some scenarios, Caliptra Subsystem might advance in version when Caliptra Core does not. For example, adding a new recovery interface IP would require a new Caliptra Subsystem minor revision release, or a bug fix would require a Caliptra Subsystem patch release. In these scenarios, any subsequent Caliptra Core release will be fast forwarded to regain version number correlation.
+Caliptra Core releases may be created for new major, minor, or patch versions, as described in the [Caliptra Core Release Checklist](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraReleaseChecklist.md). The version number is reflected in the CPTRA_HW_REV_ID register. Caliptra Subsystem releases follow any Caliptra Core releases, and version numbers are coupled. In some scenarios, Caliptra Subsystem might advance in version when Caliptra Core does not. For example, adding a new recovery interface IP would require a new Caliptra Subsystem minor revision release, or a bug fix would require a Caliptra Subsystem patch release. In these scenarios, any subsequent Caliptra Core release will be fast forwarded to regain version number correlation.
 For example, the following sequence of versions (in chronological release order) is possible:
 | Core | Subsystem |
 | :--- | :--- |
@@ -28,15 +28,15 @@ For example, the following sequence of versions (in chronological release order)
 
 Steps described in this document are followed for each Subsystem release.
 
-NOTE: On version numbering; Caliptra Subsystem 2.0 release did not originally follow the aforementioned convention. It was released following a format of css_gen<Caliptra RTL version>_v<MAJOR>.<MINOR>. This numbering is deprecated, but the original 2.0 version tag remains for legacy reasons and the original patch and release branches are: 
-  * `release_css_gen2_v1.0` (tip of this branch is tagged as css-gen2-v1.0)
-  * `patch_ss_v1p0` (contains all subsequent patches to Caliptra Subsystem, Gen2 v1.0)
+NOTE: On version numbering; Caliptra Subsystem 2.0 release did not originally follow the aforementioned convention. It was released following a format of `css_gen<Caliptra RTL version>_v<MAJOR>.<MINOR>`. This numbering is deprecated, but the original 2.0 version tag remains for legacy reasons and the original patch and release branches are: 
+  * `release_css_gen2_v1.0` (tip of this branch is tagged as [css-gen2-v1.0](https://github.com/chipsalliance/caliptra-ss/releases/tag/css-gen2-v1.0))
+  * `patch_ss_v1p0` (contains all subsequent patches to Caliptra Subsystem, v2.0 (aka Gen2 v1.0))
 
 ## Branches
 
 Each major and minor release is created as a tag on the branch `main` of the caliptra-ss repository. The tag is created using GitHub's repository release tagging feature, which also generates a zip file containing all of the code and documentation for that release. After tagging the release, any subsequent commits to `main` are pursuant to development efforts on future release versions, so the tagged release must be used to download the official release code.
 
-When necessary, a patch release may be applied retroactively to earlier versions of Caliptra or Caliptra Subsystem. In this case, a new branch is created to contain the patched code base. Patch release branches follow the naming convention, `patch_ss_v<MAJOR>p<MINOR>`, to indicate which version is being patched. After the patch release checklist is finalized for a specified release, a tag is created on the patch branch to indicate the full version number of that patch. Thus, any patch release is created as a tag on the same branch, with an incrementing patch version number.
+When necessary, a patch release may be applied retroactively to earlier versions of Caliptra or Caliptra Subsystem. In this case, a new branch is created to contain the patched code base. Patch release branches follow the naming convention, `patch_ss_v<MAJOR>.<MINOR>`, to indicate which version is being patched. After the patch release checklist is finalized for a specified release, a tag is created on the patch branch to indicate the full version number of that patch. Thus, any patch release is created as a tag on the same branch, with an incrementing patch version number.
 
 ## Steps
 
