@@ -50,7 +50,7 @@ jobs:
           name: pages_main
           path: /tmp/pages-docs/main
 
-  build-2.0:
+  build-2_0:
     name: Build v2.0
 
     runs-on: ubuntu-22.04
