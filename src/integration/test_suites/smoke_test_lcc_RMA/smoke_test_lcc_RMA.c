@@ -41,12 +41,7 @@ void no_PPD_from_Raw_to_RMA(void) {
             from_state, to_state);
     uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
 
-    sw_transition_req(next_lc_state_30,
-                        raw_unlock_token[0],
-                        raw_unlock_token[1],
-                        raw_unlock_token[2],
-                        raw_unlock_token[3],
-                        1 /*use_token*/);
+    sw_transition_req(next_lc_state_30, raw_unlock_token);
     
     reset_fc_lcc_rtl();
     from_state = 1;
@@ -80,9 +75,7 @@ void PPD_from_Unlocked_to_RMA(void) {
             from_state, to_state);
     // Pack the 5-bit repeated code
     next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req(next_lc_state_30,
-                                0, 0, 0, 0,
-                                0 /*use_token*/);
+    sw_transition_req(next_lc_state_30, NULL);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in RMA state!\n");
     reset_fc_lcc_rtl();       
 }
@@ -110,9 +103,11 @@ void PPD_from_MANUF_DEV_to_RMA(int MANUF_not_DEV) {
             from_state, to_state);
     // Pack the 5-bit repeated code
     next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req(next_lc_state_30,
-        token_value, token_value, token_value, token_value,
-                                1 /*use_token*/);
+
+    uint32_t token[4] = {token_value, token_value, token_value, token_value};
+    uint32_t four_token[4] = {4, 4, 4, 4};
+
+    sw_transition_req(next_lc_state_30, token);
     reset_fc_lcc_rtl();
     force_PPD_pin();
     from_state = to_state;
@@ -121,9 +116,7 @@ void PPD_from_MANUF_DEV_to_RMA(int MANUF_not_DEV) {
             from_state, to_state);
     // Pack the 5-bit repeated code
     next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req(next_lc_state_30,
-                                4, 4, 4, 4,
-                                1 /*use_token*/);
+    sw_transition_req(next_lc_state_30, four_token);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in RMA state!\n");
     reset_fc_lcc_rtl();       
 }

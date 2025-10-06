@@ -137,12 +137,7 @@ void force_lcc_tokens(void) {
     VPRINTF(LOW, "MCU: LCC TOKENs are forced to certain values!\n");
 }
 
-void sw_transition_req(uint32_t next_lc_state,
-                        uint32_t token_31_0,
-                        uint32_t token_63_32,
-                        uint32_t token_95_64,
-                        uint32_t token_127_96,
-                        uint32_t conditional)
+bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
 {
     uint32_t reg_value;
     uint32_t status_val;
@@ -151,7 +146,8 @@ void sw_transition_req(uint32_t next_lc_state,
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
     loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n",
+                LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
         loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     }
@@ -175,15 +171,15 @@ void sw_transition_req(uint32_t next_lc_state,
     lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
 
     // Step 4: Write Transition Tokens
-    if (conditional == 1) {
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, token_63_32);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_95_64);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, token_95_64);
-        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_127_96);
-        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, token_127_96);
+    if (token) {
+        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token[0]);
+        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token[0]);
+        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token[1]);
+        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, token[1]);
+        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token[2]);
+        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, token[2]);
+        VPRINTF(LOW, "Writing tokens: 0x%08x\n", token[3]);
+        lsu_write_32(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, token[3]);
     }
 
     // Step 6: Trigger the Transition Command
@@ -192,6 +188,8 @@ void sw_transition_req(uint32_t next_lc_state,
 
     // Step 7: Poll Status Register
     VPRINTF(LOW, "Polling status register [0x%08x]...\n", LC_CTRL_STATUS_OFFSET);
+    bool success = false;
+
     while (1) {
         status_val = lsu_read_32(LC_CTRL_STATUS_OFFSET);
         uint32_t TRANSITION_SUCCESSFUL = ((status_val & 0x8) >> 3);
@@ -207,6 +205,7 @@ void sw_transition_req(uint32_t next_lc_state,
 
         if (TRANSITION_SUCCESSFUL) {
             VPRINTF(LOW, "Transition successful.\n");
+            success = true;
             break;
         }
         if (TRANSITION_ERROR) {
@@ -246,6 +245,8 @@ void sw_transition_req(uint32_t next_lc_state,
     lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
 
     VPRINTF(LOW, "sw_transition_req completed.\n");
+
+    return success;
 }
 
 uint32_t calc_lc_state_mnemonic(uint32_t state) {
@@ -260,11 +261,17 @@ uint32_t calc_lc_state_mnemonic(uint32_t state) {
     return targeted_state_5;
 }
 
-void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
+void transition_state(uint32_t next_lc_state,
+                      uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96,
+                      uint32_t conditional) {
+    uint32_t arr[4] = {token_31_0, token_63_32, token_95_64, token_127_96};
     uint32_t next_lc_state_mne = calc_lc_state_mnemonic(next_lc_state);
-    sw_transition_req(next_lc_state_mne, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
+    bool success = sw_transition_req(next_lc_state_mne, conditional ? arr : 0);
+    const char *movement = success ? "is in" : "failed to move to";
+
     reset_fc_lcc_rtl();
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in state %d.\n", next_lc_state);
+
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL %s state %d.\n", movement, next_lc_state);
 }
 
 void transition_state_req_with_expec_error(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
@@ -300,45 +307,19 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
         // Pack the 5-bit repeated code
         uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
 
-        if (i == 0){
-             sw_transition_req(next_lc_state_30,
-                            raw_unlock_token[0],
-                            raw_unlock_token[1],
-                            raw_unlock_token[2],
-                            raw_unlock_token[3],
-                              1 /*use_token*/);
-            // check_lc_state(next_lc_state_30);
-        }
-        else if (i<15){
-            // Decide whether to use a token
-            if (use_token[i+1]) {
-                // We’re using the  token for demonstration.
-                sw_transition_req(next_lc_state_30,
-                                0, 0, 0, 0,
-                                1 /*use_token*/);
-            } else {
-                // No token is needed
-                sw_transition_req(next_lc_state_30,
-                                0, 0, 0, 0,
-                                0 /*use_token*/);
-            }
-        }
-        else{
+        const uint32_t zero_token[4] = {0, 0, 0, 0};
+        const uint32_t rep_token[4] = {token_value, token_value,
+                                       token_value, token_value};
 
-            // Decide whether to use a token
-            if (use_token[i+1]) {
-                // We’re using the  token for demonstration.
-                sw_transition_req(next_lc_state_30,
-                                token_value, token_value, token_value, token_value,
-                                1 /*use_token*/);
-            } else {
-                // No token is needed
-                sw_transition_req(next_lc_state_30,
-                                0, 0, 0, 0,
-                                0 /*use_token*/);
-            }
-            token_value = token_value +1;
+        const uint32_t *backing_token;
+        if (i == 0) backing_token = raw_unlock_token;
+        else if (i < 15) backing_token = zero_token;
+        else {
+            backing_token = rep_token;
+            ++token_value;
         }
+
+        sw_transition_req(next_lc_state_30, use_token[i+1] ? backing_token : NULL);
         reset_fc_lcc_rtl();
     }
 
