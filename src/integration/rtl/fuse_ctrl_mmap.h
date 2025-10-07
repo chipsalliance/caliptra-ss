@@ -250,6 +250,10 @@ typedef struct {
     bool            has_ecc;
     uint32_t        lc_phase;
     bool            is_lifecycle;
+    // The number of fuses in the partition. Note that this may be
+    // larger than the number of fuses explictly specified in the
+    // hjson. Any digest or zeroization field is also added to the
+    // list.
     uint32_t        num_fuses;
     const uint32_t *fuses;
 } partition_t;
