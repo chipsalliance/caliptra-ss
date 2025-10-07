@@ -33,20 +33,21 @@ const partition_t partitions[NUM_PARTITIONS] = {
     {
         .index = ${i},
         .address = ${"0x%04X" % p.offset},
-% if p.sw_digest or p.hw_digest:
-  % if p.zeroizable:
-        .digest_address = ${"0x%04X" % p.items[len(p.items)-2].offset},
-  % else:
-        .digest_address = ${"0x%04X" % p.items[len(p.items)-1].offset},
-  % endif
-% else:
-        .digest_address = 0x0000,
-% endif
-% if p.zeroizable:
-        .zer_address = ${"0x%04X" % p.items[len(p.items)-1].offset},
-% else:
-        .zer_address = 0x0000,
-% endif
+<%
+  # If there is a digest for the partition, it comes after all the explicit
+  # items defined for the partition. This is the last item (at index -1) unless
+  # there is also a zeroization status, which would come afterwards. In that
+  # situation it's the second-last item (at index -2).
+  digest_addr = 0
+  zer_addr = 0
+  if p.sw_digest or p.hw_digest:
+    digest_item = p.items[-2] if p.zeroizable else p.items[-1]
+    digest_addr = digest_item.offset
+  if p.zeroizable:
+    zer_addr = p.items[-1].offset
+%>\
+        .digest_address = ${"0x%04X" % digest_addr},
+        .zer_address = ${"0x%04X" % zer_addr},
         .variant = ${0 if p.variant == Variant.Buffered else (1 if p.variant == Variant.Unbuffered else 2)},
         .granularity = ${64 if p.secret else 32},
         .is_secret = ${"true" if p.secret else "false"},
