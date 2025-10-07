@@ -64,7 +64,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = ${"true" if p.integrity else "false"},
         .lc_phase = ${lc_state_decode(p.lc_phase)},
         .is_lifecycle = ${"true" if p.variant == Variant.LifeCycle else "false"},
-        .num_fuses = ${len(p.items)-1},
+        .num_fuses = ${len(p.items)},
         .fuses = ${p.name.lower() + "_fuses"}
     },
 % endfor
