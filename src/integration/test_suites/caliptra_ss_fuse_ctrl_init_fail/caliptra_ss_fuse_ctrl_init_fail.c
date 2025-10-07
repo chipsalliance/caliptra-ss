@@ -36,7 +36,13 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void init_fail() {
+void body(void) {
+    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token)) return;
+
+    if (!wait_dai_op_idle(0)) return;
+
+    initialize_otp_controller();
+
     const uint32_t faults[2] = {
         CMD_FC_LCC_CORRECTABLE_FAULT,
         CMD_FC_LCC_UNCORRECTABLE_FAULT
@@ -105,12 +111,7 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token);
-    wait_dai_op_idle(0);
-
-    initialize_otp_controller();
-
-    init_fail();
+    body();
 
     for (uint8_t ii = 0; ii < 160; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"

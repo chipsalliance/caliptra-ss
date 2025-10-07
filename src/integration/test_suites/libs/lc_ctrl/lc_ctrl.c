@@ -276,14 +276,17 @@ uint32_t calc_lc_state_mnemonic(uint32_t state) {
     return targeted_state_5;
 }
 
-void transition_state(uint32_t next_lc_state, const uint32_t token[4]) {
+bool transition_state(uint32_t next_lc_state, const uint32_t token[4]) {
     uint32_t next_lc_state_mne = calc_lc_state_mnemonic(next_lc_state);
     bool success = sw_transition_req(next_lc_state_mne, token);
     const char *movement = success ? "is in" : "failed to move to";
 
-    reset_fc_lcc_rtl();
+    if (success)
+        reset_fc_lcc_rtl();
 
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL %s state %d.\n", movement, next_lc_state);
+
+    return success;
 }
 
 void transition_state_check(uint32_t next_lc_state,

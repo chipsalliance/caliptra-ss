@@ -91,7 +91,7 @@ uint32_t calc_lc_state_mnemonic(uint32_t state);
 // beforehand.
 //
 // Returns true if the transition was succsessful.
-void transition_state(uint32_t next_lc_state, const uint32_t token[4]);
+bool transition_state(uint32_t next_lc_state, const uint32_t token[4]);
 
 // Request an LC state transition to next_lc_state. If token is not
 // null, it will be written to the four transition token registers
