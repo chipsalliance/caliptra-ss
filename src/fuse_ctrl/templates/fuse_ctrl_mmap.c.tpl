@@ -45,10 +45,18 @@ const partition_t partitions[NUM_PARTITIONS] = {
     digest_addr = digest_item.offset
   if p.zeroizable:
     zer_addr = p.items[-1].offset
+
+  if p.variant == Variant.Buffered:
+    var_idx = 0
+  elif p.variant == Variant.Unbuffered:
+    var_idx = 1
+  else:
+    assert(p.variant == Variant.LifeCycle)
+    var_idx = 2
 %>\
         .digest_address = ${"0x%04X" % digest_addr},
         .zer_address = ${"0x%04X" % zer_addr},
-        .variant = ${0 if p.variant == Variant.Buffered else (1 if p.variant == Variant.Unbuffered else 2)},
+        .variant = ${var_idx},
         .granularity = ${64 if p.secret else 32},
         .is_secret = ${"true" if p.secret else "false"},
         .hw_digest = ${"true" if p.hw_digest else "false"},
