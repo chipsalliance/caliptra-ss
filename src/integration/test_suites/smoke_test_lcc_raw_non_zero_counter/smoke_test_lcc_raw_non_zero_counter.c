@@ -85,12 +85,7 @@ void main (void) {
             VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            transition_state(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
+            transition_state(lc_state_next, (token_type == ZER) ? NULL : tokens[token_type]);
 
             if (lc_state_next != SCRAP) {
                 wait_dai_op_idle(0);

@@ -80,9 +80,12 @@ void iterate_test_unlock_states() {
     wait_dai_op_idle(0);
 
     for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED2; token += (state & 0x1), state++) {
+        const uint32_t token_array[4] = {token, 0, 0, 0};
+
         VPRINTF(LOW, "LC_CTRL: transition to %d state\n", state);
 
-        transition_state(state, token, 0, 0, 0, state & 0x1 /* No token required for TEST_LOCKED states*/ );
+        /* No token required for TEST_LOCKED states*/
+        transition_state(state, (state & 0x1) ? token_array : NULL);
         wait_dai_op_idle(0);
 
         uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);

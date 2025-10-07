@@ -63,7 +63,7 @@ void clock_bypass() {
 
     // Perform a state transition to see whether it still works with
     // the external clock.
-    transition_state(TEST_LOCKED0, 0, 0, 0, 0, 0);
+    transition_state(TEST_LOCKED0, NULL);
     wait_dai_op_idle(0);
 }
 
@@ -76,7 +76,7 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token);
     wait_dai_op_idle(0);
 
     clock_bypass();

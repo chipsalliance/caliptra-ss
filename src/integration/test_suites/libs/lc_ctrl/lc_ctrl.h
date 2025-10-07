@@ -85,7 +85,13 @@ void force_lcc_tokens(void);
 bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4]);
                         
 uint32_t calc_lc_state_mnemonic(uint32_t state);
-void transition_state(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional);
+
+// Request an LC state transition to next_lc_state. If token is not
+// null, it will be written to the four transition token registers
+// beforehand.
+//
+// Returns true if the transition was succsessful.
+void transition_state(uint32_t next_lc_state, const uint32_t token[4]);
 
 // Request an LC state transition to next_lc_state. If token is not
 // null, it will be written to the four transition token registers

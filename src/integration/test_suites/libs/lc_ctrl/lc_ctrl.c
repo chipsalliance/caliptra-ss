@@ -276,12 +276,9 @@ uint32_t calc_lc_state_mnemonic(uint32_t state) {
     return targeted_state_5;
 }
 
-void transition_state(uint32_t next_lc_state,
-                      uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96,
-                      uint32_t conditional) {
-    uint32_t arr[4] = {token_31_0, token_63_32, token_95_64, token_127_96};
+void transition_state(uint32_t next_lc_state, const uint32_t token[4]) {
     uint32_t next_lc_state_mne = calc_lc_state_mnemonic(next_lc_state);
-    bool success = sw_transition_req(next_lc_state_mne, conditional ? arr : 0);
+    bool success = sw_transition_req(next_lc_state_mne, token);
     const char *movement = success ? "is in" : "failed to move to";
 
     reset_fc_lcc_rtl();
@@ -289,8 +286,11 @@ void transition_state(uint32_t next_lc_state,
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL %s state %d.\n", movement, next_lc_state);
 }
 
-void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_t token_63_32, uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
-    transition_state(next_lc_state, token_31_0, token_63_32, token_95_64, token_127_96, conditional);
+void transition_state_check(uint32_t next_lc_state,
+                            uint32_t token_31_0, uint32_t token_63_32,
+                            uint32_t token_95_64, uint32_t token_127_96, uint32_t conditional) {
+    uint32_t token[4] = {token_31_0, token_63_32, token_95_64, token_127_96};
+    transition_state(next_lc_state, conditional ? token : NULL);
     wait_dai_op_idle(0);
     uint32_t lc_state_curr = read_lc_state();
     if (lc_state_curr != next_lc_state) {
