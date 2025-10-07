@@ -17,6 +17,7 @@ ${gen_comment}
 
 <%
 from lib.name import Name
+from lib.otp_mem_map import LockType, Variant
 %>\
 package otp_ctrl_part_pkg;
 
@@ -153,29 +154,29 @@ package otp_ctrl_part_pkg;
 
   localparam part_info_t PartInfo [NumPart] = '{
 % for part in otp_mmap.config["partitions"]:
-    // ${part["name"]}
+    // ${part.name}
     '{
-      variant:          ${part["variant"]},
-      offset:           ${otp_mmap.config["otp"]["byte_addr_width"]}'d${part["offset"]},
-      size:             ${part["size"]},
-      key_sel:          ${part["key_sel"] if part["key_sel"] != "NoKey" else "key_sel_e'('0)"},
-      secret:           1'b${"1" if part["secret"] else "0"},
-      sw_digest:        1'b${"1" if part["sw_digest"] else "0"},
-      hw_digest:        1'b${"1" if part["hw_digest"] else "0"},
-      write_lock:       1'b${"1" if part["write_lock"].lower() == "digest" else "0"},
-      read_lock:        1'b${"1" if part["read_lock"].lower() == "digest" else "0"},
-      integrity:        1'b${"1" if part["integrity"] else "0"},
-      iskeymgr_creator: 1'b${"1" if part["iskeymgr_creator"] else "0"},
-      iskeymgr_owner:   1'b${"1" if part["iskeymgr_owner"] else "0"},
-      lc_phase:         ${"Dec"+part["lc_phase"]},
-      zeroizable:       1'b${"1" if part["zeroizable"] else "0"}
+      variant:          ${part.variant.name},
+      offset:           ${otp_mmap.config["otp"]["byte_addr_width"]}'d${part.offset},
+      size:             ${part.size},
+      key_sel:          ${"key_sel_e'('0)" if part.key_sel is None else part.key_sel},
+      secret:           1'b${"1" if part.secret else "0"},
+      sw_digest:        1'b${"1" if part.sw_digest else "0"},
+      hw_digest:        1'b${"1" if part.hw_digest else "0"},
+      write_lock:       1'b${"1" if part.write_lock == LockType.Digest else "0"},
+      read_lock:        1'b${"1" if part.read_lock == LockType.Digest else "0"},
+      integrity:        1'b${"1" if part.integrity else "0"},
+      iskeymgr_creator: 1'b${"1" if part.iskeymgr_creator else "0"},
+      iskeymgr_owner:   1'b${"1" if part.iskeymgr_owner else "0"},
+      lc_phase:         ${"Dec"+part.lc_phase},
+      zeroizable:       1'b${"1" if part.zeroizable else "0"}
     }${"" if loop.last else ","}
 % endfor
   };
 
   typedef enum logic [4:0] {
 % for part in otp_mmap.config["partitions"]:
-    ${Name.from_snake_case(part["name"]).as_camel_case()}Idx,
+    ${Name.from_snake_case(part.name).as_camel_case()}Idx,
 % endfor
     // These are not "real partitions", but in terms of implementation it is convenient to
     // add these at the end of certain arrays.
@@ -189,37 +190,37 @@ package otp_ctrl_part_pkg;
 
   // Breakout types for easier access of individual items.
 % for part in otp_mmap.config["partitions"]:
-  % if part["bkout_type"]:
-  typedef struct packed {<% offset = part['offset'] + part['size'] %>
-    % for item in part["items"][::-1]:
-      % if offset != item['offset'] + item['size']:
-    logic [${(offset - item['size'] - item['offset']) * 8 - 1}:0] unallocated;<% offset = item['offset'] + item['size'] %>
+  % if part.bkout_type:
+  typedef struct packed {<% offset = part.offset + part.size %>
+    % for item in part.items[::-1]:
+      % if offset != item.offset + item.size:
+    logic [${(offset - item.size - item.offset) * 8 - 1}:0] unallocated;<% offset = item.offset + item.size %>
       % endif
 <%
-  if item['ismubi']:
-    item_type = 'caliptra_prim_mubi_pkg::mubi' + str(item["size"]*8) + '_t'
+  if item.is_mubi:
+    item_type = 'caliptra_prim_mubi_pkg::mubi' + str(item.size*8) + '_t'
   else:
-    item_type = 'logic [' + str(int(item["size"])*8-1) + ':0]'
+    item_type = 'logic [' + str(int(item.size)*8-1) + ':0]'
 %>\
-    ${item_type} ${item["name"].lower()};<% offset -= item['size'] %>
+    ${item_type} ${item.name.lower()};<% offset -= item.size %>
     % endfor
-  } otp_${part["name"].lower()}_data_t;
+  } otp_${part.name.lower()}_data_t;
 
   // default value used for intermodule
-  parameter otp_${part["name"].lower()}_data_t OTP_${part["name"].upper()}_DATA_DEFAULT = '{<% offset = part['offset'] + part['size'] %>
-  % for k, item in enumerate(part["items"][::-1]):
-    % if offset != item['offset'] + item['size']:
-    unallocated: ${"{}'h{:0X}".format((offset - item['size'] - item['offset']) * 8, 0)}<% offset = item['offset'] + item['size'] %>,
+  parameter otp_${part.name.lower()}_data_t OTP_${part.name.upper()}_DATA_DEFAULT = '{<% offset = part.offset + part.size %>
+  % for k, item in enumerate(part.items[::-1]):
+    % if offset != item.offset + item.size:
+    unallocated: ${"{}'h{:0X}".format((offset - item.size - item.offset) * 8, 0)}<% offset = item.offset + item.size %>,
     % endif
 <%
-  if item['ismubi']:
-    item_cast_pre = "caliptra_prim_mubi_pkg::mubi" + str(item["size"]*8) + "_t'("
+  if item.is_mubi:
+    item_cast_pre = "caliptra_prim_mubi_pkg::mubi" + str(item.size*8) + "_t'("
     item_cast_post = ")"
   else:
     item_cast_pre = ""
     item_cast_post = ""
 %>\
-    ${item["name"].lower()}: ${item_cast_pre}${"{}'h{:0X}".format(item["size"] * 8, item["inv_default"])}${item_cast_post}${"," if k < len(part["items"])-1 else ""}<% offset -= item['size'] %>
+    ${item.name.lower()}: ${item_cast_pre}${"{}'h{:0X}".format(item.size * 8, item.inv_default)}${item_cast_post}${"," if k < len(part.items)-1 else ""}<% offset -= item.size %>
   % endfor
   };
   % endif
@@ -228,8 +229,8 @@ package otp_ctrl_part_pkg;
     // This reuses the same encoding as the life cycle signals for indicating valid status.
     lc_ctrl_pkg::lc_tx_t valid;
 % for part in otp_mmap.config["partitions"][::-1]:
-  % if part["bkout_type"]:
-    otp_${part["name"].lower()}_data_t ${part["name"].lower()}_data;
+  % if part.bkout_type:
+    otp_${part.name.lower()}_data_t ${part.name.lower()}_data;
   % endif
 % endfor
   } otp_broadcast_t;
@@ -239,29 +240,29 @@ package otp_ctrl_part_pkg;
   k = 0
   num_bkout = 0
   for part in otp_mmap.config["partitions"]:
-    if part["bkout_type"]:
+    if part.bkout_type:
       num_bkout += 1
 %>\
   parameter otp_broadcast_t OTP_BROADCAST_DEFAULT = '{
     valid: lc_ctrl_pkg::Off,
 % for part in otp_mmap.config["partitions"][::-1]:
-  % if part["bkout_type"]:
-    ${part["name"].lower()}_data: OTP_${part["name"].upper()}_DATA_DEFAULT${"" if k == num_bkout-1 else ","}
+  % if part.bkout_type:
+    ${part.name.lower()}_data: OTP_${part.name.upper()}_DATA_DEFAULT${"" if k == num_bkout-1 else ","}
 <% k+=1 %>\
   % endif
 % endfor
   };
 
-<% offset =  int(otp_mmap.config["partitions"][-1]["offset"]) + int(otp_mmap.config["partitions"][-1]["size"]) %>
+<% offset =  int(otp_mmap.config["partitions"][-1].offset) + int(otp_mmap.config["partitions"][-1].size) %>
   // OTP invalid partition default for buffered partitions.
   parameter logic [${offset * 8 - 1}:0] PartInvDefault = ${offset * 8}'({
   % for k, part in enumerate(otp_mmap.config["partitions"][::-1]):
-    ${int(part["size"])*8}'({
-    % for item in part["items"][::-1]:
-      % if offset != item['offset'] + item['size']:
-      ${"{}'h{:0X}".format((offset - item['size'] - item['offset']) * 8, 0)}, // unallocated space<% offset = item['offset'] + item['size'] %>
+    ${int(part.size)*8}'({
+    % for item in part.items[::-1]:
+      % if offset != item.offset + item.size:
+      ${"{}'h{:0X}".format((offset - item.size - item.offset) * 8, 0)}, // unallocated space<% offset = item.offset + item.size %>
       % endif
-      ${"{}'h{:0X}".format(item["size"] * 8, item["inv_default"])}${("\n    })," if k < len(otp_mmap.config["partitions"])-1 else "\n    })});") if loop.last else ","}<% offset -= item['size'] %>
+      ${"{}'h{:0X}".format(item.size * 8, item.inv_default)}${("\n    })," if k < len(otp_mmap.config["partitions"])-1 else "\n    })});") if loop.last else ","}<% offset -= item.size %>
     % endfor
   % endfor
 
@@ -277,11 +278,11 @@ package otp_ctrl_part_pkg;
     hw2reg = '0;
 % for k, part in enumerate(otp_mmap.config["partitions"]):
 <%
-  part_name = Name.from_snake_case(part["name"])
+  part_name = Name.from_snake_case(part.name)
   part_name_camel = part_name.as_camel_case()
 %>\
-  % if part["sw_digest"] or part["hw_digest"]:
-    hw2reg.${part["name"].lower()}_digest = part_digest[${part_name_camel}Idx];
+  % if part.sw_digest or part.hw_digest:
+    hw2reg.${part.name.lower()}_digest = part_digest[${part_name_camel}Idx];
   % endif
 % endfor
     return hw2reg;
@@ -297,10 +298,10 @@ package otp_ctrl_part_pkg;
     // Note: these could be made a MuBi CSRs in the future.
     // The main thing that is missing right now is proper support for W0C.
 % for k, part in enumerate(otp_mmap.config["partitions"]):
-  % if part["read_lock"] == "CSR":
-    // ${part["name"]}
-    if (!reg2hw.${part["name"].lower()}_read_lock) begin
-<% part_name = Name.from_snake_case(part["name"]) %>\
+  % if part.read_lock == LockType.CSR:
+    // ${part.name}
+    if (!reg2hw.${part.name.lower()}_read_lock) begin
+<% part_name = Name.from_snake_case(part.name) %>\
       part_access_pre[${part_name.as_camel_case()}Idx].read_lock = caliptra_prim_mubi_pkg::MuBi8True;
     end
   % endif
@@ -316,14 +317,14 @@ package otp_ctrl_part_pkg;
     unused = 1'b0;
     valid = 1'b1;
 % for part in otp_mmap.config["partitions"]:
-    // ${part["name"]}
+    // ${part.name}
 <%
-  part_name = Name.from_snake_case(part["name"])
+  part_name = Name.from_snake_case(part.name)
   part_name_camel = part_name.as_camel_case()
 %>\
-  % if part["bkout_type"]:
+  % if part.bkout_type:
     valid &= part_init_done[${part_name_camel}Idx];
-    otp_broadcast.${part["name"].lower()}_data = otp_${part["name"].lower()}_data_t'(part_buf_data[${part_name_camel}Offset +: ${part_name_camel}Size]);
+    otp_broadcast.${part.name.lower()}_data = otp_${part.name.lower()}_data_t'(part_buf_data[${part_name_camel}Offset +: ${part_name_camel}Size]);
   % else:
     unused ^= ^{part_init_done[${part_name_camel}Idx],
                 part_buf_data[${part_name_camel}Offset +: ${part_name_camel}Size]};
@@ -345,29 +346,29 @@ package otp_ctrl_part_pkg;
     // a superset of all options, so we have to initialize it to '0 here.
     otp_keymgr_key = '0;
 % for part in otp_mmap.config["partitions"]:
-    // ${part["name"]}
+    // ${part.name}
 <%
-  part_name = Name.from_snake_case(part["name"])
+  part_name = Name.from_snake_case(part.name)
   part_name_camel = part_name.as_camel_case()
 %>\
-  % if part["iskeymgr_creator"] or part["iskeymgr_owner"]:
+  % if part.iskeymgr_creator or part.iskeymgr_owner:
     valid = (part_digest[${part_name_camel}Idx] != 0);
-    % for item in part["items"]:
+    % for item in part.items:
 <%
-  item_name = Name.from_snake_case(item["name"])
+  item_name = Name.from_snake_case(item.name)
   item_name_camel = item_name.as_camel_case()
 %>\
-      % if item["iskeymgr_creator"] or item["iskeymgr_owner"]:
-    otp_keymgr_key.${item["name"].lower()}_valid = valid;
+      % if item.iskeymgr_creator or item.iskeymgr_owner:
+    otp_keymgr_key.item.name.lower()_valid = valid;
     if (lc_ctrl_pkg::lc_tx_test_true_strict(lc_seed_hw_rd_en)) begin
-      otp_keymgr_key.${item["name"].lower()} =
+      otp_keymgr_key.item.name.lower() =
           part_buf_data[${item_name_camel}Offset +: ${item_name_camel}Size];
     end else begin
-      otp_keymgr_key.${item["name"].lower()} =
+      otp_keymgr_key.item.name.lower() =
           PartInvDefault[${item_name_camel}Offset*8 +: ${item_name_camel}Size*8];
     end
       % else:
-        % if not item["isdigest"]:
+        % if not item.is_digest:
     unused ^= ^part_buf_data[${item_name_camel}Offset +: ${item_name_camel}Size];
         % endif
       % endif
@@ -401,24 +402,24 @@ package otp_ctrl_part_pkg;
 
   localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
 % for part in otp_mmap.config["partitions"]:
-  % if part["sw_digest"] or part["hw_digest"]:
-    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}DigestOffset,    // ${part["name"]}
-  % elif part["variant"] == "LifeCycle":
-    0                                                               // ${part["name"]}
+  % if part.sw_digest or part.hw_digest:
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part.name).as_camel_case()}DigestOffset,    // ${part.name}
+  % elif part.variant == Variant.LifeCycle:
+    0                                                               // ${part.name}
   % else:
-    0,                                                              // ${part["name"]}
+    0,                                                              // ${part.name}
   % endif
 % endfor
   };
 
   localparam [OtpByteAddrWidth-1:0] zero_addrs [0:NumPart-1] = {
 % for part in otp_mmap.config["partitions"]:
-  % if part["zeroizable"]:
-    otp_ctrl_reg_pkg::${Name.from_snake_case(part["name"]).as_camel_case()}ZerOffset,    // ${part["name"]}
-  % elif part["variant"] == "LifeCycle":
-    0                                                               // ${part["name"]}
+  % if part.zeroizable:
+    otp_ctrl_reg_pkg::${Name.from_snake_case(part.name).as_camel_case()}ZerOffset,    // ${part.name}
+  % elif part.variant == Variant.LifeCycle:
+    0                                                               // ${part.name}
   % else:
-    0,                                                              // ${part["name"]}
+    0,                                                              // ${part.name}
   % endif
 % endfor
   };

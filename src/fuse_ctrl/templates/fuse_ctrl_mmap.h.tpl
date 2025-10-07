@@ -21,13 +21,13 @@
 
 typedef enum {
 % for i, p in enumerate(partitions):
-    // ${p["name"]}
-  % for j, f in enumerate(p["items"]):
-    % if f["isdigest"] == False and f["iszer"] == False:
-      % if i == len(partitions)-1 and j == len(p["items"])-1:
-    ${f["name"]} = ${"0x%04X" % f["offset"]}
+    // ${p.name}
+  % for j, f in enumerate(p.items):
+    % if f.is_digest == False and f.is_zeroization == False:
+      % if i == len(partitions)-1 and j == len(p.items)-1:
+    ${f.name} = ${"0x%04X" % f.offset}
       % else:
-    ${f["name"]} = ${"0x%04X" % f["offset"]},
+    ${f.name} = ${"0x%04X" % f.offset},
       % endif
     % endif
   % endfor
@@ -36,7 +36,7 @@ typedef enum {
 
 typedef enum {
 % for i, p in enumerate(partitions):
-    ${p["name"]}${"," if i < len(partitions)-1 else ""}
+    ${p.name}${"," if i < len(partitions)-1 else ""}
 % endfor
 } partition_k;
 
@@ -64,7 +64,7 @@ extern const partition_t partitions[];
 
 // Arrays with indices of fuses for each partition.
 % for i, p in enumerate(partitions[:len(partitions)]):
-extern const uint32_t ${p["name"].lower()}_fuses[];
+extern const uint32_t ${p.name.lower()}_fuses[];
 % endfor
 
 #endif // FUSE_CTRL_MMAP_HEADERS

@@ -273,7 +273,7 @@ def permute_bits(bit_str, permutation):
     return permword
 
 
-def _parse_hex(value):
+def parse_hex(value):
     '''Parse a hex value into an integer.
 
     Args:
@@ -306,7 +306,7 @@ def random_or_hexvalue(dict_obj, key, num_bits):
     # Check that the range is correct.
     else:
         try:
-            dict_obj[key] = _parse_hex(dict_obj[key])
+            dict_obj[key] = parse_hex(dict_obj[key])
             if dict_obj[key] >= 2**num_bits:
                 raise RuntimeError('Value "{}" is out of range.'.format(
                     dict_obj[key]))

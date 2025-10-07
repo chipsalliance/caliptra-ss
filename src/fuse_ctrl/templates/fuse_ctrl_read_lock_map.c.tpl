@@ -20,6 +20,9 @@
 //       This C file is generated from a template. The template doesn't depend
 //       on SOC-level information but the generated C file references names that
 //       are defined in soc_address_map.h.
+<%!
+    from lib.otp_mem_map import LockType
+%>\
 
 #include <stdint.h>
 #include "fuse_ctrl_mmap.h"
@@ -27,7 +30,7 @@
 
 const uint32_t read_lock_partition_indices[] = {
 % for i, p in enumerate(partitions):
-%  if p["read_lock"] == "CSR":
+%  if p.read_lock == LockType.CSR:
     ${i},
 %  endif
 % endfor
@@ -35,9 +38,9 @@ const uint32_t read_lock_partition_indices[] = {
 };
 
 const uint32_t read_lock_csr_mapping[] = {
-% for i, p in enumerate(partitions):
-%  if p["read_lock"] == "CSR":
-    SOC_OTP_CTRL_${p["name"]}_READ_LOCK,
+% for p in partitions:
+%  if p.read_lock == LockType.CSR:
+    SOC_OTP_CTRL_${p.name}_READ_LOCK,
 %  endif
 % endfor
     UINT32_MAX

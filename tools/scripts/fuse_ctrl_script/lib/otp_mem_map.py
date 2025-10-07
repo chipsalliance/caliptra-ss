@@ -9,13 +9,15 @@ import logging as log
 from math import ceil, log2
 from pathlib import Path
 from typing import Dict, List
+from dataclasses import dataclass, InitVar
+from enum import Enum
 
 from lib.prim_mubi import is_width_valid, mubi_value_as_int
 import hjson
 from tabulate import tabulate
 
 import lib.secure_prng as sp
-from lib.common import check_bool, check_int, random_or_hexvalue
+from lib.common import check_bool, check_int, parse_hex, random_or_hexvalue
 
 DIGEST_SUFFIX = "_DIGEST"
 DIGEST_SIZE = 8
@@ -113,6 +115,351 @@ def _calc_size(part: Dict, size: int) -> int:
         size += ZER_SIZE
 
     return size
+
+
+class LockType(Enum):
+    """This can be used to specify the type of a read or write lock"""
+    CSR    = 1
+    Digest = 2
+
+    @staticmethod
+    def maybe_from_raw(raw: object) -> 'LockType | None':
+        if raw is None:
+            return None
+        if not isinstance(raw, str):
+            raise TypeError(f"Invalid raw object to parse: {raw}")
+
+        low = raw.lower()
+        if low == "none":
+            return None
+        if low == "csr":
+            return LockType.CSR
+        if low == "digest":
+            return LockType.Digest
+
+        raise ValueError(f"Cannot parse lock type {raw!a}.")
+
+class Variant(Enum):
+    """This can be used to specify the variant of a partition"""
+    Unbuffered = 1
+    Buffered   = 2
+    LifeCycle  = 3
+
+    @staticmethod
+    def from_raw(raw: object) -> 'Variant':
+        if not isinstance(raw, str):
+            raise TypeError(f"Invalid raw object to parse: {raw}")
+
+        low = raw.lower()
+        if low == "unbuffered":
+            return Variant.Unbuffered
+        if low == "buffered":
+            return Variant.Buffered
+        if low == "lifecycle":
+            return Variant.LifeCycle
+
+        raise ValueError(f"Cannot parse variant {raw!a}.")
+
+
+@dataclass(frozen=True)
+class PartitionItem:
+    """An item in a Partition"""
+    name: str
+    size: int
+    offset: int
+    desc: str | None = None
+    is_mubi: bool = False
+    is_digest: bool = False
+    is_zeroization: bool = False
+    inv_default: int = 0
+    req_inv_default: InitVar[int | None] = 0
+    """The requested default value. By default it will be zero, which gets
+    passed to inv_default in the __post_init__ method. To get a random value,
+    pass None and it will be replaced by random bits in post_init.
+    """
+
+    @staticmethod
+    def from_dict(what: str, offset: int, raw: dict) -> 'PartitionItem':
+        name = raw.get("name")
+        if not isinstance(name, str):
+            raise RuntimeError(f"Bad name for {what}: {name}.")
+
+        desc = raw.get("desc")
+        if not isinstance(desc, str) and desc is not None:
+            raise RuntimeError(f"Bad desc for {what}: {desc}.")
+
+        size = check_int(raw.get("size"))
+
+        is_mubi = raw.get("is_mubi", False)
+        if not isinstance(is_mubi, bool):
+            raise RuntimeError(f"Bad is_mubi value for {what}.")
+
+        # Parse the requested item_inv_default and convert <random> to
+        # None: we'll handle that later.
+        inv_default = raw.get('inv_default', 0)
+        if inv_default == "<random>":
+            inv_default = None
+        elif isinstance(inv_default, str):
+            try:
+                inv_default = parse_hex(inv_default)
+            except ValueError:
+                raise RuntimeError(f"Can't parse inv_default for "
+                                   f"item {name} of partition "
+                                   f"{part_name} from {inv_default}")
+        elif not isinstance(inv_default, int):
+            raise RuntimeError(f"Invalid inv_default for item "
+                               f"{name} in partition {part_name}: "
+                               f"{inv_default}.")
+
+        assert (isinstance(inv_default, int) or inv_default is None)
+
+        return PartitionItem(name,
+                             size,
+                             offset,
+                             desc=desc,
+                             is_mubi=is_mubi,
+                             req_inv_default=inv_default)
+
+    # This runs after the auto-generated __init__ method and is responsible for
+    # checking that all any requested inv_default value fits in the item. In
+    # that case, it gets copied across to an inv_default field. If there isn't
+    # a req_inv_default, this function generates a random value of the correct
+    # number of bits.
+    def __post_init__(self, req_inv_default: int | None) -> None:
+        if req_inv_default is not None:
+            if req_inv_default < 0:
+                raise ValueError("Requested inv_default is negative.")
+
+            if req_inv_default >> (self.size * 8):
+                raise ValueError(f"Requested inv_default is "
+                                 f"0x{req_inv_default:x}, but this doesn't "
+                                 f"fit in {self.size} bits.")
+
+            inv_default = req_inv_default
+        else:
+            # There wasn't an explicit value requested, so we should pick a
+            # random constant.
+            inv_default = sp.getrandbits(self.size * 8)
+
+        object.__setattr__(self, 'inv_default', inv_default)
+
+@dataclass(frozen=True)
+class Partition:
+    """A partition in the OTP/fuse map"""
+    name: str
+    desc: str
+    absorb: bool
+    secret: bool
+    sw_digest: bool
+    hw_digest: bool
+    write_lock: LockType | None
+    read_lock: LockType | None
+    key_sel: str | None
+    integrity: bool
+    bkout_type: bool
+    zeroizable: bool
+    items: list[PartitionItem]
+    offset: int
+    size: int
+    variant: Variant
+    iskeymgr_creator: bool
+    iskeymgr_owner: bool
+    lc_phase: str
+
+    @staticmethod
+    def from_dict(start_offset: int,
+                  raw: dict) -> tuple['Partition', int]:
+        """Parse a partition description from a dict.
+
+        Returns the parsed partition, together with the offset of the next
+        thing that can be put in the fuses.
+        """
+        name = raw.get("name")
+        if not isinstance(name, str):
+            raise RuntimeError(f"Invalid partition name for item {j} "
+                               "in list of partitions")
+
+        size = raw.get("size")
+        if not isinstance(size, int) or size <= 0:
+            raise RuntimeError(f"Bad size for partition {name}: {size}")
+
+        end_offset = start_offset + size
+
+        try:
+            variant = Variant.from_raw(raw.get("variant"))
+        except ValueError:
+            raise RuntimeError(f"Cannot parse variant for partition {name}.")
+
+        if start_offset % SCRAMBLE_BLOCK_WIDTH:
+            raise RuntimeError(f"Partition {name} offset must be "
+                               f"{SCRAMBLE_BLOCK_WIDTH * 8}-bit aligned")
+
+        log.info(f"Partition {name} at offset {start_offset} size {size}")
+
+        items: list[PartitionItem] = []
+        raw_items = raw.get("items")
+        if not isinstance(raw_items, list):
+            raise RuntimeError(f"Bad items for partition {name}: {raw_items}")
+
+        # Create a mapping from the name of an item to its index in the items
+        # of the partition
+        offset = start_offset
+        known_items: set[str] = set()
+
+        for k, raw_item in enumerate(raw_items):
+            item = PartitionItem.from_dict(f"item {k} of partition {name}",
+                                           offset,
+                                           raw_item)
+            if item.name in known_items:
+                raise RuntimeError(f"Multiple items called {name} "
+                                   "in partition.")
+            known_items.add(item.name)
+            items.append(item)
+
+            log.info(f"> Item {item.name} at offset {offset} "
+                     f"with size {item.size}")
+
+            offset += item.size
+
+        is_zeroizable = raw.get("zeroizable", False)
+        sw_digest = raw.get("sw_digest", False)
+        hw_digest = raw.get("hw_digest", False)
+
+        # Place digest at the end of a partition unless there is also a
+        # zeroization field, in which case that comes afterwards.
+        if sw_digest or hw_digest:
+            digest_name = name + DIGEST_SUFFIX
+            zer_size = ZER_SIZE if is_zeroizable else 0
+            if digest_name in known_items:
+                raise RuntimeError(f'Digest name {digest_name} is not unique')
+
+            digest_offset = end_offset - zer_size - DIGEST_SIZE
+
+            # Make sure that there's space for the digest at the end of the
+            # partition (we have counted up from start_offset and are now at
+            # offset: it had better be at most digest_offset).
+            if offset > digest_offset:
+                raise RuntimeError(f"Not enough space in partition {name} to "
+                                   f"fit digest. Offset is {offset}, but we "
+                                   f"need to start at {digest_offset} to fit "
+                                   f"before the end offset: {end_offset}.")
+
+            log.info(f"> Adding digest {digest_name} at offset {offset} "
+                     f"with size {DIGEST_SIZE}")
+
+            known_items.add(digest_name)
+            items.append(PartitionItem(digest_name,
+                                       DIGEST_SIZE,
+                                       digest_offset,
+                                       is_digest=True,
+                                       req_inv_default=None))
+
+            offset = digest_offset + DIGEST_SIZE
+
+        # Place zeroization field after the digest.
+        if is_zeroizable:
+            zer_name = name + ZER_SUFFIX
+            if zer_name in known_items:
+                raise RuntimeError(f'Zeroization name {zer_name} not unique')
+            known_items.add(zer_name)
+            zer_offset = end_offset - ZER_SIZE
+
+            # Make sure that there's space for the zeroization field at the end
+            # of the partition (we have counted up from start_offset and are
+            # now at offset: it had better be at most zer_offset).
+            if offset > zer_offset:
+                raise RuntimeError(f"Not enough space in partition {name} to "
+                                   f"fit zeroization. Offset is {offset}, but "
+                                   f"we need to start at {zer_offset} to "
+                                   f"fit before the end offset: {end_offset}.")
+
+            log.info(f"> Adding zeroization field {zer_name} "
+                     f"at offset {offset} with size {ZER_SIZE}")
+
+            items.append(PartitionItem(zer_name,
+                                       ZER_SIZE,
+                                       zer_offset,
+                                       is_zeroization=True,
+                                       inv_default=0))
+
+            offset = end_offset
+
+        # check offsets and size
+        if offset > end_offset:
+            raise RuntimeError(f"Not enough space in partition {name} to "
+                               f"accommodate all items. Adding up items "
+                               f"gets to {offset} but the partition is "
+                               f"expected to end at {end_offset}.")
+
+        try:
+            write_lock = LockType.maybe_from_raw(raw.get("write_lock"))
+        except ValueError:
+            raise ValueError(f"Couldn't parse write_lock for partition {name}.")
+        try:
+            read_lock = LockType.maybe_from_raw(raw.get("read_lock"))
+        except ValueError:
+            raise ValueError(f"Couldn't parse write_lock for partition {name}.")
+
+        key_sel = raw.get("key_sel")
+        if key_sel == "NoKey":
+            key_sel = None
+        if not isinstance(key_sel, str) and key_sel is not None:
+            raise ValueError(f"Invalid key_sel in partition {name}: {key_sel}.")
+
+        integrity = raw.get("integrity", False)
+        if not isinstance(integrity, bool):
+            raise ValueError(f"Invalid integrity in partition {name}: "
+                             f"{integrity}.")
+
+        bkout_type = raw.get("bkout_type", False)
+        if not isinstance(bkout_type, bool):
+            raise ValueError(f"Invalid bkout_type in partition {name}: "
+                             f"{bkout_type}.")
+
+        zeroizable = raw.get("zeroizable", False)
+        if not isinstance(zeroizable, bool):
+            raise ValueError(f"Invalid zeroizable in partition {name}: "
+                             f"{zeroizable}.")
+
+        size = raw.get("size")
+        if not isinstance(size, int) or size <= 0:
+            raise ValueError(f"Invalid size for partition {name}: {size!a}.")
+
+        iskeymgr_creator = raw.get("iskeymgr_creator", False)
+        if not isinstance(iskeymgr_creator, bool):
+            raise ValueError(f"Invalid iskeymgr_creator in partition {name}: "
+                             f"{iskeymgr_creator}.")
+
+        iskeymgr_owner = raw.get("iskeymgr_owner", False)
+        if not isinstance(iskeymgr_owner, bool):
+            raise ValueError(f"Invalid iskeymgr_owner in partition {name}: "
+                             f"{iskeymgr_owner}.")
+
+        desc = raw.get("desc")
+        if not isinstance(desc, str):
+            raise ValueError(f"Invalid desc in partition {name}: {desc}.")
+
+        lc_phase = raw.get("lc_phase")
+        if not isinstance(lc_phase, str):
+            raise ValueError(f"Invalid lc_phase in partition {name}: {lc_phase}.")
+
+        return Partition(name,
+                         desc,
+                         raw.get("absorb", False),
+                         raw.get("secret", False),
+                         sw_digest, hw_digest,
+                         write_lock, read_lock,
+                         key_sel,
+                         integrity,
+                         bkout_type,
+                         zeroizable,
+                         items,
+                         start_offset,
+                         size,
+                         variant,
+                         iskeymgr_creator,
+                         iskeymgr_owner,
+                         lc_phase)
 
 
 def _validate_part(part: Dict, key_names: List[str], is_last: bool):
@@ -277,7 +624,7 @@ def _validate_item(item: Dict, buffered: bool, secret: bool):
         random_or_hexvalue(item, "inv_default", item_width)
 
 
-def _validate_mmap(config: Dict) -> Dict:
+def _validate_mmap(config: dict) -> dict[str, Partition]:
     '''Validate the memory map configuration'''
 
     # Get valid key names.
@@ -299,137 +646,16 @@ def _validate_mmap(config: Dict) -> Dict:
 
     # Determine offsets and generation dicts
     offset = 0
-    part_dict = {}
-    for j, part in enumerate(config["partitions"]):
+    parts: dict[str, Partition] = {}
 
-        if part['name'] in part_dict:
-            raise RuntimeError('Partition name {} is not unique'.format(
-                part['name']))
+    for j, raw in enumerate(config["partitions"]):
+        part = Partition.from_dict(offset, raw)
 
-        part['offset'] = offset
-        if check_int(part['offset']) % SCRAMBLE_BLOCK_WIDTH:
-            raise RuntimeError(
-                f"Partition {part['name']} offset must be "
-                f"{SCRAMBLE_BLOCK_WIDTH * 8}-bit aligned")
+        if part.name in parts:
+            raise ValueError(f"Duplicate partitions called {part.name}.")
 
-        log.info("Partition {} at offset {} size {}".format(
-            part["name"], part["offset"], part["size"]))
-
-        # Loop over items within a partition
-        item_dict = {}
-        for k, item in enumerate(part["items"]):
-            if item['name'] in item_dict:
-                raise RuntimeError('Item name {} is not unique'.format(
-                    item['name']))
-            item['offset'] = offset
-            log.info("> Item {} at offset {} with size {}".format(
-                item["name"], offset, item["size"]))
-            offset += check_int(item["size"])
-            item_dict[item['name']] = k
-
-        # Place digest at the end of a partition.
-        if part["sw_digest"] or part["hw_digest"]:
-            digest_name = part["name"] + DIGEST_SUFFIX
-            zer_size = ZER_SIZE if part["zeroizable"] else 0
-            if digest_name in item_dict:
-                raise RuntimeError(
-                    'Digest name {} is not unique'.format(digest_name))
-            item_dict[digest_name] = len(part["items"])
-            part["items"].append({
-                "name":
-                digest_name,
-                "size":
-                DIGEST_SIZE,
-                "offset":
-                check_int(part["offset"]) + check_int(part["size"]) -
-                DIGEST_SIZE - zer_size,
-                "ismubi":
-                False,
-                "isdigest":
-                True,
-                "iszer":
-                False,
-                "inv_default":
-                "<random>",
-                "iskeymgr_creator":
-                False,
-                "iskeymgr_owner":
-                False
-            })
-            # Randomize the digest default.
-            random_or_hexvalue(part["items"][-1], "inv_default",
-                               DIGEST_SIZE * 8)
-
-            # We always place the digest into a 64-bit word after the data.
-            canonical_offset = (check_int(part["offset"]) +
-                                check_int(part["size"]) - DIGEST_SIZE - zer_size)
-            if offset > canonical_offset:
-                raise RuntimeError(
-                    "Not enough space in partition "
-                    "{} to accommodate a digest. Bytes available "
-                    "= {}, bytes allocated to items = {}".format(
-                        part["name"], part["size"], offset - part["offset"]))
-
-            offset = canonical_offset
-            log.info("> Adding digest {} at offset {} with size {}".format(
-                digest_name, offset, DIGEST_SIZE))
-            offset += DIGEST_SIZE
-
-        # Place zeroization field after the digest.
-        if part["zeroizable"]:
-            zer_name = part["name"] + ZER_SUFFIX
-            if zer_name in item_dict:
-                raise RuntimeError(
-                    'Digest name {} is not unique'.format(zer_name))
-            item_dict[zer_name] = len(part["items"])
-            part["items"].append({
-                "name":
-                zer_name,
-                "size":
-                ZER_SIZE,
-                "offset":
-                check_int(part["offset"]) + check_int(part["size"]) -
-                ZER_SIZE,
-                "ismubi":
-                False,
-                "isdigest":
-                False,
-                "iszer":
-                True,
-                "inv_default":
-                0,
-                "iskeymgr_creator":
-                False,
-                "iskeymgr_owner":
-                False
-            })
-
-            # We always place the zeroization field into a 64-bit word after the data.
-            canonical_offset = (check_int(part["offset"]) +
-                                check_int(part["size"]) - ZER_SIZE)
-            if offset > canonical_offset:
-                raise RuntimeError(
-                    "Not enough space in partition "
-                    "{} to accommodate a zeroization field. Bytes available "
-                    "= {}, bytes allocated to items = {}".format(
-                        part["name"], part["size"], offset - part["offset"]))
-
-            offset = canonical_offset
-            log.info("> Adding digest {} at offset {} with size {}".format(
-                zer_name, offset, ZER_SIZE))
-            offset += ZER_SIZE
-
-        # check offsets and size
-        if offset > check_int(part["offset"]) + check_int(part["size"]):
-            raise RuntimeError("Not enough space in partition "
-                               "{} to accommodate all items. Bytes available "
-                               "= {}, bytes allocated to items = {}".format(
-                                   part["name"], part["size"],
-                                   offset - part["offset"]))
-
-        offset = check_int(part["offset"]) + check_int(part["size"])
-
-        part_dict.setdefault(part['name'], {'index': j, 'items': item_dict})
+        offset += part.size
+        parts[part.name] = part
 
     if offset > config["otp"]["size"]:
         raise RuntimeError(
@@ -443,10 +669,10 @@ def _validate_mmap(config: Dict) -> Dict:
     log.info("Bytes required for partitions: {}".format(offset))
 
     # return the partition/item index dict
-    return part_dict
+    return parts
 
 
-class OtpMemMap():
+class OtpMemMap:
 
     # This holds the config dict.
     config = {}
@@ -482,6 +708,7 @@ class OtpMemMap():
         _validate_scrambling(config["scrambling"])
         # Validate memory map.
         self.part_dict = _validate_mmap(config)
+        config["partitions"] = list(self.part_dict.values())
 
         self.config = config
 
@@ -526,22 +753,23 @@ class OtpMemMap():
         table = [header]
         colalign = ("center", ) * len(header[:-1]) + ("left", )
         for part in self.config["partitions"]:
-            is_secret = "yes" if check_bool(part["secret"]) else "no"
-            is_buffered = "yes" if part["variant"] in [
-                "Buffered", "LifeCycle"
-            ] else "no"
+            is_secret = "yes" if check_bool(part.secret) else "no"
+            is_buffered = ("yes"
+                           if part.variant in [Variant.Buffered,
+                                               Variant.LifeCycle]
+                           else "no")
             wr_lockable = "no"
-            if part["write_lock"].lower() in ["csr", "digest"]:
-                wr_lockable = "yes (" + part["write_lock"] + ")"
+            if part.write_lock in [LockType.CSR, LockType.Digest]:
+                wr_lockable = f"yes ({part.write_lock.name})"
             rd_lockable = "no"
-            if part["read_lock"].lower() in ["csr", "digest"]:
-                rd_lockable = "yes (" + part["read_lock"] + ")"
+            if part.read_lock in [LockType.CSR, LockType.Digest]:
+                rd_lockable = f"yes ({part.read_lock.name})"
             integrity = "no"
-            if part["integrity"]:
+            if part.integrity:
                 integrity = "yes"
-            desc = part["desc"]
+            desc = part.desc
             row = [
-                part["name"], is_secret, is_buffered, integrity, wr_lockable,
+                part.name, is_secret, is_buffered, integrity, wr_lockable,
                 rd_lockable, desc
             ]
             table.append(row)
@@ -560,27 +788,27 @@ class OtpMemMap():
         colalign = ("center", ) * len(header)
 
         for k, part in enumerate(self.config["partitions"]):
-            for j, item in enumerate(part["items"]):
-                granule = "64bit" if check_bool(part["secret"]) else "32bit"
+            for j, item in enumerate(part.items):
+                granule = "64bit" if check_bool(part.secret) else "32bit"
 
-                if check_bool(item["isdigest"]):
+                if check_bool(item.is_digest):
                     granule = "64bit"
-                    name = "[{}](#Reg_{}_0)".format(item["name"],
-                                                    item["name"].lower())
-                elif check_bool(item["iszer"]):
+                    name = "[{}](#Reg_{}_0)".format(item.name,
+                                                    item.name.lower())
+                elif check_bool(item.is_zeroization):
                     granule = "64bit"
-                    name = item["name"]
+                    name = item.name
                 else:
-                    name = item["name"]
+                    name = item.name
 
                 if j == 0:
-                    row = [str(k), part["name"], str(part["size"]), granule]
+                    row = [str(k), part.name, str(part.size), granule]
                 else:
                     row = ["", "", "", granule]
 
                 row.extend([
-                    name, "0x{:03X}".format(check_int(item["offset"])),
-                    str(item["size"])
+                    name, "0x{:03X}".format(check_int(item.offset)),
+                    str(item.size)
                 ])
 
                 table.append(row)
@@ -598,19 +826,22 @@ class OtpMemMap():
         colalign[-1] = "left"
 
         for k, part in enumerate(self.config["partitions"]):
-            for j, item in enumerate(part["items"]):
+            for j, item in enumerate(part.items):
                 name = None
-                if check_bool(item["isdigest"]):
+                if item.is_digest:
                     continue
-                else:
-                    name = item["name"]
+
+                name = item.name
 
                 if j == 0:
-                    row = [part["name"]]
+                    row = [part.name]
                 else:
                     row = [""]
-                desc = " ".join(item.get("desc", "").split("\n"))
-                row.extend([name, str(item["size"]), desc])
+                if item.desc:
+                    desc = " ".join(item.desc.split("\n"))
+                else:
+                    desc = ""
+                row.extend([name, str(item.size), desc])
 
                 table.append(row)
 
@@ -625,13 +856,13 @@ class OtpMemMap():
         colalign = ("center", ) * len(header)
 
         for part in self.config["partitions"]:
-            if check_bool(part["hw_digest"]) or check_bool(part["sw_digest"]):
-                is_hw_digest = "yes" if check_bool(part["hw_digest"]) else "no"
-                for item in part["items"]:
-                    if check_bool(item["isdigest"]):
+            if check_bool(part.hw_digest) or check_bool(part.sw_digest):
+                is_hw_digest = "yes" if check_bool(part.hw_digest) else "no"
+                for item in part.items:
+                    if check_bool(item.is_digest):
                         name = "[{}](#Reg_{}_0)".format(
-                            item["name"], item["name"].lower())
-                        row = [name, part["name"], is_hw_digest]
+                            item.name, item.name.lower())
+                        row = [name, part.name, is_hw_digest]
                         table.append(row)
                         break
                 else:

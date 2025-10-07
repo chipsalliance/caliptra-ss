@@ -19,6 +19,8 @@
 //parameter int OtpByteAddrWidth = 12;
 
 <%!
+from lib.otp_mem_map import LockType
+
 ptr = 0x0
 def inc_ptr(x):
     global ptr
@@ -92,7 +94,7 @@ addrmap otp_ctrl {
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } ${partition["name"]}_ERROR[${i}:${i}];
+        } ${partition.name}_ERROR[${i}:${i}];
 % endfor
         field {
             sw = r;
@@ -411,20 +413,20 @@ addrmap otp_ctrl {
     CONSISTENCY_CHECK_PERIOD.PERIOD -> swwe = CHECK_REGWEN.REGWEN;
 
 % for partition in partitions:
-  % if partition["read_lock"] == "CSR":
+  % if partition.read_lock == LockType.CSR:
     reg {
-    desc = "Runtime read lock for the ${partition["name"]} partition.";
+    desc = "Runtime read lock for the ${partition.name} partition.";
         default sw = rw;
         default onwrite = wzc;
         default hw = r;
         //default swwe = DIRECT_ACCESS_REGWEN;
         field {
-            desc = "When cleared to 0, read access to the ${partition["name"]} partition is locked.Write 0 to clear this bit.";
+            desc = "When cleared to 0, read access to the ${partition.name} partition is locked.Write 0 to clear this bit.";
             reset = 0x1;
         } READ_LOCK [0:0];
-    } ${partition["name"]}_READ_LOCK @${"0x%X" % + inc_ptr(0x4)};
+    } ${partition.name}_READ_LOCK @${"0x%X" % + inc_ptr(0x4)};
 
-    ${partition["name"]}_READ_LOCK.READ_LOCK -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
+    ${partition.name}_READ_LOCK.READ_LOCK -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
 
   % endif
 % endfor
@@ -484,8 +486,8 @@ addrmap otp_ctrl {
     };
 
 % for i, partition in enumerate(partitions):
-  % if partition["write_lock"] == "Digest":
-    digest_t ${partition["name"]}_DIGEST @ ${"0x%X" % + inc_ptr(0x4 if i == 0 else 0x8)};
+  % if partition.write_lock == LockType.Digest:
+    digest_t ${partition.name}_DIGEST @ ${"0x%X" % + inc_ptr(0x4 if i == 0 else 0x8)};
   % endif
 % endfor
 

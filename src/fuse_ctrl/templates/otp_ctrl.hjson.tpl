@@ -14,11 +14,12 @@
 //
 <%
 from lib.name import Name
+from lib.otp_mem_map import LockType, Variant
 
 num_part = len(otp_mmap.config["partitions"])
 num_part_unbuf = 0
 for part in otp_mmap.config["partitions"]:
-  if part["variant"] == "Unbuffered":
+  if part.variant == Variant.Unbuffered:
     num_part_unbuf += 1
 num_part_buf = num_part - num_part_unbuf
 otp_size_as_bytes = 2 ** otp_mmap.config["otp"]["byte_addr_width"]
@@ -206,36 +207,36 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
     },
 % for part in otp_mmap.config["partitions"]:
 <%
-  part_name = Name.from_snake_case(part["name"])
+  part_name = Name.from_snake_case(part.name)
   part_name_camel = part_name.as_camel_case()
 %>\
     { name: "${part_name_camel}Offset",
-      desc: "Offset of the ${part["name"]} partition",
+      desc: "Offset of the ${part.name} partition",
       type: "int",
-      default: "${part["offset"]}",
+      default: "${part.offset}",
       local: "true"
     },
     { name: "${part_name_camel}Size",
-      desc: "Size of the ${part["name"]} partition",
+      desc: "Size of the ${part.name} partition",
       type: "int",
-      default: "${part["size"]}",
+      default: "${part.size}",
       local: "true"
     },
-  % for item in part["items"]:
+  % for item in part.items:
 <%
-  item_name = Name.from_snake_case(item["name"])
+  item_name = Name.from_snake_case(item.name)
   item_name_camel = item_name.as_camel_case()
 %>\
     { name: "${item_name_camel}Offset",
-      desc: "Offset of ${item["name"]}",
+      desc: "Offset of ${item.name}",
       type: "int",
-      default: "${item["offset"]}",
+      default: "${item.offset}",
       local: "true"
     },
     { name: "${item_name_camel}Size",
-      desc: "Size of ${item["name"]}",
+      desc: "Size of ${item.name}",
       type: "int",
-      default: "${item["size"]}",
+      default: "${item.size}",
       local: "true"
     },
   % endfor
@@ -737,7 +738,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
         fields: [
   % for k, part in enumerate(otp_mmap.config["partitions"]):
           { bits: "${k}"
-            name: "${part["name"]}_ERROR"
+            name: "${part.name}_ERROR"
             desc: '''
                   Set to 1 if an error occurred in this partition.
                   If set to 1, SW should check the !!ERR_CODE register at the corresponding index.
@@ -1164,10 +1165,10 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
       // Dynamic Locks of SW Parititons //
       ////////////////////////////////////
   % for part in otp_mmap.config["partitions"]:
-    % if part["read_lock"].lower() == "csr":
-      { name: "${part["name"]}_READ_LOCK",
+    % if part.read_lock == LockType.CSR:
+      { name: "${part.name}_READ_LOCK",
         desc: '''
-              Runtime read lock for the ${part["name"]} partition.
+              Runtime read lock for the ${part.name} partition.
               ''',
         swaccess: "rw0c",
         hwaccess: "hro",
@@ -1179,7 +1180,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
         fields: [
           { bits:   "0",
             desc: '''
-            When cleared to 0, read access to the ${part["name"]} partition is locked.
+            When cleared to 0, read access to the ${part.name} partition is locked.
             Write 0 to clear this bit.
             '''
             resval: 1,
@@ -1221,14 +1222,14 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
       // Integrity Digests //
       ///////////////////////
   % for part in otp_mmap.config["partitions"]:
-    % if part["sw_digest"]:
+    % if part.sw_digest:
       { multireg: {
-          name:     "${part["name"]}_DIGEST",
+          name:     "${part.name}_DIGEST",
           desc:     '''
-                    Integrity digest for the ${part["name"]} partition.
+                    Integrity digest for the ${part.name} partition.
                     The integrity digest is 0 by default. Software must write this
                     digest value via the direct access interface in order to lock the partition.
-                    After a reset, write access to the ${part["name"]} partition is locked and
+                    After a reset, write access to the ${part.name} partition is locked and
                     the digest becomes visible in this CSR.
                     ''',
           count:     "NumDigestWords",
@@ -1245,11 +1246,11 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
           ]
         }
       },
-    % elif part["hw_digest"]:
+    % elif part.hw_digest:
       { multireg: {
-          name:     "${part["name"]}_DIGEST",
+          name:     "${part.name}_DIGEST",
           desc:     '''
-                    Integrity digest for the ${part["name"]} partition.
+                    Integrity digest for the ${part.name} partition.
                     The integrity digest is 0 by default. The digest calculation can be triggered via the !!DIRECT_ACCESS_CMD.
                     After a reset, the digest then becomes visible in this CSR, and the corresponding partition becomes write-locked.
                     ''',
