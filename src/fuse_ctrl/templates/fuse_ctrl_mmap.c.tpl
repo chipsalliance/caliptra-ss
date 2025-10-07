@@ -72,30 +72,13 @@ const partition_t partitions[NUM_PARTITIONS] = {
 
 % for i, p in enumerate(partitions[:len(partitions)]):
 const uint32_t ${p.name.lower()}_fuses[] = {
-  % if (p.hw_digest or p.sw_digest) and not p.zeroizable:
-    % for j, f in enumerate(p.items[:len(p.items)-1]):
-      % if j < len(p.items)-2:
-    ${f.name},
-      % else:
-    ${f.name}
-      % endif
-    % endfor
-  % elif (p.hw_digest or p.sw_digest) and p.zeroizable:
-    % for j, f in enumerate(p.items[:len(p.items)-2]):
-      % if j < len(p.items)-3:
-    ${f.name},
-      % else:
-    ${f.name}
-      % endif
-    % endfor
-  % else:
-    % for j, f in enumerate(p.items[:len(p.items)]):
-      % if j < len(p.items)-1:
-    ${f.name},
-      % else:
-    ${f.name}
-      % endif
-    % endfor
-  % endif
+<%
+  num_extra_items = (p.hw_digest or p.sw_digest) + p.zeroizable
+  listed_items = p.items[:-num_extra_items] if num_extra_items else p.items
+%>\
+  % for j, f in enumerate(listed_items):
+<% comma = "," if j < len(listed_items) - 1 else "" %>\
+    ${f.name}${comma}
+  % endfor
 };
 % endfor
