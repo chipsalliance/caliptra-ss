@@ -1112,7 +1112,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
-        .ListenPort     (5000)
+        .ListenPort     (51983)
     ) jtagdpi_cptra_core (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1327,7 +1327,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag2"),
-        .ListenPort     (7000)
+        .ListenPort     (64902)
     ) jtagdpi_lcc (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1530,7 +1530,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag1"),
-        .ListenPort     (6000)
+        .ListenPort     (60217)
     ) jtagdpi_mcu (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
