@@ -366,13 +366,14 @@ These gaps are also acceptable in Caliptra because it doesn't use TileLink nor a
 Functional coverage is at 94.4.
 Most of the holes are in agents that are covered elsewhere in OpenTitan like the push pull agent and TileLink agent.
 The only cover groups below 80 are the [error cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L297-L300) and the [state read mask cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L278-L282).
-The error cover group can be covered by running more error tests and the state read mask covergroup is a cross for reading the state with one, two and three byte masks, which is unlikely to contain bugs since it uses standard logic used elsewhere in OpenTitan.
+The error cover group has better coverage in the [main OpenTitan regression](https://reports.opentitan.org/hw/ip/kmac_unmasked/dv/2024.10.16_00.36.50/cov_report/groups.html), and the state read mask cover group is a cross for reading the state with one, two and three byte masks, which is unlikely to contain bugs since it uses standard logic used elsewhere in OpenTitan.
 
 ### Top-level coverage
 
-Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 100, conditional 64.2, toggle 50.9 and branch 90.0.
-The conditional holes are line 139 related to `ahb_addr[1]` (also the only hole in branch) which should be covered by the SHA3 smoke test, and line 298 related to `intr_kmac_err` and line 300 related to `intr_fifo_empty` which should be covered by the interrupt test.
-The main toggle holes are `haddr_i[1:0]` which should be hit by the SHA3 smoke test and `hsize_i[2]` which cannot be hit with our current bus implementation, and `err_intr` which should be hit by interrupt test.
+Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 96.8, conditional 85.7, toggle 51.8 and branch 80.0.
+The only conditional and branch hole is line 139 related to `ahb_addr[1]` which is because there is an issue with half word writes not propagating over the bus.
+This issue is tracked [here](https://github.com/chipsalliance/caliptra-rtl/issues/1066), but is unlikely to be an issue with the SHA3 block.
+The main toggle holes are `haddr_i[1:0]` which tracked using the same issue mentioned above and `hsize_i[2]` which cannot be hit with our current bus implementation.
 Other toggle coverage are `htrans[0]` which indicate bus bursts, reset, power good and debug unlock which are chip-wide signals.
 
 In terms of line coverage for "EnFullKmac" parameter, the following logic are non-trivial assignments:
@@ -381,13 +382,6 @@ In terms of line coverage for "EnFullKmac" parameter, the following logic are no
 - `kmac_app.sv` line [419](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L419) which is a copy of line [415](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L415) which is covered by block-levelDV.
 - `kmac_app.sv` line [438 and 439](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L437-L439) which is an error condition and should not be reachable without fault injection
 - `kmac_app.sv` lines [684 to 686](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L683-L686) which is an error condition and should not be reachable without fault injection.
-
-### TODO items
-
-Some of the holes identified above should have been covered so here are some concrete action items, these should be investigated before doing a formal sign-off for SHA3:
-- Check whether running more iterations of the error test covers the error cover group on the block-level DV.
-- Find out why the ahb_addr[1] and haddr_i[1:0] is not being hit by the SHA3 smoke test.
-- Find out why the interrupt conditions and toggles are not hit by the interrupt test.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
