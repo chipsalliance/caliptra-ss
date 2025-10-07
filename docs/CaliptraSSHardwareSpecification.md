@@ -864,6 +864,20 @@ It is important to note that the VolatileUnlock state is not a standard LCC stat
 
 Once in the VolatileUnlock state, the MCU can execute instructions stored in the SRAM, which can be initialized through a backdoor mechanism. This capability allows for basic FUSE tests and calibration operations during early debugging. However, the VolatileUnlock state is inherently unstable and temporary—if a reset is applied or the Caliptra Subsystem undergoes a power cycle, the LCC will return to the RAW state.
 
+## LCC RAW Unlock Token Generation & Setting
+
+The *hashed* RAW unlock token is stored as a netlist constant. Its value is determined by the
+`cptra_ss_raw_unlock_token_hashed_i` input of `caliptra_ss_top`. Every integrator must set the
+hashed token to a unique value. `tools/scripts/lc_ctrl_script/gen_lc_ctrl_token.py` can be used to
+generate the hashed token. The *unhashed* RAW unlock token is a secret that must be obtained from
+a cryptographically secure random number generator. The aforementioned tool accepts an unhashed
+token as input or, if omitted, generates an unhashed token using Python's `secrets` module.
+
+The *hashed* RAW unlock token must be applied to the `cptra_ss_raw_unlock_token_hashed_i` input of
+`caliptra_ss_top`. It's also required in SW that performs a *volatile* RAW unlock.
+
+The *unhashed* RAW unlock token is required in SW that performs a *non-volatile* RAW unlock.
+
 ## SOC LCC Interface usage & requirements
 
 The interaction between the SoC and the LCC within the Caliptra Subsystem is pivotal for maintaining the security and functionality of the overall system. This section outlines the specific usage and requirements for interfacing with the LCC from the SoC perspective.
