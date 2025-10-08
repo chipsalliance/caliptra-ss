@@ -335,7 +335,7 @@ The previously mentioned uncovered lines also cause the corresponding branches
 to be uncovered.
 
 ---
-## SHA3 Coverage Analysis
+## SHA3 coverage analysis
 
 The coverage on the SHA3 core is a combination of the block-level coverage derived from OpenTitan and top-level tests in the Caliptra environment.
 Before we discuss the results from the block-level verification, there are a few files that are in Caliptra RTL that are not in OpenTitan.
@@ -350,15 +350,17 @@ The other aspect that is worth mentioning is that we should check the code cover
 The code related to those configurations are unique to Caliptra, although most of these are turning complicated logic into assign statements since it strips out functionality.
 For more detailed discussion of this look at the top-level coverage section.
 
-### Block-level coverage
+### OpenTitan block-level coverage
 
-The block-level coverage is run on [a modified fork of OpenTitan](https://github.com/marnovandermaas/opentitan/tree/kmac-stripped-down-cfg).
+The block-level coverage is run on [a modified fork of OpenTitan](https://github.com/marnovandermaas/opentitan/releases/tag/caliptra_coverage) with a [stripped down configuration](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson).
+This modified fork is necessary to make sure that we are testing the RTL consumed by Caliptra with the exception of the module and macro renaming.
+The stripped down configuration is necessary to communicate to tests not to test features that are only present when the full KMAC is present, see [this commit](https://github.com/marnovandermaas/opentitan/commit/1bffadd90473b31ed2cd5ee083c2362e6742abe8) for details.
 To re-run the block-level tests you can use the following command:
 ```sh
 util/dvsim/dvsim.py hw/ip/kmac/dv/kmac_stripped_sim_cfg.hjson -i all --cov
 ```
 
-The results are very good with line coverage at 95.9, conditional coverage at 93.8 and branch coverage at 94.2.
+The results are very good with **line coverage at 95.9, conditional coverage at 93.8 and branch coverage at 94.2**.
 The toggle coverage is 100 for all the sub-modules but for the DUT itself is at 78.5.
 This is mainly because certain TileLink fields and alert fields are unreachable, this is acceptable in OpenTitan because this functionality is implemented by common wrappers that are tested elsewhere.
 These gaps are also acceptable in Caliptra because it doesn't use TileLink nor alerts like OpenTitan does.
@@ -367,21 +369,38 @@ Functional coverage is at 94.4.
 Most of the holes are in agents that are covered elsewhere in OpenTitan like the push pull agent and TileLink agent.
 The only cover groups below 80 are the [error cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L297-L300) and the [state read mask cover group](https://github.com/marnovandermaas/opentitan/blob/kmac-stripped-down-cfg/hw/ip/kmac/dv/env/kmac_env_cov.sv#L278-L282).
 The error cover group has better coverage in the [main OpenTitan regression](https://reports.opentitan.org/hw/ip/kmac_unmasked/dv/2024.10.16_00.36.50/cov_report/groups.html), and the state read mask cover group is a cross for reading the state with one, two and three byte masks, which is unlikely to contain bugs since it uses standard logic used elsewhere in OpenTitan.
+Unaligned reads in Caliptra are also not supported with the current AHB-lite specification as mentioned in the next section.
 
-### Top-level coverage
+### Caliptra-specific coverage
 
-Running all the existing SHA3 tests gets the following coverage for SHA3 control block: line 96.8, conditional 85.7, toggle 51.8 and branch 80.0.
-The only conditional and branch hole is line 139 related to `ahb_addr[1]` which is because there is an issue with half word writes not propagating over the bus.
-This issue is tracked [here](https://github.com/chipsalliance/caliptra-rtl/issues/1066), but is unlikely to be an issue with the SHA3 block.
-The main toggle holes are `haddr_i[1:0]` which tracked using the same issue mentioned above and `hsize_i[2]` which cannot be hit with our current bus implementation.
-Other toggle coverage are `htrans[0]` which indicate bus bursts, reset, power good and debug unlock which are chip-wide signals.
+These are the current tests that are run on the Caliptra core top-level that exercise the SHA3 IP block:
+- [SHA3 hash, SHAKE mode and message alignment](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_sha3).
+- [cSHAKE mode](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_cshake).
+- [SHA3 register access](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_sha3_regs).
+- [SHA3 interrupt triggering and processing](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_sha3_interrupt).
+- [SHA3 external mu](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_sha3_externalmu).
+- [MLDSA external mu](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_mldsa_externalmu).
+- [Randomised MDLSA external mu](https://github.com/chipsalliance/caliptra-rtl/tree/main/src/integration/test_suites/smoke_test_mldsa_externalmu_keygen_sign_vfy_rand).
+
+Running all these existing tests gets the following coverage for [SHA3 control block](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv) with **line coverage at 100, conditional coverage at 92.9, toggle coverage at 52.2 and branch coverage at 90.0**.
+The only condition and branch hole is line 139 related to `ahb_addr[1]` being high which is because the [current AHB-lite interface does not support transactions that are not four byte aligned](https://github.com/chipsalliance/caliptra-rtl/blob/227fa2e48a341a7b33a0a105cc94557c5d2b8e5f/docs/CaliptraHardwareSpecification.md#ahb-lite-interface).
+The main toggle holes are `haddr_i[1:0]` which is not possible with four byte aligned bus transactions, `hsize_i[2]` which indicates sizes larger than 32 bits and `htrans[0]` which indicates bus bursts.
+Other toggle coverage are `reset_n`, `cptra_pwrgood` and `debugUnlock_or_scan_mode_switch` which are chip-wide signals tested elsewhere.
 
 In terms of line coverage for "EnFullKmac" parameter, the following logic are non-trivial assignments:
 - `kmac.sv` lines [866 and 867](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac.sv#L865-L867) this code is an error condition and should not be reachable without fault injection.
 - `kmac_app.sv` lines [399 and 402](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_app.sv#L398-L402) these are a copy of lines [392 and 395](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac_app.sv#L391-L395) which are covered in block-level DV.
-- `kmac_app.sv` line [419](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L419) which is a copy of line [415](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L415) which is covered by block-levelDV.
+- `kmac_app.sv` line [419](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L419) which is a copy of line [415](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L415) which is covered by block-level DV.
 - `kmac_app.sv` line [438 and 439](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L437-L439) which is an error condition and should not be reachable without fault injection
 - `kmac_app.sv` lines [684 to 686](https://github.com/chipsalliance/caliptra-rtl/blob/19dc3e00572423ca5ed03633f38f70a4592cb56c/src/sha3/rtl/kmac_app.sv#L683-L686) which is an error condition and should not be reachable without fault injection.
+
+
+### SHA3 coverage summary
+
+The coverage RTL for the [KMAC module](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/kmac.sv) and all of its submodules are covered by a modified OpenTitan block-level DV environment.
+There are a number of RTL files relating to register files but these are not explicitly covered in the Caliptra environment because they are auto-generated.
+The [SHA3 control module](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/sha3/rtl/sha3_ctrl.sv) has good coverage using the current Caliptra tests.
+Looking at both of these coverage results, there are no current known holes in the testing of the design and so there is a high-level of confidence that the SHA3 block operates as intended.
 
 ---
 ## SoC Interface / Caliptra Core Coverage Analysis Summary
