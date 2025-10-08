@@ -41,20 +41,39 @@ module caliptra_ss_top_sva
   // fuse_ctrl_filter
   ////////////////////////////////////////////////////
 
+  logic dai_for_secret_partition;
+  assign dai_for_secret_partition = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
+                                    (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr ==
+                                     `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
+                                    (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0);
+
+  logic user_other_than_caliptra;
+  assign user_other_than_caliptra = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser !=
+                                     `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_caliptra_dma_axi_user_i);
+
+  logic unpriv_dai_access;
+  assign unpriv_dai_access = dai_for_secret_partition && user_other_than_caliptra;
+
   // The fuse_ctrl access control filter must discard an AXI write request when
   // the access control policy is violated.
+  //
+  // The discard behaviour works by setting the discard_fuse_write signal in otp_ctrl and this
+  // assertion checks that the signal gets set.
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
-    ((`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr == 32'h7000_0060) &&
-     (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0) &&
-     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser == `CPTRA_SS_TB_TOP_NAME.cptra_ss_strap_mcu_lsu_axi_user_i))
-     |-> ##2
-     `FC_PATH.discard_fuse_write)
+                   unpriv_dai_access |-> ##2 `FC_PATH.discard_fuse_write)
 
-  // When the fuse_ctrl access control filter discards an AXI write request, the DAI
-  // must signal a recoverable AccessError.
+  // When the fuse_ctrl access control filter discards an AXI write request, the DAI must signal a
+  // recoverable AccessError in its response (which becomes visible exactly one cycle after
+  // u_otp_ctrl_dai signals that the operation has completed).
   `CALIPTRA_ASSERT(FcAxiFilterDaiAccessError_A,
-    ($fell(`FC_PATH.discard_fuse_write)) |-> otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError)
+                   `FC_PATH.discard_fuse_write ##1
+                   `FC_PATH.otp_operation_done[->1] |=>
+                   `FC_PATH.u_otp_ctrl_dai.error_o == {AccessError})
+
+  logic dai_read_req, dai_write_req, dai_zeroize_req;
+  assign dai_read_req    = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiRead});
+  assign dai_write_req   = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiWrite});
+  assign dai_zeroize_req = `FC_PATH.dai_req && (`FC_PATH.dai_cmd == {DaiZeroize});
 
   //WDT checks:
   cascade_wdt_t1_pet: assert property (
@@ -337,8 +356,7 @@ module caliptra_ss_top_sva
 
   // Assert that an DAI write to a partition whose life-cycle phase has expired will result in an error.
   `CALIPTRA_ASSERT(FcPartitionLcPhaseWriteLock_A,
-    `FC_PATH.dai_req &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+    dai_write_req &&
     dec_lc_state > PartInfo[part_idx].lc_phase
     |-> ##10
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
@@ -354,8 +372,7 @@ module caliptra_ss_top_sva
   `CALIPTRA_ASSERT(FcSecretPartitionReadLock_A,
     ((PartInfo[part_idx].secret) &&
      (`CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[otp_ctrl_part_pkg::digest_addrs[part_idx]/2] != 0) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     dai_read_req &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
      (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
      |-> ##2
@@ -376,7 +393,6 @@ module caliptra_ss_top_sva
   logic        part_may_have_digest, part_has_digest;
   int unsigned part_digest_word_addr;
   logic [21:0] raw_part_digest_value;
-  logic        dai_write_req;
   logic        dai_addr_below_digest;
   logic        dai_access_error;
 
@@ -385,7 +401,6 @@ module caliptra_ss_top_sva
   assign raw_part_digest_value =
     `CPTRA_SS_TB_TOP_NAME.u_otp.u_prim_ram_1p_adv.u_mem.mem[part_digest_word_addr];
   assign part_has_digest       = part_may_have_digest && (raw_part_digest_value != 0);
-  assign dai_write_req         = `FC_PATH.dai_req && dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite;
   assign dai_addr_below_digest = (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
                                  (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]);
   assign dai_access_error = otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError;
@@ -443,48 +458,52 @@ module caliptra_ss_top_sva
   // Store the latest dai_addr and part_idx before the otp_operation_done, as it may have changed since.
   logic [OtpByteAddrWidth-1:0] past_dai_addr;
   logic [NumPartWidth-1:0]     past_part_idx;
-  initial begin
-    forever begin
-      @(posedge `FC_PATH.clk_i);
-      if ((`FC_PATH.dai_req)) begin
-        past_dai_addr = `FC_PATH.dai_addr;
-        past_part_idx = part_idx;
-      end
+
+  always_ff @(posedge `FC_PATH.clk_i) begin
+    if (`FC_PATH.dai_req) begin
+      past_dai_addr <= `FC_PATH.dai_addr;
+      past_part_idx <= part_idx;
     end
   end
 
-  // After a zeroize command, the corresponding fuse bits must turn to all ones.
+  // After a successful zeroize command, the corresponding fuse bits must turn to all ones.
+  //
+  // We detect a zeroize command by seeing a zeroize request appearing through the DAI, then see it
+  // complete in at most 50 cycles through otp_operation_done. The response might be an error. If
+  // not, we check that the partition has indeed been zeroized at the requested address.
+  //
   // Note: this assertion has to be disabled when injecting corrupted zeroization in the OTP memory.
   `CALIPTRA_ASSERT(FcZeroizeFuseAllOnes_A,
     (
       (PartInfo[part_idx].hw_digest || PartInfo[part_idx].sw_digest) &&
       (PartInfo[part_idx].zeroizable) &&
-      (`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+      dai_zeroize_req &&
       (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
       (`FC_PATH.dai_addr <= otp_ctrl_part_pkg::zero_addrs[part_idx])
       ##[1:50]
       (`FC_PATH.otp_operation_done)
     )
     |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError) ||
     data_and_ecc_zeroized(past_part_idx, past_dai_addr),
     `CALIPTRA_ASSERT_DEFAULT_CLK,
     (`CALIPTRA_ASSERT_DEFAULT_RST || `FC_LCC_TB_SERV_PATH.disable_fc_all_ones_sva)
   )
 
-  // For scrambled partitions, a successful zeroization of a fuse word should result in an all-1s word
-  // being returned to software in the `DIRECT_ACCESS_RDATA` registers, independent of any potential
-  // stuck-at-0 fuses in the word.
+  // For scrambled partitions, a successful zeroization of a fuse word should always get an all-1s
+  // result, independent of any potential stuck-at-0 fuses in the word.
+  //
+  // Note that this doesn't apply to the case where the command responds with an error code.
   `CALIPTRA_ASSERT(FcZeroizeRegRdAllOnes_A,
     (
       (PartInfo[part_idx].secret) &&
       (PartInfo[part_idx].zeroizable) &&
-      (`FC_PATH.dai_req) &&
-      (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize)
+      dai_zeroize_req
       ##[1:50]
       (`FC_PATH.otp_operation_done)
     )
     |=>
+    (otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError) ||
     (`FC_PATH.hw2reg.direct_access_rdata == '1)
   )
 
@@ -494,8 +513,7 @@ module caliptra_ss_top_sva
      (PartInfo[part_idx].zeroizable) &&
      (is_zeroized(part_idx)) &&
      (mubi8_t'(`FC_PATH.part_access[part_idx].write_lock) == MuBi8True) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+     dai_write_req &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
      (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
     |-> ##2
@@ -508,8 +526,7 @@ module caliptra_ss_top_sva
      (PartInfo[part_idx].zeroizable) &&
      (is_zeroized(part_idx)) &&
      (mubi8_t'(`FC_PATH.part_access_dai[part_idx].read_lock) == MuBi8True) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
+     dai_read_req &&
      (`FC_PATH.dai_addr >= PartInfo[part_idx].offset) &&
      (`FC_PATH.dai_addr < otp_ctrl_part_pkg::digest_addrs[part_idx]))
     |-> ##2
@@ -519,8 +536,7 @@ module caliptra_ss_top_sva
   // Make sure that the zeroization command will never return descrambled data for the secret partitions
   `CALIPTRA_ASSERT(FcZeroizeNoDescrambled_A,
     ((PartInfo[part_idx].secret) &&
-     (`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize))
+     dai_zeroize_req)
     |->
     not(!`FC_PATH.otp_operation_done[*1:$] ##1
         (otp_scrmbl_cmd_e'(`FC_PATH.u_otp_ctrl_dai.scrmbl_cmd_o) == Decrypt))
@@ -535,27 +551,32 @@ module caliptra_ss_top_sva
 
   // Attempt to zeroize a non zeroizable partition must be rejected and an error flag should be raised
   `CALIPTRA_ASSERT(FcZeroizeNonZeroizableDenied_A,
-    ((`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiZeroize) &&
+    (dai_zeroize_req &&
      (!PartInfo[part_idx].zeroizable))
     |-> ##2
     otp_err_e'(`FC_PATH.part_error[DaiIdx]) == AccessError
   )
 
-  // Zeroization marker field is always readable
+  // The zeroization marker field is always readable
+  //
+  // As such, a DaiRead request on a zeroization marker of a zeroizable partition shouldn't ever be
+  // stopped by the partition's read lock. It should only fail if the partition is secret (and the
+  // AXI user doesn't have permission to read it) or if the partition isn't zeroizable. This can be
+  // seen because unpriv_dai_access was high on the previous cycle.
+  //
+  // The assertion is phrased as "If we see a DAI read that we don't expect to fail, it won't". We
+  // don't expect a failure when the partition is zeroizable and is not secret.
   `CALIPTRA_ASSERT(FcZeroizeMarkerAlwaysReadable_A,
-    ((`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiRead) &&
-     (PartInfo[part_idx].zeroizable) &&
-     (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
-    |-> ##2
-    otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError
-  )
+                   (dai_read_req &&
+                    !$past(unpriv_dai_access) &&
+                    (PartInfo[part_idx].zeroizable) &&
+                    (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
+                   |-> ##2
+                   otp_err_e'(`FC_PATH.part_error[DaiIdx]) == NoError)
 
   // Zeroization marker field is never writable
   `CALIPTRA_ASSERT(FcZeroizeMarkerNeverWritable_A,
-    ((`FC_PATH.dai_req) &&
-     (dai_cmd_e'(`FC_PATH.dai_cmd) == DaiWrite) &&
+    (dai_write_req &&
      (PartInfo[part_idx].zeroizable) &&
      (`FC_PATH.dai_addr == otp_ctrl_part_pkg::zero_addrs[part_idx]))
     |-> ##2

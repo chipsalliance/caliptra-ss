@@ -158,6 +158,39 @@ bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
     return wait_dai_op_idle(exp_status);
 }
 
+bool dai_wr_array(uint32_t        first_fuse,
+                  uint32_t        last_fuse,
+                  const uint32_t *wdata,
+                  unsigned        granularity) {
+    VPRINTF(LOW, "DEBUG: Starting DAI array write operation (0x%0x .. 0x%0x)\n",
+            first_fuse, last_fuse);
+
+    VPRINTF(LOW, "DEBUG: Writing wdata[0]: 0x%08X to DIRECT_ACCESS_WDATA_0.\n", wdata[0]);
+    lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_0, wdata[0]);
+
+    if (granularity > 32) {
+        VPRINTF(LOW, "DEBUG: Writing wdata[1]: 0x%08X to DIRECT_ACCESS_WDATA_1.\n", wdata[1]);
+        lsu_write_32(SOC_OTP_CTRL_DAI_WDATA_RF_DIRECT_ACCESS_WDATA_1, wdata[1]);
+    }
+
+    // Each fuse takes up either 4 or 8 bytes of address space (depending on whether granularity is
+    // at most 32)
+    uint32_t fuse_addr_inc = (granularity <= 32) ? 4 : 8;
+
+    for (uint32_t addr = first_fuse; addr <= last_fuse; addr += fuse_addr_inc) {
+        VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
+        lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_ADDRESS, addr);
+
+        VPRINTF(LOW, "DEBUG: Triggering DAI write command.\n");
+        lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_WRITE);
+
+        if (!wait_dai_op_idle(0)) return false;
+    }
+
+    VPRINTF(LOW, "DEBUG: Fuse array written.\n");
+    return true;
+}
+
 bool dai_rd(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
             uint32_t granularity, uint32_t exp_status) {
     VPRINTF(LOW, "DEBUG: Starting DAI read operation...\n");
@@ -196,8 +229,7 @@ bool calculate_digest(uint32_t partition_base_address, uint32_t exp_status) {
     return wait_dai_op_idle(exp_status);
 }
 
-bool dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
-             uint32_t granularity, uint32_t exp_status) {
+bool dai_zer(uint32_t addr, uint32_t granularity, uint32_t exp_status, bool disable_rdata_check) {
     VPRINTF(LOW, "DEBUG: Starting DAI zeroization operation...\n");
 
     VPRINTF(LOW, "DEBUG: Writing address: 0x%08X to DIRECT_ACCESS_ADDRESS.\n", addr);
@@ -206,17 +238,38 @@ bool dai_zer(uint32_t addr, uint32_t* rdata0, uint32_t* rdata1,
     VPRINTF(LOW, "DEBUG: Triggering DAI Zeroize command.\n");
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_CMD, FUSE_CTRL_CMD_DAI_ZER);
 
-    bool ret = wait_dai_op_idle(exp_status);
+    if (!wait_dai_op_idle(exp_status)) return false;
 
-    *rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
-    VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", *rdata0);
+    // At this point, we know the error status reported by the DAI command matched exp_status. If
+    // that is nonzero, the command reported at least one error and so we don't have an opinion
+    // about the rdata.
+    //
+    // Similarly, if disable_rdata_check is true, we can exit immediately.
+    if (exp_status || disable_rdata_check) return true;
 
-    if (granularity == 64) {
-        *rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
-        VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", *rdata1);
+    // If zeroization didn't report an error code, we expect it to assert that it zeroized all the
+    // bits. First, check it asserts this for the bottom word.
+    uint32_t rdata0 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_0);
+    VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_0: 0x%08X\n", rdata0);
+    if (rdata0 != 0xffffffff) {
+        VPRINTF(LOW, "ERROR: Zeroization at 0x%x returned 0x%x for bottom word.\n", addr, rdata0);
+        return false;
     }
 
-    return ret;
+    // If granularity > 32 then we also expect the command to assert it zeroized all the bits in the
+    // top word.
+    if (granularity > 32) {
+        uint32_t rdata1 = lsu_read_32(SOC_OTP_CTRL_DAI_RDATA_RF_DIRECT_ACCESS_RDATA_1);
+        VPRINTF(LOW, "DEBUG: Read data from DIRECT_ACCESS_RDATA_1: 0x%08X\n", rdata1);
+
+        if (rdata1 != 0xffffffff) {
+            VPRINTF(LOW,
+                    "ERROR: Zeroization at 0x%x returned 0x%x for top word.\n", addr, rdata1);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 

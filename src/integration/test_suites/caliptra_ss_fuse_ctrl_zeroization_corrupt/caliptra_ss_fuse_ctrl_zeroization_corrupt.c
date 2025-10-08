@@ -79,39 +79,28 @@ int part_read_compare(
     return mismatches;
 }
 
-int part_zeroize(const partition_t* part, uint32_t exp_status, uint8_t check_marker) {
-    uint32_t rdata[2];
-    int mismatches = 0;
-
+// Use dai_zer to zeroize the given partition, expecting the DAI command to complete with status
+// equal to exp_status.
+//
+// Return true if all zeroizations completed as expected.
+bool part_zeroize(const partition_t* part, uint32_t exp_status) {
     // Firstly, zeroize the zeroization marker, which always has a
     // granularity and size of 64 bit.
-    dai_zer(part->zer_address, &rdata[0], &rdata[1], 64, exp_status);
-    if (check_marker) {
-      mismatches += compare(rdata[0], 0xFFFFFFFF, part->zer_address);
-      mismatches += compare(rdata[1], 0xFFFFFFFF, part->zer_address + 4);
-    }
+    if (!dai_zer(part->zer_address, 64, exp_status, false)) return false;
 
     // Secondly, zeroize the data, for which the granularity and size
     // depend on the partition.
     for (uint32_t addr = part->address;
-            addr < part->digest_address;
-            addr += part->granularity / 8) {
-        dai_zer(addr, &rdata[0], &rdata[1], part->granularity, exp_status);
-        mismatches += compare(rdata[0], 0xFFFFFFFF, addr);
-        // Check second 32 bit only if the partition has a granularity
-        // of more than 32 bit.
-        if (part->granularity > 32) {
-            mismatches += compare(rdata[1], 0xFFFFFFFF, addr + 4);
-        }
+         addr < part->digest_address;
+         addr += part->granularity / 8) {
+        if (!dai_zer(addr, part->granularity, exp_status, false)) return false;
     }
 
     // Finally, zeroize the digest, which always has a granularity and
     // size of 64 bit.
-    dai_zer(part->digest_address, &rdata[0], &rdata[1], 64, exp_status);
-    mismatches += compare(rdata[0], 0xFFFFFFFF, part->digest_address);
-    mismatches += compare(rdata[1], 0xFFFFFFFF, part->digest_address + 4);
+    if (!dai_zer(part->digest_address, 64, exp_status, false)) return false;
 
-    return mismatches;
+    return true;
 }
 
 int check_part_zeroized(
@@ -184,7 +173,7 @@ int test_sw_corruption (void) {
     wait_dai_op_idle(0);
 
     // Step 4: Zeroize and check that zeroization succeeded.
-    if (part_zeroize(&part, 0, /*check_marker*/1) != 0) {
+    if (!part_zeroize(&part, 0)) {
         VPRINTF(LOW, "ERROR: Step 4 failed!\n");
         return 1;
     }
@@ -220,7 +209,7 @@ int test_stuck_at_corruption (void) {
     // Step 2: Zeroize -- this should still succeed because the number
     // of bits stuck at 0 is lower than the threshold that would cause
     // zeroization to fail.
-    if (part_zeroize(&part, 0, /*check_marker*/0) != 0) {
+    if (!part_zeroize(&part, 0)) {
         VPRINTF(LOW, "ERROR: Step 2 failed!\n");
         retval = 1;
         goto epilogue;

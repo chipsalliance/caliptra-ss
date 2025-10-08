@@ -15,6 +15,7 @@
 // limitations under the License.
 //********************************************************************************
 #include <stdint.h>
+#include <stddef.h>
 
 #include "caliptra_ss_lc_ctrl_address_map.h"
 #include "caliptra_ss_lib.h"
@@ -74,80 +75,101 @@ const partition_info_t kPartitionsInfo[] = {
 const uint32_t kNumPartitions =
     sizeof(kPartitionsInfo) / sizeof(kPartitionsInfo[0]);
 
-static bool zeroization_check_unfeasible(uint32_t partition_id) {
-  partition_t *p = &partitions[partition_id];
+// Check that the partition containing address is indeed secret by trying to read the address and
+// checking we get a DAI_ERROR response and rdata of zero.
+static bool check_secret_at(uint32_t address)
+{
   uint32_t read_data[2];
 
-  if (p->zer_address == 0) {
-    VPRINTF(LOW, "MCU ERROR: Partition %d is not zeroizable\n", partition_id);
+  // Read the value at the address to determine if the partition is secret. If the partition is
+  // secret, we should see a DAI_ERROR.
+  if (!dai_rd(address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+    VPRINTF(LOW, "MCU ERROR: Didn't get expected DAI error when accessing %x\n", address);
     return false;
   }
 
-  // Read the digest to determine if the partition is locked
-  dai_rd(p->digest_address, &read_data[0], &read_data[1], 64, 0);
-  if (read_data[0] == 0 && read_data[1] == 0) {
-    VPRINTF(LOW, "MCU ERROR: Partition %d is not locked\n", partition_id);
-    return false;
-  }
-
-  // Check that the partition has not been zeroized already.
-  dai_rd(p->zer_address, &read_data[0], &read_data[1], 64, 0);
-  if (read_data[0] == 0xFFFFFFFF || read_data[1] == 0xFFFFFFFF) {
-    VPRINTF(LOW, "MCU ERROR: Partition %d has already been zeroized\n", partition_id);
-    return false;
-  }
-
-  // Attempt to zeroize. We check sure that the zeroize flag is still 0
-  // to confirm that zeroization is not feasible from MCU.
-  dai_zer(p->zer_address, &read_data[0], &read_data[1], 64,
-          OTP_CTRL_STATUS_DAI_ERROR_MASK);
+  // What's more, we expect the rdata to be dead zero (rather than the partition giving us some
+  // exciting data)
   if (read_data[0] != 0 || read_data[1] != 0) {
-    VPRINTF(LOW, "MCU ERROR: Zeroize flag was set to 0x%x%x\n", read_data[1], read_data[0]);
+    VPRINTF(LOW, "MCU ERROR: Failing DaiRd operation returned nonzero data: {%x, %x}\n",
+            read_data[0], read_data[1]);
     return false;
   }
-
-  reset_fc_lcc_rtl();
-  wait_dai_op_idle(0);
 
   return true;
 }
 
+// Try to zeroize the given partition. This won't work, because the partition should be locked.
+// Check that we get the sort of "access denied" behaviour we expect.
+static bool zeroization_check_unfeasible(const partition_t *partition) {
+  uint32_t read_data[2];
+
+  if (partition->zer_address == 0) {
+    VPRINTF(LOW, "MCU ERROR: Partition %d is not zeroizable\n", partition->index);
+    return false;
+  }
+
+  // If this weren't a secret partition, we might look at the digest or the zeroization address to
+  // figure out whether the partition had already been locked. Since it *is* a secret partition,
+  // that won't actually work: we are the MCU and fuse_ctrl won't give us access to the partition.
+  //
+  // Check that the partition genuinely is inaccessible by trying (and failing) to read the digest
+  // and from the zeroization address.
+  if (!check_secret_at(partition->digest_address)) {
+    VPRINTF(LOW, "MCU ERROR: Surprising access: digest of partition %d\n", partition->index);
+    return false;
+  }
+  if (!check_secret_at(partition->zer_address)) {
+    VPRINTF(LOW, "MCU ERROR: Surprising access: zer_address of partition %d\n", partition->index);
+    return false;
+  }
+
+  // Attempt to zeroize, which should fail.
+  if (!dai_zer(partition->zer_address, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK, false))
+      return false;
+
+  reset_fc_lcc_rtl();
+  return wait_dai_op_idle(0);
+}
+
 // Check that the digest is zeroized or not.
-static bool check_digest(uint32_t partition_id, bool expected_zeroized) {
+static bool check_digest(const partition_info_t *partition_info, bool expected_zeroized) {
   uint32_t digest[2];
-  digest[0] = lsu_read_32(kPartitionsInfo[partition_id].digest0);
-  digest[1] = lsu_read_32(kPartitionsInfo[partition_id].digest1);
+  digest[0] = lsu_read_32(partition_info->digest0);
+  digest[1] = lsu_read_32(partition_info->digest1);
   if (expected_zeroized) {
     return digest[0] == UINT32_MAX && digest[1] == UINT32_MAX;
   }
   // If not zeroized, the digest should not be all ones.
-  return digest[0] != UINT32_MAX && digest[1] != UINT32_MAX;
+  return digest[0] != UINT32_MAX || digest[1] != UINT32_MAX;
+}
+
+static const partition_t *index_to_partition(uint32_t index)
+{
+  for (int i = 0; i < NUM_PARTITIONS; i++)
+    if (partitions[i].index == index) return &partitions[i];
+
+  VPRINTF(LOW, "MCU ERROR: Cannot find partition with index %d.\n", index);
+  return NULL;
 }
 
 static bool mcu_zeroization_test(void) {
   for (uint32_t i = 0; i < kNumPartitions; i++) {
-    uint32_t partition_id = kPartitionsInfo[i].id;
-    if (!zeroization_check_unfeasible(partition_id)) {
-      VPRINTF(LOW,
-              "MCU ERROR: Unexpected zeroization success for partition %d from MCU: "
-              "PPD not set\n",
-              partition_id);
-      return false;
+    const partition_t *partition = index_to_partition(kPartitionsInfo[i].id);
+    if (!partition) return false;
+
+    for (int j = 0; j < 2; j++) {
+      if (!zeroization_check_unfeasible(partition)) {
+        VPRINTF(LOW, "MCU ERROR: Unexpected zeroization result for partition %d from MCU.",
+                partition->index);
+        return false;
+      }
+
+      uint32_t cmd = (j == 0) ? CMD_FC_FORCE_ZEROIZATION : CMD_RELEASE_ZEROIZATION;
+
+      lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, cmd);
+      if (!wait_dai_op_idle(0)) return false;
     }
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    wait_dai_op_idle(0);
-
-    if (!zeroization_check_unfeasible(partition_id)) {
-      VPRINTF(LOW,
-              "MCU ERROR: Unexpected zeroization success for partition %d from MCU: "
-              "PPD not set\n",
-              partition_id);
-      return false;
-    }
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
-    wait_dai_op_idle(0);
   }
   return true;
 }
@@ -177,9 +199,8 @@ bool test(void) {
   // At this point, the partitions should not be zeroized.
   VPRINTF(LOW, "@@@ Step 5/5: Checking partitions not zeroized\n");
   for (uint32_t i = 0; i < kNumPartitions; i++) {
-    uint32_t partition_id = kPartitionsInfo[i].id;
-    if (!check_digest(partition_id, /*expected_zeroized=*/false)) {
-      VPRINTF(LOW, "MCU ERROR: Partition %d unexpectedly zeroized\n", kPartitionsInfo[i].id);
+    if (!check_digest(&kPartitionsInfo[i], /*expected_zeroized=*/false)) {
+        VPRINTF(LOW, "MCU ERROR: Partition %d unexpectedly zeroized\n", kPartitionsInfo[i].id);
       return false;
     }
   }
