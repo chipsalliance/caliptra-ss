@@ -237,7 +237,7 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 
 | **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
   |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
-  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                     | Read-Only             | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. | 
+  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                     | Read-Only             | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. |
   | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                     | Read/Write            | Memory export for MCU0 access                                                                                                                           |
   | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                     | Read/Write            | Shared memory between MCI and MCU for data storage                                                                                                      |
   | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX0 communication                                                                                                                          |
@@ -383,6 +383,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | na    | `cptra_ss_lc_axi_wr_rsp_o`           | LC controller AXI write response output  |
 | External | input     | na    | `cptra_ss_lc_axi_rd_req_i`           | LC controller AXI read request input     |
 | External | output    | na    | `cptra_ss_lc_axi_rd_rsp_o`           | LC controller AXI read response output   |
+| External | input     | 128   | `cptra_ss_raw_unlock_token_hashed_i` | Hashed token for RAW unlock              |
 | External | input     | na    | `cptra_ss_otp_core_axi_wr_req_i`     | OTP controller AXI write request input   |
 | External | output    | na    | `cptra_ss_otp_core_axi_wr_rsp_o`     | OTP controller AXI write response output |
 | External | input     | na    | `cptra_ss_otp_core_axi_rd_req_i`     | OTP controller AXI read request input    |
@@ -487,8 +488,8 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
      3. Clock gating controlled by `cptra_ss_warm_reset_rdc_clk_dis_o`.
      4. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
 
-The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`. It is gated whenever `cptra_ss_mcu_rst_b_o` is asserted to avoid RDC issues within the MCU warm and cold reset domains. 
-  
+The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`. It is gated whenever `cptra_ss_mcu_rst_b_o` is asserted to avoid RDC issues within the MCU warm and cold reset domains.
+
   - **Signal Name** `cptra_ss_mcu_clk_cg_o`
   - **Required Frequency** Same as `cptra_ss_clk_i`.
   - **Clock Source** Caliptra SS MCI clock gater
@@ -509,7 +510,7 @@ The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsys
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_rst_b_i` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
-     - SOC should assert `cptra_ss_reset_b_i` after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle. This will guarantee no outstanding AXI transactions from MCU and help avoid RDC issues.  
+     - SOC should assert `cptra_ss_reset_b_i` after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle. This will guarantee no outstanding AXI transactions from MCU and help avoid RDC issues.
 
 The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_rst_b_i` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
@@ -625,7 +626,7 @@ Typically MCU reset is directly controlled by MCI. This means `cptra_ss_mcu_rst_
 
 The SOC can choose to delay the MCU reset deassertion. The SOC should be aware that MCU clock enable is based off `cptra_ss_mcu_rst_b_o`.
 
-If the SOC wants to delay assertion of MCU reset this can be done, but integrators need to be aware the MCU reset counter (`MIN_MCU_RST_COUNTER_WIDTH`) starts counting when `cptra_ss_mcu_rst_b_i` asserts. Meaning MCU could be in reset for shorter than expected. To resolve this issue the SOC should implement their own reset counter to delay the reset deassertion. 
+If the SOC wants to delay assertion of MCU reset this can be done, but integrators need to be aware the MCU reset counter (`MIN_MCU_RST_COUNTER_WIDTH`) starts counting when `cptra_ss_mcu_rst_b_i` asserts. Meaning MCU could be in reset for shorter than expected. To resolve this issue the SOC should implement their own reset counter to delay the reset deassertion.
 
 Arbitrary reset assertions/deassertions should not be done unless the integrator understands exactly what they are doing. This can cause RDC issues within Caliptra SS.
 
@@ -1149,15 +1150,15 @@ Because of these dynamic shifts:
 - The **CMD register address** must be explicitly provided, even though the other fuse controller registers are laid out consecutively.
 
 #### Strap Definitions
-- **`cptra_ss_strap_generic_0_i`**  
+- **`cptra_ss_strap_generic_0_i`**
   A 32-bit input strap that encodes:
   - **Upper 16 bits**: Bit index of the idle status bit (`IDLE_BIT_STATUS`) within `SOC_OTP_CTRL_STATUS`.
   - **Lower 16 bits**: Offset address of `SOC_OTP_CTRL_STATUS` within the `SOC_IFC_REG` space, relative to `SOC_OTP_CTRL_BASE_ADDR`.
 
   This allows the ROM to accurately monitor the fuse controller's idle state regardless of partition-induced shifts.
 
-- **`cptra_ss_strap_generic_1_i`**  
-  A 32-bit input strap that provides the address of the **CMD register**.  
+- **`cptra_ss_strap_generic_1_i`**
+  A 32-bit input strap that provides the address of the **CMD register**.
   Since the fuse controller registers are laid out consecutively, specifying the CMD register is sufficient for the ROM to infer the locations of adjacent registers like `ADDR`, `WDATA0`, and `RDATA0`.
 
 ## FC Macro Test Interface
@@ -1201,6 +1202,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 ------------|:-----------|:-------|:----------------------|:------------------------------------|:-------       |
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
+External    |input       |   1    | `raw_unlock_token_hashed_i`    | `cptra_ss_raw_unlock_token_hashed_i`         | Hashed token for RAW unlock |
 External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
@@ -1254,6 +1256,17 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 3. **Scan Path Exclusions**:
    - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token is different from other LC transition tokens as it is stored in the plaintext in gates, not in hashed form.
      To exclude it from scan, the following hierarchies must be excluded: `*::lc_ctrl_fsm::hashed_tokens_{higher, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
+
+4. **RAW Unlock Token**:
+   - The `cptra_ss_raw_unlock_token_hashed_i` top-level input defines the *hashed* value of the
+     RAW unlock token. The hashed value is generated from the *unhashed* RAW unlock token, which
+     the integrator must obtain from a cryptographically secure random number generator. Both the
+     hashed and the unhashed token must be kept secret. To generate the hashed token (and
+     optionally also the unhashed token), `tools/scripts/lc_ctrl_script/gen_lc_ctrl_token.py` can
+     be used.
+   - The *unhashed* RAW unlock token is required in SW that performs a *non-volatile* RAW unlock.
+   - The *hashed* RAW unlock token is stored in HW (see first bullet point) and required in SW
+     that performs a *volatile* RAW unlock.
 
 ## Programming Interface
 
@@ -2258,7 +2271,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
 | `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_payload_available_o` to SOC |
-| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC | 
+| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC |
 | `peripheral_reset_o`              | output    | 1 bit                     | Resets connected peripherals                                         |
 | `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
 | `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |

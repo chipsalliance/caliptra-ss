@@ -36,7 +36,10 @@ module lc_ctrl
   input                                              rst_ni,
   input                                              Allow_RMA_or_SCRAP_on_PPD, // Note: Addded another condition to RMA and SCRAP transition with Physical presence Detect
                                                                        // This is GPIO strap pin. This pin should be high until LC completes its state
-                                                                       // transition to RMA or SCRAP.  
+
+  // Raw Unlock Token (hashed)
+  input  lc_ctrl_state_pkg::lc_token_t              raw_unlock_token_hashed_i,
+
   // Clock for KMAC interface
   // input                                              clk_kmac_i,
   // input                                              rst_kmac_ni,
@@ -66,8 +69,8 @@ module lc_ctrl
 
   // Alert outputs.
   //----------------------------------------------------------------------------------
-  // NOTE: Caliptra-SS removed these differential alert sender signals. Caliptra-SS 
-  // uses "alerts" signal  instead of these pair signal set. SoC should take action if 
+  // NOTE: Caliptra-SS removed these differential alert sender signals. Caliptra-SS
+  // uses "alerts" signal  instead of these pair signal set. SoC should take action if
   // there is at leastone of the error signals: fatal_bus_integ_error_q,
   // fatal_state_error_q, or fatal_prog_error_q
 
@@ -79,7 +82,7 @@ module lc_ctrl
 
   //----------------------------------------------------------------------------------
   // NOTE: Caliptra-SS removed these differential escalation signals. Instead of
-  // generating esc_scrap_state0 and esc_scrap_state1 with prim_esc_receiver, 
+  // generating esc_scrap_state0 and esc_scrap_state1 with prim_esc_receiver,
   // Caliptra-SS delivers these signals to LC_CTRL
 
   input esc_scrap_state0,
@@ -125,7 +128,7 @@ module lc_ctrl
   output lc_tx_t                                     lc_dft_en_o,
   // output lc_tx_t                                     lc_nvm_debug_en_o,
   output lc_tx_t                                     lc_hw_debug_en_o,
-  
+
   output lc_tx_t                                     lc_creator_seed_sw_rw_en_o, // TODO: remove them when they are removed from otp ctrl
   output lc_tx_t                                     lc_owner_seed_sw_rw_en_o,  // TODO: remove them when they are removed from otp ctrl
   // output lc_tx_t                                     lc_iso_part_sw_rd_en_o,
@@ -172,6 +175,13 @@ module lc_ctrl
   import caliptra_prim_mubi_pkg::mubi8_test_true_strict;
   import caliptra_prim_mubi_pkg::mubi8_test_false_loose;
 
+  // Assert that the width of tokens equals the width of the `raw_unlock_token_hashed_i` input
+  // signal. If this assertion fails, either the lc_ctrl RTL (and hence `LcTokenWidth`) needs to be
+  // changed to handle an input signal of a different width, or the width of the input signal needs
+  // to be changed (also in all hierarchies above this module through which the signal propagates).
+  `CALIPTRA_ASSERT_INIT(RawUnlockTokenHashedWidth_A,
+                        LcTokenWidth == $bits(raw_unlock_token_hashed_i))
+
   // AXI2TLUL interface signals
   tlul_pkg::tl_h2d_t      regs_tl_i;
   tlul_pkg::tl_d2h_t      regs_tl_o;
@@ -195,19 +205,19 @@ module lc_ctrl
   assign axi_if.awlock      = axi_wr_req.awlock;
   assign axi_if.awvalid     = axi_wr_req.awvalid;
   assign axi_wr_rsp.awready = axi_if.awready;
-  
+
   assign axi_if.wdata       = axi_wr_req.wdata;
   assign axi_if.wuser       = '0;
   assign axi_if.wstrb       = axi_wr_req.wstrb;
   assign axi_if.wlast       = axi_wr_req.wlast;
   assign axi_if.wvalid      = axi_wr_req.wvalid;
   assign axi_wr_rsp.wready  = axi_if.wready;
-  
+
   assign axi_wr_rsp.bresp   = axi_if.bresp;
   assign axi_wr_rsp.bid     = axi_if.bid;
   assign axi_wr_rsp.bvalid  = axi_if.bvalid;
   assign axi_if.bready      = axi_wr_req.bready;
-  
+
   assign axi_if.araddr      = axi_rd_req.araddr;
   assign axi_if.arburst     = axi_rd_req.arburst;
   assign axi_if.arsize      = axi_rd_req.arsize;
@@ -217,7 +227,7 @@ module lc_ctrl
   assign axi_if.arlock      = axi_rd_req.arlock;
   assign axi_if.arvalid     = axi_rd_req.arvalid;
   assign axi_rd_rsp.arready = axi_if.arready;
-  
+
   assign axi_rd_rsp.rdata   = axi_if.rdata;
   assign axi_rd_rsp.rresp   = axi_if.rresp;
   assign axi_rd_rsp.rid     = axi_if.rid;
@@ -239,7 +249,7 @@ module lc_ctrl
       .tl_o           (regs_tl_i),
       .tl_i           (regs_tl_o)
   );
-  
+
   ////////////////////////
   // Integration Checks //
   ////////////////////////
@@ -716,7 +726,7 @@ module lc_ctrl
 // NOTE: Caliptra-SS wires out alerts[k] signals and makes them output of LC_CTRL
 // This action also removes the functionallity of alert test that can be done with
 // alert_test and tap_dmi_alert_test.
-  
+
   // for (genvar k = 0; k < NumAlerts; k++) begin : gen_alert_tx
   //   caliptra_prim_alert_sender #(
   //     .AsyncOn(AlertAsyncOn[k]),
@@ -797,7 +807,7 @@ module lc_ctrl
   );
 
 //----------------------------------------------------------------------------------
-// NOTE: Caliptra-SS removed these differential esc_receiver signals and module. 
+// NOTE: Caliptra-SS removed these differential esc_receiver signals and module.
 
   // //////////////////////////
   // // Escalation Receivers //
@@ -911,6 +921,7 @@ module lc_ctrl
     .clk_i,
     .rst_ni,
     .Allow_RMA_or_SCRAP_on_PPD,
+    .raw_unlock_token_hashed_i ( lc_token_t'(raw_unlock_token_hashed_i) ),
     .init_req_i             ( lc_init                          ),
     .init_done_o            ( lc_done_d                        ),
     .idle_o                 ( lc_idle_d                        ),
@@ -1001,12 +1012,12 @@ module lc_ctrl
   `CALIPTRA_ASSERT_KNOWN(LcFlashRmaReqKnown_A,   lc_flash_rma_req_o         )
   `CALIPTRA_ASSERT_KNOWN(LcKeymgrDiv_A,          lc_keymgr_div_o            )
 
-  
-  
+
+
 // ------------------------------------------------------------------------------------------
 // NOTE: Assertions have been updated since Caliptra-SS changed the alert and escalation
 // signals
-  
+
   caliptra_prim_alert_pkg::alert_tx_t state_alert;
   caliptra_prim_alert_pkg::alert_tx_t program_alert;
 
@@ -1076,5 +1087,5 @@ module lc_ctrl
                                                  u_reg_tap, program_alert, 0)
 
 // ------------------------------------------------------------------------------------------
-  
+
 endmodule : lc_ctrl

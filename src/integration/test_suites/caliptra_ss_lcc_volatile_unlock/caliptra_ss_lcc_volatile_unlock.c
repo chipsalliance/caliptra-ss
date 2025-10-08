@@ -42,8 +42,8 @@ void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
 
     // In volatile raw unlock mode the token has to be passed in hashed form.
-    const uint32_t unhashed_raw_unlock_token[4] = {
-        0x3c8ff2b6, 0x1e213794, 0x358f685c, 0x4748d3f5
+    const uint32_t hashed_raw_unlock_token[4] = {
+        0xf0930a4d, 0xde8a30e6, 0xd1c8cbba, 0x896e4a11
     };
 
     const raw_state = calc_lc_state_mnemonic(RAW);
@@ -76,10 +76,10 @@ void main (void) {
     // Transition into the TEST_UNLOCKED0 state.
     sw_transition_req(
         calc_lc_state_mnemonic(TEST_UNLOCKED0),
-        unhashed_raw_unlock_token[0],
-        unhashed_raw_unlock_token[1],
-        unhashed_raw_unlock_token[2],
-        unhashed_raw_unlock_token[3],
+        hashed_raw_unlock_token[0],
+        hashed_raw_unlock_token[1],
+        hashed_raw_unlock_token[2],
+        hashed_raw_unlock_token[3],
         1
     );
 
