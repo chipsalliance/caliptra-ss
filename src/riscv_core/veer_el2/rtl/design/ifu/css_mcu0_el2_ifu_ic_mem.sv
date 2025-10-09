@@ -289,7 +289,10 @@ import css_mcu0_el2_pkg::*;
     logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0]                                 any_bypass_up;
     logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0]                                 any_addr_match_up;
 
-   for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
+    assign ic_bank_way_clken_final = '0;
+    assign icache_export.ic_b_sb_bit_en_vec = '0;
+
+    for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
       for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
       if (pt.ICACHE_ECC) begin : ECC1
         logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0] [71-1:0]        wb_dout_pre_up;           // data and its bit enables
@@ -429,6 +432,7 @@ import css_mcu0_el2_pkg::*;
     logic [pt.ICACHE_BANKS_WAY-1:0][(71*pt.ICACHE_NUM_WAYS)-1:0]  sel_bypass_data;
     logic [pt.ICACHE_BANKS_WAY-1:0]                               any_bypass;
     logic [pt.ICACHE_BANKS_WAY-1:0]                               any_addr_match;
+    assign ic_bank_way_clken_final_up = '0;
 
  // generate IC DATA PACKED SRAMS for 2/4 ways
   for (genvar k=0; k<pt.ICACHE_BANKS_WAY; k++) begin: BANKS_WAY   // 16B subbank
@@ -896,6 +900,7 @@ end // block: OTHERS
     // Use exported ICache interface.
     always_comb begin
       icache_export.ic_tag_clken_final = ic_tag_clken_final;
+      icache_export.ic_tag_wren_biten_vec = '0;
     end
     for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
 
@@ -976,7 +981,6 @@ end // block: OTHERS
       end
       else  begin : ECC0
         logic [pt.ICACHE_NUM_WAYS-1:0] [pt.ICACHE_TAG_NUM_BYPASS-1:0][21 :0] wb_dout_hold;
-        assign ic_tag_data_raw_pre[i][25:22] = '0 ;
 
         if (pt.ICACHE_TAG_BYPASS_ENABLE == 1) begin
           assign wrptr_in[i] = (wrptr[i] == (pt.ICACHE_TAG_NUM_BYPASS-1)) ? '0 : (wrptr[i] + 1'd1);
@@ -1076,11 +1080,6 @@ end // block: OTHERS
     logic                                any_addr_match;
     logic                                ic_tag_clken_final;
 
-    // Use exported ICache interface.
-    always_comb begin
-      icache_export.ic_tag_clken_final = ic_tag_clken_final;
-    end
-
    if (pt.ICACHE_ECC) begin  : ECC1
     logic [(26*pt.ICACHE_NUM_WAYS)-1 :0]  ic_tag_data_raw_packed, ic_tag_wren_biten_vec, ic_tag_data_raw_packed_pre;           // data and its bit enables
     logic [pt.ICACHE_TAG_NUM_BYPASS-1:0][(26*pt.ICACHE_NUM_WAYS)-1 :0] wb_packeddout_hold;
@@ -1093,6 +1092,10 @@ end // block: OTHERS
 
     for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: BITEN
       assign ic_tag_wren_biten_vec[(26*i)+25:26*i] = {26{ic_tag_wren_q[i]}};
+      // Use exported ICache interface.
+      always_comb begin
+        icache_export.ic_tag_clken_final[i] = ic_tag_clken_final;
+      end
     end
 
     if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
@@ -1238,8 +1241,19 @@ end // block: OTHERS
    else  begin : ECC0
     logic [(22*pt.ICACHE_NUM_WAYS)-1 :0]  ic_tag_data_raw_packed, ic_tag_wren_biten_vec, ic_tag_data_raw_packed_pre;           // data and its bit enables
     logic [pt.ICACHE_TAG_NUM_BYPASS-1:0][(22*pt.ICACHE_NUM_WAYS)-1 :0] wb_packeddout_hold;
+
+    // Use exported ICache interface.
+    always_comb begin
+      icache_export.ic_tag_wren_biten_vec = ic_tag_wren_biten_vec;
+      ic_tag_data_raw_packed_pre = icache_export.ic_tag_data_raw_packed_pre;
+    end
+
     for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: BITEN
         assign ic_tag_wren_biten_vec[(22*i)+21:22*i] = {22{ic_tag_wren_q[i]}};
+        // Use exported ICache interface.
+        always_comb begin
+          icache_export.ic_tag_clken_final[i] = ic_tag_clken_final;
+        end
      end
       if (pt.ICACHE_NUM_WAYS == 4) begin : WAYS
         if (pt.ICACHE_TAG_BYPASS_ENABLE == 1) begin
