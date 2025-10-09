@@ -51,7 +51,7 @@ void test_unlocked0_provision() {
     uint32_t rnd_fuse_addresses[NUM_PARTITIONS-1];
 
     for (uint32_t i = 0; i < (NUM_PARTITIONS-1); i++) {
-        if (is_caliptra_secret_addr(part_sel[i].address)) {
+        if (is_caliptra_secret_addr(partitions[i].address)) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 
@@ -77,7 +77,7 @@ void test_unlocked0_provision() {
     wait_dai_op_idle(0);
 
     for (uint32_t i = 0; i < (NUM_PARTITIONS-1); i++) {
-        if (is_caliptra_secret_addr(part_sel[i].address)) {
+        if (is_caliptra_secret_addr(partitions[i].address)) {
             grant_caliptra_core_for_fc_writes();
         } else {
             grant_mcu_for_fc_writes(); 

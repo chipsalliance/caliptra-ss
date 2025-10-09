@@ -84,22 +84,16 @@ void init_fail() {
 
     uint32_t exp_dai_error = (fault == CMD_FC_LCC_CORRECTABLE_FAULT) ? single_error : uncor_error;
 
-    wait_dai_op_idle(exp_dai_error);
+    if (!wait_dai_op_idle(exp_dai_error)) return;
 
-    uint32_t err_reg = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);
-    uint32_t status_reg = lsu_read_32(SOC_OTP_CTRL_STATUS);
+    const char *err_desc = ((fault == CMD_FC_LCC_CORRECTABLE_FAULT) ?
+                            "a correctable" : "an uncorrectable");
+    unsigned exp_err_code = (fault == CMD_FC_LCC_CORRECTABLE_FAULT) ? 2 : 3;
+    uint32_t err_code = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);
 
-    if (fault == CMD_FC_LCC_CORRECTABLE_FAULT) {
-        if (err_reg != 0x2) {
-            VPRINTF(LOW, "ERROR: err code register does not show correctable error: %08X\n", err_reg);
-            return;
-        }
-    } else {
-        if (err_reg != 0x3) {
-            VPRINTF(LOW, "ERROR: err code register does not show uncorrectable error: %08X\n", err_reg);
-            return;
-        }
-    }
+    if (err_code != exp_err_code)
+        VPRINTF(LOW, "ERROR: After %s error, the error code register has %d but we expect %d.\n",
+                err_desc, err_code, exp_err_code);
 }
 
 void main (void) {
