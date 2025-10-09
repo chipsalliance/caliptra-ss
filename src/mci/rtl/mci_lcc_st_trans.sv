@@ -379,7 +379,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         & (security_state_o.debug_locked == 1)
         & (mci_trans_st_current != TRANSLATOR_RESET))
-    |=> 
+    |=> ##1
     ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
 )
 

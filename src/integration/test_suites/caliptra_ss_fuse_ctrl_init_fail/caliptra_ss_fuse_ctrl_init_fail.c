@@ -74,9 +74,15 @@ void init_fail() {
 
     // If the fault was correctable, we expect the DAI to stop with an error on the bit
     // corresponding to the partition (which will be 1 << partition.index). If it was uncorrectable,
-    // we expect the DAI to stop with all error bits set.
-    uint32_t part_error_mask = 1 << partition.index;
-    uint32_t exp_dai_error = (fault == CMD_FC_LCC_CORRECTABLE_FAULT) ? part_error_mask : UINT32_MAX;
+    // we expect the DAI to stop with all partition error bits set, together with DAI_ERROR and
+    // LCI_ERROR.
+    uint32_t single_error = 1 << partition.index;
+    uint32_t all_part_errors = (1 << NUM_PARTITIONS) - 1;
+    uint32_t uncor_error = (all_part_errors |
+                            OTP_CTRL_STATUS_DAI_ERROR_MASK |
+                            OTP_CTRL_STATUS_LCI_ERROR_MASK);
+
+    uint32_t exp_dai_error = (fault == CMD_FC_LCC_CORRECTABLE_FAULT) ? single_error : uncor_error;
 
     wait_dai_op_idle(exp_dai_error);
 

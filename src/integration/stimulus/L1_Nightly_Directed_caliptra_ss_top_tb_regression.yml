@@ -105,3 +105,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_secret_read/smoke_test_fc_filter_rule_secret_read: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_en/smoke_test_fc_ratchet_seed_lock_en: { weight: 10 }
