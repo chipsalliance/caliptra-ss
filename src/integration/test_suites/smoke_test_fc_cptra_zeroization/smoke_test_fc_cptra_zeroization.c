@@ -33,9 +33,6 @@ enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 enum printf_verbosity verbosity_g = LOW;
 #endif
 
-#define LOG_ERROR(...) VPRINTF(LOW, "MCU ERROR:" #__VA_ARGS__);
-#define LOG_INFO(...) VPRINTF(LOW, "MCU:" #__VA_ARGS__);
-
 // This struct is used to store the partition information used in the test.
 typedef struct partition_info {
   // Partition identifier. Used to access partition in the partitions array.
@@ -113,7 +110,7 @@ void main(void) {
   // Releases the Caliptra core by setting CPTRA_FUSE_WR_DONE.
   lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE,
                SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
-  LOG_INFO("Set FUSE_WR_DONE\n");
+  VPRINTF(LOW, "MCU: Set FUSE_WR_DONE\n");
 
   mcu_cptra_advance_brkpoint();
 
@@ -144,7 +141,7 @@ void main(void) {
   // At this point, the partitions should be zeroized.
   for (uint32_t i = 0; i < kNumPartitions; i++) {
     if (!check_digest(&kPartitionsInfo[i], /*expected_zeroized=*/true)) {
-      LOG_ERROR("Partition %d is not zeroized\n", kPartitionsInfo[i].id);
+      VPRINTF(LOW, "MCU ERROR: Partition %d is not zeroized\n", kPartitionsInfo[i].id);
       break;
     }
   }
