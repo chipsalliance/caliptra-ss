@@ -51,11 +51,17 @@ static uint32_t tokens[13][4] = {
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
     mcu_cptra_init_d();
-    wait_dai_op_idle(0);
+
+    // Allow the starting state to be scrap, in which case we exit the test early without any initialisation.
+    uint32_t lc_state_curr = read_lc_state();
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    wait_dai_op_idle(lc_state_curr==20 ? 0x1BFFFFFF : 0);
 
     uint32_t buf[NUM_LC_STATES] = {0};
+    if (lc_state_start == 20)
+      goto epilogue; //Exit test if we're in LCC state == SCRAP
+
 
     // Randomly choose the next LC state among the all valid ones
     // based on the current state and repeat this until the SCRAP
@@ -63,7 +69,7 @@ void main (void) {
     while (1) {
         lcc_initialization();
 
-        uint32_t lc_state_curr = read_lc_state();
+        lc_state_curr = read_lc_state();
         uint32_t lc_cnt_curr = read_lc_counter();
         uint32_t lc_cnt_next = lc_cnt_curr + 1;
 
