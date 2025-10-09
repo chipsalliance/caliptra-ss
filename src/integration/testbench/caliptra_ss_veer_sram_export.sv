@@ -229,6 +229,14 @@ end :css_mcu0_dccm_enable
 
 `include "icache_macros.svh"
 
+// ICACHE Tie offs
+ if (pt.ICACHE_WAYPACK == 0 ) begin : VEER_TIE_OFF_UNPACKED
+     `EL2_TIE_OFF_NON_PACKED(cptra_ss_mcu0_el2_mem_export)
+ end // VEER_TIE_OFF_UNPACKED
+ else begin: VEER_TIE_OFF_PACKED
+     `EL2_TIE_OFF_PACKED(cptra_ss_mcu0_el2_mem_export)
+ end // VEER_TIE_OFF_PACKED
+
 // ICACHE DATA
  if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_0
     for (genvar i=0; i<pt.ICACHE_NUM_WAYS; i++) begin: WAYS
