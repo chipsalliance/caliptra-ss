@@ -41,11 +41,18 @@ module caliptra_ss_top_sva
   // fuse_ctrl_filter
   ////////////////////////////////////////////////////
 
+  // The addresses look a little strange here, but the logic is that an access overlaps with a
+  // secret partition if it starts high enough that the bottom byte (dai_addr) is before the end of
+  // the secret region and the top byte (dai_addr+7) is at least as high as its start.
+  //
+  // Here, we rely on the fact that the secret partitions are in a contiguous block, the first is
+  // SECRET_MANUF_PARTITION, and the first non-secret partition is SW_MANUF_PARTITION.
   logic dai_for_secret_partition;
   assign dai_for_secret_partition = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awvalid) &&
                                     (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awaddr ==
                                      `SOC_OTP_CTRL_DIRECT_ACCESS_CMD) &&
-                                    (`FC_PATH.dai_addr > 12'h040 && `FC_PATH.dai_addr < 12'h0D0);
+                                    (`FC_PATH.dai_addr + 7 >= SecretManufPartitionOffset &&
+                                     `FC_PATH.dai_addr < SwManufPartitionOffset);
 
   logic user_other_than_caliptra;
   assign user_other_than_caliptra = (`FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser !=
