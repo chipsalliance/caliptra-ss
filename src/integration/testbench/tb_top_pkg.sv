@@ -20,6 +20,13 @@ package tb_top_pkg;
     // -----------------------------------------------------------
     // Parameters
     // -----------------------------------------------------------
+    // ROM
+    localparam CPTRA_SS_ROM_SIZE_KB_TB = 256;
+    localparam CPTRA_SS_ROM_DATA_W_TB = 64;
+    localparam CPTRA_SS_ROM_DEPTH_TB = (CPTRA_SS_ROM_SIZE_KB_TB*1024) / (CPTRA_SS_ROM_DATA_W_TB/8);
+    localparam CPTRA_SS_ROM_AXI_ADDR_W_TB = $clog2(CPTRA_SS_ROM_SIZE_KB_TB*1024);
+    localparam CPTRA_SS_ROM_MEM_ADDR_W_TB = $clog2(CPTRA_SS_ROM_DEPTH_TB);
+
     // MCU SRAM
     localparam MCU_SRAM_SIZE_KB = 512;
     localparam MCU_SRAM_DATA_WIDTH   = 32;
