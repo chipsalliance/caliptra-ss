@@ -2602,7 +2602,6 @@ These are undriven signals and deemed to be OK. If exposed to SOC leave unconnec
 
 | Location | Signal | Justification |
 |----------|--------|---------------|
-| [`caliptra_ss_top.sv`](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv) | `cptra_ss_mcu0_el2_mem_export.ic_bank_way_clken_final_up` | MCU ICACHE packed. The *_up signals are unused. See ICACHE_WAYPACK parameter in src/riscv_core |
 | [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `sb_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected|
 | [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
 | [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
