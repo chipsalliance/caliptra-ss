@@ -471,39 +471,53 @@ uint32_t read_lc_state(void) {
     uint32_t reg_val = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
     const char *state_str;
 
-    // Decode the redundant encoding.  (The encoding is defined as six repeated 5-bit values.)
-    switch (reg_val) {
-        case 0x00000000: state_str = "RAW"; break;
-        case 0x02108421: state_str = "TEST_UNLOCKED0"; break;
-        case 0x04210842: state_str = "TEST_LOCKED0"; break;
-        case 0x06318c63: state_str = "TEST_UNLOCKED1"; break;
-        case 0x08421084: state_str = "TEST_LOCKED1"; break;
-        case 0x0a5294a5: state_str = "TEST_UNLOCKED2"; break;
-        case 0x0c6318c6: state_str = "TEST_LOCKED2"; break;
-        case 0x0e739ce7: state_str = "TEST_UNLOCKED3"; break;
-        case 0x10842108: state_str = "TEST_LOCKED3"; break;
-        case 0x1294a529: state_str = "TEST_UNLOCKED4"; break;
-        case 0x14a5294a: state_str = "TEST_LOCKED4"; break;
-        case 0x16b5ad6b: state_str = "TEST_UNLOCKED5"; break;
-        case 0x18c6318c: state_str = "TEST_LOCKED5"; break;
-        case 0x1ad6b5ad: state_str = "TEST_UNLOCKED6"; break;
-        case 0x1ce739ce: state_str = "TEST_LOCKED6"; break;
-        case 0x1ef7bdef: state_str = "TEST_UNLOCKED7"; break;
-        case 0x21084210: state_str = "DEV"; break;
-        case 0x2318c631: state_str = "PROD"; break;
-        case 0x25294a52: state_str = "PROD_END"; break;
-        case 0x2739ce73: state_str = "RMA"; break;
-        case 0x294a5294: state_str = "SCRAP"; break;
-        case 0x2b5ad6b5: state_str = "POST_TRANSITION"; break;
-        case 0x2d6b5ad6: state_str = "ESCALATE"; break;
-        case 0x2f7bdef7: state_str = "INVALID"; break;
-        default:         state_str = "UNKNOWN"; break;
+    // The state *should* be a repeated copy of a 5-bit value. Loop over the 32 bits (for each
+    // complete 5-bit window) and extract the 5-bit value (assuming there is one). Set the "bottom
+    // value" to the impossible 0xff if there is not.
+    unsigned rep_val = reg_val & 0x1f;
+
+    for (int shift = 5; shift + 4 < 32; shift += 5) {
+        unsigned bottom = (reg_val >> shift) & 0x1f;
+        if (bottom != rep_val) {
+            rep_val = 0xff;
+            break;
+        }
     }
 
-    VPRINTF(LOW, "LC_CTRL_LC_STATE register: 0x%08x, Decoded state: %s\n", reg_val, state_str);
+    // At this point, we will either have found the repeated value, or figured out there isn't one.
+    switch (rep_val) {
+        case 0x0: state_str = "RAW"; break;
+        case 0x1: state_str = "TEST_UNLOCKED0"; break;
+        case 0x2: state_str = "TEST_LOCKED0"; break;
+        case 0x3: state_str = "TEST_UNLOCKED1"; break;
+        case 0x4: state_str = "TEST_LOCKED1"; break;
+        case 0x5: state_str = "TEST_UNLOCKED2"; break;
+        case 0x6: state_str = "TEST_LOCKED2"; break;
+        case 0x7: state_str = "TEST_UNLOCKED3"; break;
+        case 0x8: state_str = "TEST_LOCKED3"; break;
+        case 0x9: state_str = "TEST_UNLOCKED4"; break;
+        case 0xa: state_str = "TEST_LOCKED4"; break;
+        case 0xb: state_str = "TEST_UNLOCKED5"; break;
+        case 0xc: state_str = "TEST_LOCKED5"; break;
+        case 0xd: state_str = "TEST_UNLOCKED6"; break;
+        case 0xe: state_str = "TEST_LOCKED6"; break;
+        case 0xf: state_str = "TEST_UNLOCKED7"; break;
+        case 0x10: state_str = "DEV"; break;
+        case 0x11: state_str = "PROD"; break;
+        case 0x12: state_str = "PROD_END"; break;
+        case 0x13: state_str = "RMA"; break;
+        case 0x14: state_str = "SCRAP"; break;
+        case 0x15: state_str = "POST_TRANSITION"; break;
+        case 0x16: state_str = "ESCALATE"; break;
+        case 0x17: state_str = "INVALID"; break;
+        default:   state_str = "UNKNOWN"; break;
+    }
+
+    VPRINTF(LOW, "LC_CTRL_LC_STATE register: 0x%08x (rep %d), Decoded state: %s\n",
+            reg_val, rep_val, state_str);
 
     // Return decoded LC state.
-    return reg_val & 0x1F;
+    return rep_val;
 }
 
 uint32_t read_lc_counter(void) {
