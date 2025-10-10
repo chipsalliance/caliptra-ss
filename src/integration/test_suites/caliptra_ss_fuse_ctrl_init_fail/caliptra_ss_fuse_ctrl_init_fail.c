@@ -66,7 +66,9 @@ void init_fail() {
     dai_wr(partition.address, 0x1, 0x2, partition.granularity, 0);
     calculate_digest(partition.address, 0);
 
-    // Inject either a correctable or uncorrectable error into the written partition.
+    // Inject either a correctable or uncorrectable error into all locked partitions with digests
+    // (as recorded in a list in fc_lcc_tb_services). In particular, this will include the selected
+    // partition.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, fault);
     wait_dai_op_idle(0);
 
