@@ -845,7 +845,7 @@ If you want to avoid these DWORD alignment limitations and allow more flexible a
 
 When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
 
-**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cachable. Since not all regions of MCI are cachable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cacheable. Since not all regions of MCI are cacheable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
 
 If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cachable region separate from other MCI components.
 
