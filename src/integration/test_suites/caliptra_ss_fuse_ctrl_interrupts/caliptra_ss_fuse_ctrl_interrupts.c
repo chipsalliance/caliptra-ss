@@ -65,7 +65,7 @@ void main (void) {
         VPRINTF(LOW, "ERROR: wrong interrupt signaled\n");
         goto epilogue;
     }
-    lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x0);
+    lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x3);
 
     /*
      * 2: An invalid DAI operation must result in an `otp_error` interrupt.
@@ -80,7 +80,7 @@ void main (void) {
         VPRINTF(LOW, "ERROR: wrong interrupt signaled\n");
         goto epilogue;
     }
-    lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x0);
+    lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x3);
 
 
     /*
