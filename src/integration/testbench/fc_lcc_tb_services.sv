@@ -290,71 +290,70 @@ module fc_lcc_tb_services (
 
   //-------------------------------------------------------------------------
   // OTP memory fault injection
-  // Correctable error: One bit flip in locked partition
-  // Uncorrectable error: Flip all bits of a word in a locked partition
+  //
+  // This is designed to allow the caliptra_ss_fuse_ctrl_init_fail test to cause an ECC error in
+  // some chosen partition.
+  //
+  //   - Correctable error: One bit flip in a locked partition
+  //   - Uncorrectable error: Flip all bits of a word in a locked partition
+  //
   //-------------------------------------------------------------------------
 
-  reg fault_active_q;
-  reg [15:0] faulted_word_q [0:6];
+  // The offsets in the address map for the first word of some partitions, together with the offset
+  // to that partition's digest. Note that these offsets are measured in bytes, so need to be halved
+  // when indexing into `FC_MEM.
+  localparam [31:0] PartitionOffsetsAndDigests[7:0][1:0] = '{
+    '{ SwTestUnlockPartitionOffset,       SwTestUnlockPartitionDigestOffset },
+    '{ SecretManufPartitionOffset,        SecretManufPartitionDigestOffset },
+    '{ SecretProdPartition0Offset,        SecretProdPartition0DigestOffset },
+    '{ SecretProdPartition1Offset,        SecretProdPartition1DigestOffset },
+    '{ SecretProdPartition2Offset,        SecretProdPartition2DigestOffset },
+    '{ SecretProdPartition3Offset,        SecretProdPartition3DigestOffset },
+    '{ SecretLcTransitionPartitionOffset, SecretLcTransitionPartitionDigestOffset },
+    '{ VendorSecretProdPartitionOffset,   VendorSecretProdPartitionDigestOffset }
+  };
 
-  localparam int partition_offsets [0:6] = '{
-    SecretManufPartitionOffset/2,
-    SecretProdPartition0Offset/2,
-    SecretProdPartition1Offset/2,
-    SecretProdPartition2Offset/2,
-    SecretProdPartition3Offset/2,
-    SecretLcTransitionPartitionOffset/2,
-    VendorSecretProdPartitionOffset/2
-  };
-  localparam int partition_digests [0:6] = '{
-    SecretManufPartitionDigestOffset/2,
-    SecretProdPartition0DigestOffset/2,
-    SecretProdPartition1DigestOffset/2,
-    SecretProdPartition2DigestOffset/2,
-    SecretProdPartition3DigestOffset/2,
-    SecretLcTransitionPartitionDigestOffset/2,
-    VendorSecretProdPartitionDigestOffset/2
-  };
+  localparam int unsigned NumFaultablePartitions = $size(PartitionOffsetsAndDigests);
+
+  reg fault_active_q;
+  reg [15:0] faulted_word_q [NumFaultablePartitions];
 
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (!cptra_rst_b) begin
       fault_active_q <= 1'b0;
     end else begin
-      if (tb_service_cmd_valid && (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT || tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) && !fault_active_q) begin
+      if (tb_service_cmd_valid &&
+          tb_service_cmd inside {CMD_FC_LCC_CORRECTABLE_FAULT,
+                                 CMD_FC_LCC_UNCORRECTABLE_FAULT}) begin
         fault_active_q <= 1'b1;
       end
     end
   end
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
+  for (genvar i = 0; i < NumFaultablePartitions; i++) begin : partition_faults
     always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
         faulted_word_q[i] <= '0;
       end else begin
         if (tb_service_cmd_valid && !fault_active_q) begin
           // Only inject faults into partitions that are locked.
-          if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= { `FC_MEM[partition_offsets[i]][15:1], `FC_MEM[partition_offsets[i]][0] ^ |`FC_MEM[partition_digests[i]] };
-          end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= `FC_MEM[partition_offsets[i]][15:0] ^ {16{|`FC_MEM[partition_digests[i]]}};
+          if (|`FC_MEM[PartitionOffsetsAndDigests[i][1] / 2]) begin
+            if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
+              faulted_word_q[i] <= `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2] ^ 1;
+            end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
+              faulted_word_q[i] <= ~`FC_MEM[PartitionOffsetsAndDigests[i][0] / 2];
+            end
           end
         end
       end
     end
-  end
-  endgenerate
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
     always_comb begin
       if (fault_active_q) begin
-        force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];
+        force `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2] = faulted_word_q[i];
       end else begin
-        release `FC_MEM[partition_offsets[i]][15:0];
+        release `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2];
       end
     end
   end
-  endgenerate
-
 endmodule
