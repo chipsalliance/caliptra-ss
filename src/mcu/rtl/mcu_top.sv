@@ -332,7 +332,7 @@ module mcu_top
     input logic [pt.ICACHE_BANKS_WAY-1:0][(71*pt.ICACHE_NUM_WAYS)-1:0]                    wb_packeddout_pre,
     input logic [pt.ICACHE_NUM_WAYS-1:0][pt.ICACHE_BANKS_WAY-1:0][71-1:0]                 wb_dout_pre_up,
     // ICache Tag
-    output logic                                         ic_tag_clken_final,
+    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_clken_final,
     output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_tag_wren_q,
     output logic [(26*pt.ICACHE_NUM_WAYS)-1 :0]           ic_tag_wren_biten_vec,
     output logic [25:0]                                       ic_tag_wr_data,
