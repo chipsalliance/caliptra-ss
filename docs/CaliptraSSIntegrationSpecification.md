@@ -46,6 +46,12 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
+  - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
+    - [Split Memory Mapping](#split-memory-mapping)
+    - [Side Effect Considerations](#side-effect-considerations)
+    - [iCache Considerations](#icache-considerations)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -67,6 +73,9 @@
   - [Overview](#overview-4)
   - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+    - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
+      - [Why These Straps Are Needed](#why-these-straps-are-needed)
+      - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
@@ -101,6 +110,7 @@
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
+      - [MCU Mailbox Doorbell Command DLEN](#mcu-mailbox-doorbell-command-dlen)
       - [MCI Debug Lock Status](#mci-debug-lock-status)
       - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
       - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
@@ -143,6 +153,8 @@
 - [Synthesis](#synthesis)
   - [Recommended LINT rules](#recommended-lint-rules)
     - [Known Lint Issue](#known-lint-issue)
+      - [Signal Width Mismatches](#signal-width-mismatches)
+      - [Undriven signals](#undriven-signals)
 - [Terminology](#terminology)
 
 
@@ -765,7 +777,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -778,7 +790,6 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
 
-There are two main requirements for the MCU integration.
 
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
@@ -787,6 +798,56 @@ There are two main requirements for the MCU integration.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+## MCU Core Configuration Customization
+
+The MCU VeeR-EL2 core can be customized by integrators to optimize for specific SoC requirements.
+
+**Common Use Cases:**
+
+* **Memory Architecture**: Modify ICCM/DCCM addresses and sizes for SoC memory integration
+* **Power/Area Optimization**: Remove or modify features (caching, number of interrupts)
+* **Performance Tuning**: Adjust cache sizes and pipeline configurations for application workloads
+
+**Configuration Instructions:**
+
+Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-configuration) section in the project README for complete step-by-step procedures.
+
+**Validation:**
+
+Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
+
+## MCU SRAM MRAC Considerations
+
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. Each 256MB region is configured with uniform attributes - everything within a region is labeled as either "side effect" or "cacheable". This affects how MCU SRAM and MCU MBOX SRAM (both located within MCI) should be integrated into the SoC memory map, as different components within MCI may require different access attributes.
+
+### Split Memory Mapping
+
+Integrators have two main approaches for handling MCI memory mapping:
+
+**Option 1: Contiguous MCI Address Region** - If integrators don't care about the MRAC limitations described in the following sections, they can use a standard contiguous [MCI address map](#memory-map-address-map) where all MCI components (including MCU SRAM and MCU MBOX SRAM) reside within a single 256MB region.
+
+**Option 2: Split Memory Mapping** - Integrators can optionally split MCU SRAM and MCU MBOX SRAMs into their own dedicated 256MB regions, separate from other MCI components. This allows firmware to enable caching or disable side effects for these specific SRAMs.
+
+### Side Effect Considerations
+
+When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
+
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+
+### iCache Considerations
+
+When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
+
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cacheable. Since not all regions of MCI are cacheable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+
+If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cacheable region separate from other MCI components.
 
 ## MCU Programming interface
 
@@ -1681,13 +1742,11 @@ The two regions have different access protection. The size of the regions is dyn
 
     The interface signals `mci_generic_input_wires` and  `mci_generic_output_wires` are placeholders on the SoC interface reserved for late binding features. This may include any feature that is required for correct operation of the design in the final integrated SoC and that may not be accommodated through existing interface signaling (such as the mailbox).
 
-    While these late binding interface pins are generic in nature until assigned a function, integrators must not define non-standard use cases for these pins. Defining standard use cases ensures that the security posture of MCI/MCU in the final implementation is not degraded relative to the consortium design intent. Bits in `mci_generic_input_wires` that don't have a function defined in MCI must be tied to a 0-value. These undefined input bits shall not be connected to any flip flops (which would allow run-time transitions on the value).
-
     Each wire connects to a register in the MCI register bank through which communication to the MCU may be facilitated. Each of the generic wire signals is 64 bits in size.These signals are considered ASYNC and each of the 64 bits are considered separate adhoc signals. Meaning there is no bus synchronization which means the connections to this port need to be thoroughly thought through to ensure the MCU doesn’t drop any requests.
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following table describes the allocation of functionality on `mci_generic_input_wires` . All bits not listed in this table must be tied to 0.
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
 
     **Table: MCI Generic Input Allocation**
 
@@ -1696,6 +1755,12 @@ The two regions have different access protection. The size of the regions is dyn
     | 63:1 | RESERVED | No allocated function |
     | 0 | FIPS_ZEROIZATION_PPD_i | [FIPS zeroization](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses) request sampled by MCU ROM. If FIPS zeroization is required, this signal shall be set before Caliptra SS is out of reset. If set, MCU ROM will set MASK register triggering FIPS zeroization flow. If this signal is toggled at runtime it shall be ignored. |
 
+    **Table: MCI Generic Output Allocation**
+
+    | Bits | Name | Description |
+    | :---- | :---- | :---- |
+    | 63:0 | RESERVED | No allocated function |
+    
 ### Error Aggregation Connectivity Requirements
 
 MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg_error_fatal` and `agg_error_non_fatal`. These errors are:
@@ -1873,6 +1938,10 @@ See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptr
 #### Reset
 
 The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set `MBOX_DLEN` to MBOX SRAM size and write 0 to `MBOX_EXECUTE` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+
+#### MCU Mailbox Doorbell Command DLEN
+
+An MBOX doorbell command has no data. When MBOX_DLEN = 0 and MBOX_EXECUTION is cleared, the clearing logic erases the entire MBOX SRAM. To avoid long delays caused by this clearing, firmware should set MBOX_DLEN = 1 when issuing doorbell commands.
 
 #### MCI Debug Lock Status
 
@@ -2478,8 +2547,23 @@ A standardized set of lint rules is used to sign off on each release. The lint p
 
 ### Known Lint Issue
 
-- Signal width mismatch in [Line 271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) of mcu_mbox_csr.sv
-  - MSB on RHS will be optimized out during synthesis
+The following lint violations are known and expected in the current implementation:
+
+#### Signal Width Mismatches
+| Location | Description | Justification |
+|----------|-------------|---------------|
+| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+
+#### Undriven signals
+These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
+
+| Location | Signal | Justification |
+|----------|--------|---------------|
+| [`caliptra_ss_top.sv`](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/rtl/caliptra_ss_top.sv) | `cptra_ss_mcu0_el2_mem_export.ic_bank_way_clken_final_up` | MCU ICACHE packed. The *_up signals are unused. See ICACHE_WAYPACK parameter in src/riscv_core |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `sb_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected|
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
+
 
 # Terminology
 
