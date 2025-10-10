@@ -18,12 +18,6 @@
 `ifndef CALIPTRA_SS_INCLUDES_SVH
 `define CALIPTRA_SS_INCLUDES_SVH
 
-parameter CPTRA_SS_ROM_SIZE_KB = 256;
-parameter CPTRA_SS_ROM_DATA_W = 64;
-parameter CPTRA_SS_ROM_DEPTH = (CPTRA_SS_ROM_SIZE_KB*1024) / (CPTRA_SS_ROM_DATA_W/8);
-parameter CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
-parameter CPTRA_SS_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_ROM_DEPTH);
-
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1
