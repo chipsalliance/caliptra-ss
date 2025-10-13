@@ -222,9 +222,12 @@ By performing these design and verification tasks, the integrator ensures that t
 | [css_mcu0_dmi_jtag_to_core_sync.v](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_jtag_to_core_sync.v)      |Replace with a technology-specific sync cell. This synchronizer implements edge detection logic using a delayed flip flop on the output domain to produce a pulse output. Integrators must take care to ensure logical equivalence when replacing this logic with custom cells.|
 |[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvclkhdr/css_mcu0_rvoclkhdr with a technology-specific clock gater. Modifying this file may not be necessary if integrators override the clock gate module that is used by setting TECH_SPECIFIC_EC_RV_ICG.|
 |[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvsyncss (and css_mcu0_rvsyncss_fpga if the design will be implemented on an FPGA) with a technology-specific sync cell.|
+|[src/integration/rtl/caliptra_ss_includes.svh](../src/integration/rtl/caliptra_ss_includes.svh)|Modify the parameter `CPTRA_SS_ROM_SIZE_KB` to define the correct size of the MCU ROM in integrated design. No other parameters in this file are permitted to be modified. |
 
 
 [Caliptra Core RTL modifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#integrator-rtl-modification-requirements)
+
+It is mandatory that any build processes used (e.g. simulation, lint, synthesis) define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`, as described in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md). This ensures that Caliptra provides all Subsystem-related features and configuration. Example build scripts provided in the Caliptra Subsystem repository (such as [Makefile](../tools/scripts/Makefile)) demonstrate how this might be performed.
 
 ## Design Considerations
 
