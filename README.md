@@ -1,5 +1,5 @@
 # Caliptra Subsystem Overview
-_*Last Update: 2025/04/30*_
+_*Last Update: 2025/10/12*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
@@ -114,8 +114,11 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 │   └── compilespecs.yml
 ├── docs
 │   ├── Caliptra_Gen2_SS_TestPlan.xlsx
+│   ├── CaliptraSSCoverage.md
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
+│   ├── CaliptraSSReleaseChecklist.md
+│   ├── coverage_reports
 │   └── images
 ├── LICENSE
 ├── README.md

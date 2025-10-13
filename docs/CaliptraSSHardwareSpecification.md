@@ -2,8 +2,8 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Gen 2.0 Hardware Specification </h1>
-<h3 align="center"> Version 1p0-rc1 </h3>
+<h1 align="center"> Caliptra Subsystem Hardware Specification </h1>
+<h3 align="center"> Version 2p1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -129,6 +129,7 @@ This document defines technical specifications for a subsystem design utilizing 
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
 | Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Updated details on component features (MCU mailbox, MCU trace buffer, MCI error aggregation, FC fuse zeroization)<br> - Details on design connectivity with top-level ports<br> - Port and register updates  |
+| Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
 
 </div>
 
