@@ -2,8 +2,8 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Gen 2.1 Integration Specification </h1>
-<h3 align="center"> Version 1p0-rc1 </h3>
+<h1 align="center"> Caliptra Subsystem Integration Specification </h1>
+<h3 align="center"> Version 2p1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -172,6 +172,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
 | Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
+| Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
 
 </div>
 

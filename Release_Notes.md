@@ -1,5 +1,31 @@
 # **Release Notes** #
 
+## Caliptra Subsystem 2p1 Release notes
+_*Release Date: 2025/10/12*_
+
+Integration spec updates for OCP LOCK and FIPS Zeroization 
+
+### 1. Caliptra Core
+- Upgraded to Caliptra Core 2.1 final release that includes OCP LOCK, MLKEM, AES DMA, Reduced MBOX SRAM, Improvements of KV
+
+### 2. I3C
+- AXI streaming boot support in I3C; upgraded I3C to v1p4
+
+### 3. Life Cycle Controller (LCC)
+- VolatileRawUnlockEn control for SOC as a strap
+
+### 4. Fuse Controller (FC)
+- FIPS Zeroization required changes and fuse map updates for OCP LOCK Ratched seeds
+
+### 5. Manufacturer Control Interface (MCI):
+- No changes
+
+### Validation test plan completed for:
+- FIPS Zeroization
+- OCP LOCK
+
+
+
 ## Caliptra 2.1 Subsystem 1p0 RC1 Release notes
 _*Release Date: 2025/09/07*_
 
