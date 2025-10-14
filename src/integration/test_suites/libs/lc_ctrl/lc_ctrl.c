@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ lc_token_type_t trans_matrix[NUM_LC_STATES][NUM_LC_STATES] = {
 /*          RAW  TU0  TL0  TU1  TL1  TU2  TL2  TU3  TL3  TU4  TL4  TU5  TL5  TU6  TL6  TU7  DEV  PRD  PRE  RMA  SCR */
 /* RAW */ { INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, RAU, INV, INV, INV, INV, ZER },
 /* TU0 */ { INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
-/* TL0 */ { INV, INV, INV, TU1, INV, TU2, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER }, 
+/* TL0 */ { INV, INV, INV, TU1, INV, TU2, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
 /* TU1 */ { INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
 /* TL1 */ { INV, INV, INV, INV, INV, TU2, INV, TU3, INV, TU4, INV, TU5, INV, TU6, INV, TU7, TEX, DEX, PEX, INV, ZER },
 /* TU2 */ { INV, INV, INV, INV, INV, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, ZER, INV, TEX, DEX, PEX, ZER, ZER },
@@ -80,7 +80,7 @@ uint32_t state_sequence[] = {
     20  // LcStScrap
 };
 
-// If you only need tokens on the very first transition (Raw -> TestUnlocked0), 
+// If you only need tokens on the very first transition (Raw -> TestUnlocked0),
 // we can store a parallel “bool” array to indicate usage.
 // For instance, only use tokens for the 2nd element (transition *into* index1).
 // Adjust as needed for real usage.
@@ -115,19 +115,19 @@ uint32_t raw_unlock_token[4] = {
 void lcc_initialization(void) {
 
     uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
+    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK); 
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK);
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1); 
+        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
 }
@@ -149,11 +149,11 @@ void sw_transition_req(uint32_t next_lc_state,
     uint32_t loop_ctrl;
     int trigger_alert = 0;
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
 
@@ -175,7 +175,7 @@ void sw_transition_req(uint32_t next_lc_state,
     lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
 
     // Step 4: Write Transition Tokens
-    if (conditional == 1) {        
+    if (conditional == 1) {
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
         lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
@@ -203,7 +203,7 @@ void sw_transition_req(uint32_t next_lc_state,
         uint32_t STATE_ERROR = ((status_val & 0x200) >> 9);
         uint32_t BUS_INTG_ERROR = ((status_val & 0x400) >> 10);
         uint32_t OTP_PARTITION_ERROR = ((status_val & 0x800) >> 11);
-    
+
 
         if (TRANSITION_SUCCESSFUL) {
             VPRINTF(LOW, "Transition successful.\n");
@@ -242,7 +242,7 @@ void sw_transition_req(uint32_t next_lc_state,
             break;
         }
     }
-    
+
     lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
 
     VPRINTF(LOW, "sw_transition_req completed.\n");
@@ -250,12 +250,12 @@ void sw_transition_req(uint32_t next_lc_state,
 
 uint32_t calc_lc_state_mnemonic(uint32_t state) {
     uint32_t next_lc_state_5bit = state & 0x1F;
-    uint32_t targeted_state_5 = 
-        (next_lc_state_5bit << 25) | 
-        (next_lc_state_5bit << 20) | 
-        (next_lc_state_5bit << 15) | 
-        (next_lc_state_5bit << 10) | 
-        (next_lc_state_5bit << 5)  | 
+    uint32_t targeted_state_5 =
+        (next_lc_state_5bit << 25) |
+        (next_lc_state_5bit << 20) |
+        (next_lc_state_5bit << 15) |
+        (next_lc_state_5bit << 10) |
+        (next_lc_state_5bit << 5)  |
         next_lc_state_5bit;
     return targeted_state_5;
 }
@@ -285,7 +285,7 @@ void transition_state_check(uint32_t next_lc_state, uint32_t token_31_0, uint32_
 }
 
 void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
-    
+
     // Example token for the Raw->TestUnlocked0 jump (128 bits).
     // Adjust to match your real raw-unlock token if needed.
     uint32_t token_value = 1;
@@ -295,11 +295,11 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
     for (int i = 0; i < (n_states - 3); i++) {
         uint32_t from_state = state_sequence[i];
         uint32_t to_state   = state_sequence[i+1];
-        VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n", 
+        VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n",
                 from_state, to_state);
         // Pack the 5-bit repeated code
         uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
-        
+
         if (i == 0){
              sw_transition_req(next_lc_state_30,
                             raw_unlock_token[0],
@@ -356,12 +356,12 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     uint32_t loop_ctrl;
     int trigger_alert = 0;
     reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
 
     while(!loop_ctrl){
-    VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+    VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
         reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK); 
+        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
     }
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
     VPRINTF(LOW, "Starting sw_transition_req...\n");
@@ -380,7 +380,7 @@ void sw_transition_req_with_expec_error(uint32_t next_lc_state,
     VPRINTF(LOW, "Setting next lifecycle state [0x%08x]: 0x%08x\n", LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
     lsu_write_32(LC_CTRL_TRANSITION_TARGET_OFFSET, next_lc_state);
     // Step 4: Write Transition Tokens
-    if (conditional == 1) {        
+    if (conditional == 1) {
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_31_0);
         lsu_write_32(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, token_31_0);
         VPRINTF(LOW, "Writing tokens: 0x%08x\n", token_63_32);
