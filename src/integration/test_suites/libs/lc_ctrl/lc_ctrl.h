@@ -121,7 +121,9 @@ void test_all_lc_transitions_no_RMA_no_SCRAP(void);
 
 void force_PPD_pin(void);
 
-uint32_t read_lc_state(void);
+// Look at the lc_state register and return the 5-bit index that has
+// been replicated to get it. If there is no such index, return 0xff.
+uint8_t read_lc_state(void);
 
 uint32_t read_lc_counter(void);
 void disable_lcc_SVAs(void);
