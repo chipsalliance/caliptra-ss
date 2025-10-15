@@ -26,6 +26,10 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
+// Starting at some initial state (depending on the randomised test
+// build), try to transition to the RMA state, but without using the
+// backdoor method to assert the PPD pin. This is expected to fail.
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -49,60 +53,48 @@ static uint32_t tokens[13][4] = {
     [ZER] = {0}                                               // ZERO
 };
 
+bool body(void) {
+    mcu_cptra_init_d();
+    if (wait_dai_op_idle(0)) return false;
+
+    lcc_initialization();
+
+    uint32_t lc_state_curr = read_lc_state();
+    uint32_t lc_cnt_curr = read_lc_counter();
+
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
+
+    if (lc_cnt_curr == 24) {
+        VPRINTF(LOW, "INFO: reached max. LC counter value: finish test\n");
+        return true;
+    }
+
+    if (trans_matrix[lc_state_curr][RMA] == INV) {
+        VPRINTF(LOW, "Info: transition from %d into RMA not possible: finish test\n",
+                lc_state_curr);
+        return true;
+    }
+
+    lc_token_type_t token_type = trans_matrix[lc_state_curr][RMA];
+
+    if (!transition_state(RMA, tokens[token_type], true)) return false;
+    if (!wait_dai_op_idle(0)) return false;
+
+    // Check if we are still in the start state.
+    if (!check_lc_state("starting state", lc_state_curr)) return false;
+
+    return true;
+}
+
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
+    bool passed = body();
 
-    uint32_t buf[NUM_LC_STATES] = {0};
-
-    // Randomly choose the next LC state among the all valid ones
-    // based on the current state and repeat this until the SCRAP
-    // state is reached.
-    while (1) {
-        lcc_initialization();
-
-        uint32_t lc_state_curr = read_lc_state();
-        uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1;
-
-        VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
-        VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
-
-        if (lc_cnt_curr == 24) {
-            VPRINTF(LOW, "INFO: reached max. LC counter value, finish test test\n");
-            for (uint8_t i = 0; i < 160; i++) {
-                __asm__ volatile ("nop"); // Sleep loop as "nop"
-            }
-
-            SEND_STDOUT_CTRL(0xff);
-        }
-
-        uint32_t lc_state_next = RMA;
-        if (trans_matrix[lc_state_curr][lc_state_next] == INV) {
-            VPRINTF(LOW, "Info: transition from %d into RMA not possible, finish test\n", lc_state_curr);
-            goto epilogue;
-        }
-
-        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-
-        transition_state(lc_state_next, tokens[token_type], true);
-        wait_dai_op_idle(0);
-
-        uint32_t lc_state_after_transition = read_lc_state();
-        // Check if we are still in the start state.
-        if (lc_state_after_transition != lc_state_curr) {
-            VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_state_curr, lc_state_after_transition);
-            goto epilogue;
-        }
-        goto epilogue; 
-    }
-    
-epilogue:
     for (uint8_t i = 0; i < 160; i++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
