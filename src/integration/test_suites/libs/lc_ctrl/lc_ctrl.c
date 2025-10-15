@@ -188,9 +188,7 @@ start_transition_command(uint32_t next_lc_state, const uint32_t token[4])
     VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
     lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
 
-    for (uint16_t ii = 0; ii < 1000; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(1000);
 }
 
 static bool
@@ -329,9 +327,8 @@ void force_PPD_pin(void) {
 }
 
 uint8_t read_lc_state(void) {
-    for (uint32_t i = 0; i < 512; i++) {
-        __asm__ volatile ("nop");
-    }
+    mcu_sleep(512);
+
     // Read LC_CTRL_LC_STATE register and mask out the reserved bits (bits 31:30)
     uint32_t reg_val = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
     const char *state_str;
@@ -397,9 +394,8 @@ bool check_lc_state(const char *desc, uint8_t exp_idx)
 }
 
 uint32_t read_lc_counter(void) {
-    for (uint32_t i = 0; i < 512; i++) {
-        __asm__ volatile ("nop");
-    }
+    mcu_sleep(512);
+
     // Read LC_CTRL_LC_TRANSITION_CNT register and mask out the reserved bits (bits 31:5)
     uint32_t reg_val = lsu_read_32(LC_CTRL_LC_TRANSITION_CNT_OFFSET) & 0x1F;
 
