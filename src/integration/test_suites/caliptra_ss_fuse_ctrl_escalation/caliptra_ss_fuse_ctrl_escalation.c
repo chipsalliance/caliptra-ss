@@ -39,7 +39,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * This function verifies that a triggered escalation results in a locked
  * fuse controller block.
  */
-void trigger_escalation() {
+bool trigger_escalation() {
     // Assert the `lc_escalate_en_i` escalation input port. This will transfer
     // the fuse controller into an unrecoverable terminal state.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_TRIGGER_ESCALATION);
@@ -50,30 +50,32 @@ void trigger_escalation() {
     for (uint32_t i = 0; i < 18; i++) {
         uint32_t err_code = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*i);
         if (err_code != fsm_state_error) {
-            VPRINTF(LOW, "incorrectvalue in error register %d for : exp: %08X: act: %08X\n", i, fsm_state_error, err_code);
-            exit(1);
+            VPRINTF(LOW, "incorrect value in error register %d for : exp: %08X: act: %08X\n",
+                    i, fsm_state_error, err_code);
+            return false;
         }
     }
+
+    return true;
+}
+
+bool body (void) {
+    mcu_cptra_init_d();
+    if (!wait_dai_op_idle(0)) return false;
+
+    lcc_initialization();
+    grant_mcu_for_fc_writes();
+
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
+
+    initialize_otp_controller();
+
+    return trigger_escalation();
 }
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
-
-    initialize_otp_controller();
-
-    trigger_escalation();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    bool passed = body();
+    mcu_sleep(160);
+    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
