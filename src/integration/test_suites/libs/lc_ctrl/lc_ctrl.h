@@ -119,8 +119,6 @@ bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t
 // by a check that the LC state is as requested.
 bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]);
 
-void test_all_lc_transitions_no_RMA_no_SCRAP(void);
-
 void force_PPD_pin(void);
 
 // Look at the lc_state register and return the 5-bit index that has

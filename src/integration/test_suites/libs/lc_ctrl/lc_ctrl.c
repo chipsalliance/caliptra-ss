@@ -318,41 +318,6 @@ bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
     return true;
 }
 
-void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
-
-    // Example token for the Raw->TestUnlocked0 jump (128 bits).
-    // Adjust to match your real raw-unlock token if needed.
-    uint32_t token_value = 1;
-    // We start at index0=0 (Raw). We do transitions *from* each state
-    // to the *next* in the sequence. So we loop from i=0 to i=(N-2).
-    int n_states = sizeof(state_sequence)/sizeof(state_sequence[0]);
-    for (int i = 0; i < (n_states - 3); i++) {
-        uint32_t from_state = state_sequence[i];
-        uint32_t to_state   = state_sequence[i+1];
-        VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n",
-                from_state, to_state);
-        // Pack the 5-bit repeated code
-        uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
-
-        const uint32_t zero_token[4] = {0, 0, 0, 0};
-        const uint32_t rep_token[4] = {token_value, token_value,
-                                       token_value, token_value};
-
-        const uint32_t *backing_token;
-        if (i == 0) backing_token = raw_unlock_token;
-        else if (i < 15) backing_token = zero_token;
-        else {
-            backing_token = rep_token;
-            ++token_value;
-        }
-
-        sw_transition_req(next_lc_state_30, use_token[i+1] ? backing_token : NULL);
-        reset_fc_lcc_rtl();
-    }
-
-    VPRINTF(LOW, "All transitions complete.\n");
-}
-
 bool sw_transition_req_with_expec_error(uint32_t next_lc_state, const uint32_t token[4])
 {
     return sw_transition_req_core(next_lc_state, token, true);
