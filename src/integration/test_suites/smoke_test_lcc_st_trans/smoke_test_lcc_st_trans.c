@@ -62,7 +62,11 @@ bool test_all_lc_transitions_no_RMA_no_SCRAP(void) {
             ++token_value;
         }
 
-        if (!transition_state(to_state, use_token[i+1] ? backing_token : NULL)) return false;
+        if (!transition_state(to_state,
+                              use_token[i+1] ? backing_token : NULL,
+                              false))
+            return false;
+
         reset_fc_lcc_rtl();
     }
 

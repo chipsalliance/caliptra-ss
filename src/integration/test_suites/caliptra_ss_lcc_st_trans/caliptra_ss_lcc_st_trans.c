@@ -92,7 +92,8 @@ void main (void) {
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
             transition_state(lc_state_next,
-                             token_type == ZER ? NULL : tokens[token_type]);
+                             token_type == ZER ? NULL : tokens[token_type],
+                             false);
 
             if (lc_state_next != SCRAP) {
                 wait_dai_op_idle(0);
