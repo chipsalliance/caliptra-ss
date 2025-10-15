@@ -244,18 +244,6 @@ poll_transition_status(bool expected_fail)
     return transition_successful ^ expected_fail;
 }
 
-static uint32_t calc_lc_state_mnemonic(uint8_t state) {
-    uint32_t next_lc_state_5bit = state & 0x1F;
-    uint32_t targeted_state_5 =
-        (next_lc_state_5bit << 25) |
-        (next_lc_state_5bit << 20) |
-        (next_lc_state_5bit << 15) |
-        (next_lc_state_5bit << 10) |
-        (next_lc_state_5bit << 5)  |
-        next_lc_state_5bit;
-    return targeted_state_5;
-}
-
 bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
     start_transition_command(next_lc_state, token);
@@ -271,7 +259,15 @@ bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool exp
 
 bool start_state_transition(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
-    return sw_transition_req(calc_lc_state_mnemonic(next_lc_state), token, expect_error);
+    uint32_t next_lc_state_5bit = next_lc_state & 0x1F;
+    uint32_t tgt_mnemonic = ((next_lc_state_5bit << 25) |
+                             (next_lc_state_5bit << 20) |
+                             (next_lc_state_5bit << 15) |
+                             (next_lc_state_5bit << 10) |
+                             (next_lc_state_5bit << 5)  |
+                             next_lc_state_5bit);
+
+    return sw_transition_req(tgt_mnemonic, token, expect_error);
 }
 
 bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
