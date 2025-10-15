@@ -131,7 +131,7 @@ void main (void) {
 
     const uint32_t *token = (lc_state_curr == 0) ? raw_unlock_token : tokens[lc_state_next];
 
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(lc_state_next), token);
+    transition_state_req_with_expec_error(lc_state_next, token);
 
     // Wait a bit before reading out the LC state register.
     for (uint8_t ii = 0; ii < 160; ii++) {

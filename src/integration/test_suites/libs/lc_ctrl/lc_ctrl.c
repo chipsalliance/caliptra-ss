@@ -246,7 +246,7 @@ poll_transition_status(bool expected_fail)
     return transition_successful ^ expected_fail;
 }
 
-uint32_t calc_lc_state_mnemonic(uint8_t state) {
+static uint32_t calc_lc_state_mnemonic(uint8_t state) {
     uint32_t next_lc_state_5bit = state & 0x1F;
     uint32_t targeted_state_5 =
         (next_lc_state_5bit << 25) |
@@ -418,6 +418,17 @@ uint8_t read_lc_state(void) {
 
     // Return decoded LC state.
     return rep_val;
+}
+
+bool check_lc_state(const char *desc, uint8_t exp_idx)
+{
+    uint8_t act_idx = read_lc_state();
+    if (act_idx != exp_idx) {
+        VPRINTF(LOW, "ERROR: Wrong lc_state. Expected %s (0x%x), but got 0x%x, from 0x%08.\n",
+                desc, exp_idx, act_idx, lsu_read_32(LC_CTRL_LC_STATE_OFFSET));
+        return false;
+    }
+    return true;
 }
 
 uint32_t read_lc_counter(void) {

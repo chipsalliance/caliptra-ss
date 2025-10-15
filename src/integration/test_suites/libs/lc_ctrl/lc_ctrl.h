@@ -77,8 +77,6 @@ typedef enum {
 void lcc_initialization(void);
 void force_lcc_tokens(void);
 
-uint32_t calc_lc_state_mnemonic(uint8_t state);
-
 // Request an LC state transition to next_lc_state. If token is not
 // null, it will be written to the four transition token registers
 // beforehand.
@@ -124,6 +122,12 @@ void force_PPD_pin(void);
 // Look at the lc_state register and return the 5-bit index that has
 // been replicated to get it. If there is no such index, return 0xff.
 uint8_t read_lc_state(void);
+
+// Check that the lc_state register reports the current state to be a
+// replication of the given 5-bit index. If there is a mismatch, print
+// an error (using desc as a human-readable description of the
+// expected state) and return false.
+bool check_lc_state(const char *desc, uint8_t exp_idx);
 
 uint32_t read_lc_counter(void);
 void disable_lcc_SVAs(void);

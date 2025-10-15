@@ -47,7 +47,6 @@ void main (void) {
     };
 
     const raw_state = calc_lc_state_mnemonic(RAW);
-    const test_unlocked0_state = calc_lc_state_mnemonic(TEST_UNLOCKED0);
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -74,17 +73,12 @@ void main (void) {
     lsu_write_32(SOC_LC_CTRL_TRANSITION_CTRL, 0x2);
 
     // Transition into the TEST_UNLOCKED0 state.
-    if (!sw_transition_req(calc_lc_state_mnemonic(TEST_UNLOCKED0),
-                           hashed_raw_unlock_token)) {
+    if (!transition_state(TEST_UNLOCKED0, hashed_raw_unlock_token)) {
         VPRINTF(LOW, "ERROR: Transition to TEST_UNLOCKED0 returned an error code.\n");
         goto epilogue;
     }
 
-    state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != test_unlocked0_state) {
-        VPRINTF(LOW, "ERROR: lcc is not in test unlocked0 state\n");
-        goto epilogue;
-    }
+    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)) goto epilogue;
 
     // After a reset, the LCC should have reverted back to the RAW state.
     reset_fc_lcc_rtl();
