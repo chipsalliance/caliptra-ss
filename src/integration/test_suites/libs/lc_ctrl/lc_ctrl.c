@@ -363,7 +363,7 @@ void force_PPD_pin(void) {
     VPRINTF(LOW, "MCU: RMA_SCRAP_PPD pin asserted high!\n");
 }
 
-uint32_t read_lc_state(void) {
+uint8_t read_lc_state(void) {
     for (uint32_t i = 0; i < 512; i++) {
         __asm__ volatile ("nop");
     }
