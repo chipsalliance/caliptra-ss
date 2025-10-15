@@ -256,14 +256,11 @@ static uint32_t calc_lc_state_mnemonic(uint8_t state) {
     return targeted_state_5;
 }
 
-// The guts of the transition request functions. The next_lc_state argument should be the "mnemonic"
-// (replicated) version of the state value. The transition is expected to report success iff
-// expected_fail is false.
-static bool sw_transition_req_core(uint32_t next_lc_state, const uint32_t token[4], bool expected_fail)
+bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
     start_transition_command(next_lc_state, token);
 
-    bool had_expected_behaviour = poll_transition_status(expected_fail);
+    bool had_expected_behaviour = poll_transition_status(expect_error);
 
     lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
 
@@ -272,30 +269,15 @@ static bool sw_transition_req_core(uint32_t next_lc_state, const uint32_t token[
     return had_expected_behaviour;
 }
 
-bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
+bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
-    return sw_transition_req_core(next_lc_state, token, false);
-}
+    if (!sw_transition_req(calc_lc_state_mnemonic(next_lc_state), token, expect_error))
+        return false;
 
-bool transition_state(uint8_t next_lc_state, const uint32_t token[4])
-{
-    if (!sw_transition_req_core(calc_lc_state_mnemonic(next_lc_state), token, false)) return false;
-
-    // The transition request succeeded, as expected. This means we've written
-    // the new state to OTP, but now the lc_ctrl FSM has dropped into the
-    // terminal PostTransSt. Inject a reset to "start again"
-    reset_fc_lcc_rtl();
-
-    return true;
-}
-
-bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t token[4])
-{
-    if (!sw_transition_req_core(calc_lc_state_mnemonic(next_lc_state), token, true)) return false;
-
-    // Although the transition request hasn't succeeded, it will have left the
-    // lifecycle state INVALID. Inject a reset to "start again" (using the state
-    // that was stored in fuses beforehand).
+    // Whether or not the transition request succeeded, we need to reset lc_ctrl
+    // and fuse_ctrl. This will read the lifecycle state from fuses again (which
+    // had either changed or not), moving from InvalidSt / PostTransSt to the
+    // value that is actually stored.
     reset_fc_lcc_rtl();
 
     return true;
@@ -303,7 +285,7 @@ bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t
 
 bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
 
-    if (!transition_state(next_lc_state, token)) return false;
+    if (!transition_state(next_lc_state, token, false)) return false;
 
     wait_dai_op_idle(0);
     uint32_t lc_state_curr = read_lc_state();
@@ -314,11 +296,6 @@ bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
     }
 
     return true;
-}
-
-bool sw_transition_req_with_expec_error(uint32_t next_lc_state, const uint32_t token[4])
-{
-    return sw_transition_req_core(next_lc_state, token, true);
 }
 
 void force_PPD_pin(void) {

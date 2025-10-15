@@ -59,7 +59,7 @@ void main (void) {
     while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_FUSES_MASK));
 
     lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
     reset_fc_lcc_rtl();
 
     // Initialize fuses

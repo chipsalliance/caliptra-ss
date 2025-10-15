@@ -44,7 +44,7 @@ void from_Unlocked_to_SCRAP(void) {
     VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n", 
         from_state, to_state);
     force_PPD_pin();
-    transition_state(to_state, NULL);
+    transition_state(to_state, NULL, false);
     reset_fc_lcc_rtl();
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in SCRAP state!\n");
 
@@ -59,14 +59,14 @@ void no_PPD_from_Raw_to_SCRAP(void) {
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
 
-    transition_state(to_state, raw_unlock_token);
+    transition_state(to_state, raw_unlock_token, false);
     
     reset_fc_lcc_rtl();
     from_state = 1;
     to_state   = 20;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    transition_state_req_with_expec_error(to_state, NULL);
+    transition_state(to_state, NULL, true);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in not SCRAP state!\n");
     reset_fc_lcc_rtl();
     enable_lcc_SVAs();

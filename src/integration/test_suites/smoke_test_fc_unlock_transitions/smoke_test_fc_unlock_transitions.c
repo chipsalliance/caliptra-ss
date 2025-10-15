@@ -86,7 +86,7 @@ void iterate_test_unlock_states() {
         uint32_t token_array[4] = { token, 0, 0, 0 };
         bool use_token = state & 0x1; // No token required for TEST_LOCKED states
 
-        transition_state(state, use_token ? token_array : NULL);
+        transition_state(state, use_token ? token_array : NULL, false);
         wait_dai_op_idle(0);
 
         uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);

@@ -40,7 +40,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void trans_cnt_oflw_error(void) {
     // Fault the lc counter fuse to trigger a overflow error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FAULT_CNTR);
-    transition_state_req_with_expec_error(TEST_LOCKED0, NULL);
+    transition_state(TEST_LOCKED0, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_COUNT_ERROR_LOW) & 0x1)) {
@@ -51,7 +51,7 @@ void trans_cnt_oflw_error(void) {
 // Trigger a trans_invalid_error in the lc_ctrl FSM.
 void trans_invalid_error(void) {
     // Reverting back to the RAW state from TEST_UNLOCKED0 is not allowed.
-    transition_state_req_with_expec_error(RAW, NULL);
+    transition_state(RAW, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_ERROR_LOW) & 0x1)) {
@@ -62,7 +62,7 @@ void trans_invalid_error(void) {
 // Trigger a token_invalid_error in the lc_ctrl FSM.
 void token_invalid_error(void) {
     // Transitioning from TEST_LOCKED0 to TEST_UNLOCKED1 needs a correct token.
-    if (!transition_state_req_with_expec_error(TEST_UNLOCKED1, NULL)) {
+    if (!transition_state_req(TEST_UNLOCKED1, NULL, true)) {
         VPRINTF(LOW, "ERROR: Successful transition with no token.\n");
         return;
     }

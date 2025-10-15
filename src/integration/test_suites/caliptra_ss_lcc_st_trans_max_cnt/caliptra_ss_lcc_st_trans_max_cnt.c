@@ -88,12 +88,14 @@ void main (void) {
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
             if (lc_state_next != SCRAP) {
                 // We should see: Expected Transition Count E**or detected.
-                transition_state_req_with_expec_error(lc_state_next,
-                                                      tokens[token_type]);
+                transition_state(lc_state_next,
+                                 tokens[token_type],
+                                 true);
             } else {
                 // Entering SCRAP state should also be possible when reaching the max. lc counter value.
                 transition_state(lc_state_next,
-                                 token_type == ZER ? NULL : tokens[token_type]);
+                                 token_type == ZER ? NULL : tokens[token_type],
+                                 false);
             }
             
 
