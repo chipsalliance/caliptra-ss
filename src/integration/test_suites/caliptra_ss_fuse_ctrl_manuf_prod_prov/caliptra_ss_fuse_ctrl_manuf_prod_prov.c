@@ -84,12 +84,7 @@ void manuf_prod_provision() {
     transition_state(MANUF, ones_token);
     wait_dai_op_idle(0);
 
-    uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-    uint32_t exp_state = calc_lc_state_mnemonic(MANUF);
-    if (act_state != exp_state) {
-        VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-        exit(1);
-    }
+    if (!check_lc_state("MANUF", MANUF)) exit(1);
 
     // Check that all the MANUF and PROD partitionss are writeable.
     for (uint32_t i = 0; i < count; i++) {
@@ -105,12 +100,7 @@ void manuf_prod_provision() {
     transition_state(PROD, twos_token);
     wait_dai_op_idle(0);
 
-    act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-    exp_state = calc_lc_state_mnemonic(PROD);
-    if (act_state != exp_state) {
-        VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-        exit(1);
-    }
+    if (!check_lc_state("PROD", PROD)) exit(1);
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
     for (uint32_t i = 0; i < count; i++) {

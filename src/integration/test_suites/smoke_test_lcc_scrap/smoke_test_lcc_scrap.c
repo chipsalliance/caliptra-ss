@@ -43,10 +43,8 @@ void from_Unlocked_to_SCRAP(void) {
     to_state   = 20;
     VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n", 
         from_state, to_state);
-    // Pack the 5-bit repeated code
-    uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
     force_PPD_pin();
-    sw_transition_req(next_lc_state_30, NULL);
+    transition_state(to_state, NULL);
     reset_fc_lcc_rtl();
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in SCRAP state!\n");
 
@@ -60,18 +58,15 @@ void no_PPD_from_Raw_to_SCRAP(void) {
     uint32_t to_state   = 1;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
 
-    sw_transition_req(next_lc_state_30, raw_unlock_token);
+    transition_state(to_state, raw_unlock_token);
     
     reset_fc_lcc_rtl();
     from_state = 1;
     to_state   = 20;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    // Pack the 5-bit repeated code
-    next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req_with_expec_error(next_lc_state_30, NULL);
+    transition_state_req_with_expec_error(to_state, NULL);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in not SCRAP state!\n");
     reset_fc_lcc_rtl();
     enable_lcc_SVAs();
