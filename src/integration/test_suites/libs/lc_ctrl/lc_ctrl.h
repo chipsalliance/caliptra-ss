@@ -74,7 +74,11 @@ typedef enum {
     SCRAP          = 20
 } lc_state_dec_t;
 
+// Repeatedly read the lc_ctrl status register and wait until the lcc
+// reports itself to be ready, then initialized.
 void lcc_initialization(void);
+
+// Force signals to override LC tokens to a particular set of known values.
 void force_lcc_tokens(void);
 
 // Request an LC state transition to next_lc_state. If token is not

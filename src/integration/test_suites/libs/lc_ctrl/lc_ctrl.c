@@ -108,28 +108,28 @@ uint8_t use_token[] = {
     0  // from PROD -> SCRAP
 };
 
+// Repeatedly read the lc_ctrl status register until all the bits in mask are set. desc is a
+// human-readable description of what we are waiting for.
+static void masked_wait_for_status(const char *desc, uint32_t mask)
+{
+    uint32_t reg_value = 0;
+
+    VPRINTF(LOW, "LC_CTRL: Reading lc_ctrl status, waiting for %s.\n", desc);
+    while (mask &~ reg_value) {
+        VPRINTF(LOW, "DEBUG: Still waiting for bits in status: 0x%08x.\n", mask &~ reg_value);
+        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    }
+}
 uint32_t raw_unlock_token[4] = {
     CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN
 };
 
 void lcc_initialization(void) {
+    masked_wait_for_status("ready signal", CALIPTRA_SS_LC_CTRL_READY_MASK);
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready.\n");
 
-    uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
-    while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK);
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
-    while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
+    masked_wait_for_status("initialization", CALIPTRA_SS_LC_CTRL_INIT_MASK);
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initialized.\n");
 }
 
 void force_lcc_tokens(void) {
