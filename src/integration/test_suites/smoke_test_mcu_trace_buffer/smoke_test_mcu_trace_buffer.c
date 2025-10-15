@@ -52,7 +52,7 @@ void main (void) {
 
 
     lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
     reset_fc_lcc_rtl();
 
     mcu_mbox_clear_lock_out_of_reset(0);

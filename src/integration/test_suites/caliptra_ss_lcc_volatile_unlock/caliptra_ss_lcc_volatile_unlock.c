@@ -73,7 +73,7 @@ void main (void) {
     lsu_write_32(SOC_LC_CTRL_TRANSITION_CTRL, 0x2);
 
     // Transition into the TEST_UNLOCKED0 state.
-    if (!transition_state(TEST_UNLOCKED0, hashed_raw_unlock_token)) {
+    if (!transition_state(TEST_UNLOCKED0, hashed_raw_unlock_token, false)) {
         VPRINTF(LOW, "ERROR: Transition to TEST_UNLOCKED0 returned an error code.\n");
         goto epilogue;
     }

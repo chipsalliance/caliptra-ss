@@ -81,7 +81,7 @@ void manuf_prod_provision() {
     const uint32_t ones_token[4] = {1, 1, 1, 1};
     const uint32_t twos_token[4] = {2, 2, 2, 2};
 
-    transition_state(MANUF, ones_token);
+    transition_state(MANUF, ones_token, false);
     wait_dai_op_idle(0);
 
     if (!check_lc_state("MANUF", MANUF)) exit(1);
@@ -97,7 +97,7 @@ void manuf_prod_provision() {
     }
 
     // Transition from MANUF to PROD.
-    transition_state(PROD, twos_token);
+    transition_state(PROD, twos_token, false);
     wait_dai_op_idle(0);
 
     if (!check_lc_state("PROD", PROD)) exit(1);
