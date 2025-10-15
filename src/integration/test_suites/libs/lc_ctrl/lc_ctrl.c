@@ -393,7 +393,7 @@ bool check_lc_state(const char *desc, uint8_t exp_idx)
     return true;
 }
 
-uint32_t read_lc_counter(void) {
+uint8_t read_lc_counter(void) {
     mcu_sleep(512);
 
     // Read LC_CTRL_LC_TRANSITION_CNT register and mask out the reserved bits (bits 31:5)

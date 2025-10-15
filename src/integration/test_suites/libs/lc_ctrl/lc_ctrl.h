@@ -119,6 +119,7 @@ bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t
 // by a check that the LC state is as requested.
 bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]);
 
+// Use a backdoor access to assert the RMA_SCRAP_PPD pin
 void force_PPD_pin(void);
 
 // Look at the lc_state register and return the 5-bit index that has
@@ -131,8 +132,15 @@ uint8_t read_lc_state(void);
 // expected state) and return false.
 bool check_lc_state(const char *desc, uint8_t exp_idx);
 
-uint32_t read_lc_counter(void);
+// Read the transition_cnt register (5 bits).
+uint8_t read_lc_counter(void);
+
+// Disable the SVA checks that are gated by the disable_lcc_sva signal
+// at `FC_LCC_TB_SERV_PATH (such as the Allow_PPD_check_in_LCC
+// property).
 void disable_lcc_SVAs(void);
+
+// Re-enable any SVA checks that were disabled by disable_lcc_SVAs.
 void enable_lcc_SVAs(void);
 
 #endif // LC_CTRL_H
