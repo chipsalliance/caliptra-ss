@@ -103,7 +103,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: 'recursive'
-          # This is the Gen2.0 v1.0 release patch branch...
+          # This is the 2.1 release patch branch...
           ref: "patch_ss_v2.1"
 
       - name: Install peakrdl
@@ -138,7 +138,7 @@ jobs:
 
   deploy:
     name: Deploy
-    needs: build
+    needs: [build, build-2_0, build-2_1]
     if: github.event_name == 'push'
 
     permissions:
