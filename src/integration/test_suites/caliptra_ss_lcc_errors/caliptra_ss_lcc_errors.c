@@ -127,7 +127,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    switch (xorshift32() % 5) {
+    switch (xorshift32() % 6) {
         case 0: {
             VPRINTF(LOW, "INFO: triggering trans_cnt_oflw_error\n");
             trans_cnt_oflw_error();
