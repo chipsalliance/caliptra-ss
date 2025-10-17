@@ -277,6 +277,7 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME : remve this Note suppression
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
+VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
@@ -409,7 +410,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	-$(GCC_PREFIX)-objcopy -O verilog -j .mcu_hitless_sram \
 				--change-section-lma .mcu_hitless_sram-0x21C00000 \
 				--pad-to 0x80000 \
-				--no-change-warnings $(TESTNAME).exe mcu_hitless_lmem.hex			  
+				--no-change-warnings $(TESTNAME).exe mcu_hitless_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .text -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	# $(GCC_PREFIX)-objcopy -O verilog -R .data -R .rodata -R .srodata -R .bss -R .sbss -R .data.io -R .eh_frame --pad-to 0x20000 --no-change-warnings $(TESTNAME).exe mcu_program.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
@@ -431,7 +432,7 @@ mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 			      --change-section-lma        .bss-0x21c00000 \
 			      --change-section-lma       .sbss-0x21c00000 \
 			      --pad-to 0x40000 \
-			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex		  
+			      --no-change-warnings $(TESTNAME).exe mcu_lmem.hex
 	$(GCC_PREFIX)-objdump -S  $(TESTNAME).exe > $(TESTNAME).dis
 	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
