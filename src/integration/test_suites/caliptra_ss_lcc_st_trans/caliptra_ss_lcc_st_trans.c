@@ -52,7 +52,7 @@ static uint32_t tokens[13][4] = {
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
 
@@ -67,7 +67,7 @@ void main (void) {
 
         uint32_t lc_state_curr = read_lc_state();
         uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1; 
+        uint32_t lc_cnt_next = lc_cnt_curr + 1;
 
         VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
         VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
@@ -86,35 +86,38 @@ void main (void) {
             }
         }
 
-        if (count) {
-            uint32_t lc_state_next = buf[xorshift32() % count];
-            VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
+        if (!count) {
+            VPRINTF(LOW, "INFO: Empty test. No state should be reachable from current state\n");
+            goto epilogue;
+        }
 
-            lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            transition_state(lc_state_next,
-                             token_type == ZER ? NULL : tokens[token_type],
-                             false);
+        uint32_t lc_state_next = buf[xorshift32() % count];
+        VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
-            if (lc_state_next != SCRAP) {
-                wait_dai_op_idle(0);
+        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
+        transition_state(lc_state_next,
+                         token_type == ZER ? NULL : tokens[token_type],
+                         false);
 
-                lc_state_curr = read_lc_state();
-                if (lc_state_curr != lc_state_next) {
-                    VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", lc_state_next, lc_state_curr);
-                    goto epilogue;
-                }
-                lc_cnt_curr = read_lc_counter();
-                if (lc_cnt_curr != lc_cnt_next) {
-                    VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_cnt_next, lc_cnt_curr);
-                    goto epilogue;
-                }             
-            } else {
-                VPRINTF(LOW, "INFO: scrap state reached; terminating test\n");
+        if (lc_state_next != SCRAP) {
+            wait_dai_op_idle(0, 0);
+
+            lc_state_curr = read_lc_state();
+            if (lc_state_curr != lc_state_next) {
+                VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", lc_state_next, lc_state_curr);
                 goto epilogue;
             }
+            lc_cnt_curr = read_lc_counter();
+            if (lc_cnt_curr != lc_cnt_next) {
+                VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_cnt_next, lc_cnt_curr);
+                goto epilogue;
+            }
+        } else {
+            VPRINTF(LOW, "INFO: scrap state reached; terminating test\n");
+            goto epilogue;
         }
     }
-    
+
 epilogue:
     for (uint8_t i = 0; i < 160; i++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
