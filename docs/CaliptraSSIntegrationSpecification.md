@@ -2191,7 +2191,7 @@ Subsequent MCU FW Update after FW Boot Update.
 
 Caliptra SS reset toggle without powergood toggle.
 
-**IMPORTANT** - Can only happen after both Caliptra Core and MCU have received at least one FW update. Otherwise only Cold Reset is allowed.
+**IMPORTANT** - Can only happen after both Caliptra Core and MCU have loaded mutable firmware. Otherwise only Cold Reset is allowed.
 1. MCU ROM comes out of reset and sees ```WARM_RESET```. It cannot jump to MCU SRAM since it is locked and needs Caliptra to unlock.
 2. MCU ROM brings Caliptra out of reset
 3. Caliptra sees Warm Reset and starts executing from its ICCM (SRAM image)
