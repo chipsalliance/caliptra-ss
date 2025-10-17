@@ -42,13 +42,17 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * random AXI user ids.
  */
 bool axi_id() {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
+
+    initialize_otp_controller();
+
     const uint32_t sentinel = 0xAB;
 
     for (int i = 0; i < 4; i++) {
         // Exclude life-cycle partition as it is not writable.
         partition_t partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
         bool axi_user = xorshift32() % 2;
-        
+
         if (axi_user) {
             grant_mcu_for_fc_writes();
         } else {
@@ -67,24 +71,4 @@ bool axi_id() {
     return true;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
-
-    initialize_otp_controller();
-
-    axi_id();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, axi_id); }

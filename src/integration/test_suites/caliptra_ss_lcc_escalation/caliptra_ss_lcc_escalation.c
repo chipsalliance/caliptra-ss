@@ -79,9 +79,7 @@ void deassert_escalation() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_TRIGGER_ESCALATION1_DIS);
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+bool body (void) {
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
     lsu_write_32(SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, 1);
@@ -98,7 +96,7 @@ void main (void) {
     // SCRAP (20) is the last state.
     if (lc_state_curr == 18 || lc_state_curr == 20) {
         VPRINTF(LOW, "Info: Cannot increment state from current %d state. Exit test\n", lc_state_curr);
-        SEND_STDOUT_CTRL(0xff);
+        return true;
     }
 
     lcc_initialization();
@@ -111,15 +109,13 @@ void main (void) {
     trigger_escalation();
 
     // Wait a bit before reading out the LC state register.
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(160);
     lc_state_curr = read_lc_state();
 
     // Check if we are in the ESCALATE state.
     if (lc_state_curr != 22) {
         VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", 22, lc_state_curr);
-        exit(1);
+        return false;
     }
 
 
@@ -131,7 +127,7 @@ void main (void) {
 
     const uint32_t *token = (lc_state_curr == 0) ? raw_unlock_token : tokens[lc_state_next];
 
-    transition_state(lc_state_next, token, true);
+    if (!transition_state(lc_state_next, token, true)) return false;
 
     // Wait a bit before reading out the LC state register.
     for (uint8_t ii = 0; ii < 160; ii++) {
@@ -144,17 +140,26 @@ void main (void) {
     // Check if we are still in the ESCALATE state.
     if (lc_state_curr != 22) {
         VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", 22, lc_state_curr);
-        exit(1);
+        return false;
     }
 
     // After a reset the escalation should be cleared and the lc state back at the
     // pre-reset value.
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
     lc_state_curr = read_lc_state();
     if (lc_state_curr != lc_state_init) {
         VPRINTF(LOW, "ERROR: lc state has not reverted back to pre-reset value\n");
+        return false;
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    return true;
+}
+
+void main(void) {
+    // This is a very stripped-down version of fc_run_test
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+    bool failed = !body();
+    mcu_sleep(160);
+    SEND_STDOUT_CTRL(failed ? TB_CMD_TEST_FAIL : TB_CMD_TEST_PASS);
 }

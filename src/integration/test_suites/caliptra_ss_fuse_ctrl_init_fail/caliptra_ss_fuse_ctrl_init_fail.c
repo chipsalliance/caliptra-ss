@@ -36,12 +36,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-static void nop_sleep(unsigned count) {
-    for (unsigned ii = 0; ii < count; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-}
-
 bool body(void) {
     if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false))
         return false;
@@ -94,7 +88,7 @@ bool body(void) {
     // uncorrectable error. Give the block another 1e3 cycles (which, from experiment, should be a
     // generous upper bound).
     reset_fc_lcc_rtl();
-    nop_sleep(1000);
+    mcu_sleep(1000);
 
     // At this point, we want to predict the value of OTP_CTRL_STATUS that we expect. This is a bit
     // tricky, because several of the partition bits depend on lots that we don't really want to
@@ -162,18 +156,4 @@ bool body(void) {
     return success;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    bool test_passed = body();
-
-    nop_sleep(160);
-
-    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
-}
+void main (void) { fc_run_test(true, body); }

@@ -35,9 +35,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
+bool body (void) {
     /*
      * The transition tokens partitions is initialized with random data
      * but a valid digest. The initial integrity check should then pass.
@@ -46,14 +44,10 @@ void main (void) {
      * integrity check by setting the period and timeout registers.
      */
 
-    VPRINTF(LOW, "1/4: Initialising\n");
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    VPRINTF(LOW, "2/4: Injecting digest fault\n");
+    VPRINTF(LOW, "1/3: Injecting digest fault\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_DIGEST);
 
-    VPRINTF(LOW, "3/4: Initialising OTP controller\n");
+    VPRINTF(LOW, "2/3: Initialising OTP controller\n");
     initialize_otp_controller();
 
     // After injecting an error into a digest, we expect all the partitions to report an error which
@@ -66,12 +60,10 @@ void main (void) {
     uint32_t exp_error = ~(OTP_CTRL_STATUS_BUS_INTEG_ERROR_MASK |
                            OTP_CTRL_STATUS_TIMEOUT_ERROR_MASK);
 
-    VPRINTF(LOW, "4/4: Checking for DAI status\n");
-    wait_dai_op_idle(exp_error);
+    VPRINTF(LOW, "3/3: Checking for DAI status\n");
+    if (!wait_dai_op_idle(exp_error)) return false;
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(false, body); }

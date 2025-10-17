@@ -50,17 +50,10 @@ static uint32_t tokens[13][4] = {
     [ZER] = {0}                                               // ZERO
 };
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    uint32_t buf[NUM_LC_STATES] = {0};
-
-    lcc_initialization();
+bool body (void) {
     force_PPD_pin();
 
+    uint32_t buf[NUM_LC_STATES] = {0};
     uint32_t lc_state_curr = read_lc_state();
 
     VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
@@ -78,20 +71,19 @@ void main (void) {
 
     if (!count) {
         VPRINTF(LOW, "INFO: Empty test. No state should be reachable from current state\n");
-    } else {
-        uint32_t lc_state_next = buf[xorshift32() % count];
-        VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
-
-        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-        // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
-        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
-        // We should see: OTP E**or detected.
-        transition_state(lc_state_next,
-                         token_type == ZER ? NULL : tokens[token_type],
-                         true);
+        return true;
     }
 
-    mcu_sleep(160);
+    uint32_t lc_state_next = buf[xorshift32() % count];
+    VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
-    SEND_STDOUT_CTRL(0xff);
+    lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
+    // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
+    // We should see: OTP E**or detected.
+    return transition_state(lc_state_next,
+                            token_type == ZER ? NULL : tokens[token_type],
+                            true);
 }
+
+void main (void) { fc_run_test(false, body); }

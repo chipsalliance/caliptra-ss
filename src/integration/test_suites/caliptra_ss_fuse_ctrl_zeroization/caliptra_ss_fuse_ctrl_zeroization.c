@@ -40,46 +40,32 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * (using the input port and the LCC scrap state). This actual broadcast
  * signal cannot be observed in software and must be verified through assertions.
  */
-void zeroize() {
+bool zeroize() {
     const uint32_t sentinel = 0xAB;
     const uint32_t granularity = 32;
 
-    // 0x000: CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN
-    grant_caliptra_core_for_fc_writes();
-    dai_wr(0x000, sentinel, 0, granularity, 0);
-
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    wait_dai_op_idle(0);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
-    wait_dai_op_idle(0);
-
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION_RESET);
-    wait_dai_op_idle(0);
-}
-
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
-    wait_dai_op_idle(0);
+    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
 
     initialize_otp_controller();
 
-    zeroize();
+    // 0x000: CPTRA_CORE_MANUF_DEBUG_UNLOCK_TOKEN
+    grant_caliptra_core_for_fc_writes();
+    if (!dai_wr(0x000, sentinel, 0, granularity, 0)) return false;
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) return false;
 
-    SEND_STDOUT_CTRL(0xff);
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
+    if (!wait_dai_op_idle(0)) return false;
+
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_RELEASE_ZEROIZATION);
+    if (!wait_dai_op_idle(0)) return false;
+
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION_RESET);
+    if (!wait_dai_op_idle(0)) return false;
+
+    return true;
 }
+
+void main (void) { fc_run_test(true, zeroize); }

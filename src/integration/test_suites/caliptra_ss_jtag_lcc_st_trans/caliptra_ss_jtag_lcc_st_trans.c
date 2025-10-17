@@ -48,15 +48,11 @@ void wait_dai_op_idle_no_mask() {
     return;
 }
 
-void main (void)
+bool body (void)
 {
-    VPRINTF(LOW, "=================\nMCU: Caliptra Boot Go\n=================\n\n");    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
-    for (uint16_t ii = 0; ii < 100; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(100);
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG TEST with ROM \n=================\n\n");
 
     // Permanently force the PPD pin. This is needed as it seems
@@ -70,20 +66,18 @@ void main (void)
     // happen. Once we've received the final SCRAP state, exit the
     // test.
     while(1) {
-        for (uint16_t ii = 0; ii < 600; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
+        mcu_sleep(600);
 
         uint32_t lc_state_curr = read_lc_state();
         if (lc_state_curr == SCRAP) {
             VPRINTF(LOW, "Reached the final state, exit test.\n"); 
-            break;
+            return true;
         }
 
         uint32_t lc_cntn_curr = read_lc_counter();
         if (lc_cntn_curr == 24) {
             VPRINTF(LOW, "Reached the final counter, exit test.\n"); 
-            break;
+            return true;
         }
 
         // Claim mutex.
@@ -107,5 +101,8 @@ void main (void)
             wait_dai_op_idle_no_mask();
         }
     }
-   SEND_STDOUT_CTRL(0xff);
+
+    return true;
 }
+
+void main (void) { fc_run_test(false, body); }

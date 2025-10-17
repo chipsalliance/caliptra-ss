@@ -35,7 +35,12 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void external_clock() {
+bool external_clock() {
+    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
+
+    initialize_otp_controller();
+
     const uint32_t claim_trans_val = 0x96;
 
     const uint32_t freqs[4] = {
@@ -62,25 +67,4 @@ void external_clock() {
     dai_wr(0x000, 0xFF, 0, 32, 0);
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
-    wait_dai_op_idle(0);
-
-    initialize_otp_controller();
-
-    external_clock();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, external_clock); }

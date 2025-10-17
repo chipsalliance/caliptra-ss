@@ -25,6 +25,7 @@
 #include "riscv_hw_if.h"
 #include "fuse_ctrl_mmap.h"
 #include "fuse_ctrl.h"
+#include "lc_ctrl.h"
 
 void grant_mcu_for_fc_writes(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_MCU);
@@ -415,4 +416,24 @@ void disable_fc_all_ones_sva(void) {
 void enable_fc_all_ones_sva(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_ALL_ONES_ENABLE_SVA);
     VPRINTF(LOW, "MCU: FC_all_ones SVA is turned on!\n");
+}
+
+void fc_run_test(bool allow_mcu_fc_writes, bool (* test)(void)) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+
+    bool failed = false;
+
+    mcu_cptra_init_d();
+    if (!wait_dai_op_idle(0)) failed = true;
+
+    lcc_initialization();
+
+    if (!failed && allow_mcu_fc_writes)
+        grant_mcu_for_fc_writes();
+
+    if (!failed)
+        failed = !test();
+
+    mcu_sleep(160);
+    SEND_STDOUT_CTRL(failed ? TB_CMD_TEST_FAIL : TB_CMD_TEST_PASS);
 }

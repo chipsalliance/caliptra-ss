@@ -56,6 +56,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  *   9. Use a backdoor channel to verify that the valid bit is set.
  */
 bool program_secret_lc_transition_partition(void) {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
+
+    initialize_otp_controller();
 
     const uint32_t base_address = partitions[SECRET_LC_TRANSITION_PARTITION].address;
     const uint32_t fuse_address = CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
@@ -113,32 +116,4 @@ bool program_secret_lc_transition_partition(void) {
     return true;
 }
 
-static void nop_sleep(unsigned count) {
-    for (unsigned ii = 0; ii < count; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-}
-
-bool body(void) {
-    mcu_cptra_init_d();
-    if (!wait_dai_op_idle(0)) return false;
-    
-    lcc_initialization();
-    // Set AXI user ID to MCU.
-    grant_mcu_for_fc_writes(); 
-
-    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
-
-    initialize_otp_controller();
-
-    return program_secret_lc_transition_partition();
-}
-
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
-    bool passed = body();
-
-    nop_sleep(160);
-    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
-}
+void main (void) { fc_run_test(true, program_secret_lc_transition_partition); }

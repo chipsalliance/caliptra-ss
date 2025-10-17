@@ -96,4 +96,21 @@ bool zeroize_without_addr(uint32_t exp_status);
 // to the Caliptra core but not the MCU.
 bool is_caliptra_secret_addr(uint32_t addr);
 
+// Run the function in the given "test" argument. This should return
+// true on success and false on failure.
+//
+// This function is intended as the bulk of a test's "main" function.
+// As such, it performs the following steps before starting the test:
+//
+//    - Call mcu_cptra_init_d.
+//
+//    - Wait for DAI to become idle.
+//
+//    - Initialize LCC.
+//
+//    - If allow_mcu_fc_writes is true, call grant_mcu_for_fc_writes
+//      to allow the MCU to write to fuse_ctrl.
+//
+void fc_run_test(bool allow_mcu_fc_writes, bool (* test)(void));
+
 #endif // FUSE_CTRL_H
