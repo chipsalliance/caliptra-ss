@@ -147,9 +147,7 @@ bool secret_prov(void) {
     return true;
 }
 
-void body(void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
+bool body(void) {
     VPRINTF(LOW, "INFO: Initializing Caliptra subsystem...\n");
     mcu_cptra_init_d();
 
@@ -157,10 +155,10 @@ void body(void) {
     grant_caliptra_core_for_fc_writes();
 
     mcu_sleep(20);
-    if (!wait_dai_op_idle(0)) return;
+    if (!wait_dai_op_idle(0)) return false;
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
-    if (!secret_prov()) return;
+    if (!secret_prov()) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
@@ -171,7 +169,7 @@ void body(void) {
     mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    if (!try_to_zeroize_secret_partitions(false)) return;
+    if (!try_to_zeroize_secret_partitions(false)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
@@ -180,23 +178,25 @@ void body(void) {
     grant_caliptra_core_for_fc_writes();
 
     VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    if (!try_to_zeroize_secret_partitions(false)) return;
+    if (!try_to_zeroize_secret_partitions(false)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    if (!try_to_zeroize_secret_partitions(true)) return;
+    if (!try_to_zeroize_secret_partitions(true)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
+
+    return true;
 }
 
 void main(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
-    body();
+    bool passed = body();
 
     mcu_sleep(160);
     VPRINTF(LOW, "INFO: MCU Caliptra Boot sequence completed.\n");
-    SEND_STDOUT_CTRL(0xff);
+    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
