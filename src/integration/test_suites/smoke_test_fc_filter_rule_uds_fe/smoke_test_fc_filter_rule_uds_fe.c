@@ -131,14 +131,6 @@ void secret_prov(void) {
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
 }
 
-// Run num_nops nop instructions as a sleep loop.
-void sleep(unsigned num_nops)
-{
-    for (unsigned i = 0; i < num_nops; i++) {
-        __asm__ volatile ("nop");
-    }
-}
-
 void body(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
@@ -148,25 +140,25 @@ void body(void) {
     VPRINTF(LOW, "INFO: Granting MCU access to fuse controller...\n");
     grant_caliptra_core_for_fc_writes();
 
-    sleep(20);
+    mcu_sleep(20);
     if (!wait_dai_op_idle(0)) return;
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
     secret_prov();
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
     revoke_grant_mcu_for_fc_writes();
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
     if (!invalid_secret_zeroization()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
     grant_caliptra_core_for_fc_writes();
@@ -175,7 +167,7 @@ void body(void) {
     if (!invalid_secret_zeroization()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
@@ -188,7 +180,7 @@ void main(void) {
 
     body();
 
-    sleep(160);
+    mcu_sleep(160);
     VPRINTF(LOW, "INFO: MCU Caliptra Boot sequence completed.\n");
     SEND_STDOUT_CTRL(0xff);
 }
