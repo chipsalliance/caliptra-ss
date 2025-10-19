@@ -104,37 +104,47 @@ bool try_to_zeroize_secret_partitions(bool exp_success) {
     return true;
 }
 
-void provision_partition(const char *name,
+// Write data to the first entry of the given partition, then
+// calculate a digest for the partition. Return true if every step
+// succeeds.
+bool provision_partition(const char *name,
                          const partition_t *part,
                          const uint32_t data[2]) {
     VPRINTF(LOW, "INFO: Writing %s partition...\n", name);
-    dai_wr(part->address, data[0], data[1], part->granularity, 0);
+    if (!dai_wr(part->address, data[0], data[1], part->granularity, 0))
+        return false;
 
     VPRINTF(LOW, "INFO: Calculating digest for %s partition...\n", name);
-    calculate_digest(part->address, 0);
-
-#ifndef SHORT_TEST
-    VPRINTF(LOW, "INFO: Resetting to activate %s partition lock...\n", name);
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-#endif
+    return calculate_digest(part->address, 0);
 }
 
-void secret_prov(void) {
+// Write data to provision each secret partition. Return true if this
+// succeeds.
+bool secret_prov(void) {
     VPRINTF(LOW, "INFO: Starting secret provisioning...\n");
 
     uint32_t data[2] = { 0xA5A5A5A5, 0x5A5A5A5A };
 
-    // Provision each secret partition
-    provision_partition("UDS", &partitions[SECRET_MANUF_PARTITION], data);
+    if (!provision_partition("UDS", &partitions[SECRET_MANUF_PARTITION], data))
+        return false;
 #ifndef SHORT_TEST
-    provision_partition("FE0", &partitions[SECRET_PROD_PARTITION_0], data);
-    provision_partition("FE1", &partitions[SECRET_PROD_PARTITION_1], data);
-    provision_partition("FE2", &partitions[SECRET_PROD_PARTITION_2], data);
-    provision_partition("FE3", &partitions[SECRET_PROD_PARTITION_3], data);
+    if (!provision_partition("FE0", &partitions[SECRET_PROD_PARTITION_0], data))
+        return false;
+    if (!provision_partition("FE1", &partitions[SECRET_PROD_PARTITION_1], data))
+        return false;
+    if (!provision_partition("FE2", &partitions[SECRET_PROD_PARTITION_2], data))
+        return false;
+    if (!provision_partition("FE3", &partitions[SECRET_PROD_PARTITION_3], data))
+        return false;
 #endif
 
+    VPRINTF(LOW, "INFO: Resetting to activate partition locks\n");
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0))
+        return false;
+
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
+    return true;
 }
 
 void body(void) {
@@ -150,7 +160,7 @@ void body(void) {
     if (!wait_dai_op_idle(0)) return;
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
-    secret_prov();
+    if (!secret_prov()) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
