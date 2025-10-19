@@ -38,63 +38,69 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 // #define SHORT_TEST
 
+// Use dai_zer to request zeroization of the given partition. If
+// exp_success is true, we expect this to complete with status zero.
+// If exp_success is false, we expect the DAI_ERROR field to be set in
+// otp_ctrl's status register.
+//
+// If the check passes and the operation completes without an error,
+// perform a reset to bring everything back up again.
+//
+// Return true if all exit codes were as expected.
 bool try_to_zeroize_secret_partition(const char        *name,
                                      const partition_t *part,
-                                     uint32_t           exp_status) {
-    reset_fc_lcc_rtl();
-    if (!wait_dai_op_idle(0)) return false;
+                                     bool               exp_success) {
+
+    uint32_t exp_status = exp_success ? 0 : OTP_CTRL_STATUS_DAI_ERROR_MASK;
 
     if (!dai_zer(part->address, part->granularity, exp_status, false)) {
-        VPRINTF(LOW, "ERROR: Unexpected status zeroizing %s partition\n", name);
+        VPRINTF(LOW,
+                "ERROR: Unexpected status zeroizing %s partition\n", name);
         return false;
+    }
+
+    if (exp_status == 0) {
+        // We've successfully zeroized the partition, so we inject a
+        // reset to start again. Note that zeroization will have
+        // messed up the ECC data in the partition (since the contents
+        // are now all-ones), which will cause all the partition
+        // errors to be set, plus dai_error and lci_error.
+        uint32_t exp_post_rst_status = (((1 << NUM_PARTITIONS) - 1) |
+                                        OTP_CTRL_STATUS_DAI_ERROR_MASK |
+                                        OTP_CTRL_STATUS_LCI_ERROR_MASK);
+
+        reset_fc_lcc_rtl();
+        if (!wait_dai_op_idle(exp_post_rst_status)) return false;
     }
 
     return true;
 }
 
-bool try_to_zeroize_secret_partitions(uint32_t exp_status) {
+// Use try_to_zeroize_secret_partition to request zeroization of each
+// secret partition (where exp_success tracks whether it is expected
+// to work).
+//
+// Return true if all partitions behaved as expected.
+bool try_to_zeroize_secret_partitions(bool exp_success) {
     const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
     const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
     const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
     const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
     const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
 
-    if (!try_to_zeroize_secret_partition("UDS", &hw_part_uds, exp_status))
+    if (!try_to_zeroize_secret_partition("UDS", &hw_part_uds, exp_success))
         return false;
 #ifndef SHORT_TEST
-    if (!try_to_zeroize_secret_partition("FE0", &hw_part_fe0, exp_status))
+    if (!try_to_zeroize_secret_partition("FE0", &hw_part_fe0, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE1", &hw_part_fe1, exp_status))
+    if (!try_to_zeroize_secret_partition("FE1", &hw_part_fe1, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE2", &hw_part_fe2, exp_status))
+    if (!try_to_zeroize_secret_partition("FE2", &hw_part_fe2, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE3", &hw_part_fe3, exp_status))
+    if (!try_to_zeroize_secret_partition("FE3", &hw_part_fe3, exp_success))
         return false;
 #endif
 
-    return true;
-}
-
-bool invalid_secret_zeroization(void) {
-    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-
-    if (!try_to_zeroize_secret_partitions(OTP_CTRL_STATUS_DAI_ERROR_MASK))
-        return false;
-
-    reset_fc_lcc_rtl();
-    if (!wait_dai_op_idle(0)) return false;
-
-    VPRINTF(LOW, "INFO: Invalid secret zeroization steps completed.\n");
-    return true;
-}
-
-bool valid_secret_zeroization(void) {
-    VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
-
-    if (!try_to_zeroize_secret_partitions(0))
-        return false;
-
-    VPRINTF(LOW, "INFO: Valid secret zeroization test completed.\n");
     return true;
 }
 
@@ -155,7 +161,7 @@ void body(void) {
     mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    if (!invalid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(false)) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
@@ -164,14 +170,14 @@ void body(void) {
     grant_caliptra_core_for_fc_writes();
 
     VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    if (!invalid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(false)) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    if (!valid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(true)) return;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 }
 
