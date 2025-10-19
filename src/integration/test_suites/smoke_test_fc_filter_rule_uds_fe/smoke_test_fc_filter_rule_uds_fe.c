@@ -98,73 +98,36 @@ bool valid_secret_zeroization(void) {
     return true;
 }
 
-void secret_prov(void) {
-    VPRINTF(LOW, "INFO: Starting secret provisioning...\n");
+void provision_partition(const char *name,
+                         const partition_t *part,
+                         const uint32_t data[2]) {
+    VPRINTF(LOW, "INFO: Writing %s partition...\n", name);
+    dai_wr(part->address, data[0], data[1], part->granularity, 0);
 
-    uint32_t data0 = 0xA5A5A5A5;
-    uint32_t data1 = 0x5A5A5A5A;
+    VPRINTF(LOW, "INFO: Calculating digest for %s partition...\n", name);
+    calculate_digest(part->address, 0);
 
-    const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
-    const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
-    const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
-    const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
-    const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
-
-    // Provision UDS
-    VPRINTF(LOW, "INFO: Writing UDS partition...\n");
-    dai_wr(hw_part_uds.address, data0, data1, hw_part_uds.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for UDS partition...\n");
-    calculate_digest(hw_part_uds.address, 0);
 #ifndef SHORT_TEST
-    VPRINTF(LOW, "INFO: Resetting to activate UDS partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE0
-    VPRINTF(LOW, "INFO: Writing FE0 partition...\n");
-    dai_wr(hw_part_fe0.address, data0, data1, hw_part_fe0.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE0 partition...\n");
-    calculate_digest(hw_part_fe0.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE0 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE1
-    VPRINTF(LOW, "INFO: Writing FE1 partition...\n");
-    dai_wr(hw_part_fe1.address, data0, data1, hw_part_fe1.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE1 partition...\n");
-    calculate_digest(hw_part_fe1.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE1 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE2
-    VPRINTF(LOW, "INFO: Writing FE2 partition...\n");
-    dai_wr(hw_part_fe2.address, data0, data1, hw_part_fe2.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE2 partition...\n");
-    calculate_digest(hw_part_fe2.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE2 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE3
-    VPRINTF(LOW, "INFO: Writing FE3 partition...\n");
-    dai_wr(hw_part_fe3.address, data0, data1, hw_part_fe3.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE3 partition...\n");
-    calculate_digest(hw_part_fe3.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE3 partition lock...\n");
+    VPRINTF(LOW, "INFO: Resetting to activate %s partition lock...\n", name);
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 #endif
+}
+
+void secret_prov(void) {
+    VPRINTF(LOW, "INFO: Starting secret provisioning...\n");
+
+    uint32_t data[2] = { 0xA5A5A5A5, 0x5A5A5A5A };
+
+    // Provision each secret partition
+    provision_partition("UDS", &partitions[SECRET_MANUF_PARTITION], data);
+#ifndef SHORT_TEST
+    provision_partition("FE0", &partitions[SECRET_PROD_PARTITION_0], data);
+    provision_partition("FE1", &partitions[SECRET_PROD_PARTITION_1], data);
+    provision_partition("FE2", &partitions[SECRET_PROD_PARTITION_2], data);
+    provision_partition("FE3", &partitions[SECRET_PROD_PARTITION_3], data);
+#endif
+
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
 }
 
