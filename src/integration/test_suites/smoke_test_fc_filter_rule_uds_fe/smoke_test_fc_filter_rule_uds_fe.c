@@ -59,16 +59,16 @@ bool try_to_zeroize_secret_partitions(uint32_t exp_status) {
     const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
     const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
 
-    if (!try_to_zeroize_secret_partition("UDS", hw_part_uds, exp_status))
+    if (!try_to_zeroize_secret_partition("UDS", &hw_part_uds, exp_status))
         return false;
 #ifndef SHORT_TEST
-    if (!try_to_zeroize_secret_partition("FE0", hw_part_fe0, exp_status))
+    if (!try_to_zeroize_secret_partition("FE0", &hw_part_fe0, exp_status))
         return false;
-    if (!try_to_zeroize_secret_partition("FE1", hw_part_fe1, exp_status))
+    if (!try_to_zeroize_secret_partition("FE1", &hw_part_fe1, exp_status))
         return false;
-    if (!try_to_zeroize_secret_partition("FE2", hw_part_fe2, exp_status))
+    if (!try_to_zeroize_secret_partition("FE2", &hw_part_fe2, exp_status))
         return false;
-    if (!try_to_zeroize_secret_partition("FE3", hw_part_fe3, exp_status))
+    if (!try_to_zeroize_secret_partition("FE3", &hw_part_fe3, exp_status))
         return false;
 #endif
 
