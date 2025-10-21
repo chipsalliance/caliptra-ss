@@ -38,9 +38,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 /**
  * A test to verify that the volatile raw unlock state transition is working.
  */
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
+bool body (void) {
     // In volatile raw unlock mode the token has to be passed in hashed form.
     const uint32_t hashed_raw_unlock_token[4] = {
         0xf0930a4d, 0xde8a30e6, 0xd1c8cbba, 0x896e4a11
@@ -49,47 +47,31 @@ void main (void) {
     const raw_state = calc_lc_state_mnemonic(RAW);
     uint32_t next_state = TEST_LOCKED0 + xorshift32() % (SCRAP - TEST_LOCKED0 + 1);
     const post_trans_state = calc_lc_state_mnemonic(21);
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
 
     uint32_t state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
     if (state != raw_state) {
         VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
-        goto epilogue;
+        return false;
     }
 
     VPRINTF(LOW, "Info: Trying to perfrom a volatile unlock from RAW to state %d!\n", next_state);
 
     // Obtain mutex to be able to write to the LCC CSRs.
-    const uint32_t claim_trans_val = 0x96;
-    uint32_t reg_value, loop_ctrl;
-    while (loop_ctrl != claim_trans_val) {
-        lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, claim_trans_val);
-        reg_value = lsu_read_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET);
-        loop_ctrl = reg_value & claim_trans_val;
-    }
+    claim_transition_mutex();
 
     // Activate volatile raw unlock mode.
     lsu_write_32(SOC_LC_CTRL_TRANSITION_CTRL, 0x2);
 
     // Transition into the state.
-    sw_transition_req_with_expec_error(
-        calc_lc_state_mnemonic(next_state),
-        hashed_raw_unlock_token[0],
-        hashed_raw_unlock_token[1],
-        hashed_raw_unlock_token[2],
-        hashed_raw_unlock_token[3],
-        1
-    );
+    if (!sw_transition_req(calc_lc_state_mnemonic(next_state),
+                           hashed_raw_unlock_token,
+                           true))
+        return false;
 
     state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
     if (state != post_trans_state) {
         VPRINTF(LOW, "ERROR: lcc is not in post_trans state\n");
-        goto epilogue;
+        return false;
     }
 
     // After a reset, the LCC should have reverted back to the RAW state.
@@ -99,12 +81,10 @@ void main (void) {
     state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
     if (state != raw_state) {
         VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
+        return false;
     };
 
-epilogue:
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(true, body); }

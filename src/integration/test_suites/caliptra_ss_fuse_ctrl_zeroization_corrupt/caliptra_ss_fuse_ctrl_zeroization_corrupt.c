@@ -245,32 +245,18 @@ epilogue:
     return retval;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
-
-    VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_corrupt code.\n");
-
-    if (test_sw_corruption() == 0) {
-        VPRINTF(LOW, "test_sw_corruption PASSED\n");
-    } else {
+bool body (void) {
+    if (test_sw_corruption() != 0) {
         VPRINTF(LOW, "test_sw_corruption FAILED\n");
+        return false;
     }
 
-    if (test_stuck_at_corruption() == 0) {
-        VPRINTF(LOW, "test_stuck_at_corruption PASSED\n");
-    } else {
+    if (test_stuck_at_corruption() != 0) {
         VPRINTF(LOW, "test_stuck_at_corruption FAILED\n");
+        return false;
     }
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(true, body); }

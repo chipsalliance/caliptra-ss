@@ -50,7 +50,10 @@ static const uint32_t prod_token_hash[4] = {
  * MANUF and PROD partitions are writable. It then progresses to the PROD
  * state where writes to MANUF partitions should be rejected.
  */
-void manuf_prod_provision() {
+bool manuf_prod_provision() {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
+
+    initialize_otp_controller();
 
     // Collect all MANUF and PROD partitions.
     partition_t part_sel[NUM_PARTITIONS];
@@ -67,26 +70,24 @@ void manuf_prod_provision() {
     const uint32_t manuf_token_address = CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
     const uint32_t prod_token_address = CPTRA_SS_MANUF_TO_PROD_TOKEN;
 
-    dai_wr(manuf_token_address, manuf_token_hash[0], manuf_token_hash[1], 64, 0);
-    dai_wr(manuf_token_address + 0x08, manuf_token_hash[2], manuf_token_hash[3], 64, 0);
-    dai_wr(prod_token_address, prod_token_hash[0], prod_token_hash[1], 64, 0);
-    dai_wr(prod_token_address + 0x08, prod_token_hash[2], prod_token_hash[3], 64, 0);
+    if (!dai_wr(manuf_token_address, manuf_token_hash[0], manuf_token_hash[1], 64, 0)) return false;
+    if (!dai_wr(manuf_token_address + 0x08, manuf_token_hash[2], manuf_token_hash[3], 64, 0)) return false;
+    if (!dai_wr(prod_token_address, prod_token_hash[0], prod_token_hash[1], 64, 0)) return false;
+    if (!dai_wr(prod_token_address + 0x08, prod_token_hash[2], prod_token_hash[3], 64, 0)) return false;
 
     calculate_digest(base_address, 0);
 
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     // Transition from TEST_UNLOCKED0 to MANUF
-    transition_state(MANUF, 0x1, 0x1, 0x1, 0x1, 1);
-    wait_dai_op_idle(0);
+    const uint32_t ones_token[4] = {1, 1, 1, 1};
+    const uint32_t twos_token[4] = {2, 2, 2, 2};
 
-    uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-    uint32_t exp_state = calc_lc_state_mnemonic(MANUF);
-    if (act_state != exp_state) {
-        VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-        exit(1);
-    }
+    if (!transition_state(MANUF, ones_token, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
+
+    if (!check_lc_state("MANUF", MANUF)) return false;
 
     // Check that all the MANUF and PROD partitionss are writeable.
     for (uint32_t i = 0; i < count; i++) {
@@ -95,19 +96,14 @@ void manuf_prod_provision() {
         } else {
             grant_mcu_for_fc_writes();
         }
-        dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, 0);
+        if (!dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, 0)) return false;
     }
 
     // Transition from MANUF to PROD.
-    transition_state(PROD, 0x2, 0x2, 0x2, 0x2, 1);
-    wait_dai_op_idle(0);
+    if (!transition_state(PROD, twos_token, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
 
-    act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-    exp_state = calc_lc_state_mnemonic(PROD);
-    if (act_state != exp_state) {
-        VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-        exit(1);
-    }
+    if (!check_lc_state("PROD", PROD)) return false;
 
     // Check that only PROD partitions are writeable and writes to MANUF partitions are blocked.
     for (uint32_t i = 0; i < count; i++) {
@@ -116,28 +112,16 @@ void manuf_prod_provision() {
         } else {
             grant_mcu_for_fc_writes();
         }
-        dai_wr(part_sel[i].address, i, 0, part_sel[i].granularity, part_sel[i].lc_phase == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0);
-    }
-}
-
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
-    initialize_otp_controller();
-
-    manuf_prod_provision();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+        if (!dai_wr(part_sel[i].address,
+                    i,
+                    0,
+                    part_sel[i].granularity,
+                    part_sel[i].lc_phase == MANUF ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0)) {
+            return false;
+        }
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(true, manuf_prod_provision); }

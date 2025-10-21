@@ -37,127 +37,126 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 // Trigger a trans_cnt_oflw_error in the lc_ctrl FSM.
-void trans_cnt_oflw_error(void) {
+bool trans_cnt_oflw_error(void) {
+    VPRINTF(LOW, "INFO: triggering trans_cnt_oflw_error\n");
+
     // Fault the lc counter fuse to trigger a overflow error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FAULT_CNTR);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    if (!transition_state(TEST_LOCKED0, NULL, true)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_COUNT_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc transition count error is not signaled\n");
+        return false;
     }
+
+    return true;
 }
 
 // Trigger a trans_invalid_error in the lc_ctrl FSM.
-void trans_invalid_error(void) {
+bool trans_invalid_error(void) {
+    VPRINTF(LOW, "INFO: triggering trans_invalid_error\n");
+
     // Reverting back to the RAW state from TEST_UNLOCKED0 is not allowed.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RAW), 0, 0, 0, 0, 0);
+    if (!transition_state(RAW, NULL, true)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc transition error is not signaled\n");
+        return false;
     }
+
+    return true;
 }
 
 // Trigger a token_invalid_error in the lc_ctrl FSM.
-void token_invalid_error(void) {
+bool token_invalid_error(void) {
+
+    VPRINTF(LOW, "INFO: triggering token_invalid_error\n");
+
     // Transitioning from TEST_LOCKED0 to TEST_UNLOCKED1 needs a correct token.
-    sw_transition_req(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    if (!transition_state_req(TEST_UNLOCKED1, NULL, true)) {
+        VPRINTF(LOW, "ERROR: Successful transition with no token.\n");
+        return false;
+    }
+
+    uint32_t invalid_token[4] = {0, 0, 0, 0};
+
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_UNLOCKED1), 0, 0, 0, 0, 1);
+    if (!wait_dai_op_idle(0)) return false;
+    if (!transition_req_with_expec_error(TEST_UNLOCKED1, invalid_token)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TOKEN_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc token error is not signaled\n");
+        return false;
     }
+
+    return true;
 }
 
 // Trigger a flash_rma_error in the lc_ctrl FSM.
-void flash_rma_error(void) {
+bool flash_rma_error(void) {
+    VPRINTF(LOW, "INFO: triggering flash_rma_error\n");
+
     // Transitioning into the RMA state without forcing PPD pin will result in a flash_rma_error.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(RMA), 0, 0, 0, 0, 0);
+    if (!transition_req_with_expec_error(RMA, NULL)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_FLASH_RMA_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc flash rma is not signaled %08X\n", status);
+        return false;
     }
+
+    return true;
 }
 
 // Trigger a otp_prog_error in the lc_ctrl FSM.
-void otp_prog_error(void) {
+bool otp_prog_error(void) {
+    VPRINTF(LOW, "INFO: triggering otp_prog_error\n");
+
     // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(TEST_LOCKED0), 0, 0, 0, 0, 0);
+    if (!transition_req_with_expec_error(TEST_LOCKED0, NULL)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_OTP_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc otp error is not signaled %08X\n", status);
+        return false;
     }
+
+    return true;
 }
 
 // Trigger a state_invalid_error in the lc_ctrl FSM.
-void state_invalid_error(void) {
+bool state_invalid_error(void) {
+    VPRINTF(LOW, "INFO: triggering state_invalid_error\n");
+
     // Transitioning into the SCRAP state without forcing the PPD pin will result in a state_invalid_error.
-    sw_transition_req_with_expec_error(calc_lc_state_mnemonic(SCRAP), 0, 0, 0, 0, 0);
+    if (!transition_req_with_expec_error(SCRAP, NULL)) return false;
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_STATE_ERROR_LOW) & 0x1)) {
         VPRINTF(LOW, "ERROR: lc state error is not signaled %08X\n", status);
+        return false;
     }
+
+    return true;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+bool body (void) {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
 
     initialize_otp_controller();
 
-    switch (xorshift32() % 5) {
-        case 0: {
-            VPRINTF(LOW, "INFO: triggering trans_cnt_oflw_error\n");
-            trans_cnt_oflw_error();
-            break;
-        }
-        case 1: {
-            VPRINTF(LOW, "INFO: triggering trans_invalid_error\n");
-            trans_invalid_error();
-            break;
-        }
-        case 2: {
-            VPRINTF(LOW, "INFO: triggering token_invalid_error\n");
-            token_invalid_error();
-            break;
-        }
-        case 3: {
-            VPRINTF(LOW, "INFO: triggering flash_rma_error\n");
-            flash_rma_error();
-            break;
-        }
-        case 4: {
-            VPRINTF(LOW, "INFO: triggering otp_prog_error\n");
-            otp_prog_error();
-            break;
-        }
-        default: {
-            VPRINTF(LOW, "INFO: triggering state_invalid_error\n");
-            state_invalid_error();
-            break;
-        }
-    }
-
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    switch (xorshift32() % 6) {
+    case 0: return trans_cnt_oflw_error();
+    case 1: return trans_invalid_error();
+    case 2: return token_invalid_error();
+    case 3: return flash_rma_error();
+    case 4: return otp_prog_error();
+    default: return state_invalid_error();
 }
+
+void main (void) { fc_run_test(true, body); }

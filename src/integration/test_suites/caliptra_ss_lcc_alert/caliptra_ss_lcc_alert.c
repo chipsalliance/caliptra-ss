@@ -36,25 +36,21 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-
+bool body (void) {
     // Fault a bit in an AXI write request, which will transfer the LCC into a terminal state.
-    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LCC_FATAL_BUS_INTEG_ERROR);    
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LCC_FATAL_BUS_INTEG_ERROR);
     lsu_write_32(SOC_LC_CTRL_ALERT_TEST, 0x1);
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(160);
 
-    if (!((lsu_read_32(SOC_LC_CTRL_STATUS) >> LC_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 0x1)) {
+    uint32_t lcc_status = lsu_read_32(SOC_LC_CTRL_STATUS);
+
+    if (! ((lcc_status >> LC_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 1)) {
         VPRINTF(LOW, "ERROR: bus integ error not signaled in status register\n");
+        return false;
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(false, body); }

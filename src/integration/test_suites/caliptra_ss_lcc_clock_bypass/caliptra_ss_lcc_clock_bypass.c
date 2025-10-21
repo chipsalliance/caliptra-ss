@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -35,7 +36,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void clock_bypass() {
+bool clock_bypass() {
     const uint32_t claim_trans_val = 0x96;
 
     const uint32_t freqs[4] = {
@@ -45,7 +46,7 @@ void clock_bypass() {
         CMD_FC_LCC_EXT_CLK_1000MHZ
     };
 
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, freqs[xorshift32() % 4]);
 
     uint32_t reg_value, loop_ctrl;
@@ -57,33 +58,16 @@ void clock_bypass() {
 
     // Set TRANSITION_CTRL.VOLATILE_RAW_UNLOCK
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     initialize_otp_controller();
 
     // Perform a state transition to see whether it still works with
     // the external clock.
-    transition_state(TEST_LOCKED0, 0, 0, 0, 0, 0);
-    wait_dai_op_idle(0);
+    if (!transition_state(TEST_LOCKED0, NULL, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
+
+    return true;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
-
-    clock_bypass();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, clock_bypass); }

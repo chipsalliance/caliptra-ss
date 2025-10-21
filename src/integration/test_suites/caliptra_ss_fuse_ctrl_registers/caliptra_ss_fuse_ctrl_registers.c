@@ -96,17 +96,7 @@ static uint32_t digest_registers[NUM_DIGEST_REGS] = {
     SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1
 };
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    //transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
+bool body (void) {
     initialize_otp_controller();
 
     uint32_t value = 0;
@@ -117,8 +107,9 @@ void main (void) {
         if (partition_idx == UINT32_MAX) break;
         value = lsu_read_32(read_lock_csr_mapping[lockable_idx]);
         if ((value & 0x1) != 0x1) {
-            VPRINTF(LOW, "ERROR: incorrect value in read lock register %08X: exp: %08X act: %08X\n", read_lock_registers[i], 0x1, value);
-            goto epilogue;
+            VPRINTF(LOW, "ERROR: incorrect value in read lock register %08X: exp: %08X act: %08X\n",
+                    read_lock_registers[i], 0x1, value);
+            return false;
         }
     }
 
@@ -126,8 +117,9 @@ void main (void) {
     for (uint32_t i = 0; i < NUM_INTER_REGS; i++) {
         value = lsu_read_32(interrupt_registers[i]);
         if (value != 0x0) {
-            VPRINTF(LOW, "ERROR: non-zero value in interrupt register %08X: exp: 0 act: %08X\n", interrupt_registers[i], value);
-            goto epilogue;
+            VPRINTF(LOW, "ERROR: non-zero value in interrupt register %08X: exp: 0 act: %08X\n",
+                    interrupt_registers[i], value);
+            return false;
         }
     }
 
@@ -135,8 +127,9 @@ void main (void) {
     for (uint32_t i = 0; i < NUM_DAI_REGS; i++) {
         value = lsu_read_32(dai_registers[i]);
         if (value != 0x0) {
-            VPRINTF(LOW, "ERROR: incorrect value in dai register %08X: exp: 0 act: %08X\n", interrupt_registers[i], value);
-            goto epilogue;
+            VPRINTF(LOW, "ERROR: incorrect value in dai register %08X: exp: 0 act: %08X\n",
+                    interrupt_registers[i], value);
+            return false;
         }
     }
 
@@ -144,8 +137,9 @@ void main (void) {
     for (uint32_t i = 0; i < NUM_REGWEN_REGS; i++) {
         value = lsu_read_32(regwen_registers[i]);
         if ((value & 0x1) != 0x1) {
-            VPRINTF(LOW, "ERROR: incorrect value in regwen register %08X: exp: %08X act: %08X\n", regwen_registers[i], 0x1, value);
-            goto epilogue;
+            VPRINTF(LOW, "ERROR: incorrect value in regwen register %08X: exp: %08X act: %08X\n",
+                    regwen_registers[i], 0x1, value);
+            return false;
         }
     }
 
@@ -153,18 +147,18 @@ void main (void) {
     value = lsu_read_32(SOC_OTP_CTRL_CHECK_REGWEN);
     if (value != 0) {
         VPRINTF(LOW, "ERROR: check registers are not locked\n");
-        goto epilogue;
+        return false;
     }
     value = lsu_read_32(SOC_OTP_CTRL_CHECK_TRIGGER);
     if (value != 0) {
         VPRINTF(LOW, "ERROR: check trigger register is not zero\n");
-        goto epilogue;
+        return false;
     }
     for (uint32_t i = 0; i < NUM_CHECK_REGS; i++) {
         value = lsu_read_32(check_registers[i]);
         if (value == 0x0) {
             VPRINTF(LOW, "ERROR: zero value in check register %08X\n", check_registers[i]);
-            goto epilogue;
+            return false;
         }
     }
 
@@ -173,7 +167,7 @@ void main (void) {
         value = lsu_read_32(digest_registers[i]);
         if (value != 0x0) {
             VPRINTF(LOW, "ERROR: non-zero value in digest register %08X\n", digest_registers[i]);
-            goto epilogue;
+            return false;
         }
     }
 
@@ -183,10 +177,7 @@ void main (void) {
     lsu_write_32(SOC_OTP_CTRL_CHECK_TRIGGER_REGWEN, 0x0);
     lsu_write_32(SOC_OTP_CTRL_DIRECT_ACCESS_REGWEN, 0x0);
 
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(true, body); }

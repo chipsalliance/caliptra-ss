@@ -36,17 +36,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
+bool body (void) {
     grant_caliptra_core_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    wait_dai_op_idle(0);
+    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false)) return false;
+    if (!wait_dai_op_idle(0)) return false;
 
     initialize_otp_controller();
 
@@ -57,13 +51,13 @@ void main (void) {
      * 1: An ordinary, successful DAI operation must result in an `otp_operation_done` interrupt.
      */
 
-    dai_wr(CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN, 0x1, 0, 32, 0);
+    if (!dai_wr(CPTRA_SS_MANUF_DEBUG_UNLOCK_TOKEN, 0x1, 0, 32, 0)) return false;
 
     uint32_t alert_state = lsu_read_32(SOC_OTP_CTRL_INTERRUPT_STATE);
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||
         ((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1 != 0x0)) {
         VPRINTF(LOW, "ERROR: wrong interrupt signaled\n");
-        goto epilogue;
+        return false;
     }
     lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x3);
 
@@ -72,13 +66,14 @@ void main (void) {
      */
 
     grant_mcu_for_fc_writes();
-    dai_wr(CPTRA_CORE_UDS_SEED, 0x1, 0x1, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK); // invalid AXI ID
+    if (!dai_wr(CPTRA_CORE_UDS_SEED, 0x1, 0x1, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK))
+        return false;
 
     alert_state = lsu_read_32(SOC_OTP_CTRL_INTERRUPT_STATE);
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||
         ((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1 != 0x1)) {
         VPRINTF(LOW, "ERROR: wrong interrupt signaled\n");
-        goto epilogue;
+        return false;
     }
     lsu_write_32(SOC_OTP_CTRL_INTERRUPT_STATE, 0x3);
 
@@ -93,12 +88,10 @@ void main (void) {
     if (((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1 != 0x1) ||
         ((alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1 != 0x1)) {
         VPRINTF(LOW, "ERROR: wrong interrupt signaled\n");
+        return false;
     }
 
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(false, body); }

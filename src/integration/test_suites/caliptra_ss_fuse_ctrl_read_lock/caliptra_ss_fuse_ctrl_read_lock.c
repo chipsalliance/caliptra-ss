@@ -37,7 +37,9 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-void read_lock(void) {
+bool read_lock(void) {
+    initialize_otp_controller();
+
     // For each partition with a read-lock CSR:
     //
     //    - Read from the partition (this should succeed)
@@ -49,29 +51,13 @@ void read_lock(void) {
         if (partition_idx == UINT32_MAX) break;
 
         const partition_t *partition = &partitions[partition_idx];
-        dai_rd(partition->address, &read_data[0], &read_data[1], partition->granularity, 0);
+        if (!dai_rd(partition->address, &read_data[0], &read_data[1], partition->granularity, 0)) return false;
         lsu_write_32(read_lock_csr_mapping[lockable_idx], 0x0);
-        dai_rd(partition->address, &read_data[0], &read_data[1], partition->granularity,
-               OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        if (!dai_rd(partition->address, &read_data[0], &read_data[1], partition->granularity,
+                    OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+            return false;
+        }
     }
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
-
-    initialize_otp_controller();
-
-    read_lock();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, read_lock); }

@@ -34,14 +34,10 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-// The body of the test. After initialisation, check the current LC state, pick a new LC state that
-// is impossible to transition to and try to transition to it.
-void body(void)
+// The body of the test. Current LC state, pick a new LC state that is
+// impossible to transition to and try to transition to it.
+bool body(void)
 {
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    lcc_initialization();
     force_PPD_pin();
 
     // Read the LC_STATE register to get the current LC state, then LC_TRANSITION_COUNT (giving
@@ -54,12 +50,12 @@ void body(void)
 
     if (transition_count >= 24) {
         VPRINTF(LOW, "INFO: reached max. LC counter value. End test.\n");
-        return;
+        return true;
     }
 
     if (cur_lc_state == SCRAP) {
         VPRINTF(LOW, "INFO: reached LC SCRAP state. End test.\n");
-        return;
+        return true;
     }
 
     // Search through LC states strictly after this one, finding the ones that can't be reached
@@ -78,7 +74,7 @@ void body(void)
     // happened, end the test.
     if (!inv_count) {
         VPRINTF(LOW, "INFO: Ending test as there is no INV state after %d\n", cur_lc_state);
-        return;
+        return true;
     }
 
     // Pick a random state that we can't transition to (because the entry in the transition matrix
@@ -88,7 +84,8 @@ void body(void)
 
     // Request the transition, passing a zero token (since no token is valid anyway) and expecting
     // an error to come out.
-    transition_state_req_with_expec_error(lc_state_next, 0, 0, 0, 0, 1);
+    uint32_t zero_token[4] = {0, 0, 0, 0};
+    transition_state(lc_state_next, zero_token, true);
     wait_dai_op_idle(0);
 
     uint32_t new_lc_state = read_lc_state();
@@ -103,20 +100,11 @@ void body(void)
                 ("ERROR: Transition request has not moved us to POST_TRANSITION. "
                  "The underlying LC state is %d, not %d or 21.\n"),
                 new_lc_state, cur_lc_state);
-        return;
+        return false;
     }
 
     VPRINTF(LOW, "Info: Test OK\n");
+    return true;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
-    body();
-
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(false, body); }

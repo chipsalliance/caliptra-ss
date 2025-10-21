@@ -37,31 +37,15 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void pk_volatile_lock(void) {
+    initialize_otp_controller();
+
     // Loop through all possible pk volatile locks.
     for (uint32_t i = 1; i < 15; i++) {
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, i);
-        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+        if (!dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK)) return false;
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0);
-        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, 0);
+        if (!dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, 0)) return false;
     }
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    initialize_otp_controller();
-
-    pk_volatile_lock();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, pk_volatile_lock); }

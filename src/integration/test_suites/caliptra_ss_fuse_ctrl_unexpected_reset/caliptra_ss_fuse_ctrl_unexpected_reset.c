@@ -41,7 +41,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  * This function verifies that partitions remain unlocked after
  * a reset when no locking command has been issued.
  */
-void unexpected_reset() {
+bool unexpected_reset() {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
+
+    initialize_otp_controller();
+
     const uint32_t sentinel = 0x01;
 
     partition_t partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
@@ -52,40 +56,22 @@ void unexpected_reset() {
         grant_mcu_for_fc_writes(); 
     }
 
-    dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
+    if (!dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0)) return false;
 
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     // Check that the partition remains unlocked after the reset.
     // For software partitions are write should succeed while for
     // hardware partitions a read should go through.
     if (!partition.is_secret) {
-        dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
+        if (!dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0)) return false;
     } else {
         uint32_t read_data[2];
-        dai_rd(partition.address, &read_data[0], &read_data[1], partition.granularity, 0);
-    }
-}
-
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
-    initialize_otp_controller();
-
-    unexpected_reset();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+        if (!dai_rd(partition.address, &read_data[0], &read_data[1], partition.granularity, 0)) return false;
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    return true;
 }
+
+void main (void) { fc_run_test(true, unexpected_reset); }

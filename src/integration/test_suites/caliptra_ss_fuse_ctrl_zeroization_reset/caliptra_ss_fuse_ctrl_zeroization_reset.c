@@ -399,7 +399,7 @@ bool test_data_interrupted_zeroization (unsigned test_idx, bool skip_post_prep_c
     return end_test(&part);
 }
 
-void body (void) {
+bool body (void) {
     VPRINTF(LOW, "INFO: caliptra_ss_fuse_ctrl_zeroization_reset code.\n");
 
     bool (*tests[])(unsigned, bool) = {
@@ -416,28 +416,11 @@ void body (void) {
             VPRINTF(LOW, "INFO: Test %d PASSED\n", i);
         } else {
             VPRINTF(LOW, "ERROR: Test %d FAILED\n", i);
-            return;
+            return false;
         }
     }
+
+    return true;
 }
 
-void main (void) {
-    VPRINTF(LOW,
-            "====================\n"
-            "MCU Caliptra Boot Go\n"
-            "====================\n\n");
-
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
-
-    body();
-
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
-
-    SEND_STDOUT_CTRL(0xff);
-}
+void main (void) { fc_run_test(true, body); }
