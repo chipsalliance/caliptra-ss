@@ -325,31 +325,32 @@ uint8_t read_lc_state(void) {
 
     // At this point, we will either have found the repeated value, or figured out there isn't one.
     switch (rep_val) {
-        case 0x0: state_str = "RAW"; break;
-        case 0x1: state_str = "TEST_UNLOCKED0"; break;
-        case 0x2: state_str = "TEST_LOCKED0"; break;
-        case 0x3: state_str = "TEST_UNLOCKED1"; break;
-        case 0x4: state_str = "TEST_LOCKED1"; break;
-        case 0x5: state_str = "TEST_UNLOCKED2"; break;
-        case 0x6: state_str = "TEST_LOCKED2"; break;
-        case 0x7: state_str = "TEST_UNLOCKED3"; break;
-        case 0x8: state_str = "TEST_LOCKED3"; break;
-        case 0x9: state_str = "TEST_UNLOCKED4"; break;
-        case 0xa: state_str = "TEST_LOCKED4"; break;
-        case 0xb: state_str = "TEST_UNLOCKED5"; break;
-        case 0xc: state_str = "TEST_LOCKED5"; break;
-        case 0xd: state_str = "TEST_UNLOCKED6"; break;
-        case 0xe: state_str = "TEST_LOCKED6"; break;
-        case 0xf: state_str = "TEST_UNLOCKED7"; break;
-        case 0x10: state_str = "DEV"; break;
-        case 0x11: state_str = "PROD"; break;
-        case 0x12: state_str = "PROD_END"; break;
-        case 0x13: state_str = "RMA"; break;
-        case 0x14: state_str = "SCRAP"; break;
-        case 0x15: state_str = "POST_TRANSITION"; break;
-        case 0x16: state_str = "ESCALATE"; break;
-        case 0x17: state_str = "INVALID"; break;
-        default:   state_str = "UNKNOWN"; break;
+        case RAW:             state_str = "RAW";             break;
+        case TEST_UNLOCKED0:  state_str = "TEST_UNLOCKED0";  break;
+        case TEST_LOCKED0:    state_str = "TEST_LOCKED0";    break;
+        case TEST_UNLOCKED1:  state_str = "TEST_UNLOCKED1";  break;
+        case TEST_LOCKED1:    state_str = "TEST_LOCKED1";    break;
+        case TEST_UNLOCKED2:  state_str = "TEST_UNLOCKED2";  break;
+        case TEST_LOCKED2:    state_str = "TEST_LOCKED2";    break;
+        case TEST_UNLOCKED3:  state_str = "TEST_UNLOCKED3";  break;
+        case TEST_LOCKED3:    state_str = "TEST_LOCKED3";    break;
+        case TEST_UNLOCKED4:  state_str = "TEST_UNLOCKED4";  break;
+        case TEST_LOCKED4:    state_str = "TEST_LOCKED4";    break;
+        case TEST_UNLOCKED5:  state_str = "TEST_UNLOCKED5";  break;
+        case TEST_LOCKED5:    state_str = "TEST_LOCKED5";    break;
+        case TEST_UNLOCKED6:  state_str = "TEST_UNLOCKED6";  break;
+        case TEST_LOCKED6:    state_str = "TEST_LOCKED6";    break;
+        case TEST_UNLOCKED7:  state_str = "TEST_UNLOCKED7";  break;
+        case MANUF:           state_str = "DEV";             break;
+        case PROD:            state_str = "PROD";            break;
+        case PROD_END:        state_str = "PROD_END";        break;
+        case RMA:             state_str = "RMA";             break;
+        case SCRAP:           state_str = "SCRAP";           break;
+        case POST_TRANSITION: state_str = "POST_TRANSITION"; break;
+        case ESCALATE:        state_str = "ESCALATE";        break;
+        case INVALID:         state_str = "INVALID";         break;
+
+        default: state_str = "UNKNOWN"; break;
     }
 
     VPRINTF(LOW, "LC_CTRL_LC_STATE register: 0x%08x (rep %d), Decoded state: %s\n",
