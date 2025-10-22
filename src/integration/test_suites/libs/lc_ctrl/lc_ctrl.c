@@ -274,10 +274,14 @@ bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expec
     if (!sw_transition_req(calc_lc_state_mnemonic(next_lc_state), token, expect_error))
         return false;
 
-    // Whether or not the transition request succeeded, we need to reset lc_ctrl
-    // and fuse_ctrl. This will read the lifecycle state from fuses again (which
-    // had either changed or not), moving from InvalidSt / PostTransSt to the
-    // value that is actually stored.
+    // Whether or not the transition request succeeded, we expect to be in the
+    // (terminal) POST_TRANSITION state.
+    //
+    // Reset lc_ctrl and fuse_ctrl. This will read the lifecycle state from
+    // fuses again (which had either changed or not), moving from InvalidSt /
+    // PostTransSt to the value that is actually stored.
+    if (!check_lc_state("POST_TRANSITION", POST_TRANSITION)) return false;
+
     reset_fc_lcc_rtl();
 
     return true;
