@@ -269,10 +269,14 @@ bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool exp
     return had_expected_behaviour;
 }
 
+bool start_state_transition(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
+{
+    return sw_transition_req(calc_lc_state_mnemonic(next_lc_state), token, expect_error);
+}
+
 bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
-    if (!sw_transition_req(calc_lc_state_mnemonic(next_lc_state), token, expect_error))
-        return false;
+    if (!start_state_transition(next_lc_state, token, expect_error)) return false;
 
     // Whether or not the transition request succeeded, we need to reset lc_ctrl
     // and fuse_ctrl. This will read the lifecycle state from fuses again (which

@@ -96,21 +96,37 @@ void force_lcc_tokens(void);
 //                     if there is no token.
 bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool expect_error);
 
-// Request an LC state transition to next_lc_state. If token is not
-// null, it will be written to the four transition token registers
-// beforehand.
+// Request an LC state transition to next_lc_state. If token is not null, it
+// will be written to the four transition token registers beforehand.
 //
-// If the expect_error is false and the request succeeded, reset
-// fuse_ctrl and lc_ctrl before returning (so that lc_ctrl can read in
-// the new LC state).
-//
-// This returns true if the transition suceeded.
+// This is equivalent to sw_transition_req, but takes a 5-bit state index and
+// replicates it to a 32-bit mnemonic before calling sw_transition_req.
 //
 //   next_lc_state:    The target LC state, described a 5-bit index that will
 //                     be replicated to form a mnemonic.
 //
-//   token:            A list of four 32-bit words with a token to perform the transition, or NULL
-//                     if there is no token.
+//   token:            A list of four 32-bit words with a token to perform the
+//                     transition, or NULL if there is no token.
+//
+//   expect_error      True if the state transition is expected to fail with an error.
+bool start_state_transition(uint8_t next_lc_state, const uint32_t token[4], bool expect_error);
+
+// Request an LC state transition to next_lc_state. If token is not null, it
+// will be written to the four transition token registers beforehand. This works
+// by calling start_state_transition.
+//
+// If lc_ctrl responds with a different error status from expect_error, return
+// false.
+//
+// When the request completes, the lc_ctrl FSM will be in a terminal
+// post-transition state. Before returning true, reset fuse_ctrl and lc_ctrl
+// before returning (causing lc_ctrl to read in the LC state from fuses).
+//
+//   next_lc_state:    The target LC state, described a 5-bit index that will
+//                     be replicated to form a mnemonic.
+//
+//   token:            A list of four 32-bit words with a token to perform the
+//                     transition, or NULL if there is no token.
 //
 //   expect_error      True if the state transition is expected to fail with an error.
 bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expect_error);
