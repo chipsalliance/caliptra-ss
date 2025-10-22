@@ -38,26 +38,15 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 /**
  * A test to verify that the volatile raw unlock state transition is working.
  */
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
+bool body (void) {
     // In volatile raw unlock mode the token has to be passed in hashed form.
     const uint32_t hashed_raw_unlock_token[4] = {
         0xf0930a4d, 0xde8a30e6, 0xd1c8cbba, 0x896e4a11
     };
 
-    const raw_state = calc_lc_state_mnemonic(RAW);
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
-
-    uint32_t state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != raw_state) {
+    if (!check_lc_state("RAW", RAW)) {
         VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
-        goto epilogue;
+        return false;
     }
 
     // Obtain mutex to be able to write to the LCC CSRs.
@@ -75,24 +64,35 @@ void main (void) {
     // Transition into the TEST_UNLOCKED0 state.
     if (!transition_state(TEST_UNLOCKED0, hashed_raw_unlock_token, false)) {
         VPRINTF(LOW, "ERROR: Transition to TEST_UNLOCKED0 returned an error code.\n");
-        goto epilogue;
+        return false;
     }
 
-    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)) goto epilogue;
+    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)) return false;
 
     // After a reset, the LCC should have reverted back to the RAW state.
     reset_fc_lcc_rtl();
     lcc_initialization();
 
-    state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != raw_state) {
+    if (!check_lc_state("RAW", RAW)) {
         VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
-    };
-
-epilogue:
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+        return false;
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    return true;
+}
+
+void main (void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
+
+    lcc_initialization();
+    grant_mcu_for_fc_writes();
+
+    bool test_passed = body();
+
+    nop_sleep(160);
+
+    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
