@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -88,19 +89,11 @@ void main (void) {
             if (lc_state_next != SCRAP) {
                 // We should see: Expected Transition Count E**or detected.
                 transition_state_req_with_expec_error(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
+                                                      tokens[token_type]);
             } else {
                 // Entering SCRAP state should also be possible when reaching the max. lc counter value.
                 transition_state(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
+                                 token_type == ZER ? NULL : tokens[token_type]);
             }
             
 
