@@ -109,9 +109,6 @@ void main (void) {
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG PROD DEBUG TEST with ROM \n=================\n\n");
 
-    // lcc_initialization();
-    // transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    // reset_fc_lcc_rtl();
     lsu_write_32(SOC_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES, 8);
     VPRINTF(LOW, "MCU: Set number of PK hashes to 8\n");
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);
