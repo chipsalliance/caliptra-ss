@@ -81,7 +81,10 @@ void RAW_to_TESTUNLOCK0(){
         (next_lc_state_5bit << 5)  | 
         next_lc_state_5bit;
 
-    sw_transition_req(targeted_state_5, CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN, 1); //TEST_UNLOCKED0, tokenmsb, tokenlsb, conditional
+    //TEST_UNLOCKED0, tokenmsb, tokenlsb, conditional
+    uint32_t token[4] = {CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN};
+
+    sw_transition_req(targeted_state_5, token, false);
 
     reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is under reset!\n");

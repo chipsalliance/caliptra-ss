@@ -88,7 +88,8 @@ void body(void)
 
     // Request the transition, passing a zero token (since no token is valid anyway) and expecting
     // an error to come out.
-    transition_state_req_with_expec_error(lc_state_next, 0, 0, 0, 0, 1);
+    uint32_t zero_token[4] = {0, 0, 0, 0};
+    transition_state(lc_state_next, zero_token, true);
     wait_dai_op_idle(0);
 
     uint32_t new_lc_state = read_lc_state();
