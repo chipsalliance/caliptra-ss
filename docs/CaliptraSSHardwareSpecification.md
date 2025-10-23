@@ -312,7 +312,10 @@ Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.
 
 ## Caliptra ROM Requirements for OCP Streaming Boot
 
-Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
+Caliptra firmware must follow these rules when implementing the OCP Streaming Boot flow:
+* Caliptra ROM and RT Firmware must wait for "image_activated" signal to assert before processing the image.
+* When image is sent to Caliptra Subsystem, Caliptra ROM & RT firmware must program DMA assist according to the rules defined in [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads).
+* Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
 
 ## I3C and Caliptra-AXI Interactions
 
