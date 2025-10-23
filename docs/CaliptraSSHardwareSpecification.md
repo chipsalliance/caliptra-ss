@@ -305,7 +305,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ## I3C Streaming Boot (Recovery) Flow
 
-Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
+Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
