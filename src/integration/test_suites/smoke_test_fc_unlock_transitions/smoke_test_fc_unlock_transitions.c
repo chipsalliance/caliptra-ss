@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -82,7 +83,10 @@ void iterate_test_unlock_states() {
     for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED2; token += (state & 0x1), state++) {
         VPRINTF(LOW, "LC_CTRL: transition to %d state\n", state);
 
-        transition_state(state, token, 0, 0, 0, state & 0x1 /* No token required for TEST_LOCKED states*/ );
+        uint32_t token_array[4] = { token, 0, 0, 0 };
+        bool use_token = state & 0x1; // No token required for TEST_LOCKED states
+
+        transition_state(state, use_token ? token_array : NULL);
         wait_dai_op_idle(0);
 
         uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
@@ -103,7 +107,7 @@ void main (void) {
     lcc_initialization();    
     grant_mcu_for_fc_writes(); 
     
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
     
     initialize_otp_controller();
 

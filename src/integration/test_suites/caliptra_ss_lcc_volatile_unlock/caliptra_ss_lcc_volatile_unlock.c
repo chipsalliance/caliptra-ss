@@ -74,14 +74,11 @@ void main (void) {
     lsu_write_32(SOC_LC_CTRL_TRANSITION_CTRL, 0x2);
 
     // Transition into the TEST_UNLOCKED0 state.
-    sw_transition_req(
-        calc_lc_state_mnemonic(TEST_UNLOCKED0),
-        hashed_raw_unlock_token[0],
-        hashed_raw_unlock_token[1],
-        hashed_raw_unlock_token[2],
-        hashed_raw_unlock_token[3],
-        1
-    );
+    if (!sw_transition_req(calc_lc_state_mnemonic(TEST_UNLOCKED0),
+                           hashed_raw_unlock_token)) {
+        VPRINTF(LOW, "ERROR: Transition to TEST_UNLOCKED0 returned an error code.\n");
+        goto epilogue;
+    }
 
     state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
     if (state != test_unlocked0_state) {

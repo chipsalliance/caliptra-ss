@@ -105,8 +105,6 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    //transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
     initialize_otp_controller();
 
     uint32_t value = 0;
