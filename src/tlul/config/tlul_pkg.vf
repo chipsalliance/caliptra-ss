@@ -41,4 +41,3 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/keymgr_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert_multiple.sv
 ${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_assert.sv
-${CALIPTRA_SS_ROOT}/src/tlul/rtl/tlul_pkg.sv
