@@ -32,4 +32,3 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/jtag_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_defines.svh
-${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
