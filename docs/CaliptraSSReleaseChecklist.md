@@ -14,19 +14,21 @@ This document provides the signoff checklist that is used when finalizing any Ca
 
 ## Versioning
 
-Caliptra Core releases may be created for new major, minor, or patch versions, as described in the [Caliptra Core Release Checklist](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraReleaseChecklist.md). The version number is reflected in the CPTRA_HW_REV_ID register. Caliptra Subsystem releases follow any Caliptra Core releases, and version numbers are coupled. In some scenarios, Caliptra Subsystem might advance in version when Caliptra Core does not. For example, adding a new recovery interface IP would require a new Caliptra Subsystem minor revision release, or a bug fix would require a Caliptra Subsystem patch release. In these scenarios, any subsequent Caliptra Core release will be fast forwarded to regain version number correlation.
-For example, the following sequence of versions (in chronological release order) is possible:
-| Core | Subsystem |
-| :--- | :--- |
-| 2.0 | 2.0 |
-| 2.1 | 2.1 |
-| 2.0.1 | 2.0.1 |
-| 2.1 | 2.2 |
-| 2.1 | 2.1.1 |
-| 2.3 | 2.3 |
-| 2.1.2 | 2.1.2 |
+Caliptra Core releases may be created for new major, minor, or patch versions, as described in the [Caliptra Core Release Checklist](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraReleaseChecklist.md). The version number is reflected in the [CPTRA_HW_REV_ID](https://chipsalliance.github.io/caliptra-rtl/main/internal-regs/?p=clp.soc_ifc_reg.CPTRA_HW_REV_ID) register. Caliptra Subsystem major and minor releases follow any Caliptra Core releases, and version numbers are coupled. In some scenarios, Caliptra Subsystem might advance in version when Caliptra Core does not. For example, adding a new recovery interface IP would require a new Caliptra Subsystem minor revision release, or a bug fix would require a Caliptra Subsystem patch release. In these scenarios, any subsequent Caliptra Core release will be fast forwarded to regain major and minor version number correlation. Caliptra Core patch release versions will not be fast forwarded to match Caliptra Subsystem patch versions, however.
+For example, the following hypothetical sequence of versions (in chronological release order) is possible:
+| Core | Subsystem | Description |
+| :--- | :--- | :--- |
+| 5.0.0 | 5.0.0 | Initial release of major version "5". |
+| 5.1.0 | 5.1.0 | Release of major version "5" with minor version "1". |
+| 5.0.1 | 5.0.1 | Caliptra core version 5.0.0 receives a patch update, and Caliptra Subsystem is released with a new version to consume the core patch. |
+| 5.1.0 | 5.2.0 | Caliptra Subsystem is released with major version "5" and minor version "2", but Caliptra core is unchanged, so Subsystem release contains version 5.1.0 of core. |
+| 5.1.0 | 5.1.1 | Caliptra Subsystem version 5.1 is patched with a bug fix, but Caliptra core is unchanged, so Subsystem release contains version 5.1.0 of core. |
+| 5.3.0 | 5.3.0 | Caliptra Core is released with new minor version, which is fast forwarded to match the next available minor version of Caliptra Subsystem. Caliptra Subsystem is released with the same minor version after bringing in the updated Caliptra core. |
+| 5.1.1 | 5.1.2 | Caliptra core version 5.1 is patched with its first bug fix. Caliptra Subsystem version 5.1 updates Caliptra core to receive the bug fix, but Subsystem has already been patched once, so Subsystem release 5.1.2 contains version 5.1.1 of core. |
 
-Steps described in this document are followed for each Subsystem release.
+Caliptra Subsystem release versions also follow the same procedure for pre-release versions (a.k.a. "Release Candidates") and documentation updates as Caliptra RTL. Refer to the [Caliptra Core Release Checklist](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraReleaseChecklist.md) for details on these processes.
+
+Steps described in this document are followed for each Subsystem release other than documentation-only updates.
 
 NOTE: On version numbering; Caliptra Subsystem 2.0 release did not originally follow the aforementioned convention. It was released following a format of `css_gen<Caliptra RTL version>_v<MAJOR>.<MINOR>`. This numbering is deprecated, but the original 2.0 version tag remains for legacy reasons and the original patch and release branches are: 
   * `release_css_gen2_v1.0` (tip of this branch is tagged as [css-gen2-v1.0](https://github.com/chipsalliance/caliptra-ss/releases/tag/css-gen2-v1.0))
