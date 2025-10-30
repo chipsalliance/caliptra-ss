@@ -55,7 +55,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  *      is non-zero.
  *   9. Use a backdoor channel to verify that the valid bit is set.
  */
-void program_secret_lc_transition_partition() {
+bool program_secret_lc_transition_partition(void) {
 
     const uint32_t base_address = partitions[SECRET_LC_TRANSITION_PARTITION].address;
     const uint32_t fuse_address = CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN;
@@ -64,15 +64,15 @@ void program_secret_lc_transition_partition() {
     uint32_t read_data[4];
 
     // Step 1
-    dai_wr(fuse_address, data[0], data[1], 64, 0);
-    dai_wr(fuse_address+8, data[2], data[3], 64, 0);
+    if (!dai_wr(fuse_address, data[0], data[1], 64, 0)) return false;
+    if (!dai_wr(fuse_address+8, data[2], data[3], 64, 0)) return false;
 
     // Step 2
-    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, 0);
-    dai_rd(fuse_address+8, &read_data[2], &read_data[3], 64, 0);
+    if (!dai_rd(fuse_address, &read_data[0], &read_data[1], 64, 0)) return false;
+    if (!dai_rd(fuse_address+8, &read_data[2], &read_data[3], 64, 0)) return false;
     if (memcmp(data, read_data, 16)) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", data[2], read_data[2]);
-        exit(1);
+        return false;
     }
 
     // Step 3
@@ -81,7 +81,7 @@ void program_secret_lc_transition_partition() {
     digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] != 0 || digest[1] != 0) {
         VPRINTF(LOW, "ERROR: digest is not 0\n");
-        exit(1);
+        return false;
     }
 
     // Step 4
@@ -89,45 +89,56 @@ void program_secret_lc_transition_partition() {
 
     // Step 5
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
 
     // Step 6
-    dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    if (!dai_rd(fuse_address, &read_data[0], &read_data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK))
+        return false;
 
     // Step 7
-    dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    if (!dai_wr(fuse_address, data[0], data[1], 64, OTP_CTRL_STATUS_DAI_ERROR_MASK))
+        return false;
 
     // Step 8
     digest[0] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0);
     digest[1] = lsu_read_32(SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1);
     if (digest[0] == 0 && digest[1] == 0) {
         VPRINTF(LOW, "ERROR: digest is 0\n");
-        exit(1);
+        return false;
     }
 
     // Step 9
     // Use backdoor channel to verify that the valid bit is set.
+
+    return true;
 }
 
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+static void nop_sleep(unsigned count) {
+    for (unsigned ii = 0; ii < count; ii++) {
+        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    }
+}
+
+bool body(void) {
     mcu_cptra_init_d();
-    wait_dai_op_idle(0);
+    if (!wait_dai_op_idle(0)) return false;
     
     lcc_initialization();
     // Set AXI user ID to MCU.
     grant_mcu_for_fc_writes(); 
 
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
 
     initialize_otp_controller();
 
-    program_secret_lc_transition_partition();
+    return program_secret_lc_transition_partition();
+}
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+void main (void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
-    SEND_STDOUT_CTRL(0xff);
+    bool passed = body();
+
+    nop_sleep(160);
+    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }

@@ -33,92 +33,80 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-static uint32_t invalid_tokens[13][4] = {
-    [RAU] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // RAW_UNLOCK
-    [TU1] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED1
-    [TU2] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED2
-    [TU3] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED3
-    [TU4] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED4
-    [TU5] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED5
-    [TU6] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED6
-    [TU7] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_UNLOCKED7
-    [TEX] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // TEST_EXIT
-    [DEX] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // DEV_EXIT
-    [PEX] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // PROD_EXIT
-    [RMU] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff}, // RMA
-    [ZER] = {0}                                               // ZERO
-};
-
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-
+// Do a single step of the transition loop. Return -1 on an error, 0
+// if the test is complete, and 1 if the test should continue.
+unsigned do_iteration(void) {
+    uint32_t invalid_token[4] = {0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff};
     uint32_t buf[NUM_LC_STATES] = {0};
 
+    lcc_initialization();
+    force_PPD_pin();
+
+    uint32_t lc_state_curr = read_lc_state();
+    uint32_t lc_cnt_curr = read_lc_counter();
+    uint32_t lc_cnt_next = lc_cnt_curr + 1;
+
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
+
+    unsigned count = get_possible_next_states(buf);
+
+    if (!count) {
+        VPRINTF(LOW, "INFO: Test complete. No state should be reachable from current state\n");
+        return 0;
+    }
+
+    uint32_t lc_state_next = buf[xorshift32() % count];
+    VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
+
+    lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
+
+    VPRINTF(LOW, "Info: Using a wrong token\n");
+    transition_state(lc_state_next,
+                     token_type == ZER ? NULL : invalid_token,
+                     true);
+
+    if (lc_state_next != SCRAP && token_type == ZER) {
+        if (!wait_dai_op_idle(0)) return -1;
+
+        lc_state_curr = read_lc_state();
+        if (lc_state_curr != lc_state_next) {
+            VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", lc_state_next, lc_state_curr);
+            return -1;
+        }
+        lc_cnt_curr = read_lc_counter();
+        if (lc_cnt_curr != lc_cnt_next) {
+            VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_cnt_next, lc_cnt_curr);
+            return -1;
+        }
+    }
+
+    return 1;
+}
+
+bool body (void) {
     // Randomly choose the next LC state among the all valid ones
     // based on the current state and repeat this until the SCRAP
     // state is reached.
-    while (1) {
-        lcc_initialization();
-        force_PPD_pin();
-
-        uint32_t lc_state_curr = read_lc_state();
-        uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1; 
-
-        VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
-        VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
-
-        uint32_t count = 0;
-        memset(buf, 0, sizeof(buf));
-        for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {
-            if (trans_matrix[lc_state_curr][i+lc_state_curr] != INV) {
-                buf[count] = i + lc_state_curr;
-                count++;
-            }
-        }
-
-        if (count) {
-            uint32_t lc_state_next = buf[xorshift32() % count];
-            VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
-
-            lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            uint32_t token_required = token_type != ZER;
-
-            if (!token_required) {
-                transition_state(lc_state_next, NULL);
-            } else {
-                VPRINTF(LOW, "Info: Using a wrong token\n");
-                transition_state_req_with_expec_error(lc_state_next,
-                                                      invalid_tokens[token_type]);
-            }
-
-            if (lc_state_next != SCRAP && token_required == 0) {
-                wait_dai_op_idle(0);
-
-                lc_state_curr = read_lc_state();
-                if (lc_state_curr != lc_state_next) {
-                    VPRINTF(LOW, "ERROR: incorrect state: exp: %d, act: %d\n", lc_state_next, lc_state_curr);
-                    goto epilogue;
-                }
-                lc_cnt_curr = read_lc_counter();
-                if (lc_cnt_curr != lc_cnt_next) {
-                    VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_cnt_next, lc_cnt_curr);
-                    goto epilogue;
-                }             
-            } else {
-                VPRINTF(LOW, "Info: terminating test\n");
-                goto epilogue;
-            }
+    for (;;) {
+        switch (do_iteration()) {
+        case 0:
+            return true;
+        case -1:
+            return false;
+        default:
+            break;
         }
     }
-    
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+}
 
-    SEND_STDOUT_CTRL(0xff);
+void main (void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+
+    mcu_cptra_init_d();
+    bool failed = !wait_dai_op_idle(0);
+
+    if (!failed) failed = !body();
+
+    SEND_STDOUT_CTRL(failed ? TB_CMD_TEST_FAIL : TB_CMD_TEST_PASS);
 }

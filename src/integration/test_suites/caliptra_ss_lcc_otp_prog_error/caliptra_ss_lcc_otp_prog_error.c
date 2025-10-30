@@ -58,47 +58,40 @@ void main (void) {
 
     uint32_t buf[NUM_LC_STATES] = {0};
 
-    // Randomly choose the next LC state among the all valid ones
-    // based on the current state and repeat this until the SCRAP
-    // state is reached.
-    while (1) {
-        lcc_initialization();
-        force_PPD_pin();
+    lcc_initialization();
+    force_PPD_pin();
 
-        uint32_t lc_state_curr = read_lc_state();
-        uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1; 
+    uint32_t lc_state_curr = read_lc_state();
 
-        VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
-        VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", read_lc_counter());
 
-        uint32_t count = 0;
-        memset(buf, 0, sizeof(buf));
-        for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {
-            if (trans_matrix[lc_state_curr][i+lc_state_curr] != INV) {
-                buf[count] = i + lc_state_curr;
-                count++;
-            }
-        }
-
-        if (count) {
-            uint32_t lc_state_next = buf[xorshift32() % count];
-            VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
-
-            lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
-            lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
-            // We should see: OTP E**or detected.
-            transition_state_req_with_expec_error(lc_state_next,
-                                                  token_type == ZER ? NULL : tokens[token_type]);
-            goto epilogue;
+    // Search forward for a state that is accessible from lc_state_curr.
+    uint32_t count = 0;
+    memset(buf, 0, sizeof(buf));
+    for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {
+        if (trans_matrix[lc_state_curr][i+lc_state_curr] != INV) {
+            buf[count] = i + lc_state_curr;
+            count++;
         }
     }
-    
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+
+    if (!count) {
+        VPRINTF(LOW, "INFO: Empty test. No state should be reachable from current state\n");
+    } else {
+        uint32_t lc_state_next = buf[xorshift32() % count];
+        VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
+
+        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
+        // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
+        // We should see: OTP E**or detected.
+        transition_state(lc_state_next,
+                         token_type == ZER ? NULL : tokens[token_type],
+                         true);
     }
+
+    mcu_sleep(160);
 
     SEND_STDOUT_CTRL(0xff);
 }
