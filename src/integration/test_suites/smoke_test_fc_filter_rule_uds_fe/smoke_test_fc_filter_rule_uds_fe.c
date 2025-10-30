@@ -38,194 +38,165 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 // #define SHORT_TEST
 
+// Use dai_zer to request zeroization of the given partition. If
+// exp_success is true, we expect this to complete with status zero.
+// If exp_success is false, we expect the DAI_ERROR field to be set in
+// otp_ctrl's status register.
+//
+// If the check passes and the operation completes without an error,
+// perform a reset to bring everything back up again.
+//
+// Return true if all exit codes were as expected.
 bool try_to_zeroize_secret_partition(const char        *name,
                                      const partition_t *part,
-                                     uint32_t           exp_status) {
-    reset_fc_lcc_rtl();
-    if (!wait_dai_op_idle(0)) return false;
+                                     bool               exp_success) {
+
+    uint32_t exp_status = exp_success ? 0 : OTP_CTRL_STATUS_DAI_ERROR_MASK;
 
     if (!dai_zer(part->address, part->granularity, exp_status, false)) {
-        VPRINTF(LOW, "ERROR: Unexpected status zeroizing %s partition\n", name);
+        VPRINTF(LOW,
+                "ERROR: Unexpected status zeroizing %s partition\n", name);
         return false;
+    }
+
+    if (exp_status == 0) {
+        // We've successfully zeroized the partition, so we inject a
+        // reset to start again. Note that zeroization will have
+        // messed up the ECC data in the partition (since the contents
+        // are now all-ones), which will cause all the partition
+        // errors to be set, plus dai_error and lci_error.
+        uint32_t exp_post_rst_status = (((1 << NUM_PARTITIONS) - 1) |
+                                        OTP_CTRL_STATUS_DAI_ERROR_MASK |
+                                        OTP_CTRL_STATUS_LCI_ERROR_MASK);
+
+        reset_fc_lcc_rtl();
+        if (!wait_dai_op_idle(exp_post_rst_status)) return false;
     }
 
     return true;
 }
 
-bool try_to_zeroize_secret_partitions(uint32_t exp_status) {
+// Use try_to_zeroize_secret_partition to request zeroization of each
+// secret partition (where exp_success tracks whether it is expected
+// to work).
+//
+// Return true if all partitions behaved as expected.
+bool try_to_zeroize_secret_partitions(bool exp_success) {
     const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
     const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
     const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
     const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
     const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
 
-    if (!try_to_zeroize_secret_partition("UDS", hw_part_uds, exp_status))
+    if (!try_to_zeroize_secret_partition("UDS", &hw_part_uds, exp_success))
         return false;
 #ifndef SHORT_TEST
-    if (!try_to_zeroize_secret_partition("FE0", hw_part_fe0, exp_status))
+    if (!try_to_zeroize_secret_partition("FE0", &hw_part_fe0, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE1", hw_part_fe1, exp_status))
+    if (!try_to_zeroize_secret_partition("FE1", &hw_part_fe1, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE2", hw_part_fe2, exp_status))
+    if (!try_to_zeroize_secret_partition("FE2", &hw_part_fe2, exp_success))
         return false;
-    if (!try_to_zeroize_secret_partition("FE3", hw_part_fe3, exp_status))
+    if (!try_to_zeroize_secret_partition("FE3", &hw_part_fe3, exp_success))
         return false;
 #endif
 
     return true;
 }
 
-bool invalid_secret_zeroization(void) {
-    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-
-    if (!try_to_zeroize_secret_partitions(OTP_CTRL_STATUS_DAI_ERROR_MASK))
+// Write data to the first entry of the given partition, then
+// calculate a digest for the partition. Return true if every step
+// succeeds.
+bool provision_partition(const char *name,
+                         const partition_t *part,
+                         const uint32_t data[2]) {
+    VPRINTF(LOW, "INFO: Writing %s partition...\n", name);
+    if (!dai_wr(part->address, data[0], data[1], part->granularity, 0))
         return false;
 
-    reset_fc_lcc_rtl();
-    if (!wait_dai_op_idle(0)) return false;
-
-    VPRINTF(LOW, "INFO: Invalid secret zeroization steps completed.\n");
-    return true;
+    VPRINTF(LOW, "INFO: Calculating digest for %s partition...\n", name);
+    return calculate_digest(part->address, 0);
 }
 
-bool valid_secret_zeroization(void) {
-    VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
-
-    if (!try_to_zeroize_secret_partitions(0))
-        return false;
-
-    VPRINTF(LOW, "INFO: Valid secret zeroization test completed.\n");
-    return true;
-}
-
-void secret_prov(void) {
+// Write data to provision each secret partition. Return true if this
+// succeeds.
+bool secret_prov(void) {
     VPRINTF(LOW, "INFO: Starting secret provisioning...\n");
 
-    uint32_t data0 = 0xA5A5A5A5;
-    uint32_t data1 = 0x5A5A5A5A;
+    uint32_t data[2] = { 0xA5A5A5A5, 0x5A5A5A5A };
 
-    const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
-    const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
-    const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
-    const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
-    const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
-
-    // Provision UDS
-    VPRINTF(LOW, "INFO: Writing UDS partition...\n");
-    dai_wr(hw_part_uds.address, data0, data1, hw_part_uds.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for UDS partition...\n");
-    calculate_digest(hw_part_uds.address, 0);
+    if (!provision_partition("UDS", &partitions[SECRET_MANUF_PARTITION], data))
+        return false;
 #ifndef SHORT_TEST
-    VPRINTF(LOW, "INFO: Resetting to activate UDS partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE0
-    VPRINTF(LOW, "INFO: Writing FE0 partition...\n");
-    dai_wr(hw_part_fe0.address, data0, data1, hw_part_fe0.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE0 partition...\n");
-    calculate_digest(hw_part_fe0.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE0 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE1
-    VPRINTF(LOW, "INFO: Writing FE1 partition...\n");
-    dai_wr(hw_part_fe1.address, data0, data1, hw_part_fe1.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE1 partition...\n");
-    calculate_digest(hw_part_fe1.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE1 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE2
-    VPRINTF(LOW, "INFO: Writing FE2 partition...\n");
-    dai_wr(hw_part_fe2.address, data0, data1, hw_part_fe2.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE2 partition...\n");
-    calculate_digest(hw_part_fe2.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE2 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
-
-    // Provision FE3
-    VPRINTF(LOW, "INFO: Writing FE3 partition...\n");
-    dai_wr(hw_part_fe3.address, data0, data1, hw_part_fe3.granularity, 0);
-
-    VPRINTF(LOW, "INFO: Calculating digest for FE3 partition...\n");
-    calculate_digest(hw_part_fe3.address, 0);
-
-    VPRINTF(LOW, "INFO: Resetting to activate FE3 partition lock...\n");
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    if (!provision_partition("FE0", &partitions[SECRET_PROD_PARTITION_0], data))
+        return false;
+    if (!provision_partition("FE1", &partitions[SECRET_PROD_PARTITION_1], data))
+        return false;
+    if (!provision_partition("FE2", &partitions[SECRET_PROD_PARTITION_2], data))
+        return false;
+    if (!provision_partition("FE3", &partitions[SECRET_PROD_PARTITION_3], data))
+        return false;
 #endif
+
+    VPRINTF(LOW, "INFO: Resetting to activate partition locks\n");
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0))
+        return false;
+
     VPRINTF(LOW, "INFO: Secret provisioning completed.\n");
+    return true;
 }
 
-// Run num_nops nop instructions as a sleep loop.
-void sleep(unsigned num_nops)
-{
-    for (unsigned i = 0; i < num_nops; i++) {
-        __asm__ volatile ("nop");
-    }
-}
-
-void body(void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-
+bool body(void) {
     VPRINTF(LOW, "INFO: Initializing Caliptra subsystem...\n");
     mcu_cptra_init_d();
 
     VPRINTF(LOW, "INFO: Granting MCU access to fuse controller...\n");
     grant_caliptra_core_for_fc_writes();
 
-    sleep(20);
-    if (!wait_dai_op_idle(0)) return;
+    mcu_sleep(20);
+    if (!wait_dai_op_idle(0)) return false;
 
     VPRINTF(LOW, "INFO: Starting secret provisioning sequence...\n");
-    secret_prov();
+    if (!secret_prov()) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
     revoke_grant_mcu_for_fc_writes();
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    if (!invalid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(false)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
     grant_caliptra_core_for_fc_writes();
 
     VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    if (!invalid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(false)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    sleep(20);
+    mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    if (!valid_secret_zeroization()) return;
+    if (!try_to_zeroize_secret_partitions(true)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
+
+    return true;
 }
 
 void main(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
-    body();
+    bool passed = body();
 
-    sleep(160);
+    mcu_sleep(160);
     VPRINTF(LOW, "INFO: MCU Caliptra Boot sequence completed.\n");
-    SEND_STDOUT_CTRL(0xff);
+    SEND_STDOUT_CTRL(passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
