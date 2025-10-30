@@ -38,7 +38,7 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU: Testing Protected Region\n=================\n\n");
     lcc_initialization();
-    transition_state(TEST_UNLOCKED0, raw_unlock_token);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
     reset_fc_lcc_rtl();
 
     // Test is ended by the SOC BFM.

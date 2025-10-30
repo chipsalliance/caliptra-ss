@@ -43,7 +43,8 @@ static void nop_sleep(unsigned count) {
 }
 
 bool body(void) {
-    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token)) return false;
+    if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false))
+        return false;
 
     if (!wait_dai_op_idle(0)) return false;
 
