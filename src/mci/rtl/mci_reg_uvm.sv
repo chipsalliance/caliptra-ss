@@ -115,7 +115,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.MC_GENERATION = new("MC_GENERATION");
-            this.MC_GENERATION.configure(this, 16, 0, "RO", 0, 'h1000, 1, 1, 0);
+            this.MC_GENERATION.configure(this, 16, 0, "RO", 0, 'h2001, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(MC_GENERATION_bit_cg[bt]) MC_GENERATION_bit_cg[bt] = new();
             end
