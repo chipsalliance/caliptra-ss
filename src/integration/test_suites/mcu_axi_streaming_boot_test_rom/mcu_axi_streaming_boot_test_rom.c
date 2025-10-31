@@ -91,15 +91,21 @@ void main (void) {
 
     // Read DEVICE_ID
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0);
-    // TODO : add data checking 
+    if(i3c_reg_data != 1) {
+        VPRINTF(FATAL, "DEVICE_ID_0 incorrect: expected: 0x%x actual: 0x%x\n", 1, i3c_reg_data);
+    }
 
     // Read HW_STATUS
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS);
-    // TODO : add data checking 
+    if(i3c_reg_data != 0x00000100) {
+        VPRINTF(FATAL, "HW_STATUS incorrect: expected: 0x%x actual: 0x%x\n", 0x100, i3c_reg_data);
+    }
 
     // Read DEVICE_STATUS_0
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0);
-    // TODO : add data checking 
+    if(i3c_reg_data != 0) {
+        VPRINTF(FATAL, "DEVICE_STATUS_0 incorrect: expected: 0x%x actual: 0x%x\n", 0x0, i3c_reg_data);
+    }
 
 
     // waiting for recovery start
