@@ -65,9 +65,9 @@ void main (void) {
     VPRINTF(LOW, "MCU: Booting...\n");
     boot_mcu();
     boot_i3c_core();
-    trigger_caliptra_go();
+    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
-    wait_for_cptra_ready_for_mb_processing();
+    mcu_cptra_poll_mb_ready();
 
     //-- setting bypass mode for I3C
     i3c_reg_data = 0x00000000 | I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_MASK; 
