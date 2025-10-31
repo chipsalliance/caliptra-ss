@@ -50,6 +50,49 @@ jobs:
           name: pages_main
           path: /tmp/pages-docs/main
 
+  build-2_0:
+    name: Build v2.0
+
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: 'recursive'
+          # This is the Gen2.0 v1.0 release patch branch...
+          ref: "patch_ss_v1p0"
+
+      - name: Install peakrdl
+        run: |
+          python3 -m pip install \
+              systemrdl-compiler==1.27.3 \
+              peakrdl-systemrdl==0.3.0 \
+              peakrdl-regblock==0.21.0 \
+              peakrdl-uvm==2.3.0 \
+              peakrdl-ipxact==3.4.3 \
+              peakrdl-html==2.10.1 \
+              peakrdl-cheader==1.0.0 \
+              peakrdl==1.1.0
+
+      - name: Generate docs
+        run: |
+          export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
+          echo Running script
+          tools/scripts/gen_soc_regs.sh
+
+      - name: Stage documents
+        run: |
+          mkdir -p /tmp/pages-docs/v2_0
+          cp -R src/integration/docs/soc_address_map_html /tmp/pages-docs/v2_0/regs
+          find /tmp/pages-docs
+
+      - name: Upload artifacts for main
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages_v2_0
+          path: /tmp/pages-docs/v2_0
+
   deploy:
     name: Deploy
     needs: build
@@ -71,6 +114,12 @@ jobs:
         with:
           name: pages_main
           path: /tmp/pages-docs/main
+
+      - name: Download v2.0 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: pages_v2_0
+          path: /tmp/pages-docs/v2_0
 
       - name: Generate GitHub Pages artifacts
         uses: actions/upload-pages-artifact@v3

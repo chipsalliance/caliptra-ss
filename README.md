@@ -1,12 +1,13 @@
 # Caliptra Subsystem Overview
-_*Last Update: 2025/04/30*_
+_*Last Update: 2025/10/30*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
 ## Project Links
 
 [caliptra-ss](https://github.com/chipsalliance/caliptra-ss)<BR>
-[Caliptra Subsystem v1.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
+[Caliptra Subsystem v2.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_0/regs/?p=)<BR>
+[Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_1/regs/?p=)<BR>
 
 ## **Tools Used** ##
 
@@ -113,8 +114,11 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 │   └── compilespecs.yml
 ├── docs
 │   ├── Caliptra_Gen2_SS_TestPlan.xlsx
+│   ├── CaliptraSSCoverage.md
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
+│   ├── CaliptraSSReleaseChecklist.md
+│   ├── coverage_reports
 │   └── images
 ├── LICENSE
 ├── README.md
