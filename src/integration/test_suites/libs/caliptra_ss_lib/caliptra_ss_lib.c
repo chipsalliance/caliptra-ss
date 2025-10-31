@@ -575,12 +575,11 @@ bool mcu_wait_for_mcu_reset_req_interrupt(uint32_t attempt_count) {
 }
 
 bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count) {
-    // TODO: update with MCU Root Strap Value
     VPRINTF(LOW, "MCU: Wait for Lock to Reflect MBOX USER\n");
     uint32_t mbox_resp_data;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         mbox_resp_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num);
-        if(mbox_resp_data != 0){
+        if(mbox_resp_data == lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_LSU_AXI_USER)){
             VPRINTF(LOW, "MCU: MBOX%x USER = %x\n", mbox_num, mbox_resp_data);
             return true;
         }
