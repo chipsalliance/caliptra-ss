@@ -1,5 +1,51 @@
 # **Release Notes** #
 
+## Caliptra Subsystem 2.0.1 Release notes
+_*Release Date: 2025/10/31*_
+
+HW & Integration spec updates coverage all the modules
+
+### 1. Caliptra Core
+- Upgraded to Caliptra Core 2.0.2 release
+- Design changes
+  - [BUG FIX] Fixed zeroization logic in adams-bridge [#203](https://github.com/chipsalliance/adams-bridge/issues/203)
+  - [BUG FIX] Fixed KeyVault hardening for software write-enable [#1035](https://github.com/chipsalliance/caliptra-rtl/issues/1035)
+  - [BUG FIX] Upgraded VeeR core to resolve bug in AXI-to-AHB bridge logic [#1055](https://github.com/chipsalliance/caliptra-rtl/issues/1055)
+
+### 2. I3C
+- Upgraded I3C-core to version 1p4, including numerous bug fixes
+- Validated subsystem interactions
+- Coverage analysis and bug fixes
+- FPGA validation of I3C
+- Compatibility test suite validation of the target mode (Review I3C [README](https://github.com/chipsalliance/i3c-core/blob/v1p4/README.md))
+
+### 3. Life Cycle Controller (LCC)
+- LCC validation & Coverage analysis
+- Subsystem HW & Integration spec updates
+- Made RAW unlock token a top-level input signal
+
+### 4. Fuse Controller (FC)
+- Final fuse map created per architectural requirements
+- Automation/Scripts to generate/update partitions per SOC specific needs and to generate corresponding vmem files for validation
+- FC validation & Coverage analysis
+- Subsystem HW & Integration spec updates
+
+### 5. Manufacturer Control Interface (MCI):
+- WDT & RISC-V MTIMER
+- Trace Buffer
+- JTAG Security Controls
+- Interrupt Aggregation support
+- MCI Validation & Coverage Analysis
+
+### Validation test plan completed for:
+- Streaming Boot flow over I3C
+- DMA from Caliptra to/from MCI, Fuse Controller, I3C
+- MCU interaction with all the blocks (I3C, Caliptra, LCC, FC, MCU ROM, and MCI)
+- Life Cycle Controller interactions and life cycle state changes
+- Life Cycle Controller & Fuse Controller interactions
+
+# Previous Releases #
+
 ## Caliptra 2.0 Subsystem 1p0 Release notes
 _*Release Date: 2025/04/30*_
 
@@ -47,8 +93,6 @@ HW & Integration spec updates coverage all the modules
 - MCU interaction with all the blocks (I3C, Caliptra, LCC, FC, MCU ROM, and MCI)
 - Life Cycle Controller interactions and life cycle state changes
 - Life Cycle Controller & Fuse Controller interactions
-
-# Previous Releases #
 
 ## Caliptra Subsystem 0.8 Release Notes
 _*Release Date: 2025/01/20*_
