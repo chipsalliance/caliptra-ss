@@ -40,7 +40,7 @@ module caliptra_ss_veer_sram_export import css_mcu0_el2_pkg::*; #(
 
     `ifndef VERILATOR
         initial begin
-            bitflip_mask_generator #(39) iccm_bitflip_gen = new();
+            //bitflip_mask_generator #(39) iccm_bitflip_gen = new();
             bitflip_mask_generator #(39) dccm_bitflip_gen = new();
             forever begin
                 @(posedge cptra_ss_mcu0_el2_mem_export.clk)
