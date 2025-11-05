@@ -457,6 +457,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 1     | `cptra_ss_dbg_manuf_enable_o`    | Indication that the debug is unlocked for manufacturing state and this is set by Caliptra Core        |
 | External | output    | 64    | `cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o`    | Indication that the debug is unlocked for production state. Each bit represents a debug level. Currently, 8-bit is supported with Caliptra ROM |
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
+| External | output    | na     | `cptra_ss_lc_escalate_en_o`    | Life-cycle controller signal indicating that escalation is enabled at LCC and FC       |
+| External | output    | na     | `cptra_ss_lc_check_byp_en_o`    | Life-cycle controller signal indicating that external clock is accepted     |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tck_i`            | MCU JTAG clock input                     |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tms_i`            | MCU JTAG TMS input                       |
@@ -1330,8 +1332,8 @@ Internal    |struct      |   1    | `lc_otp_program_i`    |                     
 Internal    |struct      |   1    | `otp_lc_data_i`       |                                     | Broadcasted values from the fuse controller |
 Internal    |output      |   1    | `lc_dft_en_o`         |                                     | DFT enable to MCI |
 Internal    |output      |   1    | `lc_hw_debug_en_o`    |                                     | CLTAP enable to MCI |
-Internal    |output      |   1    | `lc_escalate_en_o`    |                                     | Broadcast signal to promote esclation in SoC |
-Internal    |output      |   1    | `lc_check_byp_en_o`   |                                     | External clock status delivery signal to fuse controller |
+Internal    |output      |   1    | `lc_escalate_en_o`    |  `cptra_ss_lc_escalate_en_o`        | Broadcast signal to promote esclation in SoC |
+Internal    |output      |   1    | `lc_check_byp_en_o`   |  `cptra_ss_lc_check_byp_en_o`       | External clock status delivery signal to fuse controller |
 External    |output      |   1    | `lc_clk_byp_req_o`    | `cptra_ss_lc_clk_byp_req_o`         | A request port to swtich from LCC clock to external clock |
 External    |input       |   1    | `lc_clk_byp_ack_i`    | `cptra_ss_lc_clk_byp_ack_i`         | Acknowledgment signal to indicate external clock request is accepted              |
 Internal    |input       |   1    | `otp_device_id_i`     |                                     | Unused port              |
