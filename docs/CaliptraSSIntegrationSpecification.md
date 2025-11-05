@@ -2507,13 +2507,26 @@ In an unconstrained environment, several CDC violations are anticipated. CDC ana
 
 The following code snippets and schematic diagrams illustrate the CDC violations that end at the JTAG interface.
 
-*Figure: Schematic diagram and code snippet showing JTAG-originating CDC violations*
+*Figure: Code snippet showing JTAG-originating CDC violations*
 
-![](./images/caliptra2.0_riscv_code_snippet.png)
+el2_dbg.sv
+```
+rvdffe #(32) dmi_rddata_reg (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
+```
 
-![](./images/caliptra2.0_socifc_code_snippet.png)
+soc_ifc_top.sv
+```
+cptra_uncore_dmi_reg_rdata <= cptra_uncore_dmi_unlocked_reg_en ? cptra_uncore_dmi_unlocked_reg_rdata_in : 
+                              cptra_uncore_dmi_locked_reg_en   ? cptra_uncore_dmi_locked_reg_rdata_in : cptra_uncore_dmi_reg_rdata;
+```
 
-![](./images/caliptra2.0_dmimux_code_snippet.png)
+dmi_mux.v
+```
+// Read mux
+assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
+```
+
+*Figure: Schematic diagram showing JTAG-originating CDC violations*
 
 ![](./images/caliptra_ss_cdc_violation_path1.png)
 
