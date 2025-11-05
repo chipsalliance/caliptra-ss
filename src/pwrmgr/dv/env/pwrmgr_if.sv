@@ -183,7 +183,6 @@ interface pwrmgr_if (
     rst_main_n = 1'b1;
   endtask
 
-  // FIXME Move all these initializations to sequences.
   initial begin
     // From AST.
     pwr_ast_rsp = '{default: '0};

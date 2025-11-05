@@ -61,7 +61,6 @@ class pwrmgr_escalation_timeout_vseq extends pwrmgr_base_vseq;
     check_stopped_esc_clk(2000, 1'b1);
     wait_for_fast_fsm(FastFsmActive);
     // This should generate a reset but it doesn't so the test will fail.
-    // TODO(lowrisc/opentitan#20516): Enable this test when this is fixed.
     // check_stopped_esc_clk(136, 1'b1);
   endtask : body
 
