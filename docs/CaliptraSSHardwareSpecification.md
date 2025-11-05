@@ -2,8 +2,8 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Gen 2.0 Hardware Specification </h1>
-<h3 align="center"> Version 1p0-rc1 </h3>
+<h1 align="center"> Caliptra Subsystem Hardware Specification </h1>
+<h3 align="center"> Version 2.0.1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -40,7 +40,7 @@
   - [Descriptor](#descriptor)
 - [Caliptra Subsystem Fuse Controller](#caliptra-subsystem-fuse-controller)
   - [Partition Details](#partition-details)
-    - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
+    - [Key Characteristics of Secret Partitions](#key-characteristics-of-secret-partitions)
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
@@ -69,6 +69,7 @@
   - [Masking Logic for Debugging Features in Production Debug Mode (MCI)](#masking-logic-for-debugging-features-in-production-debug-mode-mci)
   - [LCC Interpretation for Caliptra “Core” Security States](#lcc-interpretation-for-caliptra-core-security-states)
   - [Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations](#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations)
+  - [LCC RAW Unlock Token Generation \& Setting](#lcc-raw-unlock-token-generation--setting)
   - [SOC LCC Interface usage \& requirements](#soc-lcc-interface-usage--requirements)
   - [LCC Module: Summarized Theory of operation](#lcc-module-summarized-theory-of-operation)
 - [Manufacturer Control Unit (MCU)](#manufacturer-control-unit-mcu)
@@ -127,7 +128,8 @@ This document defines technical specifications for a subsystem design utilizing 
 | Date            |   Document Version | Description       |
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
-| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Updated details on component features (MCU mailbox, MCU trace buffer, MCI error aggregation, FC fuse zeroization)<br> - Details on design connectivity with top-level ports<br> - Port and register updates  |
+| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifications updated with:<br> - Updated details on component features (MCU mailbox, MCU trace buffer, MCI error aggregation, FC fuse zeroization)<br> - Details on design connectivity with top-level ports<br> - Port and register updates  |
+| Oct 29th, 2025  |   v2.0.1           | Patch release of 2.0.1 with clarifications on several doc sections |
 
 </div>
 
@@ -280,13 +282,16 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ## I3C Streaming Boot (Recovery) Flow
 
-Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
+Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
 
 ## Caliptra ROM Requirements for OCP Streaming Boot
-Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes. 
+Caliptra firmware must follow these rules when implementing the OCP Streaming Boot flow:
+* Caliptra ROM and RT Firmware must wait for "image_activated" signal to assert before processing the image.
+* When image is sent to Caliptra Subsystem, Caliptra ROM & RT firmware must program DMA assist according to the rules defined in [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads).
+* Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
 
 ## I3C and Caliptra-AXI Interactions
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
