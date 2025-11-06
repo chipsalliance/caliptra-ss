@@ -245,8 +245,8 @@ module caliptra_ss_top
     output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
 
 
-    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o;
-    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o;
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o,
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
