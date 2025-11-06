@@ -200,6 +200,7 @@ class otp_ctrl_env_cov extends cip_base_env_cov #(.CFG_T(otp_ctrl_env_cfg));
   // This covergroup is sampled only if keymgr output passed scb check.
   covergroup keymgr_o_cg with function sample (bit lc_seed_hw_rd_en, bit locked);
     keymgr_rd_en: coverpoint lc_seed_hw_rd_en;
+    // TODO: probably should add all partitions with keymgr material here.
     secret2_lock: coverpoint locked;
     keymgr_output_conditions: cross keymgr_rd_en, secret2_lock;
   endgroup

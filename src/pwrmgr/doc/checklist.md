@@ -57,6 +57,7 @@ Documentation | [FEATURE_FROZEN][]        | Done        |
 RTL           | [FEATURE_COMPLETE][]      | Done        |
 RTL           | [PORT_FROZEN][]           | Done        |
 RTL           | [ARCHITECTURE_FROZEN][]   | Done        |
+RTL           | [REVIEW_TODO][]           | Done        |
 RTL           | [STYLE_X][]               | Done        |
 RTL           | [CDC_SYNCMACRO][]         | N/A         |
 Code Quality  | [LINT_PASS][]             | Done        |
@@ -75,6 +76,7 @@ Security      | [SEC_CM_DOCUMENTED][]     | Done        |
 [FEATURE_COMPLETE]:      ../../../../../doc/project_governance/checklist/README.md#feature_complete
 [PORT_FROZEN]:           ../../../../../doc/project_governance/checklist/README.md#port_frozen
 [ARCHITECTURE_FROZEN]:   ../../../../../doc/project_governance/checklist/README.md#architecture_frozen
+[REVIEW_TODO]:           ../../../../../doc/project_governance/checklist/README.md#review_todo
 [STYLE_X]:               ../../../../../doc/project_governance/checklist/README.md#style_x
 [CDC_SYNCMACRO]:         ../../../../../doc/project_governance/checklist/README.md#cdc_syncmacro
 [LINT_PASS]:             ../../../../../doc/project_governance/checklist/README.md#lint_pass
@@ -109,6 +111,7 @@ Security      | [SEC_CM_COUNCIL_REVIEWED][]  | Done        |
  Type         | Item                    | Resolution  | Note/Collaterals
 --------------|-------------------------|-------------|------------------
 Documentation | [NEW_FEATURES_D3][]     | Not Started |
+RTL           | [TODO_COMPLETE][]       | Not Started |
 Code Quality  | [LINT_COMPLETE][]       | Not Started |
 Code Quality  | [CDC_COMPLETE][]        | Not Started |
 Code Quality  | [RDC_COMPLETE][]        | Not Started |
@@ -120,6 +123,7 @@ Review        | Reviewer(s)             | Not Started |
 Review        | Signoff date            | Not Started |
 
 [NEW_FEATURES_D3]:      ../../../../../doc/project_governance/checklist/README.md#new_features_d3
+[TODO_COMPLETE]:        ../../../../../doc/project_governance/checklist/README.md#todo_complete
 [LINT_COMPLETE]:        ../../../../../doc/project_governance/checklist/README.md#lint_complete
 [CDC_COMPLETE]:         ../../../../../doc/project_governance/checklist/README.md#cdc_complete
 [RDC_COMPLETE]:         ../../../../../doc/project_governance/checklist/README.md#rdc_complete
@@ -254,6 +258,7 @@ Coverage      | [SIM_CODE_COVERAGE_AT_100][]      | Not Started |
 Coverage      | [SIM_FUNCTIONAL_COVERAGE_AT_100][]| Not Started |
 Coverage      | [FPV_CODE_COVERAGE_AT_100][]      | Not Started |
 Coverage      | [FPV_COI_COVERAGE_AT_100][]       | Not Started |
+Code Quality  | [ALL_TODOS_RESOLVED][]            | Not Started |
 Code Quality  | [NO_TOOL_WARNINGS_THROWN][]       | Not Started |
 Code Quality  | [TB_LINT_COMPLETE][]              | Not Started |
 Integration   | [PRE_VERIFIED_SUB_MODULES_V3][]   | Not Started |
@@ -269,6 +274,7 @@ Review        | Signoff date                      | Not Started |
 [SIM_FUNCTIONAL_COVERAGE_AT_100]:../../../../../doc/project_governance/checklist/README.md#sim_functional_coverage_at_100
 [FPV_CODE_COVERAGE_AT_100]:      ../../../../../doc/project_governance/checklist/README.md#fpv_code_coverage_at_100
 [FPV_COI_COVERAGE_AT_100]:       ../../../../../doc/project_governance/checklist/README.md#fpv_coi_coverage_at_100
+[ALL_TODOS_RESOLVED]:            ../../../../../doc/project_governance/checklist/README.md#all_todos_resolved
 [NO_TOOL_WARNINGS_THROWN]:       ../../../../../doc/project_governance/checklist/README.md#no_tool_warnings_thrown
 [TB_LINT_COMPLETE]:              ../../../../../doc/project_governance/checklist/README.md#tb_lint_complete
 [PRE_VERIFIED_SUB_MODULES_V3]:   ../../../../../doc/project_governance/checklist/README.md#pre_verified_sub_modules_v3
