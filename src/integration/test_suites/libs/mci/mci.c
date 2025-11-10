@@ -381,7 +381,7 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
 
     // REG_GROUP_SS
     { 
-        { SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY, "SS_DCONFIG_DONE_STICKY", "Subsystem Config done sticky", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY, "SS_CONFIG_DONE_STICKY", "Subsystem Config done sticky", REG_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_SS_CONFIG_DONE, "SS_CONFIG_DONE", "Subsystem Config Done", REG_NOT_STICKY, false },
         { 0, NULL, NULL, REG_NOT_STICKY, false }  // End marker
     },
@@ -787,7 +787,7 @@ void init_reg_exp_dict(mci_reg_exp_dict_t *dict) {
         }
     }
 }
-/*
+
 void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_register_group_t *groups, int num_groups) {
     if (reset_type == COLD_RESET ) {
         VPRINTF(LOW, "** Clearing all expected values for cold reset\n");
@@ -884,7 +884,6 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
         } 
     }
 }
-*/
 
 /**
  * Add or update an entry in the register expected data dictionary
@@ -967,7 +966,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
 
     if (group_index == REG_GROUP_MCI_MBOX0) {
         axi_user_lock_reg = get_register_info(REG_GROUP_MCI_MBOX0_RW1S, reg_index);
-        axi_user_lock = mci_reg_read(axi_user_lock_reg->address);
+        axi_user_lock = mci_reg_read(axi_user_lock_reg->address); // TODO use the exp_data value instead of reading the reg
         if (axi_user_lock == 0) {
             update_axi_user = true;
         }
@@ -975,21 +974,28 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
 
     if (group_index == REG_GROUP_MCI_MBOX1) {
         axi_user_lock_reg = get_register_info(REG_GROUP_MCI_MBOX1_RW1S, reg_index);
-        axi_user_lock = mci_reg_read(axi_user_lock_reg->address);
+        axi_user_lock = mci_reg_read(axi_user_lock_reg->address); // TODO use the exp_data value instead of reading the reg
         if (axi_user_lock == 0) {
             update_axi_user = true;
         }
     }
 
     if (group_index == REG_GROUP_CAPABILITIES) {
+        cap_lock_reg = get_register_info(REG_GROUP_CAPABILITIES, 2);
+        if (!get_reg_exp_data(dict, cap_lock_reg->address, &cap_lock_reg_value)) {
+            VPRINTF(ERROR, "Error: Did not find exp_data entry for %s\n", cap_lock_reg->name);
+        } else {
+            VPRINTF(MEDIUM, "Found exp_data for %s: 0x%x\n", cap_lock_reg->name, cap_lock_reg_value);
+        }
         if (reg_index <= 1) {
-            cap_lock_reg = get_register_info(REG_GROUP_CAPABILITIES, 2);
-            cap_lock_reg_value = mci_reg_read(cap_lock_reg->address);
             if (cap_lock_reg_value == 0) {
                 update_config_reg = true;
             }
         } else if (reg_index == 2) {
-            if (ss_config_done == 0) {
+            // If value is 0, either the reg value is unchanged, or the write is blocked - treat both the same.
+            // If value is 1 and reg value is 0, the lock is set to 1.
+            // If reg is already 1, technically the write is blocked, but value stays the same, so treat the same as the set case.
+            if (value == 1) {
                 update_cap_lock_reg = true;
             }
         }   
@@ -1015,7 +1021,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     
     // Standard update condition
     if (ss_config_done_sticky == 0 || reg_info->is_sticky != REG_CONFIG_DONE_STICKY || force_update || update_axi_user || update_config_reg || update_cap_lock_reg) {
-    	update_exp_data = true;
+        update_exp_data = true;
     }
 
     // Special case for capabilities registers - override the above conditions
@@ -1359,7 +1365,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                             mismatch_count++;
                         }
                     } else if (reg->has_init_value == false && ro_reg == true) {
-                        if (get_reg_exp_data(&g_expected_data_dict, reg->address, &exp_data) == 0) {
+                        if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                             if (read_data == exp_data) {
                                 VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
                                        reg->name, reg->address, read_data, exp_data);
@@ -1389,7 +1395,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                     }
                 } else if (reset_type == WARM_RESET) {
                     if (reg->is_sticky == REG_STICKY || reg->is_sticky == REG_CONFIG_DONE_STICKY) {
-                        if (get_reg_exp_data(&g_expected_data_dict, reg->address, &exp_data) == 0) {
+                        if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                             VPRINTF(MEDIUM, "Expected data for %s = 0x%0x\n", reg->name, exp_data);
                             // Compare and report
                             if (group == REG_GROUP_INTERRUPT_ERROR0_COUNTERS) {
@@ -1498,7 +1504,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                                 mismatch_count++;
                             }
                         } else if (reg->has_init_value == false && ro_reg == true) {
-                            if (get_reg_exp_data(&g_expected_data_dict, reg->address, &exp_data) == 0) {
+                            if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                                 if (read_data == exp_data) {
                                     VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
                                            reg->name, reg->address, read_data, exp_data);
@@ -1529,7 +1535,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                     }
                 } 
             } else { // Verifying after a write operation
-                if (get_reg_exp_data(&g_expected_data_dict, reg->address, &exp_data) == 0) {
+                if (get_reg_exp_data(dict, reg->address, &exp_data) == 0) {
                     // Compare and report
                     if (read_data == exp_data) {
                         VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", 
