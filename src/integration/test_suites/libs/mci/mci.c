@@ -1301,8 +1301,12 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
     uint32_t exp_data;
     uint32_t read_intr0_sts;
     uint32_t read_intr1_sts;
+    uint32_t read_intr0_en;
+    uint32_t read_intr1_en;
     const mci_register_info_t *intr0_reg;
     const mci_register_info_t *intr1_reg;
+    const mci_register_info_t *intr0_en_reg;
+    const mci_register_info_t *intr1_en_reg;
 
     bool ro_reg = false;
     if (group == REG_GROUP_KNOWN_VALUES ||
@@ -1441,25 +1445,41 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                                 VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                             } else if (group == REG_GROUP_INTERRUPT_GLOBAL_STATUS_RO) {
                                 if (i == 0) {
+                                    // ERROR global status = ERROR status & ERROR enable
                                     intr0_reg = get_register_info(REG_GROUP_INTERRUPT_STATUS_RW1C, 0);
                                     intr1_reg = get_register_info(REG_GROUP_INTERRUPT_STATUS_RW1C, 1);
+                                    intr0_en_reg = get_register_info(REG_GROUP_INTERRUPT_EN, 1); // ERROR0_INTR_EN_R
+                                    intr1_en_reg = get_register_info(REG_GROUP_INTERRUPT_EN, 2); // ERROR1_INTR_EN_R
+                                    
                                     read_intr0_sts = mci_reg_read(intr0_reg->address);
                                     read_intr1_sts = mci_reg_read(intr1_reg->address);
-                                    if (read_intr0_sts != 0) {
+                                    read_intr0_en = mci_reg_read(intr0_en_reg->address);
+                                    read_intr1_en = mci_reg_read(intr1_en_reg->address);
+                                    
+                                    // Global status bit is set only if (status & enable) != 0
+                                    if ((read_intr0_sts & read_intr0_en) != 0) {
                                         exp_data |= MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS0_MASK;
                                     }
-                                    if (read_intr1_sts != 0) {
+                                    if ((read_intr1_sts & read_intr1_en) != 0) {
                                         exp_data |= MCI_REG_INTR_BLOCK_RF_ERROR_GLOBAL_INTR_R_AGG_STS1_MASK;
                                     }
                                 } else {
+                                    // NOTIF global status = NOTIF status & NOTIF enable
                                     intr0_reg = get_register_info(REG_GROUP_INTERRUPT_STATUS_RW1C, 2);
                                     intr1_reg = get_register_info(REG_GROUP_INTERRUPT_STATUS_RW1C, 3);
+                                    intr0_en_reg = get_register_info(REG_GROUP_INTERRUPT_EN, 3); // NOTIF0_INTR_EN_R
+                                    intr1_en_reg = get_register_info(REG_GROUP_INTERRUPT_EN, 4); // NOTIF1_INTR_EN_R
+                                    
                                     read_intr0_sts = mci_reg_read(intr0_reg->address);
                                     read_intr1_sts = mci_reg_read(intr1_reg->address);
-                                    if (read_intr0_sts != 0) {
+                                    read_intr0_en = mci_reg_read(intr0_en_reg->address);
+                                    read_intr1_en = mci_reg_read(intr1_en_reg->address);
+                                    
+                                    // Global status bit is set only if (status & enable) != 0
+                                    if ((read_intr0_sts & read_intr0_en) != 0) {
                                         exp_data |= MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS0_MASK;
                                     }
-                                    if (read_intr1_sts != 0) {
+                                    if ((read_intr1_sts & read_intr1_en) != 0) {
                                         exp_data |= MCI_REG_INTR_BLOCK_RF_NOTIF_GLOBAL_INTR_R_AGG_STS1_MASK;
                                     }
                                 }
