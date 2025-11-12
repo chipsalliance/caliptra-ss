@@ -4,7 +4,7 @@
 	branch = main
 [submodule "third_party/i3c-core"]
 	path = third_party/i3c-core
-	url = https://github.com/chipsalliance/i3c-core.git
+	url = https://github.com/antmicro/i3c-core.git
 	branch = main
 [submodule "third_party/cocotbext-i3c"]
 	path = third_party/cocotbext-i3c
