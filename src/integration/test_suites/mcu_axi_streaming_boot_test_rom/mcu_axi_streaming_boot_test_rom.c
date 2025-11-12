@@ -174,8 +174,8 @@ void main (void) {
         }
 
         i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS);
-        if( i3c_reg_data != 0x00000002 || i3c_reg_data != 0x00000003 || i3c_reg_data != 0x00000004) { 
-            VPRINTF(LOW, "I3C core recovery status is not set to expected value\n");
+        if( i3c_reg_data != 0x00000001 && i3c_reg_data != 0x00000002 && i3c_reg_data != 0x00000003 && i3c_reg_data != 0x00000004) { 
+            VPRINTF(LOW, "I3C core recovery status is not set to expected value: 0x%x\n", i3c_reg_data);
             err_count++;
         }
         if (i3c_reg_data == 0x00000003) {
@@ -188,7 +188,7 @@ void main (void) {
     }
 
     if(err_count > 0) {
-      VPRINTF(FATAL, "Test fails due to error");
+      handle_error("Test fails due to error");
     }
 
 
