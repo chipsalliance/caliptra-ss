@@ -55,7 +55,6 @@ void main (void) {
     int argc=0;
     char *argv[1];
     uint32_t i3c_reg_data;
-    int err_count = 0;
     int loop_count = 0;
 
     // Initialize the printf library   
@@ -79,14 +78,12 @@ void main (void) {
     // Check if the I3C core is in the correct state
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0);
     if (i3c_reg_data != 0x2050434f) {
-        VPRINTF(LOW, "Error : I3C core not in the correct state\n");
-        err_count++;
+        handle_error("Error : I3C core not in the correct state (SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0). Expected: 0x%x Actual: 0x%x", 0x2050434f, i3c_reg_data);
     }
     
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1);
     if (i3c_reg_data != 0x56434552) {
-        VPRINTF(LOW, "I3C core not in the correct state\n");
-        err_count++;
+        handle_error("Error : I3C core not in the correct state (SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1). Expected: 0x%x Actual: 0x%x", 0x56434552, i3c_reg_data);
     }
 
     // Read DEVICE_ID
@@ -97,17 +94,10 @@ void main (void) {
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS);
     // TODO : add data checking 
 
-    // Read DEVICE_STATUS_0
-    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0);
-    // TODO : add data checking 
-
 
     // waiting for recovery start
-    while (1) {
-
-        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0);
-        // i3c_reg_data == 0x00000003
-        i3c_reg_data = i3c_reg_data & 0x00000003;
+    for(int i = 0; i < 10; i++) {
+        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0) & I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_DEV_STATUS_MASK;
         VPRINTF(LOW, "I3C core device status is 0x%x\n", i3c_reg_data);
         if (i3c_reg_data == 0x00000003) {
             VPRINTF(LOW, "I3C core in recovery mode\n");
@@ -115,16 +105,35 @@ void main (void) {
         }
         // Wait for the I3C core to finish the test
         VPRINTF(LOW, "Waiting for recovery start\n");
-        mcu_sleep(1000);
+        mcu_sleep(100);
+    }
+
+    if(i3c_reg_data != 0x3) {
+      handle_error("Error: I3C core never entered 'Recovery mode' (0x3) actual DEV_STATUS: 0x%x", i3c_reg_data);
+    }
+
+
+    // CPTRA is low so wait for recovery status to be 
+    // "Awaiting recovery image"
+    for(int i = 0; i < 10; i++) {
+
+        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS) & I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_DEV_REC_STATUS_MASK;
+        VPRINTF(LOW, "I3C core recovery status is 0x%x\n", i3c_reg_data);
+        if (i3c_reg_data == 0x00000001) {
+            VPRINTF(LOW, "I3C core in recovery mode\n");
+            break;
+        }
+        // Wait for I3C to show "Awaiting recovery image"
+        VPRINTF(LOW, "Waiting for 'Awaiting recovery image' rec status\n");
+        mcu_sleep(100);
 
     }
 
     //-- Read Recovery Status register for 0x00000001
-    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS);
-    if (i3c_reg_data != 0x00000001) {
-        VPRINTF(LOW, "I3C core recovery status is not set to 0x1\n");
-        err_count++;
+    if(i3c_reg_data != 0x1) {
+      handle_error("Error: I3C core never entered 'Awaiting recovery image' (0x1) actual mode: 0x%x", i3c_reg_data);
     }
+
 
     //-- writing RECOVERY_CTRL register
     i3c_reg_data = 0x00000000;
@@ -164,33 +173,26 @@ void main (void) {
     VPRINTF(LOW, "I3C core recovery control register set to IMAGE ACTIVATION\n");
 
     // -- Read Recovery Status register to indicate RECOVERY SUCCESS by reading value 0x00000003
-    while(1){
-        
-        loop_count = loop_count + 1;
-        if(loop_count >= 100) {
-          VPRINTF(LOW, "ERROR: Loop count beyond 100");
-          err_count++;
-          break;
-        }
+    for(int i = 0; i < 100; i++){
 
-        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS);
-        if( i3c_reg_data != 0x00000001 && i3c_reg_data != 0x00000002 && i3c_reg_data != 0x00000003 && i3c_reg_data != 0x00000004) { 
-            VPRINTF(LOW, "I3C core recovery status is not set to expected value: 0x%x\n", i3c_reg_data);
-            err_count++;
+        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS) & I3CCSR_I3C_EC_SECFWRECOVERYIF_RECOVERY_STATUS_DEV_REC_STATUS_MASK;
+        VPRINTF(LOW, "I3C core recovery status is 0x%x\n", i3c_reg_data);
+        if( i3c_reg_data != 0x00000001 && i3c_reg_data != 0x00000002 && i3c_reg_data != 0x00000003) { 
+            handle_error("Error: I3C core in unexpected RECOVERY_STATE: Expected: 0x1, 0x2, or 0x3 Actual: 0x%x", i3c_reg_data);
         }
         if (i3c_reg_data == 0x00000003) {
             VPRINTF(LOW, "I3C core recovery status is set to 0x3\n");
             break;
         }
         // Wait for the I3C core to finish the test
-        VPRINTF(LOW, "Waiting for recovery status update\n");
-        mcu_sleep(1000);
+        VPRINTF(LOW, "Waiting for recovery successful status");
+        mcu_sleep(100);
     }
 
-    if(err_count > 0) {
-      handle_error("Test fails due to error");
-    }
 
+    if(i3c_reg_data != 0x3) {
+      handle_error("Error: I3C core never entered 'Recovery successful' Expected: 0x3 Current status: 0x%x", i3c_reg_data);
+    }
 
     //Halt the core to wait for Caliptra to finish the test
     csr_write_mpmc_halt();
