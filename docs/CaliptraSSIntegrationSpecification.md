@@ -2510,18 +2510,18 @@ The following code snippets and schematic diagrams illustrate the CDC violations
 *Figure: Code snippet showing JTAG-originating CDC violations*
 
 el2_dbg.sv
-```
+```verilog
 rvdffe #(32) dmi_rddata_reg (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
 ```
 
 soc_ifc_top.sv
-```
+```verilog
 cptra_uncore_dmi_reg_rdata <= cptra_uncore_dmi_unlocked_reg_en ? cptra_uncore_dmi_unlocked_reg_rdata_in : 
                               cptra_uncore_dmi_locked_reg_en   ? cptra_uncore_dmi_locked_reg_rdata_in : cptra_uncore_dmi_reg_rdata;
 ```
 
 dmi_mux.v
-```
+```verilog
 // Read mux
 assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
 ```
