@@ -25,6 +25,8 @@ contents:
         - ../test_suites/mcu_test_rom_i3c_streaming_boot_sram/mcu_test_rom_i3c_streaming_boot_sram.yml
         - ../test_suites/mcu_axi_streaming_boot_test_rom/mcu_axi_streaming_boot_test_rom.yml
         - ../test_suites/mcu_i3c_reg_rd_wr_cptra_i3c_strap/mcu_i3c_reg_rd_wr_cptra_i3c_strap.yml
+        - ../test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox0_pass_data.yml
+        - ../test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox1_pass_data.yml
         - ../test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0.yml
         - ../test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox1.yml
         - ../test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize.yml
@@ -99,3 +101,4 @@ contents:
         - ../test_suites/smoke_test_fc_filter_rule_secret_read/smoke_test_fc_filter_rule_secret_read.yml
         - ../test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization.yml
         - ../test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization.yml
+        - ../test_suites/smoke_test_fc_ratchet_seed_lock_en/smoke_test_fc_ratchet_seed_lock_en.yml
