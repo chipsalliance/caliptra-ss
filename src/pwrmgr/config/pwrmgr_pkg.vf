@@ -1,4 +1,3 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
-${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv

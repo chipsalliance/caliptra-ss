@@ -78,7 +78,10 @@ void manuf_prod_provision() {
     wait_dai_op_idle(0);
 
     // Transition from TEST_UNLOCKED0 to MANUF
-    transition_state(MANUF, 0x1, 0x1, 0x1, 0x1, 1);
+    const uint32_t ones_token[4] = {1, 1, 1, 1};
+    const uint32_t twos_token[4] = {2, 2, 2, 2};
+
+    transition_state(MANUF, ones_token);
     wait_dai_op_idle(0);
 
     uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
@@ -99,7 +102,7 @@ void manuf_prod_provision() {
     }
 
     // Transition from MANUF to PROD.
-    transition_state(PROD, 0x2, 0x2, 0x2, 0x2, 1);
+    transition_state(PROD, twos_token);
     wait_dai_op_idle(0);
 
     act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
@@ -129,7 +132,7 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
 
     initialize_otp_controller();
 
