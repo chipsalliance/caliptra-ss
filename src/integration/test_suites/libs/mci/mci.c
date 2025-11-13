@@ -758,14 +758,14 @@ int get_total_register_count(void) {
  * @param dict Pointer to dictionary to initialize
  */
 void init_reg_exp_dict(mci_reg_exp_dict_t *dict) {
-    VPRINTF(LOW, "Initializing expected data dict\n");
+    VPRINTF(LOW, "Initializing exp data dict\n");
     dict->count = 0;
 
     // Add new entry if space available
     for (mci_register_group_t group = 0; group < REG_GROUP_COUNT; group++) {
         int count = get_register_count(group);
 
-        VPRINTF(MEDIUM, "Initializing %d registers in group %s\n", count, get_group_name(group) );
+        VPRINTF(MEDIUM, "Initializing %d regs in group %s\n", count, get_group_name(group) );
 
         if (group == REG_GROUP_KNOWN_VALUES) {
             for (int i = 0; i < count; i++) {
@@ -790,9 +790,9 @@ void init_reg_exp_dict(mci_reg_exp_dict_t *dict) {
 
 void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_register_group_t *groups, int num_groups) {
     if (reset_type == COLD_RESET ) {
-        VPRINTF(LOW, "** Clearing all expected values for cold reset\n");
+        VPRINTF(LOW, "** Clear all exp values for cold reset\n");
     } else if (reset_type == WARM_RESET) {
-        VPRINTF(LOW, "** Clearing expected values for non-sticky registers\n");
+        VPRINTF(LOW, "** Clear exp values for non-sticky regs\n");
     }
 
     // Create a bit mask for fast group lookup
@@ -937,7 +937,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
         if (reg_write) {
             value = err_data & ~value;
         }
-        VPRINTF(MEDIUM, "Read current register data = 0x%0x\n", err_data);
+        VPRINTF(MEDIUM, "Read current reg data = 0x%0x\n", err_data);
     }
 
     if (group_index == REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S) {
@@ -982,7 +982,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
 
     if (group_index == REG_GROUP_CAPABILITIES) {
         cap_lock_reg = get_register_info(REG_GROUP_CAPABILITIES, 2);
-        if (!get_reg_exp_data(dict, cap_lock_reg->address, &cap_lock_reg_value)) {
+        if (get_reg_exp_data(dict, cap_lock_reg->address, &cap_lock_reg_value)) {
             VPRINTF(ERROR, "Error: Did not find exp_data entry for %s\n", cap_lock_reg->name);
         } else {
             VPRINTF(MEDIUM, "Found exp_data for %s: 0x%x\n", cap_lock_reg->name, cap_lock_reg_value);
@@ -1221,7 +1221,7 @@ void init_excluded_registers(void) {
 
 void write_random_to_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_t *dict) {
     int count = get_register_count(group);
-    VPRINTF(LOW, "Writing random values to all %s registers (%d total):\n", get_group_name(group), count);
+    VPRINTF(LOW, "Wr rand to all %s regs (num=%d):\n", get_group_name(group), count);
 
     bool ro_reg = false;
     if (group == REG_GROUP_KNOWN_VALUES ||
@@ -1267,7 +1267,7 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
 
 void write_to_register_group_and_track(mci_register_group_t group, uint32_t write_data, mci_reg_exp_dict_t *dict) {
     int count = get_register_count(group);
-    VPRINTF(LOW, "Writing fixed value to all %s registers (%d total):\n", get_group_name(group), count);
+    VPRINTF(LOW, "Wr fixed value to all %s registers (num=%d):\n", get_group_name(group), count);
     
     for (int i = 0; i < count; i++) {
         const mci_register_info_t *reg = get_register_info(group, i);
@@ -1324,7 +1324,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
             ro_reg = true;
         }
     
-    VPRINTF(LOW, "Reading and verifying %s registers (%d total):\n", get_group_name(group), count);
+    VPRINTF(LOW, "Rd/verify %s regs (num=%d):\n", get_group_name(group), count);
     
     for (int i = 0; i < count; i++) {
         const mci_register_info_t *reg = get_register_info(group, i);
@@ -1558,7 +1558,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
         }
     }
     
-    VPRINTF(LOW, "Verification complete: %d register(s) matched, %d register(s) mismatched\n", 
+    VPRINTF(LOW, "Verif result: match=%d, mismatch=%d\n", 
            count - mismatch_count, mismatch_count);
     
     return mismatch_count;
@@ -1574,7 +1574,7 @@ void read_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_
     uint32_t read_data;
     int count = get_register_count(group);
     
-    VPRINTF(LOW, "Reading and tracking %s registers (%d total):\n", get_group_name(group), count);
+    VPRINTF(LOW, "Rd and track %s regs (num=%d):\n", get_group_name(group), count);
     
     for (int i = 0; i < count; i++) {
         const mci_register_info_t *reg = get_register_info(group, i);
