@@ -243,3 +243,21 @@ jobs:
         run: |
             export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
             $GITHUB_WORKSPACE/.github/scripts/pr_rdl_check.sh "origin/$TARGET_BR"
+
+  # Check for unused test directories
+  unused_tests_check:
+    name: Unused Tests Check
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout RTL repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            submodules: 'recursive'
+      
+      - name: Run Unused Tests Check
+        run: |
+            echo "Caliptra-SS Root: $GITHUB_WORKSPACE"
+            echo "Running unused tests check..."
+            $GITHUB_WORKSPACE/.github/scripts/find_unused_tests.sh $GITHUB_WORKSPACE 
+      

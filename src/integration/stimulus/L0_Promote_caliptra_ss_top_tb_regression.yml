@@ -15,6 +15,8 @@ contents:
         - ../test_suites/mcu_lmem_exe/mcu_lmem_exe.yml
         - ../test_suites/smoke_test_lcc_scrap/smoke_test_lcc_scrap.yml
         - ../test_suites/mcu_test_rom_i3c_reg_rd_wr/mcu_test_rom_i3c_reg_rd_wr.yml
+        - ../test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox0_pass_data.yml
+        - ../test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox1_pass_data.yml
         - ../test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0.yml
         - ../test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize.yml
         - ../test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox0_lock_return_one_during_zeroize.yml

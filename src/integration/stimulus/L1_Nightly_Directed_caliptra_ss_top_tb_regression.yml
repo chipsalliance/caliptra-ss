@@ -32,6 +32,8 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_test_rom_i3c_streaming_boot_sram/mcu_test_rom_i3c_streaming_boot_sram: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_axi_streaming_boot_test_rom/mcu_axi_streaming_boot_test_rom: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_i3c_reg_rd_wr_cptra_i3c_strap/mcu_i3c_reg_rd_wr_cptra_i3c_strap: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox0_pass_data: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_pass_data/ smoke_test_mcu_mbox1_pass_data: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox0: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox/smoke_test_mcu_mbox1: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_zeroize/smoke_test_mcu_mbox0_zeroize: { weight: 100 }
@@ -102,6 +104,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_OOO_exec/smoke_test_fc_filter_rule_OOO_exec: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_uds_fe/smoke_test_fc_filter_rule_uds_fe: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_zeroization_corrupt/caliptra_ss_fuse_ctrl_zeroization_corrupt: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_zeroization_reset/caliptra_ss_fuse_ctrl_zeroization_reset: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_secret_read/smoke_test_fc_filter_rule_secret_read: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization: { weight: 10 }
