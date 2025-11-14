@@ -407,7 +407,6 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
     }
     // Key request from SRAM scramblers
     { struct:  "sram_otp_key"
-      // TODO: would be nice if this could accept parameters.
       // Split this out into an issue.
       width:   "4"
       type:    "req_rsp"
