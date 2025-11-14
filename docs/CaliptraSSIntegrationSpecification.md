@@ -2559,7 +2559,7 @@ assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
 * cdc signal rd\_data       -module css\_mcu0\_dmi\_wrapper -stable
 
 ## Analysis of missing synchronizers
-* All of the signals, whether single-bit or multi-bit, originate from the CalitpraClockDomain clock and their endpoint is the RISCV JTAG clock domain in both the CORE and MCU.
+* All of the signals, whether single-bit or multi-bit, originate from the CaliptraClockDomain clock and their endpoint is the RISCV JTAG clock domain in both Caliptra Core and MCU.
 * The violations occur on the read path to the JTAG.
 * We only need to synchronize the controlling signal for this interface.
 * Inside the dmi\_wrapper, the dmi\_reg\_en and dmi\_reg\_rd\_en comes from dmi\_jtag\_to\_core\_sync, which is a 2FF synchronizer.
