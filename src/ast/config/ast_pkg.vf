@@ -1,3 +1,2 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
 ${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
-${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
