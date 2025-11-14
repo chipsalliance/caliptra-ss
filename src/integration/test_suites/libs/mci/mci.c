@@ -1558,7 +1558,7 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
         }
     }
     
-    VPRINTF(LOW, "Verif result: match=%d, mismatch=%d\n", 
+    VPRINTF(LOW, "Verif result: match:%d, mismatch:%d\n", 
            count - mismatch_count, mismatch_count);
     
     return mismatch_count;
