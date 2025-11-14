@@ -612,6 +612,8 @@ Integrator must connect following list of manager and subordinates to axi interc
     | 64'h5000_0000    | 64'h5FFF_FFFF    | MCU DCCM             | MCU Data Closely Coupled Memory. No external subordinates may be assigned address space in the same 256MiB region as the DCCM. For more details, refer to the VeeR EL2 Programmer's Reference Manual.   |
     | 64'h6000_0000    | 64'h6FFF_FFFF    | MCU PIC              | MCU Programmable Interrupt Controller. No external subordinates may be assigned address space in the same 256MiB region as the PIC. For more details, refer to the VeeR EL2 Programmer's Reference Manual.    |
 
+  - Integrators are permitted to define a new configuration for the MCU (as described in [MCU Core Configuration Customization](#MCU-Core-Configuration-Customization)), which may include reassigning these restricted regions to new addresses. In this case, the new address regions must adhere to this same requirement on avoiding conflicts.
+
 - Subordinate Address Map (reference only) / List of sub connected to Interconnect
 
   - The following address map is a **suggested address** map for subordinates for the subsystem design. It details the memory layout and the connections between different components within the Caliptra subsystem.
