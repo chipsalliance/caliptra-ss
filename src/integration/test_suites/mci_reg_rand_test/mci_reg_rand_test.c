@@ -41,6 +41,7 @@ void main(void) {
 
     VPRINTF(LOW, "==================\nMCI Registers Test\n==================\n\n");
 
+    mci_register_group_t mci_reg_group_rst;
     mci_register_group_t mci_reg_groups[] = {
         REG_GROUP_CAPABILITIES,
         REG_GROUP_STATUS,
@@ -99,6 +100,18 @@ void main(void) {
 
     } else if (rst_count == 2) {
 
+        // Reset expected data dictionary for lock and config registers that are
+        // used to control how other reg values are predicted during an access
+        // Currently, only these are used to predict write values:
+        //  * capabilities lock
+        // TODO
+        // These should also be used during access prediction, but are not currently.
+        // MBOX AXI USER LOCK registers should have test cases added.
+        //  * config done
+        //  * mbox axi user lock
+        mci_reg_group_rst = REG_GROUP_CAPABILITIES;
+        reset_exp_reg_data(&g_expected_data_dict, WARM_RESET, &mci_reg_group_rst, 1);
+
         // Read all registers, expect register values to be retained fr sticky registers
         for (int i = 0; i < num_groups; i++) {
             mci_register_group_t group = mci_reg_groups[i];
@@ -120,6 +133,18 @@ void main(void) {
         csr_write_mpmc_halt();
 
     } else if (rst_count == 3) {
+
+        // Reset expected data dictionary for lock and config registers that are
+        // used to control how other reg values are predicted during an access
+        // Currently, only these are used to predict write values:
+        //  * capabilities lock
+        // TODO
+        // These should also be used during access prediction, but are not currently.
+        // MBOX AXI USER LOCK registers should have test cases added.
+        //  * config done
+        //  * mbox axi user lock
+        mci_reg_group_rst = REG_GROUP_CAPABILITIES;
+        reset_exp_reg_data(&g_expected_data_dict, COLD_RESET, &mci_reg_group_rst, 1);
 
         // Read all registers, expect register values to be reset
         for (int i = 0; i < num_groups; i++) {
