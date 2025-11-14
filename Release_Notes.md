@@ -1,7 +1,7 @@
 # **Release Notes** #
 
 ## Caliptra Subsystem 2.0.1 Release notes
-_*Release Date: 2025/10/31*_
+_*Release Date: 2025/11/14*_
 
 HW & Integration spec updates coverage all the modules
 
@@ -13,7 +13,7 @@ HW & Integration spec updates coverage all the modules
   - [BUG FIX] Upgraded VeeR core to resolve bug in AXI-to-AHB bridge logic [#1055](https://github.com/chipsalliance/caliptra-rtl/issues/1055)
 
 ### 2. I3C
-- Upgraded I3C-core to version 1p4, including numerous bug fixes
+- Upgraded I3C-core from branch v1p4-patches, including numerous bug fixes
 - Validated subsystem interactions
 - Coverage analysis and bug fixes
 - FPGA validation of I3C
