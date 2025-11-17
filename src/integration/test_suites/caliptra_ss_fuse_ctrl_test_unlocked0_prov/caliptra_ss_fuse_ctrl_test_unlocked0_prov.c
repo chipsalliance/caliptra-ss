@@ -40,12 +40,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void test_unlocked0_provision() {
     const uint32_t sentinel = 0xA5;
 
-    uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-    uint32_t exp_state = calc_lc_state_mnemonic(TEST_UNLOCKED0);
-    if (act_state != exp_state) {
-        VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-        exit(1);
-    }
+    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)) exit(1);
 
     uint32_t read_value, zero;
     uint32_t rnd_fuse_addresses[NUM_PARTITIONS-1];
