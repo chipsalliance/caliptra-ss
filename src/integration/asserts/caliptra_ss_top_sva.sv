@@ -69,11 +69,16 @@ module caliptra_ss_top_sva
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
                    unpriv_dai_access |-> ##2 `FC_PATH.discard_fuse_write)
 
-  // When the fuse_ctrl access control filter discards an AXI write request, the DAI must signal a
-  // recoverable AccessError in its response (which becomes visible exactly one cycle after
-  // u_otp_ctrl_dai signals that the operation has completed).
+  // If the fuse_ctrl filter decides that an AXI transaction's DAI request should be discarded, the
+  // interface must signal a recoverable AccessError in its response (which becomes visible exactly
+  // one cycle after u_otp_ctrl_dai signals that the operation has completed).
+  //
+  // The property is structured as "We see a request, which the filter marks as discarded on the
+  // next cycle. Some time later, otp_operation_done gets asserted (responding to the request that
+  // the filter had marked as discarded). When that happens, we expect an error response."
   `CALIPTRA_ASSERT(FcAxiFilterDaiAccessError_A,
-                   `FC_PATH.discard_fuse_write ##1
+                   `FC_PATH.dai_req ##1
+                   `FC_PATH.discard_fuse_write ##0
                    `FC_PATH.otp_operation_done[->1] |=>
                    `FC_PATH.u_otp_ctrl_dai.error_o == {AccessError})
 
