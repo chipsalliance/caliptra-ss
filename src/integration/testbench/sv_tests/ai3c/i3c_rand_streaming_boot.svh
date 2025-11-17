@@ -339,6 +339,24 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 			#1us;
 
 		end
+		//-- reading device status
+		//-- DEVICE_STATUS ('d36)
+		data = new[8];
+		data[0] = 0;
+		test_log.substep($psprintf("Reading DEVICE_STATUS register checking for running recovery image"));
+		for(int i = 0; i < 100; i++) begin
+			i3c_read(recovery_target_addr, `I3C_CORE_DEVICE_STATUS, 7, data);
+			if(data[0] == 'h5) begin
+				test_log.substep($psprintf("Recovery image running : 'd %0d", data[0]));
+				break;
+			end
+			#25us;
+		end
+		if(data[0] != 'h5) begin	
+			test_log.substep($psprintf("Error : Recovery image did not start code: 0x%0h", data[0]));
+			err_count++;
+      $finish;
+		end
 
 		test_log.step("=============================================================");
 		test_log.step("Step 5: Recovery completed");
