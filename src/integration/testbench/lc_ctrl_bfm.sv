@@ -57,7 +57,6 @@ module lc_ctrl_bfm
     assign esc_scrap_state1 =  1'b0;
 
 
-    // TODO: This is used for keeping RMA or SCRAP strap to a desired value
     //-------------------------------------------------------------------
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)
@@ -68,7 +67,6 @@ module lc_ctrl_bfm
     //-------------------------------------------------------------------
 
     
-    // TODO: This is used for reset and power init, a temporal solution
     //-------------------------------------------------------------------
     always@(posedge clk or negedge reset_n) begin
         if (!reset_n)

@@ -15,7 +15,7 @@
 
 ${gen_comment}
 <%
-  from lib.common import bitarray # TODO: Split lib to common lib module
+  from lib.common import bitarray 
 
   from lib.reggen.access import HwAccess, SwRdAccess, SwWrAccess
   from lib.reggen.register import Register
