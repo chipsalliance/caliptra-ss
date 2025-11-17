@@ -39,9 +39,8 @@ void no_PPD_from_Raw_to_RMA(void) {
     uint32_t to_state   = 1;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
 
-    sw_transition_req(next_lc_state_30, raw_unlock_token);
+    transition_state(to_state, raw_unlock_token, false);
     
     reset_fc_lcc_rtl();
     from_state = 1;
@@ -49,8 +48,7 @@ void no_PPD_from_Raw_to_RMA(void) {
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
     // Pack the 5-bit repeated code
-    next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req_with_expec_error(next_lc_state_30, NULL);
+    transition_state(to_state, NULL, true);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in not RMA state!\n");
     reset_fc_lcc_rtl();
     enable_lcc_SVAs(); 
@@ -63,8 +61,6 @@ void PPD_from_Unlocked_to_RMA(void) {
     uint32_t to_state   = 1;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
-
 
     force_PPD_pin();
     from_state = 1;
@@ -72,8 +68,7 @@ void PPD_from_Unlocked_to_RMA(void) {
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
     // Pack the 5-bit repeated code
-    next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req(next_lc_state_30, NULL);
+    transition_state(to_state, NULL, false);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in RMA state!\n");
     reset_fc_lcc_rtl();       
 }
@@ -86,8 +81,6 @@ void PPD_from_MANUF_DEV_to_RMA(int MANUF_not_DEV) {
     uint32_t to_state   = 1;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
-
 
     from_state = 1;
     if (MANUF_not_DEV==1){
@@ -99,22 +92,18 @@ void PPD_from_MANUF_DEV_to_RMA(int MANUF_not_DEV) {
     }
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    // Pack the 5-bit repeated code
-    next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
 
     uint32_t token[4] = {token_value, token_value, token_value, token_value};
     uint32_t four_token[4] = {4, 4, 4, 4};
 
-    sw_transition_req(next_lc_state_30, token);
+    transition_state(to_state, token, false);
     reset_fc_lcc_rtl();
     force_PPD_pin();
     from_state = to_state;
     to_state   = 19;
     VPRINTF(LOW, "\n=== Transition from 0x%08x to 0x%08x ===\n", 
             from_state, to_state);
-    // Pack the 5-bit repeated code
-    next_lc_state_30 = calc_lc_state_mnemonic(to_state);   
-    sw_transition_req(next_lc_state_30, four_token);
+    transition_state(to_state, four_token, false);
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is in RMA state!\n");
     reset_fc_lcc_rtl();       
 }

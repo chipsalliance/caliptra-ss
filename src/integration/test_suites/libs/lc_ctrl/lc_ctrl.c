@@ -108,28 +108,28 @@ uint8_t use_token[] = {
     0  // from PROD -> SCRAP
 };
 
+// Repeatedly read the lc_ctrl status register until all the bits in mask are set. desc is a
+// human-readable description of what we are waiting for.
+static void masked_wait_for_status(const char *desc, uint32_t mask)
+{
+    uint32_t reg_value = 0;
+
+    VPRINTF(LOW, "LC_CTRL: Reading lc_ctrl status, waiting for %s.\n", desc);
+    while (mask &~ reg_value) {
+        VPRINTF(LOW, "DEBUG: Still waiting for bits in status: 0x%08x.\n", mask &~ reg_value);
+        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
+    }
+}
 uint32_t raw_unlock_token[4] = {
     CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN
 };
 
 void lcc_initialization(void) {
+    masked_wait_for_status("ready signal", CALIPTRA_SS_LC_CTRL_READY_MASK);
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready.\n");
 
-    uint32_t reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    uint32_t loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
-    while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_READY_MASK);
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = ((reg_value & CALIPTRA_SS_LC_CTRL_READY_MASK)>>1);
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is ready!\n");
-    reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-    loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
-    while(!loop_ctrl){
-        VPRINTF(LOW, "Read Register [0x%08x]: 0x%08x anded with 0x%08x \n", LC_CTRL_STATUS_OFFSET, reg_value, CALIPTRA_SS_LC_CTRL_INIT_MASK);
-        reg_value = lsu_read_32(LC_CTRL_STATUS_OFFSET);
-        loop_ctrl = (reg_value & CALIPTRA_SS_LC_CTRL_INIT_MASK);
-    }
-    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initalized!\n");
+    masked_wait_for_status("initialization", CALIPTRA_SS_LC_CTRL_INIT_MASK);
+    VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is initialized.\n");
 }
 
 void force_lcc_tokens(void) {
@@ -188,9 +188,7 @@ start_transition_command(uint32_t next_lc_state, const uint32_t token[4])
     VPRINTF(LOW, "Triggering transition command [0x%08x]: 0x1\n", LC_CTRL_TRANSITION_CMD_OFFSET);
     lsu_write_32(LC_CTRL_TRANSITION_CMD_OFFSET, 0x1);
 
-    for (uint16_t ii = 0; ii < 1000; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(1000);
 }
 
 static bool
@@ -246,26 +244,11 @@ poll_transition_status(bool expected_fail)
     return transition_successful ^ expected_fail;
 }
 
-uint32_t calc_lc_state_mnemonic(uint8_t state) {
-    uint32_t next_lc_state_5bit = state & 0x1F;
-    uint32_t targeted_state_5 =
-        (next_lc_state_5bit << 25) |
-        (next_lc_state_5bit << 20) |
-        (next_lc_state_5bit << 15) |
-        (next_lc_state_5bit << 10) |
-        (next_lc_state_5bit << 5)  |
-        next_lc_state_5bit;
-    return targeted_state_5;
-}
-
-// The guts of the transition request functions. The next_lc_state argument should be the "mnemonic"
-// (replicated) version of the state value. The transition is expected to report success iff
-// expected_fail is false.
-static bool sw_transition_req_core(uint32_t next_lc_state, const uint32_t token[4], bool expected_fail)
+bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
     start_transition_command(next_lc_state, token);
 
-    bool had_expected_behaviour = poll_transition_status(expected_fail);
+    bool had_expected_behaviour = poll_transition_status(expect_error);
 
     lsu_write_32(LC_CTRL_CLAIM_TRANSITION_IF_OFFSET, 0x0);
 
@@ -274,30 +257,27 @@ static bool sw_transition_req_core(uint32_t next_lc_state, const uint32_t token[
     return had_expected_behaviour;
 }
 
-bool sw_transition_req(uint32_t next_lc_state, const uint32_t token[4])
+bool start_state_transition(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
-    return sw_transition_req_core(next_lc_state, token, false);
+    uint32_t next_lc_state_5bit = next_lc_state & 0x1F;
+    uint32_t tgt_mnemonic = ((next_lc_state_5bit << 25) |
+                             (next_lc_state_5bit << 20) |
+                             (next_lc_state_5bit << 15) |
+                             (next_lc_state_5bit << 10) |
+                             (next_lc_state_5bit << 5)  |
+                             next_lc_state_5bit);
+
+    return sw_transition_req(tgt_mnemonic, token, expect_error);
 }
 
-bool transition_state(uint8_t next_lc_state, const uint32_t token[4])
+bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
 {
-    if (!sw_transition_req_core(calc_lc_state_mnemonic(next_lc_state), token, false)) return false;
+    if (!start_state_transition(next_lc_state, token, expect_error)) return false;
 
-    // The transition request succeeded, as expected. This means we've written
-    // the new state to OTP, but now the lc_ctrl FSM has dropped into the
-    // terminal PostTransSt. Inject a reset to "start again"
-    reset_fc_lcc_rtl();
-
-    return true;
-}
-
-bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t token[4])
-{
-    if (!sw_transition_req_core(calc_lc_state_mnemonic(next_lc_state), token, true)) return false;
-
-    // Although the transition request hasn't succeeded, it will have left the
-    // lifecycle state INVALID. Inject a reset to "start again" (using the state
-    // that was stored in fuses beforehand).
+    // Whether or not the transition request succeeded, we need to reset lc_ctrl
+    // and fuse_ctrl. This will read the lifecycle state from fuses again (which
+    // had either changed or not), moving from InvalidSt / PostTransSt to the
+    // value that is actually stored.
     reset_fc_lcc_rtl();
 
     return true;
@@ -305,7 +285,7 @@ bool transition_state_req_with_expec_error(uint8_t next_lc_state, const uint32_t
 
 bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
 
-    if (!transition_state(next_lc_state, token)) return false;
+    if (!transition_state(next_lc_state, token, false)) return false;
 
     wait_dai_op_idle(0);
     uint32_t lc_state_curr = read_lc_state();
@@ -318,55 +298,14 @@ bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
     return true;
 }
 
-void test_all_lc_transitions_no_RMA_no_SCRAP(void) {
-
-    // Example token for the Raw->TestUnlocked0 jump (128 bits).
-    // Adjust to match your real raw-unlock token if needed.
-    uint32_t token_value = 1;
-    // We start at index0=0 (Raw). We do transitions *from* each state
-    // to the *next* in the sequence. So we loop from i=0 to i=(N-2).
-    int n_states = sizeof(state_sequence)/sizeof(state_sequence[0]);
-    for (int i = 0; i < (n_states - 3); i++) {
-        uint32_t from_state = state_sequence[i];
-        uint32_t to_state   = state_sequence[i+1];
-        VPRINTF(LOW, "\n=== Transition from %08d to %08d ===\n",
-                from_state, to_state);
-        // Pack the 5-bit repeated code
-        uint32_t next_lc_state_30 = calc_lc_state_mnemonic(to_state);
-
-        const uint32_t zero_token[4] = {0, 0, 0, 0};
-        const uint32_t rep_token[4] = {token_value, token_value,
-                                       token_value, token_value};
-
-        const uint32_t *backing_token;
-        if (i == 0) backing_token = raw_unlock_token;
-        else if (i < 15) backing_token = zero_token;
-        else {
-            backing_token = rep_token;
-            ++token_value;
-        }
-
-        sw_transition_req(next_lc_state_30, use_token[i+1] ? backing_token : NULL);
-        reset_fc_lcc_rtl();
-    }
-
-    VPRINTF(LOW, "All transitions complete.\n");
-}
-
-bool sw_transition_req_with_expec_error(uint32_t next_lc_state, const uint32_t token[4])
-{
-    return sw_transition_req_core(next_lc_state, token, true);
-}
-
 void force_PPD_pin(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FORCE_RMA_SCRAP_PPD);
     VPRINTF(LOW, "MCU: RMA_SCRAP_PPD pin asserted high!\n");
 }
 
-uint32_t read_lc_state(void) {
-    for (uint32_t i = 0; i < 512; i++) {
-        __asm__ volatile ("nop");
-    }
+uint8_t read_lc_state(void) {
+    mcu_sleep(512);
+
     // Read LC_CTRL_LC_STATE register and mask out the reserved bits (bits 31:30)
     uint32_t reg_val = lsu_read_32(LC_CTRL_LC_STATE_OFFSET) & 0x3FFFFFFF;
     const char *state_str;
@@ -386,31 +325,32 @@ uint32_t read_lc_state(void) {
 
     // At this point, we will either have found the repeated value, or figured out there isn't one.
     switch (rep_val) {
-        case 0x0: state_str = "RAW"; break;
-        case 0x1: state_str = "TEST_UNLOCKED0"; break;
-        case 0x2: state_str = "TEST_LOCKED0"; break;
-        case 0x3: state_str = "TEST_UNLOCKED1"; break;
-        case 0x4: state_str = "TEST_LOCKED1"; break;
-        case 0x5: state_str = "TEST_UNLOCKED2"; break;
-        case 0x6: state_str = "TEST_LOCKED2"; break;
-        case 0x7: state_str = "TEST_UNLOCKED3"; break;
-        case 0x8: state_str = "TEST_LOCKED3"; break;
-        case 0x9: state_str = "TEST_UNLOCKED4"; break;
-        case 0xa: state_str = "TEST_LOCKED4"; break;
-        case 0xb: state_str = "TEST_UNLOCKED5"; break;
-        case 0xc: state_str = "TEST_LOCKED5"; break;
-        case 0xd: state_str = "TEST_UNLOCKED6"; break;
-        case 0xe: state_str = "TEST_LOCKED6"; break;
-        case 0xf: state_str = "TEST_UNLOCKED7"; break;
-        case 0x10: state_str = "DEV"; break;
-        case 0x11: state_str = "PROD"; break;
-        case 0x12: state_str = "PROD_END"; break;
-        case 0x13: state_str = "RMA"; break;
-        case 0x14: state_str = "SCRAP"; break;
-        case 0x15: state_str = "POST_TRANSITION"; break;
-        case 0x16: state_str = "ESCALATE"; break;
-        case 0x17: state_str = "INVALID"; break;
-        default:   state_str = "UNKNOWN"; break;
+        case RAW:             state_str = "RAW";             break;
+        case TEST_UNLOCKED0:  state_str = "TEST_UNLOCKED0";  break;
+        case TEST_LOCKED0:    state_str = "TEST_LOCKED0";    break;
+        case TEST_UNLOCKED1:  state_str = "TEST_UNLOCKED1";  break;
+        case TEST_LOCKED1:    state_str = "TEST_LOCKED1";    break;
+        case TEST_UNLOCKED2:  state_str = "TEST_UNLOCKED2";  break;
+        case TEST_LOCKED2:    state_str = "TEST_LOCKED2";    break;
+        case TEST_UNLOCKED3:  state_str = "TEST_UNLOCKED3";  break;
+        case TEST_LOCKED3:    state_str = "TEST_LOCKED3";    break;
+        case TEST_UNLOCKED4:  state_str = "TEST_UNLOCKED4";  break;
+        case TEST_LOCKED4:    state_str = "TEST_LOCKED4";    break;
+        case TEST_UNLOCKED5:  state_str = "TEST_UNLOCKED5";  break;
+        case TEST_LOCKED5:    state_str = "TEST_LOCKED5";    break;
+        case TEST_UNLOCKED6:  state_str = "TEST_UNLOCKED6";  break;
+        case TEST_LOCKED6:    state_str = "TEST_LOCKED6";    break;
+        case TEST_UNLOCKED7:  state_str = "TEST_UNLOCKED7";  break;
+        case MANUF:           state_str = "DEV";             break;
+        case PROD:            state_str = "PROD";            break;
+        case PROD_END:        state_str = "PROD_END";        break;
+        case RMA:             state_str = "RMA";             break;
+        case SCRAP:           state_str = "SCRAP";           break;
+        case POST_TRANSITION: state_str = "POST_TRANSITION"; break;
+        case ESCALATE:        state_str = "ESCALATE";        break;
+        case INVALID:         state_str = "INVALID";         break;
+
+        default: state_str = "UNKNOWN"; break;
     }
 
     VPRINTF(LOW, "LC_CTRL_LC_STATE register: 0x%08x (rep %d), Decoded state: %s\n",
@@ -420,10 +360,20 @@ uint32_t read_lc_state(void) {
     return rep_val;
 }
 
-uint32_t read_lc_counter(void) {
-    for (uint32_t i = 0; i < 512; i++) {
-        __asm__ volatile ("nop");
+bool check_lc_state(const char *desc, uint8_t exp_idx)
+{
+    uint8_t act_idx = read_lc_state();
+    if (act_idx != exp_idx) {
+        VPRINTF(LOW, "ERROR: Wrong lc_state. Expected %s (0x%x), but got 0x%x, from 0x%08.\n",
+                desc, exp_idx, act_idx, lsu_read_32(LC_CTRL_LC_STATE_OFFSET));
+        return false;
     }
+    return true;
+}
+
+uint8_t read_lc_counter(void) {
+    mcu_sleep(512);
+
     // Read LC_CTRL_LC_TRANSITION_CNT register and mask out the reserved bits (bits 31:5)
     uint32_t reg_val = lsu_read_32(LC_CTRL_LC_TRANSITION_CNT_OFFSET) & 0x1F;
 
