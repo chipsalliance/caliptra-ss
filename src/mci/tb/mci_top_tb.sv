@@ -23,14 +23,12 @@ module mci_top_tb
   parameter MCI_TB_MCU_SRAM_SIZE_KB = 512;
 
   //Mailbox configuration
-  parameter MCI_TB_MBOX0_DMI_DLEN_ADDR = 0; //TODO define
   parameter MCI_TB_MBOX0_SIZE_KB = 4;
   parameter MCU_MBOX_DATA_W = 32;
   localparam MCI_TB_MBOX0_DEPTH = (MCI_TB_MBOX0_SIZE_KB * KB * 8) / MCU_MBOX_DATA_W;
   localparam MCI_TB_MBOX0_ADDR_W = $clog2(MCI_TB_MBOX0_DEPTH);
   localparam MCI_TB_MBOX0_DEPTH_LOG2 = $clog2(MCI_TB_MBOX0_DEPTH);
 
-  parameter MCI_TB_MBOX1_DMI_DLEN_ADDR = 0; //TODO define
   parameter MCI_TB_MBOX1_SIZE_KB = 4;
   localparam MCI_TB_MBOX1_DEPTH = (MCI_TB_MBOX1_SIZE_KB * KB * 8) / MCU_MBOX_DATA_W;
   localparam MCI_TB_MBOX1_ADDR_W = $clog2(MCI_TB_MBOX1_DEPTH);
