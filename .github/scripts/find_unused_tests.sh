@@ -442,11 +442,12 @@ calculate_unused_tests() {
     done
     
     local total=${#ALL_TESTS[@]}
-    local directly=${#DIRECTLY_USED[@]}
-    local transitively=${#TRANSITIVELY_USED[@]}
-    local waived=${#WAIVED_TESTS[@]}
+    # Set default; check if variable is defined && set directly to length of env var exists
+    local directly=0; [ -n "${DIRECTLY_USED+x}" ] && directly=${#DIRECTLY_USED[@]}
+    local transitively=0; [ -n "${TRANSITIVELY_USED+x}" ] && transitively=${#TRANSITIVELY_USED[@]}
+    local waived=0; [ -n "${WAIVED_TESTS+x}" ] && waived=${#WAIVED_TESTS[@]}
     local all_used=$((directly + transitively + waived))
-    local unused=${#UNUSED_TESTS[@]}
+    local unused=0; [ -n "${UNUSED_TESTS+x}" ] && unused=${#UNUSED_TESTS[@]}
     
     echo "Total test directories: $total"
     echo "Used tests (directly): $directly"
@@ -468,11 +469,12 @@ display_results() {
     print_header "RESULTS"
     
     local total=${#ALL_TESTS[@]}
-    local directly=${#DIRECTLY_USED[@]}
-    local transitively=${#TRANSITIVELY_USED[@]}
-    local waived=${#WAIVED_TESTS[@]}
+    # Set default; check if variable is defined && set directly to length of env var exists
+    local directly=0; [ -n "${DIRECTLY_USED+x}" ] && directly=${#DIRECTLY_USED[@]}
+    local transitively=0; [ -n "${TRANSITIVELY_USED+x}" ] && transitively=${#TRANSITIVELY_USED[@]}
+    local waived=0; [ -n "${WAIVED_TESTS+x}" ] && waived=${#WAIVED_TESTS[@]}
     local all_used=$((directly + transitively + waived))
-    local unused=${#UNUSED_TESTS[@]}
+    local unused=0; [ -n "${UNUSED_TESTS+x}" ] && unused=${#UNUSED_TESTS[@]}
     local waived_no_justification=0
     local waived_invalid=0
     local waived_unnecessary=0
@@ -500,7 +502,7 @@ display_results() {
         echo -e "${RED}✗ UNUSED TESTS FOUND: $unused test(s) are not being used${NC}"
         echo -e "${RED}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo ""
-        for test in "${UNUSED_TESTS[@]}"; do
+        for test in "${UNUSED_TESTS[@]+"${UNUSED_TESTS[@]}"}"; do
             echo -e "  ${RED}✗${NC} $test"
         done
         echo ""
