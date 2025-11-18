@@ -403,7 +403,7 @@ check_unnecessary_waivers() {
         # Check if test is in directly used
         for used in "${DIRECTLY_USED[@]}"; do
             if [ "$test" = "$used" ]; then
-                echo -e "  ${YELLOW}WARNING: $test is waived but also used directly in CSV${NC}" >&2
+                echo -e "  ${RED}ERROR: $test is waived but also used directly in CSV${NC}" >&2
                 WAIVED_UNNECESSARY+=("$test")
                 EXIT_CODE=1
                 break
@@ -413,7 +413,7 @@ check_unnecessary_waivers() {
         # Check if test is in transitively used
         for used in "${TRANSITIVELY_USED[@]}"; do
             if [ "$test" = "$used" ]; then
-                echo -e "  ${YELLOW}WARNING: $test is waived but also used transitively${NC}" >&2
+                echo -e "  ${RED}ERROR: $test is waived but also used transitively${NC}" >&2
                 WAIVED_UNNECESSARY+=("$test")
                 EXIT_CODE=1
                 break
@@ -442,7 +442,7 @@ calculate_unused_tests() {
     done
     
     local total=${#ALL_TESTS[@]}
-    # Set default; check if variable is defined && set directly to length of env var exists
+    # Default to 0; only access array length if array is set (prevents unbound variable error)
     local directly=0; [ -n "${DIRECTLY_USED+x}" ] && directly=${#DIRECTLY_USED[@]}
     local transitively=0; [ -n "${TRANSITIVELY_USED+x}" ] && transitively=${#TRANSITIVELY_USED[@]}
     local waived=0; [ -n "${WAIVED_TESTS+x}" ] && waived=${#WAIVED_TESTS[@]}
@@ -454,7 +454,11 @@ calculate_unused_tests() {
     echo "Used tests (transitively): $transitively"
     echo "Waived tests: $waived"
     echo "Total used tests: $all_used"
-    echo -e "${RED}UNUSED tests: $unused${NC}"
+    if [ "$unused" -eq 0 ]; then
+        echo -e "${GREEN}UNUSED tests: $unused${NC}"
+    else
+        echo -e "${RED}UNUSED tests: $unused${NC}"
+    fi
     
     # Set exit code if there are unused tests
     if [ $unused -gt 0 ]; then
@@ -469,25 +473,15 @@ display_results() {
     print_header "RESULTS"
     
     local total=${#ALL_TESTS[@]}
-    # Set default; check if variable is defined && set directly to length of env var exists
+    # Default to 0; only access array length if array is set (prevents unbound variable error)
     local directly=0; [ -n "${DIRECTLY_USED+x}" ] && directly=${#DIRECTLY_USED[@]}
     local transitively=0; [ -n "${TRANSITIVELY_USED+x}" ] && transitively=${#TRANSITIVELY_USED[@]}
     local waived=0; [ -n "${WAIVED_TESTS+x}" ] && waived=${#WAIVED_TESTS[@]}
     local all_used=$((directly + transitively + waived))
     local unused=0; [ -n "${UNUSED_TESTS+x}" ] && unused=${#UNUSED_TESTS[@]}
-    local waived_no_justification=0
-    local waived_invalid=0
-    local waived_unnecessary=0
-    
-    if [ ${#WAIVED_NO_JUSTIFICATION[@]} -gt 0 ] 2>/dev/null; then
-        waived_no_justification=${#WAIVED_NO_JUSTIFICATION[@]}
-    fi
-    if [ ${#WAIVED_INVALID[@]} -gt 0 ] 2>/dev/null; then
-        waived_invalid=${#WAIVED_INVALID[@]}
-    fi
-    if [ ${#WAIVED_UNNECESSARY[@]} -gt 0 ] 2>/dev/null; then
-        waived_unnecessary=${#WAIVED_UNNECESSARY[@]}
-    fi
+    local waived_no_justification=0; [ -n "${WAIVED_NO_JUSTIFICATION+x}" ] && waived_no_justification=${#WAIVED_NO_JUSTIFICATION[@]}
+    local waived_invalid=0;  [ -n "${WAIVED_INVALID+x}" ] && waived_invalid=${#WAIVED_INVALID[@]}
+    local waived_unnecessary=0;  [ -n "${WAIVED_UNNECESSARY+x}" ] && waived_unnecessary=${#WAIVED_UNNECESSARY[@]}
     
     echo "Total test directories: $total"
     echo "Used tests (directly): $directly"
