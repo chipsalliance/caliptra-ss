@@ -64,9 +64,9 @@ void main (void) {
     VPRINTF(LOW, "MCU: Booting...\n");
     boot_mcu();
     boot_i3c_core();
-    trigger_caliptra_go();
+    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
-    wait_for_cptra_ready_for_mb_processing();
+    mcu_cptra_poll_mb_ready();
 
     //-- setting bypass mode for I3C
     i3c_reg_data = 0x00000000 | I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_MASK; 
@@ -88,11 +88,15 @@ void main (void) {
 
     // Read DEVICE_ID
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_ID_0);
-    // TODO : add data checking 
+    if(i3c_reg_data != 1) {
+        handle_error("Error : DEVICE_ID_0 incorrect: expected: 0x%x actual: 0x%x\n", 1, i3c_reg_data);
+    }
 
     // Read HW_STATUS
     i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_HW_STATUS);
-    // TODO : add data checking 
+    if(i3c_reg_data != 0x00000100) {
+        handle_error("Error : HW_STATUS incorrect: expected: 0x%x actual: 0x%x\n", 0x100, i3c_reg_data);
+    }
 
 
     // waiting for recovery start

@@ -210,8 +210,11 @@ import tb_top_pkg::*;
                 console_buffer = "";  // Clear buffer
             end
         end
+        if(!rst_l) begin
+            error_injection_mode <= '{default: 1'b0};
+        end
         // ECC error injection
-        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
             $display("Injecting single bit DCCM error");
             error_injection_mode.dccm_single_bit_error <= 1'b1;
         end
@@ -223,9 +226,6 @@ import tb_top_pkg::*;
             $display("Disable ECC error injection");
             error_injection_mode <= '0;
         end
-        // ECC error injection - FIXME
-        error_injection_mode.dccm_single_bit_error <= 1'b0;
-        error_injection_mode.dccm_double_bit_error <= 1'b0;
 
         //TODO: randomly select which error bit to force for more complete testing
         // MCI error injection
@@ -1034,6 +1034,7 @@ endtask
 
 
 caliptra_ss_veer_sram_export veer_sram_export_inst (
+    .sram_error_injection_mode(error_injection_mode),
     .cptra_ss_mcu0_el2_mem_export
 );
 

@@ -89,8 +89,9 @@ void main (void) {
             // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
             lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
             // We should see: OTP E**or detected.
-            transition_state_req_with_expec_error(lc_state_next,
-                                                  token_type == ZER ? NULL : tokens[token_type]);
+            transition_state(lc_state_next,
+                             token_type == ZER ? NULL : tokens[token_type],
+                             true);
             goto epilogue;
         }
     }
