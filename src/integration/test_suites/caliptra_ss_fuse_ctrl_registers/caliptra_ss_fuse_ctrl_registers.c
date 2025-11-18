@@ -115,7 +115,10 @@ void main (void) {
         if (partition_idx == UINT32_MAX) break;
         value = lsu_read_32(read_lock_csr_mapping[lockable_idx]);
         if ((value & 0x1) != 0x1) {
-            VPRINTF(LOW, "ERROR: incorrect value in read lock register %08X: exp: %08X act: %08X\n", read_lock_registers[i], 0x1, value);
+            VPRINTF(LOW,
+                    ("ERROR: incorrect value in read lock register %08X: "
+                     "exp: %08X act: %08X\n"),
+                    read_lock_csr_mapping[lockable_idx], 0x1, value);
             goto epilogue;
         }
     }
