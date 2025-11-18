@@ -132,7 +132,7 @@ package otp_ctrl_reg_pkg;
   parameter int VendorTestPartitionOffset = 952;
   parameter int VendorTestPartitionSize = 64;
   parameter int VendorTestOffset = 952;
-  parameter int VendorTestSize = 32;
+  parameter int VendorTestSize = 56;
   parameter int VendorTestPartitionDigestOffset = 1008;
   parameter int VendorTestPartitionDigestSize = 8;
   parameter int VendorHashesManufPartitionOffset = 1016;

@@ -825,7 +825,7 @@
     { name: "VendorTestSize",
       desc: "Size of VENDOR_TEST",
       type: "int",
-      default: "32",
+      default: "56",
       local: "true"
     },
     { name: "VendorTestPartitionDigestOffset",

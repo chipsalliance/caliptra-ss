@@ -46,7 +46,7 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 |         |                                   |            |      32bit       |                                   CPTRA_CORE_RUNTIME_SVN                                    |     0x394      |     16     |
 |         |                                   |            |      32bit       |                                 CPTRA_CORE_SOC_MANIFEST_SVN                                 |     0x3A4      |     16     |
 |         |                                   |            |      32bit       |                               CPTRA_CORE_SOC_MANIFEST_MAX_SVN                               |     0x3B4      |     4      |
-|    9    |       VENDOR_TEST_PARTITION       |     64     |      32bit       |                                         VENDOR_TEST                                         |     0x3B8      |     32     |
+|    9    |       VENDOR_TEST_PARTITION       |     64     |      32bit       |                                         VENDOR_TEST                                         |     0x3B8      |     56     |
 |         |                                   |            |      64bit       |             [VENDOR_TEST_PARTITION_DIGEST](#Reg_vendor_test_partition_digest_0)             |     0x3F0      |     8      |
 |   10    |   VENDOR_HASHES_MANUF_PARTITION   |     64     |      32bit       |                                 CPTRA_CORE_VENDOR_PK_HASH_0                                 |     0x3F8      |     48     |
 |         |                                   |            |      32bit       |                                  CPTRA_CORE_PQC_KEY_TYPE_0                                  |     0x428      |     4      |

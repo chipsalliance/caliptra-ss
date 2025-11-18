@@ -540,7 +540,7 @@
             items: [
                 {
                     name: "VENDOR_TEST",
-                    size: "32",
+                    size: "56",
                     desc: '''
                     This is a partition used to test if FUSE programming is done accordingly.
                     It has 14 32-bit vendor test write location and one 64-bit for their digest values.
