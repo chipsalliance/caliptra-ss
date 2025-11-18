@@ -100,7 +100,7 @@ addrmap mci_reg {
                        [br][lb]15:12[rb] Major version
                        [br][lb]11: 8[rb] Minor version
                        [br][lb] 7: 0[rb] Patch version";
-               sw=r;} MC_GENERATION[16]=0x2100;
+               sw=r;} MC_GENERATION[16]=0x2101;
     } HW_REV_ID;
     reg {
         name = "MCU FW RevID";

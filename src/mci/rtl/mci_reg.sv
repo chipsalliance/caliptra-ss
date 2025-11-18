@@ -22301,7 +22301,7 @@ module mci_reg (
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
     assign readback_array[2][31:1] = '0;
-    assign readback_array[3][15:0] = (decoded_reg_strb.HW_REV_ID && !decoded_req_is_wr) ? 16'h2100 : '0;
+    assign readback_array[3][15:0] = (decoded_reg_strb.HW_REV_ID && !decoded_req_is_wr) ? 16'h2101 : '0;
     assign readback_array[3][31:16] = '0;
     for(genvar i0=0; i0<2; i0++) begin
         assign readback_array[i0*1 + 4][31:0] = (decoded_reg_strb.FW_REV_ID[i0] && !decoded_req_is_wr) ? field_storage.FW_REV_ID[i0].REV_ID.value : '0;

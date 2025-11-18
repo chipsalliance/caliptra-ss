@@ -1123,7 +1123,7 @@ int get_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t *value
 uint32_t get_known_register_value(uint32_t reg_addr) {
     switch (reg_addr) {
         case SOC_MCI_TOP_MCI_REG_HW_REV_ID:
-            return 0x00002100;  // SS Version 2.1
+            return 0x00002101;  // SS Version 2.1.1
             
         default:
             return 0x00000000;
