@@ -42,7 +42,7 @@ CDC:
 
 RDC:
  - Real Intent Meridian
-    - 2022.A.P18.3
+    - 2022.A.P10.2
 
 Synthesis:
  - Synopsys Design Compiler (R) NXT 
