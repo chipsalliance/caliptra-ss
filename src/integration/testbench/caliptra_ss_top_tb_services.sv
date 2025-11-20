@@ -186,18 +186,28 @@ import tb_top_pkg::*;
     localparam NUM_AGG_ERROR_FATAL = 7;
     localparam NUM_AGG_ERROR_NON_FATAL = 6;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
+    // Add buffer for console output only
+    string console_buffer = "";
 
     always @(negedge clk) begin
-        // console Monitor
-        if( mailbox_data_val & mailbox_write) begin
-            if (prev_mailbox_data[7:0] inside {8'h0A,8'h0D}) begin
-                $fwrite(fd,"%0t - ", $time);
-                $write("%0t - ", $time);
+        // Modified console Monitor
+        if (mailbox_data_val & mailbox_write) begin
+            // Write to file character-by-character (immediate)
+            if (prev_mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                $fwrite(fd, "%0t - ", $time);
             end
-            $fwrite(fd,"%c", mailbox_data[7:0]);
-            $write("%c", mailbox_data[7:0]);
-            if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
+            $fwrite(fd, "%c", mailbox_data[7:0]);
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
                 $fflush(fd);
+            end
+            
+            // Buffer for console output (complete lines only)
+            console_buffer = {console_buffer, string'(mailbox_data[7:0])};
+            
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                // Write complete line to console
+                $write("%0t - %s", $time, console_buffer);
+                console_buffer = "";  // Clear buffer
             end
         end
         // ECC error injection
