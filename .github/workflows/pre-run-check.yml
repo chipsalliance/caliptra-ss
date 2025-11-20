@@ -280,6 +280,5 @@ jobs:
       
       - name: Run Unused Tests Check
         run: |
-            echo "Caliptra-SS Root: $GITHUB_WORKSPACE"
-            echo "Running verify_regression_ymls.sh..."
-            $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh $GITHUB_WORKSPACE 
+            export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
+            $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh
