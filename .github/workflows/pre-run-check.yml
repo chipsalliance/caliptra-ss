@@ -261,3 +261,20 @@ jobs:
             echo "Running unused tests check..."
             $GITHUB_WORKSPACE/.github/scripts/find_unused_tests.sh $GITHUB_WORKSPACE 
       
+
+  # Check for unused test directories
+  verify_tests_added_check:
+    name: Verify regression YAML files are up-to-date
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout RTL repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            submodules: 'recursive'
+      
+      - name: Run Unused Tests Check
+        run: |
+            echo "Caliptra-SS Root: $GITHUB_WORKSPACE"
+            echo "Running verify_regression_ymls.sh..."
+            $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh $GITHUB_WORKSPACE 
