@@ -272,6 +272,11 @@ jobs:
         with:
             fetch-depth: 0
             submodules: 'recursive'
+
+      - name: Install Python dependencies
+        run: |
+            python3 -m pip install \
+                ruamel.yaml
       
       - name: Run Unused Tests Check
         run: |
