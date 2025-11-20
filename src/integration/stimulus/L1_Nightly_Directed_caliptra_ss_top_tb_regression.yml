@@ -102,6 +102,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_OOO_exec/smoke_test_fc_filter_rule_OOO_exec: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_uds_fe/smoke_test_fc_filter_rule_uds_fe: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_zeroization_corrupt/caliptra_ss_fuse_ctrl_zeroization_corrupt: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_fuse_ctrl_zeroization_reset/caliptra_ss_fuse_ctrl_zeroization_reset: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_secret_read/smoke_test_fc_filter_rule_secret_read: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization: { weight: 10 }
