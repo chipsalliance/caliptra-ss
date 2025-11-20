@@ -2278,7 +2278,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 ## Parameters and defines
 
-| Parameter          | Default Value                         | Description                                 |
+| Parameter/Define   | Default Value                         | Description                                 |
 |--------------------|---------------------------------------|---------------------------------------------|
 | `AxiDataWidth`     | `AXI_DATA_WIDTH                       | Width (in bits) of the AXI data bus         |
 | `AxiAddrWidth`     | `AXI_ADDR_WIDTH                       | Width (in bits) of the AXI address bus      |
@@ -2288,6 +2288,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `DctAw`            | i3c_pkg::DctAw                        | Device context address width (i3c_pkg)      |
 | `CsrAddrWidth`     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
 | `CsrDataWidth`     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
+| `DISABLE_INPUT_FF` | Not Defined                           | DO NOT DEFINE. NO LONGER VALID CONFIG. If defined will remove synchronizer on SCL input signal causing CDC issue.       |
+
 
 ## Interface
 
