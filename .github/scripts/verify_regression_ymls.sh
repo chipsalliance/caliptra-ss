@@ -72,8 +72,7 @@ elif [ -n "${GITHUB_WORKSPACE:-}" ]; then
     CALIPTRA_SS_ROOT="$GITHUB_WORKSPACE"
 else
     echo "Error: CALIPTRA_SS_ROOT not specified and not set as environment variable" >&2
-    echo "Usage: $0 [CALIPTRA_SS_ROOT]" >&2
-    echo "Run '$0 --help' for more information" >&2
+    show_help
     exit 1
 fi
 
