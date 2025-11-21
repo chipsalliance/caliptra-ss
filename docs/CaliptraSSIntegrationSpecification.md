@@ -497,7 +497,7 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
   - **Signal Name** `cptra_ss_clk_i`
   - **Required Frequency** 333* MHz to 400 MHz
     - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
-    - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequence. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
+    - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
     - This was changed from 170 MHz floor due to CDC issue found in I3C core:
        - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
        - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
