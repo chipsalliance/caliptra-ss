@@ -197,6 +197,28 @@ void main (void) {
       handle_error("Error: I3C core never entered 'Recovery successful' Expected: 0x3 Current status: 0x%x", i3c_reg_data);
     }
 
-    //Halt the core to wait for Caliptra to finish the test
+    // -- Read Device Status register to indicate RUNNING RECOVERY IMAGE by reading value 0x00000005
+    for(int i = 0; i < 100; i++){
+
+        i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0) & I3CCSR_I3C_EC_SECFWRECOVERYIF_DEVICE_STATUS_0_DEV_STATUS_MASK;
+        VPRINTF(LOW, "I3C core device status is 0x%x\n", i3c_reg_data);
+        if (i3c_reg_data == 0x00000005) {
+            VPRINTF(LOW, "I3C core running recovery image\n");
+            break;
+        }
+        // Wait for the I3C core to finish the test
+        VPRINTF(LOW, "Waiting for running recovery image\n");
+        mcu_sleep(100);
+    }
+
+
+    if(i3c_reg_data != 0x5) {
+      handle_error("Error: I3C core never entered 'Runing Recovery Image' Expected: 0x5 Current status: 0x%x", i3c_reg_data);
+    }
+
+    // End test with a success if we get here. Caliptra will be waiting for test to end
+    SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
+
+    //Halt the core after indicating test passed
     csr_write_mpmc_halt();
 }
