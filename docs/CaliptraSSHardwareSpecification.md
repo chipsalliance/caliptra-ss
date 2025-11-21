@@ -1,4 +1,3 @@
-<img width="1198" height="1225" alt="image" src="https://github.com/user-attachments/assets/4662c538-0c23-4ce1-b843-6664a5ed99f7" />
 <div align="center">
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
