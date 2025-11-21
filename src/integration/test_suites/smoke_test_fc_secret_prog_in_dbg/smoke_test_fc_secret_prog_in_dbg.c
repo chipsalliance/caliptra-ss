@@ -78,19 +78,19 @@ void program_UDS_FE_secret_prod_partition() {
     if (uds_read_data[0]!= read_data[0] || uds_read_data[1] != read_data[1]) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", uds_read_data[0], read_data[0]);
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", uds_read_data[1], read_data[1]);
-        exit(1);
+        handle_error("Data mismatch detected when reading UDS fuse in debug mode");
     }
     dai_rd(fe0_base_address, &read_data[0], &read_data[1], 64, 0);
     if (fe0_read_data[0]!= read_data[0] || fe0_read_data[1] != read_data[1]) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", fe0_read_data[0], read_data[0]);
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", fe0_read_data[1], read_data[1]);
-        exit(1);
+        handle_error("Data mismatch detected when reading FE0 fuse in debug mode");
     }
     dai_rd(fe3_last_address, &read_data[0], &read_data[1], 64, 0);
     if (fe3_read_data[0]!= read_data[0] || fe3_read_data[1] != read_data[1]) {
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", fe3_read_data[0], read_data[0]);
         VPRINTF(LOW, "ERROR: incorrect fuse data: expected: %08X actual: %08X\n", fe3_read_data[1], read_data[1]);
-        exit(1);
+        handle_error("Data mismatch detected when reading FE3 fuse in debug mode");
     }
 
 
@@ -107,20 +107,13 @@ void main (void) {
 
     uint32_t lc_state_curr = read_lc_state();
     if (lc_state_curr != 1) {
-        VPRINTF(LOW, "ERROR: LCC is not initialized from TEST_UNLOCKED0\n");
-        goto epilogue;
+        handle_error("ERROR: LCC is not initialized from TEST_UNLOCKED0\n");
     }
 
     program_UDS_FE_secret_prod_partition();
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    mcu_sleep(160);
 
-    epilogue:
-        for (uint8_t i = 0; i < 160; i++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
 
     SEND_STDOUT_CTRL(0xff);
 }

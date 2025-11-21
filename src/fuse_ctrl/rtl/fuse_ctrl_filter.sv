@@ -48,6 +48,7 @@ fc_table_state_t table_fsm_current_st, table_fsm_next_st;
 logic first_write_addr, second_write_addr, write_event, trigger_table_check, partition_cmd_axi_addr, all_same_id;
 
 logic [FC_TABLE_NUM_RANGES-1:0] wr_allowed_vec;
+logic caliptra_secret_access;
 logic wr_req_allowed;
 logic [31:0] latched_fuse_addr;
 logic [31:0]  req_axi_user_id, latched_data_id0, latched_data_id1, latched_addr_id, latched_cmd_id;
@@ -70,19 +71,24 @@ always_ff @(posedge clk_i or negedge rst_n_i) begin
         latched_addr_id         <= '0;
         latched_cmd_id          <= '0;
         discard_fuse_write_o    <= '0;
+        caliptra_secret_access  <= '0;
     end else begin
         table_fsm_current_st <= table_fsm_next_st;
         discard_fuse_write_o <= discard_fuse_write;
         // If clear_records is asserted, reset all latched registers
         if (clear_records) begin
-            latched_fuse_addr <= '0;
-            latched_data_id0  <= '0;
-            latched_data_id1  <= '0;
-            latched_addr_id   <= '0;
-            latched_cmd_id    <= '0;
+            latched_fuse_addr       <= '0;
+            latched_data_id0        <= '0;
+            latched_data_id1        <= '0;
+            latched_addr_id         <= '0;
+            latched_cmd_id          <= '0;
+            caliptra_secret_access  <= '0;
         end else begin
-            if (latch_addr)
-                latched_fuse_addr <= core_axi_wr_req.wdata;
+            if (latch_addr) begin
+                latched_fuse_addr       <= core_axi_wr_req.wdata;
+                caliptra_secret_access  <= (core_axi_wr_req.wdata >= CALIPTRA_SECRET_ACCESS_LOWER_ADDR && core_axi_wr_req.wdata <= CALIPTRA_SECRET_ACCESS_UPPER_ADDR) ? 1'b1 : 1'b0;
+            end
+
             if (latch_data_id0) begin
                 latched_data_id0 <= req_axi_user_id;
                 latched_data_id1 <= req_axi_user_id;
@@ -254,7 +260,7 @@ always_comb begin
             if (! wr_req_allowed || !all_same_id)begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
-            end else if ((wr_req_allowed && all_same_id) && cptra_in_debug_mode_i) begin
+            end else if (cptra_in_debug_mode_i && caliptra_secret_access) begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
             end else if (write_event) begin

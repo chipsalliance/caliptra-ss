@@ -356,6 +356,12 @@ package otp_ctrl_pkg;
     '{ lower_addr: 32'h00000000, upper_addr: 32'h00000040}  // MCU core
   };
 
+
+  // The range of addresses that are available to the Caliptra core but not the MCU (corresponding
+  // to a gap between two ranges in access_control_table). The upper bound is inclusive.
+  localparam int CALIPTRA_SECRET_ACCESS_LOWER_ADDR = 32'h48;
+  localparam int CALIPTRA_SECRET_ACCESS_UPPER_ADDR = 32'hC8;
+
     //------------------------------------------------------------------
     // Typedef for PRIM GENERIC Module Inputs
     //------------------------------------------------------------------
