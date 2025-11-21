@@ -1416,7 +1416,7 @@ Access to MCI's DMI space (MCU Uncore) is split into two different levels of sec
 
 | **Access** 	| **Description** 	|
 | :--------- 	| :--------- 	|
-| **Debug Locked**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).|
+| **Debug Locked**|  Always accessible over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).|
 | **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked|
 
 Illegal accesses will result in writes being dropped and reads returning 0.
