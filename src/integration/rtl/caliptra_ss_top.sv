@@ -360,6 +360,7 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_hw_debug_en_i;
     // Inputs from OTP_Ctrl
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
+    logic cptra_in_debug_mode;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -556,6 +557,8 @@ module caliptra_ss_top
 
 
     logic mci_intr;
+
+    assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
@@ -1235,6 +1238,7 @@ module caliptra_ss_top
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
+        .cptra_in_debug_mode_i      (cptra_in_debug_mode),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
