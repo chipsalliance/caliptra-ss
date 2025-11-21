@@ -13,8 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# Parse command line arguments
-
 
 set -e
 
@@ -110,20 +108,6 @@ echo "Stimulus Dir:     $STIMULUS_DIR"
 echo "Generation Script: $GEN_SCRIPT"
 echo ""
 
-# Check if we're in a git repo
-if ! git -C "$CALIPTRA_SS_ROOT" rev-parse --git-dir > /dev/null 2>&1; then
-    echo -e "${RED}ERROR: Not in a git repository${NC}"
-    exit 1
-fi
-
-# Check for uncommitted changes in stimulus directory
-if ! git -C "$CALIPTRA_SS_ROOT" diff --quiet "$STIMULUS_DIR"/*.yml 2>/dev/null && \
-   ! git -C "$CALIPTRA_SS_ROOT" diff --cached --quiet "$STIMULUS_DIR"/*.yml 2>/dev/null; then
-    echo -e "${YELLOW}WARNING: You have uncommitted changes in stimulus YAML files${NC}"
-    echo "This check will still proceed, but results may be misleading."
-    echo ""
-fi
-
 # Create a temporary directory
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
@@ -141,10 +125,11 @@ if ! python3 "$GEN_SCRIPT"; then
     echo -e "${RED}ERROR: Generation script failed${NC}"
     exit 1
 fi
+
 echo ""
 
 # Compare files
-echo "Comparing generated files with originals..."
+echo "Checking for changes in YAML files..."
 echo "--------------------------------------------------"
 DIFF_FOUND=0
 
@@ -169,7 +154,7 @@ for backup_file in "$TEMP_DIR"/*.yml; do
     fi
 done
 
-# Check for new files
+# Check for newly created files
 for current_file in "$STIMULUS_DIR"/*.yml; do
     filename=$(basename "$current_file")
     if [ ! -f "$TEMP_DIR/$filename" ]; then
@@ -186,8 +171,11 @@ else
     echo -e "${RED}FAILURE: Regression YAML files are NOT in sync${NC}"
     echo ""
     echo "To fix this issue:"
-    echo "  1. If the changes are intentional, commit the updated YAML files"
-    echo "  2. If not, run: python3 $GEN_SCRIPT"
-    echo "  3. Review and commit the changes"
+    echo "  1. Review the changes above"
+    echo "  2. Add/remove the appropriate tests in the CSV file:"
+    echo "     $STIMULUS_DIR/testsuites/caliptra_ss_master_test_list.csv"
+    echo "  3. Run the generation script to update YAML files:"
+    echo "     python3 $GEN_SCRIPT"
+    echo "  4. Commit both the updated CSV and YAML files"
     exit 1
 fi
