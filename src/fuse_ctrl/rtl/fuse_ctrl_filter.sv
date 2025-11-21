@@ -27,6 +27,7 @@ module fuse_ctrl_filter
     input wire clk_i,
     input wire rst_n_i,
     input wire fc_init_done,
+    input wire cptra_in_debug_mode_i,
 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
@@ -251,6 +252,9 @@ always_comb begin
             latch_cmd_id      = 1'b0;
             clear_records     = 1'b0;
             if (! wr_req_allowed || !all_same_id)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
+            end else if ((wr_req_allowed && all_same_id) && cptra_in_debug_mode_i) begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
             end else if (write_event) begin
