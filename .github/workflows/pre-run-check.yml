@@ -262,7 +262,7 @@ jobs:
             $GITHUB_WORKSPACE/.github/scripts/find_unused_tests.sh $GITHUB_WORKSPACE 
       
 
-  # Check for unused test directories
+  # Check test YMLs match CSV source file
   verify_tests_added_check:
     name: Verify regression YAML files are up-to-date
     runs-on: ubuntu-22.04
