@@ -261,3 +261,24 @@ jobs:
             echo "Running unused tests check..."
             $GITHUB_WORKSPACE/.github/scripts/find_unused_tests.sh $GITHUB_WORKSPACE 
       
+
+  # Check test YMLs match CSV source file
+  verify_tests_added_check:
+    name: Verify regression YAML files are up-to-date
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout RTL repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            submodules: 'recursive'
+
+      - name: Install Python dependencies
+        run: |
+            python3 -m pip install \
+                ruamel.yaml
+      
+      - name: Run Verify Test YML Check
+        run: |
+            export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
+            $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh
