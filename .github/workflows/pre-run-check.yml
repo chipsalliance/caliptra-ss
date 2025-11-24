@@ -278,7 +278,7 @@ jobs:
             python3 -m pip install \
                 ruamel.yaml
       
-      - name: Run Unused Tests Check
+      - name: Run Verify Test YML Check
         run: |
             export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
             $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh
