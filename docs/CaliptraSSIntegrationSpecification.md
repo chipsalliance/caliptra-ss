@@ -708,7 +708,7 @@ This section describes an example implementation of integrator machine check rel
 
 This example is applicable to scenarios where an integrator may need control of or visibility into SRAM errors for purposes of reliability or functional safety. In such cases, integrators may introduce additional layers of error injection, detection, and correction logic surrounding SRAMs. The addition of such logic is transparent to the correct function of Caliptra Subsystem, and removes integrator dependency on Caliptra Subsystem components for error logging or injection.
 
-Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(calitpra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
+Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(caliptra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
 
 *Figure: Example machine check reliability implementation*
 
@@ -2502,7 +2502,7 @@ In an unconstrained environment, several CDC violations are anticipated. CDC ana
     - Comment out code under if condition for CDC analysis
 
 ## Analysis of missing synchronizers
-* All of the signals, whether single-bit or multi-bit, originate from the CalitpraClockDomain clock and their endpoint is the JTAG clock domain.
+* All of the signals, whether single-bit or multi-bit, originate from the CaliptraClockDomain clock and their endpoint is the RISCV JTAG clock domain in both Caliptra Core and MCU.
 * The violations occur on the read path to the JTAG.
 * We only need to synchronize the controlling signal for this interface.
 * Inside the dmi\_wrapper, the dmi\_reg\_en and dmi\_reg\_rd\_en comes from dmi\_jtag\_to\_core\_sync, which is a 2FF synchronizer.
@@ -2557,6 +2557,11 @@ assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
 * cdc signal reg\_wr\_data  -module css\_mcu0\_dmi\_wrapper -stable
 * cdc signal reg\_wr\_addr  -module css\_mcu0\_dmi\_wrapper -stable
 * cdc signal rd\_data       -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal jtag\_dmi\_req_i -module dmi\_cdc -stable
+* cdc signal jtag\_dmi\_resp_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_req_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_resp_i -module dmi\_cdc -stable
+
 
 # Reset Domain Crossing
 
