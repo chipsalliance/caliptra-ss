@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -57,6 +58,34 @@ static uint32_t hashed_tokens[8][4] = {
     { 0x536a2f30, 0xf47b04d1, 0x2cf01443, 0xf0113a15 }  // value = 7
 };
 
+// Perform num_writes 64-bit writes to fuses, starting at tgt_addr. The values to
+// be written are from src32, an array of 4*num_writes 32-bit words.
+//
+// Returns true on success, or stops early and returns false on failure.
+bool dai_write_fuses(uint32_t        tgt_addr,
+                     const uint32_t *src32,
+                     unsigned        num_writes)
+{
+    for (unsigned i = 0; i < num_writes; i++) {
+        if (!dai_wr(tgt_addr + 8 * i, src32[2 * i], src32[2 * i + 1], 64, 0))
+            return false;
+    }
+    return true;
+}
+
+// Write hashed_tokens into fuses, starting at base_addr, lock the partition by
+// computing a digest, then inject a reset
+bool write_tokens(uint32_t base_addr)
+{
+    // Write the tokens into the partition. These 8 tokens each take two 64-bit
+    // writes.
+    if (!dai_write_fuses(base_addr, hashed_tokens, 16)) return false;
+    if (!calculate_digest(base_address, 0)) return false;
+
+    reset_fc_lcc_rtl();
+    return wait_dai_op_idle(0);
+}
+
 /**
  * This function steps through all the test unlock/lock states starting
  * from TEST_UNLOCKED0. Before that all unlock tokens are written into
@@ -64,54 +93,50 @@ static uint32_t hashed_tokens[8][4] = {
  * partition which is then locked by computing the hardware digest.
  * Note this is a routine with a long running time.
  */
-void iterate_test_unlock_states() {
+bool iterate_test_unlock_states(void) {
+    if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
 
-    const uint32_t base_address = CPTRA_SS_TEST_UNLOCK_TOKEN_1;
+    initialize_otp_controller();
 
-    // Write the tokens into the partition.
-    for (uint32_t i = 0; i < 3; i++) {
-        dai_wr(base_address + 0x10*i, hashed_tokens[i][0], hashed_tokens[i][1], 64, 0);
-        dai_wr(base_address + 0x08 + 0x10*i, hashed_tokens[i][2], hashed_tokens[i][3], 64, 0);
-    }
+    if (!write_tokens(CPTRA_SS_TEST_UNLOCK_TOKEN_1)) return false;
 
-    calculate_digest(base_address, 0);
+    for (unsigned tgt_state = TEST_LOCKED0; state <= TEST_UNLOCKED2; state++) {
+        VPRINTF(LOW, "LC_CTRL: transition to %d state\n", tgt_state);
 
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+        // The lifecycle states are TEST_UNLOCKED0, TEST_LOCKED0, ... and we
+        // want to iterate through (some of) them in order. Divide by two to get
+        // a "level" value (0 in the two states above).
+        unsigned tgt_level = (tgt_state - TEST_LOCKED0) / 2;
 
-    for (uint32_t state = TEST_LOCKED0, token = 0x0; state <= TEST_UNLOCKED2; token += (state & 0x1), state++) {
-        VPRINTF(LOW, "LC_CTRL: transition to %d state\n", state);
+        // Is the target lifecycle state unlocked?
+        bool tgt_is_unlocked = (tgt_state - TEST_LOCKED0) & 1;
 
-        transition_state(state, token, 0, 0, 0, state & 0x1 /* No token required for TEST_LOCKED states*/ );
-        wait_dai_op_idle(0);
+        // We have set up the fuses with hashed versions of rather trivial
+        // tokens: TEST_UNLOCKED<n> has token {n, 0, 0, 0}. Form that unhashed
+        // token here.
+        const uint32_t token[4] = { tgt_level, 0, 0, 0 };
 
-        uint32_t act_state = lsu_read_32(LC_CTRL_LC_STATE_OFFSET);
-        uint32_t exp_state = calc_lc_state_mnemonic(state);
-        if (act_state != exp_state) {
-            VPRINTF(LOW, "ERROR: incorrect state: exp: %08X, act: %08X\n", act_state, exp_state);
-            exit(1);
-        }
+        // We actually only need to pass a token if the tgt_state is unlocked.
+        // If not, set token_ptr to NULL.
+        const uint32_t *token_ptr = tgt_is_unlocked ? token : NULL;
+
+        // Now perform the transition
+        if (!transition_state_check(tgt_state, token_ptr)) return false;
     }
 }
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-    
-    lcc_initialization();    
-    grant_mcu_for_fc_writes(); 
-    
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    
-    initialize_otp_controller();
 
-    iterate_test_unlock_states();
+    lcc_initialization();
+    grant_mcu_for_fc_writes();
 
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    bool test_passed = iterate_test_unlock_states();
 
-    SEND_STDOUT_CTRL(0xff);
+    mcu_sleep(160);
+
+    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }

@@ -215,7 +215,7 @@ always_comb begin: state_branch
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
-            else if (CLPTR_PROD_DEBUG_UNLOCK_AND) begin // TODO: Be careful for fault injections
+            else if (CLPTR_PROD_DEBUG_UNLOCK_AND) begin
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end

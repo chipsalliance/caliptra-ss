@@ -292,15 +292,16 @@ void recovery_sequence() {
 
     read_image_activation();
 
+    VPRINTF(LOW, "CPTRA: Recovery Sequence completed successfully updating RECOVERY STATUS\n");
     update_recovery_ctrl(0x00010000); // Clear Image Activation
     update_recovery_status(0x2);      // Booting recovery image
     update_recovery_status(0x3);      // Recovery successful
 
+    VPRINTF(LOW, "CPTRA: Updating Device status to 0x5 - Running Recovery Image\n");
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 0x5 | i3c_reg_data;
     update_device_status(i3c_reg_data); // 0x5: Running Recovery Image
 
-    VPRINTF(LOW, "CPTRA: Recovery Sequence completed successfully\n");
         
 }
 

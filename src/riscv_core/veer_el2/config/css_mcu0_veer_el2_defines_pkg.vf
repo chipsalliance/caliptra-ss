@@ -5,4 +5,3 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/include/css_mcu0_el2_def.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv
-${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv

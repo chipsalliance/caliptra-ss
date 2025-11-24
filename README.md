@@ -1,5 +1,5 @@
 # Caliptra Subsystem Overview
-_*Last Update: 2025/04/30*_
+_*Last Update: 2025/10/12*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
@@ -7,7 +7,8 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 
 [caliptra-ss](https://github.com/chipsalliance/caliptra-ss)<BR>
 [Caliptra Subsystem v2.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_0/regs/?p=)<BR>
-[Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
+[Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_1/regs/?p=)<BR>
+[Caliptra Subsystem Example Register Map (main branch)](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
 
 ## **Tools Used** ##
 
@@ -41,7 +42,7 @@ CDC:
 
 RDC:
  - Real Intent Meridian
-    - 2022.A.P18.3
+    - 2022.A.P10.2
 
 Synthesis:
  - Synopsys Design Compiler (R) NXT 
@@ -94,6 +95,8 @@ Required for simulation:<BR>
 `CALIPTRA_SS_ROOT`: Defines the absolute path to the Project repository root (called "caliptra-ss"). Recommended to define as `${CALIPTRA_WORKSPACE}/chipsalliance/caliptra-ss`.<BR>
 `CALIPTRA_ROOT`: Defines the absolute path to the Caliptra submodule root. Must be defined as `${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl`.<BR>
 `ADAMSBRIDGE_ROOT`: Defines the absolute path to the Adams-Bridge submodule root. Must be defined as `${CALIPTRA_ROOT}/submodules/adams-bridge`.<BR>
+`CALIPTRA_PRIM_ROOT`: Set to $CALIPTRA_ROOT/src/caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
+`CALIPTRA_PRIM_MODULE_PREFIX`: Set to caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
 `CALIPTRA_AXI4PC_DIR`: Path to the directory that contains the ARM AXI4 Protocol Checker file. This file must be acquired from the Arm website by integrators, as it contains copyrighted materials.<BR>
 `AVERY_HOME`: Installation root for Avery VIP<BR>
 `AVERY_PLI`: Directory within AVERY\_HOME that contains avery\_pli<BR>
@@ -114,8 +117,11 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 │   └── compilespecs.yml
 ├── docs
 │   ├── Caliptra_Gen2_SS_TestPlan.xlsx
+│   ├── CaliptraSSCoverage.md
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
+│   ├── CaliptraSSReleaseChecklist.md
+│   ├── coverage_reports
 │   └── images
 ├── LICENSE
 ├── README.md

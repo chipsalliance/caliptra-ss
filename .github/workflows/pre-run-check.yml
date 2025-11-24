@@ -18,7 +18,7 @@ on:
   workflow_call:
 
 env:
-  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks" "andrea-caforio" "nasahlpa" "andreaskurth" )
+  MSFT_ACTORS: ( "Nitsirks" "calebofearth" "mojtaba-bisheh" "anjpar" "upadhyayulakiran" "nileshbpat" "ekarabu" "clayton8" "kedjenks" "andrea-caforio" "nasahlpa" "andreaskurth" "rswarbrick" )
 
 jobs:
   # Fail if any compile.yml has been modified
@@ -95,32 +95,50 @@ jobs:
 
       - name: Gen File List
         run: |
-            find "$GITHUB_WORKSPACE" -type f \( -name "*.sv" \
-                                             -o -name "*.svh" \
-                                             -o -name "*.rdl" \
-                                             -o -name "*.json" \
-                                             -o -name "*.v" \
-                                             -o -name "*.vh" \
-                                             -o -name "*.rsp" \
-                                             -o -name "*.s" \
-                                             -o -name "*.c" \
-                                             -o -name "*.cpp" \
-                                             -o -name "*.h" \
-                                             -o -name "*.hex" \
-                                             -o -name "*.ld" \
-                                             -o -name "*.gdb" \
-                                             -o -name "*.yml" \
-                                             -o -name "*.sh" \
-                                             -o -name "*.py" \
-                                             -o -name "pr_timestamp" \) \
-                                             ! -path "*.github/workflows/*" \
-                                             ! -path "*.git/*" | LC_COLLATE=C sort -o $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
-            sed -i "s,^$GITHUB_WORKSPACE/,," $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
-            echo "Found $(wc -l $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt) source code files to hash"
-            echo -e "First five files:\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
-            cat -n $GITHUB_WORKSPACE/.github/workflow_metadata/file_list.txt
-            echo -e ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
+            # Compute a list of all the files that we think might contribute to the released design.
+            # Note that this doesn't include things like documentation in Markdown files (.md). Nor
+            # does it include template files (with suffixes like .sv.tpl): we only check things that
+            # immediately contribute to the hardware/software design.
+            #
+            # The list of paths will all have a ./ prefix that we don't want. Pipe it through "cut
+            # -c 3-" (start at the third character of each line).
+            #
+            # Finally, the paths will be in an unconstrained order (probably based on inode number).
+            # Sort them alphabetically, setting LC_COLLATE=C to ensure this isn't affected by any
+            # environment settings.
+            cd "$GITHUB_WORKSPACE"
+            file_list=.github/workflow_metadata/file_list.txt
+            find -type f                             \
+                 \(                                  \
+                      -name "*.sv"                   \
+                   -o -name "*.svh"                  \
+                   -o -name "*.rdl"                  \
+                   -o -name "*.json"                 \
+                   -o -name "*.v"                    \
+                   -o -name "*.vh"                   \
+                   -o -name "*.rsp"                  \
+                   -o -name "*.s"                    \
+                   -o -name "*.c"                    \
+                   -o -name "*.cpp"                  \
+                   -o -name "*.h"                    \
+                   -o -name "*.hex"                  \
+                   -o -name "*.ld"                   \
+                   -o -name "*.gdb"                  \
+                   -o -name "*.yml"                  \
+                   -o -name "*.sh"                   \
+                   -o -name "*.py"                   \
+                   -o -name "pr_timestamp"           \
+                 \)                                  \
+                 ! -path "*.github/workflows/*"      \
+                 ! -path "*.git/*" |                 \
+                cut -c 3- |                          \
+                LC_COLLATE=C sort -o $file_list
 
+            # Print the list of files (this will be long!), using cat -n so that they are numbered.
+            num_files=$(wc -l $file_list)
+            echo "Found $num_files source code files to hash. Here is the list:"
+            echo
+            cat -n $file_list
 
       - name: Check Timestamp
         env:
@@ -225,3 +243,42 @@ jobs:
         run: |
             export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
             $GITHUB_WORKSPACE/.github/scripts/pr_rdl_check.sh "origin/$TARGET_BR"
+
+  # Check for unused test directories
+  unused_tests_check:
+    name: Unused Tests Check
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout RTL repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            submodules: 'recursive'
+      
+      - name: Run Unused Tests Check
+        run: |
+            echo "Caliptra-SS Root: $GITHUB_WORKSPACE"
+            echo "Running unused tests check..."
+            $GITHUB_WORKSPACE/.github/scripts/find_unused_tests.sh $GITHUB_WORKSPACE 
+      
+
+  # Check test YMLs match CSV source file
+  verify_tests_added_check:
+    name: Verify regression YAML files are up-to-date
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout RTL repo
+        uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
+            submodules: 'recursive'
+
+      - name: Install Python dependencies
+        run: |
+            python3 -m pip install \
+                ruamel.yaml
+      
+      - name: Run Verify Test YML Check
+        run: |
+            export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
+            $GITHUB_WORKSPACE/.github/scripts/verify_regression_ymls.sh

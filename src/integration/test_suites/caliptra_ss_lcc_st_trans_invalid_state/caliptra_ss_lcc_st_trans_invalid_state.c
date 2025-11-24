@@ -88,20 +88,26 @@ void body(void)
 
     // Request the transition, passing a zero token (since no token is valid anyway) and expecting
     // an error to come out.
-    transition_state_req_with_expec_error(lc_state_next, 0, 0, 0, 0, 1);
+    uint32_t zero_token[4] = {0, 0, 0, 0};
+    transition_state(lc_state_next, zero_token, true);
     wait_dai_op_idle(0);
 
-    // At this point, we shouldn't have managed a transition and the current LC state should still
-    // be cur_lc_state.
     uint32_t new_lc_state = read_lc_state();
 
-    // Check if we are still in the starting state.
-    if (cur_lc_state != new_lc_state) {
-        VPRINTF(LOW, "ERROR: We unexpectedly managed an LC state transition %d -> %d\n",
-                cur_lc_state, new_lc_state);
-    } else {
-        VPRINTF(LOW, "Info: Test OK\n");
+    // Check that the transition request was handled, which is either shown by the lifecycle state
+    // staying unchanged or by it jumping to the terminal PostTrans state. That, in turn, can be
+    // seen in the lc_state register, which should now read as cur_lc_state or POST_TRANSITION. The
+    // latter is a repetition of the the 5-bit DecLcStPostTrans value (defined in
+    // lc_ctrl_state_pkg.sv), which is 21.
+    if (new_lc_state != cur_lc_state && new_lc_state != 21) {
+        VPRINTF(LOW,
+                ("ERROR: Transition request has not moved us to POST_TRANSITION. "
+                 "The underlying LC state is %d, not %d or 21.\n"),
+                new_lc_state, cur_lc_state);
+        return;
     }
+
+    VPRINTF(LOW, "Info: Test OK\n");
 }
 
 void main (void) {
