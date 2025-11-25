@@ -28,6 +28,7 @@ module fuse_ctrl_filter
     input wire rst_n_i,
     input wire fc_init_done,
     input wire FIPS_ZEROIZATION_CMD_i,
+    input wire cptra_in_debug_mode_i,
 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
@@ -350,6 +351,10 @@ always_comb begin
             if (fuse_cmd == DaiRead && write_event)begin
                 discard_fuse_write= 1'b0;
                 table_fsm_next_st = IDLE_ST;
+
+            end else if (cptra_in_debug_mode_i && caliptra_secret_access && write_event)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 
             end else if (fuse_cmd == DaiWrite && write_event && !wr_req_allowed)begin
                 discard_fuse_write= 1'b1;
