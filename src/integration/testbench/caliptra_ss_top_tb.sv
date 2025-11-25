@@ -193,9 +193,7 @@ module caliptra_ss_top_tb
                 frequency = lcc_clock_selection;
             end
             case (frequency)
-                160: core_clk = #(3.125) ~core_clk; // 160MHz -> 6.25ns period, 3.125ns half-period
-                167: core_clk = #(3.0) ~core_clk;   // 167MHz -> 6.0ns period, 3.0ns half-period
-                170: core_clk = #(2.941) ~core_clk; // 170MHz -> 6.0ns period, 2.941ns half-period
+                333: core_clk = #(1.501) ~core_clk; // 333MHz -> ~3.003s period, ~1.501.ns half-period
                 400: core_clk = #(1.25) ~core_clk;  // 400MHz -> 2.5ns period, 1.25ns half-period
                 500: core_clk = #(1.0) ~core_clk;   // 500MHz -> 2.0ns period, 1.0ns half-period
                 1000: core_clk = #(0.5) ~core_clk;   // 1000MHz -> 1.0ns period, 0.5ns half-period
