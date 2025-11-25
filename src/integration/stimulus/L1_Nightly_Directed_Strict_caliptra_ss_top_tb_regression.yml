@@ -95,7 +95,8 @@ contents:
         - ../test_suites/smoke_test_fc_filter_rule_OOO_exec/smoke_test_fc_filter_rule_OOO_exec.yml
         - ../test_suites/smoke_test_fc_filter_rule_uds_fe/smoke_test_fc_filter_rule_uds_fe.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_zeroization_corrupt/caliptra_ss_fuse_ctrl_zeroization_corrupt.yml
-        - ../test_suites/caliptra_ss_fuse_ctrl_zeroization_reset/caliptra_ss_fuse_ctrl_zeroization_reset.yml
         - ../test_suites/smoke_test_fc_filter_rule_secret_read/smoke_test_fc_filter_rule_secret_read.yml
         - ../test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization.yml
         - ../test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization.yml
+        - ../test_suites/smoke_test_fc_ratchet_seed_lock_en/smoke_test_fc_ratchet_seed_lock_en.yml
+        - ../test_suites/smoke_test_fc_secret_prog_in_dbg/smoke_test_fc_secret_prog_in_dbg.yml
