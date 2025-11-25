@@ -97,7 +97,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mci_prod_dbg/smoke_test_mci_prod_dbg: { weight: 1 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_partition_write_zeroize/smoke_test_fc_partition_write_zeroize: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_volatile_lock/smoke_test_fc_ratchet_seed_volatile_lock: { weight: 10 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_write_read/smoke_test_fc_ratchet_seed_write_read: { weight: 50 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_write_read/smoke_test_fc_ratchet_seed_write_read: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_secret_partition_zeroization/smoke_test_fc_secret_partition_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_OOO_exec/smoke_test_fc_filter_rule_OOO_exec: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_uds_fe/smoke_test_fc_filter_rule_uds_fe: { weight: 10 }
@@ -107,3 +107,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_mcu_uds_fe_zeroization/smoke_test_fc_mcu_uds_fe_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_en/smoke_test_fc_ratchet_seed_lock_en: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_secret_prog_in_dbg/smoke_test_fc_secret_prog_in_dbg: { weight: 100 }
