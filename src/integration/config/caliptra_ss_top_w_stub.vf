@@ -552,9 +552,8 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_param_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_core.v
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_core.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_reg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac/rtl/hmac_lfsr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac_drbg/rtl/hmac_drbg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/ecc/rtl/ecc_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/ecc/rtl/ecc_defines_pkg.sv

@@ -36,9 +36,9 @@ set dlen_bytes [expr {$dlen_words * 4}]
 puts "TAP: Read Debug Module Status Register..."
 set val [riscv dmi_read $dmstatus_addr]
 puts "TAP: dmstatus: $val"
-if {($val & 0x00000c00) == 0} {
-    echo "The hart is halted!"
-    # shutdown error
+if {($val & 0x00000c00) != 0} {
+    echo "Debug is already unlocked!"
+    shutdown error
 }
 puts ""
 
@@ -125,6 +125,17 @@ if {$failure} {
     puts "TAP: MANUF DBG returned an unexpected status: $rsp_val"
     shutdown error
 } 
+
+puts "TAP: Enabling Debug Module Control in riscv"
+riscv dmi_write $dmcontrol_addr 0x00000001
+
+puts "Read Debug Module Status Register..."
+set val [riscv dmi_read $dmstatus_addr]
+puts "dmstatus: $val"
+if {($val & 0x00000c00) == 0} {
+    echo "Debug did not unlock as expected!"
+    shutdown error
+}
 
 puts "TAP: MANUF DBG completed successfully."
 shutdown
