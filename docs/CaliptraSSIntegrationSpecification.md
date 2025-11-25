@@ -2,8 +2,8 @@
   <img src="./images/OCP_logo.png" alt="OCP Logo">
 </div>
 
-<h1 align="center"> Caliptra Subsystem Gen 2.0 Integration Specification </h1>
-<h3 align="center"> Version 1p0-rc1 </h3>
+<h1 align="center"> Caliptra Subsystem Integration Specification </h1>
+<h3 align="center"> Version 2p1 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -19,7 +19,7 @@
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
-    - [Caliptra Subsystem Top Interface \& signals](#caliptra-subsystem-top-interface--signals)
+    - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
     - [Clock](#clock)
     - [Reset](#reset)
@@ -46,6 +46,12 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+  - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
+  - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
+  - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
+    - [Split Memory Mapping](#split-memory-mapping)
+    - [Side Effect Considerations](#side-effect-considerations)
+    - [iCache Considerations](#icache-considerations)
   - [MCU Programming interface](#mcu-programming-interface)
     - [MCU Linker Script Integration](#mcu-linker-script-integration)
     - [MCU External Interrupt Connections](#mcu-external-interrupt-connections)
@@ -61,12 +67,18 @@
   - [Programming interface](#programming-interface-1)
   - [Readout Sequence](#readout-sequence)
   - [Sequences: Reset, Boot](#sequences-reset-boot)
+  - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
+  - [FIPS Zeroization Sequence For ECC](#fips-zeroization-sequence-for-ecc)
+  - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
   - [Overview](#overview-4)
   - [Paramteres \& Defines](#paramteres--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
+    - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
+      - [Why These Straps Are Needed](#why-these-straps-are-needed)
+      - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
@@ -101,6 +113,7 @@
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
+      - [MCU Mailbox Doorbell Command DLEN](#mcu-mailbox-doorbell-command-dlen)
       - [MCI Debug Lock Status](#mci-debug-lock-status)
       - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
       - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
@@ -131,10 +144,11 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
-  - [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
+- [CDC analysis and constraints](#cdc-analysis-and-constraints)
     - [Known Issues](#known-issues)
-    - [CDC Constraint](#cdc-constraint)
-    - [Analysis Result](#analysis-result)
+  - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers)
+  - [CDC analysis conclusions](#cdc-analysis-conclusions)
+  - [CDC constraints](#cdc-constraints)
 - [Reset Domain Crossing](#reset-domain-crossing)
   - [Reset Architecture](#reset-architecture)
   - [Reset Domain Stamping and Constraints](#reset-domain-stamping-and-constraints)
@@ -143,6 +157,8 @@
 - [Synthesis](#synthesis)
   - [Recommended LINT rules](#recommended-lint-rules)
     - [Known Lint Issue](#known-lint-issue)
+      - [Signal Width Mismatches](#signal-width-mismatches)
+      - [Undriven signals](#undriven-signals)
 - [Terminology](#terminology)
 
 
@@ -157,6 +173,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
 | Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
+| Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
 
 </div>
 
@@ -207,9 +224,12 @@ By performing these design and verification tasks, the integrator ensures that t
 | [css_mcu0_dmi_jtag_to_core_sync.v](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_jtag_to_core_sync.v)      |Replace with a technology-specific sync cell. This synchronizer implements edge detection logic using a delayed flip flop on the output domain to produce a pulse output. Integrators must take care to ensure logical equivalence when replacing this logic with custom cells.|
 |[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvclkhdr/css_mcu0_rvoclkhdr with a technology-specific clock gater. Modifying this file may not be necessary if integrators override the clock gate module that is used by setting TECH_SPECIFIC_EC_RV_ICG.|
 |[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvsyncss (and css_mcu0_rvsyncss_fpga if the design will be implemented on an FPGA) with a technology-specific sync cell.|
+|[src/integration/rtl/caliptra_ss_includes.svh](../src/integration/rtl/caliptra_ss_includes.svh)|Modify the parameter `CPTRA_SS_ROM_SIZE_KB` to define the correct size of the MCU ROM in integrated design. No other parameters in this file are permitted to be modified. |
 
 
 [Caliptra Core RTL modifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#integrator-rtl-modification-requirements)
+
+It is mandatory that any build processes used (e.g. simulation, lint, synthesis) define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`, as described in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md). This ensures that Caliptra provides all Subsystem-related features and configuration. Example build scripts provided in the Caliptra Subsystem repository (such as [Makefile](../tools/scripts/Makefile)) demonstrate how this might be performed.
 
 ## Design Considerations
 
@@ -270,11 +290,12 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_mci_soc_config_axi_user_i`       | MCI SOC Configuration AXI user strap input             |
 | External | input     | 32     | `cptra_ss_strap_caliptra_dma_axi_user_i`           | Caliptra DMA AXI user strap input                 |
 | External | input     | 32     | `cptra_ss_strap_mcu_reset_vector_i`       | MCU reset vector strap input             |
-| External | input     | 32     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
-| External | input     | 32     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
-| External | input     | 32     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
-| External | input     | 32     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
-| External | input     | 32     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_caliptra_base_addr_i`     | Caliptra base address strap input        |
+| External | input     | 64     | `cptra_ss_strap_mci_base_addr_i`          | MCI base address strap input             |
+| External | input     | 64     | `cptra_ss_strap_recovery_ifc_base_addr_i` | Recovery interface base address strap input |
+| External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i` | External staging area base address input |
+| External | input     | 64     | `cptra_ss_strap_otp_fc_base_addr_i`       | OTP FC base address strap input          |
+| External | input     | 64     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
 | External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
 | External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
@@ -285,6 +306,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 16     | `cptra_ss_strap_key_release_key_size_i`   | OCP L.O.C.K. MEK byte size. Expected to be 0x40.  |
 | External | input     | 64     | `cptra_ss_strap_key_release_base_addr_i`  | OCP L.O.C.K. MEK release base address.  |
 | External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i`            | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling hardware features specific to OCP L.O.C.K. such as AES Keyvault write path, Keyvault filtering rules, and Key Release via AXI DMA. Must be driven with a constant value 0 or 1.  |
+| External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i`            | Base AXI address for the external staging area used by Caliptra Core FW to stage FW images due to reduced MBOX SRAM size. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area) for more details.    |
+
 
 ### AXI Interface (axi_if)
 
@@ -325,7 +348,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | `bready`        | 1                      | output          | input           |
 
 
-### Caliptra Subsystem Top Interface & signals
+### Caliptra Subsystem Top Interface & Signals
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
 |:---------|:----------|:------|:-------------------------------------|:-----------------------------------------|
@@ -386,6 +409,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | na    | `cptra_ss_lc_axi_wr_rsp_o`           | LC controller AXI write response output  |
 | External | input     | na    | `cptra_ss_lc_axi_rd_req_i`           | LC controller AXI read request input     |
 | External | output    | na    | `cptra_ss_lc_axi_rd_rsp_o`           | LC controller AXI read response output   |
+| External | input     | 128   | `cptra_ss_raw_unlock_token_hashed_i` | Hashed token for RAW unlock              |
 | External | input     | na    | `cptra_ss_otp_core_axi_wr_req_i`     | OTP controller AXI write request input   |
 | External | output    | na    | `cptra_ss_otp_core_axi_wr_rsp_o`     | OTP controller AXI write response output |
 | External | input     | na    | `cptra_ss_otp_core_axi_rd_req_i`     | OTP controller AXI read request input    |
@@ -434,6 +458,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 1     | `cptra_ss_dbg_manuf_enable_o`    | Indication that the debug is unlocked for manufacturing state and this is set by Caliptra Core        |
 | External | output    | 64    | `cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o`    | Indication that the debug is unlocked for production state. Each bit represents a debug level. Currently, 8-bit is supported with Caliptra ROM |
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
+| External | output    | na     | `cptra_ss_lc_escalate_en_o`    | Life-cycle controller signal indicating that escalation is enabled at LCC and FC       |
+| External | output    | na     | `cptra_ss_lc_check_byp_en_o`    | Life-cycle controller signal indicating that external clock is accepted     |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tck_i`            | MCU JTAG clock input                     |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tms_i`            | MCU JTAG TMS input                       |
@@ -449,8 +475,6 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 1     | `cptra_ss_i3c_sda_oe`                | I3C data output  enable                  |
 | External | input     | 1     | `cptra_i3c_axi_user_id_filtering_enable_i` | I3C AXI user filtering enable (active high)     |
 | External | output    | 1     | `cptra_ss_sel_od_pp_o`               | Select open-drain push-pull output       |
-| External | inout     | 1     | `cptra_ss_i3c_scl_io`                | I3C clock bidirectional                  |
-| External | inout     | 1     | `cptra_ss_i3c_sda_io`                | I3C data bidirectional                   |
 | External | output    | 1     | `cptra_ss_i3c_recovery_payload_available_o`                | I3C indicates recovery payload is available. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`                  |
 | External | input     | 1     | `cptra_ss_i3c_recovery_payload_available_i`                | I3C indication for Caliptra Core that a recovery payload is available. If no external I3C should be connected to `cptra_ss_i3c_recovery_payload_available_o`. If external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_payload_available_o`                  |
 | External | output    | 1     | `cptra_ss_i3c_recovery_image_activated_o`                | Indicates the recovery image is activated. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`                  |
@@ -472,8 +496,12 @@ File at this path in the repository includes parameters and defines for Caliptra
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 170 Mhz to 400 MHz
-    - I3C core imposes requirement for minimum operating clock frequency set to 170 Mhz or higher.
+  - **Required Frequency** 333* MHz to 400 MHz
+    - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
+    - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
+    - This was changed from 170 MHz floor due to CDC issue found in I3C core:
+       - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
+       - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
   - **Integration Notes**
      1. Verify that the SoC or system-level clock source provides a stable clock.
@@ -679,7 +707,7 @@ This section describes an example implementation of integrator machine check rel
 
 This example is applicable to scenarios where an integrator may need control of or visibility into SRAM errors for purposes of reliability or functional safety. In such cases, integrators may introduce additional layers of error injection, detection, and correction logic surrounding SRAMs. The addition of such logic is transparent to the correct function of Caliptra Subsystem, and removes integrator dependency on Caliptra Subsystem components for error logging or injection.
 
-Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(calitpra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
+Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(caliptra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
 
 *Figure: Example machine check reliability implementation*
 
@@ -768,7 +796,7 @@ MCU is encapsulates VeeR EL2 core that includes an iCache, a dedicated DCCM, and
 ### Parameters & Defines
 
 The VeeR EL2 core instance used for MCU has been configured with these options:
-- DCCM size: 16KiB
+- DCCM size: 16KiB (see [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing))
 - I-Cache depth: 16KiB
 - ICCM: Disabled
 - External Interrupt Vectors: 255
@@ -781,7 +809,6 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ## MCU Integration Requirements
 
-There are two main requirements for the MCU integration.
 
 - **Ensure Proper Memory Mapping**
   - The memory layout must match the physical memory configuration of the SoC.
@@ -790,6 +817,56 @@ There are two main requirements for the MCU integration.
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+## MCU Core Configuration Customization
+
+The MCU VeeR-EL2 core can be customized by integrators to optimize for specific SoC requirements.
+
+**Common Use Cases:**
+
+* **Memory Architecture**: Modify ICCM/DCCM addresses and sizes for SoC memory integration
+* **Power/Area Optimization**: Remove or modify features (caching, number of interrupts)
+* **Performance Tuning**: Adjust cache sizes and pipeline configurations for application workloads
+
+**Configuration Instructions:**
+
+Refer to the [MCU Veer-EL2 Core Configuration](../README.md#mcu-veer-el2-core-configuration) section in the project README for complete step-by-step procedures.
+
+**Validation:**
+
+Execute the full regression test suite documented in [How to test](#how-to-test) after any configuration changes to ensure system compatibility.
+
+## MCU DCCM SRAM Sizing
+
+MCU's DCCM SRAM should be sized large enough to accommodate FW's stack and heap. If it is undersized, the MCU would have to rely on the MCU SRAM (accessed via AXI) for the stack/heap which has much lower performance.
+
+## MCU SRAM MRAC Considerations
+
+The MCU's [Memory Region Access Control (MRAC)](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/memory-map.html#region-access-control-register-mrac) regions are hard coded to 256MB boundaries. Each 256MB region is configured with uniform attributes - everything within a region is labeled as either "side effect" or "cachable". This affects how MCU SRAM and MCU MBOX SRAM (both located within MCI) should be integrated into the SoC memory map, as different components within MCI may require different access attributes.
+
+### Split Memory Mapping
+
+Integrators have two main approaches for handling MCI memory mapping:
+
+**Option 1: Contiguous MCI Address Region** - If integrators don't care about the MRAC limitations described in the following sections, they can use a standard contiguous [MCI address map](#memory-map-address-map) where all MCI components (including MCU SRAM and MCU MBOX SRAM) reside within a single 256MB region.
+
+**Option 2: Split Memory Mapping** - Integrators can optionally split MCU SRAM and MCU MBOX SRAMs into their own dedicated 256MB regions, separate from other MCI components. This allows firmware to enable caching or disable side effects for these specific SRAMs.
+
+### Side Effect Considerations
+
+When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
+
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+
+If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
+
+### iCache Considerations
+
+When MCU SRAM remains within the main MCI address space (not split off), integrators should consider the following caching limitations:
+
+**iCache Enablement Requirement**: To enable MCU iCache, everything within the 256MB boundary containing MCU SRAM must be cachable. Since not all regions of MCI are cachable, **MCU iCache cannot be enabled** when using a contiguous MCI address map.
+
+If you want to enable MCU iCache functionality, you must implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect. This allows MCU SRAM to be placed in a dedicated cachable region separate from other MCI components.
 
 ## MCU Programming interface
 
@@ -996,7 +1073,34 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
    - Perform a full integrity check by triggering `FUSE_CTRL_CHECK_TRIGGER` and ensure the system is error-free before proceeding.
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
+## UDS & Field Entropy FIPS Zeroization Sequence
+This sequence follows the "theory of operation" stated in this ['fuse-zeroization-programmer's-guide'](https://github.com/chipsalliance/caliptra-ss/blob/main/src/fuse_ctrl/doc/fuse_ctrl_zeroization_programmers_guide.md)
 
+Follow these steps in order to correctly zeroize the fuses and verify the operation for any partition that requires FIPS zeroization to be set (determined by zeroizable flag when a partition is generated).
+1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value in MCI. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**. If this mask register is not set by MCU, the zeroization request is aborted by the fuse controller.
+2. Issue Zeroization Commands: Trigger zeroization by sending a zeroization command to Caliptra core. Caliptra core will send a sequence of DAI (Direct Access Commands) commands to the fuse controller to perform the zeroization. The recommended order is:
+   - Clear the Partition Zeroization Flag: First, send a DAI command to clear this 64-bit flag within the target partition. Executing this step first is critical, as it masks potential ECC or integrity errors if the process is interrupted by a power failure.
+   - Zeroize Data Words: Send DAI zeroization commands for all data words within the partition.
+   - Clear the Partition Digest: Finally, send a DAI command to clear the partition's digest.
+6. Power Cycle the SOC (including Caliptra SS): Apply a cold reset to the Caliptra subsystem. FIPS_zeroization_PPD pin should now be cleared (set low).
+8. Verify the Operation: From the main MCU, read the partition's digest value from the associated fuse_ctrl digest registers.
+   - Success: If the register returns the expected zeroized digest value, the operation is complete.
+   - Failure: If the digest does not match the zeroized value, repeat the entire sequence starting from Step 1.
+
+## FIPS Zeroization Sequence For ECC
+Zeroization is implemented within the fuse controller RTL module. It is therefore the integrator’s responsibility to ensure that the ECC bits in the corresponding fuse partition are also zeroized when a zeroization command is issued to the fuse macro. To achieve this, the integrator must provide a dedicated implementation in the fuse macro wrapper to handle zeroization of the ECC bits.
+
+## Miscellanious Fuse Integration Guidelines
+- If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
+- Whenever a secret partition is programmed, it requires a FC reset, implying it requires a SOC reset
+- ECC bits inside fuse macros MUST be zeroized per FIPS guidelines. Since these bits are implemented by SOC a a part of OTP gasket, SOC should also implement FIPS zeroization of the ECC for UDS, FE, Ratchet Seeds (OCP lock), any vendor secrets (if required by FIPS).
+- FIPS zeroization of the ECC bits of a given partition must be done after the FIPS zeroization of the partition data, zeroization marker and digest.
+- UDS & FE MUST ONLY be FIPS zeroized by Caliptra Core (by Subsystem default design construction doesnt allow anyone else to do this operation).
+  - DAI Command Error Checking: The Caliptra core is responsible for checking the result of each DAI zeroization command to ensure it completed successfully. Any errors must be handled appropriately.
+  - Partitions 0-5 should not be changed by SOC. Don’t add or remove any fields, re-adjust sizes of these partitions as Caliptra ROM may expect them to be of a fixed size.
+- Fuse Macro Wrapper Requirements: The fuse_ctrl macro wrapper must implement a retry mechanism for the zeroization process. To prevent damage to the fuses, the wrapper must also avoid double writes to bits that have already been programmed. Please follow the specific integration guidelines provided by your fuse macro vendor.
+- OCP Lock ratchet seeds can be FIPS zeroized by MCU
+- If FIPS zeroization is required for Vendor Secret Partitions, then SOC shall generate the partition with zeroization flag, validate that the zeroization sequence documented above works as expected and uses MCU to do the FIPS zeroization. Any additional physical security protection of this partition is SOC's responsibility since the use cases are SOC defined.
 
 ## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
@@ -1069,7 +1173,7 @@ Signal                                        | Type   | Width                 |
 ----------------------------------------------|--------|-----------------------|---------------
 `cptra_ss_fuse_macro_inputs_o.valid_i`        | Input  | 1                     | Valid signal for the command handshake.
 `cptra_ss_fuse_macro_inputs_o.size_i`         | Input  | [`SizeWidth`-1:0]     | Number of native OTP words to transfer, minus one: `2'b00 = 1 native word` ... `2'b11 = 4 native words`.
-`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1000101 = read`, `7'b0110111 = write`, `7'b1111001 = read raw`, `7'b1100010 = write raw`,  `7'b0101100 = initialize`
+`cptra_ss_fuse_macro_inputs_o.cmd_i`          | Input  | [`CmdWidth`-1:0]      | OTP command: `7'b1111010 = read`, `7'b1001001 = write`, `7'b1010100 = read raw`, `7'b1100111 = write raw`,  `7'b0100000 = initialize`, `7'b0111101 = zeroize`
 `cptra_ss_fuse_macro_inputs_o.addr_i`         | Input  | [`$clog2(Depth)`-1:0] | OTP word address.
 `cptra_ss_fuse_macro_inputs_o.wdata_i`        | Input  | [`IfWidth`-1:0]       | Write data for write commands.
 `cptra_ss_fuse_macro_outputs_i.fatal_alert_o` | Output | 1                     | Fatal alert output from the FC macro. This is connected to a separate alert channel in the instantiating IP. The instantiating IP latches the alert indication and continuously outputs alert events until reset.
@@ -1083,6 +1187,10 @@ The `write raw` and `read raw` command instructs the Fuse Controller Macro
 wrapper to store / read the data in raw format without generating nor checking
 integrity information. That means that the wrapper must return the raw,
 uncorrected data and no integrity errors.
+
+The `zeroize` command instructs the Fuse Macro wrapper to "erase" the addressed
+value. As fuses cannot be unset, the typical erase behavior is to set all fuses
+of the addressed value to `1`, ideally including the ECC bits.
 
 The Fuse Controller Macro wrapper implements the error codes (0x0 - 0x4).
 
@@ -1206,6 +1314,7 @@ Facing      | Type       | width  | Name                  |  External Name in So
 External    |input       |   1    | `clk_i`               | `cptra_ss_clk_i`                    | clock         |
 External    |input       |   1    | `rst_ni`              | `cptra_ss_rst_b_i`                  | LC controller reset input, active low|
 External    |input       |   1    | `lc_sec_volatile_raw_unlock_en_i`              | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`                  | Enables Volatile TEST_UNLOCKED0 state transition infra|
+External    |input       |   1    | `raw_unlock_token_hashed_i`    | `cptra_ss_raw_unlock_token_hashed_i`         | Hashed token for RAW unlock |
 External    |input       |   1    | `Allow_RMA_or_SCRAP_on_PPD`    | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`    | This is GPIO strap pin. This pin should be high until LC completes its state transition to RMA or SCRAP.|
 External    |interface   |   1    | `axi_wr_req`          | `cptra_ss_lc_axi_wr_req_i`          | LC controller AXI write request input |
 External    |interface   |   1    | `axi_wr_rsp`          | `cptra_ss_lc_axi_wr_rsp_o`          | LC controller AXI write response output|
@@ -1226,8 +1335,8 @@ Internal    |struct      |   1    | `lc_otp_program_i`    |                     
 Internal    |struct      |   1    | `otp_lc_data_i`       |                                     | Broadcasted values from the fuse controller |
 Internal    |output      |   1    | `lc_dft_en_o`         |                                     | DFT enable to MCI |
 Internal    |output      |   1    | `lc_hw_debug_en_o`    |                                     | CLTAP enable to MCI |
-Internal    |output      |   1    | `lc_escalate_en_o`    |                                     | Broadcast signal to promote esclation in SoC |
-Internal    |output      |   1    | `lc_check_byp_en_o`   |                                     | External clock status delivery signal to fuse controller |
+Internal    |output      |   1    | `lc_escalate_en_o`    |  `cptra_ss_lc_escalate_en_o`        | Broadcast signal to promote esclation in SoC |
+Internal    |output      |   1    | `lc_check_byp_en_o`   |  `cptra_ss_lc_check_byp_en_o`       | External clock status delivery signal to fuse controller |
 External    |output      |   1    | `lc_clk_byp_req_o`    | `cptra_ss_lc_clk_byp_req_o`         | A request port to swtich from LCC clock to external clock |
 External    |input       |   1    | `lc_clk_byp_ack_i`    | `cptra_ss_lc_clk_byp_ack_i`         | Acknowledgment signal to indicate external clock request is accepted              |
 Internal    |input       |   1    | `otp_device_id_i`     |                                     | Unused port              |
@@ -1261,6 +1370,17 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 3. **Scan Path Exclusions**:
    - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token is different from other LC transition tokens as it is stored in the in gates but in a hashed form as other tokens. It is recommended to exclude since it is not provisioned through fuse macro as other tokens.
      To exclude it from scan, the following hierarchies must be excluded: `*::lc_ctrl_fsm::hashed_tokens_{higher, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
+
+4. **RAW Unlock Token**:
+   - The `cptra_ss_raw_unlock_token_hashed_i` top-level input defines the *hashed* value of the
+     RAW unlock token. The hashed value is generated from the *unhashed* RAW unlock token, which
+     the integrator must obtain from a cryptographically secure random number generator. Both the
+     hashed and the unhashed token must be kept secret. To generate the hashed token (and
+     optionally also the unhashed token), `tools/scripts/lc_ctrl_script/gen_lc_ctrl_token.py` can
+     be used.
+   - The *unhashed* RAW unlock token is required in SW that performs a *non-volatile* RAW unlock.
+   - The *hashed* RAW unlock token is stored in HW (see first bullet point) and required in SW
+     that performs a *volatile* RAW unlock.
 
 ## Programming Interface
 
@@ -1675,21 +1795,24 @@ The two regions have different access protection. The size of the regions is dyn
 
     The interface signals `mci_generic_input_wires` and  `mci_generic_output_wires` are placeholders on the SoC interface reserved for late binding features. This may include any feature that is required for correct operation of the design in the final integrated SoC and that may not be accommodated through existing interface signaling (such as the mailbox).
 
-    While these late binding interface pins are generic in nature until assigned a function, integrators must not define non-standard use cases for these pins. Defining standard use cases ensures that the security posture of MCI/MCU in the final implementation is not degraded relative to the consortium design intent. Bits in `mci_generic_input_wires` that don't have a function defined in MCI must be tied to a 0-value. These undefined input bits shall not be connected to any flip flops (which would allow run-time transitions on the value).
-
     Each wire connects to a register in the MCI register bank through which communication to the MCU may be facilitated. Each of the generic wire signals is 64 bits in size.These signals are considered ASYNC and each of the 64 bits are considered separate adhoc signals. Meaning there is no bus synchronization which means the connections to this port need to be thoroughly thought through to ensure the MCU doesn’t drop any requests.
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following table describes the allocation of functionality on `mci_generic_input_wires` . All bits not listed in this table must be tied to 0.
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
 
     **Table: MCI Generic Input Allocation**
 
     | Bits | Name | Description |
     | :---- | :---- | :---- |
-    | 63:1 | RESERVED | No allocated function |
-    | 0 | FIPS_ZEROIZATION_PPD_i | [FIPS zeroization](CaliptraSSHardwareSpecification.md#zeroization-flow-for-secret-fuses) request sampled by MCU ROM. If FIPS zeroization is required, this signal shall be set before Caliptra SS is out of reset. If set, MCU ROM will set MASK register triggering FIPS zeroization flow. If this signal is toggled at runtime it shall be ignored. |
+    | 63:0 | RESERVED | No allocated function |
 
+    **Table: MCI Generic Output Allocation**
+
+    | Bits | Name | Description |
+    | :---- | :---- | :---- |
+    | 63:0 | RESERVED | No allocated function |
+    
 ### Error Aggregation Connectivity Requirements
 
 MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg_error_fatal` and `agg_error_non_fatal`. These errors are:
@@ -1867,6 +1990,10 @@ See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptr
 #### Reset
 
 The mailboxes start locked by MCU to prevent any data leaks across warm reset.  MCU shall set `MBOX_DLEN` to MBOX SRAM size and write 0 to `MBOX_EXECUTE` to release the MBOX and wipe the MBOX SRAM.  This should be done before using or allowing use of the mailboxes.
+
+#### MCU Mailbox Doorbell Command DLEN
+
+An MBOX doorbell command has no data. When MBOX_DLEN = 0 and MBOX_EXECUTION is cleared, the clearing logic erases the entire MBOX SRAM. To avoid long delays caused by this clearing, firmware should set MBOX_DLEN = 1 when issuing doorbell commands.
 
 #### MCI Debug Lock Status
 
@@ -2116,7 +2243,7 @@ Subsequent MCU FW Update after FW Boot Update.
 
 Caliptra SS reset toggle without powergood toggle.
 
-**IMPORTANT** - Can only happen after both Caliptra Core and MCU have received at least one FW update. Otherwise only Cold Reset is allowed.
+**IMPORTANT** - Can only happen after both Caliptra Core and MCU have loaded mutable firmware. Otherwise only Cold Reset is allowed.
 1. MCU ROM comes out of reset and sees ```WARM_RESET```. It cannot jump to MCU SRAM since it is locked and needs Caliptra to unlock.
 2. MCU ROM brings Caliptra out of reset
 3. Caliptra sees Warm Reset and starts executing from its ICCM (SRAM image)
@@ -2205,7 +2332,7 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 
 ## Parameters and defines
 
-| Parameter          | Default Value                         | Description                                 |
+| Parameter/Define   | Default Value                         | Description                                 |
 |--------------------|---------------------------------------|---------------------------------------------|
 | `AxiDataWidth`     | `AXI_DATA_WIDTH                       | Width (in bits) of the AXI data bus         |
 | `AxiAddrWidth`     | `AXI_ADDR_WIDTH                       | Width (in bits) of the AXI address bus      |
@@ -2215,6 +2342,8 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 | `DctAw`            | i3c_pkg::DctAw                        | Device context address width (i3c_pkg)      |
 | `CsrAddrWidth`     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
 | `CsrDataWidth`     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
+| `DISABLE_INPUT_FF` | Not Defined                           | DO NOT DEFINE. NO LONGER VALID CONFIG. If defined will remove synchronizer on SCL input signal causing CDC issue.       |
+
 
 ## Interface
 
@@ -2357,9 +2486,9 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
-## CDC Analysis and Constraints
+# CDC analysis and constraints
 
-Clock Domain Crossing (CDC) analysis is performed on the Caliptra Subsystem Design. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
+Clock Domain Crossing (CDC) analysis is performed on Caliptra Subsystem. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
 
 In an unconstrained environment, several CDC violations are anticipated. CDC analysis requires the addition of constraints to identify valid synchronization mechanisms and/or static/pseudo-static signals.
 
@@ -2371,13 +2500,67 @@ In an unconstrained environment, several CDC violations are anticipated. CDC ana
     - CALIPTRA_INC_ASSERT not defined by default
     - Comment out code under if condition for CDC analysis
 
-### CDC Constraint
+## Analysis of missing synchronizers
+* All of the signals, whether single-bit or multi-bit, originate from the CaliptraClockDomain clock and their endpoint is the RISCV JTAG clock domain in both Caliptra Core and MCU.
+* The violations occur on the read path to the JTAG.
+* We only need to synchronize the controlling signal for this interface.
+* Inside the dmi\_wrapper, the dmi\_reg\_en and dmi\_reg\_rd\_en comes from dmi\_jtag\_to\_core\_sync, which is a 2FF synchronizer.
 
-- cdc preference -multi_fanout_async
+The following code snippets and schematic diagrams illustrate the CDC violations that end at the JTAG interface.
 
-### Analysis Result
+*Figure: Code snippet showing JTAG-originating CDC violations*
 
-Caliptra Subsystem analysis showed no CDC violations
+el2_dbg.sv
+```verilog
+rvdffe #(32) dmi_rddata_reg (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
+```
+
+soc_ifc_top.sv
+```verilog
+cptra_uncore_dmi_reg_rdata <= cptra_uncore_dmi_unlocked_reg_en ? cptra_uncore_dmi_unlocked_reg_rdata_in : 
+                              cptra_uncore_dmi_locked_reg_en   ? cptra_uncore_dmi_locked_reg_rdata_in : cptra_uncore_dmi_reg_rdata;
+```
+
+dmi_mux.v
+```verilog
+// Read mux
+assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
+```
+
+*Figure: Schematic diagram showing JTAG-originating CDC violations*
+
+![](./images/caliptra_ss_cdc_violation_path1.png)
+
+![](./images/caliptra_ss_cdc_violation_path2.png)
+
+![](./images/caliptra_ss_cdc_violation_path3.png)
+
+![](./images/caliptra_ss_cdc_violation_path4.png)
+
+## CDC analysis conclusions
+* Missing synchronizers appear to be the result of “inferred” and/or only 2-FF instantiated synchronizers.
+    * dmi\_jtag\_to\_core\_sync.v contains inferred 2FF synchronizers on the control signals “dmi\_reg\_wr\_en” and “dmi\_reg\_rd\_en”.
+    * 2FF synchronizer inferences are considered non-compliant and should be replaced by an explicitly instantiated synchronization module, which is intended to be substituted on a per-integrator basis.
+        * cdc report scheme two\_dff -severity violation
+* Multi-bit signals are effectively pseudo-static and are qualified by synchronized control qualifiers.
+    * Pseudo-static: wr\_data, wr\_addr
+        * cdc signal reg\_wr\_data  -module dmi\_wrapper -stable
+        * cdc signal reg\_wr\_addr  -module dmi\_wrapper -stable
+* The core clock frequency must be at least twice the TCK clock frequency of each TAP EPs for the JTAG data to pass correctly through the synchronizers.
+
+## CDC constraints
+* cdc report scheme two\_dff -severity violation
+* cdc signal reg\_wr\_data  -module dmi\_wrapper -stable
+* cdc signal reg\_wr\_addr  -module dmi\_wrapper -stable
+* cdc signal rd\_data       -module dmi\_wrapper -stable
+* cdc signal reg\_wr\_data  -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal reg\_wr\_addr  -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal rd\_data       -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal jtag\_dmi\_req_i -module dmi\_cdc -stable
+* cdc signal jtag\_dmi\_resp_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_req_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_resp_i -module dmi\_cdc -stable
+
 
 # Reset Domain Crossing
 
@@ -2409,7 +2592,7 @@ The Below table illustrates various reset domains that we have in the design. We
 | CPTRA_SS_PRIM_RST | Primary reset input corresponding to SOC Warm Reset | cptra_ss_rst_b_i | caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q  -> LOW | CPTRA_SS_PRIM_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_MCU_RST |
 | CPTRA_SS_RST | Caliptra SS MCI Boot Sequencer generated reset used by various other SS level logic blocks and Caliptra Core | cptra_ss_mci_cptra_rst_b_i <br> mci_top_i.i_boot_seqr.cptra_ss_rst_b_o | mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH <br> mci_top_i.i_boot_seqr.early_warm_reset_warn -> HIGH <br> mci_top_i.i_boot_seqr.boot_fsm[3:0] = BOOT_IDLE <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q -> LOW <br> caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH | CPTRA_SS_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_SS_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_RST -> CPTRA_SS_MCU_RST <br> CPTRA_SS_RST -> CPTRA_DMI_NON_CORE_RST |
 | CPTRA_CORE_NON_CORE_RST | Caliptra Core Boot FSM generated reset used by various other Caliptra Core logics | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_noncore_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.rdc_clk_dis -> HIGH <br> caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.arc_IDLE -> HIGH <br> mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH | CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_CORE_UC_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_MCU_RST |
-| CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 | |
+| CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 <br> caliptra_top_dut.sha3.hsel_i -> LOW <br> caliptra_top_dut.aes_inst.aes_cif_req_dv -> LOW | |
 | CPTRA_SS_MCU_RST | Caliptra SS MCI Boot Sequencer generated microcontroller reset for Caliptra SS RISCV | mci_top_i.i_boot_seqr.mcu_rst_b | mci_top_i.i_boot_seqr.fw_update_rst_window -> HIGH <br> mci_top_i.i_mci_mcu_trace_buffer.mcu_trace_rv_i_valid_ip -> LOW | |
 
 **The current analysis only focuses on RDC crossing which are internal to Caliptra SS. Any RDC crossings with external flops need to be handled by integrators.**
@@ -2472,8 +2655,22 @@ A standardized set of lint rules is used to sign off on each release. The lint p
 
 ### Known Lint Issue
 
-- Signal width mismatch in [Line 271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) of mcu_mbox_csr.sv
-  - MSB on RHS will be optimized out during synthesis
+The following lint violations are known and expected in the current implementation:
+
+#### Signal Width Mismatches
+| Location | Description | Justification |
+|----------|-------------|---------------|
+| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+
+#### Undriven signals
+These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
+
+| Location | Signal | Justification |
+|----------|--------|---------------|
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `sb_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected|
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
+| [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
+
 
 # Terminology
 

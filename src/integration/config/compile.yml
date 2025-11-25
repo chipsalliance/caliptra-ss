@@ -70,10 +70,27 @@ targets:
       - $COMPILE_ROOT/rtl/soc_address_map/soc_address_map_defines.svh
       - $COMPILE_ROOT/rtl/caliptra_ss_includes.svh
 ---
+provides: [caliptra_ss_top_pkg]
+schema_version: 2.4.0
+requires:
+  - lc_ctrl_pkg
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_pkg.sv
+  rtl:
+    directories:
+      - $COMPILE_ROOT/rtl
+    files:
+      - $COMPILE_ROOT/rtl/caliptra_ss_top_pkg.sv
+---
 provides: [caliptra_ss_top]
 schema_version: 2.4.0
 requires:
   - caliptra_ss_top_defines
+  - caliptra_ss_top_pkg
   - caliptra_ss_lc_ctrl_pkg
   - css_mcu0_veer_el2_rtl_pkg
   - tlul_pkg
@@ -121,18 +138,6 @@ targets:
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_props.sv
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_bind.sv
 --- 
-provides: [prim_generic_otp_pkg]
-schema_version: 2.4.0
-targets:
-  rtl:
-    directories: [$COMPILE_ROOT/testbench]
-    files: 
-      - $COMPILE_ROOT/testbench/prim_generic_otp_pkg.sv
-  tb:
-    directories: [$COMPILE_ROOT/testbench]
-    files: 
-      - $COMPILE_ROOT/testbench/prim_generic_otp_pkg.sv
---- 
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
@@ -177,14 +182,14 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
-    pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
-                && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
-                && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
-                && echo "[PRE-EXEC] Copying SHA512 Vectors to $(pwd)" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp .
-                && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
-                && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
-                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $COMPILE_ROOT/../../third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
-                && echo "[PRE-EXEC] Copying otp-img.2048.vmem to ${pwd}" && cp $COMPILE_ROOT/../../src/fuse_ctrl/data/otp-img.2048.vmem .
+    pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
+                && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
+                && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
+                && echo "[PRE-EXEC] Copying SHA512 Vectors to $(pwd)" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp .
+                && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
+                && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
+                && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
+                && echo "[PRE-EXEC] Copying otp-img.2048.vmem to ${pwd}" && cp $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp-img.2048.vmem .
                 && echo "[PRE-EXEC] Copying MLKEM vector generator to $pwd" && cp -r $MSFT_SCRIPTS_DIR/models/ml-kem . && mkdir ml-kem/tv'
     post_exec: 'rm -r ./ml-kem && if [[ -f ./cm.log ]]; then rm ./cm.log; else echo "Did not find cm.log"; fi'
 global:
@@ -225,6 +230,7 @@ global:
         #FIXME : remve this Note suppression
         - '-suppress=SV-LCM-PPWI'
         - +define+I3C_BOOT_USING_ENTDAA
+        - +define+CALIPTRA_SIMULATION
       elab:
         #FIXME : remve this warning suppression
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core

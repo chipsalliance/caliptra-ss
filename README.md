@@ -1,12 +1,14 @@
 # Caliptra Subsystem Overview
-_*Last Update: 2025/04/30*_
+_*Last Update: 2025/10/12*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
 
 ## Project Links
 
 [caliptra-ss](https://github.com/chipsalliance/caliptra-ss)<BR>
-[Caliptra Subsystem v1.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
+[Caliptra Subsystem v2.0 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_0/regs/?p=)<BR>
+[Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_1/regs/?p=)<BR>
+[Caliptra Subsystem Example Register Map (main branch)](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
 
 ## **Tools Used** ##
 
@@ -40,7 +42,7 @@ CDC:
 
 RDC:
  - Real Intent Meridian
-    - 2022.A.P18.3
+    - 2022.A.P10.2
 
 Synthesis:
  - Synopsys Design Compiler (R) NXT 
@@ -93,6 +95,8 @@ Required for simulation:<BR>
 `CALIPTRA_SS_ROOT`: Defines the absolute path to the Project repository root (called "caliptra-ss"). Recommended to define as `${CALIPTRA_WORKSPACE}/chipsalliance/caliptra-ss`.<BR>
 `CALIPTRA_ROOT`: Defines the absolute path to the Caliptra submodule root. Must be defined as `${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl`.<BR>
 `ADAMSBRIDGE_ROOT`: Defines the absolute path to the Adams-Bridge submodule root. Must be defined as `${CALIPTRA_ROOT}/submodules/adams-bridge`.<BR>
+`CALIPTRA_PRIM_ROOT`: Set to $CALIPTRA_ROOT/src/caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
+`CALIPTRA_PRIM_MODULE_PREFIX`: Set to caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
 `CALIPTRA_AXI4PC_DIR`: Path to the directory that contains the ARM AXI4 Protocol Checker file. This file must be acquired from the Arm website by integrators, as it contains copyrighted materials.<BR>
 `AVERY_HOME`: Installation root for Avery VIP<BR>
 `AVERY_PLI`: Directory within AVERY\_HOME that contains avery\_pli<BR>
@@ -113,8 +117,11 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 │   └── compilespecs.yml
 ├── docs
 │   ├── Caliptra_Gen2_SS_TestPlan.xlsx
+│   ├── CaliptraSSCoverage.md
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
+│   ├── CaliptraSSReleaseChecklist.md
+│   ├── coverage_reports
 │   └── images
 ├── LICENSE
 ├── README.md
@@ -188,6 +195,100 @@ caliptra-ss GitHub repository.
     - $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug
     - $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
 1. Simulate project with `caliptra_ss_top_tb` as the top target
+
+## **MCU Veer-EL2 Core Configuration** ##
+
+The Caliptra Subsystem includes an MCU based on the Veer-EL2 RISC-V core. Users can customize the MCU configuration to meet specific requirements such as cache sizes, memory configurations, or feature enablement. This section describes how to modify the MCU Veer-EL2 core configuration.
+
+### Prerequisites ###
+- Git access to the Cores-VeeR-EL2 repository
+- Basic understanding of Veer-EL2 configuration options
+
+### Configuration Modification Steps ###
+
+1. **Clone the Veer-EL2 Repository**
+   ```bash
+   git clone git@github.com:chipsalliance/Cores-VeeR-EL2.git
+   ```
+
+2. **Set RV_ROOT Environment Variable**
+   
+   Set RV_ROOT to the root of the repository cloned in step 1:
+   ```bash
+   export RV_ROOT="/path/to/Cores-VeeR-EL2"
+   ```
+
+3. **Backup prefix_macros.sh (Workaround)**
+   
+   This file was not committed to the repository until after the 2.0 tag, so it needs to be backed up before checking out the specific commit. The command below is just an example - use any safe backup location:
+   ```bash
+   cp $RV_ROOT/tools/prefix_macros.sh ~/backup/prefix_macros.sh
+   ```
+
+4. **Checkout Required Commit**
+   
+   First, find the required commit hash in `$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/riscv_rev_info`, then checkout that specific version:
+   ```bash
+   cd $RV_ROOT
+   git checkout <commit_hash_from_riscv_rev_info>
+   ```
+   
+   Example:
+   ```bash
+   cd $RV_ROOT
+   git checkout c5c004589ee0a308b63278ee609e1597f61a4143
+   ```
+
+5. **Restore prefix_macros.sh**
+   ```bash
+   mv ~/backup/prefix_macros.sh $RV_ROOT/tools/prefix_macros.sh
+   ```
+
+6. **Modify Veer Build Configuration**
+   
+   Edit the build command script to specify your desired MCU configuration:
+   ```bash
+   $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh
+   ```
+
+7. **Generate New Configuration**
+   
+   Run the build command script with a descriptive snapshot directory name:
+   ```bash
+   $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh new-mcu-config
+   ```
+
+8. **Set Environment Variables for Prefix Script**
+   
+   Configure the required environment variables for the prefix macro script:
+   ```bash
+   export PREFIX="css_mcu0_"
+   export DESIGN_DIR="$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/design"
+   export DEFINES_PATH="$RV_ROOT/snapshots/new-mcu-config"
+   ```
+
+9. **Run Prefix Macros Script**
+   ```bash
+   $RV_ROOT/tools/prefix_macros.sh
+   ```
+
+10. **Update Caliptra SS Design Files**
+    
+    Compare and copy the generated configuration files to the Caliptra SS repository:
+    ```bash
+    # Review differences
+    diff -r $DEFINES_PATH $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
+    
+    # Copy updated files (review changes first!)
+    cp $DEFINES_PATH/* $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
+    ```
+
+### Verification ###
+After modifying the configuration:
+
+1. **Rebuild the project** using the standard [simulation flow](#simulation-flow)
+2. **Run smoke tests** to verify the new configuration works correctly
+3. **Check simulation logs** for any configuration-related warnings or errors
 
 ## **Regression Tests** ##
 

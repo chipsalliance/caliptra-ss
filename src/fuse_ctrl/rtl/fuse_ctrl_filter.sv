@@ -348,7 +348,15 @@ always_comb begin
             latch_addr_id     = 1'b0;
             latch_cmd_id      = 1'b0;
             clear_records     = 1'b0;
-            if (fuse_cmd == DaiRead && write_event)begin
+            if (fuse_cmd == DaiRead && write_event && !wr_req_allowed)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
+
+            end else if (fuse_cmd == DaiRead && write_event && !addr_and_cmd_same_id)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
+
+            end else if (fuse_cmd == DaiRead && write_event)begin
                 discard_fuse_write= 1'b0;
                 table_fsm_next_st = IDLE_ST;
 

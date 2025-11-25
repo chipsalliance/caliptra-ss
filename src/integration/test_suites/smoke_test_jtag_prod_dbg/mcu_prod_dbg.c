@@ -92,7 +92,7 @@ void main (void) {
         0x28abfbfa, 0x5a8f41,   0x44901cee, 0x4961df3f,
         0x8db3e5ea, 0x8d489c51, 0x90e26b42, 0xaf9369e
     };
-    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    // VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -109,9 +109,6 @@ void main (void) {
 
     VPRINTF(LOW, "=================\n CALIPTRA_SS JTAG PROD DEBUG TEST with ROM \n=================\n\n");
 
-    // lcc_initialization();
-    // transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    // reset_fc_lcc_rtl();
     lsu_write_32(SOC_SOC_IFC_REG_SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES, 8);
     VPRINTF(LOW, "MCU: Set number of PK hashes to 8\n");
     lsu_write_32(SOC_SOC_IFC_REG_SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK_OFFSET, PROD_DBG_PK_HASH_OFFSET);

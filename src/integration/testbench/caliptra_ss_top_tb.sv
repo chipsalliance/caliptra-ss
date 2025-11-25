@@ -193,9 +193,7 @@ module caliptra_ss_top_tb
                 frequency = lcc_clock_selection;
             end
             case (frequency)
-                160: core_clk = #(3.125) ~core_clk; // 160MHz -> 6.25ns period, 3.125ns half-period
-                167: core_clk = #(3.0) ~core_clk;   // 167MHz -> 6.0ns period, 3.0ns half-period
-                170: core_clk = #(2.941) ~core_clk; // 170MHz -> 6.0ns period, 2.941ns half-period
+                333: core_clk = #(1.501) ~core_clk; // 333MHz -> ~3.003s period, ~1.501.ns half-period
                 400: core_clk = #(1.25) ~core_clk;  // 400MHz -> 2.5ns period, 1.25ns half-period
                 500: core_clk = #(1.0) ~core_clk;   // 500MHz -> 2.0ns period, 1.0ns half-period
                 1000: core_clk = #(0.5) ~core_clk;   // 1000MHz -> 1.0ns period, 0.5ns half-period
@@ -1112,7 +1110,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
-        .ListenPort     (5000)
+        .ListenPort     (51983)
     ) jtagdpi_cptra_core (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1327,7 +1325,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag2"),
-        .ListenPort     (7000)
+        .ListenPort     (64902)
     ) jtagdpi_lcc (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1530,7 +1528,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag1"),
-        .ListenPort     (6000)
+        .ListenPort     (60217)
     ) jtagdpi_mcu (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1632,6 +1630,8 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_axi_wr_rsp_o,
         .cptra_ss_lc_axi_rd_req_i,
         .cptra_ss_lc_axi_rd_rsp_o,
+
+        .cptra_ss_raw_unlock_token_hashed_i (caliptra_ss_top_pkg::RndCnstRawUnlockTokenHashed),
 
         .cptra_ss_otp_core_axi_wr_req_i,
         .cptra_ss_otp_core_axi_wr_rsp_o,
@@ -1748,6 +1748,8 @@ module caliptra_ss_top_tb
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
         .caliptra_ss_life_cycle_steady_state_o(),
+        .cptra_ss_lc_escalate_en_o(),
+        .cptra_ss_lc_check_byp_en_o(),
 
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,

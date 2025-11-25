@@ -35,6 +35,7 @@ module caliptra_ss_top_w_stub(
     // Define the logic and interfaces
     logic cptra_ss_pwrgood_i;
     logic cptra_ss_rst_b_i;
+    logic cptra_ss_rst_b_o;
     logic cptra_ss_mci_cptra_rst_b_o;
     logic cptra_ss_mcu_rst_b_o;
     logic cptra_ss_rdc_clk_cg_o;
@@ -279,6 +280,9 @@ module caliptra_ss_top_w_stub(
 
     wire cptra_ss_soc_dft_en_o;
     wire cptra_ss_soc_hw_debug_en_o;
+    lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o;
 
     otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i;
     otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o;
@@ -366,6 +370,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_clk_i(cptra_ss_clk_i),
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
+        .cptra_ss_rst_b_o(cptra_ss_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mcu_rst_b_i(cptra_ss_mcu_rst_b_o),
@@ -376,7 +381,6 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_warm_reset_rdc_clk_dis_o,
         .cptra_ss_early_warm_reset_warn_o,
         .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
-        .cptra_ss_lc_sec_volatile_raw_unlock_en_i,
 
     
     //SoC AXI Interface
@@ -445,6 +449,8 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_lc_axi_rd_req_i,
         .cptra_ss_lc_axi_rd_rsp_o,
     
+        .cptra_ss_raw_unlock_token_hashed_i (caliptra_ss_top_pkg::RndCnstRawUnlockTokenHashed),
+
         .cptra_ss_otp_core_axi_wr_req_i,
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
@@ -556,12 +562,16 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_lc_clk_byp_ack_i           (cptra_ss_lc_clk_byp_ack_i),
         .cptra_ss_lc_clk_byp_req_o           (cptra_ss_lc_clk_byp_req_o),
         .cptra_ss_lc_ctrl_scan_rst_ni_i      (1'b1), // Note: Since we do not use dmi and use JTAG we do not need this
+        .cptra_ss_lc_sec_volatile_raw_unlock_en_i,
     
         .cptra_ss_lc_esclate_scrap_state0_i,
         .cptra_ss_lc_esclate_scrap_state1_i,
     
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
+        .caliptra_ss_life_cycle_steady_state_o,
+        .cptra_ss_lc_escalate_en_o,
+        .cptra_ss_lc_check_byp_en_o,
 
         .cptra_ss_fuse_macro_outputs_i('0),
         .cptra_ss_fuse_macro_inputs_o,

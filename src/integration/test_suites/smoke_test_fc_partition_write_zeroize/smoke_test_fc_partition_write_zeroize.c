@@ -44,9 +44,8 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
    4 - zeroizes the entire partition (fuses, marker and digest)
  */
 
-void write_partition_zeroize(void) {
+bool write_partition_zeroize(void) {
     uint32_t r_data[2];
-
 
     // Step 1 - writes 0x55 to all entries of partition HEK0
     VPRINTF(LOW, "==========================================\n");
@@ -57,7 +56,7 @@ void write_partition_zeroize(void) {
       dai_rd(addr, &r_data[0], &r_data[1], 32, 0);
       if (r_data[0] != 0x55) {
         VPRINTF(LOW, "ERROR: [CPTRA_SS_LOCK_HEK_PROD_0] read_value, does not match written_value\n");
-        goto epilogue;
+        return false;
       }
     }
 
@@ -93,34 +92,28 @@ void write_partition_zeroize(void) {
 
     // Zeroize fuse.
     for (uint32_t addr = partitions[CPTRA_SS_LOCK_HEK_PROD_0].address; addr < partitions[CPTRA_SS_LOCK_HEK_PROD_0].digest_address; addr += partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity / 8) {
-      dai_zer(addr, &r_data[0], &r_data[1], partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, 0);
-      if (r_data[0] != 0xFFFFFFFF || (partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity > 32 && r_data[1] != 0xFFFFFF)) {
+        if (!dai_zer(addr, partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: [partitions[CPTRA_SS_LOCK_HEK_PROD_0] ]fuse is not zeroized (pre-digest)\n");
-        goto epilogue;
+        return false;
       }
     }
-    memset(r_data, 0, sizeof(r_data));
     // Zeroize marker field.
-    dai_zer(partitions[CPTRA_SS_LOCK_HEK_PROD_0].zer_address, &r_data[0], &r_data[1], 64, 0);
-    if (r_data[0] != 0xFFFFFFFF || r_data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(partitions[CPTRA_SS_LOCK_HEK_PROD_0].zer_address, 64, 0, false)) {
       VPRINTF(LOW, "ERROR: [partitions[CPTRA_SS_LOCK_HEK_PROD_0]  digest is not zeroized (post-digest)\n");
-      goto epilogue;
+      return false;
     }
-    memset(r_data, 0, sizeof(r_data));
     // Zeroize digest field.
-    dai_zer(partitions[CPTRA_SS_LOCK_HEK_PROD_0].digest_address, &r_data[0], &r_data[1], 64, 0);
-    if (r_data[0] != 0xFFFFFFFF || r_data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(partitions[CPTRA_SS_LOCK_HEK_PROD_0].digest_address, 64, 0, false)) {
       VPRINTF(LOW, "ERROR: [partitions[CPTRA_SS_LOCK_HEK_PROD_0]  digest is not zeroized (post-digest)\n");
-      goto epilogue;
+      return false;
     }
-    memset(r_data, 0, sizeof(r_data));
 
-epilogue:
     VPRINTF(LOW, "ratchet seed write read test finished\n");
+    return true;
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -130,7 +123,7 @@ void main (void) {
 
     initialize_otp_controller();
 
-    VPRINTF(LOW, "=================\nBefore ratchet_seed_write_read\n=================\n\n")
+    VPRINTF(LOW, "=================\nBefore ratchet_seed_write_read\n=================\n\n");
     write_partition_zeroize();
 
     for (uint8_t ii = 0; ii < 160; ii++) {

@@ -36,7 +36,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -44,7 +44,7 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
     wait_dai_op_idle(0);
 
     initialize_otp_controller();
@@ -53,12 +53,7 @@ void main (void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_BUS_ECC);
 
     grant_caliptra_core_for_fc_writes();
-    dai_wr(0x00, 0xFF, 0, 32, 0);
-
-    uint32_t status = lsu_read_32(SOC_OTP_CTRL_STATUS);
-    if (!((status >> OTP_CTRL_STATUS_BUS_INTEG_ERROR_LOW) & 0x1)) {
-        handle_error("ERROR: bus integrity error is not set %08X\n", status);
-    }
+    dai_wr(0x00, 0xFF, 0, 32, OTP_CTRL_STATUS_BUS_INTEG_ERROR_MASK);
 
     mcu_sleep(160);
 

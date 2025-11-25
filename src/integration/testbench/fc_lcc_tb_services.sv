@@ -29,8 +29,10 @@ module fc_lcc_tb_services (
   `include "soc_address_map_defines.svh"
 
   import otp_ctrl_reg_pkg::*;
+  import otp_ctrl_pkg::*;
 
   logic disable_lcc_sva;
+  logic disable_fc_all_ones_sva;
 
   logic ecc_fault_en = 1'b0;
   logic lcc_bus_error_en = 1'b0;
@@ -144,11 +146,11 @@ module fc_lcc_tb_services (
           end
           CMD_LC_FAULT_CNTR: begin
             $display("fc_lcc_tb_services: fault lcc cntr fuse");
-          force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
+            force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
           end
           CMD_DISABLE_CLK_BYP_ACK: begin
             $display("fc_lcc_tb_services: disable clk_byp_ack");
-          force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_clk_byp_ack_i = '0;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_clk_byp_ack_i = '0;
           end
           CMD_LC_TRIGGER_ESCALATION0_DIS: begin
             $display("fc_lcc_tb_services: releasing esc_scrap_state0 escalation");
@@ -157,6 +159,22 @@ module fc_lcc_tb_services (
           CMD_LC_TRIGGER_ESCALATION1_DIS: begin
             $display("fc_lcc_tb_services: releasing esc_scrap_state1 escalation");
             release `CPTRA_SS_TB_TOP_NAME.cptra_ss_lc_esclate_scrap_state1_i;
+          end
+          CMD_FC_FORCE_FUSE_FAULT: begin
+            $display("fc_lcc_tb_services: Fault 2 LSBs of the HEK_PROD_1 zeroization marker");
+            force `FC_MEM[CptraSsLockHekProd1ZerOffset/2][1:0] = '0;
+          end
+          CMD_FC_RELEASE_FUSE_FAULT: begin
+            $display("fc_lcc_tb_services: Release fault on the HEK_PROD_1 zeroization marker");
+            release `FC_MEM[CptraSsLockHekProd1ZerOffset/2][1:0];
+          end
+          CMD_FC_FORCE_FUSE_UNZEROIZ: begin
+            $display("fc_lcc_tb_services: Fault %0d LSBs of the VENDOR_SECRET_PROD_PARTITION zeroization marker to be below the threshold", otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound+1);
+            force `FC_MEM[VendorSecretProdPartitionZerOffset/2][otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound:0] = '0;
+          end
+          CMD_FC_RELEASE_FUSE_UNZEROIZ: begin
+            $display("fc_lcc_tb_services: Release fault on the VENDOR_SECRET_PROD_PARTITION zeroization marker");
+            release `FC_MEM[VendorSecretProdPartitionZerOffset/2][otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound+1:0];
           end
           default: begin
             // No action for unrecognized commands.
@@ -197,9 +215,10 @@ module fc_lcc_tb_services (
   always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
           fc_lcc_reset_0ing_active <= 1'b0;
-          fc_lcc_reset_active  <= 1'b0;
-          fc_lcc_reset_counter <= '0;
-          disable_lcc_sva      <= 1'b0;
+          fc_lcc_reset_active      <= 1'b0;
+          fc_lcc_reset_counter     <= '0;
+          disable_lcc_sva          <= 1'b0;
+          disable_fc_all_ones_sva  <= 1'b0;
       end
       else begin
           // Detect CMD_FC_LCC_EN_RESET_WHILE_0ING command.
@@ -244,6 +263,16 @@ module fc_lcc_tb_services (
             disable_lcc_sva  <= 1'b0;
             $display("Top-level: Received enable LCC's Assertions.");
           end
+
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_ALL_ONES_DISABLE_SVA && !disable_fc_all_ones_sva) begin
+            disable_fc_all_ones_sva  <= 1'b1;
+            $display("Top-level: Received disable FC_all_ones assertion.");
+          end
+          
+          if (tb_service_cmd_valid && tb_service_cmd == CMD_FC_ALL_ONES_ENABLE_SVA && disable_fc_all_ones_sva) begin
+            disable_fc_all_ones_sva  <= 1'b0;
+            $display("Top-level: Received enable FC_all_ones assertion.");
+          end
       end
   end
 
@@ -261,71 +290,80 @@ module fc_lcc_tb_services (
 
   //-------------------------------------------------------------------------
   // OTP memory fault injection
-  // Correctable error: One bit flip in locked partition
-  // Uncorrectable error: Flip all bits of a word in a locked partition
+  //
+  // This is designed to allow the caliptra_ss_fuse_ctrl_init_fail test to cause an ECC error in
+  // some chosen partition.
+  //
+  //   - Correctable error: One bit flip in a locked partition
+  //   - Uncorrectable error: Flip all bits of a word in a locked partition
+  //
   //-------------------------------------------------------------------------
 
-  reg fault_active_q;
-  reg [15:0] faulted_word_q [0:6];
+  // The offsets in the address map for the first word of some partitions, together with the offset
+  // to that partition's digest.
+  //
+  // Note that these offsets are measured in bytes, so need to be halved when indexing into `FC_MEM.
+  // Also note that the arrays are packed (a tool requirement), but are listed in increasing order,
+  // so that indexing looks more like the C code with which we're interacting.
+  localparam [31:0] PartitionOffsetsAndDigests[0:7][0:1] = '{
+    '{ SwTestUnlockPartitionOffset,       SwTestUnlockPartitionDigestOffset },
+    '{ SecretManufPartitionOffset,        SecretManufPartitionDigestOffset },
+    '{ SecretProdPartition0Offset,        SecretProdPartition0DigestOffset },
+    '{ SecretProdPartition1Offset,        SecretProdPartition1DigestOffset },
+    '{ SecretProdPartition2Offset,        SecretProdPartition2DigestOffset },
+    '{ SecretProdPartition3Offset,        SecretProdPartition3DigestOffset },
+    '{ SecretLcTransitionPartitionOffset, SecretLcTransitionPartitionDigestOffset },
+    '{ VendorSecretProdPartitionOffset,   VendorSecretProdPartitionDigestOffset }
+  };
 
-  localparam int partition_offsets [0:6] = '{
-    SecretManufPartitionOffset/2,
-    SecretProdPartition0Offset/2,
-    SecretProdPartition1Offset/2,
-    SecretProdPartition2Offset/2,
-    SecretProdPartition3Offset/2,
-    SecretLcTransitionPartitionOffset/2,
-    VendorSecretProdPartitionOffset/2
-  };
-  localparam int partition_digests [0:6] = '{
-    SecretManufPartitionDigestOffset/2,
-    SecretProdPartition0DigestOffset/2,
-    SecretProdPartition1DigestOffset/2,
-    SecretProdPartition2DigestOffset/2,
-    SecretProdPartition3DigestOffset/2,
-    SecretLcTransitionPartitionDigestOffset/2,
-    VendorSecretProdPartitionDigestOffset/2
-  };
+  localparam int unsigned NumFaultablePartitions = $size(PartitionOffsetsAndDigests);
+
+  reg fault_active_q;
+  reg [15:0] before_fault_q[NumFaultablePartitions], fault_mask_q [NumFaultablePartitions];
+
+  logic new_fault_req;
+  assign new_fault_req = (tb_service_cmd_valid && !fault_active_q &&
+                          tb_service_cmd inside {CMD_FC_LCC_CORRECTABLE_FAULT,
+                                                 CMD_FC_LCC_UNCORRECTABLE_FAULT});
 
   always_ff @(posedge clk or negedge cptra_rst_b) begin
     if (!cptra_rst_b) begin
       fault_active_q <= 1'b0;
     end else begin
-      if (tb_service_cmd_valid && (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT || tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) && !fault_active_q) begin
+      if (new_fault_req) begin
         fault_active_q <= 1'b1;
       end
     end
   end
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
+  for (genvar i = 0; i < NumFaultablePartitions; i++) begin : partition_faults
     always_ff @(posedge clk or negedge cptra_rst_b) begin
       if (!cptra_rst_b) begin
-        faulted_word_q[i] <= '0;
+        before_fault_q[i] <= '0;
+        fault_mask_q[i] <= '0;
       end else begin
-        if (tb_service_cmd_valid && !fault_active_q) begin
-          // Only inject faults into partitions that are locked.
-          if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= { `FC_MEM[partition_offsets[i]][15:1], `FC_MEM[partition_offsets[i]][0] ^ |`FC_MEM[partition_digests[i]] };
-          end else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) begin
-            faulted_word_q[i] <= `FC_MEM[partition_offsets[i]][15:0] ^ {16{|`FC_MEM[partition_digests[i]]}};
-          end
+        // If some sort of fault is being requested, take a snapshot of the bottom 16 bits of the
+        // uncorrupted word for this partition.
+        if (new_fault_req) begin
+          before_fault_q[i] <= `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2][15:0];
+
+          // Now check to see which sort of fault was being requested. If correctable, then the
+          // fault mask to inject is just a single bit.
+          if (tb_service_cmd == CMD_FC_LCC_CORRECTABLE_FAULT) fault_mask_q[i] = 1;
+          // If uncorrectable, the fault mask should be all the bits of the word.
+          else if (tb_service_cmd == CMD_FC_LCC_UNCORRECTABLE_FAULT) fault_mask_q[i] = ~0;
         end
       end
     end
-  end
-  endgenerate
 
-  generate
-  for (genvar i = 0; i < 7; i++) begin
     always_comb begin
       if (fault_active_q) begin
-        force `FC_MEM[partition_offsets[i]][15:0] = faulted_word_q[i];
+        force `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2][15:0] = (before_fault_q[i] ^
+                                                                     fault_mask_q[i]);
       end else begin
-        release `FC_MEM[partition_offsets[i]][15:0];
+        release `FC_MEM[PartitionOffsetsAndDigests[i][0] / 2][15:0];
       end
     end
   end
-  endgenerate
 
 endmodule

@@ -635,7 +635,6 @@ module otp_ctrl
                      chk_timeout,
                      lfsr_fsm_err,
                      scrmbl_fsm_err,
-                    //  part_fsm_err[KdiIdx], //TODO: Removed this KdiIdx
                      fatal_bus_integ_error_q,
                      dai_idle,
                      chk_pending};

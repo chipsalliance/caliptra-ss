@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -61,7 +62,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #define NUM_STATES 21
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -88,11 +89,8 @@ void main (void) {
         }
 
         transition_state(lc_state_next,
-                     tokens[lc_state_next][0],
-                     tokens[lc_state_next][1],
-                     tokens[lc_state_next][2],
-                     tokens[lc_state_next][3],
-                     use_token[lc_state_next]);
+                         use_token[lc_state_next] ? tokens[lc_state_next] : NULL,
+                         false);
         
         wait_dai_op_idle(0);
 

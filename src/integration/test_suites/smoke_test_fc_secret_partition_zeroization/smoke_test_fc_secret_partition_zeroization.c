@@ -121,27 +121,21 @@ void secret_partition_zeroization(void) {
   for(uint32_t num_times = 0; num_times < zeroize_num_times; num_times++) {
     // Zeroize fuse.
     for (uint32_t addr = partitions[VENDOR_SECRET_PROD_PARTITION].address; addr < partitions[VENDOR_SECRET_PROD_PARTITION].digest_address; addr += (partitions[VENDOR_SECRET_PROD_PARTITION].granularity / 8)) {
-      dai_zer(addr, &read_data[0], &read_data[1], partitions[VENDOR_SECRET_PROD_PARTITION].granularity, 0);
-      if (read_data[0] != 0xFFFFFFFF || (partitions[VENDOR_SECRET_PROD_PARTITION].granularity> 32 && read_data[1] != 0xFFFFFFFF)) {
+      if (!dai_zer(addr, partitions[VENDOR_SECRET_PROD_PARTITION].granularity, 0, false)) {
         VPRINTF(LOW, "ERROR: [partitions[SECRET_LC_TRANSITION_PARTITION] ]fuse is not zeroized\n");
         goto epilogue;
       }
     }
-    memset(read_data, 0, sizeof(read_data));
     // Zeroize marker field.
-    dai_zer(partitions[VENDOR_SECRET_PROD_PARTITION].zer_address, &read_data[0], &read_data[1], 64, 0);
-    if (read_data[0] != 0xFFFFFFFF || read_data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(partitions[VENDOR_SECRET_PROD_PARTITION].zer_address, 64, 0, false)) {
       VPRINTF(LOW, "ERROR: [partitions[VENDOR_SECRET_PROD_PARTITION] marker is not zeroized\n");
       goto epilogue;
     }
-    memset(read_data, 0, sizeof(read_data));
     // Zeroize digest field.
-    dai_zer(partitions[VENDOR_SECRET_PROD_PARTITION].digest_address, &read_data[0], &read_data[1], 64, 0);
-    if (read_data[0] != 0xFFFFFFFF || read_data[1] != 0xFFFFFFFF) {
+    if (!dai_zer(partitions[VENDOR_SECRET_PROD_PARTITION].digest_address, 64, 0, false)) {
       VPRINTF(LOW, "ERROR: [partitions[VENDOR_SECRET_PROD_PARTITION] digest is not zeroized\n");
       goto epilogue;
     }
-    memset(read_data, 0, sizeof(read_data));
   }
 
  epilogue:
@@ -149,7 +143,7 @@ void secret_partition_zeroization(void) {
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -157,11 +151,8 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes();
 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
     initialize_otp_controller();
-    VPRINTF(LOW, "=================\nSecret_partition_zeroization\n=================\n\n")
+    VPRINTF(LOW, "=================\nSecret_partition_zeroization\n=================\n\n");
     secret_partition_zeroization();
 
     for (uint8_t ii = 0; ii < 160; ii++) {

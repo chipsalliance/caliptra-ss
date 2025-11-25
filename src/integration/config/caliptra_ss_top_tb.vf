@@ -7,7 +7,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/edn/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/rtl
@@ -116,6 +115,7 @@
 +incdir+${AVERY_I3C}/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/coverage
++incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/ai3c
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/mci
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/common
@@ -155,15 +155,15 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/rtl/entropy_src_pkg
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl/csrng_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/edn/rtl/edn_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_ram_1p.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_and2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_mux2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_inv.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xor2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xnor2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_flop_en.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_flop.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_buf.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_ram_1p.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_and2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_clock_mux2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_clock_inv.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_xor2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_xnor2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_en.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_cdc_rand_delay.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_2sync.sv
@@ -219,7 +219,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_async_simple.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_gf_mult.sv
 ${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp_pkg.sv
+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/prim_generic_otp_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
@@ -548,6 +548,7 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/alert_handler_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem_if.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv
+${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/include/css_mcu0_el2_def.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh

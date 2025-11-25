@@ -110,7 +110,7 @@ void program_secret_lc_transition_partition() {
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -119,7 +119,7 @@ void main (void) {
     // Set AXI user ID to MCU.
     grant_mcu_for_fc_writes(); 
 
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
 
     initialize_otp_controller();
 

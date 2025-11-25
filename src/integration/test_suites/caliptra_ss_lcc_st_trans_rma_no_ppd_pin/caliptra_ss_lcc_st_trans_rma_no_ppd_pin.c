@@ -34,7 +34,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 static uint32_t tokens[13][4] = {
-    [RAU] = {0xef1fadea, 0xadfc9693, 0x421748a2, 0xf12a5911}, // RAW_UNLOCK
+    [RAU] = {CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN},              // RAW_UNLOCK
     [TU1] = {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // TEST_UNLOCKED1
     [TU2] = {0x17c78a78, 0xc7b443ef, 0xd6931045, 0x55e74f3c}, // TEST_UNLOCKED2
     [TU3] = {0x1644aa12, 0x79925802, 0xdbc26815, 0x8597a5fa}, // TEST_UNLOCKED3
@@ -50,7 +50,7 @@ static uint32_t tokens[13][4] = {
 };
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -87,12 +87,7 @@ void main (void) {
 
         lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
 
-        transition_state_req_with_expec_error(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
+        transition_state(lc_state_next, tokens[token_type], true);
         wait_dai_op_idle(0);
 
         uint32_t lc_state_after_transition = read_lc_state();

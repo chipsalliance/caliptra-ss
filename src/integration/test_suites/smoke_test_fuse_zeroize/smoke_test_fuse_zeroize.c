@@ -158,7 +158,7 @@ void RAW_to_TESTUNLOCK0(){
         (next_lc_state_5bit << 5)  | 
         next_lc_state_5bit;
 
-    sw_transition_req(targeted_state_5, 0xf12a5911, 0x421748a2, 0xadfc9693, 0xef1fadea, 1); //TEST_UNLOCKED0, tokenmsb, tokenlsb, conditional
+    sw_transition_req(targeted_state_5, CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN, 1); //TEST_UNLOCKED0, tokenmsb, tokenlsb, conditional
 
     reg_value = lsu_read_32(LC_CTRL_HW_REVISION0_OFFSET); // Reset the lcc and its bfm
     VPRINTF(LOW, "LC_CTRL: CALIPTRA_SS_LC_CTRL is under reset!\n");
@@ -467,7 +467,7 @@ void main (void) {
     uint32_t mbox_resp_data;
     uint32_t cptra_boot_go;
     
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly

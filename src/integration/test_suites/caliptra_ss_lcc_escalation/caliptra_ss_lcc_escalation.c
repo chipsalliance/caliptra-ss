@@ -80,7 +80,7 @@ void deassert_escalation() {
 }
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     // Writing to Caliptra Boot GO register of MCI for CSS BootFSM to bring Caliptra out of reset 
     // This is just to see CSSBootFSM running correctly
@@ -129,21 +129,9 @@ void main (void) {
         force_PPD_pin();
     }
 
-    if (lc_state_curr == 0) {
-        sw_transition_req_with_expec_error(calc_lc_state_mnemonic(lc_state_next),
-                         raw_unlock_token[0],
-                         raw_unlock_token[1],
-                         raw_unlock_token[2],
-                         raw_unlock_token[3],
-                         1);
-    } else {
-        sw_transition_req_with_expec_error(calc_lc_state_mnemonic(lc_state_next),
-                         tokens[lc_state_next][0],
-                         tokens[lc_state_next][1],
-                         tokens[lc_state_next][2],
-                         tokens[lc_state_next][3],
-                         use_token[lc_state_next]);
-    }
+    const uint32_t *token = (lc_state_curr == 0) ? raw_unlock_token : tokens[lc_state_next];
+
+    transition_state(lc_state_next, token, true);
 
     // Wait a bit before reading out the LC state register.
     for (uint8_t ii = 0; ii < 160; ii++) {

@@ -215,7 +215,7 @@ always_comb begin: state_branch
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
-            else if (CLPTR_PROD_DEBUG_UNLOCK_AND) begin // TODO: Be careful for fault injections
+            else if (CLPTR_PROD_DEBUG_UNLOCK_AND) begin
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
                 security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
             end
@@ -379,7 +379,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
     $rose((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
         & (security_state_o.debug_locked == 1)
         & (mci_trans_st_current != TRANSLATOR_RESET))
-    |=> 
+    |=> ##1
     ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
 )
 

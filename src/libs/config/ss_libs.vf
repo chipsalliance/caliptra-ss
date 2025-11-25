@@ -1,4 +1,3 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 ${CALIPTRA_SS_ROOT}/src/libs/rtl/sram_zeroization_gadget.sv
 ${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh
-${CALIPTRA_SS_ROOT}/src/libs/rtl/caliptra_ss_prim_assert_sec_cm.svh

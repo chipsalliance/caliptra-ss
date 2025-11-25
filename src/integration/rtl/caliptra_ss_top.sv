@@ -110,6 +110,9 @@ module caliptra_ss_top
     input  axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i,
     output axi_struct_pkg::axi_rd_rsp_t cptra_ss_lc_axi_rd_rsp_o,
 
+// Caliptra SS LC Controller Raw Unlock Token (hashed)
+    input  lc_ctrl_state_pkg::lc_token_t cptra_ss_raw_unlock_token_hashed_i,
+
 // Caliptra SS FC / OTP Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_otp_core_axi_wr_req_i,
     output axi_struct_pkg::axi_wr_rsp_t cptra_ss_otp_core_axi_wr_rsp_o,
@@ -240,6 +243,10 @@ module caliptra_ss_top
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
     output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
+
+
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o,
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
@@ -993,12 +1000,6 @@ module caliptra_ss_top
     // MCI Instance
     //=========================================================================
 
-    //TODO: we need to open two input ports for the following signals:
-            // lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
-            // lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
-    // These signals show that escalation is enabled at LCC and FUSE end and external clock was accepted.
-    // The following signal should be also an input coming from LC to MCI
-            //lc_hw_rev_t  hw_rev_o;
     mci_top #(
         .AXI_ADDR_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.araddr)),
         .AXI_DATA_WIDTH  (32                                       ),
@@ -1168,6 +1169,11 @@ module caliptra_ss_top
     caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
 
+    always_comb begin
+        cptra_ss_lc_escalate_en_o = lc_escalate_en_internal;
+        cptra_ss_lc_check_byp_en_o = lc_check_byp_en_internal;
+    end
+
 
     //--------------------------------------------------------------------------------------------
 
@@ -1181,6 +1187,7 @@ module caliptra_ss_top
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
             .lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),
+            .raw_unlock_token_hashed_i(cptra_ss_raw_unlock_token_hashed_i),
             .Allow_RMA_or_SCRAP_on_PPD(cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i),
             .axi_wr_req(cptra_ss_lc_axi_wr_req_i),
             .axi_wr_rsp(cptra_ss_lc_axi_wr_rsp_o),

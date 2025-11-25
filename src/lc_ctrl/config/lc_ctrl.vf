@@ -12,7 +12,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/ast/rtl
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/dmi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage
@@ -110,15 +109,15 @@ ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/sub2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/axi2tlul/rtl/axi2tlul.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/pwrmgr/rtl/pwrmgr_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_ram_1p.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_and2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_mux2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_clock_inv.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xor2.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_xnor2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_flop_en.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_flop.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_buf.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_ram_1p.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_and2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_clock_mux2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_clock_inv.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_xor2.sv
+${CALIPTRA_PRIM_ROOT}/rtl/${CALIPTRA_PRIM_MODULE_PREFIX}_xnor2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_en.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_cdc_rand_delay.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_2sync.sv
@@ -174,7 +173,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_async_simple.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_gf_mult.sv
 ${CALIPTRA_SS_ROOT}/src/ast/rtl/ast_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp_pkg.sv
+${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/prim_generic_otp_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/rtl/otp_ctrl_part_pkg.sv
@@ -216,4 +215,3 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_signal_decode.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_state_decode.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_state_transition.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl.sv
-${CALIPTRA_SS_ROOT}/src/dmi/rtl/dm_pkg.sv

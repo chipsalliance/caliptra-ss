@@ -27,6 +27,7 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include "fuse_ctrl_read_lock_map.h"
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
@@ -34,17 +35,6 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #else
     enum printf_verbosity verbosity_g = LOW;
 #endif
-
-#define NUM_READ_LOCK_REGS 7
-static uint32_t read_lock_registers[NUM_READ_LOCK_REGS] = {
-    SOC_OTP_CTRL_SW_MANUF_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_SVN_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_VENDOR_TEST_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_READ_LOCK,
-    SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_READ_LOCK
-};
 
 #define NUM_INTER_REGS 3
 static uint32_t interrupt_registers[NUM_INTER_REGS] = {
@@ -107,7 +97,7 @@ static uint32_t digest_registers[NUM_DIGEST_REGS] = {
 };
 
 void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n")
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
@@ -115,17 +105,20 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    //transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
     initialize_otp_controller();
 
     uint32_t value = 0;
 
     // Make sure all the read lock registers are set to 1 (disabled).
-    for (uint32_t i = 0; i < NUM_READ_LOCK_REGS; i++) {
-        value = lsu_read_32(read_lock_registers[i]);
+    for (int lockable_idx = 0; ; lockable_idx++) {
+        uint32_t partition_idx = read_lock_partition_indices[lockable_idx];
+        if (partition_idx == UINT32_MAX) break;
+        value = lsu_read_32(read_lock_csr_mapping[lockable_idx]);
         if ((value & 0x1) != 0x1) {
-            VPRINTF(LOW, "ERROR: incorrect value in read lock register %08X: exp: %08X act: %08X\n", read_lock_registers[i], 0x1, value);
+            VPRINTF(LOW,
+                    ("ERROR: incorrect value in read lock register %08X: "
+                     "exp: %08X act: %08X\n"),
+                    read_lock_csr_mapping[lockable_idx], 0x1, value);
             goto epilogue;
         }
     }

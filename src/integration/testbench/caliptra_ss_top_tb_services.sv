@@ -127,6 +127,12 @@ import tb_top_pkg::*;
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
         end 
+        if ($test$plusargs("CALIPTRA_SS_PROD_DBG_ZEROIZATION")) begin
+            force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
+            force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
+        end
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
             //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
@@ -180,22 +186,35 @@ import tb_top_pkg::*;
     localparam NUM_AGG_ERROR_FATAL = 7;
     localparam NUM_AGG_ERROR_NON_FATAL = 6;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
+    // Add buffer for console output only
+    string console_buffer = "";
 
     always @(negedge clk) begin
-        // console Monitor
-        if( mailbox_data_val & mailbox_write) begin
-            if (prev_mailbox_data[7:0] inside {8'h0A,8'h0D}) begin
-                $fwrite(fd,"%0t - ", $time);
-                $write("%0t - ", $time);
+        // Modified console Monitor
+        if (mailbox_data_val & mailbox_write) begin
+            // Write to file character-by-character (immediate)
+            if (prev_mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                $fwrite(fd, "%0t - ", $time);
             end
-            $fwrite(fd,"%c", mailbox_data[7:0]);
-            $write("%c", mailbox_data[7:0]);
-            if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
+            $fwrite(fd, "%c", mailbox_data[7:0]);
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
                 $fflush(fd);
             end
+            
+            // Buffer for console output (complete lines only)
+            console_buffer = {console_buffer, string'(mailbox_data[7:0])};
+            
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                // Write complete line to console
+                $write("%0t - %s", $time, console_buffer);
+                console_buffer = "";  // Clear buffer
+            end
+        end
+        if(!rst_l) begin
+            error_injection_mode <= '{default: 1'b0};
         end
         // ECC error injection
-        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
             $display("Injecting single bit DCCM error");
             error_injection_mode.dccm_single_bit_error <= 1'b1;
         end
@@ -207,9 +226,6 @@ import tb_top_pkg::*;
             $display("Disable ECC error injection");
             error_injection_mode <= '0;
         end
-        // ECC error injection - FIXME
-        error_injection_mode.dccm_single_bit_error <= 1'b0;
-        error_injection_mode.dccm_double_bit_error <= 1'b0;
 
         //TODO: randomly select which error bit to force for more complete testing
         // MCI error injection
@@ -1018,6 +1034,7 @@ endtask
 
 
 caliptra_ss_veer_sram_export veer_sram_export_inst (
+    .sram_error_injection_mode(error_injection_mode),
     .cptra_ss_mcu0_el2_mem_export
 );
 

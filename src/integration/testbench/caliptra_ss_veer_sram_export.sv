@@ -13,14 +13,83 @@
 // limitations under the License.
 //
 
+import tb_top_pkg::*;
+
 module caliptra_ss_veer_sram_export import css_mcu0_el2_pkg::*; #(
     `include "css_mcu0_el2_param.vh"
 ) (
+    // Decode:
+    //  [0] - Single bit, ICCM Error Injection
+    //  [1] - Double bit, ICCM Error Injection
+    //  [2] - Single bit, DCCM Error Injection
+    //  [3] - Double bit, DCCM Error Injection
+    input tb_top_pkg::veer_sram_error_injection_mode_t sram_error_injection_mode,
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export
 );
 
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_wr_fdata_bank;
     logic [pt.DCCM_NUM_BANKS-1:0][pt.DCCM_FDATA_WIDTH-1:0] dccm_bank_fdout;
+//////////////////////////////////////////////////////
+// Sim-only Error Injection for ICCM/DCCM
+//
+    //bit   [pt.ICCM_NUM_BANKS-1:0]          iccm_flip_bit;
+    bit   [pt.DCCM_NUM_BANKS-1:0]          dccm_flip_bit;
+    //logic [pt.ICCM_NUM_BANKS-1:0] [39-1:0] iccm_sram_wdata_bitflip;
+    logic [pt.DCCM_NUM_BANKS-1:0] [39-1:0] dccm_sram_wdata_bitflip;
+    int ii,jj,kk,ll;
+
+    `ifndef VERILATOR
+        initial begin
+            //bitflip_mask_generator #(39) iccm_bitflip_gen = new();
+            bitflip_mask_generator #(39) dccm_bitflip_gen = new();
+            forever begin
+                @(posedge cptra_ss_mcu0_el2_mem_export.clk)
+                //if (~sram_error_injection_mode.iccm_single_bit_error && ~sram_error_injection_mode.iccm_double_bit_error) begin
+                //    iccm_sram_wdata_bitflip <= '{default:0};
+                //end
+                //else if (cptra_ss_mcu0_el2_mem_export.iccm_clken & cptra_ss_mcu0_el2_mem_export.iccm_wren_bank) begin
+                //    // Corrupt 50% of the writes
+                //    for (ii = 0; ii < pt.ICCM_NUM_BANKS; ii++) begin
+                //        iccm_flip_bit[ii] = 1'($urandom_range(0,99) < 50);
+                //        iccm_sram_wdata_bitflip[ii] <= iccm_flip_bit[ii] ? iccm_bitflip_gen.get_mask(sram_error_injection_mode.iccm_double_bit_error) : '0;
+                //    end
+                //end
+                if (~sram_error_injection_mode.dccm_single_bit_error && ~sram_error_injection_mode.dccm_double_bit_error) begin
+                    dccm_sram_wdata_bitflip <= '{default:0};
+                end
+                else if (cptra_ss_mcu0_el2_mem_export.dccm_clken & cptra_ss_mcu0_el2_mem_export.dccm_wren_bank) begin
+                    // Corrupt 50% of the writes
+                    for (jj = 0; jj < pt.DCCM_NUM_BANKS; jj++) begin
+                        dccm_flip_bit[jj] = 1'($urandom_range(0,99) < 50);
+                        dccm_sram_wdata_bitflip[jj] <= dccm_flip_bit[jj] ? dccm_bitflip_gen.get_mask(sram_error_injection_mode.dccm_double_bit_error) : '0;
+                    end
+                end
+            end
+        end
+    `else
+        always @(posedge cptra_ss_mcu0_el2_mem_export.clk) begin
+            // Corrupt 50% of the writes
+            //if ((~sram_error_injection_mode.iccm_single_bit_error && ~sram_error_injection_mode.iccm_double_bit_error)) begin
+            //    iccm_sram_wdata_bitflip <= '{default:0};
+            //end
+            //else if (cptra_ss_mcu0_el2_mem_export.iccm_clken & cptra_ss_mcu0_el2_mem_export.iccm_wren_bank) begin
+            //    for (kk = 0; kk < pt.ICCM_NUM_BANKS; kk++) begin
+            //        iccm_flip_bit[kk] <= ($urandom % 100) < 50;
+            //        iccm_sram_wdata_bitflip[kk] <= iccm_flip_bit[kk] ? get_bitflip_mask(sram_error_injection_mode.iccm_double_bit_error) : '0;
+            //    end
+            //end
+            // Corrupt 50% of the writes
+            if ((~sram_error_injection_mode.dccm_single_bit_error && ~sram_error_injection_mode.dccm_double_bit_error)) begin
+                dccm_sram_wdata_bitflip <= '{default:0};
+            end
+            else if (cptra_ss_mcu0_el2_mem_export.dccm_clken & cptra_ss_mcu0_el2_mem_export.dccm_wren_bank) begin
+                for (ll = 0; ll < pt.DCCM_NUM_BANKS; ll++) begin
+                    dccm_flip_bit[ll] <= ($urandom % 100) < 50;
+                    dccm_sram_wdata_bitflip[ll] <= dccm_flip_bit[ll] ? get_bitflip_mask(sram_error_injection_mode.dccm_double_bit_error) : '0;
+                end
+            end
+        end
+    `endif
 
 //////////////////////////////////////////////////////
 // DCCM
@@ -36,23 +105,11 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
                                             .BC1     (1'b0   ), \
                                             .BC2     (1'b0   ), \
 
-    logic [pt.DCCM_NUM_BANKS-1:0] [pt.DCCM_FDATA_WIDTH-1:0] dccm_wdata_bitflip;
-    int ii;
     localparam DCCM_INDEX_DEPTH = ((pt.DCCM_SIZE)*1024)/((pt.DCCM_BYTE_WIDTH)*(pt.DCCM_NUM_BANKS));  // Depth of memory bank
     // 8 Banks, 16KB each (2048 x 72)
-    always_ff @(cptra_ss_mcu0_el2_mem_export.clk) begin : inject_dccm_ecc_error
-        // if (~error_injection_mode.dccm_single_bit_error && ~error_injection_mode.dccm_double_bit_error) begin
-        //     dccm_wdata_bitflip <= '{default:0};
-        // end else if (cptra_ss_mcu0_el2_mem_export.dccm_clken & cptra_ss_mcu0_el2_mem_export.dccm_wren_bank) begin
-        //     for (ii=0; ii<pt.DCCM_NUM_BANKS; ii++) begin: dccm_bitflip_injection_loop
-        //         dccm_wdata_bitflip[ii] <= get_bitflip_mask(error_injection_mode.dccm_double_bit_error);
-        //     end
-        // end
-        dccm_wdata_bitflip <= '{default:0};
-    end
     for (genvar i=0; i<pt.DCCM_NUM_BANKS; i++) begin: dccm_loop
 
-        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {cptra_ss_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], cptra_ss_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_wdata_bitflip[i];
+        assign dccm_wr_fdata_bank[i][pt.DCCM_FDATA_WIDTH-1:0] = {cptra_ss_mcu0_el2_mem_export.dccm_wr_ecc_bank[i], cptra_ss_mcu0_el2_mem_export.dccm_wr_data_bank[i]} ^ dccm_sram_wdata_bitflip[i];
         assign cptra_ss_mcu0_el2_mem_export.dccm_bank_dout[i] = dccm_bank_fdout[i][31:0];
         assign cptra_ss_mcu0_el2_mem_export.dccm_bank_ecc[i] = dccm_bank_fdout[i][38:32];
 
@@ -228,6 +285,14 @@ if (pt.DCCM_ENABLE == 1) begin: css_mcu0_dccm_enable
 end :css_mcu0_dccm_enable
 
 `include "icache_macros.svh"
+
+// ICACHE tie offs
+ if (pt.ICACHE_WAYPACK == 0 ) begin : VEER_TIE_OFF_PACKED
+     `EL2_TIE_OFF_PACKED(cptra_ss_mcu0_el2_mem_export)
+ end // VEER_TIE_OFF_UNPACKED
+ else begin: VEER_TIE_OFF_UNPACKED
+     `EL2_TIE_OFF_NON_PACKED(cptra_ss_mcu0_el2_mem_export)
+ end // VEER_TIE_OFF_PACKED
 
 // ICACHE DATA
  if (pt.ICACHE_WAYPACK == 0 ) begin : PACKED_0
