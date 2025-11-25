@@ -1,0 +1,42 @@
+# Unused Tests Waiver File
+#
+# This file contains a list of test directories that are intentionally not included
+# in any test suite CSV files. Each entry MUST include a comment explaining why
+# the test is excluded.
+#
+# Format:
+#   test_directory_name # REQUIRED: Comment explaining why this test is excluded
+#
+# Lines starting with # are comments and are ignored.
+# Empty lines are ignored.
+#
+# Examples:
+#   deprecated_test # This test is deprecated and will be removed in next release
+#   experimental_feature # Under development, not ready for CI
+#   manual_test_only # This test requires manual setup and cannot be automated
+#
+# NOTE: Waiver entries will cause the check to FAIL if:
+#   - The justification comment is missing
+#   - The test directory does not exist
+#   - The test is already being used (unnecessary waiver)
+#
+################################################################################
+
+# Add waived tests below this line:
+
+# MCU MBOX
+smoke_test_mcu_mbox_axi_param # Require specific dut build and are run manually with separate RTL
+smoke_test_mcu_mbox_instantiation # Require specific dut build and are run manually with separate RTL
+smoke_test_mcu_mbox_pass_data # https://github.com/chipsalliance/caliptra-ss/issues/924 - Remove when adding test back into regression
+
+# MCU
+mcu_set_mci_cacheable # Issue with AXI interconnect. Need new version to get passing
+
+# JTAG/DEBUG
+smoke_test_fc_debug_unlock_token # To be added to nightly: https://github.com/chipsalliance/caliptra-ss/issues/916
+smoke_test_fuse_prov_with_axi_id # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
+smoke_test_fuse_zeroize # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
+caliptra_ss_jtag_manuf_dbg # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
+caliptra_ss_jtag_uds_prog # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
+
+
