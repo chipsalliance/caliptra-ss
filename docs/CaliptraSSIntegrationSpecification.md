@@ -19,7 +19,7 @@
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
-    - [Caliptra Subsystem Top Interface \& signals](#caliptra-subsystem-top-interface--signals)
+    - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
     - [Clock](#clock)
     - [Reset](#reset)
@@ -144,10 +144,11 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
-  - [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
+- [CDC analysis and constraints](#cdc-analysis-and-constraints)
     - [Known Issues](#known-issues)
-    - [CDC Constraint](#cdc-constraint)
-    - [Analysis Result](#analysis-result)
+  - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers)
+  - [CDC analysis conclusions](#cdc-analysis-conclusions)
+  - [CDC constraints](#cdc-constraints)
 - [Reset Domain Crossing](#reset-domain-crossing)
   - [Reset Architecture](#reset-architecture)
   - [Reset Domain Stamping and Constraints](#reset-domain-stamping-and-constraints)
@@ -347,7 +348,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | `bready`        | 1                      | output          | input           |
 
 
-### Caliptra Subsystem Top Interface & signals
+### Caliptra Subsystem Top Interface & Signals
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
 |:---------|:----------|:------|:-------------------------------------|:-----------------------------------------|
@@ -706,7 +707,7 @@ This section describes an example implementation of integrator machine check rel
 
 This example is applicable to scenarios where an integrator may need control of or visibility into SRAM errors for purposes of reliability or functional safety. In such cases, integrators may introduce additional layers of error injection, detection, and correction logic surrounding SRAMs. The addition of such logic is transparent to the correct function of Caliptra Subsystem, and removes integrator dependency on Caliptra Subsystem components for error logging or injection.
 
-Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(calitpra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
+Note that the example assumes that data and ECC codes are in non-deterministic bit-position in the exposed SRAM interface bus. Accordingly, redundant correction coding is shown in the integrator level logic (i.e., integrator\_ecc(caliptra\_data, caliptra\_ecc)). If the Caliptra Subsystem data and ECC are deterministically separable at the Caliptra Subsystem interface, the integrator would have discretion to store the ECC codes directly and calculate integrator ECC codes for the data alone.
 
 *Figure: Example machine check reliability implementation*
 
@@ -2485,9 +2486,9 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
-## CDC Analysis and Constraints
+# CDC analysis and constraints
 
-Clock Domain Crossing (CDC) analysis is performed on the Caliptra Subsystem Design. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
+Clock Domain Crossing (CDC) analysis is performed on Caliptra Subsystem. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
 
 In an unconstrained environment, several CDC violations are anticipated. CDC analysis requires the addition of constraints to identify valid synchronization mechanisms and/or static/pseudo-static signals.
 
@@ -2499,13 +2500,67 @@ In an unconstrained environment, several CDC violations are anticipated. CDC ana
     - CALIPTRA_INC_ASSERT not defined by default
     - Comment out code under if condition for CDC analysis
 
-### CDC Constraint
+## Analysis of missing synchronizers
+* All of the signals, whether single-bit or multi-bit, originate from the CaliptraClockDomain clock and their endpoint is the RISCV JTAG clock domain in both Caliptra Core and MCU.
+* The violations occur on the read path to the JTAG.
+* We only need to synchronize the controlling signal for this interface.
+* Inside the dmi\_wrapper, the dmi\_reg\_en and dmi\_reg\_rd\_en comes from dmi\_jtag\_to\_core\_sync, which is a 2FF synchronizer.
 
-- cdc preference -multi_fanout_async
+The following code snippets and schematic diagrams illustrate the CDC violations that end at the JTAG interface.
 
-### Analysis Result
+*Figure: Code snippet showing JTAG-originating CDC violations*
 
-Caliptra Subsystem analysis showed no CDC violations
+el2_dbg.sv
+```verilog
+rvdffe #(32) dmi_rddata_reg (.din(dmi_reg_rdata_din[31:0]), .dout(dmi_reg_rdata[31:0]), .en(dmi_reg_en), .rst_l(dbg_dm_rst_l), .clk(clk), .*);
+```
+
+soc_ifc_top.sv
+```verilog
+cptra_uncore_dmi_reg_rdata <= cptra_uncore_dmi_unlocked_reg_en ? cptra_uncore_dmi_unlocked_reg_rdata_in : 
+                              cptra_uncore_dmi_locked_reg_en   ? cptra_uncore_dmi_locked_reg_rdata_in : cptra_uncore_dmi_reg_rdata;
+```
+
+dmi_mux.v
+```verilog
+// Read mux
+assign dmi_rdata = is_uncore_aperture ? dmi_uncore_rdata : dmi_core_rdata;
+```
+
+*Figure: Schematic diagram showing JTAG-originating CDC violations*
+
+![](./images/caliptra_ss_cdc_violation_path1.png)
+
+![](./images/caliptra_ss_cdc_violation_path2.png)
+
+![](./images/caliptra_ss_cdc_violation_path3.png)
+
+![](./images/caliptra_ss_cdc_violation_path4.png)
+
+## CDC analysis conclusions
+* Missing synchronizers appear to be the result of “inferred” and/or only 2-FF instantiated synchronizers.
+    * dmi\_jtag\_to\_core\_sync.v contains inferred 2FF synchronizers on the control signals “dmi\_reg\_wr\_en” and “dmi\_reg\_rd\_en”.
+    * 2FF synchronizer inferences are considered non-compliant and should be replaced by an explicitly instantiated synchronization module, which is intended to be substituted on a per-integrator basis.
+        * cdc report scheme two\_dff -severity violation
+* Multi-bit signals are effectively pseudo-static and are qualified by synchronized control qualifiers.
+    * Pseudo-static: wr\_data, wr\_addr
+        * cdc signal reg\_wr\_data  -module dmi\_wrapper -stable
+        * cdc signal reg\_wr\_addr  -module dmi\_wrapper -stable
+* The core clock frequency must be at least twice the TCK clock frequency of each TAP EPs for the JTAG data to pass correctly through the synchronizers.
+
+## CDC constraints
+* cdc report scheme two\_dff -severity violation
+* cdc signal reg\_wr\_data  -module dmi\_wrapper -stable
+* cdc signal reg\_wr\_addr  -module dmi\_wrapper -stable
+* cdc signal rd\_data       -module dmi\_wrapper -stable
+* cdc signal reg\_wr\_data  -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal reg\_wr\_addr  -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal rd\_data       -module css\_mcu0\_dmi\_wrapper -stable
+* cdc signal jtag\_dmi\_req_i -module dmi\_cdc -stable
+* cdc signal jtag\_dmi\_resp_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_req_o -module dmi\_cdc -stable
+* cdc signal core\_dmi\_resp_i -module dmi\_cdc -stable
+
 
 # Reset Domain Crossing
 
