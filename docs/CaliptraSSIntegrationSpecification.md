@@ -19,7 +19,7 @@
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
-    - [Caliptra Subsystem Top Interface \& signals](#caliptra-subsystem-top-interface--signals)
+    - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
     - [Clock](#clock)
     - [Reset](#reset)
@@ -149,7 +149,6 @@
   - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers)
   - [CDC analysis conclusions](#cdc-analysis-conclusions)
   - [CDC constraints](#cdc-constraints)
-  - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers-1)
 - [Reset Domain Crossing](#reset-domain-crossing)
   - [Reset Architecture](#reset-architecture)
   - [Reset Domain Stamping and Constraints](#reset-domain-stamping-and-constraints)
@@ -349,7 +348,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | `bready`        | 1                      | output          | input           |
 
 
-### Caliptra Subsystem Top Interface & signals
+### Caliptra Subsystem Top Interface & Signals
 
 | Facing   | Type      | width | Signal or Interface Name             | Description                              |
 |:---------|:----------|:------|:-------------------------------------|:-----------------------------------------|
