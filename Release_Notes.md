@@ -1,5 +1,36 @@
 # **Release Notes** #
 
+## Caliptra Subsystem 2p1p1 Release notes
+_*Release Date: 2025/11/26*_
+
+Integration spec updates with several clarifications
+
+### 1. Caliptra Core
+- Upgraded to Caliptra Core 2.1.1 final release that includes:
+  - Fix for security state debug not unlocking after manuf/prod dbg unlock flow (#1132)
+  - Fix for bug #1118 from ABR and test case to validate (#1121)
+
+### 2. I3C
+- Upgraded I3C to v1p4-patch at commit 4f2bb875e50752c3dfef9396f0dcf80be7316269
+  - Numerous fixes for CCC commands, CDC signals, virtual addressing, IBIs, min frequency, assorted FIXME items
+
+### 3. Life Cycle Controller (LCC)
+- No changes
+
+### 4. Fuse Controller (FC)
+- UDS/FE Programming limitation in debug mode (#953)
+
+### 5. Manufacturer Control Interface (MCI):
+- No changes
+
+### Validation test plan completed for:
+- FIPS Zeroization
+- OCP LOCK
+
+
+
+# Previous Releases #
+
 ## Caliptra Subsystem 2p1 Release notes
 _*Release Date: 2025/10/12*_
 
@@ -99,8 +130,6 @@ HW & Integration spec updates coverage all the modules
 - MCU interaction with all the blocks (I3C, Caliptra, LCC, FC, MCU ROM, and MCI)
 - Life Cycle Controller interactions and life cycle state changes
 - Life Cycle Controller & Fuse Controller interactions
-
-# Previous Releases #
 
 ## Caliptra Subsystem 0.8 Release Notes
 _*Release Date: 2025/01/20*_
