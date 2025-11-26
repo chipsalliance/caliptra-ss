@@ -1,16 +1,17 @@
 # **Release Notes** #
 
 ## Caliptra Subsystem 2.0.1 Release notes
-_*Release Date: 2025/11/14*_
+_*Release Date: 2025/11/26*_
 
 HW & Integration spec updates coverage all the modules
 
 ### 1. Caliptra Core
-- Upgraded to Caliptra Core 2.0.2 release
-- Design changes
+- Upgraded to Caliptra Core 2.0.3 release
+- Design changes since 2.0.1:
   - [BUG FIX] Fixed zeroization logic in adams-bridge [#203](https://github.com/chipsalliance/adams-bridge/issues/203)
   - [BUG FIX] Fixed KeyVault hardening for software write-enable [#1035](https://github.com/chipsalliance/caliptra-rtl/issues/1035)
   - [BUG FIX] Upgraded VeeR core to resolve bug in AXI-to-AHB bridge logic [#1055](https://github.com/chipsalliance/caliptra-rtl/issues/1055)
+  - [BUG FIX] Fix for security state debug not unlocking after manuf/prod dbg unlock flow [#1133](https://github.com/chipsalliance/caliptra-rtl/issues/1133)
 
 ### 2. I3C
 - Upgraded I3C-core from branch v1p4-patches, including numerous bug fixes
@@ -25,6 +26,8 @@ HW & Integration spec updates coverage all the modules
 - Made RAW unlock token a top-level input signal
 
 ### 4. Fuse Controller (FC)
+- Enhancements:
+  - [RTL] UDS/FE Programming limitation in debug mode (#940)
 - Final fuse map created per architectural requirements
 - Automation/Scripts to generate/update partitions per SOC specific needs and to generate corresponding vmem files for validation
 - FC validation & Coverage analysis
