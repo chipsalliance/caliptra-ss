@@ -1,7 +1,7 @@
 # **Release Notes** #
 
 ## Caliptra Subsystem 2.0.1 Release notes
-_*Release Date: 2025/11/14*_
+_*Release Date: 2025/11/26*_
 
 HW & Integration spec updates coverage all the modules
 
