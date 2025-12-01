@@ -239,6 +239,8 @@ module caliptra_ss_top
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
     output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
+    output logic caliptra_ss_otp_state_valid_o,
+    output logic caliptra_ss_volatile_raw_unlock_success_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
@@ -1133,6 +1135,7 @@ module caliptra_ss_top
         .SOC_DFT_EN(cptra_ss_soc_dft_en_o),
         .SOC_HW_DEBUG_EN(cptra_ss_soc_hw_debug_en_o),
         .otp_static_state_o(caliptra_ss_life_cycle_steady_state_o),
+        .otp_state_valid_o(caliptra_ss_otp_state_valid_o),
 
         // Converted Signals from LCC to Caliptra-core
         .security_state_o(mci_cptra_security_state)
@@ -1162,6 +1165,7 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
     caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
+    assign caliptra_ss_volatile_raw_unlock_success_o = lcc_volatile_raw_unlock_success;
 
 
     //--------------------------------------------------------------------------------------------
