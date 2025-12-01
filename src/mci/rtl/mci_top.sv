@@ -182,6 +182,7 @@ module mci_top
     output 	logic                                       SOC_HW_DEBUG_EN,
 
     output lc_ctrl_state_pkg::lc_state_e                                   otp_static_state_o,
+    output logic                                        otp_state_valid_o, // FC Security State Output is valid
 
     output soc_ifc_pkg::security_state_t                security_state_o
 
@@ -819,6 +820,7 @@ mci_lcc_st_trans LCC_state_translator (
     .SOC_DFT_EN(SOC_DFT_EN),
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
     .otp_static_state(otp_static_state_o),
+    .otp_state_valid_o(otp_state_valid_o),
     .security_state_o(security_state_o)
 );
 
