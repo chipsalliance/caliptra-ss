@@ -458,7 +458,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | output    | 64    | `cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o`    | Indication that the debug is unlocked for production state. Each bit represents a debug level. Currently, 8-bit is supported with Caliptra ROM |
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
 | External | output  | 1     | `caliptra_ss_otp_state_valid_o`              | One-bit valid indicator for the broadcast life-cycle state (`caliptra_ss_life_cycle_steady_state_o`).                                |
-| External | output | 1 | `caliptra_ss_volatile_raw_unlock_success_o` | Asserted when the life-cycle controller grants the volatile-unlock state; this transition bypasses the fuse macro, so `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not reflect it. |
+| External | output | 1 | `caliptra_ss_volatile_raw_unlock_success_o` | Asserted when the life-cycle controller grants the volatile-unlock state and remains asserted until the next power-cycle. This transition bypasses the fuse macro, so `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not reflect it. |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tck_i`            | MCU JTAG clock input                     |
 | External | input     | 1     | `cptra_ss_mcu_jtag_tms_i`            | MCU JTAG TMS input                       |
