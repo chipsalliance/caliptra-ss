@@ -281,6 +281,8 @@ module caliptra_ss_top_w_stub(
     wire cptra_ss_soc_dft_en_o;
     wire cptra_ss_soc_hw_debug_en_o;
     lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o;
+    logic caliptra_ss_otp_state_valid_o;
+    logic caliptra_ss_volatile_raw_unlock_success_o;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o;
 
@@ -570,6 +572,8 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
         .caliptra_ss_life_cycle_steady_state_o,
+        .caliptra_ss_otp_state_valid_o,
+        .caliptra_ss_volatile_raw_unlock_success_o,
         .cptra_ss_lc_escalate_en_o,
         .cptra_ss_lc_check_byp_en_o,
 
