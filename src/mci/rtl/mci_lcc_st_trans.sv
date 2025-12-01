@@ -51,6 +51,7 @@ module mci_lcc_st_trans
 
     output lc_state_e                                   otp_static_state,
 
+    output logic                                        otp_state_valid_o, // FC Security State Output is valid  
     output soc_ifc_pkg::security_state_t                security_state_o
 );
 
@@ -78,6 +79,7 @@ assign SOC_HW_DEBUG_EN_AND          = |(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP
 assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_unlock_mask_reg0_1);
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
 assign MCU_ROM_zeroization_AND      = (&ss_soc_MCU_ROM_zeroization_mask_reg) & FIPS_ZEROIZATION_PPD_i;
+assign otp_state_valid_o            = otp_data_valid;
 
 always_ff @(posedge clk_i or negedge rst_ni) begin
     if(!rst_ni) begin
