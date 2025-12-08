@@ -145,6 +145,9 @@ while {($rsp & 0x20) != 0} {
     set rsp [riscv dmi_read $CPTRA_DBG_MANUF_SERVICE_RSP_REG]
 }
 
+#Clear execute bit
+riscv dmi_write $mbox_execute_dmi_addr 0x0
+
 set success [expr {($rsp & 0x8) != 0}]
 set failure [expr {($rsp & 0x10) != 0}]
 
@@ -158,8 +161,11 @@ if {$success} {
     shutdown error
 }
 
-puts "TAP: Enabling Debug Module Control in riscv"
-riscv dmi_write $dmcontrol_addr 0x00000001
+#re-examine the target
+$_TARGETNAME.0 arp_examine
+
+# Mem access mode
+riscv set_mem_access sysbus
 
 puts "Read Debug Module Status Register..."
 set val [riscv dmi_read $dmstatus_addr]
@@ -167,6 +173,32 @@ puts "dmstatus: $val"
 if {($val & 0x00000c00) == 0} {
     echo "Debug did not unlock as expected!"
     shutdown error
+}
+
+puts "Acquire mbox lock"
+set lock [read_memory $mbox_lock_mem_addr 32 1 phys]
+while {($lock & 0x1) != 0} {
+    after 100    ;# Wait 100ms between polls to avoid busy looping.
+    set lock [read_memory $mbox_lock_mem_addr 32 1 phys]
+}
+
+puts "Write to mailbox SRAM directly through sysbus to verify debug access..."
+for {set i 0} {$i < 4} {incr i} {
+    set addr [expr {$mbox_sram_addr + $i * 4}]
+    set val  [expr {0x5a5a5a5a ^ $i}]
+    puts "Writing $val to address $addr"
+    write_memory $addr 32 $val phys
+}
+
+puts "Read back expected data from mailbox SRAM directly through sysbus"
+for {set i 0} {$i < 4} {incr i} {
+    set addr [expr {$mbox_sram_addr + $i * 4}]
+    set val  [expr {0x5a5a5a5a ^ $i}]
+    puts "Reading address $addr"
+    set actual [read_memory $addr 32 1 phys]
+    if {[compare $actual $val] != 0} {
+        shutdown error
+    }
 }
 
 shutdown

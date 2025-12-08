@@ -143,8 +143,8 @@ void main (void) {
     }
 
     VPRINTF(LOW, "MCU: Success done\n");
-    // reset_fc_lcc_rtl();
-    for (uint32_t ii = 0; ii < 5000; ii++) {
+    //Give some time for jtag to test debug unlock success
+    for (uint32_t ii = 0; ii < 10000; ii++) {
         __asm__ volatile ("nop"); // Sleep loop as "nop"
     }
 

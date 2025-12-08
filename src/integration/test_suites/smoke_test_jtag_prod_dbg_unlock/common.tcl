@@ -46,7 +46,7 @@ set mbox_execute_mem_addr 0x30020018
 set mbox_status_mem_addr 0x3002001C
 set mbox_unlock_mem_addr 0x30020020
 
-
+set mbox_sram_addr 0x30040000
 
 set mbox_dlen_dmi_addr 0x50
 set mbox_dout_dmi_addr 0x51

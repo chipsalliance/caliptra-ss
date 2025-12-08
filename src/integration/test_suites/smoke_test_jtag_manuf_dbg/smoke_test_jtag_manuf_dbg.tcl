@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 init
 
 set script_dir [file dirname [info script]]
@@ -124,10 +125,13 @@ if {$failure} {
 } else {
     puts "TAP: MANUF DBG returned an unexpected status: $rsp_val"
     shutdown error
-} 
+}
 
-puts "TAP: Enabling Debug Module Control in riscv"
-riscv dmi_write $dmcontrol_addr 0x00000001
+#re-examine the target
+$_TARGETNAME.0 arp_examine
+
+# Mem access mode
+riscv set_mem_access sysbus
 
 puts "Read Debug Module Status Register..."
 set val [riscv dmi_read $dmstatus_addr]
@@ -135,6 +139,32 @@ puts "dmstatus: $val"
 if {($val & 0x00000c00) == 0} {
     echo "Debug did not unlock as expected!"
     shutdown error
+}
+
+puts "Acquire mbox lock"
+set lock [read_memory $mbox_lock_mem_addr 32 1 phys]
+while {($lock & 0x1) != 0} {
+    after 100    ;# Wait 100ms between polls to avoid busy looping.
+    set lock [read_memory $mbox_lock_mem_addr 32 1 phys]
+}
+
+puts "Write to mailbox SRAM directly through sysbus to verify debug access..."
+for {set i 0} {$i < 4} {incr i} {
+    set addr [expr {$mbox_sram_addr + $i * 4}]
+    set val  [expr {0x5a5a5a5a ^ $i}]
+    puts "Writing $val to address $addr"
+    write_memory $addr 32 $val phys
+}
+
+puts "Read back expected data from mailbox SRAM directly through sysbus"
+for {set i 0} {$i < 4} {incr i} {
+    set addr [expr {$mbox_sram_addr + $i * 4}]
+    set val  [expr {0x5a5a5a5a ^ $i}]
+    puts "Reading address $addr"
+    set actual [read_memory $addr 32 1 phys]
+    if {[compare $actual $val] != 0} {
+        shutdown error
+    }
 }
 
 puts "TAP: MANUF DBG completed successfully."
