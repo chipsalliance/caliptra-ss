@@ -147,8 +147,8 @@ void main(void) {
         compare_token();
         while(1);
     } else {
-        VPRINTF(LOW, "CLP_CORE: Error because there is no MANUF DEBUG request...\n");
-        SEND_STDOUT_CTRL(0xff); //End the test
+        VPRINTF(ERROR, "CLP_CORE: Error because there is no MANUF DEBUG request...\n");
+        SEND_STDOUT_CTRL(0x01); //End the test
     } 
 
 }
