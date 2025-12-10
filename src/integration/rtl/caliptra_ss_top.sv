@@ -1263,8 +1263,7 @@ module caliptra_ss_top
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
         
-        .prim_tl_i                  (107'd0),
-        .prim_tl_o                  (),
+
         .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
         .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 
