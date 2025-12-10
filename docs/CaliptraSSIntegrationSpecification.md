@@ -938,12 +938,12 @@ For an in-depth understanding of the Fuse Controller's functionality, including 
 ## Fuse Macro Memory Map and Fuse Controller CSR Address Map
 
 The Caliptra Subsystem fuse controller supports a flexible and extensible memory map for storing one-time programmable (OTP) data. This structure is documented in the following files:
-See [Fuse Controller Register Map](../src/fuse_ctrl/doc/otp_ctrl_registers.md) for registers.
-See [Fuse Macor Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md) for fuse partition map.
+ - [Fuse Controller Register Map](../src/fuse_ctrl/doc/otp_ctrl_registers.md) for registers.
+ - [Fuse Macro Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md) for fuse partition map.
 
 The current fuse memory map consists of **three main architectural segments**: **Caliptra-Core** (prefix: `CALIPTRA_CORE`), **Caliptra-Subsystem** (prefix: `CALIPTRA_SS`), **SoC/Vendor-Specific**.
 
-This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when the subsystem is instantiated with Caliptra Subsystem. These Caliptra Subsystem fuses can also be configured based on SoC requirements. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
+This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when Caliptra is instantiated with Caliptra Subsystem. These Caliptra Subsystem fuses can also be configured based on SoC requirements. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
 
 
 ### **SOC_SPECIFIC_IDEVID_CERTIFICATE Usage**
