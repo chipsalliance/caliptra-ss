@@ -37,7 +37,7 @@ volatile uint32_t  intr_count;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 
-uint8_t debug_level = 5;
+uint8_t debug_level = 1;
 uint32_t checksum, ii, lenght_challenge;
 uint32_t expected_unlock_req_payload[2];
 uint32_t expected_token_payload[0x753];
@@ -225,6 +225,10 @@ void main(void) {
         status_reg = status_reg | SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_SUCCESS_MASK;
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
         VPRINTF(LOW, "\n\nCLP_CORE: set PROD_DBG_UNLOCK_SUCCESS high...\n\n");
+        if (debug_level <= 32)
+            lsu_write_32(CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_0, 1 << (debug_level-1));
+        else
+            lsu_write_32(CLP_SOC_IFC_REG_SS_SOC_DBG_UNLOCK_LEVEL_1, 1 << (debug_level-33));
         status_reg = lsu_read_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP);
         status_reg = status_reg & (SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP_PROD_DBG_UNLOCK_IN_PROGRESS_MASK ^ 0xFFFFFFFF);
         lsu_write_32(CLP_SOC_IFC_REG_SS_DBG_SERVICE_REG_RSP, status_reg);
