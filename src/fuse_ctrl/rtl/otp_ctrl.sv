@@ -37,8 +37,8 @@ module otp_ctrl
   input axi_struct_pkg::axi_rd_req_t                  core_axi_rd_req,
   output axi_struct_pkg::axi_rd_rsp_t                 core_axi_rd_rsp,
 
-  input  tlul_pkg::tl_h2d_t                          prim_tl_i,
-  output tlul_pkg::tl_d2h_t                          prim_tl_o,
+
+
 
   input prim_generic_otp_outputs_t                  prim_generic_otp_outputs_i,
   output prim_generic_otp_inputs_t                  prim_generic_otp_inputs_o,
@@ -174,7 +174,7 @@ module otp_ctrl
   /////////////
 
   // We have one CSR node, one functional TL-UL window and a gate module for that window
-  logic [2:0] intg_error;
+  logic [1:0] intg_error;
 
   tlul_pkg::tl_h2d_t tl_win_h2d;
   tlul_pkg::tl_d2h_t tl_win_d2h;
@@ -812,29 +812,6 @@ end
   prim_generic_otp_pkg::err_e          part_otp_err;
   logic [OtpIfWidth-1:0]       part_otp_rdata;
   logic                        otp_rvalid;
-  tlul_pkg::tl_h2d_t           prim_tl_h2d_gated;
-  tlul_pkg::tl_d2h_t           prim_tl_d2h_gated;
-
-  // Life cycle qualification of TL-UL test interface.
-  // SEC_CM: TEST.BUS.LC_GATED
-  // SEC_CM: TEST_TL_LC_GATE.FSM.SPARSE
-  tlul_lc_gate #(
-    .NumGatesPerDirection(2)
-  ) u_tlul_lc_gate (
-    .clk_i,
-    .rst_ni,
-    .tl_h2d_i(prim_tl_i),
-    .tl_d2h_o(prim_tl_o),
-    .tl_h2d_o(prim_tl_h2d_gated),
-    .tl_d2h_i(prim_tl_d2h_gated),
-    .lc_en_i (lc_dft_en[0]),
-    .flush_req_i('0),
-    .flush_ack_o(),
-    .resp_pending_o(),
-    .err_o   (intg_error[2])
-  );
-
-
 
 
   always_comb begin : FCM_port_assignment
@@ -848,7 +825,6 @@ end
     
     // Test interface signals
     lc_otp_vendor_test_o.status          = '0;
-    prim_tl_d2h_gated                    = '0;
     
     // Other DFT signals
     prim_generic_otp_inputs_o.scanmode_i  = scanmode_i;
@@ -1450,7 +1426,6 @@ end
   `CALIPTRA_ASSERT_INIT(LcStateSize_A,         lc_ctrl_state_pkg::LcStateWidth == LcStateSize * 8)
   `CALIPTRA_ASSERT_INIT(LcTransitionCntSize_A, lc_ctrl_state_pkg::LcCountWidth == LcTransitionCntSize * 8)
   `CALIPTRA_ASSERT_KNOWN(CoreTlOutKnown_A,            core_tl_o)
-  `CALIPTRA_ASSERT_KNOWN(PrimTlOutKnown_A,            prim_tl_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpOperationDoneKnown_A, intr_otp_operation_done_o)
   `CALIPTRA_ASSERT_KNOWN(IntrOtpErrorKnown_A,         intr_otp_error_o)
   `CALIPTRA_ASSERT_KNOWN(PwrOtpInitRspKnown_A,        pwr_otp_o)
@@ -1474,6 +1449,5 @@ end
   `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlLfsrTimerStateRegsCheck_A, u_otp_ctrl_lfsr_timer.u_state_regs, alerts[1])
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OptCtrlScrmlPrimCountCheck_A, u_otp_ctrl_scrmbl.u_prim_count, alerts[1])
   `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlScrmblStateRegsCheck_A, u_otp_ctrl_scrmbl.u_state_regs, alerts[1])
-  `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpCtrlTlulLcGateStateRegsCheck_A, u_tlul_lc_gate.u_state_regs, alerts[1])
 
 endmodule : otp_ctrl
