@@ -43,14 +43,13 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
  */
 void unexpected_reset() {
     const uint32_t sentinel = 0x01;
-
+choosing_new_partition:
     partition_t partition = partitions[xorshift32() % (NUM_PARTITIONS-1)];
 
-    if (partition.address > 0x40 && partition.address < 0xD0) {
-        grant_caliptra_core_for_fc_writes();
-    } else {
-        grant_mcu_for_fc_writes(); 
-    }
+    if (is_caliptra_secret_addr(partition.address)) {
+        VPRINTF(LOW, "INFO: Need to re-iterate...\n");
+        goto choosing_new_partition;
+    } 
 
     dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
 
@@ -73,13 +72,6 @@ void main (void) {
     
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes(); 
-
-    transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
-
-    initialize_otp_controller();
 
     unexpected_reset();
 
