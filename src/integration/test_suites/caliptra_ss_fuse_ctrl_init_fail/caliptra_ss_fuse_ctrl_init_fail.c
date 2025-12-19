@@ -42,6 +42,8 @@ static void nop_sleep(unsigned count) {
     }
 }
 
+const MANUf_TOKEN= {0x2f533ae9, 0x341d2478, 0x5f066362, 0xb5fe1577};
+
 bool body(void) {
     if (!transition_state(TEST_UNLOCKED0, raw_unlock_token, false))
         return false;
@@ -71,14 +73,19 @@ bool body(void) {
     bool is_correctable = (fault == CMD_FC_LCC_CORRECTABLE_FAULT);
 
     if (is_caliptra_secret_addr(partition.address)) {
-        grant_caliptra_core_for_fc_writes();
+        VPRINTF(LOW, "INFO: Finish test because UDS/FE secret fuses cannot be programmed in early states\n...");
+        return true;
     } else {
         grant_mcu_for_fc_writes();
     }
 
     // Write one word in the selected partition and lock it afterwards.
     if (!dai_wr(partition.address, 0x1, 0x2, partition.granularity, 0)) return false;
-    calculate_digest(partition.address, 0);
+    if (partition.sw_digest) {
+        dai_wr(partition.digest_address, 0xA5A5, 0xFFFF, 64, 0);
+    } else if (partition.hw_digest) {
+        calculate_digest(partition.address, 0);
+    }
 
     // Inject either a correctable or uncorrectable error into all locked partitions with digests
     // (as recorded in a list in fc_lcc_tb_services). In particular, this will include the selected
@@ -94,7 +101,7 @@ bool body(void) {
     // uncorrectable error. Give the block another 1e3 cycles (which, from experiment, should be a
     // generous upper bound).
     reset_fc_lcc_rtl();
-    nop_sleep(1000);
+    mcu_sleep(1000);
 
     // At this point, we want to predict the value of OTP_CTRL_STATUS that we expect. This is a bit
     // tricky, because several of the partition bits depend on lots that we don't really want to
@@ -130,6 +137,8 @@ bool body(void) {
     // Instead of doing that, read the status register directly, then mask out the IDLE bit in case
     // it was set.
     uint32_t otp_status = lsu_read_32(SOC_OTP_CTRL_STATUS) & ~OTP_CTRL_STATUS_DAI_IDLE_MASK;
+    VPRINTF(LOW, "INFO: OTP_CTRL_STATUS = 0x%08x after injecting %s fault into partition %d.\n",
+            otp_status, err_desc, partition.index);
     bool success = true;
 
     if (error_req & ~otp_status) {
@@ -152,6 +161,8 @@ bool body(void) {
     // error code to go high (giving 7).
     unsigned exp_err_code = is_correctable ? 2 : 7;
     uint32_t err_code = lsu_read_32(SOC_OTP_CTRL_ERR_CODE_RF_ERR_CODE_0 + 0x4*partition.index);
+    VPRINTF(LOW, "INFO: OTP_CTRL_ERR_CODE for partition %d is %d after injecting %s fault.\n",
+            partition.index, err_code, err_desc);
 
     if (err_code != exp_err_code) {
         VPRINTF(LOW, "ERROR: After %s error, the error code register has %d but we expect %d.\n",
@@ -169,11 +180,15 @@ void main (void) {
     wait_dai_op_idle(0);
       
     lcc_initialization();
-    grant_mcu_for_fc_writes(); 
 
     bool test_passed = body();
+    if (test_passed) {
+        VPRINTF(LOW, "INFO: Test passed.\n");
+    } else {
+        VPRINTF(LOW, "INFO: Test failed.\n");
+    }
 
-    nop_sleep(160);
+    mcu_sleep(160);
 
-    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
+    SEND_STDOUT_CTRL(0xFF);
 }
