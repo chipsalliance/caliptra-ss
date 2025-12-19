@@ -62,7 +62,7 @@ void trans_invalid_error(void) {
 // Trigger a token_invalid_error in the lc_ctrl FSM.
 void token_invalid_error(void) {
     // Transitioning from TEST_LOCKED0 to TEST_UNLOCKED1 needs a correct token.
-    if (!transition_state_req(TEST_UNLOCKED1, NULL, true)) {
+    if (!transition_state(TEST_UNLOCKED1, NULL, true)) {
         VPRINTF(LOW, "ERROR: Successful transition with no token.\n");
         return;
     }
@@ -71,7 +71,7 @@ void token_invalid_error(void) {
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
-    transition_req_with_expec_error(TEST_UNLOCKED1, invalid_token);
+    transition_state(TEST_UNLOCKED1, invalid_token, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TOKEN_ERROR_LOW) & 0x1)) {
@@ -82,7 +82,7 @@ void token_invalid_error(void) {
 // Trigger a flash_rma_error in the lc_ctrl FSM.
 void flash_rma_error(void) {
     // Transitioning into the RMA state without forcing PPD pin will result in a flash_rma_error.
-    transition_req_with_expec_error(RMA, NULL);
+    transition_state(RMA, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_FLASH_RMA_ERROR_LOW) & 0x1)) {
@@ -95,7 +95,7 @@ void otp_prog_error(void) {
     // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    transition_req_with_expec_error(TEST_LOCKED0, NULL);
+    transition_state(TEST_LOCKED0, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_OTP_ERROR_LOW) & 0x1)) {
@@ -106,7 +106,7 @@ void otp_prog_error(void) {
 // Trigger a state_invalid_error in the lc_ctrl FSM.
 void state_invalid_error(void) {
     // Transitioning into the SCRAP state without forcing the PPD pin will result in a state_invalid_error.
-    transition_req_with_expec_error(SCRAP, NULL);
+    transition_state(SCRAP, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_STATE_ERROR_LOW) & 0x1)) {
