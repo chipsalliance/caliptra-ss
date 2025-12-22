@@ -205,23 +205,23 @@ bool body(void) {
 
     mcu_sleep(20);
 
-    // VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
-    // revoke_grant_mcu_for_fc_writes();
+    VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
+    revoke_grant_mcu_for_fc_writes();
 
-    // mcu_sleep(20);
+    mcu_sleep(20);
 
-    // VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    // if (!try_to_zeroize_secret_partitions(false)) return false;
-    // VPRINTF(LOW, "\n\n------------------------------\n\n");
+    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
+    if (!try_to_zeroize_secret_partitions(false)) return false;
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    // mcu_sleep(20);
+    mcu_sleep(20);
 
-    // VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
-    // grant_caliptra_core_for_fc_writes();
+    VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
+    grant_caliptra_core_for_fc_writes();
 
-    // VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    // if (!try_to_zeroize_secret_partitions(false)) return false;
-    // VPRINTF(LOW, "\n\n------------------------------\n\n");
+    VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
+    if (!try_to_zeroize_secret_partitions(false)) return false;
+    VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
 
