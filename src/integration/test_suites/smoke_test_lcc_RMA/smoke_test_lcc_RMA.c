@@ -22,6 +22,10 @@
 #include "caliptra_ss_lib.h"
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdbool.h>
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY

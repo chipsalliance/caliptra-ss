@@ -80,7 +80,7 @@ bool write_tokens(uint32_t base_addr)
     // Write the tokens into the partition. These 8 tokens each take two 64-bit
     // writes.
     if (!dai_write_fuses(base_addr, hashed_tokens, 16)) return false;
-    if (!calculate_digest(base_address, 0)) return false;
+    if (!calculate_digest(base_addr, 0)) return false;
 
     reset_fc_lcc_rtl();
     return wait_dai_op_idle(0);
@@ -96,7 +96,7 @@ bool write_tokens(uint32_t base_addr)
 bool iterate_test_unlock_states(void) {
     if (!transition_state_check(TEST_UNLOCKED0, raw_unlock_token)) return false;
 
-    initialize_otp_controller();
+    wait_dai_op_idle(0);
 
     if (!write_tokens(CPTRA_SS_TEST_UNLOCK_TOKEN_1)) return false;
 
@@ -135,8 +135,13 @@ void main (void) {
     grant_mcu_for_fc_writes();
 
     bool test_passed = iterate_test_unlock_states();
+    if (test_passed) {
+        VPRINTF(LOW, "INFO: Smoke Test FC Unlock Transitions Passed!\n");
+    } else {
+        handle_error("ERROR: Smoke Test FC Unlock Transitions Failed!\n");
+    }
 
     mcu_sleep(160);
 
-    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
+    SEND_STDOUT_CTRL(0xFF);
 }

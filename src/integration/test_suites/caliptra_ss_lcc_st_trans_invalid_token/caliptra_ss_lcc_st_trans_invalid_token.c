@@ -66,6 +66,10 @@ void main (void) {
 
         uint32_t lc_state_curr = read_lc_state();
         uint32_t lc_cnt_curr = read_lc_counter();
+        if (lc_cnt_curr == 24) {
+            VPRINTF(LOW, "INFO: reached max. LC counter value, finish test\n");
+            break;
+        }
         uint32_t lc_cnt_next = lc_cnt_curr + 1; 
 
         VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);

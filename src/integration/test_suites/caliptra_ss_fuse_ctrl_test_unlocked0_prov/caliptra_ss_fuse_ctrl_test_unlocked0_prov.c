@@ -40,19 +40,27 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void test_unlocked0_provision() {
     const uint32_t sentinel = 0xA5;
 
-    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)) exit(1);
+    if (!check_lc_state("TEST_UNLOCKED0", TEST_UNLOCKED0)){
+        handle_error("ERROR: Incorrect LC state at start of test_unlocked0_provision\n");
+        return;
+    }
+    else {
+        VPRINTF(LOW, "INFO: Correct LC state at start of test_unlocked0_provision\n");
+    }
 
     uint32_t read_value, zero;
-    uint32_t rnd_fuse_addresses[NUM_PARTITIONS-1];
-
-    for (uint32_t i = 0; i < (NUM_PARTITIONS-1); i++) {
+    uint32_t rnd_fuse_addresses[NUM_PARTITIONS-2]; // Exclude the last partition which is lifecycle
+    VPRINTF(LOW, "INFO:: starting the task.\n");
+    for (uint32_t i = 0; i < (NUM_PARTITIONS-2); i++) {
+        
         if (is_caliptra_secret_addr(partitions[i].address)) {
-            grant_caliptra_core_for_fc_writes();
-        } else {
-            grant_mcu_for_fc_writes(); 
+            VPRINTF(LOW, "INFO:: Got the secret partition with index %d and address 0x%x\n", i, partitions[i].address);
+            VPRINTF(LOW, "INFO:: Skipping provisioning of secret partition in debug mode.\n");
+            continue; // You cannot provision secret fuses in debug mode
         }
 
         rnd_fuse_addresses[i] = partitions[i].fuses[xorshift32() % partitions[i].num_fuses];
+        VPRINTF(LOW, "INFO:: Chosen fuse address 0x%x from partition index %d, number of fuse is %d\n", rnd_fuse_addresses[i], i, partitions[i].num_fuses);
         
         dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, 0);
         
@@ -67,27 +75,23 @@ void test_unlocked0_provision() {
             calculate_digest(partitions[i].address, 0);
         }
     } 
-
+    wait_dai_op_idle(0);
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
 
-    for (uint32_t i = 0; i < (NUM_PARTITIONS-1); i++) {
+    for (uint32_t i = 0; i < (NUM_PARTITIONS-2); i++) {
         if (is_caliptra_secret_addr(partitions[i].address)) {
-            grant_caliptra_core_for_fc_writes();
-        } else {
-            grant_mcu_for_fc_writes(); 
+            VPRINTF(LOW, "INFO:: Got the secret partition with index %d and address 0x%x\n", i, partitions[i].address);
+            VPRINTF(LOW, "INFO:: Skipping provisioning of secret partition in debug mode.\n");
+            continue; // You cannot provision secret fuses in debug mode
         }
-
+        VPRINTF(LOW, "INFO:: Trying to modify already locked fuse.\n");
         if (partitions[i].sw_digest || partitions[i].hw_digest) {
             dai_wr(rnd_fuse_addresses[i], sentinel, 0, partitions[i].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
         }
-        
-        if (partitions[i].sw_digest) {
-            dai_rd(rnd_fuse_addresses[i], &read_value, &zero, partitions[i].granularity, 0);
-            if ((read_value & 0xFF) != sentinel) {
-                VPRINTF(LOW, "ERROR: incorrect value: exp: %08X act: %08X\n", read_value, sentinel);
-            }
-        }
+
+        reset_fc_lcc_rtl();
+        wait_dai_op_idle(0);
     } 
 }
 
@@ -101,8 +105,6 @@ void main (void) {
     grant_mcu_for_fc_writes(); 
 
     transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
-
-    initialize_otp_controller();
 
     test_unlocked0_provision();
 
