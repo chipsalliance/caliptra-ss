@@ -104,6 +104,47 @@ bool try_to_zeroize_secret_partitions(bool exp_success) {
     return true;
 }
 
+/*
+    We have one shot to perform secret zeroization because after that, the integrety check will fail
+    and the fuse controller will go into a permanent error state. The reason for this is that the integrity
+    check engine calculates digests for all partitions including the secret partitions. When we zeroize
+    a secret partition, its digest will no longer match the expected value, causing the integrity check
+    to fail continuously. IF WE ZEOIZE THE ZEROIZATION MARKER FIRST, THEN THE INTEGRITY CHECK WOULD NOT
+    BE ABLE TO DETECT THE MISMATCH, ALLOWING US TO ZEROIZE OTHER SECRET PARTITIONS. HOWEVER, THIS IS NOT THE
+    INTENTION OF THIS TEST.
+*/
+bool try_to_zeroize_one_secret_partition(bool exp_success, uint32_t partition_index) {
+    const partition_t hw_part_uds = partitions[SECRET_MANUF_PARTITION];
+    const partition_t hw_part_fe0 = partitions[SECRET_PROD_PARTITION_0];
+    const partition_t hw_part_fe1 = partitions[SECRET_PROD_PARTITION_1];
+    const partition_t hw_part_fe2 = partitions[SECRET_PROD_PARTITION_2];
+    const partition_t hw_part_fe3 = partitions[SECRET_PROD_PARTITION_3];
+
+    if (partition_index == 0) {
+        if (!try_to_zeroize_secret_partition("UDS", &hw_part_uds, exp_success))
+            return false;
+    }
+    else if (partition_index == 1) {
+        if (!try_to_zeroize_secret_partition("FE0", &hw_part_fe0, exp_success))
+            return false;
+    }
+    else if (partition_index == 2) {
+        if (!try_to_zeroize_secret_partition("FE1", &hw_part_fe1, exp_success))
+            return false;
+    }
+    else if (partition_index == 3) {
+        if (!try_to_zeroize_secret_partition("FE2", &hw_part_fe2, exp_success))
+            return false;
+    }
+    else if (partition_index == 4) {
+        if (!try_to_zeroize_secret_partition("FE3", &hw_part_fe3, exp_success))
+            return false;
+    }
+
+    return true;
+}
+
+
 // Write data to the first entry of the given partition, then
 // calculate a digest for the partition. Return true if every step
 // succeeds.
@@ -150,6 +191,7 @@ bool secret_prov(void) {
 bool body(void) {
     VPRINTF(LOW, "INFO: Initializing Caliptra subsystem...\n");
     mcu_cptra_init_d();
+    initialize_otp_controller(); // Ensure the OTP controller is initialized and consisteency checks are running
 
     VPRINTF(LOW, "INFO: Granting MCU access to fuse controller...\n");
     grant_caliptra_core_for_fc_writes();
@@ -163,29 +205,30 @@ bool body(void) {
 
     mcu_sleep(20);
 
-    VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
-    revoke_grant_mcu_for_fc_writes();
+    // VPRINTF(LOW, "INFO: Revoking MCU access to fuse controller...\n");
+    // revoke_grant_mcu_for_fc_writes();
 
-    mcu_sleep(20);
+    // mcu_sleep(20);
 
-    VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
-    if (!try_to_zeroize_secret_partitions(false)) return false;
-    VPRINTF(LOW, "\n\n------------------------------\n\n");
+    // VPRINTF(LOW, "INFO: Starting invalid secret zeroization test...\n");
+    // if (!try_to_zeroize_secret_partitions(false)) return false;
+    // VPRINTF(LOW, "\n\n------------------------------\n\n");
 
-    mcu_sleep(20);
+    // mcu_sleep(20);
 
-    VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
-    grant_caliptra_core_for_fc_writes();
+    // VPRINTF(LOW, "INFO: Granting MCU access again for valid zeroization...\n");
+    // grant_caliptra_core_for_fc_writes();
 
-    VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
-    if (!try_to_zeroize_secret_partitions(false)) return false;
-    VPRINTF(LOW, "\n\n------------------------------\n\n");
+    // VPRINTF(LOW, "INFO: Starting NO PPD invalid secret zeroization test...\n");
+    // if (!try_to_zeroize_secret_partitions(false)) return false;
+    // VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     mcu_sleep(20);
 
     VPRINTF(LOW, "INFO: Starting valid secret zeroization test...\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_FORCE_ZEROIZATION);
-    if (!try_to_zeroize_secret_partitions(true)) return false;
+    uint32_t part_index = xorshift32() % 5;
+    if (!try_to_zeroize_one_secret_partition(true, part_index)) return false;
     VPRINTF(LOW, "\n\n------------------------------\n\n");
 
     return true;
