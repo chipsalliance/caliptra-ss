@@ -53,7 +53,13 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = ${"true" if p["integrity"] else "false"},
         .lc_phase = ${lc_state_decode(p["lc_phase"])},
         .is_lifecycle = ${"true" if p["variant"] == "LifeCycle" else "false"},
+        % if (p["hw_digest"] or p["sw_digest"]) and p["zeroizable"]:
+        .num_fuses = ${len(p["items"]) - 2},
+        % elif (p["hw_digest"] or p["sw_digest"]) and not p["zeroizable"]:
+        .num_fuses = ${len(p["items"]) - 1},
+        % else:
         .num_fuses = ${len(p["items"])},
+        % endif
         .fuses = ${p["name"].lower() + "_fuses"}
     },
 % endfor

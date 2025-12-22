@@ -30,7 +30,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
-        .num_fuses = 2,
+        .num_fuses = 1,
         .fuses = sw_test_unlock_partition_fuses
     },
     // SECRET_MANUF_PARTITION
@@ -47,7 +47,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = secret_manuf_partition_fuses
     },
     // SECRET_PROD_PARTITION_0
@@ -64,7 +64,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = secret_prod_partition_0_fuses
     },
     // SECRET_PROD_PARTITION_1
@@ -81,7 +81,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = secret_prod_partition_1_fuses
     },
     // SECRET_PROD_PARTITION_2
@@ -98,7 +98,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = secret_prod_partition_2_fuses
     },
     // SECRET_PROD_PARTITION_3
@@ -115,7 +115,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = secret_prod_partition_3_fuses
     },
     // SW_MANUF_PARTITION
@@ -132,7 +132,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
-        .num_fuses = 14,
+        .num_fuses = 13,
         .fuses = sw_manuf_partition_fuses
     },
     // SECRET_LC_TRANSITION_PARTITION
@@ -149,7 +149,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 1,
         .is_lifecycle = false,
-        .num_fuses = 12,
+        .num_fuses = 11,
         .fuses = secret_lc_transition_partition_fuses
     },
     // SVN_PARTITION
@@ -183,7 +183,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 2,
+        .num_fuses = 1,
         .fuses = vendor_test_partition_fuses
     },
     // VENDOR_HASHES_MANUF_PARTITION
@@ -200,7 +200,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 16,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 2,
         .fuses = vendor_hashes_manuf_partition_fuses
     },
     // VENDOR_HASHES_PROD_PARTITION
@@ -217,7 +217,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 35,
+        .num_fuses = 34,
         .fuses = vendor_hashes_prod_partition_fuses
     },
     // VENDOR_REVOCATIONS_PROD_PARTITION
@@ -234,7 +234,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = false,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 52,
+        .num_fuses = 51,
         .fuses = vendor_revocations_prod_partition_fuses
     },
     // VENDOR_SECRET_PROD_PARTITION
@@ -251,7 +251,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 18,
+        .num_fuses = 16,
         .fuses = vendor_secret_prod_partition_fuses
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
@@ -268,7 +268,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 17,
+        .num_fuses = 16,
         .fuses = vendor_non_secret_prod_partition_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_0
@@ -285,7 +285,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_0_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_1
@@ -302,7 +302,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_1_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_2
@@ -319,7 +319,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_2_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_3
@@ -336,7 +336,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_3_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_4
@@ -353,7 +353,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_4_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_5
@@ -370,7 +370,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_5_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_6
@@ -387,7 +387,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_6_fuses
     },
     // CPTRA_SS_LOCK_HEK_PROD_7
@@ -404,7 +404,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 17,
         .is_lifecycle = false,
-        .num_fuses = 3,
+        .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_7_fuses
     },
     // LIFE_CYCLE

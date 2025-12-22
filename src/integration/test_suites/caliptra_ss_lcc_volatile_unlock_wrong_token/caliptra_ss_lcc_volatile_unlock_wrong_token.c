@@ -43,6 +43,17 @@ static const uint32_t bad_token[4] = {
 bool body (void) {
     if (!check_lc_state("RAW", RAW)) return false;
 
+    uint32_t lc_state_curr = read_lc_state();
+    uint32_t lc_cnt_curr = read_lc_counter();
+
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
+
+    if (lc_cnt_curr == 24) {
+        VPRINTF(LOW, "INFO: reached max. LC counter value, finish test\n");
+        return true;
+    }
+
     // Obtain mutex to be able to write to the LCC CSRs.
     const uint32_t claim_trans_val = 0x96;
     uint32_t reg_value, loop_ctrl;
@@ -57,7 +68,10 @@ bool body (void) {
 
     // Request a transition into TEST_UNLOCKED0, but pass a bad token. This
     // should fail.
-    if (!transition_state(TEST_UNLOCKED0), bad_token, true) return false;
+    if (!transition_state(TEST_UNLOCKED0, bad_token, true)) return false;
+
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
 
     // The transition_state function should have finished up with a reset. After
     // that, the LCC should have reverted back to the RAW state.
@@ -74,8 +88,12 @@ void main (void) {
     grant_mcu_for_fc_writes();
 
     bool test_passed = body();
+    if (test_passed) {
+        VPRINTF(LOW, "INFO: Caliptra SS LCC Volatile Unlock Wrong Token Test Passed!\n");
+    } else {
+        handle_error("ERROR: Caliptra SS LCC Volatile Unlock Wrong Token Test Failed!\n");
+    }
 
-    mcu_sleep(160);
 
     SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }
