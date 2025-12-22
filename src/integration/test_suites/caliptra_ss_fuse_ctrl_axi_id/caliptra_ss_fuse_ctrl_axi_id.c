@@ -145,7 +145,7 @@ bool body(void) {
         VPRINTF(LOW, "INFO: Secret provisioning sequence completed as expected.\n");
     }
     else{
-        handle_error("ERROR: Secret provisioning sequence completed as expected.\n");
+        handle_error("ERROR: Secret provisioning sequence failed...\n");
         return false;
     }
     VPRINTF(LOW, "\n\n------------------------------\n\n");
