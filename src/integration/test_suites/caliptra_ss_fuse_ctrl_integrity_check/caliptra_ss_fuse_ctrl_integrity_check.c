@@ -48,13 +48,14 @@ void main (void) {
 
     VPRINTF(LOW, "1/4: Initialising\n");
     mcu_cptra_init_d();
+    initialize_otp_controller();
     wait_dai_op_idle(0);
 
     VPRINTF(LOW, "2/4: Injecting digest fault\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_DIGEST);
 
     VPRINTF(LOW, "3/4: Initialising OTP controller\n");
-    initialize_otp_controller();
+    
 
     // After injecting an error into a digest, we expect all the partitions to report an error which
     // will also cause several other errors to be reported. We do not, however, expect a bus
