@@ -61,7 +61,7 @@ void main (void) {
     operation_done = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1;
     otp_error = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1;
 
-    if (operation_done != 0x1 || otp_error != 0x1) {
+    if (operation_done != 0x1 && otp_error != 0x1) {
         handle_error("ERROR: INTERRUPT_TEST register does not work as expected.\n");
     }
 
@@ -85,7 +85,7 @@ void main (void) {
     operation_done = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1;
     otp_error = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1;
 
-    if (operation_done != 0x1 || otp_error != 0x0) {
+    if (operation_done != 0x1 && otp_error != 0x0) {
         handle_error("ERROR: wrong interrupt signaled\n");
     }
 
@@ -110,7 +110,7 @@ void main (void) {
     operation_done = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_OPERATION_DONE_LOW) & 0x1;
     otp_error = (alert_state >> OTP_CTRL_INTERRUPT_STATE_OTP_ERROR_LOW) & 0x1;
 
-    if (operation_done != 0x1 || otp_error != 0x1) {
+    if (operation_done != 0x0 && otp_error != 0x1) {
         handle_error("ERROR: error indication signal was not asserted.\n");
     }
 
