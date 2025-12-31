@@ -2,6 +2,7 @@
 seed: 1
 testname: smoke_test_wdt_rst
 pre-exec: |
+  set -eu
   echo "Running pre_exec for [smoke_test_wdt_rst]"
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_wdt_rst mcu_program.hex
   # CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile TESTNAME=smoke_test_wdt_rst program.hex
