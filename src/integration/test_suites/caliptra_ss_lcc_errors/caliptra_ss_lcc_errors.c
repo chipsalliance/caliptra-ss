@@ -40,53 +40,52 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void trans_cnt_oflw_error(void) {
     // Fault the lc counter fuse to trigger a overflow error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_FAULT_CNTR);
-    transition_state(TEST_LOCKED0, NULL, true);
+    transition_state_without_reset(TEST_LOCKED0, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_COUNT_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc transition count error is not signaled\n");
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
 // Trigger a trans_invalid_error in the lc_ctrl FSM.
 void trans_invalid_error(void) {
     // Reverting back to the RAW state from TEST_UNLOCKED0 is not allowed.
-    transition_state(RAW, NULL, true);
+    transition_state_without_reset(RAW, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TRANSITION_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc transition error is not signaled\n");
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
 // Trigger a token_invalid_error in the lc_ctrl FSM.
 void token_invalid_error(void) {
     // Transitioning from TEST_LOCKED0 to TEST_UNLOCKED1 needs a correct token.
-    if (!transition_state(TEST_UNLOCKED1, NULL, true)) {
-        VPRINTF(LOW, "ERROR: Successful transition with no token.\n");
+    if (!transition_state(TEST_LOCKED0, NULL, false)) {
+        handle_error("Failed to transition to TEST_LOCKED0 state\n");
         return;
     }
 
     uint32_t invalid_token[4] = {0, 0, 0, 0};
 
-    reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
-    transition_state(TEST_UNLOCKED1, invalid_token, true);
+    transition_state_without_reset(TEST_UNLOCKED1, invalid_token, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_TOKEN_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc token error is not signaled\n");
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
 // Trigger a flash_rma_error in the lc_ctrl FSM.
 void flash_rma_error(void) {
     // Transitioning into the RMA state without forcing PPD pin will result in a flash_rma_error.
-    transition_state(RMA, NULL, true);
+    transition_state_without_reset(RMA, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_FLASH_RMA_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc flash rma is not signaled %08X\n", status);
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
@@ -95,22 +94,22 @@ void otp_prog_error(void) {
     // Activating a clk bypass without acknowledging the request will result in ann opt_prog_error.
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_DISABLE_CLK_BYP_ACK);
     lsu_write_32(LC_CTRL_TRANSITION_CTRL_OFFSET, 0x1);
-    transition_state(TEST_LOCKED0, NULL, true);
+    transition_state_without_reset(TEST_LOCKED0, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_OTP_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc otp error is not signaled %08X\n", status);
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
 // Trigger a state_invalid_error in the lc_ctrl FSM.
 void state_invalid_error(void) {
     // Transitioning into the SCRAP state without forcing the PPD pin will result in a state_invalid_error.
-    transition_state(SCRAP, NULL, true);
+    transition_state_without_reset(SCRAP, NULL, true);
 
     uint32_t status = lsu_read_32(SOC_LC_CTRL_STATUS);
     if (!((status  >> LC_CTRL_STATUS_STATE_ERROR_LOW) & 0x1)) {
-        VPRINTF(LOW, "ERROR: lc state error is not signaled %08X\n", status);
+        handle_error("ERROR: lc state error is not signaled %08X\n", status);
     }
 }
 
@@ -126,8 +125,9 @@ void main (void) {
     transition_state_check(TEST_UNLOCKED0, raw_unlock_token);
 
     initialize_otp_controller();
-
-    switch (xorshift32() % 5) {
+    uint16_t i = xorshift32() % 6; // Randomly pick one of the 6 errors to trigger.
+    
+    switch (i) {
         case 0: {
             VPRINTF(LOW, "INFO: triggering trans_cnt_oflw_error\n");
             trans_cnt_oflw_error();
