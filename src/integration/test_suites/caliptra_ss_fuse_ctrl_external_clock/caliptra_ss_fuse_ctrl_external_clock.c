@@ -40,7 +40,7 @@ void external_clock() {
 
     const uint32_t freqs[4] = {
         CMD_FC_LCC_EXT_CLK_500MHZ,
-        CMD_FC_LCC_EXT_CLK_160MHZ,
+        CMD_FC_LCC_EXT_CLK_333MHZ,
         CMD_FC_LCC_EXT_CLK_400MHZ,
         CMD_FC_LCC_EXT_CLK_1000MHZ
     };

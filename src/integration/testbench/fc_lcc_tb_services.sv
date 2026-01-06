@@ -103,9 +103,9 @@ module fc_lcc_tb_services (
             `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 500;
             lcc_external_clk_req                        <= 1;
           end
-          CMD_FC_LCC_EXT_CLK_160MHZ: begin
-            $display("fc_lcc_tb_services: setting ext clock frequency to 160 mhz");     
-            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 160; 
+          CMD_FC_LCC_EXT_CLK_333MHZ: begin
+            $display("fc_lcc_tb_services: setting ext clock frequency to 333 mhz");     
+            `CPTRA_SS_TB_TOP_NAME.lcc_clock_selection   <= 333; 
             lcc_external_clk_req                        <= 1;
           end
           CMD_FC_LCC_EXT_CLK_400MHZ: begin
