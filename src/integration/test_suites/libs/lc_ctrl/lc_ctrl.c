@@ -283,6 +283,13 @@ bool transition_state(uint8_t next_lc_state, const uint32_t token[4], bool expec
     return true;
 }
 
+bool transition_state_without_reset(uint8_t next_lc_state, const uint32_t token[4], bool expect_error)
+{
+    if (!start_state_transition(next_lc_state, token, expect_error)) return false;
+
+    return true;
+}
+
 bool transition_state_check(uint8_t next_lc_state, const uint32_t token[4]) {
 
     if (!transition_state(next_lc_state, token, false)) return false;
