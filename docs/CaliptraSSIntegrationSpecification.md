@@ -2342,7 +2342,6 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
   - Connection to AXI interface
   - GPIO connection to I3C Host (VIP or RTL)
 
-
 ## Parameters and defines
 
 | Parameter/Define   | Default Value                         | Description                                 |
