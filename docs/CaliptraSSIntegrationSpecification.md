@@ -2325,16 +2325,23 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 1. **Main target** : Main target is responsible for any flows other than recovery or streaming boot.
 2. **Recovery target** : Recovery target is dedicated to streaming boot / recovery interface.
 
-- This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:
+The I3C core integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:
   - [I3C Core Documentation](https://chipsalliance.github.io/i3c-core/)
   - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
   - [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl)
+
+The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardwareSpecification.md#axi-streaming-boot-recovery-interface). In this mode, the I3C endpoint is disabled as all internal FIFOs are repurposed for the recovery stream.
+
+**IMPORTANT**:
+- **Static Configuration**: The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface. This selection is mutually exclusive and cannot be changed dynamically.
+- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, a second I3C core must be instantiated outside of Caliptra SS.
 
 ## Integration Considerations
 
 - Connections
   - Connection to AXI interface
   - GPIO connection to I3C Host (VIP or RTL)
+
 
 ## Parameters and defines
 
