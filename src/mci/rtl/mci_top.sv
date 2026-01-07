@@ -703,7 +703,7 @@ generate
 if (MCU_MBOX0_SIZE_KB == 0) begin : no_mcu_mbox0
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mcu_mbox0_req_if.hold = 0;
+        mcu_mbox0_req_if.req_hold = 0;
         mcu_mbox0_req_if.rdata = 0;
         mcu_mbox0_req_if.error = 1;
         mcu_mbox0_sram_req_if.req = '0;
@@ -753,7 +753,7 @@ generate
 if (MCU_MBOX1_SIZE_KB == 0) begin : no_mcu_mbox1
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mcu_mbox1_req_if.hold = 0;
+        mcu_mbox1_req_if.req_hold = 0;
         mcu_mbox1_req_if.rdata = 0;
         mcu_mbox1_req_if.error = 1;
         mcu_mbox1_sram_req_if.req = '0;

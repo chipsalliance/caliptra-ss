@@ -112,7 +112,7 @@ axi_sub #(
     .size  (),
     .rdata (soc_resp_if.rdata   ), // Requires: Component dwidth == AXI dwidth
     .last  (soc_resp_if.req_data.last), 
-    .hld   (soc_resp_if.hold    ),
+    .hld   (soc_resp_if.req_hold),
     .rd_err(soc_resp_if.error   ),
     .wr_err(soc_resp_if.error   )
 );

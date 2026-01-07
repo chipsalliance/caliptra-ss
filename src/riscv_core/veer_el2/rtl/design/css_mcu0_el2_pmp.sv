@@ -116,7 +116,8 @@ module css_mcu0_el2_pmp
              (pmp_req_type == EXEC) |
             ((pmp_req_type == READ) & ~priv_mode);
         /* pragma coverage off */
-        default: ;
+        default: begin
+        end
         /* pragma coverage on */
       endcase
     end else begin
@@ -147,7 +148,7 @@ module css_mcu0_el2_pmp
   function automatic logic access_fault_check(el2_mseccfg_pkt_t          csr_pmp_mseccfg,
                                               el2_pmp_type_pkt_t         req_type,
                                               logic [pt.PMP_ENTRIES-1:0] match_all,
-                                              logic any_region_enabled,
+                                              logic any_region_en,
                                               logic priv_mode,
                                               logic [pt.PMP_ENTRIES-1:0] final_perm_check);
 
@@ -159,7 +160,7 @@ module css_mcu0_el2_pmp
                        (csr_pmp_mseccfg.MML && (req_type == EXEC));
   `else
     // When in user mode and at least one PMP region is enabled deny access by default.
-    logic access_fail = any_region_enabled & priv_mode;
+    logic access_fail = any_region_en & priv_mode;
   `endif
 `else
     logic access_fail = 1'b0;
