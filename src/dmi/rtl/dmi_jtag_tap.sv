@@ -294,7 +294,8 @@ module dmi_jtag_tap #(
         update_ir = 1'b1;
         tap_state_d = (tms_i) ? SelectDrScan : RunTestIdle;
       end
-      default: ; // can't actually happen since case is full
+      default: begin // can't actually happen since case is full
+      end
     endcase
   end
 

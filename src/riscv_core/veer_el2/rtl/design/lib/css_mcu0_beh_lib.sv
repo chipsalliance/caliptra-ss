@@ -55,10 +55,10 @@ module css_mcu0_rvdffs #( parameter WIDTH=1, SHORT=0 )
      output logic [WIDTH-1:0] dout
      );
 
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    assign dout = din;
 end
-else begin : genblock
+else begin : gen_ff
    css_mcu0_rvdff #(WIDTH) dffs (.din((en) ? din[WIDTH-1:0] : dout[WIDTH-1:0]), .*);
 end
 
@@ -76,10 +76,10 @@ module css_mcu0_rvdffsc #( parameter WIDTH=1, SHORT=0 )
      );
 
    logic [WIDTH-1:0]          din_new;
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    assign dout = din;
 end
-else begin : genblock
+else begin : gen_ff
    assign din_new = {WIDTH{~clear}} & (en ? din[WIDTH-1:0] : dout[WIDTH-1:0]);
    css_mcu0_rvdff #(WIDTH) dffsc (.din(din_new[WIDTH-1:0]), .*);
 end
@@ -97,10 +97,10 @@ module css_mcu0_rvdff_fpga #( parameter WIDTH=1, SHORT=0 )
      output logic [WIDTH-1:0] dout
      );
 
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    assign dout = din;
 end
-else begin : genblock
+else begin : gen_ff
    `ifdef RV_FPGA_OPTIMIZE
     css_mcu0_rvdffs #(WIDTH) dffs (.clk(rawclk), .en(clken), .*);
 `else
@@ -122,10 +122,10 @@ module css_mcu0_rvdffs_fpga #( parameter WIDTH=1, SHORT=0 )
      output logic [WIDTH-1:0] dout
      );
 
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    assign dout = din;
 end
-else begin : genblock
+else begin : gen_ff
 `ifdef RV_FPGA_OPTIMIZE
    css_mcu0_rvdffs #(WIDTH)   dffs (.clk(rawclk), .en(clken & en), .*);
 `else
@@ -150,10 +150,10 @@ module css_mcu0_rvdffsc_fpga #( parameter WIDTH=1, SHORT=0 )
      );
 
    logic [WIDTH-1:0]          din_new;
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    assign dout = din;
 end
-else begin : genblock
+else begin : gen_ff
 `ifdef RV_FPGA_OPTIMIZE
    css_mcu0_rvdffs  #(WIDTH)   dffs  (.clk(rawclk), .din(din[WIDTH-1:0] & {WIDTH{~clear}}),.en((en | clear) & clken), .*);
 `else
@@ -178,12 +178,12 @@ module css_mcu0_rvdffe #( parameter WIDTH=1, SHORT=0, OVERRIDE=0 )
 
    logic                      l1clk;
 
-if (SHORT == 1) begin : genblock
+if (SHORT == 1) begin : gen_short
    if (1) begin : genblock
       assign dout = din;
    end
 end
-else begin : genblock
+else begin : gen_ff
 
 `ifndef css_mcu0_RV_PHYSICAL
    if (WIDTH >= 8 || OVERRIDE==1) begin: genblock

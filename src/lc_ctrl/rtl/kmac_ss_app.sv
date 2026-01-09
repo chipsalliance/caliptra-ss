@@ -623,7 +623,7 @@ module kmac_ss_app
         kmac_valid_o = app_i[app_id].valid;
         kmac_data_o  = app_i[app_id].data;
         // Expand strb to bits. caliptra_prim_packer inside MSG_FIFO accepts the bit masks
-        for (int i = 0 ; i < $bits(app_i[app_id].strb) ; i++) begin
+        for (int i = 0 ; i < MsgStrbW ; i++) begin
           kmac_mask_o[8*i+:8] = {8{app_i[app_id].strb[i]}};
         end
         app_data_ready = kmac_ready_i;
@@ -824,7 +824,8 @@ module kmac_ss_app
         end
       end
 
-      default: ;
+      default: begin
+      end
     endcase
   end
 

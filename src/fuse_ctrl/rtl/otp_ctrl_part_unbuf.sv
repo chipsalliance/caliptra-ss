@@ -190,7 +190,7 @@ module otp_ctrl_part_unbuf
     logic   [ZerFanout-1:0][$clog2(ScrmblBlockWidth+1)-1:0] zer_mrk_cnt;
     mubi4_t [ZerFanout-1:0] is_zeroized_pre;
 
-    for (genvar k = 0; k < ZerFanout; k++) begin
+    for (genvar k = 0; k < ZerFanout; k++) begin : GEN_ZERFANOUT
       caliptra_prim_buf #(
         .Width(ScrmblBlockWidth)
       ) u_rdata_buf (

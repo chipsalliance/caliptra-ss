@@ -91,7 +91,7 @@ package lc_ctrl_keymgr_pkg;
     Creator,
     OwnerInt,
     Owner,
-    Disable
+    Disabled
   } keymgr_stage_e;
 
   // Enumeration for sideload sel

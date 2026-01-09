@@ -322,7 +322,8 @@ module otp_ctrl_dai
               state_d = ZerSt;
               base_sel_d = DaiOffset;
             end
-            default: ; // Ignore invalid commands
+            default: begin // Ignore invalid commands
+            end
           endcase // dai_cmd_i
         end // dai_req_i
       end

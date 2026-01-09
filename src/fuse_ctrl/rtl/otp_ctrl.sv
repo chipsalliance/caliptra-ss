@@ -75,10 +75,7 @@ module otp_ctrl
   // Hardware config bits
   output otp_broadcast_t                             otp_broadcast_o,
   // Scan
-  input caliptra_prim_mubi_pkg::mubi4_t                       scanmode_i,
-  // Test-related GPIO output
-  output logic [OtpTestVectWidth-1:0]                cio_test_o,
-  output logic [OtpTestVectWidth-1:0]                cio_test_en_o
+  input caliptra_prim_mubi_pkg::mubi4_t                       scanmode_i
 );
 
   import caliptra_prim_mubi_pkg::*;

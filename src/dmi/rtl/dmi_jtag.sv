@@ -214,7 +214,8 @@ module dmi_jtag #(
             unique case (dmi_resp.resp)
               dm::DTM_ERR: error_dmi_op_failed = 1'b1;
               dm::DTM_BUSY: error_dmi_busy = 1'b1;
-              default: ;
+              default: begin
+              end
             endcase
             state_d = Idle;
           end

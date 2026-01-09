@@ -30,7 +30,7 @@ interface cif_if #(parameter integer ADDR_WIDTH = 32, parameter integer DATA_WID
     } cif_req_data_t;
 
     logic                       dv;
-    logic                       hold;
+    logic                       req_hold;
     logic   [DATA_WIDTH-1:0]    rdata;
     logic                       error;
     cif_req_data_t              req_data;
@@ -42,7 +42,7 @@ interface cif_if #(parameter integer ADDR_WIDTH = 32, parameter integer DATA_WID
         output  dv,
         output  req_data,
         
-        input   hold,
+        input   req_hold,
         input   rdata,
         input   error
     );
@@ -52,7 +52,7 @@ interface cif_if #(parameter integer ADDR_WIDTH = 32, parameter integer DATA_WID
         input   dv,
         input   req_data,
         
-        output  hold,
+        output  req_hold,
         output  rdata,
         output  error
     );

@@ -42,7 +42,7 @@ logic [AW-1:0] addr; // Byte address
 logic          write;
 logic [DW-1:0] wdata; // Requires: Component dwidth == AXI dwidth
 logic [DW-1:0] rdata; // Requires: Component dwidth == AXI dwidth
-logic          hold;
+logic          req_hold;
 logic          rd_error;
 logic          wr_error;
 
@@ -73,12 +73,12 @@ axi_sub #(
     .rdata   (rdata   ),
     .last    (        ),
     .size    (        ),
-    .hld     (hold    ),
+    .hld     (req_hold),
     .rd_err  (rd_error),
     .wr_err  (wr_error)
 );
 
-assign hold = 1'b0;
+assign req_hold = 1'b0;
 assign rd_error = 1'b0;
 assign wr_error = 1'b0;
 

@@ -308,7 +308,7 @@ assign cif_resp_if.error = mci_reg_read_error | mci_reg_write_error;
 ///////////////////////////////////////////////
 
 // Reads and writes occur in 1 clock cycles
-assign cif_resp_if.hold = '0;
+assign cif_resp_if.req_hold = '0;
     
 
 ///////////////////////////////////////////////

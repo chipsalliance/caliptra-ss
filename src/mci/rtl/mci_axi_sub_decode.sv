@@ -206,11 +206,11 @@ assign soc_resp_if.rdata =  soc_mcu_sram_req            ? mcu_sram_req_if.rdata 
 // Drive appropriate hold back
 ///////////////////////////////////////////////////////////
 
-always_comb soc_resp_if.hold =  (soc_mcu_sram_req           & (~soc_mcu_sram_req | mcu_sram_req_if.hold)) |
-                                (soc_mcu_trace_buffer_req   & (~soc_mcu_trace_buffer_req | mcu_trace_buffer_req_if.hold)) |
-                                (soc_mci_reg_req            & (~soc_mci_reg_req | mci_reg_req_if.hold)) |
-                                (soc_mcu_mbox0_req          & (~soc_mcu_mbox0_req | mcu_mbox0_req_if.hold)) |
-                                (soc_mcu_mbox1_req          & (~soc_mcu_mbox1_req | mcu_mbox1_req_if.hold)) ;
+always_comb soc_resp_if.req_hold =  (soc_mcu_sram_req           & (~soc_mcu_sram_req | mcu_sram_req_if.req_hold)) |
+                                    (soc_mcu_trace_buffer_req   & (~soc_mcu_trace_buffer_req | mcu_trace_buffer_req_if.req_hold)) |
+                                    (soc_mci_reg_req            & (~soc_mci_reg_req | mci_reg_req_if.req_hold)) |
+                                    (soc_mcu_mbox0_req          & (~soc_mcu_mbox0_req | mcu_mbox0_req_if.req_hold)) |
+                                    (soc_mcu_mbox1_req          & (~soc_mcu_mbox1_req | mcu_mbox1_req_if.req_hold)) ;
 
 
 

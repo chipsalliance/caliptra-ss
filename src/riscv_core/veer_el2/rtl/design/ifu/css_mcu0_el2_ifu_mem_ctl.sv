@@ -929,7 +929,6 @@ assign ic_miss_buff_half[63:0]    = {ic_miss_buff_data[{other_tag,1'b1}],ic_miss
                                       (fetch_req_icache_f & ~reset_all_tags & (~miss_pending | (miss_state==HIT_U_MISS)) & ~sel_mb_addr_ff);
 
   logic [pt.ICACHE_NUM_WAYS-1:0]                    perr_err_inv_way;
-  logic [pt.ICACHE_INDEX_HI:pt.ICACHE_TAG_INDEX_LO] perr_ic_index_ff;
   logic                                             perr_sel_invalidate;
   logic                                             perr_sb_write_status;
 
@@ -1350,10 +1349,11 @@ end
          assign iccm_dma_rdata[63:0] = '0 ;
          assign iccm_single_ecc_error = '0 ;
          assign iccm_dma_rtag         = '0 ;
-
-
-
-
+         assign iccm_rw_addr          = '0 ;
+         assign iccm_wr_data          = '0 ;
+         assign iccm_wr_size          = '0 ;
+         assign iccm_wren             = '0 ;
+         assign iccm_rden             = '0 ;
 
          assign iccm_dma_rd_ecc_single_err             = '0;
          assign iccm_dma_rd_ecc_double_err             = '0;

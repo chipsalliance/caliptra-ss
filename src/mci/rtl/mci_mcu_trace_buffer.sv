@@ -98,7 +98,7 @@ assign write_trace_data_packet.trace_rv_i_insn_ip        = mcu_trace_rv_i_insn_i
 assign trace_buffer_hwif_in.CONFIG.trace_buffer_depth.next = TRACE_BUFFER_DWORD_DEPTH;
 
 // Reads and writes occur in 1 clock cycles
-assign cif_resp_if.hold = '0;
+assign cif_resp_if.req_hold = '0;
 
 
 ////////////////////////
