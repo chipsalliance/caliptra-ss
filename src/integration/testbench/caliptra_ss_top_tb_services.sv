@@ -972,8 +972,8 @@ end
 
 
     rom #(
-        .DEPTH     (CPTRA_SS_ROM_DEPTH), // 256KiB
-        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
+        .DEPTH     (CPTRA_SS_ROM_DEPTH_TB), // 256KiB
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W_TB)
     ) imem (
         .clk_i   (clk),
         .cs_i    (mcu_rom_mem_export_if.req.cs),
