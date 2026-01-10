@@ -36,6 +36,13 @@ package tb_top_pkg;
     localparam MCU_SRAM_DEPTH   = (MCU_SRAM_SIZE_KB * 1024) / MCU_SRAM_DATA_WIDTH_BYTES;
     localparam MCU_SRAM_ADDR_WIDTH = $clog2(MCU_SRAM_DEPTH);
 
+
+    `ifndef MIN_MCU_RST_COUNTER_WIDTH
+        parameter MIN_MCU_RST_COUNTER_WIDTH = 4;
+    `else
+        parameter MIN_MCU_RST_COUNTER_WIDTH = `MIN_MCU_RST_COUNTER_WIDTH;
+    `endif
+
     // MCU Mailbox 0
     localparam MCU_MBOX0_SIZE_KB = 256;
     localparam MCU_MBOX0_DATA_W = 32;

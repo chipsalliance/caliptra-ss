@@ -194,7 +194,8 @@ module lc_ctrl_state_transition
         {DecLcStateNumRep{DecLcStProd}},
         {DecLcStateNumRep{DecLcStProdEnd}},
         {DecLcStateNumRep{DecLcStRma}},
-        {DecLcStateNumRep{DecLcStScrap}}: ;
+        {DecLcStateNumRep{DecLcStScrap}}: begin
+        end
         default: trans_invalid_error_o = 1'b1;
       endcase // trans_target_i
     end

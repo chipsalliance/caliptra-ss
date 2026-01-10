@@ -40,7 +40,7 @@
 #define CMD_LC_FORCE_RMA_SCRAP_PPD      FC_LCC_CMD_OFFSET + 0x0a
 #define CMD_FC_TRIGGER_ESCALATION       FC_LCC_CMD_OFFSET + 0x0b
 #define CMD_FC_LCC_EXT_CLK_500MHZ       FC_LCC_CMD_OFFSET + 0x0c
-#define CMD_FC_LCC_EXT_CLK_160MHZ       FC_LCC_CMD_OFFSET + 0x0d
+#define CMD_FC_LCC_EXT_CLK_333MHZ       FC_LCC_CMD_OFFSET + 0x0d
 #define CMD_FC_LCC_EXT_CLK_400MHZ       FC_LCC_CMD_OFFSET + 0x0e
 #define CMD_FC_LCC_EXT_CLK_1000MHZ      FC_LCC_CMD_OFFSET + 0x0f
 #define CMD_FC_LCC_FAULT_DIGEST         FC_LCC_CMD_OFFSET + 0x10
@@ -237,9 +237,6 @@ void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, ui
 void update_cptra_fuse_cfg(void);
 void update_pqc_key_type(void);
 void cptra_prod_rom_boot_go(void);
-void configure_captra_axi_user(void); //-- FIXME : DELETE THIS FUNCTION
-void wait_for_cptra_ready_for_mb_processing(void); //-- FIXME : DELETE THIS FUNCTION
-void trigger_caliptra_go(void); //-- FIXME : DELETE THIS FUNCTION
 bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
 bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
 void clear_mcu_mbox_soc_data_avail_interrupt(uint32_t mbox_num);

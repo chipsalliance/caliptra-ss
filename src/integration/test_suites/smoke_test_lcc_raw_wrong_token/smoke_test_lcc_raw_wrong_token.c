@@ -84,12 +84,7 @@ void main (void) {
             VPRINTF(LOW, "INFO: next lcc state: %d\n", lc_state_next);
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-            transition_state_req_with_expec_error(lc_state_next,
-                             invalid_tokens[token_type][0],
-                             invalid_tokens[token_type][1],
-                             invalid_tokens[token_type][2],
-                             invalid_tokens[token_type][3],
-                             token_type != ZER);
+            transition_state(lc_state_next, invalid_tokens[token_type], true);
 
             wait_dai_op_idle(0);
 

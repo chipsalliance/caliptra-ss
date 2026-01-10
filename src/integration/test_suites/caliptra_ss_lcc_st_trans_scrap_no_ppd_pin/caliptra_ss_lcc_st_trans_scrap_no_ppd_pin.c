@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -26,6 +27,15 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
+// This test runs without the PPD (Physical Presence Detect) pin being asserted,
+// because we neither set it through the TB services route nor by writing the
+// magic address that is monitored by lc_ctrl_bfm.
+//
+// The test tries to transfer to SCRAP, passing a zero token. When lc_ctrl_fsm
+// tries to increment the LC counter, the transition will drop out, setting the
+// FSM to PostTransSt and asserting state_invalid_error_o, which causes the
+// STATE_ERROR in the STATUS register to be set.
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -33,76 +43,43 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-static uint32_t tokens[13][4] = {
-    [RAU] = {CPTRA_SS_LC_CTRL_RAW_UNLOCK_TOKEN},              // RAW_UNLOCK
-    [TU1] = {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // TEST_UNLOCKED1
-    [TU2] = {0x17c78a78, 0xc7b443ef, 0xd6931045, 0x55e74f3c}, // TEST_UNLOCKED2
-    [TU3] = {0x1644aa12, 0x79925802, 0xdbc26815, 0x8597a5fa}, // TEST_UNLOCKED3
-    [TU4] = {0x34d1ea6e, 0x121f023f, 0x6e9dc51c, 0xc7439b6f}, // TEST_UNLOCKED4
-    [TU5] = {0x03fd9df1, 0x20978af4, 0x49db216d, 0xb0225ece}, // TEST_UNLOCKED5
-    [TU6] = {0xcfc0871c, 0xc400e922, 0x4290a4ad, 0x7f10dc89}, // TEST_UNLOCKED6
-    [TU7] = {0x67e87f3e, 0xae6ee167, 0x802efa05, 0xbaaa3138}, // TEST_UNLOCKED7
-    [TEX] = {0x2f533ae9, 0x341d2478, 0x5f066362, 0xb5fe1577}, // TEST_EXIT
-    [DEX] = {0xf622abb6, 0x5d8318f4, 0xc721179d, 0x51c001f2}, // DEV_EXIT
-    [PEX] = {0x25b8649d, 0xe7818e5b, 0x826d5ba4, 0xd6b633a0}, // PROD_EXIT
-    [RMU] = {0x72f04808, 0x05f493b4, 0x7790628a, 0x318372c8}, // RMA
-    [ZER] = {0}                                               // ZERO
-};
-
-void main (void) {
+bool body(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
 
-    uint32_t buf[NUM_LC_STATES] = {0};
+    lcc_initialization();
 
-    // Randomly choose the next LC state among the all valid ones
-    // based on the current state and repeat this until the SCRAP
-    // state is reached.
-    while (1) {
-        lcc_initialization();
+    uint8_t lc_state_before = read_lc_state();
+    uint8_t lc_cnt_before   = read_lc_counter();
 
-        uint32_t lc_state_curr = read_lc_state();
-        uint32_t lc_cnt_curr = read_lc_counter();
-        uint32_t lc_cnt_next = lc_cnt_curr + 1;
+    VPRINTF(LOW, "INFO: current lc state: %d\n", lc_state_before);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_before);
 
-        VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
-        VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
-
-        if (lc_cnt_curr == 24) {
-            VPRINTF(LOW, "INFO: reached max. LC counter value, finish test test\n");
-            for (uint8_t i = 0; i < 160; i++) {
-                __asm__ volatile ("nop"); // Sleep loop as "nop"
-            }
-
-            SEND_STDOUT_CTRL(0xff);
-        }
-
-        uint32_t lc_state_next = SCRAP;
-        lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
-
-        transition_state_req_with_expec_error(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
-        wait_dai_op_idle(0);
-
-        uint32_t lc_state_after_transition = read_lc_state();
-        // Check if we are still in the start state.
-        if (lc_state_after_transition != lc_state_curr) {
-            VPRINTF(LOW, "ERROR: incorrect counter: exp: %d, act: %d\n", lc_state_curr, lc_state_after_transition);
-            goto epilogue;
-        }
-        goto epilogue; 
-    }
-    
-epilogue:
-    for (uint8_t i = 0; i < 160; i++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    // Check that the transition counter isn't at its maximum. That shouldn't
+    // happen in this test because we only do one transition, but it can't hurt
+    // to print something helpful if it goes wrong.
+    if (lc_cnt_before == 24) {
+        VPRINTF(LOW, "ERROR: Unexpectedly saturated LC transition counter.\n");
+        return false;
     }
 
-    SEND_STDOUT_CTRL(0xff);
+    // Try to transition to the SCRAP state, with no token. This should report
+    // failure, then transition_state will inject a reset.
+    if (!transition_state(SCRAP, NULL, true)) return false;
+    if (!wait_dai_op_idle(0)) return false;
+
+    // Check that the lifecycle state really has stayed at the version we
+    // started with.
+    if (!check_lc_state("previous state", lc_state_before)) return false;
+
+    VPRINTF(LOW, "INFO: Test complete.");
+    return true;
+}
+
+void main (void) {
+    bool test_passed = body();
+    mcu_sleep(160);
+    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }

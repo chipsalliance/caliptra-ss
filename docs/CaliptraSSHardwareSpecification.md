@@ -33,7 +33,7 @@
   - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
   - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
 - [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
-  - [AXI Streaming Boot flow implementation](#axi-streaming-boot-flow-implementation)
+  - [AXI Streaming Boot Flow implementation](#axi-streaming-boot-flow-implementation)
   - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
   - [AXI Streaming Boot CSRs](#axi-streaming-boot-csrs)
 - [Caliptra Core AXI Manager \& DMA assist](#caliptra-core-axi-manager--dma-assist)
@@ -45,7 +45,7 @@
   - [Descriptor](#descriptor)
 - [Caliptra Subsystem Fuse Controller](#caliptra-subsystem-fuse-controller)
   - [Partition Details](#partition-details)
-    - [Key Characteristics of Secret Partitions:](#key-characteristics-of-secret-partitions)
+    - [Key Characteristics of Secret Partitions](#key-characteristics-of-secret-partitions)
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
@@ -63,13 +63,14 @@
   - [LCC State and State Decoder Output Ports](#lcc-state-and-state-decoder-output-ports)
   - [TAP Pin Muxing](#tap-pin-muxing)
     - [How does Caliptra Subsystem enable manufacturing debug mode?](#how-does-caliptra-subsystem-enable-manufacturing-debug-mode)
-      - [Flow Explanation:](#flow-explanation)
+      - [Flow Explanation](#flow-explanation)
   - [Production Debug Unlock Architecture](#production-debug-unlock-architecture)
     - [Overview of Debug Unlock Initiation](#overview-of-debug-unlock-initiation)
     - [Secure Debug Unlock Protocol](#secure-debug-unlock-protocol)
   - [Masking Logic for Debugging Features in Production Debug Mode (MCI)](#masking-logic-for-debugging-features-in-production-debug-mode-mci)
   - [LCC Interpretation for Caliptra “Core” Security States](#lcc-interpretation-for-caliptra-core-security-states)
   - [Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations](#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations)
+  - [LCC RAW Unlock Token Generation \& Setting](#lcc-raw-unlock-token-generation--setting)
   - [SOC LCC Interface usage \& requirements](#soc-lcc-interface-usage--requirements)
   - [LCC Module: Summarized Theory of operation](#lcc-module-summarized-theory-of-operation)
 - [Manufacturer Control Unit (MCU)](#manufacturer-control-unit-mcu)
@@ -139,7 +140,7 @@ This document defines technical specifications for a subsystem design utilizing 
 - RA: Recovery Agent / Streaming boot Agent
 - MCI: Manufacturer Control Interface
 - MCU: Manufacturer Control Unit
-  
+
 ## Caliptra-Passive-Mode (Legacy)
 
 SOC manages boot media peripherals and Caliptra is used as Root of trust for measurements.
@@ -268,7 +269,7 @@ Please refer to [Caliptra Security Subsystem Specification](https://github.com/c
 # I3C Streaming Boot (Recovery) Interface
 
 The I3C recovery interface acts as a standalone I3C target device for recovery. It will have a unique address compared to any other I3C endpoint for the device. It will comply with I3C Basic v1.1.1 specification. It will support I3C read and write transfer operations. It must support Max read and write data transfer of 1-256B excluding the command code (1 Byte), length (2 Byte), and PEC (1 Byte), total 4 Byte I3C header. Therefore, max recovery data per transfer will be limited to 256-byte data.
- 
+
 I3C recovery interface is responsible for the following list of actions:
 
 1. Responding to command sent by Recovery Agent (RA)
@@ -292,7 +293,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 **TODO:** Add a link to rdl -> html file
 
 ## Streaming Boot (Recovery) Interface Wires
- 
+
 1. **Payload available**
 
 - The Recovery Interface (I3C target) should receive a write transaction to INDIRECT_FIFO_DATA reg from BMC - 256B + 4B (Header), and wait for each I3C write to finish. Once I3C write transaction to INDIRECT_FIFO_DATA register is completed and PEC verification is successful, then the I3C target must assert "payload_available". DMA assist must wait for "payload_available" before reading. It must read 256B or last read with remaining data.
@@ -305,14 +306,17 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ## I3C Streaming Boot (Recovery) Flow
 
-Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-recovery-sequence).
+Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
 
 ## Caliptra ROM Requirements for OCP Streaming Boot
 
-Caliptra ROM & RT firmware must program DMA assist with correct image size (multiple of 4B) + FIXED Read + block size is 256B (burst / FIFO size). Caliptra ROM & RT Firmware must wait for "image_activated" signal to assert before processing the image. Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
+Caliptra firmware must follow these rules when implementing the OCP Streaming Boot flow:
+* Caliptra ROM and RT Firmware must wait for "image_activated" signal to assert before processing the image.
+* When image is sent to Caliptra Subsystem, Caliptra ROM & RT firmware must program DMA assist according to the rules defined in [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads).
+* Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
 
 ## I3C and Caliptra-AXI Interactions
 
@@ -438,7 +442,7 @@ The AXI DMA AES Mode ONLY streams the image into and out of AES. It is Firmware'
 
 If the input image size is not a multiple of 4 DWORDS, the AES FSM will properly pad the AES input data with 0s. When streaming the image out it reads all 4 DWORDS from the AES, but only writes up to the last DWORD of the image to the destination. If ``aes_gcm_mode`` register is set, at the start of the transfer it updates the GCM shadow byte count and phase registers in AES to the appropriate byte count and GCM_TEXT phase. Before the last block transfer to the AES it will again update the GCM shadow register to the appropriate values.
 
-Input images can be in **little endian** or **big endian**. It is FW's responsibility to configure the AES wrapper's ENDIAN_SWAP register.  
+Input images can be in **little endian** or **big endian**. It is FW's responsibility to configure the AES wrapper's ENDIAN_SWAP register.
 
 If AXI DMA encounters any errors (AXI or other errors) it will finish the transfer and report an error. It is the Firmware's responsibility to clear the error in the AXI DMA and flush the AES if required.
 
@@ -454,43 +458,43 @@ AES is not directly exposed on the AXI bus for external entities, it is protecte
 
 General Rules:
 
-1. If either Read or Write route is configured to AXI RD \-\> AXI WR, both routes must be configured as AXI RD \-\> AXI WR.  
-2. Read Route and Write Route must not both be disabled.  
-3. If Read Route is enabled to any configuration other than AXI RD-\> AXI WR, Write route must be disabled.  
-4. If Read Route is disabled, Write route must be enabled to a configuration that is not AXI RD \-\> AXI WR.  
-5. If Read Route is disabled, Read Fixed field is ignored.  
-6. If Write Route is disabled, Write Fixed field is ignored.  
+1. If either Read or Write route is configured to AXI RD \-\> AXI WR, both routes must be configured as AXI RD \-\> AXI WR.
+2. Read Route and Write Route must not both be disabled.
+3. If Read Route is enabled to any configuration other than AXI RD-\> AXI WR, Write route must be disabled.
+4. If Read Route is disabled, Write route must be enabled to a configuration that is not AXI RD \-\> AXI WR.
+5. If Read Route is disabled, Read Fixed field is ignored.
+6. If Write Route is disabled, Write Fixed field is ignored.
 7. Addresses and Byte Counts must be aligned to AXI data width (1 DWORD).
 8. Block Size is used only for reads from the Subsystem Recovery Interface. When block size has a non-zero value, the DMA will only issue AXI read requests when the payload available input signal is set to 1, and will limit the size of read requests to the value of block size. For all other transactions (such as AXI writes, or any single-dword access to a subsystem register via the DMA), block size shall be set to a value of 0 for every transaction.
 9. AES mode is only valid with Read/Write routes AXI RD -> AXI WR, Read/Write Fixed = 0, and Block Size 0.
 
 Steps:
 
-1. Write Byte Count  
-2. Write Block Size  
-3. Write Source Addr (value is ignored if data is from AHB)  
-4. Write Dest Addr (value is ignored if data is to AHB).  
-   1. To perform an accelerated SHA operation on incoming read data, firmware sets the Read/Write route to AXI RD-\> AXI WR, and the destination address to the SoC address for the SHA Acceleration data in aperture.  
-5. Set Interrupt Enables (optional)  
-6. If Mailbox R/W: Acquire Mailbox Lock  
+1. Write Byte Count
+2. Write Block Size
+3. Write Source Addr (value is ignored if data is from AHB)
+4. Write Dest Addr (value is ignored if data is to AHB).
+   1. To perform an accelerated SHA operation on incoming read data, firmware sets the Read/Write route to AXI RD-\> AXI WR, and the destination address to the SoC address for the SHA Acceleration data in aperture.
+5. Set Interrupt Enables (optional)
+6. If Mailbox R/W: Acquire Mailbox Lock
 7. If SHA Acc Op:
-   1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
-   2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action  
-   3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator  
+   1. First acquire Sha Accel Lock via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action
+   2. Initiate Sha Accel streaming operation via AXI by using this flow (with the AHB-\> AXI WR route) to initiate AXI manager action
+   3. Run this operation with the AXI RD \-\> AXI WR route to move data from SoC location into Sha Accelerator
 8. If AES Mode:
    1. Fully configure AES with IV/KEY see [AES spec for more details](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md#aes)
    2. Stream in any header info to AES like AAD
    3. Set read/write routes to AXI
    4. Set AES_MODE in DMA
    5. Set aes_gcm_mode in DMA if this is the AES mode
-9. Set Control Register  
-1. Set Read/Write Routes  
-2. Set Read/Write Fixed=0/1  
-3. GO  
-4. (All 3 may be single write or separate, GO must be last bit to set)  
-10. If AHB data: Wait for RD FIFO not empty or WR FIFO not full  
-1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred  
-2. If AHB Error – check status0 for Error, then check for “Command Error”
+9. Set Control Register
+   1. Set Read/Write Routes
+   2. Set Read/Write Fixed=0/1
+   3. GO
+   4. (All 3 may be single write or separate, GO must be last bit to set)
+10. If AHB data: Wait for RD FIFO not empty or WR FIFO not full
+   1. Push/Pop data (using Rd Data/Wr Data register offsets) until all requested bytes transferred
+   2. If AHB Error – check status0 for Error, then check for “Command Error”
 11. Wait for TXN Done Interrupt (or Poll Status0)
 12. Read Status0, confirm Busy=0, Error=0
 
@@ -508,23 +512,23 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 ### Key Characteristics of Secret Partitions
 
-1. **Programming Access:**  
+1. **Programming Access:**
    - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra Core.
-   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.  
-2. **Locking Mechanism:**  
-   - Write access to a partition can be permanently locked when no further updates are required.  
+   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.
+2. **Locking Mechanism:**
+   - Write access to a partition can be permanently locked when no further updates are required.
    - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
 
 ## Partition-Specific Behaviors
 
 ### Life Cycle Partition
 
-- The life cycle partition remains active across all stages and cannot be locked.  
-- This ensures that the device can transition back to the **RMA** state in case of unexpected failures during production.  
+- The life cycle partition remains active across all stages and cannot be locked.
+- This ensures that the device can transition back to the **RMA** state in case of unexpected failures during production.
 
 ### Vendor Test Partition
 
-- The vendor test partition is used for FUSE programming smoke checks during manufacturing.  
+- The vendor test partition is used for FUSE programming smoke checks during manufacturing.
 - Unlike other partitions, ECC uncorrectable errors in this partition do not trigger fatal errors or alerts due to the nature of FUSE smoke checks, which may leave certain FUSE words in inconsistent states.
 
 ## Locking the Validated Public Key Partition
@@ -533,39 +537,39 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
 
-1. **PK Hash Partition**  
-   - **Purpose:**  
+1. **PK Hash Partition**
+   - **Purpose:**
      - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
      - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
-   - **Layout & Details:**  
-     - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.  
-       - **Default N:** 1  
-       - **Maximum N:** 16  
-       - **Size:** N × 384 bits (each hash is 384-bit)  
-       - **Programming:**  
-         - The first key (i=1) is programmed during the manufacturing phase.  
+   - **Layout & Details:**
+     - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.
+       - **Default N:** 1
+       - **Maximum N:** 16
+       - **Size:** N × 384 bits (each hash is 384-bit)
+       - **Programming:**
+         - The first key (i=1) is programmed during the manufacturing phase.
          - The remaining keys (if any, i.e., N–1) can be programmed during manufacturing or in the field (production).
      - **Partition Item:**
        - `CPTRA_CORE_VENDOR_PK_HASH_VALID` is used to indicate which of the N keys is valid. Therefore, the length is N to support N-bit hot-encoding.
 
-2. **PK Hash Revocation Partition**  
-   - **Purpose:**  
+2. **PK Hash Revocation Partition**
+   - **Purpose:**
      This partition stores runtime-updateable revocation bits and PQC type information.
-   - **Layout & Details:**  
-     - For each vendor public key (`VENDOR_PK_HASH[i]`), the partition contains:  
-       - **ECC Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_ECC_REVOCATION[i]`)  
-       - **LMS Revocation Bits:** 32 bits (e.g., `CPTRA_CORE_LMS_REVOCATION[i]`)  
-       - **MLDSA Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_MLDSA_REVOCATION[i]`)  
+   - **Layout & Details:**
+     - For each vendor public key (`VENDOR_PK_HASH[i]`), the partition contains:
+       - **ECC Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_ECC_REVOCATION[i]`)
+       - **LMS Revocation Bits:** 32 bits (e.g., `CPTRA_CORE_LMS_REVOCATION[i]`)
+       - **MLDSA Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_MLDSA_REVOCATION[i]`)
        - **PQC Key Type Bits:** 1-bit one-hot encoded selection (e.g., `CPTRA_CORE_PQC_KEY_TYPE[i]`)
-     - **Attributes:**  
+     - **Attributes:**
        - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
 3. **Volatile Locking Mechanism**
 
-- To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-- The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
+  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
+  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
+  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
 - If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
-  - **Example:**
+     - **Example:**
 
        ```c
        // Lock the 3rd vendor public key hash and all higher order key hashes
@@ -573,10 +577,10 @@ During firmware authentication, the ROM validates the vendor public keys provide
        // This operation disables any further write updates to the validated public key fuse region.
        ```
 
-- The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
-- Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
-- If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
-- The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
+  -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
+  - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
+  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
+  - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
 
 ---
 
@@ -584,24 +588,25 @@ During firmware authentication, the ROM validates the vendor public keys provide
 
 Once partitions are locked, the hardware integrity checker performs two primary integrity checks to ensure the consistency of the volatile buffer registers:
 
-1. **ECC Protection:**  
+1. **ECC Protection:**
    - All buffered partitions include additional ECC protection (8-bit ECC for each 64-bit block), which is monitored concurrently.
 
-2. **Digest Verification:**  
+2. **Digest Verification:**
    - The digest of each partition is recomputed at semi-random intervals and compared to the digest stored alongside the partition.
 
 ### Purpose
 
 These integrity checks verify whether the contents of the buffer registers remain consistent with the calculated digest. They do not verify the consistency between storage flops and the FUSE.
+
 ---
 
 ## Notes
 
-- **Zeroization of Secret Partitions:**  
+- **Zeroization of Secret Partitions:**
   Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
-- **Locking Requirement:**  
+- **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
-- **Further Information:**  
+- **Further Information:**
   For more information about the conditional states, please refer to [OpenTitan open-source silicon Root of Trust (RoT) project](https://opentitan.org/book/hw/ip/lc_ctrl/doc/theory_of_operation.html).
 
 ## General Guidance
@@ -638,8 +643,8 @@ The figure below shows the LCC state transition and Caliptra Subsystem enhanceme
 
 ## Caliptra Subsystem LCC State Definitions
 
-| **Name**           | **Encoding**  | **Description** |
-| :---------        | :---------     | :---------     |
+| **Name** 	         | **Encoding** 	| **Description** |
+| :--------- 	      | :--------- 	   | :--------- 	   |
 | RAW                | FUSE            | This is the default state of the FUSE. During this state, no functions other than transition to TEST_UNLOCKED0 are available. The token authorizing the transition from RAW to TEST_UNLOCKED0 is a value that is secret global to all devices. This is known as the RAW_UNLOCK token. |
 | TEST_LOCKED{N}     |    FUSE         | TEST_LOCKED{N} states have identical functionality to RAW state and serve as a way for the Silicon Creator to protect devices in transit. It is not possible to provision FUSE root secrets during this state. This is enforced by hardware and is implementation defined. To progress from a TEST_LOCKED state to another TEST_UNLOCKED state, a TEST_UNLOCKED token is required.|
 | TEST_UNLOCKED{N}   | FUSE            | Transition from RAW state using token stored in FUSE. This state is used for manufacturing and production testing. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are enabled. It is expected that LCC tokens will be provisioned into FUSE during these states. Once provisioned, these tokens are no longer readable by software.|
@@ -670,18 +675,18 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 
 ## LCC State and State Decoder Output Ports
 
-| **LCC State\Decoder Output**  | **DFT_EN**           | **SOC_DFT_EN**        | **SOC_HW_DEBUG_EN**  |
-| :---------                | :---------           | :---------          | :---------          |
-| RAW                    | Low               | Low             | Low             |
-| TEST_LOCKED                | Low               | Low             | Low             |
-| TEST_UNLOCKED               | High               | High             | High             |
-| MANUF*                   | Low               | Low             | High             |
-| PROD*                      | Low               | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
-| PROD_END                   | Low               | Low             | Low             |
-| RMA                    | High***             | High             | High             |
-| SCRAP                      | Low               | Low             | Low             |
-| INVALID                   | Low               | Low             | Low             |
-| POST_TRANSITION              | Low               | Low             | Low             |
+| **LCC State\Decoder Output** 	| **DFT_EN** 	         | **SOC_DFT_EN** 	      | **SOC_HW_DEBUG_EN** 	|
+| :--------- 			            | :--------- 	         | :--------- 	 	      | :--------- 	 	      |
+| RAW 				               | Low 		            | Low 			         | Low 			         |
+| TEST_LOCKED 			            | Low 		            | Low 			         | Low 			         |
+| TEST_UNLOCKED 		            | High 		            | High 			         | High 			         |
+| MANUF* 			               | Low 		            | Low 			         | High 			         |
+| PROD* 			                  | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
+| PROD_END 			               | Low 		            | Low 			         | Low 			         |
+| RMA 				               | High***	            | High 			         | High 			         |
+| SCRAP 			                  | Low 		            | Low 			         | Low 			         |
+| INVALID 			               | Low 		            | Low 			         | Low 			         |
+| POST_TRANSITION 	            | Low 		            | Low 			         | Low 			         |
 
 *: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
 
@@ -839,19 +844,19 @@ The table below summarizes the relationship between the LCC state, the decoder o
 
 *Table: LCC state translation to Caliptra "Core" security states*
 
-| **LCC State vs Decoder Output**  | **DFT_EN**  | **SOC_DFT_EN**  | **SOC_HW_DEBUG_EN**   | **Caliptra “Core” Security States**  |
-| :---------                 | :---------  | :---------     | :---------           | :---------                           |
-| RAW                     | Low      | Low         | Low             | Prod Non-Debug                            |
-| TEST_LOCKED                 | Low      | Low         | Low             | Prod Non-Debug                            |
-| TEST_UNLOCKED                 | High         | High            | High             | Unprovisioned Debug                  |
-| MANUF                       | Low      | Low         | High             | Manuf Non-Debug                      |
+| **LCC State vs Decoder Output** 	| **DFT_EN** 	| **SOC_DFT_EN** 	| **SOC_HW_DEBUG_EN**   | **Caliptra “Core” Security States**  |
+| :--------- 	      			      | :--------- 	| :--------- 	   | :--------- 	         | :---------                           |
+| RAW 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
+| TEST_LOCKED 				            | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
+| TEST_UNLOCKED  			            | High  	      | High  	         | High	 		         | Unprovisioned Debug                  |
+| MANUF 				                  | Low 		   | Low 		      | High 			         | Manuf Non-Debug                      |
 | MANUF*                    | Low      | High**          | High             | Manuf Debug                          |
-| PROD                     | Low      | Low         | Low             | Prod Non-Debug                       |
-| PROD*                       | Low        | High**          | High**            | Prod Debug                           |
-| PROD_END                    | Low      | Low         | Low             | Prod Non-Debug                       |
-| RMA                     | High      | High         | High             | Prod Debug                           |
-| SCRAP                       | Low      | Low         | Low             |Prod Non-Debug                            |
-| INVALID                    | Low      | Low         | Low             | Prod Non-Debug                            |
+| PROD 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
+| PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| RMA 					               | High 		   | High 		      | High 			         | Prod Debug                           |
+| SCRAP 				                  | Low 		   | Low 		      | Low 			         |Prod Non-Debug                            |
+| INVALID 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
 *: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
@@ -963,7 +968,7 @@ The registers can be split up into a few different categories:
 
 ### MCI Straps
 
-All MCI straps shall be static before mci_rst_b is deasserted. Some straps have further restrictions as described below.  
+All MCI straps shall be static before mci_rst_b is deasserted. Some straps have further restrictions as described below.
 
 MCI has the following types of straps:
 
@@ -1052,7 +1057,7 @@ In cascade mode when the first timer reaches a timeout two things will happen:
 2. Timer 2 will start counting
 
 If the WDT is not serviced before Timer 2 times out two things happen:
- 
+
 1. NMI output pin is asserted
 2. NMI HW_ERROR_FATAL is triggered which can assert an error_fatal on the MCI port.
 
@@ -1075,10 +1080,10 @@ Trusted users always have read access to the CSRs in the mailbox, but require a 
 A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requestor has read access to the entire mailbox and write access to:
 
 - All mailbox registers except the following will be RO:
-  - CMD_STATUS
-  - TARGET_STATUS
-  - TARGET_DONE
-  - TARGET_USER
+  -  CMD_STATUS
+  -  TARGET_STATUS
+  -  TARGET_DONE
+  -  TARGET_USER
 - Mailbox SRAM
 Unlocking/releasing occurs when the requestor writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
@@ -1263,7 +1268,7 @@ There are two different groups of interrupts
 - Error
 - Notification
 
-Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.  
+Each group of interrupts has its own global status and enable registers that are an aggregate of all interrupts in the group. These status and enable registers have the same properties as the individual interrupt status and enable registers.
 
 All interrupt groups are ORed and sent out on a signal mci_intr pin.
 
@@ -1409,10 +1414,10 @@ The MCI DMI Interface gives select access to the blocks inside MCI.
 
 Access to MCI's DMI space (MCU Uncore) is split into two different levels of security:
 
-| **Access**  | **Description**  |
-| :---------  | :---------  |
-| **Debug Intent/Manufacture Mode**|  Always accessable over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).|
-| **Debug Unlock**|  Accessable over DMI only if LCC is Debug Unlocked|
+| **Access** 	| **Description** 	|
+| :--------- 	| :--------- 	|
+| **Debug Locked**|  Registers and memories behind this security level are always accessible over DMI whenever [MCU uncore DMI enabled](#mcu-dmi-enable-control).|
+| **Debug Unlock**|  Registers and memories behind this security level are only accessible over DMI when LCC is Debug Unlocked.|
 
 Illegal accesses will result in writes being dropped and reads returning 0.
 
@@ -1420,53 +1425,53 @@ Illegal accesses will result in writes being dropped and reads returning 0.
 
 ##### MCI DMI Memory Map
 
-| Register Name | DMI Address | Access Type | Debug Intent Access | Manufacture Mode Access | Debug Unlock Access |
-| :---- | :---- | :---- | :---- | :---- | :---- |
-| **NOT ENABLED IN 2.0** MBOX0\_DLEN | 0x50 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DOUT | 0x51 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX0\_STATUS | 0x52 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX0\_DIN | 0x53 | WO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DLEN | 0x54 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DOUT | 0x55 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX1\_STATUS | 0x56 | RO | Yes |  |  |
-| **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |  |
-| MCU\_SRAM\_ADDR | 0x58 | RW |  |  | Yes |
-| MCU\_SRAM\_DATA | 0x59 | RW |  |  | Yes |
-| MCU\_TRACE\_STATUS | 0x5A | RO |  |  | Yes |
-| MCU\_TRACE\_CONFIG | 0x5B | RO |  |  | Yes |
-| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  |  | Yes |
-| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  |  | Yes |
-| MCU\_TRACE\_DATA | 0x5E | RO |  |  | Yes |
-| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |  |
-| RESET\_REASON | 0x60 | RO | Yes |  |  |
-| RESET\_STATUS | 0x61 | RO | Yes |  |  |
-| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |  |
-| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |  |
-| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |  |
-| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |  |
-| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |  |
-| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |  |
-| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |  |
-| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |  |
-| FW\_ERROR\_ENC | 0x6A | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_2 | 0x6D | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_3 | 0x6E | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_4 | 0x6F | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_5 | 0x70 | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_6 | 0x71 | RO | Yes |  |  |
-| FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |  |
-| RESET\_REQUEST | 0x73 | RW |  |  | Yes |
-| MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |  |
-| CPTRA\_BOOT\_GO | 0x75 | RW |  |  | Yes |
-| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  |  | Yes |
-| MCU\_RESET\_VECTOR | 0x77 | RW |  |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  |  | Yes |
-| SS\_CONFIG\_DONE | 0x79 | RW |  |  | Yes |
-| SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  |  | Yes |
-| MCU\_NMI\_VECTOR | 0x7B | RW |  |  | Yes |
-| MCI\_DMI\_MCI\_HW\_OVERRIDE ([DMI ONLY Reg](#dmi-only-registers)) | 0x7C | RW |  |  | Yes |
+| Register Name | DMI Address | Access Type | Debug Locked Access | Debug Unlock Access |
+| :---- | :---- | :---- | :---- | :---- |
+| **NOT ENABLED IN 2.0** MBOX0\_DLEN | 0x50 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX0\_DOUT | 0x51 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX0\_STATUS | 0x52 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX0\_DIN | 0x53 | WO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DLEN | 0x54 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DOUT | 0x55 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX1\_STATUS | 0x56 | RO | Yes |  |
+| **NOT ENABLED IN 2.0** MBOX1\_DIN | 0x57 | WO | Yes |  |
+| MCU\_SRAM\_ADDR | 0x58 | RW |  | Yes |
+| MCU\_SRAM\_DATA | 0x59 | RW |  | Yes |
+| MCU\_TRACE\_STATUS | 0x5A | RO |  | Yes |
+| MCU\_TRACE\_CONFIG | 0x5B | RO |  | Yes |
+| MCU\_TRACE\_WR\_PTR | 0x5C | RO |  | Yes |
+| MCU\_TRACE\_RD\_PTR | 0x5D | RW |  | Yes |
+| MCU\_TRACE\_DATA | 0x5E | RO |  | Yes |
+| HW\_FLOW\_STATUS | 0x5F | RO | Yes |  |
+| RESET\_REASON | 0x60 | RO | Yes |  |
+| RESET\_STATUS | 0x61 | RO | Yes |  |
+| FW\_FLOW\_STATUS | 0x62 | RO | Yes |  |
+| HW\_ERROR\_FATAL | 0x63 | RO | Yes |  |
+| AGG\_ERROR\_FATAL | 0x64 | RO | Yes |  |
+| HW\_ERROR\_NON\_FATAL | 0x65 | RO | Yes |  |
+| AGG\_ERROR\_NON\_FATAL | 0x66 | RO | Yes |  |
+| FW\_ERROR\_FATAL | 0x67 | RO | Yes |  |
+| FW\_ERROR\_NON\_FATAL | 0x68 | RO | Yes |  |
+| HW\_ERROR\_ENC | 0x69 | RO | Yes |  |
+| FW\_ERROR\_ENC | 0x6A | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_0 | 0x6B | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_1 | 0x6C | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_2 | 0x6D | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_3 | 0x6E | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_4 | 0x6F | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_5 | 0x70 | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_6 | 0x71 | RO | Yes |  |
+| FW\_EXTENDED\_ERROR\_INFO\_7 | 0x72 | RO | Yes |  |
+| RESET\_REQUEST | 0x73 | RW |  | Yes |
+| MCI\_BOOTFSM\_GO | 0x74 | RW | Yes |  |
+| CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
+| FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
+| MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
+| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
+| SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
+| SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
+| MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |
+| MCI\_DMI\_MCI\_HW\_OVERRIDE ([DMI ONLY Reg](#dmi-only-registers)) | 0x7C | RW |  | Yes |
 
 ###### DMI Only Registers
 
@@ -1498,7 +1503,7 @@ To read content from the MCU SRAM the flow is:
 1. Write `MCU_SRAM_ADDR`
 2. Read `MCU_SRAM_DATA`
 
-There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.  
+There is no error response on the DMI port, so any ECC error must be checked via the ECC registers in the MCI Register Bank.
 
 **Important**: MCU core must be halted to access MCU SRAM via DMI. Failure to do so will result in collisions between the two interfaces and an error will be reported.
 

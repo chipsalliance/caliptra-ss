@@ -35,31 +35,23 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-/**
- * A test to verify that the volatile raw unlock state transition is working.
- */
-void main (void) {
-    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+// A bogus token to use when requesting a transition from RAW to TEST_UNLOCKED0.
+static const uint32_t bad_token[4] = {
+    0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
+};
 
-    // In volatile raw unlock mode the token has to be passed in hashed form.
-    const uint32_t unhashed_raw_unlock_token_wrong[4] = {
-        0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff
-    };
+bool body (void) {
+    if (!check_lc_state("RAW", RAW)) return false;
 
-    const raw_state = calc_lc_state_mnemonic(RAW);
-    const test_unlocked0_state = calc_lc_state_mnemonic(TEST_UNLOCKED0);
-    const post_trans_state = calc_lc_state_mnemonic(21);
-    
-    mcu_cptra_init_d();
-    wait_dai_op_idle(0);
-      
-    lcc_initialization();
-    grant_mcu_for_fc_writes();
+    uint32_t lc_state_curr = read_lc_state();
+    uint32_t lc_cnt_curr = read_lc_counter();
 
-    uint32_t state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != raw_state) {
-        VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
-        goto epilogue;
+    VPRINTF(LOW, "INFO: current lcc state: %d\n", lc_state_curr);
+    VPRINTF(LOW, "INFO: current lc cntc state: %d\n", lc_cnt_curr);
+
+    if (lc_cnt_curr == 24) {
+        VPRINTF(LOW, "INFO: reached max. LC counter value, finish test\n");
+        return true;
     }
 
     // Obtain mutex to be able to write to the LCC CSRs.
@@ -74,35 +66,34 @@ void main (void) {
     // Activate volatile raw unlock mode.
     lsu_write_32(SOC_LC_CTRL_TRANSITION_CTRL, 0x2);
 
-    // Transition into the TEST_UNLOCKED0 state.
-    sw_transition_req_with_expec_error(
-        calc_lc_state_mnemonic(TEST_UNLOCKED0),
-        unhashed_raw_unlock_token_wrong[0],
-        unhashed_raw_unlock_token_wrong[1],
-        unhashed_raw_unlock_token_wrong[2],
-        unhashed_raw_unlock_token_wrong[3],
-        1
-    );
+    // Request a transition into TEST_UNLOCKED0, but pass a bad token. This
+    // should fail.
+    if (!transition_state(TEST_UNLOCKED0, bad_token, true)) return false;
 
-    state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != post_trans_state) {
-        VPRINTF(LOW, "ERROR: lcc is not in post_trans state\n");
-        goto epilogue;
-    }
-
-    // After a reset, the LCC should have reverted back to the RAW state.
     reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+
+    // The transition_state function should have finished up with a reset. After
+    // that, the LCC should have reverted back to the RAW state.
+    return check_lc_state("RAW", RAW);
+}
+
+void main (void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
+
     lcc_initialization();
+    grant_mcu_for_fc_writes();
 
-    state = lsu_read_32(SOC_LC_CTRL_LC_STATE);
-    if (state != raw_state) {
-        VPRINTF(LOW, "ERROR: lcc is not in raw state\n");
-    };
-
-epilogue:
-    for (uint8_t ii = 0; ii < 160; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
+    bool test_passed = body();
+    if (test_passed) {
+        VPRINTF(LOW, "INFO: Caliptra SS LCC Volatile Unlock Wrong Token Test Passed!\n");
+    } else {
+        handle_error("ERROR: Caliptra SS LCC Volatile Unlock Wrong Token Test Failed!\n");
     }
 
-    SEND_STDOUT_CTRL(0xff);
+
+    SEND_STDOUT_CTRL(test_passed ? TB_CMD_TEST_PASS : TB_CMD_TEST_FAIL);
 }

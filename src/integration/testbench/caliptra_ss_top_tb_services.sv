@@ -186,22 +186,35 @@ import tb_top_pkg::*;
     localparam NUM_AGG_ERROR_FATAL = 7;
     localparam NUM_AGG_ERROR_NON_FATAL = 6;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
+    // Add buffer for console output only
+    string console_buffer = "";
 
     always @(negedge clk) begin
-        // console Monitor
-        if( mailbox_data_val & mailbox_write) begin
-            if (prev_mailbox_data[7:0] inside {8'h0A,8'h0D}) begin
-                $fwrite(fd,"%0t - ", $time);
-                $write("%0t - ", $time);
+        // Modified console Monitor
+        if (mailbox_data_val & mailbox_write) begin
+            // Write to file character-by-character (immediate)
+            if (prev_mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                $fwrite(fd, "%0t - ", $time);
             end
-            $fwrite(fd,"%c", mailbox_data[7:0]);
-            $write("%c", mailbox_data[7:0]);
-            if (mailbox_data[7:0] inside {8'h0A,8'h0D}) begin // CR/LF
+            $fwrite(fd, "%c", mailbox_data[7:0]);
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
                 $fflush(fd);
             end
+            
+            // Buffer for console output (complete lines only)
+            console_buffer = {console_buffer, string'(mailbox_data[7:0])};
+            
+            if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
+                // Write complete line to console
+                $write("%0t - %s", $time, console_buffer);
+                console_buffer = "";  // Clear buffer
+            end
+        end
+        if(!rst_l) begin
+            error_injection_mode <= '{default: 1'b0};
         end
         // ECC error injection
-        if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
+        else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
             $display("Injecting single bit DCCM error");
             error_injection_mode.dccm_single_bit_error <= 1'b1;
         end
@@ -213,9 +226,6 @@ import tb_top_pkg::*;
             $display("Disable ECC error injection");
             error_injection_mode <= '0;
         end
-        // ECC error injection - FIXME
-        error_injection_mode.dccm_single_bit_error <= 1'b0;
-        error_injection_mode.dccm_double_bit_error <= 1'b0;
 
         //TODO: randomly select which error bit to force for more complete testing
         // MCI error injection
@@ -1024,6 +1034,7 @@ endtask
 
 
 caliptra_ss_veer_sram_export veer_sram_export_inst (
+    .sram_error_injection_mode(error_injection_mode),
     .cptra_ss_mcu0_el2_mem_export
 );
 

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -88,11 +89,8 @@ void main (void) {
         }
 
         transition_state(lc_state_next,
-                     tokens[lc_state_next][0],
-                     tokens[lc_state_next][1],
-                     tokens[lc_state_next][2],
-                     tokens[lc_state_next][3],
-                     use_token[lc_state_next]);
+                         use_token[lc_state_next] ? tokens[lc_state_next] : NULL,
+                         false);
         
         wait_dai_op_idle(0);
 

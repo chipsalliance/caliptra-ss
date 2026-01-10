@@ -33,4 +33,3 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_pkg.sv

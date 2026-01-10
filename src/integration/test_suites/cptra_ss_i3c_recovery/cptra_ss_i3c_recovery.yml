@@ -1,9 +1,0 @@
----
-seed: 1
-testname: cptra_ss_i3c_recovery
-pre-exec: |
-  echo "Running pre_exec for [cptra_ss_i3c_recovery]"
-  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=fw_test_rom program.hex
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=cptra_ss_i3c_recovery mcu_program.hex
-plusargs:
-  - '+AVY_TEST=ai3ct_ext_basic'

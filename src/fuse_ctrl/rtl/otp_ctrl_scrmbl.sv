@@ -364,7 +364,8 @@ module otp_ctrl_scrmbl
               key_state_en   = 1'b1;
               digest_mode_d  = StandardMode;
             end
-            default: ; // ignore
+            default: begin // ignore
+            end
           endcase // cmd_i
         end
       end

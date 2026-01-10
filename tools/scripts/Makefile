@@ -21,7 +21,7 @@ GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
 
 ifndef CALIPTRA_SS_CLK_FREQ
-CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 170 400)
+CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 333 400)
 endif
 
 # Ensure that RISC-V toolchain is installed
@@ -41,7 +41,6 @@ endif
 
 # Define test name
 TESTNAME ?= mcu_hello_world
-CALIPTRA_TESTNAME ?= cptra_hello_world
 TEST_DIR ?= $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(TESTNAME)
 HEX_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/hex
 INCLUDES_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/includes
@@ -56,10 +55,18 @@ CSS_MCU0_DEFINES_DIR = $(CALIPTRA_SS_ROOT)/src/riscv_core/veer_el2/rtl/defines
 
 DUT ?= caliptra_ss_top_tb
 
-CALIPTRA_DIR = $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites
-SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
+# Define build parameters for Caliptra test fw
+CALIPTRA_TESTNAME ?= cptra_hello_world
 CALIPTRA_ROOT = $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl
+CALIPTRA_DIR = $(CALIPTRA_ROOT)/src/integration/test_suites
+SOC_IFC_DIR = $(CALIPTRA_DIR)/libs/soc_ifc
 CALIPTRA_RTL = $(CALIPTRA_ROOT)/src/integration/rtl
+CALIPTRA_CFLAGS ?=
+CALIPTRA_AUX ?=
+CALIPTRA_AUX_HEADER_FILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_aux)/$(cpt_aux).h) $(RTL_DIR)/soc_address_map/soc_address_map.h
+# TODO add some scripting to include fuse_ctrl_mmap.o here
+CALIPTRA_AUX_OFILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(cpt_aux).o)
+CALIPTRA_AUX_LIB_DIR = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_aux))
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -94,10 +101,11 @@ TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py \
-                  $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/mldsa_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex \
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/ml_kem_fixed
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -336,22 +344,29 @@ verilator: mcu_program.hex verilator-build
 	./obj_dir/V$(DUT) $(VERILATOR_RUN_ARGS)
 
 vcs: cptra_program.hex mcu_program.hex vcs-build
-	cp $(TEST_GEN_FILES) $(BUILD_DIR)
+	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
 	  -l vcs_sim.log
 
 ############ Caliptra TEST build ######################
 ifneq (,$(wildcard $(CALIPTRA_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
-cptra_program.hex:
-	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+CALIPTRA_TEST_DIR=$(CALIPTRA_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)
 else ifneq (,$(wildcard $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)))
-cptra_program.hex:
-	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+CALIPTRA_TEST_DIR=$(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(CALIPTRA_TESTNAME)
 else
-cptra_program.hex:
-	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$(TEST_DIR) TESTNAME=$(CALIPTRA_TESTNAME) program.hex
+CALIPTRA_TEST_DIR=$(TEST_DIR)
 endif
+cptra_program.hex:
+	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile \
+	     CALIPTRA_INTERNAL_TRNG=0 \
+	     TEST_DIR=$(CALIPTRA_TEST_DIR) \
+	     AUX_HEADER_FILES="$(CALIPTRA_AUX_HEADER_FILES)" \
+	     AUX_OFILES="$(CALIPTRA_AUX_OFILES)" \
+	     AUX_LIB_DIR="$(CALIPTRA_AUX_LIB_DIR)" \
+	     BUILD_CFLAGS="$(CALIPTRA_CFLAGS)" \
+	     TESTNAME=$(CALIPTRA_TESTNAME) \
+	     program.hex
 
 ############ MCU TEST build ###############################
 

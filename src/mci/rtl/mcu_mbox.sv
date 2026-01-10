@@ -79,6 +79,8 @@ module mcu_mbox
 
 );
 
+localparam MCI_MCU_SRAM_IF_ADDR_W = $bits(mcu_mbox_sram_req_if.req.addr);
+
 mcu_mbox_csr__out_t hwif_out;
 mcu_mbox_csr__in_t hwif_in;
 
@@ -224,6 +226,12 @@ sram_zeroization_gadget #(
     .sram_zero_in_progress(mbox_sram_zero_in_progress)
 );
 
+generate
+    if (MCI_MCU_SRAM_IF_ADDR_W > MCU_MBOX_SRAM_ADDR_W) begin : MCI_MCU_ADDR_TIE_OFF
+        // Upper address bits are 0 since SRAM size is less than addressable space
+        assign mcu_mbox_sram_req_if.req.addr[MCI_MCU_SRAM_IF_ADDR_W-1:MCU_MBOX_SRAM_ADDR_W] = '0;
+    end
+endgenerate
 // Track max DLEN during the lock for clearing
 always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
@@ -396,7 +404,7 @@ generate
 endgenerate
 
 // Hold interface when SRAM is being read
-assign cif_resp_if.hold = hwif_out.MBOX_SRAM.req & ~hwif_out.MBOX_SRAM.req_is_wr; 
+assign cif_resp_if.req_hold = hwif_out.MBOX_SRAM.req & ~hwif_out.MBOX_SRAM.req_is_wr; 
 
 mcu_mbox_csr
 mcu_mbox_csr(

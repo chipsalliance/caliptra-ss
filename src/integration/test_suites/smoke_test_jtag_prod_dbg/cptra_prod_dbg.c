@@ -233,6 +233,6 @@ void main(void) {
         while(1); // Do not complete the execution, wait for MCU terminal cmd
     } else {
         VPRINTF(ERROR, "CLP_CORE: No debug unlock request or intent not set\n");
-        SEND_STDOUT_CTRL(0xFF);
+        SEND_STDOUT_CTRL(0x01);
     }
 }

@@ -56,7 +56,8 @@ module lc_ctrl_state_decode
 
     unique case (fsm_state_i)
       // Don't decode anything in ResetSt
-      ResetSt: ;
+      ResetSt: begin
+      end
       // These are temporary, terminal states that are not encoded
       // in the persistent LC state vector from OTP, hence we decode them first.
       EscalateSt:  dec_lc_state = {DecLcStateNumRep{DecLcStEscalate}};

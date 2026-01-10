@@ -37,6 +37,7 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
+    ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -245,6 +246,12 @@ module caliptra_ss_top
     output wire cptra_ss_soc_dft_en_o,
     output wire cptra_ss_soc_hw_debug_en_o,
     output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
+    output logic caliptra_ss_otp_state_valid_o,
+    output logic caliptra_ss_volatile_raw_unlock_success_o,
+
+
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o,
+    output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o,
 
 // Caliptra SS Fuse Controller Interface (Fuse Macros)
     input otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i,
@@ -368,6 +375,7 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_hw_debug_en_i;
     // Inputs from OTP_Ctrl
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
+    logic cptra_in_debug_mode;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -568,6 +576,8 @@ module caliptra_ss_top
 
 
     logic mci_intr;
+
+    assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
@@ -997,18 +1007,14 @@ module caliptra_ss_top
     // MCI Instance
     //=========================================================================
 
-    //TODO: we need to open two input ports for the following signals:
-            // lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
-            // lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
-    // These signals show that escalation is enabled at LCC and FUSE end and external clock was accepted.
-    // The following signal should be also an input coming from LC to MCI
-            //lc_hw_rev_t  hw_rev_o;
     mci_top #(
         .AXI_ADDR_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.araddr)),
         .AXI_DATA_WIDTH  (32                                       ),
         .AXI_USER_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.aruser)),
         .AXI_ID_WIDTH    ($bits(cptra_ss_mci_s_axi_if_r_sub.arid)  ),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB                         ),
+
+        .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH       ),
 
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
@@ -1142,6 +1148,7 @@ module caliptra_ss_top
         .SOC_DFT_EN(cptra_ss_soc_dft_en_o),
         .SOC_HW_DEBUG_EN(cptra_ss_soc_hw_debug_en_o),
         .otp_static_state_o(caliptra_ss_life_cycle_steady_state_o),
+        .otp_state_valid_o(caliptra_ss_otp_state_valid_o),
 
         // Converted Signals from LCC to Caliptra-core
         .security_state_o(mci_cptra_security_state)
@@ -1171,6 +1178,12 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
     caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
     assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
+    assign caliptra_ss_volatile_raw_unlock_success_o = lcc_volatile_raw_unlock_success;
+
+    always_comb begin
+        cptra_ss_lc_escalate_en_o = lc_escalate_en_internal;
+        cptra_ss_lc_check_byp_en_o = lc_check_byp_en_internal;
+    end
 
 
     //--------------------------------------------------------------------------------------------
@@ -1246,6 +1259,7 @@ module caliptra_ss_top
         .clk_i                      (cptra_ss_clk_i),
         .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
+        .cptra_in_debug_mode_i      (cptra_in_debug_mode),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
@@ -1256,8 +1270,7 @@ module caliptra_ss_top
         .core_axi_rd_req            (cptra_ss_otp_core_axi_rd_req_i),
         .core_axi_rd_rsp            (cptra_ss_otp_core_axi_rd_rsp_o),
         
-        .prim_tl_i                  (107'd0),
-        .prim_tl_o                  (),
+
         .prim_generic_otp_outputs_i (cptra_ss_fuse_macro_outputs_i),
         .prim_generic_otp_inputs_o  (cptra_ss_fuse_macro_inputs_o),
 
@@ -1282,9 +1295,6 @@ module caliptra_ss_top
         .lc_check_byp_en_i(lc_check_byp_en_internal),
 
         .otp_lc_data_o(from_otp_to_lcc_data_i),
-
-        .cio_test_o(),    // confirmed unused in design
-        .cio_test_en_o(), // confirmed unused in design
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)

@@ -86,28 +86,28 @@ module caliptra_ss_top_w_stub(
     
     axi_if #(.AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),.DW(`CALIPTRA_AXI_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_cptra_core_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_S_IF_TIE_OFF(cptra_ss_cptra_core_s_axi_if);
+    `AXI_S_IF_TIE_OFF(cptra_ss_cptra_core_s_axi_if)
     axi_if #(.AW(`CALIPTRA_AXI_DMA_ADDR_WIDTH),.DW(CPTRA_AXI_DMA_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_cptra_core_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_M_IF_TIE_OFF(cptra_ss_cptra_core_m_axi_if);
+    `AXI_M_IF_TIE_OFF(cptra_ss_cptra_core_m_axi_if)
     axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mci_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_S_IF_TIE_OFF(cptra_ss_mci_s_axi_if);
+    `AXI_S_IF_TIE_OFF(cptra_ss_mci_s_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mcu_lsu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_lsu_m_axi_if);
+    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_lsu_m_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mcu_ifu_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_ifu_m_axi_if);
+    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_ifu_m_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mcu_sb_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_sb_m_axi_if);
+    `AXI_M_IF_TIE_OFF(cptra_ss_mcu_sb_m_axi_if)
     axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_S_IF_TIE_OFF(cptra_ss_i3c_s_axi_if);
+    `AXI_S_IF_TIE_OFF(cptra_ss_i3c_s_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
-    `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if);
+    `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if)
     axi_mem_if #(.ADDR_WIDTH(15),.DATA_WIDTH(64))
     mcu_rom_mem_export_if(.clk(cptra_ss_clk_i), .rst_b(cptra_ss_rst_b_i));
     assign mcu_rom_mem_export_if.resp.rdata = '0;
@@ -226,9 +226,13 @@ module caliptra_ss_top_w_stub(
     assign cptra_ss_mcu_mbox1_sram_req_if.resp.rdata = '0;
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export();
     assign cptra_ss_mcu0_el2_mem_export.wb_packeddout_pre = '0;
+    assign cptra_ss_mcu0_el2_mem_export.wb_dout_pre_up = '0;
     assign cptra_ss_mcu0_el2_mem_export.dccm_bank_ecc = '0;
     assign cptra_ss_mcu0_el2_mem_export.dccm_bank_dout = '0;
+    assign cptra_ss_mcu0_el2_mem_export.iccm_bank_ecc = '0;
+    assign cptra_ss_mcu0_el2_mem_export.iccm_bank_dout = '0;
     assign cptra_ss_mcu0_el2_mem_export.ic_tag_data_raw_packed_pre = '0;
+    assign cptra_ss_mcu0_el2_mem_export.ic_tag_data_raw_pre = '0;
 
     logic cptra_ss_soc_mcu_mbox0_data_avail;
     logic cptra_ss_soc_mcu_mbox1_data_avail;
@@ -281,6 +285,10 @@ module caliptra_ss_top_w_stub(
     wire cptra_ss_soc_dft_en_o;
     wire cptra_ss_soc_hw_debug_en_o;
     lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o;
+    logic caliptra_ss_otp_state_valid_o;
+    logic caliptra_ss_volatile_raw_unlock_success_o;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o;
+    lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o;
 
     otp_ctrl_pkg::prim_generic_otp_outputs_t      cptra_ss_fuse_macro_outputs_i;
     otp_ctrl_pkg::prim_generic_otp_inputs_t      cptra_ss_fuse_macro_inputs_o;
@@ -568,6 +576,10 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
         .caliptra_ss_life_cycle_steady_state_o,
+        .caliptra_ss_otp_state_valid_o,
+        .caliptra_ss_volatile_raw_unlock_success_o,
+        .cptra_ss_lc_escalate_en_o,
+        .cptra_ss_lc_check_byp_en_o,
 
         .cptra_ss_fuse_macro_outputs_i('0),
         .cptra_ss_fuse_macro_inputs_o,

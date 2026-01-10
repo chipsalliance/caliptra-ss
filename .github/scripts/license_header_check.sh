@@ -57,13 +57,13 @@ if [[ -z ${CALIPTRA_SS_ROOT:+"empty"} ]]; then
     exit 1
 fi
 
-exclude_dir='{uvmf*,.git,cmark,__pycache__,templates,docs,doc,third_party,riscv_core,tlul}'
+exclude_dir='{uvmf*,.git,cmark,__pycache__,templates,docs,doc,third_party,riscv_core,tlul,ISSUE_TEMPLATE}'
 exclude_suffix='*.{tcl,txt,csv,js,htm,html,json,vf,yml,woff,rsp,rdl,bashrc,waiver,cfg,hex,rc,exe,pdf,png,hvp,svg,log,sgdc,bin,size,md}'
 exclude_regs='*_reg*.{sv,rdl}'
 exclude_csr='*_csr*.*'
 exclude_file='{sglint_waivers,pr_hash,pr_timestamp,.gitmodules,.git-comodules,.gitignore,spyglass_lint.policy,ascent.ctl,clp_mapfile,c_sample.c}'
 # excluding OT Files.
-exclude_specific_files='{dmi_cdc.sv,dmi_jtag.sv,dmi_jtag_tap.sv,dm_pkg.sv,caliptra_rom_manuf_dbg,caliptra_rom_uds_prog,caliptra_rom_prod_dbg,cptra_fw_test_rom_fw,cptra_to_mcu_sram_fw_test_rom_fw}'
+exclude_specific_files='{dmi_cdc.sv,dmi_jtag.sv,dmi_jtag_tap.sv,dm_pkg.sv,caliptra_rom_manuf_dbg,caliptra_rom_uds_prog,caliptra_rom_prod_dbg,caliptra_rom_prod_dbg_unlock,cptra_fw_test_rom_fw,cptra_to_mcu_sram_fw_test_rom_fw}'
 
 apache_patn='Licensed under the Apache License'
 

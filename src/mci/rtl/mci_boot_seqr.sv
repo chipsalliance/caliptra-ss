@@ -324,7 +324,7 @@ always_comb begin
             end
         end
         default: begin
-            // Unexpected state so set state to X
+            // Unexpected state so set state to error encoding
             boot_fsm_nxt = BOOT_UNKNOWN;
         end
     endcase

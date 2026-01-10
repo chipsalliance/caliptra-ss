@@ -182,6 +182,7 @@ module mci_top
     output 	logic                                       SOC_HW_DEBUG_EN,
 
     output lc_ctrl_state_pkg::lc_state_e                                   otp_static_state_o,
+    output logic                                        otp_state_valid_o, // FC Security State Output is valid
 
     output soc_ifc_pkg::security_state_t                security_state_o
 
@@ -567,6 +568,8 @@ mci_wdt_top #(
 // MCI Reg
 // MCI CSR bank
 mci_reg_top #(
+    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB), 
+    .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH),
     .AXI_USER_WIDTH(AXI_USER_WIDTH),   
     .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),  
     .MCU_MBOX0_VALID_AXI_USER(MCU_MBOX0_VALID_AXI_USER),   
@@ -700,7 +703,7 @@ generate
 if (MCU_MBOX0_SIZE_KB == 0) begin : no_mcu_mbox0
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mcu_mbox0_req_if.hold = 0;
+        mcu_mbox0_req_if.req_hold = 0;
         mcu_mbox0_req_if.rdata = 0;
         mcu_mbox0_req_if.error = 1;
         mcu_mbox0_sram_req_if.req = '0;
@@ -750,7 +753,7 @@ generate
 if (MCU_MBOX1_SIZE_KB == 0) begin : no_mcu_mbox1
     always_comb begin
         //TIE-OFF zero sized mailbox
-        mcu_mbox1_req_if.hold = 0;
+        mcu_mbox1_req_if.req_hold = 0;
         mcu_mbox1_req_if.rdata = 0;
         mcu_mbox1_req_if.error = 1;
         mcu_mbox1_sram_req_if.req = '0;
@@ -820,6 +823,7 @@ mci_lcc_st_trans LCC_state_translator (
     .SOC_DFT_EN(SOC_DFT_EN),
     .SOC_HW_DEBUG_EN(SOC_HW_DEBUG_EN),
     .otp_static_state(otp_static_state_o),
+    .otp_state_valid_o(otp_state_valid_o),
     .security_state_o(security_state_o)
 );
 

@@ -193,7 +193,8 @@ module lc_ctrl_kmac_if
       end
       // Terminal state (by design we can only perform
       // one token hashing operation per reset cycle).
-      DoneSt: ;
+      DoneSt: begin
+      end
       default: begin
         kmac_fsm_err_d = 1'b1;
       end

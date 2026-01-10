@@ -32,4 +32,3 @@ ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dm_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_jtag_tap.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_cdc.sv
 ${CALIPTRA_SS_ROOT}/src/dmi/rtl/dmi_jtag.sv
-${CALIPTRA_SS_ROOT}/src/dmi/rtl/dm_pkg.sv

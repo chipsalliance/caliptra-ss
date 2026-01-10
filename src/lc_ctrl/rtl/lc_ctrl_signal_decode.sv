@@ -76,7 +76,8 @@ module lc_ctrl_signal_decode
     unique case (fsm_state_i)
       ///////////////////////////////////////////////////////////////////
       // Don't broadcast anything in this state.
-      ResetSt: ;
+      ResetSt: begin
+      end
       ///////////////////////////////////////////////////////////////////
       // Broadcasting of most signals is only enabled during the following life cycle states.
       IdleSt,
@@ -201,7 +202,8 @@ module lc_ctrl_signal_decode
       // Post-transition state. Behaves similarly to the virtual scrap
       // states below, with the exception that escalate_en is NOT asserted,
       // since that could trigger unwanted alerts / escalations and system resets.
-      PostTransSt: ;
+      PostTransSt: begin
+      end
       ///////////////////////////////////////////////////////////////////
       // Virtual scrap states, make sure the escalation signal is
       // also asserted in this case.

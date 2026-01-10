@@ -45,7 +45,7 @@ package mci_pkg;
         BOOT_HALT_MCU           = 4'h9,
         BOOT_WAIT_MCU_HALTED    = 4'ha,
         BOOT_RST_MCU            = 4'hb,
-        BOOT_UNKNOWN            = 'x
+        BOOT_UNKNOWN            = 4'hf
     } mci_boot_fsm_state_e;
 
     typedef enum logic [2:0] {

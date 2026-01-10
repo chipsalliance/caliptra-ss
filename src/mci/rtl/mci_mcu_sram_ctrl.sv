@@ -465,7 +465,7 @@ assign cif_resp_if.rdata = (sram_read_data_avail & mcu_sram_read_req) ?  sram_rd
 // the protection filtering and is sent to the SRAM. 
 // We wait 1 clock cycle and then read data is back
 // from the sram
-assign cif_resp_if.hold = sram_read_req; 
+assign cif_resp_if.req_hold = sram_read_req; 
 
 
 ///////////////////////////////////////////////
