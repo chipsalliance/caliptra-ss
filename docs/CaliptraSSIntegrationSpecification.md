@@ -2424,8 +2424,8 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
   4. If no external I3C connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
   5. If no external I3C connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
   6. It is the integrator’s responsibility to correctly set the I3C core’s PID and DCR registers to unique values to support I3C ENTDAA mode. If two devices on the bus share the same PID, DCR, and BCR values, ENTDAA will fail. Unique values can be assigned in one of two ways:
-    1. FW: Before enabling the I3C core, MCU FW can program these registers with the appropriate values for the device.
-    2. HW: Modify the I3C RDL and regenerate the I3C core RDL collateral.
+    1. FW: Before enabling the I3C core, MCU FW can program these registers with the appropriate values for the device. This is the recommended solution for PID and DCR.
+    2. HW: Modify the I3C RDL and regenerate the I3C core RDL collateral. This is not recommended for PID since each device should strive for unique PIDs. This is OK for DCR since the device type is typically a fixed value.
   7. The I3C static address is disabled on reset. If your design requires a static address before dynamic address assignment occurs, the MCU must program the static address as part of the I3C configuration flow. 
 
 ## Programming Sequence
