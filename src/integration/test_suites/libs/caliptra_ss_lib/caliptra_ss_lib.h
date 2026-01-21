@@ -162,7 +162,15 @@ void mcu_cptra_init(mcu_cptra_init_args args);
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
 
 
-void handle_error(const char *format, ...);
+#define handle_error(format, ...)                    \
+    do {                                             \
+        /* Pass the variable arguments to VPRINTF */ \
+        VPRINTF(FATAL, format, ##__VA_ARGS__);       \
+        /* Fail the test */                          \
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);          \
+        /* Infinite loop to halt execution */        \
+        while (1);                                   \
+    } while (0)
 
 uint32_t xorshift32(void);
 
