@@ -18,4 +18,4 @@ testname: mcu_intr_handler
 pre-exec: |
   set -eu
   echo "Running pre_exec for [mcu_intr_handler]"
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_intr_handler CALIPTRA_TESTNAME=smoke_test_mbox mcu_program.hex cptra_program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=mcu_intr_handler CALIPTRA_TESTNAME=c_intr_handler mcu_program.hex cptra_program.hex

@@ -13,6 +13,8 @@
 // limitations under the License.
 //
 
+`include "caliptra_ss_includes.svh"
+`include "css_mcu0_common_defines.vh"
 `include "soc_address_map_defines.svh"
 `include "soc_address_map_field_defines.svh"
 
@@ -24,8 +26,10 @@ import mci_pkg::*;
 import soc_ifc_pkg::*;
 import mcu_mbox_csr_pkg::*;
 import trace_buffer_csr_pkg::*;
+import css_mcu0_el2_pkg::*;
 #(
-    parameter MCU_SRAM_SIZE_KB = 512
+    parameter MCU_SRAM_SIZE_KB = 512,
+    `include "css_mcu0_el2_param.vh"
 ) 
 (
     input logic core_clk,
@@ -45,6 +49,8 @@ import trace_buffer_csr_pkg::*;
     output logic [31:0]  cptra_ss_strap_mcu_reset_vector_i,
     output logic         cptra_ss_strap_ocp_lock_en_i,
     output logic [15:0]  cptra_ss_strap_key_release_key_size_i,
+
+    output logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int,
 
     input  logic cptra_ss_mcu_halt_status_o,
     output logic cptra_ss_mcu_halt_status_i,
@@ -380,6 +386,18 @@ initial begin
         #1
         cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i; 
         $display("MCI SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
+    end
+end
+
+
+///////////////////////////////////
+// MCU External Interrupts
+//////////////////////////////////
+always @(posedge core_clk) begin
+    if (!cptra_rst_b)
+        cptra_ss_mcu_ext_int <= '0;
+    else if (tb_services_if.toggle_cptra_ss_mcu_ext_int) begin
+        cptra_ss_mcu_ext_int <= cptra_ss_mcu_ext_int ^ tb_services_if.toggle_cptra_ss_mcu_ext_int;
     end
 end
 

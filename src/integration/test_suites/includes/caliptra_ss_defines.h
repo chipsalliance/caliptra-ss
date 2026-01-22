@@ -30,11 +30,12 @@
 /* ---- Interrupts ---- */
 #define CSS_MCU0_VEER_INTR_VEC_MCI         1
 #define CSS_MCU0_VEER_INTR_VEC_I3C         2
-// Used to tie-off unused upper intr bits
+// Used to tie-off undefined upper intr bits
 #define CSS_MCU0_VEER_INTR_EXT_LSB         3
 
 #define CSS_MCU0_VEER_INTR_PRIO_MCI        8
 #define CSS_MCU0_VEER_INTR_PRIO_I3C        7
+#define CSS_MCU0_VEER_INTR_PRIO_BFM        6
 
 
 #endif // CALIPTRA_SS_DEFINES_H

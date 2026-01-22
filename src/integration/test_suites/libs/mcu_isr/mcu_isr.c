@@ -63,6 +63,7 @@ void nonstd_veer_mtvec_mcei(void) __attribute__ ((interrupt ("machine") , aligne
 // VeeR Per-Source Vectored ISR functions
 static void nonstd_veer_isr_mci  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_i3c  (void) __attribute__ ((interrupt ("machine")));
+static void nonstd_veer_isr_bfm  (void) __attribute__ ((interrupt ("machine")));
 
 // Could be much more fancy with C preprocessing to pair up the ISR with Vector
 // numbers as defined in caliptra_defines.h.... TODO
@@ -144,14 +145,14 @@ static void (* __attribute__ ((aligned(4))) nonstd_veer_isr_vector_table [CSS_MC
     nonstd_veer_isr_29,
     nonstd_veer_isr_30,
     nonstd_veer_isr_31,
-    /* Empty definitions up to the 255 index */
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine ),
-    CPTRA_REPT_32( std_rv_nop_machine )
+    /* Generic BFM handler definitions up to the 255 index */
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm ),
+    CPTRA_REPT_32( nonstd_veer_isr_bfm )
 };
 
 // Table defines the RV standard vectored entries pointed to by mtvec
@@ -214,7 +215,7 @@ void init_interrupts(void) {
     meipls[CSS_MCU0_VEER_INTR_VEC_MCI] = CSS_MCU0_VEER_INTR_PRIO_MCI; __asm__ volatile ("fence");
     meipls[CSS_MCU0_VEER_INTR_VEC_I3C] = CSS_MCU0_VEER_INTR_PRIO_I3C; __asm__ volatile ("fence");
     for (uint32_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
-        meipls[undef] = 0; __asm__ volatile ("fence"); // Set to 0 meaning NEVER interrupt
+        meipls[undef] = CSS_MCU0_VEER_INTR_PRIO_BFM; __asm__ volatile ("fence");
     }
 
     // MEICIDPL - Initialize the Claim ID priority level to 0
@@ -239,8 +240,8 @@ void init_interrupts(void) {
         //             NOTE: Any write value clears the pending bit
         meigwclrs[vec]  = 0; __asm__ volatile ("fence");
 
-        // MEIE_S - Enable implemented interrupt sources
-        meies[vec]  = (vec < CSS_MCU0_VEER_INTR_EXT_LSB); __asm__ volatile ("fence");
+        // MEIE_S - Enable all interrupt sources
+        meies[vec]  = 1; __asm__ volatile ("fence");
     }
 
     /* -- Re-enable global interrupts -- */
@@ -741,6 +742,7 @@ static void nonstd_veer_isr_0 (void) {
     /* This will match one macro from this list:                                                      \
      * service_mci_intr                                                                               \
      * service_i3c_intr                                                                               \
+     * service_bfm_intr                                                                               \
      */                                                                                               \
     service_##name##_intr();                                                                          \
                                                                                                       \
@@ -769,3 +771,5 @@ static void nonstd_veer_isr_0 (void) {
 nonstd_veer_isr(mci)
 // Non-Standard Vectored Interrupt Handler (I3C Interrupt = vector 2)
 nonstd_veer_isr(i3c)
+// Non-Standard Vectored Interrupt Handler (Default/BFM-driven Interrupt = vector 32:255)
+nonstd_veer_isr(bfm)
