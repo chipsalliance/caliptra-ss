@@ -77,6 +77,7 @@
       - [Why These Straps Are Needed](#why-these-straps-are-needed)
       - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
+  - [Life Cycle OTP Programming Behavior and Integrator Responsibilities](#life-cycle-otp-programming-behavior-and-integrator-responsibilities)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
   - [Parameters \& Defines](#parameters--defines-3)
@@ -1242,6 +1243,11 @@ program arbitrary OTP memory locations through the test interface. Only
 specific, pre-defined test locations shall be readable and programmable. Access
 to debug access interface must also be disabled once the device is in
 mission mode (i.e. PROD life cycle state).
+
+## Life Cycle OTP Programming Behavior and Integrator Responsibilities
+During a life‑cycle transition, the Caliptra Life Cycle Controller performs two OTP write operations to the transition‑counter and life‑cycle‑state fields. This behavior is architecturally defined and required for secure, fault‑resistant state progression. Although only one field changes in each phase, both fields reside within the same OTP word, so the macro receives two programming operations that may include writing some bits to the same value they already hold. This programming pattern is expected and safe for OTP implementations that correctly support word‑level writes, including rewriting a bit with the same value (1 -> 1).
+
+Integrators must ensure that their OTP macro or wrapper supports rewriting fields without generating errors, and that the macro’s burn semantics align with Caliptra’s assumption that “burn” corresponds to writing a logical 1. If an OTP vendor interprets 0 as a burn operation or cannot tolerate 1 -> 1 writes, the integrator must adapt their wrapper—for example, by inverting the encoding or using per‑bit write‑enable—to ensure compatibility.
 
 # Life Cycle Controller
 
