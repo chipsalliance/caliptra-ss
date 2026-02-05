@@ -567,7 +567,7 @@ The figure below shows the LCC state transition and Caliptra Subsystem enhanceme
 | TEST_UNLOCKED{N}   | FUSE            | Transition from RAW state using token stored in FUSE. This state is used for manufacturing and production testing. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are enabled. It is expected that LCC tokens will be provisioned into FUSE during these states. Once provisioned, these tokens are no longer readable by software.|
 | MANUF              | FUSE            | Transition from TEST_UNLOCKED state using token stored in FUSE. This is a mutually exclusive state to PROD and PROD_END. To enter this state, MANUF_TOKEN is required. This state is used for developing provisioning and mission mode. In this state, UDS and Field Entropy FUSE partitions can be provisioned. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are disabled |
 | PROD               | FUSE            | Transition from MANUF state using token stored in FUSE. PROD is a mutually exclusive state to MANUF and PROD_END. To enter this state, PROD_TOKEN is required. This state is used both for provisioning and mission mode. During this state: CLTAP is disabled; Debug functions are disabled; DFT functions are disabled; Caliptra Subsytem can grant SoC debug unlock flow if the conditions provided in “SoC Debug Flow and Architecture for Production Mode” section are satisfied. SoC debug unlock overwrites the signals and gives the following cases: CLTAP is enabled; Debug functions are enabled based on the defined debug policy; DFT is enabled but this DFT enable is called SOC_DFT_EN, which has less capabilities than DFT_EN granted in TEST_UNLOCKED. |
-| PROD_END           | FUSE            | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a PROD_END token is required. It also means that Caliptra-SS cannot enter debug mode anymore. Only transition to SCRAP mode is allowed.|
+| PROD_END           | FUSE            | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a PROD_END token is required. Only transition to SCRAP mode is allowed.|
 | RMA                | FUSE            | Transition from TEST_UNLOCKED / PROD / MANUF using token stored in FUSE. It is not possible to reach this state from PROD_END. If the RMA transition is requested, the request must follow the asserted RMA PPD pin. Without this pin, RMA request is discarded. See `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` in [Caliptra Subsystem Integration Specification Document](CaliptraSSIntegrationSpecification.md). When transitioning from PROD or MANUF, an RMA_UNLOCK token is required. When transitioning from TEST_UNLOCKED, no RMA_UNLOCK token is required. During this state: CLTAP is enabled; Debug functions are enabled; DFT functions are enabled |
 | SCRAP              | FUSE            | Transition from any state. If the SCRAP transition is requested, the request must follow the asserted SCRAP PPD pin. Without this pin, SCRAP request is discarded. See `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` in [Caliptra Subsystem Integration Specification Document](CaliptraSSIntegrationSpecification.md). During SCRAP state the device is completely dead. All functions, including CPU execution are disabled. The only exception is the TAP of the life cycle controller which is always accessible so that the device state can be read out. No owner consent is required to transition to SCRAP. Note also, SCRAP is meant as an EOL manufacturing state. Transition to this state is always purposeful and persistent, it is NOT part of the device’s native security countermeasure to transition to this state.|
 | INVALID            | FUSE            | Invalid is any combination of FUSE values that do not fall in the categories above. It is the “default” state of life cycle when no other conditions match. Functionally, INVALID is identical to SCRAP in that no functions are allowed and no transitions are allowed. A user is not able to explicitly transition into INVALID (unlike SCRAP), instead, INVALID is meant to cover in-field corruptions, failures or active attacks.|
@@ -593,16 +593,16 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 *Table: LCC State and State Decoder output ports*
 ## LCC State and State Decoder Output Ports
 | **LCC State\Decoder Output** 	| **DFT_EN** 	         | **SOC_DFT_EN** 	      | **SOC_HW_DEBUG_EN** 	|
-| :--------- 			            | :--------- 	         | :--------- 	 	      | :--------- 	 	      |
-| RAW 				               | Low 		            | Low 			         | Low 			         |
+| :--------- 			              | :--------- 	         | :--------- 	 	      | :--------- 	 	      |
+| RAW 				                  | Low 		            | Low 			         | Low 			         |
 | TEST_LOCKED 			            | Low 		            | Low 			         | Low 			         |
 | TEST_UNLOCKED 		            | High 		            | High 			         | High 			         |
-| MANUF* 			               | Low 		            | Low 			         | High 			         |
+| MANUF* 			                  | Low 		            | Low 			         | High 			         |
 | PROD* 			                  | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
-| PROD_END 			               | Low 		            | Low 			         | Low 			         |
-| RMA 				               | High***	            | High 			         | High 			         | 
+| PROD_END*			                | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
+| RMA 				                  | High***	            | High 			         | High 			         | 
 | SCRAP 			                  | Low 		            | Low 			         | Low 			         |
-| INVALID 			               | Low 		            | Low 			         | Low 			         |
+| INVALID 			                | Low 		            | Low 			         | Low 			         |
 | POST_TRANSITION 	            | Low 		            | Low 			         | Low 			         |
 
 
@@ -659,7 +659,7 @@ The following figure illustrates how Caliptra Subsystem enters the manufacturing
 
 The Caliptra Subsystem includes SoC debugger logic that supports Caliptra’s production debug mode. This debugger logic extends the capabilities of the Lifecycle Controller (LCC) by providing a production debug mode architecture that the LCC does not inherently support, except in the RMA state. This architecture manages the initiation and handling of the production debug mode separately from the LCC's lifecycle states.
 
-The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD state. Before the debug unlock flow, the MCU reads all hashed public keys from the fuse macros and writes them to the `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK` registers. Additionally, the MCU sets the number of public keys used for production debug unlock by writing to the `SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES` register. The value `DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET` represents an address offset, while `NUM_OF_DEBUG_AUTH_PK_HASHES` defines how many public keys are available for reading. These two values establish the debug policy depth for different debugging levels. 
+The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD or PROD_END states. Before the debug unlock flow, the MCU reads all hashed public keys from the fuse macros and writes them to the `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK` registers. Additionally, the MCU sets the number of public keys used for production debug unlock by writing to the `SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES` register. The value `DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET` represents an address offset, while `NUM_OF_DEBUG_AUTH_PK_HASHES` defines how many public keys are available for reading. These two values establish the debug policy depth for different debugging levels. 
 
 ### Overview of Debug Unlock Initiation
 
@@ -748,7 +748,7 @@ The LCC provides specific decoding signals—DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN
 
 **Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
 
-**Production Debug Mode:** This state is active when the LCC is in the PROD, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used.
+**Production Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used.
 
 **Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required.
 
@@ -766,6 +766,7 @@ The table below summarizes the relationship between the LCC state, the decoder o
 | PROD 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
 | PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| PROD_END* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | RMA 					               | High 		   | High 		      | High 			         | Prod Debug                           |
 | SCRAP 				                  | Low 		   | Low 		      | Low 			         |Prod Non-Debug                            |
 | INVALID 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
