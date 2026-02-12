@@ -672,7 +672,7 @@ Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
 - Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
 
-**Note:** Similar to manufacturing debug flow, BootFSMBrk needs to be set to halt Caliptra ROM execution. Otherwise, the ROM can skip the request because `PROD_DEBUG_UNLOCK_REQ`. Unlike `DEBUG_INTENT_STRAP`, BootFSMBrk is not a pre-condition for the debug flows. It is used to halt Caliptra-core execution in order to write the request/command registers before Caliptra-core reads them. It is a syncronizer in this concept.   
+**Note:** Similar to the manufacturing debug flow, BootFSMBrk must be asserted to halt Caliptra ROM execution. Otherwise, the ROM may advance past the debug request before `PROD_DEBUG_UNLOCK_REQ` is populated. Unlike `DEBUG_INTENT_STRAP`, BootFSMBrk is not a prerequisite for entering the debug flow. Instead, it serves as a synchronization mechanism—pausing Caliptra-core execution to allow the request/command registers to be written before the core attempts to read them.  
 
 ### Secure Debug Unlock Protocol
 - The production debug unlock flow uses a challenge-response authentication model involving public key verification and hybrid cryptography (ECC and MLDSA). The flow includes the following steps:
