@@ -609,7 +609,7 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 
 *: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
 
-**: SOC_DFT_EN and SOC_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN is set high to open CLTAP and SOC_DFT_EN enables DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode debug unlock or Level 0 of the production debug unlock.
+**: SOC_DFT_EN and SOC_HW_DEBUG_EN can be high if Caliptra SS grants debug mode. This case is explained in “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN is set high to open CLTAP and SOC_DFT_EN enables DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode debug unlock or Level 0 of the production debug unlock.
 
 ***: RMA state enables DFT_EN but Caliptra Core enters the debug mode when LCC enters RMA state. Thus, Caliptra Core clears UDS and Field Entropy secrets. 
 
@@ -666,11 +666,13 @@ The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP
 The process begins when the platform sets three conditions:
 - The `DEBUG_INTENT` field in the `SS_DEBUG_INTENT` register.
 - The `PROD_DEBUG_UNLOCK_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register.
-- The `BOOTFSM_GO_ADDR` to allow Caliptra Core to continue its execution.
+- The `CPTRA_BOOT_GO` allows Caliptra Core to continue its execution.
 On reset, the Caliptra ROM checks these two signals. If both are asserted, the ROM begins the production debug unlock process.
 Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
 - Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
+
+**Note:** Similar to manufacturing debug flow, BootFSMBrk needs to be set to halt Caliptra ROM execution. Otherwise, the ROM can skip the request because `PROD_DEBUG_UNLOCK_REQ`. Unlike `DEBUG_INTENT_STRAP`, BootFSMBrk is not a pre-condition for the debug flows. It is used to halt Caliptra-core execution in order to write the request/command registers before Caliptra-core reads them. It is a syncronizer in this concept.   
 
 ### Secure Debug Unlock Protocol
 - The production debug unlock flow uses a challenge-response authentication model involving public key verification and hybrid cryptography (ECC and MLDSA). The flow includes the following steps:
@@ -717,6 +719,9 @@ Upon detecting a valid debug intent:
 **Granting Production Debug Mode:**
 * If authentication succeeds, Caliptra ROM does not immediately grant full production debug mode. Instead, the ROM sets the appropriate **"debug level"** signal, which corresponds to the type of debug access being requested.
 * Caliptra ROM writes CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL register, which will be wired to the specific debug enable signal. This signal is part of an N-wide signal that is mapped to the payload encoding received during the debug request. N is defined by NUM_OF_ DEBUG_AUTH_PK_HASHES. The default version of N is 8. The payload encoding can either be one-hot encoded or a general encoded format, and this signal is passed to the SoC to allow it to make the final decision about the level of debug access that should be granted. In Caliptra’s subsystem-specific implementation, the logic is configured to handle one-hot encoding for these 8 bits. The level 0 bit is routed to both Caliptra and the MCU TAP interface, allowing them to unlock based on this level of debug access. This granular approach ensures that the system can selectively unlock different levels of debugging capability, depending on the payload and the authorization level provided by the debugger.
+
+**Granting Production Debug Mode with Caliptra Runtime FW:**
+Although the flow above describes ROM-based authentication, the same challenge–response mechanism may be executed by Caliptra Runtime Firmware. In this case, RT FW performs the challenge-response authentication steps via mailbox commands, which will be used to update the debug unlock level. **The `DEBUG_INTENT_STRAP` must still be asserted high at before Caliptra starts.** This ensures that even RT-based debug enablement remains gated by hardware intent and cannot be triggered purely through software.
 
 ## Masking Logic for Debugging Features in Production Debug Mode (MCI)
 In the production debug mode, the SoC can enable certain debugging features—such as DFT_EN and SOC_HW_DEBUG_EN—using a masking mechanism implemented within the Manufacturer Control Interface (MCI). This masking infrastructure allows the SoC to selectively control debug features that are normally gated by Caliptra’s internal signals. The masking logic functions as a set of registers, implemented in the MCI, that can be written by the SoC to override or enable specific debugging functionalities in production debug mode.
@@ -772,8 +777,8 @@ The table below summarizes the relationship between the LCC state, the decoder o
 | INVALID 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
-*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. 
-**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in PROD state.
+*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD, PROD_END states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. 
+**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in PROD, PROD_END state.
 
 ## Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations
 The Caliptra Subsystem features a non-volatile debugging infrastructure that allows the SoC integrator to utilize a dedicated SRAM for early-stage debugging during the VolatileUnlock state. This SRAM provides a means to store executable content for the MCU, enabling early manufacturing debug operations.

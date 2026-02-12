@@ -1400,6 +1400,11 @@ TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
 4. **Error Scenarios**:
    - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
 
+5. **MCI Masking Registers for LCC Decoding Signals**:
+   - The MCI provides a set of masking registers that allow the SoC integrator to explicitly masks Caliptra Core–debug level, SOC_DFT_EN and SOC_HW_DEBUG_EN. Caliptra Core expresses its debug grant through the `ss_soc_dbg_unlock_level_i` vector, where each bit represents a distinct debug unlock level. These requests are not acted upon directly; instead, they are first AND-masked with SoC-programmed MCI registers to ensure that only integrator-approved debug levels can be enabled.
+   - For production debug unlock, the integrator must program `MCI_REG_SOC_PROD_DEBUG_STATE_0` and `MCI_REG_SOC_PROD_DEBUG_STATE_1` MCI registers. Together, these registers form a 64-bit mask that gates `ss_soc_dbg_unlock_level_i`. A debug level is considered enabled only if the corresponding bit is set both in Caliptra Core’s unlock request vector and in the SoC-programmed mask. For example, if Caliptra Core asserts the fifth debug level by setting `ss_soc_dbg_unlock_level_i[4]`, the integrator must also set bit of `MCI_REG_SOC_PROD_DEBUG_STATE[1:0][4]` for that level to take effect.
+   - The same masking mechanism applies to SOC_DFT_EN enable and SOC_HW_DEBUG_EN. For these, MCI offers `MCI_REG_SOC_DFT_EN_0`, `MCI_REG_SOC_DFT_EN_1` and `MCI_REG_SOC_HW_DEBUG_EN_0`, `MCI_REG_SOC_HW_DEBUG_EN_1` mask registers. These are also masked with `ss_soc_dbg_unlock_level_i`. If this masking (AND operation) results in a value that has `1` in it. The corresponding enable signal is set to high.
+
 ## How to Test: Smoke & More
 
 ### Smoke Test
