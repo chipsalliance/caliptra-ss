@@ -754,7 +754,7 @@ Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
 - Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
 
-**Note:** Similar to manufacturing debug flow, BootFSMBrk needs to be set to halt Caliptra ROM execution. Otherwise, the ROM can skip the request because `PROD_DEBUG_UNLOCK_REQ`  
+**Note:** Similar to the manufacturing debug flow, BootFSMBrk must be asserted to halt Caliptra ROM execution. Otherwise, the ROM may advance past the debug request before `PROD_DEBUG_UNLOCK_REQ` is populated. Unlike `DEBUG_INTENT_STRAP`, BootFSMBrk is not a prerequisite for entering the debug flow. Instead, it serves as a synchronization mechanism—pausing Caliptra-core execution to allow the request/command registers to be written before the core attempts to read them.
 
 ### Secure Debug Unlock Protocol
 
@@ -837,11 +837,11 @@ The LCC provides specific decoding signals—DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN
 
 **Manufacturing Non-Debug Mode:** This state occurs when the LCC is in the MANUF state, with SOC_HW_DEBUG_EN high and DFT_EN and  SOC_DFT_EN low. In this state, the secrets have been programmed into the system, and the Caliptra can generate CSR (Certificate Signing Request) upon request. However, it remains in a secure, non-debug mode to prevent reading secrets through the debugging interfaces.
 
-**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, SOC_DFT_EN can be set high if LSB of CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL is set to high in MANUF debug state [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
+**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, SOC_DFT_EN can be set high if LSB of `MCI_REG_SOC_DFT_EN_0` is set to high in MANUF debug state [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
 
 **Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
 
-**Production Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
+**Production Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN and SOC_HW_DEBUG_EN can be set high with MCI masking registers [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
 
 **Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required.
 
