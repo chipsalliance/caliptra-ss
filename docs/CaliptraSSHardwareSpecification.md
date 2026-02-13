@@ -754,7 +754,7 @@ Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
 - Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
 
-**Note:** Similar to the manufacturing debug flow, BootFSMBrk must be asserted to halt Caliptra ROM execution. Otherwise, the ROM may advance past the debug request before `PROD_DEBUG_UNLOCK_REQ` is populated. Unlike `DEBUG_INTENT_STRAP`, BootFSMBrk is not a prerequisite for entering the debug flow. Instead, it serves as a synchronization mechanism—pausing Caliptra-core execution to allow the request/command registers to be written before the core attempts to read them.
+**Note:** Similar to the manufacturing debug flow, BootFSMBrk must be asserted to halt Caliptra ROM execution. Otherwise, the ROM may advance past the debug request before `PROD_DEBUG_UNLOCK_REQ` is populated. BootFSMBrk is a prerequisite for entering the debug flow ONLY if Caliptra core ROM needs to be debugged; for run-time injection of prod debug unlock token, setting BootFSMBrk is not required.
 
 ### Secure Debug Unlock Protocol
 
@@ -807,7 +807,7 @@ Upon detecting a valid debug intent:
 - Caliptra ROM writes CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL register, which will be wired to the specific debug enable signal. This signal is part of an N-wide signal that is mapped to the payload encoding received during the debug request. N is defined by NUM_OF_DEBUG_AUTH_PK_HASHES. The default version of N is 8. The payload encoding can either be one-hot encoded or a general encoded format, and this signal is passed to the SoC to allow it to make the final decision about the level of debug access that should be granted. In Caliptra’s subsystem-specific implementation, the logic is configured to handle one-hot encoding for these 8 bits. The level 0 bit is routed to both Caliptra and the MCU TAP interface, allowing them to unlock based on this level of debug access. This granular approach ensures that the system can selectively unlock different levels of debugging capability, depending on the payload and the authorization level provided by the debugger.
 
 **Granting Production Debug Mode with Caliptra Runtime FW:**
-Although the flow above describes ROM-based authentication, the same challenge–response mechanism may be executed by Caliptra Runtime Firmware. In this case, RT FW performs the challenge-response authentication steps via mailbox commands, which will be used to update the debug unlock level. **The `DEBUG_INTENT_STRAP` must still be asserted high before Caliptra starts.** This ensures that even RT-based debug enablement remains gated by hardware intent and cannot be triggered purely through software.
+Although the flow above describes ROM-based authentication, the same challenge–response mechanism may be executed by Caliptra Runtime Firmware. In this case, RT FW performs the challenge-response authentication steps via mailbox commands, which will be used to update the debug unlock level. **The `DEBUG_INTENT_STRAP` must still be asserted high before Caliptra subsystem is out of reset.** This ensures that even RT-based debug enablement remains gated by hardware intent and cannot be triggered purely through software.
 
 ## Masking Logic for Debugging Features in Production Debug Mode (MCI)
 
