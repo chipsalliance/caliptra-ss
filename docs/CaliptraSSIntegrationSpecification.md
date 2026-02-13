@@ -77,6 +77,7 @@
       - [Why These Straps Are Needed](#why-these-straps-are-needed)
       - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
+  - [Life Cycle OTP Programming Behavior and Integrator Responsibilities](#life-cycle-otp-programming-behavior-and-integrator-responsibilities)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
   - [Parameters \& Defines](#parameters--defines-3)
@@ -1243,6 +1244,11 @@ specific, pre-defined test locations shall be readable and programmable. Access
 to debug access interface must also be disabled once the device is in
 mission mode (i.e. PROD life cycle state).
 
+## Life Cycle OTP Programming Behavior and Integrator Responsibilities
+During a life‑cycle transition, the Caliptra Life Cycle Controller performs two OTP write operations to the transition‑counter and life‑cycle‑state fields. This behavior is architecturally defined and required for secure, fault‑resistant state progression. Although only one field changes in each phase, both fields reside within the same OTP word, so the macro receives two programming operations that may include writing some bits to the same value they already hold. This programming pattern is expected and safe for OTP implementations that correctly support word‑level writes, including rewriting a bit with the same value (1 -> 1).
+
+Integrators must ensure that their OTP macro or wrapper supports rewriting fields without generating errors, and that the macro’s burn semantics align with Caliptra’s assumption that “burn” corresponds to writing a logical 1. If an OTP vendor interprets 0 as a burn operation or cannot tolerate 1 -> 1 writes, the integrator must adapt their wrapper—for example, by inverting the encoding or using per‑bit write‑enable—to ensure compatibility.
+
 # Life Cycle Controller
 
 ## Overview
@@ -1322,7 +1328,7 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 
     To protect from clock stretching attacks Caliptra mandates using a clock source that is constructed within the SOC (eg. PLL, Calibrated Ring Oscillator, etc). For such a clock source, a SOC may require fuses to be programmed. TP programming demands a reliable and deterministic clock signal to ensure correct fuse write operations; which SOC may not have during the early phases of manufacturing flow due to above constraints. In order to overcome this issue, this `external clock` can be used typically in the manufacturing phase of a SOC; and for such SOCs this external clock is supplied from a platform (e.g an ATE). Since the Caliptra subsystem includes only one clock input (`cptra_ss_clk_i`), the SoC integrator is responsible for ensuring that this input can be switched to a stable source.
 
-    - The life-cycle controller exposes an `LC_STATE` register that carries the life-cycle controller state, which the SoC can read to determine the current life-cycle state. In addition, the Caliptra Subsystem top level provides the `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` signals, which are broadcast from the fuse controller. Whenever `caliptra_ss_otp_state_valid_o` is asserted, `caliptra_ss_life_cycle_steady_state_o` reflects the latest life-cycle state stored in the fuse macro. Because the fuse controller is initialized earlier than the life-cycle controller, these broadcast state signals are derived from the fuse controller. Note that `caliptra_ss_otp_state_valid_o` is driven low by the fuse controller if a fatal error occurs in the fuse controller or if an escalation signal is asserted by the life-cycle controller. In contrast, `LC_STATE` provides the life-cycle controller’s own view of the state, independent of the fuse controller’s errors such as entering SCRAP state.
+    - The life-cycle controller exposes an `LC_STATE` register that carries the life-cycle controller state, which the SoC can read to determine the current life-cycle state. In addition, the Caliptra Subsystem top level provides the `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` signals, which are broadcast from the fuse controller. Whenever `caliptra_ss_otp_state_valid_o` is asserted, `caliptra_ss_life_cycle_steady_state_o` reflects the latest life-cycle state stored in the fuse macro in the following cycle. Because the fuse controller is initialized earlier than the life-cycle controller, these broadcast state signals are derived from the fuse controller. Note that `caliptra_ss_otp_state_valid_o` is driven low by the fuse controller if a fatal error occurs in the fuse controller or if an escalation signal is asserted by the life-cycle controller. In contrast, `LC_STATE` provides the life-cycle controller’s own view of the state, independent of the fuse controller’s errors such as entering SCRAP state.
     
     Volatile-unlock state transitions are not reflected by the fuse controller, and therefore `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not capture state transitions granted exclusively by the life-cycle controller. To cover this case, the Caliptra Subsystem also broadcasts `caliptra_ss_volatile_raw_unlock_success_o`, which is asserted by the life-cycle controller to indicate that the volatile-unlock state has been granted.
 
@@ -1393,6 +1399,11 @@ TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
 
 4. **Error Scenarios**:
    - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
+
+5. **MCI Masking Registers for LCC Decoding Signals**:
+   - The MCI provides a set of masking registers that allow the SoC integrator to explicitly masks Caliptra Core–debug level, SOC_DFT_EN and SOC_HW_DEBUG_EN. Caliptra Core expresses its debug grant through the `ss_soc_dbg_unlock_level_i` vector, where each bit represents a distinct debug unlock level. These requests are not acted upon directly; instead, they are first AND-masked with SoC-programmed MCI registers to ensure that only integrator-approved debug levels can be enabled.
+   - For production debug unlock, the integrator must program `MCI_REG_SOC_PROD_DEBUG_STATE_0` and `MCI_REG_SOC_PROD_DEBUG_STATE_1` MCI registers. Together, these registers form a 64-bit mask that gates `ss_soc_dbg_unlock_level_i`. A debug level is considered enabled only if the corresponding bit is set both in Caliptra Core’s unlock request vector and in the SoC-programmed mask. For example, if Caliptra Core asserts the fifth debug level by setting `ss_soc_dbg_unlock_level_i[4]`, the integrator must also set bit of `MCI_REG_SOC_PROD_DEBUG_STATE[1:0][4]` for that level to take effect.
+   - The same masking mechanism applies to SOC_DFT_EN enable and SOC_HW_DEBUG_EN. For these, MCI offers `MCI_REG_SOC_DFT_EN_0`, `MCI_REG_SOC_DFT_EN_1` and `MCI_REG_SOC_HW_DEBUG_EN_0`, `MCI_REG_SOC_HW_DEBUG_EN_1` mask registers. These are also masked with `ss_soc_dbg_unlock_level_i`. If this masking (AND operation) results in a value that has `1` in it. The corresponding enable signal is set to high.
 
 ## How to Test: Smoke & More
 
