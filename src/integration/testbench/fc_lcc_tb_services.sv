@@ -178,11 +178,13 @@ module fc_lcc_tb_services (
           end
           CMD_MCI_FORCE_STATE_ERROR: begin
             $display("fc_lcc_tb_services: Forcing MCI LCC state translator state_error = 1");
+            $assertoff(0, `MCI_PATH.LCC_state_translator.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
             force `MCI_PATH.LCC_state_translator.state_error = 1'b1;
           end
           CMD_MCI_RELEASE_STATE_ERROR: begin
             $display("fc_lcc_tb_services: Releasing MCI LCC state translator state_error");
             release `MCI_PATH.LCC_state_translator.state_error;
+            $asserton(0, `MCI_PATH.LCC_state_translator.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
           end
           default: begin
             // No action for unrecognized commands.
