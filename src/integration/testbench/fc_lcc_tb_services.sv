@@ -176,6 +176,14 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: Release fault on the VENDOR_SECRET_PROD_PARTITION zeroization marker");
             release `FC_MEM[VendorSecretProdPartitionZerOffset/2][otp_ctrl_pkg::ScrmblBlockWidth-otp_ctrl_pkg::ZeroizationValidBound+1:0];
           end
+          CMD_MCI_FORCE_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: Forcing MCI LCC state translator state_error = 1");
+            force `MCI_PATH.LCC_state_translator.state_error = 1'b1;
+          end
+          CMD_MCI_RELEASE_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: Releasing MCI LCC state translator state_error");
+            release `MCI_PATH.LCC_state_translator.state_error;
+          end
           default: begin
             // No action for unrecognized commands.
           end

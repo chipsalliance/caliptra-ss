@@ -429,7 +429,9 @@ $rose(lcc_volatile_raw_unlock_success_i
     |=> ##2
     ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
         && (security_state_o.debug_locked == 1'b0)
-        && (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED) ) 
+        && (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED) ),
+    clk_i,
+    !rst_ni || state_error
 )
 
 
