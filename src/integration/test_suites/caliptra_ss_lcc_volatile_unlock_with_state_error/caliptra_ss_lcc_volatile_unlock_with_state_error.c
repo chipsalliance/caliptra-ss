@@ -28,7 +28,7 @@
 #include "fuse_ctrl.h"
 #include "lc_ctrl.h"
 
-// Coverage test for mci_lcc_st_trans.sv line 172:
+// Coverage test for mci_lcc_st_trans.sv line:
 //   if (lcc_volatile_raw_unlock_success_i && !(lcc_valid_SCRAP_req || state_error))
 //
 // This test hits the FALSE branch by forcing state_error HIGH via BFM
@@ -82,7 +82,7 @@ void main (void) {
     // Submit the volatile raw unlock transition to TEST_UNLOCKED0.
     // LCC will pulse lcc_volatile_raw_unlock_success_i, but since
     // state_error is forced HIGH, the MCI translator FSM condition
-    // at line 172 evaluates FALSE and the FSM stays in TRANSLATOR_NON_DEBUG.
+    // evaluates FALSE and the FSM stays in TRANSLATOR_NON_DEBUG.
     if (!start_state_transition(TEST_UNLOCKED0, hashed_raw_unlock_token, false)) {
         // Release state_error before failing
         lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_MCI_RELEASE_STATE_ERROR);
