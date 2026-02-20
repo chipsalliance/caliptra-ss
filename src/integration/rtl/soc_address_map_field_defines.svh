@@ -723,27 +723,18 @@
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR_VIRT_DYNAMIC_ADDR_VALID_LOW            (31)
 `define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR_VIRT_DYNAMIC_ADDR_VALID_MASK           (32'h80000000)
 `endif
-`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL                                                     (32'hbc)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL_MWL_LOW                                             (0)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL_MWL_MASK                                            (32'hffff)
-`endif
-`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL                                                     (32'hc0)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_MRL_LOW                                             (0)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_MRL_MASK                                            (32'hffff)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_IBIL_LOW                                            (16)
-`define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_IBIL_MASK                                           (32'hff0000)
+`ifndef I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_3
+`define I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_3                                                        (32'hbc)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_EXTCAP_HEADER
-`define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                             (32'h100)
+`define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                             (32'hc0)
 `define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_ID_LOW                                                  (0)
 `define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_ID_MASK                                                 (32'hff)
 `define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_LENGTH_LOW                                              (8)
 `define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_LENGTH_MASK                                             (32'hffff00)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_CONTROL
-`define I3CCSR_I3C_EC_TTI_CONTROL                                                                   (32'h104)
+`define I3CCSR_I3C_EC_TTI_CONTROL                                                                   (32'hc4)
 `define I3CCSR_I3C_EC_TTI_CONTROL_HJ_EN_LOW                                                         (10)
 `define I3CCSR_I3C_EC_TTI_CONTROL_HJ_EN_MASK                                                        (32'h400)
 `define I3CCSR_I3C_EC_TTI_CONTROL_CRR_EN_LOW                                                        (11)
@@ -754,14 +745,14 @@
 `define I3CCSR_I3C_EC_TTI_CONTROL_IBI_RETRY_NUM_MASK                                                (32'he000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_STATUS
-`define I3CCSR_I3C_EC_TTI_STATUS                                                                    (32'h108)
-`define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_LOW                                                 (8)
-`define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_MASK                                                (32'h100)
-`define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_LOW                                                (12)
-`define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_MASK                                               (32'h7000)
+`define I3CCSR_I3C_EC_TTI_STATUS                                                                    (32'hc8)
+`define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_LOW                                                 (13)
+`define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_MASK                                                (32'h2000)
+`define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_LOW                                                (14)
+`define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_MASK                                               (32'hc000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_RESET_CONTROL
-`define I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                             (32'h10c)
+`define I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                             (32'hcc)
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_SOFT_RST_LOW                                                (0)
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_SOFT_RST_MASK                                               (32'h1)
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_TX_DESC_RST_LOW                                             (1)
@@ -774,53 +765,9 @@
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_RX_DATA_RST_MASK                                            (32'h10)
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_QUEUE_RST_LOW                                           (5)
 `define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_QUEUE_RST_MASK                                          (32'h20)
-`define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_RETRY_CTR_RST_LOW                                       (6)
-`define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_RETRY_CTR_RST_MASK                                      (32'h40)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_QUEUE_STATUS
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS                                                              (32'h110)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_FULL_LOW                                       (0)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_FULL_MASK                                      (32'h1)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_EMPTY_LOW                                      (1)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_EMPTY_MASK                                     (32'h2)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_FULL_LOW                                       (2)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_FULL_MASK                                      (32'h4)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_EMPTY_LOW                                      (3)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_EMPTY_MASK                                     (32'h8)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_FULL_LOW                                       (4)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_FULL_MASK                                      (32'h10)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_EMPTY_LOW                                      (5)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_EMPTY_MASK                                     (32'h20)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_FULL_LOW                                       (6)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_FULL_MASK                                      (32'h40)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_EMPTY_LOW                                      (7)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_EMPTY_MASK                                     (32'h80)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_FULL_LOW                                           (8)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_FULL_MASK                                          (32'h100)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_EMPTY_LOW                                          (9)
-`define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_EMPTY_MASK                                         (32'h200)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH
-`define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH                                                          (32'h114)
-`define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_RX_DESC_QUEUE_DEPTH_LOW                                  (0)
-`define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_RX_DESC_QUEUE_DEPTH_MASK                                 (32'hff)
-`define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_TX_DESC_QUEUE_DEPTH_LOW                                  (8)
-`define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_TX_DESC_QUEUE_DEPTH_MASK                                 (32'hff00)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH
-`define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH                                                          (32'h118)
-`define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_RX_DATA_QUEUE_DEPTH_LOW                                  (0)
-`define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_RX_DATA_QUEUE_DEPTH_MASK                                 (32'hff)
-`define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_TX_DATA_QUEUE_DEPTH_LOW                                  (8)
-`define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_TX_DATA_QUEUE_DEPTH_MASK                                 (32'hff00)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH
-`define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH                                                           (32'h11c)
-`define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH_IBI_QUEUE_DEPTH_LOW                                       (0)
-`define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH_IBI_QUEUE_DEPTH_MASK                                      (32'hff)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                          (32'h120)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                          (32'hd0)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_LOW                                         (0)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_MASK                                        (32'h1)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_STAT_LOW                                         (1)
@@ -841,10 +788,8 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_THLD_STAT_MASK                                       (32'h1000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_DONE_LOW                                             (13)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_DONE_MASK                                            (32'h2000)
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_LOW                                    (16)
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_MASK                                   (32'hf0000)
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_IBI_LOW                                          (20)
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_IBI_MASK                                         (32'h100000)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_LOW                                    (15)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_MASK                                   (32'h78000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_LOW                                  (25)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_MASK                                 (32'h2000000)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_COMPLETE_LOW                                     (26)
@@ -853,7 +798,7 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ERR_STAT_MASK                                   (32'h80000000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                          (32'h124)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                          (32'hd4)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_STAT_EN_LOW                                      (0)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_STAT_EN_MASK                                     (32'h1)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_STAT_EN_LOW                                      (1)
@@ -882,7 +827,7 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_MASK                                (32'h80000000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE
-`define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                           (32'h128)
+`define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                           (32'hd8)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_RX_DESC_STAT_FORCE_LOW                                    (0)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_RX_DESC_STAT_FORCE_MASK                                   (32'h1)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TX_DESC_STAT_FORCE_LOW                                    (1)
@@ -910,204 +855,23 @@
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_LOW                               (31)
 `define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_MASK                              (32'h80000000)
 `endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL                                                           (32'h12c)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE0_ERR_DET_EN_LOW                                        (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE0_ERR_DET_EN_MASK                                       (32'h1)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE1_ERR_DET_EN_LOW                                        (1)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE1_ERR_DET_EN_MASK                                       (32'h2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE2_ERR_DET_EN_LOW                                        (2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE2_ERR_DET_EN_MASK                                       (32'h4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE3_ERR_DET_EN_LOW                                        (3)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE3_ERR_DET_EN_MASK                                       (32'h8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE4_ERR_DET_EN_LOW                                        (4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE4_ERR_DET_EN_MASK                                       (32'h10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE5_ERR_DET_EN_LOW                                        (5)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE5_ERR_DET_EN_MASK                                       (32'h20)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_FRAMING_ERR_DET_EN_LOW                                    (6)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_FRAMING_ERR_DET_EN_MASK                                   (32'h40)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_PEC_ERR_DET_EN_LOW                                     (7)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_PEC_ERR_DET_EN_MASK                                    (32'h80)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_LENGTH_ERR_DET_EN_LOW                                  (8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_LENGTH_ERR_DET_EN_MASK                                 (32'h100)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_READONLY_ERR_DET_EN_LOW                                (9)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_READONLY_ERR_DET_EN_MASK                               (32'h200)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_UNSUPPORTED_ERR_DET_EN_LOW                             (10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_UNSUPPORTED_ERR_DET_EN_MASK                            (32'h400)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_RX_FIFO_OVERFLOW_ERR_DET_EN_LOW                        (11)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_RX_FIFO_OVERFLOW_ERR_DET_EN_MASK                       (32'h800)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_INDIRECT_FIFO_OVERFLOW_ERR_DET_EN_LOW                  (12)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_INDIRECT_FIFO_OVERFLOW_ERR_DET_EN_MASK                 (32'h1000)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS                                                    (32'h130)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE0_ERR_STAT_LOW                                   (1)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE0_ERR_STAT_MASK                                  (32'h2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE1_ERR_STAT_LOW                                   (2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE1_ERR_STAT_MASK                                  (32'h4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE2_ERR_STAT_LOW                                   (3)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE2_ERR_STAT_MASK                                  (32'h8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE3_ERR_STAT_LOW                                   (4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE3_ERR_STAT_MASK                                  (32'h10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE4_ERR_STAT_LOW                                   (5)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE4_ERR_STAT_MASK                                  (32'h20)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE5_ERR_STAT_LOW                                   (6)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE5_ERR_STAT_MASK                                  (32'h40)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_FRAMING_ERR_STAT_LOW                               (7)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_FRAMING_ERR_STAT_MASK                              (32'h80)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_PEC_ERR_STAT_LOW                                (8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_PEC_ERR_STAT_MASK                               (32'h100)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_LENGTH_ERR_STAT_LOW                             (9)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_LENGTH_ERR_STAT_MASK                            (32'h200)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_READONLY_ERR_STAT_LOW                           (10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_READONLY_ERR_STAT_MASK                          (32'h400)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_UNSUPPORTED_ERR_STAT_LOW                        (11)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_UNSUPPORTED_ERR_STAT_MASK                       (32'h800)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_RX_FIFO_OVERFLOW_ERR_STAT_LOW                   (12)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_RX_FIFO_OVERFLOW_ERR_STAT_MASK                  (32'h1000)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_INDIRECT_FIFO_OVERFLOW_ERR_STAT_LOW             (13)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_INDIRECT_FIFO_OVERFLOW_ERR_STAT_MASK            (32'h2000)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE                                                    (32'h134)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE0_ERR_EN_LOW                                     (1)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE0_ERR_EN_MASK                                    (32'h2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE1_ERR_EN_LOW                                     (2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE1_ERR_EN_MASK                                    (32'h4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE2_ERR_EN_LOW                                     (3)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE2_ERR_EN_MASK                                    (32'h8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE3_ERR_EN_LOW                                     (4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE3_ERR_EN_MASK                                    (32'h10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE4_ERR_EN_LOW                                     (5)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE4_ERR_EN_MASK                                    (32'h20)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE5_ERR_EN_LOW                                     (6)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE5_ERR_EN_MASK                                    (32'h40)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_FRAMING_ERR_EN_LOW                                 (7)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_FRAMING_ERR_EN_MASK                                (32'h80)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_PEC_ERR_EN_LOW                                  (8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_PEC_ERR_EN_MASK                                 (32'h100)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_LENGTH_ERR_EN_LOW                               (9)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_LENGTH_ERR_EN_MASK                              (32'h200)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_READONLY_ERR_EN_LOW                             (10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_READONLY_ERR_EN_MASK                            (32'h400)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_UNSUPPORTED_ERR_EN_LOW                          (11)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_UNSUPPORTED_ERR_EN_MASK                         (32'h800)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_RX_FIFO_OVERFLOW_ERR_EN_LOW                     (12)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_RX_FIFO_OVERFLOW_ERR_EN_MASK                    (32'h1000)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_INDIRECT_FIFO_OVERFLOW_ERR_EN_LOW               (13)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_INDIRECT_FIFO_OVERFLOW_ERR_EN_MASK              (32'h2000)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE                                                     (32'h138)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE0_ERR_FORCE_LOW                                   (1)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE0_ERR_FORCE_MASK                                  (32'h2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE1_ERR_FORCE_LOW                                   (2)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE1_ERR_FORCE_MASK                                  (32'h4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE2_ERR_FORCE_LOW                                   (3)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE2_ERR_FORCE_MASK                                  (32'h8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE3_ERR_FORCE_LOW                                   (4)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE3_ERR_FORCE_MASK                                  (32'h10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE4_ERR_FORCE_LOW                                   (5)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE4_ERR_FORCE_MASK                                  (32'h20)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE5_ERR_FORCE_LOW                                   (6)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE5_ERR_FORCE_MASK                                  (32'h40)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_FRAMING_ERR_FORCE_LOW                               (7)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_FRAMING_ERR_FORCE_MASK                              (32'h80)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_PEC_ERR_FORCE_LOW                                (8)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_PEC_ERR_FORCE_MASK                               (32'h100)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_LENGTH_ERR_FORCE_LOW                             (9)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_LENGTH_ERR_FORCE_MASK                            (32'h200)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_READONLY_ERR_FORCE_LOW                           (10)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_READONLY_ERR_FORCE_MASK                          (32'h400)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_UNSUPPORTED_ERR_FORCE_LOW                        (11)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_UNSUPPORTED_ERR_FORCE_MASK                       (32'h800)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_RX_FIFO_OVERFLOW_ERR_FORCE_LOW                   (12)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_RX_FIFO_OVERFLOW_ERR_FORCE_MASK                  (32'h1000)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_INDIRECT_FIFO_OVERFLOW_ERR_FORCE_LOW             (13)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_INDIRECT_FIFO_OVERFLOW_ERR_FORCE_MASK            (32'h2000)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0                                                        (32'h13c)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1                                                        (32'h140)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2                                                        (32'h144)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3                                                        (32'h148)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4                                                        (32'h14c)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5                                                        (32'h150)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5_CNT_LOW                                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5_CNT_MASK                                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING                                                    (32'h154)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING_CNT_LOW                                            (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING_CNT_MASK                                           (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC                                                     (32'h158)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC_CNT_LOW                                             (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC_CNT_MASK                                            (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH                                                  (32'h15c)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH_CNT_LOW                                          (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH_CNT_MASK                                         (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY                                                (32'h160)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY_CNT_LOW                                        (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY_CNT_MASK                                       (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED                                             (32'h164)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED_CNT_LOW                                     (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED_CNT_MASK                                    (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW                                        (32'h168)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW_CNT_LOW                                (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW_CNT_MASK                               (32'hff)
-`endif
-`ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW                                  (32'h16c)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW_CNT_LOW                          (0)
-`define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW_CNT_MASK                         (32'hff)
-`endif
 `ifndef I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT
-`define I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                        (32'h170)
+`define I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                        (32'hdc)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_RX_DATA_PORT
-`define I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                              (32'h174)
+`define I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                              (32'he0)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT
-`define I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                        (32'h178)
+`define I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                        (32'he4)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_TX_DATA_PORT
-`define I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                              (32'h17c)
+`define I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                              (32'he8)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_IBI_PORT
-`define I3CCSR_I3C_EC_TTI_IBI_PORT                                                                  (32'h180)
+`define I3CCSR_I3C_EC_TTI_IBI_PORT                                                                  (32'hec)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_QUEUE_SIZE
-`define I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                                (32'h184)
+`define I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                                (32'hf0)
 `define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_RX_DESC_BUFFER_SIZE_LOW                                        (0)
 `define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_RX_DESC_BUFFER_SIZE_MASK                                       (32'hff)
 `define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_TX_DESC_BUFFER_SIZE_LOW                                        (8)
@@ -1118,12 +882,12 @@
 `define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_TX_DATA_BUFFER_SIZE_MASK                                       (32'hff000000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE
-`define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                            (32'h188)
+`define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                            (32'hf4)
 `define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE_IBI_QUEUE_SIZE_LOW                                         (0)
 `define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE_IBI_QUEUE_SIZE_MASK                                        (32'hff)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL
-`define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                           (32'h18c)
+`define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                           (32'hf8)
 `define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_TX_DESC_THLD_LOW                                          (0)
 `define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_TX_DESC_THLD_MASK                                         (32'hff)
 `define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_RX_DESC_THLD_LOW                                          (8)
@@ -1132,7 +896,7 @@
 `define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_IBI_THLD_MASK                                             (32'hff000000)
 `endif
 `ifndef I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL
-`define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                     (32'h190)
+`define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                     (32'hfc)
 `define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_TX_DATA_THLD_LOW                                    (0)
 `define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_TX_DATA_THLD_MASK                                   (32'h7)
 `define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_RX_DATA_THLD_LOW                                    (8)
@@ -1143,27 +907,27 @@
 `define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_RX_START_THLD_MASK                                  (32'h7000000)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER
-`define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                       (32'h200)
+`define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                       (32'h100)
 `define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_ID_LOW                                            (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_ID_MASK                                           (32'hff)
 `define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_LENGTH_LOW                                        (8)
 `define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_LENGTH_MASK                                       (32'hffff00)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                    (32'h204)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                    (32'h104)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                     (32'h208)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                     (32'h108)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG
-`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                        (32'h20c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                        (32'h10c)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_LOW                                    (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_MASK                                   (32'h1)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_LOW                                   (1)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_MASK                                  (32'h2)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS
-`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                             (32'h210)
+`define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                             (32'h110)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_LOW                       (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_MASK                      (32'hff)
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW          (8)
@@ -1172,13 +936,13 @@
 `define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_INDIRECT_FIFO_CTRL_RESET_MASK               (32'hff0000)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                     (32'h214)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                     (32'h114)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                     (32'h218)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                     (32'h118)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                        (32'h21c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                        (32'h11c)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_INPUT_ENABLE_LOW                                       (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_INPUT_ENABLE_MASK                                      (32'h1)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_SCHMITT_EN_LOW                                         (1)
@@ -1199,96 +963,86 @@
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_PAD_TYPE_MASK                                          (32'hff000000)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                        (32'h220)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                        (32'h120)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_SLEW_RATE_LOW                                    (8)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_SLEW_RATE_MASK                                   (32'hff00)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_STRENGTH_LOW                                     (24)
 `define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_STRENGTH_MASK                                    (32'hff000000)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                                  (32'h224)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                                  (32'h124)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3
-`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                                  (32'h228)
+`define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                                  (32'h128)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                             (32'h22c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                             (32'h12c)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG_T_R_LOW                                                     (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG_T_R_MASK                                                    (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                             (32'h230)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                             (32'h130)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG_T_F_LOW                                                     (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG_T_F_MASK                                                    (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                        (32'h234)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                        (32'h134)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG_T_SU_DAT_LOW                                           (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG_T_SU_DAT_MASK                                          (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                        (32'h238)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                        (32'h138)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG_T_HD_DAT_LOW                                           (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG_T_HD_DAT_MASK                                          (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                          (32'h23c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                          (32'h13c)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG_T_HIGH_LOW                                               (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG_T_HIGH_MASK                                              (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                           (32'h240)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                           (32'h140)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG_T_LOW_LOW                                                 (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG_T_LOW_MASK                                                (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                        (32'h244)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                        (32'h144)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG_T_HD_STA_LOW                                           (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG_T_HD_STA_MASK                                          (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                        (32'h248)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                        (32'h148)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG_T_SU_STA_LOW                                           (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG_T_SU_STA_MASK                                          (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                        (32'h24c)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                        (32'h14c)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG_T_SU_STO_LOW                                           (0)
 `define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG_T_SU_STO_MASK                                          (32'hfffff)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                          (32'h250)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                          (32'h150)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                          (32'h254)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                          (32'h154)
 `endif
 `ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                          (32'h258)
-`endif
-`ifndef I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG                                                  (32'h25c)
-`define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG_HDR_TIMEOUT_EN_LOW                               (0)
-`define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG_HDR_TIMEOUT_EN_MASK                              (32'h1)
-`endif
-`ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG                                                   (32'h260)
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG_T_HDR_TIMEOUT_LOW                                 (0)
-`define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG_T_HDR_TIMEOUT_MASK                                (32'hfffff)
+`define I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                          (32'h158)
 `endif
 `ifndef I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER
-`define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                         (32'h268)
+`define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                         (32'h160)
 `define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_ID_LOW                                              (0)
 `define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_ID_MASK                                             (32'hff)
 `define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_LENGTH_LOW                                          (8)
 `define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_LENGTH_MASK                                         (32'hffff00)
 `endif
 `ifndef I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG
-`define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                     (32'h26c)
+`define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                     (32'h164)
 `define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG_OPERATION_MODE_LOW                                  (4)
 `define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG_OPERATION_MODE_MASK                                 (32'h30)
 `endif
 `ifndef I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER
-`define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                     (32'h270)
+`define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                     (32'h168)
 `define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_ID_LOW                                          (0)
 `define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_ID_MASK                                         (32'hff)
 `define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_LENGTH_LOW                                      (8)
