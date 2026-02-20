@@ -101,3 +101,4 @@ contents:
         - ../test_suites/smoke_test_fc_cptra_zeroization/smoke_test_fc_cptra_zeroization.yml
         - ../test_suites/smoke_test_fc_ratchet_seed_lock_en/smoke_test_fc_ratchet_seed_lock_en.yml
         - ../test_suites/smoke_test_fc_secret_prog_in_dbg/smoke_test_fc_secret_prog_in_dbg.yml
+        - ../test_suites/smoke_test_fc_filter_rule_write_zer_id/smoke_test_fc_filter_rule_write_zer_id.yml
