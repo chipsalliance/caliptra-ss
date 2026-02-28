@@ -782,8 +782,6 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/width_conve
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/width_converter_Nto8.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recovery_pec.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recovery_receiver.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recovery_transmitter.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recovery_executor.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/recovery/recovery_handler.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_timers.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_monitor.sv
@@ -791,13 +789,11 @@ ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/i3c_bus_mon
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc_entdaa.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ccc.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_rx_flow.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_tx.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/bus_tx_flow.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/configuration.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/descriptor_ibi.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/descriptor_rx.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/descriptor_tx.sv
-${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/ibi.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/edge_detector.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/i2c_controller_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/ctrl/i2c_target_fsm.sv
