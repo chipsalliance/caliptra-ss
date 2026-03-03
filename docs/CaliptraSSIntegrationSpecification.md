@@ -320,6 +320,10 @@ File at this path in the repository includes parameters and defines for Caliptra
 | `aruser`        | UW                     | output          | input           |
 | `arid`          | IW                     | output          | input           |
 | `arlock`        | 1                      | output          | input           |
+| `arcache`       | 4                      | output          | input           |
+| `arprot`        | 3                      | output          | input           |
+| `arqos`         | 4                      | output          | input           |
+| `arregion`      | 4                      | output          | input           |
 | `arvalid`       | 1                      | output          | input           |
 | `arready`       | 1                      | input           | output          |
 | `rdata`         | DW                     | input           | output          |
@@ -335,6 +339,10 @@ File at this path in the repository includes parameters and defines for Caliptra
 | `awuser`        | UW                     | output          | input           |
 | `awid`          | IW                     | output          | input           |
 | `awlock`        | 1                      | output          | input           |
+| `awcache`       | 4                      | output          | input           |
+| `awprot`        | 3                      | output          | input           |
+| `awqos`         | 4                      | output          | input           |
+| `awregion`      | 4                      | output          | input           |
 | `awvalid`       | 1                      | output          | input           |
 | `awready`       | 1                      | input           | output          |
 | `wdata`         | DW                     | output          | input           |
