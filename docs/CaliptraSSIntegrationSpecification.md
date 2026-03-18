@@ -1666,8 +1666,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | Input  | Struct | `from_otp_to_lcc_program_i`             | These ports comes from fuse partitions and show LCC's non-volatile state   |
 | Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | Caliptra Core enables manuf debug with this  |
 | Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | Caliptra Core enables prod debug with this. Since there are multiple debug levels, the debug level is one-hot encoded to this port  |
-| External | Output | 1      | `SOC_DFT_EN`                            | Masked LCC decoding signal, see LCC section    |
-| External | Output | 1      | `SOC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section  |
+| External | Output | 1      | `SOC_DFT_EN`                            | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** Use to gate entry into scan mode only; see [DFT Reset Control](#mci-integration-requirements) for details.    |
+| External | Output | 1      | `SOC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** See [DFT Reset Control](#mci-integration-requirements) for details.  |
 | Internal | Output | Struct | `security_state_o`                      | Caliptra Core's security state  |
 | External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                | Physical pin to trigger zeroization   |
 | Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                | Masked zeroization command signal   |
@@ -1753,7 +1753,13 @@ The two regions have different access protection. The size of the regions is dyn
 
     MCI input resets do not have any built-in DFT reset control for scan. It is the integrator’s responsibility to add any DFT controls outside of MCI before the reset is connected to MCI.
 
-    Simlar to Caliptra core - When `scan_mode` is set the MCI generated resets will be directly controlled by `mci_rst_b`. This gives DFT complete control of these resets within Caliptra SS.
+    Similar to Caliptra core - When `scan_mode` is set the MCI generated resets will be directly controlled by `mci_rst_b`. This gives DFT complete control of these resets within Caliptra SS.
+
+    **Important: Scan mode is a destructive operation.** Once `scan_mode` is asserted and Caliptra assets are flushed, no guarantees can be made about the state of any signals coming out of the Caliptra Subsystem, including `SOC_DFT_EN` and `SOC_HW_DEBUG_EN`. These output signals are **not** guaranteed to remain stable during scan mode because scan data shifted into scannable flops can cause internal state (such as the LCC state translator outputs) to change unpredictably.
+
+    The integrator should use `SOC_DFT_EN` to gate entry into scan mode (e.g., to enable scan chain access), but must **not** rely on `SOC_DFT_EN` or any other Caliptra Subsystem output remaining stable once scan mode is active. The SoC's DFT architecture is responsible for ensuring that its DFT control signals are driven in a stable manner during scan. For example, if `SOC_DFT_EN` is used to gate IJTAG or other DFT access, the SoC should latch or otherwise stabilize the signal before entering scan mode.
+
+    Additionally, the MCI reset mux logic that selects between normal and scan-mode reset paths uses standard RTL assign statements (similar logic exists in VeeR core too). Depending on the synthesis tool and target technology, these may not synthesize into glitch-free mux cells, potentially causing glitches on reset lines during `scan_mode` transitions, as reported in [GitHub issue 1037](https://github.com/chipsalliance/caliptra-ss/issues/1037). Integrators should analyze their gate-level netlist to confirm logic safety against glitches when entering scan_mode. Integrators are responsible for tooling adjustments to produce glitch-free mux behavior on these reset paths.
 
   - **Integrator RTL modification requirements**
 
