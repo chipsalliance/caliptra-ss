@@ -523,7 +523,7 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
     - This was changed from 170 MHz floor due to CDC issue found in I3C core:
        - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
        - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
-  - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
+  - **Clock Source** Must be derived from the SoC’s clock generation module or a stable on-die oscillator.
   - **Integration Notes**
      1. Verify that the SoC or system-level clock source provides a stable clock.
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
@@ -2665,7 +2665,7 @@ The below waveform illustrates how various resets of Caliptra SS and Caliptra Co
 
 ![](images/Reset_sequencing.png)
 
-The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for atleast 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
+The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for at least 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
 
 ## RDC Waivers
 
@@ -2743,12 +2743,12 @@ This section defines a table of integration requirements that are mandatory for 
 | Category          | Originating Block     | Requirement                                                                                                                                                              | Rationale     |
 | :--               | :--                   | :--                                                                                                                                                                      | :--           |
 | clk-1             | Caliptra Subsystem    | Clock frequency of primary input clock `cptra_ss_clk_i` must be a minimum of 333 MHz (I3C tSCO timing requirement) and maximum of 400 MHz. SoCs with non-zero SCL PAD→D or SDA Q→PAD timing delays may require a higher minimum frequency to meet the 12 ns tSCO constraint. | Functionality |
-| clk-2             | Caliptra Subsystem    | Clock must be derived from the SoC's clock generation module or a stable external oscillator to protect against clock stretching attacks.                                | Threat Model  |
+| clk-2             | Caliptra Subsystem    | Clock must be derived from the SoC's clock generation module or a stable on-die oscillator to protect against clock stretching attacks.                                  | Threat Model  |
 | clk-3             | Caliptra Subsystem    | MCU SRAM and Mailbox memories must be connected to the Caliptra Subsystem RDC output clock, `cptra_ss_rdc_clk_cg_o`.                                                     | Timing |
 | clk-4             | MCI                   | Clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.                                                          | Timing |
 | clk-5             | MCI                   | `cptra_ss_mcu_clk_cg_o` must be used for any SOC logic on a deeper reset domain than MCU to resolve RDC issues.                                                          | Timing |
 | clk-6             | Caliptra Subsystem    | The core clock (`cptra_ss_clk_i`) frequency must be at least twice the TCK clock frequency of each JTAG TAP endpoint so that JTAG data passes correctly through the DMI synchronizers. | Timing |
-| rst-1             | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must assert for a minimum duration of 2 clock cycles.                                                                  | Functionality |
+| rst-1             | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must assert for a minimum duration of 32 clock cycles.                                                                 | Functionality |
 | rst-2             | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must be deasserted synchronous to `cptra_ss_clk_i`.                                                                    | Timing |
 | rst-3             | MCI                   | MCI reset inputs must be properly synchronized to the MCI clock domain before being passed to MCI.                                                                       | Timing |
 | rst-4             | Caliptra Subsystem    | `cptra_ss_rst_b_o` must be used for memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption.                                                              | Timing |
