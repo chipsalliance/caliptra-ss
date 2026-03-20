@@ -16,7 +16,6 @@ Integration spec updates with several clarifications
 
 ### 2. I3C
 - Upgraded I3C to tag i3c-v1.5.0
-  - T-bit/Ack handoff fixes, TE0-5 error handling added, peripheral_reset_o fix, various IBI fixes, Indirect FIFO write pointer fix.
   - [BUG FIX] I3C handoff bug dring ACK/T-Bit handoff [#1084](https://github.com/chipsalliance/caliptra-ss/issues/1084)
   - [BUG FIX] IBI back to back support [#1078](https://github.com/chipsalliance/caliptra-ss/issues/1078)
   - [BUG FIX] [Nice to have] TE0-TE5 detection support added [#1082](https://github.com/chipsalliance/caliptra-ss/issues/1082)
