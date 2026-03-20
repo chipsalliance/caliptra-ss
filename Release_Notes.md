@@ -1,5 +1,31 @@
 # **Release Notes** #
 
+## Caliptra Subsystem 2.0.2 Release notes
+_*Release Date: 2026/03/20*_
+
+Integration spec updates with several clarifications
+
+### 1. Caliptra Core
+- Upgraded to Caliptra Core 2.0.4 release that includes:
+  - [BUG FIX] [SECURITY HARDENING] KV write controls are not locked during kv write [#1216](https://github.com/chipsalliance/caliptra-rtl/issues/1216)
+  - [BUG FIX] [SECURITY HARDENING] KV error code is not captured mid-read [#1213](https://github.com/chipsalliance/caliptra-rtl/issues/1213)
+  - [BUG FIX] [SECURITY HARDENING] AES entropy interface could be re-seeded [#1224](https://github.com/chipsalliance/caliptra-rtl/issues/1224)
+
+### 2. I3C
+- Upgraded I3C to tag i3c-v1.5.0
+  - T-bit/Ack handoff fixes, TE0-5 error handling added, peripheral_reset_o fix, various IBI fixes, Indirect FIFO write pointer fix.
+
+### 3. Life Cycle Controller (LCC)
+- No changes
+
+### 4. Fuse Controller (FC)
+- No changes
+
+### 5. Manufacturer Control Interface (MCI):
+- No changes
+
+# Previous Releases #
+
 ## Caliptra Subsystem 2.0.1 Release notes
 _*Release Date: 2025/11/26*_
 
@@ -46,8 +72,6 @@ HW & Integration spec updates coverage all the modules
 - MCU interaction with all the blocks (I3C, Caliptra, LCC, FC, MCU ROM, and MCI)
 - Life Cycle Controller interactions and life cycle state changes
 - Life Cycle Controller & Fuse Controller interactions
-
-# Previous Releases #
 
 ## Caliptra 2.0 Subsystem 1p0 Release notes
 _*Release Date: 2025/04/30*_
