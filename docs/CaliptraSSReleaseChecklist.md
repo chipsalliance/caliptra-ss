@@ -2,7 +2,7 @@
 
 <p style="text-align: center;">Caliptra Subsystem Release Checklist</p>
 
-<p style="text-align: center;">Version 2.0.1</p>
+<p style="text-align: center;">Version 2.0.2</p>
 
 <div style="page-break-after: always"></div>
 
