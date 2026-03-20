@@ -12,8 +12,14 @@ Integration spec updates with several clarifications
   - [BUG FIX] [SECURITY HARDENING] AES entropy interface could be re-seeded [#1224](https://github.com/chipsalliance/caliptra-rtl/issues/1224)
 
 ### 2. I3C
-- Upgraded I3C to tag i3c-v1.5.0
-  - T-bit/Ack handoff fixes, TE0-5 error handling added, peripheral_reset_o fix, various IBI fixes, Indirect FIFO write pointer fix.
+- Upgraded I3C to tag i3c-v1.5.0 
+  - [BUG FIX] I3C handoff bug dring ACK/T-Bit handoff [#1083](https://github.com/chipsalliance/caliptra-ss/issues/1083)
+  - [BUG FIX] IBI back to back support [#1077](https://github.com/chipsalliance/caliptra-ss/issues/1077)
+  - [BUG FIX] [Nice to have] TE0-TE5 detection support added [#1081](https://github.com/chipsalliance/caliptra-ss/issues/1081)
+  - [BUG FIX] [Nice to have] peripheral_reset_o functionality[#1079](https://github.com/chipsalliance/caliptra-ss/issues/1079)
+  - [BUG FIX] [Nice to have] SDA/SDA_OE outputs driven combinationally causing potential glitch. Due to I3C spec most likely would not cause acual funcitonal issue [#1075](https://github.com/chipsalliance/caliptra-ss/issues/1075)
+  - [BUG FIX] [Nice to have] Indirect FIFO write pointer behavior when FIFO overflow [#1073](https://github.com/chipsalliance/caliptra-ss/issues/1073)
+
 
 ### 3. Life Cycle Controller (LCC)
 - No changes
