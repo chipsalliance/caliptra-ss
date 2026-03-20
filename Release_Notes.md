@@ -1,6 +1,36 @@
 # **Release Notes** #
 
-## Caliptra Subsystem 2p1p1 Release notes
+## Caliptra Subsystem 2.1.2 Release notes
+_*Release Date: 2026/03/20*_
+
+Integration spec updates with several clarifications
+
+### 1. Caliptra Core
+- Upgraded to Caliptra Core 2.1.2 release that includes:
+  - [BUG FIX] [SECURITY HARDENING] KV write controls are not locked during kv write [#1215](https://github.com/chipsalliance/caliptra-rtl/issues/1215)
+  - [BUG FIX] [SECURITY HARDENING] KV error code is not captured mid-read [#1212](https://github.com/chipsalliance/caliptra-rtl/issues/1212)
+  - [BUG FIX] [SECURITY HARDENING] AES entropy interface could be re-seeded [#1223](https://github.com/chipsalliance/caliptra-rtl/issues/1223)
+  - [BUG FIX] [SECURITY HARDENING] ML-KEM key-vault msg isn't cleared on error [#264](https://github.com/chipsalliance/adams-bridge/issues/264) [#270](https://github.com/chipsalliance/adams-bridge/issues/270)
+  - [BUG FIX] [FUTURE USE MODEL] ML-KEM key-vault endianness [#262](https://github.com/chipsalliance/adams-bridge/issues/262) [#256](https://github.com/chipsalliance/adams-bridge/issues/256)
+  - [BUG FIX] mldsa stream mode msg buffer not zeroized [#261](https://github.com/chipsalliance/adams-bridge/issues/261)
+
+### 2. I3C
+- Upgraded I3C to tag i3c-v1.5.0
+  - T-bit/Ack handoff fixes, TE0-5 error handling added, peripheral_reset_o fix, various IBI fixes, Indirect FIFO write pointer fix.
+
+### 3. Life Cycle Controller (LCC)
+- No changes
+
+### 4. Fuse Controller (FC)
+- No changes
+
+### 5. Manufacturer Control Interface (MCI):
+- No changes
+
+
+# Previous Releases #
+
+## Caliptra Subsystem 2.1.1 Release notes
 _*Release Date: 2025/11/26*_
 
 Integration spec updates with several clarifications
@@ -27,11 +57,7 @@ Integration spec updates with several clarifications
 - FIPS Zeroization
 - OCP LOCK
 
-
-
-# Previous Releases #
-
-## Caliptra Subsystem 2p1 Release notes
+## Caliptra Subsystem 2.1 Release notes
 _*Release Date: 2025/10/12*_
 
 Integration spec updates for OCP LOCK and FIPS Zeroization 
@@ -57,7 +83,7 @@ Integration spec updates for OCP LOCK and FIPS Zeroization
 
 
 
-## Caliptra 2.1 Subsystem 1p0 RC1 Release notes
+## Caliptra 2.1 Subsystem 1.0 RC1 Release notes
 _*Release Date: 2025/09/07*_
 
 Integration spec updates for OCP LOCK and FIPS Zeroization 
@@ -83,7 +109,7 @@ Integration spec updates for OCP LOCK and FIPS Zeroization
 
 
 
-## Caliptra 2.0 Subsystem 1p0 Release notes
+## Caliptra 2.0 Subsystem 1.0 Release notes
 _*Release Date: 2025/04/30*_
 
 HW & Integration spec updates coverage all the modules
@@ -103,7 +129,7 @@ HW & Integration spec updates coverage all the modules
 - Validated various subsystem interactions
 - Coverage analysis and bug fixes
 - FPGA validation of I3C
-- Compatibility test suite validation of the target mode (Review I3C [README](https://github.com/chipsalliance/i3c-core/blob/v1p0/README.md))
+- Compatibility test suite validation of the target mode (Review I3C [README](https://github.com/chipsalliance/i3c-core/blob/v1.0/README.md))
 
 ### 3. Life Cycle Controller (LCC)
 - LCC validation & Coverage analysis
