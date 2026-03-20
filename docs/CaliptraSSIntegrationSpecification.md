@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Integration Specification </h1>
-<h3 align="center"> Version 2p1 </h3>
+<h3 align="center"> Version 2.1.2 </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -145,7 +145,7 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
-- [CDC analysis and constraints](#cdc-analysis-and-constraints)
+  - [CDC Analysis and Constraints](#cdc-analysis-and-constraints)
     - [Known Issues](#known-issues)
   - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers)
   - [CDC analysis conclusions](#cdc-analysis-conclusions)
