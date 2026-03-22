@@ -6,7 +6,7 @@ _*Release Date: 2026/03/22*_
 Integration spec updates with several clarifications
 
 ### 1. Caliptra Core
-- Upgraded to Caliptra Core tag v2.1.2
+- Upgraded Caliptra Core to tag v2.1.2
 
 ### 2. I3C
 - Upgraded I3C to tag i3c-v1.5.0
