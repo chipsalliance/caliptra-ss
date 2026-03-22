@@ -1,27 +1,15 @@
 # **Release Notes** #
 
 ## Caliptra Subsystem 2.1.2 Release notes
-_*Release Date: 2026/03/20*_
+_*Release Date: 2026/03/22*_
 
 Integration spec updates with several clarifications
 
 ### 1. Caliptra Core
-- Upgraded to Caliptra Core 2.1.2 release that includes:
-  - [BUG FIX] [SECURITY HARDENING] KV write controls are not locked during kv write [#1215](https://github.com/chipsalliance/caliptra-rtl/issues/1215)
-  - [BUG FIX] [SECURITY HARDENING] KV error code is not captured mid-read [#1212](https://github.com/chipsalliance/caliptra-rtl/issues/1212)
-  - [BUG FIX] [SECURITY HARDENING] AES entropy interface could be re-seeded [#1223](https://github.com/chipsalliance/caliptra-rtl/issues/1223)
-  - [BUG FIX] [SECURITY HARDENING] ML-KEM key-vault msg isn't cleared on error [#264](https://github.com/chipsalliance/adams-bridge/issues/264) [#270](https://github.com/chipsalliance/adams-bridge/issues/270)
-  - [BUG FIX] [FUTURE USE MODEL] ML-KEM key-vault endianness [#262](https://github.com/chipsalliance/adams-bridge/issues/262) [#256](https://github.com/chipsalliance/adams-bridge/issues/256)
-  - [BUG FIX] mldsa stream mode msg buffer not zeroized [#261](https://github.com/chipsalliance/adams-bridge/issues/261)
+- Upgraded to Caliptra Core tag v2.1.2
 
 ### 2. I3C
 - Upgraded I3C to tag i3c-v1.5.0
-  - [BUG FIX] I3C handoff bug dring ACK/T-Bit handoff [#1084](https://github.com/chipsalliance/caliptra-ss/issues/1084)
-  - [BUG FIX] IBI back to back support [#1078](https://github.com/chipsalliance/caliptra-ss/issues/1078)
-  - [BUG FIX] [Nice to have] TE0-TE5 detection support added [#1082](https://github.com/chipsalliance/caliptra-ss/issues/1082)
-  - [BUG FIX] [Nice to have] peripheral_reset_o functionality[#1080](https://github.com/chipsalliance/caliptra-ss/issues/1080)
-  - [BUG FIX] [Nice to have] SDA/SDA_OE outputs driven combinationally causing potential glitch. Due to I3C spec most likely would not cause acual funcitonal issue [#1076](https://github.com/chipsalliance/caliptra-ss/issues/1076)
-  - [BUG FIX] [Nice to have] Indirect FIFO write pointer behavior when FIFO overflow [#1074](https://github.com/chipsalliance/caliptra-ss/issues/1074)
 
 ### 3. Life Cycle Controller (LCC)
 - No changes
