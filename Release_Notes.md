@@ -1,5 +1,27 @@
 # **Release Notes** #
 
+## Caliptra Subsystem 2.0.2 Release notes
+_*Release Date: 2026/03/22*_
+
+Integration spec updates with several clarifications
+
+### 1. Caliptra Core
+- Upgraded Caliptra Core to tag v2.0.4
+
+### 2. I3C
+- Upgraded I3C to tag i3c-v1.5.0
+
+### 3. Life Cycle Controller (LCC)
+- No changes
+
+### 4. Fuse Controller (FC)
+- No changes
+
+### 5. Manufacturer Control Interface (MCI):
+- No changes
+
+# Previous Releases #
+
 ## Caliptra Subsystem 2.0.1 Release notes
 _*Release Date: 2025/11/26*_
 
@@ -46,8 +68,6 @@ HW & Integration spec updates coverage all the modules
 - MCU interaction with all the blocks (I3C, Caliptra, LCC, FC, MCU ROM, and MCI)
 - Life Cycle Controller interactions and life cycle state changes
 - Life Cycle Controller & Fuse Controller interactions
-
-# Previous Releases #
 
 ## Caliptra 2.0 Subsystem 1p0 Release notes
 _*Release Date: 2025/04/30*_
