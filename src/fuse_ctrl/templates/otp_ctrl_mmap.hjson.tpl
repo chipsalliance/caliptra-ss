@@ -295,6 +295,25 @@
                     Identifier assigned by vendor to differentiate silicon steppings.
                     '''
                 },
+            ],
+            desc: '''Software manufacturing partition.
+            '''
+        },
+        {
+            name:         "PROD_DEBUG_UNLOCK_MANUF_PARTITION",
+            variant:      "Unbuffered",
+            absorb:       false,
+            secret:       false,
+            sw_digest:    true,
+            hw_digest:    false,
+            write_lock:   "Digest",
+            read_lock:    "None",
+            key_sel:      "NoKey",
+            integrity:    true,
+            bkout_type:   false,
+            lc_phase:     "LcStDev",
+            zeroizable:   true,
+            items: [
                 {
                     name: "CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0",
                     size: "48",
@@ -368,7 +387,8 @@
                     '''
                 },
             ],
-            desc: '''Software manufacturing partition.
+            desc: '''Production debug unlock public keys manufacturing partition.
+            Zeroizable partition holding all eight CPTRA_SS_PROD_DEBUG_UNLOCK_PKS public keys.
             '''
         },
         {

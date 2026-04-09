@@ -60,53 +60,52 @@
 | otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_4_READ_LOCK`](#cptra_ss_lock_hek_prod_4_read_lock)                   | 0xdc     |        4 | Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_4 partition.                                       |
 | otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK`](#cptra_ss_lock_hek_prod_5_read_lock)                   | 0xe0     |        4 | Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_5 partition.                                       |
 | otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK`](#cptra_ss_lock_hek_prod_6_read_lock)                   | 0xe4     |        4 | Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_6 partition.                                       |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK`](#cptra_ss_lock_hek_prod_7_read_lock)                   | 0xe8     |        4 | Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_7 partition.                                       |
-| otp_ctrl.[`VENDOR_PK_HASH_VOLATILE_LOCK`](#vendor_pk_hash_volatile_lock)                               | 0xec     |        4 | Address register for direct accesses.                                                               |
-| otp_ctrl.[`RATCHET_SEED_VOLATILE_LOCK`](#ratchet_seed_volatile_lock)                                   | 0xf0     |        4 | Address register for direct accesses.                                                               |
-| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_0`](#sw_test_unlock_partition_digest)                       | 0xf4     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
-| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_1`](#sw_test_unlock_partition_digest)                       | 0xf8     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
-| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_0`](#secret_manuf_partition_digest)                           | 0xfc     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
-| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_1`](#secret_manuf_partition_digest)                           | 0x100    |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
-| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_0`](#secret_prod_partition_0_digest)                         | 0x104    |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_1`](#secret_prod_partition_0_digest)                         | 0x108    |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_0`](#secret_prod_partition_1_digest)                         | 0x10c    |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_1`](#secret_prod_partition_1_digest)                         | 0x110    |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_0`](#secret_prod_partition_2_digest)                         | 0x114    |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_1`](#secret_prod_partition_2_digest)                         | 0x118    |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_0`](#secret_prod_partition_3_digest)                         | 0x11c    |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
-| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_1`](#secret_prod_partition_3_digest)                         | 0x120    |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
-| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_0`](#sw_manuf_partition_digest)                                   | 0x124    |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
-| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_1`](#sw_manuf_partition_digest)                                   | 0x128    |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
-| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_0`](#secret_lc_transition_partition_digest)           | 0x12c    |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
-| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_1`](#secret_lc_transition_partition_digest)           | 0x130    |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
-| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_0`](#vendor_test_partition_digest)                             | 0x134    |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
-| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_1`](#vendor_test_partition_digest)                             | 0x138    |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
-| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_0`](#vendor_hashes_manuf_partition_digest)             | 0x13c    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
-| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_1`](#vendor_hashes_manuf_partition_digest)             | 0x140    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
-| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_0`](#vendor_hashes_prod_partition_digest)               | 0x144    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_1`](#vendor_hashes_prod_partition_digest)               | 0x148    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0`](#vendor_revocations_prod_partition_digest)     | 0x14c    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
-| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1`](#vendor_revocations_prod_partition_digest)     | 0x150    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
-| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_secret_prod_partition_digest)               | 0x154    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_secret_prod_partition_digest)               | 0x158    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
-| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_non_secret_prod_partition_digest)       | 0x15c    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
-| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_non_secret_prod_partition_digest)       | 0x160    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0`](#cptra_ss_lock_hek_prod_0_digest)                       | 0x164    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_0 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1`](#cptra_ss_lock_hek_prod_0_digest)                       | 0x168    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_0 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0`](#cptra_ss_lock_hek_prod_1_digest)                       | 0x16c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_1 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1`](#cptra_ss_lock_hek_prod_1_digest)                       | 0x170    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_1 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0`](#cptra_ss_lock_hek_prod_2_digest)                       | 0x174    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_2 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1`](#cptra_ss_lock_hek_prod_2_digest)                       | 0x178    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_2 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0`](#cptra_ss_lock_hek_prod_3_digest)                       | 0x17c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_3 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1`](#cptra_ss_lock_hek_prod_3_digest)                       | 0x180    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_3 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0`](#cptra_ss_lock_hek_prod_4_digest)                       | 0x184    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_4 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1`](#cptra_ss_lock_hek_prod_4_digest)                       | 0x188    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_4 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0`](#cptra_ss_lock_hek_prod_5_digest)                       | 0x18c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_5 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1`](#cptra_ss_lock_hek_prod_5_digest)                       | 0x190    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_5 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0`](#cptra_ss_lock_hek_prod_6_digest)                       | 0x194    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_6 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1`](#cptra_ss_lock_hek_prod_6_digest)                       | 0x198    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_6 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0`](#cptra_ss_lock_hek_prod_7_digest)                       | 0x19c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_7 partition.                                        |
-| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1`](#cptra_ss_lock_hek_prod_7_digest)                       | 0x1a0    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_7 partition.                                        |
+| otp_ctrl.[`VENDOR_PK_HASH_VOLATILE_LOCK`](#vendor_pk_hash_volatile_lock)                               | 0xe8     |        4 | Address register for direct accesses.                                                               |
+| otp_ctrl.[`RATCHET_SEED_VOLATILE_LOCK`](#ratchet_seed_volatile_lock)                                   | 0xec     |        4 | Address register for direct accesses.                                                               |
+| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_0`](#sw_test_unlock_partition_digest)                       | 0xf0     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
+| otp_ctrl.[`SW_TEST_UNLOCK_PARTITION_DIGEST_1`](#sw_test_unlock_partition_digest)                       | 0xf4     |        4 | Integrity digest for the SW_TEST_UNLOCK_PARTITION partition.                                        |
+| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_0`](#secret_manuf_partition_digest)                           | 0xf8     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
+| otp_ctrl.[`SECRET_MANUF_PARTITION_DIGEST_1`](#secret_manuf_partition_digest)                           | 0xfc     |        4 | Integrity digest for the SECRET_MANUF_PARTITION partition.                                          |
+| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_0`](#secret_prod_partition_0_digest)                         | 0x100    |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_0_DIGEST_1`](#secret_prod_partition_0_digest)                         | 0x104    |        4 | Integrity digest for the SECRET_PROD_PARTITION_0 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_0`](#secret_prod_partition_1_digest)                         | 0x108    |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_1_DIGEST_1`](#secret_prod_partition_1_digest)                         | 0x10c    |        4 | Integrity digest for the SECRET_PROD_PARTITION_1 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_0`](#secret_prod_partition_2_digest)                         | 0x110    |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_2_DIGEST_1`](#secret_prod_partition_2_digest)                         | 0x114    |        4 | Integrity digest for the SECRET_PROD_PARTITION_2 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_0`](#secret_prod_partition_3_digest)                         | 0x118    |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
+| otp_ctrl.[`SECRET_PROD_PARTITION_3_DIGEST_1`](#secret_prod_partition_3_digest)                         | 0x11c    |        4 | Integrity digest for the SECRET_PROD_PARTITION_3 partition.                                         |
+| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_0`](#sw_manuf_partition_digest)                                   | 0x120    |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
+| otp_ctrl.[`SW_MANUF_PARTITION_DIGEST_1`](#sw_manuf_partition_digest)                                   | 0x124    |        4 | Integrity digest for the SW_MANUF_PARTITION partition.                                              |
+| otp_ctrl.[`PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_0`](#prod_debug_unlock_manuf_partition_digest)     | 0x128    |        4 | Integrity digest for the PROD_DEBUG_UNLOCK_MANUF_PARTITION partition.                               |
+| otp_ctrl.[`PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_1`](#prod_debug_unlock_manuf_partition_digest)     | 0x12c    |        4 | Integrity digest for the PROD_DEBUG_UNLOCK_MANUF_PARTITION partition.                               |
+| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_0`](#secret_lc_transition_partition_digest)           | 0x130    |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
+| otp_ctrl.[`SECRET_LC_TRANSITION_PARTITION_DIGEST_1`](#secret_lc_transition_partition_digest)           | 0x134    |        4 | Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.                                  |
+| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_0`](#vendor_test_partition_digest)                             | 0x138    |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
+| otp_ctrl.[`VENDOR_TEST_PARTITION_DIGEST_1`](#vendor_test_partition_digest)                             | 0x13c    |        4 | Integrity digest for the VENDOR_TEST_PARTITION partition.                                           |
+| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_0`](#vendor_hashes_manuf_partition_digest)             | 0x140    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
+| otp_ctrl.[`VENDOR_HASHES_MANUF_PARTITION_DIGEST_1`](#vendor_hashes_manuf_partition_digest)             | 0x144    |        4 | Integrity digest for the VENDOR_HASHES_MANUF_PARTITION partition.                                   |
+| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_0`](#vendor_hashes_prod_partition_digest)               | 0x148    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_HASHES_PROD_PARTITION_DIGEST_1`](#vendor_hashes_prod_partition_digest)               | 0x14c    |        4 | Integrity digest for the VENDOR_HASHES_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0`](#vendor_revocations_prod_partition_digest)     | 0x150    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
+| otp_ctrl.[`VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1`](#vendor_revocations_prod_partition_digest)     | 0x154    |        4 | Integrity digest for the VENDOR_REVOCATIONS_PROD_PARTITION partition.                               |
+| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_secret_prod_partition_digest)               | 0x158    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_secret_prod_partition_digest)               | 0x15c    |        4 | Integrity digest for the VENDOR_SECRET_PROD_PARTITION partition.                                    |
+| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0`](#vendor_non_secret_prod_partition_digest)       | 0x160    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
+| otp_ctrl.[`VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1`](#vendor_non_secret_prod_partition_digest)       | 0x164    |        4 | Integrity digest for the VENDOR_NON_SECRET_PROD_PARTITION partition.                                |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0`](#cptra_ss_lock_hek_prod_0_digest)                       | 0x168    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_0 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1`](#cptra_ss_lock_hek_prod_0_digest)                       | 0x16c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_0 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0`](#cptra_ss_lock_hek_prod_1_digest)                       | 0x170    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_1 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1`](#cptra_ss_lock_hek_prod_1_digest)                       | 0x174    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_1 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0`](#cptra_ss_lock_hek_prod_2_digest)                       | 0x178    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_2 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1`](#cptra_ss_lock_hek_prod_2_digest)                       | 0x17c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_2 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0`](#cptra_ss_lock_hek_prod_3_digest)                       | 0x180    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_3 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1`](#cptra_ss_lock_hek_prod_3_digest)                       | 0x184    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_3 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0`](#cptra_ss_lock_hek_prod_4_digest)                       | 0x188    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_4 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1`](#cptra_ss_lock_hek_prod_4_digest)                       | 0x18c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_4 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0`](#cptra_ss_lock_hek_prod_5_digest)                       | 0x190    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_5 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1`](#cptra_ss_lock_hek_prod_5_digest)                       | 0x194    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_5 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0`](#cptra_ss_lock_hek_prod_6_digest)                       | 0x198    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_6 partition.                                        |
+| otp_ctrl.[`CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1`](#cptra_ss_lock_hek_prod_6_digest)                       | 0x19c    |        4 | Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_6 partition.                                        |
 | otp_ctrl.[`SW_CFG_WINDOW`](#sw_cfg_window)                                                             | 0x1000   |     4096 | Any read to this window directly maps to the corresponding offset in the creator and owner software |
 
 ## INTR_STATE
@@ -193,7 +192,7 @@ OTP status register.
 ### Fields
 
 ```wavejson
-{"reg": [{"name": "SW_TEST_UNLOCK_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_0_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_1_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_2_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_3_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SW_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_LC_TRANSITION_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SVN_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_TEST_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_HASHES_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_HASHES_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_REVOCATIONS_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_SECRET_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_NON_SECRET_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_0_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_1_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_2_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_3_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_4_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_5_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_6_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_7_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LIFE_CYCLE_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "DAI_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LCI_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "TIMEOUT_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LFSR_FSM_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SCRAMBLING_FSM_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "BUS_INTEG_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "DAI_IDLE", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CHECK_PENDING", "bits": 1, "attr": ["ro"], "rotate": -90}], "config": {"lanes": 1, "fontsize": 10, "vspace": 410}}
+{"reg": [{"name": "SW_TEST_UNLOCK_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_0_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_1_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_2_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_PROD_PARTITION_3_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SW_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "PROD_DEBUG_UNLOCK_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SECRET_LC_TRANSITION_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SVN_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_TEST_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_HASHES_MANUF_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_HASHES_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_REVOCATIONS_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_SECRET_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "VENDOR_NON_SECRET_PROD_PARTITION_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_0_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_1_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_2_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_3_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_4_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_5_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CPTRA_SS_LOCK_HEK_PROD_6_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LIFE_CYCLE_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "DAI_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LCI_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "TIMEOUT_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "LFSR_FSM_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "SCRAMBLING_FSM_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "BUS_INTEG_ERROR", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "DAI_IDLE", "bits": 1, "attr": ["ro"], "rotate": -90}, {"name": "CHECK_PENDING", "bits": 1, "attr": ["ro"], "rotate": -90}], "config": {"lanes": 1, "fontsize": 10, "vspace": 410}}
 ```
 
 |  Bits  |  Type  |  Reset  | Name                                    | Description                                                                                                                                           |
@@ -207,22 +206,22 @@ OTP status register.
 |   25   |   ro   |   0x0   | LCI_ERROR                               | Set to 1 if an error occurred in the LCI. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.               |
 |   24   |   ro   |   0x0   | DAI_ERROR                               | Set to 1 if an error occurred in the DAI. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.               |
 |   23   |   ro   |   0x0   | LIFE_CYCLE_ERROR                        | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   22   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_7_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   21   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_6_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   20   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_5_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   19   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_4_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   18   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_3_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   17   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_2_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   16   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_1_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   15   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_0_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   14   |   ro   |   0x0   | VENDOR_NON_SECRET_PROD_PARTITION_ERROR  | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   13   |   ro   |   0x0   | VENDOR_SECRET_PROD_PARTITION_ERROR      | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   12   |   ro   |   0x0   | VENDOR_REVOCATIONS_PROD_PARTITION_ERROR | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   11   |   ro   |   0x0   | VENDOR_HASHES_PROD_PARTITION_ERROR      | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   10   |   ro   |   0x0   | VENDOR_HASHES_MANUF_PARTITION_ERROR     | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   9    |   ro   |   0x0   | VENDOR_TEST_PARTITION_ERROR             | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   8    |   ro   |   0x0   | SVN_PARTITION_ERROR                     | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
-|   7    |   ro   |   0x0   | SECRET_LC_TRANSITION_PARTITION_ERROR    | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   22   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_6_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   21   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_5_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   20   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_4_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   19   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_3_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   18   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_2_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   17   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_1_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   16   |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_0_ERROR          | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   15   |   ro   |   0x0   | VENDOR_NON_SECRET_PROD_PARTITION_ERROR  | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   14   |   ro   |   0x0   | VENDOR_SECRET_PROD_PARTITION_ERROR      | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   13   |   ro   |   0x0   | VENDOR_REVOCATIONS_PROD_PARTITION_ERROR | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   12   |   ro   |   0x0   | VENDOR_HASHES_PROD_PARTITION_ERROR      | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   11   |   ro   |   0x0   | VENDOR_HASHES_MANUF_PARTITION_ERROR     | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   10   |   ro   |   0x0   | VENDOR_TEST_PARTITION_ERROR             | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   9    |   ro   |   0x0   | SVN_PARTITION_ERROR                     | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   8    |   ro   |   0x0   | SECRET_LC_TRANSITION_PARTITION_ERROR    | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
+|   7    |   ro   |   0x0   | PROD_DEBUG_UNLOCK_MANUF_PARTITION_ERROR | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
 |   6    |   ro   |   0x0   | SW_MANUF_PARTITION_ERROR                | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
 |   5    |   ro   |   0x0   | SECRET_PROD_PARTITION_3_ERROR           | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
 |   4    |   ro   |   0x0   | SECRET_PROD_PARTITION_2_ERROR           | Set to 1 if an error occurred in this partition. If set to 1, SW should check the [`ERR_CODE`](#err_code) register at the corresponding index.        |
@@ -815,27 +814,9 @@ Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_6 partition.
 |  31:1  |        |         |                                    | Reserved                                                                                                       |
 |   0    |  rw0c  |   0x1   | CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK | When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_6 partition is locked. Write 0 to clear this bit. |
 
-## CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK
-Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_7 partition.
-- Offset: `0xe8`
-- Reset default: `0x1`
-- Reset mask: `0x1`
-- Register enable: [`DIRECT_ACCESS_REGWEN`](#direct_access_regwen)
-
-### Fields
-
-```wavejson
-{"reg": [{"name": "CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK", "bits": 1, "attr": ["rw0c"], "rotate": -90}, {"bits": 31}], "config": {"lanes": 1, "fontsize": 10, "vspace": 360}}
-```
-
-|  Bits  |  Type  |  Reset  | Name                               | Description                                                                                                    |
-|:------:|:------:|:-------:|:-----------------------------------|:---------------------------------------------------------------------------------------------------------------|
-|  31:1  |        |         |                                    | Reserved                                                                                                       |
-|   0    |  rw0c  |   0x1   | CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK | When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_7 partition is locked. Write 0 to clear this bit. |
-
 ## VENDOR_PK_HASH_VOLATILE_LOCK
 Address register for direct accesses.
-- Offset: `0xec`
+- Offset: `0xe8`
 - Reset default: `0x0`
 - Reset mask: `0xffffffff`
 
@@ -851,7 +832,7 @@ Address register for direct accesses.
 
 ## RATCHET_SEED_VOLATILE_LOCK
 Address register for direct accesses.
-- Offset: `0xf0`
+- Offset: `0xec`
 - Reset default: `0x0`
 - Reset mask: `0xffffffff`
 
@@ -876,8 +857,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| SW_TEST_UNLOCK_PARTITION_DIGEST_0 | 0xf4     |
-| SW_TEST_UNLOCK_PARTITION_DIGEST_1 | 0xf8     |
+| SW_TEST_UNLOCK_PARTITION_DIGEST_0 | 0xf0     |
+| SW_TEST_UNLOCK_PARTITION_DIGEST_1 | 0xf4     |
 
 
 ### Fields
@@ -901,8 +882,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                            | Offset   |
 |:--------------------------------|:---------|
-| SECRET_MANUF_PARTITION_DIGEST_0 | 0xfc     |
-| SECRET_MANUF_PARTITION_DIGEST_1 | 0x100    |
+| SECRET_MANUF_PARTITION_DIGEST_0 | 0xf8     |
+| SECRET_MANUF_PARTITION_DIGEST_1 | 0xfc     |
 
 
 ### Fields
@@ -926,8 +907,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_0_DIGEST_0 | 0x104    |
-| SECRET_PROD_PARTITION_0_DIGEST_1 | 0x108    |
+| SECRET_PROD_PARTITION_0_DIGEST_0 | 0x100    |
+| SECRET_PROD_PARTITION_0_DIGEST_1 | 0x104    |
 
 
 ### Fields
@@ -951,8 +932,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_1_DIGEST_0 | 0x10c    |
-| SECRET_PROD_PARTITION_1_DIGEST_1 | 0x110    |
+| SECRET_PROD_PARTITION_1_DIGEST_0 | 0x108    |
+| SECRET_PROD_PARTITION_1_DIGEST_1 | 0x10c    |
 
 
 ### Fields
@@ -976,8 +957,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_2_DIGEST_0 | 0x114    |
-| SECRET_PROD_PARTITION_2_DIGEST_1 | 0x118    |
+| SECRET_PROD_PARTITION_2_DIGEST_0 | 0x110    |
+| SECRET_PROD_PARTITION_2_DIGEST_1 | 0x114    |
 
 
 ### Fields
@@ -1001,8 +982,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                             | Offset   |
 |:---------------------------------|:---------|
-| SECRET_PROD_PARTITION_3_DIGEST_0 | 0x11c    |
-| SECRET_PROD_PARTITION_3_DIGEST_1 | 0x120    |
+| SECRET_PROD_PARTITION_3_DIGEST_0 | 0x118    |
+| SECRET_PROD_PARTITION_3_DIGEST_1 | 0x11c    |
 
 
 ### Fields
@@ -1028,8 +1009,8 @@ the digest becomes visible in this CSR.
 
 | Name                        | Offset   |
 |:----------------------------|:---------|
-| SW_MANUF_PARTITION_DIGEST_0 | 0x124    |
-| SW_MANUF_PARTITION_DIGEST_1 | 0x128    |
+| SW_MANUF_PARTITION_DIGEST_0 | 0x120    |
+| SW_MANUF_PARTITION_DIGEST_1 | 0x124    |
 
 
 ### Fields
@@ -1042,6 +1023,33 @@ the digest becomes visible in this CSR.
 |:------:|:------:|:-------:|:--------------------------|:--------------|
 |  31:0  |   ro   |   0x0   | SW_MANUF_PARTITION_DIGEST |               |
 
+## PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST
+Integrity digest for the PROD_DEBUG_UNLOCK_MANUF_PARTITION partition.
+The integrity digest is 0 by default. Software must write this
+digest value via the direct access interface in order to lock the partition.
+After a reset, write access to the PROD_DEBUG_UNLOCK_MANUF_PARTITION partition is locked and
+the digest becomes visible in this CSR.
+- Reset default: `0x0`
+- Reset mask: `0xffffffff`
+
+### Instances
+
+| Name                                       | Offset   |
+|:-------------------------------------------|:---------|
+| PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_0 | 0x128    |
+| PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_1 | 0x12c    |
+
+
+### Fields
+
+```wavejson
+{"reg": [{"name": "PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST", "bits": 32, "attr": ["ro"], "rotate": 0}], "config": {"lanes": 1, "fontsize": 10, "vspace": 80}}
+```
+
+|  Bits  |  Type  |  Reset  | Name                                     | Description   |
+|:------:|:------:|:-------:|:-----------------------------------------|:--------------|
+|  31:0  |   ro   |   0x0   | PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST |               |
+
 ## SECRET_LC_TRANSITION_PARTITION_DIGEST
 Integrity digest for the SECRET_LC_TRANSITION_PARTITION partition.
 The integrity digest is 0 by default. The digest calculation can be triggered via the [`DIRECT_ACCESS_CMD.`](#direct_access_cmd)
@@ -1053,8 +1061,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                                    | Offset   |
 |:----------------------------------------|:---------|
-| SECRET_LC_TRANSITION_PARTITION_DIGEST_0 | 0x12c    |
-| SECRET_LC_TRANSITION_PARTITION_DIGEST_1 | 0x130    |
+| SECRET_LC_TRANSITION_PARTITION_DIGEST_0 | 0x130    |
+| SECRET_LC_TRANSITION_PARTITION_DIGEST_1 | 0x134    |
 
 
 ### Fields
@@ -1080,8 +1088,8 @@ the digest becomes visible in this CSR.
 
 | Name                           | Offset   |
 |:-------------------------------|:---------|
-| VENDOR_TEST_PARTITION_DIGEST_0 | 0x134    |
-| VENDOR_TEST_PARTITION_DIGEST_1 | 0x138    |
+| VENDOR_TEST_PARTITION_DIGEST_0 | 0x138    |
+| VENDOR_TEST_PARTITION_DIGEST_1 | 0x13c    |
 
 
 ### Fields
@@ -1107,8 +1115,8 @@ the digest becomes visible in this CSR.
 
 | Name                                   | Offset   |
 |:---------------------------------------|:---------|
-| VENDOR_HASHES_MANUF_PARTITION_DIGEST_0 | 0x13c    |
-| VENDOR_HASHES_MANUF_PARTITION_DIGEST_1 | 0x140    |
+| VENDOR_HASHES_MANUF_PARTITION_DIGEST_0 | 0x140    |
+| VENDOR_HASHES_MANUF_PARTITION_DIGEST_1 | 0x144    |
 
 
 ### Fields
@@ -1134,8 +1142,8 @@ the digest becomes visible in this CSR.
 
 | Name                                  | Offset   |
 |:--------------------------------------|:---------|
-| VENDOR_HASHES_PROD_PARTITION_DIGEST_0 | 0x144    |
-| VENDOR_HASHES_PROD_PARTITION_DIGEST_1 | 0x148    |
+| VENDOR_HASHES_PROD_PARTITION_DIGEST_0 | 0x148    |
+| VENDOR_HASHES_PROD_PARTITION_DIGEST_1 | 0x14c    |
 
 
 ### Fields
@@ -1161,8 +1169,8 @@ the digest becomes visible in this CSR.
 
 | Name                                       | Offset   |
 |:-------------------------------------------|:---------|
-| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0 | 0x14c    |
-| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1 | 0x150    |
+| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0 | 0x150    |
+| VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1 | 0x154    |
 
 
 ### Fields
@@ -1186,8 +1194,8 @@ After a reset, the digest then becomes visible in this CSR, and the correspondin
 
 | Name                                  | Offset   |
 |:--------------------------------------|:---------|
-| VENDOR_SECRET_PROD_PARTITION_DIGEST_0 | 0x154    |
-| VENDOR_SECRET_PROD_PARTITION_DIGEST_1 | 0x158    |
+| VENDOR_SECRET_PROD_PARTITION_DIGEST_0 | 0x158    |
+| VENDOR_SECRET_PROD_PARTITION_DIGEST_1 | 0x15c    |
 
 
 ### Fields
@@ -1213,8 +1221,8 @@ the digest becomes visible in this CSR.
 
 | Name                                      | Offset   |
 |:------------------------------------------|:---------|
-| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0 | 0x15c    |
-| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1 | 0x160    |
+| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0 | 0x160    |
+| VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1 | 0x164    |
 
 
 ### Fields
@@ -1240,8 +1248,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0 | 0x164    |
-| CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1 | 0x168    |
+| CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0 | 0x168    |
+| CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1 | 0x16c    |
 
 
 ### Fields
@@ -1267,8 +1275,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0 | 0x16c    |
-| CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1 | 0x170    |
+| CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0 | 0x170    |
+| CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1 | 0x174    |
 
 
 ### Fields
@@ -1294,8 +1302,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0 | 0x174    |
-| CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1 | 0x178    |
+| CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0 | 0x178    |
+| CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1 | 0x17c    |
 
 
 ### Fields
@@ -1321,8 +1329,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0 | 0x17c    |
-| CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1 | 0x180    |
+| CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0 | 0x180    |
+| CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1 | 0x184    |
 
 
 ### Fields
@@ -1348,8 +1356,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0 | 0x184    |
-| CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1 | 0x188    |
+| CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0 | 0x188    |
+| CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1 | 0x18c    |
 
 
 ### Fields
@@ -1375,8 +1383,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0 | 0x18c    |
-| CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1 | 0x190    |
+| CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0 | 0x190    |
+| CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1 | 0x194    |
 
 
 ### Fields
@@ -1402,8 +1410,8 @@ the digest becomes visible in this CSR.
 
 | Name                              | Offset   |
 |:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0 | 0x194    |
-| CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1 | 0x198    |
+| CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0 | 0x198    |
+| CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1 | 0x19c    |
 
 
 ### Fields
@@ -1415,33 +1423,6 @@ the digest becomes visible in this CSR.
 |  Bits  |  Type  |  Reset  | Name                            | Description   |
 |:------:|:------:|:-------:|:--------------------------------|:--------------|
 |  31:0  |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_6_DIGEST |               |
-
-## CPTRA_SS_LOCK_HEK_PROD_7_DIGEST
-Integrity digest for the CPTRA_SS_LOCK_HEK_PROD_7 partition.
-The integrity digest is 0 by default. Software must write this
-digest value via the direct access interface in order to lock the partition.
-After a reset, write access to the CPTRA_SS_LOCK_HEK_PROD_7 partition is locked and
-the digest becomes visible in this CSR.
-- Reset default: `0x0`
-- Reset mask: `0xffffffff`
-
-### Instances
-
-| Name                              | Offset   |
-|:----------------------------------|:---------|
-| CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0 | 0x19c    |
-| CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1 | 0x1a0    |
-
-
-### Fields
-
-```wavejson
-{"reg": [{"name": "CPTRA_SS_LOCK_HEK_PROD_7_DIGEST", "bits": 32, "attr": ["ro"], "rotate": 0}], "config": {"lanes": 1, "fontsize": 10, "vspace": 80}}
-```
-
-|  Bits  |  Type  |  Reset  | Name                            | Description   |
-|:------:|:------:|:-------:|:--------------------------------|:--------------|
-|  31:0  |   ro   |   0x0   | CPTRA_SS_LOCK_HEK_PROD_7_DIGEST |               |
 
 ## SW_CFG_WINDOW
 Any read to this window directly maps to the corresponding offset in the creator and owner software

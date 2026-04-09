@@ -9594,38 +9594,38 @@
 #define OTP_CTRL_STATUS_SECRET_PROD_PARTITION_3_ERROR_MASK                                          (0x20)
 #define OTP_CTRL_STATUS_SW_MANUF_PARTITION_ERROR_LOW                                                (6)
 #define OTP_CTRL_STATUS_SW_MANUF_PARTITION_ERROR_MASK                                               (0x40)
-#define OTP_CTRL_STATUS_SECRET_LC_TRANSITION_PARTITION_ERROR_LOW                                    (7)
-#define OTP_CTRL_STATUS_SECRET_LC_TRANSITION_PARTITION_ERROR_MASK                                   (0x80)
-#define OTP_CTRL_STATUS_SVN_PARTITION_ERROR_LOW                                                     (8)
-#define OTP_CTRL_STATUS_SVN_PARTITION_ERROR_MASK                                                    (0x100)
-#define OTP_CTRL_STATUS_VENDOR_TEST_PARTITION_ERROR_LOW                                             (9)
-#define OTP_CTRL_STATUS_VENDOR_TEST_PARTITION_ERROR_MASK                                            (0x200)
-#define OTP_CTRL_STATUS_VENDOR_HASHES_MANUF_PARTITION_ERROR_LOW                                     (10)
-#define OTP_CTRL_STATUS_VENDOR_HASHES_MANUF_PARTITION_ERROR_MASK                                    (0x400)
-#define OTP_CTRL_STATUS_VENDOR_HASHES_PROD_PARTITION_ERROR_LOW                                      (11)
-#define OTP_CTRL_STATUS_VENDOR_HASHES_PROD_PARTITION_ERROR_MASK                                     (0x800)
-#define OTP_CTRL_STATUS_VENDOR_REVOCATIONS_PROD_PARTITION_ERROR_LOW                                 (12)
-#define OTP_CTRL_STATUS_VENDOR_REVOCATIONS_PROD_PARTITION_ERROR_MASK                                (0x1000)
-#define OTP_CTRL_STATUS_VENDOR_SECRET_PROD_PARTITION_ERROR_LOW                                      (13)
-#define OTP_CTRL_STATUS_VENDOR_SECRET_PROD_PARTITION_ERROR_MASK                                     (0x2000)
-#define OTP_CTRL_STATUS_VENDOR_NON_SECRET_PROD_PARTITION_ERROR_LOW                                  (14)
-#define OTP_CTRL_STATUS_VENDOR_NON_SECRET_PROD_PARTITION_ERROR_MASK                                 (0x4000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_0_ERROR_LOW                                          (15)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_0_ERROR_MASK                                         (0x8000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_1_ERROR_LOW                                          (16)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_1_ERROR_MASK                                         (0x10000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_2_ERROR_LOW                                          (17)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_2_ERROR_MASK                                         (0x20000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_3_ERROR_LOW                                          (18)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_3_ERROR_MASK                                         (0x40000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_4_ERROR_LOW                                          (19)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_4_ERROR_MASK                                         (0x80000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_5_ERROR_LOW                                          (20)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_5_ERROR_MASK                                         (0x100000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_6_ERROR_LOW                                          (21)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_6_ERROR_MASK                                         (0x200000)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_7_ERROR_LOW                                          (22)
-#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_7_ERROR_MASK                                         (0x400000)
+#define OTP_CTRL_STATUS_PROD_DEBUG_UNLOCK_MANUF_PARTITION_ERROR_LOW                                 (7)
+#define OTP_CTRL_STATUS_PROD_DEBUG_UNLOCK_MANUF_PARTITION_ERROR_MASK                                (0x80)
+#define OTP_CTRL_STATUS_SECRET_LC_TRANSITION_PARTITION_ERROR_LOW                                    (8)
+#define OTP_CTRL_STATUS_SECRET_LC_TRANSITION_PARTITION_ERROR_MASK                                   (0x100)
+#define OTP_CTRL_STATUS_SVN_PARTITION_ERROR_LOW                                                     (9)
+#define OTP_CTRL_STATUS_SVN_PARTITION_ERROR_MASK                                                    (0x200)
+#define OTP_CTRL_STATUS_VENDOR_TEST_PARTITION_ERROR_LOW                                             (10)
+#define OTP_CTRL_STATUS_VENDOR_TEST_PARTITION_ERROR_MASK                                            (0x400)
+#define OTP_CTRL_STATUS_VENDOR_HASHES_MANUF_PARTITION_ERROR_LOW                                     (11)
+#define OTP_CTRL_STATUS_VENDOR_HASHES_MANUF_PARTITION_ERROR_MASK                                    (0x800)
+#define OTP_CTRL_STATUS_VENDOR_HASHES_PROD_PARTITION_ERROR_LOW                                      (12)
+#define OTP_CTRL_STATUS_VENDOR_HASHES_PROD_PARTITION_ERROR_MASK                                     (0x1000)
+#define OTP_CTRL_STATUS_VENDOR_REVOCATIONS_PROD_PARTITION_ERROR_LOW                                 (13)
+#define OTP_CTRL_STATUS_VENDOR_REVOCATIONS_PROD_PARTITION_ERROR_MASK                                (0x2000)
+#define OTP_CTRL_STATUS_VENDOR_SECRET_PROD_PARTITION_ERROR_LOW                                      (14)
+#define OTP_CTRL_STATUS_VENDOR_SECRET_PROD_PARTITION_ERROR_MASK                                     (0x4000)
+#define OTP_CTRL_STATUS_VENDOR_NON_SECRET_PROD_PARTITION_ERROR_LOW                                  (15)
+#define OTP_CTRL_STATUS_VENDOR_NON_SECRET_PROD_PARTITION_ERROR_MASK                                 (0x8000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_0_ERROR_LOW                                          (16)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_0_ERROR_MASK                                         (0x10000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_1_ERROR_LOW                                          (17)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_1_ERROR_MASK                                         (0x20000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_2_ERROR_LOW                                          (18)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_2_ERROR_MASK                                         (0x40000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_3_ERROR_LOW                                          (19)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_3_ERROR_MASK                                         (0x80000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_4_ERROR_LOW                                          (20)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_4_ERROR_MASK                                         (0x100000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_5_ERROR_LOW                                          (21)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_5_ERROR_MASK                                         (0x200000)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_6_ERROR_LOW                                          (22)
+#define OTP_CTRL_STATUS_CPTRA_SS_LOCK_HEK_PROD_6_ERROR_MASK                                         (0x400000)
 #define OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_LOW                                                        (23)
 #define OTP_CTRL_STATUS_LIFE_CYCLE_ERROR_MASK                                                       (0x800000)
 #define OTP_CTRL_STATUS_DAI_ERROR_LOW                                                               (24)
@@ -9958,221 +9958,215 @@
 #define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK_READ_LOCK_LOW                                   (0)
 #define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK_READ_LOCK_MASK                                  (0x1)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK                                             (0x700000e8)
-#ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK                                                 (0xe8)
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK_READ_LOCK_LOW                                   (0)
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK_READ_LOCK_MASK                                  (0x1)
-#endif
-#define SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                   (0x700000ec)
+#define SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                   (0x700000e8)
 #ifndef OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
-#define OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                       (0xec)
+#define OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK                                                       (0xe8)
 #endif
-#define SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK                                                     (0x700000f0)
+#define SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK                                                     (0x700000ec)
 #ifndef OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK
-#define OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK                                                         (0xf0)
+#define OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK                                                         (0xec)
 #endif
-#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_START                                          (0x700000f4)
-#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                       (0x700000f4)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_START                                          (0x700000f0)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                       (0x700000f0)
 #ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                           (0xf4)
+#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_0                                           (0xf0)
 #endif
-#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                       (0x700000f8)
+#define SOC_OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                       (0x700000f4)
 #ifndef OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                           (0xf8)
+#define OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_DIGEST_1                                           (0xf4)
 #endif
-#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_START                                            (0x700000fc)
-#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                         (0x700000fc)
+#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_START                                            (0x700000f8)
+#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                         (0x700000f8)
 #ifndef OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                             (0xfc)
+#define OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0                                             (0xf8)
 #endif
-#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1                                         (0x70000100)
+#define SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1                                         (0x700000fc)
 #ifndef OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1                                             (0x100)
+#define OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1                                             (0xfc)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_START                                           (0x70000104)
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0                                        (0x70000104)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_START                                           (0x70000100)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0                                        (0x70000100)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0                                            (0x104)
+#define OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0                                            (0x100)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1                                        (0x70000108)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1                                        (0x70000104)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1                                            (0x108)
+#define OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1                                            (0x104)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_START                                           (0x7000010c)
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0                                        (0x7000010c)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_START                                           (0x70000108)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0                                        (0x70000108)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0                                            (0x10c)
+#define OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0                                            (0x108)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1                                        (0x70000110)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1                                        (0x7000010c)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1                                            (0x110)
+#define OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1                                            (0x10c)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_START                                           (0x70000114)
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0                                        (0x70000114)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_START                                           (0x70000110)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0                                        (0x70000110)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0                                            (0x114)
+#define OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0                                            (0x110)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1                                        (0x70000118)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1                                        (0x70000114)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1                                            (0x118)
+#define OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1                                            (0x114)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_START                                           (0x7000011c)
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0                                        (0x7000011c)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_START                                           (0x70000118)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0                                        (0x70000118)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0                                            (0x11c)
+#define OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0                                            (0x118)
 #endif
-#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1                                        (0x70000120)
+#define SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1                                        (0x7000011c)
 #ifndef OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1                                            (0x120)
+#define OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1                                            (0x11c)
 #endif
-#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_START                                                (0x70000124)
-#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0                                             (0x70000124)
+#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_START                                                (0x70000120)
+#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0                                             (0x70000120)
 #ifndef OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0                                                 (0x124)
+#define OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_0                                                 (0x120)
 #endif
-#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1                                             (0x70000128)
+#define SOC_OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1                                             (0x70000124)
 #ifndef OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1                                                 (0x128)
+#define OTP_CTRL_SW_MANUF_PARTITION_DIGEST_DIGEST_1                                                 (0x124)
 #endif
-#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_START                                    (0x7000012c)
-#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0                                 (0x7000012c)
+#define SOC_OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_START                                 (0x70000128)
+#define SOC_OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_0                              (0x70000128)
+#ifndef OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_0
+#define OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_0                                  (0x128)
+#endif
+#define SOC_OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_1                              (0x7000012c)
+#ifndef OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_1
+#define OTP_CTRL_PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST_DIGEST_1                                  (0x12c)
+#endif
+#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_START                                    (0x70000130)
+#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0                                 (0x70000130)
 #ifndef OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0                                     (0x12c)
+#define OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_0                                     (0x130)
 #endif
-#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1                                 (0x70000130)
+#define SOC_OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1                                 (0x70000134)
 #ifndef OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1                                     (0x130)
+#define OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_DIGEST_1                                     (0x134)
 #endif
-#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_START                                             (0x70000134)
-#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_0                                          (0x70000134)
+#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_START                                             (0x70000138)
+#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_0                                          (0x70000138)
 #ifndef OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_0                                              (0x134)
+#define OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_0                                              (0x138)
 #endif
-#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_1                                          (0x70000138)
+#define SOC_OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_1                                          (0x7000013c)
 #ifndef OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_1                                              (0x138)
+#define OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_DIGEST_1                                              (0x13c)
 #endif
-#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_START                                     (0x7000013c)
-#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_0                                  (0x7000013c)
+#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_START                                     (0x70000140)
+#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_0                                  (0x70000140)
 #ifndef OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_0                                      (0x13c)
+#define OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_0                                      (0x140)
 #endif
-#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_1                                  (0x70000140)
+#define SOC_OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_1                                  (0x70000144)
 #ifndef OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_1                                      (0x140)
+#define OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_DIGEST_1                                      (0x144)
 #endif
-#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_START                                      (0x70000144)
-#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x70000144)
+#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_START                                      (0x70000148)
+#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x70000148)
 #ifndef OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_0                                       (0x144)
+#define OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_0                                       (0x148)
 #endif
-#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x70000148)
+#define SOC_OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x7000014c)
 #ifndef OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_1                                       (0x148)
+#define OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_DIGEST_1                                       (0x14c)
 #endif
-#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_START                                 (0x7000014c)
-#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_0                              (0x7000014c)
+#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_START                                 (0x70000150)
+#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_0                              (0x70000150)
 #ifndef OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_0                                  (0x14c)
+#define OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_0                                  (0x150)
 #endif
-#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_1                              (0x70000150)
+#define SOC_OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_1                              (0x70000154)
 #ifndef OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_1                                  (0x150)
+#define OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_DIGEST_1                                  (0x154)
 #endif
-#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_START                                      (0x70000154)
-#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x70000154)
+#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_START                                      (0x70000158)
+#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x70000158)
 #ifndef OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                       (0x154)
+#define OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                       (0x158)
 #endif
-#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x70000158)
+#define SOC_OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x7000015c)
 #ifndef OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                       (0x158)
+#define OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                       (0x15c)
 #endif
-#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_START                                  (0x7000015c)
-#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                               (0x7000015c)
+#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_START                                  (0x70000160)
+#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                               (0x70000160)
 #ifndef OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_0
-#define OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x15c)
+#define OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_0                                   (0x160)
 #endif
-#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                               (0x70000160)
+#define SOC_OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                               (0x70000164)
 #ifndef OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1
-#define OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x160)
+#define OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_DIGEST_1                                   (0x164)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_START                                          (0x70000164)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_0                                       (0x70000164)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_START                                          (0x70000168)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_0                                       (0x70000168)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_0                                           (0x164)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_0                                           (0x168)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_1                                       (0x70000168)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_1                                       (0x7000016c)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_1                                           (0x168)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_DIGEST_1                                           (0x16c)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_START                                          (0x7000016c)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_0                                       (0x7000016c)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_START                                          (0x70000170)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_0                                       (0x70000170)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_0                                           (0x16c)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_0                                           (0x170)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_1                                       (0x70000170)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_1                                       (0x70000174)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_1                                           (0x170)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_DIGEST_1                                           (0x174)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_START                                          (0x70000174)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_0                                       (0x70000174)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_START                                          (0x70000178)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_0                                       (0x70000178)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_0                                           (0x174)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_0                                           (0x178)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_1                                       (0x70000178)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_1                                       (0x7000017c)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_1                                           (0x178)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_DIGEST_1                                           (0x17c)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_START                                          (0x7000017c)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_0                                       (0x7000017c)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_START                                          (0x70000180)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_0                                       (0x70000180)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_0                                           (0x17c)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_0                                           (0x180)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_1                                       (0x70000180)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_1                                       (0x70000184)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_1                                           (0x180)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_DIGEST_1                                           (0x184)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_START                                          (0x70000184)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_0                                       (0x70000184)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_START                                          (0x70000188)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_0                                       (0x70000188)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_0                                           (0x184)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_0                                           (0x188)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_1                                       (0x70000188)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_1                                       (0x7000018c)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_1                                           (0x188)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_DIGEST_1                                           (0x18c)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_START                                          (0x7000018c)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_0                                       (0x7000018c)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_START                                          (0x70000190)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_0                                       (0x70000190)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_0                                           (0x18c)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_0                                           (0x190)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_1                                       (0x70000190)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_1                                       (0x70000194)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_1                                           (0x190)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_DIGEST_1                                           (0x194)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_START                                          (0x70000194)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_0                                       (0x70000194)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_START                                          (0x70000198)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_0                                       (0x70000198)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_0                                           (0x194)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_0                                           (0x198)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_1                                       (0x70000198)
+#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_1                                       (0x7000019c)
 #ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_1                                           (0x198)
+#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_DIGEST_1                                           (0x19c)
 #endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_START                                          (0x7000019c)
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_0                                       (0x7000019c)
-#ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_0
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_0                                           (0x19c)
-#endif
-#define SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_1                                       (0x700001a0)
-#ifndef OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_1
-#define OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_DIGEST_1                                           (0x1a0)
-#endif
-#define SOC_OTP_CTRL_CSR0                                                                           (0x700001a4)
+#define SOC_OTP_CTRL_CSR0                                                                           (0x700001a0)
 #ifndef OTP_CTRL_CSR0
-#define OTP_CTRL_CSR0                                                                               (0x1a4)
+#define OTP_CTRL_CSR0                                                                               (0x1a0)
 #define OTP_CTRL_CSR0_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR0_FIELD0_MASK                                                                   (0x1)
 #define OTP_CTRL_CSR0_FIELD1_LOW                                                                    (1)
@@ -10184,9 +10178,9 @@
 #define OTP_CTRL_CSR0_FIELD4_LOW                                                                    (16)
 #define OTP_CTRL_CSR0_FIELD4_MASK                                                                   (0x7ff0000)
 #endif
-#define SOC_OTP_CTRL_CSR1                                                                           (0x700001a8)
+#define SOC_OTP_CTRL_CSR1                                                                           (0x700001a4)
 #ifndef OTP_CTRL_CSR1
-#define OTP_CTRL_CSR1                                                                               (0x1a8)
+#define OTP_CTRL_CSR1                                                                               (0x1a4)
 #define OTP_CTRL_CSR1_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR1_FIELD0_MASK                                                                   (0x7f)
 #define OTP_CTRL_CSR1_FIELD1_LOW                                                                    (7)
@@ -10198,15 +10192,15 @@
 #define OTP_CTRL_CSR1_FIELD4_LOW                                                                    (16)
 #define OTP_CTRL_CSR1_FIELD4_MASK                                                                   (0xffff0000)
 #endif
-#define SOC_OTP_CTRL_CSR2                                                                           (0x700001ac)
+#define SOC_OTP_CTRL_CSR2                                                                           (0x700001a8)
 #ifndef OTP_CTRL_CSR2
-#define OTP_CTRL_CSR2                                                                               (0x1ac)
+#define OTP_CTRL_CSR2                                                                               (0x1a8)
 #define OTP_CTRL_CSR2_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR2_FIELD0_MASK                                                                   (0x1)
 #endif
-#define SOC_OTP_CTRL_CSR3                                                                           (0x700001b0)
+#define SOC_OTP_CTRL_CSR3                                                                           (0x700001ac)
 #ifndef OTP_CTRL_CSR3
-#define OTP_CTRL_CSR3                                                                               (0x1b0)
+#define OTP_CTRL_CSR3                                                                               (0x1ac)
 #define OTP_CTRL_CSR3_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR3_FIELD0_MASK                                                                   (0x7)
 #define OTP_CTRL_CSR3_FIELD1_LOW                                                                    (4)
@@ -10226,9 +10220,9 @@
 #define OTP_CTRL_CSR3_FIELD8_LOW                                                                    (22)
 #define OTP_CTRL_CSR3_FIELD8_MASK                                                                   (0x400000)
 #endif
-#define SOC_OTP_CTRL_CSR4                                                                           (0x700001b4)
+#define SOC_OTP_CTRL_CSR4                                                                           (0x700001b0)
 #ifndef OTP_CTRL_CSR4
-#define OTP_CTRL_CSR4                                                                               (0x1b4)
+#define OTP_CTRL_CSR4                                                                               (0x1b0)
 #define OTP_CTRL_CSR4_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR4_FIELD0_MASK                                                                   (0x3ff)
 #define OTP_CTRL_CSR4_FIELD1_LOW                                                                    (12)
@@ -10238,9 +10232,9 @@
 #define OTP_CTRL_CSR4_FIELD3_LOW                                                                    (14)
 #define OTP_CTRL_CSR4_FIELD3_MASK                                                                   (0x4000)
 #endif
-#define SOC_OTP_CTRL_CSR5                                                                           (0x700001b8)
+#define SOC_OTP_CTRL_CSR5                                                                           (0x700001b4)
 #ifndef OTP_CTRL_CSR5
-#define OTP_CTRL_CSR5                                                                               (0x1b8)
+#define OTP_CTRL_CSR5                                                                               (0x1b4)
 #define OTP_CTRL_CSR5_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR5_FIELD0_MASK                                                                   (0x3f)
 #define OTP_CTRL_CSR5_FIELD1_LOW                                                                    (6)
@@ -10256,9 +10250,9 @@
 #define OTP_CTRL_CSR5_FIELD6_LOW                                                                    (16)
 #define OTP_CTRL_CSR5_FIELD6_MASK                                                                   (0xffff0000)
 #endif
-#define SOC_OTP_CTRL_CSR6                                                                           (0x700001bc)
+#define SOC_OTP_CTRL_CSR6                                                                           (0x700001b8)
 #ifndef OTP_CTRL_CSR6
-#define OTP_CTRL_CSR6                                                                               (0x1bc)
+#define OTP_CTRL_CSR6                                                                               (0x1b8)
 #define OTP_CTRL_CSR6_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR6_FIELD0_MASK                                                                   (0x3ff)
 #define OTP_CTRL_CSR6_FIELD1_LOW                                                                    (11)
@@ -10268,9 +10262,9 @@
 #define OTP_CTRL_CSR6_FIELD3_LOW                                                                    (16)
 #define OTP_CTRL_CSR6_FIELD3_MASK                                                                   (0xffff0000)
 #endif
-#define SOC_OTP_CTRL_CSR7                                                                           (0x700001c0)
+#define SOC_OTP_CTRL_CSR7                                                                           (0x700001bc)
 #ifndef OTP_CTRL_CSR7
-#define OTP_CTRL_CSR7                                                                               (0x1c0)
+#define OTP_CTRL_CSR7                                                                               (0x1bc)
 #define OTP_CTRL_CSR7_FIELD0_LOW                                                                    (0)
 #define OTP_CTRL_CSR7_FIELD0_MASK                                                                   (0x3f)
 #define OTP_CTRL_CSR7_FIELD1_LOW                                                                    (8)
