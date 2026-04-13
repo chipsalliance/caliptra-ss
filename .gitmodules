@@ -10,3 +10,7 @@
 	path = third_party/cocotbext-i3c
 	url = https://github.com/antmicro/cocotbext-i3c.git
 	branch = main
+[submodule "third_party/usb"]
+	path = third_party/usb
+	url = /home/ws/caliptra/cwhitehead/Project-Caliptra/usb
+	branch = cwhitehead-axi-and-strm-boot

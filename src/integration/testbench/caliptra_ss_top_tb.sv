@@ -22,7 +22,7 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
-`include "i3c_defines.svh"
+//`include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
 `include "caliptra_ss_includes.svh"
 `include "caliptra_ss_top_tb_intc_includes.svh"
@@ -39,8 +39,8 @@ module caliptra_ss_top_tb
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import caliptra_top_tb_pkg::*;
-    import ai2c_pkg::*;
-    import ai3c_pkg::*;
+//    import ai2c_pkg::*;
+//    import ai3c_pkg::*;
     import avery_pkg_test::*;
     import jtag_pkg::*;
 
@@ -135,7 +135,7 @@ module caliptra_ss_top_tb
 
          soc_ifc_pkg::security_state_t                security_state_o;
 
-//---------------------------I3C---------------------------------------
+//---------------------------OCP Recovery---------------------------------
          logic payload_available_o;
          logic image_activated_o;
 
@@ -308,13 +308,26 @@ module caliptra_ss_top_tb
     //     .UW(`CALIPTRA_AXI_USER_WIDTH)
     // ) mcu_dma_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
-    // I3C AXI Interface
+//    // I3C AXI Interface
+//    axi_if #(
+//        .AW(32), //-- FIXME : Assign a common paramter
+//        .DW(32), //-- FIXME : Assign a common paramter,
+//        .IW(`CALIPTRA_AXI_ID_WIDTH),
+//        .UW(`CALIPTRA_AXI_USER_WIDTH)
+//    ) cptra_ss_i3c_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_i3c_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    ) cptra_ss_usb_reg_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
+    axi_if #(
+        .AW(32), //-- FIXME : Assign a common paramter
+        .DW(32), //-- FIXME : Assign a common paramter,
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_usb_dma_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
@@ -373,7 +386,8 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
 
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
+//      logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_IDX          ; // CSS_INTC_SINTF_USB_IDX           1
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCU_ROM_IDX      ; // CSS_INTC_SINTF_MCU_ROM_IDX       2
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
@@ -388,7 +402,8 @@ module caliptra_ss_top_tb
         SOC_BFM_IDX            : `CSS_INTC_MINTF_SOC_BFM_IDX,
 
         SINTF_NC0_IDX          : `CSS_INTC_SINTF_NC0_IDX,
-        SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
+//      SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
+        SINTF_USB_IDX          : `CSS_INTC_SINTF_USB_IDX,
         SINTF_MCU_ROM_IDX      : `CSS_INTC_SINTF_MCU_ROM_IDX,
         SINTF_CPTRA_SOC_IFC_IDX: `CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX,
         SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
@@ -934,43 +949,43 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_LCC_IDX].RVALID  = cptra_ss_lc_axi_rd_rsp_o.rvalid;
     assign cptra_ss_lc_axi_rd_req_i.rready = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_LCC_IDX].RREADY;
 
-    //Interconnect 1 - I3C
-    assign cptra_ss_i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWVALID;
-    assign cptra_ss_i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWADDR[31:0];
-    assign cptra_ss_i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWID;
-    assign cptra_ss_i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWLEN;
-    assign cptra_ss_i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWSIZE;
-    assign cptra_ss_i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWBURST;
-    assign cptra_ss_i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWLOCK;
-    assign cptra_ss_i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWREADY = cptra_ss_i3c_s_axi_if.awready;
-    assign cptra_ss_i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WVALID;
-    assign cptra_ss_i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WDATA;
-    assign cptra_ss_i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WSTRB;
-    assign cptra_ss_i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WLAST;
-    assign cptra_ss_i3c_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WREADY  = cptra_ss_i3c_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BVALID  = cptra_ss_i3c_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BRESP   = cptra_ss_i3c_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BUSER   = cptra_ss_i3c_s_axi_if.buser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BID     = cptra_ss_i3c_s_axi_if.bid;
-    assign cptra_ss_i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BREADY;
-    assign cptra_ss_i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARVALID;
-    assign cptra_ss_i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARADDR[31:0];
-    assign cptra_ss_i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARID;
-    assign cptra_ss_i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARLEN;
-    assign cptra_ss_i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARSIZE;
-    assign cptra_ss_i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARBURST;
-    assign cptra_ss_i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARLOCK;
-    assign cptra_ss_i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARREADY = cptra_ss_i3c_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RVALID  = cptra_ss_i3c_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RDATA   = 64'(cptra_ss_i3c_s_axi_if.rdata);
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RRESP   = cptra_ss_i3c_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RUSER   = cptra_ss_i3c_s_axi_if.ruser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RID     = cptra_ss_i3c_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
-    assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RREADY;
+//    //Interconnect 1 - I3C
+//    assign cptra_ss_i3c_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWVALID;
+//    assign cptra_ss_i3c_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWADDR[31:0];
+//    assign cptra_ss_i3c_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWID;
+//    assign cptra_ss_i3c_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWLEN;
+//    assign cptra_ss_i3c_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWSIZE;
+//    assign cptra_ss_i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWBURST;
+//    assign cptra_ss_i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWLOCK;
+//    assign cptra_ss_i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWUSER;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWREADY = cptra_ss_i3c_s_axi_if.awready;
+//    assign cptra_ss_i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WVALID;
+//    assign cptra_ss_i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WDATA;
+//    assign cptra_ss_i3c_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WSTRB;
+//    assign cptra_ss_i3c_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WLAST;
+//    assign cptra_ss_i3c_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WUSER;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WREADY  = cptra_ss_i3c_s_axi_if.wready;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BVALID  = cptra_ss_i3c_s_axi_if.bvalid;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BRESP   = cptra_ss_i3c_s_axi_if.bresp;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BUSER   = cptra_ss_i3c_s_axi_if.buser;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BID     = cptra_ss_i3c_s_axi_if.bid;
+//    assign cptra_ss_i3c_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].BREADY;
+//    assign cptra_ss_i3c_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARVALID;
+//    assign cptra_ss_i3c_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARADDR[31:0];
+//    assign cptra_ss_i3c_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARID;
+//    assign cptra_ss_i3c_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARLEN;
+//    assign cptra_ss_i3c_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARSIZE;
+//    assign cptra_ss_i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARBURST;
+//    assign cptra_ss_i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARLOCK;
+//    assign cptra_ss_i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARUSER;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARREADY = cptra_ss_i3c_s_axi_if.arready;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RVALID  = cptra_ss_i3c_s_axi_if.rvalid;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RDATA   = 64'(cptra_ss_i3c_s_axi_if.rdata);
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RRESP   = cptra_ss_i3c_s_axi_if.rresp;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RUSER   = cptra_ss_i3c_s_axi_if.ruser;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RID     = cptra_ss_i3c_s_axi_if.rid;
+//    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RLAST   = cptra_ss_i3c_s_axi_if.rlast;
+//    assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RREADY;
 
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
@@ -1397,76 +1412,76 @@ module caliptra_ss_top_tb
         .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
 
-    // --- I3C env and interface ---
-    ai3c_env i3c_env0;
-    wand  SCL;
-    wand  SDA;
-
-    // --- Avery I3C master ---
-    ai3c_device#(`AI3C_LANE_NUM) master0;
-    ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
-
-    // // // --- Avery I3C slave ---
-    // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
-    // ai3c_device#(`AI3C_LANE_NUM) slave;
-    // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
-
-    wire cptra_ss_sel_od_pp_o;
-    logic cptra_ss_i3c_scl_oe;
-    logic cptra_ss_i3c_sda_oe;
-    
-    logic cptra_ss_i3c_recovery_payload_available_o;
-    logic cptra_ss_i3c_recovery_image_activated_o;
-
-    logic cptra_i3c_axi_user_id_filtering_enable_i;
-    assign cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
-
-    initial begin
-        string avy_test_name;
-
-        // --- Avery I3C slave ---
-        // slave = new("slave", , AI3C_SLAVE, slave_intf);
-        // slave.log.enable_bus_tracker = 1;
-        // slave.cfg_info.basic_mode();
-        // slave.set("static_addr", 7'b010_0001);
-        // slaves.push_back(slave);
-        // i3c_env0.add_slave(slaves[0]);
-        // slaves[0].set("start_bfm");
-
-        // --- Avery I3C master ---
-        master0 = new("master0", , AI3C_MASTER, master0_intf);
-        master0.cfg_info.is_main_master = 1;
-        master0.log.enable_bus_tracker  = 1;
-
-//if I3C_BOOT_USING_ENTDAA is defined, then set the dynamic address to 0
-`ifdef I3C_BOOT_USING_ENTDAA
-        master0.set("add_i3c_dev_da",0);
-        master0.set("add_i3c_dev_da",0);
-`endif
-
-//if I3C_BOOT_USING_ENTDAA is not defined, then use the static address
-`ifndef I3C_BOOT_USING_ENTDAA
-        master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
-        master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
-`endif
-        
-        master0.cfg_info.receive_all_txn = 0;
-
-
-        // --- I3C env ---
-        i3c_env0 = new("i3c_env0");
-        i3c_env0.add_master(master0);
-
-        // run test for i3C
-        if($value$plusargs("AVY_TEST=%s", avy_test_name)) begin
-            $display("Waiting for 500us before Running I3C test [%s]", avy_test_name);
-            #500us;  // system boot delay
-            i3c_env0.sb.enable_sb=0;
-            master0.set("start_bfm");
-            ai3c_run_test(avy_test_name, i3c_env0);
-        end
-
-    end
+//    // --- I3C env and interface ---
+//    ai3c_env i3c_env0;
+//    wand  SCL;
+//    wand  SDA;
+//
+//    // --- Avery I3C master ---
+//    ai3c_device#(`AI3C_LANE_NUM) master0;
+//    ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
+//
+//    // // // --- Avery I3C slave ---
+//    // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
+//    // ai3c_device#(`AI3C_LANE_NUM) slave;
+//    // ai3c_intf#(`AI3C_LANE_NUM) slave_intf(i3c_sda_io, i3c_scl_io);
+//
+//    wire cptra_ss_sel_od_pp_o;
+//    logic cptra_ss_i3c_scl_oe;
+//    logic cptra_ss_i3c_sda_oe;
+//    
+//    logic cptra_ss_i3c_recovery_payload_available_o;
+//    logic cptra_ss_i3c_recovery_image_activated_o;
+//
+////    logic cptra_i3c_axi_user_id_filtering_enable_i;
+////    assign cptra_i3c_axi_user_id_filtering_enable_i = 1'b1;
+//
+//    initial begin
+//        string avy_test_name;
+//
+//        // --- Avery I3C slave ---
+//        // slave = new("slave", , AI3C_SLAVE, slave_intf);
+//        // slave.log.enable_bus_tracker = 1;
+//        // slave.cfg_info.basic_mode();
+//        // slave.set("static_addr", 7'b010_0001);
+//        // slaves.push_back(slave);
+//        // i3c_env0.add_slave(slaves[0]);
+//        // slaves[0].set("start_bfm");
+//
+//        // --- Avery I3C master ---
+//        master0 = new("master0", , AI3C_MASTER, master0_intf);
+//        master0.cfg_info.is_main_master = 1;
+//        master0.log.enable_bus_tracker  = 1;
+//
+////if I3C_BOOT_USING_ENTDAA is defined, then set the dynamic address to 0
+//`ifdef I3C_BOOT_USING_ENTDAA
+//        master0.set("add_i3c_dev_da",0);
+//        master0.set("add_i3c_dev_da",0);
+//`endif
+//
+////if I3C_BOOT_USING_ENTDAA is not defined, then use the static address
+//`ifndef I3C_BOOT_USING_ENTDAA
+//        master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
+//        master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
+//`endif
+//        
+//        master0.cfg_info.receive_all_txn = 0;
+//
+//
+//        // --- I3C env ---
+//        i3c_env0 = new("i3c_env0");
+//        i3c_env0.add_master(master0);
+//
+//        // run test for i3C
+//        if($value$plusargs("AVY_TEST=%s", avy_test_name)) begin
+//            $display("Waiting for 500us before Running I3C test [%s]", avy_test_name);
+//            #500us;  // system boot delay
+//            i3c_env0.sb.enable_sb=0;
+//            master0.set("start_bfm");
+//            ai3c_run_test(avy_test_name, i3c_env0);
+//        end
+//
+//    end
 
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
@@ -1510,7 +1525,7 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_I3CCSR_I3C_EC_START};
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, 32'h0/*`SOC_I3CCSR_I3C_EC_START*/}; // TODO
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
@@ -1617,8 +1632,8 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_sb_m_axi_if_awqos,
         .cptra_ss_mcu_sb_m_axi_if_arqos,
         // .mcu_dma_s_axi_if,
-        .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
-        .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
+//        .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
+//        .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
 
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
@@ -1759,18 +1774,18 @@ module caliptra_ss_top_tb
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
 
-        .cptra_ss_i3c_scl_i(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_i(master0_intf.sda_and),
-        .cptra_ss_i3c_scl_o(master0_intf.scl_and),
-        .cptra_ss_i3c_sda_o(master0_intf.sda_and),
-        .cptra_ss_i3c_scl_oe,
-        .cptra_ss_i3c_sda_oe,
-        .cptra_ss_sel_od_pp_o,
-        .cptra_i3c_axi_user_id_filtering_enable_i,
-        .cptra_ss_i3c_recovery_payload_available_o,
-        .cptra_ss_i3c_recovery_payload_available_i(cptra_ss_i3c_recovery_payload_available_o),
-        .cptra_ss_i3c_recovery_image_activated_o,
-        .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
+//        .cptra_ss_i3c_scl_i(master0_intf.scl_and),
+//        .cptra_ss_i3c_sda_i(master0_intf.sda_and),
+//        .cptra_ss_i3c_scl_o(master0_intf.scl_and),
+//        .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+//        .cptra_ss_i3c_scl_oe,
+//        .cptra_ss_i3c_sda_oe,
+//        .cptra_ss_sel_od_pp_o,
+//        .cptra_i3c_axi_user_id_filtering_enable_i,
+//        .cptra_ss_i3c_recovery_payload_available_o,
+//        .cptra_ss_i3c_recovery_payload_available_i(cptra_ss_i3c_recovery_payload_available_o),
+//        .cptra_ss_i3c_recovery_image_activated_o,
+//        .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,
@@ -1835,7 +1850,7 @@ module caliptra_ss_top_tb
 
 endmodule
 
-// --- Avery I3C Test Case Bench ---
-// This is the top level module for the Avery I3C test case bench.
-// it triggers i3c test cases.
-`include "ai3c_tests_bench.sv"
+//// --- Avery I3C Test Case Bench ---
+//// This is the top level module for the Avery I3C test case bench.
+//// it triggers i3c test cases.
+//`include "ai3c_tests_bench.sv"

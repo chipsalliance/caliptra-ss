@@ -131,7 +131,7 @@ generate
     defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     defparam slave_mon[`CSS_INTC_SINTF_MCU_ROM_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     // I3C, Caliptra SoC IFC, MCI, FC, LCC
-    defparam slave_mon[`CSS_INTC_SINTF_I3C_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_USB_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_MCI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
@@ -231,17 +231,17 @@ initial begin
         slave[`CSS_INTC_SINTF_NC0_IDX].cfg_info.limit_address[0] = 64'h1000_FFFF;
         slave[`CSS_INTC_SINTF_NC0_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
 
-        //-- I3C
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.passive_mode = 1;
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.base_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR);
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.limit_address[0] = 64'(`SOC_I3CCSR_BASE_ADDR) + 64'hFFF; // FIXME hardcoded offset
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.total_outstanding_depth = 4;
-        slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.id_outstanding_depth = 4;
+        //-- USB
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.passive_mode = 1;
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.base_address[0] = 64'(`FIXME/*SOC_I3CCSR_BASE_ADDR*/);
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.limit_address[0] = 64'(`FIXME/*SOC_I3CCSR_BASE_ADDR*/) + 64'hFFF; // FIXME hardcoded offset
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_USB_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- MCU ROM MACRO / MCI_TOP 2nd instance
         slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};
