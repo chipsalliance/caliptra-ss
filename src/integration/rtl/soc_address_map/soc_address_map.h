@@ -807,22 +807,32 @@
 #define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR_VIRT_DYNAMIC_ADDR_VALID_LOW            (31)
 #define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR_VIRT_DYNAMIC_ADDR_VALID_MASK           (0x80000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_3                                                    (0x200041bc)
-#ifndef I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_3
-#define I3CCSR_I3C_EC_STDBYCTRLMODE___RSVD_3                                                        (0xbc)
+#define SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL                                                 (0x200041bc)
+#ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL                                                     (0xbc)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL_MWL_LOW                                             (0)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MWL_MWL_MASK                                            (0xffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_START                                                                 (0x200041c0)
-#define SOC_I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                         (0x200041c0)
+#define SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL                                                 (0x200041c0)
+#ifndef I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL                                                     (0xc0)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_MRL_LOW                                             (0)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_MRL_MASK                                            (0xffff)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_IBIL_LOW                                            (16)
+#define I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_MRL_IBIL_MASK                                           (0xff0000)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_START                                                                 (0x20004200)
+#define SOC_I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                         (0x20004200)
 #ifndef I3CCSR_I3C_EC_TTI_EXTCAP_HEADER
-#define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                             (0xc0)
+#define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER                                                             (0x100)
 #define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_ID_LOW                                                  (0)
 #define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_ID_MASK                                                 (0xff)
 #define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_LENGTH_LOW                                              (8)
 #define I3CCSR_I3C_EC_TTI_EXTCAP_HEADER_CAP_LENGTH_MASK                                             (0xffff00)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_CONTROL                                                               (0x200041c4)
+#define SOC_I3CCSR_I3C_EC_TTI_CONTROL                                                               (0x20004204)
 #ifndef I3CCSR_I3C_EC_TTI_CONTROL
-#define I3CCSR_I3C_EC_TTI_CONTROL                                                                   (0xc4)
+#define I3CCSR_I3C_EC_TTI_CONTROL                                                                   (0x104)
 #define I3CCSR_I3C_EC_TTI_CONTROL_HJ_EN_LOW                                                         (10)
 #define I3CCSR_I3C_EC_TTI_CONTROL_HJ_EN_MASK                                                        (0x400)
 #define I3CCSR_I3C_EC_TTI_CONTROL_CRR_EN_LOW                                                        (11)
@@ -832,17 +842,17 @@
 #define I3CCSR_I3C_EC_TTI_CONTROL_IBI_RETRY_NUM_LOW                                                 (13)
 #define I3CCSR_I3C_EC_TTI_CONTROL_IBI_RETRY_NUM_MASK                                                (0xe000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_STATUS                                                                (0x200041c8)
+#define SOC_I3CCSR_I3C_EC_TTI_STATUS                                                                (0x20004208)
 #ifndef I3CCSR_I3C_EC_TTI_STATUS
-#define I3CCSR_I3C_EC_TTI_STATUS                                                                    (0xc8)
-#define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_LOW                                                 (13)
-#define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_MASK                                                (0x2000)
-#define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_LOW                                                (14)
-#define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_MASK                                               (0xc000)
+#define I3CCSR_I3C_EC_TTI_STATUS                                                                    (0x108)
+#define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_LOW                                                 (8)
+#define I3CCSR_I3C_EC_TTI_STATUS_PROTOCOL_ERROR_MASK                                                (0x100)
+#define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_LOW                                                (12)
+#define I3CCSR_I3C_EC_TTI_STATUS_LAST_IBI_STATUS_MASK                                               (0x7000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                         (0x200041cc)
+#define SOC_I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                         (0x2000420c)
 #ifndef I3CCSR_I3C_EC_TTI_RESET_CONTROL
-#define I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                             (0xcc)
+#define I3CCSR_I3C_EC_TTI_RESET_CONTROL                                                             (0x10c)
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_SOFT_RST_LOW                                                (0)
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_SOFT_RST_MASK                                               (0x1)
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_TX_DESC_RST_LOW                                             (1)
@@ -855,10 +865,58 @@
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_RX_DATA_RST_MASK                                            (0x10)
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_QUEUE_RST_LOW                                           (5)
 #define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_QUEUE_RST_MASK                                          (0x20)
+#define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_RETRY_CTR_RST_LOW                                       (6)
+#define I3CCSR_I3C_EC_TTI_RESET_CONTROL_IBI_RETRY_CTR_RST_MASK                                      (0x40)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                      (0x200041d0)
+#define SOC_I3CCSR_I3C_EC_TTI_QUEUE_STATUS                                                          (0x20004210)
+#ifndef I3CCSR_I3C_EC_TTI_QUEUE_STATUS
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS                                                              (0x110)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_FULL_LOW                                       (0)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_FULL_MASK                                      (0x1)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_EMPTY_LOW                                      (1)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DESC_QUEUE_EMPTY_MASK                                     (0x2)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_FULL_LOW                                       (2)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_FULL_MASK                                      (0x4)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_EMPTY_LOW                                      (3)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DESC_QUEUE_EMPTY_MASK                                     (0x8)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_FULL_LOW                                       (4)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_FULL_MASK                                      (0x10)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_EMPTY_LOW                                      (5)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_RX_DATA_QUEUE_EMPTY_MASK                                     (0x20)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_FULL_LOW                                       (6)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_FULL_MASK                                      (0x40)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_EMPTY_LOW                                      (7)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_TX_DATA_QUEUE_EMPTY_MASK                                     (0x80)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_FULL_LOW                                           (8)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_FULL_MASK                                          (0x100)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_EMPTY_LOW                                          (9)
+#define I3CCSR_I3C_EC_TTI_QUEUE_STATUS_IBI_QUEUE_EMPTY_MASK                                         (0x200)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH                                                      (0x20004214)
+#ifndef I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH
+#define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH                                                          (0x114)
+#define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_RX_DESC_QUEUE_DEPTH_LOW                                  (0)
+#define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_RX_DESC_QUEUE_DEPTH_MASK                                 (0xff)
+#define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_TX_DESC_QUEUE_DEPTH_LOW                                  (8)
+#define I3CCSR_I3C_EC_TTI_DESC_QUEUE_DEPTH_TX_DESC_QUEUE_DEPTH_MASK                                 (0xff00)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH                                                      (0x20004218)
+#ifndef I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH
+#define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH                                                          (0x118)
+#define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_RX_DATA_QUEUE_DEPTH_LOW                                  (0)
+#define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_RX_DATA_QUEUE_DEPTH_MASK                                 (0xff)
+#define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_TX_DATA_QUEUE_DEPTH_LOW                                  (8)
+#define I3CCSR_I3C_EC_TTI_DATA_QUEUE_DEPTH_TX_DATA_QUEUE_DEPTH_MASK                                 (0xff00)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH                                                       (0x2000421c)
+#ifndef I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH
+#define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH                                                           (0x11c)
+#define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH_IBI_QUEUE_DEPTH_LOW                                       (0)
+#define I3CCSR_I3C_EC_TTI_IBI_QUEUE_DEPTH_IBI_QUEUE_DEPTH_MASK                                      (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                      (0x20004220)
 #ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS
-#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                          (0xd0)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS                                                          (0x120)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_LOW                                         (0)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_RX_DESC_STAT_MASK                                        (0x1)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_STAT_LOW                                         (1)
@@ -879,8 +937,10 @@
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_THLD_STAT_MASK                                       (0x1000)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_DONE_LOW                                             (13)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_IBI_DONE_MASK                                            (0x2000)
-#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_LOW                                    (15)
-#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_MASK                                   (0x78000)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_LOW                                    (16)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_INTERRUPT_MASK                                   (0xf0000)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_IBI_LOW                                          (20)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_PENDING_IBI_MASK                                         (0x100000)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_LOW                                  (25)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ABORT_STAT_MASK                                 (0x2000000)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TX_DESC_COMPLETE_LOW                                     (26)
@@ -888,9 +948,9 @@
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ERR_STAT_LOW                                    (31)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_STATUS_TRANSFER_ERR_STAT_MASK                                   (0x80000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                      (0x200041d4)
+#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                      (0x20004224)
 #ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE
-#define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                          (0xd4)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE                                                          (0x124)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_STAT_EN_LOW                                      (0)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_RX_DESC_STAT_EN_MASK                                     (0x1)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TX_DESC_STAT_EN_LOW                                      (1)
@@ -918,9 +978,9 @@
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_LOW                                 (31)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_ENABLE_TRANSFER_ERR_STAT_EN_MASK                                (0x80000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                       (0x200041d8)
+#define SOC_I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                       (0x20004228)
 #ifndef I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE
-#define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                           (0xd8)
+#define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE                                                           (0x128)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_RX_DESC_STAT_FORCE_LOW                                    (0)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_RX_DESC_STAT_FORCE_MASK                                   (0x1)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TX_DESC_STAT_FORCE_LOW                                    (1)
@@ -948,29 +1008,227 @@
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_LOW                               (31)
 #define I3CCSR_I3C_EC_TTI_INTERRUPT_FORCE_TRANSFER_ERR_STAT_FORCE_MASK                              (0x80000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                    (0x200041dc)
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL                                                       (0x2000422c)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL                                                           (0x12c)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE0_ERR_DET_EN_LOW                                        (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE0_ERR_DET_EN_MASK                                       (0x1)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE1_ERR_DET_EN_LOW                                        (1)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE1_ERR_DET_EN_MASK                                       (0x2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE2_ERR_DET_EN_LOW                                        (2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE2_ERR_DET_EN_MASK                                       (0x4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE3_ERR_DET_EN_LOW                                        (3)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE3_ERR_DET_EN_MASK                                       (0x8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE4_ERR_DET_EN_LOW                                        (4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE4_ERR_DET_EN_MASK                                       (0x10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE5_ERR_DET_EN_LOW                                        (5)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_TE5_ERR_DET_EN_MASK                                       (0x20)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_FRAMING_ERR_DET_EN_LOW                                    (6)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_FRAMING_ERR_DET_EN_MASK                                   (0x40)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_PEC_ERR_DET_EN_LOW                                     (7)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_PEC_ERR_DET_EN_MASK                                    (0x80)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_LENGTH_ERR_DET_EN_LOW                                  (8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_LENGTH_ERR_DET_EN_MASK                                 (0x100)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_READONLY_ERR_DET_EN_LOW                                (9)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_READONLY_ERR_DET_EN_MASK                               (0x200)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_UNSUPPORTED_ERR_DET_EN_LOW                             (10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_UNSUPPORTED_ERR_DET_EN_MASK                            (0x400)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_RX_FIFO_OVERFLOW_ERR_DET_EN_LOW                        (11)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_RX_FIFO_OVERFLOW_ERR_DET_EN_MASK                       (0x800)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_INDIRECT_FIFO_OVERFLOW_ERR_DET_EN_LOW                  (12)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CTRL_RI_INDIRECT_FIFO_OVERFLOW_ERR_DET_EN_MASK                 (0x1000)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS                                                (0x20004230)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS                                                    (0x130)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE0_ERR_STAT_LOW                                   (1)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE0_ERR_STAT_MASK                                  (0x2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE1_ERR_STAT_LOW                                   (2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE1_ERR_STAT_MASK                                  (0x4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE2_ERR_STAT_LOW                                   (3)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE2_ERR_STAT_MASK                                  (0x8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE3_ERR_STAT_LOW                                   (4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE3_ERR_STAT_MASK                                  (0x10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE4_ERR_STAT_LOW                                   (5)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE4_ERR_STAT_MASK                                  (0x20)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE5_ERR_STAT_LOW                                   (6)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_TE5_ERR_STAT_MASK                                  (0x40)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_FRAMING_ERR_STAT_LOW                               (7)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_FRAMING_ERR_STAT_MASK                              (0x80)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_PEC_ERR_STAT_LOW                                (8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_PEC_ERR_STAT_MASK                               (0x100)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_LENGTH_ERR_STAT_LOW                             (9)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_LENGTH_ERR_STAT_MASK                            (0x200)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_READONLY_ERR_STAT_LOW                           (10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_READONLY_ERR_STAT_MASK                          (0x400)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_UNSUPPORTED_ERR_STAT_LOW                        (11)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_UNSUPPORTED_ERR_STAT_MASK                       (0x800)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_RX_FIFO_OVERFLOW_ERR_STAT_LOW                   (12)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_RX_FIFO_OVERFLOW_ERR_STAT_MASK                  (0x1000)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_INDIRECT_FIFO_OVERFLOW_ERR_STAT_LOW             (13)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_STATUS_RI_INDIRECT_FIFO_OVERFLOW_ERR_STAT_MASK            (0x2000)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE                                                (0x20004234)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE                                                    (0x134)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE0_ERR_EN_LOW                                     (1)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE0_ERR_EN_MASK                                    (0x2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE1_ERR_EN_LOW                                     (2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE1_ERR_EN_MASK                                    (0x4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE2_ERR_EN_LOW                                     (3)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE2_ERR_EN_MASK                                    (0x8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE3_ERR_EN_LOW                                     (4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE3_ERR_EN_MASK                                    (0x10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE4_ERR_EN_LOW                                     (5)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE4_ERR_EN_MASK                                    (0x20)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE5_ERR_EN_LOW                                     (6)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_TE5_ERR_EN_MASK                                    (0x40)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_FRAMING_ERR_EN_LOW                                 (7)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_FRAMING_ERR_EN_MASK                                (0x80)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_PEC_ERR_EN_LOW                                  (8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_PEC_ERR_EN_MASK                                 (0x100)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_LENGTH_ERR_EN_LOW                               (9)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_LENGTH_ERR_EN_MASK                              (0x200)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_READONLY_ERR_EN_LOW                             (10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_READONLY_ERR_EN_MASK                            (0x400)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_UNSUPPORTED_ERR_EN_LOW                          (11)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_UNSUPPORTED_ERR_EN_MASK                         (0x800)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_RX_FIFO_OVERFLOW_ERR_EN_LOW                     (12)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_RX_FIFO_OVERFLOW_ERR_EN_MASK                    (0x1000)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_INDIRECT_FIFO_OVERFLOW_ERR_EN_LOW               (13)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_ENABLE_RI_INDIRECT_FIFO_OVERFLOW_ERR_EN_MASK              (0x2000)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE                                                 (0x20004238)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE                                                     (0x138)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE0_ERR_FORCE_LOW                                   (1)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE0_ERR_FORCE_MASK                                  (0x2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE1_ERR_FORCE_LOW                                   (2)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE1_ERR_FORCE_MASK                                  (0x4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE2_ERR_FORCE_LOW                                   (3)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE2_ERR_FORCE_MASK                                  (0x8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE3_ERR_FORCE_LOW                                   (4)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE3_ERR_FORCE_MASK                                  (0x10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE4_ERR_FORCE_LOW                                   (5)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE4_ERR_FORCE_MASK                                  (0x20)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE5_ERR_FORCE_LOW                                   (6)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_TE5_ERR_FORCE_MASK                                  (0x40)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_FRAMING_ERR_FORCE_LOW                               (7)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_FRAMING_ERR_FORCE_MASK                              (0x80)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_PEC_ERR_FORCE_LOW                                (8)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_PEC_ERR_FORCE_MASK                               (0x100)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_LENGTH_ERR_FORCE_LOW                             (9)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_LENGTH_ERR_FORCE_MASK                            (0x200)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_READONLY_ERR_FORCE_LOW                           (10)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_READONLY_ERR_FORCE_MASK                          (0x400)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_UNSUPPORTED_ERR_FORCE_LOW                        (11)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_UNSUPPORTED_ERR_FORCE_MASK                       (0x800)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_RX_FIFO_OVERFLOW_ERR_FORCE_LOW                   (12)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_RX_FIFO_OVERFLOW_ERR_FORCE_MASK                  (0x1000)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_INDIRECT_FIFO_OVERFLOW_ERR_FORCE_LOW             (13)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_INTR_FORCE_RI_INDIRECT_FIFO_OVERFLOW_ERR_FORCE_MASK            (0x2000)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0                                                    (0x2000423c)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0                                                        (0x13c)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE0_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1                                                    (0x20004240)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1                                                        (0x140)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE1_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2                                                    (0x20004244)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2                                                        (0x144)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE2_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3                                                    (0x20004248)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3                                                        (0x148)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE3_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4                                                    (0x2000424c)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4                                                        (0x14c)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE4_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5                                                    (0x20004250)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5                                                        (0x150)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5_CNT_LOW                                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_TE5_CNT_MASK                                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING                                                (0x20004254)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING                                                    (0x154)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING_CNT_LOW                                            (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_FRAMING_CNT_MASK                                           (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC                                                 (0x20004258)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC                                                     (0x158)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC_CNT_LOW                                             (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_PEC_CNT_MASK                                            (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH                                              (0x2000425c)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH                                                  (0x15c)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH_CNT_LOW                                          (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_LENGTH_CNT_MASK                                         (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY                                            (0x20004260)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY                                                (0x160)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY_CNT_LOW                                        (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_READONLY_CNT_MASK                                       (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED                                         (0x20004264)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED                                             (0x164)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED_CNT_LOW                                     (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_UNSUPPORTED_CNT_MASK                                    (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW                                    (0x20004268)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW                                        (0x168)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW_CNT_LOW                                (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_RX_FIFO_OVERFLOW_CNT_MASK                               (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW                              (0x2000426c)
+#ifndef I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW                                  (0x16c)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW_CNT_LOW                          (0)
+#define I3CCSR_I3C_EC_TTI_TARGET_ERR_CNT_RI_INDIRECT_FIFO_OVERFLOW_CNT_MASK                         (0xff)
+#endif
+#define SOC_I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                    (0x20004270)
 #ifndef I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT
-#define I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                        (0xdc)
+#define I3CCSR_I3C_EC_TTI_RX_DESC_QUEUE_PORT                                                        (0x170)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                          (0x200041e0)
+#define SOC_I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                          (0x20004274)
 #ifndef I3CCSR_I3C_EC_TTI_RX_DATA_PORT
-#define I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                              (0xe0)
+#define I3CCSR_I3C_EC_TTI_RX_DATA_PORT                                                              (0x174)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                    (0x200041e4)
+#define SOC_I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                    (0x20004278)
 #ifndef I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT
-#define I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                        (0xe4)
+#define I3CCSR_I3C_EC_TTI_TX_DESC_QUEUE_PORT                                                        (0x178)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                          (0x200041e8)
+#define SOC_I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                          (0x2000427c)
 #ifndef I3CCSR_I3C_EC_TTI_TX_DATA_PORT
-#define I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                              (0xe8)
+#define I3CCSR_I3C_EC_TTI_TX_DATA_PORT                                                              (0x17c)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_IBI_PORT                                                              (0x200041ec)
+#define SOC_I3CCSR_I3C_EC_TTI_IBI_PORT                                                              (0x20004280)
 #ifndef I3CCSR_I3C_EC_TTI_IBI_PORT
-#define I3CCSR_I3C_EC_TTI_IBI_PORT                                                                  (0xec)
+#define I3CCSR_I3C_EC_TTI_IBI_PORT                                                                  (0x180)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                            (0x200041f0)
+#define SOC_I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                            (0x20004284)
 #ifndef I3CCSR_I3C_EC_TTI_QUEUE_SIZE
-#define I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                                (0xf0)
+#define I3CCSR_I3C_EC_TTI_QUEUE_SIZE                                                                (0x184)
 #define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_RX_DESC_BUFFER_SIZE_LOW                                        (0)
 #define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_RX_DESC_BUFFER_SIZE_MASK                                       (0xff)
 #define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_TX_DESC_BUFFER_SIZE_LOW                                        (8)
@@ -980,15 +1238,15 @@
 #define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_TX_DATA_BUFFER_SIZE_LOW                                        (24)
 #define I3CCSR_I3C_EC_TTI_QUEUE_SIZE_TX_DATA_BUFFER_SIZE_MASK                                       (0xff000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                        (0x200041f4)
+#define SOC_I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                        (0x20004288)
 #ifndef I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE
-#define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                            (0xf4)
+#define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE                                                            (0x188)
 #define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE_IBI_QUEUE_SIZE_LOW                                         (0)
 #define I3CCSR_I3C_EC_TTI_IBI_QUEUE_SIZE_IBI_QUEUE_SIZE_MASK                                        (0xff)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                       (0x200041f8)
+#define SOC_I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                       (0x2000428c)
 #ifndef I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL
-#define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                           (0xf8)
+#define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL                                                           (0x18c)
 #define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_TX_DESC_THLD_LOW                                          (0)
 #define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_TX_DESC_THLD_MASK                                         (0xff)
 #define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_RX_DESC_THLD_LOW                                          (8)
@@ -996,9 +1254,9 @@
 #define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_IBI_THLD_LOW                                              (24)
 #define I3CCSR_I3C_EC_TTI_QUEUE_THLD_CTRL_IBI_THLD_MASK                                             (0xff000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                 (0x200041fc)
+#define SOC_I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                 (0x20004290)
 #ifndef I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL
-#define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                     (0xfc)
+#define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL                                                     (0x190)
 #define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_TX_DATA_THLD_LOW                                    (0)
 #define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_TX_DATA_THLD_MASK                                   (0x7)
 #define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_RX_DATA_THLD_LOW                                    (8)
@@ -1008,34 +1266,34 @@
 #define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_RX_START_THLD_LOW                                   (24)
 #define I3CCSR_I3C_EC_TTI_DATA_BUFFER_THLD_CTRL_RX_START_THLD_MASK                                  (0x7000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_START                                                           (0x20004200)
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                   (0x20004200)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_START                                                           (0x20004300)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                   (0x20004300)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER
-#define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                       (0x100)
+#define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER                                                       (0x200)
 #define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_ID_LOW                                            (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_ID_MASK                                           (0xff)
 #define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_LENGTH_LOW                                        (8)
 #define I3CCSR_I3C_EC_SOCMGMTIF_EXTCAP_HEADER_CAP_LENGTH_MASK                                       (0xffff00)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                (0x20004204)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                (0x20004304)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                    (0x104)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_CONTROL                                                    (0x204)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                 (0x20004208)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                 (0x20004308)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                     (0x108)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_STATUS                                                     (0x208)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                    (0x2000420c)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                    (0x2000430c)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG
-#define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                        (0x10c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG                                                        (0x20c)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_LOW                                    (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_INTF_BYPASS_MASK                                   (0x1)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_LOW                                   (1)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_CFG_REC_PAYLOAD_DONE_MASK                                  (0x2)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                         (0x20004210)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                         (0x20004310)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS
-#define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                             (0x110)
+#define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS                                             (0x210)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_LOW                       (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_DEVICE_RESET_CTRL_MASK                      (0xff)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW          (8)
@@ -1043,17 +1301,17 @@
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_INDIRECT_FIFO_CTRL_RESET_LOW                (16)
 #define I3CCSR_I3C_EC_SOCMGMTIF_REC_INTF_REG_W1C_ACCESS_INDIRECT_FIFO_CTRL_RESET_MASK               (0xff0000)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                 (0x20004214)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                 (0x20004314)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                     (0x114)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_2                                                     (0x214)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                 (0x20004218)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                 (0x20004318)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                     (0x118)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_RSVD_3                                                     (0x218)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                    (0x2000421c)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                    (0x2000431c)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                        (0x11c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF                                                        (0x21c)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_INPUT_ENABLE_LOW                                       (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_INPUT_ENABLE_MASK                                      (0x1)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_SCHMITT_EN_LOW                                         (1)
@@ -1073,106 +1331,118 @@
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_PAD_TYPE_LOW                                           (24)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_CONF_PAD_TYPE_MASK                                          (0xff000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                    (0x20004220)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                    (0x20004320)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                        (0x120)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR                                                        (0x220)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_SLEW_RATE_LOW                                    (8)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_SLEW_RATE_MASK                                   (0xff00)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_STRENGTH_LOW                                     (24)
 #define I3CCSR_I3C_EC_SOCMGMTIF_SOC_PAD_ATTR_DRIVE_STRENGTH_MASK                                    (0xff000000)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                              (0x20004224)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                              (0x20004324)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                                  (0x124)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_2                                                  (0x224)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                              (0x20004228)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                              (0x20004328)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3
-#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                                  (0x128)
+#define I3CCSR_I3C_EC_SOCMGMTIF_SOC_MGMT_FEATURE_3                                                  (0x228)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                         (0x2000422c)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                         (0x2000432c)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                             (0x12c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG                                                             (0x22c)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG_T_R_LOW                                                     (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_R_REG_T_R_MASK                                                    (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                         (0x20004230)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                         (0x20004330)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                             (0x130)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG                                                             (0x230)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG_T_F_LOW                                                     (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_F_REG_T_F_MASK                                                    (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                    (0x20004234)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                    (0x20004334)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                        (0x134)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG                                                        (0x234)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG_T_SU_DAT_LOW                                           (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_DAT_REG_T_SU_DAT_MASK                                          (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                    (0x20004238)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                    (0x20004338)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                        (0x138)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG                                                        (0x238)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG_T_HD_DAT_LOW                                           (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_DAT_REG_T_HD_DAT_MASK                                          (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                      (0x2000423c)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                      (0x2000433c)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                          (0x13c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG                                                          (0x23c)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG_T_HIGH_LOW                                               (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HIGH_REG_T_HIGH_MASK                                              (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                       (0x20004240)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                       (0x20004340)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                           (0x140)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG                                                           (0x240)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG_T_LOW_LOW                                                 (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_LOW_REG_T_LOW_MASK                                                (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                    (0x20004244)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                    (0x20004344)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                        (0x144)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG                                                        (0x244)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG_T_HD_STA_LOW                                           (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_HD_STA_REG_T_HD_STA_MASK                                          (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                    (0x20004248)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                    (0x20004348)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                        (0x148)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG                                                        (0x248)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG_T_SU_STA_LOW                                           (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STA_REG_T_SU_STA_MASK                                          (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                    (0x2000424c)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                    (0x2000434c)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                        (0x14c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG                                                        (0x24c)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG_T_SU_STO_LOW                                           (0)
 #define I3CCSR_I3C_EC_SOCMGMTIF_T_SU_STO_REG_T_SU_STO_MASK                                          (0xfffff)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                      (0x20004250)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                      (0x20004350)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                          (0x150)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_FREE_REG                                                          (0x250)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                      (0x20004254)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                      (0x20004354)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                          (0x154)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_AVAL_REG                                                          (0x254)
 #endif
-#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                      (0x20004258)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                      (0x20004358)
 #ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG
-#define I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                          (0x158)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_IDLE_REG                                                          (0x258)
 #endif
-#define SOC_I3CCSR_I3C_EC_CTRLCFG_START                                                             (0x20004260)
-#define SOC_I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                     (0x20004260)
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG                                              (0x2000435c)
+#ifndef I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG
+#define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG                                                  (0x25c)
+#define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG_HDR_TIMEOUT_EN_LOW                               (0)
+#define I3CCSR_I3C_EC_SOCMGMTIF_HDR_TIMEOUT_EN_REG_HDR_TIMEOUT_EN_MASK                              (0x1)
+#endif
+#define SOC_I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG                                               (0x20004360)
+#ifndef I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG                                                   (0x260)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG_T_HDR_TIMEOUT_LOW                                 (0)
+#define I3CCSR_I3C_EC_SOCMGMTIF_T_HDR_TIMEOUT_REG_T_HDR_TIMEOUT_MASK                                (0xfffff)
+#endif
+#define SOC_I3CCSR_I3C_EC_CTRLCFG_START                                                             (0x20004368)
+#define SOC_I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                     (0x20004368)
 #ifndef I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER
-#define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                         (0x160)
+#define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER                                                         (0x268)
 #define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_ID_LOW                                              (0)
 #define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_ID_MASK                                             (0xff)
 #define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_LENGTH_LOW                                          (8)
 #define I3CCSR_I3C_EC_CTRLCFG_EXTCAP_HEADER_CAP_LENGTH_MASK                                         (0xffff00)
 #endif
-#define SOC_I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                 (0x20004264)
+#define SOC_I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                 (0x2000436c)
 #ifndef I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG
-#define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                     (0x164)
+#define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG                                                     (0x26c)
 #define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG_OPERATION_MODE_LOW                                  (4)
 #define I3CCSR_I3C_EC_CTRLCFG_CONTROLLER_CONFIG_OPERATION_MODE_MASK                                 (0x30)
 #endif
-#define SOC_I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                 (0x20004268)
+#define SOC_I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                 (0x20004370)
 #ifndef I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER
-#define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                     (0x168)
+#define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER                                                     (0x270)
 #define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_ID_LOW                                          (0)
 #define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_ID_MASK                                         (0xff)
 #define I3CCSR_I3C_EC_TERMINATION_EXTCAP_HEADER_CAP_LENGTH_LOW                                      (8)
