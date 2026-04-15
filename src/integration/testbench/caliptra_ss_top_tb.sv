@@ -385,9 +385,8 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
 
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
-//      logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_IDX          ; // CSS_INTC_SINTF_USB_IDX           1
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DMA_IDX      ; // CSS_INTC_SINTF_USB_DMA_IDX       0
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV_IDX      ; // CSS_INTC_SINTF_USB_DEV_IDX       1
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCU_ROM_IDX      ; // CSS_INTC_SINTF_MCU_ROM_IDX       2
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
@@ -401,9 +400,8 @@ module caliptra_ss_top_tb
         CPTRA_DMA_IDX          : `CSS_INTC_MINTF_CPTRA_DMA_IDX,
         SOC_BFM_IDX            : `CSS_INTC_MINTF_SOC_BFM_IDX,
 
-        SINTF_NC0_IDX          : `CSS_INTC_SINTF_NC0_IDX,
-//      SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
-        SINTF_USB_IDX          : `CSS_INTC_SINTF_USB_IDX,
+        SINTF_USB_DMA_IDX      : `CSS_INTC_SINTF_USB_DMA_IDX,
+        SINTF_USB_DEV_IDX      : `CSS_INTC_SINTF_USB_DEV_IDX,
         SINTF_MCU_ROM_IDX      : `CSS_INTC_SINTF_MCU_ROM_IDX,
         SINTF_CPTRA_SOC_IFC_IDX: `CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX,
         SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
@@ -425,23 +423,6 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-
-    // Slave port 0 disconnection.
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RVALID = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RDATA = 64'h0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RRESP = 2'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RID = 8'h0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RLAST = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RUSER = '0;
-
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BVALID = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BRESP = 2'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BUSER = '0;
-
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BID = 8'h0;
 
 
     //Interconnect 0 - MCU LSU
@@ -1289,8 +1270,6 @@ module caliptra_ss_top_tb
     //     .bid            (axi_interconnect.sintf_arr[0].BID)
 
     // );
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
     assign cptra_ss_mcu_rom_s_axi_if.awvalid                      = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWVALID;
     assign cptra_ss_mcu_rom_s_axi_if.awaddr                       = 0;//axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].AWADDR[31:0];
