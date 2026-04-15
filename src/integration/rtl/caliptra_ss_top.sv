@@ -291,6 +291,8 @@ module caliptra_ss_top
 
 // USB core UTMI PHY interface
     input  logic                           cptra_ss_usb_utmi_clk_i,
+    input  logic                           cptra_ss_usb_utmi_dev_clk_lock_i,
+    input  logic                           cptra_ss_usb_utmi_hst_clk_lock_i,
     input  logic [7:0]                     cptra_ss_usb_utmi_rxdata_i,
     input  logic                           cptra_ss_usb_utmi_rxvalid_i,
     input  logic                           cptra_ss_usb_utmi_rxactive_i,
@@ -1189,8 +1191,8 @@ module caliptra_ss_top
         .dev_sys_donotwakeup_n  (1'b1),/* TODO */
         .host_sys_donotwakeup_n (1'b1),/* TODO */
         .dev_sys_wakeup_n       (1'b1),/* TODO */
-        .dev_sys_utmi_clkin_lock (1'b0),/* TODO */
-        .host_sys_utmi_clkin_lock(1'b0),/* TODO */
+        .dev_sys_utmi_clkin_lock (cptra_ss_usb_utmi_dev_clk_lock_i),/* TODO */
+        .host_sys_utmi_clkin_lock(cptra_ss_usb_utmi_hst_clk_lock_i),/* TODO */
         .host_usb_overcurrent_n (1'b1),/* TODO */
         .host_usb_portindicator (),    /* TODO */
         .host_usb_portpower     (),    /* TODO */

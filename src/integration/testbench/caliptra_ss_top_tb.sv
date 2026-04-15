@@ -1505,6 +1505,8 @@ module caliptra_ss_top_tb
 
     // USB UTMI PHY interface
     logic         cptra_ss_usb_utmi_clk_i;         // TODO: connect to USB VIP PHY clock
+    logic         cptra_ss_usb_utmi_dev_clk_lock_i,
+    logic         cptra_ss_usb_utmi_hst_clk_lock_i,
     logic [7:0]   cptra_ss_usb_utmi_rxdata_i;
     logic         cptra_ss_usb_utmi_rxvalid_i;
     logic         cptra_ss_usb_utmi_rxactive_i;
@@ -1527,6 +1529,8 @@ module caliptra_ss_top_tb
     logic         cptra_ss_usb_utmi_dppulldown_o;
     logic         cptra_ss_usb_utmi_dmpulldown_o;
     assign cptra_ss_usb_utmi_clk_i          = '0;  // TODO: connect to USB VIP
+    assign cptra_ss_usb_utmi_dev_clk_lock_i = '0; // TODO drive this
+    assign cptra_ss_usb_utmi_hst_clk_lock_i = '0; // TODO drive this
     assign cptra_ss_usb_utmi_rxdata_i       = '0;
     assign cptra_ss_usb_utmi_rxvalid_i      = '0;
     assign cptra_ss_usb_utmi_rxactive_i     = '0;
@@ -1869,6 +1873,8 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_mem_bsel_o        (cptra_ss_usb_mem_bsel_o),
 
         .cptra_ss_usb_utmi_clk_i        (cptra_ss_usb_utmi_clk_i),
+        .cptra_ss_usb_utmi_dev_clk_lock_i(cptra_ss_usb_utmi_dev_clk_lock_i),
+        .cptra_ss_usb_utmi_hst_clk_lock_i(cptra_ss_usb_utmi_hst_clk_lock_i),
         .cptra_ss_usb_utmi_rxdata_i     (cptra_ss_usb_utmi_rxdata_i),
         .cptra_ss_usb_utmi_rxvalid_i    (cptra_ss_usb_utmi_rxvalid_i),
         .cptra_ss_usb_utmi_rxactive_i   (cptra_ss_usb_utmi_rxactive_i),
