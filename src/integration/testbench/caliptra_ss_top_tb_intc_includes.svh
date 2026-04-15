@@ -24,8 +24,8 @@
     `define CSS_INTC_MINTF_CPTRA_DMA_IDX  3
     `define CSS_INTC_MINTF_SOC_BFM_IDX    4
 
-    `define CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
-    `define CSS_INTC_SINTF_I3C_IDX           1
+    `define CSS_INTC_SINTF_USB_DMA_IDX       0
+    `define CSS_INTC_SINTF_USB_DEV_IDX       1
     `define CSS_INTC_SINTF_MCU_ROM_IDX       2
     `define CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
     `define CSS_INTC_SINTF_MCI_IDX           4

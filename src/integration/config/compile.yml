@@ -234,15 +234,15 @@ global:
 #        - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
       elab:
-        #FIXME : remve this warning suppression
-        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-        - '+warn=noIWNF'
-        - '+warn=noPCWM-W'
-        - '+warn=noTFIPC,noMDVMO'
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
-        #FIXME unique case violations in i3c_core
-        - '-ignore unique_checks'
+         #FIXME : remve this warning suppression
+         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
+         #- '+warn=noIWNF'
+         #- '+warn=noPCWM-W'
+         - '+warn=noTFIPC,noMDVMO'
+         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+         - '-P $AVERY_PLI/tb_vcs64.tab'
+         #FIXME unique case violations in i3c_core
+         #- '-ignore unique_checks'
       sim:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
