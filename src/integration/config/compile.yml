@@ -162,6 +162,7 @@ targets:
 #      - $COMPILE_ROOT/testbench/sv_tests/ai3c
       - $COMPILE_ROOT/testbench/sv_tests/mci
       - $COMPILE_ROOT/testbench/sv_tests/common
+      - $COMPILE_ROOT/testbench/uvm/usb
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -221,7 +222,7 @@ global:
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
         - +define+CALIPTRA_INTERNAL_UART
-        - '-noinherit_timescale=1ns/1ps'
+        - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
         - +define+AAXI_INTC_SLAVE_CNT=8
 #        - +define+AI3C_LANE_NUM=1
@@ -233,6 +234,11 @@ global:
         - '-suppress=SV-LCM-PPWI'
 #        - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
+        # --- Synopsys USB SVT VIP compile options ---
+        - +define+SVT_UVM_TECHNOLOGY
+        - +define+UVM_PACKER_MAX_BYTES=24000
+        - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+        - +define+SYNOPSYS_SV
       elab:
          #FIXME : remve this warning suppression
          #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
@@ -256,3 +262,6 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
+        # --- Synopsys USB SVT VIP runtime options ---
+        # Uncomment to enable USB VIP debug logging
+        #- '+svt_usb_enable_debug'
