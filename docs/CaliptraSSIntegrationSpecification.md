@@ -1431,20 +1431,32 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
-   - Toke Format is illustrated with a python implementation:
+   - Token format and fuse provisioning are illustrated with a python implementation:
 ```python
-# value = 0x318372c87790628a05f493b472f04808
-# data = value.to_bytes(16, byteorder='little')
-# custom = 'LC_CTRL'.encode('UTF-8')
-# shake = cSHAKE128.new(data=data, custom=custom)
-# shake output is 0x4c9ca068a68474d526e7d8a0233d5aad
+from Crypto.Hash import cSHAKE128
+
+# Raw (unhashed) token as a 128-bit integer
+value = 0x318372c87790628a05f493b472f04808
+data = value.to_bytes(16, byteorder='little')
+# data (byte-array) = [0x08, 0x48, 0xf0, 0x72, 0xb4, 0x93, 0xf4, 0x05,
+#                      0x8a, 0x62, 0x90, 0x77, 0xc8, 0x72, 0x83, 0x31]
+
+custom = 'LC_CTRL'.encode('UTF-8')
+shake = cSHAKE128.new(data=data, custom=custom)
+hashed_token = shake.read(16)
+# hashed_token (byte-array) = [0xad, 0x5a, 0x3d, 0x23, 0xa0, 0xd8, 0xe7, 0x26,
+#                               0xd5, 0x74, 0x84, 0xa6, 0x68, 0xa0, 0x9c, 0x4c]
+# hashed_token as big-endian hex = 0x4c9ca068a68474d526e7d8a0233d5aad
+#
+# HKMS must provision this hashed_token byte-array into the corresponding
+# fuse location in SECRET_LC_TRANSITION_PARTITION via the DAI.
 
 # To unlock a state having the shake condition above, the LCC needs
-# to get the following input set:
-TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
+# to get the following raw token input set:
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
 TOKEN_write(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, 0x7790628a)
 TOKEN_write(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, 0x05f493b4)
-TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
 
 ```
 
