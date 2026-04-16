@@ -18,6 +18,7 @@
 - [Caliptra Subsystem Top](#caliptra-subsystem-top)
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
+    - [Strap Timing Requirements](#strap-timing-requirements)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
     - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
@@ -300,6 +301,21 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
 | External | input     | 1      | `cptra_ss_debug_intent_i`                 | Physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](CaliptraSSHardwareSpecification.md#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
 
+#### Strap Timing Requirements
+
+**All strap inputs listed in the table above, as well as `cptra_ss_cptra_obf_key_i`, `cptra_ss_cptra_csr_hmac_key_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`, and `cptra_ss_FIPS_ZEROIZATION_PPD_i`, must be driven to their intended values and held stable before `cptra_ss_rst_b_i` is deasserted. These signals must not transition for the duration of the boot session (until the next reset assertion).**
+
+Internally, strap values are consumed at different points during the boot sequence, all of which occur strictly *after* `cptra_ss_rst_b_i` deasserts. The internal sampling cascade is:
+
+| Order | Internal Event | Straps Consumed |
+|:------|:---------------|:----------------|
+| 1 | MCI boot sequencer starts (on `cptra_ss_rst_b_i` deassertion) | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` (used combinationally in LC controller FSM during init) |
+| 2 | MCI boot sequencer deasserts internal SS reset (`cptra_ss_rst_b_o`) during `BOOT_OTP_FC` state | MCI register straps latched on a 1-cycle write-enable pulse: `cptra_ss_strap_mcu_reset_vector_i`, `cptra_ss_strap_mcu_lsu_axi_user_i` (registered copy), `cptra_ss_strap_mcu_ifu_axi_user_i` (registered copy), `cptra_ss_strap_mcu_sram_config_axi_user_i`, `cptra_ss_strap_mci_soc_config_axi_user_i`, `cptra_ss_debug_intent_i`, `cptra_ss_FIPS_ZEROIZATION_PPD_i` |
+| 3 | MCI boot sequencer deasserts Caliptra core reset (`cptra_ss_mci_cptra_rst_b_o`) during `BOOT_CPTRA` state | `cptra_ss_cptra_obf_key_i` (latched into internal register), `cptra_ss_cptra_csr_hmac_key_i` (latched on `cptra_noncore_rst_b` deassertion, only in `DEVICE_MANUFACTURING` lifecycle) |
+| 4 | Caliptra internal boot FSM deasserts `cptra_noncore_rst_b` during `BOOT_FUSE` state | Caliptra soc_ifc register straps latched on a 1-cycle write-enable pulse (locked after `fuse_done`): `cptra_ss_strap_caliptra_base_addr_i`, `cptra_ss_strap_mci_base_addr_i`, `cptra_ss_strap_recovery_ifc_base_addr_i`, `cptra_ss_strap_otp_fc_base_addr_i`, `cptra_ss_strap_uds_seed_base_addr_i`, `cptra_ss_strap_caliptra_dma_axi_user_i`, `cptra_ss_strap_generic_0_i` through `cptra_ss_strap_generic_3_i`, `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i`, `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` |
+
+> **Security note - unregistered AXI identity straps**: `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_mcu_ifu_axi_user_i` are wired **directly** (combinationally) to the MCU AXI bus `aruser`/`awuser` fields in addition to being captured into MCI registers. The combinational path means these signals are security-critical at all times - not just at the sampling edge. Toggling them during operation would corrupt in-flight AXI transactions and could bypass fuse controller access control checks that rely on AXI user identity. SoC integrators must ensure these are driven from a constant source (e.g., tied to fixed logic values or hard-strapped).
+
 ### AXI Interface (axi_if)
 
 | Signal          | Width                  | Direction (mgr) | Direction (sub) |
@@ -522,7 +538,7 @@ The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`.
 
 ### Reset
 
-The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles) to allow all internal logic to initialize properly.
+The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 32 clock cycles) to allow the reset assertion to propagate through all internal synchronization and pipeline stages across the subsystem hierarchy.
 
    - **Signal Name** `cptra_ss_rst_b_i`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
