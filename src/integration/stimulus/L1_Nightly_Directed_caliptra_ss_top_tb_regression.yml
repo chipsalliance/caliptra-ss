@@ -110,3 +110,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_secret_prog_in_dbg/smoke_test_fc_secret_prog_in_dbg: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_write_zer_id/smoke_test_fc_filter_rule_write_zer_id: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_with_state_error/caliptra_ss_lcc_volatile_unlock_with_state_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_sram_error/mci_sram_error: { weight: 100 }
