@@ -125,6 +125,8 @@ localparam CMD_OTP_DFT_EN_EXPECT_LOW        = FC_LCC_CMD_OFFSET + 8'h27;
 localparam CMD_OTP_DFT_EN_EXPECT_HIGH       = FC_LCC_CMD_OFFSET + 8'h28;
 localparam CMD_LC_INJECT_STATE_ERROR        = FC_LCC_CMD_OFFSET + 8'h29;
 localparam CMD_LC_RELEASE_STATE_ERROR       = FC_LCC_CMD_OFFSET + 8'h2A;
+localparam CMD_FC_FORCE_PPD                 = FC_LCC_CMD_OFFSET + 8'h2B;
+localparam CMD_RELEASE_PPD                  = FC_LCC_CMD_OFFSET + 8'h2C;
 
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS  = 8'hC0;
