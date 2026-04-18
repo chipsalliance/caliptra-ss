@@ -106,3 +106,4 @@ contents:
         - ../test_suites/mci_aggregate_reg_test/mci_aggregate_reg_test.yml
         - ../test_suites/mci_invalid_access_test/mci_invalid_access_test.yml
         - ../test_suites/mci_boot_regs_test/mci_boot_regs_test.yml
+        - ../test_suites/mci_lcc_state_error/mci_lcc_state_error.yml
