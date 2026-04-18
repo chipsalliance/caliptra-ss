@@ -115,3 +115,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_boot_regs_test/mci_boot_regs_test: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_lcc_state_error/mci_lcc_state_error: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_lcc_state_error_to_locked/mci_lcc_state_error_to_locked: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_lcc_no_zeroization/mci_lcc_no_zeroization: { weight: 100 }

@@ -80,6 +80,14 @@ module fc_lcc_tb_services (
             release `MCI_PATH.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg;
             release `FC_PATH.lcc_is_in_SCRAP_mode;
           end
+          CMD_FC_FORCE_PPD: begin
+            $display("fc_lcc_tb_services: Forcing FIPS_ZEROIZATION_PPD_i = 1");
+            force `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
+          end
+          CMD_RELEASE_PPD: begin
+            $display("fc_lcc_tb_services: Releasing force on FIPS_ZEROIZATION_PPD_i");
+            release `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i;
+          end
           CMD_FORCE_LC_TOKENS: begin
             $display("fc_lcc_tb_services: Forcing LCC TOKENS");            
             force `LCC_PATH.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);

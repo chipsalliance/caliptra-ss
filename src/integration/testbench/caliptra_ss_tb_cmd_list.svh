@@ -123,6 +123,8 @@ localparam CMD_MCI_FORCE_STATE_ERROR        = FC_LCC_CMD_OFFSET + 8'h25;
 localparam CMD_MCI_RELEASE_STATE_ERROR      = FC_LCC_CMD_OFFSET + 8'h26;
 localparam CMD_LC_INJECT_STATE_ERROR        = FC_LCC_CMD_OFFSET + 8'h27;
 localparam CMD_LC_RELEASE_STATE_ERROR       = FC_LCC_CMD_OFFSET + 8'h28;
+localparam CMD_FC_FORCE_PPD                 = FC_LCC_CMD_OFFSET + 8'h29;
+localparam CMD_RELEASE_PPD                  = FC_LCC_CMD_OFFSET + 8'h2A;
 
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS  = 8'hC0;
