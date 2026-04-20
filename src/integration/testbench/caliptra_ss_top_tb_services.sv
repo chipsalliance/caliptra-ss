@@ -86,6 +86,8 @@ import tb_top_pkg::*;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
+    logic dmi_inject;
+
     time i3c_run_time;
 
     // Instantiate the fuse controller / lifecycle testbench services submodule
@@ -146,6 +148,7 @@ import tb_top_pkg::*;
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_mci_boot_seq_brkpoint_i is high"); 
         end 
+        dmi_inject = 1'b0;
     end
 
     assign mailbox_write    = `MCI_PATH.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
@@ -230,6 +233,13 @@ import tb_top_pkg::*;
         end
         if(!rst_l) begin
             error_injection_mode <= '{default: 1'b0};
+            if (dmi_inject) begin
+                release `MCU_PATH.dmi_uncore_en;
+                release `MCU_PATH.dmi_uncore_wr_en;
+                release `MCU_PATH.dmi_uncore_addr;
+                release `MCU_PATH.dmi_uncore_wdata;
+            end
+            dmi_inject <= 1'b0;
         end
         // ECC error injection
         else if(mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_ECC_ERROR_SINGLE_DCCM)) begin
@@ -429,6 +439,22 @@ import tb_top_pkg::*;
                 default: begin
                 end
             endcase
+        end
+
+        if(mailbox_write && (mailbox_data[7:0] == CMD_MCI_SRAM_DMI_ACCESS_TGL)) begin
+            if (dmi_inject) begin
+                release `MCU_PATH.dmi_uncore_en;
+                release `MCU_PATH.dmi_uncore_wr_en;
+                release `MCU_PATH.dmi_uncore_addr;
+                release `MCU_PATH.dmi_uncore_wdata;
+                $asserton(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_MULTI_REQ);
+            end else begin
+                $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_MULTI_REQ);
+                force `MCU_PATH.dmi_uncore_en = 1'b1;
+                force `MCU_PATH.dmi_uncore_wr_en = 1'b1;
+                force `MCU_PATH.dmi_uncore_addr = 7'h59;
+                force `MCU_PATH.dmi_uncore_wdata = 32'h0;
+            end
         end
 
         // Disable MCU_SRAM assertions
