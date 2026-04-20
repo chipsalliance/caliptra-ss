@@ -107,3 +107,4 @@ contents:
         - ../test_suites/mci_invalid_access_test/mci_invalid_access_test.yml
         - ../test_suites/mci_boot_regs_test/mci_boot_regs_test.yml
         - ../test_suites/mci_lcc_state_error/mci_lcc_state_error.yml
+        - ../test_suites/mci_lcc_state_error_to_locked/mci_lcc_state_error_to_locked.yml
