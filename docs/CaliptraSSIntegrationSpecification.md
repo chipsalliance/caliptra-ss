@@ -231,6 +231,7 @@ By performing these design and verification tasks, the integrator ensures that t
 |[src/integration/rtl/caliptra_ss_includes.svh](../src/integration/rtl/caliptra_ss_includes.svh)|Modify the parameter `CPTRA_SS_ROM_SIZE_KB` to define the correct size of the MCU ROM in integrated design. No other parameters in this file are permitted to be modified. |
 
 
+[MCU Core Configuration Customization](#mcu-core-configuration-customization)
 [Caliptra Core RTL modifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#integrator-rtl-modification-requirements)
 
 It is mandatory that any build processes used (e.g. simulation, lint, synthesis) define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`, as described in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md). This ensures that Caliptra provides all Subsystem-related features and configuration. Example build scripts provided in the Caliptra Subsystem repository (such as [Makefile](../tools/scripts/Makefile)) demonstrate how this might be performed.
