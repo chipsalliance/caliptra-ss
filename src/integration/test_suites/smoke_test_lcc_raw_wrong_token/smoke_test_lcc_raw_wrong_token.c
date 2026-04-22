@@ -73,7 +73,8 @@ void main (void) {
         uint32_t count = 0;
         memset(buf, 0, sizeof(buf));
         for (uint32_t i = 1, k = 0; (i + lc_state_curr)< NUM_LC_STATES; i++) {
-            if (trans_matrix[lc_state_curr][i+lc_state_curr] != INV) {
+            lc_token_type_t tt = trans_matrix[lc_state_curr][i+lc_state_curr];
+            if (tt != INV && tt != ZER) {
                 buf[count] = i + lc_state_curr;
                 count++;
             }
