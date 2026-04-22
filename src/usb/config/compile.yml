@@ -15,9 +15,9 @@ provides: [usb_lib]
 schema_version: 3.1.0
 targets:
   rtl:
-    directories:
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
+#    directories:
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
     vhdl_files:
       # VHDL packages
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE/usb_general_subcmp_pkg.p.vhdl
@@ -61,9 +61,9 @@ requires:
   - usb_lib
 targets:
   rtl:
-    directories:
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/STRUCTURE
+#    directories:
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/STRUCTURE
     vhdl_files:
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE/ip_xxx_3511_hs.e.vhdl
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE/ip_xxx_3511_hs_cmp_pkg.p.vhdl
@@ -79,9 +79,9 @@ requires:
   - usb_lib
 targets:
   rtl:
-    directories:
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/STRUCTURE
+#    directories:
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/STRUCTURE
     vhdl_files:
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE/ip_xxx_3515_hs.e.vhdl
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE/ip_xxx_3515_hs_cmp_pkg.p.vhdl
@@ -97,11 +97,11 @@ requires:
   - usb_lib
 targets:
   rtl:
-    directories:
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3516_hs_mem/INTERFACE
-      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3516_hs_mem/STRUCTURE
+#    directories:
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3516_hs_mem/INTERFACE
+#      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3516_hs_mem/STRUCTURE
     vhdl_files:
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE/ahb_dma_slave_cmp_pkg.p.vhdl
       - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL/ahb_dma_slave.m.vhdl

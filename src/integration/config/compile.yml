@@ -165,6 +165,7 @@ targets:
       - $COMPILE_ROOT/testbench/uvm/usb
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
@@ -221,7 +222,7 @@ global:
         - +define+AAXI_MAX_ID_WIDTH=5
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
-        - +define+CALIPTRA_INTERNAL_UART
+        - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
         - +define+AAXI_INTC_SLAVE_CNT=8
@@ -239,6 +240,11 @@ global:
         - +define+UVM_PACKER_MAX_BYTES=24000
         - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
         - +define+SYNOPSYS_SV
+        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME
+        - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+        - +define+SVT_VERSION=latest
+        - +define+SVT_MPHY_PKG_LOAD
+
       elab:
          #FIXME : remve this warning suppression
          #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core

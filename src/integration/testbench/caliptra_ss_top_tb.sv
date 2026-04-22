@@ -47,11 +47,24 @@ module caliptra_ss_top_tb
 //    import ai3c_pkg::*;
     import avery_pkg_test::*;
     import jtag_pkg::*;
+    /**
+     * Import UVM Package
+     */
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
+
+    // Import the SVT package
     import svt_uvm_pkg::*;
+
+    // Import the USB VIP
     import svt_usb_uvm_pkg::*;
 
-    // USB VIP UVM test infrastructure
-    `include "caliptra_ss_usb_basic_utmi_test.sv"
+`ifdef SVT_USB_INCLUDE_SEQ_PKG
+    // Import the USB test suite sequence package
+    import svt_usb_sequence_pkg::*;
+`endif
+
+    import caliptra_ss_usb_test_pkg::*;
 
     `include "caliptra_ss_assertion_overrides.svh"
 

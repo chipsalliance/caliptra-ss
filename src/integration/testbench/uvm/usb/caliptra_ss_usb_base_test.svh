@@ -12,10 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef GUARD_CALIPTRA_SS_USB_BASE_TEST_SV
-`define GUARD_CALIPTRA_SS_USB_BASE_TEST_SV
-
-`include "caliptra_ss_usb_env.sv"
+`ifndef CALIPTRA_SS_USB_BASE_TEST_SV
+`define CALIPTRA_SS_USB_BASE_TEST_SV
 
 // =============================================================================
 // Base test for USB VIP host-only environment in Caliptra Subsystem.
@@ -84,4 +82,4 @@ function void caliptra_ss_usb_base_test::final_phase(uvm_phase phase);
     `uvm_info("final_phase", "Exiting...", UVM_LOW)
 endfunction
 
-`endif // GUARD_CALIPTRA_SS_USB_BASE_TEST_SV
+`endif // CALIPTRA_SS_USB_BASE_TEST_SV

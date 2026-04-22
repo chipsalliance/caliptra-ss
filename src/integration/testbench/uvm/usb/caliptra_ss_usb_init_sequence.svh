@@ -12,53 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef GUARD_CALIPTRA_SS_USB_BASIC_UTMI_TEST_SV
-`define GUARD_CALIPTRA_SS_USB_BASIC_UTMI_TEST_SV
-
-`include "caliptra_ss_usb_base_test.sv"
-
-// =============================================================================
-// Basic USB 2.0 UTMI test for Caliptra Subsystem.
-//
-// This test exercises a basic init sequence over the UTMI interface:
-//   - VIP host agent configured for USB 2.0 HS with UTMI (TLM internal PHY)
-//   - DUT (caliptra_ss_top) acts as the USB device on UTMI MAC side
-//   - Runs a short directed sequence: CONTROL transfers (GET_DESCRIPTOR,
-//     SET_ADDRESS) to verify basic USB enumeration-style communication
-//
-// Usage:
-//   +UVM_TESTNAME=caliptra_ss_usb_basic_utmi_test
-// =============================================================================
-class caliptra_ss_usb_basic_utmi_test extends caliptra_ss_usb_base_test;
-
-    `uvm_component_utils(caliptra_ss_usb_basic_utmi_test)
-
-    function new(string name = "caliptra_ss_usb_basic_utmi_test", uvm_component parent = null);
-        super.new(name, parent);
-    endfunction
-
-    virtual function void build_phase(uvm_phase phase);
-        `uvm_info("build_phase", "Entered...", UVM_LOW)
-        super.build_phase(phase);
-
-        // Override: host uses TLM (internal PHY), device/DUT uses UTMI MAC
-        cfg.host_cfg.usb_20_signal_interface = svt_usb_configuration::USB_20_TLM;
-        cfg.host_cfg.utmi_data_width         = 8;
-
-        // Use scaled-down timers for faster simulation
-        void'(cfg.host_cfg.set_timer_values(
-            svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
-
-        // Set default sequence: directed CONTROL transfers for basic init
-        uvm_config_db#(uvm_object_wrapper)::set(this,
-            "env.host_agent.xfer_sequencer.main_phase",
-            "default_sequence",
-            caliptra_ss_usb_init_sequence::type_id::get());
-
-        `uvm_info("build_phase", "Exiting...", UVM_LOW)
-    endfunction
-
-endclass
+`ifndef CALIPTRA_SS_USB_INIT_SEQUENCE_SV
+`define CALIPTRA_SS_USB_INIT_SEQUENCE_SV
 
 // =============================================================================
 // Basic USB init sequence: GET_DESCRIPTOR followed by SET_ADDRESS.
@@ -167,4 +122,4 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
 endclass
 
-`endif // GUARD_CALIPTRA_SS_USB_BASIC_UTMI_TEST_SV
+`endif

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef GUARD_CALIPTRA_SS_USB_SHARED_CFG_SV
-`define GUARD_CALIPTRA_SS_USB_SHARED_CFG_SV
+`ifndef CALIPTRA_SS_USB_SHARED_CFG_SV
+`define CALIPTRA_SS_USB_SHARED_CFG_SV
 
 `ifndef CALIPTRA_SS_USB_CFG_TIMEOUT
 `define CALIPTRA_SS_USB_CFG_TIMEOUT 10ms
@@ -115,4 +115,4 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
 
 endclass
 
-`endif // GUARD_CALIPTRA_SS_USB_SHARED_CFG_SV
+`endif // CALIPTRA_SS_USB_SHARED_CFG_SV
