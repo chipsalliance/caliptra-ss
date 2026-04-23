@@ -68,6 +68,10 @@ module caliptra_ss_top_w_stub(
      assign ``_sig_name``.awburst = '0;\
      assign ``_sig_name``.awlock = '0;\
      assign ``_sig_name``.awuser = '0;\
+     assign ``_sig_name``.awcache = '0;\
+     assign ``_sig_name``.awprot = '0;\
+     assign ``_sig_name``.awqos = '0;\
+     assign ``_sig_name``.awregion = '0;\
      assign ``_sig_name``.wvalid = '0;\
      assign ``_sig_name``.wdata = '0;\
      assign ``_sig_name``.wstrb = '0;\
@@ -82,6 +86,10 @@ module caliptra_ss_top_w_stub(
      assign ``_sig_name``.arburst = '0;\
      assign ``_sig_name``.arlock = '0;\
      assign ``_sig_name``.aruser = '0;\
+     assign ``_sig_name``.arcache = '0;\
+     assign ``_sig_name``.arprot = '0;\
+     assign ``_sig_name``.arqos = '0;\
+     assign ``_sig_name``.arregion = '0;\
      assign ``_sig_name``.rready = '0;
     
     axi_if #(.AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),.DW(`CALIPTRA_AXI_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
@@ -122,36 +130,9 @@ module caliptra_ss_top_w_stub(
     axi_struct_pkg::axi_rd_req_t cptra_ss_otp_core_axi_rd_req_i;
     axi_struct_pkg::axi_rd_rsp_t cptra_ss_otp_core_axi_rd_rsp_o;
     
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_lsu_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_lsu_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arqos;
-    
     logic cptra_ss_mcu_halt_ack_o;
     logic cptra_ss_mcu_halt_status_o;
     logic cptra_ss_mcu_halt_req_o;
-
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_ifu_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_ifu_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arqos;
-
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_sb_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_sb_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos;
 
     logic [255:0] cptra_ss_cptra_obf_key_i;
     logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i;
@@ -417,34 +398,10 @@ module caliptra_ss_top_w_stub(
     // AXI Manager INF
         .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),
         .cptra_ss_mcu_ifu_m_axi_if_w_mgr(cptra_ss_mcu_ifu_m_axi_if.w_mgr),
-        .cptra_ss_mcu_ifu_m_axi_if_awcache,
-        .cptra_ss_mcu_ifu_m_axi_if_arcache,
-        .cptra_ss_mcu_ifu_m_axi_if_awprot,
-        .cptra_ss_mcu_ifu_m_axi_if_arprot,
-        .cptra_ss_mcu_ifu_m_axi_if_awregion,
-        .cptra_ss_mcu_ifu_m_axi_if_arregion,
-        .cptra_ss_mcu_ifu_m_axi_if_awqos,
-        .cptra_ss_mcu_ifu_m_axi_if_arqos,
         .cptra_ss_mcu_lsu_m_axi_if_r_mgr(cptra_ss_mcu_lsu_m_axi_if.r_mgr),
         .cptra_ss_mcu_lsu_m_axi_if_w_mgr(cptra_ss_mcu_lsu_m_axi_if.w_mgr),
-        .cptra_ss_mcu_lsu_m_axi_if_awcache,
-        .cptra_ss_mcu_lsu_m_axi_if_arcache,
-        .cptra_ss_mcu_lsu_m_axi_if_awprot,
-        .cptra_ss_mcu_lsu_m_axi_if_arprot,
-        .cptra_ss_mcu_lsu_m_axi_if_awregion,
-        .cptra_ss_mcu_lsu_m_axi_if_arregion,
-        .cptra_ss_mcu_lsu_m_axi_if_awqos,
-        .cptra_ss_mcu_lsu_m_axi_if_arqos,
         .cptra_ss_mcu_sb_m_axi_if_r_mgr(cptra_ss_mcu_sb_m_axi_if.r_mgr),
         .cptra_ss_mcu_sb_m_axi_if_w_mgr(cptra_ss_mcu_sb_m_axi_if.w_mgr),
-        .cptra_ss_mcu_sb_m_axi_if_awcache,
-        .cptra_ss_mcu_sb_m_axi_if_arcache,
-        .cptra_ss_mcu_sb_m_axi_if_awprot,
-        .cptra_ss_mcu_sb_m_axi_if_arprot,
-        .cptra_ss_mcu_sb_m_axi_if_awregion,
-        .cptra_ss_mcu_sb_m_axi_if_arregion,
-        .cptra_ss_mcu_sb_m_axi_if_awqos,
-        .cptra_ss_mcu_sb_m_axi_if_arqos,
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),

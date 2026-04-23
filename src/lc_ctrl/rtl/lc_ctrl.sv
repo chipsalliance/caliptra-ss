@@ -205,6 +205,10 @@ module lc_ctrl
   assign axi_if.awuser      = axi_wr_req.awuser;
   assign axi_if.awid        = axi_wr_req.awid;
   assign axi_if.awlock      = axi_wr_req.awlock;
+  assign axi_if.awcache     = axi_wr_req.awcache;
+  assign axi_if.awprot      = axi_wr_req.awprot;
+  assign axi_if.awqos       = axi_wr_req.awqos;
+  assign axi_if.awregion    = axi_wr_req.awregion;
   assign axi_if.awvalid     = axi_wr_req.awvalid;
   assign axi_wr_rsp.awready = axi_if.awready;
   
@@ -227,6 +231,10 @@ module lc_ctrl
   assign axi_if.aruser      = axi_rd_req.aruser;
   assign axi_if.arid        = axi_rd_req.arid;
   assign axi_if.arlock      = axi_rd_req.arlock;
+  assign axi_if.arcache     = axi_rd_req.arcache;
+  assign axi_if.arprot      = axi_rd_req.arprot;
+  assign axi_if.arqos       = axi_rd_req.arqos;
+  assign axi_if.arregion    = axi_rd_req.arregion;
   assign axi_if.arvalid     = axi_rd_req.arvalid;
   assign axi_rd_rsp.arready = axi_if.arready;
   

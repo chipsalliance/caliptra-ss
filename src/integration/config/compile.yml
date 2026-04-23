@@ -107,6 +107,10 @@ targets:
   rtl_lint:
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
+    options:
+      - '+define+CALIPTRA_INTERNAL_TRNG'
+      - '+define+CALIPTRA_AXI_DMA_ADDR_WIDTH=32'
+      - '+define+CALIPTRA_MODE_SUBSYSTEM'
   rtl:
     directories: 
       - $COMPILE_ROOT/rtl
@@ -122,6 +126,13 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
     tops: [caliptra_ss_top_w_stub]
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
+    options:
+      - '+define+CALIPTRA_INTERNAL_TRNG'
+      - '+define+CALIPTRA_AXI_DMA_ADDR_WIDTH=32'
+      - '+define+CALIPTRA_MODE_SUBSYSTEM'
 --- 
 provides: [caliptra_ss_top_tb_coverage]
 schema_version: 2.4.0
@@ -246,15 +257,15 @@ global:
         - +define+SVT_MPHY_PKG_LOAD
 
       elab:
-         #FIXME : remve this warning suppression
-         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-         #- '+warn=noIWNF'
-         #- '+warn=noPCWM-W'
-         - '+warn=noTFIPC,noMDVMO'
-         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-         - '-P $AVERY_PLI/tb_vcs64.tab'
-         #FIXME unique case violations in i3c_core
-         #- '-ignore unique_checks'
+        #FIXME : remve this warning suppression
+        #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
+        #- '+warn=noIWNF'
+        #- '+warn=noPCWM-W'
+        - '+warn=noTFIPC,noMDVMO'
+        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+        - '-P $AVERY_PLI/tb_vcs64.tab'
+        #FIXME unique case violations in i3c_core
+        #- '-ignore unique_checks'
       sim:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
