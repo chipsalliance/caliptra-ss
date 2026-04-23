@@ -1620,11 +1620,6 @@ module caliptra_ss_top_tb
     // --- VIP UTMI clock ---
     assign usb_20_mac_if.utmi_dut_phy_if.CLK = usb_utmi_clk;
 
-    // Enable VIP UTMI clock generation
-    initial begin
-        usb_20_mac_if.utmi_dut_phy_if.generate_clk = 1'b1;
-    end
-
     // --- DUT Device TX → VIP (MAC-side DataIn) ---
     assign usb_20_mac_if.utmi_dut_phy_if.DataIn  = cptra_ss_usb_utmi_txdata_o;
     assign usb_20_mac_if.utmi_dut_phy_if.TXValid = cptra_ss_usb_utmi_txvalid_o;

@@ -271,3 +271,7 @@ global:
         # --- Synopsys USB SVT VIP runtime options ---
         # Uncomment to enable USB VIP debug logging
         #- '+svt_usb_enable_debug'
+      dpi_compile:
+        # Allow gcc to tokenize UTF-8 source correctly (fixes Unicode curly-quote
+        # characters in #error text inside a false #if branch in uvm_hdl_vcs.c)
+        - '-finput-charset=UTF-8'

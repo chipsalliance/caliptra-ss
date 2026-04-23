@@ -354,8 +354,11 @@ module caliptra_ss_top
     logic                       mcu_dccm_ecc_double_error;
 
 //    logic                       i3c_irq_o;
-//    logic                       i3c_peripheral_reset;
-//    logic                       i3c_escalated_reset;
+    logic                       i3c_peripheral_reset;
+    logic                       i3c_escalated_reset;
+    // i3c is not currently instantiated; tie signals to 0 so SVA assertions compile
+    assign i3c_peripheral_reset = 1'b0;
+    assign i3c_escalated_reset  = 1'b0;
 
     logic        [31:0]         reset_vector;
 
