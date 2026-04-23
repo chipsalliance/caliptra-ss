@@ -14,7 +14,7 @@
 provides: [usb_lib]
 schema_version: 3.1.0
 targets:
-  usb_lib:
+  rtl:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
@@ -60,7 +60,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  lib_usb_ip_3511:
+  rtl:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/STRUCTURE
@@ -78,7 +78,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  lib_usb_ip_3515:
+  rtl:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/STRUCTURE
@@ -96,7 +96,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  lib_usb_ip_3516:
+  rtl:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
