@@ -14,7 +14,7 @@
 provides: [usb_lib]
 schema_version: 3.1.0
 targets:
-  rtl:
+  usb_lib:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
@@ -60,7 +60,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  rtl:
+  lib_usb_ip_3511:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511_hs/STRUCTURE
@@ -78,7 +78,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  rtl:
+  lib_usb_ip_3515:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3515_hs/STRUCTURE
@@ -96,7 +96,7 @@ schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
-  rtl:
+  lib_usb_ip_3516:
 #    directories:
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/INTERFACE
 #      - $COMPILE_ROOT/../../third_party/usb/src/ip_xxx_3511/RTL
@@ -133,3 +133,14 @@ targets:
       - $COMPILE_ROOT/../../third_party/usb/src/integration/rtl/axi_to_ahb.sv
       - $COMPILE_ROOT/../../third_party/usb/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv
     tops: [ip_xxx_3516_hs_mem_wrapper]
+#    pre_exec: |
+#      set -e
+#      if ! grep -qF "usb_lib :" synopsys_sim.setup 2>/dev/null; then
+#        export USB_ROOT="$CALIPTRA_SS_ROOT/third_party/usb/src"
+#        mkdir -p usb_lib lib_usb_ip_3511 lib_usb_ip_3515 lib_usb_ip_3516
+#        printf "usb_lib : $(pwd)/usb_lib/\nlib_usb_ip_3511 : $(pwd)/lib_usb_ip_3511/\nlib_usb_ip_3515 : $(pwd)/lib_usb_ip_3515/\nlib_usb_ip_3516 : $(pwd)/lib_usb_ip_3516/\n" >> synopsys_sim.setup
+#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb/src/cfg/usb_lib_filelist.f"
+#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb/src/cfg/usb_ip_3511_filelist.f"
+#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb/src/cfg/usb_ip_3515_filelist.f"
+#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb/src/cfg/usb_ip_3516_filelist.f"
+#      fi
