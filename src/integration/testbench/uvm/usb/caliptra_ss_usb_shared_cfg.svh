@@ -71,7 +71,7 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         host_cfg.speed                   = svt_usb_types::HS;
 
         // Host uses TLM (internal PHY); DUT/device uses UTMI MAC interface
-        host_cfg.usb_20_signal_interface = svt_usb_configuration::USB_20_TLM;
+        host_cfg.usb_20_signal_interface = svt_usb_configuration::UTMI_IF;
         host_cfg.usb_ss_signal_interface = svt_usb_configuration::NO_SS_IF;
         host_cfg.usb_capability          = svt_usb_configuration::USB_20_ONLY;
 

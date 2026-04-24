@@ -262,6 +262,19 @@ global:
         #- '+warn=noIWNF'
         #- '+warn=noPCWM-W'
         - '+warn=noTFIPC,noMDVMO'
+#        # ICPSD_W: Illegal combination of structural and procedural drivers, internal to
+#        # the Synopsys USB SVT VIP (svt_usb_utmi_dut_phy_if.svi).  The VIP declares these
+#        # signals as var logic with both initial-block and internal continuous-assign drivers;
+#        # our structural assign to relay DUT outputs into the VIP also triggers this warning.
+#        # Cannot be resolved without modifying 3rd-party VIP code.  Suppressed to prevent
+#        # VCS from upgrading this to an error in future tool releases.
+#        - '+warn=noICPSD_W'
+        # SIMU-RESOLUTION: VCS informational note about simulation time resolution.
+        # DRTZ: Detect delay value roundoff to 0 based on timescale — benign
+        # rounding note present in mixed-language (VHDL+SV) builds.
+        # Both are caught as errors by the Playbook log parser but are
+        # harmless elaboration-time messages, so suppress them here.
+        - '-suppress=SIMU-RESOLUTION,DRTZ'
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c_core

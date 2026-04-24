@@ -117,6 +117,13 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         `uvm_send(xfer)
         `uvm_info("body", "GET_DESCRIPTOR (Configuration) completed", UVM_LOW)
 
+        // Wait for VIP to process queued transfers on the UTMI bus.
+        // uvm_send returns immediately (the VIP driver queues transfers);
+        // without this delay the phase objection drops at time 0 and the
+        // simulator exits before any clock edges occur.
+        `uvm_info("body", "Waiting for UTMI bus activity...", UVM_LOW)
+        #200_000ns;
+
         `uvm_info("body", "USB basic init sequence complete.", UVM_LOW)
     endtask
 

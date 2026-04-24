@@ -19,7 +19,7 @@
 // Basic USB 2.0 UTMI test for Caliptra Subsystem.
 //
 // This test exercises a basic init sequence over the UTMI interface:
-//   - VIP host agent configured for USB 2.0 HS with UTMI (TLM internal PHY)
+//   - VIP host agent configured for USB 2.0 HS with UTMI MAC interface
 //   - DUT (caliptra_ss_top) acts as the USB device on UTMI MAC side
 //   - Runs a short directed sequence: CONTROL transfers (GET_DESCRIPTOR,
 //     SET_ADDRESS) to verify basic USB enumeration-style communication
@@ -39,9 +39,7 @@ class caliptra_ss_usb_basic_utmi_test extends caliptra_ss_usb_base_test;
         `uvm_info("build_phase", "Entered...", UVM_LOW)
         super.build_phase(phase);
 
-        // Override: host uses TLM (internal PHY), device/DUT uses UTMI MAC
-        cfg.host_cfg.usb_20_signal_interface = svt_usb_configuration::USB_20_TLM;
-        cfg.host_cfg.utmi_data_width         = 8;
+        cfg.host_cfg.utmi_data_width = 8;
 
         // Use scaled-down timers for faster simulation
         void'(cfg.host_cfg.set_timer_values(

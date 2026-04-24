@@ -1613,53 +1613,52 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_hst_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP UTMI clock ---
-    assign usb_20_mac_if.utmi_dut_phy_if.CLK = usb_utmi_clk;
+    // utmi_dut_mac_if is used because the DUT is a USB device MAC; VIP acts as PHY.
+    // The VIP's svt_usb_utmi_phy_port reads DUT-driven signals (input clocking blocks)
+    // and drives PHY→MAC signals (output clocking blocks), avoiding ICPSD_W conflicts.
+    assign usb_20_mac_if.utmi_dut_mac_if.CLK = usb_utmi_clk;
 
-    // --- DUT Device TX → VIP (MAC-side DataIn) ---
-    assign usb_20_mac_if.utmi_dut_phy_if.DataIn  = cptra_ss_usb_utmi_txdata_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.TXValid = cptra_ss_usb_utmi_txvalid_o;
+    // --- DUT Device TX → VIP PHY (UTMI: MAC drives DataIn/TXValid to PHY) ---
+    assign usb_20_mac_if.utmi_dut_mac_if.DataIn  = cptra_ss_usb_utmi_txdata_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.TXValid = cptra_ss_usb_utmi_txvalid_o;
 
-    // --- VIP (MAC-side DataOut) → DUT Device RX ---
-    assign cptra_ss_usb_utmi_rxdata_i   = usb_20_mac_if.utmi_dut_phy_if.DataOut;
-    assign cptra_ss_usb_utmi_rxvalid_i  = usb_20_mac_if.utmi_dut_phy_if.RXValid;
-    assign cptra_ss_usb_utmi_rxactive_i = usb_20_mac_if.utmi_dut_phy_if.RXActive;
-    assign cptra_ss_usb_utmi_rxerror_i  = usb_20_mac_if.utmi_dut_phy_if.RXError;
-    assign cptra_ss_usb_utmi_txready_i  = usb_20_mac_if.utmi_dut_phy_if.TXReady;
+    // --- VIP PHY → DUT Device RX (UTMI: PHY drives DataOut/RXValid to MAC) ---
+    assign cptra_ss_usb_utmi_rxdata_i   = usb_20_mac_if.utmi_dut_mac_if.DataOut;
+    assign cptra_ss_usb_utmi_rxvalid_i  = usb_20_mac_if.utmi_dut_mac_if.RXValid;
+    assign cptra_ss_usb_utmi_rxactive_i = usb_20_mac_if.utmi_dut_mac_if.RXActive;
+    assign cptra_ss_usb_utmi_rxerror_i  = usb_20_mac_if.utmi_dut_mac_if.RXError;
+    assign cptra_ss_usb_utmi_txready_i  = usb_20_mac_if.utmi_dut_mac_if.TXReady;
 
-    // --- VIP → DUT control/status signals ---
-    assign cptra_ss_usb_utmi_linestate_i        = usb_20_mac_if.utmi_dut_phy_if.LineState;
-    assign cptra_ss_usb_utmi_hostdisconnect_i   = usb_20_mac_if.utmi_dut_phy_if.HostDisconnect;
-    assign cptra_ss_usb_utmi_id_value_i         = usb_20_mac_if.utmi_dut_phy_if.IdDig;
+    // --- VIP PHY → DUT control/status signals ---
+    assign cptra_ss_usb_utmi_linestate_i        = usb_20_mac_if.utmi_dut_mac_if.LineState;
+    assign cptra_ss_usb_utmi_hostdisconnect_i   = usb_20_mac_if.utmi_dut_mac_if.HostDisconnect;
+    assign cptra_ss_usb_utmi_id_value_i         = usb_20_mac_if.utmi_dut_mac_if.IdDig;
     assign cptra_ss_usb_utmi_vstatus_i          = '0; // Not modeled by VIP
 
-    // --- DUT → VIP control signals ---
-    assign usb_20_mac_if.utmi_dut_phy_if.Reset      = cptra_ss_usb_utmi_reset_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.SuspendM   = cptra_ss_usb_utmi_suspendm_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.XcvrSelect = cptra_ss_usb_utmi_xcvrselect_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.TermSelect = cptra_ss_usb_utmi_termselect_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.OpMode     = cptra_ss_usb_utmi_opmode_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.DpPulldown = cptra_ss_usb_utmi_dppulldown_o;
-    assign usb_20_mac_if.utmi_dut_phy_if.DmPulldown = cptra_ss_usb_utmi_dmpulldown_o;
+    // --- DUT MAC → VIP PHY control signals ---
+    assign usb_20_mac_if.utmi_dut_mac_if.Reset      = cptra_ss_usb_utmi_reset_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.SuspendM   = cptra_ss_usb_utmi_suspendm_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.XcvrSelect = cptra_ss_usb_utmi_xcvrselect_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.TermSelect = cptra_ss_usb_utmi_termselect_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.OpMode     = cptra_ss_usb_utmi_opmode_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.DpPulldown = cptra_ss_usb_utmi_dppulldown_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.DmPulldown = cptra_ss_usb_utmi_dmpulldown_o;
 
     // --- VBus / OTG signals ---
-    assign usb_20_mac_if.utmi_dut_phy_if.VbusValid = cptra_ss_pwrgood_i;
-    assign usb_20_mac_if.utmi_dut_phy_if.SessEnd   = ~cptra_ss_pwrgood_i;
-    assign usb_20_mac_if.utmi_dut_phy_if.BValid    = cptra_ss_pwrgood_i;
-    assign usb_20_mac_if.utmi_dut_phy_if.IdDig     = 1'b1; // B-device
+    // These are not in any VIP clocking block, so structural assigns are safe.
+    assign usb_20_mac_if.utmi_dut_mac_if.VbusValid = cptra_ss_pwrgood_i;
+    assign usb_20_mac_if.utmi_dut_mac_if.SessEnd   = ~cptra_ss_pwrgood_i;
+    assign usb_20_mac_if.utmi_dut_mac_if.BValid    = cptra_ss_pwrgood_i;
+    assign usb_20_mac_if.utmi_dut_mac_if.IdDig     = 1'b1; // B-device
 
-    // --- VIP UTMI signals not driven by DUT (tie off) ---
-    assign usb_20_mac_if.utmi_dut_phy_if.TXValidH         = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.DataBus16_8       = 1'b0; // 8-bit mode
-    assign usb_20_mac_if.utmi_dut_phy_if.TxBitstuffEnable  = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.TxBitstuffEnableH = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.FsLsSerialMode    = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.Tx_Enable_N       = 1'b1;
-    assign usb_20_mac_if.utmi_dut_phy_if.Tx_DAT            = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.Tx_SE0            = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.IdPullup          = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.DrvVbus           = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.ChrgVbus          = 1'b0;
-    assign usb_20_mac_if.utmi_dut_phy_if.DischrgVbus       = 1'b0;
+    // --- DUT MAC tie-offs for unused UTMI signals ---
+    assign usb_20_mac_if.utmi_dut_mac_if.Tx_Enable_N       = 1'b1;
+    assign usb_20_mac_if.utmi_dut_mac_if.Tx_DAT            = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.Tx_SE0            = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.IdPullup          = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.DrvVbus           = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.ChrgVbus          = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.DischrgVbus       = 1'b0;
 
     // USB ULPI PHY interface
     logic         cptra_ss_usb_ulpi_clk_i;         // TODO: connect to USB VIP
