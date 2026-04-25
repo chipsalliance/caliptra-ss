@@ -961,10 +961,10 @@ module caliptra_ss_top
         .dev_axi_aruser   (cptra_ss_usb_dev_s_axi_if_r_sub.aruser),
         .dev_axi_arid     (cptra_ss_usb_dev_s_axi_if_r_sub.arid),
         .dev_axi_arlock   (cptra_ss_usb_dev_s_axi_if_r_sub.arlock),
-        .dev_axi_arcache  ('0),
-        .dev_axi_arprot   ('0),
-        .dev_axi_arqos    ('0),
-        .dev_axi_arregion ('0),
+        .dev_axi_arcache  (cptra_ss_usb_dev_s_axi_if_r_sub.arcache ),
+        .dev_axi_arprot   (cptra_ss_usb_dev_s_axi_if_r_sub.arprot  ),
+        .dev_axi_arqos    (cptra_ss_usb_dev_s_axi_if_r_sub.arqos   ),
+        .dev_axi_arregion (cptra_ss_usb_dev_s_axi_if_r_sub.arregion),
         .dev_axi_arvalid  (cptra_ss_usb_dev_s_axi_if_r_sub.arvalid),
         .dev_axi_arready  (cptra_ss_usb_dev_s_axi_if_r_sub.arready),
         // R
@@ -983,10 +983,10 @@ module caliptra_ss_top
         .dev_axi_awuser   (cptra_ss_usb_dev_s_axi_if_w_sub.awuser),
         .dev_axi_awid     (cptra_ss_usb_dev_s_axi_if_w_sub.awid),
         .dev_axi_awlock   (cptra_ss_usb_dev_s_axi_if_w_sub.awlock),
-        .dev_axi_awcache  ('0),
-        .dev_axi_awprot   ('0),
-        .dev_axi_awqos    ('0),
-        .dev_axi_awregion ('0),
+        .dev_axi_awcache  (cptra_ss_usb_dev_s_axi_if_w_sub.awcache ),
+        .dev_axi_awprot   (cptra_ss_usb_dev_s_axi_if_w_sub.awprot  ),
+        .dev_axi_awqos    (cptra_ss_usb_dev_s_axi_if_w_sub.awqos   ),
+        .dev_axi_awregion (cptra_ss_usb_dev_s_axi_if_w_sub.awregion),
         .dev_axi_awvalid  (cptra_ss_usb_dev_s_axi_if_w_sub.awvalid),
         .dev_axi_awready  (cptra_ss_usb_dev_s_axi_if_w_sub.awready),
         // W
@@ -1063,10 +1063,10 @@ module caliptra_ss_top
         .dma_axi_aruser   (cptra_ss_usb_dma_s_axi_if_r_sub.aruser),
         .dma_axi_arid     (cptra_ss_usb_dma_s_axi_if_r_sub.arid),
         .dma_axi_arlock   (cptra_ss_usb_dma_s_axi_if_r_sub.arlock),
-        .dma_axi_arcache  ('0),
-        .dma_axi_arprot   ('0),
-        .dma_axi_arqos    ('0),
-        .dma_axi_arregion ('0),
+        .dma_axi_arcache  (cptra_ss_usb_dma_s_axi_if_r_sub.arcache ),
+        .dma_axi_arprot   (cptra_ss_usb_dma_s_axi_if_r_sub.arprot  ),
+        .dma_axi_arqos    (cptra_ss_usb_dma_s_axi_if_r_sub.arqos   ),
+        .dma_axi_arregion (cptra_ss_usb_dma_s_axi_if_r_sub.arregion),
         .dma_axi_arvalid  (cptra_ss_usb_dma_s_axi_if_r_sub.arvalid),
         .dma_axi_arready  (cptra_ss_usb_dma_s_axi_if_r_sub.arready),
         // R
@@ -1085,10 +1085,10 @@ module caliptra_ss_top
         .dma_axi_awuser   (cptra_ss_usb_dma_s_axi_if_w_sub.awuser),
         .dma_axi_awid     (cptra_ss_usb_dma_s_axi_if_w_sub.awid),
         .dma_axi_awlock   (cptra_ss_usb_dma_s_axi_if_w_sub.awlock),
-        .dma_axi_awcache  ('0),
-        .dma_axi_awprot   ('0),
-        .dma_axi_awqos    ('0),
-        .dma_axi_awregion ('0),
+        .dma_axi_awcache  (cptra_ss_usb_dma_s_axi_if_w_sub.awcache ),
+        .dma_axi_awprot   (cptra_ss_usb_dma_s_axi_if_w_sub.awprot  ),
+        .dma_axi_awqos    (cptra_ss_usb_dma_s_axi_if_w_sub.awqos   ),
+        .dma_axi_awregion (cptra_ss_usb_dma_s_axi_if_w_sub.awregion),
         .dma_axi_awvalid  (cptra_ss_usb_dma_s_axi_if_w_sub.awvalid),
         .dma_axi_awready  (cptra_ss_usb_dma_s_axi_if_w_sub.awready),
         // W
@@ -1178,6 +1178,8 @@ module caliptra_ss_top
         .token_length_counter   (7'b0),/* TODO */
         .usb_token_length       ()     /* TODO */
     );
+    assign cptra_ss_usb_recovery_payload_available_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
+    assign cptra_ss_usb_recovery_image_activated_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
     
     //=========================================================================-
     // i3c_core Instance
