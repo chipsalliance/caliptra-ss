@@ -23,12 +23,11 @@
 `include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
+`include "../../../src/usb/rtl/usbhsd.rdl"
 
 addrmap soc {
 
-    // USB device register block (placeholder — will be replaced by USB RDL)
-    // USB_DEV @ 0x2000_0000 — size TBD after USB RDL integration
-    // USB_DMA @ 0x2001_0000 — size TBD after USB RDL integration
+    usbhsd usbhsd @ 0x2000_0000;
 
     mci_top mci_top @ 0x2100_0000;
     

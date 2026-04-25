@@ -213,7 +213,7 @@ void init_interrupts(void) {
 
     // MEIPL_S - assign interrupt priorities
     meipls[CSS_MCU0_VEER_INTR_VEC_MCI] = CSS_MCU0_VEER_INTR_PRIO_MCI; __asm__ volatile ("fence");
-    meipls[CSS_MCU0_VEER_INTR_VEC_I3C] = CSS_MCU0_VEER_INTR_PRIO_I3C; __asm__ volatile ("fence");
+    meipls[CSS_MCU0_VEER_INTR_VEC_USB] = CSS_MCU0_VEER_INTR_PRIO_USB; __asm__ volatile ("fence");
     for (uint32_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
         meipls[undef] = CSS_MCU0_VEER_INTR_PRIO_BFM; __asm__ volatile ("fence");
     }

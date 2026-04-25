@@ -617,12 +617,13 @@ module caliptra_ss_top
 
 
     logic mci_intr;
+    logic usb_dev_irq;
 
     assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
-    assign ext_int[`VEER_INTR_VEC_USB]                  = 1'b0; // TODO: connect to usb_core_i.dev_usb_int_req_irq
+    assign ext_int[`VEER_INTR_VEC_USB]                  = usb_dev_irq;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //Aggregate error connections
@@ -1114,7 +1115,7 @@ module caliptra_ss_top
         .mem_bsel         (cptra_ss_usb_mem_bsel_o),
 
         // ---- Interrupt Outputs ----
-        .dev_usb_int_req_irq  (/* TODO: connect to ext_int[`VEER_INTR_VEC_USB] */),
+        .dev_usb_int_req_irq  (usb_dev_irq),
         .dev_usb_Int_req_fiq  (/* TODO */),
         .dev_usbframetoggle   (/* TODO */),
         .host_usb_int_req_irq (/* TODO */),

@@ -368,4 +368,43 @@ inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
     return rd_data;
 }
 
+///////////////////////////////////////////////////
+// USB Device Register Definitions
+// Register addresses use generated macros from soc_address_map.h
+// (SOC_USBHSD_*). DMA base is not in the RDL (separate AXI port).
+///////////////////////////////////////////////////
+#define USB_DMA_BASE_ADDR           0x20010000
+
+// DEVCMDSTAT bit definitions
+#define USB_DEVCMDSTAT_DEV_ADDR_MASK  0x0000007F
+#define USB_DEVCMDSTAT_DEV_EN         (1 << 7)
+#define USB_DEVCMDSTAT_SETUP          (1 << 8)
+#define USB_DEVCMDSTAT_FORCE_NEEDCLK  (1 << 9)
+#define USB_DEVCMDSTAT_FORCE_VBUS     (1 << 10)
+#define USB_DEVCMDSTAT_LPM_SUP        (1 << 11)
+#define USB_DEVCMDSTAT_INTONNAK_AO    (1 << 12)
+#define USB_DEVCMDSTAT_INTONNAK_AI    (1 << 13)
+#define USB_DEVCMDSTAT_INTONNAK_CO    (1 << 14)
+#define USB_DEVCMDSTAT_INTONNAK_CI    (1 << 15)
+#define USB_DEVCMDSTAT_DCON           (1 << 16)
+#define USB_DEVCMDSTAT_DSUS           (1 << 17)
+#define USB_DEVCMDSTAT_DCON_C         (1 << 24)
+#define USB_DEVCMDSTAT_DSUS_C         (1 << 25)
+#define USB_DEVCMDSTAT_DRES_C         (1 << 26)
+#define USB_DEVCMDSTAT_VBUS_DEBOUNCED (1 << 28)
+
+// INTSTAT / INTEN bit definitions
+#define USB_INT_EP0OUT                (1 << 0)
+#define USB_INT_EP0IN                 (1 << 1)
+#define USB_INT_FRAME                 (1 << 30)
+#define USB_INT_DEV                   (1 << 31)
+
+// USB SRAM layout constants
+#define USB_SRAM_EP_LIST_OFFSET       0x000
+#define USB_SRAM_SETUP_BUF_OFFSET     0x100
+#define USB_SRAM_EP0_OUT_BUF_OFFSET   0x140
+#define USB_SRAM_EP0_IN_BUF_OFFSET    0x180
+
+void boot_usb_core(void);
+
 #endif // CALIPTRA_SS_LIB

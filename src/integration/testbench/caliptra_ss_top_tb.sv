@@ -1512,13 +1512,27 @@ module caliptra_ss_top_tb
     // =========================================================================
 
     // USB SRAM interface
-    logic [63:0]  cptra_ss_usb_mem_q_i;            // TODO: connect to USB SRAM model
+    logic [63:0]  cptra_ss_usb_mem_q_i;
     logic [63:0]  cptra_ss_usb_mem_d_o;
     logic         cptra_ss_usb_mem_cs_o;
     logic [8:0]   cptra_ss_usb_mem_a_o;
     logic         cptra_ss_usb_mem_web_out_o;
     logic [63:0]  cptra_ss_usb_mem_bsel_o;
-    assign cptra_ss_usb_mem_q_i = '0;              // TODO: replace with SRAM model readback
+
+    // Behavioral SRAM model for USB core (512 x 64-bit)
+    logic [63:0] usb_sram [0:511];
+    always @(posedge core_clk) begin
+        if (cptra_ss_usb_mem_cs_o) begin
+            if (!cptra_ss_usb_mem_web_out_o) begin
+                // Write: apply byte-select mask
+                for (int b = 0; b < 8; b++) begin
+                    if (cptra_ss_usb_mem_bsel_o[b*8 +: 8] != 8'h00)
+                        usb_sram[cptra_ss_usb_mem_a_o][b*8 +: 8] <= cptra_ss_usb_mem_d_o[b*8 +: 8];
+                end
+            end
+            cptra_ss_usb_mem_q_i <= usb_sram[cptra_ss_usb_mem_a_o];
+        end
+    end
 
     // =========================================================================
     // Synopsys USB SVT VIP — UTMI PHY Interface Connection
