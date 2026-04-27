@@ -109,3 +109,4 @@ contents:
         - ../test_suites/mci_lcc_state_error/mci_lcc_state_error.yml
         - ../test_suites/mci_lcc_state_error_to_locked/mci_lcc_state_error_to_locked.yml
         - ../test_suites/mci_lcc_no_zeroization/mci_lcc_no_zeroization.yml
+        - ../test_suites/mci_lcc_volatile_unlock_with_state_error/mci_lcc_volatile_unlock_with_state_error.yml
