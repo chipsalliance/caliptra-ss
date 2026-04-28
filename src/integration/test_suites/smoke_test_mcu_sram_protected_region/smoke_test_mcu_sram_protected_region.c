@@ -102,5 +102,8 @@ void main (void) {
     }
     mcu_mbox_update_status(0, MCU_MBOX_CMD_COMPLETE);
 
+    // Fudge factor to allow Caliptra to detect the status and quiesce the DMA poll loop
+    mcu_sleep(100);
+
     SEND_STDOUT_CTRL(0xff);
 }
