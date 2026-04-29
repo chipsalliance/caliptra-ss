@@ -68,21 +68,22 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
     // -------------------------------------------------------------------------
     function void setup_usb_20_utmi_host_defaults();
         host_cfg.capability              = svt_usb_configuration::PLAIN;
-        host_cfg.speed                   = svt_usb_types::HS;
+        host_cfg.speed                   = svt_usb_types::FS;
 
         // Host uses TLM (internal PHY); DUT/device uses UTMI MAC interface
         host_cfg.usb_20_signal_interface = svt_usb_configuration::UTMI_IF;
         host_cfg.usb_ss_signal_interface = svt_usb_configuration::NO_SS_IF;
         host_cfg.usb_capability          = svt_usb_configuration::USB_20_ONLY;
+        host_cfg.poweron_auto_attach_delay = 0;
 
         // UTMI data width 8-bit to match DUT
         host_cfg.utmi_data_width         = 8;
 
         // Remote device (DUT) configuration
         host_cfg.remote_device_cfg[0].device_address               = 0;
-        host_cfg.remote_device_cfg[0].connected_bus_speed           = svt_usb_types::HS;
+        host_cfg.remote_device_cfg[0].connected_bus_speed           = svt_usb_types::FS;
         host_cfg.remote_device_cfg[0].connected_hub_device_address  = 0;
-        host_cfg.remote_device_cfg[0].functionality_support         = svt_usb_types::HS;
+        host_cfg.remote_device_cfg[0].functionality_support         = svt_usb_types::FS;
         host_cfg.remote_device_cfg[0].num_endpoints                 = num_endpoints;
 
         // Create endpoint configurations
@@ -106,7 +107,7 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
             host_cfg.remote_device_cfg[0].endpoint_cfg[1].direction       = svt_usb_types::IN;
             host_cfg.remote_device_cfg[0].endpoint_cfg[1].ep_type         = svt_usb_types::BULK;
             host_cfg.remote_device_cfg[0].endpoint_cfg[1].interval        = 1;
-            host_cfg.remote_device_cfg[0].endpoint_cfg[1].max_packet_size = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].max_packet_size = 64;
         end
 
         // Use scaled-down timer values for faster simulation

@@ -233,8 +233,13 @@ initial begin
 
         //-- USB DEV (device registers)
         slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.base_address[0]  = 64'h2000_0000; // TODO use addr map macro
-        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.limit_address[0] = 64'h2000_0000 + 64'hFFFF;
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.limit_address[0] = 64'h2000_0000 + 64'h0FFF;
         slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
+
+        //-- USB HOST (host controller registers)
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.base_address[0]  = 64'h2000_1000;
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.limit_address[0] = 64'h2000_1000 + 64'h0FFF;
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
 
         //-- MCU ROM MACRO / MCI_TOP 2nd instance
         slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};

@@ -23,11 +23,17 @@
 `include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
-`include "../../../src/usb/rtl/usbhsd.rdl"
+`include "../../../third_party/usb/systemrdl/usbhsd.rdl"
+`include "../../../third_party/usb/systemrdl/usbhsh.rdl"
+`include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 
 addrmap soc {
 
     usbhsd usbhsd @ 0x2000_0000;
+
+    usbhsh usbhsh @ 0x2000_1000;
+
+    I3CCSR I3CCSR @ 0x2000_4000;
 
     mci_top mci_top @ 0x2100_0000;
     

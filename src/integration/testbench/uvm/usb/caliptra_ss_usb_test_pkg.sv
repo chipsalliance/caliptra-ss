@@ -13,7 +13,10 @@
 // limitations under the License.
 //
 
-package caliptra_ss_usb_test_pkg;
+package caliptra_ss_usb_test_pkg; // USB test pkg — direct queue_and_hold=0 assignment
+
+  // Force VCS recompile: change this value to invalidate incremental cache
+  localparam int USB_PKG_VERSION = 50;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"

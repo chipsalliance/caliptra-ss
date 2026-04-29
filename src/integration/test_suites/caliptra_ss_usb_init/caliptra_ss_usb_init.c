@@ -90,6 +90,30 @@ void main (void) {
     // --- Main USB event loop: poll for SETUP packets ---
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
 
+        // Direct DEVCMDSTAT poll for bus reset (fallback — INTSTAT may not report DEV_INT)
+        {
+            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            if (cmd & USB_DEVCMDSTAT_DRES_C) {
+                VPRINTF(LOW, "MCU: Bus reset detected (direct DEVCMDSTAT poll)\n");
+                // Clear reset change (W1C)
+                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USB_DEVCMDSTAT_DRES_C);
+
+                // Re-initialize EP0 after bus reset — hardware may clear Active bit
+                uint32_t ep0_out_entry = (1u << 31) | (8u << 16) | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
+                // Re-set SETUP buffer address
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x004, (USB_SRAM_SETUP_BUF_OFFSET >> 6));
+                // Re-set EP0 IN buffer address
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x008, (USB_SRAM_EP0_IN_BUF_OFFSET >> 6));
+                VPRINTF(LOW, "MCU: Re-initialized EP0 after bus reset (EP0OUT=0x%x)\n", ep0_out_entry);
+
+                // Reset device address to 0 per USB spec
+                cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+                cmd &= ~0x7Fu;  // Clear DEV_ADDR[6:0]
+                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+            }
+        }
+
         // Check for device-level interrupts (bus reset, connect change)
         reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
         if (reg_data & USB_INT_DEV) {
@@ -101,6 +125,13 @@ void main (void) {
                 // Clear reset change (W1C) and re-enable device
                 lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
                     cmd | USB_DEVCMDSTAT_DRES_C);
+
+                // Re-initialize EP0 after bus reset
+                uint32_t ep0_out_entry = (1u << 31) | (8u << 16) | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x004, (USB_SRAM_SETUP_BUF_OFFSET >> 6));
+                lsu_write_32(USB_DMA_BASE_ADDR + 0x008, (USB_SRAM_EP0_IN_BUF_OFFSET >> 6));
+                VPRINTF(LOW, "MCU: Re-initialized EP0 after bus reset (DEV_INT path)\n");
             }
             // Clear DEV_INT
             lsu_write_32(SOC_USBHSD_INTSTAT, USB_INT_DEV);
@@ -140,15 +171,16 @@ void main (void) {
                                          dev_desc_words[i]);
                         }
 
-                        // Update EP0 IN entry: Active=1, Stall=1, NBytes, addr_offset
-                        uint32_t ep0_in = (1u << 31) | (1u << 29)
+                        // Update EP0 IN entry: Active=1, NBytes, addr_offset
+                        uint32_t ep0_in = (1u << 31)
                                         | (nbytes << 16)
                                         | (USB_SRAM_EP0_IN_BUF_OFFSET >> 6);
                         lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x08, ep0_in);
                         VPRINTF(LOW, "MCU: EP0 IN entry = 0x%x\n", ep0_in);
 
-                        // EP0 OUT for status phase: Active=0, Stall=1
-                        uint32_t ep0_out = (1u << 29)
+                        // EP0 OUT for status phase: Active=1, NBytes=0
+                        uint32_t ep0_out = (1u << 31)
+                                         | (0u << 16)
                                          | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
                         lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00, ep0_out);
 
@@ -163,13 +195,14 @@ void main (void) {
                     VPRINTF(LOW, "MCU: SET_ADDRESS addr=%d\n", new_addr);
 
                     // Status phase: EP0 IN sends ZLP
-                    uint32_t ep0_in = (1u << 31) | (1u << 29)
+                    uint32_t ep0_in = (1u << 31)
                                     | (0u << 16)
                                     | (USB_SRAM_EP0_IN_BUF_OFFSET >> 6);
                     lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x08, ep0_in);
 
-                    // EP0 OUT: Active=0, Stall=1
-                    uint32_t ep0_out = (1u << 29)
+                    // EP0 OUT: Active=1, NBytes=0
+                    uint32_t ep0_out = (1u << 31)
+                                     | (0u << 16)
                                      | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
                     lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00, ep0_out);
 
@@ -185,6 +218,11 @@ void main (void) {
                 cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
                 lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USB_DEVCMDSTAT_SETUP);
 
+                // Verify SETUP cleared and EP0 IN is active
+                cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+                uint32_t ep0_in_rb = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x08);
+                VPRINTF(LOW, "MCU: Post-SETUP-clear DEVCMDSTAT=0x%x EP0IN=0x%x\n", cmd, ep0_in_rb);
+
                 transfers_handled++;
                 VPRINTF(LOW, "MCU: Transfers handled = %d\n", transfers_handled);
             }
@@ -193,6 +231,16 @@ void main (void) {
         // After handling at least one transfer, consider test done
         if (transfers_handled >= 1) {
             VPRINTF(LOW, "MCU: USB init test — at least one transfer handled, continuing event loop\n");
+        }
+
+        // Periodic diagnostic dump
+        if (poll_count % 1000 == 0 && poll_count > 0) {
+            uint32_t diag_cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            uint32_t diag_int = lsu_read_32(SOC_USBHSD_INTSTAT);
+            uint32_t ep0_out = lsu_read_32(USB_DMA_BASE_ADDR + 0x000);
+            uint32_t ep0_in_diag = lsu_read_32(USB_DMA_BASE_ADDR + 0x008);
+            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x\n",
+                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag);
         }
 
         mcu_sleep(10);

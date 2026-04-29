@@ -386,6 +386,7 @@ inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
 #define USB_DEVCMDSTAT_INTONNAK_AI    (1 << 13)
 #define USB_DEVCMDSTAT_INTONNAK_CO    (1 << 14)
 #define USB_DEVCMDSTAT_INTONNAK_CI    (1 << 15)
+#define USB_DEVCMDSTAT_FORCE_FULLSPEED (1 << 21)
 #define USB_DEVCMDSTAT_DCON           (1 << 16)
 #define USB_DEVCMDSTAT_DSUS           (1 << 17)
 #define USB_DEVCMDSTAT_DCON_C         (1 << 24)

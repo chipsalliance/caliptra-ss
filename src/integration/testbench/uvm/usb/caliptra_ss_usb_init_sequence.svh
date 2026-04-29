@@ -16,10 +16,95 @@
 `define CALIPTRA_SS_USB_INIT_SEQUENCE_SV
 
 // =============================================================================
-// Basic USB init sequence: GET_DESCRIPTOR followed by SET_ADDRESS.
+// USB init sequence: VIP-native enumeration over UTMI.
 //
-// This exercises the minimum USB enumeration flow that any device must support.
+// The Synopsys USB VIP is configured at top_layer = PROTOCOL with
+// usb_20_signal_interface = UTMI_IF. In this configuration the VIP itself
+// drives all UTMI line-level signaling (J/K/SE0, SOF, tokens, DATA0/1,
+// handshakes), so the testbench only needs to issue high-level transactions
+// on the VIP sequencers. No manual UTMI byte injection, no force/release
+// scaffolding is required (or permitted).
+//
+// Sequence flow:
+//   1. Wait ~200us for the DUT firmware (usb_init.c) to bring up the
+//      controller and program EP0.
+//   2. Issue a USB 2.0 bus reset via svt_usb_link_service
+//      (LINK_20_PORT_COMMAND / SVT_USB_20_PORT_RESET) on the host_agent
+//      link-service sequencer. This is started as a sub-sequence after
+//      locating the link-service sequencer via uvm_top.find_all().
+//   3. Wait ~100us for firmware to handle DRES_C and re-init EP0.
+//   4. Issue a CONTROL GET_DESCRIPTOR(Device, len=18) using svt_usb_transfer
+//      on the p_sequencer (xfer_sequencer).
+//   5. Issue a CONTROL SET_ADDRESS(1) and a follow-up GET_DESCRIPTOR using
+//      the new address to validate enumeration.
 // =============================================================================
+
+// -----------------------------------------------------------------------------
+// NOTE on bus reset:
+//   The VIP host agent at top_layer = PROTOCOL with
+//   poweron_auto_attach_delay = 0 automatically drives the bus reset as part
+//   of its connect / port-power-up sequence. No explicit svt_usb_link_service
+//   item is required for basic enumeration in this VIP release.
+//   (The SVT_USB_20_PORT_RESET enum on svt_usb_link_service is only exposed
+//   in newer SVT releases and is not used here.)
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Bus reset sub-sequence: explicit VIP-native USB 2.0 port reset.
+//
+// Pattern derived from the canonical UTMI PHY example at
+//   $VIPROOT/examples/sverilog/tb_usb_svt_uvm_20_phy/env/pulse_reset_sequence.sv
+//
+// Drives an svt_usb_link_service item with:
+//   service_type         == LINK_20_PORT_COMMAND
+//   link_20_command_type == USB_20_PORT_RESET
+// on the host_virt_sequencer.link_service_sequencer (located at runtime via
+// the sequencer's own virtual sequencer handle on p_sequencer.host_agent).
+// -----------------------------------------------------------------------------
+class caliptra_ss_usb_port_reset_sequence
+    extends svt_usb_link_service_base_sequence;
+
+    `uvm_object_utils(caliptra_ss_usb_port_reset_sequence)
+
+    rand svt_usb_types::link20sm_state_enum link20sm_state_value =
+        svt_usb_types::DEVICE_ATTACHED;
+
+    constraint c_link20sm_state {
+        link20sm_state_value inside {
+            svt_usb_types::DEVICE_ATTACHED,
+            svt_usb_types::ENABLED
+        };
+    }
+
+    function new(string name = "caliptra_ss_usb_port_reset_sequence");
+        super.new(name);
+    endfunction
+
+    virtual task body();
+        svt_usb_link_service req;
+        super.body();
+        req = svt_usb_link_service::type_id::create("req");
+        start_item(req);
+        if (!req.randomize() with {
+                service_type               == svt_usb_link_service::LINK_20_PORT_COMMAND;
+                link_20_command_type       == svt_usb_link_service::USB_20_PORT_RESET;
+                prereq_link_20_state       == link20sm_state_value;
+                link_service_delay_longint == 0;
+                prereq_ltssm_delay_longint == 0;
+            }) begin
+            `uvm_fatal("USB_INIT", "USB_20_PORT_RESET link-service randomize() failed")
+        end
+        finish_item(req);
+        `uvm_info("USB_INIT",
+            "USB_20_PORT_RESET link service issued",
+            UVM_LOW)
+    endtask
+
+endclass
+
+// -----------------------------------------------------------------------------
+// Top-level init sequence (started on env.host_agent.xfer_sequencer).
+// -----------------------------------------------------------------------------
 class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_init_sequence)
@@ -44,89 +129,120 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             phase.drop_objection(this);
     endtask
 
+    // -------------------------------------------------------------------------
+    // Helper: issue a single CONTROL transfer on p_sequencer (xfer_sequencer).
+    // -------------------------------------------------------------------------
+    task do_control_xfer(
+        input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
+        input bit [7:0]  bm_request_type_type,   // svt_usb_types type enum
+        input bit [7:0]  bm_request_type_recip,  // svt_usb_types recipient enum
+        input bit [7:0]  brequest,
+        input bit [15:0] wvalue,
+        input bit [15:0] windex,
+        input bit [15:0] wlength,
+        input int        device_addr,
+        input string     label
+    );
+        svt_usb_transfer req;
+        req = svt_usb_transfer::type_id::create({label, "_req"});
+        start_item(req);
+        if (!req.randomize() with {
+                xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
+                device_address                     == device_addr;
+                setup_data_bmrequesttype_dir       == bm_request_type_dir;
+                setup_data_bmrequesttype_type      == bm_request_type_type;
+                setup_data_bmrequesttype_recipient == bm_request_type_recip;
+                setup_data_brequest                == brequest;
+                setup_data_w_value                 == wvalue;
+                setup_data_w_index                 == windex;
+                setup_data_w_length                == wlength;
+            }) begin
+            `uvm_fatal("USB_INIT",
+                $sformatf("svt_usb_transfer randomize() failed for %s", label))
+        end
+        finish_item(req);
+        `uvm_info("USB_INIT",
+            $sformatf("CONTROL %s done (addr=%0d wValue=0x%04x wLength=0x%04x)",
+                      label, device_addr, wvalue, wlength), UVM_LOW)
+    endtask
+
+    // -------------------------------------------------------------------------
+    // Main body
+    // -------------------------------------------------------------------------
     virtual task body();
-        bit status;
-        svt_configuration get_cfg;
-        svt_usb_configuration usb_cfg;
-        svt_usb_transfer xfer;
+        uvm_component lookup;
+        svt_usb_link_service_sequencer link_seq;
+        caliptra_ss_usb_port_reset_sequence rst_seq;
 
-        `uvm_info("body", "Starting USB basic init sequence...", UVM_LOW)
+        `uvm_info("USB_INIT",
+            "Waiting ~200us for DUT firmware USB controller bring-up...",
+            UVM_LOW)
+        #200us;
 
-        // Get configuration from sequencer
-        p_sequencer.get_cfg(get_cfg);
-        if (!$cast(usb_cfg, get_cfg))
-            `uvm_fatal("body", "Unable to cast configuration")
+        // ---------------- Explicit USB 2.0 Bus reset ----------------
+        // Drive USB_20_PORT_RESET via svt_usb_link_service on the host
+        // agent's link_service_sequencer. This replaces the previous
+        // reliance on poweron_auto_attach_delay=0 auto-reset, which did
+        // not produce a clean DRES_C event for the DUT firmware.
+        lookup = uvm_top.find("*host_agent*link_service_sequencer*");
+        if (lookup == null || !$cast(link_seq, lookup)) begin
+            `uvm_warning("USB_INIT",
+                "Could not locate host_agent link_service_sequencer; skipping explicit bus reset")
+        end else begin
+            `uvm_info("USB_INIT",
+                $sformatf("Issuing USB_20_PORT_RESET on %s", link_seq.get_full_name()),
+                UVM_LOW)
+            rst_seq = caliptra_ss_usb_port_reset_sequence::type_id::create("rst_seq");
+            rst_seq.start(link_seq);
+        end
 
-        // -----------------------------------------------------------------
-        // Transfer 1: GET_DESCRIPTOR (Device Descriptor) — CONTROL IN
-        // -----------------------------------------------------------------
-        `uvm_create(xfer)
-        xfer.cfg = usb_cfg;
-        xfer.fix_anchors(0, 0, 0);
-        status = xfer.randomize() with {
-            setup_data_bmrequesttype_dir       == svt_usb_types::DEVICE_TO_HOST;
-            setup_data_bmrequesttype_type      == svt_usb_types::STANDARD;
-            setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
-            setup_data_brequest                == svt_usb_types::GET_DESCRIPTOR;
-            setup_data_w_value                 == 16'h0100; // Device descriptor
-            setup_data_w_index                 == 0;
-            setup_data_w_length                == 18;       // Device descriptor length
-        };
-        if (!status)
-            `uvm_fatal("body", "GET_DESCRIPTOR randomization failed")
-        `uvm_send(xfer)
-        `uvm_info("body", "GET_DESCRIPTOR (Device) completed", UVM_LOW)
+        `uvm_info("USB_INIT",
+            "Waiting ~100us for firmware to handle bus reset (DRES_C handler)...",
+            UVM_LOW)
+        #100us;
 
-        // -----------------------------------------------------------------
-        // Transfer 2: SET_ADDRESS — CONTROL OUT (no data stage)
-        // -----------------------------------------------------------------
-        `uvm_create(xfer)
-        xfer.cfg = usb_cfg;
-        xfer.fix_anchors(0, 0, 0);
-        status = xfer.randomize() with {
-            setup_data_bmrequesttype_dir       == svt_usb_types::HOST_TO_DEVICE;
-            setup_data_bmrequesttype_type      == svt_usb_types::STANDARD;
-            setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
-            setup_data_brequest                == svt_usb_types::SET_ADDRESS;
-            setup_data_w_value                 == 16'h0005; // Address 5
-            setup_data_w_index                 == 0;
-            setup_data_w_length                == 0;
-        };
-        if (!status)
-            `uvm_fatal("body", "SET_ADDRESS randomization failed")
-        `uvm_send(xfer)
-        `uvm_info("body", "SET_ADDRESS completed", UVM_LOW)
+        // ---------------- GET_DESCRIPTOR(Device, addr=0) ----------------
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::DEVICE),
+            .brequest              (8'h06),       // GET_DESCRIPTOR
+            .wvalue                (16'h0100),    // DEVICE descriptor, index 0
+            .windex                (16'h0000),
+            .wlength               (16'h0012),    // 18 bytes
+            .device_addr           (0),
+            .label                 ("GET_DESC_DEV_addr0")
+        );
 
-        // -----------------------------------------------------------------
-        // Transfer 3: GET_DESCRIPTOR (Configuration Descriptor) — CONTROL IN
-        // -----------------------------------------------------------------
-        `uvm_create(xfer)
-        xfer.cfg = usb_cfg;
-        xfer.fix_anchors(0, 0, 0);
-        status = xfer.randomize() with {
-            setup_data_bmrequesttype_dir       == svt_usb_types::DEVICE_TO_HOST;
-            setup_data_bmrequesttype_type      == svt_usb_types::STANDARD;
-            setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
-            setup_data_brequest                == svt_usb_types::GET_DESCRIPTOR;
-            setup_data_w_value                 == 16'h0200; // Configuration descriptor
-            setup_data_w_index                 == 0;
-            setup_data_w_length                == 64;
-        };
-        if (!status)
-            `uvm_fatal("body", "GET_DESCRIPTOR (Config) randomization failed")
-        `uvm_send(xfer)
-        `uvm_info("body", "GET_DESCRIPTOR (Configuration) completed", UVM_LOW)
+        // ---------------- SET_ADDRESS(1) at addr=0 ----------------
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::DEVICE),
+            .brequest              (8'h05),       // SET_ADDRESS
+            .wvalue                (16'h0001),    // new address = 1
+            .windex                (16'h0000),
+            .wlength               (16'h0000),
+            .device_addr           (0),
+            .label                 ("SET_ADDRESS_1")
+        );
 
-        // Wait for VIP to process queued transfers on the UTMI bus.
-        // uvm_send returns immediately (the VIP driver queues transfers);
-        // without this delay the phase objection drops at time 0 and the
-        // simulator exits before any clock edges occur.
-        `uvm_info("body", "Waiting for UTMI bus activity...", UVM_LOW)
-        #200_000ns;
+        // ---------------- GET_DESCRIPTOR(Device, addr=1) ----------------
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::DEVICE),
+            .brequest              (8'h06),
+            .wvalue                (16'h0100),
+            .windex                (16'h0000),
+            .wlength               (16'h0012),
+            .device_addr           (1),
+            .label                 ("GET_DESC_DEV_addr1")
+        );
 
-        `uvm_info("body", "USB basic init sequence complete.", UVM_LOW)
+        `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
 
 endclass
 
-`endif
+`endif // CALIPTRA_SS_USB_INIT_SEQUENCE_SV

@@ -236,7 +236,7 @@ global:
         - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AAXI_INTC_SLAVE_CNT=9
 #        - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
 #        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
@@ -292,6 +292,8 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
+        # Enable force/release on VHDL targets (needed for USB dev_enable)
+        - '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
         # Uncomment to enable USB VIP debug logging
         #- '+svt_usb_enable_debug'

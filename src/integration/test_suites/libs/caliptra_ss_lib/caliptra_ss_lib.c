@@ -1070,6 +1070,7 @@ void boot_usb_core(void) {
     // --- Step 3: Enable device ---
     reg_data = USB_DEVCMDSTAT_DEV_EN
              | USB_DEVCMDSTAT_FORCE_VBUS
+             | USB_DEVCMDSTAT_FORCE_FULLSPEED
              | USB_DEVCMDSTAT_DCON;
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
