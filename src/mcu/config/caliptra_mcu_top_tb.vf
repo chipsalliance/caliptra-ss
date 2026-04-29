@@ -60,7 +60,6 @@ ${CALIPTRA_ROOT}/src/spi_host/rtl/spi_host_reg_pkg.sv
 ${CALIPTRA_ROOT}/src/spi_host/rtl/spi_host_cmd_pkg.sv
 ${CALIPTRA_ROOT}/src/spi_host/tb/spi_device_pkg.sv
 ${CALIPTRA_ROOT}/src/spi_host/tb/spiflash.sv
-${CALIPTRA_SS_ROOT}/src/mcu/rtl/config_defines_mcu.svh
 ${CALIPTRA_SS_ROOT}/src/mcu/rtl/caliptra_reg_defines.svh
 ${CALIPTRA_ROOT}/src/soc_ifc/rtl/soc_ifc_pkg.sv
 ${CALIPTRA_ROOT}/src/soc_ifc/rtl/soc_ifc_reg_pkg.sv

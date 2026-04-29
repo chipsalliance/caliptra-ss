@@ -21,7 +21,6 @@
 +incdir+${CALIPTRA_ROOT}/src/caliptra_prim_generic/rtl
 +incdir+${CALIPTRA_ROOT}/src/edn/rtl
 +incdir+${CALIPTRA_ROOT}/src/aes/rtl
-${CALIPTRA_SS_ROOT}/src/mcu/rtl/config_defines_mcu.svh
 ${CALIPTRA_SS_ROOT}/src/mcu/rtl/caliptra_reg_defines.svh
 ${CALIPTRA_ROOT}/src/integration/rtl/config_defines.svh
 ${CALIPTRA_ROOT}/src/integration/rtl/caliptra_reg_defines.svh
