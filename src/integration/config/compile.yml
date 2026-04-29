@@ -106,6 +106,10 @@ targets:
   rtl_lint:
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
+    options:
+      - '+define+CALIPTRA_INTERNAL_TRNG'
+      - '+define+CALIPTRA_AXI_DMA_ADDR_WIDTH=32'
+      - '+define+CALIPTRA_MODE_SUBSYSTEM'
   rtl:
     directories: 
       - $COMPILE_ROOT/rtl
@@ -121,6 +125,13 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
     tops: [caliptra_ss_top_w_stub]
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
+    options:
+      - '+define+CALIPTRA_INTERNAL_TRNG'
+      - '+define+CALIPTRA_AXI_DMA_ADDR_WIDTH=32'
+      - '+define+CALIPTRA_MODE_SUBSYSTEM'
 --- 
 provides: [caliptra_ss_top_tb_coverage]
 schema_version: 2.4.0
@@ -218,7 +229,7 @@ global:
         - +define+AAXI_MAX_ID_WIDTH=5
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
-        - +define+CALIPTRA_INTERNAL_UART
+        - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
         - +define+AAXI_INTC_SLAVE_CNT=8
