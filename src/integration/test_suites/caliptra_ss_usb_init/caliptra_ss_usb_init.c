@@ -65,7 +65,7 @@ void main (void) {
     uint16_t wValue, wLength;
     uint32_t transfers_handled = 0;
 
-    VPRINTF(LOW, "MCU: USB init test — booting...\n");
+    VPRINTF(LOW, "=================\nMCU: USB init test\n=================\n\n");
 
     // Standard MCU boot sequence
     boot_mcu();
@@ -90,7 +90,7 @@ void main (void) {
     // --- Main USB event loop: poll for SETUP packets ---
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
 
-        // Direct DEVCMDSTAT poll for bus reset (fallback — INTSTAT may not report DEV_INT)
+        // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         {
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
             if (cmd & USB_DEVCMDSTAT_DRES_C) {
@@ -98,7 +98,7 @@ void main (void) {
                 // Clear reset change (W1C)
                 lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USB_DEVCMDSTAT_DRES_C);
 
-                // Re-initialize EP0 after bus reset — hardware may clear Active bit
+                // Re-initialize EP0 after bus reset - hardware may clear Active bit
                 uint32_t ep0_out_entry = (1u << 31) | (8u << 16) | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
                 lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
                 // Re-set SETUP buffer address
@@ -118,7 +118,7 @@ void main (void) {
         reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
         if (reg_data & USB_INT_DEV) {
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-            VPRINTF(LOW, "MCU: DEV_INT — DEVCMDSTAT = 0x%x\n", cmd);
+            VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
 
             if (cmd & USB_DEVCMDSTAT_DRES_C) {
                 VPRINTF(LOW, "MCU: Bus reset detected\n");
@@ -211,7 +211,7 @@ void main (void) {
                     cmd = (cmd & ~USB_DEVCMDSTAT_DEV_ADDR_MASK) | new_addr;
                     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
                 } else {
-                    VPRINTF(LOW, "MCU: Unhandled request 0x%x — stalling\n", bRequest);
+                    VPRINTF(LOW, "MCU: Unhandled request 0x%x - stalling\n", bRequest);
                 }
 
                 // Clear SETUP bit LAST (per Integration Guide §4.2.4.1.1)
@@ -230,7 +230,7 @@ void main (void) {
 
         // After handling at least one transfer, consider test done
         if (transfers_handled >= 1) {
-            VPRINTF(LOW, "MCU: USB init test — at least one transfer handled, continuing event loop\n");
+            VPRINTF(LOW, "MCU: USB init test - at least one transfer handled, continuing event loop\n");
         }
 
         // Periodic diagnostic dump
@@ -251,8 +251,8 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     reg_data = lsu_read_32(SOC_USBHSD_INFO);
     VPRINTF(LOW, "MCU: USB INFO final = 0x%x\n", reg_data);
-    VPRINTF(LOW, "MCU: USB init test — transfers handled: %d\n", transfers_handled);
+    VPRINTF(LOW, "MCU: USB init test - transfers handled: %d\n", transfers_handled);
 
-    VPRINTF(LOW, "MCU: USB init test — halting\n");
+    VPRINTF(LOW, "MCU: USB init test - halting\n");
     csr_write_mpmc_halt();
 }
