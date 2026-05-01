@@ -132,6 +132,7 @@ generate
     // USB DMA, USB DEV, Caliptra SoC IFC, MCI, FC, LCC
     defparam slave_mon[`CSS_INTC_SINTF_USB_DMA_IDX      ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_USB_DEV_IDX      ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_USB_HOST_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_MCI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
@@ -397,6 +398,7 @@ initial begin
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
         slave[7].set("mem_uninitialized_value", 0);
+        slave[8].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -407,6 +409,7 @@ initial begin
         test.slave5= slave[5];
         test.slave6= slave[6];
         test.slave7= slave[7];
+        test.slave8= slave[8];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);

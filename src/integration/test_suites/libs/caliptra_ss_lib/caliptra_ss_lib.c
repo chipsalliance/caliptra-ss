@@ -1033,6 +1033,19 @@ void boot_usb_core(void) {
 
     VPRINTF(LOW, "MCU: boot_usb_core — initializing USB device controller\n");
 
+    // --- Step 0a: Enable device-mode in the OTG PHY mux ---
+    // PORTMODE.PORT_MODE (bit 16) drives the VHDL `dev_enable` signal that
+    // routes UTMI signals between host and device controllers in the OTG
+    // PHY mux. Must be set to 1 so the device controller (which the MCU
+    // configures below) actually sees the UTMI bus. This replaces a prior
+    // `force` workaround in the testbench.
+    // E1 experiment: skip the read-modify-write to localize the AAXI sport8
+    // R-channel stall. Other PORTMODE bits are reset-default; just write the
+    // PORT_MODE bit directly.
+    reg_data = USBHSH_PORTMODE_PORT_MODE_MASK;
+    lsu_write_32(SOC_USBHSH_PORTMODE, reg_data);
+    VPRINTF(LOW, "MCU: USB PORTMODE configured (dev mode, write-only) = 0x%x\n", reg_data);
+
     // Read DEVCMDSTAT to check initial state
     reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT initial = 0x%x\n", reg_data);
@@ -1068,9 +1081,10 @@ void boot_usb_core(void) {
     lsu_write_32(SOC_USBHSD_DATABUFSTART, 0x00000000);
 
     // --- Step 3: Enable device ---
+    // HS link-up: do NOT set FORCE_FULLSPEED. The device controller will
+    // perform HS chirp at the next bus reset.
     reg_data = USB_DEVCMDSTAT_DEV_EN
              | USB_DEVCMDSTAT_FORCE_VBUS
-             | USB_DEVCMDSTAT_FORCE_FULLSPEED
              | USB_DEVCMDSTAT_DCON;
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);

@@ -30,11 +30,11 @@
 //      controller and program EP0.
 //   2. Issue a USB 2.0 bus reset via svt_usb_link_service
 //      (LINK_20_PORT_COMMAND / SVT_USB_20_PORT_RESET) on the host_agent
-//      link-service sequencer. This is started as a sub-sequence after
-//      locating the link-service sequencer via uvm_top.find_all().
+//      link-service sequencer, accessed directly via the virtual
+//      sequencer's link_service_sequencer handle.
 //   3. Wait ~100us for firmware to handle DRES_C and re-init EP0.
 //   4. Issue a CONTROL GET_DESCRIPTOR(Device, len=18) using svt_usb_transfer
-//      on the p_sequencer (xfer_sequencer).
+//      on the xfer_sequencer via the virtual sequencer.
 //   5. Issue a CONTROL SET_ADDRESS(1) and a follow-up GET_DESCRIPTOR using
 //      the new address to validate enumeration.
 // =============================================================================
@@ -58,8 +58,8 @@
 // Drives an svt_usb_link_service item with:
 //   service_type         == LINK_20_PORT_COMMAND
 //   link_20_command_type == USB_20_PORT_RESET
-// on the host_virt_sequencer.link_service_sequencer (located at runtime via
-// the sequencer's own virtual sequencer handle on p_sequencer.host_agent).
+// on the host agent's link_service_sequencer, accessed through the
+// virtual sequencer (p_sequencer.link_service_sequencer).
 // -----------------------------------------------------------------------------
 class caliptra_ss_usb_port_reset_sequence
     extends svt_usb_link_service_base_sequence;
@@ -103,12 +103,12 @@ class caliptra_ss_usb_port_reset_sequence
 endclass
 
 // -----------------------------------------------------------------------------
-// Top-level init sequence (started on env.host_agent.xfer_sequencer).
+// Top-level init sequence (started on env.host_agent.virt_sequencer).
 // -----------------------------------------------------------------------------
 class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_init_sequence)
-    `uvm_declare_p_sequencer(svt_usb_transfer_sequencer)
+    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     function new(string name = "caliptra_ss_usb_init_sequence");
         super.new(name);
@@ -130,7 +130,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     endtask
 
     // -------------------------------------------------------------------------
-    // Helper: issue a single CONTROL transfer on p_sequencer (xfer_sequencer).
+    // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
     // -------------------------------------------------------------------------
     task do_control_xfer(
         input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
@@ -145,7 +145,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     );
         svt_usb_transfer req;
         req = svt_usb_transfer::type_id::create({label, "_req"});
-        start_item(req);
+        start_item(req, -1, p_sequencer.xfer_sequencer);
         if (!req.randomize() with {
                 xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
                 device_address                     == device_addr;
@@ -160,7 +160,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             `uvm_fatal("USB_INIT",
                 $sformatf("svt_usb_transfer randomize() failed for %s", label))
         end
-        finish_item(req);
+        finish_item(req, -1);
         `uvm_info("USB_INIT",
             $sformatf("CONTROL %s done (addr=%0d wValue=0x%04x wLength=0x%04x)",
                       label, device_addr, wvalue, wlength), UVM_LOW)
@@ -170,8 +170,6 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     // Main body
     // -------------------------------------------------------------------------
     virtual task body();
-        uvm_component lookup;
-        svt_usb_link_service_sequencer link_seq;
         caliptra_ss_usb_port_reset_sequence rst_seq;
 
         `uvm_info("USB_INIT",
@@ -181,20 +179,14 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
         // ---------------- Explicit USB 2.0 Bus reset ----------------
         // Drive USB_20_PORT_RESET via svt_usb_link_service on the host
-        // agent's link_service_sequencer. This replaces the previous
-        // reliance on poweron_auto_attach_delay=0 auto-reset, which did
-        // not produce a clean DRES_C event for the DUT firmware.
-        lookup = uvm_top.find("*host_agent*link_service_sequencer*");
-        if (lookup == null || !$cast(link_seq, lookup)) begin
-            `uvm_warning("USB_INIT",
-                "Could not locate host_agent link_service_sequencer; skipping explicit bus reset")
-        end else begin
-            `uvm_info("USB_INIT",
-                $sformatf("Issuing USB_20_PORT_RESET on %s", link_seq.get_full_name()),
-                UVM_LOW)
-            rst_seq = caliptra_ss_usb_port_reset_sequence::type_id::create("rst_seq");
-            rst_seq.start(link_seq);
-        end
+        // agent's link_service_sequencer, accessed deterministically
+        // through p_sequencer (svt_usb_virtual_sequencer).
+        `uvm_info("USB_INIT",
+            $sformatf("Issuing USB_20_PORT_RESET on %s",
+                      p_sequencer.link_service_sequencer.get_full_name()),
+            UVM_LOW)
+        rst_seq = caliptra_ss_usb_port_reset_sequence::type_id::create("rst_seq");
+        rst_seq.start(p_sequencer.link_service_sequencer);
 
         `uvm_info("USB_INIT",
             "Waiting ~100us for firmware to handle bus reset (DRES_C handler)...",

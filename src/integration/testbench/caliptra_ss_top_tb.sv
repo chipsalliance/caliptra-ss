@@ -1056,7 +1056,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_host_s_axi_if.aruser                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARUSER;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARREADY = cptra_ss_usb_host_s_axi_if.arready;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RVALID  = cptra_ss_usb_host_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RDATA   = 64'(cptra_ss_usb_host_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RDATA   = cptra_ss_usb_host_s_axi_if.rdata;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RRESP   = cptra_ss_usb_host_s_axi_if.rresp;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RUSER   = cptra_ss_usb_host_s_axi_if.ruser;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RID     = cptra_ss_usb_host_s_axi_if.rid;
@@ -1697,15 +1697,8 @@ module caliptra_ss_top_tb
     // --- VIP PHY -> DUT control/status signals ---
     assign cptra_ss_usb_utmi_linestate_i = usb_20_mac_if.utmi_dut_mac_if.LineState;
 
-    // Force dev_enable in the VHDL PHY mux to route UTMI signals to the
-    // device controller. The host AXI port is tied off in caliptra_ss_top,
-    // so the host register that controls dev_enable is never written.
-    // Without this force, the mux defaults block all UTMI I/O to the device.
-    initial begin
-        @(posedge cptra_ss_pwrgood_i);
-        #1;
-        force caliptra_ss_dut.usb_core_i.uut.dev_enable = 1'b1;
-    end
+    // dev_enable is now driven by firmware via the host PORTMODE register
+    // (SOC_USBHSH_PORTMODE bit 16). No structural force needed.
 
     assign cptra_ss_usb_utmi_hostdisconnect_i   = usb_20_mac_if.utmi_dut_mac_if.HostDisconnect;
     assign cptra_ss_usb_utmi_id_value_i         = usb_20_mac_if.utmi_dut_mac_if.IdDig;

@@ -231,6 +231,7 @@ global:
         - +define+AAXI_MAX_DATA_WIDTH=64
         - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
+        - +define+AAXI_SPORT_ID_WIDTH=8
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
         - +define+CALIPTRA_INTERNAL_TRNG

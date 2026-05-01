@@ -47,7 +47,7 @@ class caliptra_ss_usb_basic_utmi_test extends caliptra_ss_usb_base_test;
 
         // Set default sequence: directed CONTROL transfers for basic init
         uvm_config_db#(uvm_object_wrapper)::set(this,
-            "env.host_agent.xfer_sequencer.main_phase",
+            "env.host_agent.virt_sequencer.main_phase",
             "default_sequence",
             caliptra_ss_usb_init_sequence::type_id::get());
 
