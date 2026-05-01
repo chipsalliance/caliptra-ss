@@ -1720,6 +1720,13 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.utmi_dut_mac_if.BValid    = cptra_ss_pwrgood_i;
     assign usb_20_mac_if.utmi_dut_mac_if.IdDig     = 1'b1; // B-device
 
+    // Tell the VIP UTMI port to source-clock its sub-interface from CLK above
+    // (canonical pattern from tb_usb_svt_uvm_basic_sys/top.usb_20_utmi.sv).
+    initial begin
+        usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b1;
+        usb_20_mac_if.testbench_clock              = usb_utmi_clk;
+    end
+
     // --- DUT MAC tie-offs for unused UTMI signals ---
     assign usb_20_mac_if.utmi_dut_mac_if.Tx_Enable_N       = 1'b1;
     assign usb_20_mac_if.utmi_dut_mac_if.Tx_DAT            = 1'b0;

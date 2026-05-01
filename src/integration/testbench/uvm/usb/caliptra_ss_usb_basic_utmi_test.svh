@@ -39,10 +39,13 @@ class caliptra_ss_usb_basic_utmi_test extends caliptra_ss_usb_base_test;
         `uvm_info("build_phase", "Entered...", UVM_LOW)
         super.build_phase(phase);
 
-        cfg.host_cfg.utmi_data_width = 8;
+        // utmi_data_width applies to the agent owning the UTMI vif (dev_agent)
+        cfg.dev_cfg.utmi_data_width = 8;
 
         // Use scaled-down timers for faster simulation
         void'(cfg.host_cfg.set_timer_values(
+            svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
+        void'(cfg.dev_cfg.set_timer_values(
             svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
 
         // Set default sequence: directed CONTROL transfers for basic init
