@@ -1676,9 +1676,12 @@ module caliptra_ss_top_tb
 
     // --- VIP UTMI clock ---
     // utmi_dut_mac_if is used because the DUT is a USB device MAC; VIP acts as PHY.
-    // The VIP's svt_usb_utmi_phy_port reads DUT-driven signals (input clocking blocks)
-    // and drives PHY→MAC signals (output clocking blocks), avoiding ICPSD_W conflicts.
-    assign usb_20_mac_if.utmi_dut_mac_if.CLK = usb_utmi_clk;
+    // CLK on the VIP UTMI sub-interface is generated internally by the VIP via
+    // generate_clk=1 (set in the initial block below; matches canonical Synopsys
+    // example tb_usb_svt_uvm_basic_sys/top.usb_20_utmi.sv). Do NOT also drive
+    // CLK with an external continuous assign — that produces a multi-driver
+    // X-conflict that freezes the VIP's PHY→MAC outputs (LineState, DataOut,
+    // RXValid, RXActive, HostDisconnect) and the DUT never sees SE0/bus-reset.
 
     // --- DUT Device TX → VIP PHY (UTMI: MAC drives DataIn/TXValid to PHY) ---
     assign usb_20_mac_if.utmi_dut_mac_if.DataIn  = cptra_ss_usb_utmi_txdata_o;

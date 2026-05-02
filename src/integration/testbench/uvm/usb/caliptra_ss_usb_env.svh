@@ -101,6 +101,17 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
         remote_agent_cfg.usb_capability          = svt_usb_configuration::USB_20_ONLY;
         remote_agent_cfg.utmi_data_width         = 8;
         remote_agent_cfg.capability              = svt_usb_configuration::PLAIN;
+        // Manual attach mode: the test sequence will issue
+        // svt_usb_physical_service_remote_attach_device_sequence to drive the
+        // host VIP into DEVICE_ATTACHED. Without this, the host stays in
+        // DISCONNECTED forever in a single-agent host-MAC + remote-PHY UTMI
+        // topology because there is no peer DEVICE agent to synthesize attach.
+        remote_agent_cfg.poweron_auto_attach_delay = -1;
+        // Apply the same timer scale-down preset to the remote PHY config so
+        // tattdb / chirp / debounce all complete in microseconds rather than
+        // milliseconds (matches host_cfg setup in shared_cfg).
+        void'(remote_agent_cfg.set_timer_values(
+            svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
         $cast(remote_cfg, remote_agent_cfg);
         uvm_config_db#(svt_usb_configuration)::set(this, "host_agent",
             "remote_cfg", remote_cfg);

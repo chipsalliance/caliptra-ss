@@ -170,28 +170,57 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     // Main body
     // -------------------------------------------------------------------------
     virtual task body();
-        caliptra_ss_usb_port_reset_sequence rst_seq;
+        svt_usb_physical_service_remote_attach_device_sequence rem_attach;
+        svt_usb_agent host_agent_h;
+        uvm_component parent_comp;
 
         `uvm_info("USB_INIT",
             "Waiting ~200us for DUT firmware USB controller bring-up...",
             UVM_LOW)
         #200us;
 
-        // ---------------- Explicit USB 2.0 Bus reset ----------------
-        // Drive USB_20_PORT_RESET via svt_usb_link_service on the host
-        // agent's link_service_sequencer, accessed deterministically
-        // through p_sequencer (svt_usb_virtual_sequencer).
+        // ---------------- Force VIP attach via REMOTE_ATTACH_DEVICE ----------------
+        // In the single-agent host-MAC + remote-PHY UTMI topology, there is no
+        // peer DEVICE agent to synthesize an attach indication. With remote_cfg
+        // poweron_auto_attach_delay = -1 (manual mode), the test must explicitly
+        // issue svt_usb_physical_service_remote_attach_device_sequence on
+        // p_sequencer.usb_20_phys_service_sequencer. The remote PHY then drives
+        // an attach indication into the host link via the internal TLM bridge,
+        // and L20_DEV_A_SM walks DISCONNECTED -> DEVICE_ATTACHED -> RESETTING ->
+        // ENABLED automatically (host link issues post-attach reset on its own).
+        // Reference: usb_vip_topology_reference.md, FAQ usb_2_0.html, and
+        // class_svt_usb_physical_service_remote_attach_device_sequence.
         `uvm_info("USB_INIT",
-            $sformatf("Issuing USB_20_PORT_RESET on %s",
-                      p_sequencer.link_service_sequencer.get_full_name()),
+            $sformatf("Issuing REMOTE_ATTACH_DEVICE on %s",
+                      p_sequencer.usb_20_phys_service_sequencer.get_full_name()),
             UVM_LOW)
-        rst_seq = caliptra_ss_usb_port_reset_sequence::type_id::create("rst_seq");
-        rst_seq.start(p_sequencer.link_service_sequencer);
+        rem_attach = svt_usb_physical_service_remote_attach_device_sequence::
+                     type_id::create("rem_attach");
+        rem_attach.start(p_sequencer.usb_20_phys_service_sequencer);
 
+        // ---------------- Wait for host link to reach ENABLED ----------------
+        // Per attach_bulk_xfers_detach_hs_sequence.sv pattern: wait on
+        // host_agent.shared_status.link_usb_20_state == ENABLED before any
+        // svt_usb_transfer item, otherwise transfer randomization will fail
+        // because no negotiated bus speed / endpoint context exists.
+        // Navigate from p_sequencer (svt_usb_virtual_sequencer) up to the agent
+        // that owns it.
+        parent_comp = p_sequencer.get_parent();
+        if (!$cast(host_agent_h, parent_comp)) begin
+            `uvm_fatal("USB_INIT",
+                $sformatf("Could not cast p_sequencer parent (%s) to svt_usb_agent",
+                          parent_comp.get_full_name()))
+        end
         `uvm_info("USB_INIT",
-            "Waiting ~100us for firmware to handle bus reset (DRES_C handler)...",
-            UVM_LOW)
-        #100us;
+            "Waiting for host link to reach ENABLED state...", UVM_LOW)
+        wait (host_agent_h.shared_status.link_usb_20_state ==
+              svt_usb_types::ENABLED);
+        `uvm_info("USB_INIT", "Host link ENABLED. Starting transfers.", UVM_LOW)
+
+        // Small settling delay before issuing the first SETUP transfer so the
+        // DUT firmware has had time to handle the bus-reset interrupt
+        // (DRES_C) and re-prime EP0.
+        #20us;
 
         // ---------------- GET_DESCRIPTOR(Device, addr=0) ----------------
         do_control_xfer(
