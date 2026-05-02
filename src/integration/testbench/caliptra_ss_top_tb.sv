@@ -1728,6 +1728,7 @@ module caliptra_ss_top_tb
     end
 
     // --- DUT MAC tie-offs for unused UTMI signals ---
+    assign usb_20_mac_if.utmi_dut_mac_if.DataBus16_8        = 1'b0; // 8-bit data bus
     assign usb_20_mac_if.utmi_dut_mac_if.Tx_Enable_N       = 1'b1;
     assign usb_20_mac_if.utmi_dut_mac_if.Tx_DAT            = 1'b0;
     assign usb_20_mac_if.utmi_dut_mac_if.Tx_SE0            = 1'b0;

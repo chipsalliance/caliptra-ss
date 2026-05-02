@@ -22,32 +22,31 @@
 // =============================================================================
 // USB shared configuration for Caliptra Subsystem testbench.
 //
-// Two-agent topology matching the canonical
-// tb_usb_svt_uvm_basic_sys/host_phy_device_mac example:
-//   - host_agent: component_type=HOST,   usb_20_signal_interface=USB_20_TLM
-//                 (no on-wire interface; runs over the VIP TLM-internal PHY)
-//   - dev_agent:  component_type=DEVICE, usb_20_signal_interface=UTMI_IF
-//                 (owns the svt_usb_if vif on the DUT MAC side)
+// Single-agent topology per usb_vip_topology_reference.md:
+//   - One svt_usb_agent (host_agent) with:
+//     - Main cfg: component_type=HOST, usb_20_signal_interface=USB_20_TLM
+//       (local Host stack — Protocol, Link, Physical — all internal/TLM)
+//     - remote_cfg: component_type=DEVICE, component_subtype=PHY,
+//       usb_20_signal_interface=UTMI_IF (remote Device PHY facing DUT MAC)
+//   - The agent internally bridges local↔remote via TLM; remote PHY drives
+//     real UTMI signals to the DUT device controller.
+//   - No second agent is needed.
 //
-// EP descriptors are populated only on dev_cfg.local_device_cfg[0]; the host's
-// remote_device_cfg array is pointer-aliased to dev_cfg.local_device_cfg so
-// both agents share the same EP table.
+// EP descriptors are populated on host_cfg.remote_device_cfg[0] so the host
+// protocol layer knows the DUT device's endpoint layout.
 // =============================================================================
 class caliptra_ss_usb_shared_cfg extends uvm_object;
 
     real timeout = `CALIPTRA_SS_USB_CFG_TIMEOUT;
 
-    // Host agent configuration (VIP acts as host)
+    // Single agent configuration (VIP acts as host with remote device PHY)
     svt_usb_agent_configuration host_cfg;
-    // Device agent configuration (VIP emulates dev PHY)
-    svt_usb_agent_configuration dev_cfg;
 
     // Number of endpoints to configure on the device (DUT)
     int num_endpoints = 2;
 
     `uvm_object_utils_begin(caliptra_ss_usb_shared_cfg)
         `uvm_field_object(host_cfg, UVM_ALL_ON|UVM_DEEP)
-        `uvm_field_object(dev_cfg,  UVM_ALL_ON|UVM_DEEP)
         `uvm_field_real  (timeout,  UVM_ALL_ON)
         `uvm_field_int   (num_endpoints, UVM_ALL_ON)
     `uvm_object_utils_end
@@ -59,79 +58,65 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         host_cfg.component_type = svt_usb_types::HOST;
         host_cfg.top_layer      = svt_usb_agent_configuration::PROTOCOL;
         host_cfg.local_host_cfg        = new();
+
+        // Host's view of the remote device (DUT) — EP descriptors go here
+        host_cfg.remote_device_cfg_size = 1;
+        host_cfg.remote_device_cfg[0]   = new();
+
+        // No local device cfg on the host agent
         host_cfg.local_device_cfg_size = 0;
-
-        dev_cfg = new();
-        dev_cfg.component_type = svt_usb_types::DEVICE;
-        dev_cfg.top_layer      = svt_usb_agent_configuration::PROTOCOL;
-        dev_cfg.local_host_cfg         = null;
-        dev_cfg.local_device_cfg_size  = 1;
-        dev_cfg.local_device_cfg[0]    = new();
-
-        // Cross-link: host's view of the remote device == device's local cfg
-        // (pointer alias — same handle, so EP table stays in sync).
-        host_cfg.remote_device_cfg_size = dev_cfg.local_device_cfg_size;
-        host_cfg.remote_device_cfg      = dev_cfg.local_device_cfg;
-        host_cfg.remote_host_cfg        = dev_cfg.local_host_cfg;
-
-        dev_cfg.remote_host_cfg         = host_cfg.local_host_cfg;
-        dev_cfg.remote_device_cfg_size  = host_cfg.local_device_cfg_size;
     endfunction
 
     // -------------------------------------------------------------------------
-    // Setup USB 2.0 HS UTMI defaults for two-agent (host TLM + dev UTMI) topology
+    // Setup USB 2.0 HS UTMI defaults for single-agent topology.
+    //
+    // The host_cfg is the agent's main (local) configuration with USB_20_TLM.
+    // The env will create a separate remote_cfg object with UTMI_IF + DEVICE +
+    // PHY and push it via config_db. EP descriptors are set here on
+    // host_cfg.remote_device_cfg[0].
     // -------------------------------------------------------------------------
     function void setup_usb_20_utmi_host_defaults();
-        // ---------------- host_agent (TLM) ----------------
+        // ---------------- host agent main cfg (local Host stack, TLM) --------
         host_cfg.capability                = svt_usb_configuration::PLAIN;
         host_cfg.speed                     = svt_usb_types::HS;
         host_cfg.usb_20_signal_interface   = svt_usb_configuration::USB_20_TLM;
         host_cfg.usb_ss_signal_interface   = svt_usb_configuration::NO_SS_IF;
         host_cfg.usb_capability            = svt_usb_configuration::USB_20_ONLY;
+        host_cfg.utmi_data_width           = 8;
         host_cfg.poweron_auto_attach_delay = 0;
 
-        // ---------------- dev_agent (UTMI MAC-side) ----------------
-        dev_cfg.capability                 = svt_usb_configuration::PLAIN;
-        dev_cfg.speed                      = svt_usb_types::HS;
-        dev_cfg.usb_20_signal_interface    = svt_usb_configuration::UTMI_IF;
-        dev_cfg.usb_ss_signal_interface    = svt_usb_configuration::NO_SS_IF;
-        dev_cfg.usb_capability             = svt_usb_configuration::USB_20_ONLY;
-        dev_cfg.utmi_data_width            = 8;
-        dev_cfg.poweron_auto_attach_delay  = 0;
-
-        // ---------------- Device function descriptor (shared via alias) ----------------
-        dev_cfg.local_device_cfg[0].device_address              = 0;
-        dev_cfg.local_device_cfg[0].connected_bus_speed         = svt_usb_types::HS;
-        dev_cfg.local_device_cfg[0].connected_hub_device_address = 0;
-        dev_cfg.local_device_cfg[0].functionality_support       = svt_usb_types::HS;
-        dev_cfg.local_device_cfg[0].num_endpoints               = num_endpoints;
+        // ---------------- Remote device descriptor (DUT's EP layout) --------
+        host_cfg.remote_device_cfg[0].device_address              = 0;
+        host_cfg.remote_device_cfg[0].connected_bus_speed         = svt_usb_types::HS;
+        host_cfg.remote_device_cfg[0].connected_hub_device_address = 0;
+        host_cfg.remote_device_cfg[0].functionality_support       = svt_usb_types::HS;
+        host_cfg.remote_device_cfg[0].num_endpoints               = num_endpoints;
 
         for (int ep = 0; ep < num_endpoints; ep++) begin
-            dev_cfg.local_device_cfg[0].endpoint_cfg[ep] = new();
+            host_cfg.remote_device_cfg[0].endpoint_cfg[ep] = new();
         end
 
         // Endpoint 0: CONTROL (mandatory)
         if (num_endpoints >= 1) begin
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].ep_number       = 0;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].direction       = svt_usb_types::IN;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].ep_type         = svt_usb_types::CONTROL;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].interval        = 1;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].max_burst_size  = 0;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[0].max_packet_size = `SVT_USB_HS_CONTROL_MAX_PACKET_SIZE;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].ep_number       = 0;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].direction       = svt_usb_types::IN;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].ep_type         = svt_usb_types::CONTROL;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].interval        = 1;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].max_burst_size  = 0;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[0].max_packet_size = `SVT_USB_HS_CONTROL_MAX_PACKET_SIZE;
         end
 
         // Endpoint 1: BULK IN
         if (num_endpoints >= 2) begin
-            dev_cfg.local_device_cfg[0].endpoint_cfg[1].ep_number       = 1;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[1].direction       = svt_usb_types::IN;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[1].ep_type         = svt_usb_types::BULK;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[1].interval        = 1;
-            dev_cfg.local_device_cfg[0].endpoint_cfg[1].max_packet_size = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].ep_number       = 1;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].direction       = svt_usb_types::IN;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].ep_type         = svt_usb_types::BULK;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].interval        = 1;
+            host_cfg.remote_device_cfg[0].endpoint_cfg[1].max_packet_size = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
         end
 
-        // Scaled-down timers on both cfgs for faster simulation
+        // Scaled-down timers for faster simulation
         void'(host_cfg.set_timer_values(svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
-        void'(dev_cfg.set_timer_values (svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
     endfunction
 
 endclass
