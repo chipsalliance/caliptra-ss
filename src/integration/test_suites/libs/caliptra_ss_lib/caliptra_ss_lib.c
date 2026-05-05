@@ -1010,7 +1010,7 @@ void boot_mcu(){
 }
 
 // -------------------------------------------------------------------------
-// boot_usb_core — Initialize the USB device controller
+// boot_usb_core - Initialize the USB device controller
 //
 // Sets up the EP command/status list and data buffers in SRAM, then
 // configures EPLISTSTART, DATABUFSTART, DEVCMDSTAT, and interrupt enables
@@ -1031,7 +1031,7 @@ void boot_mcu(){
 void boot_usb_core(void) {
     uint32_t reg_data;
 
-    VPRINTF(LOW, "MCU: boot_usb_core — initializing USB device controller\n");
+    VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller\n");
 
     // --- Step 0a: Enable device-mode in the OTG PHY mux ---
     // PORTMODE.PORT_MODE (bit 16) drives the VHDL `dev_enable` signal that
@@ -1101,5 +1101,5 @@ void boot_usb_core(void) {
     // --- Step 5: Clear pending interrupts ---
     lsu_write_32(SOC_USBHSD_INTSTAT, 0xC0000FFF);
 
-    VPRINTF(LOW, "MCU: boot_usb_core — done\n");
+    VPRINTF(LOW, "MCU: boot_usb_core - done\n");
 }
