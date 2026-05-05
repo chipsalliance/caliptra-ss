@@ -518,7 +518,7 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
     - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
       - 333 MHz was calculated assuming SCL PAD -> D and SDA Q -> PAD timing is 0. SOCs with large timing delays might need to run at a faster clock frequency to meet tSCO timing of 12ns. 
     - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
-    - This was changed from 170 MHz floor due to CDC issue found in I3C core:
+    - Previous I3C Core releases permitted use of a 170 MHz clock as part of a faulty configuration that involved disabling input synchronizers. This configuration produces CDC violations and is no longer permitted. If integrators follow the requirement for 333MHz clock and do not disable synchronizers, CDC in the phy is clean. The following issues include discussion about the CDC violations from the invalid configuration:
        - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
        - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
