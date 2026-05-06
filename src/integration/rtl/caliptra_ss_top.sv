@@ -310,6 +310,8 @@ module caliptra_ss_top
     output logic                           cptra_ss_usb_vbuscomp_on_o,
     output logic                           cptra_ss_usb_chrgvbus_o,
     output logic                           cptra_ss_usb_dischrgvbus_o,
+    input  logic                           cptra_ss_usb_sessend_i,
+
     output logic cptra_ss_usb_recovery_payload_available_o, // TODO: drive from usb_core_i when recovery is supported
     input  logic cptra_ss_usb_recovery_payload_available_i,
 
@@ -1131,8 +1133,8 @@ module caliptra_ss_top
         .dischrgvbus      (cptra_ss_usb_dischrgvbus_o),
 
         // ---- OTG / Session Signals ----
-        .avalid           (1'b0),  /* TODO: OTG session */
-        .sessend          (1'b1),  /* TODO: OTG session */
+        .avalid           (1'b1),  /* TODO: OTG session */
+        .sessend          (cptra_ss_usb_sessend_i),  /* TODO: OTG session */
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
