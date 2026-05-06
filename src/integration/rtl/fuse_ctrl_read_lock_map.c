@@ -27,12 +27,11 @@
 
 const uint32_t read_lock_partition_indices[] = {
     6,
-    8,
     9,
     10,
     11,
     12,
-    14,
+    13,
     15,
     16,
     17,
@@ -59,6 +58,5 @@ const uint32_t read_lock_csr_mapping[] = {
     SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_READ_LOCK,
     SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK,
     SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK,
-    SOC_OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK,
     UINT32_MAX
 };

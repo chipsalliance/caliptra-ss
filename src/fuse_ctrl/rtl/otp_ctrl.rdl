@@ -113,67 +113,67 @@ addrmap otp_ctrl {
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SECRET_LC_TRANSITION_PARTITION_ERROR[7:7];
+        } PROD_DEBUG_UNLOCK_MANUF_PARTITION_ERROR[7:7];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } SVN_PARTITION_ERROR[8:8];
+        } SECRET_LC_TRANSITION_PARTITION_ERROR[8:8];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_TEST_PARTITION_ERROR[9:9];
+        } SVN_PARTITION_ERROR[9:9];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_HASHES_MANUF_PARTITION_ERROR[10:10];
+        } VENDOR_TEST_PARTITION_ERROR[10:10];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_HASHES_PROD_PARTITION_ERROR[11:11];
+        } VENDOR_HASHES_MANUF_PARTITION_ERROR[11:11];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_REVOCATIONS_PROD_PARTITION_ERROR[12:12];
+        } VENDOR_HASHES_PROD_PARTITION_ERROR[12:12];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_SECRET_PROD_PARTITION_ERROR[13:13];
+        } VENDOR_REVOCATIONS_PROD_PARTITION_ERROR[13:13];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } VENDOR_NON_SECRET_PROD_PARTITION_ERROR[14:14];
+        } VENDOR_SECRET_PROD_PARTITION_ERROR[14:14];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_0_ERROR[15:15];
+        } VENDOR_NON_SECRET_PROD_PARTITION_ERROR[15:15];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_1_ERROR[16:16];
+        } CPTRA_SS_LOCK_HEK_PROD_0_ERROR[16:16];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_2_ERROR[17:17];
+        } CPTRA_SS_LOCK_HEK_PROD_1_ERROR[17:17];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_3_ERROR[18:18];
+        } CPTRA_SS_LOCK_HEK_PROD_2_ERROR[18:18];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_4_ERROR[19:19];
+        } CPTRA_SS_LOCK_HEK_PROD_3_ERROR[19:19];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_5_ERROR[20:20];
+        } CPTRA_SS_LOCK_HEK_PROD_4_ERROR[20:20];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_6_ERROR[21:21];
+        } CPTRA_SS_LOCK_HEK_PROD_5_ERROR[21:21];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
-        } CPTRA_SS_LOCK_HEK_PROD_7_ERROR[22:22];
+        } CPTRA_SS_LOCK_HEK_PROD_6_ERROR[22:22];
         field {
             sw = r;
             desc = "Set to 1 if an error occurred in this partition. If set to 1, SW should check the !!ERR_CODE register at the corresponding index.";
@@ -713,20 +713,6 @@ addrmap otp_ctrl {
 
     CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK.READ_LOCK -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
 
-    reg {
-    desc = "Runtime read lock for the CPTRA_SS_LOCK_HEK_PROD_7 partition.";
-        default sw = rw;
-        default onwrite = wzc;
-        default hw = r;
-        //default swwe = DIRECT_ACCESS_REGWEN;
-        field {
-            desc = "When cleared to 0, read access to the CPTRA_SS_LOCK_HEK_PROD_7 partition is locked.Write 0 to clear this bit.";
-            reset = 0x1;
-        } READ_LOCK [0:0];
-    } CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK @0xE8;
-
-    CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK.READ_LOCK -> swwe = DIRECT_ACCESS_REGWEN.REGWEN;
-
 
     reg {
         desc = "Volatile write lock for vendor public key hashes.";
@@ -736,7 +722,7 @@ addrmap otp_ctrl {
             desc = "One-hot encoded";
             reset = 0x0;
         } PERIOD [31:0];
-    } VENDOR_PK_HASH_VOLATILE_LOCK @ 0xEC;
+    } VENDOR_PK_HASH_VOLATILE_LOCK @ 0xE8;
 
     reg {
         desc = "Volatile write lock for ratchet seed partitions.";
@@ -746,7 +732,7 @@ addrmap otp_ctrl {
             desc = "One-hot encoded";
             reset = 0x0;
         } PERIOD [31:0];
-    } RATCHET_SEED_VOLATILE_LOCK @ 0xF0;
+    } RATCHET_SEED_VOLATILE_LOCK @ 0xEC;
 
     regfile digest_t {
         /* -----------------------------------
@@ -782,28 +768,28 @@ addrmap otp_ctrl {
         /* --------------------------------------*/
     };
 
-    digest_t SW_TEST_UNLOCK_PARTITION_DIGEST @ 0xF4;
-    digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xFC;
-    digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0x104;
-    digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0x10C;
-    digest_t SECRET_PROD_PARTITION_2_DIGEST @ 0x114;
-    digest_t SECRET_PROD_PARTITION_3_DIGEST @ 0x11C;
-    digest_t SW_MANUF_PARTITION_DIGEST @ 0x124;
-    digest_t SECRET_LC_TRANSITION_PARTITION_DIGEST @ 0x12C;
-    digest_t VENDOR_TEST_PARTITION_DIGEST @ 0x134;
-    digest_t VENDOR_HASHES_MANUF_PARTITION_DIGEST @ 0x13C;
-    digest_t VENDOR_HASHES_PROD_PARTITION_DIGEST @ 0x144;
-    digest_t VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST @ 0x14C;
-    digest_t VENDOR_SECRET_PROD_PARTITION_DIGEST @ 0x154;
-    digest_t VENDOR_NON_SECRET_PROD_PARTITION_DIGEST @ 0x15C;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_0_DIGEST @ 0x164;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_1_DIGEST @ 0x16C;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_2_DIGEST @ 0x174;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_3_DIGEST @ 0x17C;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_4_DIGEST @ 0x184;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_5_DIGEST @ 0x18C;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_6_DIGEST @ 0x194;
-    digest_t CPTRA_SS_LOCK_HEK_PROD_7_DIGEST @ 0x19C;
+    digest_t SW_TEST_UNLOCK_PARTITION_DIGEST @ 0xF0;
+    digest_t SECRET_MANUF_PARTITION_DIGEST @ 0xF8;
+    digest_t SECRET_PROD_PARTITION_0_DIGEST @ 0x100;
+    digest_t SECRET_PROD_PARTITION_1_DIGEST @ 0x108;
+    digest_t SECRET_PROD_PARTITION_2_DIGEST @ 0x110;
+    digest_t SECRET_PROD_PARTITION_3_DIGEST @ 0x118;
+    digest_t SW_MANUF_PARTITION_DIGEST @ 0x120;
+    digest_t PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST @ 0x128;
+    digest_t SECRET_LC_TRANSITION_PARTITION_DIGEST @ 0x130;
+    digest_t VENDOR_TEST_PARTITION_DIGEST @ 0x138;
+    digest_t VENDOR_HASHES_MANUF_PARTITION_DIGEST @ 0x140;
+    digest_t VENDOR_HASHES_PROD_PARTITION_DIGEST @ 0x148;
+    digest_t VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST @ 0x150;
+    digest_t VENDOR_SECRET_PROD_PARTITION_DIGEST @ 0x158;
+    digest_t VENDOR_NON_SECRET_PROD_PARTITION_DIGEST @ 0x160;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_0_DIGEST @ 0x168;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_1_DIGEST @ 0x170;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_2_DIGEST @ 0x178;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_3_DIGEST @ 0x180;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_4_DIGEST @ 0x188;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_5_DIGEST @ 0x190;
+    digest_t CPTRA_SS_LOCK_HEK_PROD_6_DIGEST @ 0x198;
 
     reg {
         field {
@@ -831,7 +817,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = r;
         } field4[26:16] = 0x0;
-    } CSR0 @ 0x1A4;
+    } CSR0 @ 0x1A0;
 
     reg {
         field {
@@ -859,7 +845,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = r;
         } field4[31:16] = 0x0;
-    } CSR1 @ 0x1A8;
+    } CSR1 @ 0x1A4;
 
     reg {
         field {
@@ -867,7 +853,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = r;
         } field0[0:0] = 0x0;
-    } CSR2 @ 0x1AC;
+    } CSR2 @ 0x1A8;
 
     reg {
         field {
@@ -917,7 +903,7 @@ addrmap otp_ctrl {
             sw = r;
             hw = rw;
         } field8[22:22] = 0x0;
-    } CSR3 @ 0x1B0;
+    } CSR3 @ 0x1AC;
 
     reg {
         field {
@@ -940,7 +926,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = r;
         } field3[14:14] = 0x0;
-    } CSR4 @ 0x1B4;
+    } CSR4 @ 0x1B0;
 
     reg {
         field {
@@ -978,7 +964,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = rw;
         } field6[31:16] = 0x0;
-    } CSR5 @ 0x1B8;
+    } CSR5 @ 0x1B4;
 
     reg {
         field {
@@ -1001,7 +987,7 @@ addrmap otp_ctrl {
             sw = rw;
             hw = rw;
         } field3[31:16] = 0x0;
-    } CSR6 @ 0x1BC;
+    } CSR6 @ 0x1B8;
 
     reg {
         field {
@@ -1024,5 +1010,5 @@ addrmap otp_ctrl {
             sw = r;
             hw = rw;
         } field3[15:15] = 0x0;
-    } CSR7 @ 0x1C0;
+    } CSR7 @ 0x1BC;
 };
