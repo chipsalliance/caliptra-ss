@@ -102,6 +102,10 @@ module otp_ctrl
   assign core_axi_if.awuser      = core_axi_wr_req.awuser;
   assign core_axi_if.awid        = core_axi_wr_req.awid;
   assign core_axi_if.awlock      = core_axi_wr_req.awlock;
+  assign core_axi_if.awcache     = core_axi_wr_req.awcache;
+  assign core_axi_if.awprot      = core_axi_wr_req.awprot;
+  assign core_axi_if.awqos       = core_axi_wr_req.awqos;
+  assign core_axi_if.awregion    = core_axi_wr_req.awregion;
   assign core_axi_if.awvalid     = core_axi_wr_req.awvalid;
   assign core_axi_wr_rsp.awready = core_axi_if.awready;
 
@@ -124,6 +128,10 @@ module otp_ctrl
   assign core_axi_if.aruser      = core_axi_rd_req.aruser;
   assign core_axi_if.arid        = core_axi_rd_req.arid;
   assign core_axi_if.arlock      = core_axi_rd_req.arlock;
+  assign core_axi_if.arcache     = core_axi_rd_req.arcache;
+  assign core_axi_if.arprot      = core_axi_rd_req.arprot;
+  assign core_axi_if.arqos       = core_axi_rd_req.arqos;
+  assign core_axi_if.arregion    = core_axi_rd_req.arregion;
   assign core_axi_if.arvalid     = core_axi_rd_req.arvalid;
   assign core_axi_rd_rsp.arready      = core_axi_if.arready;
 

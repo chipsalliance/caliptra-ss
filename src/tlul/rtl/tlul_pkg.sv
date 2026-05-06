@@ -249,6 +249,10 @@ package axi_struct_pkg;
     logic [TLUL_AXI_STRUCT_USER_WIDTH-1:0] awuser; // 32-bit User-defined signal
     logic [TLUL_AXI_STRUCT_ID_WIDTH  -1:0] awid;   // 3-bit Write transaction ID
     logic                                  awlock; // Lock signal for atomic operations
+    logic [3:0]                            awcache;// 4-bit Cache type
+    logic [2:0]                            awprot; // 3-bit Protection type
+    logic [3:0]                            awqos;  // 4-bit Quality of Service
+    logic [3:0]                            awregion;// 4-bit Region identifier
     logic                                  awvalid;// Write address valid
 
     // AXI W Channel
@@ -280,6 +284,10 @@ package axi_struct_pkg;
     logic [TLUL_AXI_STRUCT_USER_WIDTH-1:0] aruser;           // 32-bit User-defined signal for read
     logic [TLUL_AXI_STRUCT_ID_WIDTH  -1:0] arid;             // 4-bit Read transaction ID
     logic                                  arlock;           // Lock signal
+    logic [3:0]                            arcache;          // 4-bit Cache type
+    logic [2:0]                            arprot;           // 3-bit Protection type
+    logic [3:0]                            arqos;            // 4-bit Quality of Service
+    logic [3:0]                            arregion;         // 4-bit Region identifier
     logic                                  arvalid;          // Read address valid
 
     logic        rready;           // Read data ready
