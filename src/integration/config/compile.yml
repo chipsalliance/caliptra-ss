@@ -271,7 +271,7 @@ global:
 #        # VCS from upgrading this to an error in future tool releases.
 #        - '+warn=noICPSD_W'
         # SIMU-RESOLUTION: VCS informational note about simulation time resolution.
-        # DRTZ: Detect delay value roundoff to 0 based on timescale — benign
+        # DRTZ: Detect delay value roundoff to 0 based on timescale - benign
         # rounding note present in mixed-language (VHDL+SV) builds.
         # Both are caught as errors by the Playbook log parser but are
         # harmless elaboration-time messages, so suppress them here.
