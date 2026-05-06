@@ -599,6 +599,12 @@ Integrator must connect following list of manager and subordinates to axi interc
   | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only. Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.    |
   | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions. Additional signals are unused and may be tied to 0 at the interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).           |
 
+- The following signals are unused for all AXI subordinate interfaces within Caliptra Subsystem. The AXI specification defines these signals as optional for a compliant AXI subordinate. They may be used by integrators to fine tune AXI interconnect behavior or performance. MCU AXI manager interfaces drive these signals, as documented in the VeeR EL2 specification. 
+  - AxCACHE
+  - AxPROT
+  - AxREGION
+  - AxQOS
+
 - AXI USER width is 32-bits for all AXI interfaces in the Caliptra Subsystem. Only the Address User signals are used (ARUSER and AWUSER) for secure access filtering. Other USER signals are either tied to 0 or not used (WUSER, RUSER, BUSER). ARUSER and AWUSER must be passed unmodified through the AXI interconnect to all AXI subordinates in the Subsystem. Each logic block inside the Subsystem is responsible for performing its own AXI User filtering based on access privileges. AXI interconnect is only responsible for passing the unmodified signals along with the transaction requests, not for performing any access filtering.
 
 - AXI ID width at each MCU manager interface must not be modified from the configured values. ID width for each of the MCU AXI Manager interfaces is defined by the <IF_NAME>_BUS_TAG parameter from this file: [css_mcu0_el2_param.vh](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh). Port connections may be seen in [mcu_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mcu/rtl/mcu_top.sv). ID Width of the Caliptra DMA AXI Manager interface is defined in [soc_ifc_pkg.sv](../third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv).
