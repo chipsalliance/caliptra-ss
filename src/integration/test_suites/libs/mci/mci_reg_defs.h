@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 // [03/26] MCI Register Count: 261
-#define MAX_REGISTER_ENTRIES 300
+#define MAX_REGISTER_ENTRIES 330
 
 // Enum for register sticky behavior
 typedef enum {
@@ -115,7 +115,9 @@ typedef enum {
     REG_GROUP_INTERRUPT_STATUS_RW1C,
     REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S,
     REG_GROUP_INTERRUPT_ERROR0_COUNTERS,
+    REG_GROUP_INTERRUPT_ERROR1_COUNTERS,
     REG_GROUP_INTERRUPT_NOTIF0_COUNTERS,
+    REG_GROUP_INTERRUPT_NOTIF1_COUNTERS,
     REG_GROUP_TRACE,
     REG_GROUP_TRACE_RO,
     REG_GROUP_SOC_MBOX_CSR,
@@ -123,7 +125,7 @@ typedef enum {
 } mci_register_group_t;
 
 /* Maximum number of registers in any group */
-#define MAX_REGISTERS_PER_GROUP 25
+#define MAX_REGISTERS_PER_GROUP 33
 
 /* Declare the register groups array (defined in mci_register_defs.c) */
 extern const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP];
