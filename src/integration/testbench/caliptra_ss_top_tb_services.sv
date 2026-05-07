@@ -517,6 +517,13 @@ import tb_top_pkg::*;
         if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
             $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
         end
+        // Change LSU AXI USER STRAP in the MCI AXI decode
+        if(mailbox_write && (mailbox_data[7:0] == TB_CHANGE_STRAP_MCU_LSU_AXI_USER)) begin
+            force `MCI_PATH.i_mci_axi_sub_top.i_mci_axi_sub_decode.strap_mcu_lsu_axi_user = `CPTRA_SS_TOP_PATH.cptra_ss_strap_mci_soc_config_axi_user_i ^ `CPTRA_SS_TOP_PATH.cptra_ss_strap_mcu_lsu_axi_user_i;
+        end
+        if(mailbox_write && (mailbox_data[7:0] == TB_RELEASE_STRAP_MCU_LSU_AXI_USER)) begin
+            release `MCI_PATH.i_mci_axi_sub_top.i_mci_axi_sub_decode.strap_mcu_lsu_axi_user;
+        end
         // Memory signature dump and test END
         if((mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) || soc_bfm_if.end_test_success) begin
             if (mem_signature_begin < mem_signature_end) begin

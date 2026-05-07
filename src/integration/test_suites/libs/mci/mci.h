@@ -49,11 +49,11 @@ extern mci_reg_exp_dict_t g_expected_data_dict;
 uint32_t mci_reg_read(uint32_t reg_addr);
 void mci_reg_write(uint32_t reg_addr, uint32_t value);
 
-const mci_register_info_t* find_register_by_address(uint32_t address, mci_register_group_t *group_index, int *reg_index);
+const mci_register_info_t* find_register_by_address(uint32_t address, mci_register_group_t *group_index, int *reg_index, mci_register_group_t start_index);
 int get_total_register_count(void);
 void init_reg_exp_dict(mci_reg_exp_dict_t *dict);
 void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_register_group_t *groups, int num_groups);
-int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask, bool reg_write);
+int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask, bool reg_write, mci_register_group_t group_index_arg);
 int get_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t *value);    
 void init_mask_dict(void); 
 const mci_register_info_t* get_register_info(mci_register_group_t group, int index);
