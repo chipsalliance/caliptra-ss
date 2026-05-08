@@ -58,9 +58,9 @@ void main (void) {
     
     boot_mcu();
     boot_i3c_core();
-    trigger_caliptra_go();
+    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
-    wait_for_cptra_ready_for_mb_processing();
+    mcu_cptra_poll_mb_ready();
     
     //Halt the core to wait for Caliptra to finish the test
     csr_write_mpmc_halt();

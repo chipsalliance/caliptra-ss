@@ -35,6 +35,47 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+void fuse_ctrl_short_integrity_check_init(void) {
+    uint32_t status;
+
+    // Step 1: Check OTP controller initialization status
+    VPRINTF(LOW, "DEBUG: Checking OTP controller initialization status...\n");
+    status = lsu_read_32(SOC_OTP_CTRL_STATUS);
+
+    // Check for error bits in the status register
+    if (status & 0x3FFFFF != 0 ) { // Mask all bits except DAI_IDLE
+        VPRINTF(LOW, "ERROR: OTP controller initialization failed. STATUS: 0x%08X\n", status);
+        return;
+    }
+
+    wait_dai_op_idle(0);
+
+    VPRINTF(LOW, "INFO: OTP controller successfully initialized. STATUS: 0x%08X\n", status);
+
+    // Step 2: Set up periodic background checks
+    VPRINTF(LOW, "DEBUG: Configuring periodic background checks...\n");
+    
+    // Configure CHECK_TIMEOUT
+    uint32_t check_timeout = 0x100000; // Example value, adjust as needed
+    lsu_write_32(SOC_OTP_CTRL_CHECK_TIMEOUT, check_timeout);
+    VPRINTF(LOW, "INFO: CHECK_TIMEOUT set to 0x%08X\n", check_timeout);
+
+    // Configure INTEGRITY_CHECK_PERIOD
+    uint32_t integrity_check_period = 0xFFF; // Example value, adjust as needed
+    lsu_write_32(SOC_OTP_CTRL_INTEGRITY_CHECK_PERIOD, integrity_check_period);
+    VPRINTF(LOW, "INFO: INTEGRITY_CHECK_PERIOD set to 0x%08X\n", integrity_check_period);
+
+    // Configure CONSISTENCY_CHECK_PERIOD
+    uint32_t consistency_check_period = 0xFFF; // Example value, adjust as needed
+    lsu_write_32(SOC_OTP_CTRL_CONSISTENCY_CHECK_PERIOD, consistency_check_period);
+    VPRINTF(LOW, "INFO: CONSISTENCY_CHECK_PERIOD set to 0x%08X\n", consistency_check_period);
+
+    // Step 3: Lock down background check registers
+    VPRINTF(LOW, "DEBUG: Locking background check registers...\n");
+    lsu_write_32(SOC_OTP_CTRL_CHECK_REGWEN, 0x0);
+    VPRINTF(LOW, "INFO: CHECK_REGWEN locked.\n");
+}
+
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
@@ -48,13 +89,13 @@ void main (void) {
 
     VPRINTF(LOW, "1/4: Initialising\n");
     mcu_cptra_init_d();
-    wait_dai_op_idle(0);
+    fuse_ctrl_short_integrity_check_init();
 
     VPRINTF(LOW, "2/4: Injecting digest fault\n");
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_FAULT_DIGEST);
 
     VPRINTF(LOW, "3/4: Initialising OTP controller\n");
-    initialize_otp_controller();
+    
 
     // After injecting an error into a digest, we expect all the partitions to report an error which
     // will also cause several other errors to be reported. We do not, however, expect a bus
@@ -65,6 +106,8 @@ void main (void) {
     // caused by injecting a fault in a partition so won't be reported here.
     uint32_t exp_error = ~(OTP_CTRL_STATUS_BUS_INTEG_ERROR_MASK |
                            OTP_CTRL_STATUS_TIMEOUT_ERROR_MASK);
+
+    mcu_sleep(1000); // Wait for some time before triggering the integrity check.
 
     VPRINTF(LOW, "4/4: Checking for DAI status\n");
     wait_dai_op_idle(exp_error);

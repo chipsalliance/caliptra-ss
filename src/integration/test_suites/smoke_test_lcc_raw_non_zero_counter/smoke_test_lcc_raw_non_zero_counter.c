@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -86,11 +87,8 @@ void main (void) {
 
             lc_token_type_t token_type = trans_matrix[lc_state_curr][lc_state_next];
             transition_state(lc_state_next,
-                             tokens[token_type][0],
-                             tokens[token_type][1],
-                             tokens[token_type][2],
-                             tokens[token_type][3],
-                             token_type != ZER);
+                             token_type == ZER ? NULL : tokens[token_type],
+                             false);
 
             if (lc_state_next != SCRAP) {
                 wait_dai_op_idle(0);

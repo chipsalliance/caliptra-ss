@@ -89,10 +89,6 @@ void main (void) {
     // lsu_write_32(SOC_SOC_IFC_REG_CPTRA_HW_CONFIG, HW_config_value);
     // VPRINTF(LOW, "MCU: Writting  SOC_SOC_IFC_REG_CPTRA_HW_CONFIG %x\n",HW_config_value);
     
-    // lcc_initialization();
-    // transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-    // reset_fc_lcc_rtl();
-
     // Initialize fuses
     lsu_write_32(SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK);
     VPRINTF(LOW, "MCU: Set fuse wr done\n");    

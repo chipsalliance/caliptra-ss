@@ -88,7 +88,7 @@ $(BUILD_DIR)/$(TESTNAME).extracted: $(TEST_DIR)/$(TESTNAME).bin $(TEST_DIR)/$(TE
 copy_caliptra_hex_files:
 	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/includes/caliptra_defines.h $(BUILD_DIR)
 	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/includes/defines.h $(BUILD_DIR)
-	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg.h $(BUILD_DIR)
+	 cp $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg_ss/caliptra_reg.h $(BUILD_DIR)
 
 help:
 	@echo Make sure the environment variable RV_ROOT is set.

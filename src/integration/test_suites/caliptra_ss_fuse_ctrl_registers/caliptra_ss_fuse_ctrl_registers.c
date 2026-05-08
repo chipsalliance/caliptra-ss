@@ -105,8 +105,6 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    //transition_state_check(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
-
     initialize_otp_controller();
 
     uint32_t value = 0;
@@ -117,7 +115,10 @@ void main (void) {
         if (partition_idx == UINT32_MAX) break;
         value = lsu_read_32(read_lock_csr_mapping[lockable_idx]);
         if ((value & 0x1) != 0x1) {
-            VPRINTF(LOW, "ERROR: incorrect value in read lock register %08X: exp: %08X act: %08X\n", read_lock_registers[i], 0x1, value);
+            VPRINTF(LOW,
+                    ("ERROR: incorrect value in read lock register %08X: "
+                     "exp: %08X act: %08X\n"),
+                    read_lock_csr_mapping[lockable_idx], 0x1, value);
             goto epilogue;
         }
     }

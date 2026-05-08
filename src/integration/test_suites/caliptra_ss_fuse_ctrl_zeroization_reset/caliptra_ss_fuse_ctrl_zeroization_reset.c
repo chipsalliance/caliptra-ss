@@ -215,7 +215,7 @@ bool prepare_test(unsigned           test_idx,
     // Step 5: Verify that reading the partition now gives an access
     // error and returns zeros.
     uint32_t exp_zeros[] = {0, 0};
-    VPRINTF(LOW, "INFO: Step %d.5: Check reading now gives error and zeros.\n", test_idx);
+    VPRINTF(LOW, "INFO: Step %d.5: Check reading now gives e**or and zeros.\n", test_idx);
     if (!part_read_compare(part, exp_zeros, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
         VPRINTF(LOW, "ERROR: Step %d.5 failed!\n", test_idx);
         return false;

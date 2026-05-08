@@ -40,7 +40,7 @@ void external_clock() {
 
     const uint32_t freqs[4] = {
         CMD_FC_LCC_EXT_CLK_500MHZ,
-        CMD_FC_LCC_EXT_CLK_160MHZ,
+        CMD_FC_LCC_EXT_CLK_333MHZ,
         CMD_FC_LCC_EXT_CLK_400MHZ,
         CMD_FC_LCC_EXT_CLK_1000MHZ
     };
@@ -71,7 +71,7 @@ void main (void) {
     lcc_initialization();
     grant_mcu_for_fc_writes(); 
 
-    transition_state(TEST_UNLOCKED0, raw_unlock_token[0], raw_unlock_token[1], raw_unlock_token[2], raw_unlock_token[3], 1);
+    transition_state(TEST_UNLOCKED0, raw_unlock_token, false);
     wait_dai_op_idle(0);
 
     initialize_otp_controller();
