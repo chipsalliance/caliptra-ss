@@ -36,6 +36,7 @@ module caliptra_ss_top
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
     ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
+    ,parameter G_SIM_CHIRP_TIMERS = 0
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -949,7 +950,8 @@ module caliptra_ss_top
         .AXI_USER_WIDTH       (`CALIPTRA_AXI_USER_WIDTH),
         .AXI_DEV_ADDR_WIDTH   ($bits(cptra_ss_usb_dev_s_axi_if_r_sub.araddr)),
         .AXI_DMA_ADDR_WIDTH   ($bits(cptra_ss_usb_dma_s_axi_if_r_sub.araddr)),
-        .AXI_HOST_ADDR_WIDTH  (32)
+        .AXI_HOST_ADDR_WIDTH  (32),
+        .G_SIM_CHIRP_TIMERS   (G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
         // ---- Clock / Reset (all domains share the system clock) ----
         .dev_axi_aclk     (cptra_ss_clk_i),

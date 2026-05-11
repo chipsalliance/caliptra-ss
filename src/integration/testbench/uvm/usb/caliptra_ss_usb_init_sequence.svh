@@ -16,41 +16,23 @@
 `define CALIPTRA_SS_USB_INIT_SEQUENCE_SV
 
 // =============================================================================
-// USB init sequence: VIP-native enumeration over UTMI.
+// USB init sequence for the single-host-agent UTMI+ topology.
 //
-// The Synopsys USB VIP is configured at top_layer = PROTOCOL with
-// usb_20_signal_interface = UTMI_IF. In this configuration the VIP itself
-// drives all UTMI line-level signaling (J/K/SE0, SOF, tokens, DATA0/1,
-// handshakes), so the testbench only needs to issue high-level transactions
-// on the VIP sequencers. No manual UTMI byte injection, no force/release
-// scaffolding is required (or permitted).
+// The environment creates one host_agent. host_cfg is the local host stack and
+// remote_cfg is the modeled device PHY connected to the DUT over one svt_usb_if.
+// Auto-attach and reset/chirp handling are driven by the VIP link state machine;
+// this sequence waits for HS link-up before issuing protocol transfers.
 //
 // Sequence flow:
-//   1. Wait ~200us for the DUT firmware (usb_init.c) to bring up the
-//      controller and program EP0.
-//   2. Issue a USB 2.0 bus reset via svt_usb_link_service
-//      (LINK_20_PORT_COMMAND / SVT_USB_20_PORT_RESET) on the host_agent
-//      link-service sequencer, accessed directly via the virtual
-//      sequencer's link_service_sequencer handle.
-//   3. Wait ~100us for firmware to handle DRES_C and re-init EP0.
-//   4. Issue a CONTROL GET_DESCRIPTOR(Device, len=18) using svt_usb_transfer
-//      on the xfer_sequencer via the virtual sequencer.
-//   5. Issue a CONTROL SET_ADDRESS(1) and a follow-up GET_DESCRIPTOR using
-//      the new address to validate enumeration.
+//   1. Wait for host_agent.shared_status.link_usb_20_state == ENABLED.
+//   2. Allow the DUT firmware a short post-reset settling interval.
+//   3. Issue CONTROL GET_DESCRIPTOR, SET_ADDRESS, and another GET_DESCRIPTOR.
 // =============================================================================
 
 // -----------------------------------------------------------------------------
-// NOTE on bus reset:
-//   The VIP host agent at top_layer = PROTOCOL with
-//   poweron_auto_attach_delay = 0 automatically drives the bus reset as part
-//   of its connect / port-power-up sequence. No explicit svt_usb_link_service
-//   item is required for basic enumeration in this VIP release.
-//   (The SVT_USB_20_PORT_RESET enum on svt_usb_link_service is only exposed
-//   in newer SVT releases and is not used here.)
-// -----------------------------------------------------------------------------
-
-// -----------------------------------------------------------------------------
-// Bus reset sub-sequence: explicit VIP-native USB 2.0 port reset.
+// Optional USB 2.0 port-reset helper. The basic init sequence relies on VIP
+// auto-attach/reset, but this helper is kept for tests that need an explicit
+// reset after the link is already attached or enabled.
 //
 // Pattern derived from the canonical UTMI PHY example at
 //   $VIPROOT/examples/sverilog/tb_usb_svt_uvm_20_phy/env/pulse_reset_sequence.sv
@@ -170,41 +152,19 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     // Main body
     // -------------------------------------------------------------------------
     virtual task body();
-        svt_usb_physical_service_remote_attach_device_sequence rem_attach;
         svt_usb_agent host_agent_h;
         uvm_component parent_comp;
 
+        // Auto-attach is configured through remote_cfg. Once the modeled device
+        // PHY attaches, the host link state machine performs reset, detects the
+        // HS chirp from the DUT, and transitions to ENABLED. Transfers must not
+        // be issued before ENABLED because the VIP protocol layer has not yet
+        // established negotiated speed and endpoint context.
         `uvm_info("USB_INIT",
-            "Waiting ~200us for DUT firmware USB controller bring-up...",
+            "Auto-attach in flight via remote_cfg. Waiting for host link to reach ENABLED.",
             UVM_LOW)
-        #200us;
-
-        // ---------------- Force VIP attach via REMOTE_ATTACH_DEVICE ----------------
-        // In the single-agent host-MAC + remote-PHY UTMI topology, there is no
-        // peer DEVICE agent to synthesize an attach indication. With remote_cfg
-        // poweron_auto_attach_delay = -1 (manual mode), the test must explicitly
-        // issue svt_usb_physical_service_remote_attach_device_sequence on
-        // p_sequencer.usb_20_phys_service_sequencer. The remote PHY then drives
-        // an attach indication into the host link via the internal TLM bridge,
-        // and L20_DEV_A_SM walks DISCONNECTED -> DEVICE_ATTACHED -> RESETTING ->
-        // ENABLED automatically (host link issues post-attach reset on its own).
-        // Reference: usb_vip_topology_reference.md, FAQ usb_2_0.html, and
-        // class_svt_usb_physical_service_remote_attach_device_sequence.
-        `uvm_info("USB_INIT",
-            $sformatf("Issuing REMOTE_ATTACH_DEVICE on %s",
-                      p_sequencer.usb_20_phys_service_sequencer.get_full_name()),
-            UVM_LOW)
-        rem_attach = svt_usb_physical_service_remote_attach_device_sequence::
-                     type_id::create("rem_attach");
-        rem_attach.start(p_sequencer.usb_20_phys_service_sequencer);
 
         // ---------------- Wait for host link to reach ENABLED ----------------
-        // Per attach_bulk_xfers_detach_hs_sequence.sv pattern: wait on
-        // host_agent.shared_status.link_usb_20_state == ENABLED before any
-        // svt_usb_transfer item, otherwise transfer randomization will fail
-        // because no negotiated bus speed / endpoint context exists.
-        // Navigate from p_sequencer (svt_usb_virtual_sequencer) up to the agent
-        // that owns it.
         parent_comp = p_sequencer.get_parent();
         if (!$cast(host_agent_h, parent_comp)) begin
             `uvm_fatal("USB_INIT",
@@ -213,8 +173,21 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         end
         `uvm_info("USB_INIT",
             "Waiting for host link to reach ENABLED state...", UVM_LOW)
-        wait (host_agent_h.shared_status.link_usb_20_state ==
-              svt_usb_types::ENABLED);
+        fork 
+            begin: WAIT_EN
+                wait (host_agent_h.shared_status.link_usb_20_state ==
+                      svt_usb_types::ENABLED);
+                disable REPORT_LINK_STATE;
+            end
+            begin: REPORT_LINK_STATE
+                forever begin
+                    #10us `uvm_info("USB_INIT",
+                        $sformatf("host agent link_usb_20_state [%p]",
+                                  host_agent_h.shared_status.link_usb_20_state),
+                        UVM_LOW);
+                end
+            end
+        join
         `uvm_info("USB_INIT", "Host link ENABLED. Starting transfers.", UVM_LOW)
 
         // Small settling delay before issuing the first SETUP transfer so the

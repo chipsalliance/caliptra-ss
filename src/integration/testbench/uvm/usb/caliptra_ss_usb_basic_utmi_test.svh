@@ -18,11 +18,11 @@
 // =============================================================================
 // Basic USB 2.0 UTMI test for Caliptra Subsystem.
 //
-// This test exercises a basic init sequence over the UTMI interface:
-//   - VIP host agent configured for USB 2.0 HS with UTMI MAC interface
-//   - DUT (caliptra_ss_top) acts as the USB device on UTMI MAC side
-//   - Runs a short directed sequence: CONTROL transfers (GET_DESCRIPTOR,
-//     SET_ADDRESS) to verify basic USB enumeration-style communication
+// This test exercises the single-host-agent topology:
+//   - host_cfg models the USB 2.0 HS host stack.
+//   - remote_cfg models the device PHY connected to the DUT UTMI+ interface.
+//   - The default sequence waits for HS link-up, then runs a small set of
+//     CONTROL transfers to validate enumeration-style communication.
 //
 // Usage:
 //   +UVM_TESTNAME=caliptra_ss_usb_basic_utmi_test
@@ -39,11 +39,7 @@ class caliptra_ss_usb_basic_utmi_test extends caliptra_ss_usb_base_test;
         `uvm_info("build_phase", "Entered...", UVM_LOW)
         super.build_phase(phase);
 
-        // Use scaled-down timers for faster simulation
-        void'(cfg.host_cfg.set_timer_values(
-            svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
-
-        // Set default sequence: directed CONTROL transfers for basic init
+        // Start the directed USB init sequence on the host virtual sequencer.
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase",
             "default_sequence",

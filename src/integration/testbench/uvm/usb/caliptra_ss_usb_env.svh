@@ -18,12 +18,12 @@
 // =============================================================================
 // USB VIP environment for Caliptra Subsystem testbench.
 //
-// Single-agent topology per usb_vip_topology_reference.md:
-//   - host_agent: One svt_usb_agent configured as HOST (USB_20_TLM locally).
-//     A remote_cfg with component_type=DEVICE, component_subtype=PHY,
-//     usb_20_signal_interface=UTMI_IF creates an internal remote Device PHY
-//     that drives real UTMI signals to the DUT device controller (MAC).
-//   - No second agent. The DUT is the real USB device on the wire.
+// Current topology:
+//   - One svt_usb_agent instance named host_agent.
+//   - host_cfg configures the local USB 2.0 host stack.
+//   - remote_cfg is cloned from dev_cfg and configures the modeled device PHY.
+//   - One svt_usb_if instance carries the UTMI+ connection between remote_cfg's
+//     device PHY model and the Caliptra SS USB device DUT.
 // =============================================================================
 class caliptra_ss_usb_env extends uvm_env;
 
@@ -31,10 +31,10 @@ class caliptra_ss_usb_env extends uvm_env;
 
     `uvm_component_utils(caliptra_ss_usb_env)
 
-    // Virtual interface handle for the UTMI connection to DUT
+    // Single virtual interface for the DUT UTMI+ connection.
     USB_IF usb_20_mac_if;
 
-    // Single VIP agent (Host with remote Device PHY)
+    // Single VIP agent. remote_cfg supplies the modeled device PHY.
     svt_usb_agent host_agent;
 
     // Configuration
@@ -42,6 +42,9 @@ class caliptra_ss_usb_env extends uvm_env;
 
     // Sequence item report (system-level)
     svt_sequence_item_report seq_item_report;
+
+    // System virtual sequencer handle used to connect to lower level agent virtual sequencer.
+    svt_usb_system_virtual_sequencer sys_virt_sequencer;
 
     function new(string name = "caliptra_ss_usb_env", uvm_component parent = null);
         super.new(name, parent);
@@ -59,7 +62,7 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
     `uvm_info("build_phase", "Entered...", UVM_LOW)
     super.build_phase(phase);
 
-    // Retrieve the VIP interface from config_db
+    // Retrieve the VIP interface from config_db.
     void'(uvm_config_db#(virtual svt_usb_if)::get(null, get_full_name(),
           "usb_20_mac_if", usb_20_mac_if));
 
@@ -72,12 +75,20 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
         `uvm_info("build_phase", "Using externally provided cfg.", UVM_LOW)
     end
 
-    // ---------- Pass agent configuration ----------
+    /**
+     * Double check that the configuration is valid before moving on
+     */
+    if (this.cfg.is_valid(0)) begin
+      `uvm_info("build_phase", $psprintf("cfg passed is_valid() check. Contents:\n%0s", this.cfg.sprint()), UVM_HIGH)
+    end else begin
+      `uvm_fatal("build_phase", "cfg failed is_valid() check. Unable to continue.")
+    end
+
+    // ---------- Pass agent configurations ----------
     uvm_config_db#(svt_usb_agent_configuration)::set(this, "host_agent", "cfg", cfg.host_cfg);
 
-    // ---------- Route usb_20_if to host_agent ----------
-    // The agent uses this vif to bind its remote_phys_lane (Device PHY)
-    // to the UTMI signals connected to the DUT.
+    // ---------- Route VIP interfaces to agents ----------
+    // The host agent consumes this interface for the remote_cfg UTMI PHY.
     if (usb_20_mac_if != null) begin
         uvm_config_db#(USB_IF)::set(this, "host_agent", "usb_20_if", usb_20_mac_if);
     end else begin
@@ -85,36 +96,27 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
             "usb_20_mac_if is null - host_agent will have no UTMI vif.")
     end
 
-    // ---------- Create remote_cfg for the Device PHY facing the DUT ----------
-    // Per usb_vip_topology_reference.md:
-    //   component_type          = DEVICE  (remote side is a device PHY)
-    //   component_subtype       = PHY     (physical layer facing DUT MAC)
-    //   usb_20_signal_interface = UTMI_IF (UTMI signal interface to DUT)
-    begin
-        svt_usb_agent_configuration remote_agent_cfg;
-        remote_agent_cfg = new();
-        remote_agent_cfg.component_type          = svt_usb_types::DEVICE;
-        remote_agent_cfg.component_subtype       = svt_usb_configuration::PHY;
-        remote_agent_cfg.speed                   = svt_usb_types::HS;
-        remote_agent_cfg.usb_20_signal_interface = svt_usb_configuration::UTMI_IF;
-        remote_agent_cfg.usb_ss_signal_interface = svt_usb_configuration::NO_SS_IF;
-        remote_agent_cfg.usb_capability          = svt_usb_configuration::USB_20_ONLY;
-        remote_agent_cfg.utmi_data_width         = 8;
-        remote_agent_cfg.capability              = svt_usb_configuration::PLAIN;
-        // Manual attach mode: the test sequence will issue
-        // svt_usb_physical_service_remote_attach_device_sequence to drive the
-        // host VIP into DEVICE_ATTACHED. Without this, the host stays in
-        // DISCONNECTED forever in a single-agent host-MAC + remote-PHY UTMI
-        // topology because there is no peer DEVICE agent to synthesize attach.
-        remote_agent_cfg.poweron_auto_attach_delay = -1;
-        // Apply the same timer scale-down preset to the remote PHY config so
-        // tattdb / chirp / debounce all complete in microseconds rather than
-        // milliseconds (matches host_cfg setup in shared_cfg).
-        void'(remote_agent_cfg.set_timer_values(
-            svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
-        $cast(remote_cfg, remote_agent_cfg);
-        uvm_config_db#(svt_usb_configuration)::set(this, "host_agent",
-            "remote_cfg", remote_cfg);
+    // ---------- Create remote_cfg via canonical clone-of-dev_cfg pattern ----
+    // Clone dev_cfg into remote_cfg and override component_subtype = PHY so the
+    // host agent models the device-side UTMI PHY without creating a second
+    // agent. The clone inherits UTMI, speed, and endpoint settings from dev_cfg.
+    if (!$cast(remote_cfg, cfg.dev_cfg.clone())) begin
+        `uvm_fatal("build_phase",
+            "Unable to clone dev_cfg into remote_cfg")
+    end
+    remote_cfg.component_subtype = svt_usb_configuration::PHY;
+    uvm_config_db#(svt_usb_configuration)::set(this, "host_agent",
+        "remote_cfg", remote_cfg);
+
+    /**
+     * Double check that the remote configuration is valid before moving on
+     */
+    if (remote_cfg == null) begin
+        `uvm_fatal("build_phase", "remote_cfg is null. Unable to continue.")
+    end else if (!remote_cfg.is_valid(0)) begin
+        `uvm_fatal("build_phase", "remote_cfg failed is_valid() check. Unable to continue.")
+    end else begin
+        `uvm_info("build_phase", $psprintf("remote_cfg passed is_valid() check. Contents:\n%0s", remote_cfg.sprint()), UVM_HIGH)
     end
 
     // ---------- System-level sequence-item report ----------
@@ -122,8 +124,13 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
     uvm_config_db#(svt_sequence_item_report)::set(this, "host_agent",
         "sys_seq_item_report", seq_item_report);
 
-    // ---------- Construct agent ----------
+    // ---------- Construct agents ----------
     host_agent = svt_usb_agent::type_id::create("host_agent", this);
+
+    /**
+     * Create the system virtual sequencer.
+     */
+    this.sys_virt_sequencer = svt_usb_system_virtual_sequencer::type_id::create("sys_virt_sequencer", this);
 
     `uvm_info("build_phase", "Exiting...", UVM_LOW)
 endfunction
@@ -132,7 +139,12 @@ endfunction
 function void caliptra_ss_usb_env::connect_phase(uvm_phase phase);
     `uvm_info("connect_phase", "Entered...", UVM_LOW)
     super.connect_phase(phase);
-    // No callbacks needed — the DUT is the real device on the wire.
+
+    /**
+     * Connect up the host virtual sequencer.
+     */
+    this.sys_virt_sequencer.host_virt_sequencer = host_agent.virt_sequencer;
+
     `uvm_info("connect_phase", "Exiting...", UVM_LOW)
 endfunction
 
