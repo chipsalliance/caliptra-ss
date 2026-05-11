@@ -43,6 +43,7 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
     localparam real USB_TIMER_50US_PS  = 50000000.0;
     localparam real USB_TIMER_100US_PS = 100000000.0;
     localparam real USB_TIMER_150US_PS = 150000000.0;
+    localparam real USB_TIMER_300US_PS = 300000000.0;
 
     // host_cfg drives host_agent; dev_cfg is cloned into host_agent.remote_cfg.
     svt_usb_agent_configuration host_cfg;
@@ -173,6 +174,13 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         dev_cfg.twtdch   = USB_TIMER_10US_PS;
         host_cfg.twths   = USB_TIMER_10US_PS;
         dev_cfg.twths    = USB_TIMER_10US_PS;
+
+        // tinactivity: bus-idle duration before the VIP enters SUSPENDED.
+        // The scaledown default is ~6 us which is shorter than the scaled
+        // SOF interval, causing premature suspend between SOF frames.
+        // 300 us gives ample room for SOF keep-alive packets.
+        host_cfg.tinactivity = USB_TIMER_300US_PS;
+        dev_cfg.tinactivity  = USB_TIMER_300US_PS;
     endfunction
 
     /**

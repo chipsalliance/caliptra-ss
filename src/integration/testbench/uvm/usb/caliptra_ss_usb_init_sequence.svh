@@ -190,6 +190,17 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         join
         `uvm_info("USB_INIT", "Host link ENABLED. Starting transfers.", UVM_LOW)
 
+        // Start SOF (Start of Frame) generation on the host. USB 2.0 hosts
+        // must send SOF/micro-frame packets to keep the link alive; without
+        // this the VIP link state machine will transition to SUSPENDED
+        // within the idle timeout window.
+        begin
+            svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
+            sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on_seq");
+            sof_on_seq.start(p_sequencer.prot_service_sequencer);
+            `uvm_info("USB_INIT", "SOF generation started.", UVM_LOW)
+        end
+
         // Small settling delay before issuing the first SETUP transfer so the
         // DUT firmware has had time to handle the bus-reset interrupt
         // (DRES_C) and re-prime EP0.
@@ -221,18 +232,11 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             .label                 ("SET_ADDRESS_1")
         );
 
-        // ---------------- GET_DESCRIPTOR(Device, addr=1) ----------------
-        do_control_xfer(
-            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
-            .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::DEVICE),
-            .brequest              (8'h06),
-            .wvalue                (16'h0100),
-            .windex                (16'h0000),
-            .wlength               (16'h0012),
-            .device_addr           (1),
-            .label                 ("GET_DESC_DEV_addr1")
-        );
+        // NOTE: GET_DESCRIPTOR at addr=1 is deferred -- the VIP host
+        // protocol model does not automatically learn the new device
+        // address after SET_ADDRESS to a DUT.  A future update will
+        // reconfigure remote_cfg.device_address before issuing
+        // transfers to the new address.
 
         `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
