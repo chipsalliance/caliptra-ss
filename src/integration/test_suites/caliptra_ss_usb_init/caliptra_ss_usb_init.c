@@ -93,10 +93,10 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         {
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-            if (cmd & USB_DEVCMDSTAT_DRES_C) {
+            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 VPRINTF(LOW, "MCU: Bus reset detected (direct DEVCMDSTAT poll)\n");
                 // Clear reset change (W1C)
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USB_DEVCMDSTAT_DRES_C);
+                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
 
                 // Re-initialize EP0 after bus reset - hardware may clear Active bit
                 uint32_t ep0_out_entry = (1u << 31) | (8u << 16) | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
@@ -116,15 +116,15 @@ void main (void) {
 
         // Check for device-level interrupts (bus reset, connect change)
         reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
-        if (reg_data & USB_INT_DEV) {
+        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
 
-            if (cmd & USB_DEVCMDSTAT_DRES_C) {
+            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 VPRINTF(LOW, "MCU: Bus reset detected\n");
                 // Clear reset change (W1C) and re-enable device
                 lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
-                    cmd | USB_DEVCMDSTAT_DRES_C);
+                    cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
 
                 // Re-initialize EP0 after bus reset
                 uint32_t ep0_out_entry = (1u << 31) | (8u << 16) | (USB_SRAM_EP0_OUT_BUF_OFFSET >> 6);
@@ -134,16 +134,16 @@ void main (void) {
                 VPRINTF(LOW, "MCU: Re-initialized EP0 after bus reset (DEV_INT path)\n");
             }
             // Clear DEV_INT
-            lsu_write_32(SOC_USBHSD_INTSTAT, USB_INT_DEV);
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         // Check for EP0 OUT interrupt (SETUP or data)
-        if (reg_data & USB_INT_EP0OUT) {
+        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
             // Clear the EP0OUT interrupt
-            lsu_write_32(SOC_USBHSD_INTSTAT, USB_INT_EP0OUT);
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
 
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-            if (cmd & USB_DEVCMDSTAT_SETUP) {
+            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 VPRINTF(LOW, "MCU: SETUP packet received\n");
 
                 // Read 8-byte SETUP data from SRAM via DMA port
@@ -157,7 +157,7 @@ void main (void) {
                 wLength       = (setup_word1 >> 16) & 0xFFFF;
 
                 // Clear EP0 IN interrupt before programming response
-                lsu_write_32(SOC_USBHSD_INTSTAT, USB_INT_EP0IN);
+                lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
                 if (bRequest == USB_REQ_GET_DESCRIPTOR) {
                     uint8_t desc_type = (wValue >> 8) & 0xFF;
@@ -186,8 +186,8 @@ void main (void) {
 
                         // Set IntOnNAK_CO for status phase detection
                         cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                        cmd |= USB_DEVCMDSTAT_INTONNAK_CO;
-                        cmd &= ~USB_DEVCMDSTAT_INTONNAK_CI;
+                        cmd |= USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
+                        cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
                         lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
                     }
                 } else if (bRequest == USB_REQ_SET_ADDRESS) {
@@ -208,7 +208,7 @@ void main (void) {
 
                     // Update device address in DEVCMDSTAT
                     cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                    cmd = (cmd & ~USB_DEVCMDSTAT_DEV_ADDR_MASK) | new_addr;
+                    cmd = (cmd & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK) | new_addr;
                     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
                 } else {
                     VPRINTF(LOW, "MCU: Unhandled request 0x%x - stalling\n", bRequest);
@@ -216,7 +216,7 @@ void main (void) {
 
                 // Clear SETUP bit LAST (per Integration Guide §4.2.4.1.1)
                 cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USB_DEVCMDSTAT_SETUP);
+                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USBHSD_DEVCMDSTAT_SETUP_MASK);
 
                 // Verify SETUP cleared and EP0 IN is active
                 cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
@@ -226,11 +226,6 @@ void main (void) {
                 transfers_handled++;
                 VPRINTF(LOW, "MCU: Transfers handled = %d\n", transfers_handled);
             }
-        }
-
-        // After handling at least one transfer, consider test done
-        if (transfers_handled >= 1) {
-            VPRINTF(LOW, "MCU: USB init test - at least one transfer handled, continuing event loop\n");
         }
 
         // Periodic diagnostic dump
