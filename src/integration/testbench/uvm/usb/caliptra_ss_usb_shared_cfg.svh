@@ -185,6 +185,23 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         // 300 us gives ample room for SOF keep-alive packets.
         host_cfg.tinactivity = USB_TIMER_300US_PS;
         dev_cfg.tinactivity  = USB_TIMER_300US_PS;
+
+        // Protocol- and link-layer trace logging to dedicated log files.
+        // enable_prot_tracing: writes svt_usb_transfer objects per transaction.
+        // enable_link_tracing: writes svt_usb_packet objects per packet.
+        // enable_runtime_trace_recording: enables monitor-side runtime capture.
+        // Applied to both host_cfg and dev_cfg so both the host agent stack
+        // and the remote_cfg PHY model produce trace output.
+        // enable_phys_tracing explicitly set to 0 to suppress physical-layer
+        // trace files even if +svt_debug_opts enables them by default.
+        host_cfg.enable_prot_tracing            = 1;
+        host_cfg.enable_link_tracing            = 1;
+        host_cfg.enable_phys_tracing            = 0;
+        host_cfg.enable_runtime_trace_recording = 1;
+        dev_cfg.enable_prot_tracing             = 1;
+        dev_cfg.enable_link_tracing             = 1;
+        dev_cfg.enable_phys_tracing             = 0;
+        dev_cfg.enable_runtime_trace_recording  = 1;
     endfunction
 
     /**

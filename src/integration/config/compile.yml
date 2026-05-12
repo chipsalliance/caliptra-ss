@@ -296,6 +296,11 @@ global:
         # Enable force/release on VHDL targets (needed for USB dev_enable)
         - '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
+        # Enable SVT debug automation: activates protocol and link trace log
+        # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+        # config object properties (enable_prot_tracing, enable_link_tracing)
+        # gate which layers are written; physical layer tracing is disabled.
+        - '+svt_debug_opts'
         # Uncomment to enable USB VIP debug logging
         #- '+svt_usb_enable_debug'
       dpi_compile:
