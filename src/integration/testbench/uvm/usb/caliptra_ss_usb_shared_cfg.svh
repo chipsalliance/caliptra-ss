@@ -128,6 +128,10 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         dev_cfg.local_device_cfg[0].device_address        = 0;
         dev_cfg.local_device_cfg[0].connected_hub_device_address = 0;
         dev_cfg.local_device_cfg[0].num_endpoints         = num_endpoints;
+        // Increase device_timeout to allow MCU firmware time to process
+        // SETUP packets and prime endpoint buffers. Default scaledown
+        // value is too aggressive for firmware-driven responses.
+        dev_cfg.local_device_cfg[0].device_timeout        = 50us;
 
         for (int ep = 0; ep < num_endpoints; ep++) begin
             dev_cfg.local_device_cfg[0].endpoint_cfg[ep] = new();

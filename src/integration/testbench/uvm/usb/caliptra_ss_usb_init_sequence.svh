@@ -113,6 +113,9 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
     // -------------------------------------------------------------------------
     // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
+    //
+    // Uses the canonical VIP pattern: set cfg + fix_anchors before randomize
+    // (see $VIPROOT examples usb_directed_transfers_sequence.sv).
     // -------------------------------------------------------------------------
     task do_control_xfer(
         input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
@@ -123,11 +126,18 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         input bit [15:0] windex,
         input bit [15:0] wlength,
         input int        device_addr,
-        input string     label
+        input string     label,
+        input svt_usb_configuration usb_cfg = null
     );
         svt_usb_transfer req;
         req = svt_usb_transfer::type_id::create({label, "_req"});
         start_item(req, -1, p_sequencer.xfer_sequencer);
+        // Set cfg so the transfer's internal constraints can resolve
+        // device/endpoint anchors. fix_anchors(dev_idx, ep_idx, upstream_idx)
+        // tells the randomizer which remote_device_cfg entry to use.
+        if (usb_cfg != null)
+            req.cfg = usb_cfg;
+        req.fix_anchors(0, 0, 0);
         if (!req.randomize() with {
                 xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
                 device_address                     == device_addr;
@@ -149,11 +159,31 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
     endtask
 
     // -------------------------------------------------------------------------
+    // Helper: wait for host-side transfer completion.
+    //
+    // The xfer_sequencer accepts transfers into its pending queue and
+    // finish_item returns immediately. The protocol scheduler sends the
+    // transfer on the bus asynchronously. We must wait for
+    // NOTIFY_USB_TRANSFER_ENDED before proceeding.
+    //
+    // Pattern from VIP example:
+    //   attach_bulk_xfers_detach_hs_sequence.sv (fork/join on
+    //   host_agent.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger)
+    // -------------------------------------------------------------------------
+    task wait_xfer_done(svt_usb_agent agent_h, string label);
+        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+        `uvm_info("USB_INIT",
+            $sformatf("Transfer %s completed on bus.", label), UVM_LOW)
+    endtask
+
+    // -------------------------------------------------------------------------
     // Main body
     // -------------------------------------------------------------------------
     virtual task body();
         svt_usb_agent host_agent_h;
         uvm_component parent_comp;
+        svt_configuration get_cfg;
+        svt_usb_configuration usb_cfg;
 
         // Auto-attach is configured through remote_cfg. Once the modeled device
         // PHY attaches, the host link state machine performs reset, detects the
@@ -171,6 +201,13 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
                 $sformatf("Could not cast p_sequencer parent (%s) to svt_usb_agent",
                           parent_comp.get_full_name()))
         end
+
+        // Get VIP configuration via the canonical accessor (cfg is local in
+        // svt_usb_agent, so we use p_sequencer.get_cfg()).
+        p_sequencer.get_cfg(get_cfg);
+        if (!$cast(usb_cfg, get_cfg))
+            `uvm_fatal("USB_INIT", "Unable to cast configuration to svt_usb_configuration")
+
         `uvm_info("USB_INIT",
             "Waiting for host link to reach ENABLED state...", UVM_LOW)
         fork 
@@ -216,8 +253,10 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             .windex                (16'h0000),
             .wlength               (16'h0012),    // 18 bytes
             .device_addr           (0),
-            .label                 ("GET_DESC_DEV_addr0")
+            .label                 ("GET_DESC_DEV_addr0"),
+            .usb_cfg               (usb_cfg)
         );
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
 
         // ---------------- SET_ADDRESS(1) at addr=0 ----------------
         do_control_xfer(
@@ -229,14 +268,32 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             .windex                (16'h0000),
             .wlength               (16'h0000),
             .device_addr           (0),
-            .label                 ("SET_ADDRESS_1")
+            .label                 ("SET_ADDRESS_1"),
+            .usb_cfg               (usb_cfg)
         );
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
 
-        // NOTE: GET_DESCRIPTOR at addr=1 is deferred -- the VIP host
-        // protocol model does not automatically learn the new device
-        // address after SET_ADDRESS to a DUT.  A future update will
-        // reconfigure remote_cfg.device_address before issuing
-        // transfers to the new address.
+        // Update the VIP's device configuration with the new address.
+        // We update both the runtime cfg (used by transfer randomization
+        // constraints via fix_anchors) and the shared_cfg (for consistency).
+        usb_cfg.remote_device_cfg[0].device_address = 1;
+        `uvm_info("USB_INIT",
+            "Updated remote_device_cfg[0].device_address to 1.", UVM_LOW)
+
+        // ---------------- GET_DESCRIPTOR(Device, addr=1) ----------------
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::DEVICE),
+            .brequest              (8'h06),       // GET_DESCRIPTOR
+            .wvalue                (16'h0100),    // DEVICE descriptor, index 0
+            .windex                (16'h0000),
+            .wlength               (16'h0012),    // 18 bytes
+            .device_addr           (1),
+            .label                 ("GET_DESC_DEV_addr1"),
+            .usb_cfg               (usb_cfg)
+        );
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1");
 
         `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
