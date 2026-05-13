@@ -121,7 +121,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
         input bit [7:0]  bm_request_type_type,   // svt_usb_types type enum
         input bit [7:0]  bm_request_type_recip,  // svt_usb_types recipient enum
-        input bit [7:0]  brequest,
+        input bit [7:0]  brequest_val,
         input bit [15:0] wvalue,
         input bit [15:0] windex,
         input bit [15:0] wlength,
@@ -144,7 +144,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
                 setup_data_bmrequesttype_dir       == bm_request_type_dir;
                 setup_data_bmrequesttype_type      == bm_request_type_type;
                 setup_data_bmrequesttype_recipient == bm_request_type_recip;
-                setup_data_brequest                == brequest;
+                setup_data_brequest                == brequest_val;
                 setup_data_w_value                 == wvalue;
                 setup_data_w_index                 == windex;
                 setup_data_w_length                == wlength;
@@ -247,8 +247,8 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
             .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::DEVICE),
-            .brequest              (8'h06),       // GET_DESCRIPTOR
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h06),       // GET_DESCRIPTOR
             .wvalue                (16'h0100),    // DEVICE descriptor, index 0
             .windex                (16'h0000),
             .wlength               (16'h0012),    // 18 bytes
@@ -258,12 +258,29 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
 
+        // ---------------- GET_STATUS(Device, addr=0) ----------------
+        // Standard device GET_STATUS: returns 2-byte status word
+        //   bit[0] = Self-Powered, bit[1] = Remote Wakeup (both 0 for this device)
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h00),       // GET_STATUS
+            .wvalue                (16'h0000),
+            .windex                (16'h0000),
+            .wlength               (16'h0002),    // 2 bytes
+            .device_addr           (0),
+            .label                 ("GET_STATUS_addr0"),
+            .usb_cfg               (usb_cfg)
+        );
+        wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
+
         // ---------------- SET_ADDRESS(1) at addr=0 ----------------
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::DEVICE),
-            .brequest              (8'h05),       // SET_ADDRESS
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h05),       // SET_ADDRESS
             .wvalue                (16'h0001),    // new address = 1
             .windex                (16'h0000),
             .wlength               (16'h0000),
@@ -284,8 +301,8 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
             .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::DEVICE),
-            .brequest              (8'h06),       // GET_DESCRIPTOR
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h06),       // GET_DESCRIPTOR
             .wvalue                (16'h0100),    // DEVICE descriptor, index 0
             .windex                (16'h0000),
             .wlength               (16'h0012),    // 18 bytes
