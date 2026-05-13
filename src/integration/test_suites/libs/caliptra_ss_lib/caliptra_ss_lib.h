@@ -368,19 +368,5 @@ inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
     return rd_data;
 }
 
-///////////////////////////////////////////////////
-// USB Device Register Definitions
-// Register addresses use generated macros from soc_address_map.h
-// (SOC_USBHSD_*). DMA base is not in the RDL (separate AXI port).
-///////////////////////////////////////////////////
-#define USB_DMA_BASE_ADDR           0x20010000
-
-// USB SRAM layout constants
-#define USB_SRAM_EP_LIST_OFFSET       0x000
-#define USB_SRAM_SETUP_BUF_OFFSET     0x100
-#define USB_SRAM_EP0_OUT_BUF_OFFSET   0x140
-#define USB_SRAM_EP0_IN_BUF_OFFSET    0x180
-
-void boot_usb_core(void);
 
 #endif // CALIPTRA_SS_LIB
