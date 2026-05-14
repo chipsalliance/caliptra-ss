@@ -145,12 +145,14 @@ void usb_handle_bus_reset(void) {
 void usb_read_setup_packet(usb_setup_pkt_t *pkt) {
     uint32_t w0 = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET);
     uint32_t w1 = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET + 4);
-    VPRINTF(LOW, "MCU: SETUP[0]=0x%x SETUP[1]=0x%x\n", w0, w1);
     pkt->bmRequestType = (uint8_t)((w0 >>  0) & 0xFF);
     pkt->bRequest      = (uint8_t)((w0 >>  8) & 0xFF);
     pkt->wValue        = (uint16_t)((w0 >> 16) & 0xFFFF);
     pkt->wIndex        = (uint16_t)((w1 >>  0) & 0xFFFF);
     pkt->wLength       = (uint16_t)((w1 >> 16) & 0xFFFF);
+    // NOTE: VPRINTF intentionally omitted from the SETUP read hot-path.
+    // Logging before priming EP0 IN causes the VIP tend_to_end_delay_check
+    // timer (~2.3us) to fire. Callers log AFTER priming if needed.
 }
 
 void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes) {
@@ -226,8 +228,6 @@ bool usb_handle_control_transfer(void) {
             switch (pkt.bRequest) {
                 case USB_REQ_GET_DESCRIPTOR: {
                     uint8_t desc_type = (uint8_t)((pkt.wValue >> 8) & 0xFF);
-                    VPRINTF(LOW, "MCU: GET_DESCRIPTOR type=0x%02x len=%d\n",
-                            desc_type, pkt.wLength);
                     if (desc_type == USB_DESC_DEVICE) {
                         uint32_t nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
                         usb_ep0_send_data(usb_default_device_descriptor, nbytes);
@@ -237,28 +237,35 @@ bool usb_handle_control_transfer(void) {
                         cmd |=  USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
                         cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
                         lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+                        VPRINTF(LOW, "MCU: GET_DESCRIPTOR type=0x%02x len=%d\n",
+                                desc_type, pkt.wLength);
                         handled = true;
                     } else {
+                        usb_ep0_stall();
                         VPRINTF(LOW, "MCU: USB Unhandled GET_DESCRIPTOR type=0x%02x"
                                 " - stalling\n", desc_type);
-                        usb_ep0_stall();
                     }
                     break;
                 }
                 case USB_REQ_SET_ADDRESS: {
                     uint8_t new_addr = (uint8_t)(pkt.wValue & 0x7Fu);
-                    VPRINTF(LOW, "MCU: SET_ADDRESS addr=%d\n", new_addr);
                     usb_ep0_send_zlp();
                     usb_ep0_arm_out();
                     usb_set_device_address(new_addr);
+                    VPRINTF(LOW, "MCU: SET_ADDRESS addr=%d\n", new_addr);
                     handled = true;
                     break;
                 }
-                case USB_REQ_GET_STATUS:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Device GET_STATUS"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                case USB_REQ_GET_STATUS: {
+                    // Standard device GET_STATUS: 2-byte status word.
+                    // bit[0]=Self-Powered, bit[1]=Remote Wakeup, both 0.
+                    static const uint32_t status_buf = 0x00000000u;
+                    usb_ep0_send_data(&status_buf, 2);
+                    usb_ep0_arm_out();
+                    VPRINTF(LOW, "MCU: GET_STATUS -> 0x0000\n");
+                    handled = true;
                     break;
+                }
                 case USB_REQ_CLEAR_FEATURE:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Device CLEAR_FEATURE"
                             " - stalling\n");
