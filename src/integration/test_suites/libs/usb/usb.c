@@ -164,14 +164,16 @@ void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes) {
                     | USB_EP_ENTRY_NBYTES(nbytes)
                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008, ep0_in);
-    VPRINTF(LOW, "MCU: EP0 IN entry (nbytes=%d) = 0x%x\n", nbytes, ep0_in);
+    // NOTE: VPRINTF intentionally omitted from EP0 IN arming hot-path.
+    // Host VIP only gives ~5us between SETUP-ACK and giving up on IN polling;
+    // adding logging here delays the arm beyond that window for back-to-back
+    // SETUPs (e.g. GET_STATUS following GET_DESCRIPTOR).
 }
 
 void usb_ep0_send_zlp(void) {
     uint32_t ep0_in = USB_EP_ENTRY_ACTIVE
                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008, ep0_in);
-    VPRINTF(LOW, "MCU: EP0 IN ZLP entry = 0x%x\n", ep0_in);
 }
 
 void usb_ep0_stall(void) {
@@ -197,7 +199,6 @@ void usb_set_device_address(uint8_t addr) {
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     cmd = (cmd & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK) | (addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
-    VPRINTF(LOW, "MCU: USB device address set to %d\n", addr);
 }
 
 // -------------------------------------------------------------------------
@@ -237,8 +238,6 @@ bool usb_handle_control_transfer(void) {
                         cmd |=  USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
                         cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
                         lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
-                        VPRINTF(LOW, "MCU: GET_DESCRIPTOR type=0x%02x len=%d\n",
-                                desc_type, pkt.wLength);
                         handled = true;
                     } else {
                         usb_ep0_stall();
@@ -252,7 +251,6 @@ bool usb_handle_control_transfer(void) {
                     usb_ep0_send_zlp();
                     usb_ep0_arm_out();
                     usb_set_device_address(new_addr);
-                    VPRINTF(LOW, "MCU: SET_ADDRESS addr=%d\n", new_addr);
                     handled = true;
                     break;
                 }
@@ -262,7 +260,6 @@ bool usb_handle_control_transfer(void) {
                     static const uint32_t status_buf = 0x00000000u;
                     usb_ep0_send_data(&status_buf, 2);
                     usb_ep0_arm_out();
-                    VPRINTF(LOW, "MCU: GET_STATUS -> 0x0000\n");
                     handled = true;
                     break;
                 }
@@ -347,12 +344,21 @@ bool usb_handle_control_transfer(void) {
         usb_ep0_stall();
     }
 
-    // Per Integration Guide 4.2.4.1.1: clear SETUP bit last
+    // Per Integration Guide 4.2.4.1.1: clear SETUP bit after arming response.
+    // This must happen quickly: host VIP retries IN tokens for only ~5us
+    // before giving up and sending the next SETUP, which will be NAKed by
+    // the DUT IP unless the SETUP bit is already cleared.
     usb_clear_setup_bit();
 
-    uint32_t cmd       = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    uint32_t ep0_in_rb = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
-    VPRINTF(LOW, "MCU: Post-SETUP-clear DEVCMDSTAT=0x%x EP0IN=0x%x\n", cmd, ep0_in_rb);
+    // Post-handler diagnostic logging. Outside the critical timing window
+    // (after EP arming + SETUP-bit clear) so it does not delay the response.
+    VPRINTF(LOW, "MCU: SETUP handled bmReqType=0x%02x bReq=0x%02x wVal=0x%04x"
+            " wIdx=0x%04x wLen=%d handled=%d\n",
+            pkt.bmRequestType, pkt.bRequest, pkt.wValue,
+            pkt.wIndex, pkt.wLength, (int)handled);
+    if (pkt.bRequest == USB_REQ_SET_ADDRESS) {
+        VPRINTF(LOW, "MCU: SET_ADDRESS addr=%d\n", (int)(pkt.wValue & 0x7Fu));
+    }
 
     return handled;
 }

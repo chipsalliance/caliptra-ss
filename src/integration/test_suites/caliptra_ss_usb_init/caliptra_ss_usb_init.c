@@ -92,10 +92,12 @@ void main (void) {
 
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
-                VPRINTF(LOW, "MCU: SETUP packet received\n");
+                // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
+                // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
+                // polling ~5us after the SETUP ACK. Logging is done inside
+                // the handler AFTER the SETUP bit is cleared.
                 usb_handle_control_transfer();
                 transfers_handled++;
-                VPRINTF(LOW, "MCU: Transfers handled = %d\n", transfers_handled);
             }
         }
 
@@ -105,11 +107,14 @@ void main (void) {
             uint32_t diag_int     = lsu_read_32(SOC_USBHSD_INTSTAT);
             uint32_t ep0_out      = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
             uint32_t ep0_in_diag  = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
-            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x\n",
-                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag);
+            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
+                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled);
         }
 
-        mcu_sleep(10);
+        // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
+        // between consecutive polls, which exceeds the host VIP IN-retry
+        // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
+        // 1 us of the EP0OUT interrupt.
     }
 
     // Report final state
