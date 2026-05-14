@@ -1333,7 +1333,7 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
     Volatile-unlock state transitions are not reflected by the fuse controller, and therefore `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not capture state transitions granted exclusively by the life-cycle controller. To cover this case, the Caliptra Subsystem also broadcasts `caliptra_ss_volatile_raw_unlock_success_o`, which is asserted by the life-cycle controller to indicate that the volatile-unlock state has been granted.
 
 3. **Scan Path Exclusions**:
-   - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token is different from other LC transition tokens as it is stored in the plaintext in gates, not in hashed form.
+   - Ensure that the RAW\_UNLOCK token is excluded from the scan chain. This token differs from other LC transition tokens because it is stored in gates, although it is also stored in a hashed form similar to other tokens. It is recommended to exclude since it is not provisioned through fuse macro as other tokens.
      To exclude it from scan, the following hierarchies must be excluded: `*::lc_ctrl_fsm::hashed_tokens_{higher, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
 
 4. **RAW Unlock Token**:
