@@ -122,7 +122,7 @@ const partition_t partitions[NUM_PARTITIONS] = {
     {
         .index = 6,
         .address = 0x00F8,
-        .digest_address = 0x02F8,
+        .digest_address = 0x0178,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -132,14 +132,31 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .has_ecc = true,
         .lc_phase = 16,
         .is_lifecycle = false,
-        .num_fuses = 13,
+        .num_fuses = 5,
         .fuses = sw_manuf_partition_fuses
+    },
+    // PROD_DEBUG_UNLOCK_MANUF_PARTITION
+    {
+        .index = 7,
+        .address = 0x0180,
+        .digest_address = 0x0300,
+        .zer_address = 0x0308,
+        .variant = 1,
+        .granularity = 32,
+        .is_secret = false,
+        .hw_digest = false,
+        .sw_digest = true,
+        .has_ecc = true,
+        .lc_phase = 16,
+        .is_lifecycle = false,
+        .num_fuses = 8,
+        .fuses = prod_debug_unlock_manuf_partition_fuses
     },
     // SECRET_LC_TRANSITION_PARTITION
     {
-        .index = 7,
-        .address = 0x0300,
-        .digest_address = 0x03B0,
+        .index = 8,
+        .address = 0x0310,
+        .digest_address = 0x03C0,
         .zer_address = 0x0000,
         .variant = 0,
         .granularity = 64,
@@ -154,8 +171,8 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // SVN_PARTITION
     {
-        .index = 8,
-        .address = 0x03B8,
+        .index = 9,
+        .address = 0x03C8,
         .digest_address = 0x0000,
         .zer_address = 0x0000,
         .variant = 1,
@@ -171,9 +188,9 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_TEST_PARTITION
     {
-        .index = 9,
-        .address = 0x03E0,
-        .digest_address = 0x0418,
+        .index = 10,
+        .address = 0x03F0,
+        .digest_address = 0x0428,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -188,9 +205,9 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_HASHES_MANUF_PARTITION
     {
-        .index = 10,
-        .address = 0x0420,
-        .digest_address = 0x0458,
+        .index = 11,
+        .address = 0x0430,
+        .digest_address = 0x0468,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -205,9 +222,9 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_HASHES_PROD_PARTITION
     {
-        .index = 11,
-        .address = 0x0460,
-        .digest_address = 0x07B8,
+        .index = 12,
+        .address = 0x0470,
+        .digest_address = 0x07C8,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -222,9 +239,9 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_REVOCATIONS_PROD_PARTITION
     {
-        .index = 12,
-        .address = 0x07C0,
-        .digest_address = 0x0890,
+        .index = 13,
+        .address = 0x07D0,
+        .digest_address = 0x08A0,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -239,10 +256,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_SECRET_PROD_PARTITION
     {
-        .index = 13,
-        .address = 0x0898,
-        .digest_address = 0x0A98,
-        .zer_address = 0x0AA0,
+        .index = 14,
+        .address = 0x08A8,
+        .digest_address = 0x0AA8,
+        .zer_address = 0x0AB0,
         .variant = 0,
         .granularity = 64,
         .is_secret = true,
@@ -256,9 +273,9 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // VENDOR_NON_SECRET_PROD_PARTITION
     {
-        .index = 14,
-        .address = 0x0AA8,
-        .digest_address = 0x0CA8,
+        .index = 15,
+        .address = 0x0AB8,
+        .digest_address = 0x0CB8,
         .zer_address = 0x0000,
         .variant = 1,
         .granularity = 32,
@@ -273,10 +290,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_0
     {
-        .index = 15,
-        .address = 0x0CB0,
-        .digest_address = 0x0CD0,
-        .zer_address = 0x0CD8,
+        .index = 16,
+        .address = 0x0CC0,
+        .digest_address = 0x0CE0,
+        .zer_address = 0x0CE8,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -290,10 +307,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_1
     {
-        .index = 16,
-        .address = 0x0CE0,
-        .digest_address = 0x0D00,
-        .zer_address = 0x0D08,
+        .index = 17,
+        .address = 0x0CF0,
+        .digest_address = 0x0D10,
+        .zer_address = 0x0D18,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -307,10 +324,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_2
     {
-        .index = 17,
-        .address = 0x0D10,
-        .digest_address = 0x0D30,
-        .zer_address = 0x0D38,
+        .index = 18,
+        .address = 0x0D20,
+        .digest_address = 0x0D40,
+        .zer_address = 0x0D48,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -324,10 +341,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_3
     {
-        .index = 18,
-        .address = 0x0D40,
-        .digest_address = 0x0D60,
-        .zer_address = 0x0D68,
+        .index = 19,
+        .address = 0x0D50,
+        .digest_address = 0x0D70,
+        .zer_address = 0x0D78,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -341,10 +358,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_4
     {
-        .index = 19,
-        .address = 0x0D70,
-        .digest_address = 0x0D90,
-        .zer_address = 0x0D98,
+        .index = 20,
+        .address = 0x0D80,
+        .digest_address = 0x0DA0,
+        .zer_address = 0x0DA8,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -358,10 +375,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_5
     {
-        .index = 20,
-        .address = 0x0DA0,
-        .digest_address = 0x0DC0,
-        .zer_address = 0x0DC8,
+        .index = 21,
+        .address = 0x0DB0,
+        .digest_address = 0x0DD0,
+        .zer_address = 0x0DD8,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -375,10 +392,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
     },
     // CPTRA_SS_LOCK_HEK_PROD_6
     {
-        .index = 21,
-        .address = 0x0DD0,
-        .digest_address = 0x0DF0,
-        .zer_address = 0x0DF8,
+        .index = 22,
+        .address = 0x0DE0,
+        .digest_address = 0x0E00,
+        .zer_address = 0x0E08,
         .variant = 1,
         .granularity = 32,
         .is_secret = false,
@@ -390,27 +407,10 @@ const partition_t partitions[NUM_PARTITIONS] = {
         .num_fuses = 1,
         .fuses = cptra_ss_lock_hek_prod_6_fuses
     },
-    // CPTRA_SS_LOCK_HEK_PROD_7
-    {
-        .index = 22,
-        .address = 0x0E00,
-        .digest_address = 0x0E20,
-        .zer_address = 0x0E28,
-        .variant = 1,
-        .granularity = 32,
-        .is_secret = false,
-        .hw_digest = false,
-        .sw_digest = true,
-        .has_ecc = true,
-        .lc_phase = 17,
-        .is_lifecycle = false,
-        .num_fuses = 1,
-        .fuses = cptra_ss_lock_hek_prod_7_fuses
-    },
     // LIFE_CYCLE
     {
         .index = 23,
-        .address = 0x0E30,
+        .address = 0x0E10,
         .digest_address = 0x0000,
         .zer_address = 0x0000,
         .variant = 2,
@@ -449,7 +449,9 @@ const uint32_t sw_manuf_partition_fuses[] = {
     CPTRA_CORE_IDEVID_CERT_IDEVID_ATTR,
     SOC_SPECIFIC_IDEVID_CERTIFICATE,
     CPTRA_CORE_IDEVID_MANUF_HSM_IDENTIFIER,
-    CPTRA_CORE_SOC_STEPPING_ID,
+    CPTRA_CORE_SOC_STEPPING_ID
+};
+const uint32_t prod_debug_unlock_manuf_partition_fuses[] = {
     CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_0,
     CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_1,
     CPTRA_SS_PROD_DEBUG_UNLOCK_PKS_2,
@@ -630,9 +632,6 @@ const uint32_t cptra_ss_lock_hek_prod_5_fuses[] = {
 };
 const uint32_t cptra_ss_lock_hek_prod_6_fuses[] = {
     CPTRA_SS_LOCK_HEK_PROD_6_RATCHET_SEED
-};
-const uint32_t cptra_ss_lock_hek_prod_7_fuses[] = {
-    CPTRA_SS_LOCK_HEK_PROD_7_RATCHET_SEED
 };
 const uint32_t life_cycle_fuses[] = {
     LC_TRANSITION_CNT,
