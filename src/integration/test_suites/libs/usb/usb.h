@@ -35,15 +35,18 @@
 #define USB_SRAM_EP0_OUT_BUF_OFFSET  0x140u
 #define USB_SRAM_EP0_IN_BUF_OFFSET   0x180u
 
-// EP command/status list entry bit fields (from RTL usb_dma.m.vhdl):
+// EP command/status list entry bit fields (from RTL usb_dma.m.vhdl line 420:
+//   "epinfo_nbytes <= dma_rdata(25 downto 11);" and line 421:
+//   "epinfo_addr_offset <= dma_rdata(C_DALB-7 downto 0);" with C_DALB=17
+//   in our integration → addr_offset at bits [10:0]).
 //   [31]    = Active
 //   [29]    = Stall
-//   [25:16] = NBytes (10-bit transfer length)
-//   [15:0]  = AddrOffset (buffer byte address >> 6)
+//   [25:11] = NBytes (15-bit transfer length)
+//   [10:0]  = AddrOffset (buffer byte address >> 6)
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
 #define USB_EP_ENTRY_STALL        (1u << 29)
-#define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x3FFu) << 16)
-#define USB_EP_ENTRY_ADDR(off)    ((uint32_t)(off) >> 6)
+#define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
+#define USB_EP_ENTRY_ADDR(off)    (((uint32_t)(off) >> 6) & 0x7FFu)
 
 // -------------------------------------------------------------------------
 // USB 2.0 standard request codes (bRequest field of SETUP packet)
