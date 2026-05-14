@@ -1662,7 +1662,7 @@ module caliptra_ss_top_tb
     logic [1:0]   usb_dut_vip_xcvrselect;
 
     // --- UTMI clock and lock signals ---
-    assign cptra_ss_usb_utmi_clk_i          = usb_utmi_clk;
+    assign cptra_ss_usb_utmi_clk_i          = usb_20_mac_if.utmi_dut_mac_if.CLK;
     assign cptra_ss_usb_utmi_dev_clk_lock_i = cptra_ss_pwrgood_i;
     assign cptra_ss_usb_utmi_hst_clk_lock_i = cptra_ss_pwrgood_i;
 
