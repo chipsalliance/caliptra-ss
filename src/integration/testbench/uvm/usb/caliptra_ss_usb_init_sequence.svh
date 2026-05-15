@@ -184,6 +184,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         uvm_component parent_comp;
         svt_configuration get_cfg;
         svt_usb_configuration usb_cfg;
+        svt_usb_status shared_status;
 
         // Auto-attach is configured through remote_cfg. Once the modeled device
         // PHY attaches, the host link state machine performs reset, detects the
@@ -194,12 +195,12 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             "Auto-attach in flight via remote_cfg. Waiting for host link to reach ENABLED.",
             UVM_LOW)
 
-        // ---------------- Wait for host link to reach ENABLED ----------------
-        // Use VIP-shipped wait sequence which reads shared_status via the
-        // canonical accessor p_sequencer.get_shared_status(this). The prior
-        // implementation read host_agent_h.shared_status directly via
-        // p_sequencer.get_parent() which can yield a stale instance; the
-        // link-FSM only writes the shared_status returned by get_shared_status.
+        // ---------------- Resolve VIP handles for wait + transfers ----------------
+        // The svt_usb_status object that the link FSM writes is shared between
+        // the agent (`host_agent_h.shared_status`) and the canonical accessor
+        // (`p_sequencer.get_shared_status(this)`). Empirically verified in
+        // pkg125: both return the same object instance (id matches). We use
+        // the canonical accessor as the recommended path.
         parent_comp = p_sequencer.get_parent();
         if (!$cast(host_agent_h, parent_comp)) begin
             `uvm_fatal("USB_INIT",
@@ -207,17 +208,23 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
                           parent_comp.get_full_name()))
         end
 
-        // Get VIP configuration via the canonical accessor (cfg is local in
-        // svt_usb_agent, so we use p_sequencer.get_cfg()).
+        shared_status = p_sequencer.get_shared_status(this);
+        if (shared_status == null) begin
+            `uvm_fatal("USB_INIT",
+                "p_sequencer.get_shared_status(this) returned null.")
+        end
+
         p_sequencer.get_cfg(get_cfg);
         if (!$cast(usb_cfg, get_cfg))
             `uvm_fatal("USB_INIT", "Unable to cast configuration to svt_usb_configuration")
 
         `uvm_info("USB_INIT",
-            "Waiting for host link to reach ENABLED state...", UVM_LOW)
+            $sformatf("Waiting for host link to reach ENABLED (current=%p)...",
+                      shared_status.link_usb_20_state),
+            UVM_LOW)
         fork
             begin: WAIT_EN
-                wait (host_agent_h.shared_status.link_usb_20_state ==
+                wait (shared_status.link_usb_20_state ==
                       svt_usb_types::ENABLED);
                 disable REPORT_LINK_STATE;
             end
@@ -225,7 +232,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
                 forever begin
                     #10us `uvm_info("USB_INIT",
                         $sformatf("host agent link_usb_20_state [%p]",
-                                  host_agent_h.shared_status.link_usb_20_state),
+                                  shared_status.link_usb_20_state),
                         UVM_LOW);
                 end
             end
