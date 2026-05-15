@@ -195,14 +195,14 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         // enable_phys_tracing explicitly set to 0 to suppress physical-layer
         // trace files even if +svt_debug_opts enables them by default.
         host_cfg.enable_prot_tracing            = 1;
-        host_cfg.enable_link_tracing            = 2;
-        host_cfg.enable_phys_tracing            = 2;
-        host_cfg.enable_phys_reporting          = 2;
+        host_cfg.enable_link_tracing            = 1;
+        host_cfg.enable_phys_tracing            = 1;
+        host_cfg.enable_phys_reporting          = 1;
         host_cfg.enable_runtime_trace_recording = 1;
         dev_cfg.enable_prot_tracing             = 1;
-        dev_cfg.enable_link_tracing             = 2;
-        dev_cfg.enable_phys_tracing             = 2;
-        dev_cfg.enable_phys_reporting           = 2;
+        dev_cfg.enable_link_tracing             = 1;
+        dev_cfg.enable_phys_tracing             = 1;
+        dev_cfg.enable_phys_reporting           = 1;
         dev_cfg.enable_runtime_trace_recording  = 1;
     endfunction
 
