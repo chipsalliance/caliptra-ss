@@ -278,11 +278,15 @@ bool usb_handle_control_transfer(void) {
                             " - stalling\n");
                     usb_ep0_stall();
                     break;
-                case USB_REQ_GET_CONFIGURATION:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Device GET_CONFIGURATION"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                case USB_REQ_GET_CONFIGURATION: {
+                    // Standard device GET_CONFIGURATION: 1-byte current config.
+                    // Default state (no SET_CONFIGURATION received) returns 0.
+                    static const uint32_t cfg_buf = 0x00000000u;
+                    usb_ep0_send_data(&cfg_buf, 1);
+                    usb_ep0_arm_out();
+                    handled = true;
                     break;
+                }
                 case USB_REQ_SET_CONFIGURATION:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Device SET_CONFIGURATION"
                             " - stalling\n");
