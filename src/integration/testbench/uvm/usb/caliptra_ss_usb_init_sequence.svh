@@ -295,12 +295,24 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
 
-        // Update the VIP's device configuration with the new address.
-        // We update both the runtime cfg (used by transfer randomization
-        // constraints via fix_anchors) and the shared_cfg (for consistency).
-        usb_cfg.remote_device_cfg[0].device_address = 1;
+        // USB 2.0 §9.4.6: the device can take up to 2 ms after the status
+        // stage of SET_ADDRESS before it begins responding to its new address
+        // ("SetAddress() recovery interval"). Add a settling delay before
+        // issuing the first request to the new address so the DUT firmware
+        // has time to commit the address change to hardware.
+        #5us;
+
+        // Update the agent's configuration with the new remote device address
+        // and call svt_usb_agent::reconfigure() so the contained components
+        // (protocol service, packet sequencer) re-snapshot the cfg. Per
+        // class ref, p_sequencer.get_cfg() returns a *reference* — mutating
+        // the runtime cfg object alone is necessary but not sufficient
+        // because the protocol service holds its own cached snapshot.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        host_agent_h.reconfigure(usb_cfg);
         `uvm_info("USB_INIT",
-            "Updated remote_device_cfg[0].device_address to 1.", UVM_LOW)
+            "Reconfigured host agent with remote device_address=1.",
+            UVM_LOW)
 
         // ---------------- GET_DESCRIPTOR(Device, addr=1) ----------------
         do_control_xfer(
