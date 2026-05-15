@@ -195,6 +195,11 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             UVM_LOW)
 
         // ---------------- Wait for host link to reach ENABLED ----------------
+        // Use VIP-shipped wait sequence which reads shared_status via the
+        // canonical accessor p_sequencer.get_shared_status(this). The prior
+        // implementation read host_agent_h.shared_status directly via
+        // p_sequencer.get_parent() which can yield a stale instance; the
+        // link-FSM only writes the shared_status returned by get_shared_status.
         parent_comp = p_sequencer.get_parent();
         if (!$cast(host_agent_h, parent_comp)) begin
             `uvm_fatal("USB_INIT",
@@ -210,7 +215,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
 
         `uvm_info("USB_INIT",
             "Waiting for host link to reach ENABLED state...", UVM_LOW)
-        fork 
+        fork
             begin: WAIT_EN
                 wait (host_agent_h.shared_status.link_usb_20_state ==
                       svt_usb_types::ENABLED);
@@ -311,6 +316,23 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             .usb_cfg               (usb_cfg)
         );
         wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1");
+
+        // ---------------- GET_CONFIGURATION(Device, addr=1) ----------------
+        // Returns the current configuration value (1 byte). For an unconfigured
+        // device the value is 0; after SET_CONFIGURATION(1) it becomes 1.
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h08),       // GET_CONFIGURATION
+            .wvalue                (16'h0000),
+            .windex                (16'h0000),
+            .wlength               (16'h0001),    // 1 byte
+            .device_addr           (1),
+            .label                 ("GET_CONFIGURATION_addr1"),
+            .usb_cfg               (usb_cfg)
+        );
+        wait_xfer_done(host_agent_h, "GET_CONFIGURATION_addr1");
 
         `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
