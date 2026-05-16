@@ -15,6 +15,28 @@
 
 #include "usb.h"
 
+// Shadow of the staged device-address (DEVCMDSTAT[6:0]).
+//
+// Hardware quirk (IP-XXX-3511): DEVCMDSTAT[6:0] reads return the LIVE
+// `reg_dev_addr`, but writes always update the staged `reg_dev_addr_tmp` which
+// is only committed to LIVE on the next `setup_received`. Any naive RMW of
+// DEVCMDSTAT after `usb_set_device_address(N)` (e.g., `usb_clear_setup_bit()`)
+// will read LIVE (still 0) and write that back into TMP, clobbering the
+// staged address. The DUT then never enables the new address and goes silent
+// on the host's first SETUP@addr=N. See
+// `copilot/research/addr1_silence_fsdb_rca_pkg127.md` for the FSDB evidence.
+//
+// Fix: every RMW write to DEVCMDSTAT goes through usb_devcmdstat_write() which
+// re-substitutes this shadow into bits[6:0] before writeback, preserving the
+// staged address regardless of call order.
+static uint8_t usb_dev_addr_shadow = 0;
+
+static void usb_devcmdstat_write(uint32_t val) {
+    val = (val & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK)
+        | (usb_dev_addr_shadow & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
+    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, val);
+}
+
 // Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM writes)
 const uint32_t usb_default_device_descriptor[5] = {
     0x00020112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
@@ -133,13 +155,16 @@ void usb_handle_bus_reset(void) {
         return;
     }
     VPRINTF(LOW, "MCU: USB bus reset detected\n");
+    // Bus reset returns device address to 0 per USB spec; update shadow so all
+    // subsequent DEVCMDSTAT RMW writes carry the reset address.
+    usb_dev_addr_shadow = 0;
     // Clear DRES_C (W1C)
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+    usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
     usb_ep0_reinit();
     // Reset device address to 0 per USB spec
     cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     cmd &= ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK;
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+    usb_devcmdstat_write(cmd);
 }
 
 void usb_read_setup_packet(usb_setup_pkt_t *pkt) {
@@ -192,13 +217,13 @@ void usb_ep0_arm_out(void) {
 
 void usb_clear_setup_bit(void) {
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd | USBHSD_DEVCMDSTAT_SETUP_MASK);
+    usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_SETUP_MASK);
 }
 
 void usb_set_device_address(uint8_t addr) {
+    usb_dev_addr_shadow = (uint8_t)(addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    cmd = (cmd & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK) | (addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+    usb_devcmdstat_write(cmd);
 }
 
 // -------------------------------------------------------------------------
@@ -237,7 +262,7 @@ bool usb_handle_control_transfer(void) {
                         uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
                         cmd |=  USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
                         cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
-                        lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+                        usb_devcmdstat_write(cmd);
                         handled = true;
                     } else {
                         usb_ep0_stall();
