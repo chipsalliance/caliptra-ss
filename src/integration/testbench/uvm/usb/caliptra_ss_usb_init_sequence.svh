@@ -353,6 +353,42 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "GET_CONFIGURATION_addr1");
 
+        // ---------------- SET_CONFIGURATION(1) at addr=1 ----------------
+        // HOST_TO_DEVICE no-data control: status stage is a ZLP IN from device.
+        // Selects configuration 1 (the device descriptor declares
+        // bNumConfigurations=1). Transitions device from Address → Configured
+        // state per USB 2.0 §9.1.1.5.
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h09),       // SET_CONFIGURATION
+            .wvalue                (16'h0001),    // configuration value = 1
+            .windex                (16'h0000),
+            .wlength               (16'h0000),
+            .device_addr           (1),
+            .label                 ("SET_CONFIGURATION_1"),
+            .usb_cfg               (usb_cfg)
+        );
+        wait_xfer_done(host_agent_h, "SET_CONFIGURATION_1");
+
+        // ---------------- GET_CONFIGURATION(Device, addr=1) verify ----------------
+        // Should now return 1 (the value just programmed). Re-using the same
+        // control-transfer path validates the firmware shadow round-trip.
+        do_control_xfer(
+            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
+            .bm_request_type_type  (svt_usb_types::STANDARD),
+            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
+            .brequest_val          (8'h08),       // GET_CONFIGURATION
+            .wvalue                (16'h0000),
+            .windex                (16'h0000),
+            .wlength               (16'h0001),    // 1 byte
+            .device_addr           (1),
+            .label                 ("GET_CONFIGURATION_addr1_verify"),
+            .usb_cfg               (usb_cfg)
+        );
+        wait_xfer_done(host_agent_h, "GET_CONFIGURATION_addr1_verify");
+
         `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
 

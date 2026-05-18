@@ -31,6 +31,11 @@
 // staged address regardless of call order.
 static uint8_t usb_dev_addr_shadow = 0;
 
+// Shadow of the currently-selected configuration value (USB 2.0 §9.4.7).
+// Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on
+// bus reset (device returns to Default state per USB 2.0 §9.1.1.3).
+static uint8_t usb_current_config = 0;
+
 static void usb_devcmdstat_write(uint32_t val) {
     val = (val & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK)
         | (usb_dev_addr_shadow & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
@@ -158,6 +163,10 @@ void usb_handle_bus_reset(void) {
     // Bus reset returns device address to 0 per USB spec; update shadow so all
     // subsequent DEVCMDSTAT RMW writes carry the reset address.
     usb_dev_addr_shadow = 0;
+    // USB 2.0 §9.1.1.3: reset returns the device to the Default state with
+    // no configuration selected. Mirror that in the firmware shadow so a
+    // subsequent GET_CONFIGURATION reports 0 until SET_CONFIGURATION runs.
+    usb_current_config = 0;
     // Clear DRES_C (W1C)
     usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
     usb_ep0_reinit();
@@ -305,18 +314,32 @@ bool usb_handle_control_transfer(void) {
                     break;
                 case USB_REQ_GET_CONFIGURATION: {
                     // Standard device GET_CONFIGURATION: 1-byte current config.
-                    // Default state (no SET_CONFIGURATION received) returns 0.
-                    static const uint32_t cfg_buf = 0x00000000u;
+                    // Returns the value most recently set by SET_CONFIGURATION,
+                    // or 0 if the device is still in Address state.
+                    uint32_t cfg_buf = (uint32_t)usb_current_config;
                     usb_ep0_send_data(&cfg_buf, 1);
                     usb_ep0_arm_out();
                     handled = true;
                     break;
                 }
-                case USB_REQ_SET_CONFIGURATION:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Device SET_CONFIGURATION"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                case USB_REQ_SET_CONFIGURATION: {
+                    // Standard device SET_CONFIGURATION: wValue low byte is
+                    // the configuration value. The device descriptor declares
+                    // bNumConfigurations=1, so accept 0 (unconfigure) or 1
+                    // and stall any other value per USB 2.0 §9.4.7.
+                    uint8_t new_cfg = (uint8_t)(pkt.wValue & 0xFFu);
+                    if (new_cfg <= 1u) {
+                        usb_current_config = new_cfg;
+                        usb_ep0_send_zlp();
+                        usb_ep0_arm_out();
+                        handled = true;
+                    } else {
+                        VPRINTF(LOW, "MCU: USB SET_CONFIGURATION invalid value=%d"
+                                " - stalling\n", new_cfg);
+                        usb_ep0_stall();
+                    }
                     break;
+                }
                 default:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Device bRequest=0x%02x"
                             " - stalling\n", pkt.bRequest);
