@@ -18,6 +18,7 @@
 - [Caliptra Subsystem Top](#caliptra-subsystem-top)
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
+    - [Strap Timing Requirements](#strap-timing-requirements)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
     - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
@@ -309,6 +310,20 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i`            | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling hardware features specific to OCP L.O.C.K. such as AES Keyvault write path, Keyvault filtering rules, and Key Release via AXI DMA. Must be driven with a constant value 0 or 1.  |
 | External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i`            | Base AXI address for the external staging area used by Caliptra Core FW to stage FW images due to reduced MBOX SRAM size. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area) for more details.    |
 
+#### Strap Timing Requirements
+
+**All strap inputs listed in the table above, as well as `cptra_ss_cptra_obf_key_i`, `cptra_ss_cptra_csr_hmac_key_i`, `cptra_ss_lc_sec_volatile_raw_unlock_en_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`, and `cptra_ss_FIPS_ZEROIZATION_PPD_i`, must be driven to their intended values and held stable before `cptra_ss_rst_b_i` is deasserted. These signals must not transition for the duration of the boot session (until the next reset assertion).**
+
+Internally, strap values are consumed at different points during the boot sequence, all of which occur strictly *after* `cptra_ss_rst_b_i` deasserts. The internal sampling cascade is:
+
+| Order | Internal Event | Straps Consumed |
+|:------|:---------------|:----------------|
+| 1 | MCI boot sequencer starts (on `cptra_ss_rst_b_i` deassertion) | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` (used combinationally in LC controller FSM during init) |
+| 2 | MCI boot sequencer deasserts internal SS reset (`cptra_ss_rst_b_o`) during `BOOT_OTP_FC` state | MCI register straps latched on a 1-cycle write-enable pulse: `cptra_ss_strap_mcu_reset_vector_i`, `cptra_ss_strap_mcu_lsu_axi_user_i` (registered copy), `cptra_ss_strap_mcu_ifu_axi_user_i` (registered copy), `cptra_ss_strap_mcu_sram_config_axi_user_i`, `cptra_ss_strap_mci_soc_config_axi_user_i`, `cptra_ss_debug_intent_i`, `cptra_ss_FIPS_ZEROIZATION_PPD_i` |
+| 3 | MCI boot sequencer deasserts Caliptra core reset (`cptra_ss_mci_cptra_rst_b_o`) during `BOOT_CPTRA` state | `cptra_ss_cptra_obf_key_i` (latched into internal register), `cptra_ss_cptra_csr_hmac_key_i` (latched on `cptra_noncore_rst_b` deassertion, only in `DEVICE_MANUFACTURING` lifecycle) |
+| 4 | Caliptra internal boot FSM deasserts `cptra_noncore_rst_b` during `BOOT_FUSE` state | Caliptra soc_ifc register straps latched on a 1-cycle write-enable pulse (locked after `fuse_done`): `cptra_ss_strap_caliptra_base_addr_i`, `cptra_ss_strap_mci_base_addr_i`, `cptra_ss_strap_recovery_ifc_base_addr_i`, `cptra_ss_strap_otp_fc_base_addr_i`, `cptra_ss_strap_uds_seed_base_addr_i`, `cptra_ss_strap_caliptra_dma_axi_user_i`, `cptra_ss_strap_generic_0_i` through `cptra_ss_strap_generic_3_i`, `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i`, `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i`, `cptra_ss_strap_key_release_key_size_i`, `cptra_ss_strap_key_release_base_addr_i`, `cptra_ss_strap_ocp_lock_en_i`, `cptra_ss_strap_external_staging_area_base_addr_i` |
+
+> **Security note — unregistered AXI identity straps**: `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_mcu_ifu_axi_user_i` are wired **directly** (combinationally) to the MCU AXI bus `aruser`/`awuser` fields in addition to being captured into MCI registers. The combinational path means these signals are security-critical at all times — not just at the sampling edge. Toggling them during operation would corrupt in-flight AXI transactions and could bypass fuse controller access control checks that rely on AXI user identity. SoC integrators must ensure these are driven from a constant source (e.g., tied to fixed logic values or hard-strapped).
 
 ### AXI Interface (axi_if)
 
@@ -499,8 +514,9 @@ The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsyste
   - **Signal Name** `cptra_ss_clk_i`
   - **Required Frequency** 333* MHz to 400 MHz
     - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
+      - 333 MHz was calculated assuming SCL PAD -> D and SDA Q -> PAD timing is 0. SOCs with large timing delays might need to run at a faster clock frequency to meet tSCO timing of 12ns. 
     - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
-    - This was changed from 170 MHz floor due to CDC issue found in I3C core:
+    - Previous I3C Core releases permitted use of a 170 MHz clock as part of a faulty configuration that involved disabling input synchronizers. This configuration produces CDC violations and is no longer permitted. If integrators follow the requirement for 333MHz clock and do not disable synchronizers, CDC in the phy is clean. The following issues include discussion about the CDC violations from the invalid configuration:
        - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
        - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
   - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
@@ -532,7 +548,7 @@ The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`.
 
 ### Reset
 
-The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 2 clock cycles) to allow all internal logic to initialize properly.
+The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsystem. It must be asserted low to reset the subsystem and de-asserted high to release it from reset. Ensure that the reset is held low for a sufficient duration (minimum of 32 clock cycles) to allow the reset assertion to propagate through all internal synchronization and pipeline stages across the subsystem hierarchy.
 
    - **Signal Name** `cptra_ss_rst_b_i`
    - **Active Level** Active-low (`0` resets the subsystem, `1` releases reset)
@@ -576,10 +592,16 @@ Integrator must connect following list of manager and subordinates to axi interc
 
   | Manager AXI If Name           | Description                                                       |
   |-------------------------------|-------------------------------------------------------------------|
-  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU). All additional AXI signals present in the top-level port list that are not part of the axi_if interface must also be connected to the AXI interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).                   |
-  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU). All additional AXI signals present in the top-level port list that are not part of the axi_if interface must also be connected to the AXI interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).            |
-  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only. All additional AXI signals present in the top-level port list that are not part of the axi_if interface must also be connected to the AXI interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).    |
+  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU). Additional AXI signals (AxCACHE, AxPROT, AxREGION, AxQOS) are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals. |
+  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU). Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.            |
+  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only. Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.    |
   | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions. Additional signals are unused and may be tied to 0 at the interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).           |
+
+- The following signals are unused for all AXI subordinate interfaces within Caliptra Subsystem. The AXI specification defines these signals as optional for a compliant AXI subordinate. They may be used by integrators to fine tune AXI interconnect behavior or performance. MCU AXI manager interfaces drive these signals, as documented in the VeeR EL2 specification. 
+  - AxCACHE
+  - AxPROT
+  - AxREGION
+  - AxQOS
 
 - AXI USER width is 32-bits for all AXI interfaces in the Caliptra Subsystem. Only the Address User signals are used (ARUSER and AWUSER) for secure access filtering. Other USER signals are either tied to 0 or not used (WUSER, RUSER, BUSER). ARUSER and AWUSER must be passed unmodified through the AXI interconnect to all AXI subordinates in the Subsystem. Each logic block inside the Subsystem is responsible for performing its own AXI User filtering based on access privileges. AXI interconnect is only responsible for passing the unmodified signals along with the transaction requests, not for performing any access filtering.
 
@@ -1412,20 +1434,32 @@ The LC Controller's programming interface facilitates lifecycle state transition
 
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
-   - Toke Format is illustrated with a python implementation:
+   - Token format and fuse provisioning are illustrated with a python implementation:
 ```python
-# value = 0x318372c87790628a05f493b472f04808
-# data = value.to_bytes(16, byteorder='little')
-# custom = 'LC_CTRL'.encode('UTF-8')
-# shake = cSHAKE128.new(data=data, custom=custom)
-# shake output is 0x4c9ca068a68474d526e7d8a0233d5aad
+from Crypto.Hash import cSHAKE128
+
+# Raw (unhashed) token as a 128-bit integer
+value = 0x318372c87790628a05f493b472f04808
+data = value.to_bytes(16, byteorder='little')
+# data (byte-array) = [0x08, 0x48, 0xf0, 0x72, 0xb4, 0x93, 0xf4, 0x05,
+#                      0x8a, 0x62, 0x90, 0x77, 0xc8, 0x72, 0x83, 0x31]
+
+custom = 'LC_CTRL'.encode('UTF-8')
+shake = cSHAKE128.new(data=data, custom=custom)
+hashed_token = shake.read(16)
+# hashed_token (byte-array) = [0xad, 0x5a, 0x3d, 0x23, 0xa0, 0xd8, 0xe7, 0x26,
+#                               0xd5, 0x74, 0x84, 0xa6, 0x68, 0xa0, 0x9c, 0x4c]
+# hashed_token as big-endian hex = 0x4c9ca068a68474d526e7d8a0233d5aad
+#
+# HKMS must provision this hashed_token byte-array into the corresponding
+# fuse location in SECRET_LC_TRANSITION_PARTITION via the DAI.
 
 # To unlock a state having the shake condition above, the LCC needs
-# to get the following input set:
-TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
+# to get the following raw token input set:
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
 TOKEN_write(LC_CTRL_TRANSITION_TOKEN_1_OFFSET, 0x7790628a)
 TOKEN_write(LC_CTRL_TRANSITION_TOKEN_2_OFFSET, 0x05f493b4)
-TOKEN_write(LC_CTRL_TRANSITION_TOKEN_0_OFFSET, 0x72f04808)
+TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
 
 ```
 
@@ -2340,10 +2374,16 @@ The I3C core in the Caliptra Subsystem is an I3C target composed of two separate
 1. **Main target** : Main target is responsible for any flows other than recovery or streaming boot.
 2. **Recovery target** : Recovery target is dedicated to streaming boot / recovery interface.
 
-- This I3C code integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:
+The I3C core integrates with an AXI interconnect, allowing AXI read and write transactions to access I3C registers. For details on the core’s internal registers and functionality, see:
   - [I3C Core Documentation](https://chipsalliance.github.io/i3c-core/)
   - [Caliptra Subsystem Hardware Specification Document](CaliptraSSHardwareSpecification.md)
   - [I3C Core Registers](https://github.com/chipsalliance/i3c-core/tree/main/src/rdl)
+
+The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardwareSpecification.md#axi-streaming-boot-recovery-interface). In this mode, the I3C endpoint is disabled as all internal FIFOs are repurposed for the recovery stream.
+
+**IMPORTANT**:
+- **Static Configuration**: The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface. This selection is mutually exclusive and cannot be changed dynamically.
+- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, a second I3C core must be instantiated outside of Caliptra SS.
 
 ## Integration Considerations
 
@@ -2613,7 +2653,7 @@ The Below table illustrates various reset domains that we have in the design. We
 | CPTRA_SS_PRIM_RST | Primary reset input corresponding to SOC Warm Reset | cptra_ss_rst_b_i | caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q  -> LOW | CPTRA_SS_PRIM_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_MCU_RST |
 | CPTRA_SS_RST | Caliptra SS MCI Boot Sequencer generated reset used by various other SS level logic blocks and Caliptra Core | cptra_ss_mci_cptra_rst_b_i <br> mci_top_i.i_boot_seqr.cptra_ss_rst_b_o | mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH <br> mci_top_i.i_boot_seqr.early_warm_reset_warn -> HIGH <br> mci_top_i.i_boot_seqr.boot_fsm[3:0] = BOOT_IDLE <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q -> LOW <br> caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH | CPTRA_SS_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_SS_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_RST -> CPTRA_SS_MCU_RST <br> CPTRA_SS_RST -> CPTRA_DMI_NON_CORE_RST |
 | CPTRA_CORE_NON_CORE_RST | Caliptra Core Boot FSM generated reset used by various other Caliptra Core logics | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_noncore_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.rdc_clk_dis -> HIGH <br> caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.arc_IDLE -> HIGH <br> mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH | CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_CORE_UC_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_MCU_RST |
-| CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 | |
+| CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 <br> caliptra_top_dut.sha3.hsel_i -> LOW <br> caliptra_top_dut.aes_inst.aes_cif_req_dv -> LOW | |
 | CPTRA_SS_MCU_RST | Caliptra SS MCI Boot Sequencer generated microcontroller reset for Caliptra SS RISCV | mci_top_i.i_boot_seqr.mcu_rst_b | mci_top_i.i_boot_seqr.fw_update_rst_window -> HIGH <br> mci_top_i.i_mci_mcu_trace_buffer.mcu_trace_rv_i_valid_ip -> LOW | |
 
 **The current analysis only focuses on RDC crossing which are internal to Caliptra SS. Any RDC crossings with external flops need to be handled by integrators.**
