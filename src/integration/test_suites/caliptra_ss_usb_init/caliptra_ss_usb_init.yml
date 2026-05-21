@@ -3,6 +3,12 @@ testname: caliptra_ss_usb_init
 pre-exec: |
   set -eu
   echo "Running pre_exec for test caliptra_ss_usb_init"
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=caliptra_ss_usb_init CALIPTRA_TESTNAME=cptra_bringup CALIPTRA_AUX=soc_ifc_ss mcu_program.hex cptra_program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_init \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_basic_utmi_test'
