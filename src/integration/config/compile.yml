@@ -15,20 +15,20 @@ targets:
       - $AVERY_AXI/src.axi
       - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
       - $AVERY_AXI/testbench
-#      #-- I3C VIP
-#      - $AVERY_I3C/
-#      - $AVERY_I3C/src
-#      - $AVERY_I3C/src.i3c
-#      - $AVERY_I3C/src.VCS
-#      - $AVERY_I3C/src.i3c
-#      - $AVERY_I3C/testsuite.i3c/examples
-#      - $AVERY_I3C/testsuite.i3c/examples.uvm
-#      - $AVERY_I3C/testsuite.i3c/dut
-#      - $AVERY_I3C/testsuite.i3c/dut1_1
-#      - $AVERY_I3C/testsuite.i3c/dut_slave
-#      - $AVERY_I3C/testsuite.i3c/dut_master
-#      - $AVERY_I3C/testsuite.i3c/dut_master_stby
-#      - $AVERY_I3C/testbench
+      #-- I3C VIP
+      - $AVERY_I3C/
+      - $AVERY_I3C/src
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/src.VCS
+      - $AVERY_I3C/src.i3c
+      - $AVERY_I3C/testsuite.i3c/examples
+      - $AVERY_I3C/testsuite.i3c/examples.uvm
+      - $AVERY_I3C/testsuite.i3c/dut
+      - $AVERY_I3C/testsuite.i3c/dut1_1
+      - $AVERY_I3C/testsuite.i3c/dut_slave
+      - $AVERY_I3C/testsuite.i3c/dut_master
+      - $AVERY_I3C/testsuite.i3c/dut_master_stby
+      - $AVERY_I3C/testbench
     files:
       #-- General
       - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
@@ -43,14 +43,14 @@ targets:
       - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv 
       - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
       - $AVERY_AXI/src.axi/aaxi_intf.sv
-#      #-- I3C VIP
-#      - $AVERY_I3C/src/ai2c_pkg.sv
-#      - $AVERY_I3C/src.i3c/ai3c_pkg.sv
-#      - $AVERY_I3C/src/ai2c_intf.sv
-#      - $AVERY_I3C/src.i3c/ai3c_intf.sv
-#    tops:
-#      #-- NOTE: include this in the top level testbench
-#      - ai3c_tests_bench
+      #-- I3C VIP
+      - $AVERY_I3C/src/ai2c_pkg.sv
+      - $AVERY_I3C/src.i3c/ai3c_pkg.sv
+      - $AVERY_I3C/src/ai2c_intf.sv
+      - $AVERY_I3C/src.i3c/ai3c_intf.sv
+    tops:
+      #-- NOTE: include this in the top level testbench
+      - ai3c_tests_bench
 ---
 provides: [caliptra_ss_top_defines]
 schema_version: 2.4.0
@@ -99,7 +99,7 @@ requires:
   - axi_mem_pkg
   - mcu_top
   - ip_xxx_3516_hs_mem_wrapper
-#  - i3c_core
+  - i3c_core
   - fuse_ctrl
   - mci_top
   - caliptra_top
@@ -170,7 +170,7 @@ targets:
     directories:
       - $COMPILE_ROOT/vip
       - $COMPILE_ROOT/testbench
-#      - $COMPILE_ROOT/testbench/sv_tests/ai3c
+      - $COMPILE_ROOT/testbench/sv_tests/ai3c
       - $COMPILE_ROOT/testbench/sv_tests/mci
       - $COMPILE_ROOT/testbench/sv_tests/common
       - $COMPILE_ROOT/testbench/uvm/usb
@@ -195,7 +195,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
-    tops: [caliptra_ss_top_tb]
+    tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
     pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
@@ -237,8 +237,8 @@ global:
         - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=9
-#        - +define+AI3C_LANE_NUM=1
+        - +define+AAXI_INTC_SLAVE_CNT=11
+        - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
 #        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'

@@ -277,22 +277,25 @@ VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=11
+VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
+VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
 VCS_COMP_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME : remve this Note suppression
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
+VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
 ############# VCS Elab options #############
-##FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-#VCS_ELAB_OPTS += +warn=noIWNF
-#VCS_ELAB_OPTS += +warn=noPCWM-W
+#FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
+VCS_ELAB_OPTS += +warn=noIWNF
+VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
 VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
-##FIXME unique case violations in i3c_core
-#VCS_ELAB_OPTS += -ignore unique_checks
+#FIXME unique case violations in i3c_core
+VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1

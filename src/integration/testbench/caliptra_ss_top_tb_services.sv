@@ -20,7 +20,7 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
-//`include "i3c_defines.svh" // Removed — I3C replaced by USB
+`include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
 `include "caliptra_ss_includes.svh"
 
@@ -86,7 +86,7 @@ import tb_top_pkg::*;
     logic [11:0]                wb_csr_dest;
     logic [31:0]                wb_csr_data;
 
-    // time i3c_run_time; // Removed — I3C replaced by USB
+    time i3c_run_time;
 
     // Instantiate the fuse controller / lifecycle testbench services submodule
     fc_lcc_tb_services u_fc_lcc_tb_services (
@@ -306,14 +306,14 @@ import tb_top_pkg::*;
                     release `CPTRA_SS_TOP_PATH.fc_intr_otp_error;
                 end
                 5: begin
-                    // force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
                     @(negedge clk);
-                    // release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
                 end
                 6: begin
-                    // force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
                     @(negedge clk);
-                    // release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
                 end
                 default: begin
                 end
@@ -347,14 +347,14 @@ import tb_top_pkg::*;
                     release `CPTRA_SS_TOP_PATH.fc_alerts;
                 end
                 4: begin
-                    // force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
+                    force `CPTRA_SS_TOP_PATH.i3c_peripheral_reset = 1'b1;
                     @(negedge clk);
-                    // release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
+                    release `CPTRA_SS_TOP_PATH.i3c_peripheral_reset;
                 end
                 5: begin
-                    // force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
+                    force `CPTRA_SS_TOP_PATH.i3c_escalated_reset = 1'b1;
                     @(negedge clk);
-                    // release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
+                    release `CPTRA_SS_TOP_PATH.i3c_escalated_reset;
                 end
                 default: begin
                 end
@@ -454,16 +454,16 @@ import tb_top_pkg::*;
                 $display("* TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
-                //if($test$plusargs("AVY_TEST")) begin
-                    // if($value$plusargs("i3c_run_time=%0d", i3c_run_time)) begin
-                    //     $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
-                    //     #i3c_run_time;
-                    // end else begin
-                    //     i3c_run_time = 500us;
-                    //     $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
-                    //     #i3c_run_time;
-                    // end
-                //end
+                if($test$plusargs("AVY_TEST")) begin
+                    if($value$plusargs("i3c_run_time=%0d", i3c_run_time)) begin
+                        $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
+                        #i3c_run_time;
+                    end else begin
+                        i3c_run_time = 500us;
+                        $display("Waiting %0t for I3C tests to finish..\n", i3c_run_time);
+                        #i3c_run_time;
+                    end
+                end
                 $finish;
             end
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
