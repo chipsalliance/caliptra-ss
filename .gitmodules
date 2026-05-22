@@ -12,5 +12,5 @@
 	branch = main
 [submodule "third_party/usb2"]
 	path = third_party/usb2
-	url = /home/ws/caliptra/cwhitehead/Project-Caliptra/usb
-	branch = cwhitehead-axi-and-strm-boot
+	url = https://github.com/chipsalliance/usb2.git
+	branch = main
