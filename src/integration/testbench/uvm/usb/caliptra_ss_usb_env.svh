@@ -124,7 +124,7 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
     uvm_config_db#(svt_sequence_item_report)::set(this, "host_agent",
         "sys_seq_item_report", seq_item_report);
 
-    // ---------- Construct agents ----------
+    // ---------- Construct agent ----------
     host_agent = svt_usb_agent::type_id::create("host_agent", this);
 
     /**
