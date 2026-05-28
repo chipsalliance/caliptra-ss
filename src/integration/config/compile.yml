@@ -240,19 +240,19 @@ global:
         - +define+AAXI_INTC_SLAVE_CNT=11
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
-#        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
+        - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME : remve this Note suppression
         - '-suppress=SV-LCM-PPWI'
-#        - +define+I3C_BOOT_USING_ENTDAA
+        - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
         # --- Synopsys USB SVT VIP compile options ---
         - +define+SVT_UVM_TECHNOLOGY
         - +define+UVM_PACKER_MAX_BYTES=24000
         - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
         - +define+SYNOPSYS_SV
-        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME
+        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME_INC
         - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
         - +define+SVT_VERSION=latest
         - +define+SVT_MPHY_PKG_LOAD
@@ -260,8 +260,8 @@ global:
       elab:
         #FIXME : remve this warning suppression
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
-        #- '+warn=noIWNF'
-        #- '+warn=noPCWM-W'
+        - '+warn=noIWNF'
+        - '+warn=noPCWM-W'
         - '+warn=noTFIPC,noMDVMO'
 #        # ICPSD_W: Illegal combination of structural and procedural drivers, internal to
 #        # the Synopsys USB SVT VIP (svt_usb_utmi_dut_phy_if.svi).  The VIP declares these
@@ -279,7 +279,7 @@ global:
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c_core
-        #- '-ignore unique_checks'
+        - '-ignore unique_checks'
       sim:
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
