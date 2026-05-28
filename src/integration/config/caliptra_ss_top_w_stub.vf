@@ -21,6 +21,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs
 +incdir+${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/axi_sub
@@ -331,6 +332,9 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem_if.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/rtl/axi_mem.sv
 ${CALIPTRA_SS_ROOT}/src/mcu/rtl/mcu_top.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb/src/integration/rtl/axilite_to_ahb.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb/src/integration/rtl/axi_to_ahb.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_generic_ram_1p.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_adv.sv
