@@ -229,6 +229,7 @@ TB_DPI_SRCS = jtagdpi/jtagdpi.c \
 
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_SRCS += FIXME
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -272,10 +273,11 @@ VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ADDR_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=8
 VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
-VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
+VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=11
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
@@ -287,11 +289,20 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+VCS_COMP_OPTS += +define+SVT_UVM_TECHNOLOGY
+VCS_COMP_OPTS += +define+UVM_PACKER_MAX_BYTES=24000
+VCS_COMP_OPTS += +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+VCS_COMP_OPTS += +define+SYNOPSYS_SV
+VCS_COMP_OPTS += +define+DESIGNWARE_INCDIR=$(DESIGNWARE_HOME_INC)
+VCS_COMP_OPTS += +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+VCS_COMP_OPTS += +define+SVT_VERSION=latest
+VCS_COMP_OPTS += +define+SVT_MPHY_PKG_LOAD
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
 VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
+VCS_ELAB_OPTS += -suppress=SIMU-RESOLUTION,DRTZ
 VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
@@ -299,6 +310,10 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
+VCS_SIM_OPTS  += -mx_force
+VCS_SIM_OPTS  += +svt_debug_opts
+############# VCS Simulation Override Options #############
+VCS_SIM_EXTRA_OPTS ?= 
 
 # Targets
 all: clean verilator
@@ -348,6 +363,7 @@ vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
+	  $(VCS_SIM_EXTRA_OPTS) \
 	  -l vcs_sim.log
 
 ############ Caliptra TEST build ######################
