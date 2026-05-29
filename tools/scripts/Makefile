@@ -169,7 +169,7 @@ endif
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf | grep -v '+incdir+\|+define+'))
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -229,7 +229,8 @@ TB_DPI_SRCS = jtagdpi/jtagdpi.c \
 
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
-TB_DPI_SRCS += FIXME
+TB_DPI_INCS += $(UVM_HOME_2020)/src/dpi
+TB_DPI_SRCS += $(UVM_HOME_2020)/src/dpi/uvm_dpi.cc
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -345,14 +346,17 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	touch verilator-build
 
 vcs-build: $(TBFILES) $(TB_DPI_SRCS)
+	vhdlan           -full64                -kdb=common_elab \
+	  -l vcs_vhdl_compile.log \
+	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
-	  -l vcs_compile.log \
+	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
-	  -assert enable_hier $(DUT) -o simv.$(DUT) +dpi -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
+	  -assert enable_hier $(DUT) -o simv.$(DUT) -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
 
 ############ TEST Simulation ###############################
 
