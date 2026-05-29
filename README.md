@@ -21,13 +21,15 @@ LINT:
 
 Simulation:
  - Synopsys VCS with Verdi
-   - `Version U-2023.03-SP1-1_Full64`
+   - `Version X-2025.06-SP2`
+ - Synopsys VIP
+   - `2025.06` SVT USB VIP
  - Mentor Graphics AVERY
    - `avery/2025.1_20250313` AXI interconnect and I3C VIP
  - ARM AXI Protocol Checker
    - `BP063-BU-01000-r0p1-00rel0` Axi4PC.sv must be acquired from the ARM website
  - UVM installation
-   - `Version 1.1d`
+   - `Version 1800.2-2020`
 
 GCC:
  - RISCV Toolchain for generating memory initialization files
@@ -103,6 +105,9 @@ Required for simulation:<BR>
 `AVERY_SIM`: Directory within AVERY\_HOME that contains avery\_sim<BR>
 `AVERY_AXI`: Directory within AVERY\_HOME that contains axixactor<BR>
 `AVERY_I3C`: Directory within AVERY\_HOME that contains i3cxactor<BR>
+`UVM_HOME_2020`: Path to the installation of UVM library, version 1800.2-2020
+`DESIGNWARE_HOME_INC`: Path to common/shared library code for Synopsys SVT VIP
+`DESIGNWARE_HOME`: Path to SVT USB VIP installation
 
 Required for Firmware (i.e. Test suites) makefile:<BR>
   `TESTNAME`: Contains the name of one of the tests listed inside the `$CALIPTRA_SS_ROOT/src/integration/test_suites` folder; used for simulations with `caliptra_ss_top_tb` tests<BR>
