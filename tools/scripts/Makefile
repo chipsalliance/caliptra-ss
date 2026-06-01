@@ -171,6 +171,8 @@ VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PR
 # Use eval to expand env variables in the .vf file
 $(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf | grep -v '+incdir+\|+define+'))
 
+SYNOPSYS_SIM_SETUP = $(CALIPTRA_SS_ROOT)/third_party/usb2/tools/scripts/synopsys_sim.setup
+
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
 #defines += $(BUILD_DIR)/el2_pdef.vh
@@ -345,12 +347,16 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-vcs-build: $(TBFILES) $(TB_DPI_SRCS)
-	vhdlan           -full64                -kdb=common_elab \
+vcs-build: $(TBFILES) $(TB_DPI_SRCS) $(SYNOPSYS_SIM_SETUP)
+	cp $(SYNOPSYS_SIM_SETUP) .
+	export USB_COMPILE_DIR=$(BUILD_DIR)
+	vhdlan           -full64                -kdb=common_elab -smart_order \
+	  -work rtl \
 	  -l vcs_vhdl_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
+	  -work rtl \
 	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
