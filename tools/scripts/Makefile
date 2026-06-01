@@ -231,7 +231,7 @@ TB_DPI_SRCS = jtagdpi/jtagdpi.c \
 
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
-TB_DPI_INCS += $(UVM_HOME_2020)/src/dpi
+TB_DPI_INCS += -I$(UVM_HOME_2020)/src/dpi
 TB_DPI_SRCS += $(UVM_HOME_2020)/src/dpi/uvm_dpi.cc
 
 # Testbench sources
@@ -349,7 +349,7 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 
 vcs-build: $(TBFILES) $(TB_DPI_SRCS) $(SYNOPSYS_SIM_SETUP)
 	cp $(SYNOPSYS_SIM_SETUP) $(BUILD_DIR)
-	mkdir $(BUILD_DIR)/rtl
+	mkdir -p $(BUILD_DIR)/rtl
 	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vhdlan           -full64                -kdb=common_elab \
 	  -work rtl \
