@@ -229,10 +229,21 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
+VCS_DPI_INC_DIR := $(VCS_HOME)/linux64/include
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
-TB_DPI_INCS += -I$(UVM_HOME_2020)/src/dpi
+TB_DPI_INCS += -I$(UVM_HOME_2020)/src/dpi -I$(VCS_DPI_INC_DIR)
 TB_DPI_SRCS += $(UVM_HOME_2020)/src/dpi/uvm_dpi.cc
+
+TB_DPI_DIR := $(BUILD_DIR)/dpi
+TB_DPI_OFILES := $(addprefix $(TB_DPI_DIR)/,jtagdpi.o tcp_server.o uvm_dpi.o)
+TB_DPI_SO := $(TB_DPI_DIR)/lib_dpi.so
+DPI_CFLAGS := -m64 -g \
+    -fPIC -finput-charset=UTF-8 \
+    -Wall -Wno-unused-variable -Wno-unused-function \
+    -DVCS \
+    $(TB_DPI_INCS) \
+    -shared -c
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -347,7 +358,7 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-vcs-build: $(TBFILES) $(TB_DPI_SRCS) $(SYNOPSYS_SIM_SETUP)
+vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
 	cp $(SYNOPSYS_SIM_SETUP) $(BUILD_DIR)
 	mkdir -p $(BUILD_DIR)/rtl
 	USB_COMPILE_DIR=$(BUILD_DIR) \
@@ -363,7 +374,20 @@ vcs-build: $(TBFILES) $(TB_DPI_SRCS) $(SYNOPSYS_SIM_SETUP)
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
-	  -assert enable_hier $(DUT) -o simv.$(DUT) -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
+	  -assert enable_hier $(DUT) -o simv.$(DUT)
+
+$(TB_DPI_DIR):
+	mkdir -p $(TB_DPI_DIR)
+
+$(TB_DPI_DIR)/%.o: $(TB_DPI_SRCS) | $(TB_DPI_DIR)
+	gcc $(DPI_CFLAGS) $(filter %$*.c %$*.cc,$(TB_DPI_SRCS)) -o $@
+
+$(TB_DPI_SO): $(TB_DPI_OFILES)
+	gcc -m64 \
+	    -fPIC \
+	    -shared \
+	    $(TB_DPI_OFILES) \
+	    -o $(TB_DPI_SO)
 
 ############ TEST Simulation ###############################
 
