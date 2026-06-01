@@ -348,9 +348,10 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	touch verilator-build
 
 vcs-build: $(TBFILES) $(TB_DPI_SRCS) $(SYNOPSYS_SIM_SETUP)
-	cp $(SYNOPSYS_SIM_SETUP) .
-	export USB_COMPILE_DIR=$(BUILD_DIR)
-	vhdlan           -full64                -kdb=common_elab -smart_order \
+	cp $(SYNOPSYS_SIM_SETUP) $(BUILD_DIR)
+	mkdir $(BUILD_DIR)/rtl
+	USB_COMPILE_DIR=$(BUILD_DIR) \
+	vhdlan           -full64                -kdb=common_elab \
 	  -work rtl \
 	  -l vcs_vhdl_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
