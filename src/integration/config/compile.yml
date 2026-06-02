@@ -252,7 +252,7 @@ global:
         - +define+UVM_PACKER_MAX_BYTES=24000
         - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
         - +define+SYNOPSYS_SV
-        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME_INC
+        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME
         - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
         - +define+SVT_VERSION=latest
         - +define+SVT_MPHY_PKG_LOAD
