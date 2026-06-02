@@ -106,6 +106,7 @@ Required for simulation:<BR>
 `AVERY_AXI`: Directory within AVERY\_HOME that contains axixactor<BR>
 `AVERY_I3C`: Directory within AVERY\_HOME that contains i3cxactor<BR>
 `UVM_HOME_2020`: Path to the installation of UVM library, version 1800.2-2020
+`VCS_HOME`: Path to the installation of VCS
 `DESIGNWARE_HOME`: Path to common/shared library code for Synopsys SVT VIP
 `DESIGNWARE_HOME_USB`: Path to SVT USB VIP installation
 
