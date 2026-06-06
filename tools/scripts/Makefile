@@ -277,6 +277,7 @@ VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=8
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=9
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=4
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -434,6 +435,36 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	@echo Completed building $(TESTNAME)
 
 ############ NWP program hex build ###############################
+ifdef NWP_C_TEST
+############ NWP C-based program build (set NWP_C_TEST=<testname>) ##
+NWP_C_TEST_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(NWP_C_TEST)
+NWP_C_LINK = $(RISCV_HW_IF_DIR)/nwp_link.ld
+
+nwp_program.hex: $(NWP_C_TEST_DIR)/$(NWP_C_TEST).c $(NWP_C_LINK)
+	@echo "Building NWP C test: $(NWP_C_TEST)"
+	$(GCC_PREFIX)-cpp $(RISCV_HW_IF_DIR)/nwp_crt0.s > nwp_crt0.cpp.s
+	$(GCC_PREFIX)-as $(ABI) nwp_crt0.cpp.s -o nwp_crt0.o
+	$(GCC_PREFIX)-gcc $(ABI) $(TEST_CFLAGS) -I$(PRINTF_DIR) -nostdlib -c $(NWP_C_TEST_DIR)/$(NWP_C_TEST).c -o $(NWP_C_TEST).o
+	$(GCC_PREFIX)-gcc $(ABI) $(TEST_CFLAGS) -I$(PRINTF_DIR) -nostdlib -c $(PRINTF_DIR)/printf.c -o nwp_printf.o
+	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=nwp.map -lgcc -T$(NWP_C_LINK) -o nwp.exe nwp_crt0.o $(NWP_C_TEST).o nwp_printf.o -nostartfiles
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata \
+			      --change-section-lma  .text.init-0x90000000 \
+			      --change-section-lma       .text-0x90000000 \
+			      --change-section-lma     .rodata-0x90000000 \
+			      --change-section-lma    .srodata-0x90000000 \
+			      --no-change-warnings nwp.exe nwp_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .dccm-0x30000000 \
+			      --change-section-lma       .data-0x30000000 \
+			      --change-section-lma      .sdata-0x30000000 \
+			      --change-section-lma        .bss-0x30000000 \
+			      --change-section-lma       .sbss-0x30000000 \
+			      --no-change-warnings nwp.exe nwp_dccm.hex
+	-$(GCC_PREFIX)-objdump -S nwp.exe > nwp.dis
+	@echo "Completed building NWP C test: $(NWP_C_TEST)"
+
+else
+############ NWP Cargo-based program build (default) ################
 # NWP_CARGO_ROOT is the top-level Cargo workspace (two levels above CALIPTRA_SS_ROOT)
 NWP_CARGO_ROOT ?= $(CALIPTRA_SS_ROOT)/../..
 NWP_ELF = $(NWP_CARGO_ROOT)/target/riscv32imc-unknown-none-elf/release/network-rom
@@ -441,18 +472,23 @@ NWP_FEATURES ?=
 
 nwp_program.hex: $(NWP_ELF)
 	@echo "Generating nwp_program.hex from network-rom ELF"
-	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata \
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata -j .data \
 			      --change-section-lma  .text.init-0x90000000 \
 			      --change-section-lma       .text-0x90000000 \
 			      --change-section-lma     .rodata-0x90000000 \
 			      --change-section-lma    .srodata-0x90000000 \
+			      --change-section-lma       .data-0x90000000 \
 			      --no-change-warnings $(NWP_ELF) nwp_program.hex
+	-$(GCC_PREFIX)-objcopy --change-section-lma .data=0x30000000 \
+			      --change-section-lma .sdata=0x30000000 \
+			      --no-change-warnings $(NWP_ELF) nwp_fixed_lma.elf
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .sdata -j .bss -j .sbss \
 			      --change-section-lma       .data-0x30000000 \
 			      --change-section-lma      .sdata-0x30000000 \
 			      --change-section-lma        .bss-0x30000000 \
 			      --change-section-lma       .sbss-0x30000000 \
-			      --no-change-warnings $(NWP_ELF) nwp_dccm.hex
+			      --no-change-warnings nwp_fixed_lma.elf nwp_dccm.hex
+	-rm -f nwp_fixed_lma.elf
 	-$(GCC_PREFIX)-objdump -S $(NWP_ELF) > network-rom.dis
 	@echo "Completed building nwp_program.hex"
 
@@ -461,6 +497,8 @@ nwp_program.hex: $(NWP_ELF)
 $(NWP_ELF):
 	@echo "Building network-rom for riscv32imc$(if $(NWP_FEATURES), with features: $(NWP_FEATURES))"
 	cd $(NWP_CARGO_ROOT) && cargo build --release -p network-rom --target riscv32imc-unknown-none-elf $(if $(NWP_FEATURES),--features $(NWP_FEATURES))
+
+endif
 
 ############ lmem TEST build ###############################
 mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
