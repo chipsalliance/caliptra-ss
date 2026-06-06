@@ -1,0 +1,10 @@
+---
+seed: 1
+testname: nwp_hello_world
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [nwp_hello_world]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+    TESTNAME=mcu_hello_world CALIPTRA_TESTNAME=cptra_hello_world \
+    NWP_FEATURES=test-hello-world \
+    mcu_program.hex cptra_program.hex nwp_program.hex
