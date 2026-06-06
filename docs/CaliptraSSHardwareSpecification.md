@@ -565,15 +565,16 @@ During firmware authentication, the ROM validates the vendor public keys provide
        - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
 3. **Volatile Locking Mechanism**
 
-  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
+  - The FC implements reset-cleared volatile write locks with sticky W1S CSRs. Writing a 1 sets the selected lock bit, writing 0 cannot clear an already-set bit, and only reset clears these volatile locks.
+  - `MANUF_PK_HASH_VOLATILE_LOCK` bit 0 locks `CPTRA_CORE_VENDOR_PK_HASH_0` and `CPTRA_CORE_PQC_KEY_TYPE_0` in `VENDOR_HASHES_MANUF_PARTITION`. This is a volatile-only manufacturing safety lock; lifecycle state already prevents MANUF partition writes after manufacturing closure.
+  - `VENDOR_PK_HASH_VOLATILE_LOCK` bit i locks production vendor hash i+1 (`CPTRA_CORE_VENDOR_PK_HASH_1` through `CPTRA_CORE_VENDOR_PK_HASH_N`) and the associated PQC key type entry.
+  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. If `num_ratchet_seed_partitions == 0`, the entire `RATCHET_SEED_VOLATILE_LOCK` CSR is absent and firmware must not access it.
+  - These fields are bit masks with one bit per lock target; they are not threshold or ordinal encodings.
      - **Example:**
 
        ```c
-       // Lock the 3rd vendor public key hash and all higher order key hashes
-       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
+       // Lock CPTRA_CORE_VENDOR_PK_HASH_3 and its associated PQC key type.
+       write_register(otp_ctrl.VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 2);
        // This operation disables any further write updates to the validated public key fuse region.
        ```
 
