@@ -469,24 +469,25 @@ nwp_program.hex: $(NWP_C_TEST_DIR)/$(NWP_C_TEST).c $(NWP_C_LINK)
 	@echo "Completed building NWP C test: $(NWP_C_TEST)"
 
 else
-############ NWP Cargo-based program build (default) ################
-# NWP_CARGO_ROOT is the top-level Cargo workspace (two levels above CALIPTRA_SS_ROOT)
-NWP_CARGO_ROOT ?= $(CALIPTRA_SS_ROOT)/../..
-NWP_ELF = $(NWP_CARGO_ROOT)/target/riscv32imc-unknown-none-elf/release/network-rom
-NWP_FEATURES ?=
+############ NWP Cargo-built program (pre-built ELF, mirrors MCU pattern) ##
+# Contract: the test's .yml pre-exec builds the network-rom ELF and drops it at
+# $(NWP_TEST_DIR)/$(NWP_TESTNAME). This Makefile only objcopies — no cargo
+# invocation, no parent-repo path knowledge. Identical shape to the MCU rule
+# at $(TEST_DIR)/$(TESTNAME) (see "MCU TEST build" section above).
+NWP_TEST_DIR ?= $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(NWP_TESTNAME)
 
-nwp_program.hex: $(NWP_ELF)
-	@echo "Generating nwp_program.hex from network-rom ELF"
+nwp_program.hex: $(NWP_TEST_DIR)/$(NWP_TESTNAME)
+	@echo "Generating nwp_program.hex from $(NWP_TEST_DIR)/$(NWP_TESTNAME)"
 	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata -j .data \
 			      --change-section-lma  .text.init-0x90000000 \
 			      --change-section-lma       .text-0x90000000 \
 			      --change-section-lma     .rodata-0x90000000 \
 			      --change-section-lma    .srodata-0x90000000 \
 			      --change-section-lma       .data-0x90000000 \
-			      --no-change-warnings $(NWP_ELF) nwp_program.hex
+			      --no-change-warnings $(NWP_TEST_DIR)/$(NWP_TESTNAME) nwp_program.hex
 	-$(GCC_PREFIX)-objcopy --change-section-lma .data=0x30000000 \
 			      --change-section-lma .sdata=0x30000000 \
-			      --no-change-warnings $(NWP_ELF) nwp_fixed_lma.elf
+			      --no-change-warnings $(NWP_TEST_DIR)/$(NWP_TESTNAME) nwp_fixed_lma.elf
 	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .sdata -j .bss -j .sbss \
 			      --change-section-lma       .data-0x30000000 \
 			      --change-section-lma      .sdata-0x30000000 \
@@ -494,15 +495,8 @@ nwp_program.hex: $(NWP_ELF)
 			      --change-section-lma       .sbss-0x30000000 \
 			      --no-change-warnings nwp_fixed_lma.elf nwp_dccm.hex
 	-rm -f nwp_fixed_lma.elf
-	-$(GCC_PREFIX)-objdump -S $(NWP_ELF) > network-rom.dis
+	-$(GCC_PREFIX)-objdump -S $(NWP_TEST_DIR)/$(NWP_TESTNAME) > network-rom.dis
 	@echo "Completed building nwp_program.hex"
-
-# Always rebuild NWP ELF — cargo handles incremental builds internally
-.PHONY: $(NWP_ELF)
-$(NWP_ELF):
-	@echo "Building network-rom for riscv32imc$(if $(NWP_FEATURES), with features: $(NWP_FEATURES))"
-	cd $(NWP_CARGO_ROOT) && cargo build --release -p network-rom --target riscv32imc-unknown-none-elf $(if $(NWP_FEATURES),--features $(NWP_FEATURES))
-
 endif
 
 ############ lmem TEST build ###############################

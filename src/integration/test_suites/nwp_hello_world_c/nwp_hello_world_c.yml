@@ -2,8 +2,9 @@
 seed: 1
 testname: nwp_hello_world_c
 pre-exec: |
-  set -eu
   echo "Running pre_exec for [nwp_hello_world_c]"
+  # TESTNAME / CALIPTRA_TESTNAME are placeholders required by the Makefile;
+  # the NWP-only sim consumes nwp_program.hex (built from NWP_C_TEST).
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
     TESTNAME=mcu_hello_world CALIPTRA_TESTNAME=cptra_hello_world \
     NWP_C_TEST=nwp_hello_world_c \
