@@ -453,7 +453,7 @@ import tb_top_pkg::*;
                     wait(`MCI_PATH.mcu_cpu_halt_status_i);
                 end
 
-                $display("* TESTCASE PASSED");
+                $display("5. * TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
@@ -469,7 +469,7 @@ import tb_top_pkg::*;
                 $finish;
             end
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
-                $error("* TESTCASE FAILED");
+                $error("5. * TESTCASE FAILED");
                 $finish;
             end
         end
@@ -819,7 +819,12 @@ end
 
         nwp_imem.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s nwp_program.hex");
-        if (!hex_file_is_empty) $readmemh("nwp_program.hex",  nwp_imem.ram);
+        if (!hex_file_is_empty) begin
+            $readmemh("nwp_program.hex",  nwp_imem.ram);
+            $display("[%0t]    NWP ROM: loaded nwp_program.hex into ICCM (reset_vec=0x90000000)", $time);
+        end else begin
+            $display("[%0t]    NWP ROM: nwp_program.hex is empty or missing — NWP will not execute code", $time);
+        end
 
         tp = $fopen("mcu_trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
@@ -840,6 +845,8 @@ end
         if (!hex_file_is_empty) $readmemh("nwp_dccm.hex",css_nwp0_dummy_dccm_preloader.ram,0,32'h0000_3FFF);
 
         preload_css_nwp0_dccm();
+
+        $display("[%0t] 1. Firmware loaded: MCU ROM @ 0x80000000, NWP ROM @ 0x90000000, DCCM and SRAM preloaded", $time);
 
     end
 
@@ -1301,6 +1308,7 @@ task static init_css_nwp0_dccm;
         `NWP_DRAM(6) = '{default:39'h0};
         `NWP_DRAM(7) = '{default:39'h0};
     `endif
+        $display("[%0t]    NWP DCCM init: zeroed all banks (39-bit words with ECC)", $time);
     `endif
 endtask
 

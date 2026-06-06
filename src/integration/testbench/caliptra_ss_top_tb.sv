@@ -507,23 +507,152 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
-    // Slave port 0 disconnection.
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RVALID = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RDATA = 64'h0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RRESP = 2'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RID = 8'h0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RLAST = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RUSER = '0;
+    // Slave port 0 — NWP peripheral sink (UART at 0x10001000)
+    // Accepts AXI reads/writes so the NWP core does not stall on external accesses.
+    // Writes to the NWP UART address are captured and logged to nwp_console.log.
+    //
+    // AXI write channels (AW and W) are tracked independently: AXI spec allows
+    // the master to send W before or after AW in any clock relationship.
+    // Asserting AWREADY/WREADY only while in reset or after both are received caused
+    // a deadlock when AW and W arrived in different cycles (write#33735 AW@t0, W@t0+3).
+    logic nc0_bvalid_q, nc0_rvalid_q;
+    logic nc0_aw_received_q, nc0_w_received_q;
+    logic [7:0]  nc0_bid_q, nc0_rid_q;
+    logic [31:0] nc0_aw_addr_q;
+    logic [7:0]  nc0_w_data_q;
 
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WREADY = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BVALID = 1'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BRESP = 2'b0;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BUSER = '0;
+    // AWREADY: accept a new AW beat only when not already holding one and no B pending
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWREADY = ~nc0_aw_received_q & ~nc0_bvalid_q;
+    // WREADY: accept a new W beat only when not already holding one and no B pending
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WREADY  = ~nc0_w_received_q  & ~nc0_bvalid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BVALID  = nc0_bvalid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BRESP   = 2'b00;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BID     = nc0_bid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BUSER   = '0;
 
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BID = 8'h0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARREADY = ~nc0_rvalid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RVALID  = nc0_rvalid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RDATA   = 64'h0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RRESP   = 2'b00;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RID     = nc0_rid_q;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RLAST   = 1'b1;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RUSER   = '0;
 
+    integer nwp_fd;
+    initial nwp_fd = $fopen("nwp_console.log", "w");
+    string  nwp_console_line = "";
+    logic   nwp_first_uart_seen = 1'b0;
+
+    always @(posedge core_clk or negedge cptra_ss_rst_b_i) begin
+        if (!cptra_ss_rst_b_i) begin
+            nc0_bvalid_q      <= 1'b0;
+            nc0_bid_q         <= 8'h0;
+            nc0_aw_received_q <= 1'b0;
+            nc0_w_received_q  <= 1'b0;
+            nc0_aw_addr_q     <= 32'h0;
+            nc0_w_data_q      <= '0;
+            nc0_rvalid_q      <= 1'b0;
+            nc0_rid_q         <= 8'h0;
+        end else begin
+            // Write: accept AW and W independently; issue B when both have arrived.
+            // AXI spec allows AW and W to arrive in any relative order.
+            if (~nc0_bvalid_q) begin
+                // Latch AW beat when AWVALID and not already holding one
+                if (~nc0_aw_received_q & axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWVALID) begin
+                    nc0_aw_received_q <= 1'b1;
+                    nc0_aw_addr_q     <= axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[31:0];
+                    nc0_bid_q         <= axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWID;
+                end
+                // Latch W beat when WVALID and not already holding one
+                if (~nc0_w_received_q & axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WVALID) begin
+                    nc0_w_received_q <= 1'b1;
+                    nc0_w_data_q     <= axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WDATA[15:8];
+                end
+                // Issue B when both AW and W have been received (either buffered or arriving now)
+                if ((nc0_aw_received_q | axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWVALID) &
+                    (nc0_w_received_q  | axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WVALID)) begin
+                    nc0_bvalid_q      <= 1'b1;
+                    nc0_aw_received_q <= 1'b0;
+                    nc0_w_received_q  <= 1'b0;
+                    // bid was already latched into nc0_bid_q when AW was accepted
+                    // UART: use buffered addr/data if the channel arrived in an earlier cycle
+                    if ((nc0_aw_received_q ? nc0_aw_addr_q[31:12] :
+                         axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[31:12])
+                         == 20'h10001) begin
+                        // NWP UART TX register: character is in WDATA[15:8] (byte offset 1)
+                        $fwrite(nwp_fd, "%c",
+                            nc0_w_received_q ? nc0_w_data_q :
+                            axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WDATA[15:8]);
+                        $fflush(nwp_fd);
+                        if (!nwp_first_uart_seen) begin
+                            nwp_first_uart_seen = 1'b1;
+                            $display("[%0t] 4. NWP first UART write received — VeeR core is executing instructions", $time);
+                        end
+                        // Mirror NWP output to sim console, line-buffered
+                        begin
+                            automatic logic [7:0] c = nc0_w_received_q ? nc0_w_data_q :
+                                axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WDATA[15:8];
+                            if (c inside {8'h0A, 8'h0D}) begin
+                                if (nwp_console_line != "") begin
+                                    $display("%0t -    NWP: %s", $time, nwp_console_line);
+                                    nwp_console_line = "";
+                                end
+                            end else begin
+                                nwp_console_line = {nwp_console_line, string'(c)};
+                            end
+                        end
+                    end
+                end
+            end else if (nc0_bvalid_q &
+                         axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BREADY) begin
+                nc0_bvalid_q <= 1'b0;
+            end
+
+            // Read: one-cycle response
+            if (~nc0_rvalid_q & axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARVALID) begin
+                nc0_rvalid_q <= 1'b1;
+                nc0_rid_q    <= axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARID;
+            end else if (nc0_rvalid_q &
+                         axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RREADY) begin
+                nc0_rvalid_q <= 1'b0;
+            end
+        end
+    end
+
+    // ──────────────────────────────────────────────────────────────────────
+    // NWP lifecycle monitors: reset release, first retire, exceptions
+    // ──────────────────────────────────────────────────────────────────────
+    logic nwp_rst_seen_active = 1'b0;
+    logic nwp_rst_released    = 1'b0;
+    logic nwp_first_retire    = 1'b0;
+
+    always @(posedge core_clk) begin
+        // Detect NWP reset deassertion (rst_l 0→1)
+        if (!nwp_rst_released && `NWP_PATH.rst_l) begin
+            if (nwp_rst_seen_active) begin
+                nwp_rst_released <= 1'b1;
+                $display("[%0t]    NWP: reset deasserted (rst_l=1) — VeeR core released", $time);
+            end
+        end
+        if (!`NWP_PATH.rst_l) begin
+            nwp_rst_seen_active <= 1'b1;
+        end
+
+        // Detect NWP first instruction retire
+        if (!nwp_first_retire && `NWP_PATH.trace_rv_i_valid_ip) begin
+            nwp_first_retire <= 1'b1;
+            $display("[%0t]    NWP: first instruction retired at PC=0x%08h", $time,
+                     `NWP_PATH.trace_rv_i_address_ip);
+        end
+
+        // Log every NWP exception event
+        if (`NWP_PATH.trace_rv_i_valid_ip && `NWP_PATH.trace_rv_i_exception_ip) begin
+            $display("[%0t]    NWP: EXCEPTION ecause=%0d at PC=0x%08h tval=0x%08h", $time,
+                     `NWP_PATH.trace_rv_i_ecause_ip,
+                     `NWP_PATH.trace_rv_i_address_ip,
+                     `NWP_PATH.trace_rv_i_tval_ip);
+        end
+    end
 
     //Interconnect 0 - MCU LSU
     // FIXME
@@ -2176,7 +2305,6 @@ module caliptra_ss_top_tb
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
     `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
-
 
 endmodule
 
