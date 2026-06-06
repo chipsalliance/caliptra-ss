@@ -30,7 +30,7 @@ import css_mcu0_el2_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512,
     `include "css_mcu0_el2_param.vh"
-) 
+)
 (
     input logic core_clk,
     output logic                       cptra_pwrgood,
@@ -119,18 +119,18 @@ initial begin
     mcu_trace_buffer_valid      = '0;
     mcu_trace_buffer_wrapped    = '0;
 
-    
-    
+
+
     ///////////////////////////////////
     // Test Sequences
     //////////////////////////////////
     if ($value$plusargs("cptra_ss_sv_test=%s", cptra_ss_test_name)) begin
         $display("[%t] CPTRA SS SV TEST: Test Name from Plusarg: %s", $time, cptra_ss_test_name);
         if (cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_EXECUTION_REGION") begin
-            smoke_test_mcu_sram_execution_region();        
+            smoke_test_mcu_sram_execution_region();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_DEBUG_STRESS")begin
-            smoke_test_mcu_sram_debug_stress();        
+            smoke_test_mcu_sram_debug_stress();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_SRAM_DEBUG_STRESS") begin
             smoke_test_mcu_trace_buffer();
@@ -145,19 +145,19 @@ initial begin
             smoke_test_mcu_trace_buffer_no_debug();
         end
         else if(cptra_ss_test_name == "MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE") begin
-            mcu_mbox_soc_agent_write_fw_image();       
+            mcu_mbox_soc_agent_write_fw_image();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DISABLE") begin
-            smoke_test_mci_soc_config_disable();       
+            smoke_test_mci_soc_config_disable();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_ALWAYS_ENABLE") begin
-            smoke_test_mci_soc_config_always_enable();       
+            smoke_test_mci_soc_config_always_enable();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DIFF_MCU") begin
-            smoke_test_mci_soc_config_diff_mcu();       
+            smoke_test_mci_soc_config_diff_mcu();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_BRKPOINT_AXI") begin
-            smoke_test_mci_brkpoint_axi();       
+            smoke_test_mci_brkpoint_axi();
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_NO_ROM_CONFIG") begin
             smoke_test_mcu_no_rom_config();
@@ -179,16 +179,16 @@ end
 initial begin
     cptra_ss_mcu_halt_status_i_soc_ctrl = 1'b0;
     cptra_ss_mcu_halt_ack_i_soc_ctrl = 1'b0;
-end 
+end
 
 assign cptra_ss_mcu_halt_status_i = cptra_ss_mcu_halt_status_i_soc_ctrl | cptra_ss_mcu_halt_status_o;
 assign cptra_ss_mcu_halt_ack_i    = cptra_ss_mcu_halt_ack_i_soc_ctrl | cptra_ss_mcu_halt_ack_o;
 
 ///////////////////////////////////
-// MCI Breakpoint              
+// MCI Breakpoint
 //////////////////////////////////
 initial begin
-    
+
     if ($test$plusargs("MCI_BOOT_FSM_BRKPOINT_SET")) begin
         cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
         $display("MCI Boot FSM Breakpoint Set");
@@ -199,7 +199,7 @@ initial begin
 end
 
 ///////////////////////////////////
-// MCU NO ROM CONFIG 
+// MCU NO ROM CONFIG
 //////////////////////////////////
 initial begin
     if ($test$plusargs("MCU_NO_ROM_CONFIG_SET")) begin
@@ -212,7 +212,7 @@ initial begin
 end
 
 ///////////////////////////////////
-// MCU NO ROM CONFIG 
+// MCU NO ROM CONFIG
 //////////////////////////////////
 initial begin
     if ($value$plusargs("MCU_RESET_VECTOR_STRAP_VALUE=%h", cptra_ss_strap_mcu_reset_vector_i)) begin
@@ -224,10 +224,10 @@ initial begin
 end
 
 ///////////////////////////////////
-// MONITOR STARTUP             
+// MONITOR STARTUP
 //////////////////////////////////
 initial begin
-    fork 
+    fork
         mcu_trace_buffer_mon();
     join_none
 end
@@ -238,6 +238,7 @@ end
 
 always @(posedge core_clk) begin
     if (cycleCnt == 15) begin
+        $display("[%t] 2. Power-good (cptra_pwrgood) deasserted — chip initializing", $time);
         $display("[%t] SOC: INIT Deasserting Hard Reset (cptra_pwrgood)", $time);
         deassert_cptra_pwrgood(5);
     end
@@ -264,6 +265,7 @@ end
 //////////////////////////////////
 always @(posedge core_clk) begin
     if (cycleCnt == 20) begin
+        $display("[%t] 3. System reset (cptra_rst_b) deasserted — MCU and NWP begin executing from ROM", $time);
         $display("[%t] SOC: INIT Deasserting Caliptra Reset (cptra_rst_b)", $time);
         deassert_cptra_rst_b(100);
     end
@@ -285,7 +287,7 @@ always @(posedge core_clk) begin
 end
 
 ///////////////////////////////////
-// MEK KEY SIZE            
+// MEK KEY SIZE
 //////////////////////////////////
 initial begin
     // Initialize cptra_ss_strap_key_release_key_size_i based on plusargs
@@ -306,7 +308,7 @@ end
 
 
 ///////////////////////////////////
-// OCP LOCK EN             
+// OCP LOCK EN
 //////////////////////////////////
 initial begin
     if ($test$plusargs("CLP_OCP_LOCK_EN")) begin
@@ -323,7 +325,7 @@ end
 
 
 ///////////////////////////////////
-// AXI USER VALUES         
+// AXI USER VALUES
 //////////////////////////////////
 initial begin
     // MCU LSU
@@ -369,7 +371,7 @@ initial begin
         $display("Randomized MCU SRAM CONFIG AXI USER Value: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
     end else begin
         #1
-        cptra_ss_strap_mcu_sram_config_axi_user_i = cptra_ss_strap_caliptra_dma_axi_user_i; 
+        cptra_ss_strap_mcu_sram_config_axi_user_i = cptra_ss_strap_caliptra_dma_axi_user_i;
         $display("MCU SRAM CONFIG AXI USER Value Default to Caliptra DMA: %h", cptra_ss_strap_mcu_sram_config_axi_user_i);
     end
 end
@@ -384,7 +386,7 @@ initial begin
         $display("Randomized MCI SOC CONFIG AXI USER Value: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end else begin
         #1
-        cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i; 
+        cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i;
         $display("MCI SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end
 end

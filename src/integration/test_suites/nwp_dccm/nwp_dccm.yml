@@ -1,0 +1,20 @@
+---
+seed: 1
+testname: nwp_dccm
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [nwp_dccm]"
+  : "${MCU_REPO:?ERROR: export MCU_REPO=<path-to-caliptra-mcu-sw> (clone https://github.com/chipsalliance/caliptra-mcu-sw if needed)}"
+  test -f "$MCU_REPO/Cargo.toml"
+  (cd "$MCU_REPO" && cargo build --release -p caliptra-mcu-network-rom \
+    --target riscv32imc-unknown-none-elf --features test-dccm)
+  # Drop the built ELF at the convention path the Makefile expects
+  # ($(NWP_TEST_DIR)/$(NWP_TESTNAME)) — mirrors the MCU pre-built-ELF pattern.
+  cp "$MCU_REPO/target/riscv32imc-unknown-none-elf/release/caliptra-mcu-network-rom" \
+     "$CALIPTRA_SS_ROOT/src/integration/test_suites/nwp_dccm/nwp_dccm"
+  # TESTNAME / CALIPTRA_TESTNAME are placeholders required by the Makefile;
+  # the NWP-only sim consumes nwp_program.hex.
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+    TESTNAME=mcu_hello_world CALIPTRA_TESTNAME=cptra_hello_world \
+    NWP_TESTNAME=nwp_dccm \
+    mcu_program.hex cptra_program.hex nwp_program.hex

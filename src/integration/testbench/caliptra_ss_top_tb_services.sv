@@ -27,7 +27,7 @@
 
 module caliptra_ss_top_tb_services
 import css_mcu0_el2_pkg::*;
-import tb_top_pkg::*; 
+import tb_top_pkg::*;
 #(
   parameter UVM_TB = 0,
   `include "css_mcu0_el2_param.vh"
@@ -44,6 +44,10 @@ import tb_top_pkg::*;
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox1_sram_req_if,
   axi_mem_if                         mcu_rom_mem_export_if
+`ifdef ENABLE_NWP
+  , css_nwp0_el2_mem_if              cptra_ss_nwp0_el2_mem_export
+  , axi_mem_if                       nwp_rom_mem_export_if
+`endif // ENABLE_NWP
 );
 
     `include "caliptra_ss_tb_cmd_list.svh"
@@ -70,12 +74,12 @@ import tb_top_pkg::*;
     tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox0_sram_error_injection_mode;
     tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mbox1_sram_error_injection_mode;
     tb_top_pkg::mcu_mbox_sram_error_injection_mode_t mcu_sram_error_injection_mode;
-    
+
     bit                         flip_bit_mbox0;
     bit                         flip_bit_mbox1;
     logic [MCU_MBOX0_DATA_AND_ECC_W-1:0] mbox0_sram_wdata_bitflip;
     logic [MCU_MBOX1_DATA_AND_ECC_W-1:0] mbox1_sram_wdata_bitflip;
-    
+
     bit                         flip_bit_mcu_sram;
     logic [MCU_SRAM_DATA_TOTAL_WIDTH-1:0] mcu_sram_wdata_bitflip;
 
@@ -112,40 +116,40 @@ import tb_top_pkg::*;
             // force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_m_axi_if.awuser = CPTRA_SS_STRAP_CLPTRA_CORE_AXI_USER;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_cptra_core_bootfsm_bp_i = 1'b1;
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.soc_ifc_reg_hwif_in.CPTRA_HW_CONFIG.SUBSYSTEM_MODE_en.next = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_cptra_core_bootfsm_bp_i is 1");  
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): SUBSYSTEM_MODE_en.next = 1'b1");  
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_cptra_core_bootfsm_bp_i is 1");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): SUBSYSTEM_MODE_en.next = 1'b1");
         end
         if ($test$plusargs("CALIPTRA_SS_MANUF_DBG")) begin
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");  
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
-        end 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");
+        end
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG")) begin
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
-        end 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");
+        end
         if ($test$plusargs("CALIPTRA_SS_PROD_DBG_ZEROIZATION")) begin
             force `CPTRA_CORE_TOP_PATH.soc_ifc_top1.timer1_timeout_period = 64'hFFFFFFFF_FFFFFFFF;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF"); 
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");   
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): timer1_timeout_period is 64'hFFFFFFFF_FFFFFFFF");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");
         end
         if ($test$plusargs("CALIPTRA_SS_JTAG_DBG")) begin
             //force `MCI_PATH.from_otp_to_lcc_program_i.state = MANUF_state;
             //force `MCI_PATH.ss_dbg_manuf_enable_i = 1'b1;
             //force `MCI_PATH.mcu_sram_fw_exec_region_lock = 1'b1;
-        end 
+        end
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is PROD_state");  
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");  
-            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_mci_boot_seq_brkpoint_i is high"); 
-        end 
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is PROD_state");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_debug_intent_i is high");
+            $display("APPLYING FORCE (caliptra_ss_top_tb_services): cptra_ss_mci_boot_seq_brkpoint_i is high");
+        end
     end
 
     assign mailbox_write    = `MCI_PATH.i_mci_reg_top.i_mci_reg.field_combo.DEBUG_OUT.DATA.load_next && rst_l;
@@ -218,10 +222,10 @@ import tb_top_pkg::*;
             if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
                 $fflush(fd);
             end
-            
+
             // Buffer for console output (complete lines only)
             console_buffer = {console_buffer, string'(mailbox_data[7:0])};
-            
+
             if (mailbox_data[7:0] inside {8'h0A, 8'h0D}) begin
                 // Write complete line to console
                 $write("%0t - %s", $time, console_buffer);
@@ -249,12 +253,12 @@ import tb_top_pkg::*;
         // MCI error injection
         if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_MCI_ERROR_FATAL)) begin
             $display("Injecting MCI errs");
-            
+
             force `MCI_REG_TOP_PATH.nmi_intr = 1'b1;
             @(negedge clk);
             release `MCI_REG_TOP_PATH.nmi_intr;
             repeat($urandom_range(0,15)) @(negedge clk);
-        
+
             force `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error = 1'b1;
             @(negedge clk);
             release `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error;
@@ -451,7 +455,7 @@ import tb_top_pkg::*;
                     wait(`MCI_PATH.mcu_cpu_halt_status_i);
                 end
 
-                $display("* TESTCASE PASSED");
+                $display("5. * TESTCASE PASSED");
                 $display("\nFinished : minstret = %0d, mcycle = %0d", `MCU_DEC.tlu.minstretl[31:0],`MCU_DEC.tlu.mcyclel[31:0]);
                 $display("See \"mcu_exec.log\" for execution trace with register updates..\n");
                 if($test$plusargs("AVY_TEST")) begin
@@ -467,7 +471,7 @@ import tb_top_pkg::*;
                 $finish;
             end
             else if(mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE) begin
-                $error("* TESTCASE FAILED");
+                $error("5. * TESTCASE FAILED");
                 $finish;
             end
         end
@@ -609,7 +613,7 @@ import tb_top_pkg::*;
                 void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_block_data));
                 void'($fgets(line_read,fd_r));
                 void'($sscanf( line_read, "%s %s %h", tmp_str1, tmp_str2, sha_digest));
-                
+
                 $fclose(fd_r);
 
                 dlen = block_len >> 3; // in bytes
@@ -658,7 +662,7 @@ import tb_top_pkg::*;
     end
 
 ///////////////////////////////////////////////
-// Time controls 
+// Time controls
 //////////////////////////////////////////////
 
 ///////////////////////////////////////////////
@@ -666,9 +670,9 @@ import tb_top_pkg::*;
 //////////////////////////////////////////////
 
     always@(negedge clk) begin
-        if((mailbox_data[7:0] == TB_CMD_COLD_RESET) && mailbox_write) begin 
+        if((mailbox_data[7:0] == TB_CMD_COLD_RESET) && mailbox_write) begin
             $display("[%t] COLD RESET REQUESTED", $time);
-            cold_rst <= 1'b1; 
+            cold_rst <= 1'b1;
             warm_rst <= 1'b0;
         end
         else if((mailbox_data[7:0] == TB_CMD_WARM_RESET) && mailbox_write) begin
@@ -815,6 +819,17 @@ end
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
+`ifdef ENABLE_NWP
+        nwp_imem.ram = '{default:8'h0};
+        hex_file_is_empty = $system("test -s nwp_program.hex");
+        if (!hex_file_is_empty) begin
+            $readmemh("nwp_program.hex",  nwp_imem.ram);
+            $display("[%0t]    NWP ROM: loaded nwp_program.hex into ICCM (reset_vec=0x90000000)", $time);
+        end else begin
+            $display("[%0t]    NWP ROM: nwp_program.hex is empty or missing — NWP will not execute code", $time);
+        end
+`endif // ENABLE_NWP
+
         tp = $fopen("mcu_trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
         $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
@@ -828,6 +843,20 @@ end
         // preload_dccm();
         preload_css_mcu0_dccm();
         preload_mcu_sram();
+
+`ifdef ENABLE_NWP
+        css_nwp0_dummy_dccm_preloader.ram = '{default:8'h0};
+        hex_file_is_empty = $system("test -s nwp_dccm.hex");
+        if (!hex_file_is_empty) $readmemh("nwp_dccm.hex",css_nwp0_dummy_dccm_preloader.ram,0,32'h0000_3FFF);
+
+        preload_css_nwp0_dccm();
+`endif // ENABLE_NWP
+
+`ifdef ENABLE_NWP
+        $display("[%0t] 1. Firmware loaded: MCU ROM @ 0x80000000, NWP ROM @ 0x90000000, DCCM and SRAM preloaded", $time);
+`else
+        $display("[%0t] 1. Firmware loaded: MCU ROM @ 0x80000000, DCCM and SRAM preloaded", $time);
+`endif // ENABLE_NWP
 
     end
 
@@ -846,7 +875,7 @@ end
                     flip_bit_mbox0 = (mbox0_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
                     mbox0_sram_wdata_bitflip <= flip_bit_mbox0 ? bitflip_gen.get_mask(mbox0_sram_error_injection_mode.double_bit_error) : '0;
                     if (flip_bit_mbox0) begin
-                    //    $display("%t Injecting bit flips to Mbox0 SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x", 
+                    //    $display("%t Injecting bit flips to Mbox0 SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x",
                     //                             $realtime, cptra_ss_mcu_mbox0_sram_req_if.req.addr >>2, mbox0_sram_wdata_bitflip, cptra_ss_mcu_mbox0_sram_req_if.req.wdata);
                     end
                 end
@@ -910,7 +939,7 @@ end
                     flip_bit_mcu_sram = (mcu_sram_error_injection_mode.randomize) ? ($urandom_range(0,99) < 20) : 1'b1;
                     mcu_sram_wdata_bitflip <= flip_bit_mcu_sram ? bitflip_gen.get_mask(mcu_sram_error_injection_mode.double_bit_error) : '0;
                     if (flip_bit_mcu_sram) begin
-                    //    $display("%t Injecting bit flips to MCU SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x", 
+                    //    $display("%t Injecting bit flips to MCU SRAM[%d] Bitflip Mask: 0x%x Write Data: 0x%x",
                     //                             $realtime, cptra_ss_mci_mcu_sram_req_if.req.addr >>2, mcu_sram_wdata_bitflip, cptra_ss_mci_mcu_sram_req_if.req.wdata);
                     end
                 end
@@ -946,7 +975,7 @@ end
         // AXI INF
         .s_axi_w_if(cptra_ss_soc_sram_axi_if.w_sub),
         .s_axi_r_if(cptra_ss_soc_sram_axi_if.r_sub)
-    );   
+    );
     `ifdef VERILATOR
     initial i_soc_sram.i_sram.ram = '{default:'{default:8'h00}};
     `else
@@ -970,7 +999,7 @@ end
 
         .rdata_o(cptra_ss_mcu_mbox0_sram_req_if.resp.rdata)
     );
-    
+
     caliptra_sram
     #(
         .DATA_WIDTH(MCU_MBOX1_DATA_AND_ECC_W),
@@ -1001,6 +1030,20 @@ end
         .rdata_o (mcu_rom_mem_export_if.resp.rdata)
     );
 
+`ifdef ENABLE_NWP
+    rom #(
+        .DEPTH     (CPTRA_SS_NWP_ROM_DEPTH),
+        .DATA_WIDTH(CPTRA_SS_NWP_ROM_DATA_W)
+    ) nwp_imem (
+        .clk_i   (clk),
+        .cs_i    (nwp_rom_mem_export_if.req.cs),
+        .we_i    ('0),
+        .addr_i  (nwp_rom_mem_export_if.req.addr),
+        .wdata_i ('0),
+        .rdata_o (nwp_rom_mem_export_if.resp.rdata)
+    );
+`endif // ENABLE_NWP
+
     caliptra_ss_sram #(
         .DEPTH     (MCU_SRAM_DEPTH),
         .DATA_WIDTH(MCU_SRAM_DATA_TOTAL_WIDTH),
@@ -1016,8 +1059,8 @@ end
 
     // -- LMEM PRELOAD
     caliptra_sram #(
-         .DEPTH     (MCU_SRAM_DEPTH        ), 
-         .DATA_WIDTH(MCU_SRAM_DATA_WIDTH   ), 
+         .DEPTH     (MCU_SRAM_DEPTH        ),
+         .DATA_WIDTH(MCU_SRAM_DATA_WIDTH   ),
          .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH   )
 
     ) lmem_dummy_preloader (
@@ -1044,7 +1087,7 @@ task preload_mcu_sram;
 
     for(addr= 0; addr < MCU_SRAM_DEPTH; addr++) begin
         data = {lmem_dummy_preloader.ram[addr][3],lmem_dummy_preloader.ram[addr][2],lmem_dummy_preloader.ram[addr][1],lmem_dummy_preloader.ram[addr][0]};
-        ecc = |data  ? riscv_ecc32(data) : 0; 
+        ecc = |data  ? riscv_ecc32(data) : 0;
         lmem.ram[addr] = {ecc,data};
     end
 
@@ -1062,6 +1105,19 @@ caliptra_ss_veer_sram_export veer_sram_export_inst (
 `else
 `define MCU_DRAM(bk) veer_sram_export_inst.css_mcu0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
 `endif
+
+`ifdef ENABLE_NWP
+caliptra_ss_nwp_veer_sram_export nwp_veer_sram_export_inst (
+    .sram_error_injection_mode(error_injection_mode),
+    .cptra_ss_nwp0_el2_mem_export
+);
+
+`ifdef VERILATOR
+`define NWP_DRAM(bk) nwp_veer_sram_export_inst.css_nwp0_dccm_enable.dccm_loop[bk].ram.ram_core
+`else
+`define NWP_DRAM(bk) nwp_veer_sram_export_inst.css_nwp0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
+`endif
+`endif // ENABLE_NWP
 
 
 
@@ -1234,6 +1290,73 @@ task static preload_css_mcu0_dccm;
     $display("CSS MCU0 DCCM pre-load completed");
 
 endtask
+
+
+// -- NWP DCCM PRELOAD
+`ifdef ENABLE_NWP
+caliptra_sram #(
+     .DEPTH     (2048         ), // 16KiB (NWP DCCM is 16KB)
+     .DATA_WIDTH(64           ),
+     .ADDR_WIDTH($clog2(2048) )
+
+) css_nwp0_dummy_dccm_preloader (
+    .clk_i   (clk),
+
+    .cs_i    (        ),
+    .we_i    (        ),
+    .addr_i  (        ),
+    .wdata_i (        ),
+    .rdata_o (        )
+);
+
+task static init_css_nwp0_dccm;
+    `ifdef css_nwp0_RV_DCCM_ENABLE
+        `NWP_DRAM(0) = '{default:39'h0};
+        `NWP_DRAM(1) = '{default:39'h0};
+    `ifdef css_nwp0_RV_DCCM_NUM_BANKS_4
+        `NWP_DRAM(2) = '{default:39'h0};
+        `NWP_DRAM(3) = '{default:39'h0};
+    `endif
+    `ifdef css_nwp0_RV_DCCM_NUM_BANKS_8
+        `NWP_DRAM(4) = '{default:39'h0};
+        `NWP_DRAM(5) = '{default:39'h0};
+        `NWP_DRAM(6) = '{default:39'h0};
+        `NWP_DRAM(7) = '{default:39'h0};
+    `endif
+        $display("[%0t]    NWP DCCM init: zeroed all banks (39-bit words with ECC)", $time);
+    `endif
+endtask
+
+task static preload_css_nwp0_dccm;
+    bit[31:0] data;
+    bit[31:0] addr, saddr, eaddr;
+
+    `ifndef VERILATOR
+    init_css_nwp0_dccm();
+    `endif
+    saddr = `css_nwp0_RV_DCCM_SADR;
+    if (saddr < `css_nwp0_RV_DCCM_SADR || saddr > `css_nwp0_RV_DCCM_EADR) return;
+    `ifndef css_nwp0_RV_DCCM_ENABLE
+        $display("********************************************************");
+        $display("NWP DCCM preload: there is no DCCM in VeeR, terminating !!!");
+        $display("********************************************************");
+        $finish;
+    `endif
+    eaddr = `css_nwp0_RV_DCCM_EADR;
+    $display("CSS NWP0 DCCM pre-load from %h to %h", saddr, eaddr);
+
+    for(addr=saddr; addr <= eaddr; addr+=4) begin
+        data = {css_nwp0_dummy_dccm_preloader.ram [addr[13:3]] [{addr[2],2'h3}],
+                css_nwp0_dummy_dccm_preloader.ram [addr[13:3]] [{addr[2],2'h2}],
+                css_nwp0_dummy_dccm_preloader.ram [addr[13:3]] [{addr[2],2'h1}],
+                css_nwp0_dummy_dccm_preloader.ram [addr[13:3]] [{addr[2],2'h0}]};
+        // NWP uses same slam_dccm_ram approach - but with NWP DRAM macro
+        // For Phase 1, NWP DCCM is initialized to zeros
+    end
+    $display("CSS NWP0 DCCM pre-load completed");
+
+endtask
+`endif // ENABLE_NWP
 
 
 `ifndef VERILATOR

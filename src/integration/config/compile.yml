@@ -40,7 +40,7 @@ targets:
       - $AVERY_AXI/src.axi/aaxi_class_pll.sv
       - $AVERY_AXI/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
       - $AVERY_AXI/src.VCS/aaxi_busmonitor.v
-      - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv 
+      - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv
       - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
       - $AVERY_AXI/src.axi/aaxi_intf.sv
       #-- I3C VIP
@@ -93,11 +93,13 @@ requires:
   - caliptra_ss_top_pkg
   - caliptra_ss_lc_ctrl_pkg
   - css_mcu0_veer_el2_rtl_pkg
+  - css_nwp0_veer_el2_rtl_pkg
   - tlul_pkg
   - fuse_ctrl_pkg
   - lc_ctrl
   - axi_mem_pkg
   - mcu_top
+  - nwp_top
   - i3c_core
   - fuse_ctrl
   - mci_top
@@ -107,7 +109,7 @@ targets:
     waiver_files:
       - $MSFT_REPO_ROOT/src/integration/config/design_lint/sglint_waivers
   rtl:
-    directories: 
+    directories:
       - $COMPILE_ROOT/rtl
     files:
       - $COMPILE_ROOT/rtl/caliptra_ss_top.sv
@@ -121,7 +123,7 @@ targets:
     files:
       - $COMPILE_ROOT/rtl/caliptra_ss_top_w_stub.sv
     tops: [caliptra_ss_top_w_stub]
---- 
+---
 provides: [caliptra_ss_top_tb_coverage]
 schema_version: 2.4.0
 requires:
@@ -137,7 +139,7 @@ targets:
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_if.sv
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_props.sv
       - $COMPILE_ROOT/coverage/caliptra_ss_top_cov_bind.sv
---- 
+---
 provides: [caliptra_ss_top_tb]
 schema_version: 2.4.0
 requires:
@@ -174,6 +176,7 @@ targets:
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_tb_cmd_list.svh
       - $COMPILE_ROOT/testbench/caliptra_ss_veer_sram_export.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_nwp_veer_sram_export.sv
       - $COMPILE_ROOT/testbench/fc_lcc_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
@@ -182,7 +185,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
-    pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 
+    pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe .
                 && echo "[PRE-EXEC] Copying DOE vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/doe/tb/doe_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA256 wntz vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/sha256/tb/sha256_wntz_test_gen.py .
                 && echo "[PRE-EXEC] Copying SHA512 Vectors to $(pwd)" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/integration/tb/vectors/SHA*.rsp .
@@ -220,8 +223,9 @@ global:
         - +define+AAXI_MAX_AWUSER_WIDTH=32
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
-        - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AAXI_INTC_MASTER_CNT=8
+        - +define+AAXI_INTC_SLAVE_CNT=9
+        - +define+AAXI_SPORT_ID_WIDTH=4
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
@@ -249,7 +253,7 @@ global:
         # - -lpthread'
         # Uncomment to enable exec.log, ahb bus logs, etc. in Caliptra Core
         #- '+CLP_BUS_LOGS=1'
-        # Command line arg to spcify the I3C test 
+        # Command line arg to spcify the I3C test
         # - +AVY_TEST=ai3ct_ext_basic
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test

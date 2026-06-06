@@ -45,7 +45,7 @@ RDC:
     - 2022.A.P10.2
 
 Synthesis:
- - Synopsys Design Compiler (R) NXT 
+ - Synopsys Design Compiler (R) NXT
     - Version U-2022.12-SP6
 
 Scripts:
@@ -173,7 +173,7 @@ caliptra-ss GitHub repository.
         `make -C <path/to/run/folder> -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile TESTNAME=${TESTNAME} CALIPTRA_TESTNAME=${CALIPTRA_TESTNAME} vcs`
     - NOTE: `TESTNAME=${TESTNAME}` is optional; if not provided, test defaults to value of TESTNAME environment variable, then to `mcu_hello_world`
 1. Remaining steps describe how to manually run the individual steps for a VCS simulation
-1. [OPTIONAL] By default, this run flow will use the RISC-V toolchain to compile test firmware (according to TESTNAME, CALIPTRA_TESTNAME) into mcu_program.hex, mcu_lmem.hex, mcu_dccm.hex, program.hex, iccm.hex, dccm.hex, and mailbox.hex. 
+1. [OPTIONAL] By default, this run flow will use the RISC-V toolchain to compile test firmware (according to TESTNAME, CALIPTRA_TESTNAME) into mcu_program.hex, mcu_lmem.hex, mcu_dccm.hex, program.hex, iccm.hex, dccm.hex, and mailbox.hex.
 1. Invoke `${CALIPTRA_ROOT}/tools/scripts/Makefile` with target 'program.hex' to produce SRAM initialization files from the firmware found in `src/integration/test_suites/${TESTNAME}`, `src/integration/test_suites/${CALIPTRA_TESTNAME}` or in `${CALIPTRA_ROOT}/src/integration/test_suites/${CALIPTRA_TESTNAME}`
     - E.g.: `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile program.hex`
     - NOTE: CALIPTRA_TESTNAME may also be overridden in the makefile command line invocation, e.g. `make -f ${CALIPTRA_ROOT}/tools/scripts/Makefile CALIPTRA_TESTNAME=smoke_test_mbox program.hex`
@@ -212,27 +212,27 @@ The Caliptra Subsystem includes an MCU based on the Veer-EL2 RISC-V core. Users 
    ```
 
 2. **Set RV_ROOT Environment Variable**
-   
+
    Set RV_ROOT to the root of the repository cloned in step 1:
    ```bash
    export RV_ROOT="/path/to/Cores-VeeR-EL2"
    ```
 
 3. **Backup prefix_macros.sh (Workaround)**
-   
+
    This file was not committed to the repository until after the 2.0 tag, so it needs to be backed up before checking out the specific commit. The command below is just an example - use any safe backup location:
    ```bash
    cp $RV_ROOT/tools/prefix_macros.sh ~/backup/prefix_macros.sh
    ```
 
 4. **Checkout Required Commit**
-   
+
    First, find the required commit hash in `$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/riscv_rev_info`, then checkout that specific version:
    ```bash
    cd $RV_ROOT
    git checkout <commit_hash_from_riscv_rev_info>
    ```
-   
+
    Example:
    ```bash
    cd $RV_ROOT
@@ -245,21 +245,21 @@ The Caliptra Subsystem includes an MCU based on the Veer-EL2 RISC-V core. Users 
    ```
 
 6. **Modify Veer Build Configuration**
-   
+
    Edit the build command script to specify your desired MCU configuration:
    ```bash
    $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh
    ```
 
 7. **Generate New Configuration**
-   
+
    Run the build command script with a descriptive snapshot directory name:
    ```bash
    $CALIPTRA_SS_ROOT/tools/scripts/veer_build_command.sh new-mcu-config
    ```
 
 8. **Set Environment Variables for Prefix Script**
-   
+
    Configure the required environment variables for the prefix macro script:
    ```bash
    export PREFIX="css_mcu0_"
@@ -273,12 +273,12 @@ The Caliptra Subsystem includes an MCU based on the Veer-EL2 RISC-V core. Users 
    ```
 
 10. **Update Caliptra SS Design Files**
-    
+
     Compare and copy the generated configuration files to the Caliptra SS repository:
     ```bash
     # Review differences
     diff -r $DEFINES_PATH $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
-    
+
     # Copy updated files (review changes first!)
     cp $DEFINES_PATH/* $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2/rtl/defines/
     ```
@@ -289,6 +289,74 @@ After modifying the configuration:
 1. **Rebuild the project** using the standard [simulation flow](#simulation-flow)
 2. **Run smoke tests** to verify the new configuration works correctly
 3. **Check simulation logs** for any configuration-related warnings or errors
+
+## **NWP Veer-EL2 Core Configuration** ##
+
+The Caliptra Subsystem includes a Network Processor (NWP) based on the same Veer-EL2 RISC-V core as the MCU. The NWP uses a separate namespace prefix (`css_nwp0_`) and a different address map. This section describes how to generate the NWP Veer-EL2 core files.
+
+### NWP Address Map ###
+
+| Region       | Address        | Size     | VeeR Region |
+|--------------|----------------|----------|-------------|
+| DCCM         | `0x3000_0000`  | 16 KB    | 0x3         |
+| PIC          | `0xB000_0000`  | 32 KB    | 0xB         |
+| ICCM         | `0xC000_0000`  | disabled | 0xC         |
+| ROM (AXI)    | `0x9000_0000`  | 256 KB   | —           |
+| Reset vector | `0x9000_0000`  | —        | —           |
+
+### NWP Configuration Steps ###
+
+The NWP generation follows the same workflow as the MCU (see [MCU Veer-EL2 Core Configuration](#mcu-veer-el2-core-configuration)), with these differences:
+
+1. **Use the NWP build command script** instead of the MCU one:
+
+   ```bash
+   $CALIPTRA_SS_ROOT/tools/scripts/nwp_veer_build_command.sh nwp_config
+   ```
+
+2. **Set environment variables for the NWP prefix**:
+
+   ```bash
+   export PREFIX="css_nwp0_"
+   export DESIGN_DIR="$CALIPTRA_SS_ROOT/src/riscv_core/veer_el2_nwp/rtl/design"
+   export DEFINES_PATH="$RV_ROOT/snapshots/nwp_config"
+   ```
+
+3. **Run prefix_macros.sh** (same as MCU step 9):
+
+   ```bash
+   $RV_ROOT/tools/prefix_macros.sh
+   ```
+
+4. **Copy generated files to the NWP directory**:
+
+   ```bash
+   cp $DEFINES_PATH/* $CALIPTRA_SS_ROOT/src/riscv_core/veer_el2_nwp/rtl/defines/
+   ```
+
+### NWP Target Directory ###
+
+Generated files are placed in `src/riscv_core/veer_el2_nwp/`:
+
+```text
+src/riscv_core/veer_el2_nwp/
+    config/
+        compile.yml
+        css_nwp0_veer_el2_defines_pkg.vf
+        css_nwp0_veer_el2_rtl_pkg.vf
+    rtl/
+        riscv_rev_info
+        defines/       # css_nwp0_common_defines.vh, css_nwp0_el2_param.vh, etc.
+        design/        # css_nwp0_el2_veer_wrapper.sv, css_nwp0_el2_veer.sv, etc.
+    tb/
+        icache_macros.svh
+```
+
+### Important Notes ###
+
+- The NWP must use the **same VeeR commit hash** as the MCU (see `riscv_rev_info`)
+- Only 4 parameters differ from the MCU: `dccm_region`, `pic_region`, `iccm_region`, `reset_vec`
+- All other VeeR configuration flags are identical to the MCU
 
 ## **Regression Tests** ##
 

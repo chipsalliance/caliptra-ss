@@ -1,6 +1,6 @@
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,10 +24,26 @@ parameter CPTRA_SS_ROM_DEPTH = (CPTRA_SS_ROM_SIZE_KB*1024) / (CPTRA_SS_ROM_DATA_
 parameter CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
 parameter CPTRA_SS_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_ROM_DEPTH);
 
+parameter int CPTRA_SS_NWP_ROM_SIZE_KB = 256;
+parameter int CPTRA_SS_NWP_ROM_DATA_W = 64;
+parameter int CPTRA_SS_NWP_ROM_DEPTH = (CPTRA_SS_NWP_ROM_SIZE_KB*1024) / (CPTRA_SS_NWP_ROM_DATA_W/8);
+parameter int CPTRA_SS_NWP_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_NWP_ROM_SIZE_KB*1024);
+parameter int CPTRA_SS_NWP_ROM_MEM_ADDR_W = $clog2(CPTRA_SS_NWP_ROM_DEPTH);
+
+// NWP block-level enable (REQ-22).
+// Opt-in: pass +define+ENABLE_NWP to the tool to include NWP. When the
+// macro is undefined (default), all NWP ports, the nwp_top instance, and
+// nwp_rom_i in caliptra_ss_top.sv are elided. Macro form is required
+// because SystemVerilog `parameter` cannot gate port declarations.
+//
+// A file-level `define here would re-define the macro at include-time even
+// when the CLI passed +undefine+ENABLE_NWP, defeating the opt-out path; the
+// opt-in default avoids that order-of-operations trap.
+
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1
 `define VEER_INTR_VEC_I3C                 2
 `define VEER_INTR_EXT_LSB                 3
-    
+
 `endif // CALIPTRA_SS_INCLUDES_SVH

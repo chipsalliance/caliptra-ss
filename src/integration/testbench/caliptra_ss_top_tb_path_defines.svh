@@ -15,7 +15,7 @@
 
 `ifndef CALIPTRA_SS_TOP_TB_PATH_DEFINES
     `define CALIPTRA_SS_TOP_TB_PATH_DEFINES
-    
+
     `ifndef CPTRA_SS_TB_TOP_NAME
       `define CPTRA_SS_TB_TOP_NAME caliptra_ss_top_tb
     `endif
@@ -31,7 +31,10 @@
     `ifndef MCU_PATH
       `define MCU_PATH      `CPTRA_SS_TOP_PATH.rvtop_wrapper
     `endif
-    `ifndef MCU_DEC 
+    `ifndef NWP_PATH
+      `define NWP_PATH      `CPTRA_SS_TOP_PATH.nwp_top_i
+    `endif
+    `ifndef MCU_DEC
       `define MCU_DEC       `MCU_PATH.rvtop.veer.dec
     `endif
     `ifndef LCC_PATH

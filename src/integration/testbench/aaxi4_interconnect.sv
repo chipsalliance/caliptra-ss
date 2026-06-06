@@ -1,7 +1,7 @@
 
 //********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// 
+//
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@
 `include "caliptra_ss_top_tb_intc_includes.svh"
 
 module aaxi4_interconnect(
-    input logic		core_clk,	
+    input logic		core_clk,
     input logic      rst_l);
 
 import aaxi_pkg::*;
@@ -44,7 +44,7 @@ wire		   CACTIVE_PLL;
 wire		   CSYSACK;
 wire		   CSYSACK_PLL;
 
-// pll class 
+// pll class
 // aaxi_class_pll sys_pll;
 
 // device classes
@@ -58,14 +58,14 @@ aaxi_interconnect_intf	ports			(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSA
 aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))mintf_arr[AAXI_INTC_MASTER_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
 aaxi_intf #(.MCB_INPUT(aaxi_pkg::AAXI_MCB_INPUT),.MCB_OUTPUT(aaxi_pkg::AAXI_MCB_OUTPUT),.SCB_INPUT(aaxi_pkg::AAXI_SCB_INPUT),.SCB_OUTPUT(aaxi_pkg::AAXI_SCB_OUTPUT))sintf_arr[AAXI_INTC_SLAVE_CNT-1:0]	(core_clk, rst_l, CACTIVE, 1'b0/*CSYSREQ*/, CSYSACK);
 
-/* When all CACTIVE signal of ports, mintf_arr[] and sintf_arr[] 
+/* When all CACTIVE signal of ports, mintf_arr[] and sintf_arr[]
    are different from each other(some ports whose CACTIVE was 1,
-   these ports has transaction to write or read), 
+   these ports has transaction to write or read),
    the CACTIVE_PLL will be set 1 (can not enter low power state) */
 assign CACTIVE_PLL = ((CACTIVE === 1'bx)? 1: CACTIVE);
 /* When all CSYSACK signal of ports, mintf_arr[] and sintf_arr[]
    are different from each other(some ports whose CSYSACK was 1,
-   these ports has transaction to write or read), 
+   these ports has transaction to write or read),
    the CSYSACK_PLL will be set 1 (can not enter low power state) */
 assign CSYSACK_PLL = ((CSYSACK === 1'bx)? 1: CSYSACK);
 
@@ -74,7 +74,7 @@ generate
     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin : master_loop
 	initial begin
 	    master[i] = new($psprintf("master%0d" ,i), AAXI_MASTER, AAXI4, mintf_arr[i],, i);
-	    #1;	// wait to instantiate intc bfm 
+	    #1;	// wait to instantiate intc bfm
 	    intc.master_ports[i].vers= master[i].vers;
 	    intc.master_ports[i].ports= mintf_arr[i];
 	end
@@ -87,7 +87,7 @@ generate
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_loop
 	initial begin
 	    slave[i] = new($psprintf("slave%0d", i), AAXI_SLAVE_TO_INTERCONNECT, AAXI4, sintf_arr[i],, i);
-	    #1;	// wait to instantiate intc bfm 
+	    #1;	// wait to instantiate intc bfm
 	    intc.slave_ports[i].vers= slave[i].vers;
 	    intc.slave_ports[i].ports= sintf_arr[i];
 	end
@@ -96,13 +96,13 @@ generate
     assign sintf_arr[i].CSYSACK_m = 1'b0;
     assign sintf_arr[i].CSYSACK_s = 1'b0;
     end
-endgenerate 
+endgenerate
 
 
 // bus monitor/checker0
 `ifdef AVERY_ASSERT_ON
 
-generate 
+generate
     // interfaces between Master BFMs and Interconnect slave ports
     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin: master_mon
         aaxi_monitor_wrapper monitor(mintf_arr[i]);
@@ -118,6 +118,12 @@ generate
     // Caliptra AXI DMA, SoC BFM i/fs
     defparam master_mon[`CSS_INTC_MINTF_CPTRA_DMA_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam master_mon[`CSS_INTC_MINTF_SOC_BFM_IDX  ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    // NWP IFU, LSU, SB i/fs
+`ifdef ENABLE_NWP
+    defparam master_mon[`CSS_INTC_MINTF_NWP_LSU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam master_mon[`CSS_INTC_MINTF_NWP_IFU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+    defparam master_mon[`CSS_INTC_MINTF_NWP_SB_IDX ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
 
     // interfaces between Slave BFMs and Interconnect master ports
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_mon
@@ -137,8 +143,12 @@ generate
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_SOC_SRAM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
-        
-endgenerate 
+    // NWP ROM
+`ifdef ENABLE_NWP
+    defparam slave_mon[`CSS_INTC_SINTF_NWP_ROM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
+
+endgenerate
 
 // instantiates monitor/protocol checker0 for default slave interface
 assign ports.default_slave_intf.CACTIVE_m = 1'b0;
@@ -198,11 +208,16 @@ initial begin
     master[`CSS_INTC_MINTF_MCU_SB_IDX].   cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
     master[`CSS_INTC_MINTF_CPTRA_DMA_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     master[`CSS_INTC_MINTF_SOC_BFM_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+`ifdef ENABLE_NWP
+    master[`CSS_INTC_MINTF_NWP_LSU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+    master[`CSS_INTC_MINTF_NWP_IFU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+    master[`CSS_INTC_MINTF_NWP_SB_IDX].   cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
 
     wait (slave[0] != null);
     for (int i=0; i<AAXI_INTC_SLAVE_CNT; i++) begin
         // instantiates Slave BFMs
-        slave[i].cfg_info.passive_mode= 1; 
+        slave[i].cfg_info.passive_mode= 1;
         slave[i].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[i].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -249,7 +264,7 @@ initial begin
         slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
 
         //-- Caliptra SoC IFC Sub
-        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.passive_mode= 1;
         slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -267,7 +282,7 @@ initial begin
         slave[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- MCI
-        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.passive_mode= 1;
         slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -279,8 +294,8 @@ initial begin
         slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_MCI_IDX].cfg_info.id_outstanding_depth = 4;
 
-        //-- Fuse Controller Core AXI 
-        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.passive_mode = 1; 
+        //-- Fuse Controller Core AXI
+        slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.passive_mode = 1;
         slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -293,20 +308,20 @@ initial begin
         slave[`CSS_INTC_SINTF_FC_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- Fuse Controller Prim AXI (not connected)
-        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.passive_mode= 1; 
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.passive_mode= 1;
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
-        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.base_address[0]  = {32'h0, SOC_SRAM_BASE_ADDR}; 
-        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.limit_address[0] = {32'h0, (SOC_SRAM_BASE_ADDR + SOC_SRAM_SIZE_BYTES - 1)}; 
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.base_address[0]  = {32'h0, SOC_SRAM_BASE_ADDR};
+        slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.limit_address[0] = {32'h0, (SOC_SRAM_BASE_ADDR + SOC_SRAM_SIZE_BYTES - 1)};
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_SOC_SRAM_IDX].cfg_info.id_outstanding_depth = 4;
 
-        //-- Life-cycle Controller Core AXI 
-        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.passive_mode = 1; 
+        //-- Life-cycle Controller Core AXI
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.passive_mode = 1;
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_awuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_aruser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_ruser_enable = 1; // optional, axi4_interconn_routings.sv need it
@@ -317,6 +332,15 @@ initial begin
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.id_outstanding_depth = 4;
+
+        //-- NWP ROM MACRO
+`ifdef ENABLE_NWP
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h9000_0000};
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.limit_address[0] = {32'h0, 32'h90FF_FFFF};
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.id_outstanding_depth = 4;
+`endif // ENABLE_NWP
 
 
 
@@ -390,7 +414,7 @@ initial begin
     `endif
         end
 
-        // initial memory value to be 0 for data comparision on Slave BFM 
+        // initial memory value to be 0 for data comparision on Slave BFM
         slave[0].set("mem_uninitialized_value", 0);
         slave[1].set("mem_uninitialized_value", 0);
         slave[2].set("mem_uninitialized_value", 0);
@@ -399,6 +423,7 @@ initial begin
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
         slave[7].set("mem_uninitialized_value", 0);
+        slave[8].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -409,6 +434,7 @@ initial begin
         test.slave5= slave[5];
         test.slave6= slave[6];
         test.slave7= slave[7];
+        test.slave8= slave[8];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);
