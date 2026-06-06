@@ -331,6 +331,8 @@ initial begin
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h9000_0000};
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.limit_address[0] = {32'h0, 32'h90FF_FFFF};
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.id_outstanding_depth = 4;
 
 
 
