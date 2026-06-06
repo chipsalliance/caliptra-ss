@@ -1,7 +1,7 @@
 // NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
-// This is an automatically generated file by zahralak on Fri Apr 10 15:45:38 PDT 2026
+// This is an automatically generated file by zahralak on Mon Apr 27 16:02:14 PDT 2026
 //
-// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x3 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0xC -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0xB -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x90000000 -fpga_optimize=0 -snapshot=nwp_config 
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x3 -set=dccm_offset=0x00000 -set=dccm_size=64 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0xC -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0xB -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x90000000 -fpga_optimize=0 -snapshot=nwp_dccm64k 
 //
 `ifndef css_nwp0_RV_COMMON_DEFINES
 `define css_nwp0_RV_COMMON_DEFINES
@@ -64,26 +64,26 @@
 `define css_nwp0_RV_TIMER_LEGAL_EN 1
 `define css_nwp0_RV_USER_MODE 1
 `define css_nwp0_RV_DCCM_BANK_BITS 2
-`define css_nwp0_RV_DCCM_BITS 14
+`define css_nwp0_RV_DCCM_BITS 16
 `define css_nwp0_RV_DCCM_BYTE_WIDTH 4
-`define css_nwp0_RV_DCCM_DATA_CELL ram_1024x39
+`define css_nwp0_RV_DCCM_DATA_CELL ram_4096x39
 `define css_nwp0_RV_DCCM_DATA_WIDTH 32
-`define css_nwp0_RV_DCCM_EADR 32'h30003fff
+`define css_nwp0_RV_DCCM_EADR 32'h3000ffff
 `define css_nwp0_RV_DCCM_ECC_WIDTH 7
 `define css_nwp0_RV_DCCM_ENABLE 1
 `define css_nwp0_RV_DCCM_FDATA_WIDTH 39
-`define css_nwp0_RV_DCCM_INDEX_BITS 10
+`define css_nwp0_RV_DCCM_INDEX_BITS 12
 `define css_nwp0_RV_DCCM_NUM_BANKS 4
 `define css_nwp0_RV_DCCM_NUM_BANKS_4 
 `define css_nwp0_RV_DCCM_OFFSET 28'h00000
 `define css_nwp0_RV_DCCM_REGION 4'h3
 `define css_nwp0_RV_DCCM_RESERVED 'h1400
-`define css_nwp0_RV_DCCM_ROWS 1024
+`define css_nwp0_RV_DCCM_ROWS 4096
 `define css_nwp0_RV_DCCM_SADR 32'h30000000
-`define css_nwp0_RV_DCCM_SIZE 16
-`define css_nwp0_RV_DCCM_SIZE_16 
+`define css_nwp0_RV_DCCM_SIZE 64
+`define css_nwp0_RV_DCCM_SIZE_64 
 `define css_nwp0_RV_DCCM_WIDTH_BITS 2
-`define css_nwp0_RV_LSU_SB_BITS 14
+`define css_nwp0_RV_LSU_SB_BITS 16
 `define css_nwp0_RV_ICACHE_2BANKS 1
 `define css_nwp0_RV_ICACHE_BANK_BITS 1
 `define css_nwp0_RV_ICACHE_BANK_HI 3
@@ -249,4 +249,4 @@
 `define css_nwp0_USER_EC_RV_ICG css_nwp0_user_clock_gate
 `define css_nwp0_RV_XLEN 32
 
-`endif // RV_COMMON_DEFINES
+`endif // css_nwp0_RV_COMMON_DEFINES
