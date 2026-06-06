@@ -37,27 +37,31 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 /**
- * Program two fuses in `VENDOR_HASHES_PROD_PARTITION`, then verify whether
- * the volatile lock works as intended. The test proceeds in the following steps:
- * 
- *   1. Write a value to first fuse.
- *   2. Activate the volatile lock such that the fuse from step 2 is now in the
- *      locked region.
- *   3. Verify that writing to the second fuse now results in an error.
+ * Program production vendor PK hash fuses, then verify that volatile locks use
+ * sticky per-bit mask semantics. Bit 2 locks CPTRA_CORE_VENDOR_PK_HASH_3 only.
  */
 void program_vendor_hashes_prod_partition(void) {
-    const uint32_t addresses[2] = {CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_4};
-
+    const uint32_t locked_hash = CPTRA_CORE_VENDOR_PK_HASH_3;
+    const uint32_t unlocked_hash = CPTRA_CORE_VENDOR_PK_HASH_4;
+    const uint32_t lock_mask = 1u << 2;
     const uint32_t data = 0xdeadbeef;
 
-    // Step 1
-    dai_wr(addresses[0], data, 0, 32, 0);
+    if (!dai_wr(locked_hash, data, 0, 32, 0)) {
+        handle_error("ERROR: initial write to PROD vendor PK hash 3 failed\n");
+    }
 
-    // Step 2
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 4.
+    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask);
+    if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != lock_mask) {
+        handle_error("ERROR: PROD PK volatile lock did not retain bit-mask value\n");
+    }
 
-    // Step 3
-    dai_wr(addresses[1], data+2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    if (!dai_wr(unlocked_hash, data + 1, 0, 32, 0)) {
+        handle_error("ERROR: unselected PROD vendor PK hash 4 was unexpectedly locked\n");
+    }
+
+    if (!dai_wr(locked_hash, data + 2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+        handle_error("ERROR: locked PROD vendor PK hash 3 write was not rejected\n");
+    }
 }
 
 void main (void) {

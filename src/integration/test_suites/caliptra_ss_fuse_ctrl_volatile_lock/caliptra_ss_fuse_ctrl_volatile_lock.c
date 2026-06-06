@@ -37,12 +37,35 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 void pk_volatile_lock(void) {
-    // Loop through all possible pk volatile locks.
-    for (uint32_t i = 1; i < 15; i++) {
-        lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, i);
-        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    const uint32_t prod_hash_addr[15] = {
+        CPTRA_CORE_VENDOR_PK_HASH_1, CPTRA_CORE_VENDOR_PK_HASH_2,
+        CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_4,
+        CPTRA_CORE_VENDOR_PK_HASH_5, CPTRA_CORE_VENDOR_PK_HASH_6,
+        CPTRA_CORE_VENDOR_PK_HASH_7, CPTRA_CORE_VENDOR_PK_HASH_8,
+        CPTRA_CORE_VENDOR_PK_HASH_9, CPTRA_CORE_VENDOR_PK_HASH_10,
+        CPTRA_CORE_VENDOR_PK_HASH_11, CPTRA_CORE_VENDOR_PK_HASH_12,
+        CPTRA_CORE_VENDOR_PK_HASH_13, CPTRA_CORE_VENDOR_PK_HASH_14,
+        CPTRA_CORE_VENDOR_PK_HASH_15
+    };
+    uint32_t expected_lock = 0;
+
+    for (uint32_t i = 0; i < 15; i++) {
+        const uint32_t lock_mask = 1u << i;
+        expected_lock |= lock_mask;
+
+        lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask);
+        if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != expected_lock) {
+            handle_error("ERROR: PROD PK volatile lock did not set expected bit-mask\n");
+        }
+
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0);
-        dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1 + i*49, 0xFF, 0, 32, 0);
+        if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != expected_lock) {
+            handle_error("ERROR: writing 0 cleared sticky PROD PK volatile lock bits\n");
+        }
+
+        if (!dai_wr(prod_hash_addr[i], 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+            handle_error("ERROR: locked PROD vendor PK hash write was not rejected\n");
+        }
     }
 }
 
