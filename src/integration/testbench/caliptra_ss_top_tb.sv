@@ -63,7 +63,7 @@ module caliptra_ss_top_tb
     logic                       cptra_ss_rdc_clk_cg_o;
     logic                       cptra_ss_mcu_clk_cg_o;
     logic                       cptra_ss_mcu_rst_b_o;
-    
+
     logic                       cptra_ss_warm_reset_rdc_clk_dis_o;
     logic                       cptra_ss_early_warm_reset_warn_o;
     logic                       cptra_ss_mcu_fw_update_rdc_clk_dis_o;
@@ -155,6 +155,7 @@ module caliptra_ss_top_tb
     logic                                 cptra_ss_soc_hw_debug_en_o;
 
     css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
+    css_nwp0_el2_mem_if         cptra_ss_nwp0_el2_mem_export ();
     el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();
 
     caliptra_ss_bfm_services_if i_caliptra_ss_bfm_services_if();
@@ -300,6 +301,45 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_mcu_ifu_ds_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+    // NWP ROM Sub AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(64),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_nwp_rom_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
+    // NWP LSU AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(64),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_nwp_lsu_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
+    // NWP SB AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(64),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_nwp_sb_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
+    // NWP IFU AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(64),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_nwp_ifu_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    // NWP IFU AXI Interface (downsized)
+    axi_if #(
+        .AW(32),
+        .DW(64),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_nwp_ifu_ds_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
     // // MCU DMA AXI Interface
     // axi_if #(
     //     .AW(32), //-- FIXME : Assign a common paramter
@@ -363,6 +403,46 @@ module caliptra_ss_top_tb
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos;
 
+    // NWP LSU sideband signals
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_awcache;
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_arcache;
+    logic [2:0] cptra_ss_nwp_lsu_m_axi_if_awprot;
+    logic [2:0] cptra_ss_nwp_lsu_m_axi_if_arprot;
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_awregion;
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_arregion;
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_awqos;
+    logic [3:0] cptra_ss_nwp_lsu_m_axi_if_arqos;
+
+    // NWP IFU sideband signals
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_awcache;
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_arcache;
+    logic [2:0] cptra_ss_nwp_ifu_m_axi_if_awprot;
+    logic [2:0] cptra_ss_nwp_ifu_m_axi_if_arprot;
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_awregion;
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_arregion;
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_awqos;
+    logic [3:0] cptra_ss_nwp_ifu_m_axi_if_arqos;
+
+    // NWP IFU downsized sideband signals
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_awcache;
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_arcache;
+    logic [2:0] cptra_ss_nwp_ifu_ds_m_axi_if_awprot;
+    logic [2:0] cptra_ss_nwp_ifu_ds_m_axi_if_arprot;
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_awregion;
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_arregion;
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_awqos;
+    logic [3:0] cptra_ss_nwp_ifu_ds_m_axi_if_arqos;
+
+    // NWP SB sideband signals
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_awcache;
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_arcache;
+    logic [2:0] cptra_ss_nwp_sb_m_axi_if_awprot;
+    logic [2:0] cptra_ss_nwp_sb_m_axi_if_arprot;
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_awregion;
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_arregion;
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_awqos;
+    logic [3:0] cptra_ss_nwp_sb_m_axi_if_arqos;
+
     // Signal that may be viewed in waves to review the mapping of
     // functional AXI interfaces to indexed ports of the interconnect
     struct packed {
@@ -371,6 +451,9 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_SB_IDX            ; // CSS_INTC_MINTF_MCU_SB_IDX     2
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_LSU_IDX           ; // CSS_INTC_MINTF_NWP_LSU_IDX    5
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_IFU_IDX           ; // CSS_INTC_MINTF_NWP_IFU_IDX    6
+        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_SB_IDX            ; // CSS_INTC_MINTF_NWP_SB_IDX     7
 
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
@@ -378,14 +461,18 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6 
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NWP_ROM_IDX      ; // CSS_INTC_SINTF_NWP_ROM_IDX       8
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
         MCU_SB_IDX             : `CSS_INTC_MINTF_MCU_SB_IDX,
         CPTRA_DMA_IDX          : `CSS_INTC_MINTF_CPTRA_DMA_IDX,
         SOC_BFM_IDX            : `CSS_INTC_MINTF_SOC_BFM_IDX,
+        NWP_LSU_IDX            : `CSS_INTC_MINTF_NWP_LSU_IDX,
+        NWP_IFU_IDX            : `CSS_INTC_MINTF_NWP_IFU_IDX,
+        NWP_SB_IDX             : `CSS_INTC_MINTF_NWP_SB_IDX,
 
         SINTF_NC0_IDX          : `CSS_INTC_SINTF_NC0_IDX,
         SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
@@ -394,7 +481,8 @@ module caliptra_ss_top_tb
         SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
         SINTF_FC_IDX           : `CSS_INTC_SINTF_FC_IDX,
         SINTF_SOC_SRAM_IDX     : `CSS_INTC_SINTF_SOC_SRAM_IDX,
-        SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX
+        SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX,
+        SINTF_NWP_ROM_IDX      : `CSS_INTC_SINTF_NWP_ROM_IDX
     };
 
     // AXI Interconnect upper address tie to 0
@@ -410,6 +498,14 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX   ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX   ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
     // Slave port 0 disconnection.
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARREADY = 1'b0;
@@ -598,6 +694,166 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_sb_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_SB_IDX].RID;
     assign cptra_ss_mcu_sb_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_SB_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_SB_IDX].RREADY  = cptra_ss_mcu_sb_m_axi_if.rready;
+
+    //Interconnect 5 - NWP LSU
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWVALID = cptra_ss_nwp_lsu_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWADDR[31:0]  = cptra_ss_nwp_lsu_m_axi_if.awaddr[31:0] & 32'hFFFF_FFFC /*FIXME*/;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWID    = cptra_ss_nwp_lsu_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWLEN   = cptra_ss_nwp_lsu_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWSIZE  = 2; // FIXME cptra_ss_nwp_lsu_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWBURST = cptra_ss_nwp_lsu_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWLOCK  = cptra_ss_nwp_lsu_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWUSER  = cptra_ss_nwp_lsu_m_axi_if.awuser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWCACHE  = cptra_ss_nwp_lsu_m_axi_if_awcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWPROT   = cptra_ss_nwp_lsu_m_axi_if_awprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWQOS    = cptra_ss_nwp_lsu_m_axi_if_awqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWREGION = cptra_ss_nwp_lsu_m_axi_if_awregion;
+    assign cptra_ss_nwp_lsu_m_axi_if.awready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWREADY;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WVALID  = cptra_ss_nwp_lsu_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WDATA   = cptra_ss_nwp_lsu_m_axi_if.wdata;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WSTRB   = cptra_ss_nwp_lsu_m_axi_if.wstrb;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WLAST   = cptra_ss_nwp_lsu_m_axi_if.wlast;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WUSER  = cptra_ss_nwp_lsu_m_axi_if.wuser;
+    assign cptra_ss_nwp_lsu_m_axi_if.wready               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].WREADY;
+    assign cptra_ss_nwp_lsu_m_axi_if.bvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].BVALID;
+    assign cptra_ss_nwp_lsu_m_axi_if.bresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].BRESP;
+    assign cptra_ss_nwp_lsu_m_axi_if.buser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].BUSER;
+    assign cptra_ss_nwp_lsu_m_axi_if.bid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].BID;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].BREADY  = cptra_ss_nwp_lsu_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARVALID = cptra_ss_nwp_lsu_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARADDR[31:0]  = cptra_ss_nwp_lsu_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARID    = cptra_ss_nwp_lsu_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARLEN   = cptra_ss_nwp_lsu_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARSIZE  = cptra_ss_nwp_lsu_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARBURST = cptra_ss_nwp_lsu_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARLOCK  = cptra_ss_nwp_lsu_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARUSER  = cptra_ss_nwp_lsu_m_axi_if.aruser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARCACHE  = cptra_ss_nwp_lsu_m_axi_if_arcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARPROT   = cptra_ss_nwp_lsu_m_axi_if_arprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARQOS    = cptra_ss_nwp_lsu_m_axi_if_arqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARREGION = cptra_ss_nwp_lsu_m_axi_if_arregion;
+    assign cptra_ss_nwp_lsu_m_axi_if.arready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].ARREADY;
+    assign cptra_ss_nwp_lsu_m_axi_if.rvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RVALID;
+    assign cptra_ss_nwp_lsu_m_axi_if.rdata                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RDATA;
+    assign cptra_ss_nwp_lsu_m_axi_if.rresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RRESP;
+    assign cptra_ss_nwp_lsu_m_axi_if.ruser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RUSER;
+    assign cptra_ss_nwp_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RID;
+    assign cptra_ss_nwp_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RLAST;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].RREADY  = cptra_ss_nwp_lsu_m_axi_if.rready;
+
+    //Interconnect 6 - NWP IFU
+    caliptra_ss_top_tb_axi_64_to_32_downsizer i_cptra_ss_nwp_ifu_m_axi_if_downsizer (
+        .clk              (core_clk                          ),
+        .rst_n            (cptra_ss_rst_b_i                  ),
+        .m_axi_if         (cptra_ss_nwp_ifu_m_axi_if         ),
+        .m_axi_if_arcache (cptra_ss_nwp_ifu_m_axi_if_arcache ),
+        .m_axi_if_arprot  (cptra_ss_nwp_ifu_m_axi_if_arprot  ),
+        .m_axi_if_arregion(cptra_ss_nwp_ifu_m_axi_if_arregion),
+        .m_axi_if_arqos   (cptra_ss_nwp_ifu_m_axi_if_arqos   ),
+        .m_axi_if_awcache (cptra_ss_nwp_ifu_m_axi_if_awcache ),
+        .m_axi_if_awprot  (cptra_ss_nwp_ifu_m_axi_if_awprot  ),
+        .m_axi_if_awregion(cptra_ss_nwp_ifu_m_axi_if_awregion),
+        .m_axi_if_awqos   (cptra_ss_nwp_ifu_m_axi_if_awqos   ),
+        .s_axi_if         (cptra_ss_nwp_ifu_ds_m_axi_if         ),
+        .s_axi_if_arcache (cptra_ss_nwp_ifu_ds_m_axi_if_arcache ),
+        .s_axi_if_arprot  (cptra_ss_nwp_ifu_ds_m_axi_if_arprot  ),
+        .s_axi_if_arregion(cptra_ss_nwp_ifu_ds_m_axi_if_arregion),
+        .s_axi_if_arqos   (cptra_ss_nwp_ifu_ds_m_axi_if_arqos   ),
+        .s_axi_if_awcache (cptra_ss_nwp_ifu_ds_m_axi_if_awcache ),
+        .s_axi_if_awprot  (cptra_ss_nwp_ifu_ds_m_axi_if_awprot  ),
+        .s_axi_if_awregion(cptra_ss_nwp_ifu_ds_m_axi_if_awregion),
+        .s_axi_if_awqos   (cptra_ss_nwp_ifu_ds_m_axi_if_awqos   )
+    );
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWVALID = cptra_ss_nwp_ifu_ds_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWADDR[31:0]  = cptra_ss_nwp_ifu_ds_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWID    = cptra_ss_nwp_ifu_ds_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWLEN   = cptra_ss_nwp_ifu_ds_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWSIZE  = cptra_ss_nwp_ifu_ds_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWBURST = cptra_ss_nwp_ifu_ds_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWLOCK  = cptra_ss_nwp_ifu_ds_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWUSER  = cptra_ss_nwp_ifu_ds_m_axi_if.awuser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWCACHE  = cptra_ss_nwp_ifu_ds_m_axi_if_awcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWPROT   = cptra_ss_nwp_ifu_ds_m_axi_if_awprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWQOS    = cptra_ss_nwp_ifu_ds_m_axi_if_awqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWREGION = cptra_ss_nwp_ifu_ds_m_axi_if_awregion;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.awready                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].AWREADY;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WVALID  = cptra_ss_nwp_ifu_ds_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WDATA   = cptra_ss_nwp_ifu_ds_m_axi_if.wdata;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WSTRB   = cptra_ss_nwp_ifu_ds_m_axi_if.wstrb;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WLAST   = cptra_ss_nwp_ifu_ds_m_axi_if.wlast;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WUSER  = cptra_ss_nwp_ifu_ds_m_axi_if.wuser;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.wready                 = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].WREADY;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.bvalid                 = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].BVALID;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.bresp                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].BRESP;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.buser                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].BUSER;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.bid                    = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].BID;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].BREADY  = cptra_ss_nwp_ifu_ds_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARVALID = cptra_ss_nwp_ifu_ds_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARADDR[31:0]  = cptra_ss_nwp_ifu_ds_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARID    = cptra_ss_nwp_ifu_ds_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARLEN   = cptra_ss_nwp_ifu_ds_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARSIZE  = cptra_ss_nwp_ifu_ds_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARBURST = cptra_ss_nwp_ifu_ds_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARLOCK  = cptra_ss_nwp_ifu_ds_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARUSER  = cptra_ss_nwp_ifu_ds_m_axi_if.aruser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARCACHE  = cptra_ss_nwp_ifu_ds_m_axi_if_arcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARPROT   = cptra_ss_nwp_ifu_ds_m_axi_if_arprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARQOS    = cptra_ss_nwp_ifu_ds_m_axi_if_arqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARREGION = cptra_ss_nwp_ifu_ds_m_axi_if_arregion;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.arready                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].ARREADY;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.rvalid                 = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RVALID;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.rdata                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RDATA;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.rresp                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RRESP;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.ruser                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RUSER;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.rid                    = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RID;
+    assign cptra_ss_nwp_ifu_ds_m_axi_if.rlast                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RLAST;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX].RREADY  = cptra_ss_nwp_ifu_ds_m_axi_if.rready;
+
+    //Interconnect 7 - NWP SysBus
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWVALID = cptra_ss_nwp_sb_m_axi_if.awvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWADDR[31:0]  = cptra_ss_nwp_sb_m_axi_if.awaddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWID    = cptra_ss_nwp_sb_m_axi_if.awid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWLEN   = cptra_ss_nwp_sb_m_axi_if.awlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWSIZE  = cptra_ss_nwp_sb_m_axi_if.awsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWBURST = cptra_ss_nwp_sb_m_axi_if.awburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWLOCK  = cptra_ss_nwp_sb_m_axi_if.awlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWUSER  = cptra_ss_nwp_sb_m_axi_if.awuser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWCACHE  = cptra_ss_nwp_sb_m_axi_if_awcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWPROT   = cptra_ss_nwp_sb_m_axi_if_awprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWQOS    = cptra_ss_nwp_sb_m_axi_if_awqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWREGION = cptra_ss_nwp_sb_m_axi_if_awregion;
+    assign cptra_ss_nwp_sb_m_axi_if.awready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].AWREADY;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WVALID  = cptra_ss_nwp_sb_m_axi_if.wvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WDATA   = cptra_ss_nwp_sb_m_axi_if.wdata;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WSTRB   = cptra_ss_nwp_sb_m_axi_if.wstrb;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WLAST   = cptra_ss_nwp_sb_m_axi_if.wlast;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WUSER  = cptra_ss_nwp_sb_m_axi_if.wuser;
+    assign cptra_ss_nwp_sb_m_axi_if.wready               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].WREADY;
+    assign cptra_ss_nwp_sb_m_axi_if.bvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].BVALID;
+    assign cptra_ss_nwp_sb_m_axi_if.bresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].BRESP;
+    assign cptra_ss_nwp_sb_m_axi_if.buser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].BUSER;
+    assign cptra_ss_nwp_sb_m_axi_if.bid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].BID;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].BREADY  = cptra_ss_nwp_sb_m_axi_if.bready;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARVALID = cptra_ss_nwp_sb_m_axi_if.arvalid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARADDR[31:0]  = cptra_ss_nwp_sb_m_axi_if.araddr;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARID    = cptra_ss_nwp_sb_m_axi_if.arid;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARLEN   = cptra_ss_nwp_sb_m_axi_if.arlen;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARSIZE  = cptra_ss_nwp_sb_m_axi_if.arsize;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARBURST = cptra_ss_nwp_sb_m_axi_if.arburst;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARLOCK  = cptra_ss_nwp_sb_m_axi_if.arlock;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARUSER  = cptra_ss_nwp_sb_m_axi_if.aruser;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARCACHE  = cptra_ss_nwp_sb_m_axi_if_arcache;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARPROT   = cptra_ss_nwp_sb_m_axi_if_arprot;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARQOS    = cptra_ss_nwp_sb_m_axi_if_arqos;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARREGION = cptra_ss_nwp_sb_m_axi_if_arregion;
+    assign cptra_ss_nwp_sb_m_axi_if.arready              = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].ARREADY;
+    assign cptra_ss_nwp_sb_m_axi_if.rvalid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RVALID;
+    assign cptra_ss_nwp_sb_m_axi_if.rdata                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RDATA;
+    assign cptra_ss_nwp_sb_m_axi_if.rresp                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RRESP;
+    assign cptra_ss_nwp_sb_m_axi_if.ruser                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RUSER;
+    assign cptra_ss_nwp_sb_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RID;
+    assign cptra_ss_nwp_sb_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RLAST;
+    assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RREADY  = cptra_ss_nwp_sb_m_axi_if.rready;
 
     // //Interconnect 2 Sub - MCU DMA
     // // assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
@@ -1007,6 +1263,14 @@ module caliptra_ss_top_tb
         .rst_b(cptra_ss_rst_b_i)
     );
 
+    axi_mem_if #(
+        .ADDR_WIDTH(CPTRA_SS_NWP_ROM_MEM_ADDR_W),
+        .DATA_WIDTH(CPTRA_SS_NWP_ROM_DATA_W)
+    ) nwp_rom_mem_export_if (
+        .clk(core_clk),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+
     //=================== BEGIN CALIPTRA_TOP_TB ========================
     logic                       cptra_ss_cptra_core_bootfsm_bp_i;
     logic                       cptra_ss_cptra_core_scan_mode_i;
@@ -1276,6 +1540,44 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RREADY;
 
+    //Interconnect 8 Sub - NWP ROM (read-only, write channel tied to 0)
+    assign cptra_ss_nwp_rom_s_axi_if.awvalid                      = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awaddr                       = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awid                         = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awlen                        = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awsize                       = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awburst                      = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awlock                       = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.awuser                       = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].AWREADY     = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.wvalid                       = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.wdata                        = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.wstrb                        = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.wlast                        = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.wuser                        = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].WREADY      = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].BVALID      = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].BRESP       = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].BUSER       = 0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].BID         = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.bready                       = 0;
+    assign cptra_ss_nwp_rom_s_axi_if.arvalid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARVALID;
+    assign cptra_ss_nwp_rom_s_axi_if.araddr                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARADDR[31:0];
+    assign cptra_ss_nwp_rom_s_axi_if.arid                         = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARID;
+    assign cptra_ss_nwp_rom_s_axi_if.arlen                        = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARLEN;
+    assign cptra_ss_nwp_rom_s_axi_if.arsize                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARSIZE;
+    assign cptra_ss_nwp_rom_s_axi_if.arburst                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARBURST;
+    assign cptra_ss_nwp_rom_s_axi_if.arlock                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARLOCK;
+    assign cptra_ss_nwp_rom_s_axi_if.aruser                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARREADY       = cptra_ss_nwp_rom_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RVALID        = cptra_ss_nwp_rom_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RDATA         = 64'(cptra_ss_nwp_rom_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RRESP         = cptra_ss_nwp_rom_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RUSER         = cptra_ss_nwp_rom_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RID           = cptra_ss_nwp_rom_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RLAST         = cptra_ss_nwp_rom_s_axi_if.rlast;
+    assign cptra_ss_nwp_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RREADY;
+
 
 
   //-------------------------------------------------------------------------
@@ -1414,7 +1716,7 @@ module caliptra_ss_top_tb
     wire cptra_ss_sel_od_pp_o;
     logic cptra_ss_i3c_scl_oe;
     logic cptra_ss_i3c_sda_oe;
-    
+
     logic cptra_ss_i3c_recovery_payload_available_o;
     logic cptra_ss_i3c_recovery_image_activated_o;
 
@@ -1449,7 +1751,7 @@ module caliptra_ss_top_tb
         master0.set("add_i3c_dev", 7'h5A); // virtual target 0 static address
         master0.set("add_i3c_dev", 7'h5B); // virtual target 1 static address - recovery target
 `endif
-        
+
         master0.cfg_info.receive_all_txn = 0;
 
 
@@ -1484,7 +1786,7 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mci_soc_config_axi_user_i;
     logic [15:0]  cptra_ss_strap_key_release_key_size_i;
     logic [63:0]  cptra_ss_strap_key_release_base_addr_i;
-    logic         cptra_ss_strap_ocp_lock_en_i; 
+    logic         cptra_ss_strap_ocp_lock_en_i;
     logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
     logic         cptra_ss_mcu_jtag_tck_i;
     logic         cptra_ss_mcu_jtag_tms_i;
@@ -1495,7 +1797,7 @@ module caliptra_ss_top_tb
     logic [63:0]  cptra_ss_strap_caliptra_base_addr_i;
     logic [63:0]  cptra_ss_strap_mci_base_addr_i;
     logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i;
-    logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i; 
+    logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i;
     logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i;
     logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0]  cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
@@ -1515,14 +1817,14 @@ module caliptra_ss_top_tb
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
     assign cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i        = 32'h0;
-    assign cptra_ss_strap_generic_0_i           = 32'h001E_0010; // {16'hIDLE_BIT_STATUS's bit Location in SOC_OTP_CTRL_STATUS, 
+    assign cptra_ss_strap_generic_0_i           = 32'h001E_0010; // {16'hIDLE_BIT_STATUS's bit Location in SOC_OTP_CTRL_STATUS,
                                                                 // 16'hSOC_OTP_CTRL_STATUS's address in SOC_IFC_REG - SOC_OTP_CTRL_BASE_ADDR}
     assign cptra_ss_strap_generic_1_i           = 32'h0000_0080; // {32'hSOC_OTP_CTRL_DIRECT_ACCESS_CMD's address in SOC_IFC_REG - SOC_OTP_CTRL_BASE_ADDR}
     assign cptra_ss_strap_generic_2_i           = 32'h0;
     assign cptra_ss_strap_generic_3_i           = 32'h0;
     assign cptra_ss_debug_intent_i              = 1'b0;
-    assign cptra_ss_strap_external_staging_area_base_addr_i = 64'(`SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR); 
-    assign cptra_ss_strap_key_release_base_addr_i = 64'(SOC_SRAM_BASE_ADDR); 
+    assign cptra_ss_strap_external_staging_area_base_addr_i = 64'(`SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR);
+    assign cptra_ss_strap_key_release_base_addr_i = 64'(SOC_SRAM_BASE_ADDR);
 
     // JTAG DPI
     jtagdpi #(
@@ -1565,7 +1867,7 @@ module caliptra_ss_top_tb
         .cptra_ss_warm_reset_rdc_clk_dis_o,
         .cptra_ss_early_warm_reset_warn_o,
         .cptra_ss_mcu_fw_update_rdc_clk_dis_o,
- 
+
 
     //SoC AXI Interface
         .cptra_ss_cptra_core_s_axi_if_r_sub(cptra_ss_cptra_core_s_axi_if.r_sub),
@@ -1616,6 +1918,47 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_sb_m_axi_if_arregion,
         .cptra_ss_mcu_sb_m_axi_if_awqos,
         .cptra_ss_mcu_sb_m_axi_if_arqos,
+
+    //NWP ROM Sub Interface
+        .cptra_ss_nwp_rom_s_axi_if_r_sub(cptra_ss_nwp_rom_s_axi_if.r_sub),
+        .cptra_ss_nwp_rom_s_axi_if_w_sub(cptra_ss_nwp_rom_s_axi_if.w_sub),
+        .nwp_rom_mem_export_if,
+
+    // NWP AXI Manager INF
+        .cptra_ss_nwp_lsu_m_axi_if_r_mgr(cptra_ss_nwp_lsu_m_axi_if.r_mgr),
+        .cptra_ss_nwp_lsu_m_axi_if_w_mgr(cptra_ss_nwp_lsu_m_axi_if.w_mgr),
+        .cptra_ss_nwp_lsu_m_axi_if_awcache,
+        .cptra_ss_nwp_lsu_m_axi_if_arcache,
+        .cptra_ss_nwp_lsu_m_axi_if_awprot,
+        .cptra_ss_nwp_lsu_m_axi_if_arprot,
+        .cptra_ss_nwp_lsu_m_axi_if_awregion,
+        .cptra_ss_nwp_lsu_m_axi_if_arregion,
+        .cptra_ss_nwp_lsu_m_axi_if_awqos,
+        .cptra_ss_nwp_lsu_m_axi_if_arqos,
+        .cptra_ss_nwp_ifu_m_axi_if_r_mgr(cptra_ss_nwp_ifu_m_axi_if.r_mgr),
+        .cptra_ss_nwp_ifu_m_axi_if_w_mgr(cptra_ss_nwp_ifu_m_axi_if.w_mgr),
+        .cptra_ss_nwp_ifu_m_axi_if_awcache,
+        .cptra_ss_nwp_ifu_m_axi_if_arcache,
+        .cptra_ss_nwp_ifu_m_axi_if_awprot,
+        .cptra_ss_nwp_ifu_m_axi_if_arprot,
+        .cptra_ss_nwp_ifu_m_axi_if_awregion,
+        .cptra_ss_nwp_ifu_m_axi_if_arregion,
+        .cptra_ss_nwp_ifu_m_axi_if_awqos,
+        .cptra_ss_nwp_ifu_m_axi_if_arqos,
+        .cptra_ss_nwp_sb_m_axi_if_r_mgr(cptra_ss_nwp_sb_m_axi_if.r_mgr),
+        .cptra_ss_nwp_sb_m_axi_if_w_mgr(cptra_ss_nwp_sb_m_axi_if.w_mgr),
+        .cptra_ss_nwp_sb_m_axi_if_awcache,
+        .cptra_ss_nwp_sb_m_axi_if_arcache,
+        .cptra_ss_nwp_sb_m_axi_if_awprot,
+        .cptra_ss_nwp_sb_m_axi_if_arprot,
+        .cptra_ss_nwp_sb_m_axi_if_awregion,
+        .cptra_ss_nwp_sb_m_axi_if_arregion,
+        .cptra_ss_nwp_sb_m_axi_if_awqos,
+        .cptra_ss_nwp_sb_m_axi_if_arqos,
+
+    // NWP Memory Export
+        .cptra_ss_nwp0_el2_mem_export,
+
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
@@ -1801,7 +2144,7 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_key_release_key_size_i,
 
         .cptra_ss_mcu_ext_int,
-        
+
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
         .cptra_ss_mcu_halt_req_o,
@@ -1826,7 +2169,9 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
-        .mcu_rom_mem_export_if
+        .mcu_rom_mem_export_if,
+        .cptra_ss_nwp0_el2_mem_export(cptra_ss_nwp0_el2_mem_export),
+        .nwp_rom_mem_export_if
     );
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)

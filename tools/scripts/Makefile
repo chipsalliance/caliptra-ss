@@ -275,8 +275,8 @@ VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
-VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=9
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -340,10 +340,10 @@ vcs-build: $(TBFILES) $(TB_DPI_SRCS)
 
 ############ TEST Simulation ###############################
 
-verilator: mcu_program.hex verilator-build
+verilator: mcu_program.hex nwp_program.hex verilator-build
 	./obj_dir/V$(DUT) $(VERILATOR_RUN_ARGS)
 
-vcs: cptra_program.hex mcu_program.hex vcs-build
+vcs: cptra_program.hex mcu_program.hex nwp_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
@@ -432,6 +432,32 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
+
+############ NWP program hex build ###############################
+# NWP_CARGO_ROOT is the top-level Cargo workspace (two levels above CALIPTRA_SS_ROOT)
+NWP_CARGO_ROOT ?= $(CALIPTRA_SS_ROOT)/../..
+NWP_ELF = $(NWP_CARGO_ROOT)/target/riscv32imc-unknown-none-elf/release/network-rom
+
+nwp_program.hex: $(NWP_ELF)
+	@echo "Generating nwp_program.hex from network-rom ELF"
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata \
+			      --change-section-lma  .text.init-0x90000000 \
+			      --change-section-lma       .text-0x90000000 \
+			      --change-section-lma     .rodata-0x90000000 \
+			      --change-section-lma    .srodata-0x90000000 \
+			      --no-change-warnings $(NWP_ELF) nwp_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .data-0x30000000 \
+			      --change-section-lma      .sdata-0x30000000 \
+			      --change-section-lma        .bss-0x30000000 \
+			      --change-section-lma       .sbss-0x30000000 \
+			      --no-change-warnings $(NWP_ELF) nwp_dccm.hex
+	-$(GCC_PREFIX)-objdump -S $(NWP_ELF) > network-rom.dis
+	@echo "Completed building nwp_program.hex"
+
+$(NWP_ELF):
+	@echo "Building network-rom for riscv32imc"
+	cd $(NWP_CARGO_ROOT) && cargo build --release -p network-rom --target riscv32imc-unknown-none-elf
 
 ############ lmem TEST build ###############################
 mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
