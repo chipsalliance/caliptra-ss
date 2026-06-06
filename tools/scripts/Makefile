@@ -437,6 +437,7 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 # NWP_CARGO_ROOT is the top-level Cargo workspace (two levels above CALIPTRA_SS_ROOT)
 NWP_CARGO_ROOT ?= $(CALIPTRA_SS_ROOT)/../..
 NWP_ELF = $(NWP_CARGO_ROOT)/target/riscv32imc-unknown-none-elf/release/network-rom
+NWP_FEATURES ?=
 
 nwp_program.hex: $(NWP_ELF)
 	@echo "Generating nwp_program.hex from network-rom ELF"
@@ -455,9 +456,11 @@ nwp_program.hex: $(NWP_ELF)
 	-$(GCC_PREFIX)-objdump -S $(NWP_ELF) > network-rom.dis
 	@echo "Completed building nwp_program.hex"
 
+# Always rebuild NWP ELF — cargo handles incremental builds internally
+.PHONY: $(NWP_ELF)
 $(NWP_ELF):
-	@echo "Building network-rom for riscv32imc"
-	cd $(NWP_CARGO_ROOT) && cargo build --release -p network-rom --target riscv32imc-unknown-none-elf
+	@echo "Building network-rom for riscv32imc$(if $(NWP_FEATURES), with features: $(NWP_FEATURES))"
+	cd $(NWP_CARGO_ROOT) && cargo build --release -p network-rom --target riscv32imc-unknown-none-elf $(if $(NWP_FEATURES),--features $(NWP_FEATURES))
 
 ############ lmem TEST build ###############################
 mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)
