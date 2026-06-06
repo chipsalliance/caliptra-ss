@@ -375,6 +375,10 @@ module nwp_top
     output logic        dmi_active
 );
 
+  // jtag_id is supposed to be tied to constants in the top level
+  logic [31:1] jtag_id;
+  assign jtag_id = '0;
+
   css_nwp0_el2_mem_if mem_export ();
   css_nwp0_el2_mem_if mem_export_icache ();
   assign mem_clk                   = mem_export.clk;
