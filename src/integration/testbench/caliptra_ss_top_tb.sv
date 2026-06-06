@@ -592,8 +592,9 @@ module caliptra_ss_top_tb
 
     integer nwp_fd;
     initial nwp_fd = $fopen("nwp_console.log", "w");
-    string  nwp_console_line = "";
-    logic   nwp_first_uart_seen = 1'b0;
+    string      nwp_console_buffer = "";
+    logic [7:0] nwp_prev_char       = 8'h0A;
+    logic       nwp_first_uart_seen = 1'b0;
 
     always @(posedge core_clk or negedge cptra_ss_rst_b_i) begin
         if (!cptra_ss_rst_b_i) begin
@@ -631,26 +632,34 @@ module caliptra_ss_top_tb
                     if ((nc0_aw_received_q ? nc0_aw_addr_q[31:12] :
                          axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[31:12])
                          == 20'h10001) begin
-                        // NWP UART TX register: character is in WDATA[15:8] (byte offset 1)
-                        $fwrite(nwp_fd, "%c",
-                            nc0_w_received_q ? nc0_w_data_q :
-                            axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WDATA[15:8]);
-                        $fflush(nwp_fd);
-                        if (!nwp_first_uart_seen) begin
-                            nwp_first_uart_seen = 1'b1;
-                            $display("[%0t] 4. NWP first UART write received — VeeR core is executing instructions", $time);
-                        end
-                        // Mirror NWP output to sim console, line-buffered
+                        // NWP UART TX register: character is in WDATA[15:8] (byte offset 1).
+                        // Mirrors the MCU console path in caliptra_ss_top_tb_services.sv:212-234:
+                        //   - Per-line "%0t - " timestamp prefix in the .log file
+                        //   - Line-buffered $write to stdout on EOL
+                        // EOL detection uses LF (\n / 8'h0A) only; CR (\r / 8'h0D) is kept in
+                        // the buffer so CRLF-emitting firmware doesn't double-flush.
                         begin
                             automatic logic [7:0] c = nc0_w_received_q ? nc0_w_data_q :
                                 axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WDATA[15:8];
-                            if (c inside {8'h0A, 8'h0D}) begin
-                                if (nwp_console_line != "") begin
-                                    $display("%0t -    NWP: %s", $time, nwp_console_line);
-                                    nwp_console_line = "";
-                                end
-                            end else begin
-                                nwp_console_line = {nwp_console_line, string'(c)};
+                            if (nwp_prev_char == 8'h0A) begin
+                                $fwrite(nwp_fd, "%0t - ", $time);
+                            end
+                            $fwrite(nwp_fd, "%c", c);
+                            if (c == 8'h0A) begin
+                                $fflush(nwp_fd);
+                            end
+                            nwp_prev_char = c;
+
+                            if (!nwp_first_uart_seen) begin
+                                nwp_first_uart_seen = 1'b1;
+                                $display("[%0t] 4. NWP first UART write received — VeeR core is executing instructions", $time);
+                            end
+
+                            // Stdout mirror — line-buffered, MCU-style
+                            nwp_console_buffer = {nwp_console_buffer, string'(c)};
+                            if (c == 8'h0A) begin
+                                $write("%0t -    NWP: %s", $time, nwp_console_buffer);
+                                nwp_console_buffer = "";
                             end
                         end
                     end
