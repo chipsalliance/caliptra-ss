@@ -28,6 +28,7 @@ package otp_ctrl_part_pkg;
   parameter int NumVendorSecretFuses = 16;
   parameter int NumVendorNonSecretFuses = 16;
   parameter int NumRatchetSeedPartitions = 8;
+  parameter bit HasRatchetSeed = (NumRatchetSeedPartitions > 0);
   
   ////////////////////////////////////
   // Scrambling Constants and Types //
@@ -1265,10 +1266,85 @@ package otp_ctrl_part_pkg;
     return otp_keymgr_key;
   endfunction : named_keymgr_key_assign
 
-  parameter int ProdVendorHashNum   = NumVendorPkFuses-1;
-  parameter int ProdVendorHashSize  = CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size;
-  parameter int ProdVendorHashStart = CptraCoreVendorPkHash1Offset;
-  parameter int ProdVendorHashEnd   = CptraCoreVendorPkHash1Offset + (ProdVendorHashSize * ProdVendorHashNum);
+  parameter int PartIdxWidth = $clog2(NumPart);
+
+  typedef struct packed {
+    logic [PartIdxWidth-1:0]     partition_idx;
+    logic [OtpByteAddrWidth-1:0] addr_start;
+    logic [OtpByteAddrWidth-1:0] addr_end;
+  } pk_hash_lock_entry_t;
+
+  parameter int ManufVendorHashLockBits = 1;
+  parameter int ProdVendorHashLockBits  = 15;
+
+  localparam pk_hash_lock_entry_t ProdVendorHashLockMap [ProdVendorHashLockBits] = '{
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash1Offset,
+      addr_end:   CptraCorePqcKeyType1Offset + CptraCorePqcKeyType1Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash2Offset,
+      addr_end:   CptraCorePqcKeyType2Offset + CptraCorePqcKeyType2Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash3Offset,
+      addr_end:   CptraCorePqcKeyType3Offset + CptraCorePqcKeyType3Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash4Offset,
+      addr_end:   CptraCorePqcKeyType4Offset + CptraCorePqcKeyType4Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash5Offset,
+      addr_end:   CptraCorePqcKeyType5Offset + CptraCorePqcKeyType5Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash6Offset,
+      addr_end:   CptraCorePqcKeyType6Offset + CptraCorePqcKeyType6Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash7Offset,
+      addr_end:   CptraCorePqcKeyType7Offset + CptraCorePqcKeyType7Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash8Offset,
+      addr_end:   CptraCorePqcKeyType8Offset + CptraCorePqcKeyType8Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash9Offset,
+      addr_end:   CptraCorePqcKeyType9Offset + CptraCorePqcKeyType9Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash10Offset,
+      addr_end:   CptraCorePqcKeyType10Offset + CptraCorePqcKeyType10Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash11Offset,
+      addr_end:   CptraCorePqcKeyType11Offset + CptraCorePqcKeyType11Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash12Offset,
+      addr_end:   CptraCorePqcKeyType12Offset + CptraCorePqcKeyType12Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash13Offset,
+      addr_end:   CptraCorePqcKeyType13Offset + CptraCorePqcKeyType13Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash14Offset,
+      addr_end:   CptraCorePqcKeyType14Offset + CptraCorePqcKeyType14Size - 1},
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash15Offset,
+      addr_end:   CptraCorePqcKeyType15Offset + CptraCorePqcKeyType15Size - 1}
+  };
+
+  localparam pk_hash_lock_entry_t ManufVendorHashLockMap [ManufVendorHashLockBits] = '{
+    '{partition_idx: PartIdxWidth'(VendorHashesManufPartitionIdx),
+      addr_start: CptraCoreVendorPkHash0Offset,
+      addr_end:   CptraCorePqcKeyType0Offset + CptraCorePqcKeyType0Size - 1}
+  };
+
+  typedef struct packed {
+    logic [PartIdxWidth-1:0] partition_idx;
+  } partition_lock_entry_t;
+
+  localparam partition_lock_entry_t RatchetSeedLockMap [NumRatchetSeedPartitions] = '{
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd0Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd1Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd2Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd3Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd4Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd5Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd6Idx)},
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd7Idx)}
+  };
 
   localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
     otp_ctrl_reg_pkg::SwTestUnlockPartitionDigestOffset,    // SW_TEST_UNLOCK_PARTITION

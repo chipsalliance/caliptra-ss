@@ -29,6 +29,7 @@ package otp_ctrl_part_pkg;
   parameter int NumVendorSecretFuses = ${num_vendor_secret_fuses};
   parameter int NumVendorNonSecretFuses = ${num_vendor_non_secret_fuses};
   parameter int NumRatchetSeedPartitions = ${num_ratchet_seed_partitions};
+  parameter bit HasRatchetSeed = (NumRatchetSeedPartitions > 0);
   
   ////////////////////////////////////
   // Scrambling Constants and Types //
@@ -384,19 +385,55 @@ package otp_ctrl_part_pkg;
     return otp_keymgr_key;
   endfunction : named_keymgr_key_assign
 
-% if num_vendor_pk_fuses <= 1:
-  parameter int ProdVendorHashNum   = 0;
-  parameter int ProdVendorHashSize  = 0;
-  parameter int ProdVendorHashStart = 0;
-  parameter int ProdVendorHashEnd   = 0;
-  % if num_vendor_pk_fuses == 0:
-  parameter int VendorHashesProdPartitionIdx = 0;
-  % endif
+  parameter int PartIdxWidth = $clog2(NumPart);
+
+  typedef struct packed {
+    logic [PartIdxWidth-1:0]     partition_idx;
+    logic [OtpByteAddrWidth-1:0] addr_start;
+    logic [OtpByteAddrWidth-1:0] addr_end;
+  } pk_hash_lock_entry_t;
+
+  parameter int ManufVendorHashLockBits = ${max(1, num_manuf_vendor_pk_fuses)};
+  parameter int ProdVendorHashLockBits  = ${max(1, num_vendor_pk_fuses - num_manuf_vendor_pk_fuses)};
+
+  localparam pk_hash_lock_entry_t ProdVendorHashLockMap [ProdVendorHashLockBits] = '{
+% if (num_vendor_pk_fuses - num_manuf_vendor_pk_fuses) > 0:
+  % for i in range(num_manuf_vendor_pk_fuses, num_vendor_pk_fuses):
+    '{partition_idx: PartIdxWidth'(VendorHashesProdPartitionIdx),
+      addr_start: CptraCoreVendorPkHash${i}Offset,
+      addr_end:   CptraCorePqcKeyType${i}Offset + CptraCorePqcKeyType${i}Size - 1}${"," if i < num_vendor_pk_fuses - 1 else ""}
+  % endfor
 % else:
-  parameter int ProdVendorHashNum   = NumVendorPkFuses-1;
-  parameter int ProdVendorHashSize  = CptraCoreVendorPkHash1Size + CptraCorePqcKeyType1Size;
-  parameter int ProdVendorHashStart = CptraCoreVendorPkHash1Offset;
-  parameter int ProdVendorHashEnd   = CptraCoreVendorPkHash1Offset + (ProdVendorHashSize * ProdVendorHashNum);
+    '{partition_idx: PartIdxWidth'(0),
+      addr_start: {OtpByteAddrWidth{1'b1}},
+      addr_end:   OtpByteAddrWidth'(0)}
+% endif
+  };
+
+  localparam pk_hash_lock_entry_t ManufVendorHashLockMap [ManufVendorHashLockBits] = '{
+% if num_manuf_vendor_pk_fuses > 0:
+  % for i in range(num_manuf_vendor_pk_fuses):
+    '{partition_idx: PartIdxWidth'(VendorHashesManufPartitionIdx),
+      addr_start: CptraCoreVendorPkHash${i}Offset,
+      addr_end:   CptraCorePqcKeyType${i}Offset + CptraCorePqcKeyType${i}Size - 1}${"," if i < num_manuf_vendor_pk_fuses - 1 else ""}
+  % endfor
+% else:
+    '{partition_idx: PartIdxWidth'(0),
+      addr_start: {OtpByteAddrWidth{1'b1}},
+      addr_end:   OtpByteAddrWidth'(0)}
+% endif
+  };
+
+% if num_ratchet_seed_partitions > 0:
+  typedef struct packed {
+    logic [PartIdxWidth-1:0] partition_idx;
+  } partition_lock_entry_t;
+
+  localparam partition_lock_entry_t RatchetSeedLockMap [NumRatchetSeedPartitions] = '{
+  % for i in range(num_ratchet_seed_partitions):
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd${i}Idx)}${"," if i < num_ratchet_seed_partitions - 1 else ""}
+  % endfor
+  };
 % endif
 
   localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
