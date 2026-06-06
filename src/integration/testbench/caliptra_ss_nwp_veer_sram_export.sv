@@ -131,7 +131,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
     `else
 
         if (DCCM_INDEX_DEPTH == 32768) begin : dccm
-	 	 	 	 css_nwp0_ram_32768x39  dccm_bank (
+        css_nwp0_ram_32768x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -146,7 +146,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 16384) begin : dccm
-	 	 	 	 css_nwp0_ram_16384x39  dccm_bank (
+        css_nwp0_ram_16384x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -161,7 +161,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 8192) begin : dccm
-	 	 	 	 css_nwp0_ram_8192x39  dccm_bank (
+        css_nwp0_ram_8192x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -176,7 +176,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 4096) begin : dccm
-	 	 	 	 css_nwp0_ram_4096x39  dccm_bank (
+        css_nwp0_ram_4096x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -191,7 +191,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 3072) begin : dccm
-	 	 	 	 css_nwp0_ram_3072x39  dccm_bank (
+        css_nwp0_ram_3072x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -206,7 +206,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 2048) begin : dccm
-	 	 	 	 css_nwp0_ram_2048x39  dccm_bank (
+        css_nwp0_ram_2048x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -221,7 +221,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 1024) begin : dccm
-	 	 	 	 css_nwp0_ram_1024x39  dccm_bank (
+        css_nwp0_ram_1024x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -236,7 +236,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 512) begin : dccm
-	 	 	 	 css_nwp0_ram_512x39  dccm_bank (
+        css_nwp0_ram_512x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -251,7 +251,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 256) begin : dccm
-	 	 	 	 css_nwp0_ram_256x39  dccm_bank (
+        css_nwp0_ram_256x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),
@@ -266,7 +266,7 @@ if (pt.DCCM_ENABLE == 1) begin: css_nwp0_dccm_enable
                                     );
         end
         else if (DCCM_INDEX_DEPTH == 128) begin : dccm
-	 	 	 	 css_nwp0_ram_128x39  dccm_bank (
+        css_nwp0_ram_128x39  dccm_bank (
                                     // Primary ports
                                     .ME(cptra_ss_nwp0_el2_mem_export.dccm_clken[i]),
                                     .CLK(cptra_ss_nwp0_el2_mem_export.clk),

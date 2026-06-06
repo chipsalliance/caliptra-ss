@@ -509,23 +509,35 @@ module caliptra_ss_top
     // NWP AXI ID assignments
     ///////
     generate
-        if ($bits(cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid) > pt.LSU_BUS_TAG) begin
-            assign cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid[$bits(cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid)-1:pt.LSU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid) > pt.LSU_BUS_TAG) begin : g_nwp_lsu_r
+            assign cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid[
+                $bits(cptra_ss_nwp_lsu_m_axi_if_r_mgr.arid)-1:
+                pt.LSU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid) > pt.LSU_BUS_TAG) begin
-            assign cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid[$bits(cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid)-1:pt.LSU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid) > pt.LSU_BUS_TAG) begin : g_nwp_lsu_w
+            assign cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid[
+                $bits(cptra_ss_nwp_lsu_m_axi_if_w_mgr.awid)-1:
+                pt.LSU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid[$bits(cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid)-1:pt.IFU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid) > pt.IFU_BUS_TAG) begin : g_nwp_ifu_r
+            assign cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid[
+                $bits(cptra_ss_nwp_ifu_m_axi_if_r_mgr.arid)-1:
+                pt.IFU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid) > pt.IFU_BUS_TAG) begin
-            assign cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid[$bits(cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid)-1:pt.IFU_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid) > pt.IFU_BUS_TAG) begin : g_nwp_ifu_w
+            assign cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid[
+                $bits(cptra_ss_nwp_ifu_m_axi_if_w_mgr.awid)-1:
+                pt.IFU_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_nwp_sb_m_axi_if_r_mgr.arid) > pt.SB_BUS_TAG) begin
-            assign cptra_ss_nwp_sb_m_axi_if_r_mgr.arid[$bits(cptra_ss_nwp_sb_m_axi_if_r_mgr.arid)-1:pt.SB_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_sb_m_axi_if_r_mgr.arid) > pt.SB_BUS_TAG) begin : g_nwp_sb_r
+            assign cptra_ss_nwp_sb_m_axi_if_r_mgr.arid[
+                $bits(cptra_ss_nwp_sb_m_axi_if_r_mgr.arid)-1:
+                pt.SB_BUS_TAG] = '0;
         end
-        if ($bits(cptra_ss_nwp_sb_m_axi_if_w_mgr.awid) > pt.SB_BUS_TAG) begin
-            assign cptra_ss_nwp_sb_m_axi_if_w_mgr.awid[$bits(cptra_ss_nwp_sb_m_axi_if_w_mgr.awid)-1:pt.SB_BUS_TAG] = '0;
+        if ($bits(cptra_ss_nwp_sb_m_axi_if_w_mgr.awid) > pt.SB_BUS_TAG) begin : g_nwp_sb_w
+            assign cptra_ss_nwp_sb_m_axi_if_w_mgr.awid[
+                $bits(cptra_ss_nwp_sb_m_axi_if_w_mgr.awid)-1:
+                pt.SB_BUS_TAG] = '0;
         end
     endgenerate
 
