@@ -187,6 +187,7 @@ module caliptra_ss_top
     mci_mcu_sram_if.request cptra_ss_mcu_mbox1_sram_req_if,
     css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
 
+`ifdef ENABLE_NWP
 // Caliptra SS NWP ROM AXI Sub Interface
     axi_if.w_sub cptra_ss_nwp_rom_s_axi_if_w_sub,
     axi_if.r_sub cptra_ss_nwp_rom_s_axi_if_r_sub,
@@ -224,6 +225,7 @@ module caliptra_ss_top
     output logic [3:0] cptra_ss_nwp_sb_m_axi_if_awqos,
     output logic [3:0] cptra_ss_nwp_sb_m_axi_if_arqos,
     css_nwp0_el2_mem_if.veer_sram_icache_src cptra_ss_nwp0_el2_mem_export,
+`endif // ENABLE_NWP
 
 //  MCU MBOX signals
     output logic cptra_ss_soc_mcu_mbox0_data_avail,
@@ -381,6 +383,7 @@ module caliptra_ss_top
     logic [31:0] mcu_trace_rv_i_tval_ip;
 
     // ----------------- NWP Trace within Subsystem -----------------------
+`ifdef ENABLE_NWP
     logic [31:0] nwp_trace_rv_i_insn_ip;
     logic [31:0] nwp_trace_rv_i_address_ip;
     logic        nwp_trace_rv_i_valid_ip;
@@ -388,6 +391,7 @@ module caliptra_ss_top
     logic [ 4:0] nwp_trace_rv_i_ecause_ip;
     logic        nwp_trace_rv_i_interrupt_ip;
     logic [31:0] nwp_trace_rv_i_tval_ip;
+`endif // ENABLE_NWP
 
 
 
@@ -490,6 +494,7 @@ module caliptra_ss_top
     ///////
     // NWP AXI USER assignments
     ///////
+`ifdef ENABLE_NWP
     // ARUSER - NWP reuses MCU strap values for Phase 1
     assign cptra_ss_nwp_lsu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_lsu_axi_user_i;
     assign cptra_ss_nwp_ifu_m_axi_if_r_mgr.aruser = cptra_ss_strap_mcu_ifu_axi_user_i;
@@ -540,6 +545,7 @@ module caliptra_ss_top
                 pt.SB_BUS_TAG] = '0;
         end
     endgenerate
+`endif // ENABLE_NWP
 
     // Fuse controller output is re-organized to feed caliptra-core with its fuse values and valid signal.
      assign uds_field_entrpy_valid = (from_otp_to_clpt_core_broadcast.valid == lc_ctrl_pkg::On) ? 1'b1 : 1'b0;
@@ -1103,6 +1109,7 @@ module caliptra_ss_top
     //=========================================================================-
     // NWP instance
     //=========================================================================-
+`ifdef ENABLE_NWP
     nwp_top nwp_top_i (
         .rst_l                  ( cptra_ss_mcu_rst_b_i ),
         .dbg_rst_l              ( cptra_ss_pwrgood_i ),
@@ -1399,6 +1406,7 @@ module caliptra_ss_top
 
       .s_mem_req_if(nwp_rom_mem_export_if)
     );
+`endif // ENABLE_NWP
 
     //=========================================================================
     // MCI Instance

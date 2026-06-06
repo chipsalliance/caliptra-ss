@@ -287,6 +287,11 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+# Cmdline-cmdline hook: pass EXTRA_VCS_OPTS=... on the make cmdline to append
+# additional vlogan flags WITHOUT clobbering the in-Makefile VCS_COMP_OPTS += chain.
+# Required because passing VCS_COMP_OPTS+=... on the make cmdline wipes all
+# in-Makefile += lines (GNU Make cmdline-precedence rule).
+override VCS_COMP_OPTS += $(EXTRA_VCS_OPTS)
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF

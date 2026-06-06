@@ -155,7 +155,9 @@ module caliptra_ss_top_tb
     logic                                 cptra_ss_soc_hw_debug_en_o;
 
     css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
+`ifdef ENABLE_NWP
     css_nwp0_el2_mem_if         cptra_ss_nwp0_el2_mem_export ();
+`endif // ENABLE_NWP
     el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();
 
     caliptra_ss_bfm_services_if i_caliptra_ss_bfm_services_if();
@@ -301,6 +303,7 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_mcu_ifu_ds_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+`ifdef ENABLE_NWP
     // NWP ROM Sub AXI Interface
     axi_if #(
         .AW(32),
@@ -339,6 +342,7 @@ module caliptra_ss_top_tb
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_nwp_ifu_ds_m_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+`endif // ENABLE_NWP
 
     // // MCU DMA AXI Interface
     // axi_if #(
@@ -403,6 +407,7 @@ module caliptra_ss_top_tb
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_awqos;
     logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos;
 
+`ifdef ENABLE_NWP
     // NWP LSU sideband signals
     logic [3:0] cptra_ss_nwp_lsu_m_axi_if_awcache;
     logic [3:0] cptra_ss_nwp_lsu_m_axi_if_arcache;
@@ -442,6 +447,7 @@ module caliptra_ss_top_tb
     logic [3:0] cptra_ss_nwp_sb_m_axi_if_arregion;
     logic [3:0] cptra_ss_nwp_sb_m_axi_if_awqos;
     logic [3:0] cptra_ss_nwp_sb_m_axi_if_arqos;
+`endif // ENABLE_NWP
 
     // Signal that may be viewed in waves to review the mapping of
     // functional AXI interfaces to indexed ports of the interconnect
@@ -451,9 +457,11 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_SB_IDX            ; // CSS_INTC_MINTF_MCU_SB_IDX     2
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
+`ifdef ENABLE_NWP
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_LSU_IDX           ; // CSS_INTC_MINTF_NWP_LSU_IDX    5
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_IFU_IDX           ; // CSS_INTC_MINTF_NWP_IFU_IDX    6
         logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] NWP_SB_IDX            ; // CSS_INTC_MINTF_NWP_SB_IDX     7
+`endif // ENABLE_NWP
 
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
@@ -463,16 +471,20 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
+`ifdef ENABLE_NWP
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NWP_ROM_IDX      ; // CSS_INTC_SINTF_NWP_ROM_IDX       8
+`endif // ENABLE_NWP
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
         MCU_SB_IDX             : `CSS_INTC_MINTF_MCU_SB_IDX,
         CPTRA_DMA_IDX          : `CSS_INTC_MINTF_CPTRA_DMA_IDX,
         SOC_BFM_IDX            : `CSS_INTC_MINTF_SOC_BFM_IDX,
+`ifdef ENABLE_NWP
         NWP_LSU_IDX            : `CSS_INTC_MINTF_NWP_LSU_IDX,
         NWP_IFU_IDX            : `CSS_INTC_MINTF_NWP_IFU_IDX,
         NWP_SB_IDX             : `CSS_INTC_MINTF_NWP_SB_IDX,
+`endif // ENABLE_NWP
 
         SINTF_NC0_IDX          : `CSS_INTC_SINTF_NC0_IDX,
         SINTF_I3C_IDX          : `CSS_INTC_SINTF_I3C_IDX,
@@ -481,8 +493,12 @@ module caliptra_ss_top_tb
         SINTF_MCI_IDX          : `CSS_INTC_SINTF_MCI_IDX,
         SINTF_FC_IDX           : `CSS_INTC_SINTF_FC_IDX,
         SINTF_SOC_SRAM_IDX     : `CSS_INTC_SINTF_SOC_SRAM_IDX,
+`ifdef ENABLE_NWP
         SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX,
         SINTF_NWP_ROM_IDX      : `CSS_INTC_SINTF_NWP_ROM_IDX
+`else
+        SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX
+`endif // ENABLE_NWP
     };
 
     // AXI Interconnect upper address tie to 0
@@ -498,6 +514,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+`ifdef ENABLE_NWP
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_IFU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
@@ -506,7 +523,42 @@ module caliptra_ss_top_tb
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX   ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
+`else // !ENABLE_NWP
+    // REQ-22 tie-off: when NWP is gated out, nwp_top_i does not exist and the
+    // NWP master/slave slots in the interconnect (LSU/IFU/SB masters, NWP_ROM
+    // and NC0 slaves) would otherwise float to X, tripping AXI4 protocol
+    // checkers. Park them with safe defaults. Phase 3 should replace this with
+    // interconnect size parameterization on ENABLE_NWP (see spec §13).
+    for (genvar nwp_m = 0; nwp_m < 3; nwp_m++) begin : g_nwp_master_tieoff
+        localparam int IDX = (nwp_m == 0) ? `CSS_INTC_MINTF_NWP_LSU_IDX :
+                             (nwp_m == 1) ? `CSS_INTC_MINTF_NWP_IFU_IDX :
+                                            `CSS_INTC_MINTF_NWP_SB_IDX;
+        assign axi_interconnect.mintf_arr[IDX].AWVALID = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].WVALID  = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].WLAST   = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].BREADY  = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].ARVALID = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].RREADY  = 1'b0;
+        assign axi_interconnect.mintf_arr[IDX].AWADDR  = '0;
+        assign axi_interconnect.mintf_arr[IDX].ARADDR  = '0;
+    end
+    // NWP_ROM slave slot — nothing drives it when NWP is off
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].AWREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].WREADY  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].BVALID  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].ARREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RVALID  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RLAST   = 1'b0;
+    // NC0 (NWP UART sink) slave slot
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].WREADY  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BVALID  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARREADY = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RVALID  = 1'b0;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].RLAST   = 1'b0;
+`endif // ENABLE_NWP
 
+`ifdef ENABLE_NWP
     // Slave port 0 — NWP peripheral sink (UART at 0x10001000)
     // Accepts AXI reads/writes so the NWP core does not stall on external accesses.
     // Writes to the NWP UART address are captured and logged to nwp_console.log.
@@ -653,6 +705,7 @@ module caliptra_ss_top_tb
                      `NWP_PATH.trace_rv_i_tval_ip);
         end
     end
+`endif // ENABLE_NWP
 
     //Interconnect 0 - MCU LSU
     // FIXME
@@ -824,6 +877,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_sb_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_SB_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_SB_IDX].RREADY  = cptra_ss_mcu_sb_m_axi_if.rready;
 
+`ifdef ENABLE_NWP
     //Interconnect 5 - NWP LSU
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWVALID = cptra_ss_nwp_lsu_m_axi_if.awvalid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_LSU_IDX].AWADDR[31:0]  = cptra_ss_nwp_lsu_m_axi_if.awaddr[31:0] & 32'hFFFF_FFFC /*FIXME*/;
@@ -983,6 +1037,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_nwp_sb_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RID;
     assign cptra_ss_nwp_sb_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_NWP_SB_IDX].RREADY  = cptra_ss_nwp_sb_m_axi_if.rready;
+`endif // ENABLE_NWP
 
     // //Interconnect 2 Sub - MCU DMA
     // // assign mcu_dma_s_axi_if.awvalid                = axi_interconnect.sintf_arr[2].AWVALID;
@@ -1392,6 +1447,7 @@ module caliptra_ss_top_tb
         .rst_b(cptra_ss_rst_b_i)
     );
 
+`ifdef ENABLE_NWP
     axi_mem_if #(
         .ADDR_WIDTH(CPTRA_SS_NWP_ROM_MEM_ADDR_W),
         .DATA_WIDTH(CPTRA_SS_NWP_ROM_DATA_W)
@@ -1399,6 +1455,7 @@ module caliptra_ss_top_tb
         .clk(core_clk),
         .rst_b(cptra_ss_rst_b_i)
     );
+`endif // ENABLE_NWP
 
     //=================== BEGIN CALIPTRA_TOP_TB ========================
     logic                       cptra_ss_cptra_core_bootfsm_bp_i;
@@ -1669,6 +1726,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RREADY;
 
+`ifdef ENABLE_NWP
     //Interconnect 8 Sub - NWP ROM (read-only, write channel tied to 0)
     assign cptra_ss_nwp_rom_s_axi_if.awvalid                      = 0;
     assign cptra_ss_nwp_rom_s_axi_if.awaddr                       = 0;
@@ -1706,6 +1764,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RID           = cptra_ss_nwp_rom_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RLAST         = cptra_ss_nwp_rom_s_axi_if.rlast;
     assign cptra_ss_nwp_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NWP_ROM_IDX].RREADY;
+`endif // ENABLE_NWP
 
 
 
@@ -2048,6 +2107,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_sb_m_axi_if_awqos,
         .cptra_ss_mcu_sb_m_axi_if_arqos,
 
+`ifdef ENABLE_NWP
     //NWP ROM Sub Interface
         .cptra_ss_nwp_rom_s_axi_if_r_sub(cptra_ss_nwp_rom_s_axi_if.r_sub),
         .cptra_ss_nwp_rom_s_axi_if_w_sub(cptra_ss_nwp_rom_s_axi_if.w_sub),
@@ -2087,6 +2147,7 @@ module caliptra_ss_top_tb
 
     // NWP Memory Export
         .cptra_ss_nwp0_el2_mem_export,
+`endif // ENABLE_NWP
 
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
@@ -2298,9 +2359,11 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
-        .mcu_rom_mem_export_if,
-        .cptra_ss_nwp0_el2_mem_export(cptra_ss_nwp0_el2_mem_export),
-        .nwp_rom_mem_export_if
+        .mcu_rom_mem_export_if
+`ifdef ENABLE_NWP
+        , .cptra_ss_nwp0_el2_mem_export(cptra_ss_nwp0_el2_mem_export)
+        , .nwp_rom_mem_export_if
+`endif // ENABLE_NWP
     );
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)

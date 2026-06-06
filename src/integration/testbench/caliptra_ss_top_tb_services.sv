@@ -43,9 +43,11 @@ import tb_top_pkg::*;
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox1_sram_req_if,
-  axi_mem_if                         mcu_rom_mem_export_if,
-  css_nwp0_el2_mem_if                cptra_ss_nwp0_el2_mem_export,
-  axi_mem_if                         nwp_rom_mem_export_if
+  axi_mem_if                         mcu_rom_mem_export_if
+`ifdef ENABLE_NWP
+  , css_nwp0_el2_mem_if              cptra_ss_nwp0_el2_mem_export
+  , axi_mem_if                       nwp_rom_mem_export_if
+`endif // ENABLE_NWP
 );
 
     `include "caliptra_ss_tb_cmd_list.svh"
@@ -817,6 +819,7 @@ end
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
+`ifdef ENABLE_NWP
         nwp_imem.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s nwp_program.hex");
         if (!hex_file_is_empty) begin
@@ -825,6 +828,7 @@ end
         end else begin
             $display("[%0t]    NWP ROM: nwp_program.hex is empty or missing — NWP will not execute code", $time);
         end
+`endif // ENABLE_NWP
 
         tp = $fopen("mcu_trace_port.csv","w");
         el = $fopen("mcu_exec.log","w");
@@ -840,13 +844,19 @@ end
         preload_css_mcu0_dccm();
         preload_mcu_sram();
 
+`ifdef ENABLE_NWP
         css_nwp0_dummy_dccm_preloader.ram = '{default:8'h0};
         hex_file_is_empty = $system("test -s nwp_dccm.hex");
         if (!hex_file_is_empty) $readmemh("nwp_dccm.hex",css_nwp0_dummy_dccm_preloader.ram,0,32'h0000_3FFF);
 
         preload_css_nwp0_dccm();
+`endif // ENABLE_NWP
 
+`ifdef ENABLE_NWP
         $display("[%0t] 1. Firmware loaded: MCU ROM @ 0x80000000, NWP ROM @ 0x90000000, DCCM and SRAM preloaded", $time);
+`else
+        $display("[%0t] 1. Firmware loaded: MCU ROM @ 0x80000000, DCCM and SRAM preloaded", $time);
+`endif // ENABLE_NWP
 
     end
 
@@ -1020,6 +1030,7 @@ end
         .rdata_o (mcu_rom_mem_export_if.resp.rdata)
     );
 
+`ifdef ENABLE_NWP
     rom #(
         .DEPTH     (CPTRA_SS_NWP_ROM_DEPTH),
         .DATA_WIDTH(CPTRA_SS_NWP_ROM_DATA_W)
@@ -1031,6 +1042,7 @@ end
         .wdata_i ('0),
         .rdata_o (nwp_rom_mem_export_if.resp.rdata)
     );
+`endif // ENABLE_NWP
 
     caliptra_ss_sram #(
         .DEPTH     (MCU_SRAM_DEPTH),
@@ -1094,6 +1106,7 @@ caliptra_ss_veer_sram_export veer_sram_export_inst (
 `define MCU_DRAM(bk) veer_sram_export_inst.css_mcu0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
 `endif
 
+`ifdef ENABLE_NWP
 caliptra_ss_nwp_veer_sram_export nwp_veer_sram_export_inst (
     .sram_error_injection_mode(error_injection_mode),
     .cptra_ss_nwp0_el2_mem_export
@@ -1104,6 +1117,7 @@ caliptra_ss_nwp_veer_sram_export nwp_veer_sram_export_inst (
 `else
 `define NWP_DRAM(bk) nwp_veer_sram_export_inst.css_nwp0_dccm_enable.dccm_loop[bk].dccm.dccm_bank.ram_core
 `endif
+`endif // ENABLE_NWP
 
 
 
@@ -1279,6 +1293,7 @@ endtask
 
 
 // -- NWP DCCM PRELOAD
+`ifdef ENABLE_NWP
 caliptra_sram #(
      .DEPTH     (2048         ), // 16KiB (NWP DCCM is 16KB)
      .DATA_WIDTH(64           ),
@@ -1341,6 +1356,7 @@ task static preload_css_nwp0_dccm;
     $display("CSS NWP0 DCCM pre-load completed");
 
 endtask
+`endif // ENABLE_NWP
 
 
 `ifndef VERILATOR

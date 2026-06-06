@@ -119,9 +119,11 @@ generate
     defparam master_mon[`CSS_INTC_MINTF_CPTRA_DMA_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam master_mon[`CSS_INTC_MINTF_SOC_BFM_IDX  ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     // NWP IFU, LSU, SB i/fs
+`ifdef ENABLE_NWP
     defparam master_mon[`CSS_INTC_MINTF_NWP_LSU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     defparam master_mon[`CSS_INTC_MINTF_NWP_IFU_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     defparam master_mon[`CSS_INTC_MINTF_NWP_SB_IDX ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
 
     // interfaces between Slave BFMs and Interconnect master ports
     for ( i = 0; i < AAXI_INTC_SLAVE_CNT; i++ ) begin: slave_mon
@@ -142,7 +144,9 @@ generate
     defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_SOC_SRAM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     // NWP ROM
+`ifdef ENABLE_NWP
     defparam slave_mon[`CSS_INTC_SINTF_NWP_ROM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
 
 endgenerate
 
@@ -204,9 +208,11 @@ initial begin
     master[`CSS_INTC_MINTF_MCU_SB_IDX].   cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
     master[`CSS_INTC_MINTF_CPTRA_DMA_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     master[`CSS_INTC_MINTF_SOC_BFM_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+`ifdef ENABLE_NWP
     master[`CSS_INTC_MINTF_NWP_LSU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
     master[`CSS_INTC_MINTF_NWP_IFU_IDX].  cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
     master[`CSS_INTC_MINTF_NWP_SB_IDX].   cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
+`endif // ENABLE_NWP
 
     wait (slave[0] != null);
     for (int i=0; i<AAXI_INTC_SLAVE_CNT; i++) begin
@@ -328,11 +334,13 @@ initial begin
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.id_outstanding_depth = 4;
 
         //-- NWP ROM MACRO
+`ifdef ENABLE_NWP
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h9000_0000};
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.limit_address[0] = {32'h0, 32'h90FF_FFFF};
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 3; // set DATA BUS WIDTH to match interconnect native width
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_NWP_ROM_IDX].cfg_info.id_outstanding_depth = 4;
+`endif // ENABLE_NWP
 
 
 
