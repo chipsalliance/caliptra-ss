@@ -451,7 +451,6 @@ addrmap otp_ctrl {
         } LOCK [31:0];
     } MANUF_PK_HASH_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
 
-% if num_ratchet_seed_partitions > 0:
     reg {
         desc = "Volatile write lock for ratchet seed partitions. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.";
         default sw = rw;
@@ -462,7 +461,6 @@ addrmap otp_ctrl {
             reset = 0x0;
         } LOCK [31:0];
     } RATCHET_SEED_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
-% endif
 
     regfile digest_t {
         /* -----------------------------------

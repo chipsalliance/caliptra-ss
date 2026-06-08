@@ -1222,7 +1222,6 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
         ]
       }
 
-% if num_ratchet_seed_partitions > 0:
       { name: "RATCHET_SEED_VOLATILE_LOCK",
         desc: '''
               Volatile write lock for ratchet seed partitions. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.
@@ -1239,7 +1238,6 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
           }
         ]
       }
-% endif
 
       ///////////////////////
       // Integrity Digests //

@@ -424,7 +424,6 @@ package otp_ctrl_part_pkg;
 % endif
   };
 
-% if num_ratchet_seed_partitions > 0:
   typedef struct packed {
     logic [PartIdxWidth-1:0] partition_idx;
   } partition_lock_entry_t;
@@ -434,7 +433,6 @@ package otp_ctrl_part_pkg;
     '{partition_idx: PartIdxWidth'(CptraSsLockHekProd${i}Idx)}${"," if i < num_ratchet_seed_partitions - 1 else ""}
   % endfor
   };
-% endif
 
   localparam [OtpByteAddrWidth-1:0] digest_addrs [0:NumPart-1] = {
 % for part in otp_mmap.config["partitions"]:
