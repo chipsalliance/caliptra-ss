@@ -565,7 +565,6 @@
 #############################################################
 ## Start vendor-specific fuses
 #############################################################
-% if num_manuf_vendor_pk_fuses > 0:
         {
             name:         "VENDOR_HASHES_MANUF_PARTITION",
             variant:      "Unbuffered",
@@ -740,7 +739,6 @@
             desc: '''Vendor revocations production partition.
             '''
         },
-% endif
 % if num_vendor_secret_fuses > 0:
         {
             name:         "VENDOR_SECRET_PROD_PARTITION",

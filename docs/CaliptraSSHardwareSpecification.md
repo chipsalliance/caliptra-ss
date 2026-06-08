@@ -568,7 +568,7 @@ During firmware authentication, the ROM validates the vendor public keys provide
   - The FC implements reset-cleared volatile write locks with sticky W1S CSRs. Writing a 1 sets the selected lock bit, writing 0 cannot clear an already-set bit, and only reset clears these volatile locks.
   - `MANUF_PK_HASH_VOLATILE_LOCK` bit 0 locks `CPTRA_CORE_VENDOR_PK_HASH_0` and `CPTRA_CORE_PQC_KEY_TYPE_0` in `VENDOR_HASHES_MANUF_PARTITION`. This is a volatile-only manufacturing safety lock; lifecycle state already prevents MANUF partition writes after manufacturing closure.
   - `VENDOR_PK_HASH_VOLATILE_LOCK` bit i locks production vendor hash i+1 (`CPTRA_CORE_VENDOR_PK_HASH_1` through `CPTRA_CORE_VENDOR_PK_HASH_N`) and the associated PQC key type entry.
-  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. If `num_ratchet_seed_partitions == 0`, the entire `RATCHET_SEED_VOLATILE_LOCK` CSR is absent and firmware must not access it.
+  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. The CSR is a fixed 32-bit W1S register and is always present in the SoC address map regardless of `num_ratchet_seed_partitions`, but only the first `num_ratchet_seed_partitions` bits carry semantic meaning; bits beyond that index are reserved/RAZ. When `num_ratchet_seed_partitions == 0` the CSR remains accessible for SW ABI stability but never gates a partition.
   - These fields are bit masks with one bit per lock target; they are not threshold or ordinal encodings.
      - **Example:**
 
