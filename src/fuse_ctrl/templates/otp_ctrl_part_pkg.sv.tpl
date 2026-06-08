@@ -428,9 +428,22 @@ package otp_ctrl_part_pkg;
     logic [PartIdxWidth-1:0] partition_idx;
   } partition_lock_entry_t;
 
-  localparam partition_lock_entry_t RatchetSeedLockMap [NumRatchetSeedPartitions] = '{
-  % for i in range(num_ratchet_seed_partitions):
-    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd${i}Idx)}${"," if i < num_ratchet_seed_partitions - 1 else ""}
+<%
+  ratchet_lock_map_size = max(1, num_ratchet_seed_partitions)
+%>\
+  // RatchetSeedLockMap is sized to max(1, NumRatchetSeedPartitions) so the
+  // unpacked array is always at least one element wide (zero-size unpacked
+  // arrays are illegal in IEEE 1800). When num_ratchet_seed_partitions == 0
+  // the single dummy entry is never accessed because every consumer iterates
+  // i from 0 to NumRatchetSeedPartitions-1.
+  localparam int RatchetSeedLockMapSize = ${ratchet_lock_map_size};
+  localparam partition_lock_entry_t RatchetSeedLockMap [RatchetSeedLockMapSize] = '{
+  % for i in range(ratchet_lock_map_size):
+    % if i < num_ratchet_seed_partitions:
+    '{partition_idx: PartIdxWidth'(CptraSsLockHekProd${i}Idx)}${"," if i < ratchet_lock_map_size - 1 else ""}
+    % else:
+    '{partition_idx: PartIdxWidth'(0)}${"," if i < ratchet_lock_map_size - 1 else ""}
+    % endif
   % endfor
   };
 
