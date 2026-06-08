@@ -49,7 +49,7 @@
   - [Partition-Specific Behaviors](#partition-specific-behaviors)
     - [Life Cycle Partition](#life-cycle-partition)
     - [Vendor Test Partition](#vendor-test-partition)
-  - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
+  - [Vendor PK Hash and Revocation Partitions](#vendor-pk-hash-and-revocation-partitions)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
   - [Notes](#notes)
@@ -531,16 +531,15 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 - The vendor test partition is used for FUSE programming smoke checks during manufacturing.
 - Unlike other partitions, ECC uncorrectable errors in this partition do not trigger fatal errors or alerts due to the nature of FUSE smoke checks, which may leave certain FUSE words in inconsistent states.
 
-## Locking the Validated Public Key Partition
+## Vendor PK Hash and Revocation Partitions
 
-<a name="locking-the-validated-public-key-partition"></a>
+<a name="vendor-pk-hash-and-revocation-partitions"></a>
 
-During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
+The fuse controller (FC) implements two distinct partitions for vendor public-key material: one for the public-key hashes themselves and one for the associated revocation metadata.
 
 1. **PK Hash Partition**
    - **Purpose:**
      - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
-     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
    - **Layout & Details:**
      - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.
        - **Default N:** 1
@@ -562,25 +561,7 @@ During firmware authentication, the ROM validates the vendor public keys provide
        - **MLDSA Revocation Bits:** 4 bits (e.g., `CPTRA_CORE_MLDSA_REVOCATION[i]`)
        - **PQC Key Type Bits:** 1-bit one-hot encoded selection (e.g., `CPTRA_CORE_PQC_KEY_TYPE[i]`)
      - **Attributes:**
-       - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
-3. **Volatile Locking Mechanism**
-
-  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
-     - **Example:**
-
-       ```c
-       // Lock the 3rd vendor public key hash and all higher order key hashes
-       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
-       // This operation disables any further write updates to the validated public key fuse region.
-       ```
-
-  -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
-  - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
-  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
-  - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
+       - This partition is kept separate from the PK hash partition so that the revocation bits and PQC type information can be updated at runtime independently of the public key hashes.
 
 ---
 
