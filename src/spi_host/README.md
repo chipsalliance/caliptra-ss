@@ -39,3 +39,18 @@ The implementation however is runtime-configurable to support a wide variety of 
 
 There are also a number of good references describing legacy host implementations for this protocol, which are useful for understanding some of the general needs for a wider range of target devices.
 For instance, the legacy [SPI Block Guide](https://web.archive.org/web/20150413003534/http://www.ee.nmt.edu/~teare/ee308l/datasheets/S12SPIV3.pdf) from Motorola contains a definitive overview of some of the general requirements for a standard SPI host, notably the definitions of SPI clock phase and polarity (CPOL and CPHA).
+
+## Integration Guideline
+
+### Timing
+
+An example [SDC fragment](syn/spi_host_axi_synth.sdc) for the SPI host IP scoped for the IP's [synthesis wrapper](rtl/spi_host_axi_synth.sv) for a host clock of 400 MHz and a SPI frequency of 50 MHz targeting an off-the-shelf SPI flash is provided. When the Caliptra subsystem is integrated into a host SoC, these constraints can be translated to the top-level and be adapted to the target's constraints and technology. 
+
+### Technology-Specific Cells
+
+The SPI host IP features two technology-specific cell instances abstracted away through the `caliptra_prim_generic` library.
+
+|Cell                         |Path                                                                                                            |
+|-----------------------------|----------------------------------------------------------------------------------------------------------------|
+|caliptra_prim_generic_buf    |`u_spi_host_axi.u_caliptra_ss_spi_host.u_reg.u_prim_reg_we_check.u_caliptra_prim_buf.gen_generic.u_impl_generic`|
+|caliptra_prim_generic_flop_en|`u_spi_host_axi.u_caliptra_ss_spi_host.u_spi_core.u_fsm.u_sck_flop.gen_generic.u_impl_generic`                  |
