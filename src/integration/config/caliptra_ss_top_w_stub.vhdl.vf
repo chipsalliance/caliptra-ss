@@ -19,6 +19,8 @@ ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_sof_timer.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_synchronizer.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_pie.m.vhdl
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_pie_recovery_arb.e.vhdl
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_pie_recovery_arb.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_reg_if.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_rgen.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_sie.m.vhdl

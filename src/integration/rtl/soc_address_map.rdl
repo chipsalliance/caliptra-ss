@@ -24,14 +24,24 @@
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
-`include "../../../third_party/usb/systemrdl/usbhsd.rdl"
-`include "../../../third_party/usb/systemrdl/usbhsh.rdl"
+`include "../../../third_party/usb2/systemrdl/usbhsd.rdl"
+`include "../../../third_party/usb2/systemrdl/usbhsh.rdl"
+`include "../../../third_party/usb2/systemrdl/usb_ocp_recovery.rdl"
 
 addrmap soc {
 
     usbhsd usbhsd @ 0x2000_0000;
 
     usbhsh usbhsh @ 0x2000_1000;
+
+    // OCP Recovery v1.1 register file exposed by the USB device subsystem
+    // (third_party/usb2).  Reached via the existing dev_axi tap into the
+    // recovery rb_* reg-bus; consumed by Caliptra firmware as
+    // SS_RECOVERY_IFC_BASE_ADDR per OCP Recovery v1.1 Sec 8.5 / 9.2 and the
+    // streaming-boot handoff pattern (cptra_test_rom_streaming_boot.c).
+    // Lives in the free hole between usbhsh@0x2000_1000 and
+    // I3CCSR@0x2000_4000 per plan.md D0.B and rtl_review.md Section H.
+    usb_ocp_recovery usb_ocp_recovery @ 0x2000_2000;
 
     I3CCSR I3CCSR @ 0x2000_4000;
 

@@ -293,8 +293,8 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
-        # Enable force/release on VHDL targets (needed for USB dev_enable)
-        - '-mx_force'
+        ## Enable force/release on VHDL targets (needed for USB dev_enable)
+        #- '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
         # Enable SVT debug automation: activates protocol and link trace log
         # files (svt_debug.transcript, svt_debug.out) on every USB sim run.

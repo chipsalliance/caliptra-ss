@@ -1182,10 +1182,54 @@ module caliptra_ss_top
         .host_usb_portindicator (),    /* TODO */
         .host_usb_portpower     (),    /* TODO */
         .token_length_counter   (7'b0),/* TODO */
-        .usb_token_length       ()     /* TODO */
+        .usb_token_length       (),    /* TODO */
+
+        // ---- OCP Recovery sideband -------------------------------------
+        // The wrapper has more sideband (rec_active, boot_req, device_reset_req,
+        // fatal_err); only the two below have SS-top sideband outputs today.
+        // The other four remain wrapper-internal until a downstream consumer
+        // wires them up (see phase1 RTL design report - sideband promotion).
+        // rec_trigger / soc_boot_ack are platform-defined OCP Recovery v1.1
+        // sideband inputs (Sec 8) with no SoC driver wired today; tie off to
+        // 0 to prevent X-propagation into u_ocp_recovery.u_a5_fsm (which would
+        // latch X into state_q and corrupt every downstream FSM output).
+        // rec_trigger=0 means "no platform-asserted recovery request" (host-
+        // initiated recovery via the command path still works).  soc_boot_ack=0
+        // means "MCU has not yet acked boot_req"; downstream consumer must be
+        // wired in a later phase.
+        .rec_trigger            (1'b0),
+        .soc_boot_ack           (1'b0),
+        .image_ready            (cptra_ss_usb_image_ready_w),
+        .ocp_firmware_activated (cptra_ss_usb_ocp_firmware_activated_w)
     );
-    assign cptra_ss_usb_recovery_payload_available_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
-    assign cptra_ss_usb_recovery_image_activated_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
+    // Recovery sideband fan-out from usb_core_i (ip_xxx_3516_hs_mem_wrapper)
+    // up to SS-top sideband outputs.  Wrapper exposes:
+    //   image_ready             -> drives recovery_payload_available_o
+    //   ocp_firmware_activated  -> drives recovery_image_activated_o
+    // OCP Recovery v1.1 Sec 8 sideband semantics, in line with how the I3C
+    // recovery interface drives the matching i3c_recovery_* outputs at
+    // caliptra_ss_top.sv lines 1269-1270.
+    //
+    // CDC: as of the Phase 1 OCP recovery delta, u_ocp_recovery runs in
+    // utmi_clk (60 MHz UTMI domain) while these consumers live in
+    // cptra_ss_clk_i.  Both signals are slow, level-mode steady flags
+    // (set once at boot, level-held), so a 2-FF synchronizer per signal
+    // is sufficient.  See usb_rtl_combined_fixes_report.md residual #2.
+    logic [1:0] cptra_ss_usb_image_ready_sync_q;
+    logic [1:0] cptra_ss_usb_ocp_firmware_activated_sync_q;
+    always_ff @(posedge cptra_ss_clk_i or negedge cptra_ss_rst_b_o) begin
+        if (!cptra_ss_rst_b_o) begin
+            cptra_ss_usb_image_ready_sync_q            <= 2'b00;
+            cptra_ss_usb_ocp_firmware_activated_sync_q <= 2'b00;
+        end else begin
+            cptra_ss_usb_image_ready_sync_q            <= {cptra_ss_usb_image_ready_sync_q[0],
+                                                           cptra_ss_usb_image_ready_w};
+            cptra_ss_usb_ocp_firmware_activated_sync_q <= {cptra_ss_usb_ocp_firmware_activated_sync_q[0],
+                                                           cptra_ss_usb_ocp_firmware_activated_w};
+        end
+    end
+    assign cptra_ss_usb_recovery_payload_available_o = cptra_ss_usb_image_ready_sync_q[1];
+    assign cptra_ss_usb_recovery_image_activated_o   = cptra_ss_usb_ocp_firmware_activated_sync_q[1];
     
     //=========================================================================-
     // i3c_core Instance

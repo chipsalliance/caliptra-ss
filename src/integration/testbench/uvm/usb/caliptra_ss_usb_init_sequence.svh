@@ -86,138 +86,43 @@ endclass
 
 // -----------------------------------------------------------------------------
 // Top-level init sequence (started on env.host_agent.virt_sequencer).
+//
+// Extends caliptra_ss_usb_base_sequence which provides:
+//   * pre_start/post_start objection plumbing
+//   * resolve_xfer_handles()
+//   * do_control_xfer() / wait_xfer_done()
+//
+// The body() is decomposed into four protected virtual subtasks so future
+// sequences (e.g. caliptra_ss_usb_ocp_recovery_sequence) that extend
+// caliptra_ss_usb_base_sequence directly can call them via a wrapper or
+// duplicate just the choreography they need.
 // -----------------------------------------------------------------------------
-class caliptra_ss_usb_init_sequence extends uvm_sequence;
+class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_init_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
+
+    // Cached handles populated by resolve_xfer_handles() at the top of body().
+    // Subtasks rely on these so they do not have to redo the resolution.
+    protected svt_usb_agent         host_agent_h;
+    protected svt_usb_configuration usb_cfg;
+    protected svt_usb_status        shared_status;
 
     function new(string name = "caliptra_ss_usb_init_sequence");
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
     // -------------------------------------------------------------------------
-    // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
+    // wait_link_enabled
+    //   Pre : resolve_xfer_handles() has populated this.shared_status.
+    //   Post: shared_status.link_usb_20_state == svt_usb_types::ENABLED.
     //
-    // Uses the canonical VIP pattern: set cfg + fix_anchors before randomize
-    // (see $VIPROOT examples usb_directed_transfers_sequence.sv).
+    // Auto-attach is configured through remote_cfg. Once the modeled device
+    // PHY attaches, the host link state machine performs reset, detects the
+    // HS chirp from the DUT, and transitions to ENABLED. Transfers must not
+    // be issued before ENABLED because the VIP protocol layer has not yet
+    // established negotiated speed and endpoint context.
     // -------------------------------------------------------------------------
-    task do_control_xfer(
-        input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
-        input bit [7:0]  bm_request_type_type,   // svt_usb_types type enum
-        input bit [7:0]  bm_request_type_recip,  // svt_usb_types recipient enum
-        input bit [7:0]  brequest_val,
-        input bit [15:0] wvalue,
-        input bit [15:0] windex,
-        input bit [15:0] wlength,
-        input int        device_addr,
-        input string     label,
-        input svt_usb_configuration usb_cfg = null
-    );
-        svt_usb_transfer req;
-        req = svt_usb_transfer::type_id::create({label, "_req"});
-        start_item(req, -1, p_sequencer.xfer_sequencer);
-        // Set cfg so the transfer's internal constraints can resolve
-        // device/endpoint anchors. fix_anchors(dev_idx, ep_idx, upstream_idx)
-        // tells the randomizer which remote_device_cfg entry to use.
-        if (usb_cfg != null)
-            req.cfg = usb_cfg;
-        req.fix_anchors(0, 0, 0);
-        if (!req.randomize() with {
-                xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
-                device_address                     == device_addr;
-                setup_data_bmrequesttype_dir       == bm_request_type_dir;
-                setup_data_bmrequesttype_type      == bm_request_type_type;
-                setup_data_bmrequesttype_recipient == bm_request_type_recip;
-                setup_data_brequest                == brequest_val;
-                setup_data_w_value                 == wvalue;
-                setup_data_w_index                 == windex;
-                setup_data_w_length                == wlength;
-            }) begin
-            `uvm_fatal("USB_INIT",
-                $sformatf("svt_usb_transfer randomize() failed for %s", label))
-        end
-        finish_item(req, -1);
-        `uvm_info("USB_INIT",
-            $sformatf("CONTROL %s done (addr=%0d wValue=0x%04x wLength=0x%04x)",
-                      label, device_addr, wvalue, wlength), UVM_LOW)
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Helper: wait for host-side transfer completion.
-    //
-    // The xfer_sequencer accepts transfers into its pending queue and
-    // finish_item returns immediately. The protocol scheduler sends the
-    // transfer on the bus asynchronously. We must wait for
-    // NOTIFY_USB_TRANSFER_ENDED before proceeding.
-    //
-    // Pattern from VIP example:
-    //   attach_bulk_xfers_detach_hs_sequence.sv (fork/join on
-    //   host_agent.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger)
-    // -------------------------------------------------------------------------
-    task wait_xfer_done(svt_usb_agent agent_h, string label);
-        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
-        `uvm_info("USB_INIT",
-            $sformatf("Transfer %s completed on bus.", label), UVM_LOW)
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Main body
-    // -------------------------------------------------------------------------
-    virtual task body();
-        svt_usb_agent host_agent_h;
-        uvm_component parent_comp;
-        svt_configuration get_cfg;
-        svt_usb_configuration usb_cfg;
-        svt_usb_status shared_status;
-
-        // Auto-attach is configured through remote_cfg. Once the modeled device
-        // PHY attaches, the host link state machine performs reset, detects the
-        // HS chirp from the DUT, and transitions to ENABLED. Transfers must not
-        // be issued before ENABLED because the VIP protocol layer has not yet
-        // established negotiated speed and endpoint context.
-        `uvm_info("USB_INIT",
-            "Auto-attach in flight via remote_cfg. Waiting for host link to reach ENABLED.",
-            UVM_LOW)
-
-        // ---------------- Resolve VIP handles for wait + transfers ----------------
-        // The svt_usb_status object that the link FSM writes is shared between
-        // the agent (`host_agent_h.shared_status`) and the canonical accessor
-        // (`p_sequencer.get_shared_status(this)`). Empirically verified in
-        // pkg125: both return the same object instance (id matches). We use
-        // the canonical accessor as the recommended path.
-        parent_comp = p_sequencer.get_parent();
-        if (!$cast(host_agent_h, parent_comp)) begin
-            `uvm_fatal("USB_INIT",
-                $sformatf("Could not cast p_sequencer parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
-        end
-
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null) begin
-            `uvm_fatal("USB_INIT",
-                "p_sequencer.get_shared_status(this) returned null.")
-        end
-
-        p_sequencer.get_cfg(get_cfg);
-        if (!$cast(usb_cfg, get_cfg))
-            `uvm_fatal("USB_INIT", "Unable to cast configuration to svt_usb_configuration")
-
+    protected virtual task wait_link_enabled();
         `uvm_info("USB_INIT",
             $sformatf("Waiting for host link to reach ENABLED (current=%p)...",
                       shared_status.link_usb_20_state),
@@ -237,19 +142,38 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
                 end
             end
         join
-        `uvm_info("USB_INIT", "Host link ENABLED. Starting transfers.", UVM_LOW)
+        // Enumeration anchor (UVM_NONE so it survives +svt_debug_opts).
+        `uvm_info("USB_INIT", "Host link ENABLED. Starting transfers.", UVM_NONE)
+    endtask
 
-        // Start SOF (Start of Frame) generation on the host. USB 2.0 hosts
-        // must send SOF/micro-frame packets to keep the link alive; without
-        // this the VIP link state machine will transition to SUSPENDED
-        // within the idle timeout window.
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
-            sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on_seq");
-            sof_on_seq.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("USB_INIT", "SOF generation started.", UVM_LOW)
-        end
+    // -------------------------------------------------------------------------
+    // start_sof
+    //   Pre : Host link is ENABLED.
+    //   Post: VIP host is issuing SOF / micro-frame packets at the configured
+    //         interval; bus will not transition to SUSPENDED due to idle.
+    //
+    // USB 2.0 hosts must send SOF packets to keep the HS link alive; without
+    // them the VIP link state machine will SUSPEND within tinactivity.
+    // -------------------------------------------------------------------------
+    protected virtual task start_sof();
+        svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
+        sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on_seq");
+        sof_on_seq.start(p_sequencer.prot_service_sequencer);
+        // Enumeration anchor (UVM_NONE so it survives +svt_debug_opts).
+        `uvm_info("USB_INIT", "SOF generation started.", UVM_NONE)
+    endtask
 
+    // -------------------------------------------------------------------------
+    // enumerate_to_addr1
+    //   Pre : Link is ENABLED and SOF is running. Device is at default
+    //         address 0. this.usb_cfg / this.host_agent_h are populated.
+    //   Post: Device is at address 1; the host_agent has been reconfigured
+    //         so subsequent transfers target remote_device_cfg[0]
+    //         .device_address == 1. GET_DESCRIPTOR(Device) at addr=0 and
+    //         GET_STATUS at addr=0 have been exercised first to validate
+    //         the default-address EP0 path per USB 2.0 sec 9.1.
+    // -------------------------------------------------------------------------
+    protected virtual task enumerate_to_addr1();
         // Small settling delay before issuing the first SETUP transfer so the
         // DUT firmware has had time to handle the bus-reset interrupt
         // (DRES_C) and re-prime EP0.
@@ -302,7 +226,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
 
-        // USB 2.0 §9.4.6: the device can take up to 2 ms after the status
+        // USB 2.0 sec 9.4.6: the device can take up to 2 ms after the status
         // stage of SET_ADDRESS before it begins responding to its new address
         // ("SetAddress() recovery interval"). Add a settling delay before
         // issuing the first request to the new address so the DUT firmware
@@ -312,15 +236,27 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         // Update the agent's configuration with the new remote device address
         // and call svt_usb_agent::reconfigure() so the contained components
         // (protocol service, packet sequencer) re-snapshot the cfg. Per
-        // class ref, p_sequencer.get_cfg() returns a *reference* — mutating
+        // class ref, p_sequencer.get_cfg() returns a *reference* -- mutating
         // the runtime cfg object alone is necessary but not sufficient
         // because the protocol service holds its own cached snapshot.
         usb_cfg.remote_device_cfg[0].device_address = 7'd1;
         host_agent_h.reconfigure(usb_cfg);
+        // Enumeration anchor (UVM_NONE so it survives +svt_debug_opts).
         `uvm_info("USB_INIT",
             "Reconfigured host agent with remote device_address=1.",
-            UVM_LOW)
+            UVM_NONE)
+    endtask
 
+    // -------------------------------------------------------------------------
+    // select_config_1
+    //   Pre : Device responds at address 1; host_agent has been reconfigured
+    //         (enumerate_to_addr1 post-condition).
+    //   Post: Device is in the Configured state with bConfigurationValue=1.
+    //         Verified by reading GET_CONFIGURATION before and after
+    //         SET_CONFIGURATION(1). Per USB 2.0 sec 9.1.1.5 this transitions
+    //         the device from Address to Configured.
+    // -------------------------------------------------------------------------
+    protected virtual task select_config_1();
         // ---------------- GET_DESCRIPTOR(Device, addr=1) ----------------
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
@@ -356,8 +292,8 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         // ---------------- SET_CONFIGURATION(1) at addr=1 ----------------
         // HOST_TO_DEVICE no-data control: status stage is a ZLP IN from device.
         // Selects configuration 1 (the device descriptor declares
-        // bNumConfigurations=1). Transitions device from Address → Configured
-        // state per USB 2.0 §9.1.1.5.
+        // bNumConfigurations=1). Transitions device from Address to
+        // Configured state per USB 2.0 sec 9.1.1.5.
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type  (svt_usb_types::STANDARD),
@@ -388,8 +324,29 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
             .usb_cfg               (usb_cfg)
         );
         wait_xfer_done(host_agent_h, "GET_CONFIGURATION_addr1_verify");
+    endtask
 
-        `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
+    // -------------------------------------------------------------------------
+    // Main body
+    // Orchestrates the four phases of init: handle resolution -> link wait ->
+    // SOF -> enumerate to addr 1 -> select configuration 1.
+    // -------------------------------------------------------------------------
+    virtual task body();
+        `uvm_info("USB_INIT",
+            "Auto-attach in flight via remote_cfg. Waiting for host link to reach ENABLED.",
+            UVM_LOW)
+
+        // Resolve VIP handles once at the top; subtasks consume the cached
+        // protected members host_agent_h / usb_cfg / shared_status.
+        resolve_xfer_handles(host_agent_h, usb_cfg, shared_status);
+
+        wait_link_enabled();
+        start_sof();
+        enumerate_to_addr1();
+        select_config_1();
+
+        // Terminal enumeration anchor (UVM_NONE so it survives +svt_debug_opts).
+        `uvm_info("USB_INIT", "USB init sequence complete.", UVM_NONE)
     endtask
 
 endclass

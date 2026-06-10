@@ -67,6 +67,11 @@ CALIPTRA_AUX_HEADER_FILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_
 # TODO add some scripting to include fuse_ctrl_mmap.o here
 CALIPTRA_AUX_OFILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(cpt_aux).o)
 CALIPTRA_AUX_LIB_DIR = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_aux))
+ifeq ($(CALIPTRA_TESTNAME),cptra_usb_ocp_recovery)
+CALIPTRA_AUX_HEADER_FILES += $(LIBS_DIR)/cptra_usb_ocp_recovery/cptra_usb_ocp_recovery.h
+CALIPTRA_AUX_OFILES += cptra_usb_ocp_recovery_lib.o
+CALIPTRA_AUX_LIB_DIR += $(LIBS_DIR)/cptra_usb_ocp_recovery
+endif
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -324,7 +329,7 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
-VCS_SIM_OPTS  += -mx_force
+#VCS_SIM_OPTS  += -mx_force
 VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
 ############# VCS Simulation Override Options #############
@@ -367,11 +372,13 @@ vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
 	  -work rtl \
 	  -l vcs_vhdl_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
 	  -work rtl \
 	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \

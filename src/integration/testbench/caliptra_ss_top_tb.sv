@@ -1640,6 +1640,14 @@ module caliptra_ss_top_tb
 
     // Behavioral SRAM model for USB core (512 x 64-bit)
     logic [63:0] usb_sram [0:511];
+    // Zero-init the SRAM and the read-data port to prevent X-prop on the legacy
+    // USB DMA AHB read path when the MCU reads a location it has not yet
+    // written.  Without this, axi_to_ahb's u_r_resp_fifo trips its DataKnown_A
+    // assertion the first time a DMA read of an unwritten address completes.
+    initial begin
+        foreach (usb_sram[i]) usb_sram[i] = '0;
+        cptra_ss_usb_mem_q_i = '0;
+    end
     always @(posedge core_clk) begin
         if (cptra_ss_usb_mem_cs_o) begin
             if (!cptra_ss_usb_mem_web_out_o) begin
@@ -1877,7 +1885,12 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, 32'h0/*`SOC_I3CCSR_I3C_EC_START*/}; // TODO
+    // OCP Recovery v1.1 §8.5 specifies the recovery register set is reached
+    // via the existing recovery-ifc-base-addr strap.  This SS pass routes the
+    // strap to the new USB OCP recovery window (see plan §D0.D and
+    // soc_address_map.rdl).  Caliptra firmware consumes the symbol as
+    // SS_RECOVERY_IFC_BASE_ADDR_L/H per cptra_test_rom_streaming_boot.c.
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_USB_OCP_RECOVERY_BASE_ADDR};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;

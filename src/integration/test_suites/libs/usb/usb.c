@@ -35,11 +35,37 @@ static uint8_t usb_dev_addr_shadow = 0;
 // Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on
 // bus reset (device returns to Default state per USB 2.0 §9.1.1.3).
 static uint8_t usb_current_config = 0;
+static uint32_t usb_transfers_handled = 0;
+
+const uint8_t *(*usb_config_descriptor_override)(uint16_t *len) = 0;
+bool (*usb_class_request_override)(const usb_setup_pkt_t *setup) = 0;
 
 static void usb_devcmdstat_write(uint32_t val) {
     val = (val & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK)
         | (usb_dev_addr_shadow & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, val);
+}
+
+__attribute__((weak))
+const uint8_t *usb_get_config_descriptor(uint16_t *len) {
+    if (usb_config_descriptor_override != 0) {
+        return usb_config_descriptor_override(len);
+    }
+
+    if (len != 0) {
+        *len = 0;
+    }
+
+    return 0;
+}
+
+__attribute__((weak))
+bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
+    if (usb_class_request_override != 0) {
+        return usb_class_request_override(setup);
+    }
+
+    return false;
 }
 
 // Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM writes)
@@ -190,10 +216,22 @@ void usb_read_setup_packet(usb_setup_pkt_t *pkt) {
 }
 
 void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes) {
+    const uint8_t *byte_data = (const uint8_t *)data;
     uint32_t nwords = (nbytes + 3) / 4;
+
     for (uint32_t i = 0; i < nwords; i++) {
-        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET + (i * 4), data[i]);
+        uint32_t word = 0;
+        uint32_t base = i * 4;
+
+        for (uint32_t byte = 0; byte < 4; byte++) {
+            uint32_t idx = base + byte;
+            uint8_t val = (idx < nbytes) ? byte_data[idx] : 0u;
+            word |= ((uint32_t)val) << (byte * 8);
+        }
+
+        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET + (i * 4), word);
     }
+
     uint32_t ep0_in = USB_EP_ENTRY_ACTIVE
                     | USB_EP_ENTRY_NBYTES(nbytes)
                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
@@ -235,6 +273,67 @@ void usb_set_device_address(uint8_t addr) {
     usb_devcmdstat_write(cmd);
 }
 
+void usb_dump_state(const char *tag) {
+    const char *label = (tag != 0) ? tag : "state";
+    uint32_t reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    uint32_t intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
+    uint32_t ep0_out = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
+    uint32_t ep0_in = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
+
+    VPRINTF(LOW,
+            "MCU: USB %s DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
+            label, reg_data, intstat, ep0_out, ep0_in, (int)usb_transfers_handled);
+}
+
+void usb_event_loop(uint32_t max_iters) {
+    for (uint32_t poll_count = 0; (max_iters == 0u) || (poll_count < max_iters); poll_count++) {
+        uint32_t reg_data;
+
+        if (poll_count == 0u) {
+            usb_transfers_handled = 0u;
+        }
+
+        usb_handle_bus_reset();
+
+        reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
+        if ((reg_data & USBHSD_INTSTAT_DEV_INT_MASK) != 0u) {
+            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
+            if ((cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) != 0u) {
+                usb_handle_bus_reset();
+            }
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+        }
+
+        if ((reg_data & USBHSD_INTSTAT_EP0OUT_MASK) != 0u) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+
+            if ((lsu_read_32(SOC_USBHSD_DEVCMDSTAT) & USBHSD_DEVCMDSTAT_SETUP_MASK) != 0u) {
+                (void)usb_handle_control_transfer();
+                usb_transfers_handled++;
+            }
+        }
+
+        if ((USB_EVENT_LOOP_DIAG_PERIOD != 0u)
+            && (poll_count > 0u)
+            && ((poll_count % USB_EVENT_LOOP_DIAG_PERIOD) == 0u)) {
+            VPRINTF(LOW,
+                    "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
+                    (int)poll_count,
+                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT),
+                    lsu_read_32(SOC_USBHSD_INTSTAT),
+                    lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000),
+                    lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008),
+                    (int)usb_transfers_handled);
+        }
+
+        // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
+        // between consecutive polls, which exceeds the host VIP IN-retry
+        // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
+        // 1 us of the EP0OUT interrupt.
+    }
+}
+
 // -------------------------------------------------------------------------
 // usb_handle_control_transfer
 //
@@ -263,13 +362,29 @@ bool usb_handle_control_transfer(void) {
             switch (pkt.bRequest) {
                 case USB_REQ_GET_DESCRIPTOR: {
                     uint8_t desc_type = (uint8_t)((pkt.wValue >> 8) & 0xFF);
+                    const uint8_t *config_desc = 0;
+                    uint16_t config_len = 0;
+                    uint32_t nbytes = 0;
+                    bool have_descriptor = false;
+
                     if (desc_type == USB_DESC_DEVICE) {
-                        uint32_t nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
+                        nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
                         usb_ep0_send_data(usb_default_device_descriptor, nbytes);
+                        have_descriptor = true;
+                    } else if (desc_type == USB_DESC_CONFIGURATION) {
+                        config_desc = usb_get_config_descriptor(&config_len);
+                        if ((config_desc != 0) && (config_len != 0u)) {
+                            nbytes = (pkt.wLength < config_len) ? pkt.wLength : config_len;
+                            usb_ep0_send_data((const uint32_t *)config_desc, nbytes);
+                            have_descriptor = true;
+                        }
+                    }
+
+                    if (have_descriptor) {
                         usb_ep0_arm_out();
                         // Enable IntOnNAK_CO for status-phase detection
                         uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                        cmd |=  USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
+                        cmd |= USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
                         cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
                         usb_devcmdstat_write(cmd);
                         handled = true;
@@ -383,9 +498,13 @@ bool usb_handle_control_transfer(void) {
             usb_ep0_stall();
         }
     } else if (req_type == USB_TYPE_CLASS) {
-        VPRINTF(LOW, "MCU: USB Unhandled Class request recipient=%d bRequest=0x%02x"
-                " - stalling\n", recipient, pkt.bRequest);
-        usb_ep0_stall();
+        if (usb_handle_class_request(&pkt)) {
+            handled = true;
+        } else {
+            VPRINTF(LOW, "MCU: USB Unhandled Class request recipient=%d bRequest=0x%02x"
+                    " - stalling\n", recipient, pkt.bRequest);
+            usb_ep0_stall();
+        }
     } else if (req_type == USB_TYPE_VENDOR) {
         VPRINTF(LOW, "MCU: USB Unhandled Vendor request recipient=%d bRequest=0x%02x"
                 " - stalling\n", recipient, pkt.bRequest);
@@ -414,3 +533,8 @@ bool usb_handle_control_transfer(void) {
 
     return handled;
 }
+
+// The MCU build currently pulls only usb.o from libs/usb. Include the
+// recovery helper implementation here so its symbols link automatically
+// without requiring per-test makefile edits.
+#include "usb_ocp_recovery.c"
