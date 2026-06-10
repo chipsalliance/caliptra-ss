@@ -25,6 +25,7 @@
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
 `include "../../../src/spi_host/rtl/spi_host.rdl"
+`include "../../../src/uart/rtl/uart.rdl"
 
 addrmap soc {
 
@@ -43,4 +44,6 @@ addrmap soc {
     lc_ctrl lc_ctrl @ 0x7000_0400;
 
     spi_host spi_host @ 0x7000_0800;
+
+    uart uart @ 0x7000_0C00;
 };

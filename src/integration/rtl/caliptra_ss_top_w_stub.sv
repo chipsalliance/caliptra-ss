@@ -23,6 +23,7 @@ module caliptra_ss_top_w_stub #(
      parameter SPI_HOST_ENA = 1
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
+    ,parameter UART_ENA = 1
 )(
     input logic cptra_ss_clk_i,
     input logic cptra_ss_cptra_core_jtag_tck_i,
@@ -112,6 +113,9 @@ module caliptra_ss_top_w_stub #(
     axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_spi_host_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_spi_host_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_uart_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    `AXI_S_IF_TIE_OFF(cptra_ss_uart_s_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if)
@@ -319,6 +323,10 @@ module caliptra_ss_top_w_stub #(
     logic [3:0] cptra_ss_sd_en_o;
     logic [3:0] cptra_ss_sd_i;
 
+    logic cptra_ss_uart_rx_i;
+    logic cptra_ss_uart_tx_o;
+    logic cptra_ss_uart_tx_en_o;
+
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
     logic cptra_ss_cptra_core_scan_mode_i;
@@ -383,12 +391,14 @@ module caliptra_ss_top_w_stub #(
         cptra_ss_i3c_sda_i=0;
         cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
         cptra_ss_sd_i = '0;
+        cptra_ss_uart_rx_i = cptra_ss_uart_tx_o;
     end
 
     caliptra_ss_top #(
         .SPI_HOST_ENA(SPI_HOST_ENA),
         .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS),
-        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH)
+        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH),
+        .UART_ENA(UART_ENA)
     )
     caliptra_ss_top_i (
 
@@ -484,7 +494,11 @@ module caliptra_ss_top_w_stub #(
     // SPI AXI interface
         .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
         .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
-    
+
+    // UART AXI interface
+        .cptra_ss_uart_s_axi_if_w_sub(cptra_ss_uart_s_axi_if.w_sub),
+        .cptra_ss_uart_s_axi_if_r_sub(cptra_ss_uart_s_axi_if.r_sub),
+
     //--------------------
     //caliptra core signals
     //--------------------
@@ -627,6 +641,10 @@ module caliptra_ss_top_w_stub #(
         .cptra_ss_sd_o,
         .cptra_ss_sd_en_o,
         .cptra_ss_sd_i,
+
+        .cptra_ss_uart_rx_i,
+        .cptra_ss_uart_tx_o,
+        .cptra_ss_uart_tx_en_o,
 
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,

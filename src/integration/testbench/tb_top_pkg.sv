@@ -67,6 +67,9 @@ package tb_top_pkg;
     localparam SPI_HOST_NUM_CS    = 2;
     localparam SPI_HOST_CMD_DEPTH = 8;
 
+    // UART
+    localparam UART_ENA = 1;
+
     // SOC SRAM
     localparam SOC_SRAM_SIZE_BYTES   = 16384; // 16KB
     localparam SOC_SRAM_ADDR_WIDTH   = $clog2(SOC_SRAM_SIZE_BYTES);
