@@ -485,6 +485,14 @@ ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_shift_register.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_window.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_top.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_rx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_tx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_core.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi_synth.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/datavault/rtl/dv_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/dbg/el2_dbg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/dec/el2_dec_decode_ctl.sv

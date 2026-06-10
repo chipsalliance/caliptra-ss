@@ -103,6 +103,7 @@ requires:
   - mci_top
   - caliptra_top
   - spi_host_subsystem
+  - uart_subsystem
 targets:
   rtl_lint:
     waiver_files:
@@ -222,7 +223,7 @@ global:
         - +define+CALIPTRA_INTERNAL_UART
         - '-noinherit_timescale=1ns/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=9
+        - +define+AAXI_INTC_SLAVE_CNT=10
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
