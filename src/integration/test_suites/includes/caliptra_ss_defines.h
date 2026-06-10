@@ -32,13 +32,15 @@
 #define CSS_MCU0_VEER_INTR_VEC_I3C         2
 #define CSS_MCU0_VEER_INTR_VEC_USB         3
 #define CSS_MCU0_VEER_INTR_VEC_SPIH        4
+#define CSS_MCU0_VEER_INTR_VEC_UART        5
 // Used to tie-off undefined upper intr bits
-#define CSS_MCU0_VEER_INTR_EXT_LSB         5
+#define CSS_MCU0_VEER_INTR_EXT_LSB         6
 
 #define CSS_MCU0_VEER_INTR_PRIO_MCI        8
 #define CSS_MCU0_VEER_INTR_PRIO_I3C        7
 #define CSS_MCU0_VEER_INTR_PRIO_USB        7
 #define CSS_MCU0_VEER_INTR_PRIO_SPIH       7
+#define CSS_MCU0_VEER_INTR_PRIO_UART       7
 #define CSS_MCU0_VEER_INTR_PRIO_BFM        6
 
 

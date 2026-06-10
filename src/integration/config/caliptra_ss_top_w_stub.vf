@@ -842,6 +842,14 @@ ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_shift_register.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_window.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_top.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_rx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_tx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_core.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi_synth.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top_w_stub.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb/icache_macros.svh
