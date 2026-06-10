@@ -36,6 +36,7 @@
     `define CSS_INTC_SINTF_USB_DMA_IDX       9
     `define CSS_INTC_SINTF_USB_DEV_IDX       10
     `define CSS_INTC_SINTF_SPI_IDX           11
+    `define CSS_INTC_SINTF_UART_IDX          12
 
 
 

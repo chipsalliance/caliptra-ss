@@ -141,7 +141,8 @@ generate
     defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_SOC_SRAM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_SPI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
-        
+    defparam slave_mon[`CSS_INTC_SINTF_UART_IDX         ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+
 endgenerate 
 
 // instantiates monitor/protocol checker0 for default slave interface
@@ -350,6 +351,19 @@ initial begin
         slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.id_outstanding_depth = 4;
 
+        //-- UART
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.passive_mode = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.opt_awuser_enable = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.opt_aruser_enable = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.opt_ruser_enable = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.opt_wuser_enable = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.opt_buser_enable = 1;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.base_address[0]  = {32'h0, `SOC_UART_BASE_ADDR}; //64'h7000_0C00;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_UART_BASE_ADDR} + 'hFF; //64'h7000_0CFF;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_UART_IDX].cfg_info.id_outstanding_depth = 4;
+
 
 
 //#1;
@@ -435,6 +449,7 @@ initial begin
         slave[9].set("mem_uninitialized_value", 0);
         slave[10].set("mem_uninitialized_value", 0);
         slave[11].set("mem_uninitialized_value", 0);
+        slave[12].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -449,6 +464,7 @@ initial begin
         test.slave9= slave[9];
         test.slave10= slave[10];
         test.slave11= slave[11];
+        test.slave12= slave[12];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);
