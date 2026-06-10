@@ -1,0 +1,1589 @@
+diff --git a/uart.sv b/uart.sv
+index f79ec4b..95de434 100644
+--- a/uart.sv
++++ b/uart.sv
+@@ -4,13 +4,11 @@
+ //
+ // Description: UART top level wrapper file
+ 
+-`include "prim_assert.sv"
++`include "caliptra_prim_assert.sv"
+ 
+-module uart
+-    import uart_reg_pkg::*;
+-#(
+-  parameter logic [NumAlerts-1:0] AlertAsyncOn = {NumAlerts{1'b1}}
+-) (
++module caliptra_ss_uart
++    import caliptra_ss_uart_reg_pkg::*;
++(
+   input           clk_i,
+   input           rst_ni,
+ 
+@@ -18,9 +16,8 @@ module uart
+   input  tlul_pkg::tl_h2d_t tl_i,
+   output tlul_pkg::tl_d2h_t tl_o,
+ 
+-  // Alerts
+-  input  prim_alert_pkg::alert_rx_t [NumAlerts-1:0] alert_rx_i,
+-  output prim_alert_pkg::alert_tx_t [NumAlerts-1:0] alert_tx_o,
++  // Register integrity error
++  output logic intg_err_o,
+ 
+   // Generic IO
+   input           cio_rx_i,
+@@ -39,11 +36,10 @@ module uart
+   output logic    intr_rx_parity_err_o
+ );
+ 
+-  logic [NumAlerts-1:0] alert_test, alerts;
+-  uart_reg2hw_t reg2hw;
+-  uart_hw2reg_t hw2reg;
++  caliptra_ss_uart_reg2hw_t reg2hw;
++  caliptra_ss_uart_hw2reg_t hw2reg;
+ 
+-  uart_reg_top u_reg (
++  caliptra_ss_uart_reg_top u_reg (
+     .clk_i,
+     .rst_ni,
+     .tl_i,
+@@ -51,10 +47,10 @@ module uart
+     .reg2hw,
+     .hw2reg,
+     // SEC_CM: BUS.INTEGRITY
+-    .intg_err_o (alerts[0])
++    .intg_err_o
+   );
+ 
+-  uart_core uart_core (
++  caliptra_ss_uart_core caliptra_ss_uart_core (
+     .clk_i,
+     .rst_ni,
+     .reg2hw,
+@@ -74,49 +70,22 @@ module uart
+     .intr_rx_parity_err_o
+   );
+ 
+-  // Alerts
+-  assign alert_test = {
+-    reg2hw.alert_test.q &
+-    reg2hw.alert_test.qe
+-  };
+-
+-  for (genvar i = 0; i < NumAlerts; i++) begin : gen_alert_tx
+-    prim_alert_sender #(
+-      .AsyncOn(AlertAsyncOn[i]),
+-      .IsFatal(1'b1)
+-    ) u_prim_alert_sender (
+-      .clk_i,
+-      .rst_ni,
+-      .alert_test_i  ( alert_test[i] ),
+-      .alert_req_i   ( alerts[0]     ),
+-      .alert_ack_o   (               ),
+-      .alert_state_o (               ),
+-      .alert_rx_i    ( alert_rx_i[i] ),
+-      .alert_tx_o    ( alert_tx_o[i] )
+-    );
+-  end
+-
+   // always enable the driving out of TX
+   assign cio_tx_en_o = 1'b1;
+ 
+   // Assert Known for outputs
+-  `ASSERT(TxEnIsOne_A, cio_tx_en_o === 1'b1)
+-  `ASSERT_KNOWN(TxKnown_A, cio_tx_o, clk_i, !rst_ni || !cio_tx_en_o)
+-
+-  // Assert Known for alerts
+-  `ASSERT_KNOWN(AlertsKnown_A, alert_tx_o)
++  `CALIPTRA_ASSERT(TxEnIsOne_A, cio_tx_en_o === 1'b1)
++  `CALIPTRA_ASSERT_KNOWN(TxKnown_A, cio_tx_o, clk_i, !rst_ni || !cio_tx_en_o)
+ 
+   // Assert Known for interrupts
+-  `ASSERT_KNOWN(TxWatermarkKnown_A, intr_tx_watermark_o)
+-  `ASSERT_KNOWN(TxEmptyKnown_A, intr_tx_empty_o)
+-  `ASSERT_KNOWN(RxWatermarkKnown_A, intr_rx_watermark_o)
+-  `ASSERT_KNOWN(TxDoneKnown_A, intr_tx_done_o)
+-  `ASSERT_KNOWN(RxOverflowKnown_A, intr_rx_overflow_o)
+-  `ASSERT_KNOWN(RxFrameErrKnown_A, intr_rx_frame_err_o)
+-  `ASSERT_KNOWN(RxBreakErrKnown_A, intr_rx_break_err_o)
+-  `ASSERT_KNOWN(RxTimeoutKnown_A, intr_rx_timeout_o)
+-  `ASSERT_KNOWN(RxParityErrKnown_A, intr_rx_parity_err_o)
++  `CALIPTRA_ASSERT_KNOWN(TxWatermarkKnown_A, intr_tx_watermark_o)
++  `CALIPTRA_ASSERT_KNOWN(TxEmptyKnown_A, intr_tx_empty_o)
++  `CALIPTRA_ASSERT_KNOWN(RxWatermarkKnown_A, intr_rx_watermark_o)
++  `CALIPTRA_ASSERT_KNOWN(TxDoneKnown_A, intr_tx_done_o)
++  `CALIPTRA_ASSERT_KNOWN(RxOverflowKnown_A, intr_rx_overflow_o)
++  `CALIPTRA_ASSERT_KNOWN(RxFrameErrKnown_A, intr_rx_frame_err_o)
++  `CALIPTRA_ASSERT_KNOWN(RxBreakErrKnown_A, intr_rx_break_err_o)
++  `CALIPTRA_ASSERT_KNOWN(RxTimeoutKnown_A, intr_rx_timeout_o)
++  `CALIPTRA_ASSERT_KNOWN(RxParityErrKnown_A, intr_rx_parity_err_o)
+ 
+-  // Alert assertions for reg_we onehot check
+-  `ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg, alert_tx_o[0])
+ endmodule
+diff --git a/uart_core.sv b/uart_core.sv
+index 38d4dac..a316b88 100644
+--- a/uart_core.sv
++++ b/uart_core.sv
+@@ -5,12 +5,14 @@
+ // Description: UART core module
+ //
+ 
+-module uart_core (
++`include "caliptra_prim_assert.sv"
++
++module caliptra_ss_uart_core (
+   input                  clk_i,
+   input                  rst_ni,
+ 
+-  input  uart_reg_pkg::uart_reg2hw_t reg2hw,
+-  output uart_reg_pkg::uart_hw2reg_t hw2reg,
++  input  caliptra_ss_uart_reg_pkg::caliptra_ss_uart_reg2hw_t reg2hw,
++  output caliptra_ss_uart_reg_pkg::caliptra_ss_uart_hw2reg_t hw2reg,
+ 
+   input                  rx,
+   output logic           tx,
+@@ -26,15 +28,15 @@ module uart_core (
+   output logic           intr_rx_parity_err_o
+ );
+ 
+-  import uart_reg_pkg::*;
++  import caliptra_ss_uart_reg_pkg::*;
+ 
+   localparam int NcoWidth = $bits(reg2hw.ctrl.nco.q);
+   localparam int TxFifoDepthW = $clog2(TxFifoDepth)+1;
+   localparam int RxFifoDepthW = $clog2(RxFifoDepth)+1;
+ 
+   // The design does not support FIFOs deeper than 255 elements with the current CSR layout.
+-  `ASSERT_INIT(TxFifoDepth_A, TxFifoDepth < 256)
+-  `ASSERT_INIT(RxFifoDepth_A, RxFifoDepth < 256)
++  `CALIPTRA_ASSERT_INIT(TxFifoDepth_A, TxFifoDepth < 256)
++  `CALIPTRA_ASSERT_INIT(RxFifoDepth_A, RxFifoDepth < 256)
+ 
+   logic   [15:0]  rx_val_q;
+   logic   [7:0]   uart_rdata;
+@@ -87,9 +89,9 @@ module uart_core (
+   typedef enum logic {
+     BRK_CHK,
+     BRK_WAIT
+-  } break_st_e ;
++  } caliptra_ss_break_st_e ;
+ 
+-  break_st_e break_st_q;
++  caliptra_ss_break_st_e break_st_q;
+ 
+   assign not_allzero_char = rx_valid & (~event_rx_frame_err | (rx_fifo_data != 8'h0));
+   assign allzero_err = event_rx_frame_err & (rx_fifo_data == 8'h0);
+@@ -178,7 +180,7 @@ module uart_core (
+ 
+   assign tx_fifo_rready = tx_uart_idle & tx_fifo_rvalid & tx_enable;
+ 
+-  prim_fifo_sync #(
++  caliptra_prim_fifo_sync #(
+     .Width   (8),
+     .Pass    (1'b0),
+     .Depth   (TxFifoDepth)
+@@ -197,7 +199,7 @@ module uart_core (
+     .err_o   ()
+   );
+ 
+-  uart_tx uart_tx (
++  caliptra_ss_uart_tx caliptra_ss_uart_tx (
+     .clk_i,
+     .rst_ni,
+     .tx_enable,
+@@ -228,7 +230,7 @@ module uart_core (
+   //////////////
+ 
+   //      sync the incoming data
+-  prim_flop_2sync #(
++  caliptra_prim_flop_2sync #(
+     .Width(1),
+     .ResetValue(1'b1)
+   ) sync_rx (
+@@ -261,7 +263,7 @@ module uart_core (
+                   line_loopback ? 1'b1 :
+                   rx_in_mx;
+ 
+-  uart_rx uart_rx (
++  caliptra_ss_uart_rx caliptra_ss_uart_rx (
+     .clk_i,
+     .rst_ni,
+     .rx_enable,
+@@ -279,7 +281,7 @@ module uart_core (
+ 
+   assign rx_fifo_wvalid = rx_valid & ~event_rx_frame_err & ~event_rx_parity_err;
+ 
+-  prim_fifo_sync #(
++  caliptra_prim_fifo_sync #(
+     .Width   (8),
+     .Pass    (1'b0),
+     .Depth   (RxFifoDepth)
+@@ -390,7 +392,7 @@ module uart_core (
+ 
+   // instantiate interrupt hardware primitives
+ 
+-  prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_tx_watermark (
++  caliptra_prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_tx_watermark (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_tx_watermark),
+@@ -403,7 +405,7 @@ module uart_core (
+     .intr_o                 (intr_tx_watermark_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_tx_empty (
++  caliptra_prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_tx_empty (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_tx_empty),
+@@ -416,7 +418,7 @@ module uart_core (
+     .intr_o                 (intr_tx_empty_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_rx_watermark (
++  caliptra_prim_intr_hw #(.Width(1), .IntrT("Status")) intr_hw_rx_watermark (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_watermark),
+@@ -429,7 +431,7 @@ module uart_core (
+     .intr_o                 (intr_rx_watermark_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_tx_done (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_tx_done (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_tx_done),
+@@ -442,7 +444,7 @@ module uart_core (
+     .intr_o                 (intr_tx_done_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_rx_overflow (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_rx_overflow (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_overflow),
+@@ -455,7 +457,7 @@ module uart_core (
+     .intr_o                 (intr_rx_overflow_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_rx_frame_err (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_rx_frame_err (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_frame_err),
+@@ -468,7 +470,7 @@ module uart_core (
+     .intr_o                 (intr_rx_frame_err_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_rx_break_err (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_rx_break_err (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_break_err),
+@@ -481,7 +483,7 @@ module uart_core (
+     .intr_o                 (intr_rx_break_err_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_rx_timeout (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_rx_timeout (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_timeout),
+@@ -494,7 +496,7 @@ module uart_core (
+     .intr_o                 (intr_rx_timeout_o)
+   );
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_rx_parity_err (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_rx_parity_err (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_rx_parity_err),
+@@ -507,8 +509,4 @@ module uart_core (
+     .intr_o                 (intr_rx_parity_err_o)
+   );
+ 
+-  // unused registers
+-  logic unused_reg;
+-  assign unused_reg = ^reg2hw.alert_test;
+-
+ endmodule
+diff --git a/uart_reg_pkg.sv b/uart_reg_pkg.sv
+index 56f5aaf..715082e 100644
+--- a/uart_reg_pkg.sv
++++ b/uart_reg_pkg.sv
+@@ -4,16 +4,18 @@
+ //
+ // Register Package auto-generated by `reggen` containing data structure
+ 
+-package uart_reg_pkg;
++package caliptra_ss_uart_reg_pkg;
+ 
+   // Param list
+   parameter int RxFifoDepth = 64;
+   parameter int TxFifoDepth = 32;
+-  parameter int NumAlerts = 1;
+ 
+   // Address widths within the block
+   parameter int BlockAw = 6;
+ 
++  // Number of registers for every interface
++  parameter int NumRegs = 12;
++
+   ////////////////////////////
+   // Typedefs for registers //
+   ////////////////////////////
+@@ -46,7 +48,7 @@ package uart_reg_pkg;
+     struct packed {
+       logic        q;
+     } tx_watermark;
+-  } uart_reg2hw_intr_state_reg_t;
++  } caliptra_ss_uart_reg2hw_intr_state_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -76,7 +78,7 @@ package uart_reg_pkg;
+     struct packed {
+       logic        q;
+     } tx_watermark;
+-  } uart_reg2hw_intr_enable_reg_t;
++  } caliptra_ss_uart_reg2hw_intr_enable_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -115,12 +117,7 @@ package uart_reg_pkg;
+       logic        q;
+       logic        qe;
+     } tx_watermark;
+-  } uart_reg2hw_intr_test_reg_t;
+-
+-  typedef struct packed {
+-    logic        q;
+-    logic        qe;
+-  } uart_reg2hw_alert_test_reg_t;
++  } caliptra_ss_uart_reg2hw_intr_test_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -150,7 +147,7 @@ package uart_reg_pkg;
+     struct packed {
+       logic        q;
+     } tx;
+-  } uart_reg2hw_ctrl_reg_t;
++  } caliptra_ss_uart_reg2hw_ctrl_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -177,17 +174,17 @@ package uart_reg_pkg;
+       logic        q;
+       logic        re;
+     } txfull;
+-  } uart_reg2hw_status_reg_t;
++  } caliptra_ss_uart_reg2hw_status_reg_t;
+ 
+   typedef struct packed {
+     logic [7:0]  q;
+     logic        re;
+-  } uart_reg2hw_rdata_reg_t;
++  } caliptra_ss_uart_reg2hw_rdata_reg_t;
+ 
+   typedef struct packed {
+     logic [7:0]  q;
+     logic        qe;
+-  } uart_reg2hw_wdata_reg_t;
++  } caliptra_ss_uart_reg2hw_wdata_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -206,7 +203,7 @@ package uart_reg_pkg;
+       logic        q;
+       logic        qe;
+     } rxrst;
+-  } uart_reg2hw_fifo_ctrl_reg_t;
++  } caliptra_ss_uart_reg2hw_fifo_ctrl_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -215,7 +212,7 @@ package uart_reg_pkg;
+     struct packed {
+       logic        q;
+     } txen;
+-  } uart_reg2hw_ovrd_reg_t;
++  } caliptra_ss_uart_reg2hw_ovrd_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -224,25 +221,25 @@ package uart_reg_pkg;
+     struct packed {
+       logic [23:0] q;
+     } val;
+-  } uart_reg2hw_timeout_ctrl_reg_t;
++  } caliptra_ss_uart_reg2hw_timeout_ctrl_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic        d;
+       logic        de;
+-    } tx_watermark;
++    } tx_empty;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rx_watermark;
++    } rx_parity_err;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } tx_done;
++    } rx_timeout;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rx_overflow;
++    } rx_break_err;
+     struct packed {
+       logic        d;
+       logic        de;
+@@ -250,109 +247,107 @@ package uart_reg_pkg;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rx_break_err;
++    } rx_overflow;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rx_timeout;
++    } tx_done;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rx_parity_err;
++    } rx_watermark;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } tx_empty;
+-  } uart_hw2reg_intr_state_reg_t;
++    } tx_watermark;
++  } caliptra_ss_uart_hw2reg_intr_state_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic        d;
+-    } txfull;
++    } rxempty;
+     struct packed {
+       logic        d;
+-    } rxfull;
++    } rxidle;
+     struct packed {
+       logic        d;
+-    } txempty;
++    } txidle;
+     struct packed {
+       logic        d;
+-    } txidle;
++    } txempty;
+     struct packed {
+       logic        d;
+-    } rxidle;
++    } rxfull;
+     struct packed {
+       logic        d;
+-    } rxempty;
+-  } uart_hw2reg_status_reg_t;
++    } txfull;
++  } caliptra_ss_uart_hw2reg_status_reg_t;
+ 
+   typedef struct packed {
+     logic [7:0]  d;
+-  } uart_hw2reg_rdata_reg_t;
++  } caliptra_ss_uart_hw2reg_rdata_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic [2:0]  d;
+       logic        de;
+-    } rxilvl;
++    } txilvl;
+     struct packed {
+       logic [2:0]  d;
+       logic        de;
+-    } txilvl;
+-  } uart_hw2reg_fifo_ctrl_reg_t;
++    } rxilvl;
++  } caliptra_ss_uart_hw2reg_fifo_ctrl_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic [7:0]  d;
+-    } txlvl;
++    } rxlvl;
+     struct packed {
+       logic [7:0]  d;
+-    } rxlvl;
+-  } uart_hw2reg_fifo_status_reg_t;
++    } txlvl;
++  } caliptra_ss_uart_hw2reg_fifo_status_reg_t;
+ 
+   typedef struct packed {
+     logic [15:0] d;
+-  } uart_hw2reg_val_reg_t;
++  } caliptra_ss_uart_hw2reg_val_reg_t;
+ 
+   // Register -> HW type
+   typedef struct packed {
+-    uart_reg2hw_intr_state_reg_t intr_state; // [131:123]
+-    uart_reg2hw_intr_enable_reg_t intr_enable; // [122:114]
+-    uart_reg2hw_intr_test_reg_t intr_test; // [113:96]
+-    uart_reg2hw_alert_test_reg_t alert_test; // [95:94]
+-    uart_reg2hw_ctrl_reg_t ctrl; // [93:69]
+-    uart_reg2hw_status_reg_t status; // [68:57]
+-    uart_reg2hw_rdata_reg_t rdata; // [56:48]
+-    uart_reg2hw_wdata_reg_t wdata; // [47:39]
+-    uart_reg2hw_fifo_ctrl_reg_t fifo_ctrl; // [38:27]
+-    uart_reg2hw_ovrd_reg_t ovrd; // [26:25]
+-    uart_reg2hw_timeout_ctrl_reg_t timeout_ctrl; // [24:0]
+-  } uart_reg2hw_t;
++    caliptra_ss_uart_reg2hw_intr_state_reg_t intr_state; // [129:121]
++    caliptra_ss_uart_reg2hw_intr_enable_reg_t intr_enable; // [120:112]
++    caliptra_ss_uart_reg2hw_intr_test_reg_t intr_test; // [111:94]
++    caliptra_ss_uart_reg2hw_ctrl_reg_t ctrl; // [93:69]
++    caliptra_ss_uart_reg2hw_status_reg_t status; // [68:57]
++    caliptra_ss_uart_reg2hw_rdata_reg_t rdata; // [56:48]
++    caliptra_ss_uart_reg2hw_wdata_reg_t wdata; // [47:39]
++    caliptra_ss_uart_reg2hw_fifo_ctrl_reg_t fifo_ctrl; // [38:27]
++    caliptra_ss_uart_reg2hw_ovrd_reg_t ovrd; // [26:25]
++    caliptra_ss_uart_reg2hw_timeout_ctrl_reg_t timeout_ctrl; // [24:0]
++  } caliptra_ss_uart_reg2hw_t;
+ 
+   // HW -> register type
+   typedef struct packed {
+-    uart_hw2reg_intr_state_reg_t intr_state; // [71:54]
+-    uart_hw2reg_status_reg_t status; // [53:48]
+-    uart_hw2reg_rdata_reg_t rdata; // [47:40]
+-    uart_hw2reg_fifo_ctrl_reg_t fifo_ctrl; // [39:32]
+-    uart_hw2reg_fifo_status_reg_t fifo_status; // [31:16]
+-    uart_hw2reg_val_reg_t val; // [15:0]
+-  } uart_hw2reg_t;
++    caliptra_ss_uart_hw2reg_intr_state_reg_t intr_state; // [71:54]
++    caliptra_ss_uart_hw2reg_status_reg_t status; // [53:48]
++    caliptra_ss_uart_hw2reg_rdata_reg_t rdata; // [47:40]
++    caliptra_ss_uart_hw2reg_fifo_ctrl_reg_t fifo_ctrl; // [39:32]
++    caliptra_ss_uart_hw2reg_fifo_status_reg_t fifo_status; // [31:16]
++    caliptra_ss_uart_hw2reg_val_reg_t val; // [15:0]
++  } caliptra_ss_uart_hw2reg_t;
+ 
+   // Register offsets
+   parameter logic [BlockAw-1:0] UART_INTR_STATE_OFFSET = 6'h 0;
+   parameter logic [BlockAw-1:0] UART_INTR_ENABLE_OFFSET = 6'h 4;
+   parameter logic [BlockAw-1:0] UART_INTR_TEST_OFFSET = 6'h 8;
+-  parameter logic [BlockAw-1:0] UART_ALERT_TEST_OFFSET = 6'h c;
+-  parameter logic [BlockAw-1:0] UART_CTRL_OFFSET = 6'h 10;
+-  parameter logic [BlockAw-1:0] UART_STATUS_OFFSET = 6'h 14;
+-  parameter logic [BlockAw-1:0] UART_RDATA_OFFSET = 6'h 18;
+-  parameter logic [BlockAw-1:0] UART_WDATA_OFFSET = 6'h 1c;
+-  parameter logic [BlockAw-1:0] UART_FIFO_CTRL_OFFSET = 6'h 20;
+-  parameter logic [BlockAw-1:0] UART_FIFO_STATUS_OFFSET = 6'h 24;
+-  parameter logic [BlockAw-1:0] UART_OVRD_OFFSET = 6'h 28;
+-  parameter logic [BlockAw-1:0] UART_VAL_OFFSET = 6'h 2c;
+-  parameter logic [BlockAw-1:0] UART_TIMEOUT_CTRL_OFFSET = 6'h 30;
++  parameter logic [BlockAw-1:0] UART_CTRL_OFFSET = 6'h c;
++  parameter logic [BlockAw-1:0] UART_STATUS_OFFSET = 6'h 10;
++  parameter logic [BlockAw-1:0] UART_RDATA_OFFSET = 6'h 14;
++  parameter logic [BlockAw-1:0] UART_WDATA_OFFSET = 6'h 18;
++  parameter logic [BlockAw-1:0] UART_FIFO_CTRL_OFFSET = 6'h 1c;
++  parameter logic [BlockAw-1:0] UART_FIFO_STATUS_OFFSET = 6'h 20;
++  parameter logic [BlockAw-1:0] UART_OVRD_OFFSET = 6'h 24;
++  parameter logic [BlockAw-1:0] UART_VAL_OFFSET = 6'h 28;
++  parameter logic [BlockAw-1:0] UART_TIMEOUT_CTRL_OFFSET = 6'h 2c;
+ 
+   // Reset values for hwext registers and their fields
+   parameter logic [8:0] UART_INTR_TEST_RESVAL = 9'h 0;
+@@ -365,8 +360,6 @@ package uart_reg_pkg;
+   parameter logic [0:0] UART_INTR_TEST_RX_TIMEOUT_RESVAL = 1'h 0;
+   parameter logic [0:0] UART_INTR_TEST_RX_PARITY_ERR_RESVAL = 1'h 0;
+   parameter logic [0:0] UART_INTR_TEST_TX_EMPTY_RESVAL = 1'h 0;
+-  parameter logic [0:0] UART_ALERT_TEST_RESVAL = 1'h 0;
+-  parameter logic [0:0] UART_ALERT_TEST_FATAL_FAULT_RESVAL = 1'h 0;
+   parameter logic [5:0] UART_STATUS_RESVAL = 6'h 3c;
+   parameter logic [0:0] UART_STATUS_TXEMPTY_RESVAL = 1'h 1;
+   parameter logic [0:0] UART_STATUS_TXIDLE_RESVAL = 1'h 1;
+@@ -381,7 +374,6 @@ package uart_reg_pkg;
+     UART_INTR_STATE,
+     UART_INTR_ENABLE,
+     UART_INTR_TEST,
+-    UART_ALERT_TEST,
+     UART_CTRL,
+     UART_STATUS,
+     UART_RDATA,
+@@ -391,23 +383,22 @@ package uart_reg_pkg;
+     UART_OVRD,
+     UART_VAL,
+     UART_TIMEOUT_CTRL
+-  } uart_id_e;
++  } caliptra_ss_uart_id_e;
+ 
+   // Register width information to check illegal writes
+-  parameter logic [3:0] UART_PERMIT [13] = '{
++  parameter logic [3:0] UART_PERMIT [12] = '{
+     4'b 0011, // index[ 0] UART_INTR_STATE
+     4'b 0011, // index[ 1] UART_INTR_ENABLE
+     4'b 0011, // index[ 2] UART_INTR_TEST
+-    4'b 0001, // index[ 3] UART_ALERT_TEST
+-    4'b 1111, // index[ 4] UART_CTRL
+-    4'b 0001, // index[ 5] UART_STATUS
+-    4'b 0001, // index[ 6] UART_RDATA
+-    4'b 0001, // index[ 7] UART_WDATA
+-    4'b 0001, // index[ 8] UART_FIFO_CTRL
+-    4'b 0111, // index[ 9] UART_FIFO_STATUS
+-    4'b 0001, // index[10] UART_OVRD
+-    4'b 0011, // index[11] UART_VAL
+-    4'b 1111  // index[12] UART_TIMEOUT_CTRL
++    4'b 1111, // index[ 3] UART_CTRL
++    4'b 0001, // index[ 4] UART_STATUS
++    4'b 0001, // index[ 5] UART_RDATA
++    4'b 0001, // index[ 6] UART_WDATA
++    4'b 0001, // index[ 7] UART_FIFO_CTRL
++    4'b 0111, // index[ 8] UART_FIFO_STATUS
++    4'b 0001, // index[ 9] UART_OVRD
++    4'b 0011, // index[10] UART_VAL
++    4'b 1111  // index[11] UART_TIMEOUT_CTRL
+   };
+ 
+ endpackage
+diff --git a/uart_reg_top.sv b/uart_reg_top.sv
+index 6648443..8900423 100644
+--- a/uart_reg_top.sv
++++ b/uart_reg_top.sv
+@@ -4,22 +4,22 @@
+ //
+ // Register Top module auto-generated by `reggen`
+ 
+-`include "prim_assert.sv"
++`include "caliptra_prim_assert.sv"
+ 
+-module uart_reg_top (
++module caliptra_ss_uart_reg_top (
+   input clk_i,
+   input rst_ni,
+   input  tlul_pkg::tl_h2d_t tl_i,
+   output tlul_pkg::tl_d2h_t tl_o,
+   // To HW
+-  output uart_reg_pkg::uart_reg2hw_t reg2hw, // Write
+-  input  uart_reg_pkg::uart_hw2reg_t hw2reg, // Read
++  output caliptra_ss_uart_reg_pkg::caliptra_ss_uart_reg2hw_t reg2hw, // Write
++  input  caliptra_ss_uart_reg_pkg::caliptra_ss_uart_hw2reg_t hw2reg, // Read
+ 
+   // Integrity check errors
+   output logic intg_err_o
+ );
+ 
+-  import uart_reg_pkg::* ;
++  import caliptra_ss_uart_reg_pkg::* ;
+ 
+   localparam int AW = 6;
+   localparam int DW = 32;
+@@ -52,9 +52,9 @@ module uart_reg_top (
+ 
+   // also check for spurious write enables
+   logic reg_we_err;
+-  logic [12:0] reg_we_check;
+-  prim_reg_we_check #(
+-    .OneHotWidth(13)
++  logic [11:0] reg_we_check;
++  caliptra_prim_reg_we_check #(
++    .OneHotWidth(12)
+   ) u_prim_reg_we_check (
+     .clk_i(clk_i),
+     .rst_ni(rst_ni),
+@@ -100,7 +100,7 @@ module uart_reg_top (
+     .tl_i (tl_reg_h2d),
+     .tl_o (tl_reg_d2h),
+ 
+-    .en_ifetch_i(prim_mubi_pkg::MuBi4False),
++    .en_ifetch_i(caliptra_prim_mubi_pkg::MuBi4False),
+     .intg_error_o(),
+ 
+     .we_o    (reg_we),
+@@ -166,8 +166,6 @@ module uart_reg_top (
+   logic intr_test_rx_timeout_wd;
+   logic intr_test_rx_parity_err_wd;
+   logic intr_test_tx_empty_wd;
+-  logic alert_test_we;
+-  logic alert_test_wd;
+   logic ctrl_we;
+   logic ctrl_tx_qs;
+   logic ctrl_tx_wd;
+@@ -224,9 +222,9 @@ module uart_reg_top (
+   // Register instances
+   // R[intr_state]: V(False)
+   //   F[tx_watermark]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_intr_state_tx_watermark (
+@@ -251,9 +249,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_watermark]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_watermark (
+@@ -278,9 +276,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[tx_done]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_tx_done (
+@@ -305,9 +303,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_overflow]: 3:3
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_overflow (
+@@ -332,9 +330,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_frame_err]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_frame_err (
+@@ -359,9 +357,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_break_err]: 5:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_break_err (
+@@ -386,9 +384,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_timeout]: 6:6
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_timeout (
+@@ -413,9 +411,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_parity_err]: 7:7
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_rx_parity_err (
+@@ -440,9 +438,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[tx_empty]: 8:8
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_intr_state_tx_empty (
+@@ -469,9 +467,9 @@ module uart_reg_top (
+ 
+   // R[intr_enable]: V(False)
+   //   F[tx_watermark]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_tx_watermark (
+@@ -496,9 +494,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_watermark]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_watermark (
+@@ -523,9 +521,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[tx_done]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_tx_done (
+@@ -550,9 +548,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_overflow]: 3:3
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_overflow (
+@@ -577,9 +575,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_frame_err]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_frame_err (
+@@ -604,9 +602,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_break_err]: 5:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_break_err (
+@@ -631,9 +629,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_timeout]: 6:6
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_timeout (
+@@ -658,9 +656,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx_parity_err]: 7:7
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_rx_parity_err (
+@@ -685,9 +683,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[tx_empty]: 8:8
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_tx_empty (
+@@ -717,7 +715,7 @@ module uart_reg_top (
+   logic [8:0] intr_test_flds_we;
+   assign intr_test_qe = &intr_test_flds_we;
+   //   F[tx_watermark]: 0:0
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_tx_watermark (
+     .re     (1'b0),
+@@ -733,7 +731,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.tx_watermark.qe = intr_test_qe;
+ 
+   //   F[rx_watermark]: 1:1
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_watermark (
+     .re     (1'b0),
+@@ -749,7 +747,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_watermark.qe = intr_test_qe;
+ 
+   //   F[tx_done]: 2:2
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_tx_done (
+     .re     (1'b0),
+@@ -765,7 +763,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.tx_done.qe = intr_test_qe;
+ 
+   //   F[rx_overflow]: 3:3
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_overflow (
+     .re     (1'b0),
+@@ -781,7 +779,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_overflow.qe = intr_test_qe;
+ 
+   //   F[rx_frame_err]: 4:4
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_frame_err (
+     .re     (1'b0),
+@@ -797,7 +795,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_frame_err.qe = intr_test_qe;
+ 
+   //   F[rx_break_err]: 5:5
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_break_err (
+     .re     (1'b0),
+@@ -813,7 +811,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_break_err.qe = intr_test_qe;
+ 
+   //   F[rx_timeout]: 6:6
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_timeout (
+     .re     (1'b0),
+@@ -829,7 +827,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_timeout.qe = intr_test_qe;
+ 
+   //   F[rx_parity_err]: 7:7
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_rx_parity_err (
+     .re     (1'b0),
+@@ -845,7 +843,7 @@ module uart_reg_top (
+   assign reg2hw.intr_test.rx_parity_err.qe = intr_test_qe;
+ 
+   //   F[tx_empty]: 8:8
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_tx_empty (
+     .re     (1'b0),
+@@ -861,31 +859,11 @@ module uart_reg_top (
+   assign reg2hw.intr_test.tx_empty.qe = intr_test_qe;
+ 
+ 
+-  // R[alert_test]: V(True)
+-  logic alert_test_qe;
+-  logic [0:0] alert_test_flds_we;
+-  assign alert_test_qe = &alert_test_flds_we;
+-  prim_subreg_ext #(
+-    .DW    (1)
+-  ) u_alert_test (
+-    .re     (1'b0),
+-    .we     (alert_test_we),
+-    .wd     (alert_test_wd),
+-    .d      ('0),
+-    .qre    (),
+-    .qe     (alert_test_flds_we[0]),
+-    .q      (reg2hw.alert_test.q),
+-    .ds     (),
+-    .qs     ()
+-  );
+-  assign reg2hw.alert_test.qe = alert_test_qe;
+-
+-
+   // R[ctrl]: V(False)
+   //   F[tx]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_tx (
+@@ -910,9 +888,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rx]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_rx (
+@@ -937,9 +915,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[nf]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_nf (
+@@ -964,9 +942,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[slpbk]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_slpbk (
+@@ -991,9 +969,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[llpbk]: 5:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_llpbk (
+@@ -1018,9 +996,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[parity_en]: 6:6
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_parity_en (
+@@ -1045,9 +1023,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[parity_odd]: 7:7
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_parity_odd (
+@@ -1072,9 +1050,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[rxblvl]: 9:8
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (2),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (2'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_rxblvl (
+@@ -1099,9 +1077,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[nco]: 31:16
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (16),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (16'h0),
+     .Mubi    (1'b0)
+   ) u_ctrl_nco (
+@@ -1128,7 +1106,7 @@ module uart_reg_top (
+ 
+   // R[status]: V(True)
+   //   F[txfull]: 0:0
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_txfull (
+     .re     (status_re),
+@@ -1143,7 +1121,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[rxfull]: 1:1
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_rxfull (
+     .re     (status_re),
+@@ -1158,7 +1136,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[txempty]: 2:2
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_txempty (
+     .re     (status_re),
+@@ -1173,7 +1151,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[txidle]: 3:3
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_txidle (
+     .re     (status_re),
+@@ -1188,7 +1166,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[rxidle]: 4:4
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_rxidle (
+     .re     (status_re),
+@@ -1203,7 +1181,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[rxempty]: 5:5
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_status_rxempty (
+     .re     (status_re),
+@@ -1219,7 +1197,7 @@ module uart_reg_top (
+ 
+ 
+   // R[rdata]: V(True)
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (8)
+   ) u_rdata (
+     .re     (rdata_re),
+@@ -1237,7 +1215,7 @@ module uart_reg_top (
+   // R[wdata]: V(False)
+   logic wdata_qe;
+   logic [0:0] wdata_flds_we;
+-  prim_flop #(
++  caliptra_prim_flop #(
+     .Width(1),
+     .ResetValue(0)
+   ) u_wdata0_qe (
+@@ -1246,9 +1224,9 @@ module uart_reg_top (
+     .d_i(&wdata_flds_we),
+     .q_o(wdata_qe)
+   );
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (8),
+-    .SwAccess(prim_subreg_pkg::SwAccessWO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessWO),
+     .RESVAL  (8'h0),
+     .Mubi    (1'b0)
+   ) u_wdata (
+@@ -1277,7 +1255,7 @@ module uart_reg_top (
+   // R[fifo_ctrl]: V(False)
+   logic fifo_ctrl_qe;
+   logic [3:0] fifo_ctrl_flds_we;
+-  prim_flop #(
++  caliptra_prim_flop #(
+     .Width(1),
+     .ResetValue(0)
+   ) u_fifo_ctrl0_qe (
+@@ -1287,9 +1265,9 @@ module uart_reg_top (
+     .q_o(fifo_ctrl_qe)
+   );
+   //   F[rxrst]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessWO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessWO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_fifo_ctrl_rxrst (
+@@ -1315,9 +1293,9 @@ module uart_reg_top (
+   assign reg2hw.fifo_ctrl.rxrst.qe = fifo_ctrl_qe;
+ 
+   //   F[txrst]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessWO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessWO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_fifo_ctrl_txrst (
+@@ -1343,9 +1321,9 @@ module uart_reg_top (
+   assign reg2hw.fifo_ctrl.txrst.qe = fifo_ctrl_qe;
+ 
+   //   F[rxilvl]: 4:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (3),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (3'h0),
+     .Mubi    (1'b0)
+   ) u_fifo_ctrl_rxilvl (
+@@ -1371,9 +1349,9 @@ module uart_reg_top (
+   assign reg2hw.fifo_ctrl.rxilvl.qe = fifo_ctrl_qe;
+ 
+   //   F[txilvl]: 7:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (3),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (3'h0),
+     .Mubi    (1'b0)
+   ) u_fifo_ctrl_txilvl (
+@@ -1401,7 +1379,7 @@ module uart_reg_top (
+ 
+   // R[fifo_status]: V(True)
+   //   F[txlvl]: 7:0
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (8)
+   ) u_fifo_status_txlvl (
+     .re     (fifo_status_re),
+@@ -1416,7 +1394,7 @@ module uart_reg_top (
+   );
+ 
+   //   F[rxlvl]: 23:16
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (8)
+   ) u_fifo_status_rxlvl (
+     .re     (fifo_status_re),
+@@ -1433,9 +1411,9 @@ module uart_reg_top (
+ 
+   // R[ovrd]: V(False)
+   //   F[txen]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ovrd_txen (
+@@ -1460,9 +1438,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[txval]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_ovrd_txval (
+@@ -1488,7 +1466,7 @@ module uart_reg_top (
+ 
+ 
+   // R[val]: V(True)
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (16)
+   ) u_val (
+     .re     (val_re),
+@@ -1505,9 +1483,9 @@ module uart_reg_top (
+ 
+   // R[timeout_ctrl]: V(False)
+   //   F[val]: 23:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (24),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (24'h0),
+     .Mubi    (1'b0)
+   ) u_timeout_ctrl_val (
+@@ -1532,9 +1510,9 @@ module uart_reg_top (
+   );
+ 
+   //   F[en]: 31:31
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_timeout_ctrl_en (
+@@ -1560,22 +1538,20 @@ module uart_reg_top (
+ 
+ 
+ 
+-  logic [12:0] addr_hit;
++  logic [11:0] addr_hit;
+   always_comb begin
+-    addr_hit = '0;
+     addr_hit[ 0] = (reg_addr == UART_INTR_STATE_OFFSET);
+     addr_hit[ 1] = (reg_addr == UART_INTR_ENABLE_OFFSET);
+     addr_hit[ 2] = (reg_addr == UART_INTR_TEST_OFFSET);
+-    addr_hit[ 3] = (reg_addr == UART_ALERT_TEST_OFFSET);
+-    addr_hit[ 4] = (reg_addr == UART_CTRL_OFFSET);
+-    addr_hit[ 5] = (reg_addr == UART_STATUS_OFFSET);
+-    addr_hit[ 6] = (reg_addr == UART_RDATA_OFFSET);
+-    addr_hit[ 7] = (reg_addr == UART_WDATA_OFFSET);
+-    addr_hit[ 8] = (reg_addr == UART_FIFO_CTRL_OFFSET);
+-    addr_hit[ 9] = (reg_addr == UART_FIFO_STATUS_OFFSET);
+-    addr_hit[10] = (reg_addr == UART_OVRD_OFFSET);
+-    addr_hit[11] = (reg_addr == UART_VAL_OFFSET);
+-    addr_hit[12] = (reg_addr == UART_TIMEOUT_CTRL_OFFSET);
++    addr_hit[ 3] = (reg_addr == UART_CTRL_OFFSET);
++    addr_hit[ 4] = (reg_addr == UART_STATUS_OFFSET);
++    addr_hit[ 5] = (reg_addr == UART_RDATA_OFFSET);
++    addr_hit[ 6] = (reg_addr == UART_WDATA_OFFSET);
++    addr_hit[ 7] = (reg_addr == UART_FIFO_CTRL_OFFSET);
++    addr_hit[ 8] = (reg_addr == UART_FIFO_STATUS_OFFSET);
++    addr_hit[ 9] = (reg_addr == UART_OVRD_OFFSET);
++    addr_hit[10] = (reg_addr == UART_VAL_OFFSET);
++    addr_hit[11] = (reg_addr == UART_TIMEOUT_CTRL_OFFSET);
+   end
+ 
+   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
+@@ -1594,8 +1570,7 @@ module uart_reg_top (
+                (addr_hit[ 8] & (|(UART_PERMIT[ 8] & ~reg_be))) |
+                (addr_hit[ 9] & (|(UART_PERMIT[ 9] & ~reg_be))) |
+                (addr_hit[10] & (|(UART_PERMIT[10] & ~reg_be))) |
+-               (addr_hit[11] & (|(UART_PERMIT[11] & ~reg_be))) |
+-               (addr_hit[12] & (|(UART_PERMIT[12] & ~reg_be)))));
++               (addr_hit[11] & (|(UART_PERMIT[11] & ~reg_be)))));
+   end
+ 
+   // Generate write-enables
+@@ -1650,10 +1625,7 @@ module uart_reg_top (
+   assign intr_test_rx_parity_err_wd = reg_wdata[7];
+ 
+   assign intr_test_tx_empty_wd = reg_wdata[8];
+-  assign alert_test_we = addr_hit[3] & reg_we & !reg_error;
+-
+-  assign alert_test_wd = reg_wdata[0];
+-  assign ctrl_we = addr_hit[4] & reg_we & !reg_error;
++  assign ctrl_we = addr_hit[3] & reg_we & !reg_error;
+ 
+   assign ctrl_tx_wd = reg_wdata[0];
+ 
+@@ -1672,12 +1644,12 @@ module uart_reg_top (
+   assign ctrl_rxblvl_wd = reg_wdata[9:8];
+ 
+   assign ctrl_nco_wd = reg_wdata[31:16];
+-  assign status_re = addr_hit[5] & reg_re & !reg_error;
+-  assign rdata_re = addr_hit[6] & reg_re & !reg_error;
+-  assign wdata_we = addr_hit[7] & reg_we & !reg_error;
++  assign status_re = addr_hit[4] & reg_re & !reg_error;
++  assign rdata_re = addr_hit[5] & reg_re & !reg_error;
++  assign wdata_we = addr_hit[6] & reg_we & !reg_error;
+ 
+   assign wdata_wd = reg_wdata[7:0];
+-  assign fifo_ctrl_we = addr_hit[8] & reg_we & !reg_error;
++  assign fifo_ctrl_we = addr_hit[7] & reg_we & !reg_error;
+ 
+   assign fifo_ctrl_rxrst_wd = reg_wdata[0];
+ 
+@@ -1686,14 +1658,14 @@ module uart_reg_top (
+   assign fifo_ctrl_rxilvl_wd = reg_wdata[4:2];
+ 
+   assign fifo_ctrl_txilvl_wd = reg_wdata[7:5];
+-  assign fifo_status_re = addr_hit[9] & reg_re & !reg_error;
+-  assign ovrd_we = addr_hit[10] & reg_we & !reg_error;
++  assign fifo_status_re = addr_hit[8] & reg_re & !reg_error;
++  assign ovrd_we = addr_hit[9] & reg_we & !reg_error;
+ 
+   assign ovrd_txen_wd = reg_wdata[0];
+ 
+   assign ovrd_txval_wd = reg_wdata[1];
+-  assign val_re = addr_hit[11] & reg_re & !reg_error;
+-  assign timeout_ctrl_we = addr_hit[12] & reg_we & !reg_error;
++  assign val_re = addr_hit[10] & reg_re & !reg_error;
++  assign timeout_ctrl_we = addr_hit[11] & reg_we & !reg_error;
+ 
+   assign timeout_ctrl_val_wd = reg_wdata[23:0];
+ 
+@@ -1701,20 +1673,18 @@ module uart_reg_top (
+ 
+   // Assign write-enables to checker logic vector.
+   always_comb begin
+-    reg_we_check = '0;
+     reg_we_check[0] = intr_state_we;
+     reg_we_check[1] = intr_enable_we;
+     reg_we_check[2] = intr_test_we;
+-    reg_we_check[3] = alert_test_we;
+-    reg_we_check[4] = ctrl_we;
++    reg_we_check[3] = ctrl_we;
++    reg_we_check[4] = 1'b0;
+     reg_we_check[5] = 1'b0;
+-    reg_we_check[6] = 1'b0;
+-    reg_we_check[7] = wdata_we;
+-    reg_we_check[8] = fifo_ctrl_we;
+-    reg_we_check[9] = 1'b0;
+-    reg_we_check[10] = ovrd_we;
+-    reg_we_check[11] = 1'b0;
+-    reg_we_check[12] = timeout_ctrl_we;
++    reg_we_check[6] = wdata_we;
++    reg_we_check[7] = fifo_ctrl_we;
++    reg_we_check[8] = 1'b0;
++    reg_we_check[9] = ovrd_we;
++    reg_we_check[10] = 1'b0;
++    reg_we_check[11] = timeout_ctrl_we;
+   end
+ 
+   // Read data return
+@@ -1758,10 +1728,6 @@ module uart_reg_top (
+       end
+ 
+       addr_hit[3]: begin
+-        reg_rdata_next[0] = '0;
+-      end
+-
+-      addr_hit[4]: begin
+         reg_rdata_next[0] = ctrl_tx_qs;
+         reg_rdata_next[1] = ctrl_rx_qs;
+         reg_rdata_next[2] = ctrl_nf_qs;
+@@ -1773,7 +1739,7 @@ module uart_reg_top (
+         reg_rdata_next[31:16] = ctrl_nco_qs;
+       end
+ 
+-      addr_hit[5]: begin
++      addr_hit[4]: begin
+         reg_rdata_next[0] = status_txfull_qs;
+         reg_rdata_next[1] = status_rxfull_qs;
+         reg_rdata_next[2] = status_txempty_qs;
+@@ -1782,36 +1748,36 @@ module uart_reg_top (
+         reg_rdata_next[5] = status_rxempty_qs;
+       end
+ 
+-      addr_hit[6]: begin
++      addr_hit[5]: begin
+         reg_rdata_next[7:0] = rdata_qs;
+       end
+ 
+-      addr_hit[7]: begin
++      addr_hit[6]: begin
+         reg_rdata_next[7:0] = '0;
+       end
+ 
+-      addr_hit[8]: begin
++      addr_hit[7]: begin
+         reg_rdata_next[0] = '0;
+         reg_rdata_next[1] = '0;
+         reg_rdata_next[4:2] = fifo_ctrl_rxilvl_qs;
+         reg_rdata_next[7:5] = fifo_ctrl_txilvl_qs;
+       end
+ 
+-      addr_hit[9]: begin
++      addr_hit[8]: begin
+         reg_rdata_next[7:0] = fifo_status_txlvl_qs;
+         reg_rdata_next[23:16] = fifo_status_rxlvl_qs;
+       end
+ 
+-      addr_hit[10]: begin
++      addr_hit[9]: begin
+         reg_rdata_next[0] = ovrd_txen_qs;
+         reg_rdata_next[1] = ovrd_txval_qs;
+       end
+ 
+-      addr_hit[11]: begin
++      addr_hit[10]: begin
+         reg_rdata_next[15:0] = val_qs;
+       end
+ 
+-      addr_hit[12]: begin
++      addr_hit[11]: begin
+         reg_rdata_next[23:0] = timeout_ctrl_val_qs;
+         reg_rdata_next[31] = timeout_ctrl_en_qs;
+       end
+@@ -1839,12 +1805,12 @@ module uart_reg_top (
+   assign unused_be = ^reg_be;
+ 
+   // Assertions for Register Interface
+-  `ASSERT_PULSE(wePulse, reg_we, clk_i, !rst_ni)
+-  `ASSERT_PULSE(rePulse, reg_re, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT_PULSE(wePulse, reg_we, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT_PULSE(rePulse, reg_re, clk_i, !rst_ni)
+ 
+-  `ASSERT(reAfterRv, $rose(reg_re || reg_we) |=> tl_o_pre.d_valid, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT(reAfterRv, $rose(reg_re || reg_we) |=> tl_o_pre.d_valid, clk_i, !rst_ni)
+ 
+-  `ASSERT(en2addrHit, (reg_we || reg_re) |-> $onehot0(addr_hit), clk_i, !rst_ni)
++  `CALIPTRA_ASSERT(en2addrHit, (reg_we || reg_re) |-> $onehot0(addr_hit), clk_i, !rst_ni)
+ 
+   // this is formulated as an assumption such that the FPV testbenches do disprove this
+   // property by mistake
+diff --git a/uart_rx.sv b/uart_rx.sv
+index 82f73f0..7836c7b 100644
+--- a/uart_rx.sv
++++ b/uart_rx.sv
+@@ -5,7 +5,7 @@
+ // Description: UART Receive Module
+ //
+ 
+-module uart_rx (
++module caliptra_ss_uart_rx (
+   input           clk_i,
+   input           rst_ni,
+ 
+diff --git a/uart_tx.sv b/uart_tx.sv
+index dad59d6..5f59125 100644
+--- a/uart_tx.sv
++++ b/uart_tx.sv
+@@ -5,7 +5,7 @@
+ // Description: UART Transmit Module
+ //
+ 
+-module uart_tx (
++module caliptra_ss_uart_tx (
+   input               clk_i,
+   input               rst_ni,
+ 
