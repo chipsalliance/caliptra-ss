@@ -251,9 +251,13 @@ initial begin
         slave[`CSS_INTC_SINTF_USB_DMA_IDX].cfg_info.limit_address[0] = 64'h2001_0000 + 64'hFFFF;
         slave[`CSS_INTC_SINTF_USB_DMA_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
 
-        //-- USB DEV (device registers)
+        //-- USB DEV (device registers + OCP recovery aperture)
+        // Region [0]: device controller @ 0x2000_0000-0x2000_0FFF
+        // Region [1]: OCP recovery aperture @ 0x2000_2000-0x2000_2FFF (per SOC_USB_OCP_RECOVERY_BASE_ADDR)
         slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.base_address[0]  = 64'h2000_0000; // TODO use addr map macro
         slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.limit_address[0] = 64'h2000_0000 + 64'h0FFF;
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.base_address[1]  = 64'h2000_2000;
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.limit_address[1] = 64'h2000_2000 + 64'h0FFF;
         slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
 
         //-- USB HOST (host controller registers)

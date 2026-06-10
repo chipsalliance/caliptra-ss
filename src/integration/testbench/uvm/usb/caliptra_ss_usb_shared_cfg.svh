@@ -52,11 +52,26 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
     // Number of endpoints to configure on the device (DUT)
     int num_endpoints = 2;
 
+    // -------------------------------------------------------------------------
+    // OCP Recovery interface number (bInterfaceNumber) used by the host when
+    // issuing class-specific requests per OCP Recovery v1.1 sec 8.5.2.
+    // Row 2 ("wIndex") of Table "Setup Packet" RECOMMENDS 00h for the
+    // recovery interface number; any 8-bit value is legal so no validation
+    // is required in is_valid(). Override via test if the firmware-built
+    // configuration descriptor places the recovery interface elsewhere.
+    //
+    // EP0-only architecture: all OCP class transfers ride on the default
+    // control pipe (EP0). Per OCP v1.1 sec 8.5 there are no bulk endpoints
+    // associated with recovery.
+    // -------------------------------------------------------------------------
+    int unsigned ocp_recovery_iface_num = 0;
+
     `uvm_object_utils_begin(caliptra_ss_usb_shared_cfg)
         `uvm_field_object(host_cfg, UVM_ALL_ON|UVM_DEEP)
         `uvm_field_object(dev_cfg,  UVM_ALL_ON|UVM_DEEP)
         `uvm_field_real  (timeout,  UVM_ALL_ON)
         `uvm_field_int   (num_endpoints, UVM_ALL_ON)
+        `uvm_field_int   (ocp_recovery_iface_num, UVM_ALL_ON)
     `uvm_object_utils_end
 
     function new(string name = "caliptra_ss_usb_shared_cfg");
@@ -216,12 +231,12 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
       
             if (!host_cfg.is_valid()) begin
                 if (!silent) begin
-                    `uvm_info("is_valid", $sformatf("Invalid Host configuration. Contents:\n%s", host_cfg.sprint()), UVM_HIGH)
+                    `uvm_info("is_valid", $sformatf("Invalid Host configuration. Contents:\n%s", host_cfg.sprint()), UVM_NONE)
                 end
                 is_valid = 0;   
             end else if (!dev_cfg.is_valid()) begin
                 if (!silent) begin
-                    `uvm_info("is_valid", $sformatf("Invalid Device configuration. Contents:\n%s", dev_cfg.sprint()), UVM_HIGH);
+                    `uvm_info("is_valid", $sformatf("Invalid Device configuration. Contents:\n%s", dev_cfg.sprint()), UVM_NONE);
                 end
                 is_valid = 0;   
             end

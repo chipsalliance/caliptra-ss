@@ -660,9 +660,14 @@ uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t min_kb, uint32
     return rand_addr;
 }
 
+uint32_t mcu_cptra_mb_ready_nb(void) {
+    return (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS)
+            & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK) ? 1u : 0u;
+}
+
 void mcu_cptra_poll_mb_ready() {
     // MBOX: Wait for ready_for_mb_processing
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
+    while(!mcu_cptra_mb_ready_nb()) {
         mcu_sleep(16);
     }
     VPRINTF(LOW, "MCU: Ready for FW\n");
@@ -833,43 +838,31 @@ void boot_i3c_core(void) {
 
 }
 
-void cptra_prod_rom_boot_go(void) {
-
-    mcu_cptra_user_init();
-    
-    // MBOX: Acquire lock
-    VPRINTF(LOW, "MCU: Acquiring Mbox lock\n");
+void caliptra_mailbox_send_ri_download_firmware(void) {
+    VPRINTF(LOW, "MCU: Acquiring Caliptra mailbox lock for RI_DOWNLOAD_FIRMWARE\n");
     while((lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK));
-    VPRINTF(LOW, "MCU: Mbox lock acquired\n");
+    VPRINTF(LOW, "MCU: Caliptra mailbox lock acquired\n");
 
-    // MBOX: Write CMD
-    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0x52494644 | MBOX_CMD_FIELD_RESP_MASK); // Resp required
-
-    // MBOX: Write DLEN
-    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
-
-    // MBOX: Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD,
+                 CALIPTRA_MBOX_CMD_RI_DOWNLOAD_FIRMWARE | MBOX_CMD_FIELD_RESP_MASK);
+    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0u);
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox execute\n");
+    VPRINTF(LOW, "MCU: RI_DOWNLOAD_FIRMWARE execute asserted\n");
 
-    // MBOX: Poll status
-    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
+    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK)
+            >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
+        mcu_sleep(16);
     }
-    VPRINTF(LOW, "MCU: Mbox response ready\n");
+    VPRINTF(LOW, "MCU: RI_DOWNLOAD_FIRMWARE completed\n");
 
-    for (uint8_t ii = 0; ii < 16; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0u);
+    VPRINTF(LOW, "MCU: Caliptra mailbox execute cleared\n");
+}
 
-    // MBOX: Clear Execute
-    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
-    VPRINTF(LOW, "MCU: Mbox execute clear\n");
-
+void cptra_prod_rom_boot_go(void) {
+    mcu_cptra_user_init();
+    caliptra_mailbox_send_ri_download_firmware();
     VPRINTF(LOW, "MCU: Completed with cptra_prod_rom_boot_go\n");
-
 }
 
 // -- function to update cptra_wdt_cfg

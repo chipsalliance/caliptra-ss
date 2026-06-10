@@ -100,6 +100,9 @@
 #define MCU_MBOX_MAX_SIZE_KB            2048
 #define MCU_MBOX_MAX_NUM                2
 
+// Caliptra mailbox command ID defined by caliptra-sw CommandId::RI_DOWNLOAD_FIRMWARE ("RIFD").
+#define CALIPTRA_MBOX_CMD_RI_DOWNLOAD_FIRMWARE 0x52494644u
+
 extern uint32_t state;
 
 typedef struct {
@@ -215,6 +218,7 @@ void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
+uint32_t mcu_cptra_mb_ready_nb();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();
 void boot_i3c_core(void);
@@ -247,6 +251,7 @@ void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
 void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, uint16_t cptra_wdt_cfg_0);
 void update_cptra_fuse_cfg(void);
 void update_pqc_key_type(void);
+void caliptra_mailbox_send_ri_download_firmware(void);
 void cptra_prod_rom_boot_go(void);
 bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
 bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
