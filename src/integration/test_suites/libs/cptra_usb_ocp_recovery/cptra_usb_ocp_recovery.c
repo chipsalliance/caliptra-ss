@@ -16,15 +16,16 @@
 
 #include "soc_address_map.h"
 #include "soc_ifc.h"
+#include "soc_ifc_ss.h"
 
 #define CPTRA_OCP_RECOVERY_BYTE0_MASK 0xFFu
 
 static uint8_t cptra_ocp_recovery_read_dword(uint64_t addr, uint32_t *value) {
-    return soc_ifc_axi_dma_read_ahb_payload(addr, 0u, value, sizeof(*value), 0u);
+    return soc_ifc_axi_dma_read_ahb_payload_with_status(addr, 0u, value, sizeof(*value), 0u);
 }
 
 static uint8_t cptra_ocp_recovery_write_dword(uint64_t addr, uint32_t value) {
-    return soc_ifc_axi_dma_send_ahb_payload(addr, 0u, &value, sizeof(value), 0u);
+    return soc_ifc_axi_dma_send_ahb_payload_with_status(addr, 0u, &value, sizeof(value), 0u);
 }
 
 static uint32_t cptra_ocp_recovery_pack_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
