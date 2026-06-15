@@ -638,46 +638,46 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                           fifo_status.size()))
         end
 
-        // 5d. Poll RECOVERY_STATUS (cmd 0x27) until firmware indicates the
-        //     image has been activated. Per sec 9.2 Tbl 9-10, byte 0 holds
-        //     "Device Recovery Status" which transitions to a higher status
-        //     code once the activation step (RECOVERY_CTRL.activate=0x0F,
-        //     sec 9.2 Tbl 9-9) is consumed by firmware. We poll with a
-        //     bounded iteration cap so the test fails closed if firmware
-        //     never advances.
+        // 5d. Poll DEVICE_STATUS (cmd 0x24) until firmware advances past
+        //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
+        //     Tbl 9-6, byte 0 holds "Device Status"; the FSM raises it
+        //     to 0x04 RECOVERY_PENDING on S_IMAGE_LOADED, while
+        //     RECOVERY_STATUS byte 0 stays at 0x01 Awaiting Image until
+        //     activation. Polling DEVICE_STATUS therefore observes the
+        //     correct image-loaded transition. Bounded iterations so the
+        //     test fails closed if firmware never advances.
         poll_iter = 0;
         forever begin
             empty_q.delete();
             ocp_class_xfer(.dir_in(1'b1),
-                           .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                            .wlength(16'(wMaxRdTransferSize)),
                            .payload_bytes(empty_q),
-                           .resp_bytes(rec_status),
-                           .label($sformatf("OCPREC_RECOVERY_STATUS_poll%0d", poll_iter)));
-            if (rec_status.size() < 1) begin
+                           .resp_bytes(dev_status),
+                           .label($sformatf("OCPREC_DEVICE_STATUS_poll%0d", poll_iter)));
+            if (dev_status.size() < 1) begin
                 `uvm_error("OCPREC",
-                    "RECOVERY_STATUS poll returned 0 bytes.")
+                    "DEVICE_STATUS poll returned 0 bytes.")
                 break;
             end
             `uvm_info("OCPREC",
-                $sformatf("Polling RECOVERY_STATUS[0]=0x%02h iter=%0d",
-                          rec_status[0], poll_iter),
+                $sformatf("Polling DEVICE_STATUS[0]=0x%02h iter=%0d (sec 9.2 Tbl 9-6).",
+                          dev_status[0], poll_iter),
                 UVM_NONE)
-            // Treat any transition away from the initial "awaiting image"
-            // values (0x00 Status Pending / 0x01 Awaiting Image) as
-            // activation. Per sec 9.2 Tbl 9-10 the higher codes (0x02
-            // Booting Recovery Image, 0x03 Recovery Success, etc.) signal
-            // progress.
-            if (rec_status[0] != 8'h00 && rec_status[0] != 8'h01) break;
+            // Exit on RECOVERY_PENDING (0x04) per sec 9.2 Tbl 9-6: the
+            // device has loaded a recovery image and is ready for the
+            // activation step (RECOVERY_CTRL.activate=0x0F, Tbl 9-9).
+            if (dev_status[0] == 8'h04) break;
             poll_iter++;
             if (poll_iter > 16) begin
-                // Review M3: fail closed. The block comment above states the
-                // intent is to fail closed if firmware never advances, so
-                // this exit path MUST raise an error (uvm_info would be
-                // re-routed by +svt_debug_opts and the timeout would slip).
+                // Review M3: fail closed. The block comment above states
+                // the intent is to fail closed if firmware never
+                // advances, so this exit path MUST raise an error
+                // (uvm_info would be re-routed by +svt_debug_opts and
+                // the timeout would slip).
                 `uvm_error("OCPREC",
-                    $sformatf("RECOVERY_STATUS did not advance within 16 polls; continuing without activation assertion. last rec_status[0]=0x%02h time=%0t",
-                              rec_status.size() > 0 ? rec_status[0] : 8'h00,
+                    $sformatf("DEVICE_STATUS did not reach 0x04 RECOVERY_PENDING within 16 polls. last dev_status[0]=0x%02h time=%0t",
+                              dev_status.size() > 0 ? dev_status[0] : 8'h00,
                               $time))
                 break;
             end
