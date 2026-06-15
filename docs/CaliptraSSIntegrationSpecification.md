@@ -257,17 +257,17 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 
 **SoC Specific** in below table means the size of the memory is not fixed and can be configured based on the design requirements by integrator. The actual size will depend on the specific implementation and configuration of the Caliptra Subsystem.
 
-| **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
-  |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
-  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                     | Read-Only             | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. | 
-  | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                     | Read/Write            | Memory export for MCU0 access                                                                                                                           |
-  | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                     | Read/Write            | Shared memory between MCI and MCU for data storage                                                                                                      |
-  | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX0 communication                                                                                                                          |
-  | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX1 communication                                                                                                                          |
-  | **Caliptra Core**   | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write            | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core                                                                  |
-  | **Caliptra Core**   | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to Caliptra Core spec      | Read-Only             | Interface for Caliptra ROM                                                                                                                              |
-  | **Caliptra Core**   | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to Caliptra Core spec      | Read/Write            | Interface for Caliptra mailbox memory                                                                                                                   |
-  | **Caliptra Core**   | Caliptra MLDSA SRAM   | `mldsa_memory_export_req`            | Refer to Caliptra Core spec      | Read/Write            | Interface for SRAM instantiated within Adams Bridge block                                                                                               |
+| **Device**        | **Memory Name**       | **Interface**                        | **Size**                    | **Access Type** | **Description**                                                                                                                          |
+|-------------------|-----------------------|--------------------------------------|-----------------------------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **MCU0**          | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                | Read-Only       | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. |
+| **MCU0**          | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                | Read/Write      | Memory export for MCU0 access.                                                                                                           |
+| **MCU0**          | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                | Read/Write      | Shared memory between MCI and MCU for data storage.                                                                                      |
+| **MAILBOX**       | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX0 communication.                                                                                                          |
+| **MAILBOX**       | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX1 communication.                                                                                                          |
+| **Caliptra Core** | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core.                                                 |
+| **Caliptra Core** | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read-Only       | Interface for Caliptra ROM.                                                                                                              |
+| **Caliptra Core** | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for Caliptra mailbox memory.                                                                                                   |
+| **Caliptra Core** | Adams Bridge SRAM     | `abr_memory_export_req`              | Refer to [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) | Read/Write      | Interface for SRAM instantiated within Adams Bridge block.                                                                               |
 
 # Caliptra Subsystem Top
 
@@ -310,7 +310,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i`            | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling hardware features specific to OCP L.O.C.K. such as AES Keyvault write path, Keyvault filtering rules, and Key Release via AXI DMA. Must be driven with a constant value 0 or 1.  |
 | External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i`            | Base AXI address for the external staging area used by Caliptra Core FW to stage FW images due to reduced MBOX SRAM size. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area) for more details.    |
 
-#### Strap Timing Requirements
+### Strap Timing Requirements
 
 **All strap inputs listed in the table above, as well as `cptra_ss_cptra_obf_key_i`, `cptra_ss_cptra_csr_hmac_key_i`, `cptra_ss_lc_sec_volatile_raw_unlock_en_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`, and `cptra_ss_FIPS_ZEROIZATION_PPD_i`, must be driven to their intended values and held stable before `cptra_ss_rst_b_i` is deasserted. These signals must not transition for the duration of the boot session (until the next reset assertion).**
 
@@ -691,7 +691,8 @@ Arbitrary reset assertions/deassertions should not be done unless the integrator
 ### Overview
 
 SRAMs are instantiated at the SoC level. Caliptra Subsystem provides the interface to export SRAMs from internal components. Components that export SRAMs include:
- - Caliptra Core (see Caliptra Core integration specification)
+ - Caliptra Core (see [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md))
+ - Adams Bridge (see [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs))
  - MCU (RISC-V core)
  - MCI (Mailbox SRAM and MCU SRAM)
 
