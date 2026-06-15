@@ -80,10 +80,10 @@ void main(void) {
     VPRINTF(LOW, "CPTRA: recovery aperture base lo=0x%08x hi=0x%08x\n",
             (uint32_t)rec_base,
             (uint32_t)(rec_base >> 32));
-    if (rec_base != (uint64_t)SOC_USB_OCP_RECOVERY_BASE_ADDR) {
+    if (rec_base != (uint64_t)SOC_USB_OCP_RECOVERY_REG_BASE_ADDR) {
         VPRINTF(WARNING,
-                "CPTRA: SS_RECOVERY_IFC_BASE_ADDR!=SOC_USB_OCP_RECOVERY_BASE_ADDR; using generated base 0x%08x\n",
-                (uint32_t)SOC_USB_OCP_RECOVERY_BASE_ADDR);
+                "CPTRA: SS_RECOVERY_IFC_BASE_ADDR!=SOC_USB_OCP_RECOVERY_REG_BASE_ADDR; using generated base 0x%08x\n",
+                (uint32_t)SOC_USB_OCP_RECOVERY_REG_BASE_ADDR);
     }
 
     VPRINTF(LOW, "CPTRA: polling DEVICE_STATUS for Recovery Pending\n");

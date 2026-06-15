@@ -42,7 +42,7 @@ uint8_t cptra_ocp_recovery_read_device_status(uint8_t *device_status) {
     }
 
     // OCP Recovery v1.1 9.2, DEVICE_STATUS / Table 9-5: byte 0 is the device status.
-    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_DEVICE_STATUS_0, &device_status_word) != 0u) {
+    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, &device_status_word) != 0u) {
         return 1u;
     }
 
@@ -69,7 +69,7 @@ uint32_t cptra_ocp_recovery_read_image_size_words(void) {
     uint32_t image_size_words = 0u;
 
     // OCP Recovery v1.1 9.2, INDIRECT_FIFO_CTRL / Table 9-13: bytes 2..5 hold Image Size in 4-byte units.
-    (void)cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_INDIRECT_FIFO_CTRL_1, &image_size_words);
+    (void)cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1, &image_size_words);
     return image_size_words;
 }
 
@@ -82,10 +82,10 @@ uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *writ
     }
 
     // OCP Recovery v1.1 9.2, INDIRECT_FIFO_STATUS / Table 9-14: byte 0 is FIFO status and bytes 4..7 are Write Index.
-    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_INDIRECT_FIFO_STATUS_0, &fifo_status_word) != 0u) {
+    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0, &fifo_status_word) != 0u) {
         return 1u;
     }
-    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_INDIRECT_FIFO_STATUS_1, &write_index_word) != 0u) {
+    if (cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_1, &write_index_word) != 0u) {
         return 1u;
     }
 
@@ -102,7 +102,7 @@ uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t mbox_d
     }
 
     // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15: repeatedly access the fixed FIFO data register.
-    return soc_ifc_axi_dma_read_mbox_payload(SOC_USB_OCP_RECOVERY_INDIRECT_FIFO_DATA,
+    return soc_ifc_axi_dma_read_mbox_payload(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
                                              mbox_dest_addr,
                                              1u,
                                              byte_count,
@@ -114,11 +114,11 @@ void cptra_ocp_recovery_set_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t 
 
     // OCP Recovery v1.1 9.2, RECOVERY_CTRL / Table 9-9: program CMS, then image selection, then activate.
     ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, 0u, 0u);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_RECOVERY_CTRL, ctrl_word);
+    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
 
     ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, img_sel, 0u);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_RECOVERY_CTRL, ctrl_word);
+    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
 
     ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, img_sel, activate);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_RECOVERY_CTRL, ctrl_word);
+    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
 }
