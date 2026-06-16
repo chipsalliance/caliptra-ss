@@ -553,12 +553,16 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/include/css_mcu0_el2_def.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_mubi_pkg.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_lockstep_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_mem.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_dma_ctrl.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_pmp.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_pic_ctrl.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_regfile_if.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_veer.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_veer_wrapper.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_veer_lockstep.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/dbg/css_mcu0_el2_dbg.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_mux.v
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/dec/css_mcu0_el2_dec_decode_ctl.sv
