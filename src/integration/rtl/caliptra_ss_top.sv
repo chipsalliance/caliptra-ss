@@ -290,6 +290,7 @@ module caliptra_ss_top
 
     logic                       mcu_dccm_ecc_single_error;
     logic                       mcu_dccm_ecc_double_error;
+    el2_mubi_pkg::el2_mubi_t    mcu_dcls_corruption_error;
 
     logic                       i3c_irq_o;
     logic                       i3c_peripheral_reset;
@@ -587,7 +588,7 @@ module caliptra_ss_top
 
     //Aggregate error connections
     assign agg_error_fatal[5:0]   = {5'b0, cptra_error_fatal}; //CPTRA
-    assign agg_error_fatal[11:6]  = {5'b0, mcu_dccm_ecc_double_error}; //MCU
+    assign agg_error_fatal[11:6]  = {4'b0, el2_mubi_pkg::mubi_check_true(mcu_dcls_corruption_error), mcu_dccm_ecc_double_error}; //MCU
     assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
     assign agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
@@ -888,7 +889,18 @@ module caliptra_ss_top
         .dmi_uncore_addr   (mcu_dmi_uncore_addr),
         .dmi_uncore_wdata   (mcu_dmi_uncore_wdata),
         .dmi_uncore_rdata   (mcu_dmi_uncore_rdata),
-        .dmi_active   (mcu_dmi_active)
+        .dmi_active   (mcu_dmi_active),
+
+        .mcu_dcls_corruption_error_o(mcu_dcls_corruption_error),
+
+        // Shadow core trace (DCLS) - currently not connected
+        .shadow_core_trace_rv_i_insn_ip     (),
+        .shadow_core_trace_rv_i_address_ip  (),
+        .shadow_core_trace_rv_i_valid_ip    (),
+        .shadow_core_trace_rv_i_exception_ip(),
+        .shadow_core_trace_rv_i_ecause_ip   (),
+        .shadow_core_trace_rv_i_interrupt_ip(),
+        .shadow_core_trace_rv_i_tval_ip     ()
 
     );
 
