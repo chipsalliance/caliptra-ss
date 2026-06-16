@@ -162,6 +162,8 @@ targets:
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
       - $COMPILE_ROOT/testbench/sv_tests/mci
       - $COMPILE_ROOT/testbench/sv_tests/common
+      - $COMPILE_ROOT/testbench_src/axi/include
+      - $COMPILE_ROOT/testbench_src/common_cells/include
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -169,8 +171,37 @@ targets:
       # - $COMPILE_ROOT/testbench/dasm.svi
       - $COMPILE_ROOT/testbench/mci_sram.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_sram.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_cf_math_pkg.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_lzc.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_onehot_to_bin.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_rr_arb_tree.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_spill_register_flushable.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_spill_register.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_fifo_v3.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_id_queue.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_counter.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_delta_counter.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_addr_decode.sv
+      - $COMPILE_ROOT/testbench_src/common_cells/src/caliptra_ss_tb_addr_decode_dync.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_pkg.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_cut.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_demux_simple.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_demux.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_mux.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_multicut.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_err_slv.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_id_prepend.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_id_remap.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_iw_converter.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_dw_upsizer.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_dw_downsizer.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_dw_converter.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_xbar_unmuxed.sv
+      - $COMPILE_ROOT/testbench_src/axi/src/caliptra_ss_tb_axi_xbar.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_pkg.sv
       - $COMPILE_ROOT/testbench/aaxi_pkg_caliptra_test.sv
       - $COMPILE_ROOT/testbench/aaxi4_interconnect.sv
+      - $COMPILE_ROOT/testbench/pulp_interconnect.sv
       - $COMPILE_ROOT/testbench/fuse_ctrl_bfm.sv
       - $COMPILE_ROOT/testbench/prim_generic_otp.sv
       - $COMPILE_ROOT/testbench/lc_ctrl_bfm.sv

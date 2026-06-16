@@ -98,9 +98,6 @@
 +incdir+${AVERY_SIM}/src
 +incdir+${AVERY_SIM}/src.IEEE
 +incdir+${AVERY_PLI}
-+incdir+${AVERY_AXI}/src.axi.VCS
-+incdir+${AVERY_AXI}/src.axi
-+incdir+${AVERY_AXI}/testbench
 +incdir+${AVERY_I3C}/
 +incdir+${AVERY_I3C}/src
 +incdir+${AVERY_I3C}/src.i3c
@@ -975,14 +972,6 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb/icache_macros.svh
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_defines.svh
 ${AVERY_SIM}/src/avery_pkg.sv
 ${AVERY_SIM}/src/avery_pkg_test.sv
-${AVERY_AXI}/src.axi/aaxi_pkg.sv
-${AVERY_AXI}/src.axi/aaxi_pkg_xactor.sv
-${AVERY_AXI}/src.axi/aaxi_class_pll.sv
-${AVERY_AXI}/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
-${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
-${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
-${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
-${AVERY_AXI}/src.axi/aaxi_intf.sv
 ${AVERY_I3C}/src/ai2c_pkg.sv
 ${AVERY_I3C}/src.i3c/ai3c_pkg.sv
 ${AVERY_I3C}/src/ai2c_intf.sv
@@ -1000,15 +989,13 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/tb_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/axi_slv.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/mci_sram.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_sram.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi_pkg_caliptra_test.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi4_interconnect.sv
+-f ${CSS_AXI_FLIST}
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/fuse_ctrl_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/lc_ctrl_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_tb_cmd_list.svh
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_veer_sram_export.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_bfm_services_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv
