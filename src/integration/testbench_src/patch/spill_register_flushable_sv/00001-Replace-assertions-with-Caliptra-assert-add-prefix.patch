@@ -1,0 +1,31 @@
+diff --git a/caliptra_ss_tb_spill_register_flushable.sv b/caliptra_ss_tb_spill_register_flushable.sv
+index 8588a43..ed5e2e6 100644
+--- a/caliptra_ss_tb_spill_register_flushable.sv
++++ b/caliptra_ss_tb_spill_register_flushable.sv
+@@ -1,3 +1,17 @@
++// SPDX-License-Identifier: Apache-2.0
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++// http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
+ // Copyright 2021 ETH Zurich and University of Bologna.
+ //
+ // Copyright and related rights are licensed under the Solderpad Hardware
+@@ -14,7 +28,7 @@
+ 
+ /// A register with handshakes that completely cuts any combinational paths
+ /// between the input and output. This spill register can be flushed.
+-module spill_register_flushable #(
++module caliptra_ss_tb_spill_register_flushable #(
+   parameter type T           = logic,
+   parameter bit  Bypass      = 1'b0   // make this spill register transparent
+ ) (
