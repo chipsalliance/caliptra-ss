@@ -868,6 +868,10 @@
   assign cptra.awsize   = req.aw.size;                                \
   assign cptra.awburst  = req.aw.burst;                               \
   assign cptra.awlock   = req.aw.lock;                                \
+  assign cptra.awcache  = req.aw.cache;                               \
+  assign cptra.awprot   = req.aw.prot;                                \
+  assign cptra.awqos    = req.aw.qos;                                 \
+  assign cptra.awregion = req.aw.region;                              \
   assign cptra.awuser   = req.aw.user;                                \
   assign cptra.awvalid  = req.aw_valid;                               \
   assign rsp.aw_ready   = cptra.awready;
@@ -891,6 +895,10 @@
   assign cptra.arsize   = req.ar.size;                                \
   assign cptra.arburst  = req.ar.burst;                               \
   assign cptra.arlock   = req.ar.lock;                                \
+  assign cptra.arcache  = req.ar.cache;                               \
+  assign cptra.arprot   = req.ar.prot;                                \
+  assign cptra.arqos    = req.ar.qos;                                 \
+  assign cptra.arregion = req.ar.region;                              \
   assign cptra.aruser   = req.ar.user;                                \
   assign cptra.arvalid  = req.ar_valid;                               \
   assign rsp.ar_ready   = cptra.arready;

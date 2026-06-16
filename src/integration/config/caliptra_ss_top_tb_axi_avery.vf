@@ -1,0 +1,14 @@
++incdir+${AVERY_AXI}/src.axi.VCS
++incdir+${AVERY_AXI}/src.axi
++incdir+${AVERY_AXI}/testbench
+${AVERY_AXI}/src.axi/aaxi_pkg.sv
+${AVERY_AXI}/src.axi/aaxi_pkg_xactor.sv
+${AVERY_AXI}/src.axi/aaxi_class_pll.sv
+${AVERY_AXI}/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
+${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
+${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
+${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
+${AVERY_AXI}/src.axi/aaxi_intf.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi_pkg_caliptra_test.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/aaxi4_interconnect.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
