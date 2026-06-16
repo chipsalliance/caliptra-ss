@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_axi_id_prepend.sv b/caliptra_ss_tb_axi_id_prepend.sv
+index f830ef6..b6bfeb5 100644
+--- a/caliptra_ss_tb_axi_id_prepend.sv
++++ b/caliptra_ss_tb_axi_id_prepend.sv
+@@ -15,7 +15,7 @@
+ // AXI ID Prepend: This module prepends/strips the MSB from the AXI IDs.
+ // Constraints enforced through assertions: ID width of slave and master port
+ 
+-module axi_id_prepend #(
++module caliptra_ss_tb_axi_id_prepend #(
+   parameter int unsigned NoBus             = 1,     // Can take multiple axi busses
+   parameter int unsigned AxiIdWidthSlvPort = 4,     // AXI ID Width of the Slave Ports
+   parameter int unsigned AxiIdWidthMstPort = 6,     // AXI ID Width of the Master Ports

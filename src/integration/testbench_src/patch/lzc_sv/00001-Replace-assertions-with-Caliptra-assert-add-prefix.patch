@@ -1,0 +1,28 @@
+diff --git a/caliptra_ss_tb_lzc.sv b/caliptra_ss_tb_lzc.sv
+index f051a66..1bf677a 100644
+--- a/caliptra_ss_tb_lzc.sv
++++ b/caliptra_ss_tb_lzc.sv
+@@ -12,7 +12,7 @@
+ ///   in_i = 000_1000, empty_o = 0, cnt_o = 3 (mode = 0)
+ /// Furthermore, this unit contains a more efficient implementation for Verilator (simulation only).
+ /// This speeds up simulation significantly.
+-module lzc #(
++module caliptra_ss_tb_lzc #(
+   /// The width of the input vector.
+   parameter int unsigned WIDTH = 2,
+   /// Mode selection: 0 -> trailing zero, 1 -> leading zero
+@@ -20,7 +20,7 @@ module lzc #(
+   /// Dependent parameter. Do **not** change!
+   ///
+   /// Width of the output signal with the zero count.
+-  parameter int unsigned CNT_WIDTH = cf_math_pkg::idx_width(WIDTH)
++  parameter int unsigned CNT_WIDTH = caliptra_ss_tb_cf_math_pkg::idx_width(WIDTH)
+ ) (
+   /// Input vector to be counted.
+   input  logic [WIDTH-1:0]     in_i,
+@@ -110,4 +110,4 @@ module lzc #(
+ `endif
+ `endif
+ 
+-endmodule : lzc
++endmodule : caliptra_ss_tb_lzc

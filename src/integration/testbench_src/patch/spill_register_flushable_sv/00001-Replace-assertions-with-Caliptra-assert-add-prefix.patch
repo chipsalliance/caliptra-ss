@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_spill_register_flushable.sv b/caliptra_ss_tb_spill_register_flushable.sv
+index 8588a43..e9e6de0 100644
+--- a/caliptra_ss_tb_spill_register_flushable.sv
++++ b/caliptra_ss_tb_spill_register_flushable.sv
+@@ -14,7 +14,7 @@
+ 
+ /// A register with handshakes that completely cuts any combinational paths
+ /// between the input and output. This spill register can be flushed.
+-module spill_register_flushable #(
++module caliptra_ss_tb_spill_register_flushable #(
+   parameter type T           = logic,
+   parameter bit  Bypass      = 1'b0   // make this spill register transparent
+ ) (

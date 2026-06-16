@@ -1,0 +1,172 @@
+--- a/caliptra_ss_tb_axi_xbar.sv
++++ b/caliptra_ss_tb_axi_xbar.sv
+@@ -15,11 +15,11 @@
+ 
+ /// axi_xbar: Fully-connected AXI4+ATOP crossbar with an arbitrary number of slave and master ports.
+ /// See `doc/axi_xbar.md` for the documentation, including the definition of parameters and ports.
+-module axi_xbar
+-import cf_math_pkg::idx_width;
++module caliptra_ss_tb_axi_xbar
++import caliptra_ss_tb_cf_math_pkg::idx_width;
+ #(
+   /// Configuration struct for the crossbar see `axi_pkg` for fields and definitions.
+-  parameter axi_pkg::xbar_cfg_t Cfg                                   = '0,
++  parameter caliptra_ss_tb_axi_pkg::caliptra_ss_tb_xbar_cfg_t Cfg                                   = '0,
+   /// Enable atomic operations support.
+   parameter bit  ATOPs                                                = 1'b1,
+   /// Connectivity matrix
+@@ -29,7 +29,7 @@
+   /// AXI4+ATOP AW channel struct type for the master ports.
+   parameter type mst_aw_chan_t                                        = logic,
+   /// AXI4+ATOP W channel struct type for all ports.
+-  parameter type w_chan_t                                             = logic,
++  parameter type caliptra_ss_tb_w_chan_t                                             = logic,
+   /// AXI4+ATOP B channel struct type for the slave ports.
+   parameter type slv_b_chan_t                                         = logic,
+   /// AXI4+ATOP B channel struct type for the master ports.
+@@ -60,7 +60,7 @@
+   ///   axi_addr_t   end_addr;
+   /// } rule_t;
+   /// ```
+-  parameter type rule_t                                               = axi_pkg::xbar_rule_64_t,
++  parameter type rule_t                                               = caliptra_ss_tb_axi_pkg::caliptra_ss_tb_xbar_rule_64_t,
+   localparam int unsigned MstPortsIdxWidth =
+       (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+ ) (
+@@ -94,17 +94,17 @@
+   slv_req_t  [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_reqs;
+   slv_resp_t [Cfg.NoMstPorts-1:0][Cfg.NoSlvPorts-1:0] mst_resps;
+ 
+-  axi_xbar_unmuxed #(
++  caliptra_ss_tb_axi_xbar_unmuxed #(
+     .Cfg          (Cfg),
+     .ATOPs        (ATOPs),
+     .Connectivity (Connectivity),
+-    .aw_chan_t    (slv_aw_chan_t),
+-    .w_chan_t     (w_chan_t),
+-    .b_chan_t     (slv_b_chan_t),
+-    .ar_chan_t    (slv_ar_chan_t),
+-    .r_chan_t     (slv_r_chan_t),
+-    .req_t        (slv_req_t),
+-    .resp_t       (slv_resp_t),
++    .caliptra_ss_tb_aw_chan_t    (slv_aw_chan_t),
++    .caliptra_ss_tb_w_chan_t     (caliptra_ss_tb_w_chan_t),
++    .caliptra_ss_tb_b_chan_t     (slv_b_chan_t),
++    .caliptra_ss_tb_ar_chan_t    (slv_ar_chan_t),
++    .caliptra_ss_tb_r_chan_t     (slv_r_chan_t),
++    .caliptra_ss_tb_req_t        (slv_req_t),
++    .caliptra_ss_tb_resp_t       (slv_resp_t),
+     .rule_t       (rule_t)
+   ) i_xbar_unmuxed (
+     .clk_i,
+@@ -120,11 +120,11 @@
+   );
+ 
+   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_mst_port_mux
+-    axi_mux #(
++    caliptra_ss_tb_axi_mux #(
+       .SlvAxiIDWidth ( Cfg.AxiIdWidthSlvPorts ), // ID width of the slave ports
+       .slv_aw_chan_t ( slv_aw_chan_t          ), // AW Channel Type, slave ports
+       .mst_aw_chan_t ( mst_aw_chan_t          ), // AW Channel Type, master port
+-      .w_chan_t      ( w_chan_t               ), //  W Channel Type, all ports
++      .caliptra_ss_tb_w_chan_t      ( caliptra_ss_tb_w_chan_t               ), //  W Channel Type, all ports
+       .slv_b_chan_t  ( slv_b_chan_t           ), //  B Channel Type, slave ports
+       .mst_b_chan_t  ( mst_b_chan_t           ), //  B Channel Type, master port
+       .slv_ar_chan_t ( slv_ar_chan_t          ), // AR Channel Type, slave ports
+@@ -171,14 +171,14 @@
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+-`include "axi/typedef.svh"
++`include "axi/caliptra_ss_tb_axi_typedef.svh"
+
+-module axi_xbar_intf
+-import cf_math_pkg::idx_width;
++module caliptra_ss_tb_axi_xbar_intf
++import caliptra_ss_tb_cf_math_pkg::idx_width;
+ #(
+   parameter int unsigned AXI_USER_WIDTH =  0,
+-  parameter axi_pkg::xbar_cfg_t Cfg     = '0,
++  parameter caliptra_ss_tb_axi_pkg::caliptra_ss_tb_xbar_cfg_t Cfg     = '0,
+   parameter bit ATOPS                   = 1'b1,
+   parameter bit [Cfg.NoSlvPorts-1:0][Cfg.NoMstPorts-1:0] CONNECTIVITY = '1,
+-  parameter type rule_t                 = axi_pkg::xbar_rule_64_t,
++  parameter type rule_t                 = caliptra_ss_tb_axi_pkg::caliptra_ss_tb_xbar_rule_64_t,
+   localparam int unsigned MstPortsIdxWidth =
+         (Cfg.NoMstPorts == 32'd1) ? 32'd1 : unsigned'($clog2(Cfg.NoMstPorts))
+ ) (
+@@ -194,26 +194,26 @@
+ 
+   localparam int unsigned AxiIdWidthMstPorts = Cfg.AxiIdWidthSlvPorts + $clog2(Cfg.NoSlvPorts);
+ 
+-  typedef logic [AxiIdWidthMstPorts     -1:0] id_mst_t;
+-  typedef logic [Cfg.AxiIdWidthSlvPorts -1:0] id_slv_t;
+-  typedef logic [Cfg.AxiAddrWidth       -1:0] addr_t;
+-  typedef logic [Cfg.AxiDataWidth       -1:0] data_t;
+-  typedef logic [Cfg.AxiDataWidth/8     -1:0] strb_t;
+-  typedef logic [AXI_USER_WIDTH         -1:0] user_t;
+-
+-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, id_mst_t, user_t)
+-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, id_slv_t, user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, id_mst_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, id_slv_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, id_mst_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, id_slv_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, id_mst_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, id_slv_t, user_t)
+-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
++  typedef logic [AxiIdWidthMstPorts     -1:0] caliptra_ss_tb_id_mst_t;
++  typedef logic [Cfg.AxiIdWidthSlvPorts -1:0] caliptra_ss_tb_id_slv_t;
++  typedef logic [Cfg.AxiAddrWidth       -1:0] caliptra_ss_tb_addr_t;
++  typedef logic [Cfg.AxiDataWidth       -1:0] caliptra_ss_tb_data_t;
++  typedef logic [Cfg.AxiDataWidth/8     -1:0] caliptra_ss_tb_strb_t;
++  typedef logic [AXI_USER_WIDTH         -1:0] caliptra_ss_tb_user_t;
++
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_mst_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_slv_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(caliptra_ss_tb_w_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_strb_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, caliptra_ss_tb_id_mst_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, caliptra_ss_tb_id_slv_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_mst_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_slv_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_id_mst_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_id_slv_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, caliptra_ss_tb_w_chan_t, mst_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, caliptra_ss_tb_w_chan_t, slv_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+ 
+   mst_req_t   [Cfg.NoMstPorts-1:0]  mst_reqs;
+   mst_resp_t  [Cfg.NoMstPorts-1:0]  mst_resps;
+@@ -221,22 +221,22 @@
+   slv_resp_t  [Cfg.NoSlvPorts-1:0]  slv_resps;
+ 
+   for (genvar i = 0; i < Cfg.NoMstPorts; i++) begin : gen_assign_mst
+-    `AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
+-    `AXI_ASSIGN_TO_RESP(mst_resps[i], mst_ports[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(mst_ports[i], mst_reqs[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(mst_resps[i], mst_ports[i])
+   end
+ 
+   for (genvar i = 0; i < Cfg.NoSlvPorts; i++) begin : gen_assign_slv
+-    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
+-    `AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(slv_reqs[i], slv_ports[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(slv_ports[i], slv_resps[i])
+   end
+ 
+-  axi_xbar #(
++  caliptra_ss_tb_axi_xbar #(
+     .Cfg  (Cfg),
+     .ATOPs          ( ATOPS         ),
+     .Connectivity   ( CONNECTIVITY  ),
+     .slv_aw_chan_t  ( slv_aw_chan_t ),
+     .mst_aw_chan_t  ( mst_aw_chan_t ),
+-    .w_chan_t       ( w_chan_t      ),
++    .caliptra_ss_tb_w_chan_t       ( caliptra_ss_tb_w_chan_t      ),
+     .slv_b_chan_t   ( slv_b_chan_t  ),
+     .mst_b_chan_t   ( mst_b_chan_t  ),
+     .slv_ar_chan_t  ( slv_ar_chan_t ),

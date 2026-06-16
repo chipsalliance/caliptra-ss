@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_onehot_to_bin.sv b/caliptra_ss_tb_onehot_to_bin.sv
+index 47dae21..63d83d7 100644
+--- a/caliptra_ss_tb_onehot_to_bin.sv
++++ b/caliptra_ss_tb_onehot_to_bin.sv
+@@ -10,7 +10,7 @@
+ 
+ // Franceco Conti <fconti@iis.ee.ethz.ch>
+ 
+-module onehot_to_bin #(
++module caliptra_ss_tb_onehot_to_bin #(
+     parameter int unsigned ONEHOT_WIDTH = 16,
+     // Do Not Change
+     parameter int unsigned BIN_WIDTH    = ONEHOT_WIDTH == 1 ? 1 : $clog2(ONEHOT_WIDTH)

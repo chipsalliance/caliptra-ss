@@ -1,0 +1,328 @@
+--- a/caliptra_ss_tb_axi_mux.sv
++++ b/caliptra_ss_tb_axi_mux.sv
+@@ -22,15 +22,15 @@
+ // a response with ID `6'b100110` will be forwarded to slave port 2 (`2'b10`).
+ 
+ // register macros
+-`include "common_cells/assertions.svh"
++`include "caliptra_prim_assert.sv"
+-`include "common_cells/registers.svh"
++`include "common_cells/caliptra_ss_tb_common_cells_registers.svh"
+
+-module axi_mux #(
++module caliptra_ss_tb_axi_mux #(
+   // AXI parameter and channel types
+   parameter int unsigned SlvAxiIDWidth = 32'd0, // AXI ID width, slave ports
+   parameter type         slv_aw_chan_t = logic, // AW Channel Type, slave ports
+   parameter type         mst_aw_chan_t = logic, // AW Channel Type, master port
+-  parameter type         w_chan_t      = logic, //  W Channel Type, all ports
++  parameter type         caliptra_ss_tb_w_chan_t      = logic, //  W Channel Type, all ports
+   parameter type         slv_b_chan_t  = logic, //  B Channel Type, slave ports
+   parameter type         mst_b_chan_t  = logic, //  B Channel Type, master port
+   parameter type         slv_ar_chan_t = logic, // AR Channel Type, slave ports
+@@ -70,7 +70,7 @@
+ 
+   // pass through if only one slave port
+   if (NoSlvPorts == 32'h1) begin : gen_no_mux
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_aw_chan_t ),
+       .Bypass  ( ~SpillAw      )
+     ) i_aw_spill_reg (
+@@ -83,8 +83,8 @@
+       .ready_i ( mst_resp_i.aw_ready      ),
+       .data_o  ( mst_req_o.aw             )
+     );
+-    spill_register #(
+-      .T       ( w_chan_t ),
++    caliptra_ss_tb_spill_register #(
++      .T       ( caliptra_ss_tb_w_chan_t ),
+       .Bypass  ( ~SpillW  )
+     ) i_w_spill_reg (
+       .clk_i   ( clk_i                   ),
+@@ -96,7 +96,7 @@
+       .ready_i ( mst_resp_i.w_ready      ),
+       .data_o  ( mst_req_o.w             )
+     );
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_b_chan_t ),
+       .Bypass  ( ~SpillB      )
+     ) i_b_spill_reg (
+@@ -109,7 +109,7 @@
+       .ready_i ( slv_reqs_i[0].b_ready  ),
+       .data_o  ( slv_resps_o[0].b       )
+     );
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_ar_chan_t ),
+       .Bypass  ( ~SpillAr      )
+     ) i_ar_spill_reg (
+@@ -122,7 +122,7 @@
+       .ready_i ( mst_resp_i.ar_ready      ),
+       .data_o  ( mst_req_o.ar             )
+     );
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_r_chan_t ),
+       .Bypass  ( ~SpillR      )
+     ) i_r_spill_reg (
+@@ -137,25 +137,25 @@
+     );
+ // Validate parameters.
+ // pragma translate_off
+-    `ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthSlvB, $bits(slv_resps_o[0].b.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthSlvAr, $bits(slv_reqs_i[0].ar.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthSlvR, $bits(slv_resps_o[0].r.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthMstAw, $bits(mst_req_o.aw.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthMstB, $bits(mst_resp_i.b.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthMstAr, $bits(mst_req_o.ar.id) == SlvAxiIDWidth)
+-    `ASSERT_INIT(CorrectIdWidthMstR, $bits(mst_resp_i.r.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthSlvAw, $bits(slv_reqs_i[0].aw.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthSlvB, $bits(slv_resps_o[0].b.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthSlvAr, $bits(slv_reqs_i[0].ar.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthSlvR, $bits(slv_resps_o[0].r.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthMstAw, $bits(mst_req_o.aw.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthMstB, $bits(mst_resp_i.b.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthMstAr, $bits(mst_req_o.ar.id) == SlvAxiIDWidth)
++    `CALIPTRA_ASSERT_INIT(CorrectIdWidthMstR, $bits(mst_resp_i.r.id) == SlvAxiIDWidth)
+ // pragma translate_on
+ 
+   // other non degenerate cases
+   end else begin : gen_mux
+ 
+-    typedef logic [MstIdxBits-1:0] switch_id_t;
++    typedef logic [MstIdxBits-1:0] caliptra_ss_tb_switch_id_t;
+ 
+     // AXI channels between the ID prepend unit and the rest of the multiplexer
+     mst_aw_chan_t [NoSlvPorts-1:0] slv_aw_chans;
+     logic         [NoSlvPorts-1:0] slv_aw_valids, slv_aw_readies;
+-    w_chan_t      [NoSlvPorts-1:0] slv_w_chans;
++    caliptra_ss_tb_w_chan_t      [NoSlvPorts-1:0] slv_w_chans;
+     logic         [NoSlvPorts-1:0] slv_w_valids,  slv_w_readies;
+     mst_b_chan_t  [NoSlvPorts-1:0] slv_b_chans;
+     logic         [NoSlvPorts-1:0] slv_b_valids,  slv_b_readies;
+@@ -181,14 +181,14 @@
+     // signals for the FIFO that holds the last switching decision of the AW channel
+     logic           w_fifo_full,  w_fifo_empty;
+     logic           w_fifo_push,  w_fifo_pop;
+-    switch_id_t     w_fifo_data;
++    caliptra_ss_tb_switch_id_t     w_fifo_data;
+ 
+     // W channel spill reg
+-    w_chan_t        mst_w_chan;
++    caliptra_ss_tb_w_chan_t        mst_w_chan;
+     logic           mst_w_valid,  mst_w_ready;
+ 
+     // master ID in the b_id
+-    switch_id_t     switch_b_id;
++    caliptra_ss_tb_switch_id_t     switch_b_id;
+ 
+     // B channel spill reg
+     mst_b_chan_t    mst_b_chan;
+@@ -199,7 +199,7 @@
+     logic           ar_valid,     ar_ready;
+ 
+     // master ID in the r_id
+-    switch_id_t     switch_r_id;
++    caliptra_ss_tb_switch_id_t     switch_r_id;
+ 
+     // R channel spill reg
+     mst_r_chan_t    mst_r_chan;
+@@ -209,22 +209,22 @@
+     // ID prepend for all slave ports
+     //--------------------------------------
+     for (genvar i = 0; i < NoSlvPorts; i++) begin : gen_id_prepend
+-      axi_id_prepend #(
++      caliptra_ss_tb_axi_id_prepend #(
+         .NoBus            ( 32'd1               ), // one AXI bus per slave port
+         .AxiIdWidthSlvPort( SlvAxiIDWidth       ),
+         .AxiIdWidthMstPort( MstAxiIDWidth       ),
+         .slv_aw_chan_t    ( slv_aw_chan_t       ),
+-        .slv_w_chan_t     ( w_chan_t            ),
++        .slv_w_chan_t     ( caliptra_ss_tb_w_chan_t            ),
+         .slv_b_chan_t     ( slv_b_chan_t        ),
+         .slv_ar_chan_t    ( slv_ar_chan_t       ),
+         .slv_r_chan_t     ( slv_r_chan_t        ),
+         .mst_aw_chan_t    ( mst_aw_chan_t       ),
+-        .mst_w_chan_t     ( w_chan_t            ),
++        .mst_w_chan_t     ( caliptra_ss_tb_w_chan_t            ),
+         .mst_b_chan_t     ( mst_b_chan_t        ),
+         .mst_ar_chan_t    ( mst_ar_chan_t       ),
+         .mst_r_chan_t     ( mst_r_chan_t        )
+       ) i_id_prepend (
+-        .pre_id_i         ( switch_id_t'(i)         ),
++        .pre_id_i         ( caliptra_ss_tb_switch_id_t'(i)         ),
+         .slv_aw_chans_i   ( slv_reqs_i[i].aw        ),
+         .slv_aw_valids_i  ( slv_reqs_i[i].aw_valid  ),
+         .slv_aw_readies_o ( slv_resps_o[i].aw_ready ),
+@@ -261,7 +261,7 @@
+     //--------------------------------------
+     // AW Channel
+     //--------------------------------------
+-    rr_arb_tree #(
++    caliptra_ss_tb_rr_arb_tree #(
+       .NumIn    ( NoSlvPorts    ),
+       .DataType ( mst_aw_chan_t ),
+       .AxiVldRdy( 1'b1          ),
+@@ -312,12 +312,12 @@
+       end
+     end
+ 
+-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
++    `CALIPTRA_SS_TB_FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+ 
+-    fifo_v3 #(
++    caliptra_ss_tb_fifo_v3 #(
+       .FALL_THROUGH ( FallThrough ),
+       .DEPTH        ( MaxWTrans   ),
+-      .dtype        ( switch_id_t )
++      .dtype        ( caliptra_ss_tb_switch_id_t )
+     ) i_w_fifo (
+       .clk_i     ( clk_i                                     ),
+       .rst_ni    ( rst_ni                                    ),
+@@ -332,7 +332,7 @@
+       .pop_i     ( w_fifo_pop                                )
+     );
+ 
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_aw_chan_t ),
+       .Bypass  ( ~SpillAw      ) // Param indicated that we want a spill reg
+     ) i_aw_spill_reg (
+@@ -366,8 +366,8 @@
+       end
+     end
+ 
+-    spill_register #(
+-      .T       ( w_chan_t ),
++    caliptra_ss_tb_spill_register #(
++      .T       ( caliptra_ss_tb_w_chan_t ),
+       .Bypass  ( ~SpillW  )
+     ) i_w_spill_reg (
+       .clk_i   ( clk_i              ),
+@@ -389,7 +389,7 @@
+     assign switch_b_id  = mst_b_chan.id[SlvAxiIDWidth+:MstIdxBits];
+     assign slv_b_valids = (mst_b_valid) ? (1 << switch_b_id) : '0;
+ 
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_b_chan_t ),
+       .Bypass  ( ~SpillB      )
+     ) i_b_spill_reg (
+@@ -406,7 +406,7 @@
+     //--------------------------------------
+     // AR Channel
+     //--------------------------------------
+-    rr_arb_tree #(
++    caliptra_ss_tb_rr_arb_tree #(
+       .NumIn    ( NoSlvPorts    ),
+       .DataType ( mst_ar_chan_t ),
+       .AxiVldRdy( 1'b1          ),
+@@ -425,7 +425,7 @@
+       .idx_o  (                 )
+     );
+ 
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_ar_chan_t ),
+       .Bypass  ( ~SpillAr      )
+     ) i_ar_spill_reg (
+@@ -448,7 +448,7 @@
+     assign switch_r_id  = mst_r_chan.id[SlvAxiIDWidth+:MstIdxBits];
+     assign slv_r_valids = (mst_r_valid) ? (1 << switch_r_id) : '0;
+ 
+-    spill_register #(
++    caliptra_ss_tb_spill_register #(
+       .T       ( mst_r_chan_t ),
+       .Bypass  ( ~SpillR      )
+     ) i_r_spill_reg (
+@@ -497,7 +497,7 @@
+ // interface wrap
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+-`include "axi/typedef.svh"
++`include "axi/caliptra_ss_tb_axi_typedef.svh"
+-module axi_mux_intf #(
++module caliptra_ss_tb_axi_mux_intf #(
+   parameter int unsigned SLV_AXI_ID_WIDTH = 32'd0, // Synopsys DC requires default value for params
+   parameter int unsigned MST_AXI_ID_WIDTH = 32'd0,
+   parameter int unsigned AXI_ADDR_WIDTH   = 32'd0,
+@@ -523,32 +523,32 @@
+   AXI_BUS.Master mst                     // master port
+ );
+ 
+-  typedef logic [SLV_AXI_ID_WIDTH-1:0] slv_id_t;
+-  typedef logic [MST_AXI_ID_WIDTH-1:0] mst_id_t;
+-  typedef logic [AXI_ADDR_WIDTH -1:0]  addr_t;
+-  typedef logic [AXI_DATA_WIDTH-1:0]   data_t;
+-  typedef logic [AXI_DATA_WIDTH/8-1:0] strb_t;
+-  typedef logic [AXI_USER_WIDTH-1:0]   user_t;
++  typedef logic [SLV_AXI_ID_WIDTH-1:0] caliptra_ss_tb_slv_id_t;
++  typedef logic [MST_AXI_ID_WIDTH-1:0] caliptra_ss_tb_mst_id_t;
++  typedef logic [AXI_ADDR_WIDTH -1:0]  caliptra_ss_tb_addr_t;
++  typedef logic [AXI_DATA_WIDTH-1:0]   caliptra_ss_tb_data_t;
++  typedef logic [AXI_DATA_WIDTH/8-1:0] caliptra_ss_tb_strb_t;
++  typedef logic [AXI_USER_WIDTH-1:0]   caliptra_ss_tb_user_t;
+   // channels typedef
+-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, addr_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, addr_t, mst_id_t, user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
+ 
+-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(caliptra_ss_tb_w_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_strb_t, caliptra_ss_tb_user_t)
+ 
+-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
+ 
+-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, addr_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, addr_t, mst_id_t, user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
+ 
+-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, data_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, data_t, mst_id_t, user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
+ 
+-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, w_chan_t, slv_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, caliptra_ss_tb_w_chan_t, slv_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+ 
+-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, w_chan_t, mst_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, caliptra_ss_tb_w_chan_t, mst_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+ 
+   slv_req_t  [NO_SLV_PORTS-1:0] slv_reqs;
+   slv_resp_t [NO_SLV_PORTS-1:0] slv_resps;
+@@ -556,18 +556,18 @@
+   mst_resp_t                    mst_resp;
+ 
+   for (genvar i = 0; i < NO_SLV_PORTS; i++) begin : gen_assign_slv_ports
+-    `AXI_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
+-    `AXI_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(slv_reqs[i], slv[i])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(slv[i], slv_resps[i])
+   end
+ 
+-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(mst, mst_req)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(mst_resp, mst)
+ 
+-  axi_mux #(
++  caliptra_ss_tb_axi_mux #(
+     .SlvAxiIDWidth ( SLV_AXI_ID_WIDTH ),
+     .slv_aw_chan_t ( slv_aw_chan_t    ), // AW Channel Type, slave ports
+     .mst_aw_chan_t ( mst_aw_chan_t    ), // AW Channel Type, master port
+-    .w_chan_t      ( w_chan_t         ), //  W Channel Type, all ports
++    .caliptra_ss_tb_w_chan_t      ( caliptra_ss_tb_w_chan_t         ), //  W Channel Type, all ports
+     .slv_b_chan_t  ( slv_b_chan_t     ), //  B Channel Type, slave ports
+     .mst_b_chan_t  ( mst_b_chan_t     ), //  B Channel Type, master port
+     .slv_ar_chan_t ( slv_ar_chan_t    ), // AR Channel Type, slave ports

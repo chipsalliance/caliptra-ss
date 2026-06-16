@@ -1,0 +1,740 @@
+diff --git a/caliptra_ss_tb_axi_assign.svh b/caliptra_ss_tb_axi_assign.svh
+index 927ee67..6fe6e0c 100644
+--- a/caliptra_ss_tb_axi_assign.svh
++++ b/caliptra_ss_tb_axi_assign.svh
+@@ -16,14 +16,14 @@
+ // Macros to assign AXI Interfaces and Structs
+ 
+-`ifndef AXI_ASSIGN_SVH_
++`ifndef CALIPTRA_SS_TB_AXI_ASSIGN_SVH_
+-`define AXI_ASSIGN_SVH_
++`define CALIPTRA_SS_TB_AXI_ASSIGN_SVH_
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ // Internal implementation for assigning one AXI struct or interface to another struct or interface.
+ // The path to the signals on each side is defined by the `__sep*` arguments.  The `__opt_as`
+ // argument allows to use this standalone (with `__opt_as = assign`) or in assignments inside
+ // processes (with `__opt_as` void).
+-`define __AXI_TO_AW(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)   \
++`define CALIPTRA_SS_TB___AXI_TO_AW(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)   \
+   __opt_as __lhs``__lhs_sep``id     = __rhs``__rhs_sep``id;         \
+   __opt_as __lhs``__lhs_sep``addr   = __rhs``__rhs_sep``addr;       \
+   __opt_as __lhs``__lhs_sep``len    = __rhs``__rhs_sep``len;        \
+@@ -36,16 +36,16 @@
+   __opt_as __lhs``__lhs_sep``region = __rhs``__rhs_sep``region;     \
+   __opt_as __lhs``__lhs_sep``atop   = __rhs``__rhs_sep``atop;       \
+   __opt_as __lhs``__lhs_sep``user   = __rhs``__rhs_sep``user;
+-`define __AXI_TO_W(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
++`define CALIPTRA_SS_TB___AXI_TO_W(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
+   __opt_as __lhs``__lhs_sep``data   = __rhs``__rhs_sep``data;       \
+   __opt_as __lhs``__lhs_sep``strb   = __rhs``__rhs_sep``strb;       \
+   __opt_as __lhs``__lhs_sep``last   = __rhs``__rhs_sep``last;       \
+   __opt_as __lhs``__lhs_sep``user   = __rhs``__rhs_sep``user;
+-`define __AXI_TO_B(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
++`define CALIPTRA_SS_TB___AXI_TO_B(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
+   __opt_as __lhs``__lhs_sep``id     = __rhs``__rhs_sep``id;         \
+   __opt_as __lhs``__lhs_sep``resp   = __rhs``__rhs_sep``resp;       \
+   __opt_as __lhs``__lhs_sep``user   = __rhs``__rhs_sep``user;
+-`define __AXI_TO_AR(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)   \
++`define CALIPTRA_SS_TB___AXI_TO_AR(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)   \
+   __opt_as __lhs``__lhs_sep``id     = __rhs``__rhs_sep``id;         \
+   __opt_as __lhs``__lhs_sep``addr   = __rhs``__rhs_sep``addr;       \
+   __opt_as __lhs``__lhs_sep``len    = __rhs``__rhs_sep``len;        \
+@@ -57,29 +57,29 @@
+   __opt_as __lhs``__lhs_sep``qos    = __rhs``__rhs_sep``qos;        \
+   __opt_as __lhs``__lhs_sep``region = __rhs``__rhs_sep``region;     \
+   __opt_as __lhs``__lhs_sep``user   = __rhs``__rhs_sep``user;
+-`define __AXI_TO_R(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
++`define CALIPTRA_SS_TB___AXI_TO_R(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)    \
+   __opt_as __lhs``__lhs_sep``id     = __rhs``__rhs_sep``id;         \
+   __opt_as __lhs``__lhs_sep``data   = __rhs``__rhs_sep``data;       \
+   __opt_as __lhs``__lhs_sep``resp   = __rhs``__rhs_sep``resp;       \
+   __opt_as __lhs``__lhs_sep``last   = __rhs``__rhs_sep``last;       \
+   __opt_as __lhs``__lhs_sep``user   = __rhs``__rhs_sep``user;
+-`define __AXI_TO_REQ(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
+-  `__AXI_TO_AW(__opt_as, __lhs.aw, __lhs_sep, __rhs.aw, __rhs_sep)  \
++`define CALIPTRA_SS_TB___AXI_TO_REQ(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
++  `CALIPTRA_SS_TB___AXI_TO_AW(__opt_as, __lhs.aw, __lhs_sep, __rhs.aw, __rhs_sep)  \
+   __opt_as __lhs.aw_valid = __rhs.aw_valid;                         \
+-  `__AXI_TO_W(__opt_as, __lhs.w, __lhs_sep, __rhs.w, __rhs_sep)     \
++  `CALIPTRA_SS_TB___AXI_TO_W(__opt_as, __lhs.w, __lhs_sep, __rhs.w, __rhs_sep)     \
+   __opt_as __lhs.w_valid = __rhs.w_valid;                           \
+   __opt_as __lhs.b_ready = __rhs.b_ready;                           \
+-  `__AXI_TO_AR(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep)  \
++  `CALIPTRA_SS_TB___AXI_TO_AR(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep)  \
+   __opt_as __lhs.ar_valid = __rhs.ar_valid;                         \
+   __opt_as __lhs.r_ready = __rhs.r_ready;
+-`define __AXI_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
++`define CALIPTRA_SS_TB___AXI_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+   __opt_as __lhs.aw_ready = __rhs.aw_ready;                         \
+   __opt_as __lhs.ar_ready = __rhs.ar_ready;                         \
+   __opt_as __lhs.w_ready = __rhs.w_ready;                           \
+   __opt_as __lhs.b_valid = __rhs.b_valid;                           \
+-  `__AXI_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)     \
++  `CALIPTRA_SS_TB___AXI_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)     \
+   __opt_as __lhs.r_valid = __rhs.r_valid;                           \
+-  `__AXI_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
++  `CALIPTRA_SS_TB___AXI_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -96,32 +96,32 @@
+ // `AXI_ASSIGN(slv, mst)
+ // `AXI_ASSIGN_AW(dst, src)
+ // `AXI_ASSIGN_R(dst, src)
+-`define AXI_ASSIGN_AW(dst, src)               \
+-  `__AXI_TO_AW(assign, dst.aw, _, src.aw, _)  \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AW(dst, src)               \
++  `CALIPTRA_SS_TB___AXI_TO_AW(assign, dst.aw, _, src.aw, _)  \
+   assign dst.aw_valid = src.aw_valid;         \
+   assign src.aw_ready = dst.aw_ready;
+-`define AXI_ASSIGN_W(dst, src)                \
+-  `__AXI_TO_W(assign, dst.w, _, src.w, _)     \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_W(dst, src)                \
++  `CALIPTRA_SS_TB___AXI_TO_W(assign, dst.w, _, src.w, _)     \
+   assign dst.w_valid  = src.w_valid;          \
+   assign src.w_ready  = dst.w_ready;
+-`define AXI_ASSIGN_B(dst, src)                \
+-  `__AXI_TO_B(assign, dst.b, _, src.b, _)     \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_B(dst, src)                \
++  `CALIPTRA_SS_TB___AXI_TO_B(assign, dst.b, _, src.b, _)     \
+   assign dst.b_valid  = src.b_valid;          \
+   assign src.b_ready  = dst.b_ready;
+-`define AXI_ASSIGN_AR(dst, src)               \
+-  `__AXI_TO_AR(assign, dst.ar, _, src.ar, _)  \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AR(dst, src)               \
++  `CALIPTRA_SS_TB___AXI_TO_AR(assign, dst.ar, _, src.ar, _)  \
+   assign dst.ar_valid = src.ar_valid;         \
+   assign src.ar_ready = dst.ar_ready;
+-`define AXI_ASSIGN_R(dst, src)                \
+-  `__AXI_TO_R(assign, dst.r, _, src.r, _)     \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_R(dst, src)                \
++  `CALIPTRA_SS_TB___AXI_TO_R(assign, dst.r, _, src.r, _)     \
+   assign dst.r_valid  = src.r_valid;          \
+   assign src.r_ready  = dst.r_ready;
+-`define AXI_ASSIGN(slv, mst)  \
+-  `AXI_ASSIGN_AW(slv, mst)    \
+-  `AXI_ASSIGN_W(slv, mst)     \
+-  `AXI_ASSIGN_B(mst, slv)     \
+-  `AXI_ASSIGN_AR(slv, mst)    \
+-  `AXI_ASSIGN_R(mst, slv)
++`define CALIPTRA_SS_TB_AXI_ASSIGN(slv, mst)  \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AW(slv, mst)    \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_W(slv, mst)     \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_B(mst, slv)     \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AR(slv, mst)    \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_R(mst, slv)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -133,20 +133,20 @@
+ //
+ // Usage Example:
+ // `AXI_ASSIGN_MONITOR(mon_dv, axi_if)
+-`define AXI_ASSIGN_MONITOR(mon_dv, axi_if)          \
+-  `__AXI_TO_AW(assign, mon_dv.aw, _, axi_if.aw, _)  \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_MONITOR(mon_dv, axi_if)          \
++  `CALIPTRA_SS_TB___AXI_TO_AW(assign, mon_dv.aw, _, axi_if.aw, _)  \
+   assign mon_dv.aw_valid  = axi_if.aw_valid;        \
+   assign mon_dv.aw_ready  = axi_if.aw_ready;        \
+-  `__AXI_TO_W(assign, mon_dv.w, _, axi_if.w, _)     \
++  `CALIPTRA_SS_TB___AXI_TO_W(assign, mon_dv.w, _, axi_if.w, _)     \
+   assign mon_dv.w_valid   = axi_if.w_valid;         \
+   assign mon_dv.w_ready   = axi_if.w_ready;         \
+-  `__AXI_TO_B(assign, mon_dv.b, _, axi_if.b, _)     \
++  `CALIPTRA_SS_TB___AXI_TO_B(assign, mon_dv.b, _, axi_if.b, _)     \
+   assign mon_dv.b_valid   = axi_if.b_valid;         \
+   assign mon_dv.b_ready   = axi_if.b_ready;         \
+-  `__AXI_TO_AR(assign, mon_dv.ar, _, axi_if.ar, _)  \
++  `CALIPTRA_SS_TB___AXI_TO_AR(assign, mon_dv.ar, _, axi_if.ar, _)  \
+   assign mon_dv.ar_valid  = axi_if.ar_valid;        \
+   assign mon_dv.ar_ready  = axi_if.ar_ready;        \
+-  `__AXI_TO_R(assign, mon_dv.r, _, axi_if.r, _)     \
++  `CALIPTRA_SS_TB___AXI_TO_R(assign, mon_dv.r, _, axi_if.r, _)     \
+   assign mon_dv.r_valid   = axi_if.r_valid;         \
+   assign mon_dv.r_ready   = axi_if.r_ready;
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+@@ -168,13 +168,13 @@
+ // always_comb begin
+ //   `AXI_SET_FROM_REQ(my_if, my_req_struct)
+ // end
+-`define AXI_SET_FROM_AW(axi_if, aw_struct)      `__AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
+-`define AXI_SET_FROM_W(axi_if, w_struct)        `__AXI_TO_W(, axi_if.w, _, w_struct, .)
+-`define AXI_SET_FROM_B(axi_if, b_struct)        `__AXI_TO_B(, axi_if.b, _, b_struct, .)
+-`define AXI_SET_FROM_AR(axi_if, ar_struct)      `__AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
+-`define AXI_SET_FROM_R(axi_if, r_struct)        `__AXI_TO_R(, axi_if.r, _, r_struct, .)
+-`define AXI_SET_FROM_REQ(axi_if, req_struct)    `__AXI_TO_REQ(, axi_if, _, req_struct, .)
+-`define AXI_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_TO_RESP(, axi_if, _, resp_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_AW(axi_if, aw_struct)      `CALIPTRA_SS_TB___AXI_TO_AW(, axi_if.aw, _, aw_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_W(axi_if, w_struct)        `CALIPTRA_SS_TB___AXI_TO_W(, axi_if.w, _, w_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_B(axi_if, b_struct)        `CALIPTRA_SS_TB___AXI_TO_B(, axi_if.b, _, b_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_AR(axi_if, ar_struct)      `CALIPTRA_SS_TB___AXI_TO_AR(, axi_if.ar, _, ar_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_R(axi_if, r_struct)        `CALIPTRA_SS_TB___AXI_TO_R(, axi_if.r, _, r_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_REQ(axi_if, req_struct)    `CALIPTRA_SS_TB___AXI_TO_REQ(, axi_if, _, req_struct, .)
++`define CALIPTRA_SS_TB_AXI_SET_FROM_RESP(axi_if, resp_struct)  `CALIPTRA_SS_TB___AXI_TO_RESP(, axi_if, _, resp_struct, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -192,13 +192,13 @@
+ //
+ // Usage Example:
+ // `AXI_ASSIGN_FROM_REQ(my_if, my_req_struct)
+-`define AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
+-`define AXI_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_TO_W(assign, axi_if.w, _, w_struct, .)
+-`define AXI_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_TO_B(assign, axi_if.b, _, b_struct, .)
+-`define AXI_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
+-`define AXI_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_TO_R(assign, axi_if.r, _, r_struct, .)
+-`define AXI_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_TO_REQ(assign, axi_if, _, req_struct, .)
+-`define AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_TO_RESP(assign, axi_if, _, resp_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_AW(axi_if, aw_struct)     `CALIPTRA_SS_TB___AXI_TO_AW(assign, axi_if.aw, _, aw_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_W(axi_if, w_struct)       `CALIPTRA_SS_TB___AXI_TO_W(assign, axi_if.w, _, w_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_B(axi_if, b_struct)       `CALIPTRA_SS_TB___AXI_TO_B(assign, axi_if.b, _, b_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_AR(axi_if, ar_struct)     `CALIPTRA_SS_TB___AXI_TO_AR(assign, axi_if.ar, _, ar_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_R(axi_if, r_struct)       `CALIPTRA_SS_TB___AXI_TO_R(assign, axi_if.r, _, r_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(axi_if, req_struct)   `CALIPTRA_SS_TB___AXI_TO_REQ(assign, axi_if, _, req_struct, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(axi_if, resp_struct) `CALIPTRA_SS_TB___AXI_TO_RESP(assign, axi_if, _, resp_struct, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -219,13 +219,13 @@
+ // always_comb begin
+ //   `AXI_SET_TO_REQ(my_req_struct, my_if)
+ // end
+-`define AXI_SET_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
+-`define AXI_SET_TO_W(w_struct, axi_if)       `__AXI_TO_W(, w_struct, ., axi_if.w, _)
+-`define AXI_SET_TO_B(b_struct, axi_if)       `__AXI_TO_B(, b_struct, ., axi_if.b, _)
+-`define AXI_SET_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
+-`define AXI_SET_TO_R(r_struct, axi_if)       `__AXI_TO_R(, r_struct, ., axi_if.r, _)
+-`define AXI_SET_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(, req_struct, ., axi_if, _)
+-`define AXI_SET_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(, resp_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_AW(aw_struct, axi_if)     `CALIPTRA_SS_TB___AXI_TO_AW(, aw_struct, ., axi_if.aw, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_W(w_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_W(, w_struct, ., axi_if.w, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_B(b_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_B(, b_struct, ., axi_if.b, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_AR(ar_struct, axi_if)     `CALIPTRA_SS_TB___AXI_TO_AR(, ar_struct, ., axi_if.ar, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_R(r_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_R(, r_struct, ., axi_if.r, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_REQ(req_struct, axi_if)   `CALIPTRA_SS_TB___AXI_TO_REQ(, req_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_SET_TO_RESP(resp_struct, axi_if) `CALIPTRA_SS_TB___AXI_TO_RESP(, resp_struct, ., axi_if, _)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -244,13 +244,13 @@
+ //
+ // Usage Example:
+ // `AXI_ASSIGN_TO_REQ(my_req_struct, my_if)
+-`define AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
+-`define AXI_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_TO_W(assign, w_struct, ., axi_if.w, _)
+-`define AXI_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_TO_B(assign, b_struct, ., axi_if.b, _)
+-`define AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
+-`define AXI_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_TO_R(assign, r_struct, ., axi_if.r, _)
+-`define AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_TO_REQ(assign, req_struct, ., axi_if, _)
+-`define AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_TO_RESP(assign, resp_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_AW(aw_struct, axi_if)     `CALIPTRA_SS_TB___AXI_TO_AW(assign, aw_struct, ., axi_if.aw, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_W(w_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_W(assign, w_struct, ., axi_if.w, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_B(b_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_B(assign, b_struct, ., axi_if.b, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_AR(ar_struct, axi_if)     `CALIPTRA_SS_TB___AXI_TO_AR(assign, ar_struct, ., axi_if.ar, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_R(r_struct, axi_if)       `CALIPTRA_SS_TB___AXI_TO_R(assign, r_struct, ., axi_if.r, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(req_struct, axi_if)   `CALIPTRA_SS_TB___AXI_TO_REQ(assign, req_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(resp_struct, axi_if) `CALIPTRA_SS_TB___AXI_TO_RESP(assign, resp_struct, ., axi_if, _)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -271,13 +271,13 @@
+ // always_comb begin
+ //   `AXI_SET_REQ_STRUCT(my_req_struct, another_req_struct)
+ // end
+-`define AXI_SET_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(, lhs, ., rhs, .)
+-`define AXI_SET_W_STRUCT(lhs, rhs)       `__AXI_TO_W(, lhs, ., rhs, .)
+-`define AXI_SET_B_STRUCT(lhs, rhs)       `__AXI_TO_B(, lhs, ., rhs, .)
+-`define AXI_SET_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(, lhs, ., rhs, .)
+-`define AXI_SET_R_STRUCT(lhs, rhs)       `__AXI_TO_R(, lhs, ., rhs, .)
+-`define AXI_SET_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(, lhs, ., rhs, .)
+-`define AXI_SET_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_AW_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_TO_AW(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_W_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_W(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_B_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_B(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_AR_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_TO_AR(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_R_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_R(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_REQ_STRUCT(lhs, rhs)   `CALIPTRA_SS_TB___AXI_TO_REQ(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_SET_RESP_STRUCT(lhs, rhs) `CALIPTRA_SS_TB___AXI_TO_RESP(, lhs, ., rhs, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -296,13 +296,13 @@
+ //
+ // Usage Example:
+ // `AXI_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
+-`define AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_TO_AW(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_TO_W(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_TO_B(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_TO_AR(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_TO_R(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_TO_REQ(assign, lhs, ., rhs, .)
+-`define AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_TO_RESP(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AW_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_TO_AW(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_W_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_W(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_B_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_B(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AR_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_TO_AR(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_R_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_TO_R(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_REQ_STRUCT(lhs, rhs)   `CALIPTRA_SS_TB___AXI_TO_REQ(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_RESP_STRUCT(lhs, rhs) `CALIPTRA_SS_TB___AXI_TO_RESP(assign, lhs, ., rhs, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -311,34 +311,34 @@
+ // interface.  The path to the signals on each side is defined by the `__sep*` arguments.  The
+ // `__opt_as` argument allows to use this standalne (with `__opt_as = assign`) or in assignments
+ // inside processes (with `__opt_as` void).
+-`define __AXI_LITE_TO_AX(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_AX(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
+   __opt_as __lhs``__lhs_sep``addr = __rhs``__rhs_sep``addr;             \
+   __opt_as __lhs``__lhs_sep``prot = __rhs``__rhs_sep``prot;
+-`define __AXI_LITE_TO_W(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_W(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+   __opt_as __lhs``__lhs_sep``data = __rhs``__rhs_sep``data;           \
+   __opt_as __lhs``__lhs_sep``strb = __rhs``__rhs_sep``strb;
+-`define __AXI_LITE_TO_B(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_B(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+   __opt_as __lhs``__lhs_sep``resp = __rhs``__rhs_sep``resp;
+-`define __AXI_LITE_TO_R(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_R(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+   __opt_as __lhs``__lhs_sep``data = __rhs``__rhs_sep``data;           \
+   __opt_as __lhs``__lhs_sep``resp = __rhs``__rhs_sep``resp;
+-`define __AXI_LITE_TO_REQ(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
+-  `__AXI_LITE_TO_AX(__opt_as, __lhs.aw, __lhs_sep, __rhs.aw, __rhs_sep) \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_REQ(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep) \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_AX(__opt_as, __lhs.aw, __lhs_sep, __rhs.aw, __rhs_sep) \
+   __opt_as __lhs.aw_valid = __rhs.aw_valid;                             \
+-  `__AXI_LITE_TO_W(__opt_as, __lhs.w, __lhs_sep, __rhs.w, __rhs_sep)    \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_W(__opt_as, __lhs.w, __lhs_sep, __rhs.w, __rhs_sep)    \
+   __opt_as __lhs.w_valid = __rhs.w_valid;                               \
+   __opt_as __lhs.b_ready = __rhs.b_ready;                               \
+-  `__AXI_LITE_TO_AX(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep) \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_AX(__opt_as, __lhs.ar, __lhs_sep, __rhs.ar, __rhs_sep) \
+   __opt_as __lhs.ar_valid = __rhs.ar_valid;                             \
+   __opt_as __lhs.r_ready = __rhs.r_ready;
+-`define __AXI_LITE_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
++`define CALIPTRA_SS_TB___AXI_LITE_TO_RESP(__opt_as, __lhs, __lhs_sep, __rhs, __rhs_sep)  \
+   __opt_as __lhs.aw_ready = __rhs.aw_ready;                               \
+   __opt_as __lhs.ar_ready = __rhs.ar_ready;                               \
+   __opt_as __lhs.w_ready = __rhs.w_ready;                                 \
+   __opt_as __lhs.b_valid = __rhs.b_valid;                                 \
+-  `__AXI_LITE_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)      \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_B(__opt_as, __lhs.b, __lhs_sep, __rhs.b, __rhs_sep)      \
+   __opt_as __lhs.r_valid = __rhs.r_valid;                                 \
+-  `__AXI_LITE_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
++  `CALIPTRA_SS_TB___AXI_LITE_TO_R(__opt_as, __lhs.r, __lhs_sep, __rhs.r, __rhs_sep)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -355,32 +355,32 @@
+ // `AXI_LITE_ASSIGN(slv, mst)
+ // `AXI_LITE_ASSIGN_AW(dst, src)
+ // `AXI_LITE_ASSIGN_R(dst, src)
+-`define AXI_LITE_ASSIGN_AW(dst, src)              \
+-  `__AXI_LITE_TO_AX(assign, dst.aw, _, src.aw, _) \
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AW(dst, src)              \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, dst.aw, _, src.aw, _) \
+   assign dst.aw_valid = src.aw_valid;             \
+   assign src.aw_ready = dst.aw_ready;
+-`define AXI_LITE_ASSIGN_W(dst, src)             \
+-  `__AXI_LITE_TO_W(assign, dst.w, _, src.w, _)  \
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_W(dst, src)             \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_W(assign, dst.w, _, src.w, _)  \
+   assign dst.w_valid  = src.w_valid;            \
+   assign src.w_ready  = dst.w_ready;
+-`define AXI_LITE_ASSIGN_B(dst, src)             \
+-  `__AXI_LITE_TO_B(assign, dst.b, _, src.b, _)  \
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_B(dst, src)             \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_B(assign, dst.b, _, src.b, _)  \
+   assign dst.b_valid  = src.b_valid;            \
+   assign src.b_ready  = dst.b_ready;
+-`define AXI_LITE_ASSIGN_AR(dst, src)              \
+-  `__AXI_LITE_TO_AX(assign, dst.ar, _, src.ar, _) \
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AR(dst, src)              \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, dst.ar, _, src.ar, _) \
+   assign dst.ar_valid = src.ar_valid;             \
+   assign src.ar_ready = dst.ar_ready;
+-`define AXI_LITE_ASSIGN_R(dst, src)             \
+-  `__AXI_LITE_TO_R(assign, dst.r, _, src.r, _)  \
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_R(dst, src)             \
++  `CALIPTRA_SS_TB___AXI_LITE_TO_R(assign, dst.r, _, src.r, _)  \
+   assign dst.r_valid  = src.r_valid;            \
+   assign src.r_ready  = dst.r_ready;
+-`define AXI_LITE_ASSIGN(slv, mst) \
+-  `AXI_LITE_ASSIGN_AW(slv, mst)   \
+-  `AXI_LITE_ASSIGN_W(slv, mst)    \
+-  `AXI_LITE_ASSIGN_B(mst, slv)    \
+-  `AXI_LITE_ASSIGN_AR(slv, mst)   \
+-  `AXI_LITE_ASSIGN_R(mst, slv)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN(slv, mst) \
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AW(slv, mst)   \
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_W(slv, mst)    \
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_B(mst, slv)    \
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AR(slv, mst)   \
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_R(mst, slv)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -400,13 +400,13 @@
+ // always_comb begin
+ //   `AXI_LITE_SET_FROM_REQ(my_if, my_req_struct)
+ // end
+-`define AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `__AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
+-`define AXI_LITE_SET_FROM_W(axi_if, w_struct)        `__AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
+-`define AXI_LITE_SET_FROM_B(axi_if, b_struct)        `__AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
+-`define AXI_LITE_SET_FROM_AR(axi_if, ar_struct)      `__AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
+-`define AXI_LITE_SET_FROM_R(axi_if, r_struct)        `__AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
+-`define AXI_LITE_SET_FROM_REQ(axi_if, req_struct)    `__AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
+-`define AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)  `__AXI_LITE_TO_RESP(, axi_if, _, resp_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_AW(axi_if, aw_struct)      `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, axi_if.aw, _, aw_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_W(axi_if, w_struct)        `CALIPTRA_SS_TB___AXI_LITE_TO_W(, axi_if.w, _, w_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_B(axi_if, b_struct)        `CALIPTRA_SS_TB___AXI_LITE_TO_B(, axi_if.b, _, b_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_AR(axi_if, ar_struct)      `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, axi_if.ar, _, ar_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_R(axi_if, r_struct)        `CALIPTRA_SS_TB___AXI_LITE_TO_R(, axi_if.r, _, r_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_REQ(axi_if, req_struct)    `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(, axi_if, _, req_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_FROM_RESP(axi_if, resp_struct)  `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(, axi_if, _, resp_struct, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -424,13 +424,13 @@
+ //
+ // Usage Example:
+ // `AXI_LITE_ASSIGN_FROM_REQ(my_if, my_req_struct)
+-`define AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `__AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `__AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `__AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)     `__AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)       `__AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)   `__AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
+-`define AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct) `__AXI_LITE_TO_RESP(assign, axi_if, _, resp_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_AW(axi_if, aw_struct)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, axi_if.aw, _, aw_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_W(axi_if, w_struct)       `CALIPTRA_SS_TB___AXI_LITE_TO_W(assign, axi_if.w, _, w_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_B(axi_if, b_struct)       `CALIPTRA_SS_TB___AXI_LITE_TO_B(assign, axi_if.b, _, b_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_AR(axi_if, ar_struct)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, axi_if.ar, _, ar_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_R(axi_if, r_struct)       `CALIPTRA_SS_TB___AXI_LITE_TO_R(assign, axi_if.r, _, r_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_REQ(axi_if, req_struct)   `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(assign, axi_if, _, req_struct, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_RESP(axi_if, resp_struct) `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(assign, axi_if, _, resp_struct, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -451,13 +451,13 @@
+ // always_comb begin
+ //   `AXI_LITE_SET_TO_REQ(my_req_struct, my_if)
+ // end
+-`define AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
+-`define AXI_LITE_SET_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
+-`define AXI_LITE_SET_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
+-`define AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
+-`define AXI_LITE_SET_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
+-`define AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
+-`define AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(, resp_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_AW(aw_struct, axi_if)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, aw_struct, ., axi_if.aw, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_W(w_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_W(, w_struct, ., axi_if.w, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_B(b_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_B(, b_struct, ., axi_if.b, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_AR(ar_struct, axi_if)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, ar_struct, ., axi_if.ar, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_R(r_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_R(, r_struct, ., axi_if.r, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_REQ(req_struct, axi_if)   `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(, req_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_TO_RESP(resp_struct, axi_if) `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(, resp_struct, ., axi_if, _)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -476,13 +476,13 @@
+ //
+ // Usage Example:
+ // `AXI_LITE_ASSIGN_TO_REQ(my_req_struct, my_if)
+-`define AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `__AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
+-`define AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `__AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
+-`define AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `__AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
+-`define AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `__AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
+-`define AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `__AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
+-`define AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `__AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
+-`define AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `__AXI_LITE_TO_RESP(assign, resp_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_AW(aw_struct, axi_if)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, aw_struct, ., axi_if.aw, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_W(w_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_W(assign, w_struct, ., axi_if.w, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_B(b_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_B(assign, b_struct, ., axi_if.b, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_AR(ar_struct, axi_if)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, ar_struct, ., axi_if.ar, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_R(r_struct, axi_if)       `CALIPTRA_SS_TB___AXI_LITE_TO_R(assign, r_struct, ., axi_if.r, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_REQ(req_struct, axi_if)   `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(assign, req_struct, ., axi_if, _)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_RESP(resp_struct, axi_if) `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(assign, resp_struct, ., axi_if, _)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -503,13 +503,13 @@
+ // always_comb begin
+ //   `AXI_LITE_SET_REQ_STRUCT(my_req_struct, another_req_struct)
+ // end
+-`define AXI_LITE_SET_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(, lhs, ., rhs, .)
+-`define AXI_LITE_SET_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_AW_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_W_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_W(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_B_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_B(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_AR_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_R_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_R(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_REQ_STRUCT(lhs, rhs)   `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_SET_RESP_STRUCT(lhs, rhs) `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(, lhs, ., rhs, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -528,13 +528,13 @@
+ //
+ // Usage Example:
+ // `AXI_LITE_ASSIGN_REQ_STRUCT(my_req_struct, another_req_struct)
+-`define AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)       `__AXI_LITE_TO_W(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)       `__AXI_LITE_TO_B(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)     `__AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)       `__AXI_LITE_TO_R(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)   `__AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
+-`define AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs) `__AXI_LITE_TO_RESP(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AW_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_W_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_W(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_B_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_B(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_AR_STRUCT(lhs, rhs)     `CALIPTRA_SS_TB___AXI_LITE_TO_AX(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_R_STRUCT(lhs, rhs)       `CALIPTRA_SS_TB___AXI_LITE_TO_R(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_REQ_STRUCT(lhs, rhs)   `CALIPTRA_SS_TB___AXI_LITE_TO_REQ(assign, lhs, ., rhs, .)
++`define CALIPTRA_SS_TB_AXI_LITE_ASSIGN_RESP_STRUCT(lhs, rhs) `CALIPTRA_SS_TB___AXI_LITE_TO_RESP(assign, lhs, ., rhs, .)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ 
+@@ -544,7 +544,7 @@
+ //
+ // Usage Example:
+ // `AXI_ASSIGN_MASTER_TO_FLAT("my_bus", my_req_struct, my_rsp_struct)
+-`define AXI_ASSIGN_MASTER_TO_FLAT(pat, req, rsp) \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_MASTER_TO_FLAT(pat, req, rsp) \
+   assign m_axi_``pat``_awvalid  = req.aw_valid;  \
+   assign m_axi_``pat``_awid     = req.aw.id;     \
+   assign m_axi_``pat``_awaddr   = req.aw.addr;   \
+@@ -597,7 +597,7 @@
+   assign rsp.r.last   = m_axi_``pat``_rlast;     \
+   assign rsp.r.user   = m_axi_``pat``_ruser;
+ 
+-`define AXI_ASSIGN_SLAVE_TO_FLAT(pat, req, rsp)  \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_SLAVE_TO_FLAT(pat, req, rsp)  \
+   assign req.aw_valid  = s_axi_``pat``_awvalid;  \
+   assign req.aw.id     = s_axi_``pat``_awid;     \
+   assign req.aw.addr   = s_axi_``pat``_awaddr;   \
+@@ -650,7 +650,7 @@
+   assign s_axi_``pat``_rlast   = rsp.r.last;     \
+   assign s_axi_``pat``_ruser   = rsp.r.user;
+ 
+-`define AXI_ASSIGN_TO_FLAT_PORT(pat, req, rsp)  \
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_FLAT_PORT(pat, req, rsp)  \
+   .``pat``_awvalid  ( req.aw_valid  ), \
+   .``pat``_awid     ( req.aw.id     ), \
+   .``pat``_awaddr   ( req.aw.addr   ), \
+@@ -703,11 +703,11 @@
+   .``pat``_rlast    ( rsp.r.last    ), \
+   .``pat``_ruser    ( rsp.r.user    )
+ 
+-`define AXI_ASSIGN_MASTER_TO_FLAT_PORT(name, req, rsp) \
+-  `AXI_ASSIGN_TO_FLAT_PORT(m_axi_``name``, req, rsp)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_MASTER_TO_FLAT_PORT(name, req, rsp) \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_FLAT_PORT(m_axi_``name``, req, rsp)
+ 
+-`define AXI_ASSIGN_SLAVE_TO_FLAT_PORT(name, req, rsp) \
+-  `AXI_ASSIGN_TO_FLAT_PORT(s_axi_``name``, req, rsp)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_SLAVE_TO_FLAT_PORT(name, req, rsp) \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_FLAT_PORT(s_axi_``name``, req, rsp)
+ 
+ 
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+@@ -717,7 +717,7 @@
+ // Macros instantiating signal highlighter from common verification
+ // https://github.com/pulp-platform/common_verification.git
+ // `AXI_HIGHLIGHT(__name, __aw_t, __w_t, __b_t, __ar_t, __r_t, __req, __resp)
+-`define AXI_HIGHLIGHT(__name, __aw_t, __w_t, __b_t, __ar_t, __r_t, __req, __resp) \
++`define CALIPTRA_SS_TB_AXI_HIGHLIGHT(__name, __aw_t, __w_t, __b_t, __ar_t, __r_t, __req, __resp) \
+   signal_highlighter #(                                                           \
+     .T ( __aw_t )                                                                 \
+   ) i_signal_highlighter_``__name``_aw (                                          \
+@@ -755,4 +755,184 @@
+   );
+ ////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
++
++////////////////////////////////////////////////////////////////////////////////////////////////////
++// Caliptra SS testbench additions (not part of the pulp-platform/axi upstream).
++//
++// Connect a Caliptra-RTL style AXI endpoint to a PULP req/resp struct pair.  Caliptra interfaces
++// (`axi_if` from caliptra-rtl, or the flat `axi_struct_pkg` wr/rd structs) use flat lowercase
++// signal names (awaddr, arvalid, ...) without CACHE/PROT/QOS/REGION/ATOP sideband.  These macros
++// adapt the naming, tie the missing fields, and adapt width differences (addr, id, data, strb)
++// with self-sizing casts, so the same macro serves 32- and 64-bit endpoints (narrow endpoints use
++// byte lanes [3:0] of the 64-bit struct fields by testbench convention).
++//
++// Manager direction (the Caliptra interface requests, e.g. MCU LSU/IFU/SB, Caliptra DMA, SOC BFM):
++// `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_CPTRA_MGR(req, rsp, cptra_if)
++//   plus exactly one of (AW/AR cache/prot/qos/region fields):
++// `CALIPTRA_SS_TB_AXI_ASSIGN_MGR_SIDEBAND(req, cptra_if)     // from <cptra_if>_awcache etc.
++// `CALIPTRA_SS_TB_AXI_ASSIGN_MGR_NO_SIDEBAND(req)            // tie to '0
++//
++// Subordinate direction (the Caliptra interface responds, e.g. I3C, MCI, SoC IFC, SRAM, SPI, UART):
++// `CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB(rsp, req, cptra_if)
++//
++// Subordinates with split axi_struct_pkg write/read struct pairs (FC, LCC):
++// `CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB_WR(rsp, req, wr_req, wr_rsp)
++// `CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB_RD(rsp, req, rd_req, rd_rsp)
++//
++// The per-channel macros are also usable standalone for ports that need special handling on one
++// channel (e.g. a read-only subordinate, or an AW channel with an address fixup).
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AW_FROM_CPTRA(req, rsp, cptra)      \
++  assign req.aw.id      = ($bits(req.aw.id))'(cptra.awid);            \
++  assign req.aw.addr    = ($bits(req.aw.addr))'(cptra.awaddr);        \
++  assign req.aw.len     = cptra.awlen;                                \
++  assign req.aw.size    = cptra.awsize;                               \
++  assign req.aw.burst   = cptra.awburst;                              \
++  assign req.aw.lock    = cptra.awlock;                               \
++  assign req.aw.atop    = '0;                                         \
++  assign req.aw.user    = cptra.awuser;                               \
++  assign req.aw_valid   = cptra.awvalid;                              \
++  assign cptra.awready  = rsp.aw_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_W_FROM_CPTRA(req, rsp, cptra)       \
++  assign req.w.data     = ($bits(req.w.data))'(cptra.wdata);          \
++  assign req.w.strb     = ($bits(req.w.strb))'(cptra.wstrb);          \
++  assign req.w.last     = cptra.wlast;                                \
++  assign req.w.user     = cptra.wuser;                                \
++  assign req.w_valid    = cptra.wvalid;                               \
++  assign cptra.wready   = rsp.w_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_B_TO_CPTRA(req, rsp, cptra)         \
++  assign cptra.bid      = ($bits(cptra.bid))'(rsp.b.id);              \
++  assign cptra.bresp    = rsp.b.resp;                                 \
++  assign cptra.buser    = rsp.b.user;                                 \
++  assign cptra.bvalid   = rsp.b_valid;                                \
++  assign req.b_ready    = cptra.bready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AR_FROM_CPTRA(req, rsp, cptra)      \
++  assign req.ar.id      = ($bits(req.ar.id))'(cptra.arid);            \
++  assign req.ar.addr    = ($bits(req.ar.addr))'(cptra.araddr);        \
++  assign req.ar.len     = cptra.arlen;                                \
++  assign req.ar.size    = cptra.arsize;                               \
++  assign req.ar.burst   = cptra.arburst;                              \
++  assign req.ar.lock    = cptra.arlock;                               \
++  assign req.ar.user    = cptra.aruser;                               \
++  assign req.ar_valid   = cptra.arvalid;                              \
++  assign cptra.arready  = rsp.ar_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_R_TO_CPTRA(req, rsp, cptra)         \
++  assign cptra.rid      = ($bits(cptra.rid))'(rsp.r.id);              \
++  assign cptra.rdata    = ($bits(cptra.rdata))'(rsp.r.data);          \
++  assign cptra.rresp    = rsp.r.resp;                                 \
++  assign cptra.rlast    = rsp.r.last;                                 \
++  assign cptra.ruser    = rsp.r.user;                                 \
++  assign cptra.rvalid   = rsp.r_valid;                                \
++  assign req.r_ready    = cptra.rready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_FROM_CPTRA_MGR(req, rsp, cptra)     \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AW_FROM_CPTRA(req, rsp, cptra)           \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_W_FROM_CPTRA(req, rsp, cptra)            \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_B_TO_CPTRA(req, rsp, cptra)              \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AR_FROM_CPTRA(req, rsp, cptra)           \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_R_TO_CPTRA(req, rsp, cptra)
++`define CALIPTRA_SS_TB_AXI_ASSIGN_MGR_SIDEBAND(req, cptra)            \
++  assign req.aw.cache   = cptra``_awcache;                            \
++  assign req.aw.prot    = cptra``_awprot;                             \
++  assign req.aw.qos     = cptra``_awqos;                              \
++  assign req.aw.region  = cptra``_awregion;                           \
++  assign req.ar.cache   = cptra``_arcache;                            \
++  assign req.ar.prot    = cptra``_arprot;                             \
++  assign req.ar.qos     = cptra``_arqos;                              \
++  assign req.ar.region  = cptra``_arregion;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_MGR_NO_SIDEBAND(req)                \
++  assign req.aw.cache   = '0;                                         \
++  assign req.aw.prot    = '0;                                         \
++  assign req.aw.qos     = '0;                                         \
++  assign req.aw.region  = '0;                                         \
++  assign req.ar.cache   = '0;                                         \
++  assign req.ar.prot    = '0;                                         \
++  assign req.ar.qos     = '0;                                         \
++  assign req.ar.region  = '0;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AW_TO_CPTRA(rsp, req, cptra)        \
++  assign cptra.awid     = ($bits(cptra.awid))'(req.aw.id);            \
++  assign cptra.awaddr   = ($bits(cptra.awaddr))'(req.aw.addr);        \
++  assign cptra.awlen    = req.aw.len;                                 \
++  assign cptra.awsize   = req.aw.size;                                \
++  assign cptra.awburst  = req.aw.burst;                               \
++  assign cptra.awlock   = req.aw.lock;                                \
++  assign cptra.awuser   = req.aw.user;                                \
++  assign cptra.awvalid  = req.aw_valid;                               \
++  assign rsp.aw_ready   = cptra.awready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_W_TO_CPTRA(rsp, req, cptra)         \
++  assign cptra.wdata    = ($bits(cptra.wdata))'(req.w.data);          \
++  assign cptra.wstrb    = ($bits(cptra.wstrb))'(req.w.strb);          \
++  assign cptra.wlast    = req.w.last;                                 \
++  assign cptra.wuser    = req.w.user;                                 \
++  assign cptra.wvalid   = req.w_valid;                                \
++  assign rsp.w_ready    = cptra.wready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_B_FROM_CPTRA(rsp, req, cptra)       \
++  assign rsp.b.id       = ($bits(rsp.b.id))'(cptra.bid);              \
++  assign rsp.b.resp     = cptra.bresp;                                \
++  assign rsp.b.user     = cptra.buser;                                \
++  assign rsp.b_valid    = cptra.bvalid;                               \
++  assign cptra.bready   = req.b_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_AR_TO_CPTRA(rsp, req, cptra)        \
++  assign cptra.arid     = ($bits(cptra.arid))'(req.ar.id);            \
++  assign cptra.araddr   = ($bits(cptra.araddr))'(req.ar.addr);        \
++  assign cptra.arlen    = req.ar.len;                                 \
++  assign cptra.arsize   = req.ar.size;                                \
++  assign cptra.arburst  = req.ar.burst;                               \
++  assign cptra.arlock   = req.ar.lock;                                \
++  assign cptra.aruser   = req.ar.user;                                \
++  assign cptra.arvalid  = req.ar_valid;                               \
++  assign rsp.ar_ready   = cptra.arready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_R_FROM_CPTRA(rsp, req, cptra)       \
++  assign rsp.r.id       = ($bits(rsp.r.id))'(cptra.rid);              \
++  assign rsp.r.data     = ($bits(rsp.r.data))'(cptra.rdata);          \
++  assign rsp.r.resp     = cptra.rresp;                                \
++  assign rsp.r.last     = cptra.rlast;                                \
++  assign rsp.r.user     = cptra.ruser;                                \
++  assign rsp.r_valid    = cptra.rvalid;                               \
++  assign cptra.rready   = req.r_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB(rsp, req, cptra)       \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AW_TO_CPTRA(rsp, req, cptra)             \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_W_TO_CPTRA(rsp, req, cptra)              \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_B_FROM_CPTRA(rsp, req, cptra)            \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_AR_TO_CPTRA(rsp, req, cptra)             \
++  `CALIPTRA_SS_TB_AXI_ASSIGN_R_FROM_CPTRA(rsp, req, cptra)
++// Split write/read struct pairs (axi_struct_pkg, used by FC and LCC) carry no W/B/R user fields:
++// WUSER is dropped, B/RUSER are tied '0 toward the crossbar.
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB_WR(rsp, req, wr_req, wr_rsp) \
++  assign wr_req.awid    = ($bits(wr_req.awid))'(req.aw.id);           \
++  assign wr_req.awaddr  = ($bits(wr_req.awaddr))'(req.aw.addr);       \
++  assign wr_req.awlen   = req.aw.len;                                 \
++  assign wr_req.awsize  = req.aw.size;                                \
++  assign wr_req.awburst = req.aw.burst;                               \
++  assign wr_req.awlock  = req.aw.lock;                                \
++  assign wr_req.awuser  = req.aw.user;                                \
++  assign wr_req.awvalid = req.aw_valid;                               \
++  assign rsp.aw_ready   = wr_rsp.awready;                             \
++  assign wr_req.wdata   = ($bits(wr_req.wdata))'(req.w.data);         \
++  assign wr_req.wstrb   = ($bits(wr_req.wstrb))'(req.w.strb);         \
++  assign wr_req.wlast   = req.w.last;                                 \
++  assign wr_req.wvalid  = req.w_valid;                                \
++  assign rsp.w_ready    = wr_rsp.wready;                              \
++  assign rsp.b.id       = ($bits(rsp.b.id))'(wr_rsp.bid);             \
++  assign rsp.b.resp     = wr_rsp.bresp;                               \
++  assign rsp.b.user     = '0;                                         \
++  assign rsp.b_valid    = wr_rsp.bvalid;                              \
++  assign wr_req.bready  = req.b_ready;
++`define CALIPTRA_SS_TB_AXI_ASSIGN_TO_CPTRA_SUB_RD(rsp, req, rd_req, rd_rsp) \
++  assign rd_req.arid    = ($bits(rd_req.arid))'(req.ar.id);           \
++  assign rd_req.araddr  = ($bits(rd_req.araddr))'(req.ar.addr);       \
++  assign rd_req.arlen   = req.ar.len;                                 \
++  assign rd_req.arsize  = req.ar.size;                                \
++  assign rd_req.arburst = req.ar.burst;                               \
++  assign rd_req.arlock  = req.ar.lock;                                \
++  assign rd_req.aruser  = req.ar.user;                                \
++  assign rd_req.arvalid = req.ar_valid;                               \
++  assign rsp.ar_ready   = rd_rsp.arready;                             \
++  assign rsp.r.id       = ($bits(rsp.r.id))'(rd_rsp.rid);             \
++  assign rsp.r.data     = ($bits(rsp.r.data))'(rd_rsp.rdata);         \
++  assign rsp.r.resp     = rd_rsp.rresp;                               \
++  assign rsp.r.last     = rd_rsp.rlast;                               \
++  assign rsp.r.user     = '0;                                         \
++  assign rsp.r_valid    = rd_rsp.rvalid;                              \
++  assign rd_req.rready  = req.r_ready;
++////////////////////////////////////////////////////////////////////////////////////////////////////
++
+ `endif

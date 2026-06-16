@@ -1,0 +1,180 @@
+diff --git a/caliptra_ss_tb_axi_multicut.sv b/caliptra_ss_tb_axi_multicut.sv
+index 64a354a..bddc432 100644
+--- a/caliptra_ss_tb_axi_multicut.sv
++++ b/caliptra_ss_tb_axi_multicut.sv
+@@ -18,14 +18,14 @@
+ // Multiple AXI4 cuts.
+ //
+ // These can be used to relax timing pressure on very long AXI busses.
+-module axi_multicut #(
++module caliptra_ss_tb_axi_multicut #(
+   parameter int unsigned NoCuts = 32'd1, // Number of cuts.
+   // AXI channel structs
+-  parameter type  aw_chan_t = logic,
+-  parameter type   w_chan_t = logic,
+-  parameter type   b_chan_t = logic,
+-  parameter type  ar_chan_t = logic,
+-  parameter type   r_chan_t = logic,
++  parameter type  caliptra_ss_tb_aw_chan_t = logic,
++  parameter type   caliptra_ss_tb_w_chan_t = logic,
++  parameter type   caliptra_ss_tb_b_chan_t = logic,
++  parameter type  caliptra_ss_tb_ar_chan_t = logic,
++  parameter type   caliptra_ss_tb_r_chan_t = logic,
+   // AXI request & response structs
+   parameter type  axi_req_t = logic,
+   parameter type axi_resp_t = logic
+@@ -55,13 +55,13 @@ module axi_multicut #(
+ 
+     // AXI cuts
+     for (genvar i = 0; i < NoCuts; i++) begin : gen_axi_cuts
+-      axi_cut #(
++      caliptra_ss_tb_axi_cut #(
+         .Bypass     (       1'b0 ),
+-        .aw_chan_t  (  aw_chan_t ),
+-        .w_chan_t   (   w_chan_t ),
+-        .b_chan_t   (   b_chan_t ),
+-        .ar_chan_t  (  ar_chan_t ),
+-        .r_chan_t   (   r_chan_t ),
++        .caliptra_ss_tb_aw_chan_t  (  caliptra_ss_tb_aw_chan_t ),
++        .caliptra_ss_tb_w_chan_t   (   caliptra_ss_tb_w_chan_t ),
++        .caliptra_ss_tb_b_chan_t   (   caliptra_ss_tb_b_chan_t ),
++        .caliptra_ss_tb_ar_chan_t  (  caliptra_ss_tb_ar_chan_t ),
++        .caliptra_ss_tb_r_chan_t   (   caliptra_ss_tb_r_chan_t ),
+         .axi_req_t  (  axi_req_t ),
+         .axi_resp_t ( axi_resp_t )
+       ) i_cut (
+@@ -92,8 +92,8 @@ endmodule
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+-`include "axi/typedef.svh"
++`include "axi/caliptra_ss_tb_axi_typedef.svh"
+ 
+ // interface wrapper
+-module axi_multicut_intf #(
++module caliptra_ss_tb_axi_multicut_intf #(
+   parameter int unsigned ADDR_WIDTH = 0, // The address width.
+   parameter int unsigned DATA_WIDTH = 0, // The data width.
+   parameter int unsigned ID_WIDTH   = 0, // The ID width.
+@@ -106,36 +106,36 @@ module axi_multicut_intf #(
+   AXI_BUS.Master out
+ );
+ 
+-  typedef logic [ID_WIDTH-1:0]     id_t;
+-  typedef logic [ADDR_WIDTH-1:0]   addr_t;
+-  typedef logic [DATA_WIDTH-1:0]   data_t;
+-  typedef logic [DATA_WIDTH/8-1:0] strb_t;
+-  typedef logic [USER_WIDTH-1:0]   user_t;
++  typedef logic [ID_WIDTH-1:0]     caliptra_ss_tb_id_t;
++  typedef logic [ADDR_WIDTH-1:0]   caliptra_ss_tb_addr_t;
++  typedef logic [DATA_WIDTH-1:0]   caliptra_ss_tb_data_t;
++  typedef logic [DATA_WIDTH/8-1:0] caliptra_ss_tb_strb_t;
++  typedef logic [USER_WIDTH-1:0]   caliptra_ss_tb_user_t;
+ 
+-  `AXI_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t, id_t, user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(b_chan_t, id_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t, id_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(r_chan_t, data_t, id_t, user_t)
+-  `AXI_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(caliptra_ss_tb_aw_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(caliptra_ss_tb_w_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_strb_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(caliptra_ss_tb_b_chan_t, caliptra_ss_tb_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(caliptra_ss_tb_ar_chan_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(caliptra_ss_tb_r_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(axi_req_t, caliptra_ss_tb_aw_chan_t, caliptra_ss_tb_w_chan_t, caliptra_ss_tb_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(axi_resp_t, caliptra_ss_tb_b_chan_t, caliptra_ss_tb_r_chan_t)
+ 
+   axi_req_t  slv_req,  mst_req;
+   axi_resp_t slv_resp, mst_resp;
+ 
+-  `AXI_ASSIGN_TO_REQ(slv_req, in)
+-  `AXI_ASSIGN_FROM_RESP(in, slv_resp)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(slv_req, in)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(in, slv_resp)
+ 
+-  `AXI_ASSIGN_FROM_REQ(out, mst_req)
+-  `AXI_ASSIGN_TO_RESP(mst_resp, out)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(out, mst_req)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(mst_resp, out)
+ 
+-  axi_multicut #(
++  caliptra_ss_tb_axi_multicut #(
+     .NoCuts     (   NUM_CUTS ),
+-    .aw_chan_t  (  aw_chan_t ),
+-    .w_chan_t   (   w_chan_t ),
+-    .b_chan_t   (   b_chan_t ),
+-    .ar_chan_t  (  ar_chan_t ),
+-    .r_chan_t   (   r_chan_t ),
++    .caliptra_ss_tb_aw_chan_t  (  caliptra_ss_tb_aw_chan_t ),
++    .caliptra_ss_tb_w_chan_t   (   caliptra_ss_tb_w_chan_t ),
++    .caliptra_ss_tb_b_chan_t   (   caliptra_ss_tb_b_chan_t ),
++    .caliptra_ss_tb_ar_chan_t  (  caliptra_ss_tb_ar_chan_t ),
++    .caliptra_ss_tb_r_chan_t   (   caliptra_ss_tb_r_chan_t ),
+     .axi_req_t  (  axi_req_t ),
+     .axi_resp_t ( axi_resp_t )
+   ) i_axi_multicut (
+@@ -168,7 +168,7 @@ module axi_multicut_intf #(
+   // pragma translate_on
+ endmodule
+ 
+-module axi_lite_multicut_intf #(
++module caliptra_ss_tb_axi_lite_multicut_intf #(
+   // The address width.
+   parameter int unsigned ADDR_WIDTH = 0,
+   // The data width.
+@@ -182,34 +182,34 @@ module axi_lite_multicut_intf #(
+   AXI_LITE.Master out
+ );
+ 
+-  typedef logic [ADDR_WIDTH-1:0]   addr_t;
+-  typedef logic [DATA_WIDTH-1:0]   data_t;
+-  typedef logic [DATA_WIDTH/8-1:0] strb_t;
++  typedef logic [ADDR_WIDTH-1:0]   caliptra_ss_tb_addr_t;
++  typedef logic [DATA_WIDTH-1:0]   caliptra_ss_tb_data_t;
++  typedef logic [DATA_WIDTH/8-1:0] caliptra_ss_tb_strb_t;
+ 
+-  `AXI_LITE_TYPEDEF_AW_CHAN_T(aw_chan_t, addr_t)
+-  `AXI_LITE_TYPEDEF_W_CHAN_T(w_chan_t, data_t, strb_t)
+-  `AXI_LITE_TYPEDEF_B_CHAN_T(b_chan_t)
+-  `AXI_LITE_TYPEDEF_AR_CHAN_T(ar_chan_t, addr_t)
+-  `AXI_LITE_TYPEDEF_R_CHAN_T(r_chan_t, data_t)
+-  `AXI_LITE_TYPEDEF_REQ_T(axi_req_t, aw_chan_t, w_chan_t, ar_chan_t)
+-  `AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, b_chan_t, r_chan_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_AW_CHAN_T(caliptra_ss_tb_aw_chan_t, caliptra_ss_tb_addr_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_W_CHAN_T(caliptra_ss_tb_w_chan_t, caliptra_ss_tb_data_t, caliptra_ss_tb_strb_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_B_CHAN_T(caliptra_ss_tb_b_chan_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_AR_CHAN_T(caliptra_ss_tb_ar_chan_t, caliptra_ss_tb_addr_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_R_CHAN_T(caliptra_ss_tb_r_chan_t, caliptra_ss_tb_data_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_REQ_T(axi_req_t, caliptra_ss_tb_aw_chan_t, caliptra_ss_tb_w_chan_t, caliptra_ss_tb_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_LITE_TYPEDEF_RESP_T(axi_resp_t, caliptra_ss_tb_b_chan_t, caliptra_ss_tb_r_chan_t)
+ 
+   axi_req_t  slv_req,  mst_req;
+   axi_resp_t slv_resp, mst_resp;
+ 
+-  `AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
+-  `AXI_LITE_ASSIGN_FROM_RESP(in, slv_resp)
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_REQ(slv_req, in)
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_RESP(in, slv_resp)
+ 
+-  `AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
+-  `AXI_LITE_ASSIGN_TO_RESP(mst_resp, out)
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_FROM_REQ(out, mst_req)
++  `CALIPTRA_SS_TB_AXI_LITE_ASSIGN_TO_RESP(mst_resp, out)
+ 
+-  axi_multicut #(
++  caliptra_ss_tb_axi_multicut #(
+     .NoCuts     (   NUM_CUTS ),
+-    .aw_chan_t  (  aw_chan_t ),
+-    .w_chan_t   (   w_chan_t ),
+-    .b_chan_t   (   b_chan_t ),
+-    .ar_chan_t  (  ar_chan_t ),
+-    .r_chan_t   (   r_chan_t ),
++    .caliptra_ss_tb_aw_chan_t  (  caliptra_ss_tb_aw_chan_t ),
++    .caliptra_ss_tb_w_chan_t   (   caliptra_ss_tb_w_chan_t ),
++    .caliptra_ss_tb_b_chan_t   (   caliptra_ss_tb_b_chan_t ),
++    .caliptra_ss_tb_ar_chan_t  (  caliptra_ss_tb_ar_chan_t ),
++    .caliptra_ss_tb_r_chan_t   (   caliptra_ss_tb_r_chan_t ),
+     .axi_req_t  (  axi_req_t ),
+     .axi_resp_t ( axi_resp_t )
+   ) i_axi_multicut (

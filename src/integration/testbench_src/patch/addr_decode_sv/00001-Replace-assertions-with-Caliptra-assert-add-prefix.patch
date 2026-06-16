@@ -1,0 +1,61 @@
+diff --git a/caliptra_ss_tb_addr_decode.sv b/caliptra_ss_tb_addr_decode.sv
+index 315dc2d..48c6cad 100644
+--- a/caliptra_ss_tb_addr_decode.sv
++++ b/caliptra_ss_tb_addr_decode.sv
+@@ -32,13 +32,13 @@
+ /// if the resulting map is valid. It fatals if `start_addr` is higher than `end_addr` (non-NAPOT
+ /// only) or if a mapping targets an index that is outside the number of allowed indices.
+ /// It issues warnings if the address regions of any two mappings overlap (non-NAPOT only).
+-module addr_decode #(
++module caliptra_ss_tb_addr_decode #(
+   /// Highest index which can happen in a rule.
+   parameter int unsigned NoIndices = 32'd0,
+   /// Total number of rules.
+   parameter int unsigned NoRules   = 32'd0,
+   /// Address type inside the rules and to decode.
+-  parameter type         addr_t    = logic,
++  parameter type         caliptra_ss_tb_addr_t    = logic,
+   /// Rule packed struct type.
+   /// The address decoder expects three fields in `rule_t`:
+   ///
+@@ -62,18 +62,18 @@ module addr_decode #(
+   /// Dependent parameter, do **not** overwite!
+   ///
+   /// Width of the `idx_o` output port.
+-  parameter int unsigned IdxWidth  = cf_math_pkg::idx_width(NoIndices),
++  parameter int unsigned IdxWidth  = caliptra_ss_tb_cf_math_pkg::idx_width(NoIndices),
+   /// Dependent parameter, do **not** overwite!
+   ///
+   /// Type of the `idx_o` output port.
+-  parameter type         idx_t     = logic [IdxWidth-1:0]
++  parameter type         caliptra_ss_tb_idx_t     = logic [IdxWidth-1:0]
+ ) (
+   /// Address to decode.
+-  input  addr_t               addr_i,
++  input  caliptra_ss_tb_addr_t               addr_i,
+   /// Address map: rule with the highest array position wins on collision
+   input  rule_t [NoRules-1:0] addr_map_i,
+   /// Decoded index.
+-  output idx_t                idx_o,
++  output caliptra_ss_tb_idx_t                idx_o,
+   /// Decode is valid.
+   output logic                dec_valid_o,
+   /// Decode is not valid, no matching rule found.
+@@ -87,14 +87,14 @@ module addr_decode #(
+   /// When `en_default_idx_i` is `1`, this will be the index when no rule matches.
+   ///
+   /// When not used, tie to `0`.
+-  input  idx_t                default_idx_i
++  input  caliptra_ss_tb_idx_t                default_idx_i
+ );
+ 
+   // wraps the dynamic configuration version of the address decoder
+-  addr_decode_dync #(
++  caliptra_ss_tb_addr_decode_dync #(
+     .NoIndices ( NoIndices ),
+     .NoRules   ( NoRules   ),
+-    .addr_t    ( addr_t    ),
++    .caliptra_ss_tb_addr_t    ( caliptra_ss_tb_addr_t    ),
+     .rule_t    ( rule_t    ),
+     .Napot     ( Napot     )
+   ) i_addr_decode_dync (
