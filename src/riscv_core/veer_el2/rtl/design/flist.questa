@@ -16,7 +16,9 @@ $RV_ROOT/design/include/el2_def.sv
 +incdir+$RV_ROOT/design/dmi
 +incdir+$SYNOPSYS_SYN_ROOT/dw/sim_ver
 -y $SYNOPSYS_SYN_ROOT/dw/sim_ver
+$RV_ROOT/design/el2_mubi_pkg.sv
 $RV_ROOT/design/el2_veer_wrapper.sv
+$RV_ROOT/design/el2_veer_lockstep.sv
 $RV_ROOT/design/el2_mem.sv
 $RV_ROOT/design/el2_pic_ctrl.sv
 $RV_ROOT/design/el2_veer.sv
@@ -58,6 +60,7 @@ $RV_ROOT/design/dmi/dmi_wrapper.v
 $RV_ROOT/design/dmi/dmi_jtag_to_core_sync.v
 $RV_ROOT/design/dmi/rvjtag_tap.v
 $RV_ROOT/design/lib/el2_lib.sv
+$RV_ROOT/design/lib/el2_mem_if.sv
 $RV_ROOT/design/lib/beh_lib.sv
 $RV_ROOT/design/lib/mem_lib.sv
 $RV_ROOT/design/lib/ahb_to_axi4.sv
