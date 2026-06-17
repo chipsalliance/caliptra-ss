@@ -375,6 +375,7 @@ module mcu_top
     output logic        dmi_active,
 
     // DCLS ports.
+    input  el2_mubi_pkg::el2_mubi_t mcu_dcls_disable_i,
     output el2_mubi_pkg::el2_mubi_t mcu_dcls_corruption_error_o,
 
     // Shadow core trace (DCLS) — not connected in this integration
@@ -429,7 +430,7 @@ module mcu_top
       .el2_icache_export(mem_export_icache.veer_icache_src),
       .dmi_core_enable(dmi_core_enable),
       .dmi_active(dmi_active),
-      .disable_corruption_detection_i(el2_mubi_pkg::El2MuBiFalse),
+      .disable_corruption_detection_i(mcu_dcls_disable_i),
       .lockstep_err_injection_en_i(el2_mubi_pkg::El2MuBiFalse),
       .corruption_detected_o(mcu_dcls_corruption_error_o),
       .*
