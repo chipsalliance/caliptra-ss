@@ -67,11 +67,6 @@ CALIPTRA_AUX_HEADER_FILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_
 # TODO add some scripting to include fuse_ctrl_mmap.o here
 CALIPTRA_AUX_OFILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(cpt_aux).o)
 CALIPTRA_AUX_LIB_DIR = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_aux))
-ifeq ($(CALIPTRA_TESTNAME),cptra_usb_ocp_recovery)
-CALIPTRA_AUX_HEADER_FILES += $(LIBS_DIR)/cptra_usb_ocp_recovery/cptra_usb_ocp_recovery.h
-CALIPTRA_AUX_OFILES += cptra_usb_ocp_recovery.o
-CALIPTRA_AUX_LIB_DIR += $(LIBS_DIR)/cptra_usb_ocp_recovery
-endif
 
 # Determine test directory
 #ifneq (,$(wildcard $(TBDIR)/tests/$(TEST)))
@@ -419,7 +414,7 @@ CALIPTRA_TEST_DIR=$(TEST_DIR)
 endif
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile \
-	     CALIPTRA_INTERNAL_TRNG=0 \
+	     CALIPTRA_INTERNAL_TRNG=1 \
 	     TEST_DIR=$(CALIPTRA_TEST_DIR) \
 	     AUX_HEADER_FILES="$(CALIPTRA_AUX_HEADER_FILES)" \
 	     AUX_OFILES="$(CALIPTRA_AUX_OFILES)" \
