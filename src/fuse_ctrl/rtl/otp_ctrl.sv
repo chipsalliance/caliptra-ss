@@ -382,6 +382,32 @@ module otp_ctrl
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
 
+  // Pre-decode the volatile-lock maps with generate-for blocks. The lock maps
+  // are localparam unpacked arrays in otp_ctrl_part_pkg; resolving each per-bit
+  // address-range and partition-index here (at elaboration time) keeps the
+  // always_comb below lint-clean and matches the PartInfo[k] idiom used
+  // elsewhere in this module.
+  logic [ProdVendorHashLockBits-1:0]                   prod_pk_addr_in_range;
+  logic [ProdVendorHashLockBits-1:0][PartIdxWidth-1:0] prod_pk_lock_part_idx;
+  for (genvar i = 0; i < ProdVendorHashLockBits; i++) begin : g_prod_pk_lock_decode
+    assign prod_pk_addr_in_range[i] = (dai_addr >= ProdVendorHashLockMap[i].addr_start) &&
+                                      (dai_addr <= ProdVendorHashLockMap[i].addr_end);
+    assign prod_pk_lock_part_idx[i] = ProdVendorHashLockMap[i].partition_idx;
+  end
+
+  logic [ManufVendorHashLockBits-1:0]                   manuf_pk_addr_in_range;
+  logic [ManufVendorHashLockBits-1:0][PartIdxWidth-1:0] manuf_pk_lock_part_idx;
+  for (genvar i = 0; i < ManufVendorHashLockBits; i++) begin : g_manuf_pk_lock_decode
+    assign manuf_pk_addr_in_range[i] = (dai_addr >= ManufVendorHashLockMap[i].addr_start) &&
+                                       (dai_addr <= ManufVendorHashLockMap[i].addr_end);
+    assign manuf_pk_lock_part_idx[i] = ManufVendorHashLockMap[i].partition_idx;
+  end
+
+  logic [RatchetSeedLockMapSize-1:0][PartIdxWidth-1:0] ratchet_seed_lock_part_idx;
+  for (genvar i = 0; i < RatchetSeedLockMapSize; i++) begin : g_ratchet_seed_lock_decode
+    assign ratchet_seed_lock_part_idx[i] = RatchetSeedLockMap[i].partition_idx;
+  end
+
   always_comb begin : p_access_control
     // Assigns default and extracts named CSR read enables for SW_CFG partitions.
     // SEC_CM: PART.MEM.REGREN
@@ -397,9 +423,8 @@ module otp_ctrl
     for (int unsigned i = 0; i < ProdVendorHashLockBits; i++) begin
       if (reg2hw.vendor_pk_hash_volatile_lock.q[i] &&
           dai_cmd == DaiWrite &&
-          dai_addr >= ProdVendorHashLockMap[i].addr_start &&
-          dai_addr <= ProdVendorHashLockMap[i].addr_end) begin
-        part_access_pre[ProdVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
+          prod_pk_addr_in_range[i]) begin
+        part_access_pre[prod_pk_lock_part_idx[i]].write_lock = MuBi8True;
       end
     end
 
@@ -407,9 +432,8 @@ module otp_ctrl
     for (int unsigned i = 0; i < ManufVendorHashLockBits; i++) begin
       if (reg2hw.manuf_pk_hash_volatile_lock.q[i] &&
           dai_cmd == DaiWrite &&
-          dai_addr >= ManufVendorHashLockMap[i].addr_start &&
-          dai_addr <= ManufVendorHashLockMap[i].addr_end) begin
-        part_access_pre[ManufVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
+          manuf_pk_addr_in_range[i]) begin
+        part_access_pre[manuf_pk_lock_part_idx[i]].write_lock = MuBi8True;
       end
     end
 
@@ -418,7 +442,7 @@ module otp_ctrl
     // feature is absent, NumRatchetSeedPartitions == 0 and this loop is empty.
     for (int unsigned i = 0; i < NumRatchetSeedPartitions; i++) begin
       if (reg2hw.ratchet_seed_volatile_lock.q[i]) begin
-        part_access_pre[RatchetSeedLockMap[i].partition_idx].write_lock = MuBi8True;
+        part_access_pre[ratchet_seed_lock_part_idx[i]].write_lock = MuBi8True;
       end
     end
 
