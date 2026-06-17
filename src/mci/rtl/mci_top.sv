@@ -94,6 +94,9 @@ module mci_top
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
+
+    // MCU DCLS disable (MUBI4)
+    output logic [3:0]  mcu_dcls_disable,
     input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // MCU Halt Signals
@@ -625,6 +628,7 @@ mci_reg_top #(
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
     .mcu_reset_vector,       // reset vector used by MCU
+    .mcu_dcls_disable,
 
     // SS error signals
     .agg_error_fatal,

@@ -69,6 +69,12 @@ $RV_ROOT/configs/veer.config    \
 -set=lsu_stbuf_depth=4           \
 -set=lsu_num_nbload=4            \
 -set=load_to_use_plus1=0         \
+-set=lockstep_delay=2            \
+-set=lockstep_enable=1           \
+-set=lockstep_regfile_enable=1   \
+-set=mubi_width=4                \
+-set=mubi_true=0x6               \
+-set=mubi_false=0x9              \
 -set=pic_2cycle=0                \
 -set=pic_region=0x6              \
 -set=pic_offset=0                \

@@ -35,7 +35,7 @@ import css_mcu0_el2_pkg::*;
    input logic [31:1]                      rst_vec,
    /*pragma coverage on*/
    input logic                             nmi_int,
-   // nmi_vec is supposed to be tied to constants in the top level
+   // jtag_id and nmi_vec are supposed to be tied to constants in the top level
    /*pragma coverage off*/
    input logic [31:1]                      nmi_vec,
    /*pragma coverage on*/
@@ -333,7 +333,7 @@ import css_mcu0_el2_pkg::*;
    input logic                             lsu_hready,
    input logic                             lsu_hresp,
    /*pragma coverage on*/
-   // Debug Syster Bus AHB
+   // Debug System Bus AHB
    output logic [31:0]                     sb_haddr,
    /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
    /*pragma coverage off*/
@@ -411,6 +411,22 @@ import css_mcu0_el2_pkg::*;
    // Memory Export Interface
    css_mcu0_el2_mem_if.veer_sram_src                el2_mem_export,
 
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+   // Shadow Core trace
+   output logic [31:0] shadow_core_trace_rv_i_insn_ip,
+   output logic [31:0] shadow_core_trace_rv_i_address_ip,
+   output logic shadow_core_trace_rv_i_valid_ip,
+   output logic shadow_core_trace_rv_i_exception_ip,
+   output logic [4:0] shadow_core_trace_rv_i_ecause_ip,
+   output logic shadow_core_trace_rv_i_interrupt_ip,
+   output logic [31:0] shadow_core_trace_rv_i_tval_ip,
+
+   // Shadow Core control
+   input el2_mubi_pkg::el2_mubi_t disable_corruption_detection_i,
+   input el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en_i,
+   output el2_mubi_pkg::el2_mubi_t corruption_detected_o,
+`endif
+
    // external MPC halt/run interface
    input logic                             mpc_debug_halt_req, // Async halt request
    input logic                             mpc_debug_run_req,  // Async run request
@@ -472,7 +488,7 @@ import css_mcu0_el2_pkg::*;
    logic [pt.ICACHE_NUM_WAYS-1:0]   ic_rd_hit;      // ic_rd_hit[3:0]
    logic         ic_tag_perr;                       // Ic tag parity error
 
-   logic [pt.ICACHE_INDEX_HI:3]  ic_debug_addr;     // Read/Write addresss to the Icache.
+   logic [pt.ICACHE_INDEX_HI:3]  ic_debug_addr;     // Read/Write address to the Icache.
    logic         ic_debug_rd_en;                    // Icache debug rd
    logic         ic_debug_wr_en;                    // Icache debug wr
    logic         ic_debug_tag_array;                // Debug tag array
@@ -540,7 +556,7 @@ import css_mcu0_el2_pkg::*;
    logic [63:0]              lsu_hrdata;
    logic                     lsu_hready;
    logic                     lsu_hresp;
-   // Debug Syster Bus AHB
+   // Debug System Bus AHB
    logic [31:0]              sb_haddr;
    logic [2:0]               sb_hburst;
    logic                     sb_hmastlock;
@@ -849,10 +865,10 @@ import css_mcu0_el2_pkg::*;
    assign ifu_axi_bvalid = '0;
    assign ifu_axi_bresp[1:0] = '0;
    assign ifu_axi_bid[pt.IFU_BUS_TAG-1:0] = '0;
- 
+
    /*pragma coverage on*/
 
-`endif //  `ifdef RV_BUILD_AHB_LITE
+`endif //  `ifdef css_mcu0_RV_BUILD_AHB_LITE
 
    // DMI (core)
    logic                   dmi_en;
@@ -868,11 +884,32 @@ import css_mcu0_el2_pkg::*;
    logic [31:0]            dmi_reg_wdata;
    logic [31:0]            dmi_reg_rdata;
 
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+   el2_regfile_if regfile ();
+`endif
+
    // Instantiate the css_mcu0_el2_veer core
    css_mcu0_el2_veer #(.pt(pt)) veer (
                                 .clk(clk),
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .regfile(regfile.veer_rf_src),
+`endif
                                 .*
                                 );
+
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+   initial begin
+      $display("Dual Core Lockstep enabled!\n");
+   end
+
+   css_mcu0_el2_veer_lockstep #(.pt(pt)) lockstep (
+                                .clk(clk),
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .main_core_regfile(regfile.veer_rf_sink),
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .*
+                                );
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_ENABLE
 
    // Instantiate the mem
    css_mcu0_el2_mem  #(.pt(pt)) mem (
@@ -939,4 +976,33 @@ import css_mcu0_el2_pkg::*;
   end
 `endif
 
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+`ifdef RV_ASSERT_ON
+  `define RV_ASSERT_OR_VERILATOR
+`elsif VERILATOR
+  `define RV_ASSERT_OR_VERILATOR
+`endif
+`ifdef RV_ASSERT_OR_VERILATOR
+   logic disable_const_delay_assertion;
+   initial begin
+     disable_const_delay_assertion = 0;
+   end
+
+   property p_const_delay;
+   @(posedge clk)
+   disable iff (!core_rst_l || disable_const_delay_assertion)
+    shadow_core_trace_rv_i_valid_ip |-> (
+      $past(trace_rv_i_valid_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_insn_ip      == $past(trace_rv_i_insn_ip,      `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_address_ip   == $past(trace_rv_i_address_ip,   `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_exception_ip == $past(trace_rv_i_exception_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_ecause_ip    == $past(trace_rv_i_ecause_ip,    `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_interrupt_ip == $past(trace_rv_i_interrupt_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+      shadow_core_trace_rv_i_tval_ip      == $past(trace_rv_i_tval_ip,      `css_mcu0_RV_LOCKSTEP_DELAY)
+    );
+   endproperty
+
+  assert property (p_const_delay) else $fatal("Lockstep constant delay violation");
+`endif // `ifdef RV_ASSERT_OR_VERILATOR
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_ENABLE
 endmodule

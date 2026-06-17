@@ -136,6 +136,9 @@ module mci_reg_top
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
 
+    // MCU DCLS disable (MUBI4)
+    output logic [3:0]  mcu_dcls_disable,
+
     // OTP
     input logic intr_otp_operation_done,
 
@@ -395,6 +398,7 @@ assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.m
 
 assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
 assign mcu_reset_vector     = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
+assign mcu_dcls_disable     = mci_reg_hwif_out.MCU_DCLS_DISABLE.mubi.value;
 
 assign mci_reg_hwif_in.HW_CONFIG0.MCU_MBOX0_SRAM_SIZE.next = MCU_MBOX0_SIZE_KB;
 assign mci_reg_hwif_in.HW_CONFIG0.MCU_MBOX1_SRAM_SIZE.next = MCU_MBOX1_SIZE_KB;

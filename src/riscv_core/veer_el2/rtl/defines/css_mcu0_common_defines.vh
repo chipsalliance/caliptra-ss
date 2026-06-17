@@ -1,12 +1,12 @@
 // NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
-// This is an automatically generated file by cwhitehead on Thu Oct  9 09:50:20 PDT 2025
+// This is an automatically generated file by pascal on Di 16 Jun 2026 13:53:41 CEST
 //
-// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=20251009_ahb_lint_fix_css 
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=lockstep_delay=2 -set=lockstep_enable=1 -set=lockstep_regfile_enable=1 -set=mubi_width=4 -set=mubi_true=0x6 -set=mubi_false=0x9 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=css_mcu0_dcls 
 //
 `ifndef css_mcu0_RV_COMMON_DEFINES
 `define css_mcu0_RV_COMMON_DEFINES
 
-`define css_mcu0_RV_ROOT ""
+`define css_mcu0_RV_ROOT "/home/pascal/Documents/projects/caliptra_2.2/Cores-VeeR-EL2"
 `define css_mcu0_RV_BHT_ADDR_HI 9
 `define css_mcu0_RV_BHT_ADDR_LO 2
 `define css_mcu0_RV_BHT_ARRAY_DEPTH 256
@@ -228,6 +228,12 @@
 `define css_mcu0_RV_INST_ACCESS_MASK5 'hffffffff
 `define css_mcu0_RV_INST_ACCESS_MASK6 'hffffffff
 `define css_mcu0_RV_INST_ACCESS_MASK7 'hffffffff
+`define css_mcu0_RV_LOCKSTEP_DELAY 2
+`define css_mcu0_RV_LOCKSTEP_ENABLE 1
+`define css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE 1
+`define css_mcu0_RV_MUBI_FALSE 'h9
+`define css_mcu0_RV_MUBI_TRUE 'h6
+`define css_mcu0_RV_MUBI_WIDTH 4
 `define css_mcu0_RV_PMP_ENTRIES 64
 `define css_mcu0_RV_SMEPMP 1
 `define css_mcu0_REGWIDTH 32
