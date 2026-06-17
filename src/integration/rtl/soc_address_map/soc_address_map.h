@@ -7400,6 +7400,12 @@
 #ifndef MCI_REG_MCU_RESET_VECTOR
 #define MCI_REG_MCU_RESET_VECTOR                                                                    (0x114)
 #endif
+#define SOC_MCI_TOP_MCI_REG_MCU_DCLS_DISABLE                                                        (0x21000118)
+#ifndef MCI_REG_MCU_DCLS_DISABLE
+#define MCI_REG_MCU_DCLS_DISABLE                                                                    (0x118)
+#define MCI_REG_MCU_DCLS_DISABLE_MUBI_LOW                                                           (0)
+#define MCI_REG_MCU_DCLS_DISABLE_MUBI_MASK                                                          (0xf)
+#endif
 #define SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0                                                  (0x21000180)
 #ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
 #define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (0x180)

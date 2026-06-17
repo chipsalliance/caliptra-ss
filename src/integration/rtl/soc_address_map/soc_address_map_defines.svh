@@ -493,6 +493,7 @@
 `define SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE                                                (32'h2100010c)
 `define SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR                                                          (32'h21000110)
 `define SOC_MCI_TOP_MCI_REG_MCU_RESET_VECTOR                                                        (32'h21000114)
+`define SOC_MCI_TOP_MCI_REG_MCU_DCLS_DISABLE                                                        (32'h21000118)
 `define SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0                                                  (32'h21000180)
 `define SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1                                                  (32'h21000184)
 `define SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_2                                                  (32'h21000188)

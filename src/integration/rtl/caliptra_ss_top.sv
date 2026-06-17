@@ -291,6 +291,7 @@ module caliptra_ss_top
     logic                       mcu_dccm_ecc_single_error;
     logic                       mcu_dccm_ecc_double_error;
     el2_mubi_pkg::el2_mubi_t    mcu_dcls_corruption_error;
+    el2_mubi_pkg::el2_mubi_t    mcu_dcls_disable;
 
     logic                       i3c_irq_o;
     logic                       i3c_peripheral_reset;
@@ -891,6 +892,7 @@ module caliptra_ss_top
         .dmi_uncore_rdata   (mcu_dmi_uncore_rdata),
         .dmi_active   (mcu_dmi_active),
 
+        .mcu_dcls_disable_i(mcu_dcls_disable),
         .mcu_dcls_corruption_error_o(mcu_dcls_corruption_error),
 
         // Shadow core trace (DCLS) - currently not connected
@@ -1080,7 +1082,8 @@ module caliptra_ss_top
         .strap_mcu_reset_vector(cptra_ss_strap_mcu_reset_vector_i),
         
         .mcu_reset_vector(reset_vector),
-        
+        .mcu_dcls_disable(mcu_dcls_disable),
+
         // OTP
         .intr_otp_operation_done,
 
