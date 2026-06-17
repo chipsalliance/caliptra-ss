@@ -69,7 +69,7 @@ CALIPTRA_AUX_OFILES = $(foreach cpt_aux,$(CALIPTRA_AUX),$(cpt_aux).o)
 CALIPTRA_AUX_LIB_DIR = $(foreach cpt_aux,$(CALIPTRA_AUX),$(LIBS_DIR)/$(cpt_aux))
 ifeq ($(CALIPTRA_TESTNAME),cptra_usb_ocp_recovery)
 CALIPTRA_AUX_HEADER_FILES += $(LIBS_DIR)/cptra_usb_ocp_recovery/cptra_usb_ocp_recovery.h
-CALIPTRA_AUX_OFILES += cptra_usb_ocp_recovery_lib.o
+CALIPTRA_AUX_OFILES += cptra_usb_ocp_recovery.o
 CALIPTRA_AUX_LIB_DIR += $(LIBS_DIR)/cptra_usb_ocp_recovery
 endif
 
