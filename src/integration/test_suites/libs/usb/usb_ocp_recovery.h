@@ -86,13 +86,12 @@
 // wMaxWrTransferSize values.
 const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len);
 
-// Class-request handler proxying recovery commands. For now, returns false on
-// every call (Caliptra firmware, not MCU, services the OCP register accesses
-// via the PIE-level arbiter; the MCU only needs to NOT stall the class
-// request before the arbiter snoops the SETUP). However, the IP-3511 EPCS
-// will fire EP0_OUT on the SETUP regardless of arbiter routing - this handler
-// must return true (claim the SETUP) and emit a ZLP status phase so the MCU
-// firmware does not stall. The arbiter handles the actual register access.
+// Class-request hook for OCP Recovery EP0 traffic.  The VHDL PIE arbiter
+// classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed requests to the
+// recovery RTL, so the MCU path must not claim them here.  This hook returns
+// false on every call; if an OCP recovery request reaches the MCU stack at all,
+// the implementation logs that unexpected condition and falls back to the
+// legacy USB stack behavior.
 bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup);
 
 // Convenience installer that overrides the weak hooks in libs/usb/usb.h by

@@ -60,6 +60,7 @@ uint8_t main(void) {
     // class endpoints (otherwise GET_DESCRIPTOR(CONFIG) and class
     // requests would be stalled). Per OCP Recovery v1.1 sec 8.5,
     // recovery interface must be advertised before any class request.
+    // TODO shouldn't installing this class override be part of boot_usb_core?
     usb_advertise_ocp_recovery();
     VPRINTF(LOW, "MCU: USB OCP recovery interface advertised\n");
 
@@ -68,11 +69,21 @@ uint8_t main(void) {
     // which the host VIP issues SETUPs that MUST be ACKed within
     // tend_to_end_delay (~2.3 us). Interleave the USB event loop while
     // waiting for the mailbox to avoid violating USB 2.0 sec 8.4.5.
-    VPRINTF(LOW, "MCU: Waiting for CPTRA mailbox while servicing USB\n");
-    while (!mcu_cptra_mb_ready_nb()) {
+    //
+    // Defer the Caliptra handoff until USB enumeration is COMPLETE (device in
+    // Configured state). Caliptra's recovery flow polls DEVICE_STATUS over the
+    // AXI/recovery aperture; if it starts while enumeration is still running,
+    // its DMA traffic contends with the USB controller's AXI accesses and can
+    // stall enumeration (and itself). Recovery cannot become pending until
+    // after the host has enumerated and pushed an image anyway (OCP Recovery
+    // v1.1 sec 8.5: respond once USB enumeration is complete and the device is
+    // Configured), so waiting for usb_is_configured() removes the contention
+    // window without delaying any real work.
+    VPRINTF(LOW, "MCU: Waiting for CPTRA mailbox and USB enumeration while servicing USB\n");
+    while (!mcu_cptra_mb_ready_nb() || !usb_is_configured()) {
         usb_event_loop(USB_EVENT_LOOP_SLICE_ITERS);
     }
-    VPRINTF(LOW, "MCU: CPTRA mailbox ready; starting Caliptra streaming boot\n");
+    VPRINTF(LOW, "MCU: CPTRA mailbox ready and USB configured; starting Caliptra streaming boot\n");
     caliptra_mailbox_send_ri_download_firmware();
 
     VPRINTF(LOW, "MCU: Entering USB event loop until SS_GENERIC_FW_EXEC_CTRL_0[2] is asserted\n");
@@ -84,5 +95,5 @@ uint8_t main(void) {
     usb_dump_state("streaming-boot-complete");
     VPRINTF(LOW, "MCU: Streaming boot complete; reporting pass to the testbench\n");
     SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
-    return 0;
+    while(1);
 }

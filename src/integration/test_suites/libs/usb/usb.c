@@ -267,6 +267,13 @@ void usb_clear_setup_bit(void) {
     usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_SETUP_MASK);
 }
 
+uint8_t usb_is_configured(void) {
+    // USB 2.0 sec 9.4.7 / 9.1.1.5: the device is in the Configured state once a
+    // SET_CONFIGURATION with a non-zero configuration value has been accepted.
+    // usb_current_config tracks that value (cleared on bus reset).
+    return (usb_current_config != 0u) ? 1u : 0u;
+}
+
 void usb_set_device_address(uint8_t addr) {
     usb_dev_addr_shadow = (uint8_t)(addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
@@ -534,6 +541,8 @@ bool usb_handle_control_transfer(void) {
     return handled;
 }
 
+//,. .,
+//) o (
 // The MCU build currently pulls only usb.o from libs/usb. Include the
 // recovery helper implementation here so its symbols link automatically
 // without requiring per-test makefile edits.

@@ -99,11 +99,22 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
     // Selected device address (1 after enumeration).
     protected int dev_addr_v = 1;
 
-    // Review M6: count of OCP class transfers we issue. Published via
+    // Review M6: count of OCP *class* transfers we issue. Published via
     // uvm_config_db at end of body() so the scoreboard's report_phase can
     // cross-check against the count observed on the analysis port.
     // Per-sample uvm_event drops on back-to-back triggers are otherwise
     // silent; this counter makes that loss observable.
+    //
+    // M6 follow-up (count-domain fix): this counter MUST stay in the same
+    // observation domain as the scoreboard, which filters its analysis-port
+    // stream down to CLASS / BMREQ_INTERFACE / bRequest==0x00 transfers
+    // (caliptra_ss_usb_ocp_scoreboard.svh write() lines 116-120). It is
+    // therefore incremented ONLY in ocp_class_xfer() below. The two STANDARD
+    // GET_DESCRIPTOR(CONFIGURATION) reads in body() are forwarded by the env
+    // but correctly dropped by the scoreboard's class filter, so they MUST
+    // NOT be counted here -- counting them produced the prior false
+    // "issued=11 observed=9" cross-check failure (the two standard descriptor
+    // reads, not a dropped NOTIFY_USB_TRANSFER_ENDED sample).
     protected int unsigned transfers_issued = 0;
 
     function new(string name = "caliptra_ss_usb_ocp_recovery_sequence");
@@ -126,9 +137,11 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
     //   label    : used as a uvm_info anchor and as the transfer name.
     //
     // Pattern: extends do_control_xfer choreography by inlining start_item /
-    // randomize / finish_item so we can poke payload.data[] between randomize
-    // and finish_item (per EX20PHY/usb_directed_transfers_sequence.sv:261-264
-    // and per the research note in usb_vip_ocp_recovery_class_xfers.md sec 1).
+    // randomize / finish_item so we can pin the OUT payload.data[] inside the
+    // randomize() with{} constraint (the VIP packetizes the OUT data stage
+    // from payload.data during randomize; constraining it is the supported way
+    // to drive deterministic OUT bytes -- see usb_vip_ocp_recovery_class_xfers.md
+    // sec 1 and bug_usb_ocp_out_payload_not_driven_tb).
     // -------------------------------------------------------------------------
     protected virtual task ocp_class_xfer(
         input  bit              dir_in,
@@ -157,6 +170,26 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         if (usb_cfg != null) req.cfg = usb_cfg;
         req.fix_anchors(0, 0, 0);
 
+        // For OUT (HOST_TO_DEVICE) class transfers, the data stage bytes must
+        // be made deterministic on the wire. Construct the svt_usb_payload and
+        // size its data array BEFORE randomize() so the VIP has a non-null
+        // payload handle to solve against, then PIN payload.data inside the
+        // randomize() with{} block below. The VIP generates/packetizes the OUT
+        // data stage from payload.data during randomize (post_randomize); a
+        // post-randomize poke of payload.data[] is therefore too late and was
+        // overwritten by the VIP's randomized payload (the host transmitted
+        // random bytes on the wire). See bug_usb_ocp_out_payload_not_driven_tb.
+        n = payload_bytes.size();
+        if (!dir_in) begin
+            req.payload = svt_usb_payload::type_id::create("payload");
+            if (req.payload == null) begin
+                `uvm_fatal("OCPREC",
+                    $sformatf("svt_usb_payload::type_id::create returned null for %s (cmd=0x%02h)",
+                              label, cmd_code))
+            end
+            req.payload.data = new[n];
+        end
+
         if (!req.randomize() with {
                 xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
                 device_address                     == dev_addr_v;
@@ -168,30 +201,18 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 setup_data_w_index                 == windex_v;
                 setup_data_w_length                == wlength;
                 payload_intended_byte_count        == wlength;
+                // Pin the OUT data-stage bytes so the VIP transmits exactly
+                // payload_bytes (in order) instead of a randomized payload.
+                // For IN this block is skipped (payload.data is filled by the
+                // VIP from the device response and must stay unconstrained).
+                if (!dir_in) {
+                    payload.data.size() == n;
+                    foreach (payload.data[i]) payload.data[i] == payload_bytes[i];
+                }
             }) begin
             `uvm_fatal("OCPREC",
                 $sformatf("svt_usb_transfer randomize() failed for %s (cmd=0x%02h)",
                           label, cmd_code))
-        end
-
-        // For OUT, poke deterministic payload bytes (pattern from
-        // EX20PHY/usb_directed_transfers_sequence.sv:261-264).
-        // Review M2: defensively construct payload if randomize() left it
-        // null (fix_anchors / VIP factory ordering can leave the handle
-        // unconstructed on some configurations).
-        if (!dir_in) begin
-            if (req.payload == null) begin
-                req.payload = svt_usb_payload::type_id::create("payload");
-                if (req.payload == null) begin
-                    `uvm_fatal("OCPREC",
-                        $sformatf("svt_usb_payload::type_id::create returned null for %s (cmd=0x%02h)",
-                                  label, cmd_code))
-                end
-            end
-            n = payload_bytes.size();
-            for (int i = 0; i < n; i++) begin
-                req.payload.data[i] = payload_bytes[i];
-            end
         end
 
         finish_item(req, -1);
@@ -303,10 +324,12 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         bit [7:0] dev_id[$];
         bit [7:0] dev_status[$];
         bit [7:0] rec_status[$];
+        bit [7:0] recovery_ctrl_payload[$];
         bit [7:0] indir_fifo_ctrl_payload[$];
         bit [7:0] image_chunk[$];
         bit [7:0] fifo_status[$];
         int      poll_iter;
+        bit      recovery_pending_seen;
         int      n_dwords;
         bit [31:0] pattern_dw[$];
         int       i;
@@ -366,7 +389,11 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 `uvm_fatal("OCPREC", "randomize failed for OCPREC_GET_CONFIG_DESC_HDR")
             end
             finish_item(creq, -1);
-            transfers_issued++;
+            // Count-domain fix (M6): do NOT increment transfers_issued here.
+            // This is a STANDARD GET_DESCRIPTOR(CONFIGURATION) read which the
+            // scoreboard's class filter drops, so counting it would desync the
+            // issued-vs-observed cross-check. transfers_issued tracks CLASS
+            // transfers only (see decl comment + ocp_class_xfer()).
             host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
 
             hdr_blob.delete();
@@ -409,7 +436,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                     `uvm_fatal("OCPREC", "randomize failed for OCPREC_GET_CONFIG_DESC_FULL")
                 end
                 finish_item(creq2, -1);
-                transfers_issued++;
+                // Count-domain fix (M6): STANDARD descriptor read; not counted
+                // (see the Stage-1 read above and the transfers_issued decl).
                 host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
 
                 if (creq2.payload == null) begin
@@ -548,6 +576,37 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         // 5. Streaming-boot-lite phase
         // ---------------------------------------------------------------------
 
+        // 5pre. RECOVERY_CTRL (cmd 0x26) OUT: initiate recovery so the device
+        //     recovery FSM leaves S_IDLE. The RTL FSM
+        //     (third_party/usb2/src/integration/rtl/usb_ocp_recovery_fsm.sv,
+        //     S_IDLE lines 224-246) only advances on a RECOVERY_CTRL byte-0
+        //     (CMS) write strobe (recovery_ctrl_wr_cms). Without this write the
+        //     FSM stays in S_IDLE, the INDIRECT_FIFO image push below is
+        //     ignored, and DEVICE_STATUS never reports 0x04 RECOVERY_PENDING.
+        //     FSM path: S_IDLE --(recovery_ctrl_wr_cms)--> S_DETECTED
+        //               --> S_AWAIT_IMAGE --(image_push_active)--> S_PUSH_ACTIVE
+        //               --(image_push_done)--> S_IMAGE_LOADED (=DS_RECOVERY_PENDING).
+        //     Payload per OCP Recovery v1.1 Section 9.2 Table 9-9 (RECOVERY_CTRL):
+        //       byte 0 : Component Memory Space (CMS) index -> 0 (select CMS 0)
+        //       byte 1 : Recovery Image Selection           -> 0 (use stored/
+        //                                                         streamed image)
+        //       byte 2 : Activate Recovery Image            -> 0 (do NOT activate
+        //                                                         yet; activation
+        //                                                         is a later step,
+        //                                                         Tbl 9-9 = 0x0F)
+        //     wLength = 3: a partial-word (non-word-multiple) OUT that also
+        //     exercises the partial-word OUT coverage required by the plan.
+        recovery_ctrl_payload = '{8'h00, 8'h00, 8'h00};
+        `uvm_info("OCPREC",
+            "RECOVERY_CTRL (cmd 0x26) OUT: CMS=0, ImgSel=0, Activate=0 (sec 9.2 Tbl 9-9). Initiating recovery to advance FSM out of S_IDLE.",
+            UVM_NONE)
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                       .wlength(16'(recovery_ctrl_payload.size())),
+                       .payload_bytes(recovery_ctrl_payload),
+                       .resp_bytes(resp_q),
+                       .label("OCPREC_RECOVERY_CTRL"));
+
         // 5a. INDIRECT_FIFO_CTRL (cmd 0x2C) OUT: select CMS index 0,
         //     reset FIFO, set IMAGE_SIZE to 16 (4-byte units; sec 9.2
         //     Tbl 9-14 IMAGE_SIZE unit = 4 bytes => 16 * 4 = 64 bytes).
@@ -647,6 +706,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     correct image-loaded transition. Bounded iterations so the
         //     test fails closed if firmware never advances.
         poll_iter = 0;
+        recovery_pending_seen = 1'b0;
         forever begin
             empty_q.delete();
             ocp_class_xfer(.dir_in(1'b1),
@@ -667,7 +727,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             // Exit on RECOVERY_PENDING (0x04) per sec 9.2 Tbl 9-6: the
             // device has loaded a recovery image and is ready for the
             // activation step (RECOVERY_CTRL.activate=0x0F, Tbl 9-9).
-            if (dev_status[0] == 8'h04) break;
+            if (dev_status[0] == 8'h04) begin
+                recovery_pending_seen = 1'b1;
+                break;
+            end
             poll_iter++;
             if (poll_iter > 16) begin
                 // Review M3: fail closed. The block comment above states
@@ -682,6 +745,45 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 break;
             end
             #50us;
+        end
+
+        // End-of-test handshake (Problem 1 fix).
+        //
+        // Observing DEVICE_STATUS==0x04 RECOVERY_PENDING only means the device
+        // FSM has loaded the recovery image; the streaming-boot is NOT yet
+        // complete. Caliptra still has to drain the INDIRECT_FIFO, write
+        // RECOVERY_CTRL.activate, and assert SS_GENERIC_FW_EXEC_CTRL_0[2]
+        // (observed ~40 us after 0x04), after which the MCU firmware reports
+        // the result by writing TB_CMD_END_SIM_WITH_SUCCESS to its TB mailbox.
+        // That mailbox write is what truly ends the simulation: the TB services
+        // block (caliptra_ss_top_tb_services.sv) calls $finish on it,
+        // pre-empting everything else.
+        //
+        // Previously, body() returned the instant 0x04 was seen. That dropped
+        // the main_phase default-sequence objection and let uvm_root $finish
+        // the sim ~93 ns AFTER FW_EXEC_CTRL asserted -- before the MCU could
+        // observe it and report the pass. The MCU handoff was lost.
+        //
+        // Fix: once RECOVERY_PENDING is seen, keep body() (and therefore the
+        // main_phase objection) alive so the MCU can complete the streaming
+        // boot and drive its pass. The real terminal event is the MCU's
+        // TB_CMD_END_SIM_WITH_SUCCESS $finish, which interrupts the wait below
+        // the moment it occurs -- so on a passing run this wait ends early via
+        // that external $finish. The bound is a fail-safe only: it is large
+        // enough to cover the observed drain->activate->signal->MCU-pass
+        // latency (~40 us) with ample margin, yet well under the UVM test
+        // timeout, so a firmware that never finishes still terminates the
+        // sequence (with whatever errors were logged) rather than hanging
+        // unbounded.
+        if (recovery_pending_seen) begin
+            `uvm_info("OCPREC",
+                "DEVICE_STATUS=0x04 RECOVERY_PENDING observed. Holding the main_phase objection so the MCU can complete streaming-boot and report TB_CMD_END_SIM_WITH_SUCCESS (which $finishes the sim). Bounded fail-safe wait engaged.",
+                UVM_NONE)
+            // Bounded keep-alive. The MCU's TB_CMD_END_SIM_WITH_SUCCESS $finish
+            // normally ends the sim long before this elapses.
+            #200us;
+            `uvm_warning("OCPREC",
+                "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
         end
 
         // Review M6: publish the issued transfer count so the scoreboard's

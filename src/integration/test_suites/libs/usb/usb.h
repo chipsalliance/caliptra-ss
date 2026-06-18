@@ -187,4 +187,10 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup);
 // Update the USB device address field in DEVCMDSTAT.
 void usb_set_device_address(uint8_t addr);
 
+// Returns 1 once the device has reached the USB Configured state (a
+// SET_CONFIGURATION with a non-zero value has been accepted), else 0.
+// USB 2.0 sec 9.4.7 / 9.1.1.5. Used to gate the MCU->Caliptra recovery
+// handoff until USB enumeration is complete.
+uint8_t usb_is_configured(void);
+
 #endif // USB_DRV_H

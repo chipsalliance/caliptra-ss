@@ -252,9 +252,13 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             end while (xfer_count.next(cmd));
         end
 
-        // Review M6: cross-check observed transfers against the count the
-        // sequence reports having issued. A drop indicates a missed
-        // NOTIFY_USB_TRANSFER_ENDED trigger sample in the env forwarder.
+        // Review M6: cross-check observed CLASS transfers against the count
+        // the sequence reports having issued. Both counters now live in the
+        // same CLASS-transfer domain: the sequence increments transfers_issued
+        // only in ocp_class_xfer() (NOT for the two STANDARD
+        // GET_DESCRIPTOR(CONFIGURATION) reads, which this scoreboard's filter
+        // at write() drops). A residual drift therefore genuinely indicates a
+        // missed NOTIFY_USB_TRANSFER_ENDED trigger sample in the env forwarder.
         if (uvm_config_db#(int unsigned)::get(null, "",
                 "ocp_transfers_issued", issued)) begin
             if (issued != total_class_xfers) begin

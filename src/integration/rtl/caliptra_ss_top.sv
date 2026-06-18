@@ -941,6 +941,22 @@ module caliptra_ss_top
     // USB core Instance
     //=========================================================================-
 
+    // CMS (Component Memory Space) backing-store address width for the USB
+    // OCP-recovery indirect FIFO.  Single source of truth: this localparam both
+    // overrides the wrapper REC_CMS_ADDR_W and sizes the external byte-SRAM
+    // model below, so the two cannot disagree.
+    localparam int USB_REC_CMS_ADDR_W = 16;
+
+    // OCP-recovery CMS backing-store bus, driven by usb_core_i and backed by the
+    // behavioral byte-SRAM instantiated after the instance.  cms_rdata is a
+    // registered (1-cycle latency) read so it aligns with the cms_fifo
+    // RB_RD -> RB_RDC capture sequence.
+    logic [USB_REC_CMS_ADDR_W-1:0] usb_cms_addr;
+    logic                          usb_cms_wr;
+    logic                          usb_cms_rd;
+    logic [7:0]                    usb_cms_wdata;
+    logic [7:0]                    usb_cms_rdata;
+
     ip_xxx_3516_hs_mem_wrapper #(
         .AXI_DATA_WIDTH       (`CALIPTRA_AXI_DATA_WIDTH),
         .AXI_ID_WIDTH         (`CALIPTRA_AXI_ID_WIDTH),
@@ -948,6 +964,7 @@ module caliptra_ss_top
         .AXI_DEV_ADDR_WIDTH   ($bits(cptra_ss_usb_dev_s_axi_if_r_sub.araddr)),
         .AXI_DMA_ADDR_WIDTH   ($bits(cptra_ss_usb_dma_s_axi_if_r_sub.araddr)),
         .AXI_HOST_ADDR_WIDTH  (32),
+        .REC_CMS_ADDR_W       (USB_REC_CMS_ADDR_W),
         .G_SIM_CHIRP_TIMERS   (G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
         // ---- Clock / Reset (all domains share the system clock) ----
@@ -1119,6 +1136,13 @@ module caliptra_ss_top
         .mem_web_out      (cptra_ss_usb_mem_web_out_o),
         .mem_bsel         (cptra_ss_usb_mem_bsel_o),
 
+        // ---- OCP recovery CMS backing-store SRAM (byte-wide, sync read) ----
+        .cms_addr         (usb_cms_addr),
+        .cms_wr           (usb_cms_wr),
+        .cms_rd           (usb_cms_rd),
+        .cms_wdata        (usb_cms_wdata),
+        .cms_rdata        (usb_cms_rdata),
+
         // ---- Interrupt Outputs ----
         .dev_usb_int_req_irq  (usb_dev_irq),
         .dev_usb_Int_req_fiq  (/* TODO */),
@@ -1202,6 +1226,32 @@ module caliptra_ss_top
         .image_ready            (cptra_ss_usb_image_ready_w),
         .ocp_firmware_activated (cptra_ss_usb_ocp_firmware_activated_w)
     );
+
+    // -----------------------------------------------------------------------
+    // OCP-recovery CMS (Component Memory Space) backing store.
+    //
+    // The USB OCP-recovery indirect FIFO (usb_ocp_recovery_cms_fifo, inside
+    // usb_core_i) streams the recovery image into / out of an external
+    // single-ported byte-wide SRAM over the cms_* bus.  This mirrors how the
+    // USB packet RAM (mem_*) is backed by an external model; the CMS store has
+    // no SoC-export port, so its sim backing store lives here.
+    //
+    // Clock: usb_ocp_recovery_top is clocked by utmi_clk (see the wrapper
+    // instantiation .clk(utmi_clk)), which at this level is
+    // cptra_ss_usb_utmi_clk_i, so the SRAM is clocked in that same domain.
+    // The read is SYNCHRONOUS (registered, 1-cycle latency): the cms_fifo
+    // asserts cms_rd + cms_addr in RB_RD and captures cms_rdata one cycle
+    // later in RB_RDC, by which time cms_addr has already returned to 0; an
+    // async/combinational read would therefore mis-sample location 0.
+    // Depth = 2**USB_REC_CMS_ADDR_W bytes, covering all REC_NUM_CMS regions
+    // (cms_fifo make_addr() composes {region, offset} into the flat address).
+    // -----------------------------------------------------------------------
+    logic [7:0] usb_cms_mem [0:(1<<USB_REC_CMS_ADDR_W)-1];
+    always_ff @(posedge cptra_ss_usb_utmi_clk_i) begin
+        if (usb_cms_wr) usb_cms_mem[usb_cms_addr] <= usb_cms_wdata;
+        if (usb_cms_rd) usb_cms_rdata             <= usb_cms_mem[usb_cms_addr];
+    end
+
     // Recovery sideband fan-out from usb_core_i (ip_xxx_3516_hs_mem_wrapper)
     // up to SS-top sideband outputs.  Wrapper exposes:
     //   image_ready             -> drives recovery_payload_available_o
