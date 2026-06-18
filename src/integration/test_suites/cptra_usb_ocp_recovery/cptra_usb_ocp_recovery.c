@@ -13,9 +13,9 @@
 // limitations under the License.
 //
 // Caliptra-core firmware for the USB OCP Recovery bring-up path.
-// Per plan D0.E, this test discovers the recovery aperture through the
-// strap-published SS_RECOVERY_IFC_BASE_ADDR_L/H registers, drains the USB OCP
-// recovery FIFO through the AXI DMA, writes RECOVERY_CTRL, and then asserts
+// This test discovers the recovery aperture through the strap-published
+// SS_RECOVERY_IFC_BASE_ADDR_L/H registers, drains the USB OCP recovery FIFO
+// through the AXI DMA, writes RECOVERY_CTRL, and then asserts
 // SS_GENERIC_FW_EXEC_CTRL_0[2] so the MCU can exit its USB event loop.
 
 #include <stdint.h>
@@ -206,19 +206,23 @@ uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *writ
     return 0u;
 }
 
-uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t mbox_dest_addr, uint16_t block_size) {
-    uint32_t byte_count = image_size_words * sizeof(uint32_t);
-
-    if (byte_count == 0u) {
-        return 0u;
+uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t *dest, uint32_t dest_words) {
+    // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15:
+    // INDIRECT_FIFO_DATA is a fixed FIFO data register; each access pops the
+    // next DWORD. Drain with single-beat AHB reads. The recovery aperture is
+    // AXI4-Lite (single-beat only), so a burst DMA read is never serviced and
+    // would hang; single-beat reads also tolerate concurrent USB reg-bus
+    // traffic via the arbiter without stalling the whole transfer.
+    for (uint32_t ii = 0u; ii < image_size_words; ++ii) {
+        uint32_t word = 0u;
+        if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA, &word) != 0u) {
+            return 1u;
+        }
+        if ((dest != 0) && (ii < dest_words)) {
+            dest[ii] = word;
+        }
     }
-
-    // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15: repeatedly access the fixed FIFO data register.
-    return soc_ifc_axi_dma_read_mbox_payload(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
-                                             mbox_dest_addr,
-                                             1u,
-                                             byte_count,
-                                             block_size);
+    return 0u;
 }
 
 void cptra_ocp_recovery_set_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
@@ -315,15 +319,12 @@ void main(void) {
             last_write_index);
     VPRINTF(LOW, "CPTRA: draining %u dwords from INDIRECT_FIFO_DATA\n", image_size_words);
     if (cptra_ocp_recovery_drain_fifo(image_size_words,
-                                      OCP_RECOVERY_MBOX_DEST_ADDR,
-                                      OCP_RECOVERY_DMA_BLOCK_SIZE) != 0u) {
+                                      scratch,
+                                      OCP_RECOVERY_SCRATCH_WORDS) != 0u) {
         fail_and_halt("CPTRA: INDIRECT_FIFO_DATA DMA drain failed");
     }
     if (cptra_ocp_recovery_read_fifo_status(&fifo_status, &last_write_index) != 0u) {
         fail_and_halt("CPTRA: post-drain INDIRECT_FIFO_STATUS DMA read failed");
-    }
-    for (uint32_t ii = 0; (ii < image_size_words) && (ii < OCP_RECOVERY_SCRATCH_WORDS); ++ii) {
-        scratch[ii] = lsu_read_32(CLP_MBOX_SRAM_BASE_ADDR + OCP_RECOVERY_MBOX_DEST_ADDR + (ii << 2));
     }
     VPRINTF(LOW, "CPTRA: drained %u dwords; final write_index=0x%08x fifo_status=0x%02x first_word=0x%08x\n",
             image_size_words,
@@ -343,7 +344,5 @@ void main(void) {
     // and a RMW races with MCU reads of the same register.
     lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, SS_GENERIC_FW_EXEC_CTRL_GO_MASK);
 
-    SEND_STDOUT_CTRL(0xff);
-    while (1) {
-    }
+    while (1);
 }
