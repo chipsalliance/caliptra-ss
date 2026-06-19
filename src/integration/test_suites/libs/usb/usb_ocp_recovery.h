@@ -94,9 +94,4 @@ const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len);
 // legacy USB stack behavior.
 bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup);
 
-// Convenience installer that overrides the weak hooks in libs/usb/usb.h by
-// pointing to the recovery implementations. Call once from the per-test
-// firmware after boot_usb_core() and before usb_event_loop().
-void usb_advertise_ocp_recovery(void);
-
 #endif // USB_OCP_RECOVERY_H

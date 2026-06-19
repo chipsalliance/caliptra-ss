@@ -126,8 +126,12 @@ extern const uint32_t usb_default_device_descriptor[5];
 
 // Initialize the USB device controller: configure the OTG PHY mux, set up
 // the EP command/status list and SRAM buffers, enable device mode and
-// interrupts.
-void boot_usb_core(void);
+// interrupts. config_desc_fn / class_req_fn install the application's
+// config-descriptor and class-request hooks BEFORE enumeration can begin;
+// pass 0 for either to use the built-in default (no config descriptor /
+// STALL class requests).
+void boot_usb_core(const uint8_t *(*config_desc_fn)(uint16_t *len),
+                   bool (*class_req_fn)(const usb_setup_pkt_t *setup));
 
 // Re-arm EP0 OUT, SETUP, and IN buffer address entries in the EP list.
 // Must be called after any bus reset to restore hardware-cleared entries.
