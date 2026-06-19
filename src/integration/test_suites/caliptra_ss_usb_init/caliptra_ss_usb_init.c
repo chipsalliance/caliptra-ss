@@ -51,7 +51,8 @@ void main (void) {
 
     // Initialize USB device controller BEFORE Caliptra bringup.
     // USB PHY and pull-up need time to settle while Caliptra boots.
-    boot_usb_core();
+    // No application descriptor/class hooks: use the built-in USB defaults.
+    boot_usb_core(0, 0);
 
     // Caliptra core bringup
     mcu_cptra_advance_brkpoint();

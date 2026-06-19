@@ -31,6 +31,14 @@
 
 #define SS_GENERIC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 #define USB_EVENT_LOOP_SLICE_ITERS 1000u
+// Smaller slice for the post-handoff FW_EXEC_CTRL wait loop: the MCU must notice
+// Caliptra's completion signal (and report the pass) promptly, so it re-checks
+// FW_EXEC_CTRL every ~few us instead of once per ~89us USB-servicing slice.
+// (Using the large slice here makes end-of-test latency depend on slice/FW_EXEC
+// alignment, 0..~89us.) Enumeration servicing is unaffected -- this loop runs
+// post-enumeration, and USB is still serviced every iteration, just in smaller
+// batches.
+#define USB_FW_EXEC_POLL_SLICE_ITERS 32u
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -48,21 +56,19 @@ uint8_t main(void) {
     boot_mcu();
 
     usb_dump_state("pre-boot");
-    boot_usb_core();
+    // Boot the USB device controller AND advertise the OCP recovery interface
+    // in one step: the OCP composite config descriptor + recovery class-request
+    // handler are installed as boot_usb_core's hooks, so any host VIP
+    // enumeration that begins later already sees the recovery descriptor and
+    // class endpoints (OCP Recovery v1.1 sec 8.5: recovery interface must be
+    // advertised before any class request; otherwise GET_DESCRIPTOR(CONFIG) and
+    // class requests would be STALLed).
+    boot_usb_core(usb_ocp_recovery_get_config_descriptor,
+                  usb_ocp_recovery_handle_class_request);
     usb_dump_state("post-boot");
 
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
-
-    // Install OCP recovery descriptor + class-request hooks BEFORE the
-    // mailbox-wait loop, so that any host VIP enumeration that begins
-    // while we wait sees the composite config descriptor and recovery
-    // class endpoints (otherwise GET_DESCRIPTOR(CONFIG) and class
-    // requests would be stalled). Per OCP Recovery v1.1 sec 8.5,
-    // recovery interface must be advertised before any class request.
-    // TODO shouldn't installing this class override be part of boot_usb_core?
-    usb_advertise_ocp_recovery();
-    VPRINTF(LOW, "MCU: USB OCP recovery interface advertised\n");
 
     // Per debug RCA (research/usb_setup_nak_root_cause.md): the Caliptra
     // mailbox does not become ready for ~250 us after USB bring-up, during
@@ -89,7 +95,7 @@ uint8_t main(void) {
     VPRINTF(LOW, "MCU: Entering USB event loop until SS_GENERIC_FW_EXEC_CTRL_0[2] is asserted\n");
     while ((lsu_read_32(SOC_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0)
             & SS_GENERIC_FW_EXEC_CTRL_GO_MASK) == 0u) {
-        usb_event_loop(USB_EVENT_LOOP_SLICE_ITERS);
+        usb_event_loop(USB_FW_EXEC_POLL_SLICE_ITERS);
     }
 
     usb_dump_state("streaming-boot-complete");

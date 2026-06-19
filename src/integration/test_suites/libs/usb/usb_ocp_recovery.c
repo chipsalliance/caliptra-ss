@@ -114,8 +114,3 @@ bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup) {
 
     return false;
 }
-
-void usb_advertise_ocp_recovery(void) {
-    usb_config_descriptor_override = usb_ocp_recovery_get_config_descriptor;
-    usb_class_request_override = usb_ocp_recovery_handle_class_request;
-}

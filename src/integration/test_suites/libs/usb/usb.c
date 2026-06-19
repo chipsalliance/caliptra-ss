@@ -91,8 +91,17 @@ const uint32_t usb_default_device_descriptor[5] = {
 //   0x140-0x17F: EP0 OUT data buffer (64 bytes)
 //   0x180-0x1BF: EP0 IN data buffer (64 bytes)
 // -------------------------------------------------------------------------
-void boot_usb_core(void) {
+void boot_usb_core(const uint8_t *(*config_desc_fn)(uint16_t *len),
+                   bool (*class_req_fn)(const usb_setup_pkt_t *setup)) {
     uint32_t reg_data;
+
+    // Install the application's USB config-descriptor and class-request hooks
+    // BEFORE any host enumeration can begin (GET_DESCRIPTOR(CONFIG) and class
+    // requests must already see them). Passing 0 selects the built-in defaults:
+    // usb_get_config_descriptor / usb_handle_class_request guard on these
+    // pointers (0 -> no config descriptor / STALL class requests).
+    usb_config_descriptor_override = config_desc_fn;
+    usb_class_request_override     = class_req_fn;
 
     VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller\n");
 
