@@ -39,7 +39,6 @@
 #define OCP_RECOVERY_SCRATCH_WORDS 16u
 #define OCP_RECOVERY_CMS_REGION 0u
 #define OCP_RECOVERY_MBOX_DEST_ADDR 0x4400u
-#define OCP_RECOVERY_DMA_BLOCK_SIZE 256u
 #define OCP_RECOVERY_POLL_DELAY_CYCLES 64u
 #define OCP_RECOVERY_POLL_ITERS 50000u
 #define OCP_RECOVERY_DMA_ERR_LIMIT 20u
@@ -208,21 +207,24 @@ uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *writ
 
 uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t *dest, uint32_t dest_words) {
     // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15:
-    // INDIRECT_FIFO_DATA is a fixed FIFO data register; each access pops the
-    // next DWORD. Drain with single-beat AHB reads. The recovery aperture is
-    // AXI4-Lite (single-beat only), so a burst DMA read is never serviced and
-    // would hang; single-beat reads also tolerate concurrent USB reg-bus
-    // traffic via the arbiter without stalling the whole transfer.
-    for (uint32_t ii = 0u; ii < image_size_words; ++ii) {
-        uint32_t word = 0u;
-        if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA, &word) != 0u) {
-            return 1u;
-        }
-        if ((dest != 0) && (ii < dest_words)) {
-            dest[ii] = word;
-        }
+    // INDIRECT_FIFO_DATA is a fixed FIFO data register; each AXI read pops the
+    // next DWORD. Caliptra Core reaches the recovery aperture only through the
+    // AXI DMA engine. Drain the image with a FIXED-address DMA read burst
+    // (AXI AxBURST=FIXED via ctrl.rd_fixed=1): the source address holds on
+    // INDIRECT_FIFO_DATA while the recovery aperture pops one DWORD per beat.
+    // block_size 0 lets the DMA auto-size each FIXED burst (capped to 16 beats
+    // per AXI4 section A3.4.1) and issue as many bursts as the image requires.
+    if ((dest == 0) || (image_size_words == 0u)) {
+        return 1u;
     }
-    return 0u;
+    uint32_t words      = (image_size_words < dest_words) ? image_size_words : dest_words;
+    uint32_t byte_count = words * (uint32_t)sizeof(uint32_t);
+    return soc_ifc_axi_dma_read_ahb_payload_with_status(
+               SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+               1u,
+               dest,
+               byte_count,
+               0u);
 }
 
 void cptra_ocp_recovery_set_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
