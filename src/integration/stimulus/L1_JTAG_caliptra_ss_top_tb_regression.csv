@@ -9,3 +9,4 @@ smoke_test_jtag_mcu_bp,220000
 smoke_test_jtag_mcu_intent,220000
 smoke_test_jtag_mcu_unlock,220000
 smoke_test_jtag_mcu_sram,220000
+caliptra_ss_jtag_lcc_st_trans_all_states,10000000
