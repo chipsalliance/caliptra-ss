@@ -55,22 +55,28 @@ static void expect_reg(uint32_t addr, uint32_t expected, const char *msg) {
     }
 }
 
-static void expect_dai_wr(uint32_t addr, uint32_t data, uint32_t granularity,
-                          uint32_t exp_status, const char *msg) {
-    if (!dai_wr(addr, data, data ^ 0xffffffffu, granularity, exp_status)) {
-        handle_error("ERROR: %s\n", msg);
-    }
-}
-
 static void test_sticky_locks(void) {
     const uint32_t prod_mask = 1u << 1;
     const uint32_t manuf_mask = 1u << 0;
     const uint32_t ratchet_mask = 1u << 2;
 
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, prod_mask);
-    lsu_write_32(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, manuf_mask);
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, ratchet_mask);
+    // Prove each lock blocks writes: program 0x55555555, set the lock bit,
+    // attempt 0xAAAAAAAA, read back 0x55555555. Each call also engages the lock.
+    if (!dai_lock_blocks_write(CPTRA_CORE_VENDOR_PK_HASH_2, 32,
+                               SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, prod_mask)) {
+        handle_error("ERROR: locked PROD vendor PK hash 2 was modified despite the volatile lock\n");
+    }
+    if (!dai_lock_blocks_write(CPTRA_CORE_VENDOR_PK_HASH_0, 32,
+                               SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, manuf_mask)) {
+        handle_error("ERROR: locked MANUF vendor PK hash 0 was modified despite the volatile lock\n");
+    }
+    if (!dai_lock_blocks_write(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address,
+                               partitions[CPTRA_SS_LOCK_HEK_PROD_2].granularity,
+                               SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, ratchet_mask)) {
+        handle_error("ERROR: locked ratchet seed partition 2 was modified despite the volatile lock\n");
+    }
 
+    // Stickiness: writing 0 to the W1S lock CSRs must NOT clear the set bits.
     lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0);
     lsu_write_32(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 0);
     lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0);
@@ -78,14 +84,6 @@ static void test_sticky_locks(void) {
     expect_reg(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, prod_mask, "PROD PK lock sticky after write 0");
     expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, manuf_mask, "MANUF PK lock sticky after write 0");
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, ratchet_mask, "ratchet lock sticky after write 0");
-
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_2, 0x51000002, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked PROD vendor PK hash 2 write was not rejected");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, 0x51000000, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked MANUF vendor PK hash 0 write was not rejected");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0x51000022,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_2].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked ratchet seed partition 2 write was not rejected");
 }
 
 void main(void) {

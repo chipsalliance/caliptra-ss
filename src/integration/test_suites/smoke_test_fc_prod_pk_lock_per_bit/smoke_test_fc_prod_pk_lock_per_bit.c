@@ -55,16 +55,6 @@ static void expect_reg(uint32_t addr, uint32_t expected, const char *msg) {
     }
 }
 
-static void expect_dai_wr(uint32_t addr, uint32_t data, uint32_t granularity,
-                          uint32_t exp_status, const char *msg) {
-    // wdata1 pinned to all-ones to preserve OTP write-once semantics across
-    // re-programmed addresses (the controller is reset between iterations
-    // but OTP RAM persists).
-    if (!dai_wr(addr, data, 0xFFFFFFFFu, granularity, exp_status)) {
-        handle_error("ERROR: %s\n", msg);
-    }
-}
-
 static const uint32_t prod_hash_addr[15] = {
     CPTRA_CORE_VENDOR_PK_HASH_1, CPTRA_CORE_VENDOR_PK_HASH_2,
     CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_4,
@@ -76,38 +66,31 @@ static const uint32_t prod_hash_addr[15] = {
     CPTRA_CORE_VENDOR_PK_HASH_15
 };
 
-static void set_prod_lock_bit(uint32_t i) {
-    const uint32_t lock_mask = 1u << i;
-
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask);
-    expect_reg(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask,
-               "PROD PK lock register changed bits other than selected bit");
-}
-
-static void expect_unselected_prod_hash_writable(uint32_t i) {
-    // Rotate the unselected target so each iteration programs a DISTINCT
-    // virgin Hash slot (otherwise prod_hash_addr[0] would be rewritten with
-    // different data on every i>=1 iteration, violating OTP write-once).
-    const uint32_t other = (i + 1u) % 15u;
-
-    expect_dai_wr(prod_hash_addr[other], 0x52002000u + i, 32, 0,
-                  "unselected PROD vendor PK hash was unexpectedly locked");
-}
-
 static void test_prod_per_bit(void) {
     // Iterate only over representative bits {0, 7, 14}: low boundary, middle,
     // and high boundary of the 15-bit PROD lock mask. The PQC sub-case was
     // dropped because PQC lives in the same VendorHashesProd partition and
     // is covered by the persistence tests.
     static const uint32_t test_bits[3] = {0u, 7u, 14u};
+    // Disjoint unselected targets (never used as a locked marker entry): the
+    // markers are prod_hash_addr[{0,7,14}], so HASH_2/3/4 stay virgin.
+    static const uint32_t unsel_idx[3] = {1u, 2u, 3u};
 
     for (uint32_t k = 0; k < 3; k++) {
         const uint32_t i = test_bits[k];
 
-        set_prod_lock_bit(i);
-        expect_unselected_prod_hash_writable(i);
-        expect_dai_wr(prod_hash_addr[i], 0x52000000u + i, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                      "locked PROD vendor PK hash write was not rejected");
+        // Prove lock bit i blocks writes to its hash: program 0x55555555, set
+        // bit i, attempt 0xAAAAAAAA, read back 0x55555555.
+        if (!dai_lock_blocks_write(prod_hash_addr[i], 32,
+                                   SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 1u << i)) {
+            handle_error("ERROR: locked PROD vendor PK hash was modified despite the volatile lock\n");
+        }
+        expect_reg(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 1u << i,
+                   "PROD PK lock register changed bits other than selected bit");
+        // Unselected hash remains writable.
+        if (!dai_wr(prod_hash_addr[unsel_idx[k]], 0x52002000u + i, 0, 32, 0)) {
+            handle_error("ERROR: unselected PROD vendor PK hash was unexpectedly locked\n");
+        }
 
         if (k + 1 < 3) {
             reset_fc_for_next_case();

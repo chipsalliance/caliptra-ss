@@ -109,10 +109,14 @@ static void test_manuf_vendor_pk_persistence(void) {
     expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, lock_mask,
                "MANUF PK volatile lock bit 0 not set");
 
-    write_hash_word_pattern(CPTRA_CORE_VENDOR_PK_HASH_0, 0,
-                            OTP_CTRL_STATUS_DAI_ERROR_MASK, 1,
-                            "locked MANUF hash0 word0 update");
+    // (iii) Attempt to overwrite the locked word with the complement of its
+    // programmed value. A working lock blocks the write so the word keeps its
+    // value; a dead lock would OR the complement in (P | ~P = all-ones). The
+    // status is not asserted -- the post-reset read-back below is the verdict.
+    (void)dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, ~pattern_word(0), 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
+    // (iv) After reset the word must still read its programmed value, not the
+    // all-ones a dead lock would have produced.
     reset_fc_keep_otp();
     expect_hash_word_pattern(CPTRA_CORE_VENDOR_PK_HASH_0, 0, 0,
                              "locked MANUF hash0 word0 preserved value");

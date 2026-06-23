@@ -74,20 +74,25 @@ static void expect_manuf_unselected_targets(void) {
 }
 
 static void test_manuf_hash0_lock(void) {
-    lsu_write_32(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u);
+    // Prove the lock blocks writes to MANUF HASH_0: program 0x55555555, set
+    // lock bit 0, attempt 0xAAAAAAAA, read back 0x55555555.
+    if (!dai_lock_blocks_write(CPTRA_CORE_VENDOR_PK_HASH_0, 32,
+                               SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u)) {
+        handle_error("ERROR: locked MANUF vendor PK hash 0 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u, "MANUF PK lock bit 0 not set");
     expect_manuf_unselected_targets();
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, 0x53000000, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked MANUF vendor PK hash 0 write was not rejected");
 }
 
 static void test_manuf_pqc0_lock(void) {
     reset_fc_for_next_case();
-    lsu_write_32(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u);
+    // Prove the lock blocks writes to MANUF PQC_KEY_TYPE_0 (same partition/bit).
+    if (!dai_lock_blocks_write(CPTRA_CORE_PQC_KEY_TYPE_0, 32,
+                               SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u)) {
+        handle_error("ERROR: locked MANUF vendor PQC key type 0 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u, "MANUF PK lock bit 0 not set");
     expect_manuf_unselected_targets();
-    expect_dai_wr(CPTRA_CORE_PQC_KEY_TYPE_0, 0x53000001, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked MANUF vendor PQC key type 0 write was not rejected");
 }
 
 void main(void) {

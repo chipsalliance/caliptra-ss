@@ -55,42 +55,43 @@ static void expect_reg(uint32_t addr, uint32_t expected, const char *msg) {
     }
 }
 
-static void expect_dai_wr(uint32_t addr, uint32_t data, uint32_t granularity,
-                          uint32_t exp_status, const char *msg) {
-    // wdata1 pinned to all-ones to preserve OTP write-once semantics across
-    // re-programmed addresses (OTP RAM persists across FC controller reset).
-    if (!dai_wr(addr, data, 0xFFFFFFFFu, granularity, exp_status)) {
-        handle_error("ERROR: %s\n", msg);
-    }
-}
-
 static void test_ratchet_bit0_lock(void) {
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0);
+    // Prove ratchet bit 0 blocks writes to HEK_PROD_0 (the marker entry).
+    if (!dai_lock_blocks_write(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address,
+                               partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity,
+                               SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0)) {
+        handle_error("ERROR: locked ratchet seed partition 0 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0, "ratchet lock bit 0 not set");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0x54000001,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_1].granularity, 0,
-                  "unselected ratchet seed partition 1 was unexpectedly locked");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0x54000000,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked ratchet seed partition 0 write was not rejected");
+    // Unselected partition (HEK_PROD_4, disjoint blank) remains writable.
+    if (!dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_4].address, 0x54000001, 0x54000001,
+                partitions[CPTRA_SS_LOCK_HEK_PROD_4].granularity, 0)) {
+        handle_error("ERROR: unselected ratchet seed partition 4 was unexpectedly locked\n");
+    }
 }
 
 static void test_ratchet_bit1_accumulation_lock(void) {
     reset_fc_for_next_case();
+    // Stickiness on bit 0: set it, write 0, confirm it is still set.
     lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0);
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0, "ratchet lock bit 0 not set");
     lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0);
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0,
                "writing 0 cleared sticky ratchet seed lock bit 0");
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 1);
+    // Prove bit 1 blocks writes to HEK_PROD_1; the helper also sets bit 1, which
+    // must accumulate onto the already-set bit 0.
+    if (!dai_lock_blocks_write(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address,
+                               partitions[CPTRA_SS_LOCK_HEK_PROD_1].granularity,
+                               SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 1)) {
+        handle_error("ERROR: locked ratchet seed partition 1 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 0) | (1u << 1),
                "ratchet lock did not accumulate bits 0 and 1");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0x54000022,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_2].granularity, 0,
-                  "unselected ratchet seed partition 2 was unexpectedly locked");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0x54000011,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_1].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked ratchet seed partition 1 write was not rejected");
+    // Unselected partition (HEK_PROD_5, disjoint blank) remains writable.
+    if (!dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_5].address, 0x54000022, 0x54000022,
+                partitions[CPTRA_SS_LOCK_HEK_PROD_5].granularity, 0)) {
+        handle_error("ERROR: unselected ratchet seed partition 5 was unexpectedly locked\n");
+    }
 }
 
 static void test_ratchet_per_bit(void) {

@@ -53,18 +53,22 @@ void pk_volatile_lock(void) {
         const uint32_t lock_mask = 1u << i;
         expected_lock |= lock_mask;
 
-        lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask);
+        // Prove lock bit i blocks writes to its hash: program 0x55555555, set
+        // bit i (also engages the lock), attempt 0xAAAAAAAA, read back
+        // 0x55555555. Bit i only locks prod_hash_addr[i], which is still virgin
+        // and unlocked when the marker is programmed.
+        if (!dai_lock_blocks_write(prod_hash_addr[i], 32,
+                                   SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask)) {
+            handle_error("ERROR: locked PROD vendor PK hash was modified despite the volatile lock\n");
+        }
+
+        // The lock bits accumulate (W1S) and are sticky against a write of 0.
         if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != expected_lock) {
             handle_error("ERROR: PROD PK volatile lock did not set expected bit-mask\n");
         }
-
         lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0);
         if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != expected_lock) {
             handle_error("ERROR: writing 0 cleared sticky PROD PK volatile lock bits\n");
-        }
-
-        if (!dai_wr(prod_hash_addr[i], 0xFF, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
-            handle_error("ERROR: locked PROD vendor PK hash write was not rejected\n");
         }
     }
 }

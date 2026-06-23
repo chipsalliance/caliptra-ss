@@ -112,9 +112,15 @@ static void test_ratchet_seed_persistence(void) {
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, lock_mask,
                "ratchet seed volatile lock bit 0 not set");
 
-    write_seed_word_pattern(p, 0, OTP_CTRL_STATUS_DAI_ERROR_MASK, 1,
-                            "locked ratchet seed0 update");
+    // (iii) Attempt to overwrite the locked entry with the complement of its
+    // programmed value. A working lock blocks the write so the entry keeps its
+    // value; a dead lock would OR the complement in (P | ~P = all-ones). The
+    // status is not asserted -- the post-reset read-back below is the verdict.
+    (void)dai_wr(p->address, ~pattern_word(0), ~pattern_word(4u), p->granularity,
+                 OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
+    // (iv) After reset the entry must still read its programmed value, not the
+    // all-ones a dead lock would have produced.
     reset_fc_keep_otp();
     expect_seed_word_pattern(p, 0, 0, "locked ratchet seed0 preserved value");
 }

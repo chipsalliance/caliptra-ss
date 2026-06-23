@@ -37,30 +37,31 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 /**
- * Program production vendor PK hash fuses, then verify that volatile locks use
- * sticky per-bit mask semantics. Bit 2 locks CPTRA_CORE_VENDOR_PK_HASH_3 only.
+ * Verify the PROD vendor PK-hash volatile lock actually blocks DAI writes.
+ *
+ * Bit 2 of VENDOR_PK_HASH_VOLATILE_LOCK locks CPTRA_CORE_VENDOR_PK_HASH_3 only.
+ * The lock is proven by data: program 0x55555555 into HASH_3, set the lock,
+ * attempt to overwrite with 0xAAAAAAAA, then read back. A functional lock keeps
+ * 0x55555555; a dead lock would OR-in the complement and show 0xFFFFFFFF.
  */
 void program_vendor_hashes_prod_partition(void) {
     const uint32_t locked_hash = CPTRA_CORE_VENDOR_PK_HASH_3;
     const uint32_t unlocked_hash = CPTRA_CORE_VENDOR_PK_HASH_4;
     const uint32_t lock_mask = 1u << 2;
-    const uint32_t data = 0xdeadbeef;
 
-    if (!dai_wr(locked_hash, data, 0, 32, 0)) {
-        handle_error("ERROR: initial write to PROD vendor PK hash 3 failed\n");
+    // Program-lock-overwrite-read proof on the locked entry (HASH_3).
+    if (!dai_lock_blocks_write(locked_hash, 32,
+                               SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask)) {
+        handle_error("ERROR: locked PROD vendor PK hash 3 was modified despite the volatile lock\n");
     }
 
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask);
+    // The lock register must have retained the bit, and the lock is per-bit:
+    // the unselected entry (HASH_4) must still be writable.
     if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != lock_mask) {
         handle_error("ERROR: PROD PK volatile lock did not retain bit-mask value\n");
     }
-
-    if (!dai_wr(unlocked_hash, data + 1, 0, 32, 0)) {
+    if (!dai_wr(unlocked_hash, 0x12345678u, 0, 32, 0)) {
         handle_error("ERROR: unselected PROD vendor PK hash 4 was unexpectedly locked\n");
-    }
-
-    if (!dai_wr(locked_hash, data + 2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
-        handle_error("ERROR: locked PROD vendor PK hash 3 write was not rejected\n");
     }
 }
 

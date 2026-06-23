@@ -55,68 +55,64 @@ static void expect_reg(uint32_t addr, uint32_t expected, const char *msg) {
     }
 }
 
-static void expect_dai_wr(uint32_t addr, uint32_t data, uint32_t granularity,
-                          uint32_t exp_status, const char *msg) {
-    // wdata1 is pinned to all-ones so that an OTP address re-programmed across
-    // sub-cases never has to transition a wdata1 bit from 1 to 0 (which the
-    // OTP macro flags as MacroWriteBlankError). OTP RAM persists across the
-    // FC controller reset done between sub-cases. Sub-case wdata0 values must
-    // be bit-additive on any address that is written in more than one sub-case.
-    if (!dai_wr(addr, data, 0xFFFFFFFFu, granularity, exp_status)) {
-        handle_error("ERROR: %s\n", msg);
+static void test_prod_independence(void) {
+    // Lock PROD bit 0 -> locks CPTRA_CORE_VENDOR_PK_HASH_1 (the marker entry).
+    // Disjoint blank entries are used in every sub-case so no OTP word is
+    // re-programmed across sub-cases (OTP RAM persists across the FC reset).
+    if (!dai_lock_blocks_write(CPTRA_CORE_VENDOR_PK_HASH_1, 32,
+                               SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 0)) {
+        handle_error("ERROR: locked PROD vendor PK hash 1 was modified despite the volatile lock\n");
+    }
+    // Register independence: the PROD lock must not set the other lock CSRs.
+    expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 0, "PROD lock changed MANUF lock register");
+    expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0, "PROD lock changed ratchet lock register");
+    // Write independence: other unlocked entries remain writable.
+    if (!dai_wr(CPTRA_CORE_VENDOR_PK_HASH_2, 0x11111111u, 0, 32, 0)) {
+        handle_error("ERROR: unlocked PROD vendor PK hash 2 was affected by PROD lock\n");
+    }
+    if (!dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0x11111111u, 0x11111111u,
+                partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, 0)) {
+        handle_error("ERROR: ratchet seed partition 0 was affected by PROD lock\n");
     }
 }
 
-static void test_prod_independence(void) {
-    // PROD lock bit 0 → locks CPTRA_CORE_VENDOR_PK_HASH_1 only.
-    // Success writes: MANUF Hash_0, PROD Hash_2, ratchet HekProd_0 (all virgin).
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 0);
-    expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 0, "PROD lock changed MANUF lock register");
-    expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0, "PROD lock changed ratchet lock register");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, 0x00000001u, 32, 0,
-                  "MANUF vendor PK hash 0 was affected by PROD lock");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_2, 0x00000020u, 32, 0,
-                  "unlocked PROD vendor PK hash 2 was affected by PROD lock bit 0");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0x00000010u,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, 0,
-                  "ratchet seed partition 0 was affected by PROD lock");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_1, 0x00000001u, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked PROD vendor PK hash 1 write was not rejected");
-}
-
 static void test_manuf_independence(void) {
-    // MANUF lock bit 0 → locks CPTRA_CORE_VENDOR_PK_HASH_0 only.
-    // Success writes: PROD Hash_3 (virgin), ratchet HekProd_1 (virgin).
-    // Skip MANUF success write; the only MANUF slot is the one we are locking.
+    // Lock MANUF bit 0 -> locks CPTRA_CORE_VENDOR_PK_HASH_0 (the marker entry).
     reset_fc_for_next_case();
-    lsu_write_32(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u << 0);
+    if (!dai_lock_blocks_write(CPTRA_CORE_VENDOR_PK_HASH_0, 32,
+                               SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 1u << 0)) {
+        handle_error("ERROR: locked MANUF vendor PK hash 0 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0, "MANUF lock changed PROD lock register");
     expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0, "MANUF lock changed ratchet lock register");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_3, 0x00000040u, 32, 0,
-                  "unlocked PROD vendor PK hash 3 was affected by MANUF lock");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0x00000020u,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_1].granularity, 0,
-                  "ratchet seed partition 1 was affected by MANUF lock");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, 0x00000100u, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked MANUF vendor PK hash 0 write was not rejected");
+    if (!dai_wr(CPTRA_CORE_VENDOR_PK_HASH_3, 0x22222222u, 0, 32, 0)) {
+        handle_error("ERROR: unlocked PROD vendor PK hash 3 was affected by MANUF lock\n");
+    }
+    if (!dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0x22222222u, 0x22222222u,
+                partitions[CPTRA_SS_LOCK_HEK_PROD_1].granularity, 0)) {
+        handle_error("ERROR: ratchet seed partition 1 was affected by MANUF lock\n");
+    }
 }
 
 static void test_ratchet_independence(void) {
-    // RATCHET lock bit 0 → locks ratchet HekProd_0 only.
-    // Success writes: MANUF Hash_0 (REWRITE - bit-additive: 0x1 → 0x3), PROD Hash_4 (virgin).
-    // The Hash_0 wdata0 is strictly additive over the prod sub-case so OTP
-    // only programs new 0→1 bit transitions (no 1→0 to violate write-once).
+    // Lock ratchet bit 2 -> locks HekProd_2 (the marker entry). Bits 0/1 select
+    // HekProd_0/1, which are written as unselected entries above, so bit 2 keeps
+    // the locked entry disjoint and blank.
     reset_fc_for_next_case();
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 0);
+    if (!dai_lock_blocks_write(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address,
+                               partitions[CPTRA_SS_LOCK_HEK_PROD_2].granularity,
+                               SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << 2)) {
+        handle_error("ERROR: locked ratchet seed partition 2 was modified despite the volatile lock\n");
+    }
     expect_reg(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 0, "ratchet lock changed PROD lock register");
     expect_reg(SOC_OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK, 0, "ratchet lock changed MANUF lock register");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_0, 0x00000003u, 32, 0,
-                  "MANUF vendor PK hash 0 was affected by ratchet lock");
-    expect_dai_wr(CPTRA_CORE_VENDOR_PK_HASH_4, 0x00000080u, 32, 0,
-                  "unlocked PROD vendor PK hash 4 was affected by ratchet lock");
-    expect_dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0x00000200u,
-                  partitions[CPTRA_SS_LOCK_HEK_PROD_0].granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK,
-                  "locked ratchet seed partition 0 write was not rejected");
+    if (!dai_wr(CPTRA_CORE_VENDOR_PK_HASH_4, 0x44444444u, 0, 32, 0)) {
+        handle_error("ERROR: unlocked PROD vendor PK hash 4 was affected by ratchet lock\n");
+    }
+    if (!dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0x44444444u, 0x44444444u,
+                partitions[CPTRA_SS_LOCK_HEK_PROD_3].granularity, 0)) {
+        handle_error("ERROR: unselected ratchet seed partition 3 was affected by ratchet lock\n");
+    }
 }
 
 void main(void) {
