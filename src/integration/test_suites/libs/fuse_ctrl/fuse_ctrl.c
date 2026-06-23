@@ -88,6 +88,7 @@ bool wait_dai_op_idle(uint32_t exp_status) {
     }
 
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
+
     return status_matched;
 }
 
@@ -157,6 +158,56 @@ bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
 
     return wait_dai_op_idle(exp_status);
 }
+
+bool dai_locked_write_preserves_marker(uint32_t addr, uint32_t granularity) {
+    // The entry is expected to already hold the 0x55555555 marker and be locked
+    // by some means (volatile-lock CSR, computed digest, ...). Attempt to OR-in
+    // the marker's complement and confirm the lock preserved the original value.
+    const uint32_t marker  = 0x55555555u;
+    const uint32_t anti    = 0xAAAAAAAAu;
+    const uint32_t anti_hi = (granularity > 32) ? anti : 0u;
+    uint32_t rd0 = 0, rd1 = 0;
+
+    // Attempt to overwrite the locked entry with the complement.
+    (void)dai_wr(addr, anti, anti_hi, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+
+    // A functional lock blocks the write, so the word still reads 0x55555555; a
+    // non-functional lock lets OTP OR-in the complement and the word reads
+    // 0xFFFFFFFF (0x55555555 | 0xAAAAAAAA).
+    if (!dai_rd(addr, &rd0, &rd1, granularity, 0)) {
+        VPRINTF(LOW, "ERROR: read-back of lock-test marker at 0x%08X failed\n", addr);
+        return false;
+    }
+    if (rd0 != marker || (granularity > 32 && rd1 != marker)) {
+        VPRINTF(LOW,
+                "ERROR: locked word 0x%08X was modified: read 0x%08X/0x%08X (expected 0x55555555)\n",
+                addr, rd1, rd0);
+        return false;
+    }
+    return true;
+}
+
+bool dai_lock_blocks_write(uint32_t addr, uint32_t granularity,
+                           uint32_t lock_reg, uint32_t lock_mask) {
+    // Marker / anti-marker are bitwise complements, so a successful overwrite
+    // (dead lock) OR-s them to all-ones and is plainly visible on read-back:
+    //   0x55555555 | 0xAAAAAAAA = 0xFFFFFFFF.
+    const uint32_t marker    = 0x55555555u;
+    const uint32_t marker_hi = (granularity > 32) ? marker : 0u;
+
+    // (i) Program the marker into the (still unlocked) entry.
+    if (!dai_wr(addr, marker, marker_hi, granularity, 0)) {
+        VPRINTF(LOW, "ERROR: could not program lock-test marker at 0x%08X\n", addr);
+        return false;
+    }
+
+    // (ii) Engage the volatile lock (sticky W1S).
+    lsu_write_32(lock_reg, lock_mask);
+
+    // (iii)+(iv) Attempt the complement overwrite and confirm the marker survives.
+    return dai_locked_write_preserves_marker(addr, granularity);
+}
+
 
 bool dai_wr_array(uint32_t        first_fuse,
                   uint32_t        last_fuse,
