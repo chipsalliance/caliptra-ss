@@ -26,6 +26,18 @@
 #include "fuse_ctrl_mmap.h"
 #include "fuse_ctrl.h"
 
+// Fuse-controller fatal-alert bits within the MCI AGG_ERROR_FATAL register.
+// caliptra_ss_top wires agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts},
+// where fc_alerts = {recov_prim_otp_alert, fatal_prim_otp_alert,
+// fatal_bus_integ_error, fatal_check_error, fatal_macro_error}. Only the four
+// genuinely fatal alerts (bits 18-21) are checked; the recoverable alert (22)
+// and the otp_error interrupt aggregate (23) are intentionally excluded.
+#define FC_AGG_ERROR_FATAL_MASK ( \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_MASK | /* fatal_macro_error     */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_MASK | /* fatal_check_error     */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_MASK | /* fatal_bus_integ_error */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_MASK)  /* fatal_prim_otp_alert  */
+
 void grant_mcu_for_fc_writes(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_MCU);
     VPRINTF(LOW, "LCC & Fuse_CTRL is under MCU_LSU_AXI_USER!\n");
@@ -88,6 +100,24 @@ bool wait_dai_op_idle(uint32_t exp_status) {
     }
 
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
+
+    // OTP_CTRL_STATUS does not reflect fuse-macro fatal errors (e.g. an
+    // uncorrectable ECC error inside the macro). Those are driven from the macro
+    // model to the fuse controller and aggregated by MCI into the FC field of
+    // AGG_ERROR_FATAL (bits 23:18). When the caller expects a clean operation
+    // (exp_status == 0), additionally confirm no FC fatal alert fired so that
+    // macro errors are covered too. Operations that deliberately expect an error
+    // (exp_status != 0) skip this check.
+    if (exp_status == 0) {
+        uint32_t agg_fatal = lsu_read_32(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
+        if (agg_fatal & FC_AGG_ERROR_FATAL_MASK) {
+            VPRINTF(LOW,
+                    "ERROR: fuse controller fatal error after DAI op: "
+                    "AGG_ERROR_FATAL=0x%08X (FC fatal bits: 0x%08X)\n",
+                    agg_fatal, agg_fatal & FC_AGG_ERROR_FATAL_MASK);
+            status_matched = false;
+        }
+    }
 
     return status_matched;
 }
