@@ -393,20 +393,23 @@ module otp_ctrl
     part_access_pre[LifeCycleIdx].write_lock = MuBi8True;
     part_access_pre[LifeCycleIdx].read_lock = MuBi8True;
 
-    // Intercept DAI write requests to locked PROD vendor PK hash entries.
+    // Apply the volatile write lock to locked PROD vendor PK hash entries.
+    // The lock is gated on the DAI address (held stable while the DAI is busy)
+    // and NOT on dai_cmd: dai_cmd is only valid during the single Idle decode
+    // cycle, whereas the DAI samples write_lock later in the Write/Scr states.
+    // write_lock only affects writes, so no command qualifier is needed.
     for (int unsigned i = 0; i < ProdVendorHashLockBits; i++) begin
       if (reg2hw.vendor_pk_hash_volatile_lock.q[i] &&
-          dai_cmd == DaiWrite &&
           dai_addr >= ProdVendorHashLockMap[i].addr_start &&
           dai_addr <= ProdVendorHashLockMap[i].addr_end) begin
         part_access_pre[ProdVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
       end
     end
 
-    // Intercept DAI write requests to locked MANUF vendor PK hash entries.
+    // Apply the volatile write lock to locked MANUF vendor PK hash entries
+    // (address-gated, command-independent; see PROD note above).
     for (int unsigned i = 0; i < ManufVendorHashLockBits; i++) begin
       if (reg2hw.manuf_pk_hash_volatile_lock.q[i] &&
-          dai_cmd == DaiWrite &&
           dai_addr >= ManufVendorHashLockMap[i].addr_start &&
           dai_addr <= ManufVendorHashLockMap[i].addr_end) begin
         part_access_pre[ManufVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
@@ -1452,9 +1455,9 @@ end
   //   (B) Gates write : when the lock condition holds, the mapped partition's
   //                     part_access_pre[*].write_lock is MuBi8True same-cycle.
   //
-  // PROD/MANUF lock paths are address-filtered on DAI writes; ratchet locks
-  // are partition-wide. Each antecedent is exercised by the directed tests
-  // listed in step-4 (coverage-friendly, no guardian guards).
+  // PROD/MANUF lock paths are address-filtered (command-independent); ratchet
+  // locks are partition-wide. Each antecedent is exercised by the directed
+  // tests listed in step-4 (coverage-friendly, no guardian guards).
   //---------------------------------------------------------------------------
 
   // (A1) PROD vendor PK hash volatile-lock stickiness.
@@ -1482,13 +1485,12 @@ end
         clk_i, !rst_ni)
   end
 
-  // (B1) PROD vendor PK hash address-gated write-lock: a DAI write to a
-  // locked PROD hash address range drives the target partition's write_lock
-  // to MuBi8True in the same cycle.
+  // (B1) PROD vendor PK hash address-gated write-lock: when a lock bit is set
+  // and the DAI address falls in the locked entry's range, the target
+  // partition's write_lock is MuBi8True in the same cycle.
   for (genvar i = 0; i < ProdVendorHashLockBits; i++) begin : g_prod_lock_gates_sva
     `CALIPTRA_ASSERT(ProdVendorHashLockGatesWrite_A,
         (reg2hw.vendor_pk_hash_volatile_lock.q[i] &&
-         dai_cmd == DaiWrite &&
          dai_addr >= ProdVendorHashLockMap[i].addr_start &&
          dai_addr <= ProdVendorHashLockMap[i].addr_end) |->
         (part_access_pre[ProdVendorHashLockMap[i].partition_idx].write_lock ==
@@ -1500,7 +1502,6 @@ end
   for (genvar i = 0; i < ManufVendorHashLockBits; i++) begin : g_manuf_lock_gates_sva
     `CALIPTRA_ASSERT(ManufVendorHashLockGatesWrite_A,
         (reg2hw.manuf_pk_hash_volatile_lock.q[i] &&
-         dai_cmd == DaiWrite &&
          dai_addr >= ManufVendorHashLockMap[i].addr_start &&
          dai_addr <= ManufVendorHashLockMap[i].addr_end) |->
         (part_access_pre[ManufVendorHashLockMap[i].partition_idx].write_lock ==
