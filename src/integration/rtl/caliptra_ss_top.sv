@@ -36,6 +36,10 @@ module caliptra_ss_top
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
     ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
+    ,parameter SPI_HOST_ENA = 1
+    ,parameter SPI_HOST_NUM_CS = 2
+    ,parameter SPI_HOST_CMD_DEPTH = 8
+    ,parameter UART_ENA = 1
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -104,6 +108,14 @@ module caliptra_ss_top
 // Caliptra SS I3C AXI Sub Interface
     axi_if.w_sub cptra_ss_i3c_s_axi_if_w_sub,
     axi_if.r_sub cptra_ss_i3c_s_axi_if_r_sub,
+
+// Caliptra SS SPI Host AXI Sub Interface
+    axi_if.w_sub cptra_ss_spi_host_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_spi_host_s_axi_if_r_sub,
+
+// Caliptra SS UART AXI Sub Interface
+    axi_if.w_sub cptra_ss_uart_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_uart_s_axi_if_r_sub,
 
 // Caliptra SS LC Controller AXI Sub Interface
     input  axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i,
@@ -276,7 +288,23 @@ module caliptra_ss_top
     output logic [63:0] cptra_ss_cptra_core_generic_output_wires_o,
     input  logic        cptra_ss_cptra_core_scan_mode_i,
     output logic        cptra_error_fatal,
-    output logic        cptra_error_non_fatal 
+    output logic        cptra_error_non_fatal,
+
+// SPI host interface signals
+
+  output logic                       cptra_ss_sck_o,
+  output logic                       cptra_ss_sck_en_o,
+  output logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_o,
+  output logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_en_o,
+  output logic [3:0]                 cptra_ss_sd_o,
+  output logic [3:0]                 cptra_ss_sd_en_o,
+  input  logic [3:0]                 cptra_ss_sd_i,
+
+// UART interface signals
+
+  input  logic                       cptra_ss_uart_rx_i,
+  output logic                       cptra_ss_uart_tx_o,
+  output logic                       cptra_ss_uart_tx_en_o
 );
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
@@ -397,6 +425,27 @@ module caliptra_ss_top
     logic                       disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
 
+    //------------------------ SPI host ------------------------------------
+    logic spi_host_intg_error;
+    logic spi_host_intr_error;
+    logic spi_host_intr_spi_event;
+
+    //------------------------ UART ----------------------------------------
+    typedef struct packed {
+        logic tx_watermark;
+        logic tx_empty;
+        logic tx_done;
+        logic rx_watermark;
+        logic rx_overflow;
+        logic rx_frame_err;
+        logic rx_break_err;
+        logic rx_timeout;
+        logic rx_parity_err;
+    } cptra_ss_uart_intr_t;
+
+    logic                uart_intg_error;
+    cptra_ss_uart_intr_t uart_intr;
+    logic                uart_intr_combined;
 
     ///////
     // AXI USER assignments
@@ -578,6 +627,8 @@ module caliptra_ss_top
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
     assign ext_int[`VEER_INTR_VEC_I3C]                  = i3c_irq_o;
+    assign ext_int[`VEER_INTR_VEC_SPIH]                 = spi_host_intr_spi_event;
+    assign ext_int[`VEER_INTR_VEC_UART]                 = uart_intr_combined;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //Aggregate error connections
@@ -586,14 +637,16 @@ module caliptra_ss_top
     assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
     assign agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
-    assign agg_error_fatal[31:30] = '0; //spare
+    assign agg_error_fatal[30]    = spi_host_intg_error; //SPI Host
+    assign agg_error_fatal[31]    = uart_intg_error; //UART
 
     assign agg_error_non_fatal[5:0]   = {5'b0, cptra_error_non_fatal}; //CPTRA
     assign agg_error_non_fatal[11:6]  = {5'b0, mcu_dccm_ecc_single_error}; //MCU
     assign agg_error_non_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
     assign agg_error_non_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_non_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C
-    assign agg_error_non_fatal[31:30] = '0; //spare
+    assign agg_error_non_fatal[30]    = spi_host_intr_error; //SPI Host
+    assign agg_error_non_fatal[31]    = '0; //spare
 
     //=========================================================================-
     // MCU instance
@@ -1295,6 +1348,160 @@ module caliptra_ss_top
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
         .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
     ); 
+
+
+    //=========================================================================-
+    // SPI Host Instance :
+    //
+    //=========================================================================-
+    if (SPI_HOST_ENA) begin : gen_spi_host_axi
+
+        logic unused_spi_host_passthrough;
+
+        spi_host_axi #(
+            .NumCS   (SPI_HOST_NUM_CS),
+            .CmdDepth(SPI_HOST_CMD_DEPTH),
+            .AxiAw   (`AXI_ADDR_WIDTH),
+            .AxiDw   (`AXI_DATA_WIDTH),
+            .AxiUw   (`AXI_USER_WIDTH),
+            .AxiIw   (`AXI_ID_WIDTH)
+        ) spi_host_axi_i (
+            .clk_i           (cptra_ss_clk_i),
+            .rst_ni          (cptra_ss_rst_b_o),
+            .s_axi_w_if      (cptra_ss_spi_host_s_axi_if_w_sub),
+            .s_axi_r_if      (cptra_ss_spi_host_s_axi_if_r_sub),
+            .intg_error_o    (spi_host_intg_error),
+            .cio_sck_o       (cptra_ss_sck_o),
+            .cio_sck_en_o    (cptra_ss_sck_en_o),
+            .cio_csb_o       (cptra_ss_csb_o),
+            .cio_csb_en_o    (cptra_ss_csb_en_o),
+            .cio_sd_o        (cptra_ss_sd_o),
+            .cio_sd_en_o     (cptra_ss_sd_en_o),
+            .cio_sd_i        (cptra_ss_sd_i),
+            .passthrough_i   ('0),
+            .passthrough_o   (unused_spi_host_passthrough),
+            .intr_error_o    (spi_host_intr_error),
+            .intr_spi_event_o(spi_host_intr_spi_event)
+        );
+
+    end else begin : gen_no_spi_host_axi
+        // Tie-off unused outputs
+        assign spi_host_intg_error        = '0;
+        assign cptra_ss_sck_o             = '0;
+        assign cptra_ss_sck_en_o          = '0;
+        assign cptra_ss_csb_o             = '0;
+        assign cptra_ss_csb_en_o          = '0;
+        assign cptra_ss_sd_o              = '0;
+        assign cptra_ss_sd_en_o           = '0;
+        assign spi_host_intr_error        = '0;
+        assign spi_host_intr_spi_event    = '0;
+
+        // Tie-off AXI interface
+        axi_sub #(
+            .AW(`AXI_ADDR_WIDTH),
+            .DW(`AXI_DATA_WIDTH),
+            .UW(`AXI_USER_WIDTH),
+            .IW(`AXI_ID_WIDTH),
+            .C_LAT(0)
+        ) axi_sub_spi_host_Axi_err_resp_i (
+            .clk       (cptra_ss_clk_i),
+            .rst_n     (cptra_ss_rst_b_o),
+            .s_axi_w_if(s_axi_w_if),
+            .s_axi_r_if(s_axi_r_if),
+            .dv        (),
+            .addr      (),
+            .write     (),
+            .user      (),
+            .id        (),
+            .wdata     (),
+            .wstrb     (),
+            .size      (),
+            .last      (),
+            .rdata     ('0),
+            .hld       (1'b0),
+            .rd_err    (1'b1),
+            .wr_err    (1'b1)
+        );
+
+        // Absorb unused inputs
+        logic unused_spi_host;
+        assign unused_spi_host = ^cptra_ss_sd_i;
+    end
+
+
+    //=========================================================================-
+    // UART Instance :
+    //
+    //=========================================================================-
+    if (UART_ENA) begin : gen_uart_axi
+
+        uart_axi #(
+            .AxiAw(`AXI_ADDR_WIDTH),
+            .AxiDw(`AXI_DATA_WIDTH),
+            .AxiUw(`AXI_USER_WIDTH),
+            .AxiIw(`AXI_ID_WIDTH)
+        ) uart_axi_i (
+            .clk_i               (cptra_ss_clk_i),
+            .rst_ni              (cptra_ss_rst_b_o),
+            .s_axi_w_if          (cptra_ss_uart_s_axi_if_w_sub),
+            .s_axi_r_if          (cptra_ss_uart_s_axi_if_r_sub),
+            .intg_err_o          (uart_intg_error),
+            .cio_rx_i            (cptra_ss_uart_rx_i),
+            .cio_tx_o            (cptra_ss_uart_tx_o),
+            .cio_tx_en_o         (cptra_ss_uart_tx_en_o),
+            .intr_tx_watermark_o (uart_intr.tx_watermark),
+            .intr_tx_empty_o     (uart_intr.tx_empty),
+            .intr_rx_watermark_o (uart_intr.rx_watermark),
+            .intr_tx_done_o      (uart_intr.tx_done),
+            .intr_rx_overflow_o  (uart_intr.rx_overflow),
+            .intr_rx_frame_err_o (uart_intr.rx_frame_err),
+            .intr_rx_break_err_o (uart_intr.rx_break_err),
+            .intr_rx_timeout_o   (uart_intr.rx_timeout),
+            .intr_rx_parity_err_o(uart_intr.rx_parity_err)
+        );
+
+        assign uart_intr_combined = |uart_intr;
+
+    end else begin : gen_no_uart_axi
+        // Tie-off unused outputs
+        assign uart_intg_error         = 1'b0;
+        assign uart_intr               =  '0;
+        assign uart_intr_combined      = 1'b0;
+        assign cptra_ss_uart_tx_o      = 1'b0;
+        assign cptra_ss_uart_tx_en_o   = 1'b0;
+
+        // Tie-off AXI interface
+        axi_sub #(
+            .AW(`AXI_ADDR_WIDTH),
+            .DW(`AXI_DATA_WIDTH),
+            .UW(`AXI_USER_WIDTH),
+            .IW(`AXI_ID_WIDTH),
+            .C_LAT(0)
+        ) axi_sub_uart_err_resp_i (
+            .clk       (cptra_ss_clk_i),
+            .rst_n     (cptra_ss_rst_b_o),
+            .s_axi_w_if(cptra_ss_uart_s_axi_if_w_sub),
+            .s_axi_r_if(cptra_ss_uart_s_axi_if_r_sub),
+            .dv        (),
+            .addr      (),
+            .write     (),
+            .user      (),
+            .id        (),
+            .wdata     (),
+            .wstrb     (),
+            .size      (),
+            .last      (),
+            .rdata     ('0),
+            .hld       (1'b0),
+            .rd_err    (1'b1),
+            .wr_err    (1'b1)
+        );
+
+        // Absorb unused inputs
+        logic unused_uart;
+        assign unused_uart = cptra_ss_uart_rx_i;
+    end
+
 
     //`CALIPTRA_ASSERT(i3c_payload_available, ($rose(cptra_ss_i3c_recovery_payload_available_i) |-> ##[1:50] cptra_ss_i3c_recovery_payload_available_i == 0),cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
     //`CALIPTRA_ASSERT(i3c_image_activated, ($rose(cptra_ss_i3c_recovery_image_activated_i) |-> ##[1:50] cptra_ss_i3c_recovery_image_activated_i == 0), cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
