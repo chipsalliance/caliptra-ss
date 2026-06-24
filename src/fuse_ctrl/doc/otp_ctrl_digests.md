@@ -11,6 +11,7 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 |           [SECRET_PROD_PARTITION_2_DIGEST](#Reg_secret_prod_partition_2_digest_0)           |      SECRET_PROD_PARTITION_2      |        yes         |
 |           [SECRET_PROD_PARTITION_3_DIGEST](#Reg_secret_prod_partition_3_digest_0)           |      SECRET_PROD_PARTITION_3      |        yes         |
 |                [SW_MANUF_PARTITION_DIGEST](#Reg_sw_manuf_partition_digest_0)                |        SW_MANUF_PARTITION         |         no         |
+| [PROD_DEBUG_UNLOCK_MANUF_PARTITION_DIGEST](#Reg_prod_debug_unlock_manuf_partition_digest_0) | PROD_DEBUG_UNLOCK_MANUF_PARTITION |         no         |
 |    [SECRET_LC_TRANSITION_PARTITION_DIGEST](#Reg_secret_lc_transition_partition_digest_0)    |  SECRET_LC_TRANSITION_PARTITION   |        yes         |
 |             [VENDOR_TEST_PARTITION_DIGEST](#Reg_vendor_test_partition_digest_0)             |       VENDOR_TEST_PARTITION       |         no         |
 |     [VENDOR_HASHES_MANUF_PARTITION_DIGEST](#Reg_vendor_hashes_manuf_partition_digest_0)     |   VENDOR_HASHES_MANUF_PARTITION   |         no         |
@@ -25,4 +26,3 @@ It has been generated with ./tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_partit
 |          [CPTRA_SS_LOCK_HEK_PROD_4_DIGEST](#Reg_cptra_ss_lock_hek_prod_4_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_4      |         no         |
 |          [CPTRA_SS_LOCK_HEK_PROD_5_DIGEST](#Reg_cptra_ss_lock_hek_prod_5_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_5      |         no         |
 |          [CPTRA_SS_LOCK_HEK_PROD_6_DIGEST](#Reg_cptra_ss_lock_hek_prod_6_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_6      |         no         |
-|          [CPTRA_SS_LOCK_HEK_PROD_7_DIGEST](#Reg_cptra_ss_lock_hek_prod_7_digest_0)          |     CPTRA_SS_LOCK_HEK_PROD_7      |         no         |
