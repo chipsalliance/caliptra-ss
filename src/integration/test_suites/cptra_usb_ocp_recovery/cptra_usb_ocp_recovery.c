@@ -176,28 +176,16 @@ uint8_t cptra_ocp_recovery_poll_device_status_robust(
 }
 
 uint32_t cptra_ocp_recovery_read_image_size_words(void) {
-    uint32_t ctrl0 = 0u;
     uint32_t ctrl1 = 0u;
-    uint32_t lo;
-    uint32_t hi;
 
-    // OCP Recovery v1.1 Sec 9.2 INDIRECT_FIFO_CTRL (Table 9-13): IMAGE_SIZE is a
-    // 32-bit value at command bytes 2..5 (in 4-byte/DWORD units). In the
-    // DWORD-aligned register view it straddles two control registers:
-    //   INDIRECT_FIFO_CTRL_0 bytes 2..3 -> IMAGE_SIZE[15:0]  (IMAGE_SIZE_LO field)
-    //   INDIRECT_FIFO_CTRL_1 bytes 4..5 -> IMAGE_SIZE[31:16] (IMAGE_SIZE_HI field)
-    // Read both registers and reassemble the full image size.
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, &ctrl0) != 0u) {
-        return 0u;
-    }
+    // OCP Recovery v1.1 Sec 9.2 INDIRECT_FIFO_CTRL: IMAGE_SIZE is the image
+    // size to load, in 4-byte (DWORD) units. The register map is I3C-identical
+    // (secure_firmware_recovery_interface.rdl): IMAGE_SIZE is the full 32-bit
+    // INDIRECT_FIFO_CTRL_1 register, so a single read returns it directly.
     if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1, &ctrl1) != 0u) {
         return 0u;
     }
-    lo = (ctrl0 & USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_MASK)
-         >> USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_LOW;
-    hi = (ctrl1 & USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_MASK)
-         >> USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_LOW;
-    return lo | (hi << 16);
+    return ctrl1;
 }
 
 uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *write_index) {

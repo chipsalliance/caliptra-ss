@@ -433,8 +433,34 @@
 #define USB_OCP_RECOVERY_REG_PROT_CAP_2                                                             (0x8)
 #define USB_OCP_RECOVERY_REG_PROT_CAP_2_REC_PROT_VERSION_LOW                                        (0)
 #define USB_OCP_RECOVERY_REG_PROT_CAP_2_REC_PROT_VERSION_MASK                                       (0xffff)
-#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_LOW                                              (16)
-#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_MASK                                             (0xffff0000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_LOW                               (16)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK                              (0x10000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_LOW                              (17)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK                             (0x20000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_LOW                                   (18)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK                                  (0x40000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_LOW                                 (19)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK                                (0x80000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_LOW                                (20)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_MASK                               (0x100000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_LOW                          (21)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_MASK                         (0x200000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_LOW                                (22)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_MASK                               (0x400000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_LOW                                 (23)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_MASK                                (0x800000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_LOW                          (24)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK                         (0x1000000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_LOW                              (25)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_MASK                             (0x2000000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_LOW                               (26)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK                              (0x4000000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_LOW                               (27)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK                              (0x8000000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_LOW                             (28)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK                            (0x10000000)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_RESERVED_LOW                                     (29)
+#define USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_RESERVED_MASK                                    (0xe0000000)
 #endif
 #define SOC_USB_OCP_RECOVERY_REG_PROT_CAP_3                                                         (0x2000200c)
 #ifndef USB_OCP_RECOVERY_REG_PROT_CAP_3
@@ -608,294 +634,6 @@
 #define USB_OCP_RECOVERY_REG_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                                     (24)
 #define USB_OCP_RECOVERY_REG_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                                    (0xff000000)
 #endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0                                                    (0x20002078)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0                                                        (0x78)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_CMS_LOW                                                (0)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_CMS_MASK                                               (0xff)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_RESERVED_15_8_LOW                                      (8)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_RESERVED_15_8_MASK                                     (0xff00)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_INDIRECT_OFFSET_LOW_LOW                                (16)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_0_INDIRECT_OFFSET_LOW_MASK                               (0xffff0000)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1                                                    (0x2000207c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1                                                        (0x7c)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1_INDIRECT_OFFSET_HIGH_LOW                               (0)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1_INDIRECT_OFFSET_HIGH_MASK                              (0xffff)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1_RESERVED_31_16_LOW                                     (16)
-#define USB_OCP_RECOVERY_REG_INDIRECT_CTRL_1_RESERVED_31_16_MASK                                    (0xffff0000)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0                                                  (0x20002080)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0                                                      (0x80)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_EMPTY_LOW                                            (0)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_EMPTY_MASK                                           (0x1)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_FULL_LOW                                             (1)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_FULL_MASK                                            (0x2)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_RESERVED_7_2_LOW                                     (2)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_RESERVED_7_2_MASK                                    (0xfc)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_REGION_TYPE_LOW                                      (8)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_REGION_TYPE_MASK                                     (0xff00)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_REGION_SIZE_LOW_LOW                                  (16)
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_0_REGION_SIZE_LOW_MASK                                 (0xffff0000)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_STATUS_1                                                  (0x20002084)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_STATUS_1
-#define USB_OCP_RECOVERY_REG_INDIRECT_STATUS_1                                                      (0x84)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_0                                                    (0x20002088)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_0
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_0                                                        (0x88)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_1                                                    (0x2000208c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_1
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_1                                                        (0x8c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_2                                                    (0x20002090)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_2
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_2                                                        (0x90)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_3                                                    (0x20002094)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_3
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_3                                                        (0x94)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_4                                                    (0x20002098)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_4
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_4                                                        (0x98)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_5                                                    (0x2000209c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_5
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_5                                                        (0x9c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_6                                                    (0x200020a0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_6
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_6                                                        (0xa0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_7                                                    (0x200020a4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_7
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_7                                                        (0xa4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_8                                                    (0x200020a8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_8
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_8                                                        (0xa8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_9                                                    (0x200020ac)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_9
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_9                                                        (0xac)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_10                                                   (0x200020b0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_10
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_10                                                       (0xb0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_11                                                   (0x200020b4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_11
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_11                                                       (0xb4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_12                                                   (0x200020b8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_12
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_12                                                       (0xb8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_13                                                   (0x200020bc)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_13
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_13                                                       (0xbc)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_14                                                   (0x200020c0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_14
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_14                                                       (0xc0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_15                                                   (0x200020c4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_15
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_15                                                       (0xc4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_16                                                   (0x200020c8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_16
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_16                                                       (0xc8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_17                                                   (0x200020cc)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_17
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_17                                                       (0xcc)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_18                                                   (0x200020d0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_18
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_18                                                       (0xd0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_19                                                   (0x200020d4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_19
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_19                                                       (0xd4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_20                                                   (0x200020d8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_20
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_20                                                       (0xd8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_21                                                   (0x200020dc)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_21
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_21                                                       (0xdc)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_22                                                   (0x200020e0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_22
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_22                                                       (0xe0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_23                                                   (0x200020e4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_23
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_23                                                       (0xe4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_24                                                   (0x200020e8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_24
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_24                                                       (0xe8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_25                                                   (0x200020ec)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_25
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_25                                                       (0xec)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_26                                                   (0x200020f0)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_26
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_26                                                       (0xf0)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_27                                                   (0x200020f4)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_27
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_27                                                       (0xf4)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_28                                                   (0x200020f8)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_28
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_28                                                       (0xf8)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_29                                                   (0x200020fc)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_29
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_29                                                       (0xfc)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_30                                                   (0x20002100)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_30
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_30                                                       (0x100)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_31                                                   (0x20002104)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_31
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_31                                                       (0x104)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_32                                                   (0x20002108)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_32
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_32                                                       (0x108)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_33                                                   (0x2000210c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_33
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_33                                                       (0x10c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_34                                                   (0x20002110)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_34
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_34                                                       (0x110)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_35                                                   (0x20002114)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_35
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_35                                                       (0x114)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_36                                                   (0x20002118)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_36
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_36                                                       (0x118)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_37                                                   (0x2000211c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_37
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_37                                                       (0x11c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_38                                                   (0x20002120)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_38
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_38                                                       (0x120)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_39                                                   (0x20002124)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_39
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_39                                                       (0x124)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_40                                                   (0x20002128)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_40
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_40                                                       (0x128)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_41                                                   (0x2000212c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_41
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_41                                                       (0x12c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_42                                                   (0x20002130)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_42
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_42                                                       (0x130)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_43                                                   (0x20002134)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_43
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_43                                                       (0x134)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_44                                                   (0x20002138)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_44
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_44                                                       (0x138)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_45                                                   (0x2000213c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_45
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_45                                                       (0x13c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_46                                                   (0x20002140)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_46
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_46                                                       (0x140)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_47                                                   (0x20002144)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_47
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_47                                                       (0x144)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_48                                                   (0x20002148)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_48
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_48                                                       (0x148)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_49                                                   (0x2000214c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_49
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_49                                                       (0x14c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_50                                                   (0x20002150)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_50
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_50                                                       (0x150)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_51                                                   (0x20002154)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_51
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_51                                                       (0x154)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_52                                                   (0x20002158)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_52
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_52                                                       (0x158)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_53                                                   (0x2000215c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_53
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_53                                                       (0x15c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_54                                                   (0x20002160)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_54
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_54                                                       (0x160)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_55                                                   (0x20002164)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_55
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_55                                                       (0x164)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_56                                                   (0x20002168)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_56
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_56                                                       (0x168)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_57                                                   (0x2000216c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_57
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_57                                                       (0x16c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_58                                                   (0x20002170)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_58
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_58                                                       (0x170)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_59                                                   (0x20002174)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_59
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_59                                                       (0x174)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_60                                                   (0x20002178)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_60
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_60                                                       (0x178)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_61                                                   (0x2000217c)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_61
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_61                                                       (0x17c)
-#endif
-#define SOC_USB_OCP_RECOVERY_REG_INDIRECT_DATA_62                                                   (0x20002180)
-#ifndef USB_OCP_RECOVERY_REG_INDIRECT_DATA_62
-#define USB_OCP_RECOVERY_REG_INDIRECT_DATA_62                                                       (0x180)
-#endif
 #define SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0                                               (0x20002184)
 #ifndef USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0
 #define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0                                                   (0x184)
@@ -903,16 +641,12 @@
 #define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_CMS_MASK                                          (0xff)
 #define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESET_LOW                                         (8)
 #define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESET_MASK                                        (0xff00)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_LOW                                 (16)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_MASK                                (0xffff0000)
+#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                (16)
+#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                               (0xffff0000)
 #endif
 #define SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1                                               (0x20002188)
 #ifndef USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1
 #define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1                                                   (0x188)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_LOW                                 (0)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_MASK                                (0xffff)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_RESERVED_31_16_LOW                                (16)
-#define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_RESERVED_31_16_MASK                               (0xffff0000)
 #endif
 #define SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0                                             (0x2000218c)
 #ifndef USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0
