@@ -176,11 +176,28 @@ uint8_t cptra_ocp_recovery_poll_device_status_robust(
 }
 
 uint32_t cptra_ocp_recovery_read_image_size_words(void) {
-    uint32_t image_size_words = 0u;
+    uint32_t ctrl0 = 0u;
+    uint32_t ctrl1 = 0u;
+    uint32_t lo;
+    uint32_t hi;
 
-    // OCP Recovery v1.1 9.2, INDIRECT_FIFO_CTRL / Table 9-13: bytes 2..5 hold Image Size in 4-byte units.
-    (void)cptra_ocp_recovery_read_dword(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1, &image_size_words);
-    return image_size_words;
+    // OCP Recovery v1.1 Sec 9.2 INDIRECT_FIFO_CTRL (Table 9-13): IMAGE_SIZE is a
+    // 32-bit value at command bytes 2..5 (in 4-byte/DWORD units). In the
+    // DWORD-aligned register view it straddles two control registers:
+    //   INDIRECT_FIFO_CTRL_0 bytes 2..3 -> IMAGE_SIZE[15:0]  (IMAGE_SIZE_LO field)
+    //   INDIRECT_FIFO_CTRL_1 bytes 4..5 -> IMAGE_SIZE[31:16] (IMAGE_SIZE_HI field)
+    // Read both registers and reassemble the full image size.
+    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, &ctrl0) != 0u) {
+        return 0u;
+    }
+    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1, &ctrl1) != 0u) {
+        return 0u;
+    }
+    lo = (ctrl0 & USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_MASK)
+         >> USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_LOW;
+    hi = (ctrl1 & USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_MASK)
+         >> USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_LOW;
+    return lo | (hi << 16);
 }
 
 uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *write_index) {
@@ -209,22 +226,43 @@ uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t *dest,
     // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15:
     // INDIRECT_FIFO_DATA is a fixed FIFO data register; each AXI read pops the
     // next DWORD. Caliptra Core reaches the recovery aperture only through the
-    // AXI DMA engine. Drain the image with a FIXED-address DMA read burst
-    // (AXI AxBURST=FIXED via ctrl.rd_fixed=1): the source address holds on
-    // INDIRECT_FIFO_DATA while the recovery aperture pops one DWORD per beat.
-    // block_size 0 lets the DMA auto-size each FIXED burst (capped to 16 beats
-    // per AXI4 section A3.4.1) and issue as many bursts as the image requires.
+    // AXI DMA engine. Drain with SINGLE-BEAT reads (one DMA transaction per
+    // DWORD): each read is an independent, well-spaced AXI access at the fixed
+    // INDIRECT_FIFO_DATA address that pops exactly one DWORD. This is the
+    // verified-correct drain path; the FIXED-address multi-beat burst is a
+    // throughput optimization that is reopened pending a per-beat-pop fix.
     if ((dest == 0) || (image_size_words == 0u)) {
         return 1u;
     }
-    uint32_t words      = (image_size_words < dest_words) ? image_size_words : dest_words;
-    uint32_t byte_count = words * (uint32_t)sizeof(uint32_t);
-    return soc_ifc_axi_dma_read_ahb_payload_with_status(
-               SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
-               1u,
-               dest,
-               byte_count,
-               0u);
+    uint32_t words = (image_size_words < dest_words) ? image_size_words : dest_words;
+    for (uint32_t ii = 0u; ii < words; ++ii) {
+        uint32_t word = 0u;
+        if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA, &word) != 0u) {
+            return 1u;
+        }
+        dest[ii] = word;
+    }
+    return 0u;
+}
+
+// Verify the drained recovery image matches the deterministic pattern the USB
+// OCP-recovery DV sequence programs (caliptra_ss_usb_ocp_recovery_sequence.svh,
+// step 5b): words 0..3 are fixed markers, words 4+ are 0x00000010 + word_index.
+// This self-checks the ENTIRE recovery datapath (USB push -> FIFO -> AXI drain)
+// for every DWORD, not just the first word.
+static uint8_t cptra_ocp_recovery_check_image(const uint32_t *img, uint32_t words) {
+    static const uint32_t markers[4] = {
+        0xDEADBEEFu, 0xCAFEBABEu, 0x12345678u, 0x9ABCDEF0u };
+    for (uint32_t i = 0u; i < words; ++i) {
+        uint32_t expected = (i < 4u) ? markers[i] : (0x00000010u + i);
+        if (img[i] != expected) {
+            VPRINTF(FATAL,
+                    "CPTRA: drained image mismatch at word %u: got 0x%08x exp 0x%08x\n",
+                    i, img[i], expected);
+            return 1u;
+        }
+    }
+    return 0u;
 }
 
 void cptra_ocp_recovery_set_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
@@ -310,8 +348,14 @@ void main(void) {
 
     image_size_words = cptra_ocp_recovery_read_image_size_words();
     if (image_size_words == 0u) {
-        image_size_words = OCP_RECOVERY_SCRATCH_WORDS;
-        VPRINTF(WARNING, "CPTRA: image size is zero; falling back to a 64-byte bring-up drain\n");
+        // OCP Recovery v1.1 Sec 9.2: by the time DEVICE_STATUS reports the
+        // recovery image is available, the device must have programmed a
+        // non-zero IMAGE_SIZE via INDIRECT_FIFO_CTRL. A zero here is a genuine
+        // protocol/programming error, not a condition to silently work around.
+        fail_and_halt("CPTRA: INDIRECT_FIFO_CTRL IMAGE_SIZE read back as zero");
+    }
+    if (image_size_words > OCP_RECOVERY_SCRATCH_WORDS) {
+        fail_and_halt("CPTRA: IMAGE_SIZE exceeds drain scratch capacity");
     }
     if (cptra_ocp_recovery_read_fifo_status(&fifo_status, &last_write_index) != 0u) {
         fail_and_halt("CPTRA: INDIRECT_FIFO_STATUS DMA read failed");
@@ -333,6 +377,11 @@ void main(void) {
             last_write_index,
             fifo_status,
             scratch[0]);
+
+    if (cptra_ocp_recovery_check_image(scratch, image_size_words) != 0u) {
+        fail_and_halt("CPTRA: drained recovery image content mismatch");
+    }
+    VPRINTF(LOW, "CPTRA: drained image content verified (%u dwords)\n", image_size_words);
 
     VPRINTF(LOW, "CPTRA: writing RECOVERY_CTRL to select CMS image and activate it\n");
     cptra_ocp_recovery_set_recovery_ctrl(OCP_RECOVERY_CMS_REGION,
