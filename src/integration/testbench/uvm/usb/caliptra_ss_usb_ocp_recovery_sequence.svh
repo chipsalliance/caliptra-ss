@@ -608,17 +608,22 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .label("OCPREC_RECOVERY_CTRL"));
 
         // 5a. INDIRECT_FIFO_CTRL (cmd 0x2C) OUT: select CMS index 0,
-        //     reset FIFO, set IMAGE_SIZE to 16 (4-byte units; sec 9.2
-        //     Tbl 9-14 IMAGE_SIZE unit = 4 bytes => 16 * 4 = 64 bytes).
+        //     reset FIFO, set IMAGE_SIZE to 12 (4-byte units; sec 9.2
+        //     Tbl 9-14 IMAGE_SIZE unit = 4 bytes => 12 * 4 = 48 bytes).
+        //     The image size is deliberately NOT equal to the firmware's
+        //     scratch-buffer constant so the device-programmed size must be
+        //     read back correctly (it exercises the INDIRECT_FIFO_CTRL
+        //     IMAGE_SIZE byte placement, OCP Recovery v1.1 Sec 9.2 Tbl 9-14:
+        //     IMAGE_SIZE occupies bytes 2..5, straddling CTRL_0/CTRL_1).
         //     Per OCP Recovery v1.1 Section 8.2.5, FIFO CMS uses ONLY
         //     INDIRECT_FIFO_* family; INDIRECT_CTRL is mutually exclusive
         //     (Memory Window CMS) and must NOT be touched in this path.
         //     Layout per Tbl 9-14:
         //       byte 0     : CMS index            -> 0
         //       byte 1     : Reset (1 = reset)    -> 1
-        //       bytes 2..5 : IMAGE_SIZE (4B units, LE) -> 16
+        //       bytes 2..5 : IMAGE_SIZE (4B units, LE) -> 12
         indir_fifo_ctrl_payload = '{8'h00, 8'h01,
-                                    8'h10, 8'h00, 8'h00, 8'h00};
+                                    8'h0C, 8'h00, 8'h00, 8'h00};
         ocp_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
                        .wlength(16'(indir_fifo_ctrl_payload.size())),
@@ -626,12 +631,13 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL"));
 
-        // 5b. INDIRECT_FIFO_DATA (cmd 0x2E) OUT: push 64 bytes (16 dwords)
+        // 5b. INDIRECT_FIFO_DATA (cmd 0x2E) OUT: push 48 bytes (12 dwords)
         //     of synthetic image with a recognizable pattern so the
         //     scoreboard can match (OCP Recovery v1.1 sec 9.2: cmd 0x2E
         //     is the streaming write to the FIFO). wLength must be
-        //     <= wMaxWrTransferSize per sec 8.5.1.
-        n_dwords = 16;
+        //     <= wMaxWrTransferSize per sec 8.5.1. The count matches the
+        //     programmed IMAGE_SIZE above.
+        n_dwords = 12;
         pattern_dw.delete();
         pattern_dw.push_back(32'hDEADBEEF);
         pattern_dw.push_back(32'hCAFEBABE);
@@ -662,7 +668,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .label("OCPREC_INDIRECT_FIFO_DATA"));
 
         // 5c. INDIRECT_FIFO_STATUS (cmd 0x2D) IN: expect WRITE_INDEX
-        //     advanced by 16 (4-byte units). Per sec 9.2 Tbl 9-15:
+        //     advanced by n_dwords (4-byte units). Per sec 9.2 Tbl 9-15:
         //       byte 0       : EMPTY (1=empty)
         //       byte 1       : FULL
         //       byte 2       : REGION
@@ -683,8 +689,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             wr_idx = {fifo_status[7], fifo_status[6],
                       fifo_status[5], fifo_status[4]};
             `uvm_info("OCPREC",
-                $sformatf("INDIRECT_FIFO_STATUS: EMPTY=%0d FULL=%0d WRITE_INDEX=%0d (4B units; expected 16)",
-                          fifo_status[0], fifo_status[1], wr_idx),
+                $sformatf("INDIRECT_FIFO_STATUS: EMPTY=%0d FULL=%0d WRITE_INDEX=%0d (4B units; expected %0d)",
+                          fifo_status[0], fifo_status[1], wr_idx, n_dwords),
                 UVM_NONE)
             if (wr_idx != n_dwords) begin
                 `uvm_error("OCPREC",

@@ -766,11 +766,15 @@
 `define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_CMS_MASK                                          (32'hff)
 `define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESET_LOW                                         (8)
 `define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESET_MASK                                        (32'hff00)
-`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                (16)
-`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                               (32'hffff0000)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_LOW                                 (16)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0_IMAGE_SIZE_LO_MASK                                (32'hffff0000)
 `endif
 `ifndef USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1
 `define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1                                                   (32'h188)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_LOW                                 (0)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_IMAGE_SIZE_HI_MASK                                (32'hffff)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_RESERVED_31_16_LOW                                (16)
+`define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1_RESERVED_31_16_MASK                               (32'hffff0000)
 `endif
 `ifndef USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0
 `define USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0                                                 (32'h18c)
