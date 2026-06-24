@@ -36,6 +36,12 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+static void reset_fc_for_next_case(void) {
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+    grant_mcu_for_fc_writes();
+}
+
 /**
  * VENDOR_SECRET_PROD_PARTITION and CPTRA_SS_LOCK_HEK_PROD_* partitions
  * are zeroizable while the others are not. This test verifies basic
@@ -50,7 +56,7 @@ void ocp_lock_zeroization(void) {
 
     // A partition that is not zeroizable.
     const partition_t ctrl_part = partitions[SW_MANUF_PARTITION];
-    
+
     // The hardware partition gets locked for reads and writes after its
     // digest has been calculated via the DAI. Zeroization still needs
     // to work.
@@ -71,6 +77,7 @@ void ocp_lock_zeroization(void) {
     // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
     // Before the HW gets locked.
     dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
     dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
 
 
@@ -78,12 +85,12 @@ void ocp_lock_zeroization(void) {
     calculate_digest(hw_part.address, 0);
 
     // Reset to activate the write lock of the partition.
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    reset_fc_for_next_case();
 
     // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
     // After the HW gets locked, but before the zeroization.
     dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
     dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
 
 
@@ -113,13 +120,15 @@ void ocp_lock_zeroization(void) {
         VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
-    
+
     // Check that for a secret zeroized locked partition, the data cannot be read.
     dai_rd(hw_part.address, &data[0], &data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
 
     // Attempt to read and write the zeroization marker, reads should always work but writes should fail.
     // After the HW gets locked and after the zeroization.
     dai_wr(hw_part.zer_address, data[0], data[1], hw_part.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
     dai_rd(hw_part.zer_address, &data[0], &data[1], hw_part.granularity, 0);
 
     // Zeroize the first 32-bit word of the software partition and its
@@ -153,7 +162,7 @@ void ocp_lock_zeroization(void) {
         VPRINTF(LOW, "ERROR: marker is not zeroized\n");
         goto epilogue;
     }
-    
+
     // Write, then calculate & write digest, then read an unbuffered
     // partition. Finally, zeroize the partition.
     VPRINTF(LOW, "================= Start testing zeroization on sw_part1 =================\n");
@@ -170,10 +179,9 @@ void ocp_lock_zeroization(void) {
         VPRINTF(LOW, "ERROR: read data does not match written data\n");
         goto epilogue;
     }
-    
+
     // Reset to activate the write lock of the partition.
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    reset_fc_for_next_case();
 
     // Zeroize marker before data, as recommended.
     if (!dai_zer(sw_part1.zer_address, 64, 0, false)) {
@@ -187,12 +195,22 @@ void ocp_lock_zeroization(void) {
     }
 
     VPRINTF(LOW, "================= Start testing more zeroization cases =================\n");
-    // Lock the first three ratchet seed partition
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
+    // Lock the first three ratchet seed partitions.
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
 
-    // Check that for a zeroized locked partition, neither the data nor the digest can be written.
+    // Check that for zeroized locked partitions, neither the data nor the digest can be written.
+    // Each expected DAI error is the final DAI operation before reset.
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_0].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_1].digest_address, 0x12, 0x34, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
 
     // Attempting to zeroize a partition that is not zeroizable must
     // result in an error.
@@ -204,8 +222,7 @@ void ocp_lock_zeroization(void) {
     // A reset triggers a integrity check that must skip the zeroized
     // partitions.
 
-    reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    reset_fc_for_next_case();
 
     // Zeroization is idempotent, meaning that repeated zeroizations
     // have the same effect.
@@ -236,16 +253,20 @@ void ocp_lock_zeroization(void) {
         goto epilogue;
     }
 
-    // Lock the first three ratchet seed partition
-    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0x3);
+    // Lock the first three ratchet seed partitions.
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
+
+    // Check that a non-locked partition can still be written before the expected failure.
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0xFF, 0xFF, 32, 0);
 
     // Check that for a locked partition, neither the data nor the
-    // digest can be written.
+    // digest can be written. Each expected DAI error is final before reset.
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].address, 0xFF, 0xFF, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
-    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].digest_address, 0x12, 0x34, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    reset_fc_for_next_case();
 
-    // Check that a non-locked partition can still be written.
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, (1u << 3) - 1u);
     dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_3].address, 0xFF, 0xFF, 32, 0);
+    dai_wr(partitions[CPTRA_SS_LOCK_HEK_PROD_2].digest_address, 0x12, 0x34, 64, OTP_CTRL_STATUS_DAI_ERROR_MASK);
 
 epilogue:
     VPRINTF(LOW, "ocp lock zeroization test finished\n");
@@ -253,12 +274,12 @@ epilogue:
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-      
+
     lcc_initialization();
-    grant_mcu_for_fc_writes(); 
+    grant_mcu_for_fc_writes();
 
     ocp_lock_zeroization();
 

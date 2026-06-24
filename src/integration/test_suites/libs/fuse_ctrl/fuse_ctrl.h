@@ -96,4 +96,23 @@ bool zeroize_without_addr(uint32_t exp_status);
 // to the Caliptra core but not the MCU.
 bool is_caliptra_secret_addr(uint32_t addr);
 
+// Prove that a volatile write lock actually blocks DAI writes, by observing the
+// fuse DATA (not a DAI error code, whose ERR_CODE index shifts when partitions
+// are added or removed). Runs four steps against a still-blank entry:
+//   (i)   program the marker 0x55555555 into the entry while unlocked
+//   (ii)  engage the lock (lock_reg |= lock_mask; the lock CSRs are sticky W1S)
+//   (iii) attempt to overwrite the entry with the complement 0xAAAAAAAA
+//   (iv)  read back: a functional lock preserves 0x55555555; a dead lock lets
+//         OTP OR-in the complement and the word reads 0xFFFFFFFF.
+// The entry must be blank (and not written by any other sub-case) when called.
+// Returns true only if the marker was preserved.
+bool dai_lock_blocks_write(uint32_t addr, uint32_t granularity,
+                           uint32_t lock_reg, uint32_t lock_mask);
+
+// Variant of dai_lock_blocks_write for entries that are already locked by some
+// means other than a writable lock CSR (e.g. a computed digest or zeroization)
+// and that already hold the 0x55555555 marker. Runs steps (iii)+(iv) only:
+// attempts the complement overwrite and confirms the marker survived.
+bool dai_locked_write_preserves_marker(uint32_t addr, uint32_t granularity);
+
 #endif // FUSE_CTRL_H
