@@ -18,7 +18,7 @@
 - [Caliptra Subsystem Top](#caliptra-subsystem-top)
   - [Parameters \& Defines](#parameters--defines)
   - [Interfaces \& Signals](#interfaces--signals)
-      - [Strap Timing Requirements](#strap-timing-requirements)
+    - [Strap Timing Requirements](#strap-timing-requirements)
     - [AXI Interface (axi\_if)](#axi-interface-axi_if)
     - [Caliptra Subsystem Top Interface \& Signals](#caliptra-subsystem-top-interface--signals)
   - [Integration Requirements](#integration-requirements)
@@ -301,7 +301,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
 | External | input     | 1      | `cptra_ss_debug_intent_i`                 | Physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](CaliptraSSHardwareSpecification.md#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
 
-#### Strap Timing Requirements
+### Strap Timing Requirements
 
 **All strap inputs listed in the table above, as well as `cptra_ss_cptra_obf_key_i`, `cptra_ss_cptra_csr_hmac_key_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`, and `cptra_ss_FIPS_ZEROIZATION_PPD_i`, must be driven to their intended values and held stable before `cptra_ss_rst_b_i` is deasserted. These signals must not transition for the duration of the boot session (until the next reset assertion).**
 
