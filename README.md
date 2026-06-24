@@ -20,7 +20,7 @@ LINT:
 
 Simulation:
  - Synopsys VCS with Verdi
-   - `Version U-2023.03-SP1-1_Full64`
+   - `Version R-2020.12-SP2-7_Full64`
  - Mentor Graphics AVERY
    - `avery/2025.1_20250313` AXI interconnect and I3C VIP
  - ARM AXI Protocol Checker
