@@ -535,12 +535,12 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 <a name="locking-the-validated-public-key-partition"></a>
 
-During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
+During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries for the remainder of the current boot. This ensures that the validated key’s fuse entry remains immutable until the next subsystem reset (warm or cold) re-runs the boot flow. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
 
 1. **PK Hash Partition**
    - **Purpose:**
      - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
-     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
+     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM via the volatile lock CSR, making them immutable for the rest of the current boot. The lock clears on any subsystem reset (warm or cold), at which point the FC re-runs OTP init and ROM re-validates.
    - **Layout & Details:**
      - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.
        - **Default N:** 1
@@ -565,21 +565,22 @@ During firmware authentication, the ROM validates the vendor public keys provide
        - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
 3. **Volatile Locking Mechanism**
 
-  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
+  - The FC implements volatile write locks with sticky W1S CSRs. Each lock bit is effectively write-once per boot: writing a 1 sets the selected lock bit; writing 0 cannot clear an already-set bit. Once set, the bit remains set for the rest of the current boot and clears on the next subsystem reset (warm or cold), at which point the FC re-runs OTP init.
+  - `MANUF_PK_HASH_VOLATILE_LOCK` bit 0 locks `CPTRA_CORE_VENDOR_PK_HASH_0` and `CPTRA_CORE_PQC_KEY_TYPE_0` in `VENDOR_HASHES_MANUF_PARTITION`. This is a volatile-only manufacturing safety lock; lifecycle state already prevents MANUF partition writes after manufacturing closure.
+  - `VENDOR_PK_HASH_VOLATILE_LOCK` bit i locks production vendor hash i+1 (`CPTRA_CORE_VENDOR_PK_HASH_1` through `CPTRA_CORE_VENDOR_PK_HASH_N`) and the associated PQC key type entry.
+  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. The CSR is a fixed 32-bit W1S register and is always present in the SoC address map regardless of `num_ratchet_seed_partitions`, but only the first `num_ratchet_seed_partitions` bits carry semantic meaning; bits beyond that index are reserved/RAZ. When `num_ratchet_seed_partitions == 0` the CSR remains accessible for SW ABI stability but never gates a partition.
+  - These fields are bit masks with one bit per lock target; they are not threshold or ordinal encodings.
      - **Example:**
 
        ```c
-       // Lock the 3rd vendor public key hash and all higher order key hashes
-       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
+       // Lock CPTRA_CORE_VENDOR_PK_HASH_3 and its associated PQC key type.
+       write_register(otp_ctrl.VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 2);
        // This operation disables any further write updates to the validated public key fuse region.
        ```
 
   -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
   - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
-  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
+  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request, which requires a subsystem reset (warm or cold) to clear the volatile lock and re-enter ROM.
   - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
 
 ---

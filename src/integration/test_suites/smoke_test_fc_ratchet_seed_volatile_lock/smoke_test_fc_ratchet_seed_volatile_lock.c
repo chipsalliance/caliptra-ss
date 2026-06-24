@@ -39,94 +39,81 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 
 
-void volatile_lock_set_write_read_ratchet(uint32_t lock_value, uint32_t wdata0, uint32_t wdata1, uint32_t partition_locked) {
-  uint32_t mask, partition_index_offset;
-  uint32_t rdata[2];
+static void reset_fc_for_next_case(void) {
+  reset_fc_lcc_rtl();
+  wait_dai_op_idle(0);
+  grant_mcu_for_fc_writes();
+}
 
-  lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, lock_value);
-  partition_index_offset = CPTRA_SS_LOCK_HEK_PROD_0;
-  for (uint32_t partition_no = CPTRA_SS_LOCK_HEK_PROD_0; partition_no <= CPTRA_SS_LOCK_HEK_PROD_7; partition_no++) {
-    mask = (((partition_no-partition_index_offset) < lock_value) ||  partition_locked) ? OTP_CTRL_STATUS_DAI_ERROR_MASK : 0;
-
-    dai_wr(partitions[partition_no].address, wdata0, wdata1 , partitions[partition_no].granularity, mask);
-    dai_rd(partitions[partition_no].address, &rdata[0],&rdata[1] , partitions[partition_no].granularity, 0);
-    // Only compare when an error is not expected
-    if (mask == 0 &&
-        (wdata0 != rdata[0] || (partitions[partition_no].granularity > 32 && rdata[1] != wdata1))
-        ) {
-      VPRINTF(LOW, "ERROR: partitions[HEK_no=%0d] read_value, does not match written_value\n", partition_no);
-      break;
-    }
+static void expect_ratchet_lock_reg(uint32_t expected, const char *msg) {
+  uint32_t actual = lsu_read_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK);
+  if (actual != expected) {
+    handle_error("ERROR: %s expected 0x%08x actual 0x%08x\n", msg, expected, actual);
   }
 }
 
+static void check_ratchet_lock_sticky_w1s(void) {
+  uint32_t lock_mask = 0;
+
+  for (uint32_t bit = 0; bit < 8; bit++) {
+    lock_mask |= (1u << bit);
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << bit);
+    expect_ratchet_lock_reg(lock_mask, "ratchet seed volatile lock did not accumulate bit-mask");
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0);
+    expect_ratchet_lock_reg(lock_mask, "writing 0 cleared sticky ratchet seed volatile lock bits");
+  }
+}
+
+static void check_ratchet_volatile_lock_bits(void) {
+  // Sticky accumulation: each iteration leaves the prior bits locked, so a
+  // successful marker write to partition i also proves the already-engaged locks
+  // for bits < i do not block it (selectivity), while the complement read-back
+  // proves bit i blocks partition i. Each partition is the marker target exactly
+  // once, so every entry is still blank when its marker is programmed.
+  for (uint32_t bit = 0; bit < 8; bit++) {
+    const uint32_t partition_no = CPTRA_SS_LOCK_HEK_PROD_0 + bit;
+
+    if (!dai_lock_blocks_write(partitions[partition_no].address,
+                               partitions[partition_no].granularity,
+                               SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 1u << bit)) {
+      handle_error("ERROR: locked ratchet seed partition %u was modified despite the volatile lock\n",
+                   bit);
+    }
+  }
+  expect_ratchet_lock_reg(0xFFu, "ratchet seed volatile lock did not accumulate all eight bits");
+}
 
 /**
-   This tests takes the following steps:
-   1 - Write read each ratchet seed while testing all possible values of ratchet_seed_volatile_lock with the partition unlocked
-   2 - calculates the digest, and resets the device
-   3 - Writes read each ratchet seed now that partition is locked: all writes should fail
+   Exercises the ratchet seed volatile lock:
+   1 - Sticky W1S behaviour of the lock CSR (write 0 does not clear set bits).
+   2 - Each lock bit blocks writes to its ratchet seed partition (per-bit, with
+       sticky accumulation proving selectivity), verified by data read-back.
+
+   Note: digest-based locking of these partitions is a separate mechanism that is
+   covered by the digest/zeroization tests (e.g. smoke_test_fc_ratchet_seed_lock_en,
+   smoke_test_fc_ocp_lock_zeroization), so it is intentionally not retested here.
 */
 
 void ratchet_seed_volatile_lock(void) {
-  uint32_t data[2];
-  uint32_t partition_locked = 0;
-
   VPRINTF(LOW, "==================================\n");
   VPRINTF(LOW, "testing all ratchet seed registers \n");
   VPRINTF(LOW, "==================================\n\n");
 
-  // Step 1 - Write read each ratchet seed while testing all possible values of ratchet_seed_volatile_lock with the partition unlocked
-  for (uint32_t lock_value = 0; lock_value <= 8; lock_value++) {
-    volatile_lock_set_write_read_ratchet(lock_value, 0xFF, 0xFF, partition_locked);
-  }
-
-
-  VPRINTF(LOW, "==========================================\n");
-  VPRINTF(LOW, "Before the digests have been calculated\n");
-  VPRINTF(LOW, "==========================================\n");
-
-  // Step 2 - calculates the digest for all HEKs - which locks the partition, and reset the device
-
-  // First start by unsetting the lock, so the DAI writes can proceed
-  lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, 0);
-  for (uint32_t partition_no = CPTRA_SS_LOCK_HEK_PROD_0; partition_no <= CPTRA_SS_LOCK_HEK_PROD_7; partition_no++) {
-    dai_wr(partitions[partition_no].digest_address, 0xFF, 0xFF, 32, 0);
-  }
-  partition_locked = 1;
-  VPRINTF(LOW, "==========================================\n");
-  VPRINTF(LOW, "All the digests for HEKs partitions have been calculated\n");
-  VPRINTF(LOW, "==========================================\n");
-
-
-  //=================================
-  // Reset:
-  //=================================
-  reset_fc_lcc_rtl();
-  wait_dai_op_idle(0);
-
-  VPRINTF(LOW, "==========================================\n");
-  VPRINTF(LOW, "After after reset and DAI idle:\n");
-  VPRINTF(LOW, "==========================================\n");
-
-
-  // Step 3 - Writes read each ratchet seed now that partition is locked: all writes should fail
-  for (uint32_t lock_value = 0; lock_value <= 8; lock_value++) {
-    volatile_lock_set_write_read_ratchet(lock_value, 0xFF, 0xFF, partition_locked);
-  }
-
+  check_ratchet_lock_sticky_w1s();
+  reset_fc_for_next_case();
+  check_ratchet_volatile_lock_bits();
 
   VPRINTF(LOW, "Ratchet seed volatile lock test finished\n");
 }
 
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
-    
+
     mcu_cptra_init_d();
     wait_dai_op_idle(0);
-      
+
     lcc_initialization();
-    grant_mcu_for_fc_writes(); 
+    grant_mcu_for_fc_writes();
 
     initialize_otp_controller();
 

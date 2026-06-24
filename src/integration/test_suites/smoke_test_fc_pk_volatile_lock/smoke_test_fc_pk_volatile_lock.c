@@ -37,27 +37,32 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 /**
- * Program two fuses in `VENDOR_HASHES_PROD_PARTITION`, then verify whether
- * the volatile lock works as intended. The test proceeds in the following steps:
- * 
- *   1. Write a value to first fuse.
- *   2. Activate the volatile lock such that the fuse from step 2 is now in the
- *      locked region.
- *   3. Verify that writing to the second fuse now results in an error.
+ * Verify the PROD vendor PK-hash volatile lock actually blocks DAI writes.
+ *
+ * Bit 2 of VENDOR_PK_HASH_VOLATILE_LOCK locks CPTRA_CORE_VENDOR_PK_HASH_3 only.
+ * The lock is proven by data: program 0x55555555 into HASH_3, set the lock,
+ * attempt to overwrite with 0xAAAAAAAA, then read back. A functional lock keeps
+ * 0x55555555; a dead lock would OR-in the complement and show 0xFFFFFFFF.
  */
 void program_vendor_hashes_prod_partition(void) {
-    const uint32_t addresses[2] = {CPTRA_CORE_VENDOR_PK_HASH_3, CPTRA_CORE_VENDOR_PK_HASH_4};
+    const uint32_t locked_hash = CPTRA_CORE_VENDOR_PK_HASH_3;
+    const uint32_t unlocked_hash = CPTRA_CORE_VENDOR_PK_HASH_4;
+    const uint32_t lock_mask = 1u << 2;
 
-    const uint32_t data = 0xdeadbeef;
+    // Program-lock-overwrite-read proof on the locked entry (HASH_3).
+    if (!dai_lock_blocks_write(locked_hash, 32,
+                               SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, lock_mask)) {
+        handle_error("ERROR: locked PROD vendor PK hash 3 was modified despite the volatile lock\n");
+    }
 
-    // Step 1
-    dai_wr(addresses[0], data, 0, 32, 0);
-
-    // Step 2
-    lsu_write_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK, 4); // Lock all hashes starting from index 4.
-
-    // Step 3
-    dai_wr(addresses[1], data+2, 0, 32, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+    // The lock register must have retained the bit, and the lock is per-bit:
+    // the unselected entry (HASH_4) must still be writable.
+    if (lsu_read_32(SOC_OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK) != lock_mask) {
+        handle_error("ERROR: PROD PK volatile lock did not retain bit-mask value\n");
+    }
+    if (!dai_wr(unlocked_hash, 0x12345678u, 0, 32, 0)) {
+        handle_error("ERROR: unselected PROD vendor PK hash 4 was unexpectedly locked\n");
+    }
 }
 
 void main (void) {
