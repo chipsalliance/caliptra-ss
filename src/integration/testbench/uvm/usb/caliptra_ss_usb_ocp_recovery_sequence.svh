@@ -73,6 +73,11 @@ localparam bit [7:0] OCP_PROT_CAP_MAGIC [8] = '{
     8'h4F, 8'h43, 8'h50, 8'h20,  // 'O' 'C' 'P' ' '
     8'h52, 8'h45, 8'h43, 8'h56}; // 'R' 'E' 'C' 'V'
 
+// OCP Recovery v1.1 Sec 9.2 Table 9-3 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
+// FIFO-only push-image recovery; bit5 (direct CMS-memory window) cleared. Matches the RDL
+// PROT_CAP_2.AGENT_CAPS reset and the retired wrapper REC_PROT_CAP_DEFAULT bitmap.
+localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h169B;
+
 // OCP Recovery v1.1 sec 8.5.3 bcdOCPRecVersion: BCD encoding of the spec
 // revision. v1.1 = 0x0110.
 localparam bit [15:0] OCP_REC_BCD_VERSION_V1P1 = 16'h0110;
@@ -514,6 +519,24 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                         $sformatf("PROT_CAP magic byte %0d mismatch: exp=0x%02h got=0x%02h",
                                   j, OCP_PROT_CAP_MAGIC[j], prot_cap[j]))
                 end
+            end
+        end
+
+        // PROT_CAP AGENT_CAPS read-back (sec 9.2 Tbl 9-3 bytes 10-11). The magic
+        // loop above maps PROT_CAP byte k -> prot_cap[k] (e.g. byte 0 = 'O' = 0x4F),
+        // so byte 10 = prot_cap[10] is the capability LSB and byte 11 = prot_cap[11]
+        // the MSB; assemble little-endian as {prot_cap[11], prot_cap[10]}.
+        if (prot_cap.size() < 12) begin
+            `uvm_error("OCPREC",
+                $sformatf("PROT_CAP returned only %0d bytes; expected >= 12 for AGENT_CAPS (bytes 10-11).",
+                          prot_cap.size()))
+        end else begin
+            logic [15:0] agent_caps;
+            agent_caps = {prot_cap[11], prot_cap[10]};
+            if (agent_caps !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 10-11; FIFO-only bit5 must be 0).",
+                              agent_caps, OCP_PROT_CAP_AGENT_CAPS_EXP))
             end
         end
 
