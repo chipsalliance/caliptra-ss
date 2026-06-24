@@ -44,3 +44,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_rma_no_ppd_pin/caliptra_ss_lcc_st_trans_rma_no_ppd_pin: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_state/caliptra_ss_lcc_volatile_unlock_wrong_state: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_otp_prog_error/caliptra_ss_lcc_otp_prog_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/lcc_check_timeout/lcc_check_timeout: { weight: 100 }
