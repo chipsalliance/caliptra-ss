@@ -494,6 +494,7 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_path_defines.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/soc_address_map/soc_address_map_defines.svh
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_includes.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/caliptra_top_sva.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/kv_boot_flow_sva.sv
 ${CALIPTRA_AXI4PC_DIR}/Axi4PC.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb/physical_rng.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha512/coverage/sha512_ctrl_cov_if.sv
@@ -507,12 +508,14 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/hmac_drbg/coverage/hmac_drbg_co
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/ecc/coverage/ecc_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/ecc/coverage/ecc_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/coverage/soc_ifc_cov_if.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/coverage/soc_ifc_iccm_shadow_cov.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/coverage/soc_ifc_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/coverage/pcrvault_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/coverage/pcrvault_cov_props.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/coverage/pcrvault_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/keyvault_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/keyvault_cov_props.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/kv_boot_flow_cov.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/coverage/keyvault_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage/abr_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/coverage/abr_top_cov_bind.sv

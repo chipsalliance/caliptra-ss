@@ -856,6 +856,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_reg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/ot_sha3.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl/sha3_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_top.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/boot_flow_monitor.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb/icache_macros.svh
 ${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
