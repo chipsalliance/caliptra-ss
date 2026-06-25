@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_delta_counter.sv b/caliptra_ss_tb_delta_counter.sv
+index 90b5cff..53e3d81 100644
+--- a/caliptra_ss_tb_delta_counter.sv
++++ b/caliptra_ss_tb_delta_counter.sv
+@@ -10,7 +10,7 @@
+ 
+ // Up/down counter with variable delta
+ 
+-module delta_counter #(
++module caliptra_ss_tb_delta_counter #(
+     parameter int unsigned WIDTH = 4,
+     parameter bit STICKY_OVERFLOW = 1'b0
+ )(

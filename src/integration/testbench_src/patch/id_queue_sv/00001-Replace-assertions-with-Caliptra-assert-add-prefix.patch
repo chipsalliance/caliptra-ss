@@ -1,0 +1,182 @@
+diff --git a/caliptra_ss_tb_id_queue.sv b/caliptra_ss_tb_id_queue.sv
+index 9bf0c20..5cfcb80 100644
+--- a/caliptra_ss_tb_id_queue.sv
++++ b/caliptra_ss_tb_id_queue.sv
+@@ -45,33 +45,33 @@
+ // Maintainers:
+ // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+ 
+-module id_queue #(
++module caliptra_ss_tb_id_queue #(
+     parameter int ID_WIDTH  = 0,
+     parameter int CAPACITY  = 0,
+     parameter bit FULL_BW   = 0,
+     parameter bit CUT_OUP_POP_INP_GNT = 0,
+-    parameter type data_t   = logic[31:0],
++    parameter type caliptra_ss_tb_data_t   = logic[31:0],
+     // Dependent parameters, DO NOT OVERRIDE!
+-    localparam type id_t    = logic[ID_WIDTH-1:0]
++    localparam type caliptra_ss_tb_id_t    = logic[ID_WIDTH-1:0]
+ ) (
+     input  logic    clk_i,
+     input  logic    rst_ni,
+ 
+-    input  id_t     inp_id_i,
+-    input  data_t   inp_data_i,
++    input  caliptra_ss_tb_id_t     inp_id_i,
++    input  caliptra_ss_tb_data_t   inp_data_i,
+     input  logic    inp_req_i,
+     output logic    inp_gnt_o,
+ 
+-    input  data_t   exists_data_i,
+-    input  data_t   exists_mask_i,
++    input  caliptra_ss_tb_data_t   exists_data_i,
++    input  caliptra_ss_tb_data_t   exists_mask_i,
+     input  logic    exists_req_i,
+     output logic    exists_o,
+     output logic    exists_gnt_o,
+ 
+-    input  id_t     oup_id_i,
++    input  caliptra_ss_tb_id_t     oup_id_i,
+     input  logic    oup_pop_i,
+     input  logic    oup_req_i,
+-    output data_t   oup_data_o,
++    output caliptra_ss_tb_data_t   oup_data_o,
+     output logic    oup_data_valid_o,
+     output logic    oup_gnt_o
+ );
+@@ -80,33 +80,33 @@ module id_queue #(
+     // indices.
+     localparam int NIds = 2**ID_WIDTH;
+     localparam int HtCapacity = (NIds <= CAPACITY) ? NIds : CAPACITY;
+-    localparam int unsigned HtIdxWidth = cf_math_pkg::idx_width(HtCapacity);
+-    localparam int unsigned LdIdxWidth = cf_math_pkg::idx_width(CAPACITY);
++    localparam int unsigned HtIdxWidth = caliptra_ss_tb_cf_math_pkg::idx_width(HtCapacity);
++    localparam int unsigned LdIdxWidth = caliptra_ss_tb_cf_math_pkg::idx_width(CAPACITY);
+ 
+     // Type for indexing the head-tail table.
+-    typedef logic [HtIdxWidth-1:0] ht_idx_t;
++    typedef logic [HtIdxWidth-1:0] caliptra_ss_tb_ht_idx_t;
+ 
+     // Type for indexing the lined data table.
+-    typedef logic [LdIdxWidth-1:0] ld_idx_t;
++    typedef logic [LdIdxWidth-1:0] caliptra_ss_tb_ld_idx_t;
+ 
+     // Type of an entry in the head-tail table.
+     typedef struct packed {
+-        id_t        id;
+-        ld_idx_t    head,
++        caliptra_ss_tb_id_t        id;
++        caliptra_ss_tb_ld_idx_t    head,
+                     tail;
+         logic       free;
+-    } head_tail_t;
++    } caliptra_ss_tb_head_tail_t;
+ 
+     // Type of an entry in the linked data table.
+     typedef struct packed {
+-        data_t      data;
+-        ld_idx_t    next;
++        caliptra_ss_tb_data_t      data;
++        caliptra_ss_tb_ld_idx_t    next;
+         logic       free;
+-    } linked_data_t;
++    } caliptra_ss_tb_linked_data_t;
+ 
+-    head_tail_t [HtCapacity-1:0]    head_tail_d,    head_tail_q;
++    caliptra_ss_tb_head_tail_t [HtCapacity-1:0]    head_tail_d,    head_tail_q;
+ 
+-    linked_data_t [CAPACITY-1:0]    linked_data_d,  linked_data_q;
++    caliptra_ss_tb_linked_data_t [CAPACITY-1:0]    linked_data_d,  linked_data_q;
+ 
+     logic                           full,
+                                     match_in_id_valid,
+@@ -121,13 +121,13 @@ module id_queue #(
+     logic [CAPACITY-1:0]            exists_match,
+                                     linked_data_free;
+ 
+-    id_t                            match_in_id, match_out_id;
++    caliptra_ss_tb_id_t                            match_in_id, match_out_id;
+ 
+-    ht_idx_t                        head_tail_free_idx,
++    caliptra_ss_tb_ht_idx_t                        head_tail_free_idx,
+                                     match_in_idx,
+                                     match_out_idx;
+ 
+-    ld_idx_t                        linked_data_free_idx,
++    caliptra_ss_tb_ld_idx_t                        linked_data_free_idx,
+                                     oup_data_free_idx;
+ 
+     logic                           oup_data_popped,
+@@ -142,13 +142,13 @@ module id_queue #(
+     end
+     assign no_in_id_match = !(|idx_matches_in_id);
+     assign no_out_id_match = !(|idx_matches_out_id);
+-    onehot_to_bin #(
++    caliptra_ss_tb_onehot_to_bin #(
+         .ONEHOT_WIDTH ( HtCapacity )
+     ) i_id_ohb_in (
+         .onehot ( idx_matches_in_id ),
+         .bin    ( match_in_idx      )
+     );
+-    onehot_to_bin #(
++    caliptra_ss_tb_onehot_to_bin #(
+         .ONEHOT_WIDTH ( HtCapacity )
+     ) i_id_ohb_out (
+         .onehot ( idx_matches_out_id ),
+@@ -159,7 +159,7 @@ module id_queue #(
+     for (genvar i = 0; i < HtCapacity; i++) begin: gen_head_tail_free
+         assign head_tail_free[i] = head_tail_q[i].free;
+     end
+-    lzc #(
++    caliptra_ss_tb_lzc #(
+         .WIDTH ( HtCapacity ),
+         .MODE  ( 0          ) // Start at index 0.
+     ) i_ht_free_lzc (
+@@ -172,7 +172,7 @@ module id_queue #(
+     for (genvar i = 0; i < CAPACITY; i++) begin: gen_linked_data_free
+         assign linked_data_free[i] = linked_data_q[i].free;
+     end
+-    lzc #(
++    caliptra_ss_tb_lzc #(
+         .WIDTH ( CAPACITY ),
+         .MODE  ( 0        ) // Start at index 0.
+     ) i_ld_free_lzc (
+@@ -197,7 +197,7 @@ module id_queue #(
+         head_tail_d         = head_tail_q;
+         linked_data_d       = linked_data_q;
+         oup_gnt_o           = 1'b0;
+-        oup_data_o          = data_t'('0);
++        oup_data_o          = caliptra_ss_tb_data_t'('0);
+         oup_data_valid_o    = 1'b0;
+         oup_data_popped     = 1'b0;
+         oup_ht_popped       = 1'b0;
+@@ -228,7 +228,7 @@ module id_queue #(
+                 match_in_id = oup_id_i;
+                 match_in_id_valid = 1'b1;
+                 if (!no_in_id_match) begin
+-                    oup_data_o = data_t'(linked_data_q[head_tail_q[match_in_idx].head].data);
++                    oup_data_o = caliptra_ss_tb_data_t'(linked_data_q[head_tail_q[match_in_idx].head].data);
+                     oup_data_valid_o = 1'b1;
+                     if (oup_pop_i) begin
+                         // Set free bit of linked data entry, all other bits are don't care.
+@@ -252,7 +252,7 @@ module id_queue #(
+                 match_out_id = oup_id_i;
+                 match_out_id_valid = 1'b1;
+                 if (!no_out_id_match) begin
+-                    oup_data_o = data_t'(linked_data_q[head_tail_q[match_out_idx].head].data);
++                    oup_data_o = caliptra_ss_tb_data_t'(linked_data_q[head_tail_q[match_out_idx].head].data);
+                     oup_data_valid_o = 1'b1;
+                     if (oup_pop_i) begin
+                         oup_data_popped = 1'b1;
+@@ -358,8 +358,8 @@ module id_queue #(
+ 
+     // Exists Lookup
+     for (genvar i = 0; i < CAPACITY; i++) begin: gen_lookup
+-        data_t exists_match_bits;
+-        for (genvar j = 0; j < $bits(data_t); j++) begin: gen_mask
++        caliptra_ss_tb_data_t exists_match_bits;
++        for (genvar j = 0; j < $bits(caliptra_ss_tb_data_t); j++) begin: gen_mask
+             always_comb begin
+                 if (linked_data_q[i].free) begin
+                     exists_match_bits[j] = 1'b0;

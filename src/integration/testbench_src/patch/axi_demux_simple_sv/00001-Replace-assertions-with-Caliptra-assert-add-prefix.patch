@@ -1,0 +1,316 @@
+--- a/caliptra_ss_tb_axi_demux_simple.sv
++++ b/caliptra_ss_tb_axi_demux_simple.sv
+@@ -14,14 +14,14 @@
+ // - Thomas Benz <tbenz@iis.ee.ethz.ch>
+ // - Andreas Kurth <akurth@iis.ee.ethz.ch>
+ 
+-`include "common_cells/assertions.svh"
++`include "caliptra_prim_assert.sv"
+-`include "common_cells/registers.svh"
++`include "common_cells/caliptra_ss_tb_common_cells_registers.svh"
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+ 
+ `ifdef QUESTA
+ // Derive `TARGET_VSIM`, which is used for tool-specific workarounds in this file, from `QUESTA`,
+ // which is automatically set in Questa.
+-`define TARGET_VSIM
++`define CALIPTRA_SS_TB_TARGET_VSIM
+ `endif
+ 
+ /// Demultiplex one AXI4+ATOP slave port to multiple AXI4+ATOP master ports.
+@@ -40,7 +40,7 @@
+ ///
+ /// Beats on the B and R channel are multiplexed from the master ports to the slave port with
+ /// a round-robin arbitration tree.
+-module axi_demux_simple #(
++module caliptra_ss_tb_axi_demux_simple #(
+   parameter int unsigned AxiIdWidth     = 32'd0,
+   parameter bit          AtopSupport    = 1'b1,
+   parameter type         axi_req_t      = logic,
+@@ -51,28 +51,28 @@
+   parameter bit          UniqueIds      = 1'b0,
+   // Dependent parameters, DO NOT OVERRIDE!
+   parameter int unsigned SelectWidth    = (NoMstPorts > 32'd1) ? $clog2(NoMstPorts) : 32'd1,
+-  parameter type         select_t       = logic [SelectWidth-1:0]
++  parameter type         caliptra_ss_tb_select_t       = logic [SelectWidth-1:0]
+ ) (
+   input  logic                          clk_i,
+   input  logic                          rst_ni,
+   input  logic                          test_i,
+   // Slave Port
+   input  axi_req_t                      slv_req_i,
+-  input  select_t                       slv_aw_select_i,
+-  input  select_t                       slv_ar_select_i,
++  input  caliptra_ss_tb_select_t                       slv_aw_select_i,
++  input  caliptra_ss_tb_select_t                       slv_ar_select_i,
+   output axi_resp_t                     slv_resp_o,
+   // Master Ports
+   output axi_req_t    [NoMstPorts-1:0]  mst_reqs_o,
+   input  axi_resp_t   [NoMstPorts-1:0]  mst_resps_i
+ );
+ 
+-  localparam int unsigned IdCounterWidth = cf_math_pkg::idx_width(MaxTrans);
+-  typedef logic [IdCounterWidth-1:0] id_cnt_t;
++  localparam int unsigned IdCounterWidth = caliptra_ss_tb_cf_math_pkg::idx_width(MaxTrans);
++  typedef logic [IdCounterWidth-1:0] caliptra_ss_tb_id_cnt_t;
+ 
+   // pass through if only one master port
+   if (NoMstPorts == 32'h1) begin : gen_no_demux
+-    `AXI_ASSIGN_REQ_STRUCT(mst_reqs_o[0], slv_req_i)
+-    `AXI_ASSIGN_RESP_STRUCT(slv_resp_o, mst_resps_i[0])
++    `CALIPTRA_SS_TB_AXI_ASSIGN_REQ_STRUCT(mst_reqs_o[0], slv_req_i)
++    `CALIPTRA_SS_TB_AXI_ASSIGN_RESP_STRUCT(slv_resp_o, mst_resps_i[0])
+   end else begin
+ 
+     //--------------------------------------
+@@ -90,15 +90,15 @@
+     logic                     aw_valid,           aw_ready;
+ 
+     // AW ID counter
+-    select_t                  lookup_aw_select;
++    caliptra_ss_tb_select_t                  lookup_aw_select;
+     logic                     aw_select_occupied, aw_id_cnt_full;
+     // Upon an ATOP load, inject IDs from the AW into the AR channel
+     logic                     atop_inject;
+ 
+     // W select counter: stores the decision to which master W beats should go
+-    select_t                  w_select,           w_select_q;
++    caliptra_ss_tb_select_t                  w_select,           w_select_q;
+     logic                     w_select_valid;
+-    id_cnt_t                  w_open;
++    caliptra_ss_tb_id_cnt_t                  w_open;
+     logic                     w_cnt_up,           w_cnt_down;
+ 
+     // B channles input into the arbitration
+@@ -109,7 +109,7 @@
+     //--------------------------------------
+ 
+     // AR ID counter
+-    select_t                  lookup_ar_select;
++    caliptra_ss_tb_select_t                  lookup_ar_select;
+     logic                     ar_select_occupied, ar_id_cnt_full;
+     logic                     ar_push;
+ 
+@@ -159,14 +159,14 @@
+           lock_aw_valid_d = 1'b0;
+           load_aw_lock    = 1'b1;
+           // inject the ATOP if necessary
+-          atop_inject     = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
++          atop_inject     = slv_req_i.aw.atop[caliptra_ss_tb_axi_pkg::ATOP_R_RESP] & AtopSupport;
+         end
+       end else begin
+         // An AW can be handled if `i_aw_id_counter` and `i_counter_open_w` are not full.  An ATOP that
+         // requires an R response can be handled if additionally `i_ar_id_counter` is not full (this
+         // only applies if ATOPs are supported at all).
+         if (!aw_id_cnt_full && (w_open != {IdCounterWidth{1'b1}}) &&
+-            (!(ar_id_cnt_full && slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) ||
++            (!(ar_id_cnt_full && slv_req_i.aw.atop[caliptra_ss_tb_axi_pkg::ATOP_R_RESP]) ||
+              !AtopSupport)) begin
+           // There is a valid AW vector make the id lookup and go further, if it passes.
+           // Also stall if previous transmitted AWs still have active W's in flight.
+@@ -182,7 +182,7 @@
+             // on AW transaction
+             if (aw_ready) begin
+               slv_resp_o.aw_ready = 1'b1;
+-              atop_inject  = slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP] & AtopSupport;
++              atop_inject  = slv_req_i.aw.atop[caliptra_ss_tb_axi_pkg::ATOP_R_RESP] & AtopSupport;
+             // no AW transaction this cycle, lock the decision
+             end else begin
+               lock_aw_valid_d = 1'b1;
+@@ -195,7 +195,7 @@
+ 
+     // lock the valid signal, as the selection gets pushed into the W FIFO on first assertion,
+     // prevent further pushing
+-    `FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
++    `CALIPTRA_SS_TB_FFLARN(lock_aw_valid_q, lock_aw_valid_d, load_aw_lock, '0, clk_i, rst_ni)
+ 
+     if (UniqueIds) begin : gen_unique_ids_aw
+       // If the `UniqueIds` parameter is set, each write transaction has an ID that is unique among
+@@ -207,10 +207,10 @@
+       assign aw_select_occupied = 1'b0;
+       assign aw_id_cnt_full = 1'b0;
+     end else begin : gen_aw_id_counter
+-      axi_demux_id_counters #(
++      caliptra_ss_tb_axi_demux_id_counters #(
+         .AxiIdBits         ( AxiLookBits    ),
+         .CounterWidth      ( IdCounterWidth ),
+-        .mst_port_select_t ( select_t       )
++        .mst_port_select_t ( caliptra_ss_tb_select_t       )
+       ) i_aw_id_counter (
+         .clk_i                        ( clk_i                          ),
+         .rst_ni                       ( rst_ni                         ),
+@@ -233,7 +233,7 @@
+     // `w_select` determines, which handshaking is connected.
+     // AWs are only forwarded, if the counter is empty, or `w_select_q` is the same as
+     // `slv_aw_select_i`.
+-    counter #(
++    caliptra_ss_tb_counter #(
+       .WIDTH           ( IdCounterWidth ),
+       .STICKY_OVERFLOW ( 1'b0           )
+     ) i_counter_open_w (
+@@ -248,7 +248,7 @@
+       .overflow_o ( /*not used*/          )
+     );
+ 
+-    `FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, select_t'(0), clk_i, rst_ni)
++    `CALIPTRA_SS_TB_FFLARN(w_select_q, slv_aw_select_i, w_cnt_up, caliptra_ss_tb_select_t'(0), clk_i, rst_ni)
+     assign w_select       = (|w_open) ? w_select_q : slv_aw_select_i;
+     assign w_select_valid = w_cnt_up | (|w_open);
+ 
+@@ -259,10 +259,10 @@
+     //--------------------------------------
+     //  B Channel
+     //--------------------------------------
+-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
++    logic [caliptra_ss_tb_cf_math_pkg::idx_width(NoMstPorts)-1:0] b_idx;
+ 
+     // Arbitration of the different B responses
+-    rr_arb_tree #(
++    caliptra_ss_tb_rr_arb_tree #(
+       .NumIn    ( NoMstPorts ),
+       .DataType ( logic   ),
+       .AxiVldRdy( 1'b1       ),
+@@ -283,7 +283,7 @@
+ 
+     always_comb begin
+       if (slv_resp_o.b_valid) begin
+-        `AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx].b)
++        `CALIPTRA_SS_TB_AXI_SET_B_STRUCT(slv_resp_o.b, mst_resps_i[b_idx].b)
+       end else begin
+         slv_resp_o.b = '0;
+       end
+@@ -340,7 +340,7 @@
+     end
+ 
+     // this ff is needed so that ar does not get de-asserted if an atop gets injected
+-    `FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
++    `CALIPTRA_SS_TB_FFLARN(lock_ar_valid_q, lock_ar_valid_d, load_ar_lock, '0, clk_i, rst_ni)
+ 
+     if (UniqueIds) begin : gen_unique_ids_ar
+       // If the `UniqueIds` parameter is set, each read transaction has an ID that is unique among
+@@ -352,10 +352,10 @@
+       assign ar_select_occupied = 1'b0;
+       assign ar_id_cnt_full = 1'b0;
+     end else begin : gen_ar_id_counter
+-      axi_demux_id_counters #(
++      caliptra_ss_tb_axi_demux_id_counters #(
+         .AxiIdBits         ( AxiLookBits    ),
+         .CounterWidth      ( IdCounterWidth ),
+-        .mst_port_select_t ( select_t       )
++        .mst_port_select_t ( caliptra_ss_tb_select_t       )
+       ) i_ar_id_counter (
+         .clk_i                        ( clk_i                                       ),
+         .rst_ni                       ( rst_ni                                      ),
+@@ -377,10 +377,10 @@
+     //  R Channel
+     //--------------------------------------
+ 
+-    logic [cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
++    logic [caliptra_ss_tb_cf_math_pkg::idx_width(NoMstPorts)-1:0] r_idx;
+ 
+     // Arbitration of the different r responses
+-    rr_arb_tree #(
++    caliptra_ss_tb_rr_arb_tree #(
+       .NumIn    ( NoMstPorts ),
+       .DataType ( logic   ),
+       .AxiVldRdy( 1'b1       ),
+@@ -401,7 +401,7 @@
+ 
+     always_comb begin
+       if (slv_resp_o.r_valid) begin
+-        `AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
++        `CALIPTRA_SS_TB_AXI_SET_R_STRUCT(slv_resp_o.r, mst_resps_i[r_idx].r)
+       end else begin
+         slv_resp_o.r = '0;
+       end
+@@ -502,7 +502,7 @@
+     w_underflow: assert property( @(posedge clk_i)
+         ((w_open == '0) && (w_cnt_up ^ w_cnt_down) |-> !w_cnt_down)) else
+         $fatal(1, "W counter underflowed!");
+-    `ASSUME(NoAtopAllowed, !AtopSupport && slv_req_i.aw_valid |-> slv_req_i.aw.atop == '0)
++    `CALIPTRA_ASSUME(NoAtopAllowed, !AtopSupport && slv_req_i.aw_valid |-> slv_req_i.aw.atop == '0)
+ `endif
+ `endif
+ // pragma translate_on
+@@ -510,7 +510,7 @@
+ endmodule
+ 
+ 
+-module axi_demux_id_counters #(
++module caliptra_ss_tb_axi_demux_id_counters #(
+   // the lower bits of the AXI ID that should be considered, results in 2**AXI_ID_BITS counters
+   parameter int unsigned AxiIdBits         = 2,
+   parameter int unsigned CounterWidth      = 4,
+@@ -535,7 +535,7 @@
+   input  logic                 pop_i
+ );
+   localparam int unsigned NoCounters = 2**AxiIdBits;
+-  typedef logic [CounterWidth-1:0] cnt_t;
++  typedef logic [CounterWidth-1:0] caliptra_ss_tb_cnt_t;
+ 
+   // registers, each gets loaded when push_en[i]
+   mst_port_select_t [NoCounters-1:0] mst_select_q;
+@@ -558,45 +558,45 @@
+   // counters
+   for (genvar i = 0; i < NoCounters; i++) begin : gen_counters
+     logic cnt_en, cnt_down, overflow;
+-    cnt_t cnt_delta, in_flight;
++    caliptra_ss_tb_cnt_t cnt_delta, in_flight;
+     always_comb begin
+       unique case ({push_en[i], inject_en[i], pop_en[i]})
+         3'b001  : begin // pop_i = -1
+           cnt_en    = 1'b1;
+           cnt_down  = 1'b1;
+-          cnt_delta = cnt_t'(1);
++          cnt_delta = caliptra_ss_tb_cnt_t'(1);
+         end
+         3'b010  : begin // inject_i = +1
+           cnt_en    = 1'b1;
+           cnt_down  = 1'b0;
+-          cnt_delta = cnt_t'(1);
++          cnt_delta = caliptra_ss_tb_cnt_t'(1);
+         end
+      // 3'b011, inject_i & pop_i = 0 --> use default
+         3'b100  : begin // push_i = +1
+           cnt_en    = 1'b1;
+           cnt_down  = 1'b0;
+-          cnt_delta = cnt_t'(1);
++          cnt_delta = caliptra_ss_tb_cnt_t'(1);
+         end
+      // 3'b101, push_i & pop_i = 0 --> use default
+         3'b110  : begin // push_i & inject_i = +2
+           cnt_en    = 1'b1;
+           cnt_down  = 1'b0;
+-          cnt_delta = cnt_t'(2);
++          cnt_delta = caliptra_ss_tb_cnt_t'(2);
+         end
+         3'b111  : begin // push_i & inject_i & pop_i = +1
+           cnt_en    = 1'b1;
+           cnt_down  = 1'b0;
+-          cnt_delta = cnt_t'(1);
++          cnt_delta = caliptra_ss_tb_cnt_t'(1);
+         end
+         default : begin // do nothing to the counters
+           cnt_en    = 1'b0;
+           cnt_down  = 1'b0;
+-          cnt_delta = cnt_t'(0);
++          cnt_delta = caliptra_ss_tb_cnt_t'(0);
+         end
+       endcase
+     end
+ 
+-    delta_counter #(
++    caliptra_ss_tb_delta_counter #(
+       .WIDTH           ( CounterWidth ),
+       .STICKY_OVERFLOW ( 1'b0         )
+     ) i_in_flight_cnt (
+@@ -615,7 +615,7 @@
+     assign cnt_full[i] = overflow | (&in_flight);
+ 
+     // holds the selection signal for this id
+-    `FFLARN(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
++    `CALIPTRA_SS_TB_FFLARN(mst_select_q[i], push_mst_select_i, push_en[i], '0, clk_i, rst_ni)
+ 
+ // pragma translate_off
+ `ifndef VERILATOR

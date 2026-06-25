@@ -1,0 +1,61 @@
+diff --git a/caliptra_ss_tb_addr_decode_dync.sv b/caliptra_ss_tb_addr_decode_dync.sv
+index 03d1980..f75c707 100644
+--- a/caliptra_ss_tb_addr_decode_dync.sv
++++ b/caliptra_ss_tb_addr_decode_dync.sv
+@@ -35,13 +35,13 @@
+ /// if the resulting map is valid. It fatals if `start_addr` is higher than `end_addr` (non-NAPOT
+ /// only) or if a mapping targets an index that is outside the number of allowed indices.
+ /// It issues warnings if the address regions of any two mappings overlap (non-NAPOT only).
+-module addr_decode_dync #(
++module caliptra_ss_tb_addr_decode_dync #(
+   /// Highest index which can happen in a rule.
+   parameter int unsigned NoIndices = 32'd0,
+   /// Total number of rules.
+   parameter int unsigned NoRules   = 32'd0,
+   /// Address type inside the rules and to decode.
+-  parameter type         addr_t    = logic,
++  parameter type         caliptra_ss_tb_addr_t    = logic,
+   /// Rule packed struct type.
+   /// The address decoder expects three fields in `rule_t`:
+   ///
+@@ -65,18 +65,18 @@ module addr_decode_dync #(
+   /// Dependent parameter, do **not** overwite!
+   ///
+   /// Width of the `idx_o` output port.
+-  parameter int unsigned IdxWidth  = cf_math_pkg::idx_width(NoIndices),
++  parameter int unsigned IdxWidth  = caliptra_ss_tb_cf_math_pkg::idx_width(NoIndices),
+   /// Dependent parameter, do **not** overwite!
+   ///
+   /// Type of the `idx_o` output port.
+-  parameter type         idx_t     = logic [IdxWidth-1:0]
++  parameter type         caliptra_ss_tb_idx_t     = logic [IdxWidth-1:0]
+ ) (
+   /// Address to decode.
+-  input  addr_t               addr_i,
++  input  caliptra_ss_tb_addr_t               addr_i,
+   /// Address map: rule with the highest array position wins on collision
+   input  rule_t [NoRules-1:0] addr_map_i,
+   /// Decoded index.
+-  output idx_t                idx_o,
++  output caliptra_ss_tb_idx_t                idx_o,
+   /// Decode is valid.
+   output logic                dec_valid_o,
+   /// Decode is not valid, no matching rule found.
+@@ -90,7 +90,7 @@ module addr_decode_dync #(
+   /// When `en_default_idx_i` is `1`, this will be the index when no rule matches.
+   ///
+   /// When not used, tie to `0`.
+-  input  idx_t                default_idx_i,
++  input  caliptra_ss_tb_idx_t                default_idx_i,
+   /// The module is dynamically configured, this deactivates its output and the integrated
+   /// assertions.
+   input  logic                config_ongoing_i
+@@ -116,7 +116,7 @@ module addr_decode_dync #(
+         matched_rules[i] = ~config_ongoing_i;
+         dec_valid_o      = ~config_ongoing_i;
+         dec_error_o      = 1'b0;
+-        idx_o            = config_ongoing_i ? default_idx_i : idx_t'(addr_map_i[i].idx);
++        idx_o            = config_ongoing_i ? default_idx_i : caliptra_ss_tb_idx_t'(addr_map_i[i].idx);
+       end
+     end
+   end

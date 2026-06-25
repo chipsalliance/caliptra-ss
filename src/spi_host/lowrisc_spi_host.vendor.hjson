@@ -1,0 +1,26 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "lowrisc_spi_host",
+  target_dir: "rtl",
+  patch_dir: "patch",
+
+  upstream: {
+    url: "https://github.com/lowRISC/opentitan.git",
+    rev: "earlgrey_1.0.0",
+  },
+
+  mapping: [
+    {
+      from:      "hw/ip/spi_host/rtl",
+      to:        ".",
+      patch_dir: "host"
+    },
+    {
+      from:      "hw/ip/spi_device/rtl/spi_device_pkg.sv",
+      to:        "./spi_device_pkg.sv",
+      patch_dir: "device"
+    }
+  ]
+}

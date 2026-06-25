@@ -1,0 +1,22 @@
+diff --git a/caliptra_ss_tb_counter.sv b/caliptra_ss_tb_counter.sv
+index 43392e4..78b12e0 100644
+--- a/caliptra_ss_tb_counter.sv
++++ b/caliptra_ss_tb_counter.sv
+@@ -11,7 +11,7 @@
+ // Author: Florian Zaruba
+ // Description: Generic up/down counter
+ 
+-module counter #(
++module caliptra_ss_tb_counter #(
+     parameter int unsigned WIDTH = 4,
+     parameter bit STICKY_OVERFLOW = 1'b0
+ )(
+@@ -25,7 +25,7 @@ module counter #(
+     output logic [WIDTH-1:0] q_o,
+     output logic             overflow_o
+ );
+-    delta_counter #(
++    caliptra_ss_tb_delta_counter #(
+         .WIDTH          (WIDTH),
+         .STICKY_OVERFLOW (STICKY_OVERFLOW)
+     ) i_counter (

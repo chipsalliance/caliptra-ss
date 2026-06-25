@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_cf_math_pkg.sv b/caliptra_ss_tb_cf_math_pkg.sv
+index cea39be..41bcb28 100644
+--- a/caliptra_ss_tb_cf_math_pkg.sv
++++ b/caliptra_ss_tb_cf_math_pkg.sv
+@@ -15,7 +15,7 @@
+ /// functions.  Introduced in Verilog 2001 (IEEE Std 1364-2001), a constant function (§ 10.3.5) is a
+ /// function whose value can be evaluated at compile time or during elaboration.  A constant function
+ /// must be called with arguments that are constants.
+-package cf_math_pkg;
++package caliptra_ss_tb_cf_math_pkg;
+ 
+     /// Ceiled Division of Two Natural Numbers
+     ///

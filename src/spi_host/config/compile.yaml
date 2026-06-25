@@ -1,0 +1,28 @@
+---
+provides: [spi_host_subsystem]
+schema_version: 2.4.0
+requires:
+  - axi2tlul
+  - caliptra_prim
+  - caliptra_prim_generic
+  - tlul
+  - caliptra_ss_lc_ctrl_pkg
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:  
+      - $COMPILE_ROOT/rtl/spi_device_pkg.sv
+      - $COMPILE_ROOT/rtl/spi_host.sv
+      - $COMPILE_ROOT/rtl/spi_host_axi.sv
+      - $COMPILE_ROOT/rtl/spi_host_byte_merge.sv
+      - $COMPILE_ROOT/rtl/spi_host_byte_select.sv
+      - $COMPILE_ROOT/rtl/spi_host_cmd_pkg.sv
+      - $COMPILE_ROOT/rtl/spi_host_command_queue.sv
+      - $COMPILE_ROOT/rtl/spi_host_core.sv
+      - $COMPILE_ROOT/rtl/spi_host_data_fifos.sv
+      - $COMPILE_ROOT/rtl/spi_host_fsm.sv
+      - $COMPILE_ROOT/rtl/spi_host_reg_pkg.sv
+      - $COMPILE_ROOT/rtl/spi_host_reg_top.sv
+      - $COMPILE_ROOT/rtl/spi_host_shift_register.sv
+      - $COMPILE_ROOT/rtl/spi_host_window.sv
+    tops: [spi_host_axi]
