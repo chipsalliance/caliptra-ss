@@ -32,6 +32,7 @@
     `define CSS_INTC_SINTF_FC_IDX            5
     `define CSS_INTC_SINTF_SOC_SRAM_IDX      6 
     `define CSS_INTC_SINTF_LCC_IDX           7
+    `define CSS_INTC_SINTF_SPI_IDX           8
 
 
 
