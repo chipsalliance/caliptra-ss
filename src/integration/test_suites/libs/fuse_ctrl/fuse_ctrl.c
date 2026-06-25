@@ -26,6 +26,18 @@
 #include "fuse_ctrl_mmap.h"
 #include "fuse_ctrl.h"
 
+// Fuse-controller fatal-alert bits within the MCI AGG_ERROR_FATAL register.
+// caliptra_ss_top wires agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts},
+// where fc_alerts = {recov_prim_otp_alert, fatal_prim_otp_alert,
+// fatal_bus_integ_error, fatal_check_error, fatal_macro_error}. Only the four
+// genuinely fatal alerts (bits 18-21) are checked; the recoverable alert (22)
+// and the otp_error interrupt aggregate (23) are intentionally excluded.
+#define FC_AGG_ERROR_FATAL_MASK ( \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL18_MASK | /* fatal_macro_error     */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL19_MASK | /* fatal_check_error     */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL20_MASK | /* fatal_bus_integ_error */ \
+    MCI_REG_AGG_ERROR_FATAL_AGG_ERROR_FATAL21_MASK)  /* fatal_prim_otp_alert  */
+
 void grant_mcu_for_fc_writes(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FORCE_FC_AWUSER_MCU);
     VPRINTF(LOW, "LCC & Fuse_CTRL is under MCU_LSU_AXI_USER!\n");
@@ -88,6 +100,25 @@ bool wait_dai_op_idle(uint32_t exp_status) {
     }
 
     VPRINTF(LOW, "DEBUG: DAI is now idle.\n");
+
+    // OTP_CTRL_STATUS does not reflect fuse-macro fatal errors (e.g. an
+    // uncorrectable ECC error inside the macro). Those are driven from the macro
+    // model to the fuse controller and aggregated by MCI into the FC field of
+    // AGG_ERROR_FATAL (bits 23:18). When the caller expects a clean operation
+    // (exp_status == 0), additionally confirm no FC fatal alert fired so that
+    // macro errors are covered too. Operations that deliberately expect an error
+    // (exp_status != 0) skip this check.
+    if (exp_status == 0) {
+        uint32_t agg_fatal = lsu_read_32(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL);
+        if (agg_fatal & FC_AGG_ERROR_FATAL_MASK) {
+            VPRINTF(LOW,
+                    "ERROR: fuse controller fatal error after DAI op: "
+                    "AGG_ERROR_FATAL=0x%08X (FC fatal bits: 0x%08X)\n",
+                    agg_fatal, agg_fatal & FC_AGG_ERROR_FATAL_MASK);
+            status_matched = false;
+        }
+    }
+
     return status_matched;
 }
 
@@ -157,6 +188,56 @@ bool dai_wr(uint32_t addr, uint32_t wdata0, uint32_t wdata1,
 
     return wait_dai_op_idle(exp_status);
 }
+
+bool dai_locked_write_preserves_marker(uint32_t addr, uint32_t granularity) {
+    // The entry is expected to already hold the 0x55555555 marker and be locked
+    // by some means (volatile-lock CSR, computed digest, ...). Attempt to OR-in
+    // the marker's complement and confirm the lock preserved the original value.
+    const uint32_t marker  = 0x55555555u;
+    const uint32_t anti    = 0xAAAAAAAAu;
+    const uint32_t anti_hi = (granularity > 32) ? anti : 0u;
+    uint32_t rd0 = 0, rd1 = 0;
+
+    // Attempt to overwrite the locked entry with the complement.
+    (void)dai_wr(addr, anti, anti_hi, granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK);
+
+    // A functional lock blocks the write, so the word still reads 0x55555555; a
+    // non-functional lock lets OTP OR-in the complement and the word reads
+    // 0xFFFFFFFF (0x55555555 | 0xAAAAAAAA).
+    if (!dai_rd(addr, &rd0, &rd1, granularity, 0)) {
+        VPRINTF(LOW, "ERROR: read-back of lock-test marker at 0x%08X failed\n", addr);
+        return false;
+    }
+    if (rd0 != marker || (granularity > 32 && rd1 != marker)) {
+        VPRINTF(LOW,
+                "ERROR: locked word 0x%08X was modified: read 0x%08X/0x%08X (expected 0x55555555)\n",
+                addr, rd1, rd0);
+        return false;
+    }
+    return true;
+}
+
+bool dai_lock_blocks_write(uint32_t addr, uint32_t granularity,
+                           uint32_t lock_reg, uint32_t lock_mask) {
+    // Marker / anti-marker are bitwise complements, so a successful overwrite
+    // (dead lock) OR-s them to all-ones and is plainly visible on read-back:
+    //   0x55555555 | 0xAAAAAAAA = 0xFFFFFFFF.
+    const uint32_t marker    = 0x55555555u;
+    const uint32_t marker_hi = (granularity > 32) ? marker : 0u;
+
+    // (i) Program the marker into the (still unlocked) entry.
+    if (!dai_wr(addr, marker, marker_hi, granularity, 0)) {
+        VPRINTF(LOW, "ERROR: could not program lock-test marker at 0x%08X\n", addr);
+        return false;
+    }
+
+    // (ii) Engage the volatile lock (sticky W1S).
+    lsu_write_32(lock_reg, lock_mask);
+
+    // (iii)+(iv) Attempt the complement overwrite and confirm the marker survives.
+    return dai_locked_write_preserves_marker(addr, granularity);
+}
+
 
 bool dai_wr_array(uint32_t        first_fuse,
                   uint32_t        last_fuse,

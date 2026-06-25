@@ -288,31 +288,68 @@ interface fuse_ctrl_cov_if
 
     endgroup
 
-    /** fuse_ctrl public-key hash volatile lock:
+    /** fuse_ctrl public-key hash volatile locks:
      *
-     *  All possible locking indices should be covered.
+     *  Volatile lock CSRs are sticky W1S bit masks, not ordinal encodings.
      */
     generate
-        logic [31:0] pk_hash_volatile_lock;
-        assign pk_hash_volatile_lock = `FC_PATH.reg2hw.vendor_pk_hash_volatile_lock; 
-        if (NumVendorPkFuses > 1) begin : gen_pk_hash_cg
-          covergroup fuse_ctrl_pk_hash_volatile_lock_cg @(posedge clk_i);
+        logic [31:0] prod_pk_hash_volatile_lock;
+        logic [31:0] manuf_pk_hash_volatile_lock;
+        logic        dai_write_attempt;
+
+        assign prod_pk_hash_volatile_lock  = `FC_PATH.reg2hw.vendor_pk_hash_volatile_lock.q;
+        assign manuf_pk_hash_volatile_lock = `FC_PATH.reg2hw.manuf_pk_hash_volatile_lock.q;
+        // Use raw bit encoding (DaiWrite = 4'b0010) to avoid cross-scope enum mismatch warning.
+        assign dai_write_attempt = (`FC_PATH.dai_cmd == 4'b0010);
+
+        covergroup fuse_ctrl_pk_hash_volatile_lock_cg @(posedge clk_i);
+          option.per_instance = 1;
+          prod_pk_hash_volatile_lock_cp: coverpoint prod_pk_hash_volatile_lock {
+            bins AllZero  = {32'h0000_0000};
+            bins AnyBitSet = {[32'h0000_0001:32'hffff_ffff]};
+          }
+          manuf_pk_hash_volatile_lock_cp: coverpoint manuf_pk_hash_volatile_lock {
+            bins AllZero  = {32'h0000_0000};
+            bins AnyBitSet = {[32'h0000_0001:32'hffff_ffff]};
+          }
+          dai_write_attempt_cp: coverpoint dai_write_attempt {
+            bins NoWrite = {1'b0};
+            bins Write   = {1'b1};
+          }
+          prod_lock_write_cr:  cross prod_pk_hash_volatile_lock_cp,  dai_write_attempt_cp;
+          manuf_lock_write_cr: cross manuf_pk_hash_volatile_lock_cp, dai_write_attempt_cp;
+        endgroup
+
+        fuse_ctrl_pk_hash_volatile_lock_cg pk_hash_cg_inst;
+
+        if (HasRatchetSeed) begin : gen_ratchet_lock_cg
+          logic [31:0] ratchet_seed_volatile_lock;
+          assign ratchet_seed_volatile_lock = `FC_PATH.reg2hw.ratchet_seed_volatile_lock.q;
+
+          covergroup fuse_ctrl_ratchet_seed_volatile_lock_cg @(posedge clk_i);
             option.per_instance = 1;
-            fuse_ctrl_pk_hash_volatile_lock_cp: coverpoint pk_hash_volatile_lock {
-              bins PkHashVolatileLock[] = {[0:NumVendorPkFuses-1]};
+            ratchet_seed_volatile_lock_cp: coverpoint ratchet_seed_volatile_lock {
+              bins AllZero  = {32'h0000_0000};
+              bins AnyBitSet = {[32'h0000_0001:32'hffff_ffff]};
             }
+            ratchet_dai_write_attempt_cp: coverpoint dai_write_attempt {
+              bins NoWrite = {1'b0};
+              bins Write   = {1'b1};
+            }
+            ratchet_lock_write_cr: cross ratchet_seed_volatile_lock_cp, ratchet_dai_write_attempt_cp;
           endgroup
-      
-          fuse_ctrl_pk_hash_volatile_lock_cg cg_inst;  // Declare only!
+
+          fuse_ctrl_ratchet_seed_volatile_lock_cg ratchet_cg_inst;
+
+          initial begin
+            ratchet_cg_inst = new();
+          end
         end
     endgenerate
-      
-      initial begin
-        // Instantiate the covergroup outside the generate block
-        if (NumVendorPkFuses > 1) begin
-          gen_pk_hash_cg.cg_inst = new();
-        end
-      end
+
+    initial begin
+      pk_hash_cg_inst = new();
+    end
       
     /** fuse_ctrl register accesses:
      *
