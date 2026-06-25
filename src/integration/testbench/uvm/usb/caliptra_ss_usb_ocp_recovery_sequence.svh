@@ -74,9 +74,14 @@ localparam bit [7:0] OCP_PROT_CAP_MAGIC [8] = '{
     8'h52, 8'h45, 8'h43, 8'h56}; // 'R' 'E' 'C' 'V'
 
 // OCP Recovery v1.1 Sec 9.2 Table 9-3 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
-// FIFO-only push-image recovery; bit5 (direct CMS-memory window) cleared. Matches the RDL
-// PROT_CAP_2.AGENT_CAPS reset and the retired wrapper REC_PROT_CAP_DEFAULT bitmap.
-localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h169B;
+// FIFO-only push-image recovery: bit5 (direct CMS-memory window) cleared, bit11 (flashless boot)
+// set (R4). 0x169B base | 0x0800 (bit11) = 0x1E9B. Matches the RDL PROT_CAP_2.AGENT_CAPS reset.
+localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h1E9B;
+
+// OCP Recovery v1.1 Sec 9.2 Table 9-3 PROT_CAP bytes 8-9 (Recovery protocol version):
+// byte 8 = major = 0x01, byte 9 = minor = 0x01 -> little-endian 16-bit 0x0101. Matches the RDL
+// PROT_CAP_2.REC_PROT_VERSION reset.
+localparam bit [15:0] OCP_PROT_CAP_VERSION_EXP = 16'h0101;
 
 // OCP Recovery v1.1 sec 8.5.3 bcdOCPRecVersion: BCD encoding of the spec
 // revision. v1.1 = 0x0110.
@@ -522,20 +527,27 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             end
         end
 
-        // PROT_CAP AGENT_CAPS read-back (sec 9.2 Tbl 9-3 bytes 10-11). The magic
+        // PROT_CAP version + AGENT_CAPS read-back (sec 9.2 Tbl 9-3). The magic
         // loop above maps PROT_CAP byte k -> prot_cap[k] (e.g. byte 0 = 'O' = 0x4F),
-        // so byte 10 = prot_cap[10] is the capability LSB and byte 11 = prot_cap[11]
-        // the MSB; assemble little-endian as {prot_cap[11], prot_cap[10]}.
+        // so version is bytes 8-9 (major/minor) and AGENT_CAPS is bytes 10-11
+        // (LSB = byte 10, MSB = byte 11); assemble each little-endian.
         if (prot_cap.size() < 12) begin
             `uvm_error("OCPREC",
-                $sformatf("PROT_CAP returned only %0d bytes; expected >= 12 for AGENT_CAPS (bytes 10-11).",
+                $sformatf("PROT_CAP returned only %0d bytes; expected >= 12 for version (8-9) and AGENT_CAPS (10-11).",
                           prot_cap.size()))
         end else begin
             logic [15:0] agent_caps;
+            logic [15:0] prot_version;
+            prot_version = {prot_cap[9], prot_cap[8]};
+            if (prot_version !== OCP_PROT_CAP_VERSION_EXP) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP version mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 8-9: major=0x01, minor=0x01).",
+                              prot_version, OCP_PROT_CAP_VERSION_EXP))
+            end
             agent_caps = {prot_cap[11], prot_cap[10]};
             if (agent_caps !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 10-11; FIFO-only bit5 must be 0).",
+                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 10-11; FIFO-only bit5=0, flashless bit11=1).",
                               agent_caps, OCP_PROT_CAP_AGENT_CAPS_EXP))
             end
         end
@@ -593,6 +605,86 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 $sformatf("RECOVERY_STATUS[0]=0x%02h (sec 9.2 Tbl 9-10).",
                           rec_status[0]),
                 UVM_NONE)
+        end
+
+        // ---------------------------------------------------------------------
+        // V2: Unsupported-command PROTOCOL_ERROR negative check (R4 / OCP
+        //     Recovery v1.1 Sec 9.1: "an unsupported command MUST set an
+        //     unsupported error condition in the DEVICE_STATUS"; Sec 9.2 Tbl
+        //     9-6 byte 1 = 0x01 "Unsupported/Write Command", clear-on-read).
+        //     INDIRECT_CTRL (cmd 0x29) is the direct CMS-memory window, which
+        //     this FIFO-only transport does not implement (removed in R3; not
+        //     advertised: AGENT_CAPS bit5 = 0).  The device STALLs the request
+        //     (a legal "unsupported" response; the control pipe auto-clears the
+        //     stall on the next SETUP per USB 2.0 sec 8.5.3.4) and latches
+        //     PROTOCOL_ERROR = 0x01.
+        //     Done here -- before the recovery flow (section 5) -- so the
+        //     Caliptra-core firmware is not yet polling DEVICE_STATUS (each such
+        //     read would clear PROTOCOL_ERROR before this check observes it).
+        // ---------------------------------------------------------------------
+        begin
+            bit [7:0] unsup_resp[$];
+            bit [7:0] ds_proto[$];
+            bit [7:0] ds_proto_clr[$];
+
+            // Issue the unsupported command.  The IN read is expected to STALL;
+            // a null/short response payload is tolerated and not checked.
+            empty_q.delete();
+            unsup_resp.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_INDIRECT_CTRL),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(unsup_resp),
+                           .label("OCPREC_UNSUPPORTED_INDIRECT_CTRL"));
+
+            // First DEVICE_STATUS read: PROTOCOL_ERROR (byte 1) must be 0x01.
+            // This read also clears it (onread = rclr).
+            empty_q.delete();
+            ds_proto.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR"));
+            if (ds_proto.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS after unsupported command returned %0d bytes; need >= 2 to read PROTOCOL_ERROR (byte 1).",
+                              ds_proto.size()))
+            end else if (ds_proto[1] !== 8'h01) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR not set after unsupported command 0x29: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 / Sec 9.2 Tbl 9-6).",
+                              ds_proto[1]))
+            end else begin
+                `uvm_info("OCPREC",
+                    "V2: PROTOCOL_ERROR=0x01 correctly set after unsupported command 0x29 (OCP Recovery v1.1 Sec 9.1).",
+                    UVM_NONE)
+            end
+
+            // Second DEVICE_STATUS read: PROTOCOL_ERROR must now read 0x00
+            // (clear-on-read semantic).
+            empty_q.delete();
+            ds_proto_clr.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto_clr),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR_CLR"));
+            if (ds_proto_clr.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS (clear check) returned %0d bytes; need >= 2.",
+                              ds_proto_clr.size()))
+            end else if (ds_proto_clr[1] !== 8'h00) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR did not clear on read: DEVICE_STATUS[1]=0x%02h, expected 0x00 (OCP Recovery v1.1 Sec 9.1 clear-on-read).",
+                              ds_proto_clr[1]))
+            end else begin
+                `uvm_info("OCPREC",
+                    "V2: PROTOCOL_ERROR cleared to 0x00 on DEVICE_STATUS read (clear-on-read).",
+                    UVM_NONE)
+            end
         end
 
         // ---------------------------------------------------------------------
