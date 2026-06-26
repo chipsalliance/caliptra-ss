@@ -80,6 +80,14 @@ module fc_lcc_tb_services (
             release `MCI_PATH.LCC_state_translator.ss_soc_MCU_ROM_zeroization_mask_reg;
             release `FC_PATH.lcc_is_in_SCRAP_mode;
           end
+          CMD_FC_FORCE_PPD: begin
+            $display("fc_lcc_tb_services: Forcing FIPS_ZEROIZATION_PPD_i = 1");
+            force `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i = 1'b1;
+          end
+          CMD_RELEASE_PPD: begin
+            $display("fc_lcc_tb_services: Releasing force on FIPS_ZEROIZATION_PPD_i");
+            release `CPTRA_SS_TOP_PATH.cptra_ss_FIPS_ZEROIZATION_PPD_i;
+          end
           CMD_FORCE_LC_TOKENS: begin
             $display("fc_lcc_tb_services: Forcing LCC TOKENS");            
             force `LCC_PATH.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
@@ -185,6 +193,42 @@ module fc_lcc_tb_services (
             $display("fc_lcc_tb_services: Releasing MCI LCC state translator state_error");
             release `MCI_PATH.LCC_state_translator.state_error;
             $asserton(0, `MCI_PATH.LCC_state_translator.UnProvSIGNAL_with_Volatile_Decoding_A);
+          end
+          CMD_MCI_LCC_INJECT_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: injecting state_error into MCI LCC state translator");
+            $assertoff(0, `MCI_PATH.LCC_state_translator.ProdSIGNAL_Decoding_A);
+            $assertoff(0, `MCI_PATH.LCC_state_translator.UnProvSIGNAL_with_Volatile_Decoding_A);
+            force `MCI_PATH.lc_fatal_state_error_i = 1'b1;
+          end
+          CMD_MCI_LCC_RELEASE_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: releasing state_error injection in MCI LCC state translator");
+            release `MCI_PATH.lc_fatal_state_error_i;
+            $asserton(0, `MCI_PATH.LCC_state_translator.ProdSIGNAL_Decoding_A);
+            $asserton(0, `MCI_PATH.LCC_state_translator.UnProvSIGNAL_with_Volatile_Decoding_A);
+          end
+          CMD_LC_INJECT_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: injecting state_error into LC CTRL");
+            $assertoff(0, `MCI_PATH.LCC_state_translator.ProdSIGNAL_Decoding_A);
+            // Use lc_ctrl_fsm error signal that is propagated to MCI.
+            // Doing so also exercises LC FSM InvalidSt handling.
+            force `LCC_PATH.u_lc_ctrl_fsm.token_if_fsm_err_i = 1'b1;
+          end
+          CMD_LC_RELEASE_STATE_ERROR: begin
+            $display("fc_lcc_tb_services: releasing state_error injection in LC CTRL");
+            release `LCC_PATH.u_lc_ctrl_fsm.token_if_fsm_err_i;
+            $asserton(0, `MCI_PATH.LCC_state_translator.ProdSIGNAL_Decoding_A);
+          end
+          CMD_LC_INJECT_INVALID_OTP_STATE: begin
+            $display("fc_lcc_tb_services: injecting invalid otp_static_state into MCI LCC state translator");
+            $assertoff(0, `MCI_PATH.LCC_state_translator.NonDebugUnlockedCheck_A);
+            $assertoff(0, `MCI_PATH.LCC_state_translator.DebugLockedCheck_A);
+            force `MCI_PATH.LCC_state_translator.otp_static_state = {10{32'hFFFF_FFFF}};
+          end
+          CMD_LC_RELEASE_OTP_STATE: begin
+            $display("fc_lcc_tb_services: releasing otp_static_state injection in MCI LCC state translator");
+            release `MCI_PATH.LCC_state_translator.otp_static_state;
+            $asserton(0, `MCI_PATH.LCC_state_translator.NonDebugUnlockedCheck_A);
+            $asserton(0, `MCI_PATH.LCC_state_translator.DebugLockedCheck_A);
           end
           default: begin
             // No action for unrecognized commands.

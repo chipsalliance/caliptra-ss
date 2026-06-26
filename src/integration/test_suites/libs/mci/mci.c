@@ -574,6 +574,43 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { 0, NULL, NULL, REG_NOT_STICKY, false }  // End marker
     },
 
+    // REG_GROUP_INTERRUPT_ERROR1_COUNTERS
+    {
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL0_INTR_COUNT_R", "Fatal 0 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL1_INTR_COUNT_R", "Fatal 1 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL2_INTR_COUNT_R", "Fatal 2 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL3_INTR_COUNT_R", "Fatal 3 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL4_INTR_COUNT_R", "Fatal 4 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL5_INTR_COUNT_R", "Fatal 5 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL6_INTR_COUNT_R", "Fatal 6 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL7_INTR_COUNT_R", "Fatal 7 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL8_INTR_COUNT_R", "Fatal 8 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL9_INTR_COUNT_R", "Fatal 9 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL10_INTR_COUNT_R", "Fatal 10 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL11_INTR_COUNT_R", "Fatal 11 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL12_INTR_COUNT_R", "Fatal 12 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL13_INTR_COUNT_R", "Fatal 13 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL14_INTR_COUNT_R", "Fatal 14 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL15_INTR_COUNT_R", "Fatal 15 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL16_INTR_COUNT_R", "Fatal 16 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL17_INTR_COUNT_R", "Fatal 17 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL18_INTR_COUNT_R", "Fatal 18 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL19_INTR_COUNT_R", "Fatal 19 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL20_INTR_COUNT_R", "Fatal 20 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL21_INTR_COUNT_R", "Fatal 21 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL22_INTR_COUNT_R", "Fatal 22 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL23_INTR_COUNT_R", "Fatal 23 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL24_INTR_COUNT_R", "Fatal 24 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL25_INTR_COUNT_R", "Fatal 25 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL26_INTR_COUNT_R", "Fatal 26 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL27_INTR_COUNT_R", "Fatal 27 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL28_INTR_COUNT_R", "Fatal 28 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL29_INTR_COUNT_R", "Fatal 29 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL30_INTR_COUNT_R", "Fatal 30 Internal Intrpt Count", REG_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR_AGG_ERROR_FATAL31_INTR_COUNT_R", "Fatal 31 Internal Intrpt Count", REG_STICKY, false },
+        { 0, NULL, NULL, REG_NOT_STICKY, false }  // End marker
+    },
+
     // REG_GROUP_INTERRUPT_NOTIF0_COUNTERS
     {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R, "NOTIF_MCU_SRAM_ECC_COR_INTR_COUNT_R", "Notification MCU SRAM ECC Correctable Intrpt Count", REG_NOT_STICKY, false },
@@ -591,6 +628,43 @@ const mci_register_info_t register_groups[][MAX_REGISTERS_PER_GROUP] = {
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R, "NOTIF_MBOX0_SOC_REQ_LOCK_INTR_COUNT_R", "Notification MBOX0 SOC Request Lock Intrpt Count", REG_NOT_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R, "NOTIF_MBOX1_SOC_REQ_LOCK_INTR_COUNT_R", "Notification MBOX1 SOC Request Lock Intrpt Count", REG_NOT_STICKY, false },
         { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R, "NOTIF_OTP_OPERATION_DONE_INTR_COUNT_R", "Notification OTP Operation Done Intrpt Count", REG_NOT_STICKY, false} ,
+        { 0, NULL, NULL, REG_NOT_STICKY, false }  // End marker
+    },
+
+    // REG_GROUP_INTERRUPT_NOTIF1_COUNTERS
+    {
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL0_INTR_COUNT_R", "Non-fatal 0 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL1_INTR_COUNT_R", "Non-fatal 1 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL2_INTR_COUNT_R", "Non-fatal 2 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL3_INTR_COUNT_R", "Non-fatal 3 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL4_INTR_COUNT_R", "Non-fatal 4 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL5_INTR_COUNT_R", "Non-fatal 5 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL6_INTR_COUNT_R", "Non-fatal 6 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL7_INTR_COUNT_R", "Non-fatal 7 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL8_INTR_COUNT_R", "Non-fatal 8 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL9_INTR_COUNT_R", "Non-fatal 9 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL10_INTR_COUNT_R", "Non-fatal 10 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL11_INTR_COUNT_R", "Non-fatal 11 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL12_INTR_COUNT_R", "Non-fatal 12 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL13_INTR_COUNT_R", "Non-fatal 13 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL14_INTR_COUNT_R", "Non-fatal 14 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL15_INTR_COUNT_R", "Non-fatal 15 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL16_INTR_COUNT_R", "Non-fatal 16 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL17_INTR_COUNT_R", "Non-fatal 17 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL18_INTR_COUNT_R", "Non-fatal 18 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL19_INTR_COUNT_R", "Non-fatal 19 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL20_INTR_COUNT_R", "Non-fatal 20 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL21_INTR_COUNT_R", "Non-fatal 21 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL22_INTR_COUNT_R", "Non-fatal 22 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL23_INTR_COUNT_R", "Non-fatal 23 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL24_INTR_COUNT_R", "Non-fatal 24 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL25_INTR_COUNT_R", "Non-fatal 25 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL26_INTR_COUNT_R", "Non-fatal 26 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL27_INTR_COUNT_R", "Non-fatal 27 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL28_INTR_COUNT_R", "Non-fatal 28 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL29_INTR_COUNT_R", "Non-fatal 29 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL30_INTR_COUNT_R", "Non-fatal 30 Internal Intrpt Count", REG_NOT_STICKY, false },
+        { SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R, "SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF_AGG_ERROR_NON_FATAL31_INTR_COUNT_R", "Non-fatal 31 Internal Intrpt Count", REG_NOT_STICKY, false },
         { 0, NULL, NULL, REG_NOT_STICKY, false }  // End marker
     },
 
@@ -670,7 +744,9 @@ const char* get_group_name(mci_register_group_t group) {
         case REG_GROUP_INTERRUPT_STATUS_RW1C: return "Intrpt Status W1C";
         case REG_GROUP_INTERRUPT_TRIGGER_PULSE_RW1S: return "Intrpt Trigger Pulse W1S";
         case REG_GROUP_INTERRUPT_ERROR0_COUNTERS: return "Err 0 Intrpt Counters";
+        case REG_GROUP_INTERRUPT_ERROR1_COUNTERS: return "Err 1 Intrpt Counters";
         case REG_GROUP_INTERRUPT_NOTIF0_COUNTERS: return "Notif 0 Intrpt Counters";
+        case REG_GROUP_INTERRUPT_NOTIF1_COUNTERS: return "Notif 1 Intrpt Counters";
         case REG_GROUP_TRACE: return "Trace";
         case REG_GROUP_TRACE_RO: return "Trace-RO";
         case REG_GROUP_SOC_MBOX_CSR: return "SOC Mailbox CSR";
@@ -718,15 +794,25 @@ const mci_register_info_t* get_register_info(mci_register_group_t group, int ind
  * @param reg_index Pointer to store register index
  * @return Register info pointer, or NULL if not found
  */
-const mci_register_info_t* find_register_by_address(uint32_t address, 
-                                                   mci_register_group_t *group_index, 
-                                                   int *reg_index) {
+const mci_register_info_t* find_register_by_address(uint32_t address,
+                                                   mci_register_group_t *group_index,
+                                                   int *reg_index,
+                                                   mci_register_group_t start_index) {
+
+    int count = get_register_count((mci_register_group_t)start_index);
+    for (int i = 0; i < count; i++) {
+        const mci_register_info_t *reg = get_register_info((mci_register_group_t)start_index, i);
+        if (reg && reg->address == address) {
+            if (group_index) *group_index = (mci_register_group_t)start_index;
+            if (reg_index) *reg_index = i;
+            return reg;
+        }
+    }
+
     for (int group = 0; group < REG_GROUP_COUNT; group++) {
-        int count = get_register_count((mci_register_group_t)group);
-        
+        count = get_register_count((mci_register_group_t)group);
         for (int i = 0; i < count; i++) {
             const mci_register_info_t *reg = get_register_info((mci_register_group_t)group, i);
-            
             if (reg && reg->address == address) {
                 if (group_index) *group_index = (mci_register_group_t)group;
                 if (reg_index) *reg_index = i;
@@ -815,7 +901,8 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
         value = 0;
         reg_info = find_register_by_address(dict->entries[i].address, 
                                            &group_index, 
-                                           &reg_index);
+                                           &reg_index,
+                                           0);
         
         if (reg_info) {
             VPRINTF(MEDIUM, "Found reg in dictionary\n");
@@ -895,7 +982,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
  * @param mask Mask to apply to the value
  * @return 0 on success, -1 if dictionary is full
  */
- int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask, bool reg_write) {
+ int set_reg_exp_data(mci_reg_exp_dict_t *dict, uint32_t address, uint32_t value, uint32_t mask, bool reg_write, mci_register_group_t group_index_arg) {
 
     VPRINTF(MEDIUM, "UPDATE REG [0x%0x] with Value = 0x%0x, Mask = 0x%0x\n", address, value, mask);
 
@@ -929,7 +1016,7 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
     bool reset_reason_reg = false;
     bool update_exp_data = false;
 
-    reg_info = find_register_by_address(address, &group_index, &reg_index);
+    reg_info = find_register_by_address(address, &group_index, &reg_index, group_index_arg);
     VPRINTF(MEDIUM, "Register Name = %s\n", reg_info->name);
     
     if (group_index == REG_GROUP_ERROR_RW1C || group_index == REG_GROUP_INTERRUPT_STATUS_RW1C) {
@@ -1056,10 +1143,10 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
                     dict->entries[i].expected_data = 0x0;
                     // Update expected data for corresponding interrupt status register
                     VPRINTF(MEDIUM, "Recursively Updating exp_data for %s [ 0x%0x ] = 0x%0x (read_intr_sts)\n", intr_sts_reg->name, intr_sts_reg->address, read_intr_sts);
-                    set_reg_exp_data(dict, intr_sts_reg->address, read_intr_sts, intr_sts_mask, false);
+                    set_reg_exp_data(dict, intr_sts_reg->address, read_intr_sts, intr_sts_mask, false, 0);
                     // Update global interrupt status register
-                    set_reg_exp_data(dict, intr_glb_sts_reg->address, (1U << (glb_sts_mask - 1)), glb_sts_mask, false);
-                } 
+                    set_reg_exp_data(dict, intr_glb_sts_reg->address, (1U << (glb_sts_mask - 1)), glb_sts_mask, false, 0);
+                }
             }
             // If sticky bit is set, retain previous expected value (do nothing)
             
@@ -1085,9 +1172,9 @@ void reset_exp_reg_data(mci_reg_exp_dict_t *dict, reset_type_t reset_type, mci_r
             VPRINTF(MEDIUM, "Pulse Interrupt reg, value = 0x0\n");
             dict->entries[dict->count].expected_data = 0x0;
             // Update expected data for corresponding interrupt status register
-            set_reg_exp_data(dict, intr_sts_reg->address, read_intr_sts, intr_sts_mask, false);
+            set_reg_exp_data(dict, intr_sts_reg->address, read_intr_sts, intr_sts_mask, false, 0);
             // Update global interrupt status register
-            set_reg_exp_data(dict, intr_glb_sts_reg->address, (1U << (glb_sts_mask - 1)), glb_sts_mask, false);
+            set_reg_exp_data(dict, intr_glb_sts_reg->address, (1U << (glb_sts_mask - 1)), glb_sts_mask, false, 0);
         }
         dict->count++;
         return 0;
@@ -1254,7 +1341,7 @@ void write_random_to_register_group_and_track(mci_register_group_t group, mci_re
                 
                 // Store in dictionary
                 if (!ro_reg) {
-                    if (set_reg_exp_data(dict, reg->address, rand_value, mask, true) != 0) {
+                    if (set_reg_exp_data(dict, reg->address, rand_value, mask, true, group) != 0) {
                         VPRINTF(MEDIUM, "  WARNING: Could not store expected data for %s\n", reg->name);
                     }
                 }
@@ -1283,7 +1370,7 @@ void write_to_register_group_and_track(mci_register_group_t group, uint32_t writ
                 uint32_t mask = get_register_mask(reg->address);
                 
                 // Store in dictionary
-                if (set_reg_exp_data(dict, reg->address, write_data, mask, true) != 0) {
+                if (set_reg_exp_data(dict, reg->address, write_data, mask, true, group) != 0) {
                     VPRINTF(MEDIUM, "  WARNING: Could not store expected data for %s\n", reg->name);
                 }
             } else {
@@ -1416,6 +1503,46 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                                         mismatch_count++;
                                     } 
                                 }
+                            } else if (group == REG_GROUP_INTERRUPT_ERROR1_COUNTERS) {
+                                if ((i == 0 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL0_STS_LOW)) ||
+                                    (i == 1 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL1_STS_LOW)) ||
+                                    (i == 2 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL2_STS_LOW)) ||
+                                    (i == 3 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL3_STS_LOW)) ||
+                                    (i == 4 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL4_STS_LOW)) ||
+                                    (i == 5 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL5_STS_LOW)) ||
+                                    (i == 6 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL6_STS_LOW)) ||
+                                    (i == 7 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL7_STS_LOW)) ||
+                                    (i == 8 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL8_STS_LOW)) ||
+                                    (i == 9 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL9_STS_LOW)) ||
+                                    (i == 10 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL10_STS_LOW)) ||
+                                    (i == 11 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL11_STS_LOW)) ||
+                                    (i == 12 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL12_STS_LOW)) ||
+                                    (i == 13 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL13_STS_LOW)) ||
+                                    (i == 14 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL14_STS_LOW)) ||
+                                    (i == 15 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL15_STS_LOW)) ||
+                                    (i == 16 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL16_STS_LOW)) ||
+                                    (i == 17 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL17_STS_LOW)) ||
+                                    (i == 18 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL18_STS_LOW)) ||
+                                    (i == 19 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL19_STS_LOW)) ||
+                                    (i == 20 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL20_STS_LOW)) ||
+                                    (i == 21 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL21_STS_LOW)) ||
+                                    (i == 22 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL22_STS_LOW)) ||
+                                    (i == 23 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL23_STS_LOW)) ||
+                                    (i == 24 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL24_STS_LOW)) ||
+                                    (i == 25 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL25_STS_LOW)) ||
+                                    (i == 26 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL26_STS_LOW)) ||
+                                    (i == 27 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL27_STS_LOW)) ||
+                                    (i == 28 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL28_STS_LOW)) ||
+                                    (i == 29 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL29_STS_LOW)) ||
+                                    (i == 30 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL30_STS_LOW)) ||
+                                    (i == 31 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_ERROR1_INTERNAL_INTR_R_ERROR_AGG_ERROR_FATAL31_STS_LOW))) {
+                                    if (read_data >= exp_data) {
+                                        VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x > Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                    } else {
+                                        VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                        mismatch_count++;
+                                    }
+                                }
                             } else if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R) {
                                 exp_data |= MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_DEBUG_LOCKED_STS_MASK; // debug_locked_en_sts is set on Warm Reset
                             } else if (reg->address == SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) {
@@ -1518,7 +1645,47 @@ int read_register_group_and_verify(mci_register_group_t group, mci_reg_exp_dict_
                                         VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                                     mismatch_count++;
                                     }
-                                } 
+                                }
+                            }  else if (group == REG_GROUP_INTERRUPT_NOTIF1_COUNTERS) {
+                                if ((i == 0 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL0_STS_LOW)) ||
+                                    (i == 1 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL1_STS_LOW)) ||
+                                    (i == 2 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL2_STS_LOW)) ||
+                                    (i == 3 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL3_STS_LOW)) ||
+                                    (i == 4 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL4_STS_LOW)) ||
+                                    (i == 5 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL5_STS_LOW)) ||
+                                    (i == 6 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL6_STS_LOW)) ||
+                                    (i == 7 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL7_STS_LOW)) ||
+                                    (i == 8 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL8_STS_LOW)) ||
+                                    (i == 9 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL9_STS_LOW)) ||
+                                    (i == 10 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL10_STS_LOW)) ||
+                                    (i == 11 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL11_STS_LOW)) ||
+                                    (i == 12 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL12_STS_LOW)) ||
+                                    (i == 13 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL13_STS_LOW)) ||
+                                    (i == 14 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL14_STS_LOW)) ||
+                                    (i == 15 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL15_STS_LOW)) ||
+                                    (i == 16 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL16_STS_LOW)) ||
+                                    (i == 17 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL17_STS_LOW)) ||
+                                    (i == 18 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL18_STS_LOW)) ||
+                                    (i == 19 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL19_STS_LOW)) ||
+                                    (i == 20 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL20_STS_LOW)) ||
+                                    (i == 21 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL21_STS_LOW)) ||
+                                    (i == 22 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL22_STS_LOW)) ||
+                                    (i == 23 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL23_STS_LOW)) ||
+                                    (i == 24 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL24_STS_LOW)) ||
+                                    (i == 25 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL25_STS_LOW)) ||
+                                    (i == 26 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL26_STS_LOW)) ||
+                                    (i == 27 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL27_STS_LOW)) ||
+                                    (i == 28 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL28_STS_LOW)) ||
+                                    (i == 29 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL29_STS_LOW)) ||
+                                    (i == 30 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL30_STS_LOW)) ||
+                                    (i == 31 && (mci_reg_read(SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R) & MCI_REG_INTR_BLOCK_RF_NOTIF1_INTERNAL_INTR_R_NOTIF_AGG_ERROR_NON_FATAL31_STS_LOW))) {
+                                    if (read_data >= exp_data) {
+                                        VPRINTF(MEDIUM,"  Match: %s (0x%08x): Read 0x%08x > Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                    } else {
+                                        VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
+                                    mismatch_count++;
+                                    }
+                                }
                             } else {
                                 VPRINTF(LOW, "  No match: %s (0x%08x): Read 0x%08x, Expected 0x%08x\n", reg->name, reg->address, read_data, exp_data);
                                 mismatch_count++;
@@ -1611,7 +1778,7 @@ void read_register_group_and_track(mci_register_group_t group, mci_reg_exp_dict_
                 uint32_t mask = get_register_mask(reg->address);
                 
                 // Store in dictionary
-                if (set_reg_exp_data(dict, reg->address, read_data, mask, false) != 0) {
+                if (set_reg_exp_data(dict, reg->address, read_data, mask, false, group) != 0) {
                     VPRINTF(LOW, "  WARNING: Could not store read data for %s\n", reg->name);
                 }
             } else {

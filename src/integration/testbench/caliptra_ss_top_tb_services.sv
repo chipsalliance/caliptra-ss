@@ -361,6 +361,88 @@ import tb_top_pkg::*;
             endcase
         end
 
+        //Aggregate fatal error injection directly to MCI
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_FATAL_DIRECT)) begin
+            $display("Injecting aggregate ftl err directly to MCI");
+            case(mailbox_data[12:8])
+                0: force `CPTRA_SS_TOP_PATH.agg_error_fatal[0] = 1'b1;
+                1: force `CPTRA_SS_TOP_PATH.agg_error_fatal[1] = 1'b1;
+                2: force `CPTRA_SS_TOP_PATH.agg_error_fatal[2] = 1'b1;
+                3: force `CPTRA_SS_TOP_PATH.agg_error_fatal[3] = 1'b1;
+                4: force `CPTRA_SS_TOP_PATH.agg_error_fatal[4] = 1'b1;
+                5: force `CPTRA_SS_TOP_PATH.agg_error_fatal[5] = 1'b1;
+                6: force `CPTRA_SS_TOP_PATH.agg_error_fatal[6] = 1'b1;
+                7: force `CPTRA_SS_TOP_PATH.agg_error_fatal[7] = 1'b1;
+                8: force `CPTRA_SS_TOP_PATH.agg_error_fatal[8] = 1'b1;
+                9: force `CPTRA_SS_TOP_PATH.agg_error_fatal[9] = 1'b1;
+                10: force `CPTRA_SS_TOP_PATH.agg_error_fatal[10] = 1'b1;
+                11: force `CPTRA_SS_TOP_PATH.agg_error_fatal[11] = 1'b1;
+                12: force `CPTRA_SS_TOP_PATH.agg_error_fatal[12] = 1'b1;
+                13: force `CPTRA_SS_TOP_PATH.agg_error_fatal[13] = 1'b1;
+                14: force `CPTRA_SS_TOP_PATH.agg_error_fatal[14] = 1'b1;
+                15: force `CPTRA_SS_TOP_PATH.agg_error_fatal[15] = 1'b1;
+                16: force `CPTRA_SS_TOP_PATH.agg_error_fatal[16] = 1'b1;
+                17: force `CPTRA_SS_TOP_PATH.agg_error_fatal[17] = 1'b1;
+                18: force `CPTRA_SS_TOP_PATH.agg_error_fatal[18] = 1'b1;
+                19: force `CPTRA_SS_TOP_PATH.agg_error_fatal[19] = 1'b1;
+                20: force `CPTRA_SS_TOP_PATH.agg_error_fatal[20] = 1'b1;
+                21: force `CPTRA_SS_TOP_PATH.agg_error_fatal[21] = 1'b1;
+                22: force `CPTRA_SS_TOP_PATH.agg_error_fatal[22] = 1'b1;
+                23: force `CPTRA_SS_TOP_PATH.agg_error_fatal[23] = 1'b1;
+                24: force `CPTRA_SS_TOP_PATH.agg_error_fatal[24] = 1'b1;
+                25: force `CPTRA_SS_TOP_PATH.agg_error_fatal[25] = 1'b1;
+                26: force `CPTRA_SS_TOP_PATH.agg_error_fatal[26] = 1'b1;
+                27: force `CPTRA_SS_TOP_PATH.agg_error_fatal[27] = 1'b1;
+                28: force `CPTRA_SS_TOP_PATH.agg_error_fatal[28] = 1'b1;
+                29: force `CPTRA_SS_TOP_PATH.agg_error_fatal[29] = 1'b1;
+                30: force `CPTRA_SS_TOP_PATH.agg_error_fatal[30] = 1'b1;
+                31: force `CPTRA_SS_TOP_PATH.agg_error_fatal[31] = 1'b1;
+            endcase
+            @(negedge clk);
+            release `CPTRA_SS_TOP_PATH.agg_error_fatal;
+        end
+
+        //Aggregate non_fatal error injection directly to MCI
+        if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_AGG_ERROR_NON_FATAL_DIRECT)) begin
+            $display("Injecting aggregate non ftl err directly to MCI");
+            case(mailbox_data[12:8])
+                0: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[0] = 1'b1;
+                1: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[1] = 1'b1;
+                2: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[2] = 1'b1;
+                3: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[3] = 1'b1;
+                4: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[4] = 1'b1;
+                5: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[5] = 1'b1;
+                6: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[6] = 1'b1;
+                7: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[7] = 1'b1;
+                8: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[8] = 1'b1;
+                9: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[9] = 1'b1;
+                10: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[10] = 1'b1;
+                11: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[11] = 1'b1;
+                12: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[12] = 1'b1;
+                13: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[13] = 1'b1;
+                14: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[14] = 1'b1;
+                15: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[15] = 1'b1;
+                16: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[16] = 1'b1;
+                17: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[17] = 1'b1;
+                18: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[18] = 1'b1;
+                19: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[19] = 1'b1;
+                20: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[20] = 1'b1;
+                21: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[21] = 1'b1;
+                22: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[22] = 1'b1;
+                23: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[23] = 1'b1;
+                24: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[24] = 1'b1;
+                25: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[25] = 1'b1;
+                26: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[26] = 1'b1;
+                27: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[27] = 1'b1;
+                28: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[28] = 1'b1;
+                29: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[29] = 1'b1;
+                30: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[30] = 1'b1;
+                31: force `CPTRA_SS_TOP_PATH.agg_error_non_fatal[31] = 1'b1;
+            endcase
+            @(negedge clk);
+            release `CPTRA_SS_TOP_PATH.agg_error_non_fatal;
+        end
+
         if (mailbox_write && (mailbox_data[7:0] == TB_CMD_INJECT_NOTIF0)) begin
             $display("Injecting random notif0 condition");
             rand_err_injection_sel = $urandom_range(0,NUM_NOTIF0_INTR-1);
@@ -434,6 +516,13 @@ import tb_top_pkg::*;
         // Disable MCU_SRAM assertions
         if(mailbox_write && (mailbox_data[7:0] == TB_DISABLE_MCU_SRAM_PROT_ASSERTS)) begin
             $assertoff(0, `MCI_PATH.i_mci_mcu_sram_ctrl.ERR_MCU_SRAM_PROT_REGION_FILTER_ERROR);
+        end
+        // Change LSU AXI USER STRAP in the MCI AXI decode
+        if(mailbox_write && (mailbox_data[7:0] == TB_CHANGE_STRAP_MCU_LSU_AXI_USER)) begin
+            force `MCI_PATH.i_mci_axi_sub_top.i_mci_axi_sub_decode.strap_mcu_lsu_axi_user = `CPTRA_SS_TOP_PATH.cptra_ss_strap_mci_soc_config_axi_user_i ^ `CPTRA_SS_TOP_PATH.cptra_ss_strap_mcu_lsu_axi_user_i;
+        end
+        if(mailbox_write && (mailbox_data[7:0] == TB_RELEASE_STRAP_MCU_LSU_AXI_USER)) begin
+            release `MCI_PATH.i_mci_axi_sub_top.i_mci_axi_sub_decode.strap_mcu_lsu_axi_user;
         end
         // Memory signature dump and test END
         if((mailbox_write && (mailbox_data[7:0] == TB_CMD_END_SIM_WITH_SUCCESS || mailbox_data[7:0] == TB_CMD_END_SIM_WITH_FAILURE)) || soc_bfm_if.end_test_success) begin
