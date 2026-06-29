@@ -57,13 +57,13 @@ typedef enum bit [7:0] {
     OCP_REC_CMD_RECOVERY_CTRL       = 8'h26, // sec 9.2 Tbl 9-9 (R/W)
     OCP_REC_CMD_RECOVERY_STATUS     = 8'h27, // sec 9.2 Tbl 9-10 (Read)
     OCP_REC_CMD_HW_STATUS           = 8'h28, // sec 9.2 (Read)
-    OCP_REC_CMD_INDIRECT_CTRL       = 8'h29, // sec 9.2 Tbl 9-12 (R/W)
-    OCP_REC_CMD_INDIRECT_STATUS     = 8'h2A, // sec 9.2 (Read)
-    OCP_REC_CMD_INDIRECT_DATA       = 8'h2B, // sec 9.2 (R/W)
-    OCP_REC_CMD_INDIRECT_FIFO_CTRL  = 8'h2C, // sec 9.2 Tbl 9-14 (R/W)
-    OCP_REC_CMD_INDIRECT_FIFO_STATUS= 8'h2D, // sec 9.2 Tbl 9-15 (Read)
-    OCP_REC_CMD_INDIRECT_FIFO_DATA  = 8'h2E, // sec 9.2 (Write)
-    OCP_REC_CMD_VENDOR              = 8'h2F  // sec 9.2 (R/W)
+    OCP_REC_CMD_INDIRECT_CTRL       = 8'h29, // sec 9.2 cmd 41 (R/W)
+    OCP_REC_CMD_INDIRECT_STATUS     = 8'h2A, // sec 9.2 cmd 42 (Read)
+    OCP_REC_CMD_INDIRECT_DATA       = 8'h2B, // sec 9.2 cmd 43 (R/W)
+    OCP_REC_CMD_VENDOR              = 8'h2C, // sec 9.2 cmd 44 (R/W)
+    OCP_REC_CMD_INDIRECT_FIFO_CTRL  = 8'h2D, // sec 9.2 cmd 45 (R/W)
+    OCP_REC_CMD_INDIRECT_FIFO_STATUS= 8'h2E, // sec 9.2 cmd 46 (Read)
+    OCP_REC_CMD_INDIRECT_FIFO_DATA  = 8'h2F  // sec 9.2 cmd 47 (Write)
 } caliptra_ss_usb_ocp_recovery_cmd_e;
 
 // OCP Recovery v1.1 sec 9.2 Tbl 9-3 PROT_CAP Magic String: ASCII "OCP RECV".
@@ -502,7 +502,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         // 4. Probe (smoke) phase
         // ---------------------------------------------------------------------
 
-        // 4a. PROT_CAP (cmd 0x22) IN: first 8 bytes ASCII "OCP RECV"
+        // 4a. PROT_CAP IN: first 8 bytes ASCII "OCP RECV"
         //     (sec 9.2 Tbl 9-3 row "Magic String").
         empty_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
@@ -552,7 +552,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             end
         end
 
-        // 4b. DEVICE_ID (cmd 0x23) IN.
+        // 4b. DEVICE_ID IN.
         empty_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_ID),
@@ -569,7 +569,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                       dev_id.size() > 3 ? dev_id[3] : 8'h00),
             UVM_NONE)
 
-        // 4c. DEVICE_STATUS (cmd 0x24) IN. byte[0] is Device Status code;
+        // 4c. DEVICE_STATUS IN. byte[0] is Device Status code;
         //     sec 9.2 Tbl 9-6 defines 0x00 = Status Pending, 0x01 = Device
         //     Healthy. Other values are also legal but logged for visibility.
         empty_q.delete();
@@ -589,7 +589,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 UVM_NONE)
         end
 
-        // 4d. RECOVERY_STATUS (cmd 0x27) IN.
+        // 4d. RECOVERY_STATUS IN.
         empty_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
@@ -612,7 +612,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     Recovery v1.1 Sec 9.1: "an unsupported command MUST set an
         //     unsupported error condition in the DEVICE_STATUS"; Sec 9.2 Tbl
         //     9-6 byte 1 = 0x01 "Unsupported/Write Command", clear-on-read).
-        //     INDIRECT_CTRL (cmd 0x29) is the direct CMS-memory window, which
+        //     INDIRECT_CTRL is the direct CMS-memory window, which
         //     this FIFO-only transport does not implement (removed in R3; not
         //     advertised: AGENT_CAPS bit5 = 0).  The device STALLs the request
         //     (a legal "unsupported" response; the control pipe auto-clears the
@@ -691,7 +691,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         // 5. Streaming-boot-lite phase
         // ---------------------------------------------------------------------
 
-        // 5pre. RECOVERY_CTRL (cmd 0x26) OUT: initiate recovery so the device
+        // 5pre. RECOVERY_CTRL OUT: initiate recovery so the device
         //     recovery FSM leaves S_IDLE. The RTL FSM
         //     (third_party/usb2/src/integration/rtl/usb_ocp_recovery_fsm.sv,
         //     S_IDLE lines 224-246) only advances on a RECOVERY_CTRL byte-0
@@ -722,7 +722,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_RECOVERY_CTRL"));
 
-        // 5a. INDIRECT_FIFO_CTRL (cmd 0x2C) OUT: select CMS index 0,
+        // 5a. INDIRECT_FIFO_CTRL OUT: select CMS index 0,
         //     reset FIFO, set IMAGE_SIZE to 12 (4-byte units; sec 9.2
         //     Tbl 9-14 IMAGE_SIZE unit = 4 bytes => 12 * 4 = 48 bytes).
         //     The image size is deliberately NOT equal to the firmware's
@@ -746,9 +746,9 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL"));
 
-        // 5b. INDIRECT_FIFO_DATA (cmd 0x2E) OUT: push 48 bytes (12 dwords)
+        // 5b. INDIRECT_FIFO_DATA OUT: push 48 bytes (12 dwords)
         //     of synthetic image with a recognizable pattern so the
-        //     scoreboard can match (OCP Recovery v1.1 sec 9.2: cmd 0x2E
+        //     scoreboard can match (OCP Recovery v1.1 sec 9.2: cmd 0x2F
         //     is the streaming write to the FIFO). wLength must be
         //     <= wMaxWrTransferSize per sec 8.5.1. The count matches the
         //     programmed IMAGE_SIZE above.
@@ -782,7 +782,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_DATA"));
 
-        // 5c. INDIRECT_FIFO_STATUS (cmd 0x2D) IN: expect WRITE_INDEX
+        // 5c. INDIRECT_FIFO_STATUS IN: expect WRITE_INDEX
         //     advanced by n_dwords (4-byte units). Per sec 9.2 Tbl 9-15:
         //       byte 0       : EMPTY (1=empty)
         //       byte 1       : FULL
@@ -818,7 +818,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                           fifo_status.size()))
         end
 
-        // 5d. Poll DEVICE_STATUS (cmd 0x24) until firmware advances past
+        // 5d. Poll DEVICE_STATUS until firmware advances past
         //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
         //     Tbl 9-6, byte 0 holds "Device Status"; the FSM raises it
         //     to 0x04 RECOVERY_PENDING on S_IMAGE_LOADED, while
