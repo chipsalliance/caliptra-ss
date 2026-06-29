@@ -1,0 +1,233 @@
+diff --git a/caliptra_ss_tb_axi_pkg.sv b/caliptra_ss_tb_axi_pkg.sv
+index f14d6c3..d6491e1 100644
+--- a/caliptra_ss_tb_axi_pkg.sv
++++ b/caliptra_ss_tb_axi_pkg.sv
+@@ -20,7 +20,7 @@
+ 
+ //! AXI Package
+ /// Contains all necessary type definitions, constants, and generally useful functions.
+-package axi_pkg;
++package caliptra_ss_tb_axi_pkg;
+     /// AXI Transaction Burst Width.
+   parameter int unsigned BurstWidth  = 32'd2;
+   /// AXI Transaction Response Width.
+@@ -45,25 +45,25 @@ package axi_pkg;
+   parameter int unsigned NsaidWidth  = 32'd4;
+ 
+   /// AXI Transaction Burst Width.
+-  typedef logic [1:0]  burst_t;
++  typedef logic [1:0]  caliptra_ss_tb_burst_t;
+   /// AXI Transaction Response Type.
+-  typedef logic [1:0]   resp_t;
++  typedef logic [1:0]   caliptra_ss_tb_resp_t;
+   /// AXI Transaction Cacheability Type.
+-  typedef logic [3:0]  cache_t;
++  typedef logic [3:0]  caliptra_ss_tb_cache_t;
+   /// AXI Transaction Protection Type.
+-  typedef logic [2:0]   prot_t;
++  typedef logic [2:0]   caliptra_ss_tb_prot_t;
+   /// AXI Transaction Quality of Service Type.
+-  typedef logic [3:0]    qos_t;
++  typedef logic [3:0]    caliptra_ss_tb_qos_t;
+   /// AXI Transaction Region Type.
+-  typedef logic [3:0] region_t;
++  typedef logic [3:0] caliptra_ss_tb_region_t;
+   /// AXI Transaction Length Type.
+-  typedef logic [7:0]    len_t;
++  typedef logic [7:0]    caliptra_ss_tb_len_t;
+   /// AXI Transaction Size Type.
+-  typedef logic [2:0]   size_t;
++  typedef logic [2:0]   caliptra_ss_tb_size_t;
+   /// AXI5 Atomic Operation Type.
+-  typedef logic [5:0]   atop_t; // atomic operations
++  typedef logic [5:0]   caliptra_ss_tb_atop_t; // atomic operations
+   /// AXI5 Non-Secure Address Identifier.
+-  typedef logic [3:0]  nsaid_t;
++  typedef logic [3:0]  caliptra_ss_tb_nsaid_t;
+ 
+   /// In a fixed burst:
+   /// - The address is the same for every transfer in the burst.
+@@ -113,17 +113,17 @@ package axi_pkg;
+   localparam CACHE_WR_ALLOC   = 4'b1000;
+ 
+   /// Maximum number of bytes per burst, as specified by `size` (see Table A3-2).
+-  function automatic shortint unsigned num_bytes(size_t size);
++  function automatic shortint unsigned num_bytes(caliptra_ss_tb_size_t size);
+     return shortint'(1 << size);
+   endfunction
+ 
+   /// An overly long address type.
+   /// It lets us define functions that work generically for shorter addresses.  We rely on the
+   /// synthesizer to optimize the unused bits away.
+-  typedef logic [127:0] largest_addr_t;
++  typedef logic [127:0] caliptra_ss_tb_largest_addr_t;
+ 
+   /// Aligned address of burst (see A3-51).
+-  function automatic largest_addr_t aligned_addr(largest_addr_t addr, size_t size);
++  function automatic caliptra_ss_tb_largest_addr_t aligned_addr(caliptra_ss_tb_largest_addr_t addr, caliptra_ss_tb_size_t size);
+     return (addr >> size) << size;
+   endfunction
+ 
+@@ -131,13 +131,13 @@ package axi_pkg;
+   /// This is the lowest address accessed within a wrapping burst.
+   /// This address is aligned to the size and length of the burst.
+   /// The length of a `BURST_WRAP` has to be 2, 4, 8, or 16 transfers.
+-  function automatic largest_addr_t wrap_boundary (largest_addr_t addr, size_t size, len_t len);
+-    largest_addr_t wrap_addr;
++  function automatic caliptra_ss_tb_largest_addr_t wrap_boundary (caliptra_ss_tb_largest_addr_t addr, caliptra_ss_tb_size_t size, caliptra_ss_tb_len_t len);
++    caliptra_ss_tb_largest_addr_t wrap_addr;
+ 
+     // pragma translate_off
+     `ifndef VERILATOR
+-      assume (len == len_t'(4'b1) || len == len_t'(4'b11) || len == len_t'(4'b111) ||
+-          len == len_t'(4'b1111)) else
++      assume (len == caliptra_ss_tb_len_t'(4'b1) || len == caliptra_ss_tb_len_t'(4'b11) || len == caliptra_ss_tb_len_t'(4'b111) ||
++          len == caliptra_ss_tb_len_t'(4'b1111)) else
+         $error("AXI BURST_WRAP with not allowed len of: %0h", len);
+     `endif
+     // pragma translate_on
+@@ -153,20 +153,20 @@ package axi_pkg;
+     // equivalent with multiplication and division by a power of two, which conveniently are the
+     // only allowed values for `len` of a `BURST_WRAP`.
+     unique case (len)
+-      len_t'(4'b1   ) : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
+-      len_t'(4'b11  ) : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
+-      len_t'(4'b111 ) : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
+-      len_t'(4'b1111) : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
++      caliptra_ss_tb_len_t'(4'b1   ) : wrap_addr = (addr >> (unsigned'(size) + 1)) << (unsigned'(size) + 1); // multiply `Number_Bytes` by `2`
++      caliptra_ss_tb_len_t'(4'b11  ) : wrap_addr = (addr >> (unsigned'(size) + 2)) << (unsigned'(size) + 2); // multiply `Number_Bytes` by `4`
++      caliptra_ss_tb_len_t'(4'b111 ) : wrap_addr = (addr >> (unsigned'(size) + 3)) << (unsigned'(size) + 3); // multiply `Number_Bytes` by `8`
++      caliptra_ss_tb_len_t'(4'b1111) : wrap_addr = (addr >> (unsigned'(size) + 4)) << (unsigned'(size) + 4); // multiply `Number_Bytes` by `16`
+       default : wrap_addr = '0;
+     endcase
+     return wrap_addr;
+   endfunction
+ 
+   /// Address of beat (see A3-51).
+-  function automatic largest_addr_t
+-  beat_addr(largest_addr_t addr, size_t size, len_t len, burst_t burst, shortint unsigned i_beat);
+-    largest_addr_t ret_addr = addr;
+-    largest_addr_t wrp_bond = '0;
++  function automatic caliptra_ss_tb_largest_addr_t
++  beat_addr(caliptra_ss_tb_largest_addr_t addr, caliptra_ss_tb_size_t size, caliptra_ss_tb_len_t len, caliptra_ss_tb_burst_t burst, shortint unsigned i_beat);
++    caliptra_ss_tb_largest_addr_t ret_addr = addr;
++    caliptra_ss_tb_largest_addr_t wrp_bond = '0;
+     if (burst == BURST_WRAP) begin
+       // do not trigger the function if there is no wrapping burst, to prevent assumptions firing
+       wrp_bond = wrap_boundary(addr, size, len);
+@@ -188,8 +188,8 @@ package axi_pkg;
+       // over the wrap threshold, the address wraps around by subtracting the accessed address
+       // space from the normal `BURST_INCR` address. The lower wrap boundary is equivalent to
+       // The wrap trigger condition minus the container size (`num_bytes(size) * (len + 1)`).
+-      if (burst == BURST_WRAP && ret_addr >= wrp_bond + (num_bytes(size) * (largest_addr_t'(len) + 1))) begin
+-        ret_addr = ret_addr - (num_bytes(size) * (largest_addr_t'(len) + 1));
++      if (burst == BURST_WRAP && ret_addr >= wrp_bond + (num_bytes(size) * (caliptra_ss_tb_largest_addr_t'(len) + 1))) begin
++        ret_addr = ret_addr - (num_bytes(size) * (caliptra_ss_tb_largest_addr_t'(len) + 1));
+       end
+     end
+     return ret_addr;
+@@ -197,31 +197,31 @@ package axi_pkg;
+ 
+   /// Index of lowest byte in beat (see A3-51).
+   function automatic shortint unsigned
+-  beat_lower_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
++  beat_lower_byte(caliptra_ss_tb_largest_addr_t addr, caliptra_ss_tb_size_t size, caliptra_ss_tb_len_t len, caliptra_ss_tb_burst_t burst,
+       shortint unsigned strobe_width, shortint unsigned i_beat);
+-    largest_addr_t _addr = beat_addr(addr, size, len, burst, i_beat);
+-    return shortint'(($bits(_addr)  + $bits(strobe_width))'(_addr) - (_addr / largest_addr_t'(strobe_width)) * strobe_width);
++    caliptra_ss_tb_largest_addr_t _addr = beat_addr(addr, size, len, burst, i_beat);
++    return shortint'(($bits(_addr)  + $bits(strobe_width))'(_addr) - (_addr / caliptra_ss_tb_largest_addr_t'(strobe_width)) * strobe_width);
+   endfunction
+ 
+   /// Index of highest byte in beat (see A3-51).
+   function automatic shortint unsigned
+-  beat_upper_byte(largest_addr_t addr, size_t size, len_t len, burst_t burst,
++  beat_upper_byte(caliptra_ss_tb_largest_addr_t addr, caliptra_ss_tb_size_t size, caliptra_ss_tb_len_t len, caliptra_ss_tb_burst_t burst,
+       shortint unsigned strobe_width, shortint unsigned i_beat);
+-      typedef shortint unsigned SU;
++      typedef shortint unsigned caliptra_ss_tb_SU;
+     if (i_beat == 0) begin
+-      return SU'(aligned_addr(addr, size) + (largest_addr_t'(num_bytes(size)) - 1) - (addr / largest_addr_t'(strobe_width)) * strobe_width);
++      return caliptra_ss_tb_SU'(aligned_addr(addr, size) + (caliptra_ss_tb_largest_addr_t'(num_bytes(size)) - 1) - (addr / caliptra_ss_tb_largest_addr_t'(strobe_width)) * strobe_width);
+     end else begin
+       return beat_lower_byte(addr, size, len, burst, strobe_width, i_beat) + num_bytes(size) - 1;
+     end
+   endfunction
+ 
+   /// Is the bufferable bit set?
+-  function automatic logic bufferable(cache_t cache);
++  function automatic logic bufferable(caliptra_ss_tb_cache_t cache);
+     return |(cache & CACHE_BUFFERABLE);
+   endfunction
+ 
+   /// Is the modifiable bit set?
+-  function automatic logic modifiable(cache_t cache);
++  function automatic logic modifiable(caliptra_ss_tb_cache_t cache);
+     return |(cache & CACHE_MODIFIABLE);
+   endfunction
+ 
+@@ -239,10 +239,10 @@ package axi_pkg;
+     WBACK_RALLOCATE,
+     WBACK_WALLOCATE,
+     WBACK_RWALLOCATE
+-  } mem_type_t;
++  } caliptra_ss_tb_mem_type_t;
+ 
+   /// Create an `AR_CACHE` field from a `mem_type_t` type.
+-  function automatic logic [3:0] get_arcache(mem_type_t mtype);
++  function automatic logic [3:0] get_arcache(caliptra_ss_tb_mem_type_t mtype);
+     unique case (mtype)
+       DEVICE_NONBUFFERABLE              : return 4'b0000;
+       DEVICE_BUFFERABLE                 : return 4'b0001;
+@@ -261,7 +261,7 @@ package axi_pkg;
+   endfunction
+ 
+   /// Create an `AW_CACHE` field from a `mem_type_t` type.
+-  function automatic logic [3:0] get_awcache(mem_type_t mtype);
++  function automatic logic [3:0] get_awcache(caliptra_ss_tb_mem_type_t mtype);
+     unique case (mtype)
+       DEVICE_NONBUFFERABLE              : return 4'b0000;
+       DEVICE_BUFFERABLE                 : return 4'b0001;
+@@ -289,7 +289,7 @@ package axi_pkg;
+   /// - DECERR means (part of) a transactions could not be routed to a slave component, whereas
+   ///   SLVERR means the transaction reached a slave component but lead to an error condition there.
+   ///   Thus DECERR precedes SLVERR because DECERR happens earlier in the handling of a transaction.
+-  function automatic resp_t resp_precedence(resp_t resp_a, resp_t resp_b);
++  function automatic caliptra_ss_tb_resp_t resp_precedence(caliptra_ss_tb_resp_t resp_a, caliptra_ss_tb_resp_t resp_b);
+     unique case (resp_a)
+       RESP_OKAY: begin
+         // Any response except EXOKAY precedes OKAY.
+@@ -476,7 +476,7 @@ package axi_pkg;
+     CUT_SLV_PORTS = DemuxAw | DemuxW | DemuxB | DemuxAr | DemuxR,
+     CUT_MST_PORTS = MuxAw | MuxW | MuxB | MuxAr | MuxR,
+     CUT_ALL_PORTS = 10'b111_11_111_11
+-  } xbar_latency_e;
++  } caliptra_ss_tb_xbar_latency_e;
+ 
+   /// Configuration for `axi_xbar`.
+   typedef struct packed {
+@@ -519,21 +519,21 @@ package axi_pkg;
+     /// Each master port can have multiple rules, should have however at least one.
+     /// If a transaction can not be routed the xbar will answer with an `axi_pkg::RESP_DECERR`.
+     int unsigned   NoAddrRules;
+-  } xbar_cfg_t;
++  } caliptra_ss_tb_xbar_cfg_t;
+ 
+   /// Commonly used rule types for `axi_xbar` (64-bit addresses).
+   typedef struct packed {
+     int unsigned idx;
+     logic [63:0] start_addr;
+     logic [63:0] end_addr;
+-  } xbar_rule_64_t;
++  } caliptra_ss_tb_xbar_rule_64_t;
+ 
+   /// Commonly used rule types for `axi_xbar` (32-bit addresses).
+   typedef struct packed {
+     int unsigned idx;
+     logic [31:0] start_addr;
+     logic [31:0] end_addr;
+-  } xbar_rule_32_t;
++  } caliptra_ss_tb_xbar_rule_32_t;
+ 
+   // Return either the argument minus 1 or 0 if 0; useful for IO vector width declaration
+   function automatic integer unsigned iomsb (input integer unsigned width);

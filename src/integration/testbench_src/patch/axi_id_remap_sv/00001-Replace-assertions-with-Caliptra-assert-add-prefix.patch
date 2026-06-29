@@ -1,0 +1,309 @@
+diff --git a/caliptra_ss_tb_axi_id_remap.sv b/caliptra_ss_tb_axi_id_remap.sv
+index 85dc66e..3408d02 100644
+--- a/caliptra_ss_tb_axi_id_remap.sv
++++ b/caliptra_ss_tb_axi_id_remap.sv
+@@ -15,7 +15,7 @@
+ // - Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+
+-`include "common_cells/registers.svh"
++`include "common_cells/caliptra_ss_tb_common_cells_registers.svh"
+
+ /// Remap AXI IDs from wide IDs at the slave port to narrower IDs at the master port.
+ ///
+ /// This module is designed to remap an overly wide, sparsely used ID space to a narrower, densely
+@@ -29,7 +29,7 @@
+ /// independence, use [`axi_id_serialize`](module.axi_id_serialize) instead.
+ ///
+ /// Internally, a [table is used for remapping IDs](module.axi_id_remap_table).
+-module axi_id_remap #(
++module caliptra_ss_tb_axi_id_remap #(
+   /// ID width of the AXI4+ATOP slave port.
+   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+   /// Maximum number of different IDs that can be in flight at the slave port.  Reads and writes are
+@@ -128,13 +128,13 @@ module axi_id_remap #(
+ 
+ 
+   // Remap tables keep track of in-flight bursts and their input and output IDs.
+-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(AxiSlvPortMaxUniqIds);
+-  typedef logic [AxiSlvPortMaxUniqIds-1:0]  field_t;
+-  typedef logic [AxiSlvPortIdWidth-1:0]     id_inp_t;
+-  typedef logic [IdxWidth-1:0]              idx_t;
+-  field_t   wr_free,          rd_free,          both_free;
+-  id_inp_t                    rd_push_inp_id;
+-  idx_t     wr_free_oup_id,   rd_free_oup_id,   both_free_oup_id,
++  localparam int unsigned IdxWidth = caliptra_ss_tb_cf_math_pkg::idx_width(AxiSlvPortMaxUniqIds);
++  typedef logic [AxiSlvPortMaxUniqIds-1:0]  caliptra_ss_tb_field_t;
++  typedef logic [AxiSlvPortIdWidth-1:0]     caliptra_ss_tb_id_inp_t;
++  typedef logic [IdxWidth-1:0]              caliptra_ss_tb_idx_t;
++  caliptra_ss_tb_field_t   wr_free,          rd_free,          both_free;
++  caliptra_ss_tb_id_inp_t                    rd_push_inp_id;
++  caliptra_ss_tb_idx_t     wr_free_oup_id,   rd_free_oup_id,   both_free_oup_id,
+             wr_push_oup_id,   rd_push_oup_id,
+             wr_exists_id,     rd_exists_id;
+   logic     wr_exists,        rd_exists,
+@@ -142,7 +142,7 @@ module axi_id_remap #(
+             wr_full,          rd_full,
+             wr_push,          rd_push;
+ 
+-  axi_id_remap_table #(
++  caliptra_ss_tb_axi_id_remap_table #(
+     .InpIdWidth     ( AxiSlvPortIdWidth     ),
+     .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
+     .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
+@@ -163,7 +163,7 @@ module axi_id_remap #(
+     .pop_oup_id_i    ( mst_resp_i.b.id[IdxWidth-1:0]           ),
+     .pop_inp_id_o    ( slv_resp_o.b.id                         )
+   );
+-  axi_id_remap_table #(
++  caliptra_ss_tb_axi_id_remap_table #(
+     .InpIdWidth     ( AxiSlvPortIdWidth     ),
+     .MaxUniqInpIds  ( AxiSlvPortMaxUniqIds  ),
+     .MaxTxnsPerId   ( AxiMaxTxnsPerId       )
+@@ -185,7 +185,7 @@ module axi_id_remap #(
+     .pop_inp_id_o     ( slv_resp_o.r.id                                              )
+   );
+   assign both_free = wr_free & rd_free;
+-  lzc #(
++  caliptra_ss_tb_lzc #(
+     .WIDTH  ( AxiSlvPortMaxUniqIds  ),
+     .MODE   ( 1'b0                  )
+   ) i_lzc (
+@@ -201,7 +201,7 @@ module axi_id_remap #(
+ 
+   // Handle requests.
+   enum logic [1:0] {Ready, HoldAR, HoldAW, HoldAx} state_d, state_q;
+-  idx_t ar_id_d, ar_id_q,
++  caliptra_ss_tb_idx_t ar_id_d, ar_id_q,
+         aw_id_d, aw_id_q;
+   logic ar_prio_d, ar_prio_q;
+   always_comb begin
+@@ -239,7 +239,7 @@ module axi_id_remap #(
+         if (slv_req_i.aw_valid) begin
+           // If this is not an ATOP that gives rise to an R response, we can handle it in isolation
+           // on the write direction.
+-          if (!slv_req_i.aw.atop[axi_pkg::ATOP_R_RESP]) begin
++          if (!slv_req_i.aw.atop[caliptra_ss_tb_axi_pkg::ATOP_R_RESP]) begin
+             // If a burst with the same input ID is already in flight or there are free output IDs:
+             if ((wr_exists && !wr_exists_full) || (!wr_exists && !wr_full)) begin
+               // Determine the output ID: if another in-flight burst had the same input ID, we must
+@@ -345,10 +345,10 @@ module axi_id_remap #(
+   end
+ 
+   // Registers
+-  `FFARN(ar_id_q, ar_id_d, '0, clk_i, rst_ni)
+-  `FFARN(ar_prio_q, ar_prio_d, 1'b0, clk_i, rst_ni)
+-  `FFARN(aw_id_q, aw_id_d, '0, clk_i, rst_ni)
+-  `FFARN(state_q, state_d, Ready, clk_i, rst_ni)
++  `CALIPTRA_SS_TB_FFARN(ar_id_q, ar_id_d, '0, clk_i, rst_ni)
++  `CALIPTRA_SS_TB_FFARN(ar_prio_q, ar_prio_d, 1'b0, clk_i, rst_ni)
++  `CALIPTRA_SS_TB_FFARN(aw_id_q, aw_id_d, '0, clk_i, rst_ni)
++  `CALIPTRA_SS_TB_FFARN(state_q, state_d, Ready, clk_i, rst_ni)
+ 
+   // pragma translate_off
+   `ifndef VERILATOR
+@@ -419,7 +419,7 @@ endmodule
+ /// - `MaxUniqInpIds * InpIdWidth * clog2(MaxTxnsPerId)` flip flops;
+ /// - `MaxUniqInpIds` comparators of width `InpIdWidth`;
+ /// - 2 leading-zero counters of width `MaxUniqInpIds`.
+-module axi_id_remap_table #(
++module caliptra_ss_tb_axi_id_remap_table #(
+   /// Width of input IDs, therefore width of `id_inp_t`.
+   parameter int unsigned InpIdWidth = 32'd0,
+   /// Maximum number of different input IDs that can be in-flight. This defines the number of remap
+@@ -430,14 +430,14 @@ module axi_id_remap_table #(
+   /// Maximum number of in-flight transactions with the same ID.
+   parameter int unsigned MaxTxnsPerId = 32'd0,
+   /// Derived (**=do not override**) type of input IDs.
+-  localparam type id_inp_t = logic [InpIdWidth-1:0],
++  localparam type caliptra_ss_tb_id_inp_t = logic [InpIdWidth-1:0],
+   /// Derived (**=do not override**) width of table index (ceiled binary logarithm of
+   /// `MaxUniqInpIds`).
+-  localparam int unsigned IdxWidth = cf_math_pkg::idx_width(MaxUniqInpIds),
++  localparam int unsigned IdxWidth = caliptra_ss_tb_cf_math_pkg::idx_width(MaxUniqInpIds),
+   /// Derived (**=do not override**) type of table index (width = `IdxWidth`).
+-  localparam type idx_t = logic [IdxWidth-1:0],
++  localparam type caliptra_ss_tb_idx_t = logic [IdxWidth-1:0],
+   /// Derived (**=do not override**) type with one bit per table entry (thus also output ID).
+-  localparam type field_t = logic [MaxUniqInpIds-1:0]
++  localparam type caliptra_ss_tb_field_t = logic [MaxUniqInpIds-1:0]
+ ) (
+   /// Rising-edge clock of all ports
+   input  logic    clk_i,
+@@ -445,9 +445,9 @@ module axi_id_remap_table #(
+   input  logic    rst_ni,
+ 
+   /// One bit per table entry / output ID that indicates whether the entry is free.
+-  output field_t  free_o,
++  output caliptra_ss_tb_field_t  free_o,
+   /// Lowest free output ID.  Only valid if the table is not full (i.e., `!full_o`).
+-  output idx_t    free_oup_id_o,
++  output caliptra_ss_tb_idx_t    free_oup_id_o,
+   /// Indicates whether the table is full.
+   output logic    full_o,
+ 
+@@ -455,17 +455,17 @@ module axi_id_remap_table #(
+   input  logic    push_i,
+   /// Input ID to be pushed. If the table already contains this ID, its counter must be smaller than
+   /// `MaxTxnsPerId`.
+-  input  id_inp_t push_inp_id_i,
++  input  caliptra_ss_tb_id_inp_t push_inp_id_i,
+   /// Output ID to be pushed.  If the table already contains the input ID to be pushed, the output
+   /// ID **must** match the output ID of the existing entry with the same input ID.
+-  input  idx_t    push_oup_id_i,
++  input  caliptra_ss_tb_idx_t    push_oup_id_i,
+ 
+   /// Input ID to look up in the table.
+-  input  id_inp_t exists_inp_id_i,
++  input  caliptra_ss_tb_id_inp_t exists_inp_id_i,
+   /// Indicates whether the given input ID exists in the table.
+   output logic    exists_o,
+   /// The output ID of the given input ID.  Only valid if the input ID exists (i.e., `exists_o`).
+-  output idx_t    exists_oup_id_o,
++  output caliptra_ss_tb_idx_t    exists_oup_id_o,
+   /// Indicates whether the maximum number of transactions for the given input ID is reached.  Only
+   /// valid if the input ID exists (i.e., `exists_o`).
+   output logic    exists_full_o,
+@@ -474,30 +474,30 @@ module axi_id_remap_table #(
+   /// `pop_oup_id_i` by one.
+   input  logic    pop_i,
+   /// Output ID to be popped.  The counter for this ID must be larger than `0`.
+-  input  idx_t    pop_oup_id_i,
++  input  caliptra_ss_tb_idx_t    pop_oup_id_i,
+   /// Input ID corresponding to the popped output ID.
+-  output id_inp_t pop_inp_id_o
++  output caliptra_ss_tb_id_inp_t pop_inp_id_o
+ );
+ 
+   /// Counter width, derived to hold numbers up to `MaxTxnsPerId`.
+   localparam int unsigned CntWidth = $clog2(MaxTxnsPerId+1);
+   /// Counter that tracks the number of in-flight transactions with an ID.
+-  typedef logic [CntWidth-1:0] cnt_t;
++  typedef logic [CntWidth-1:0] caliptra_ss_tb_cnt_t;
+ 
+   /// Type of a table entry.
+   typedef struct packed {
+-    id_inp_t  inp_id;
+-    cnt_t     cnt;
+-  } entry_t;
++    caliptra_ss_tb_id_inp_t  inp_id;
++    caliptra_ss_tb_cnt_t     cnt;
++  } caliptra_ss_tb_entry_t;
+ 
+   // Table indexed by output IDs that contains the corresponding input IDs
+-  entry_t [MaxUniqInpIds-1:0] table_d, table_q;
++  caliptra_ss_tb_entry_t [MaxUniqInpIds-1:0] table_d, table_q;
+ 
+   // Determine lowest free output ID.
+   for (genvar i = 0; i < MaxUniqInpIds; i++) begin : gen_free_o
+     assign free_o[i] = table_q[i].cnt == '0;
+   end
+-  lzc #(
++  caliptra_ss_tb_lzc #(
+     .WIDTH ( MaxUniqInpIds  ),
+     .MODE  ( 1'b0           )
+   ) i_lzc_free (
+@@ -514,12 +514,12 @@ module axi_id_remap_table #(
+   end
+ 
+   // Determine if given output ID is already used and, if it is, by which input ID.
+-  field_t match;
++  caliptra_ss_tb_field_t match;
+   for (genvar i = 0; i < MaxUniqInpIds; i++) begin : gen_match
+     assign match[i] = table_q[i].cnt > 0 && table_q[i].inp_id == exists_inp_id_i;
+   end
+   logic no_match;
+-  lzc #(
++  caliptra_ss_tb_lzc #(
+       .WIDTH ( MaxUniqInpIds  ),
+       .MODE  ( 1'b0           )
+   ) i_lzc_match (
+@@ -547,7 +547,7 @@ module axi_id_remap_table #(
+   end
+ 
+   // Registers
+-  `FFARN(table_q, table_d, '0, clk_i, rst_ni)
++  `CALIPTRA_SS_TB_FFARN(table_q, table_d, '0, clk_i, rst_ni)
+ 
+   // Assertions
+   // pragma translate_off
+@@ -578,9 +578,9 @@ endmodule
+-`include "axi/typedef.svh"
++`include "axi/caliptra_ss_tb_axi_typedef.svh"
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+ /// Interface variant of [`axi_id_remap`](module.axi_id_remap).
+ ///
+ /// See the documentation of the main module for the definition of ports and parameters.
+-module axi_id_remap_intf #(
++module caliptra_ss_tb_axi_id_remap_intf #(
+   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
+   parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
+   parameter int unsigned AXI_MAX_TXNS_PER_ID = 32'd0,
+@@ -594,40 +594,40 @@ module axi_id_remap_intf #(
+   AXI_BUS.Slave   slv,
+   AXI_BUS.Master  mst
+ );
+-  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] slv_id_t;
+-  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] mst_id_t;
+-  typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
+-  typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
+-  typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
+-  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
+-
+-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+-
+-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
++  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] caliptra_ss_tb_slv_id_t;
++  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] caliptra_ss_tb_mst_id_t;
++  typedef logic [AXI_ADDR_WIDTH-1:0]        caliptra_ss_tb_axi_addr_t;
++  typedef logic [AXI_DATA_WIDTH-1:0]        caliptra_ss_tb_axi_data_t;
++  typedef logic [AXI_DATA_WIDTH/8-1:0]      caliptra_ss_tb_axi_strb_t;
++  typedef logic [AXI_USER_WIDTH-1:0]        caliptra_ss_tb_axi_user_t;
++
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_axi_strb_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
++
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_axi_strb_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+ 
+   slv_req_t  slv_req;
+   slv_resp_t slv_resp;
+   mst_req_t  mst_req;
+   mst_resp_t mst_resp;
+ 
+-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(slv_req, slv)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(slv, slv_resp)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(mst, mst_req)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(mst_resp, mst)
+ 
+-  axi_id_remap #(
++  caliptra_ss_tb_axi_id_remap #(
+     .AxiSlvPortIdWidth    ( AXI_SLV_PORT_ID_WIDTH     ),
+     .AxiSlvPortMaxUniqIds ( AXI_SLV_PORT_MAX_UNIQ_IDS ),
+     .AxiMaxTxnsPerId      ( AXI_MAX_TXNS_PER_ID       ),

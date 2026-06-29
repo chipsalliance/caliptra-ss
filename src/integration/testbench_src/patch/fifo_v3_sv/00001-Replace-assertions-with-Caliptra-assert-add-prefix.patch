@@ -1,0 +1,13 @@
+diff --git a/caliptra_ss_tb_fifo_v3.sv b/caliptra_ss_tb_fifo_v3.sv
+index a1b6118..554d60c 100644
+--- a/caliptra_ss_tb_fifo_v3.sv
++++ b/caliptra_ss_tb_fifo_v3.sv
+@@ -10,7 +10,7 @@
+ 
+ // Author: Florian Zaruba <zarubaf@iis.ee.ethz.ch>
+ 
+-module fifo_v3 #(
++module caliptra_ss_tb_fifo_v3 #(
+     parameter bit          FALL_THROUGH = 1'b0, // fifo is in fall-through mode
+     parameter int unsigned DATA_WIDTH   = 32,   // default data width if the fifo is of type logic
+     parameter int unsigned DEPTH        = 8,    // depth can be arbitrary from 0 to 2**32

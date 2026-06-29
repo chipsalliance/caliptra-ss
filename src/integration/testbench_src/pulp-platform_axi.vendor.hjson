@@ -1,0 +1,101 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "pulp-platform_axi",
+  target_dir: "axi",
+  patch_dir: "patch",
+
+  upstream: {
+    url: "https://github.com/pulp-platform/axi.git",
+    rev: "v0.39.9",
+  },
+
+  mapping: [
+    {
+      from:      "include/axi/assign.svh",
+      to:        "include/axi/caliptra_ss_tb_axi_assign.svh",
+      patch_dir: "assign_svh"
+    },
+    {
+      from:      "include/axi/typedef.svh",
+      to:        "include/axi/caliptra_ss_tb_axi_typedef.svh",
+      patch_dir: "typedef_svh"
+    },
+    {
+      from:      "src/axi_cut.sv",
+      to:        "src/caliptra_ss_tb_axi_cut.sv",
+      patch_dir: "axi_cut_sv"
+    },
+    {
+      from:      "src/axi_demux.sv",
+      to:        "src/caliptra_ss_tb_axi_demux.sv",
+      patch_dir: "axi_demux_sv"
+    },
+    {
+      from:      "src/axi_demux_simple.sv",
+      to:        "src/caliptra_ss_tb_axi_demux_simple.sv",
+      patch_dir: "axi_demux_simple_sv"
+    },
+    {
+      from:      "src/axi_dw_converter.sv",
+      to:        "src/caliptra_ss_tb_axi_dw_converter.sv",
+      patch_dir: "axi_dw_converter_sv"
+    },
+    {
+      from:      "src/axi_dw_downsizer.sv",
+      to:        "src/caliptra_ss_tb_axi_dw_downsizer.sv",
+      patch_dir: "axi_dw_downsizer_sv"
+    },
+    {
+      from:      "src/axi_dw_upsizer.sv",
+      to:        "src/caliptra_ss_tb_axi_dw_upsizer.sv",
+      patch_dir: "axi_dw_upsizer_sv"
+    },
+    {
+      from:      "src/axi_err_slv.sv",
+      to:        "src/caliptra_ss_tb_axi_err_slv.sv",
+      patch_dir: "axi_err_slv_sv"
+    },
+    {
+      from:      "src/axi_id_prepend.sv",
+      to:        "src/caliptra_ss_tb_axi_id_prepend.sv",
+      patch_dir: "axi_id_prepend_sv"
+    },
+    {
+      from:      "src/axi_id_remap.sv",
+      to:        "src/caliptra_ss_tb_axi_id_remap.sv",
+      patch_dir: "axi_id_remap_sv"
+    },
+    {
+      from:      "src/axi_iw_converter.sv",
+      to:        "src/caliptra_ss_tb_axi_iw_converter.sv",
+      patch_dir: "axi_iw_converter_sv"
+    },
+    {
+      from:      "src/axi_multicut.sv",
+      to:        "src/caliptra_ss_tb_axi_multicut.sv",
+      patch_dir: "axi_multicut_sv"
+    },
+    {
+      from:      "src/axi_mux.sv",
+      to:        "src/caliptra_ss_tb_axi_mux.sv",
+      patch_dir: "axi_mux_sv"
+    },
+    {
+      from:      "src/axi_pkg.sv",
+      to:        "src/caliptra_ss_tb_axi_pkg.sv",
+      patch_dir: "axi_pkg_sv"
+    },
+    {
+      from:      "src/axi_xbar.sv",
+      to:        "src/caliptra_ss_tb_axi_xbar.sv",
+      patch_dir: "axi_xbar_sv"
+    },
+    {
+      from:      "src/axi_xbar_unmuxed.sv",
+      to:        "src/caliptra_ss_tb_axi_xbar_unmuxed.sv",
+      patch_dir: "axi_xbar_unmuxed_sv"
+    },
+  ]
+}

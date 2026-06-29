@@ -1,0 +1,22 @@
+---
+provides: [uart_subsystem]
+schema_version: 2.4.0
+requires:
+  - axi2tlul
+  - caliptra_prim
+  - caliptra_prim_generic
+  - tlul
+  - caliptra_ss_lc_ctrl_pkg
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:  
+      $COMPILE_ROOT/rtl/uart_reg_pkg.sv
+      $COMPILE_ROOT/rtl/uart_core.sv
+      $COMPILE_ROOT/rtl/uart_reg_top.sv
+      $COMPILE_ROOT/rtl/uart_rx.sv
+      $COMPILE_ROOT/rtl/uart_tx.sv
+      $COMPILE_ROOT/rtl/uart.sv
+      $COMPILE_ROOT/rtl/uart_axi.sv
+      $COMPILE_ROOT/rtl/uart_axi_synth.sv
+    tops: [uart_axi]

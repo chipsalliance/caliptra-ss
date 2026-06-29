@@ -1,0 +1,81 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "pulp-platform_common_cells",
+  target_dir: "common_cells",
+  patch_dir: "patch",
+
+  upstream: {
+    url: "https://github.com/pulp-platform/common_cells.git",
+    rev: "v1.37.0",
+  },
+
+  mapping: [
+    {
+      from:      "include/common_cells/registers.svh",
+      to:        "include/common_cells/caliptra_ss_tb_common_cells_registers.svh",
+      patch_dir: "registers_svh"
+    },
+    {
+      from:      "src/addr_decode.sv",
+      to:        "src/caliptra_ss_tb_addr_decode.sv",
+      patch_dir: "addr_decode_sv"
+    },
+    {
+      from:      "src/addr_decode_dync.sv",
+      to:        "src/caliptra_ss_tb_addr_decode_dync.sv",
+      patch_dir: "addr_decode_dync_sv"
+    },
+    {
+      from:      "src/cf_math_pkg.sv",
+      to:        "src/caliptra_ss_tb_cf_math_pkg.sv",
+      patch_dir: "cf_math_pkg_sv"
+    },
+    {
+      from:      "src/counter.sv",
+      to:        "src/caliptra_ss_tb_counter.sv",
+      patch_dir: "counter_sv"
+    },
+    {
+      from:      "src/delta_counter.sv",
+      to:        "src/caliptra_ss_tb_delta_counter.sv",
+      patch_dir: "delta_counter_sv"
+    },
+    {
+      from:      "src/fifo_v3.sv",
+      to:        "src/caliptra_ss_tb_fifo_v3.sv",
+      patch_dir: "fifo_v3_sv"
+    },
+    {
+      from:      "src/id_queue.sv",
+      to:        "src/caliptra_ss_tb_id_queue.sv",
+      patch_dir: "id_queue_sv"
+    },
+    {
+      from:      "src/lzc.sv",
+      to:        "src/caliptra_ss_tb_lzc.sv",
+      patch_dir: "lzc_sv"
+    },
+    {
+      from:      "src/onehot_to_bin.sv",
+      to:        "src/caliptra_ss_tb_onehot_to_bin.sv",
+      patch_dir: "onehot_to_bin_sv"
+    },
+    {
+      from:      "src/rr_arb_tree.sv",
+      to:        "src/caliptra_ss_tb_rr_arb_tree.sv",
+      patch_dir: "rr_arb_tree_sv"
+    },
+    {
+      from:      "src/spill_register.sv",
+      to:        "src/caliptra_ss_tb_spill_register.sv",
+      patch_dir: "spill_register_sv"
+    },
+    {
+      from:      "src/spill_register_flushable.sv",
+      to:        "src/caliptra_ss_tb_spill_register_flushable.sv",
+      patch_dir: "spill_register_flushable_sv"
+    },
+  ]
+}

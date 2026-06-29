@@ -1,0 +1,160 @@
+diff --git a/caliptra_ss_tb_axi_iw_converter.sv b/caliptra_ss_tb_axi_iw_converter.sv
+index f29425e..1b7e818 100644
+--- a/caliptra_ss_tb_axi_iw_converter.sv
++++ b/caliptra_ss_tb_axi_iw_converter.sv
+@@ -14,7 +14,7 @@
+ // - Wolfgang Roenninger <wroennin@iis.ee.ethz.ch>
+
+-`include "axi/typedef.svh"
++`include "axi/caliptra_ss_tb_axi_typedef.svh"
+
+ /// Convert between any two AXI ID widths.
+ ///
+ /// Any combination of slave and master port ID width is valid.  When the master port ID width is
+@@ -41,7 +41,7 @@
+ /// master port IDs.  Therefore, some IDs that are different at the slave port need to be assigned
+ /// to the same master port ID and thus become ordered with respect to each other.  An instance of
+ /// [`axi_id_serialize`](module.axi_id_serialize) handles this case.
+-module axi_iw_converter #(
++module caliptra_ss_tb_axi_iw_converter #(
+   /// ID width of the AXI4+ATOP slave port
+   parameter int unsigned AxiSlvPortIdWidth = 32'd0,
+   /// ID width of the AXI4+ATOP master port
+@@ -108,25 +108,25 @@ module axi_iw_converter #(
+   input  mst_resp_t mst_resp_i
+ );
+ 
+-  typedef logic [AxiAddrWidth-1:0]      addr_t;
+-  typedef logic [AxiDataWidth-1:0]      data_t;
+-  typedef logic [AxiSlvPortIdWidth-1:0] slv_id_t;
+-  typedef logic [AxiMstPortIdWidth-1:0] mst_id_t;
+-  typedef logic [AxiDataWidth/8-1:0]    strb_t;
+-  typedef logic [AxiUserWidth-1:0]      user_t;
+-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, addr_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, addr_t, mst_id_t, user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(w_t, data_t, strb_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(slv_b_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(mst_b_t, mst_id_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, addr_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, addr_t, mst_id_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(slv_r_t, data_t, slv_id_t, user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(mst_r_t, data_t, mst_id_t, user_t)
++  typedef logic [AxiAddrWidth-1:0]      caliptra_ss_tb_addr_t;
++  typedef logic [AxiDataWidth-1:0]      caliptra_ss_tb_data_t;
++  typedef logic [AxiSlvPortIdWidth-1:0] caliptra_ss_tb_slv_id_t;
++  typedef logic [AxiMstPortIdWidth-1:0] caliptra_ss_tb_mst_id_t;
++  typedef logic [AxiDataWidth/8-1:0]    caliptra_ss_tb_strb_t;
++  typedef logic [AxiUserWidth-1:0]      caliptra_ss_tb_user_t;
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(slv_aw_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(mst_aw_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(w_t, caliptra_ss_tb_data_t, caliptra_ss_tb_strb_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(slv_b_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(mst_b_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(slv_ar_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(mst_ar_t, caliptra_ss_tb_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(slv_r_t, caliptra_ss_tb_data_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(mst_r_t, caliptra_ss_tb_data_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_user_t)
+ 
+   if (AxiMstPortIdWidth < AxiSlvPortIdWidth) begin : gen_downsize
+     if (AxiSlvPortMaxUniqIds <= 2**AxiMstPortIdWidth) begin : gen_remap
+-      axi_id_remap #(
++      caliptra_ss_tb_axi_id_remap #(
+         .AxiSlvPortIdWidth    ( AxiSlvPortIdWidth       ),
+         .AxiMstPortIdWidth    ( AxiMstPortIdWidth       ),
+         .AxiSlvPortMaxUniqIds ( AxiSlvPortMaxUniqIds    ),
+@@ -144,7 +144,7 @@ module axi_iw_converter #(
+         .mst_resp_i ( mst_resp_i )
+       );
+     end else begin : gen_serialize
+-      axi_id_serialize #(
++      caliptra_ss_tb_axi_id_serialize #(
+         .AxiSlvPortIdWidth      ( AxiSlvPortIdWidth       ),
+         .AxiSlvPortMaxTxns      ( AxiSlvPortMaxTxns       ),
+         .AxiMstPortIdWidth      ( AxiMstPortIdWidth       ),
+@@ -167,7 +167,7 @@ module axi_iw_converter #(
+       );
+       end
+   end else if (AxiMstPortIdWidth > AxiSlvPortIdWidth) begin : gen_upsize
+-    axi_id_prepend #(
++    caliptra_ss_tb_axi_id_prepend #(
+       .NoBus             ( 32'd1              ),
+       .AxiIdWidthSlvPort ( AxiSlvPortIdWidth  ),
+       .AxiIdWidthMstPort ( AxiMstPortIdWidth  ),
+@@ -258,9 +258,9 @@ endmodule
+-`include "axi/assign.svh"
++`include "axi/caliptra_ss_tb_axi_assign.svh"
+
+ /// Interface variant of [`axi_iw_converter`](module.axi_iw_converter).
+ ///
+ /// See the documentation of the main module for the definition of ports and parameters.
+-module axi_iw_converter_intf #(
++module caliptra_ss_tb_axi_iw_converter_intf #(
+   parameter int unsigned AXI_SLV_PORT_ID_WIDTH = 32'd0,
+   parameter int unsigned AXI_MST_PORT_ID_WIDTH = 32'd0,
+   parameter int unsigned AXI_SLV_PORT_MAX_UNIQ_IDS = 32'd0,
+@@ -277,40 +277,40 @@ module axi_iw_converter_intf #(
+   AXI_BUS.Slave  slv,
+   AXI_BUS.Master mst
+ );
+-  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] slv_id_t;
+-  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] mst_id_t;
+-  typedef logic [AXI_ADDR_WIDTH-1:0]        axi_addr_t;
+-  typedef logic [AXI_DATA_WIDTH-1:0]        axi_data_t;
+-  typedef logic [AXI_DATA_WIDTH/8-1:0]      axi_strb_t;
+-  typedef logic [AXI_USER_WIDTH-1:0]        axi_user_t;
++  typedef logic [AXI_SLV_PORT_ID_WIDTH-1:0] caliptra_ss_tb_slv_id_t;
++  typedef logic [AXI_MST_PORT_ID_WIDTH-1:0] caliptra_ss_tb_mst_id_t;
++  typedef logic [AXI_ADDR_WIDTH-1:0]        caliptra_ss_tb_axi_addr_t;
++  typedef logic [AXI_DATA_WIDTH-1:0]        caliptra_ss_tb_axi_data_t;
++  typedef logic [AXI_DATA_WIDTH/8-1:0]      caliptra_ss_tb_axi_strb_t;
++  typedef logic [AXI_USER_WIDTH-1:0]        caliptra_ss_tb_axi_user_t;
+ 
+-  `AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, axi_addr_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, axi_data_t, slv_id_t, axi_user_t)
+-  `AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(slv_aw_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(slv_w_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_axi_strb_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(slv_b_chan_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(slv_ar_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(slv_r_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_slv_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(slv_req_t, slv_aw_chan_t, slv_w_chan_t, slv_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(slv_resp_t, slv_b_chan_t, slv_r_chan_t)
+ 
+-  `AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, axi_data_t, axi_strb_t, axi_user_t)
+-  `AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, axi_addr_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, axi_data_t, mst_id_t, axi_user_t)
+-  `AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
+-  `AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AW_CHAN_T(mst_aw_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_W_CHAN_T(mst_w_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_axi_strb_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_B_CHAN_T(mst_b_chan_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_AR_CHAN_T(mst_ar_chan_t, caliptra_ss_tb_axi_addr_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_R_CHAN_T(mst_r_chan_t, caliptra_ss_tb_axi_data_t, caliptra_ss_tb_mst_id_t, caliptra_ss_tb_axi_user_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_REQ_T(mst_req_t, mst_aw_chan_t, mst_w_chan_t, mst_ar_chan_t)
++  `CALIPTRA_SS_TB_AXI_TYPEDEF_RESP_T(mst_resp_t, mst_b_chan_t, mst_r_chan_t)
+ 
+   slv_req_t  slv_req;
+   slv_resp_t slv_resp;
+   mst_req_t  mst_req;
+   mst_resp_t mst_resp;
+ 
+-  `AXI_ASSIGN_TO_REQ(slv_req, slv)
+-  `AXI_ASSIGN_FROM_RESP(slv, slv_resp)
+-  `AXI_ASSIGN_FROM_REQ(mst, mst_req)
+-  `AXI_ASSIGN_TO_RESP(mst_resp, mst)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_REQ(slv_req, slv)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_RESP(slv, slv_resp)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_FROM_REQ(mst, mst_req)
++  `CALIPTRA_SS_TB_AXI_ASSIGN_TO_RESP(mst_resp, mst)
+ 
+-  axi_iw_converter #(
++  caliptra_ss_tb_axi_iw_converter #(
+     .AxiSlvPortIdWidth      ( AXI_SLV_PORT_ID_WIDTH         ),
+     .AxiMstPortIdWidth      ( AXI_MST_PORT_ID_WIDTH         ),
+     .AxiSlvPortMaxUniqIds   ( AXI_SLV_PORT_MAX_UNIQ_IDS     ),

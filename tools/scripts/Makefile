@@ -168,7 +168,7 @@ endif
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/caliptra_ss_top_tb_axi_$(if $(filter 1,$(PULP_AXI)),pulp,avery).vf | grep -v -e '+incdir+' -e '^//' -e '^-f '))
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -266,6 +266,17 @@ VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
 VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
 VCS_COMP_OPTS += +define+AVERY_VCS
 VCS_COMP_OPTS += +define+AVERY_CLOCK=5
+#-- AXI interconnect selection.  Default = Avery interconnect VIP;
+#-- PULP_AXI=1 selects the PULP axi_xbar interconnect.
+#-- CSS_AXI_FLIST (exported, expanded by VCS in the `-f ${CSS_AXI_FLIST}` line
+#-- of caliptra_ss_top_tb.vf) picks the matching AXI source fragment.  In PULP
+#-- mode NO Avery AXI VIP sources are compiled
+PULP_AXI ?= 0
+ifeq ($(PULP_AXI),1)
+VCS_COMP_OPTS += +define+TB_PULP_AXI
+VCS_COMP_OPTS += +define+TB_PULP_AXI4PC
+CSS_AXI_FLIST := $(TBDIR)/../config/caliptra_ss_top_tb_axi_pulp.vf
+else
 VCS_COMP_OPTS += +define+FOUR_OUTSTANDING
 VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
@@ -273,10 +284,13 @@ VCS_COMP_OPTS += +define+AAXI_MAX_ADDR_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
 VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
+VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=10
+CSS_AXI_FLIST := $(TBDIR)/../config/caliptra_ss_top_tb_axi_avery.vf
+endif
+export CSS_AXI_FLIST
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
-VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
