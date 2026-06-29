@@ -32,7 +32,7 @@
 //     survives +svt_debug_opts rerouting per
 //     usb_vip_ocp_recovery_class_xfers.md sec 6.
 //   * For PROT_CAP IN responses: first 8 payload bytes must
-//     equal ASCII "OCP RECV" (sec 9.2 Tbl 9-3 "Magic String").
+//     equal ASCII "OCP RECV" (sec 9.2 "Magic String").
 //   * For INDIRECT_FIFO_DATA OUT requests: the data-stage
 //     payload is captured into expected_fifo_data. On the next
 //     INDIRECT_FIFO_STATUS IN read, WRITE_INDEX (bytes 4..7,
@@ -48,7 +48,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     uvm_analysis_imp #(svt_usb_transfer, caliptra_ss_usb_ocp_scoreboard)
         transfer_imp;
 
-    // ASCII "OCP RECV" (OCP Recovery v1.1 sec 9.2 Tbl 9-3 PROT_CAP magic).
+    // ASCII "OCP RECV" (OCP Recovery v1.1 sec 9.2 PROT_CAP magic).
     // Review m2: reference the shared OCP_PROT_CAP_MAGIC localparam from
     // caliptra_ss_usb_ocp_recovery_sequence.svh (same package scope) instead
     // of redeclaring the byte array here.
@@ -146,7 +146,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         // the case arms use spec-named symbols instead of raw 8'h22/etc.
         case (caliptra_ss_usb_ocp_recovery_cmd_e'(cmd_code))
 
-            // PROT_CAP (sec 9.2 Tbl 9-3): IN responses must begin with the
+            // PROT_CAP (sec 9.2): IN responses must begin with the
             // 8-byte ASCII magic "OCP RECV".
             OCP_REC_CMD_PROT_CAP: begin
                 if (dir_in) begin
@@ -199,7 +199,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 end
             end
 
-            // INDIRECT_FIFO_STATUS (sec 9.2 Tbl 9-15): byte[0]=EMPTY,
+            // INDIRECT_FIFO_STATUS (sec 9.2): byte[0]=EMPTY,
             // byte[1]=FULL, bytes[4..7]=WRITE_INDEX (4-byte units).
             OCP_REC_CMD_INDIRECT_FIFO_STATUS: begin
                 if (dir_in) begin
@@ -220,7 +220,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                             expected_dwords = pushed_fifo_bytes.size() / 4;
                             if (wr_idx != expected_dwords) begin
                                 `uvm_error("OCPREC_MARK",
-                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d (from %0d pushed bytes). Mismatch at dword index %0d (sec 9.2 Tbl 9-15).",
+                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d (from %0d pushed bytes). Mismatch at dword index %0d (sec 9.2).",
                                               wr_idx, expected_dwords,
                                               pushed_fifo_bytes.size(),
                                               expected_dwords < wr_idx ? expected_dwords : wr_idx))

@@ -46,16 +46,16 @@
 // 8.5.3.
 // =============================================================================
 
-// OCP Recovery v1.1 sec 9.2 Tbl 9-1: Command Codes. Spec assigns codes
+// OCP Recovery v1.1 sec 9.2: Command Codes. Spec assigns codes
 // 0x22..0x2F to the OCP recovery commands; values outside that range are
 // reserved.
 typedef enum bit [7:0] {
-    OCP_REC_CMD_PROT_CAP            = 8'h22, // sec 9.2 Tbl 9-3 (Read)
-    OCP_REC_CMD_DEVICE_ID           = 8'h23, // sec 9.2 Tbl 9-4 (Read)
-    OCP_REC_CMD_DEVICE_STATUS       = 8'h24, // sec 9.2 Tbl 9-6 (Read)
+    OCP_REC_CMD_PROT_CAP            = 8'h22, // sec 9.2 (Read)
+    OCP_REC_CMD_DEVICE_ID           = 8'h23, // sec 9.2 (Read)
+    OCP_REC_CMD_DEVICE_STATUS       = 8'h24, // sec 9.2 (Read)
     OCP_REC_CMD_RESET               = 8'h25, // sec 9.2 (Write)
-    OCP_REC_CMD_RECOVERY_CTRL       = 8'h26, // sec 9.2 Tbl 9-9 (R/W)
-    OCP_REC_CMD_RECOVERY_STATUS     = 8'h27, // sec 9.2 Tbl 9-10 (Read)
+    OCP_REC_CMD_RECOVERY_CTRL       = 8'h26, // sec 9.2 (R/W)
+    OCP_REC_CMD_RECOVERY_STATUS     = 8'h27, // sec 9.2 (Read)
     OCP_REC_CMD_HW_STATUS           = 8'h28, // sec 9.2 (Read)
     OCP_REC_CMD_INDIRECT_CTRL       = 8'h29, // sec 9.2 cmd 41 (R/W)
     OCP_REC_CMD_INDIRECT_STATUS     = 8'h2A, // sec 9.2 cmd 42 (Read)
@@ -66,19 +66,19 @@ typedef enum bit [7:0] {
     OCP_REC_CMD_INDIRECT_FIFO_DATA  = 8'h2F  // sec 9.2 cmd 47 (Write)
 } caliptra_ss_usb_ocp_recovery_cmd_e;
 
-// OCP Recovery v1.1 sec 9.2 Tbl 9-3 PROT_CAP Magic String: ASCII "OCP RECV".
+// OCP Recovery v1.1 sec 9.2 PROT_CAP Magic String: ASCII "OCP RECV".
 // Single source of truth for both the stimulus sequence and the scoreboard
 // PROT_CAP check (eliminates the duplicate literal flagged by review m2).
 localparam bit [7:0] OCP_PROT_CAP_MAGIC [8] = '{
     8'h4F, 8'h43, 8'h50, 8'h20,  // 'O' 'C' 'P' ' '
     8'h52, 8'h45, 8'h43, 8'h56}; // 'R' 'E' 'C' 'V'
 
-// OCP Recovery v1.1 Sec 9.2 Table 9-3 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
+// OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
 // FIFO-only push-image recovery: bit5 (direct CMS-memory window) cleared, bit11 (flashless boot)
 // set (R4). 0x169B base | 0x0800 (bit11) = 0x1E9B. Matches the RDL PROT_CAP_2.AGENT_CAPS reset.
 localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h1E9B;
 
-// OCP Recovery v1.1 Sec 9.2 Table 9-3 PROT_CAP bytes 8-9 (Recovery protocol version):
+// OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 8-9 (Recovery protocol version):
 // byte 8 = major = 0x01, byte 9 = minor = 0x01 -> little-endian 16-bit 0x0101. Matches the RDL
 // PROT_CAP_2.REC_PROT_VERSION reset.
 localparam bit [15:0] OCP_PROT_CAP_VERSION_EXP = 16'h0101;
@@ -136,7 +136,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
     //
     //   dir_in   : 1 = IN (DEVICE_TO_HOST, Read direction per sec 8.5.1)
     //              0 = OUT (HOST_TO_DEVICE, Write direction)
-    //   cmd_code : OCP Recovery command (sec 9.2 Tbl 9-1)
+    //   cmd_code : OCP Recovery command (sec 9.2)
     //   wlength  : data-stage byte count. Caller is responsible for setting
     //              wlength == wMaxRdTransferSize on IN (sec 8.5.1) and
     //              wlength <= wMaxWrTransferSize on OUT.
@@ -503,7 +503,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         // ---------------------------------------------------------------------
 
         // 4a. PROT_CAP IN: first 8 bytes ASCII "OCP RECV"
-        //     (sec 9.2 Tbl 9-3 row "Magic String").
+        //     (sec 9.2 row "Magic String").
         empty_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_PROT_CAP),
@@ -511,7 +511,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap),
                        .label("OCPREC_PROT_CAP"));
-        // PROT_CAP magic per OCP Recovery v1.1 sec 9.2 Tbl 9-3 (review m2:
+        // PROT_CAP magic per OCP Recovery v1.1 sec 9.2 (review m2:
         // shared OCP_PROT_CAP_MAGIC localparam used by both seq and sb).
         if (prot_cap.size() < 8) begin
             `uvm_error("OCPREC",
@@ -527,7 +527,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             end
         end
 
-        // PROT_CAP version + AGENT_CAPS read-back (sec 9.2 Tbl 9-3). The magic
+        // PROT_CAP version + AGENT_CAPS read-back (sec 9.2). The magic
         // loop above maps PROT_CAP byte k -> prot_cap[k] (e.g. byte 0 = 'O' = 0x4F),
         // so version is bytes 8-9 (major/minor) and AGENT_CAPS is bytes 10-11
         // (LSB = byte 10, MSB = byte 11); assemble each little-endian.
@@ -541,13 +541,13 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             prot_version = {prot_cap[9], prot_cap[8]};
             if (prot_version !== OCP_PROT_CAP_VERSION_EXP) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP version mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 8-9: major=0x01, minor=0x01).",
+                    $sformatf("PROT_CAP version mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 bytes 8-9: major=0x01, minor=0x01).",
                               prot_version, OCP_PROT_CAP_VERSION_EXP))
             end
             agent_caps = {prot_cap[11], prot_cap[10]};
             if (agent_caps !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 Table 9-3 bytes 10-11; FIFO-only bit5=0, flashless bit11=1).",
+                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 bytes 10-11; FIFO-only bit5=0, flashless bit11=1).",
                               agent_caps, OCP_PROT_CAP_AGENT_CAPS_EXP))
             end
         end
@@ -570,7 +570,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             UVM_NONE)
 
         // 4c. DEVICE_STATUS IN. byte[0] is Device Status code;
-        //     sec 9.2 Tbl 9-6 defines 0x00 = Status Pending, 0x01 = Device
+        //     sec 9.2 defines 0x00 = Status Pending, 0x01 = Device
         //     Healthy. Other values are also legal but logged for visibility.
         empty_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
@@ -584,7 +584,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 "DEVICE_STATUS returned 0 bytes; expected at least 1 (Device Status).")
         end else begin
             `uvm_info("OCPREC",
-                $sformatf("DEVICE_STATUS[0]=0x%02h (sec 9.2 Tbl 9-6 reason code).",
+                $sformatf("DEVICE_STATUS[0]=0x%02h (sec 9.2 reason code).",
                           dev_status[0]),
                 UVM_NONE)
         end
@@ -599,10 +599,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .label("OCPREC_RECOVERY_STATUS"));
         if (rec_status.size() < 1) begin
             `uvm_error("OCPREC",
-                "RECOVERY_STATUS returned 0 bytes; expected at least 1 (sec 9.2 Tbl 9-10).")
+                "RECOVERY_STATUS returned 0 bytes; expected at least 1 (sec 9.2).")
         end else begin
             `uvm_info("OCPREC",
-                $sformatf("RECOVERY_STATUS[0]=0x%02h (sec 9.2 Tbl 9-10).",
+                $sformatf("RECOVERY_STATUS[0]=0x%02h (sec 9.2).",
                           rec_status[0]),
                 UVM_NONE)
         end
@@ -654,7 +654,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                               ds_proto.size()))
             end else if (ds_proto[1] !== 8'h01) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROTOCOL_ERROR not set after unsupported command 0x29: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 / Sec 9.2 Tbl 9-6).",
+                    $sformatf("PROTOCOL_ERROR not set after unsupported command 0x29: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 / Sec 9.2).",
                               ds_proto[1]))
             end else begin
                 `uvm_info("OCPREC",
@@ -701,19 +701,19 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     FSM path: S_IDLE --(recovery_ctrl_wr_cms)--> S_DETECTED
         //               --> S_AWAIT_IMAGE --(image_push_active)--> S_PUSH_ACTIVE
         //               --(image_push_done)--> S_IMAGE_LOADED (=DS_RECOVERY_PENDING).
-        //     Payload per OCP Recovery v1.1 Section 9.2 Table 9-9 (RECOVERY_CTRL):
+        //     Payload per OCP Recovery v1.1 Section 9.2 (RECOVERY_CTRL):
         //       byte 0 : Component Memory Space (CMS) index -> 0 (select CMS 0)
         //       byte 1 : Recovery Image Selection           -> 0 (use stored/
         //                                                         streamed image)
         //       byte 2 : Activate Recovery Image            -> 0 (do NOT activate
         //                                                         yet; activation
         //                                                         is a later step,
-        //                                                         Tbl 9-9 = 0x0F)
+        //                                                         RECOVERY_CTRL activate = 0x0F)
         //     wLength = 3: a partial-word (non-word-multiple) OUT that also
         //     exercises the partial-word OUT coverage required by the plan.
         recovery_ctrl_payload = '{8'h00, 8'h00, 8'h00};
         `uvm_info("OCPREC",
-            "RECOVERY_CTRL (cmd 0x26) OUT: CMS=0, ImgSel=0, Activate=0 (sec 9.2 Tbl 9-9). Initiating recovery to advance FSM out of S_IDLE.",
+            "RECOVERY_CTRL (cmd 0x26) OUT: CMS=0, ImgSel=0, Activate=0 (sec 9.2). Initiating recovery to advance FSM out of S_IDLE.",
             UVM_NONE)
         ocp_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
@@ -724,16 +724,16 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
 
         // 5a. INDIRECT_FIFO_CTRL OUT: select CMS index 0,
         //     reset FIFO, set IMAGE_SIZE to 12 (4-byte units; sec 9.2
-        //     Tbl 9-14 IMAGE_SIZE unit = 4 bytes => 12 * 4 = 48 bytes).
+        //     INDIRECT_FIFO_CTRL IMAGE_SIZE unit = 4 bytes => 12 * 4 = 48 bytes).
         //     The image size is deliberately NOT equal to the firmware's
         //     scratch-buffer constant so the device-programmed size must be
         //     read back correctly (it exercises the INDIRECT_FIFO_CTRL
-        //     IMAGE_SIZE byte placement, OCP Recovery v1.1 Sec 9.2 Tbl 9-14:
+        //     IMAGE_SIZE byte placement, OCP Recovery v1.1 Sec 9.2:
         //     IMAGE_SIZE occupies bytes 2..5, straddling CTRL_0/CTRL_1).
         //     Per OCP Recovery v1.1 Section 8.2.5, FIFO CMS uses ONLY
         //     INDIRECT_FIFO_* family; INDIRECT_CTRL is mutually exclusive
         //     (Memory Window CMS) and must NOT be touched in this path.
-        //     Layout per Tbl 9-14:
+        //     Layout per INDIRECT_FIFO_CTRL (Sec 9.2):
         //       byte 0     : CMS index            -> 0
         //       byte 1     : Reset (1 = reset)    -> 1
         //       bytes 2..5 : IMAGE_SIZE (4B units, LE) -> 12
@@ -783,7 +783,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .label("OCPREC_INDIRECT_FIFO_DATA"));
 
         // 5c. INDIRECT_FIFO_STATUS IN: expect WRITE_INDEX
-        //     advanced by n_dwords (4-byte units). Per sec 9.2 Tbl 9-15:
+        //     advanced by n_dwords (4-byte units). Per sec 9.2:
         //       byte 0       : EMPTY (1=empty)
         //       byte 1       : FULL
         //       byte 2       : REGION
@@ -809,18 +809,18 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 UVM_NONE)
             if (wr_idx != n_dwords) begin
                 `uvm_error("OCPREC",
-                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d after pushing %0d dwords (sec 9.2 Tbl 9-15).",
+                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d after pushing %0d dwords (sec 9.2).",
                               wr_idx, n_dwords, n_dwords))
             end
         end else begin
             `uvm_error("OCPREC",
-                $sformatf("INDIRECT_FIFO_STATUS returned %0d bytes; need >= 8 to extract WRITE_INDEX (sec 9.2 Tbl 9-15).",
+                $sformatf("INDIRECT_FIFO_STATUS returned %0d bytes; need >= 8 to extract WRITE_INDEX (sec 9.2).",
                           fifo_status.size()))
         end
 
         // 5d. Poll DEVICE_STATUS until firmware advances past
         //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
-        //     Tbl 9-6, byte 0 holds "Device Status"; the FSM raises it
+        //     DEVICE_STATUS byte 0 holds "Device Status"; the FSM raises it
         //     to 0x04 RECOVERY_PENDING on S_IMAGE_LOADED, while
         //     RECOVERY_STATUS byte 0 stays at 0x01 Awaiting Image until
         //     activation. Polling DEVICE_STATUS therefore observes the
@@ -842,12 +842,12 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 break;
             end
             `uvm_info("OCPREC",
-                $sformatf("Polling DEVICE_STATUS[0]=0x%02h iter=%0d (sec 9.2 Tbl 9-6).",
+                $sformatf("Polling DEVICE_STATUS[0]=0x%02h iter=%0d (sec 9.2).",
                           dev_status[0], poll_iter),
                 UVM_NONE)
-            // Exit on RECOVERY_PENDING (0x04) per sec 9.2 Tbl 9-6: the
+            // Exit on RECOVERY_PENDING (0x04) per sec 9.2: the
             // device has loaded a recovery image and is ready for the
-            // activation step (RECOVERY_CTRL.activate=0x0F, Tbl 9-9).
+            // activation step (RECOVERY_CTRL.activate=0x0F, Sec 9.2).
             if (dev_status[0] == 8'h04) begin
                 recovery_pending_seen = 1'b1;
                 break;
