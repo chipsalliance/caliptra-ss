@@ -1,0 +1,2464 @@
+diff --git a/spi_host.sv b/spi_host.sv
+index 8408cb0..9aa0efa 100644
+--- a/spi_host.sv
++++ b/spi_host.sv
+@@ -6,23 +6,23 @@
+ //
+ //
+ 
+-`include "prim_assert.sv"
++`include "caliptra_prim_assert.sv"
+ 
+-module spi_host
+-  import spi_host_reg_pkg::*;
++module caliptra_ss_spi_host
++  import caliptra_ss_spi_host_reg_pkg::*;
+ #(
+-  parameter logic [NumAlerts-1:0] AlertAsyncOn = {NumAlerts{1'b1}}
++  parameter int unsigned NumCS    = 2,
++  parameter int unsigned CmdDepth = 8
+ ) (
+-  input              clk_i,
+-  input              rst_ni,
++  input                     clk_i,
++  input                     rst_ni,
+ 
+   // Register interface
+-  input              tlul_pkg::tl_h2d_t tl_i,
+-  output             tlul_pkg::tl_d2h_t tl_o,
++  input  tlul_pkg::tl_h2d_t tl_i,
++  output tlul_pkg::tl_d2h_t tl_o,
+ 
+-  // Alerts
+-  input  prim_alert_pkg::alert_rx_t [NumAlerts-1:0] alert_rx_i,
+-  output prim_alert_pkg::alert_tx_t [NumAlerts-1:0] alert_tx_o,
++  // Register integrity error
++  output logic             intg_error_o,
+ 
+   // SPI Interface
+   output logic             cio_sck_o,
+@@ -34,24 +34,23 @@ module spi_host
+   input        [3:0]       cio_sd_i,
+ 
+   // Passthrough interface
+-  input  spi_device_pkg::passthrough_req_t passthrough_i,
+-  output spi_device_pkg::passthrough_rsp_t passthrough_o,
++  input  caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_req_t passthrough_i,
++  output caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_rsp_t passthrough_o,
+ 
+   output logic             intr_error_o,
+   output logic             intr_spi_event_o
+ );
+ 
+-  import spi_host_cmd_pkg::*;
++  import caliptra_ss_spi_host_cmd_pkg::*;
+ 
+-  spi_host_reg2hw_t reg2hw;
+-  spi_host_hw2reg_t hw2reg;
++  caliptra_ss_spi_host_reg2hw_t reg2hw;
++  caliptra_ss_spi_host_hw2reg_t hw2reg;
+ 
+   tlul_pkg::tl_h2d_t fifo_win_h2d [2];
+   tlul_pkg::tl_d2h_t fifo_win_d2h [2];
+ 
+   // Register module
+-  logic [NumAlerts-1:0] alert_test, alerts;
+-  spi_host_reg_top u_reg (
++  caliptra_ss_spi_host_reg_top u_reg (
+     .clk_i,
+     .rst_ni,
+     .tl_i       (tl_i),
+@@ -61,31 +60,9 @@ module spi_host
+     .reg2hw,
+     .hw2reg,
+     // SEC_CM: BUS.INTEGRITY
+-    .intg_err_o (alerts[0])
++    .intg_err_o ( intg_error_o )
+   );
+ 
+-  // Alerts
+-  assign alert_test = {
+-    reg2hw.alert_test.q &
+-    reg2hw.alert_test.qe
+-  };
+-
+-  for (genvar i = 0; i < NumAlerts; i++) begin : gen_alert_tx
+-    prim_alert_sender #(
+-      .AsyncOn(AlertAsyncOn[i]),
+-      .IsFatal(1'b1)
+-    ) u_prim_alert_sender (
+-      .clk_i,
+-      .rst_ni,
+-      .alert_test_i  ( alert_test[i] ),
+-      .alert_req_i   ( alerts[0]     ),
+-      .alert_ack_o   (               ),
+-      .alert_state_o (               ),
+-      .alert_rx_i    ( alert_rx_i[i] ),
+-      .alert_tx_o    ( alert_tx_o[i] )
+-    );
+-  end
+-
+   logic             sck;
+   logic [NumCS-1:0] csb;
+   logic [3:0]       sd_out;
+@@ -125,7 +102,7 @@ module spi_host
+   end                   : gen_passthrough_implementation
+   else begin            : gen_passthrough_ignore
+      // Passthrough only supported for instances with one CSb line
+-    `ASSERT(PassthroughNumCSCompat_A, !passthrough_i.passthrough_en, clk_i, rst_ni)
++    `CALIPTRA_ASSERT(PassthroughNumCSCompat_A, !passthrough_i.passthrough_en, clk_i, rst_ni)
+ 
+     assign cio_sck_o    = sck;
+     assign cio_sck_en_o = output_en;
+@@ -163,7 +140,7 @@ module spi_host
+   logic command_busy;
+   logic core_command_ready;
+ 
+-  command_t core_command, command;
++  caliptra_ss_command_t core_command, command;
+   logic error_csid_inval;
+   logic error_cmd_inval;
+   logic error_busy;
+@@ -171,11 +148,11 @@ module spi_host
+   logic test_dir_inval;
+   logic test_speed_inval;
+ 
+-  assign test_csid_inval  = (reg2hw.csid.q >= NumCS);
++  assign test_csid_inval = (reg2hw.csid.q >= NumCS);
+ 
+   always_comb begin
+-    test_speed_inval           = 1'b1;
+-    test_dir_inval             = 1'b1;
++    test_speed_inval = 1'b1;
++    test_dir_inval   = 1'b1;
+     unique case (reg2hw.command.speed.q)
+       Standard: begin
+         test_dir_inval   = 1'b0;
+@@ -214,7 +191,7 @@ module spi_host
+   assign error_cmd_inval  = command_valid & ~command_busy &
+                             (test_speed_inval | test_dir_inval);
+ 
+-  spi_host_reg_pkg::spi_host_reg2hw_configopts_mreg_t configopts;
++  caliptra_ss_spi_host_reg_pkg::caliptra_ss_spi_host_reg2hw_configopts_mreg_t configopts;
+ 
+   if (NumCS == 1) begin : gen_single_device
+     assign configopts   = reg2hw.configopts[0];
+@@ -269,7 +246,7 @@ module spi_host
+ 
+   logic [3:0]  cmd_qd;
+ 
+-  spi_host_command_queue #(
++  caliptra_ss_spi_host_command_queue #(
+     .CmdDepth(CmdDepth)
+   ) u_cmd_queue (
+     .clk_i,
+@@ -294,7 +271,7 @@ module spi_host
+   logic        rx_valid;
+   logic        rx_ready;
+ 
+-  spi_host_window u_window (
++  caliptra_ss_spi_host_window u_window (
+     .clk_i,
+     .rst_ni,
+     .rx_win_i   (fifo_win_h2d[0]),
+@@ -381,10 +358,10 @@ module spi_host
+   assign tx_valid_checked = tx_valid & ~error_overflow & ~error_access_inval;
+ 
+   // Note on ByteOrder and ByteSwapping.
+-  // ByteOrder == 1 is for Little-Endian transmission (i.e. LSB first), which is acheived by
++  // ByteOrder == 1 is for Little-Endian transmission (i.e. LSB first), which is achieved by
+   // default with the prim_packer_fifo implementation.  Thus we have to swap if Big-Endian
+   // transmission is required (i.e. if ByteOrder == 0).
+-  spi_host_data_fifos #(
++  caliptra_ss_spi_host_data_fifos #(
+     .TxDepth(TxDepth),
+     .RxDepth(RxDepth),
+     .SwapBytes(~ByteOrder)
+@@ -433,7 +410,7 @@ module spi_host
+   assign sw_rst = reg2hw.control.sw_rst.q;
+   assign en_sw  = reg2hw.control.spien.q;
+ 
+-  spi_host_core #(
++  caliptra_ss_spi_host_core #(
+     .NumCS(NumCS)
+   ) u_spi_core (
+     .clk_i,
+@@ -517,7 +494,7 @@ module spi_host
+   assign event_error   = |(error_vec & error_mask);
+   assign enb_error     = |sw_error_status;
+ 
+-  prim_intr_hw #(.Width(1)) intr_hw_error (
++  caliptra_prim_intr_hw #(.Width(1)) intr_hw_error (
+     .clk_i,
+     .rst_ni,
+     .event_intr_i           (event_error),
+@@ -563,7 +540,7 @@ module spi_host
+   // Qualify interrupt sources individually with dedicated mask register CSR.EVENT_ENABLE
+   assign status_spi_event = |(event_vector & event_mask);
+ 
+-  prim_intr_hw #(
++  caliptra_prim_intr_hw #(
+     .Width(1),
+     .IntrT("Status")
+   ) intr_hw_spi_event (
+@@ -580,25 +557,24 @@ module spi_host
+   );
+ 
+ 
+-  `ASSERT_KNOWN(TlDValidKnownO_A, tl_o.d_valid)
+-  `ASSERT_KNOWN(TlAReadyKnownO_A, tl_o.a_ready)
+-  `ASSERT_KNOWN(AlertKnownO_A, alert_tx_o)
+-  `ASSERT_KNOWN(CioSckKnownO_A, cio_sck_o)
+-  `ASSERT_KNOWN(CioSckEnKnownO_A, cio_sck_en_o)
+-  `ASSERT_KNOWN(CioCsbKnownO_A, cio_csb_o)
+-  `ASSERT_KNOWN(CioCsbEnKnownO_A, cio_csb_en_o)
+-  `ASSERT_KNOWN_IF(CioSdKnownO_A, cio_sd_o, !passthrough_i.passthrough_en |
++  `CALIPTRA_ASSERT_KNOWN(TlDValidKnownO_A, tl_o.d_valid)
++  `CALIPTRA_ASSERT_KNOWN(TlAReadyKnownO_A, tl_o.a_ready)
++  `CALIPTRA_ASSERT_KNOWN(CioSckKnownO_A, cio_sck_o)
++  `CALIPTRA_ASSERT_KNOWN(CioSckEnKnownO_A, cio_sck_en_o)
++  `CALIPTRA_ASSERT_KNOWN(CioCsbKnownO_A, cio_csb_o)
++  `CALIPTRA_ASSERT_KNOWN(CioCsbEnKnownO_A, cio_csb_en_o)
++  `CALIPTRA_ASSERT_KNOWN_IF(CioSdKnownO_A, cio_sd_o, !passthrough_i.passthrough_en |
+     (passthrough_i.passthrough_en && passthrough_i.csb_en && !passthrough_i.csb),
+     passthrough_i.sck_en & passthrough_i.sck)
+-  `ASSERT_KNOWN(CioSdEnKnownO_A, cio_sd_en_o)
+-  `ASSERT_KNOWN(IntrSpiEventKnownO_A, intr_spi_event_o)
+-  `ASSERT_KNOWN(IntrErrorKnownO_A, intr_error_o)
++  `CALIPTRA_ASSERT_KNOWN(CioSdEnKnownO_A, cio_sd_en_o)
++  `CALIPTRA_ASSERT_KNOWN(IntrSpiEventKnownO_A, intr_spi_event_o)
++  `CALIPTRA_ASSERT_KNOWN(IntrErrorKnownO_A, intr_error_o)
++  `CALIPTRA_ASSERT_KNOWN(IntgErrorKnownO_A, intg_error_o)
++
+ 
+   // passthrough_o.s is passed through to spi_device, it may contain unknown data,
+   // but the unknown data won't be used based on the SPI protocol.
+   // Hence, instead of checking known data, here does a connectivity check.
+-  `ASSERT(PassthroughConn_A, passthrough_o.s === cio_sd_i)
++  `CALIPTRA_ASSERT(PassthroughConn_A, passthrough_o.s === cio_sd_i)
+ 
+-  // Alert assertions for reg_we onehot check
+-  `ASSERT_PRIM_REG_WE_ONEHOT_ERROR_TRIGGER_ALERT(RegWeOnehotCheck_A, u_reg, alert_tx_o[0])
+-endmodule : spi_host
++endmodule : caliptra_ss_spi_host
+diff --git a/spi_host_byte_merge.sv b/spi_host_byte_merge.sv
+index 16f3796..cf2cce0 100644
+--- a/spi_host_byte_merge.sv
++++ b/spi_host_byte_merge.sv
+@@ -5,7 +5,7 @@
+ // Byte-merge module for collecting words in SPI Host IP
+ //
+ 
+-module spi_host_byte_merge (
++module caliptra_ss_spi_host_byte_merge (
+   input               clk_i,
+   input               rst_ni,
+   input        [7:0]  byte_i,
+@@ -47,7 +47,7 @@ module spi_host_byte_merge (
+     end
+   end
+ 
+-  prim_packer_fifo #(
++  caliptra_prim_packer_fifo #(
+     .InW(8),
+     .OutW(32)
+   ) u_packer (
+@@ -63,4 +63,4 @@ module spi_host_byte_merge (
+     .depth_o  ()
+   );
+ 
+-endmodule : spi_host_byte_merge
++endmodule : caliptra_ss_spi_host_byte_merge
+diff --git a/spi_host_byte_select.sv b/spi_host_byte_select.sv
+index c370142..2b39c7a 100644
+--- a/spi_host_byte_select.sv
++++ b/spi_host_byte_select.sv
+@@ -4,7 +4,7 @@
+ //
+ // Byte-select module for dispensing words in SPI Host IP
+ //
+-module spi_host_byte_select (
++module caliptra_ss_spi_host_byte_select (
+   input               clk_i,
+   input               rst_ni,
+   input       [31:0]  word_i,
+@@ -34,7 +34,7 @@ module spi_host_byte_select (
+     assign wdata_be[9*ii +: 9] = { word_be_i[ii], word_i[8*ii +: 8] };
+   end : gen_map_data_be
+ 
+-  prim_packer_fifo #(
++  caliptra_prim_packer_fifo #(
+     .InW(36),
+     .OutW(9)
+   ) u_packer (
+@@ -50,4 +50,4 @@ module spi_host_byte_select (
+     .depth_o   ()
+   );
+ 
+-endmodule : spi_host_byte_select
++endmodule : caliptra_ss_spi_host_byte_select
+diff --git a/spi_host_cmd_pkg.sv b/spi_host_cmd_pkg.sv
+index c0eb40b..330e576 100644
+--- a/spi_host_cmd_pkg.sv
++++ b/spi_host_cmd_pkg.sv
+@@ -5,9 +5,9 @@
+ // Command & Configuration Options structure for SPI HOST.
+ //
+ 
+-package spi_host_cmd_pkg;
++package caliptra_ss_spi_host_cmd_pkg;
+ 
+-  parameter int CSW = prim_util_pkg::vbits(spi_host_reg_pkg::NumCS);
++  parameter int CSW = caliptra_prim_util_pkg::vbits(caliptra_ss_spi_host_reg_pkg::NumCS);
+   parameter int CmdSize = CSW + 45;
+ 
+   // For decoding the direction register
+@@ -16,7 +16,7 @@ package spi_host_cmd_pkg;
+      RdOnly = 2'b01,
+      WrOnly = 2'b10,
+      Bidir  = 2'b11
+-   } reg_direction_t;
++   } caliptra_ss_reg_direction_t;
+ 
+   // For decoding the direction register
+   typedef enum logic [1:0] {
+@@ -24,7 +24,7 @@ package spi_host_cmd_pkg;
+      Dual     = 2'b01,
+      Quad     = 2'b10,
+      RsvdSpd  = 2'b11
+-   } speed_t;
++   } caliptra_ss_speed_t;
+ 
+   typedef struct packed {
+     logic [15:0] clkdiv;
+@@ -34,20 +34,20 @@ package spi_host_cmd_pkg;
+     logic        full_cyc;
+     logic        cpha;
+     logic        cpol;
+-  } configopts_t;
++  } caliptra_ss_configopts_t;
+ 
+   typedef struct packed {
+-    logic [1:0] speed;
+-    logic       cmd_wr_en;
+-    logic       cmd_rd_en;
+-    logic [8:0] len;
+-    logic       csaat;
+-  } segment_t;
++    logic [1:0]  speed;
++    logic        cmd_wr_en;
++    logic        cmd_rd_en;
++    logic [19:0] len;
++    logic        csaat;
++  } caliptra_ss_segment_t;
+ 
+   typedef struct packed {
+     logic [CSW-1:0] csid;
+-    segment_t segment;
+-    configopts_t configopts;
+-  } command_t;
++    caliptra_ss_segment_t segment;
++    caliptra_ss_configopts_t configopts;
++  } caliptra_ss_command_t;
+ 
+ endpackage
+diff --git a/spi_host_command_queue.sv b/spi_host_command_queue.sv
+index 3716f54..66b37ca 100644
+--- a/spi_host_command_queue.sv
++++ b/spi_host_command_queue.sv
+@@ -5,28 +5,28 @@
+ // Queue for SPI_HOST commands
+ //
+ 
+-module spi_host_command_queue #(
+-  parameter int CmdDepth = 4
++module caliptra_ss_spi_host_command_queue #(
++  parameter int          CmdDepth = 4
+ ) (
+-  input                              clk_i,
+-  input                              rst_ni,
++  input                                                      clk_i,
++  input                                                      rst_ni,
+ 
+-  input  spi_host_cmd_pkg::command_t command_i,
+-  input                              command_valid_i,
+-  output logic                       command_busy_o,
++  input  caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t command_i,
++  input                                                      command_valid_i,
++  output logic                                               command_busy_o,
+ 
+-  output spi_host_cmd_pkg::command_t core_command_o,
+-  output logic                       core_command_valid_o,
+-  input                              core_command_ready_i,
++  output caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t core_command_o,
++  output logic                                               core_command_valid_o,
++  input                                                      core_command_ready_i,
+ 
+-  output logic [3:0]                 qd_o,
++  output logic [3:0]                                         qd_o,
+ 
+-  output logic                       error_busy_o,
++  output logic                                               error_busy_o,
+ 
+-  input                              sw_rst_i
++  input                                                      sw_rst_i
+ );
+ 
+-  localparam int CmdDepthW = prim_util_pkg::vbits(CmdDepth+1);
++  localparam int CmdDepthW = caliptra_prim_util_pkg::vbits(CmdDepth+1);
+ 
+   logic command_ready;
+ 
+@@ -35,8 +35,9 @@ module spi_host_command_queue #(
+ 
+   logic [CmdDepthW-1:0] cmd_depth;
+ 
+-  prim_fifo_sync #(
+-    .Width(spi_host_cmd_pkg::CmdSize),
++  caliptra_prim_fifo_sync #(
++    .Width($bits(caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t) +
++           caliptra_ss_spi_host_cmd_pkg::CSW),
+     .Pass(0),
+     .Depth(CmdDepth)
+   ) cmd_fifo (
+@@ -56,4 +57,4 @@ module spi_host_command_queue #(
+ 
+   assign qd_o = 4'(cmd_depth);
+ 
+-endmodule : spi_host_command_queue
++endmodule : caliptra_ss_spi_host_command_queue
+diff --git a/spi_host_core.sv b/spi_host_core.sv
+index 65b7b9b..f177d3e 100644
+--- a/spi_host_core.sv
++++ b/spi_host_core.sv
+@@ -2,43 +2,43 @@
+ // Licensed under the Apache License, Version 2.0, see LICENSE for details.
+ // SPDX-License-Identifier: Apache-2.0
+ //
+-// Core Implemenation module for Serial Peripheral Interface (SPI) Host IP.
++// Core Implementation module for Serial Peripheral Interface (SPI) Host IP.
+ //
+ 
+-module spi_host_core #(
+-  parameter  int NumCS     = 1
++module caliptra_ss_spi_host_core #(
++  parameter  int NumCS = 1
+ ) (
+-  input                             clk_i,
+-  input                             rst_ni,
++  input                                                     clk_i,
++  input                                                     rst_ni,
+ 
+-  input spi_host_cmd_pkg::command_t command_i,
+-  input                             command_valid_i,
+-  output                            command_ready_o,
+-  input                             en_i,
++  input caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t command_i,
++  input                                                     command_valid_i,
++  output                                                    command_ready_o,
++  input                                                     en_i,
+ 
+-  input        [31:0]               tx_data_i,
+-  input        [3:0]                tx_be_i,
+-  input                             tx_valid_i,
+-  output logic                      tx_ready_o,
+-  output logic                      tx_byte_select_full_o,
++  input        [31:0]                                       tx_data_i,
++  input        [3:0]                                        tx_be_i,
++  input                                                     tx_valid_i,
++  output logic                                              tx_ready_o,
++  output logic                                              tx_byte_select_full_o,
+ 
+-  output logic [31:0]               rx_data_o,
+-  output logic                      rx_valid_o,
+-  input                             rx_ready_i,
++  output logic [31:0]                                       rx_data_o,
++  output logic                                              rx_valid_o,
++  input                                                     rx_ready_i,
+ 
+-  input                             sw_rst_i,
++  input                                                     sw_rst_i,
+ 
+   // SPI Interface
+-  output logic                      sck_o,
+-  output logic [NumCS-1:0]          csb_o,
+-  output logic [3:0]                sd_o,
+-  output logic [3:0]                sd_en_o,
+-  input [3:0]                       sd_i,
++  output logic                                              sck_o,
++  output logic [NumCS-1:0]                                  csb_o,
++  output logic [3:0]                                        sd_o,
++  output logic [3:0]                                        sd_en_o,
++  input [3:0]                                               sd_i,
+ 
+   // Status bits
+-  output logic                      rx_stall_o,
+-  output logic                      tx_stall_o,
+-  output logic                      active_o
++  output logic                                              rx_stall_o,
++  output logic                                              tx_stall_o,
++  output logic                                              active_o
+ );
+ 
+   logic       rx_valid_sr;
+@@ -62,7 +62,7 @@ module spi_host_core #(
+   logic       last_read;
+   logic       last_write;
+ 
+-  spi_host_byte_merge u_merge (
++  caliptra_ss_spi_host_byte_merge u_merge (
+     .clk_i,
+     .rst_ni,
+     .byte_i       (rx_data_sr),
+@@ -75,7 +75,7 @@ module spi_host_core #(
+     .sw_rst_i
+   );
+ 
+-  spi_host_byte_select u_select (
++  caliptra_ss_spi_host_byte_select u_select (
+     .clk_i,
+     .rst_ni,
+     .word_i       (tx_data_i),
+@@ -95,7 +95,7 @@ module spi_host_core #(
+   // reported depth/full/empty flags.
+   assign tx_byte_select_full_o = tx_valid_sr;
+ 
+-  spi_host_shift_register u_shift_reg (
++  caliptra_ss_spi_host_shift_register u_shift_reg (
+     .clk_i,
+     .rst_ni,
+     .wr_en_i      (wr_en),
+@@ -121,7 +121,7 @@ module spi_host_core #(
+     .sd_i         (sd_i)
+   );
+ 
+-  spi_host_fsm #(
++  caliptra_ss_spi_host_fsm #(
+     .NumCS(NumCS)
+   ) u_fsm (
+     .clk_i,
+@@ -149,4 +149,4 @@ module spi_host_core #(
+     .active_o
+   );
+ 
+-endmodule : spi_host_core
++endmodule : caliptra_ss_spi_host_core
+diff --git a/spi_host_data_fifos.sv b/spi_host_data_fifos.sv
+index 7baa914..dfad12c 100644
+--- a/spi_host_data_fifos.sv
++++ b/spi_host_data_fifos.sv
+@@ -5,7 +5,9 @@
+ // Module for SPI_HOST RX and TX queues
+ //
+ 
+-module spi_host_data_fifos #(
++`include "caliptra_prim_assert.sv"
++
++module caliptra_ss_spi_host_data_fifos #(
+   parameter int         TxDepth   = 72,
+   parameter int         RxDepth   = 64,
+   parameter logic       SwapBytes = 0
+@@ -46,8 +48,8 @@ module spi_host_data_fifos #(
+   output logic        rx_wm_o
+ );
+ 
+-  localparam int RxDepthW = prim_util_pkg::vbits(RxDepth+1);
+-  localparam int TxDepthW = prim_util_pkg::vbits(TxDepth+1);
++  localparam int RxDepthW = caliptra_prim_util_pkg::vbits(RxDepth+1);
++  localparam int TxDepthW = caliptra_prim_util_pkg::vbits(TxDepth+1);
+ 
+   logic [31:0] tx_data_ordered;
+   logic [3:0]  tx_be_ordered;
+@@ -75,7 +77,7 @@ module spi_host_data_fifos #(
+   assign tx_data_be = { tx_data_ordered, tx_be_ordered };
+   assign { core_tx_data_o, core_tx_be_o } = core_tx_data_be;
+ 
+-  prim_fifo_sync #(
++  caliptra_prim_fifo_sync #(
+     .Width(36),
+     .Pass(1),
+     .Depth(TxDepth)
+@@ -98,7 +100,7 @@ module spi_host_data_fifos #(
+ 
+   assign rx_qd_o = 8'(rx_depth);
+ 
+-  prim_fifo_sync #(
++  caliptra_prim_fifo_sync #(
+     .Width(32),
+     .Pass(1),
+     .Depth(RxDepth)
+@@ -128,6 +130,6 @@ module spi_host_data_fifos #(
+ 
+   // Due to the addition of the byte_sel as a N+1'th fifo stage, ensure
+   // we have adequate resolution in our counter (tx_qd_o) to represent this.
+-  `ASSERT_INIT(TxDepth_A, TxDepth < (2**$size(tx_qd_o)) - 1)
++  `CALIPTRA_ASSERT_INIT(TxDepth_A, TxDepth < (2**$size(tx_qd_o)) - 1)
+ 
+-endmodule : spi_host_data_fifos
++endmodule : caliptra_ss_spi_host_data_fifos
+diff --git a/spi_host_fsm.sv b/spi_host_fsm.sv
+index 1fe1077..9c9c865 100644
+--- a/spi_host_fsm.sv
++++ b/spi_host_fsm.sv
+@@ -2,38 +2,40 @@
+ // Licensed under the Apache License, Version 2.0, see LICENSE for details.
+ // SPDX-License-Identifier: Apache-2.0
+ //
+-// Core Implemenation module for Serial Peripheral Interface (SPI) Host IP.
++// Core Implementation module for Serial Peripheral Interface (SPI) Host IP.
+ //
+ 
+-module spi_host_fsm
+-  import spi_host_cmd_pkg::*;
++`include "caliptra_prim_assert.sv"
++
++module caliptra_ss_spi_host_fsm
++  import caliptra_ss_spi_host_cmd_pkg::*;
+ #(
+   parameter  int NumCS = 1
+ ) (
+-  input                              clk_i,
+-  input                              rst_ni,
+-  input                              en_i,
+-  input  command_t                   command_i,
+-  input                              command_valid_i,
+-  output logic                       command_ready_o,
+-  output logic                       sck_o,
+-  output logic [NumCS-1:0]           csb_o,
+-  output logic [3:0]                 sd_en_o,
+-  output logic                       last_read_o,
+-  output logic                       last_write_o,
+-  output logic                       wr_en_o,
+-  input                              sr_wr_ready_i,
+-  output logic                       rd_en_o,
+-  input                              sr_rd_ready_i,
+-  output logic                       sample_en_o,
+-  output logic                       shift_en_o,
+-  output logic [1:0]                 speed_o,
+-  output logic                       full_cyc_o,
+-  output logic                       rx_stall_o,
+-  output logic                       tx_stall_o,
+-  output logic                       active_o,
+-
+-  input                              sw_rst_i
++  input                        clk_i,
++  input                        rst_ni,
++  input                        en_i,
++  input  caliptra_ss_command_t command_i,
++  input                        command_valid_i,
++  output logic                 command_ready_o,
++  output logic                 sck_o,
++  output logic [NumCS-1:0]     csb_o,
++  output logic [3:0]           sd_en_o,
++  output logic                 last_read_o,
++  output logic                 last_write_o,
++  output logic                 wr_en_o,
++  input                        sr_wr_ready_i,
++  output logic                 rd_en_o,
++  input                        sr_rd_ready_i,
++  output logic                 sample_en_o,
++  output logic                 shift_en_o,
++  output logic [1:0]           speed_o,
++  output logic                 full_cyc_o,
++  output logic                 rx_stall_o,
++  output logic                 tx_stall_o,
++  output logic                 active_o,
++
++  input                        sw_rst_i
+ );
+ 
+   logic             is_idle;
+@@ -110,9 +112,9 @@ module spi_host_fsm
+     WaitIdle,
+     CSBSwitch,
+     IdleCSBActive
+-  } spi_host_st_e;
++  } caliptra_ss_spi_host_st_e;
+ 
+-  spi_host_st_e state_q, state_d;
++  caliptra_ss_spi_host_st_e state_q, state_d;
+ 
+   logic command_ready_int;
+   assign command_ready_o = command_ready_int & ~stall;
+@@ -175,9 +177,9 @@ module spi_host_fsm
+     end
+   end
+ 
+-  assign is_idle     = (state_q == Idle) || (state_q == IdleCSBActive);
++  assign is_idle = (state_q == Idle) || (state_q == IdleCSBActive);
+ 
+-  assign active_o   = ~is_idle;
++  assign active_o = ~is_idle;
+ 
+   // New commands must always ensure there is the full setup time available.
+   assign clk_cntr_d = sw_rst_i              ? 16'h0 :
+@@ -192,7 +194,7 @@ module spi_host_fsm
+   assign clk_cntr_en = en_i;
+   assign fsm_en = (clk_cntr_en && ((clk_cntr_q == 0) || is_idle));
+ 
+-  spi_host_st_e next_state_after_idle;
++  caliptra_ss_spi_host_st_e next_state_after_idle;
+   always_comb begin
+     if (command_valid_i) begin
+       if (config_changed) begin
+@@ -205,7 +207,7 @@ module spi_host_fsm
+     end
+   end
+ 
+-  spi_host_st_e next_state_after_idle_csb_active;
++  caliptra_ss_spi_host_st_e next_state_after_idle_csb_active;
+   logic         command_ready_idle_csb_active;
+   always_comb begin
+     if (command_valid_i) begin
+@@ -350,15 +352,15 @@ module spi_host_fsm
+   assign segment_rd_en_cpha0 = cmd_rd_en_q;
+ 
+   // We can calculate byte transitions for CPHA=1 by noting
+-  // that in this implmentation, the sck edges have a 1-1
++  // that in this implementation, the sck edges have a 1-1
+   // correspondence with FSM transitions.
+   // New bytes are loaded exactly one state transition behind the time
+   // when they would be loaded if CPHA=0
+   always_ff @(posedge clk_i or negedge rst_ni) begin
+     if (!rst_ni) begin
+-      segment_rd_en_cpha1   <= 1'b0;
++      segment_rd_en_cpha1 <= 1'b0;
+     end else if (state_changing && !stall) begin
+-      segment_rd_en_cpha1   <= segment_rd_en_cpha0;
++      segment_rd_en_cpha1 <= segment_rd_en_cpha0;
+     end
+   end
+ 
+@@ -544,7 +546,7 @@ module spi_host_fsm
+ 
+   assign sck_o = sck_q;
+ 
+-  prim_flop_en u_sck_flop (
++  caliptra_prim_flop_en u_sck_flop (
+     .clk_i,
+     .rst_ni,
+     .en_i(~stall),
+@@ -629,7 +631,7 @@ module spi_host_fsm
+           sd_en_o[3:0] = 4'h0;
+         end
+       endcase
+-    end // else: !if(&csb_o)
++    end
+   end
+ 
+   // The following signals are unused since their usages got removed in an ECO.  In order to
+@@ -642,10 +644,10 @@ module spi_host_fsm
+   // Assertions confirming valid user input.
+   //
+ 
+-  `ASSERT(BidirOnlyInStdMode_A,
++  `CALIPTRA_ASSERT(BidirOnlyInStdMode_A,
+       cmd_speed_d == Standard || !(cmd_rd_en_d && cmd_wr_en_d),
+       clk_i, rst_ni)
+-  `ASSERT(ValidSpeed_A, cmd_speed_d != RsvdSpd, clk_i, rst_ni)
+-  `ASSERT(ValidCSID_A, csid < NumCS, clk_i, rst_ni)
++  `CALIPTRA_ASSERT(ValidSpeed_A, cmd_speed_d != RsvdSpd, clk_i, rst_ni)
++  `CALIPTRA_ASSERT(ValidCSID_A, csid < NumCS, clk_i, rst_ni)
+ 
+ endmodule
+diff --git a/spi_host_reg_pkg.sv b/spi_host_reg_pkg.sv
+index 97e30ac..bacae50 100644
+--- a/spi_host_reg_pkg.sv
++++ b/spi_host_reg_pkg.sv
+@@ -4,19 +4,20 @@
+ //
+ // Register Package auto-generated by `reggen` containing data structure
+ 
+-package spi_host_reg_pkg;
++package caliptra_ss_spi_host_reg_pkg;
+ 
+   // Param list
+   parameter logic ByteOrder = 1;
+-  parameter int NumCS = 1;
++  parameter int NumCS = 2;
+   parameter int TxDepth = 72;
+   parameter int RxDepth = 64;
+-  parameter int CmdDepth = 4;
+-  parameter int NumAlerts = 1;
+ 
+   // Address widths within the block
+   parameter int BlockAw = 6;
+ 
++  // Number of registers for every interface
++  parameter int NumRegs = 12;
++
+   ////////////////////////////
+   // Typedefs for registers //
+   ////////////////////////////
+@@ -28,7 +29,7 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        q;
+     } error;
+-  } spi_host_reg2hw_intr_state_reg_t;
++  } caliptra_ss_spi_host_reg2hw_intr_state_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -37,7 +38,7 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        q;
+     } error;
+-  } spi_host_reg2hw_intr_enable_reg_t;
++  } caliptra_ss_spi_host_reg2hw_intr_enable_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -48,12 +49,7 @@ package spi_host_reg_pkg;
+       logic        q;
+       logic        qe;
+     } error;
+-  } spi_host_reg2hw_intr_test_reg_t;
+-
+-  typedef struct packed {
+-    logic        q;
+-    logic        qe;
+-  } spi_host_reg2hw_alert_test_reg_t;
++  } caliptra_ss_spi_host_reg2hw_intr_test_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -71,7 +67,7 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic [7:0]  q;
+     } rx_watermark;
+-  } spi_host_reg2hw_control_reg_t;
++  } caliptra_ss_spi_host_reg2hw_control_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -95,11 +91,11 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic [15:0] q;
+     } clkdiv;
+-  } spi_host_reg2hw_configopts_mreg_t;
++  } caliptra_ss_spi_host_reg2hw_configopts_mreg_t;
+ 
+   typedef struct packed {
+     logic [31:0] q;
+-  } spi_host_reg2hw_csid_reg_t;
++  } caliptra_ss_spi_host_reg2hw_csid_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -118,7 +114,7 @@ package spi_host_reg_pkg;
+       logic [8:0]  q;
+       logic        qe;
+     } len;
+-  } spi_host_reg2hw_command_reg_t;
++  } caliptra_ss_spi_host_reg2hw_command_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -136,7 +132,7 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        q;
+     } cmdbusy;
+-  } spi_host_reg2hw_error_enable_reg_t;
++  } caliptra_ss_spi_host_reg2hw_error_enable_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -157,7 +153,7 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        q;
+     } cmdbusy;
+-  } spi_host_reg2hw_error_status_reg_t;
++  } caliptra_ss_spi_host_reg2hw_error_status_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+@@ -178,48 +174,44 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        q;
+     } rxfull;
+-  } spi_host_reg2hw_event_enable_reg_t;
++  } caliptra_ss_spi_host_reg2hw_event_enable_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic        d;
+       logic        de;
+-    } error;
++    } spi_event;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } spi_event;
+-  } spi_host_hw2reg_intr_state_reg_t;
++    } error;
++  } caliptra_ss_spi_host_hw2reg_intr_state_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+-      logic [7:0]  d;
+-      logic        de;
+-    } txqd;
+-    struct packed {
+-      logic [7:0]  d;
++      logic        d;
+       logic        de;
+-    } rxqd;
++    } ready;
+     struct packed {
+-      logic [3:0]  d;
++      logic        d;
+       logic        de;
+-    } cmdqd;
++    } active;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rxwm;
++    } txfull;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } byteorder;
++    } txempty;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rxstall;
++    } txstall;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } rxempty;
++    } txwm;
+     struct packed {
+       logic        d;
+       logic        de;
+@@ -227,86 +219,89 @@ package spi_host_reg_pkg;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } txwm;
++    } rxempty;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } txstall;
++    } rxstall;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } txempty;
++    } byteorder;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } txfull;
++    } rxwm;
+     struct packed {
+-      logic        d;
++      logic [3:0]  d;
+       logic        de;
+-    } active;
++    } cmdqd;
+     struct packed {
+-      logic        d;
++      logic [7:0]  d;
+       logic        de;
+-    } ready;
+-  } spi_host_hw2reg_status_reg_t;
++    } rxqd;
++    struct packed {
++      logic [7:0]  d;
++      logic        de;
++    } txqd;
++  } caliptra_ss_spi_host_hw2reg_status_reg_t;
+ 
+   typedef struct packed {
+     struct packed {
+       logic        d;
+       logic        de;
+-    } cmdbusy;
++    } accessinval;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } overflow;
++    } csidinval;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } underflow;
++    } cmdinval;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } cmdinval;
++    } underflow;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } csidinval;
++    } overflow;
+     struct packed {
+       logic        d;
+       logic        de;
+-    } accessinval;
+-  } spi_host_hw2reg_error_status_reg_t;
++    } cmdbusy;
++  } caliptra_ss_spi_host_hw2reg_error_status_reg_t;
+ 
+   // Register -> HW type
+   typedef struct packed {
+-    spi_host_reg2hw_intr_state_reg_t intr_state; // [126:125]
+-    spi_host_reg2hw_intr_enable_reg_t intr_enable; // [124:123]
+-    spi_host_reg2hw_intr_test_reg_t intr_test; // [122:119]
+-    spi_host_reg2hw_alert_test_reg_t alert_test; // [118:117]
+-    spi_host_reg2hw_control_reg_t control; // [116:98]
+-    spi_host_reg2hw_configopts_mreg_t [0:0] configopts; // [97:67]
+-    spi_host_reg2hw_csid_reg_t csid; // [66:35]
+-    spi_host_reg2hw_command_reg_t command; // [34:17]
+-    spi_host_reg2hw_error_enable_reg_t error_enable; // [16:12]
+-    spi_host_reg2hw_error_status_reg_t error_status; // [11:6]
+-    spi_host_reg2hw_event_enable_reg_t event_enable; // [5:0]
+-  } spi_host_reg2hw_t;
++    caliptra_ss_spi_host_reg2hw_intr_state_reg_t intr_state; // [155:154]
++    caliptra_ss_spi_host_reg2hw_intr_enable_reg_t intr_enable; // [153:152]
++    caliptra_ss_spi_host_reg2hw_intr_test_reg_t intr_test; // [151:148]
++    caliptra_ss_spi_host_reg2hw_control_reg_t control; // [147:129]
++    caliptra_ss_spi_host_reg2hw_configopts_mreg_t [1:0] configopts; // [128:67]
++    caliptra_ss_spi_host_reg2hw_csid_reg_t csid; // [66:35]
++    caliptra_ss_spi_host_reg2hw_command_reg_t command; // [34:17]
++    caliptra_ss_spi_host_reg2hw_error_enable_reg_t error_enable; // [16:12]
++    caliptra_ss_spi_host_reg2hw_error_status_reg_t error_status; // [11:6]
++    caliptra_ss_spi_host_reg2hw_event_enable_reg_t event_enable; // [5:0]
++  } caliptra_ss_spi_host_reg2hw_t;
+ 
+   // HW -> register type
+   typedef struct packed {
+-    spi_host_hw2reg_intr_state_reg_t intr_state; // [60:57]
+-    spi_host_hw2reg_status_reg_t status; // [56:12]
+-    spi_host_hw2reg_error_status_reg_t error_status; // [11:0]
+-  } spi_host_hw2reg_t;
++    caliptra_ss_spi_host_hw2reg_intr_state_reg_t intr_state; // [60:57]
++    caliptra_ss_spi_host_hw2reg_status_reg_t status; // [56:12]
++    caliptra_ss_spi_host_hw2reg_error_status_reg_t error_status; // [11:0]
++  } caliptra_ss_spi_host_hw2reg_t;
+ 
+   // Register offsets
+   parameter logic [BlockAw-1:0] SPI_HOST_INTR_STATE_OFFSET = 6'h 0;
+   parameter logic [BlockAw-1:0] SPI_HOST_INTR_ENABLE_OFFSET = 6'h 4;
+   parameter logic [BlockAw-1:0] SPI_HOST_INTR_TEST_OFFSET = 6'h 8;
+-  parameter logic [BlockAw-1:0] SPI_HOST_ALERT_TEST_OFFSET = 6'h c;
+-  parameter logic [BlockAw-1:0] SPI_HOST_CONTROL_OFFSET = 6'h 10;
+-  parameter logic [BlockAw-1:0] SPI_HOST_STATUS_OFFSET = 6'h 14;
+-  parameter logic [BlockAw-1:0] SPI_HOST_CONFIGOPTS_OFFSET = 6'h 18;
++  parameter logic [BlockAw-1:0] SPI_HOST_CONTROL_OFFSET = 6'h c;
++  parameter logic [BlockAw-1:0] SPI_HOST_STATUS_OFFSET = 6'h 10;
++  parameter logic [BlockAw-1:0] SPI_HOST_CONFIGOPTS_0_OFFSET = 6'h 14;
++  parameter logic [BlockAw-1:0] SPI_HOST_CONFIGOPTS_1_OFFSET = 6'h 18;
+   parameter logic [BlockAw-1:0] SPI_HOST_CSID_OFFSET = 6'h 1c;
+   parameter logic [BlockAw-1:0] SPI_HOST_COMMAND_OFFSET = 6'h 20;
+   parameter logic [BlockAw-1:0] SPI_HOST_ERROR_ENABLE_OFFSET = 6'h 2c;
+@@ -317,8 +312,6 @@ package spi_host_reg_pkg;
+   parameter logic [1:0] SPI_HOST_INTR_TEST_RESVAL = 2'h 0;
+   parameter logic [0:0] SPI_HOST_INTR_TEST_ERROR_RESVAL = 1'h 0;
+   parameter logic [0:0] SPI_HOST_INTR_TEST_SPI_EVENT_RESVAL = 1'h 0;
+-  parameter logic [0:0] SPI_HOST_ALERT_TEST_RESVAL = 1'h 0;
+-  parameter logic [0:0] SPI_HOST_ALERT_TEST_FATAL_FAULT_RESVAL = 1'h 0;
+   parameter logic [13:0] SPI_HOST_COMMAND_RESVAL = 14'h 0;
+   parameter logic [8:0] SPI_HOST_COMMAND_LEN_RESVAL = 9'h 0;
+   parameter logic [0:0] SPI_HOST_COMMAND_CSAAT_RESVAL = 1'h 0;
+@@ -338,26 +331,26 @@ package spi_host_reg_pkg;
+     SPI_HOST_INTR_STATE,
+     SPI_HOST_INTR_ENABLE,
+     SPI_HOST_INTR_TEST,
+-    SPI_HOST_ALERT_TEST,
+     SPI_HOST_CONTROL,
+     SPI_HOST_STATUS,
+-    SPI_HOST_CONFIGOPTS,
++    SPI_HOST_CONFIGOPTS_0,
++    SPI_HOST_CONFIGOPTS_1,
+     SPI_HOST_CSID,
+     SPI_HOST_COMMAND,
+     SPI_HOST_ERROR_ENABLE,
+     SPI_HOST_ERROR_STATUS,
+     SPI_HOST_EVENT_ENABLE
+-  } spi_host_id_e;
++  } caliptra_ss_spi_host_id_e;
+ 
+   // Register width information to check illegal writes
+   parameter logic [3:0] SPI_HOST_PERMIT [12] = '{
+     4'b 0001, // index[ 0] SPI_HOST_INTR_STATE
+     4'b 0001, // index[ 1] SPI_HOST_INTR_ENABLE
+     4'b 0001, // index[ 2] SPI_HOST_INTR_TEST
+-    4'b 0001, // index[ 3] SPI_HOST_ALERT_TEST
+-    4'b 1111, // index[ 4] SPI_HOST_CONTROL
+-    4'b 1111, // index[ 5] SPI_HOST_STATUS
+-    4'b 1111, // index[ 6] SPI_HOST_CONFIGOPTS
++    4'b 1111, // index[ 3] SPI_HOST_CONTROL
++    4'b 1111, // index[ 4] SPI_HOST_STATUS
++    4'b 1111, // index[ 5] SPI_HOST_CONFIGOPTS_0
++    4'b 1111, // index[ 6] SPI_HOST_CONFIGOPTS_1
+     4'b 1111, // index[ 7] SPI_HOST_CSID
+     4'b 0011, // index[ 8] SPI_HOST_COMMAND
+     4'b 0001, // index[ 9] SPI_HOST_ERROR_ENABLE
+diff --git a/spi_host_reg_top.sv b/spi_host_reg_top.sv
+index 75ce27d..0d1737a 100644
+--- a/spi_host_reg_top.sv
++++ b/spi_host_reg_top.sv
+@@ -4,9 +4,9 @@
+ //
+ // Register Top module auto-generated by `reggen`
+ 
+-`include "prim_assert.sv"
++`include "caliptra_prim_assert.sv"
+ 
+-module spi_host_reg_top (
++module caliptra_ss_spi_host_reg_top (
+   input clk_i,
+   input rst_ni,
+   input  tlul_pkg::tl_h2d_t tl_i,
+@@ -17,14 +17,14 @@ module spi_host_reg_top (
+   input  tlul_pkg::tl_d2h_t tl_win_i  [2],
+ 
+   // To HW
+-  output spi_host_reg_pkg::spi_host_reg2hw_t reg2hw, // Write
+-  input  spi_host_reg_pkg::spi_host_hw2reg_t hw2reg, // Read
++  output caliptra_ss_spi_host_reg_pkg::caliptra_ss_spi_host_reg2hw_t reg2hw, // Write
++  input  caliptra_ss_spi_host_reg_pkg::caliptra_ss_spi_host_hw2reg_t hw2reg, // Read
+ 
+   // Integrity check errors
+   output logic intg_err_o
+ );
+ 
+-  import spi_host_reg_pkg::* ;
++  import caliptra_ss_spi_host_reg_pkg::* ;
+ 
+   localparam int AW = 6;
+   localparam int DW = 32;
+@@ -58,7 +58,7 @@ module spi_host_reg_top (
+   // also check for spurious write enables
+   logic reg_we_err;
+   logic [11:0] reg_we_check;
+-  prim_reg_we_check #(
++  caliptra_prim_reg_we_check #(
+     .OneHotWidth(12)
+   ) u_prim_reg_we_check (
+     .clk_i(clk_i),
+@@ -152,7 +152,7 @@ module spi_host_reg_top (
+     .tl_i (tl_reg_h2d),
+     .tl_o (tl_reg_d2h),
+ 
+-    .en_ifetch_i(prim_mubi_pkg::MuBi4False),
++    .en_ifetch_i(caliptra_prim_mubi_pkg::MuBi4False),
+     .intg_error_o(),
+ 
+     .we_o    (reg_we),
+@@ -185,8 +185,6 @@ module spi_host_reg_top (
+   logic intr_test_we;
+   logic intr_test_error_wd;
+   logic intr_test_spi_event_wd;
+-  logic alert_test_we;
+-  logic alert_test_wd;
+   logic control_we;
+   logic [7:0] control_rx_watermark_qs;
+   logic [7:0] control_rx_watermark_wd;
+@@ -212,21 +210,36 @@ module spi_host_reg_top (
+   logic status_txfull_qs;
+   logic status_active_qs;
+   logic status_ready_qs;
+-  logic configopts_we;
+-  logic [15:0] configopts_clkdiv_0_qs;
+-  logic [15:0] configopts_clkdiv_0_wd;
+-  logic [3:0] configopts_csnidle_0_qs;
+-  logic [3:0] configopts_csnidle_0_wd;
+-  logic [3:0] configopts_csntrail_0_qs;
+-  logic [3:0] configopts_csntrail_0_wd;
+-  logic [3:0] configopts_csnlead_0_qs;
+-  logic [3:0] configopts_csnlead_0_wd;
+-  logic configopts_fullcyc_0_qs;
+-  logic configopts_fullcyc_0_wd;
+-  logic configopts_cpha_0_qs;
+-  logic configopts_cpha_0_wd;
+-  logic configopts_cpol_0_qs;
+-  logic configopts_cpol_0_wd;
++  logic configopts_0_we;
++  logic [15:0] configopts_0_clkdiv_0_qs;
++  logic [15:0] configopts_0_clkdiv_0_wd;
++  logic [3:0] configopts_0_csnidle_0_qs;
++  logic [3:0] configopts_0_csnidle_0_wd;
++  logic [3:0] configopts_0_csntrail_0_qs;
++  logic [3:0] configopts_0_csntrail_0_wd;
++  logic [3:0] configopts_0_csnlead_0_qs;
++  logic [3:0] configopts_0_csnlead_0_wd;
++  logic configopts_0_fullcyc_0_qs;
++  logic configopts_0_fullcyc_0_wd;
++  logic configopts_0_cpha_0_qs;
++  logic configopts_0_cpha_0_wd;
++  logic configopts_0_cpol_0_qs;
++  logic configopts_0_cpol_0_wd;
++  logic configopts_1_we;
++  logic [15:0] configopts_1_clkdiv_1_qs;
++  logic [15:0] configopts_1_clkdiv_1_wd;
++  logic [3:0] configopts_1_csnidle_1_qs;
++  logic [3:0] configopts_1_csnidle_1_wd;
++  logic [3:0] configopts_1_csntrail_1_qs;
++  logic [3:0] configopts_1_csntrail_1_wd;
++  logic [3:0] configopts_1_csnlead_1_qs;
++  logic [3:0] configopts_1_csnlead_1_wd;
++  logic configopts_1_fullcyc_1_qs;
++  logic configopts_1_fullcyc_1_wd;
++  logic configopts_1_cpha_1_qs;
++  logic configopts_1_cpha_1_wd;
++  logic configopts_1_cpol_1_qs;
++  logic configopts_1_cpol_1_wd;
+   logic csid_we;
+   logic [31:0] csid_qs;
+   logic [31:0] csid_wd;
+@@ -276,9 +289,9 @@ module spi_host_reg_top (
+   // Register instances
+   // R[intr_state]: V(False)
+   //   F[error]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_error (
+@@ -303,9 +316,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[spi_event]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_state_spi_event (
+@@ -332,9 +345,9 @@ module spi_host_reg_top (
+ 
+   // R[intr_enable]: V(False)
+   //   F[error]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_error (
+@@ -359,9 +372,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[spi_event]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_intr_enable_spi_event (
+@@ -391,7 +404,7 @@ module spi_host_reg_top (
+   logic [1:0] intr_test_flds_we;
+   assign intr_test_qe = &intr_test_flds_we;
+   //   F[error]: 0:0
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_error (
+     .re     (1'b0),
+@@ -407,7 +420,7 @@ module spi_host_reg_top (
+   assign reg2hw.intr_test.error.qe = intr_test_qe;
+ 
+   //   F[spi_event]: 1:1
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_intr_test_spi_event (
+     .re     (1'b0),
+@@ -423,31 +436,11 @@ module spi_host_reg_top (
+   assign reg2hw.intr_test.spi_event.qe = intr_test_qe;
+ 
+ 
+-  // R[alert_test]: V(True)
+-  logic alert_test_qe;
+-  logic [0:0] alert_test_flds_we;
+-  assign alert_test_qe = &alert_test_flds_we;
+-  prim_subreg_ext #(
+-    .DW    (1)
+-  ) u_alert_test (
+-    .re     (1'b0),
+-    .we     (alert_test_we),
+-    .wd     (alert_test_wd),
+-    .d      ('0),
+-    .qre    (),
+-    .qe     (alert_test_flds_we[0]),
+-    .q      (reg2hw.alert_test.q),
+-    .ds     (),
+-    .qs     ()
+-  );
+-  assign reg2hw.alert_test.qe = alert_test_qe;
+-
+-
+   // R[control]: V(False)
+   //   F[rx_watermark]: 7:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (8),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (8'h7f),
+     .Mubi    (1'b0)
+   ) u_control_rx_watermark (
+@@ -472,9 +465,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[tx_watermark]: 15:8
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (8),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (8'h0),
+     .Mubi    (1'b0)
+   ) u_control_tx_watermark (
+@@ -499,9 +492,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[output_en]: 29:29
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_control_output_en (
+@@ -526,9 +519,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[sw_rst]: 30:30
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_control_sw_rst (
+@@ -553,9 +546,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[spien]: 31:31
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_control_spien (
+@@ -582,9 +575,9 @@ module spi_host_reg_top (
+ 
+   // R[status]: V(False)
+   //   F[txqd]: 7:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (8),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (8'h0),
+     .Mubi    (1'b0)
+   ) u_status_txqd (
+@@ -609,9 +602,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxqd]: 15:8
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (8),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (8'h0),
+     .Mubi    (1'b0)
+   ) u_status_rxqd (
+@@ -636,9 +629,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[cmdqd]: 19:16
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (4),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (4'h0),
+     .Mubi    (1'b0)
+   ) u_status_cmdqd (
+@@ -663,9 +656,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxwm]: 20:20
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_rxwm (
+@@ -690,9 +683,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[byteorder]: 22:22
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_byteorder (
+@@ -717,9 +710,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxstall]: 23:23
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_rxstall (
+@@ -744,9 +737,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxempty]: 24:24
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_rxempty (
+@@ -771,9 +764,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxfull]: 25:25
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_rxfull (
+@@ -798,9 +791,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txwm]: 26:26
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_txwm (
+@@ -825,9 +818,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txstall]: 27:27
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_txstall (
+@@ -852,9 +845,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txempty]: 28:28
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_txempty (
+@@ -879,9 +872,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txfull]: 29:29
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_txfull (
+@@ -906,9 +899,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[active]: 30:30
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_active (
+@@ -933,9 +926,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[ready]: 31:31
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRO),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRO),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_status_ready (
+@@ -961,20 +954,20 @@ module spi_host_reg_top (
+ 
+ 
+   // Subregister 0 of Multireg configopts
+-  // R[configopts]: V(False)
++  // R[configopts_0]: V(False)
+   //   F[clkdiv_0]: 15:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (16),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (16'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_clkdiv_0 (
++  ) u_configopts_0_clkdiv_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_clkdiv_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_clkdiv_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -986,22 +979,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_clkdiv_0_qs)
++    .qs     (configopts_0_clkdiv_0_qs)
+   );
+ 
+   //   F[csnidle_0]: 19:16
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (4),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (4'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_csnidle_0 (
++  ) u_configopts_0_csnidle_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_csnidle_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_csnidle_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1013,22 +1006,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_csnidle_0_qs)
++    .qs     (configopts_0_csnidle_0_qs)
+   );
+ 
+   //   F[csntrail_0]: 23:20
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (4),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (4'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_csntrail_0 (
++  ) u_configopts_0_csntrail_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_csntrail_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_csntrail_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1040,22 +1033,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_csntrail_0_qs)
++    .qs     (configopts_0_csntrail_0_qs)
+   );
+ 
+   //   F[csnlead_0]: 27:24
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (4),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (4'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_csnlead_0 (
++  ) u_configopts_0_csnlead_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_csnlead_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_csnlead_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1067,22 +1060,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_csnlead_0_qs)
++    .qs     (configopts_0_csnlead_0_qs)
+   );
+ 
+   //   F[fullcyc_0]: 29:29
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_fullcyc_0 (
++  ) u_configopts_0_fullcyc_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_fullcyc_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_fullcyc_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1094,22 +1087,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_fullcyc_0_qs)
++    .qs     (configopts_0_fullcyc_0_qs)
+   );
+ 
+   //   F[cpha_0]: 30:30
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_cpha_0 (
++  ) u_configopts_0_cpha_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_cpha_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_cpha_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1121,22 +1114,22 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_cpha_0_qs)
++    .qs     (configopts_0_cpha_0_qs)
+   );
+ 
+   //   F[cpol_0]: 31:31
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+-  ) u_configopts_cpol_0 (
++  ) u_configopts_0_cpol_0 (
+     .clk_i   (clk_i),
+     .rst_ni  (rst_ni),
+ 
+     // from register interface
+-    .we     (configopts_we),
+-    .wd     (configopts_cpol_0_wd),
++    .we     (configopts_0_we),
++    .wd     (configopts_0_cpol_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -1148,14 +1141,206 @@ module spi_host_reg_top (
+     .ds     (),
+ 
+     // to register interface (read)
+-    .qs     (configopts_cpol_0_qs)
++    .qs     (configopts_0_cpol_0_qs)
++  );
++
++
++  // Subregister 1 of Multireg configopts
++  // R[configopts_1]: V(False)
++  //   F[clkdiv_1]: 15:0
++  caliptra_prim_subreg #(
++    .DW      (16),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (16'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_clkdiv_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_clkdiv_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].clkdiv.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_clkdiv_1_qs)
++  );
++
++  //   F[csnidle_1]: 19:16
++  caliptra_prim_subreg #(
++    .DW      (4),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (4'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_csnidle_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_csnidle_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].csnidle.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_csnidle_1_qs)
++  );
++
++  //   F[csntrail_1]: 23:20
++  caliptra_prim_subreg #(
++    .DW      (4),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (4'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_csntrail_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_csntrail_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].csntrail.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_csntrail_1_qs)
++  );
++
++  //   F[csnlead_1]: 27:24
++  caliptra_prim_subreg #(
++    .DW      (4),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (4'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_csnlead_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_csnlead_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].csnlead.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_csnlead_1_qs)
++  );
++
++  //   F[fullcyc_1]: 29:29
++  caliptra_prim_subreg #(
++    .DW      (1),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (1'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_fullcyc_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_fullcyc_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].fullcyc.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_fullcyc_1_qs)
++  );
++
++  //   F[cpha_1]: 30:30
++  caliptra_prim_subreg #(
++    .DW      (1),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (1'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_cpha_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_cpha_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].cpha.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_cpha_1_qs)
++  );
++
++  //   F[cpol_1]: 31:31
++  caliptra_prim_subreg #(
++    .DW      (1),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
++    .RESVAL  (1'h0),
++    .Mubi    (1'b0)
++  ) u_configopts_1_cpol_1 (
++    .clk_i   (clk_i),
++    .rst_ni  (rst_ni),
++
++    // from register interface
++    .we     (configopts_1_we),
++    .wd     (configopts_1_cpol_1_wd),
++
++    // from internal hardware
++    .de     (1'b0),
++    .d      ('0),
++
++    // to internal hardware
++    .qe     (),
++    .q      (reg2hw.configopts[1].cpol.q),
++    .ds     (),
++
++    // to register interface (read)
++    .qs     (configopts_1_cpol_1_qs)
+   );
+ 
+ 
+   // R[csid]: V(False)
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (32),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (32'h0),
+     .Mubi    (1'b0)
+   ) u_csid (
+@@ -1185,7 +1370,7 @@ module spi_host_reg_top (
+   logic [3:0] command_flds_we;
+   assign command_qe = &command_flds_we;
+   //   F[len]: 8:0
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (9)
+   ) u_command_len (
+     .re     (1'b0),
+@@ -1201,7 +1386,7 @@ module spi_host_reg_top (
+   assign reg2hw.command.len.qe = command_qe;
+ 
+   //   F[csaat]: 9:9
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (1)
+   ) u_command_csaat (
+     .re     (1'b0),
+@@ -1217,7 +1402,7 @@ module spi_host_reg_top (
+   assign reg2hw.command.csaat.qe = command_qe;
+ 
+   //   F[speed]: 11:10
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (2)
+   ) u_command_speed (
+     .re     (1'b0),
+@@ -1233,7 +1418,7 @@ module spi_host_reg_top (
+   assign reg2hw.command.speed.qe = command_qe;
+ 
+   //   F[direction]: 13:12
+-  prim_subreg_ext #(
++  caliptra_prim_subreg_ext #(
+     .DW    (2)
+   ) u_command_direction (
+     .re     (1'b0),
+@@ -1251,9 +1436,9 @@ module spi_host_reg_top (
+ 
+   // R[error_enable]: V(False)
+   //   F[cmdbusy]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_error_enable_cmdbusy (
+@@ -1278,9 +1463,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[overflow]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_error_enable_overflow (
+@@ -1305,9 +1490,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[underflow]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_error_enable_underflow (
+@@ -1332,9 +1517,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[cmdinval]: 3:3
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_error_enable_cmdinval (
+@@ -1359,9 +1544,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[csidinval]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h1),
+     .Mubi    (1'b0)
+   ) u_error_enable_csidinval (
+@@ -1388,9 +1573,9 @@ module spi_host_reg_top (
+ 
+   // R[error_status]: V(False)
+   //   F[cmdbusy]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_cmdbusy (
+@@ -1415,9 +1600,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[overflow]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_overflow (
+@@ -1442,9 +1627,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[underflow]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_underflow (
+@@ -1469,9 +1654,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[cmdinval]: 3:3
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_cmdinval (
+@@ -1496,9 +1681,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[csidinval]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_csidinval (
+@@ -1523,9 +1708,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[accessinval]: 5:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessW1C),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessW1C),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_error_status_accessinval (
+@@ -1552,9 +1737,9 @@ module spi_host_reg_top (
+ 
+   // R[event_enable]: V(False)
+   //   F[rxfull]: 0:0
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_rxfull (
+@@ -1579,9 +1764,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txempty]: 1:1
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_txempty (
+@@ -1606,9 +1791,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[rxwm]: 2:2
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_rxwm (
+@@ -1633,9 +1818,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[txwm]: 3:3
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_txwm (
+@@ -1660,9 +1845,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[ready]: 4:4
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_ready (
+@@ -1687,9 +1872,9 @@ module spi_host_reg_top (
+   );
+ 
+   //   F[idle]: 5:5
+-  prim_subreg #(
++  caliptra_prim_subreg #(
+     .DW      (1),
+-    .SwAccess(prim_subreg_pkg::SwAccessRW),
++    .SwAccess(caliptra_prim_subreg_pkg::SwAccessRW),
+     .RESVAL  (1'h0),
+     .Mubi    (1'b0)
+   ) u_event_enable_idle (
+@@ -1717,14 +1902,13 @@ module spi_host_reg_top (
+ 
+   logic [11:0] addr_hit;
+   always_comb begin
+-    addr_hit = '0;
+     addr_hit[ 0] = (reg_addr == SPI_HOST_INTR_STATE_OFFSET);
+     addr_hit[ 1] = (reg_addr == SPI_HOST_INTR_ENABLE_OFFSET);
+     addr_hit[ 2] = (reg_addr == SPI_HOST_INTR_TEST_OFFSET);
+-    addr_hit[ 3] = (reg_addr == SPI_HOST_ALERT_TEST_OFFSET);
+-    addr_hit[ 4] = (reg_addr == SPI_HOST_CONTROL_OFFSET);
+-    addr_hit[ 5] = (reg_addr == SPI_HOST_STATUS_OFFSET);
+-    addr_hit[ 6] = (reg_addr == SPI_HOST_CONFIGOPTS_OFFSET);
++    addr_hit[ 3] = (reg_addr == SPI_HOST_CONTROL_OFFSET);
++    addr_hit[ 4] = (reg_addr == SPI_HOST_STATUS_OFFSET);
++    addr_hit[ 5] = (reg_addr == SPI_HOST_CONFIGOPTS_0_OFFSET);
++    addr_hit[ 6] = (reg_addr == SPI_HOST_CONFIGOPTS_1_OFFSET);
+     addr_hit[ 7] = (reg_addr == SPI_HOST_CSID_OFFSET);
+     addr_hit[ 8] = (reg_addr == SPI_HOST_COMMAND_OFFSET);
+     addr_hit[ 9] = (reg_addr == SPI_HOST_ERROR_ENABLE_OFFSET);
+@@ -1765,10 +1949,7 @@ module spi_host_reg_top (
+   assign intr_test_error_wd = reg_wdata[0];
+ 
+   assign intr_test_spi_event_wd = reg_wdata[1];
+-  assign alert_test_we = addr_hit[3] & reg_we & !reg_error;
+-
+-  assign alert_test_wd = reg_wdata[0];
+-  assign control_we = addr_hit[4] & reg_we & !reg_error;
++  assign control_we = addr_hit[3] & reg_we & !reg_error;
+ 
+   assign control_rx_watermark_wd = reg_wdata[7:0];
+ 
+@@ -1779,21 +1960,36 @@ module spi_host_reg_top (
+   assign control_sw_rst_wd = reg_wdata[30];
+ 
+   assign control_spien_wd = reg_wdata[31];
+-  assign configopts_we = addr_hit[6] & reg_we & !reg_error;
++  assign configopts_0_we = addr_hit[5] & reg_we & !reg_error;
++
++  assign configopts_0_clkdiv_0_wd = reg_wdata[15:0];
++
++  assign configopts_0_csnidle_0_wd = reg_wdata[19:16];
++
++  assign configopts_0_csntrail_0_wd = reg_wdata[23:20];
++
++  assign configopts_0_csnlead_0_wd = reg_wdata[27:24];
++
++  assign configopts_0_fullcyc_0_wd = reg_wdata[29];
++
++  assign configopts_0_cpha_0_wd = reg_wdata[30];
+ 
+-  assign configopts_clkdiv_0_wd = reg_wdata[15:0];
++  assign configopts_0_cpol_0_wd = reg_wdata[31];
++  assign configopts_1_we = addr_hit[6] & reg_we & !reg_error;
+ 
+-  assign configopts_csnidle_0_wd = reg_wdata[19:16];
++  assign configopts_1_clkdiv_1_wd = reg_wdata[15:0];
+ 
+-  assign configopts_csntrail_0_wd = reg_wdata[23:20];
++  assign configopts_1_csnidle_1_wd = reg_wdata[19:16];
+ 
+-  assign configopts_csnlead_0_wd = reg_wdata[27:24];
++  assign configopts_1_csntrail_1_wd = reg_wdata[23:20];
+ 
+-  assign configopts_fullcyc_0_wd = reg_wdata[29];
++  assign configopts_1_csnlead_1_wd = reg_wdata[27:24];
+ 
+-  assign configopts_cpha_0_wd = reg_wdata[30];
++  assign configopts_1_fullcyc_1_wd = reg_wdata[29];
+ 
+-  assign configopts_cpol_0_wd = reg_wdata[31];
++  assign configopts_1_cpha_1_wd = reg_wdata[30];
++
++  assign configopts_1_cpol_1_wd = reg_wdata[31];
+   assign csid_we = addr_hit[7] & reg_we & !reg_error;
+ 
+   assign csid_wd = reg_wdata[31:0];
+@@ -1846,14 +2042,13 @@ module spi_host_reg_top (
+ 
+   // Assign write-enables to checker logic vector.
+   always_comb begin
+-    reg_we_check = '0;
+     reg_we_check[0] = intr_state_we;
+     reg_we_check[1] = intr_enable_we;
+     reg_we_check[2] = intr_test_we;
+-    reg_we_check[3] = alert_test_we;
+-    reg_we_check[4] = control_we;
+-    reg_we_check[5] = 1'b0;
+-    reg_we_check[6] = configopts_we;
++    reg_we_check[3] = control_we;
++    reg_we_check[4] = 1'b0;
++    reg_we_check[5] = configopts_0_we;
++    reg_we_check[6] = configopts_1_we;
+     reg_we_check[7] = csid_we;
+     reg_we_check[8] = command_we;
+     reg_we_check[9] = error_enable_we;
+@@ -1881,10 +2076,6 @@ module spi_host_reg_top (
+       end
+ 
+       addr_hit[3]: begin
+-        reg_rdata_next[0] = '0;
+-      end
+-
+-      addr_hit[4]: begin
+         reg_rdata_next[7:0] = control_rx_watermark_qs;
+         reg_rdata_next[15:8] = control_tx_watermark_qs;
+         reg_rdata_next[29] = control_output_en_qs;
+@@ -1892,7 +2083,7 @@ module spi_host_reg_top (
+         reg_rdata_next[31] = control_spien_qs;
+       end
+ 
+-      addr_hit[5]: begin
++      addr_hit[4]: begin
+         reg_rdata_next[7:0] = status_txqd_qs;
+         reg_rdata_next[15:8] = status_rxqd_qs;
+         reg_rdata_next[19:16] = status_cmdqd_qs;
+@@ -1909,14 +2100,24 @@ module spi_host_reg_top (
+         reg_rdata_next[31] = status_ready_qs;
+       end
+ 
++      addr_hit[5]: begin
++        reg_rdata_next[15:0] = configopts_0_clkdiv_0_qs;
++        reg_rdata_next[19:16] = configopts_0_csnidle_0_qs;
++        reg_rdata_next[23:20] = configopts_0_csntrail_0_qs;
++        reg_rdata_next[27:24] = configopts_0_csnlead_0_qs;
++        reg_rdata_next[29] = configopts_0_fullcyc_0_qs;
++        reg_rdata_next[30] = configopts_0_cpha_0_qs;
++        reg_rdata_next[31] = configopts_0_cpol_0_qs;
++      end
++
+       addr_hit[6]: begin
+-        reg_rdata_next[15:0] = configopts_clkdiv_0_qs;
+-        reg_rdata_next[19:16] = configopts_csnidle_0_qs;
+-        reg_rdata_next[23:20] = configopts_csntrail_0_qs;
+-        reg_rdata_next[27:24] = configopts_csnlead_0_qs;
+-        reg_rdata_next[29] = configopts_fullcyc_0_qs;
+-        reg_rdata_next[30] = configopts_cpha_0_qs;
+-        reg_rdata_next[31] = configopts_cpol_0_qs;
++        reg_rdata_next[15:0] = configopts_1_clkdiv_1_qs;
++        reg_rdata_next[19:16] = configopts_1_csnidle_1_qs;
++        reg_rdata_next[23:20] = configopts_1_csntrail_1_qs;
++        reg_rdata_next[27:24] = configopts_1_csnlead_1_qs;
++        reg_rdata_next[29] = configopts_1_fullcyc_1_qs;
++        reg_rdata_next[30] = configopts_1_cpha_1_qs;
++        reg_rdata_next[31] = configopts_1_cpol_1_qs;
+       end
+ 
+       addr_hit[7]: begin
+@@ -1979,12 +2180,12 @@ module spi_host_reg_top (
+   assign unused_be = ^reg_be;
+ 
+   // Assertions for Register Interface
+-  `ASSERT_PULSE(wePulse, reg_we, clk_i, !rst_ni)
+-  `ASSERT_PULSE(rePulse, reg_re, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT_PULSE(wePulse, reg_we, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT_PULSE(rePulse, reg_re, clk_i, !rst_ni)
+ 
+-  `ASSERT(reAfterRv, $rose(reg_re || reg_we) |=> tl_o_pre.d_valid, clk_i, !rst_ni)
++  `CALIPTRA_ASSERT(reAfterRv, $rose(reg_re || reg_we) |=> tl_o_pre.d_valid, clk_i, !rst_ni)
+ 
+-  `ASSERT(en2addrHit, (reg_we || reg_re) |-> $onehot0(addr_hit), clk_i, !rst_ni)
++  `CALIPTRA_ASSERT(en2addrHit, (reg_we || reg_re) |-> $onehot0(addr_hit), clk_i, !rst_ni)
+ 
+   // this is formulated as an assumption such that the FPV testbenches do disprove this
+   // property by mistake
+diff --git a/spi_host_shift_register.sv b/spi_host_shift_register.sv
+index e013b7a..3253d62 100644
+--- a/spi_host_shift_register.sv
++++ b/spi_host_shift_register.sv
+@@ -5,7 +5,9 @@
+ // Shift Register for Serial Peripheral Interface (SPI) Host IP.
+ //
+ 
+-module spi_host_shift_register (
++`include "caliptra_prim_assert.sv"
++
++module caliptra_ss_spi_host_shift_register (
+   input              clk_i,
+   input              rst_ni,
+   input              wr_en_i,
+@@ -35,7 +37,7 @@ module spi_host_shift_register (
+ 
+   input              sw_rst_i
+ );
+-  import spi_host_cmd_pkg::*;
++  import caliptra_ss_spi_host_cmd_pkg::*;
+ 
+   logic        [7:0] sr_q;
+   logic        [7:0] sr_d;
+@@ -51,7 +53,7 @@ module spi_host_shift_register (
+   logic              rx_buf_valid_q;
+   logic              rx_buf_valid_d;
+ 
+-  `ASSERT(SpeedValid, speed_i != RsvdSpd, clk_i, rst_ni)
++  `CALIPTRA_ASSERT(SpeedValid, speed_i != RsvdSpd, clk_i, rst_ni)
+ 
+   assign next_bits  = full_cyc_i ? sd_i : sd_i_q;
+   assign sr_shifted = (speed_i == Standard) ? {sr_q[6:0], next_bits[1]} :
+@@ -110,4 +112,4 @@ module spi_host_shift_register (
+     end
+   end
+ 
+-endmodule : spi_host_shift_register
++endmodule : caliptra_ss_spi_host_shift_register
+diff --git a/spi_host_window.sv b/spi_host_window.sv
+index 999c119..79ef71d 100644
+--- a/spi_host_window.sv
++++ b/spi_host_window.sv
+@@ -5,9 +5,11 @@
+ // Module to manage TX & RX FIFO windows for Serial Peripheral Interface (SPI) host IP.
+ //
+ 
+-module spi_host_window (
+-  input  clk_i,
+-  input  rst_ni,
++`include "caliptra_prim_assert.sv"
++
++module caliptra_ss_spi_host_window (
++  input                     clk_i,
++  input                     rst_ni,
+   input  tlul_pkg::tl_h2d_t rx_win_i,
+   output tlul_pkg::tl_d2h_t rx_win_o,
+   input  tlul_pkg::tl_h2d_t tx_win_i,
+@@ -19,7 +21,7 @@ module spi_host_window (
+   output logic              rx_ready_o
+ );
+ 
+-  localparam int AW = spi_host_reg_pkg::BlockAw;
++  localparam int AW = caliptra_ss_spi_host_reg_pkg::BlockAw;
+   localparam int DW = 32;
+   localparam int ByteMaskW = DW / 8;
+ 
+@@ -30,14 +32,14 @@ module spi_host_window (
+   assign rx_access_error = rx_we;
+ 
+   tlul_adapter_reg #(
+-    .RegAw (AW),
+-    .RegDw (DW)
++    .RegAw             ( AW ),
++    .RegDw             ( DW )
+   ) u_adapter_rx (
+     .clk_i,
+     .rst_ni,
+     .tl_i        (rx_win_i),
+     .tl_o        (rx_win_o),
+-    .en_ifetch_i (prim_mubi_pkg::MuBi4False),
++    .en_ifetch_i (caliptra_prim_mubi_pkg::MuBi4False),
+     .intg_error_o(),
+     .we_o        (rx_we),
+     .re_o        (rx_ready_o),
+@@ -55,7 +57,7 @@ module spi_host_window (
+      assign tx_be_o[i] = |bit_mask[i*8 +: 8];
+ 
+     // all the bits of particular byte must be the same
+-    `ASSERT(BitMaskCheck_A, (|bit_mask[i*8 +: 8] == 1'b0) ||
++    `CALIPTRA_ASSERT(BitMaskCheck_A, (|bit_mask[i*8 +: 8] == 1'b0) ||
+                             (&bit_mask[i*8 +: 8] == 1'b1))
+   end
+ 
+@@ -72,7 +74,7 @@ module spi_host_window (
+     .rst_ni,
+     .tl_i(tx_win_i),
+     .tl_o(tx_win_o),
+-    .en_ifetch_i(prim_mubi_pkg::MuBi4False),
++    .en_ifetch_i(caliptra_prim_mubi_pkg::MuBi4False),
+     .req_o(tx_valid_o),
+     .req_type_o(),
+     .gnt_i(1'b1),
+@@ -85,10 +87,10 @@ module spi_host_window (
+     .rvalid_i('0),
+     .rerror_i('0),
+     .compound_txn_in_progress_o(),
+-    .readback_en_i(prim_mubi_pkg::MuBi4False),
++    .readback_en_i(caliptra_prim_mubi_pkg::MuBi4False),
+     .readback_error_o (),
+     .wr_collision_i(1'b0),
+     .write_pending_i(1'b0)
+   );
+ 
+-endmodule : spi_host_window
++endmodule : caliptra_ss_spi_host_window
