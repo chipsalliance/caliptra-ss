@@ -750,6 +750,16 @@ addrmap mci_reg {
         field {desc = "NMI Vector"; hw = rw; we; sw = rw; swwe = axi_mcu_or_mci_soc_config_req__ss_config_unlock;} vec[32] = 32'h0; 
     } MCU_RESET_VECTOR;
 
+    reg {
+        name = "MCU DCLS Disable";
+        desc = "Multibit control for MCU Dual-Core Lockstep (DCLS) corruption detection.
+                Write El2MuBiTrue (4'h6) to disable shadow-core comparison; write El2MuBiFalse (4'h9) to enable it.
+                Invalid MUBI encodings cause the lockstep module to assert corruption detection regardless of this field.
+                Default 4'h6 (disabled) — enable explicitly via software after boot.
+                [br]TAP Access [in debug mode]: RW";
+        field {sw=rw; hw=r; swwe = axi_mcu_or_mci_soc_config_req__ss_config_unlock;} mubi[4] = 4'h6;
+    } MCU_DCLS_DISABLE;
+
     // ----------------------------------------
     // ------------ AxUSER CONFIG -------------
     reg {

@@ -2194,6 +2194,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RESET_VECTOR
 
+    // Reg - mci_reg::MCU_DCLS_DISABLE
+    class mci_reg__MCU_DCLS_DISABLE extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__MCU_DCLS_DISABLE_bit_cg mubi_bit_cg[4];
+        mci_reg__MCU_DCLS_DISABLE_fld_cg fld_cg;
+        rand uvm_reg_field mubi;
+
+        function new(string name = "mci_reg__MCU_DCLS_DISABLE");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.mubi = new("mubi");
+            this.mubi.configure(this, 4, 0, "RW", 0, 'h6, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(mubi_bit_cg[bt]) mubi_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__MCU_DCLS_DISABLE
+
     // Reg - mci_reg::MBOX0_VALID_AXI_USER
     class mci_reg__MBOX0_VALID_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -10658,6 +10688,7 @@ package mci_reg_uvm;
         rand mci_reg__FW_SRAM_EXEC_REGION_SIZE FW_SRAM_EXEC_REGION_SIZE;
         rand mci_reg__MCU_NMI_VECTOR MCU_NMI_VECTOR;
         rand mci_reg__MCU_RESET_VECTOR MCU_RESET_VECTOR;
+        rand mci_reg__MCU_DCLS_DISABLE MCU_DCLS_DISABLE;
         rand mci_reg__MBOX0_VALID_AXI_USER MBOX0_VALID_AXI_USER[5];
         rand mci_reg__MBOX0_AXI_USER_LOCK MBOX0_AXI_USER_LOCK[5];
         rand mci_reg__MBOX1_VALID_AXI_USER MBOX1_VALID_AXI_USER[5];
@@ -10943,6 +10974,11 @@ package mci_reg_uvm;
 
             this.MCU_RESET_VECTOR.build();
             this.default_map.add_reg(this.MCU_RESET_VECTOR, 'h114);
+            this.MCU_DCLS_DISABLE = new("MCU_DCLS_DISABLE");
+            this.MCU_DCLS_DISABLE.configure(this);
+
+            this.MCU_DCLS_DISABLE.build();
+            this.default_map.add_reg(this.MCU_DCLS_DISABLE, 'h118);
             foreach(this.MBOX0_VALID_AXI_USER[i0]) begin
                 this.MBOX0_VALID_AXI_USER[i0] = new($sformatf("MBOX0_VALID_AXI_USER[%0d]", i0));
                 this.MBOX0_VALID_AXI_USER[i0].configure(this);

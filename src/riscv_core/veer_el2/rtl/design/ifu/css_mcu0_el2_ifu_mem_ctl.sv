@@ -130,7 +130,7 @@ import css_mcu0_el2_pkg::*;
 
 
 //   I$ & ITAG Ports
-   output logic [31:1]               ic_rw_addr,         // Read/Write addresss to the Icache.
+   output logic [31:1]               ic_rw_addr,         // Read/Write address to the Icache.
    output logic [pt.ICACHE_NUM_WAYS-1:0]                ic_wr_en,           // Icache write enable, when filling the Icache.
    output logic                      ic_rd_en,           // Icache read  enable.
 
@@ -145,7 +145,7 @@ import css_mcu0_el2_pkg::*;
    input  logic [pt.ICACHE_BANKS_WAY-1:0] ic_eccerr,    //
    input  logic [pt.ICACHE_BANKS_WAY-1:0] ic_parerr,
 
-   output logic [pt.ICACHE_INDEX_HI:3]               ic_debug_addr,      // Read/Write addresss to the Icache.
+   output logic [pt.ICACHE_INDEX_HI:3]               ic_debug_addr,      // Read/Write address to the Icache.
    output logic                      ic_debug_rd_en,     // Icache debug rd
    output logic                      ic_debug_wr_en,     // Icache debug wr
    output logic                      ic_debug_tag_array, // Debug tag array
@@ -929,6 +929,7 @@ assign ic_miss_buff_half[63:0]    = {ic_miss_buff_data[{other_tag,1'b1}],ic_miss
                                       (fetch_req_icache_f & ~reset_all_tags & (~miss_pending | (miss_state==HIT_U_MISS)) & ~sel_mb_addr_ff);
 
   logic [pt.ICACHE_NUM_WAYS-1:0]                    perr_err_inv_way;
+  logic [pt.ICACHE_INDEX_HI:pt.ICACHE_TAG_INDEX_LO] perr_ic_index_ff;
   logic                                             perr_sel_invalidate;
   logic                                             perr_sb_write_status;
 
@@ -1349,14 +1350,13 @@ end
          assign iccm_dma_rdata[63:0] = '0 ;
          assign iccm_single_ecc_error = '0 ;
          assign iccm_dma_rtag         = '0 ;
-         assign iccm_rw_addr          = '0 ;
-         assign iccm_wr_data          = '0 ;
-         assign iccm_wr_size          = '0 ;
-         assign iccm_wren             = '0 ;
-         assign iccm_rden             = '0 ;
+         assign iccm_dma_rd_ecc_single_err = '0 ;
+         assign iccm_dma_rd_ecc_double_err = '0 ;
 
-         assign iccm_dma_rd_ecc_single_err             = '0;
-         assign iccm_dma_rd_ecc_double_err             = '0;
+
+
+
+
          assign iccm_rd_ecc_single_err                 = 1'b0 ;
          assign iccm_rd_ecc_double_err                 = '0 ;
          assign iccm_rd_ecc_single_err_ff              = 1'b0 ;

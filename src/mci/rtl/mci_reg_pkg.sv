@@ -1282,6 +1282,14 @@ package mci_reg_pkg;
     } mci_reg__MCU_RESET_VECTOR__out_t;
 
     typedef struct packed{
+        logic [3:0] value;
+    } mci_reg__MCU_DCLS_DISABLE__mubi__out_t;
+
+    typedef struct packed{
+        mci_reg__MCU_DCLS_DISABLE__mubi__out_t mubi;
+    } mci_reg__MCU_DCLS_DISABLE__out_t;
+
+    typedef struct packed{
         logic [31:0] value;
     } mci_reg__MBOX0_VALID_AXI_USER__AXI_USER__out_t;
 
@@ -1484,6 +1492,7 @@ package mci_reg_pkg;
         mci_reg__FW_SRAM_EXEC_REGION_SIZE__out_t FW_SRAM_EXEC_REGION_SIZE;
         mci_reg__MCU_NMI_VECTOR__out_t MCU_NMI_VECTOR;
         mci_reg__MCU_RESET_VECTOR__out_t MCU_RESET_VECTOR;
+        mci_reg__MCU_DCLS_DISABLE__out_t MCU_DCLS_DISABLE;
         mci_reg__MBOX0_VALID_AXI_USER__out_t [5-1:0]MBOX0_VALID_AXI_USER;
         mci_reg__MBOX0_AXI_USER_LOCK__out_t [5-1:0]MBOX0_AXI_USER_LOCK;
         mci_reg__MBOX1_VALID_AXI_USER__out_t [5-1:0]MBOX1_VALID_AXI_USER;
