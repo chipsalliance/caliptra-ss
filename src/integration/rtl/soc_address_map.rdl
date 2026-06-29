@@ -24,6 +24,7 @@
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
+`include "../../../src/spi_host/rtl/spi_host.rdl"
 
 addrmap soc {
 
@@ -40,4 +41,6 @@ addrmap soc {
     otp_ctrl otp_ctrl @ 0x7000_0000;
 
     lc_ctrl lc_ctrl @ 0x7000_0400;
+
+    spi_host spi_host @ 0x7000_0800;
 };
