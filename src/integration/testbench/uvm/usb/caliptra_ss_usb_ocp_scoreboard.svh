@@ -31,11 +31,11 @@
 //     bound via `uvm_info_context to this component (non-VIP path) so it
 //     survives +svt_debug_opts rerouting per
 //     usb_vip_ocp_recovery_class_xfers.md sec 6.
-//   * For cmd 0x22 (PROT_CAP) IN responses: first 8 payload bytes must
+//   * For PROT_CAP IN responses: first 8 payload bytes must
 //     equal ASCII "OCP RECV" (sec 9.2 Tbl 9-3 "Magic String").
-//   * For cmd 0x2E (INDIRECT_FIFO_DATA) OUT requests: the data-stage
+//   * For INDIRECT_FIFO_DATA OUT requests: the data-stage
 //     payload is captured into expected_fifo_data. On the next
-//     INDIRECT_FIFO_STATUS (cmd 0x2D) IN read, WRITE_INDEX (bytes 4..7,
+//     INDIRECT_FIFO_STATUS IN read, WRITE_INDEX (bytes 4..7,
 //     in 4-byte units) is compared against the total dwords previously
 //     pushed -- mismatch raises UVM_ERROR with the offending dword index.
 //   * Per-command, per-direction observation counters are maintained

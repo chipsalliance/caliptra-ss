@@ -135,6 +135,8 @@ targets:
       # third_party/usb2/systemrdl/usb_ocp_recovery_reg.rdl).
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg_pkg.sv
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg.sv
+      # Shared OCP command-code / length / offset constants (single source of truth).
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_ctrl_decode.sv
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_rb_adapter.sv
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_cms_fifo.sv
