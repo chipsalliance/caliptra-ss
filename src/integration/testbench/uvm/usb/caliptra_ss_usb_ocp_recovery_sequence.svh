@@ -746,6 +746,42 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL"));
 
+        // 5a-rt. INDIRECT_FIFO_CTRL IN read-back (R5 command-routing test).
+        //     INDIRECT_FIFO_CTRL reads are serviced by the A3 regblock command
+        //     window (cms_fifo captures the write but DRIVES the regblock
+        //     CTRL_0/_1 fields via hw=w; reads route to the regblock, not the
+        //     FIFO synthesis path). This verifies the read-back mirrors the
+        //     just-written CMS=0 and IMAGE_SIZE=12 (DWORD units), confirming
+        //     both the read routing and the hw=w drive. Sec 9.2:
+        //       byte 0     : CMS        -> 0   (CTRL_0 @ 0x184)
+        //       bytes 4..7 : IMAGE_SIZE -> 12  (CTRL_1 @ 0x188, LE)
+        resp_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(resp_q),
+                       .label("OCPREC_INDIRECT_FIFO_CTRL_RDBK"));
+        if (resp_q.size() >= 8) begin
+            int unsigned img_sz_rb;
+            img_sz_rb = {resp_q[7], resp_q[6], resp_q[5], resp_q[4]};
+            `uvm_info("OCPREC",
+                $sformatf("INDIRECT_FIFO_CTRL read-back: CMS=0x%02h IMAGE_SIZE=%0d (4B units; expected CMS=0, IMAGE_SIZE=12)",
+                          resp_q[0], img_sz_rb), UVM_NONE)
+            if (resp_q[0] != 8'h00)
+                `uvm_error("OCPREC",
+                    $sformatf("INDIRECT_FIFO_CTRL.CMS read-back=0x%02h, expected 0x00 (R5 regblock read routing).",
+                              resp_q[0]))
+            if (img_sz_rb != 32'd12)
+                `uvm_error("OCPREC",
+                    $sformatf("INDIRECT_FIFO_CTRL.IMAGE_SIZE read-back=%0d, expected 12 DWORDs (R5 regblock read routing / cms_fifo hw=w drive).",
+                              img_sz_rb))
+        end else begin
+            `uvm_error("OCPREC",
+                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need >= 8 (R5 regblock read routing).",
+                          resp_q.size()))
+        end
+
         // 5b. INDIRECT_FIFO_DATA OUT: push 48 bytes (12 dwords)
         //     of synthetic image with a recognizable pattern so the
         //     scoreboard can match (OCP Recovery v1.1 sec 9.2: cmd 0x2F
