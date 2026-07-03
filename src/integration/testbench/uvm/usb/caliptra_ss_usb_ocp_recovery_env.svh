@@ -67,7 +67,7 @@ function void caliptra_ss_usb_ocp_recovery_env::build_phase(uvm_phase phase);
         new("host_transfer_observed_port", this);
     scoreboard =
         caliptra_ss_usb_ocp_scoreboard::type_id::create("scoreboard", this);
-    // Review M4: republish the shared_cfg at the global wildcard scope so
+    // Republish the shared_cfg at the global wildcard scope so
     // the OCP recovery sequence's lookup at uvm_config_db::get(null, "",
     // "cfg", scfg) hits. The base env::build_phase only sets it under
     // "this" scope, which is invisible to sequences that have no
@@ -102,13 +102,13 @@ task caliptra_ss_usb_ocp_recovery_env::run_phase(uvm_phase phase);
         return;
     end
 
-    // Review M5: fork the forwarder so it runs concurrently with whatever
+    // Fork the forwarder so it runs concurrently with whatever
     // super.run_phase() does. uvm_env::run_phase is empty today but any
     // future blocking work in super (delay, wait for reset deassert)
     // would otherwise delay the start of the forwarder and silently drop
     // the first N transfers from the scoreboard.
     //
-    // Review M6 (documentation): NOTIFY_USB_TRANSFER_ENDED is a shared
+    // NOTIFY_USB_TRANSFER_ENDED is a shared
     // uvm_event with multiple waiters (this forwarder AND the sequence's
     // own wait_trigger() in caliptra_ss_usb_ocp_recovery_sequence.svh).
     // Back-to-back triggers issued before all waiters have re-armed can

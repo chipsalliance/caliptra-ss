@@ -68,14 +68,14 @@ typedef enum bit [7:0] {
 
 // OCP Recovery v1.1 sec 9.2 PROT_CAP Magic String: ASCII "OCP RECV".
 // Single source of truth for both the stimulus sequence and the scoreboard
-// PROT_CAP check (eliminates the duplicate literal flagged by review m2).
+// PROT_CAP check (avoids a duplicated literal between sequence and scoreboard).
 localparam bit [7:0] OCP_PROT_CAP_MAGIC [8] = '{
     8'h4F, 8'h43, 8'h50, 8'h20,  // 'O' 'C' 'P' ' '
     8'h52, 8'h45, 8'h43, 8'h56}; // 'R' 'E' 'C' 'V'
 
 // OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
 // FIFO-only push-image recovery: bit5 (direct CMS-memory window) cleared, bit11 (flashless boot)
-// set (R4). 0x169B base | 0x0800 (bit11) = 0x1E9B. Matches the RDL PROT_CAP_2.AGENT_CAPS reset.
+// set. 0x169B base | 0x0800 (bit11) = 0x1E9B. Matches the RDL PROT_CAP_2.AGENT_CAPS reset.
 localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h1E9B;
 
 // OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 8-9 (Recovery protocol version):
@@ -109,7 +109,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
     // Selected device address (1 after enumeration).
     protected int dev_addr_v = 1;
 
-    // Review M6: count of OCP *class* transfers we issue. Published via
+    // Count of OCP *class* transfers we issue. Published via
     // uvm_config_db at end of body() so the scoreboard's report_phase can
     // cross-check against the count observed on the analysis port.
     // Per-sample uvm_event drops on back-to-back triggers are otherwise
@@ -227,7 +227,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
 
         finish_item(req, -1);
 
-        // Track issued transfers for the scoreboard cross-check (review M6).
+        // Track issued transfers for the scoreboard cross-check.
         transfers_issued++;
 
         // Block until the host stack has completed the bus transaction so
@@ -240,7 +240,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             // VIP returns the device-side bytes in req.payload.data[].
             // Copy up to wlength bytes (some commands return short; we
             // copy whatever the VIP populated, capped at wlength).
-            // Review M2: payload may legally be null on a stalled IN.
+            // Payload may legally be null on a stalled IN.
             if (req.payload == null) begin
                 `uvm_info("OCPREC",
                     $sformatf("IN xfer %s (cmd=0x%02h) returned null payload; resp_bytes left empty.",
@@ -338,6 +338,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         bit [7:0] indir_fifo_ctrl_payload[$];
         bit [7:0] image_chunk[$];
         bit [7:0] fifo_status[$];
+        bit [7:0] prot_cap_wr_payload[$];
         int      poll_iter;
         bit      recovery_pending_seen;
         int      n_dwords;
@@ -364,7 +365,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             UVM_NONE)
 
         // 3. Parse the OCP_RECOVERY_FUNCTIONAL descriptor (sec 8.5.3) from
-        //    GET_DESCRIPTOR(CONFIGURATION). Review M1: USB 2.0 sec 9.4.3
+        //    GET_DESCRIPTOR(CONFIGURATION). USB 2.0 sec 9.4.3
         //    requires a two-stage read because wTotalLength is not known
         //    a-priori. A single 255-byte fetch with
         //    payload_intended_byte_count==255 tells the VIP to wait for
@@ -455,7 +456,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                         "Stage-2 GET_DESCRIPTOR(CONFIGURATION) returned null payload.")
                 end else begin
                     // Bound the push loop by the actual wTotalLength
-                    // (review M1) so the walker sees only valid bytes.
+                    // so the walker sees only valid bytes.
                     copy_len = w_total_length;
                     for (int j = 0; j < copy_len; j++)
                         cfg_blob.push_back(creq2.payload.data[j]);
@@ -477,7 +478,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 $sformatf("OCP_RECOVERY_FUNCTIONAL parsed: bcdOCPRecVersion=0x%04h wMaxRdTransferSize=%0d wMaxWrTransferSize=%0d",
                           bcdOCPRecVersion, wMaxRdTransferSize, wMaxWrTransferSize),
                 UVM_NONE)
-            // Review m6: validate against expected OCP Recovery v1.1
+            // Validate against expected OCP Recovery v1.1
             // encoding (sec 8.5.3). BCD high byte = major, low byte = minor.
             if (bcdOCPRecVersion[15:8] != OCP_REC_BCD_VERSION_V1P1[15:8]) begin
                 `uvm_error("OCPREC",
@@ -511,8 +512,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap),
                        .label("OCPREC_PROT_CAP"));
-        // PROT_CAP magic per OCP Recovery v1.1 sec 9.2 (review m2:
-        // shared OCP_PROT_CAP_MAGIC localparam used by both seq and sb).
+        // PROT_CAP magic per OCP Recovery v1.1 sec 9.2 (uses the
+        // shared OCP_PROT_CAP_MAGIC localparam, common to sequence and scoreboard).
         if (prot_cap.size() < 8) begin
             `uvm_error("OCPREC",
                 $sformatf("PROT_CAP returned only %0d bytes; expected >= 8 for magic string.",
@@ -608,12 +609,12 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         end
 
         // ---------------------------------------------------------------------
-        // V2: Unsupported-command PROTOCOL_ERROR negative check (R4 / OCP
+        // Unsupported-command PROTOCOL_ERROR negative check (OCP
         //     Recovery v1.1 Sec 9.1: "an unsupported command MUST set an
         //     unsupported error condition in the DEVICE_STATUS"; Sec 9.2 Tbl
         //     9-6 byte 1 = 0x01 "Unsupported/Write Command", clear-on-read).
         //     INDIRECT_CTRL is the direct CMS-memory window, which
-        //     this FIFO-only transport does not implement (removed in R3; not
+        //     this FIFO-only transport does not implement (not
         //     advertised: AGENT_CAPS bit5 = 0).  The device STALLs the request
         //     (a legal "unsupported" response; the control pipe auto-clears the
         //     stall on the next SETUP per USB 2.0 sec 8.5.3.4) and latches
@@ -682,8 +683,166 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                               ds_proto_clr[1]))
             end else begin
                 `uvm_info("OCPREC",
-                    "V2: PROTOCOL_ERROR cleared to 0x00 on DEVICE_STATUS read (clear-on-read).",
+                    "Unsupported-command check: PROTOCOL_ERROR cleared to 0x00 on DEVICE_STATUS read (clear-on-read).",
                     UVM_NONE)
+            end
+        end
+
+        // ---------------------------------------------------------------------
+        // Host-RO write PROTOCOL_ERROR negative check (OCP Recovery v1.1
+        //     Sec 9.1: "Writing to a read only command (e.g. PROT_CAP) MUST
+        //     generate an 'unsupported command' error in the DEVICE_STATUS").
+        //     PROT_CAP capability sub-fields are firmware-configurable
+        //     (sw=rw); the USB host must remain RO. Verify: (a) a
+        //     USB-host write to PROT_CAP raises PROTOCOL_ERROR=0x01
+        //     (clear-on-read, same as the unsupported-command check above), and (b) the write has no effect --
+        //     AGENT_CAPS read back unchanged from OCP_PROT_CAP_AGENT_CAPS_EXP.
+        //     Also covers INDIRECT_FIFO_STATUS (Sec 9.2 cmd=46, r/w=ro): a
+        //     host write there is likewise rejected (the prior cms_fifo
+        //     write-1-to-clear extension was removed as non-spec-conformant
+        //     and unused by any test/firmware).
+        //     Done here (before the recovery flow) for the same read-timing
+        //     reason as the unsupported-command check above: Caliptra firmware is not yet polling
+        //     DEVICE_STATUS, so the clear-on-read checks below are not raced.
+        // ---------------------------------------------------------------------
+        begin
+            bit [7:0] ds_proto_r7[$];
+            bit [7:0] ds_proto_r7_clr[$];
+            bit [7:0] prot_cap_after[$];
+
+            // (a) USB-host write to PROT_CAP (arbitrary non-zero payload
+            // targeting the AGENT_CAPS bytes 10-11) must be rejected.
+            prot_cap_wr_payload.delete();
+            prot_cap_wr_payload = '{8'hFF, 8'hFF, 8'hFF, 8'hFF,
+                                     8'hFF, 8'hFF, 8'hFF, 8'hFF,
+                                     8'hFF, 8'hFF, 8'hFF, 8'hFF};
+            resp_q.delete();
+            ocp_class_xfer(.dir_in(1'b0),
+                           .cmd_code(OCP_REC_CMD_PROT_CAP),
+                           .wlength(16'(prot_cap_wr_payload.size())),
+                           .payload_bytes(prot_cap_wr_payload),
+                           .resp_bytes(resp_q),
+                           .label("OCPREC_PROT_CAP_HOST_WRITE_REJECTED"));
+
+            empty_q.delete();
+            ds_proto_r7.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto_r7),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR_R7_PROTCAP"));
+            if (ds_proto_r7.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS after PROT_CAP host write returned %0d bytes; need >= 2 to read PROTOCOL_ERROR (byte 1).",
+                              ds_proto_r7.size()))
+            end else if (ds_proto_r7[1] !== 8'h01) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR not set after USB-host write to PROT_CAP: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 write-to-RO, R7).",
+                              ds_proto_r7[1]))
+            end else begin
+                `uvm_info("OCPREC",
+                    "PROTOCOL_ERROR=0x01 correctly set after USB-host write to PROT_CAP (OCP Recovery v1.1 Sec 9.1).",
+                    UVM_NONE)
+            end
+
+            // Clear-on-read check (same semantics as the unsupported-command check above).
+            empty_q.delete();
+            ds_proto_r7_clr.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto_r7_clr),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR_R7_PROTCAP_CLR"));
+            if (ds_proto_r7_clr.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS (PROT_CAP write-reject clear check) returned %0d bytes; need >= 2.",
+                              ds_proto_r7_clr.size()))
+            end else if (ds_proto_r7_clr[1] !== 8'h00) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR did not clear on read after PROT_CAP host-write check: DEVICE_STATUS[1]=0x%02h, expected 0x00.",
+                              ds_proto_r7_clr[1]))
+            end
+
+            // (b) Confirm the rejected write had no effect: AGENT_CAPS must
+            // still read back the RESET default, not the 0xFFFF written above.
+            empty_q.delete();
+            prot_cap_after.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_PROT_CAP),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(prot_cap_after),
+                           .label("OCPREC_PROT_CAP_UNCHANGED_AFTER_HOST_WRITE"));
+            if (prot_cap_after.size() < 12) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP (post host-write check) returned %0d bytes; need >= 12.",
+                              prot_cap_after.size()))
+            end else begin
+                logic [15:0] agent_caps_after;
+                agent_caps_after = {prot_cap_after[11], prot_cap_after[10]};
+                if (agent_caps_after !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
+                    `uvm_error("OCPREC",
+                        $sformatf("PROT_CAP AGENT_CAPS changed after rejected USB-host write: got=0x%04h exp=0x%04h (USB host is RO for PROT_CAP).",
+                                  agent_caps_after, OCP_PROT_CAP_AGENT_CAPS_EXP))
+                end else begin
+                    `uvm_info("OCPREC",
+                        "PROT_CAP AGENT_CAPS unchanged after rejected USB-host write, as expected.",
+                        UVM_NONE)
+                end
+            end
+
+            // (c) INDIRECT_FIFO_STATUS is also strictly host-RO (Sec 9.2
+            // cmd=46). A 1-byte write must likewise raise PROTOCOL_ERROR.
+            empty_q.delete();
+            resp_q.delete();
+            ocp_class_xfer(.dir_in(1'b0),
+                           .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                           .wlength(16'd1),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(resp_q),
+                           .label("OCPREC_INDIRECT_FIFO_STATUS_HOST_WRITE_REJECTED"));
+
+            empty_q.delete();
+            ds_proto_r7.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto_r7),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS"));
+            if (ds_proto_r7.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS after INDIRECT_FIFO_STATUS host write returned %0d bytes; need >= 2.",
+                              ds_proto_r7.size()))
+            end else if (ds_proto_r7[1] !== 8'h01) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR not set after USB-host write to INDIRECT_FIFO_STATUS: DEVICE_STATUS[1]=0x%02h, expected 0x01 (Sec 9.1/9.2, R7).",
+                              ds_proto_r7[1]))
+            end else begin
+                `uvm_info("OCPREC",
+                    "PROTOCOL_ERROR=0x01 correctly set after USB-host write to INDIRECT_FIFO_STATUS (OCP Recovery v1.1 Sec 9.1/9.2).",
+                    UVM_NONE)
+            end
+
+            // Clear-on-read for the FIFO_STATUS check.
+            empty_q.delete();
+            ds_proto_r7_clr.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(ds_proto_r7_clr),
+                           .label("OCPREC_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS_CLR"));
+            if (ds_proto_r7_clr.size() < 2) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS (INDIRECT_FIFO_STATUS write-reject clear check) returned %0d bytes; need >= 2.",
+                              ds_proto_r7_clr.size()))
+            end else if (ds_proto_r7_clr[1] !== 8'h00) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROTOCOL_ERROR did not clear on read after INDIRECT_FIFO_STATUS host-write check: DEVICE_STATUS[1]=0x%02h, expected 0x00.",
+                              ds_proto_r7_clr[1]))
             end
         end
 
@@ -746,7 +905,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL"));
 
-        // 5a-rt. INDIRECT_FIFO_CTRL IN read-back (R5 command-routing test).
+        // 5a-rt. INDIRECT_FIFO_CTRL IN read-back (command-routing test).
         //     INDIRECT_FIFO_CTRL reads are serviced by the A3 regblock command
         //     window (cms_fifo captures the write but DRIVES the regblock
         //     CTRL_0/_1 fields via hw=w; reads route to the regblock, not the
@@ -770,15 +929,15 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                           resp_q[0], img_sz_rb), UVM_NONE)
             if (resp_q[0] != 8'h00)
                 `uvm_error("OCPREC",
-                    $sformatf("INDIRECT_FIFO_CTRL.CMS read-back=0x%02h, expected 0x00 (R5 regblock read routing).",
+                    $sformatf("INDIRECT_FIFO_CTRL.CMS read-back=0x%02h, expected 0x00 (regblock read routing).",
                               resp_q[0]))
             if (img_sz_rb != 32'd12)
                 `uvm_error("OCPREC",
-                    $sformatf("INDIRECT_FIFO_CTRL.IMAGE_SIZE read-back=%0d, expected 12 DWORDs (R5 regblock read routing / cms_fifo hw=w drive).",
+                    $sformatf("INDIRECT_FIFO_CTRL.IMAGE_SIZE read-back=%0d, expected 12 DWORDs (regblock read routing / cms_fifo hw=w drive).",
                               img_sz_rb))
         end else begin
             `uvm_error("OCPREC",
-                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need >= 8 (R5 regblock read routing).",
+                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need >= 8 (regblock read routing).",
                           resp_q.size()))
         end
 
@@ -890,11 +1049,9 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             end
             poll_iter++;
             if (poll_iter > 16) begin
-                // Review M3: fail closed. The block comment above states
-                // the intent is to fail closed if firmware never
-                // advances, so this exit path MUST raise an error
-                // (uvm_info would be re-routed by +svt_debug_opts and
-                // the timeout would slip).
+                // Fail closed if firmware never advances: this exit
+                // path MUST raise an error (uvm_info would be re-routed by
+                // +svt_debug_opts and the timeout would slip unnoticed).
                 `uvm_error("OCPREC",
                     $sformatf("DEVICE_STATUS did not reach 0x04 RECOVERY_PENDING within 16 polls. last dev_status[0]=0x%02h time=%0t",
                               dev_status.size() > 0 ? dev_status[0] : 8'h00,
@@ -943,7 +1100,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
         end
 
-        // Review M6: publish the issued transfer count so the scoreboard's
+        // Publish the issued transfer count so the scoreboard's
         // report_phase can cross-check against transfers observed on the
         // analysis port. A drift indicates that NOTIFY_USB_TRANSFER_ENDED
         // back-to-back triggers were dropped at the env forwarder, which

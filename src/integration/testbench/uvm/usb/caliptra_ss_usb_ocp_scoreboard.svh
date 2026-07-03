@@ -49,7 +49,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         transfer_imp;
 
     // ASCII "OCP RECV" (OCP Recovery v1.1 sec 9.2 PROT_CAP magic).
-    // Review m2: reference the shared OCP_PROT_CAP_MAGIC localparam from
+    // References the shared OCP_PROT_CAP_MAGIC localparam from
     // caliptra_ss_usb_ocp_recovery_sequence.svh (same package scope) instead
     // of redeclaring the byte array here.
 
@@ -65,7 +65,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     protected int unsigned total_prot_cap_mismatch;
     protected int unsigned total_fifo_data_out_bytes;
     protected int unsigned total_fifo_status_in;
-    // Review M7: count transfers that arrived with a non-success status so
+    // Count transfers that arrived with a non-success status so
     // they can be reported and skipped from PROT_CAP / FIFO accounting.
     protected int unsigned total_nonsuccess_xfers;
 
@@ -85,7 +85,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         total_nonsuccess_xfers      = 0;
     endfunction
 
-    // Review M7: returns 1 if the transfer completed successfully on the
+    // Returns 1 if the transfer completed successfully on the
     // bus, 0 otherwise (NAK / STALL / TIMEOUT / etc.). Synopsys USB VIP
     // does NOT expose a "SUCCESSFUL" enum. Per UVM Class Reference for
     // svt_usb_transfer, the canonical success predicate is
@@ -133,7 +133,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         xfer_count[cmd_code][dir_in ? 1 : 0]++;
 
         // Anchor marker (UVM_NONE, _context to *this* non-VIP component).
-        // Review M7: include the transfer status so operator can correlate
+        // Includes the transfer status so the operator can correlate
         // a skipped accumulation back to a NAK/STALL on the bus.
         `uvm_info_context("OCPREC_MARK",
             $sformatf("OCPREC_XFER cmd=0x%02h dir=%s wIndex=0x%04h wLength=%0d status=%s",
@@ -142,7 +142,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                       xfer_ok ? "SUCCESSFUL" : "NON_SUCCESS"),
             UVM_NONE, this)
 
-        // Per-command predicates. Review m3: cast to the OCP cmd enum so
+        // Per-command predicates. Cast to the OCP cmd enum so
         // the case arms use spec-named symbols instead of raw 8'h22/etc.
         case (caliptra_ss_usb_ocp_recovery_cmd_e'(cmd_code))
 
@@ -152,7 +152,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 if (dir_in) begin
                     if (!xfer_ok) begin
                         `uvm_info("OCPREC_MARK",
-                            "PROT_CAP IN skipped: transfer status NON_SUCCESS (review M7).",
+                            "PROT_CAP IN skipped: transfer status NON_SUCCESS.",
                             UVM_NONE)
                     end else begin
                         total_prot_cap_in++;
@@ -185,7 +185,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 if (!dir_in) begin
                     if (!xfer_ok) begin
                         `uvm_info("OCPREC_MARK",
-                            "INDIRECT_FIFO_DATA OUT skipped: transfer status NON_SUCCESS; bytes NOT accumulated into pushed_fifo_bytes (review M7).",
+                            "INDIRECT_FIFO_DATA OUT skipped: transfer status NON_SUCCESS; bytes NOT accumulated into pushed_fifo_bytes.",
                             UVM_NONE)
                     end else if (t.payload == null) begin
                         `uvm_error("OCPREC_MARK",
@@ -205,7 +205,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 if (dir_in) begin
                     if (!xfer_ok) begin
                         `uvm_info("OCPREC_MARK",
-                            "INDIRECT_FIFO_STATUS IN skipped: transfer status NON_SUCCESS; WRITE_INDEX comparison suppressed (review M7).",
+                            "INDIRECT_FIFO_STATUS IN skipped: transfer status NON_SUCCESS; WRITE_INDEX comparison suppressed.",
                             UVM_NONE)
                     end else begin
                         total_fifo_status_in++;
@@ -252,7 +252,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             end while (xfer_count.next(cmd));
         end
 
-        // Review M6: cross-check observed CLASS transfers against the count
+        // Cross-check observed CLASS transfers against the count
         // the sequence reports having issued. Both counters now live in the
         // same CLASS-transfer domain: the sequence increments transfers_issued
         // only in ocp_class_xfer() (NOT for the two STANDARD
@@ -263,7 +263,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 "ocp_transfers_issued", issued)) begin
             if (issued != total_class_xfers) begin
                 `uvm_error("OCPREC_MARK",
-                    $sformatf("OCPREC transfer-count mismatch: sequence issued=%0d, scoreboard observed=%0d. Likely a dropped NOTIFY_USB_TRANSFER_ENDED sample (review M6).",
+                    $sformatf("OCPREC transfer-count mismatch: sequence issued=%0d, scoreboard observed=%0d. Likely a dropped NOTIFY_USB_TRANSFER_ENDED sample.",
                               issued, total_class_xfers))
             end else begin
                 `uvm_info_context("OCPREC_MARK",
