@@ -1,0 +1,10 @@
+provides: [nwp_top]
+schema_version: 2.4.0
+requires:
+  - css_nwp0_veer_el2_rtl_pkg
+targets:
+  rtl:
+    directories: [$COMPILE_ROOT/rtl]
+    files:
+      - $COMPILE_ROOT/rtl/nwp_top.sv
+    tops: [nwp_top]

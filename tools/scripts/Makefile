@@ -275,8 +275,9 @@ VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
-VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=9
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=4
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -286,6 +287,11 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+# Cmdline-cmdline hook: pass EXTRA_VCS_OPTS=... on the make cmdline to append
+# additional vlogan flags WITHOUT clobbering the in-Makefile VCS_COMP_OPTS += chain.
+# Required because passing VCS_COMP_OPTS+=... on the make cmdline wipes all
+# in-Makefile += lines (GNU Make cmdline-precedence rule).
+override VCS_COMP_OPTS += $(EXTRA_VCS_OPTS)
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
@@ -340,10 +346,10 @@ vcs-build: $(TBFILES) $(TB_DPI_SRCS)
 
 ############ TEST Simulation ###############################
 
-verilator: mcu_program.hex verilator-build
+verilator: mcu_program.hex nwp_program.hex verilator-build
 	./obj_dir/V$(DUT) $(VERILATOR_RUN_ARGS)
 
-vcs: cptra_program.hex mcu_program.hex vcs-build
+vcs: cptra_program.hex mcu_program.hex nwp_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
@@ -432,6 +438,66 @@ mcu_program.hex: $(OFILE_CRT) $(OFILES) $(LINK)
 	$(GCC_PREFIX)-size        $(TESTNAME).exe | tee $(TESTNAME).size
 	riscv64-unknown-elf-nm -B -n $(TESTNAME).exe > $(TESTNAME).sym
 	@echo Completed building $(TESTNAME)
+
+############ NWP program hex build ###############################
+ifdef NWP_C_TEST
+############ NWP C-based program build (set NWP_C_TEST=<testname>) ##
+NWP_C_TEST_DIR = $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(NWP_C_TEST)
+NWP_C_LINK = $(RISCV_HW_IF_DIR)/nwp_link.ld
+
+nwp_program.hex: $(NWP_C_TEST_DIR)/$(NWP_C_TEST).c $(NWP_C_LINK)
+	@echo "Building NWP C test: $(NWP_C_TEST)"
+	$(GCC_PREFIX)-cpp $(RISCV_HW_IF_DIR)/nwp_crt0.s > nwp_crt0.cpp.s
+	$(GCC_PREFIX)-as $(ABI) nwp_crt0.cpp.s -o nwp_crt0.o
+	$(GCC_PREFIX)-gcc $(ABI) $(TEST_CFLAGS) -I$(PRINTF_DIR) -nostdlib -c $(NWP_C_TEST_DIR)/$(NWP_C_TEST).c -o $(NWP_C_TEST).o
+	$(GCC_PREFIX)-gcc $(ABI) $(TEST_CFLAGS) -I$(PRINTF_DIR) -nostdlib -c $(PRINTF_DIR)/printf.c -o nwp_printf.o
+	$(GCC_PREFIX)-gcc $(ABI) -Wl,-Map=nwp.map -lgcc -T$(NWP_C_LINK) -o nwp.exe nwp_crt0.o $(NWP_C_TEST).o nwp_printf.o -nostartfiles
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata \
+			      --change-section-lma  .text.init-0x90000000 \
+			      --change-section-lma       .text-0x90000000 \
+			      --change-section-lma     .rodata-0x90000000 \
+			      --change-section-lma    .srodata-0x90000000 \
+			      --no-change-warnings nwp.exe nwp_program.hex
+	-$(GCC_PREFIX)-objcopy -O verilog -j .dccm -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .dccm-0x30000000 \
+			      --change-section-lma       .data-0x30000000 \
+			      --change-section-lma      .sdata-0x30000000 \
+			      --change-section-lma        .bss-0x30000000 \
+			      --change-section-lma       .sbss-0x30000000 \
+			      --no-change-warnings nwp.exe nwp_dccm.hex
+	-$(GCC_PREFIX)-objdump -S nwp.exe > nwp.dis
+	@echo "Completed building NWP C test: $(NWP_C_TEST)"
+
+else
+############ NWP Cargo-built program (pre-built ELF, mirrors MCU pattern) ##
+# Contract: the test's .yml pre-exec builds the network-rom ELF and drops it at
+# $(NWP_TEST_DIR)/$(NWP_TESTNAME). This Makefile only objcopies — no cargo
+# invocation, no parent-repo path knowledge. Identical shape to the MCU rule
+# at $(TEST_DIR)/$(TESTNAME) (see "MCU TEST build" section above).
+NWP_TEST_DIR ?= $(CALIPTRA_SS_ROOT)/src/integration/test_suites/$(NWP_TESTNAME)
+
+nwp_program.hex: $(NWP_TEST_DIR)/$(NWP_TESTNAME)
+	@echo "Generating nwp_program.hex from $(NWP_TEST_DIR)/$(NWP_TESTNAME)"
+	-$(GCC_PREFIX)-objcopy -O verilog -j .text -j .text.init -j .rodata -j .srodata -j .data \
+			      --change-section-lma  .text.init-0x90000000 \
+			      --change-section-lma       .text-0x90000000 \
+			      --change-section-lma     .rodata-0x90000000 \
+			      --change-section-lma    .srodata-0x90000000 \
+			      --change-section-lma       .data-0x90000000 \
+			      --no-change-warnings $(NWP_TEST_DIR)/$(NWP_TESTNAME) nwp_program.hex
+	-$(GCC_PREFIX)-objcopy --change-section-lma .data=0x30000000 \
+			      --change-section-lma .sdata=0x30000000 \
+			      --no-change-warnings $(NWP_TEST_DIR)/$(NWP_TESTNAME) nwp_fixed_lma.elf
+	-$(GCC_PREFIX)-objcopy -O verilog -j .data -j .sdata -j .bss -j .sbss \
+			      --change-section-lma       .data-0x30000000 \
+			      --change-section-lma      .sdata-0x30000000 \
+			      --change-section-lma        .bss-0x30000000 \
+			      --change-section-lma       .sbss-0x30000000 \
+			      --no-change-warnings nwp_fixed_lma.elf nwp_dccm.hex
+	-rm -f nwp_fixed_lma.elf
+	-$(GCC_PREFIX)-objdump -S $(NWP_TEST_DIR)/$(NWP_TESTNAME) > network-rom.dis
+	@echo "Completed building nwp_program.hex"
+endif
 
 ############ lmem TEST build ###############################
 mcu_lmem.hex: $(OFILE_CRT) $(OFILES) $(LINK)

@@ -1,0 +1,7 @@
++incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/design
++incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/defines
++incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/design/include
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/defines/css_nwp0_el2_pdef.vh
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/design/include/css_nwp0_el2_def.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/defines/css_nwp0_common_defines.vh
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2_nwp/rtl/design/lib/css_nwp0_beh_lib.sv
