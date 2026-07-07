@@ -20,6 +20,7 @@ module otp_ctrl_part_buf
   input                               rst_ni,
   // Pulse to start partition initialisation (required once per power cycle).
   input                               init_req_i,
+  input                               cptra_ss_debug_intent_i,
   output logic                        init_done_o,
   // Integrity check requests
   input                               integ_chk_req_i,
@@ -119,6 +120,11 @@ module otp_ctrl_part_buf
   `CALIPTRA_ASSERT(BypassEnable0_A, Info.secret    |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
   `CALIPTRA_ASSERT(BypassEnable1_A, Info.hw_digest |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
 
+  localparam bit DebugZeroizeThisPart = Info.secret & Info.hw_digest;
+
+  logic debug_zeroize_en;
+  assign debug_zeroize_en = cptra_ss_debug_intent_i & DebugZeroizeThisPart;
+
   ///////////////////////
   // OTP Partition FSM //
   ///////////////////////
@@ -127,6 +133,7 @@ module otp_ctrl_part_buf
   // Encoding generated with:
   // $ ./util/design/sparse-fsm-encode.py -d 5 -m 19 -n 12 \
   //     -s 143174455 --language=sv
+  // DebugZeroSt added offline with distance >= 5 to all generated states.
   //
   // Hamming distance histogram:
   //
@@ -135,13 +142,13 @@ module otp_ctrl_part_buf
   //  2: --
   //  3: --
   //  4: --
-  //  5: |||||||||||||||| (29.82%)
-  //  6: |||||||||||||||||||| (36.26%)
-  //  7: |||||||| (15.79%)
-  //  8: |||||| (11.70%)
-  //  9: || (5.26%)
-  // 10:  (0.58%)
-  // 11:  (0.58%)
+  //  5: ||||||||||||||||| (31.05%)
+  //  6: |||||||||||||||||| (35.79%)
+  //  7: ||||||| (14.74%)
+  //  8: |||||| (11.58%)
+  //  9: ||| (5.79%)
+  // 10:  (0.53%)
+  // 11:  (0.53%)
   // 12: --
   //
   // Minimum Hamming distance: 5
@@ -169,6 +176,7 @@ module otp_ctrl_part_buf
     IntegDigWaitSt   = 12'b111011110101,
     CnstyReadSt      = 12'b110101101001,
     CnstyReadWaitSt  = 12'b011001110010,
+    DebugZeroSt      = 12'b100100000011,
     ErrorSt          = 12'b001000000000
   } state_e;
 
@@ -324,8 +332,10 @@ module otp_ctrl_part_buf
       // initialization request.
       ResetSt: begin
         if (init_req_i) begin
+          if (debug_zeroize_en) begin
+            state_d = DebugZeroSt;
           // If enabled, check if partition is zeroized first.
-          if (Info.zeroizable) begin
+          end else if (Info.zeroizable) begin
             state_d = InitChkZerSt;
           end else begin
             state_d = InitSt;
@@ -716,6 +726,20 @@ module otp_ctrl_part_buf
         integ_chk_ack_o = 1'b1;
       end
       ///////////////////////////////////////////////////////////////////
+      // Debug-intent secret zeroization path. Reached only for secret+hw_digest partitions
+      // when cptra_ss_debug_intent_i is set at init. Declare init done WITHOUT ever reading OTP,
+      // invoking the scrambler, or loading the buffer registers, so no plaintext or key can reach
+      // a scannable flop. Integrity/consistency checks are acknowledged in place (never executed).
+      // The partition remains here until reset. data_o is forced to DataDefault and read/write
+      // locks are forced asserted by the gating logic further below.
+      DebugZeroSt: begin
+        dout_locked_d   = MuBi8False;   // init_done_o asserts
+        cnsty_chk_ack_o = cnsty_chk_req_i;
+        integ_chk_ack_o = integ_chk_req_i;
+        // state_d defaults to state_q (stay here); otp_req_o/scrmbl_valid_o/buffer_reg_en stay at
+        // their idle defaults, so nothing secret is ever fetched or latched.
+      end
+      ///////////////////////////////////////////////////////////////////
       // We should never get here. If we do (e.g. via a malicious
       // glitch), error out immediately.
       default: begin
@@ -826,7 +850,8 @@ module otp_ctrl_part_buf
   assign init_done_o = mubi8_test_false_strict(dout_locked_q);
   // Hardware output gating.
   // Note that this is decoupled from the DAI access rules further below.
-  assign data_o = (init_done_o) ? ((Info.zeroizable) ? {zer_mrk, data} : data) : DataDefault;
+  assign data_o = (init_done_o && !debug_zeroize_en) ?
+                  ((Info.zeroizable) ? {zer_mrk, data} : data) : DataDefault;
   // The digest does not have to be gated.
   assign digest_o = data[$high(data) -: ScrmblBlockWidth];
 
@@ -865,13 +890,14 @@ module otp_ctrl_part_buf
     ) u_prim_mubi8_sender_write_lock (
       .clk_i,
       .rst_ni,
-      .mubi_i(mubi8_and_lo(access_pre.write_lock, digest_locked)),
+      .mubi_i(debug_zeroize_en ? MuBi8True :
+              mubi8_and_lo(access_pre.write_lock, digest_locked)),
       .mubi_o(access_o.write_lock)
     );
 
     `CALIPTRA_ASSERT(DigestWriteLocksPartition_A, digest_o |-> mubi8_test_true_loose(access_o.write_lock))
   end else begin : gen_no_digest_write_lock
-    assign access_o.write_lock = access_pre.write_lock;
+    assign access_o.write_lock = debug_zeroize_en ? MuBi8True : access_pre.write_lock;
   end
 
   // SEC_CM: PART.MEM.SW_UNREADABLE
@@ -885,13 +911,14 @@ module otp_ctrl_part_buf
     ) u_prim_mubi8_sender_read_lock (
       .clk_i,
       .rst_ni,
-      .mubi_i(mubi8_and_lo(access_pre.read_lock, digest_locked)),
+      .mubi_i(debug_zeroize_en ? MuBi8True :
+              mubi8_and_lo(access_pre.read_lock, digest_locked)),
       .mubi_o(access_o.read_lock)
     );
 
     `CALIPTRA_ASSERT(DigestReadLocksPartition_A, digest_o |-> mubi8_test_true_loose(access_o.read_lock))
   end else begin : gen_no_digest_read_lock
-    assign access_o.read_lock = access_pre.read_lock;
+    assign access_o.read_lock = debug_zeroize_en ? MuBi8True : access_pre.read_lock;
   end
 
   ///////////////

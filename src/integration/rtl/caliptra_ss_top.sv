@@ -372,6 +372,7 @@ module caliptra_ss_top
     // Inputs from OTP_Ctrl
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
     logic cptra_in_debug_mode;
+    logic mci_ss_debug_intent;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -1041,6 +1042,7 @@ module caliptra_ss_top
         .strap_mcu_sram_config_axi_user    (cptra_ss_strap_mcu_sram_config_axi_user_i),
         .strap_mci_soc_config_axi_user    (cptra_ss_strap_mci_soc_config_axi_user_i),
         .ss_debug_intent         ( cptra_ss_debug_intent_i ),
+        .mci_ss_debug_intent     ( mci_ss_debug_intent ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i),
@@ -1256,6 +1258,7 @@ module caliptra_ss_top
         .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
         .cptra_in_debug_mode_i      (cptra_in_debug_mode),
+        .cptra_ss_debug_intent_i    (mci_ss_debug_intent),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),

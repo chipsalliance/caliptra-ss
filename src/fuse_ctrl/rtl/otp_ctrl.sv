@@ -30,6 +30,7 @@ module otp_ctrl
   // This is a command to zeroize the secrets in run-time
   input                                              FIPS_ZEROIZATION_CMD_i,
   input                                              cptra_in_debug_mode_i,
+  input                                              cptra_ss_debug_intent_i,
   input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
   input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
@@ -958,6 +959,7 @@ end
   otp_ctrl_scrmbl u_otp_ctrl_scrmbl (
     .clk_i,
     .rst_ni,
+    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i ),
     .cmd_i         ( scrmbl_req_bundle.cmd       ),
     .mode_i        ( scrmbl_req_bundle.mode      ),
     .sel_i         ( scrmbl_req_bundle.sel       ),
@@ -1187,6 +1189,7 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
+        .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i   ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
@@ -1244,6 +1247,8 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
+        // LifeCycle is non-secret LC state/count data and must never be debug-zeroized.
+        .cptra_ss_debug_intent_i ( 1'b0                      ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
