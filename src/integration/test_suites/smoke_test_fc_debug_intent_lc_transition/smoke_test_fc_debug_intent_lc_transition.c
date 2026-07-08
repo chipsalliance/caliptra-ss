@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "caliptra_ss_lc_ctrl_address_map.h"
