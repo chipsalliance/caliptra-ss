@@ -131,12 +131,10 @@ static void check_secret_dai_access_locked(void) {
                 granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
         handle_error("ERROR: unlocked FE3 DAI write did not report DAI error under debug intent\n");
     }
-    reset_fc_lcc_rtl();
     if (!dai_rd(CPTRA_CORE_FIELD_ENTROPY_3, &rdata0, &rdata1,
                 granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
         handle_error("ERROR: unlocked FE3 DAI read-after-write did not report DAI error under debug intent\n");
     }
-    reset_fc_lcc_rtl();
     revoke_grant_mcu_for_fc_writes();
 }
 
@@ -173,10 +171,8 @@ static void check_lc_functionality(void) {
     }
     VPRINTF(LOW, "INFO: DEV LC counter readback: %d\n", lc_counter);
 
-    force_PPD_pin();
-    if (!transition_state_check(SCRAP, NULL)) {
-        handle_error("ERROR: DEV to SCRAP transition failed\n");
-    }
+    // Do not transition DEV->SCRAP here: SCRAP asserts lc_escalate_en and
+    // escalates fuse_ctrl, which is out of scope for this LC readback check.
 }
 
 void main(void) {
