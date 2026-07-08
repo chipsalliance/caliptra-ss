@@ -994,6 +994,24 @@ module otp_ctrl_dai
   `CALIPTRA_ASSERT_KNOWN(ScrmblDataKnown_A,   scrmbl_data_o)
   `CALIPTRA_ASSERT_KNOWN(ScrmblValidKnown_A,  scrmbl_valid_o)
 
+  // What: Debug-intent secret HW-digest DAI reads do not issue OTP reads.
+  // Why: Debug-mode digest readback must not fetch the real secret digest from OTP.
+  `CALIPTRA_ASSERT(DebugDigestNoOtpRead_A,
+      cptra_ss_debug_intent_i && state_q == ReadSt && part_sel_valid &&
+      PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
+      otp_addr_o == digest_addr_lut[part_idx]
+      |->
+      !otp_req_o)
+
+  // What: Debug-intent secret HW-digest DAI readback data remains zero.
+  // Why: The masked read completes from the pre-cleared data register instead of exposing OTP data.
+  `CALIPTRA_ASSERT(DebugDigestDataZero_A,
+      cptra_ss_debug_intent_i && state_q == ReadSt && part_sel_valid &&
+      PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
+      otp_addr_o == digest_addr_lut[part_idx]
+      |->
+      data_q == '0)
+
   // OTP error response
   `CALIPTRA_ASSERT(OtpErrorState_A,
       state_q inside {InitOtpSt, ReadWaitSt, WriteWaitSt, DigReadWaitSt} && otp_rvalid_i &&

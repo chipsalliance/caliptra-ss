@@ -992,6 +992,13 @@ module otp_ctrl_part_buf
   `CALIPTRA_ASSERT_KNOWN(ScrmblDataKnown_A,   scrmbl_data_o)
   `CALIPTRA_ASSERT_KNOWN(ScrmblValidKnown_A,  scrmbl_valid_o)
 
+  // What: Debug-intent zeroization suppresses targeted partition OTP reads.
+  // Why: Secret HW-digest partitions must not fetch real OTP contents while debug intent is active.
+  `CALIPTRA_ASSERT(DebugZeroizeNoOtpRead_A,
+      debug_zeroize_en
+      |->
+      !otp_req_o)
+
   // Uninitialized partitions should always be locked, no matter what.
   `CALIPTRA_ASSERT(InitWriteLocksPartition_A,
       mubi8_test_true_loose(dout_locked_q)

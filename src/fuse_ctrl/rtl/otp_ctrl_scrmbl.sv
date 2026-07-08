@@ -228,6 +228,14 @@ module otp_ctrl_scrmbl
                            (key_state_sel == SelDigestChained)  ? {data_state_q, data_shadow_q} :
                                                                   {data_i, data_shadow_q};
 
+  // What: Debug intent forces scrambler decrypt/encrypt key initialization to zero.
+  // Why: Secret RndCnstKey-derived values must not be loaded into the scrambler key state in debug.
+  `CALIPTRA_ASSERT(DebugScrmblKeyZero_A,
+      (cptra_ss_debug_intent_i &&
+       (key_state_sel == SelDecKeyInit || key_state_sel == SelEncKeyInit))
+      |->
+      key_state_d == '0)
+
   // Initialize the round index state with 1 in all cases, except for the decrypt operation.
   assign idx_state_d     = (key_state_sel == SelDecKeyOut)      ? dec_idx_out                     :
                            (key_state_sel == SelEncKeyOut)      ? enc_idx_out                     :
