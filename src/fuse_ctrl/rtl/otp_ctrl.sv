@@ -954,12 +954,26 @@ end
   logic scrmbl_arb_req_ready, scrmbl_arb_rsp_valid;
   logic [NumAgents-1:0] part_scrmbl_req_ready, part_scrmbl_rsp_valid;
 
+  // SEC_CM: latch debug intent sticky. Once debug intent is observed, the secret
+  // zeroization protections (M1/M2/M3) stay engaged until reset, so a mid-session
+  // deassertion of cptra_ss_debug_intent_i (e.g. via a TAP/DMI write to
+  // SS_DEBUG_INTENT) cannot re-expose secrets or the secret partition digest.
+  logic debug_intent_latched_q;
+  always_ff @(posedge clk_i or negedge rst_ni) begin : p_debug_intent_latched
+    if (!rst_ni) begin
+      debug_intent_latched_q <= 1'b0;
+    end else begin
+      debug_intent_latched_q <= debug_intent_latched_q | cptra_ss_debug_intent_i;
+    end
+  end
+
   // SEC_CM: SECRET.MEM.SCRAMBLE
   // SEC_CM: PART.MEM.DIGEST
   otp_ctrl_scrmbl u_otp_ctrl_scrmbl (
     .clk_i,
     .rst_ni,
-    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i ),
+    // Receive latched debug intent so M2 key gating stays engaged until reset.
+    .cptra_ss_debug_intent_i ( debug_intent_latched_q ),
     .cmd_i         ( scrmbl_req_bundle.cmd       ),
     .mode_i        ( scrmbl_req_bundle.mode      ),
     .sel_i         ( scrmbl_req_bundle.sel       ),
@@ -1042,7 +1056,8 @@ end
     .error_o          ( part_error[DaiIdx]                    ),
     .fsm_err_o        ( part_fsm_err[DaiIdx]                  ),
     .part_access_i    ( part_access_dai                       ),
-    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i         ),
+    // Receive latched debug intent so M3 digest short-circuit stays engaged until reset.
+    .cptra_ss_debug_intent_i ( debug_intent_latched_q          ),
     .dai_addr_i       ( dai_addr                              ),
     .dai_cmd_i        ( dai_cmd                               ),
     .dai_req_i        ( dai_req                               ),
@@ -1190,7 +1205,8 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
-        .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i   ),
+        // Receive latched debug intent so M1 data_o gating stays engaged until reset.
+        .cptra_ss_debug_intent_i ( debug_intent_latched_q    ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
