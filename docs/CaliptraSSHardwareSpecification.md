@@ -605,6 +605,8 @@ These integrity checks verify whether the contents of the buffer registers remai
 
 - **Zeroization of Secret Partitions:**
   Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+- **Debug Intent and Secret Partitions:**
+  As a security enhancement, when debug intent is asserted, the secret (buffered) partitions are not sensed into their buffer registers, the scrambler key used for these partitions is forced to zero, and their hardware digest reads back as zero. Please note that this will prevent an integrity check on these partitions. Please also note that this will prevent conditional Life Cycle Controller (LCC) state transitioning; only unconditional state transitioning can happen.
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
 - **Further Information:**
