@@ -1042,6 +1042,7 @@ end
     .error_o          ( part_error[DaiIdx]                    ),
     .fsm_err_o        ( part_fsm_err[DaiIdx]                  ),
     .part_access_i    ( part_access_dai                       ),
+    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i         ),
     .dai_addr_i       ( dai_addr                              ),
     .dai_cmd_i        ( dai_cmd                               ),
     .dai_req_i        ( dai_req                               ),

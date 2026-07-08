@@ -40,6 +40,7 @@ module otp_ctrl_dai
   // Access/lock status from partitions
   // SEC_CM: ACCESS.CTRL.MUBI
   input  part_access_t [NumPart-1:0]     part_access_i,
+  input logic                            cptra_ss_debug_intent_i,
   // CSR interface
   input        [OtpByteAddrWidth-1:0]    dai_addr_i,
   input dai_cmd_e                        dai_cmd_i,
@@ -333,7 +334,17 @@ module otp_ctrl_dai
       // that is the case, we immediately bail out. Otherwise, we
       // request a block of data from OTP.
       ReadSt: begin
-        if ( !discard_fuse_write_i &&
+        if (cptra_ss_debug_intent_i && part_sel_valid &&
+            PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
+            otp_addr_o == digest_addr_lut[part_idx]) begin
+          // SEC_CM: under debug intent, hide the secret HW digest on the DAI
+          // readback path. Skip the OTP read entirely so the real digest is
+          // never fetched into the datapath; data_q was already cleared to 0
+          // by the IdleSt read decode, so the readback returns 0 and matches
+          // the (already-zero) named-CSR path.
+          state_d        = IdleSt;
+          dai_cmd_done_o = 1'b1;
+        end else if ( !discard_fuse_write_i &&
           part_sel_valid && (mubi8_test_false_strict(part_access_i[part_idx].read_lock) ||
                                // HW digests and zeroization marker always remain readable.
                                (PartInfo[part_idx].hw_digest && otp_addr_o == digest_addr_lut[part_idx]) ||
