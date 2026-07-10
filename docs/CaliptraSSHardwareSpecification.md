@@ -601,12 +601,32 @@ These integrity checks verify whether the contents of the buffer registers remai
 
 ---
 
+## Debug Intent Secret Zeroization
+
+As a defense-in-depth enhancement, the Fuse Controller flushes provisioned secrets from its scannable buffer flops while the debug-intent strap is asserted. MCI captures the physical debug-intent strap into the `SS_DEBUG_INTENT` register and distributes this registered value as the centralized debug-intent signal consumed across the Caliptra Subsystem, including the Fuse Controller. Once the Fuse Controller observes debug intent, it latches the condition until reset, so a later deassertion of the strap cannot re-expose secrets.
+
+While debug intent is asserted, every secret partition that carries a hardware digest **except** `SECRET_LC_TRANSITION_PARTITION` is handled as follows:
+
+- The partition is not sensed into its buffer registers; the buffer contents stay at their reset value.
+- The PRESENT scrambler key used to descramble the partition is forced to zero, so no `RndCnstKey`-derived value is latched into the scrambler key state.
+- The hardware digest reads back as zero in both the named digest CSR and on a Direct Access Interface (DAI) read.
+- The background integrity and consistency checks are acknowledged without accessing the fuse macro, so they neither run nor fail for these partitions.
+
+`SECRET_LC_TRANSITION_PARTITION` is intentionally excluded from this behavior so that the Life Cycle Controller (LCC) can still perform conditional state transitions while debug intent is asserted:
+
+- The partition is sensed and descrambled with its real key, and its tokens are broadcast to the LCC.
+- Its hardware digest reads back as its real, non-zero value in the named digest CSR, and its background integrity and consistency checks run normally.
+- The tokens are stored only as cSHAKE128 hashes rather than raw secrets, and the partition stays read-locked, so its raw contents are not exposed. The DAI hardware-digest read still returns zero.
+
+This enhancement protects the secrets provisioned in the manufacturing and production states. It is an additional layer of defense and does not remove the scan-path exclusion requirements described in the [Integration Specification](CaliptraSSIntegrationSpecification.md).
+
+---
+
 ## Notes
 
 - **Zeroization of Secret Partitions:**
   Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
-- **Debug Intent and Secret Partitions:**
-  As a security enhancement, when debug intent is asserted, the secret (buffered) partitions are not sensed into their buffer registers, the scrambler key used for these partitions is forced to zero, and their hardware digest reads back as zero. Please note that this will prevent an integrity check on these partitions. Please also note that this will prevent conditional Life Cycle Controller (LCC) state transitioning; only unconditional state transitioning can happen. Please remember that this is an enhancement added to protect the secrets provisioned at manufacturing and production states.
+- **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
 - **Further Information:**
