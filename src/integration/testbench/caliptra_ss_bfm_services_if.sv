@@ -16,6 +16,12 @@
 
 interface caliptra_ss_bfm_services_if (
 );
+
+    `include "caliptra_ss_includes.svh"
+    import css_mcu0_el2_pkg::*;
+    `include "css_mcu0_el2_param.vh"
+    ;
+
     // Define signals
     logic deassert_hard_rst_flag;
     logic assert_hard_rst_flag;
@@ -25,6 +31,8 @@ interface caliptra_ss_bfm_services_if (
     logic assert_hard_rst_flag_done;
     logic deassert_rst_flag_done;
     logic assert_rst_flag_done;
+
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] toggle_cptra_ss_mcu_ext_int;
     
     logic end_test_success;
 
@@ -38,7 +46,8 @@ interface caliptra_ss_bfm_services_if (
         output deassert_hard_rst_flag_done,
         output assert_hard_rst_flag_done,
         output deassert_rst_flag_done,
-        output assert_rst_flag_done
+        output assert_rst_flag_done,
+        input  toggle_cptra_ss_mcu_ext_int
     );
 
     modport tb_services (
@@ -50,7 +59,8 @@ interface caliptra_ss_bfm_services_if (
         input  deassert_hard_rst_flag_done,
         input  assert_hard_rst_flag_done,
         input  deassert_rst_flag_done,
-        input  assert_rst_flag_done
+        input  assert_rst_flag_done,
+        output toggle_cptra_ss_mcu_ext_int
     );
 endinterface
 

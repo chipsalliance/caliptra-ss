@@ -29,7 +29,9 @@
 #define EN_ISR_PRINTS 1
 
 #include "caliptra_ss_defines.h"
+#include "caliptra_ss_lib.h"
 #include "riscv_hw_if.h"
+#include "veer-csr.h"
 #include <stdint.h>
 #include "printf.h"
 
@@ -40,6 +42,14 @@ typedef struct {
     uint32_t mci_notif0;
     uint32_t mci_notif1;
     uint32_t i3c; // FIXME sub-banks of vectors
+    uint32_t bfm0;
+    uint32_t bfm1;
+    uint32_t bfm2;
+    uint32_t bfm3;
+    uint32_t bfm4;
+    uint32_t bfm5;
+    uint32_t bfm6;
+    uint32_t bfm7;
 } mcu_intr_received_s;
 extern volatile mcu_intr_received_s mcu_intr_rcv;
 
@@ -142,5 +152,32 @@ inline void service_i3c_intr() {
     }
 }
 
+inline void service_bfm_intr() {
+    uint32_t vec;
+    __asm__ volatile ("csrr    %0, %1"
+                      : "=r" (vec)  /* output : register */
+                      : "i" (VEER_CSR_MEIHAP) /* input : immediate */
+                      : /* clobbers: none */);
+    vec >>= 2;
+    vec &= 0xff;
+    if (vec < 32) {
+        mcu_intr_rcv.bfm0 |= 1 << vec;
+    } else if (vec < 64) {
+        mcu_intr_rcv.bfm1 |= 1 << (vec-32);
+    } else if (vec < 96) {
+        mcu_intr_rcv.bfm2 |= 1 << (vec-64);
+    } else if (vec < 128) {
+        mcu_intr_rcv.bfm3 |= 1 << (vec-96);
+    } else if (vec < 160) {
+        mcu_intr_rcv.bfm4 |= 1 << (vec-128);
+    } else if (vec < 192) {
+        mcu_intr_rcv.bfm5 |= 1 << (vec-160);
+    } else if (vec < 224) {
+        mcu_intr_rcv.bfm6 |= 1 << (vec-192);
+    } else if (vec < 256) {
+        mcu_intr_rcv.bfm7 |= 1 << (vec-224);
+    }
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, (vec << 8) | TB_CMD_TOGGLE_EXT_INT);
+}
 
 #endif //MCU_ISR_H

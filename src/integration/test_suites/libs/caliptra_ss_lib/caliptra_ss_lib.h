@@ -64,6 +64,8 @@
 #define CMD_FC_RELEASE_FUSE_UNZEROIZ    FC_LCC_CMD_OFFSET + 0x22
 #define CMD_FC_ALL_ONES_DISABLE_SVA     FC_LCC_CMD_OFFSET + 0x23
 #define CMD_FC_ALL_ONES_ENABLE_SVA      FC_LCC_CMD_OFFSET + 0x24
+#define CMD_MCI_FORCE_STATE_ERROR       FC_LCC_CMD_OFFSET + 0x25
+#define CMD_MCI_RELEASE_STATE_ERROR     FC_LCC_CMD_OFFSET + 0x26
 
 
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
@@ -85,6 +87,7 @@
 #define TB_CMD_INJECT_AGG_ERROR_NON_FATAL 0xef
 #define TB_CMD_INJECT_NOTIF0 0xf0
 #define TB_CMD_TOGGLE_GENERIC_INPUT_WIRES 0xf1
+#define TB_CMD_TOGGLE_EXT_INT 0xf2
 
 #define TB_CMD_COLD_RESET 0xF5
 #define TB_CMD_WARM_RESET 0xF6
@@ -161,7 +164,15 @@ void mcu_cptra_init(mcu_cptra_init_args args);
 #define mcu_cptra_init_d(...) mcu_cptra_init((mcu_cptra_init_args){mcu_cptra_init_arg_defaults __VA_OPT__(,) __VA_ARGS__});
 
 
-void handle_error(const char *format, ...);
+#define handle_error(format, ...)                    \
+    do {                                             \
+        /* Pass the variable arguments to VPRINTF */ \
+        VPRINTF(FATAL, format, ##__VA_ARGS__);       \
+        /* Fail the test */                          \
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);          \
+        /* Infinite loop to halt execution */        \
+        while (1);                                   \
+    } while (0)
 
 uint32_t xorshift32(void);
 

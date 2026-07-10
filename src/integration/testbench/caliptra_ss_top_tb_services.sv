@@ -181,6 +181,24 @@ import tb_top_pkg::*;
         end
     end
 
+    always @(negedge clk or negedge rst_l) begin
+        if (!rst_l) begin
+            soc_bfm_if.toggle_cptra_ss_mcu_ext_int <= 'h0;
+        end
+        else if (mailbox_write && (mailbox_data[7:0] == TB_CMD_TOGGLE_EXT_INT)) begin
+            if (mailbox_data[15:8] < `VEER_INTR_EXT_LSB) begin
+                $display("Ignoring request to toggle external interrupt bit [%d] to value [0x%x]\n", mailbox_data[15:8], ~caliptra_ss_top_tb.cptra_ss_mcu_ext_int[mailbox_data[15:8]]);
+            end
+            else begin
+                $display("Toggling external interrupt bit [%d] to value [0x%x]\n", mailbox_data[15:8], ~caliptra_ss_top_tb.cptra_ss_mcu_ext_int[mailbox_data[15:8]]);
+                soc_bfm_if.toggle_cptra_ss_mcu_ext_int[mailbox_data[15:8]] <= 1'b1;
+            end
+        end
+        else begin
+            soc_bfm_if.toggle_cptra_ss_mcu_ext_int <= 'h0;
+        end
+    end
+
     //Note update these as more errors are added to aggregate_error bus
     int rand_err_injection_sel;
     localparam NUM_AGG_ERROR_FATAL = 7;

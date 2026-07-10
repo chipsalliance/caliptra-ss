@@ -381,6 +381,7 @@ module otp_ctrl
 
   // SEC_CM: ACCESS.CTRL.MUBI
   part_access_t [NumPart-1:0] part_access_pre, part_access;
+
   always_comb begin : p_access_control
     // Assigns default and extracts named CSR read enables for SW_CFG partitions.
     // SEC_CM: PART.MEM.REGREN
@@ -392,23 +393,35 @@ module otp_ctrl
     part_access_pre[LifeCycleIdx].write_lock = MuBi8True;
     part_access_pre[LifeCycleIdx].read_lock = MuBi8True;
 
-    // Intercept write requests to the `VENDOR_HASHES_PROD` partition and verify
-    // the write is allowed by the volatile lock of the `VENDOR_PK_HASH_VOLATILE LOCK` register.
-    if (NumVendorPkFuses > 1) begin
-      if (dai_cmd == DaiWrite && reg2hw.vendor_pk_hash_volatile_lock != '0 &&
-          dai_addr >= ProdVendorHashStart &&
-          dai_addr < ProdVendorHashEnd) begin
-        if (32'(dai_addr) >= (ProdVendorHashStart + ((reg2hw.vendor_pk_hash_volatile_lock-1) * ProdVendorHashSize))) begin
-          part_access_pre[VendorHashesProdPartitionIdx].write_lock = MuBi8True;
-        end
+    // Apply the volatile write lock to locked PROD vendor PK hash entries.
+    // The lock is gated on the DAI address (held stable while the DAI is busy)
+    // and NOT on dai_cmd: dai_cmd is only valid during the single Idle decode
+    // cycle, whereas the DAI samples write_lock later in the Write/Scr states.
+    // write_lock only affects writes, so no command qualifier is needed.
+    for (int unsigned i = 0; i < ProdVendorHashLockBits; i++) begin
+      if (reg2hw.vendor_pk_hash_volatile_lock.q[i] &&
+          dai_addr >= ProdVendorHashLockMap[i].addr_start &&
+          dai_addr <= ProdVendorHashLockMap[i].addr_end) begin
+        part_access_pre[ProdVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
       end
     end
 
-    // Intercept write requests to the ratchet seed partitions and lock them
-    // based on the value in `RATCHET_SEED_VOLATILE_LOCK`.
-    for (int i = 0; i < NumRatchetSeedPartitions; i++) begin
-      if (i < reg2hw.ratchet_seed_volatile_lock) begin
-        part_access_pre[CptraSsLockHekProd0Idx+i].write_lock = MuBi8True;
+    // Apply the volatile write lock to locked MANUF vendor PK hash entries
+    // (address-gated, command-independent; see PROD note above).
+    for (int unsigned i = 0; i < ManufVendorHashLockBits; i++) begin
+      if (reg2hw.manuf_pk_hash_volatile_lock.q[i] &&
+          dai_addr >= ManufVendorHashLockMap[i].addr_start &&
+          dai_addr <= ManufVendorHashLockMap[i].addr_end) begin
+        part_access_pre[ManufVendorHashLockMap[i].partition_idx].write_lock = MuBi8True;
+      end
+    end
+
+    // Apply ratchet seed partition volatile locks. Each lock bit i directly
+    // gates the partition identified by RatchetSeedLockMap[i]. When the
+    // feature is absent, NumRatchetSeedPartitions == 0 and this loop is empty.
+    for (int unsigned i = 0; i < NumRatchetSeedPartitions; i++) begin
+      if (reg2hw.ratchet_seed_volatile_lock.q[i]) begin
+        part_access_pre[RatchetSeedLockMap[i].partition_idx].write_lock = MuBi8True;
       end
     end
 
@@ -1433,6 +1446,79 @@ end
   `CALIPTRA_ASSERT(TransitionTokensValid_A, part_digest[SecretLcTransitionPartitionIdx] != '0 &&
                                             mubi8_test_false_strict(part_is_zer[SecretLcTransitionPartitionIdx])
                                             |-> test_tokens_valid == lc_ctrl_pkg::On)
+
+  //---------------------------------------------------------------------------
+  // Volatile PK hash / ratchet seed lock assertions (caliptra-ss#1127)
+  //
+  // Two simple, hit-driven families:
+  //   (A) Stickiness  : once a lock bit is set, it stays set until reset.
+  //   (B) Gates write : when the lock condition holds, the mapped partition's
+  //                     part_access_pre[*].write_lock is MuBi8True same-cycle.
+  //
+  // PROD/MANUF lock paths are address-filtered (command-independent); ratchet
+  // locks are partition-wide. Each antecedent is exercised by the directed
+  // tests listed in step-4 (coverage-friendly, no guardian guards).
+  //---------------------------------------------------------------------------
+
+  // (A1) PROD vendor PK hash volatile-lock stickiness.
+  for (genvar i = 0; i < ProdVendorHashLockBits; i++) begin : g_prod_lock_sticky_sva
+    `CALIPTRA_ASSERT(ProdVendorHashLockSticky_A,
+        reg2hw.vendor_pk_hash_volatile_lock.q[i] |=>
+        reg2hw.vendor_pk_hash_volatile_lock.q[i],
+        clk_i, !rst_ni)
+  end
+
+  // (A2) MANUF vendor PK hash volatile-lock stickiness.
+  for (genvar i = 0; i < ManufVendorHashLockBits; i++) begin : g_manuf_lock_sticky_sva
+    `CALIPTRA_ASSERT(ManufVendorHashLockSticky_A,
+        reg2hw.manuf_pk_hash_volatile_lock.q[i] |=>
+        reg2hw.manuf_pk_hash_volatile_lock.q[i],
+        clk_i, !rst_ni)
+  end
+
+  // (A3) Ratchet seed partition volatile-lock stickiness. Empty generate when
+  // the feature is absent (NumRatchetSeedPartitions == 0).
+  for (genvar i = 0; i < NumRatchetSeedPartitions; i++) begin : g_ratchet_lock_sticky_sva
+    `CALIPTRA_ASSERT(RatchetSeedLockSticky_A,
+        reg2hw.ratchet_seed_volatile_lock.q[i] |=>
+        reg2hw.ratchet_seed_volatile_lock.q[i],
+        clk_i, !rst_ni)
+  end
+
+  // (B1) PROD vendor PK hash address-gated write-lock: when a lock bit is set
+  // and the DAI address falls in the locked entry's range, the target
+  // partition's write_lock is MuBi8True in the same cycle.
+  for (genvar i = 0; i < ProdVendorHashLockBits; i++) begin : g_prod_lock_gates_sva
+    `CALIPTRA_ASSERT(ProdVendorHashLockGatesWrite_A,
+        (reg2hw.vendor_pk_hash_volatile_lock.q[i] &&
+         dai_addr >= ProdVendorHashLockMap[i].addr_start &&
+         dai_addr <= ProdVendorHashLockMap[i].addr_end) |->
+        (part_access_pre[ProdVendorHashLockMap[i].partition_idx].write_lock ==
+         caliptra_prim_mubi_pkg::MuBi8True),
+        clk_i, !rst_ni)
+  end
+
+  // (B2) MANUF vendor PK hash address-gated write-lock.
+  for (genvar i = 0; i < ManufVendorHashLockBits; i++) begin : g_manuf_lock_gates_sva
+    `CALIPTRA_ASSERT(ManufVendorHashLockGatesWrite_A,
+        (reg2hw.manuf_pk_hash_volatile_lock.q[i] &&
+         dai_addr >= ManufVendorHashLockMap[i].addr_start &&
+         dai_addr <= ManufVendorHashLockMap[i].addr_end) |->
+        (part_access_pre[ManufVendorHashLockMap[i].partition_idx].write_lock ==
+         caliptra_prim_mubi_pkg::MuBi8True),
+        clk_i, !rst_ni)
+  end
+
+  // (B3) Ratchet seed partition-wide write-lock: setting a ratchet lock bit
+  // forces the mapped partition's write_lock to MuBi8True every cycle (no
+  // address gate because the whole partition is locked).
+  for (genvar i = 0; i < NumRatchetSeedPartitions; i++) begin : g_ratchet_lock_gates_sva
+    `CALIPTRA_ASSERT(RatchetSeedLockGatesWrite_A,
+        reg2hw.ratchet_seed_volatile_lock.q[i] |->
+        (part_access_pre[RatchetSeedLockMap[i].partition_idx].write_lock ==
+         caliptra_prim_mubi_pkg::MuBi8True),
+        clk_i, !rst_ni)
+  end
 
   // Redirect error triggers to the state error alert port.
   `CALIPTRA_SS_ASSERT_PRIM_COUNT_ERROR_TRIGGER_ALERT(OtpCtrlDaiPrimCountCheck_A, u_otp_ctrl_dai.u_prim_count, alerts[1])

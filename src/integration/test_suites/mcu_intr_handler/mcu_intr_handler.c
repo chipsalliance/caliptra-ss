@@ -47,6 +47,10 @@ uint32_t main(void) {
 
         VPRINTF(LOW,"----------------------------------\nMCU: Direct ISR Test!!\n----------------------------------\n");
 
+        // Bring up Caliptra so it can test its own interrupts
+        VPRINTF(LOW, "MCU: Caliptra bringup\n");
+        mcu_cptra_init_d(.cfg_enable_cptra_mbox_user_init=true);
+
         // Setup the interrupt CSR configuration
         init_interrupts();
 
@@ -149,7 +153,7 @@ uint32_t main(void) {
 
         // TODO i3c triggers ?
 
-        // Disable interrutps
+        // Disable interrupts
         csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
 
         // Print interrupt count from FW/HW trackers
@@ -261,6 +265,30 @@ uint32_t main(void) {
             SEND_STDOUT_CTRL(0x1); // Kill sim with ERROR
         }
 
+        // Test BFM-driven external interrupts (i.e. from SoC)
+        VPRINTF(MEDIUM, "MCU: Test BFM-driven external interrupts\n");
+        csr_set_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, (32  << 8) | TB_CMD_TOGGLE_EXT_INT); __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
+        if ((mcu_intr_rcv.bfm1 & 0x00000001) == 0) {
+            handle_error("MCU: Did not receive expected interrupt at vector %d!\n", 32);
+        }
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, (61  << 8) | TB_CMD_TOGGLE_EXT_INT); __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
+        if ((mcu_intr_rcv.bfm1 & 0x20000000) == 0) {
+            handle_error("MCU: Did not receive expected interrupt at vector %d!\n", 61);
+        }
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, (123 << 8) | TB_CMD_TOGGLE_EXT_INT); __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
+        if ((mcu_intr_rcv.bfm3 & 0x08000000) == 0) {
+            handle_error("MCU: Did not receive expected interrupt at vector %d!\n", 123);
+        }
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, (255 << 8) | TB_CMD_TOGGLE_EXT_INT); __asm__ volatile ("wfi") /* "Wait for interrupt" */; mcu_sleep(100);
+        if ((mcu_intr_rcv.bfm7 & 0x80000000) == 0) {
+            handle_error("MCU: Did not receive expected interrupt at vector %d!\n", 255);
+        }
+
+        // Disable interrupts
+        csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+
         // Now test timer interrupts
         VPRINTF(MEDIUM, "MCU: Test timer int\n");
         mtime = ((uint64_t) lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_H) << 32) | lsu_read_32(SOC_MCI_TOP_MCI_REG_MCU_RV_MTIME_L);
@@ -288,6 +316,9 @@ uint32_t main(void) {
             mcu_sleep(100);
         }
 
-        return 0;
+    
+        //Halt the core to wait for Caliptra to finish the test
+        VPRINTF(MEDIUM, "MCU: halt\n");
+        csr_write_mpmc_halt();
 }
 

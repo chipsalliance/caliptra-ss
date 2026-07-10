@@ -565,7 +565,6 @@
 #############################################################
 ## Start vendor-specific fuses
 #############################################################
-% if num_vendor_pk_fuses > 0:
         {
             name:         "VENDOR_HASHES_MANUF_PARTITION",
             variant:      "Unbuffered",
@@ -640,7 +639,7 @@
                     SoC product requirements determine the need of this partition.
                     '''
                 },   
-    % for i in range(1, num_vendor_pk_fuses):               
+    % for i in range(num_manuf_vendor_pk_fuses, num_vendor_pk_fuses):               
                 {
                     name: "CPTRA_CORE_VENDOR_PK_HASH_${i}",
                     size: "48",
@@ -740,7 +739,6 @@
             desc: '''Vendor revocations production partition.
             '''
         },
-% endif
 % if num_vendor_secret_fuses > 0:
         {
             name:         "VENDOR_SECRET_PROD_PARTITION",

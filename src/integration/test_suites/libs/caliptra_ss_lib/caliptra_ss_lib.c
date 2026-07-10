@@ -43,16 +43,6 @@
     __attribute__((weak)) uint32_t state = 0xabcd;
 #endif
 
-void handle_error(const char *format, ...) {
-    va_list args;
-    va_start(args, format);
-    VPRINTF(FATAL, format, args); // Pass the variable arguments to VPRINTF
-    va_end(args);
-
-    SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
-    while (1); // Infinite loop to halt execution
-}
-
 __attribute__((weak)) uint32_t xorshift32(void)
 {
     state ^= state << 13;
