@@ -73,12 +73,12 @@ void main(void) {
     require_lc_state(TEST_LOCKED0, "after zero-token transition");
 
     VPRINTF(LOW, "INFO: Attempting token-dependent TEST_LOCKED0 -> TEST_UNLOCKED1\n");
-    if (!start_state_transition(TEST_UNLOCKED1, k_test_unlock1_token, true)) {
-        handle_error("ERROR: token-dependent LC transition did not report expected error\n");
+    if (!start_state_transition(TEST_UNLOCKED1, k_test_unlock1_token, false)) {
+        handle_error("ERROR: token-dependent LC transition failed under debug intent\n");
     }
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
-    require_lc_state(TEST_LOCKED0, "after blocked token transition");
+    require_lc_state(TEST_UNLOCKED1, "after token transition");
 
     SEND_STDOUT_CTRL(0xff);
 }
