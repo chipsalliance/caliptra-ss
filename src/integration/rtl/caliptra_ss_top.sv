@@ -544,7 +544,7 @@ module caliptra_ss_top
         .strap_ss_strap_generic_2                               ( cptra_ss_strap_generic_2_i ),
         .strap_ss_strap_generic_3                               ( cptra_ss_strap_generic_3_i ),
 
-        .ss_debug_intent                                        ( cptra_ss_debug_intent_i ),
+        .ss_debug_intent                                        ( mci_ss_debug_intent ),
 
         // Subsystem mode debug outputs
         .ss_dbg_manuf_enable(cptra_ss_dbg_manuf_enable_o),

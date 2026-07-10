@@ -206,8 +206,12 @@ module otp_ctrl_scrmbl
 
   // SEC_CM: debug intent forces scrambler init keys to zero so key_state_q cannot latch a
   // real RndCnstKey-derived value in scan/DFT mode. Digest constants and IVs remain untouched.
-  assign otp_enc_key_mux_gated = (cptra_ss_debug_intent_i) ? DebugScrmblKey : otp_enc_key_mux;
-  assign otp_dec_key_mux_gated = (cptra_ss_debug_intent_i) ? DebugScrmblKey : otp_dec_key_mux;
+  // Exception: the SecretLifeCycleTransitionKey is kept live so the LC transition partition can
+  // still be descrambled and its tokens broadcast to LCC while debug intent is asserted.
+  assign otp_enc_key_mux_gated = (cptra_ss_debug_intent_i && (sel_i != SecretLifeCycleTransitionKey)) ?
+                                 DebugScrmblKey : otp_enc_key_mux;
+  assign otp_dec_key_mux_gated = (cptra_ss_debug_intent_i && (sel_i != SecretLifeCycleTransitionKey)) ?
+                                 DebugScrmblKey : otp_dec_key_mux;
 
   // Make sure we always select a valid key / digest constant.
   `CALIPTRA_ASSERT(CheckNumEncKeys_A, key_state_sel == SelEncKeyInit  |-> sel_i < NumScrmblKeys)
@@ -228,13 +232,24 @@ module otp_ctrl_scrmbl
                            (key_state_sel == SelDigestChained)  ? {data_state_q, data_shadow_q} :
                                                                   {data_i, data_shadow_q};
 
-  // What: Debug intent forces scrambler decrypt/encrypt key initialization to zero.
+  // What: Debug intent forces scrambler decrypt/encrypt key initialization to zero, except for the
+  //       SecretLifeCycleTransitionKey which is intentionally kept live for LCC transitions.
   // Why: Secret RndCnstKey-derived values must not be loaded into the scrambler key state in debug.
   `CALIPTRA_ASSERT(DebugScrmblKeyZero_A,
       (cptra_ss_debug_intent_i &&
+       (sel_i != SecretLifeCycleTransitionKey) &&
        (key_state_sel == SelDecKeyInit || key_state_sel == SelEncKeyInit))
       |->
       key_state_d == '0)
+
+  // What: The SecretLifeCycleTransitionKey stays live even under debug intent.
+  // Why: LCC must still descramble and receive its transition tokens to perform state transitions.
+  `CALIPTRA_ASSERT(DebugScrmblLcKeyLive_A,
+      (cptra_ss_debug_intent_i &&
+       (sel_i == SecretLifeCycleTransitionKey) &&
+       (key_state_sel == SelDecKeyInit || key_state_sel == SelEncKeyInit))
+      |->
+      key_state_d != '0)
 
   // Initialize the round index state with 1 in all cases, except for the decrypt operation.
   assign idx_state_d     = (key_state_sel == SelDecKeyOut)      ? dec_idx_out                     :

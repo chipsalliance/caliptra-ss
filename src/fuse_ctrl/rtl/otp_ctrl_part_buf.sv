@@ -120,7 +120,11 @@ module otp_ctrl_part_buf
   `CALIPTRA_ASSERT(BypassEnable0_A, Info.secret    |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
   `CALIPTRA_ASSERT(BypassEnable1_A, Info.hw_digest |-> lc_ctrl_pkg::lc_tx_test_false_strict(check_byp_en_i))
 
-  localparam bit DebugZeroizeThisPart = Info.secret & Info.hw_digest;
+  // The SECRET_LC_TRANSITION_PARTITION (key_sel == SecretLifeCycleTransitionKey) is excluded from
+  // debug-intent zeroization: LCC must still receive its transition tokens (broadcast from the
+  // buffer) to perform life cycle state transitions while debug intent is asserted.
+  localparam bit DebugZeroizeThisPart = Info.secret & Info.hw_digest &
+                                        (Info.key_sel != SecretLifeCycleTransitionKey);
 
   logic debug_zeroize_en;
   assign debug_zeroize_en = cptra_ss_debug_intent_i & DebugZeroizeThisPart;
