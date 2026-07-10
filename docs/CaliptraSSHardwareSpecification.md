@@ -1497,7 +1497,7 @@ Illegal accesses will result in writes being dropped and reads returning 0.
 | CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
 | FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
 | MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
+| SS\_DEBUG\_INTENT | 0x78 | RO |  | Yes |
 | SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
 | SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
 | MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |
