@@ -619,9 +619,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     (a legal "unsupported" response; the control pipe auto-clears the
         //     stall on the next SETUP per USB 2.0 sec 8.5.3.4) and latches
         //     PROTOCOL_ERROR = 0x01.
-        //     Done here -- before the recovery flow (section 5) -- so the
-        //     Caliptra-core firmware is not yet polling DEVICE_STATUS (each such
-        //     read would clear PROTOCOL_ERROR before this check observes it).
+        //     Done here before the recovery flow so the Recovery Agent's
+        //     clear-on-read behavior is checked before later status polling.
+        //     Firmware reads are intentionally non-destructive; only a
+        //     completed USB DEVICE_STATUS read may clear PROTOCOL_ERROR.
         // ---------------------------------------------------------------------
         begin
             bit [7:0] unsup_resp[$];
@@ -701,9 +702,9 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     host write there is likewise rejected (the prior cms_fifo
         //     write-1-to-clear extension was removed as non-spec-conformant
         //     and unused by any test/firmware).
-        //     Done here (before the recovery flow) for the same read-timing
-        //     reason as the unsupported-command check above: Caliptra firmware is not yet polling
-        //     DEVICE_STATUS, so the clear-on-read checks below are not raced.
+        //     Done here before the recovery flow so the Recovery Agent's
+        //     clear-on-read behavior is checked before later status polling.
+        //     Firmware reads are intentionally non-destructive.
         // ---------------------------------------------------------------------
         begin
             bit [7:0] ds_proto_r7[$];
