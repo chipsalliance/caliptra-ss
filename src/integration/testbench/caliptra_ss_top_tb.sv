@@ -263,7 +263,7 @@ module caliptra_ss_top_tb
 
     // MCU ROM Sub AXI Interface
     axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
+        .AW(CPTRA_SS_ROM_AXI_ADDR_W_TB),
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
