@@ -243,7 +243,9 @@ logic mcu_mbox0_target_user_done_p;
 logic mcu_mbox1_target_user_done_d;
 logic mcu_mbox1_target_user_done_p;
 
-logic strap_we_sticky;
+// SS_DEBUG_INTENT one-shot capture arm: armed at cold reset, disarmed after the
+// cold-boot capture window so the strap is latched only once per power cycle.
+logic ss_debug_intent_capture_armed;
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -325,12 +327,24 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
-assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+// SS_DEBUG_INTENT capture: the physical debug-intent strap is latched once
+// during the cold-boot reset window (while strap_we is high, giving the debugger
+// a window to set the strap), and is not resampled on the following warm resets.
+// The arm is set by cold reset (mci_pwrgood) and cleared once strap_we drops.
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if (~mci_pwrgood) begin
+        ss_debug_intent_capture_armed <= 1'b1;
+    end
+    else begin
+        if (!strap_we)
+            ss_debug_intent_capture_armed <= 1'b0;
+    end
+end
 
 // Value
 always_comb begin
     // STRAP with TAP ACCESS
-    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
+    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = ss_debug_intent;
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
     mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.next  = FIPS_ZEROIZATION_PPD_i;
 
@@ -354,8 +368,7 @@ end
 // Write enable
 always_comb begin
     // STRAPS with TAP ACCESS
-    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
-                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
+    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = ss_debug_intent_capture_armed & strap_we;
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
