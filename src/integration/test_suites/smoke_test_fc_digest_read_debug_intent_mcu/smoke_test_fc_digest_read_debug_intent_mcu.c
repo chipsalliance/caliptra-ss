@@ -15,22 +15,31 @@
 // limitations under the License.
 //********************************************************************************
 //
-// SECRET_DIGEST_READ_LOCK test (read lock ONLY).
+// MCU debug-intent secret HW-digest hiding test.
 //
-// Exercises the W1S SECRET_DIGEST_READ_LOCK CSR, which hides secret partition HW
-// digests from software once set:
-//   - Named CSR path: masked to the provisioned indicator (all-1s if the digest
-//     is provisioned/non-zero, else 0), never the real digest.
-//   - DAI path: short-circuited to 0.
+// The fuse controller senses the secret partitions in hardware during boot
+// (before this test runs) while SS_DEBUG_INTENT_MCU is still 0, so the real
+// digests are captured. The MCU then writes the W1S SS_DEBUG_INTENT_MCU register
+// to assert debug intent. Because that register is only writable before
+// SS_CONFIG_DONE_STICKY is set, it is written at the very start of main() (before
+// mcu_cptra_init_d asserts config done). Once debug intent is asserted:
+//   - Named CSR path: secret HW digests are masked to the provisioned indicator
+//     (all-1s if provisioned/non-zero, else 0), never the real digest.
+//   - DAI path: the digest read is short-circuited to 0.
 //
-// Partitions are provisioned + locked via the VMEM (secret_partitions_locked.hjson)
-// so their digests are non-zero at boot; SECRET_PROD_PARTITION_3 is left
-// unprovisioned so the 0-indicator case is also covered. One digest per secret
-// partition is checked.
+// Then the SECRET_DIGEST_READ_LOCK is ALSO engaged (both mechanisms set at once)
+// and the same digest checks are repeated, to prove the two hiding mechanisms do
+// not break each other when combined.
 //
-// PASS = baseline exposes the real digest on both paths AND, once the read lock is
-//        set, every DAI digest reads 0 while every CSR digest reads only the
-//        provisioned indicator (all-1s for provisioned, 0 for unprovisioned).
+// Partitions are provisioned + locked via the VMEM (secret_partitions_locked.hjson);
+// SECRET_PROD_PARTITION_3 is left unprovisioned so the 0-indicator case is also
+// covered. One digest per secret partition is checked. The all-1s indicator for a
+// provisioned partition proves its real (non-zero) digest was sensed before being
+// masked.
+//
+// PASS = under debug intent (and again with the read lock also set) every DAI
+//        digest reads 0 and every CSR digest reads only the provisioned
+//        indicator (all-1s for provisioned, 0 for unprovisioned).
 //
 #include <stdbool.h>
 #include <stddef.h>
@@ -100,34 +109,9 @@ static bool read_digest_dai(const digest_target_t *t, uint32_t *d0, uint32_t *d1
     return dai_rd(part.digest_address, d0, d1, 64, 0);
 }
 
-// Baseline: both paths must expose the SAME real digest (non-zero for a
-// provisioned partition, zero for an unprovisioned one).
-static void check_baseline(uint32_t i) {
-    const digest_target_t *t = &secret_targets[i];
-    uint32_t csr0, csr1, dai0, dai1;
-
-    read_digest_csr(t, &csr0, &csr1);
-    if (!read_digest_dai(t, &dai0, &dai1)) {
-        handle_error("ERROR [baseline] %s: DAI digest read did not return idle\n", t->name);
-    }
-
-    VPRINTF(LOW, "INFO [baseline] %s: CSR={%08X_%08X} DAI={%08X_%08X}\n",
-            t->name, csr1, csr0, dai1, dai0);
-
-    if (csr0 != dai0 || csr1 != dai1) {
-        handle_error("ERROR [baseline] %s: CSR and DAI digest differ\n", t->name);
-    }
-    const bool nonzero = (csr0 != 0) || (csr1 != 0);
-    if (t->expect_provisioned && !nonzero) {
-        handle_error("ERROR [baseline] %s: expected provisioned digest but read 0\n", t->name);
-    }
-    if (!t->expect_provisioned && nonzero) {
-        handle_error("ERROR [baseline] %s: expected unprovisioned (0) digest but read non-zero\n", t->name);
-    }
-}
-
-// Under the read lock: DAI digest must read 0, and the CSR digest must read only
-// the provisioned indicator (all-1s for provisioned, 0 for unprovisioned).
+// Under a digest-hiding mechanism: DAI digest must read 0, and the CSR digest
+// must read only the provisioned indicator (all-1s for provisioned, 0 for
+// unprovisioned).
 static void check_hidden(uint32_t i, const char *phase) {
     const digest_target_t *t = &secret_targets[i];
     uint32_t csr0, csr1, dai0, dai1;
@@ -151,10 +135,38 @@ static void check_hidden(uint32_t i, const char *phase) {
     }
 }
 
+static void run_hidden_checks(const char *phase) {
+    grant_caliptra_core_for_fc_writes();
+    for (uint32_t i = 0; i < NUM_SECRET_TARGETS; i++) {
+        check_hidden(i, phase);
+    }
+    revoke_grant_mcu_for_fc_writes();
+}
+
 void main(void) {
     VPRINTF(LOW, "==================================================\n"
-                 "FC secret digest read lock test (read lock only)\n"
+                 "FC secret digest hiding: MCU debug intent (+ read lock)\n"
                  "==================================================\n\n");
+
+    // Assert debug intent via the MCU register (W1S, MCU-only). It must be
+    // written before SS_CONFIG_DONE_STICKY is set, hence before mcu_cptra_init_d.
+    // The partitions were already sensed in HW during boot (register was 0 then),
+    // so their real digests are captured before this masks them.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU, 1);
+    mcu_sleep(20);
+    if ((lsu_read_32(SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU) &
+         MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_MASK) == 0) {
+        handle_error("ERROR [dbg-intent]: SS_DEBUG_INTENT_MCU did not set\n");
+    }
+
+    // W1S: writing 0 must be a no-op while the register is still writable (before
+    // config done). Confirm the bit stays set.
+    lsu_write_32(SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU, 0);
+    mcu_sleep(20);
+    if ((lsu_read_32(SOC_MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU) &
+         MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_MASK) == 0) {
+        handle_error("ERROR [dbg-intent]: SS_DEBUG_INTENT_MCU (W1S) unexpectedly cleared by write-0\n");
+    }
 
     mcu_cptra_init_d();
     if (!wait_dai_op_idle(0)) {
@@ -162,43 +174,37 @@ void main(void) {
     }
 
     // ---------------------------------------------------------------------
-    // Phase 1: baseline. Both paths expose the same real digest. DAI secret
-    // reads use the Caliptra-core AXI identity so they pass the fuse_ctrl filter.
+    // Phase 1: debug intent is active (asserted above). DAI digest -> 0 and CSR
+    // digest -> provisioned indicator (all-1s provisioned, 0 unprovisioned). DAI
+    // secret reads use the Caliptra-core AXI identity so they pass the fuse_ctrl
+    // filter. The all-1s result proves the provisioned digest was really sensed.
     // ---------------------------------------------------------------------
-    VPRINTF(LOW, "\n--- Phase 1: baseline CSR == DAI == real digest ---\n");
-    grant_caliptra_core_for_fc_writes();
-    for (uint32_t i = 0; i < NUM_SECRET_TARGETS; i++) {
-        check_baseline(i);
-    }
-    revoke_grant_mcu_for_fc_writes();
+    VPRINTF(LOW, "\n--- Phase 1: MCU debug intent hides the digest ---\n");
+    run_hidden_checks("dbg-intent");
 
     // ---------------------------------------------------------------------
-    // Phase 2: engage SECRET_DIGEST_READ_LOCK (W1S), written under the default
-    // MCU identity. DAI digest -> 0, CSR digest -> provisioned indicator. A
-    // write of 0 is a no-op.
+    // Phase 2: ALSO engage SECRET_DIGEST_READ_LOCK (W1S) so both hiding
+    // mechanisms are set at once. Repeat the digest checks to confirm the logic
+    // is not broken when both are active. Write-0 is a no-op.
     // ---------------------------------------------------------------------
-    VPRINTF(LOW, "\n--- Phase 2: SECRET_DIGEST_READ_LOCK hides the digest ---\n");
+    VPRINTF(LOW, "\n--- Phase 2: read lock ALSO set (both mechanisms active) ---\n");
     lsu_write_32(SOC_OTP_CTRL_SECRET_DIGEST_READ_LOCK, 1);
     mcu_sleep(20);
     if ((lsu_read_32(SOC_OTP_CTRL_SECRET_DIGEST_READ_LOCK) & 1u) != 1u) {
-        handle_error("ERROR [read-lock]: SECRET_DIGEST_READ_LOCK did not set\n");
+        handle_error("ERROR [both]: SECRET_DIGEST_READ_LOCK did not set\n");
     }
     lsu_write_32(SOC_OTP_CTRL_SECRET_DIGEST_READ_LOCK, 0); // W1S: write-0 is a no-op
     mcu_sleep(20);
     if ((lsu_read_32(SOC_OTP_CTRL_SECRET_DIGEST_READ_LOCK) & 1u) != 1u) {
-        handle_error("ERROR [read-lock]: W1S lock unexpectedly cleared by write-0\n");
+        handle_error("ERROR [both]: W1S lock unexpectedly cleared by write-0\n");
     }
     if (!wait_dai_op_idle(0)) {
-        handle_error("ERROR [read-lock]: DAI not idle after engaging read lock\n");
+        handle_error("ERROR [both]: DAI not idle after engaging read lock\n");
     }
-    grant_caliptra_core_for_fc_writes();
-    for (uint32_t i = 0; i < NUM_SECRET_TARGETS; i++) {
-        check_hidden(i, "read-lock");
-    }
-    revoke_grant_mcu_for_fc_writes();
+    run_hidden_checks("both");
 
     mcu_sleep(160);
-    VPRINTF(LOW, "\nINFO: secret digest read lock test completed (PASS).\n");
+    VPRINTF(LOW, "\nINFO: MCU debug-intent digest hiding test completed (PASS).\n");
 
     SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
 }
