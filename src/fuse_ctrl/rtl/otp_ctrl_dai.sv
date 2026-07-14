@@ -41,6 +41,8 @@ module otp_ctrl_dai
   // SEC_CM: ACCESS.CTRL.MUBI
   input  part_access_t [NumPart-1:0]     part_access_i,
   input logic                            cptra_ss_debug_intent_i,
+  // Readback lock for secret HW digest DAI values.
+  input logic                            digest_read_lock_i,
   // CSR interface
   input        [OtpByteAddrWidth-1:0]    dai_addr_i,
   input dai_cmd_e                        dai_cmd_i,
@@ -334,14 +336,14 @@ module otp_ctrl_dai
       // that is the case, we immediately bail out. Otherwise, we
       // request a block of data from OTP.
       ReadSt: begin
-        if (cptra_ss_debug_intent_i && part_sel_valid &&
+        if ((cptra_ss_debug_intent_i || digest_read_lock_i) && part_sel_valid &&
             PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
             otp_addr_o == digest_addr_lut[part_idx]) begin
-          // SEC_CM: under debug intent, hide the secret HW digest on the DAI
-          // readback path. Skip the OTP read entirely so the real digest is
-          // never fetched into the datapath; data_q was already cleared to 0
-          // by the IdleSt read decode, so the readback returns 0 and matches
-          // the (already-zero) named-CSR path.
+          // SEC_CM: under debug intent OR the secret HW-digest read lock, hide
+          // the secret HW digest on the DAI readback path. Skip the OTP read
+          // entirely so the real digest is never fetched into the datapath;
+          // data_q was already cleared to 0 by the IdleSt read decode, so the
+          // readback returns 0 and matches the (already-zero) named-CSR path.
           state_d        = IdleSt;
           dai_cmd_done_o = 1'b1;
         end else if ( !discard_fuse_write_i &&
@@ -1007,6 +1009,24 @@ module otp_ctrl_dai
   // Why: The masked read completes from the pre-cleared data register instead of exposing OTP data.
   `CALIPTRA_ASSERT(DebugDigestDataZero_A,
       cptra_ss_debug_intent_i && state_q == ReadSt && part_sel_valid &&
+      PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
+      otp_addr_o == digest_addr_lut[part_idx]
+      |->
+      data_q == '0)
+
+  // What: Read-locked secret HW-digest DAI reads do not issue OTP reads.
+  // Why: The secret digest read lock must not fetch the real secret digest from OTP.
+  `CALIPTRA_ASSERT(DigestReadLockNoOtpRead_A,
+      digest_read_lock_i && state_q == ReadSt && part_sel_valid &&
+      PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
+      otp_addr_o == digest_addr_lut[part_idx]
+      |->
+      !otp_req_o)
+
+  // What: Read-locked secret HW-digest DAI readback data remains zero.
+  // Why: The masked read completes from the pre-cleared data register instead of exposing OTP data.
+  `CALIPTRA_ASSERT(DigestReadLockDataZero_A,
+      digest_read_lock_i && state_q == ReadSt && part_sel_valid &&
       PartInfo[part_idx].secret && PartInfo[part_idx].hw_digest &&
       otp_addr_o == digest_addr_lut[part_idx]
       |->

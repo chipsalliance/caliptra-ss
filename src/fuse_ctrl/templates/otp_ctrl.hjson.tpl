@@ -1188,9 +1188,25 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
     % endif
   % endfor
 
+      { name: "SECRET_DIGEST_READ_LOCK",
+        desc: '''
+              Global volatile read lock for secret partition HW digest CSRs and DAI digest readback. W1S: writing 1 sets the lock bit, writing 0 leaves the bit unchanged, and only reset clears the register.
+              ''',
+        swaccess: "rw1s",
+        hwaccess: "hro",
+        resval:   0,
+        fields: [
+          { bits: "0",
+            desc: '''
+                  Global volatile read lock for secret partition HW digest CSRs and DAI digest readback. W1S: writing 1 sets the lock bit, writing 0 leaves the bit unchanged, and only reset clears the register.
+                  '''
+          }
+        ]
+      }
+
       { name: "VENDOR_PK_HASH_VOLATILE_LOCK",
         desc: '''
-              Volatile write lock for production vendor public key hashes. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.
+              Volatile write lock for production vendor public key hashes. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.
               ''',
         swaccess: "rw1s",
         hwaccess: "hro",
@@ -1199,7 +1215,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
           { name: "LOCK",
             bits: "31:0",
             desc: '''
-                  Volatile write lock for production vendor public key hashes. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.
+                  Volatile write lock for production vendor public key hashes. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.
                   '''
           }
         ]
@@ -1207,7 +1223,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
 
       { name: "MANUF_PK_HASH_VOLATILE_LOCK",
         desc: '''
-              Volatile write lock for the manufacturing vendor public key hash. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.
+              Volatile write lock for the manufacturing vendor public key hash. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.
               ''',
         swaccess: "rw1s",
         hwaccess: "hro",
@@ -1216,7 +1232,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
           { name: "LOCK",
             bits: "31:0",
             desc: '''
-                  Volatile write lock for the manufacturing vendor public key hash. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.
+                  Volatile write lock for the manufacturing vendor public key hash. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.
                   '''
           }
         ]
@@ -1224,7 +1240,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
 
       { name: "RATCHET_SEED_VOLATILE_LOCK",
         desc: '''
-              Volatile write lock for ratchet seed partitions. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.
+              Volatile write lock for ratchet seed partitions. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.
               ''',
         swaccess: "rw1s",
         hwaccess: "hro",
@@ -1233,7 +1249,7 @@ otp_size_as_uint32 = otp_size_as_bytes // 4
           { name: "LOCK",
             bits: "31:0",
             desc: '''
-                  Volatile write lock for ratchet seed partitions. Sticky W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.
+                  Volatile write lock for ratchet seed partitions. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.
                   '''
           }
         ]

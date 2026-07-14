@@ -290,7 +290,7 @@ interface fuse_ctrl_cov_if
 
     /** fuse_ctrl public-key hash volatile locks:
      *
-     *  Volatile lock CSRs are sticky W1S bit masks, not ordinal encodings.
+     *  Volatile lock CSRs are W1S bit masks, not ordinal encodings.
      */
     generate
         logic [31:0] prod_pk_hash_volatile_lock;
