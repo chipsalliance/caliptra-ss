@@ -633,9 +633,16 @@ module otp_ctrl
   logic intr_state_otp_operation_done_d, intr_state_otp_operation_done_de;
   logic intr_state_otp_error_d, intr_state_otp_error_de;
 
+  // Mask the named-CSR secret HW-digest readback to the provisioned indicator
+  // (all-1s if provisioned, else 0) when either the digest read lock is engaged
+  // or debug intent is asserted. When debug intent is asserted pre-init (GPIO
+  // strap) the partition is never sensed, so part_digest is 0 and the CSR reads
+  // 0; when asserted post-init by the MCU register the partition is already
+  // sensed, so the CSR reads all-1s instead of leaking the real digest.
   always_comb begin : p_csr_part_digest
     for (int unsigned k = 0; k < NumPart; k++) begin
-      if (PartInfo[k].secret && PartInfo[k].hw_digest && reg2hw.secret_digest_read_lock.q) begin
+      if (PartInfo[k].secret && PartInfo[k].hw_digest &&
+          (reg2hw.secret_digest_read_lock.q || cptra_ss_debug_intent_i)) begin
         csr_part_digest[k] = (part_digest[k] == '0) ? '0 : {ScrmblBlockWidth{1'b1}};
       end else begin
         csr_part_digest[k] = part_digest[k];
