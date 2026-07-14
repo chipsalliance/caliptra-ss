@@ -79,12 +79,14 @@
 // OCP Recovery v1.1 Section 8.5.3: bcdOCPRecVersion encodes spec major.minor, so v1.1 is 0x0110.
 #define USB_OCP_RECOVERY_BCD_VERSION 0x0110u
 
-// Returns a pointer to a static composite Configuration descriptor blob that
-// advertises a single Interface (OCP Recovery, class 0xEF/0x08/0x01,
-// bNumEndpoints=0x00) plus one OCP_RECOVERY_FUNCTIONAL descriptor (type 0x24,
-// subtype 0x01) carrying the firmware-chosen wMaxRdTransferSize /
-// wMaxWrTransferSize values.
+// Compatibility configuration descriptor entry point. Consumers that require
+// the OCP Recovery v1.1 Section 8.5.3 field ordering use the v1p1 entry point.
 const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len);
+
+// Returns the OCP Recovery v1.1 configuration descriptor using the functional
+// descriptor layout from Section 8.5.3: reserved byte at offset 3, maximum
+// write/read transfer sizes at offsets 4/6, and BCD version at offset 8.
+const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len);
 
 // Class-request hook for OCP Recovery EP0 traffic.  The VHDL PIE arbiter
 // classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed requests to the

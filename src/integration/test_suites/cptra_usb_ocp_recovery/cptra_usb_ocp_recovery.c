@@ -33,9 +33,6 @@
 #define CPTRA_OCP_RECOVERY_RETRY_DELAY 16u
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_READY_FOR_RECOVERY_IMAGE 0x03u
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING 0x04u
-#define CPTRA_OCP_RECOVERY_RECOVERY_CTRL_USE_MEMORY_WINDOW_IMAGE 0x01u
-#define CPTRA_OCP_RECOVERY_RECOVERY_CTRL_ACTIVATE_RECOVERY_IMAGE 0x0Fu
-
 #define OCP_RECOVERY_SCRATCH_WORDS 16u
 #define OCP_RECOVERY_CMS_REGION 0u
 #define OCP_RECOVERY_MBOX_DEST_ADDR 0x4400u
@@ -91,12 +88,6 @@ static uint8_t cptra_ocp_recovery_read_dword_retry(uint64_t addr, uint32_t *valu
 
 static uint8_t cptra_ocp_recovery_write_dword(uint64_t addr, uint32_t value) {
     return soc_ifc_axi_dma_send_ahb_payload_with_status(addr, 0u, &value, sizeof(value), 0u);
-}
-
-static uint32_t cptra_ocp_recovery_pack_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
-    return ((uint32_t)cms << 0)
-         | ((uint32_t)img_sel << 8)
-         | ((uint32_t)activate << 16);
 }
 
 uint8_t cptra_ocp_recovery_read_device_status(uint8_t *device_status) {
@@ -253,24 +244,11 @@ static uint8_t cptra_ocp_recovery_check_image(const uint32_t *img, uint32_t word
     return 0u;
 }
 
-void cptra_ocp_recovery_set_recovery_ctrl(uint8_t cms, uint8_t img_sel, uint8_t activate) {
-    uint32_t ctrl_word;
-
-    // OCP Recovery v1.1 9.2, RECOVERY_CTRL / Table 9-9: program CMS, then image selection, then activate.
-    ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, 0u, 0u);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
-
-    ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, img_sel, 0u);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
-
-    ctrl_word = cptra_ocp_recovery_pack_recovery_ctrl(cms, img_sel, activate);
-    (void)cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, ctrl_word);
-}
-
 void main(void) {
     uint32_t scratch[OCP_RECOVERY_SCRATCH_WORDS] = {0};
     uint32_t image_size_words;
     uint32_t last_write_index = 0u;
+    uint32_t recovery_ctrl_word;
     uint64_t rec_base;
     uint8_t dev_status = 0u;
     uint8_t fifo_status;
@@ -371,10 +349,16 @@ void main(void) {
     }
     VPRINTF(LOW, "CPTRA: drained image content verified (%u dwords)\n", image_size_words);
 
-    VPRINTF(LOW, "CPTRA: writing RECOVERY_CTRL to select CMS image and activate it\n");
-    cptra_ocp_recovery_set_recovery_ctrl(OCP_RECOVERY_CMS_REGION,
-                                         CPTRA_OCP_RECOVERY_RECOVERY_CTRL_USE_MEMORY_WINDOW_IMAGE,
-                                         CPTRA_OCP_RECOVERY_RECOVERY_CTRL_ACTIVATE_RECOVERY_IMAGE);
+    VPRINTF(LOW, "CPTRA: clearing RECOVERY_CTRL activation after verified FIFO drain\n");
+    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
+                                            &recovery_ctrl_word) != 0u) {
+        fail_and_halt("CPTRA: RECOVERY_CTRL read before activation clear failed");
+    }
+    recovery_ctrl_word &= 0xFF00FFFFu;
+    if (cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
+                                       recovery_ctrl_word) != 0u) {
+        fail_and_halt("CPTRA: RECOVERY_CTRL activation clear write failed");
+    }
 
     VPRINTF(LOW, "CPTRA: signaling MCU completion through SS_GENERIC_FW_EXEC_CTRL_0[2]\n");
     // Match the established convention in existing tests (mcu_lmem_exe,

@@ -1062,6 +1062,23 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             #50us;
         end
 
+        // The Recovery Agent requests activation after the device reports the
+        // FIFO image is loaded. This sets the standard OCP field to 0x0F but
+        // does not boot immediately: firmware drains and verifies the image,
+        // then writes the same field to zero as the device-side clear.
+        if (recovery_pending_seen) begin
+            recovery_ctrl_payload = '{8'h00, 8'h00, 8'h0F};
+            `uvm_info("OCPREC",
+                "RECOVERY_CTRL (cmd 0x26) OUT: CMS=0, ImgSel=0, Activate=0x0F. Requesting activation after RECOVERY_PENDING.",
+                UVM_NONE)
+            ocp_class_xfer(.dir_in(1'b0),
+                           .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                           .wlength(16'(recovery_ctrl_payload.size())),
+                           .payload_bytes(recovery_ctrl_payload),
+                           .resp_bytes(resp_q),
+                           .label("OCPREC_RECOVERY_CTRL_ACTIVATE"));
+        end
+
         // End-of-test handshake (Problem 1 fix).
         //
         // Observing DEVICE_STATUS==0x04 RECOVERY_PENDING only means the device

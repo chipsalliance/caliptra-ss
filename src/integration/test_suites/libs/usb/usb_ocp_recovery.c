@@ -61,9 +61,8 @@ static const uint8_t usb_ocp_recovery_config_descriptor[USB_OCP_RECOVERY_CONFIG_
     USB_OCP_RECOVERY_INTERFACE_PROTOCOL,
     USB_OCP_RECOVERY_STRING_INDEX_NONE,
 
-    // OCP Recovery v1.1 Section 8.5.3 Table 8-3: OCP_RECOVERY_FUNCTIONAL descriptor.
-    // Byte order: bLength, bDescriptorType, bDescriptorSubType, bcdOCPRecVersion(LE),
-    // wMaxWrTransferSize(LE), wMaxRdTransferSize(LE).
+    // Compatibility descriptor field order. The OCP Recovery v1.1 Section
+    // 8.5.3 field order is provided by the descriptor below.
     USB_OCP_RECOVERY_FUNCTIONAL_DESCRIPTOR_LENGTH,
     USB_OCP_RECOVERY_FUNCTIONAL_DESC_TYPE,
     USB_OCP_RECOVERY_FUNCTIONAL_DESC_SUBTYPE,
@@ -75,11 +74,55 @@ static const uint8_t usb_ocp_recovery_config_descriptor[USB_OCP_RECOVERY_CONFIG_
     (uint8_t)((USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE >> 8) & 0xFFu),
 };
 
+static const uint8_t usb_ocp_recovery_v1p1_config_descriptor[
+    USB_OCP_RECOVERY_CONFIG_TOTAL_LENGTH] = {
+    USB_STD_CONFIGURATION_DESCRIPTOR_LENGTH,
+    USB_DESC_CONFIGURATION,
+    (uint8_t)(sizeof(usb_ocp_recovery_v1p1_config_descriptor) & 0xFFu),
+    (uint8_t)((sizeof(usb_ocp_recovery_v1p1_config_descriptor) >> 8) & 0xFFu),
+    USB_OCP_RECOVERY_CONFIG_NUM_INTERFACES,
+    USB_OCP_RECOVERY_CONFIG_VALUE,
+    USB_OCP_RECOVERY_STRING_INDEX_NONE,
+    USB_OCP_RECOVERY_CONFIG_ATTRIBUTES,
+    USB_OCP_RECOVERY_MAX_POWER_2MA_UNITS,
+
+    USB_STD_INTERFACE_DESCRIPTOR_LENGTH,
+    USB_DESC_INTERFACE,
+    USB_OCP_RECOVERY_IFACE_NUM,
+    USB_OCP_RECOVERY_ALT_SETTING,
+    USB_OCP_RECOVERY_NUM_ENDPOINTS,
+    USB_OCP_RECOVERY_INTERFACE_CLASS,
+    USB_OCP_RECOVERY_INTERFACE_SUBCLASS,
+    USB_OCP_RECOVERY_INTERFACE_PROTOCOL,
+    USB_OCP_RECOVERY_STRING_INDEX_NONE,
+
+    // OCP Recovery v1.1 Section 8.5.3: length, type, subtype, reserved,
+    // maximum write size, maximum read size, and BCD specification version.
+    USB_OCP_RECOVERY_FUNCTIONAL_DESCRIPTOR_LENGTH,
+    USB_OCP_RECOVERY_FUNCTIONAL_DESC_TYPE,
+    USB_OCP_RECOVERY_FUNCTIONAL_DESC_SUBTYPE,
+    0u,
+    (uint8_t)(USB_OCP_RECOVERY_MAX_WR_TRANSFER_SIZE & 0xFFu),
+    (uint8_t)((USB_OCP_RECOVERY_MAX_WR_TRANSFER_SIZE >> 8) & 0xFFu),
+    (uint8_t)(USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE & 0xFFu),
+    (uint8_t)((USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE >> 8) & 0xFFu),
+    (uint8_t)(USB_OCP_RECOVERY_BCD_VERSION & 0xFFu),
+    (uint8_t)((USB_OCP_RECOVERY_BCD_VERSION >> 8) & 0xFFu),
+};
+
 const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len) {
     if (len != NULL) {
         *len = (uint16_t)sizeof(usb_ocp_recovery_config_descriptor);
     }
     return usb_ocp_recovery_config_descriptor;
+}
+
+const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len) {
+    if (len != NULL) {
+        *len =
+            (uint16_t)sizeof(usb_ocp_recovery_v1p1_config_descriptor);
+    }
+    return usb_ocp_recovery_v1p1_config_descriptor;
 }
 
 bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup) {
