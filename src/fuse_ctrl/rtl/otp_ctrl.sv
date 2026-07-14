@@ -30,6 +30,7 @@ module otp_ctrl
   // This is a command to zeroize the secrets in run-time
   input                                              FIPS_ZEROIZATION_CMD_i,
   input                                              cptra_in_debug_mode_i,
+  input                                              cptra_ss_debug_intent_i,
   input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
   input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
@@ -953,11 +954,20 @@ end
   logic scrmbl_arb_req_ready, scrmbl_arb_rsp_valid;
   logic [NumAgents-1:0] part_scrmbl_req_ready, part_scrmbl_rsp_valid;
 
+  // cptra_ss_debug_intent_i is driven by MCI's SS_DEBUG_INTENT register, which
+  // captures the debug-intent strap once during the cold-boot reset window and is
+  // read-only over TAP/DMI. That capture completes before the MCI boot sequencer
+  // releases cptra_ss_rst_b_o and asserts the FC init request, so the value is
+  // stable and cannot be deasserted mid-session. No sticky latch is needed here;
+  // MCI is the single latch point for the M1/M2/M3 zeroization protections.
+
   // SEC_CM: SECRET.MEM.SCRAMBLE
   // SEC_CM: PART.MEM.DIGEST
   otp_ctrl_scrmbl u_otp_ctrl_scrmbl (
     .clk_i,
     .rst_ni,
+    // MCI-latched debug intent (stable before FC init) keeps M2 key gating engaged.
+    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i ),
     .cmd_i         ( scrmbl_req_bundle.cmd       ),
     .mode_i        ( scrmbl_req_bundle.mode      ),
     .sel_i         ( scrmbl_req_bundle.sel       ),
@@ -1040,6 +1050,8 @@ end
     .error_o          ( part_error[DaiIdx]                    ),
     .fsm_err_o        ( part_fsm_err[DaiIdx]                  ),
     .part_access_i    ( part_access_dai                       ),
+    // MCI-latched debug intent (stable before FC init) keeps M3 digest short-circuit engaged.
+    .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i         ),
     .dai_addr_i       ( dai_addr                              ),
     .dai_cmd_i        ( dai_cmd                               ),
     .dai_req_i        ( dai_req                               ),
@@ -1187,6 +1199,8 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
+        // MCI-latched debug intent (stable before FC init) keeps M1 data_o gating engaged.
+        .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i   ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
@@ -1244,6 +1258,8 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
+        // LifeCycle is non-secret LC state/count data and must never be debug-zeroized.
+        .cptra_ss_debug_intent_i ( 1'b0                      ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
         .integ_chk_ack_o   ( integ_chk_ack[k]                ),
