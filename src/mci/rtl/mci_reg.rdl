@@ -857,6 +857,18 @@ addrmap mci_reg {
         field strap {sw = r; hw = rw; we; resetsignal = mci_pwrgood;} debug_intent=1'b0;
     } SS_DEBUG_INTENT;
 
+    reg {
+        name = "DEBUG INTENT (MCU ROM)";
+        desc = "MCU-ROM-driven debug intent. OR'd with the physical
+                SS_DEBUG_INTENT strap to form the effective debug intent, so the
+                MCU can assert debug intent via a register write instead of only
+                the GPIO strap.
+                [br]Write-1-set (W1S): a SW write of 1 sets the bit; writes of 0
+                have no effect. Writable by MCU only.
+                [br]Sticky across warm reset; cleared only on cold reset.";
+        field {sw = rw; hw = r; woset = true; swwe = axi_mcu_req; resetsignal = mci_pwrgood;} debug_intent=1'b0;
+    } SS_DEBUG_INTENT_MCU;
+
 
     reg {
         name = "Subsystem Config Done Sticky";
