@@ -65,11 +65,7 @@ void main(void) {
     require_lc_state(TEST_UNLOCKED0, "initial state");
 
     VPRINTF(LOW, "INFO: Attempting zero-token TEST_UNLOCKED0 -> TEST_LOCKED0\n");
-<<<<<<< user/ekarabulut/fc_secret_digest_read_lock
-    read_lc_counter(); 
-=======
     read_lc_counter();
->>>>>>> main
     if (!start_state_transition(TEST_LOCKED0, NULL, false)) {
         handle_error("ERROR: zero-token LC transition failed under debug intent\n");
     }
