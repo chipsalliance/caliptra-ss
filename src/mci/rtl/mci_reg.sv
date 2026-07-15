@@ -10234,7 +10234,7 @@ module mci_reg (
     always_comb begin
         automatic logic [0:0] next_c = field_storage.SS_DEBUG_INTENT_MCU.debug_intent.value;
         automatic logic load_next_c = '0;
-        if(decoded_reg_strb.SS_DEBUG_INTENT_MCU && decoded_req_is_wr && hwif_in.axi_mcu_req__ss_config_unlock_sticky) begin // SW write 1 set
+        if(decoded_reg_strb.SS_DEBUG_INTENT_MCU && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req__ss_config_unlock_sticky) begin // SW write 1 set
             next_c = field_storage.SS_DEBUG_INTENT_MCU.debug_intent.value | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end

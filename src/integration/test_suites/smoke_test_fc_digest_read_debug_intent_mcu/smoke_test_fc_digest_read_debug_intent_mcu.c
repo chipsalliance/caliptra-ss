@@ -168,6 +168,8 @@ void main(void) {
         handle_error("ERROR [dbg-intent]: SS_DEBUG_INTENT_MCU (W1S) unexpectedly cleared by write-0\n");
     }
 
+    VPRINTF(LOW, "\n--- Phase 0: MCU debug intent was set. ---\n");
+
     mcu_cptra_init_d();
     if (!wait_dai_op_idle(0)) {
         handle_error("ERROR: DAI not idle after init\n");
