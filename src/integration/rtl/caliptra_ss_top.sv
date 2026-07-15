@@ -28,6 +28,8 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
+    ,parameter CPTRA_SS_ROM_SIZE_KB = 256
+    ,parameter CPTRA_SS_ROM_DATA_W = 64
     ,parameter MCU_MBOX0_SIZE_KB = 4
     ,parameter [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
@@ -278,6 +280,8 @@ module caliptra_ss_top
     output logic        cptra_error_fatal,
     output logic        cptra_error_non_fatal 
 );
+
+    localparam CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
 
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic        [31:0]         agg_error_fatal;

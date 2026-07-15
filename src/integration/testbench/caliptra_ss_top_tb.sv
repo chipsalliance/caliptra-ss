@@ -263,7 +263,7 @@ module caliptra_ss_top_tb
 
     // MCU ROM Sub AXI Interface
     axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
+        .AW(CPTRA_SS_ROM_AXI_ADDR_W_TB),
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -1000,8 +1000,8 @@ module caliptra_ss_top_tb
     );
 
     axi_mem_if #(
-        .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W),
-        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
+        .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W_TB),
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W_TB)
     ) mcu_rom_mem_export_if (
         .clk(core_clk),
         .rst_b(cptra_ss_rst_b_i)
@@ -1540,6 +1540,8 @@ module caliptra_ss_top_tb
     );
 
     caliptra_ss_top #(
+        .CPTRA_SS_ROM_SIZE_KB(CPTRA_SS_ROM_SIZE_KB_TB),
+        .CPTRA_SS_ROM_DATA_W(CPTRA_SS_ROM_DATA_W_TB),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
         .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH),
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
