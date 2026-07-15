@@ -123,3 +123,5 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_secret_zeroize_baseline/smoke_test_fc_debug_intent_secret_zeroize_baseline: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_lc_transition/smoke_test_fc_debug_intent_lc_transition: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_integrity_check/smoke_test_fc_debug_intent_integrity_check: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_digest_read_dai_vs_csr/smoke_test_fc_digest_read_dai_vs_csr: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_digest_read_debug_intent_mcu/smoke_test_fc_digest_read_debug_intent_mcu: { weight: 10 }
