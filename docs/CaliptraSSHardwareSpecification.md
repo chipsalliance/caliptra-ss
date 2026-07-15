@@ -120,6 +120,8 @@
 
 # Scope
 
+![signal step4](https://svg.wavedrom.com/github/chipsalliance/caliptra-ss/ckuchta-test-wavedrom/docs/images/testme.json5)
+
 This document defines technical specifications for a subsystem design utilizing Caliptra RoT in Subystem Mode. This document, along with [Caliptra Hardware Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraHardwareSpecification.md), shall comprise the Caliptra Subsystem technical specification.
 
 ## Document Version
