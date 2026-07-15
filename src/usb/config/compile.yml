@@ -44,8 +44,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_pie.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_reg_if.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_rgen.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_sie.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_sieint.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_synchronizer.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_timers_sf.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_tx_sf_dpdm.m.vhdl
