@@ -19,7 +19,11 @@
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
 
-module caliptra_ss_top_w_stub(
+module caliptra_ss_top_w_stub #(
+     parameter SPI_HOST_ENA = 1
+    ,parameter SPI_HOST_NUM_CS = 2
+    ,parameter SPI_HOST_CMD_DEPTH = 8
+)(
     input logic cptra_ss_clk_i,
     input logic cptra_ss_cptra_core_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tck_i,
@@ -102,9 +106,12 @@ module caliptra_ss_top_w_stub(
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mcu_sb_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_M_IF_TIE_OFF(cptra_ss_mcu_sb_m_axi_if)
-    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_i3c_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_spi_host_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    `AXI_S_IF_TIE_OFF(cptra_ss_spi_host_s_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if)
@@ -304,6 +311,13 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_i3c_recovery_payload_available_o;
     logic cptra_ss_i3c_recovery_image_activated_o;
 
+    logic cptra_ss_sck_o;
+    logic cptra_ss_sck_en_o;
+    logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_o;
+    logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_en_o;
+    logic [3:0] cptra_ss_sd_o;
+    logic [3:0] cptra_ss_sd_en_o;
+    logic [3:0] cptra_ss_sd_i;
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
@@ -368,9 +382,14 @@ module caliptra_ss_top_w_stub(
         cptra_ss_i3c_scl_i=0;
         cptra_ss_i3c_sda_i=0;
         cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
+        cptra_ss_sd_i = '0;
     end
 
-    caliptra_ss_top
+    caliptra_ss_top #(
+        .SPI_HOST_ENA(SPI_HOST_ENA),
+        .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS),
+        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH)
+    )
     caliptra_ss_top_i (
 
         .cptra_ss_clk_i(cptra_ss_clk_i),
@@ -461,6 +480,10 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
         .cptra_ss_otp_core_axi_rd_rsp_o,
+
+    // SPI AXI interface
+        .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
+        .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
     
     //--------------------
     //caliptra core signals
@@ -597,7 +620,14 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_i3c_recovery_image_activated_o,
         .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
-    
+        .cptra_ss_sck_o,
+        .cptra_ss_sck_en_o,
+        .cptra_ss_csb_o,
+        .cptra_ss_csb_en_o,
+        .cptra_ss_sd_o,
+        .cptra_ss_sd_en_o,
+        .cptra_ss_sd_i,
+
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,
