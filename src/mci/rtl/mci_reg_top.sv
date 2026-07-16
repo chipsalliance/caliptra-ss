@@ -406,7 +406,8 @@ end
 assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.mcu_sram_fw_exec_region_lock;
 
 
-assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
+assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value
+                            | mci_reg_hwif_out.SS_DEBUG_INTENT_MCU.debug_intent.value;
 assign mcu_reset_vector     = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
 
 assign mci_reg_hwif_in.HW_CONFIG0.MCU_MBOX0_SRAM_SIZE.next = MCU_MBOX0_SIZE_KB;

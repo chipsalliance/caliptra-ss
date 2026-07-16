@@ -42,7 +42,7 @@ typedef struct secret_partition_info {
     uint32_t digest1;
     // SECRET_LC_TRANSITION_PARTITION is excluded from debug-intent zeroization so that LCC can
     // still perform state transitions; its buffer/CSR digest therefore holds the real (non-zero)
-    // provisioned value. The DAI digest readback stays zero for every secret partition (M3).
+    // provisioned value. The DAI digest readback stays zero for every secret partition.
     bool     expect_csr_digest_nonzero;
 } secret_partition_info_t;
 
@@ -116,7 +116,7 @@ static void check_secret_digests(void) {
         uint32_t digest1 = 0;
         const partition_t partition = partitions[k_secret_partitions[i].id];
 
-        // The DAI digest readback (M3) is unchanged: it stays zero for EVERY secret hw_digest
+        // The DAI digest readback is unchanged: it stays zero for EVERY secret hw_digest
         // partition, including the excluded LC transition partition, so SW cannot read the digest.
         if (!dai_rd(partition.digest_address, &digest0, &digest1, 64, 0)) {
             handle_error("ERROR: secret partition DAI digest read failed under debug intent\n");
@@ -137,7 +137,7 @@ static void check_secret_dai_access_locked(void) {
 
     // SECRET_PROD_PARTITION_3 is deliberately left unprovisioned/unlocked in
     // the VMEM. Without the debug-intent strap, FIELD_ENTROPY_3 DAI writes and
-    // reads would succeed, so these denials prove M1's forced read/write locks.
+    // reads would succeed, so these denials prove the forced read/write locks.
 
     grant_caliptra_core_for_fc_writes();
     if (!dai_wr(CPTRA_CORE_FIELD_ENTROPY_3, 0xdeadbeef, 0xcafebabe,

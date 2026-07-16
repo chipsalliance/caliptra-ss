@@ -603,20 +603,44 @@ These integrity checks verify whether the contents of the buffer registers remai
 
 ## Debug Intent Secret Zeroization
 
-As a defense-in-depth enhancement, the Fuse Controller flushes provisioned secrets from its scannable buffer flops while the debug-intent strap is asserted. MCI captures the physical debug-intent strap into the `SS_DEBUG_INTENT` register and distributes this registered value as the centralized debug-intent signal consumed across the Caliptra Subsystem, including the Fuse Controller. Once the Fuse Controller observes debug intent, it latches the condition until reset, so a later deassertion of the strap cannot re-expose secrets.
+As a defense-in-depth enhancement, the Fuse Controller hides the hardware digests of provisioned secret partitions from software while debug intent is asserted.
 
-While debug intent is asserted, every secret partition that carries a hardware digest **except** `SECRET_LC_TRANSITION_PARTITION` is handled as follows:
+### Effective debug intent
 
-- The partition is not sensed into its buffer registers; the buffer contents stay at their reset value.
+MCI forms the centralized debug-intent signal distributed across the Caliptra Subsystem (including the Fuse Controller) as the logical **OR** of two sources:
+
+- The **physical debug-intent strap**, captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register.
+- The **`SS_DEBUG_INTENT_MCU`** register — a write-1-set (W1S) bit that MCU ROM (or the SoC Config Agent) may set over AXI, but only before `SS_CONFIG_DONE_STICKY` is set. It is retained across warm reset and cleared only on cold reset, and once set it cannot be cleared by software (a write of 0 has no effect). This lets the MCU assert debug intent from a register write instead of relying solely on the GPIO strap.
+
+The physical strap is sampled *before* the Fuse Controller initializes, so partitions are never sensed when the strap drives debug intent. `SS_DEBUG_INTENT_MCU` can be set by MCU ROM *after* the Fuse Controller has already sensed the partitions; in that case the buffers already hold the provisioned values, but the digest-read masking below still prevents software from reading the real digests.
+
+### Secret hardware-digest read masking
+
+While debug intent is asserted, every secret partition that carries a hardware digest — **including** `SECRET_LC_TRANSITION_PARTITION` — hides its digest from software:
+
+- The named digest CSR returns only a **provisioned indicator**: all-ones when the sensed digest is non-zero (provisioned), or zero when the sensed digest is zero (unprovisioned, or flushed by the zeroization below). The real digest value is never returned.
+- The Direct Access Interface (DAI) hardware-digest read returns zero.
+
+### Secret partition zeroization
+
+In addition, when debug intent is asserted before Fuse Controller initialization (i.e., driven by the physical strap before sensing), every secret partition that carries a hardware digest **except** `SECRET_LC_TRANSITION_PARTITION` is flushed:
+
+- The partition is not sensed into its buffer registers; the buffer contents stay at their reset value (zero).
 - The PRESENT scrambler key used to descramble the partition is forced to zero, so no `RndCnstKey`-derived value is latched into the scrambler key state.
-- The hardware digest reads back as zero in both the named digest CSR and on a Direct Access Interface (DAI) read.
 - The background integrity and consistency checks are acknowledged without accessing the fuse macro, so they neither run nor fail for these partitions.
+- Because the buffer stays zero, the digest-read masking above returns zero for these partitions.
 
-`SECRET_LC_TRANSITION_PARTITION` is intentionally excluded from this behavior so that the Life Cycle Controller (LCC) can still perform conditional state transitions while debug intent is asserted:
+`SECRET_LC_TRANSITION_PARTITION` is intentionally excluded from the zeroization (buffer flush) so that the Life Cycle Controller (LCC) can still perform conditional state transitions while debug intent is asserted:
 
 - The partition is sensed and descrambled with its real key, and its tokens are broadcast to the LCC.
-- Its hardware digest reads back as its real, non-zero value in the named digest CSR, and its background integrity and consistency checks run normally.
-- The tokens are stored only as cSHAKE128 hashes rather than raw secrets, and the partition stays read-locked, so its raw contents are not exposed. The DAI hardware-digest read still returns zero.
+- Its background integrity and consistency checks run normally.
+- The tokens are stored only as cSHAKE128 hashes rather than raw secrets, and the partition stays read-locked, so its raw contents are not exposed. Its hardware digest is still masked as described above — all-ones on the named digest CSR (because the partition is sensed and provisioned) and zero on the DAI read — so the real digest is not exposed.
+
+- A secret partition's data field (as opposed to its digest field) is never readable by software regardless of this digest hardening: the secret data is broadcast only over a dedicated port and has no software read path.
+
+### `SECRET_DIGEST_READ_LOCK`
+
+Independently of debug intent, the Fuse Controller provides the `SECRET_DIGEST_READ_LOCK` CSR — a write-1-set (W1S) lock (a write of 0 has no effect). When set, it applies the same secret hardware-digest read masking described above (provisioned indicator on the named digest CSR, zero on the DAI read) to every secret partition that carries a hardware digest, **without** flushing the buffers or otherwise altering partition sensing. This lets software hide the secret digests on demand even when debug intent is not asserted.
 
 This enhancement protects the secrets provisioned in the manufacturing and production states. It is an additional layer of defense and does not remove the scan-path exclusion requirements described in the [Integration Specification](CaliptraSSIntegrationSpecification.md).
 
@@ -650,6 +674,8 @@ Hence the OTP controller performs a blank check and returns an error if a write 
 It is an overview of the architecture of the Life-Cycle Controller (LCC) Module for its use in the Caliptra Subsystem. The LCC is responsible for managing the life-cycle states of the system, ensuring secure transitions between states, and enforcing security policies.
 
 ## Caliptra Subsystem, SOC Debug Architecture Interaction
+
+**Note — sources of debug intent:** Throughout this section, "debug intent" refers to the *effective* debug-intent signal that MCI distributes across the Caliptra Subsystem, not to the physical strap alone. As described in [Effective debug intent](#effective-debug-intent), this signal is the logical OR of the physical `DEBUG_INTENT_STRAP` (captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register) and the MCU-writable `SS_DEBUG_INTENT_MCU` register (a W1S bit settable only before `SS_CONFIG_DONE_STICKY`). The strap is therefore not the only way to assert debug intent; the MCU can also assert it through `SS_DEBUG_INTENT_MCU`. The two sources also differ in how they affect the secret digest CSRs: because the physical strap suppresses fuse-macro sensing entirely (the secret partitions are never read into their buffers), their named digest CSRs always read back as zero and can never return the all-ones provisioned indicator, whereas `SS_DEBUG_INTENT_MCU` (like `SECRET_DIGEST_READ_LOCK`) masks the digests only after the partitions have already been sensed, so the CSR still reflects whether each digest field is provisioned (all-ones) or unprovisioned (zero).
 
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
@@ -1019,7 +1045,7 @@ MCI has the following types of straps:
 |`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
 |`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
 |`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
-|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Shows the intent to put the part in a debug-unlocked state. This strap is not writable by SW via AXI, and it is read-only over DMI. Debug intent can additionally be asserted by the MCU through the AXI-writable `SS_DEBUG_INTENT_MCU` register (W1S, settable only before `SS_CONFIG_DONE_STICKY`); that register is OR'd with this strap to form the effective debug intent.|
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
@@ -1434,7 +1460,7 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 **MCU Core Enable**: Debug Mode
 
-**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** DEBUG_INTENT strap set
+**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** debug intent asserted (effective debug intent — physical strap **OR** `SS_DEBUG_INTENT_MCU`)
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable*
 

@@ -17,11 +17,11 @@
 // All secret partitions are provisioned and locked in the VMEM (see
 // secret_partitions_locked.hjson) and the debug-intent strap is asserted
 // (+CALIPTRA_SS_DEBUG_INTENT). Under debug intent:
-//   - The manuf/prod/vendor secret partitions are debug-zeroized (M1): they ACK
+//   - The manuf/prod/vendor secret partitions are debug-zeroized: they ACK
 //     background checks without executing them, so they never fail.
 //   - SECRET_LC_TRANSITION_PARTITION is EXCLUDED from zeroization so LCC can
 //     transition, so it runs REAL integrity/consistency checks using the real
-//     scrambler key (M2 exclusion).
+//     scrambler key.
 //
 // This test enables both background checks with a very small period and lets the
 // fuse controller run many check rounds. It verifies that none of these checks

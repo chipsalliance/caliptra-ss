@@ -629,14 +629,33 @@ module otp_ctrl
   // the parameterized digest_assign task below without multiple driver issues.
   logic unused_part_digest;
   logic [NumPart-1:0][ScrmblBlockWidth-1:0] part_digest;
+  logic [NumPart-1:0][ScrmblBlockWidth-1:0] csr_part_digest;
   logic intr_state_otp_operation_done_d, intr_state_otp_operation_done_de;
   logic intr_state_otp_error_d, intr_state_otp_error_de;
+
+  // Mask the named-CSR secret HW-digest readback to the provisioned indicator
+  // (all-1s if provisioned, else 0) when either the digest read lock is engaged
+  // or debug intent is asserted. When debug intent is asserted pre-init (GPIO
+  // strap) the partition is never sensed, so part_digest is 0 and the CSR reads
+  // 0; when asserted post-init by the MCU register the partition is already
+  // sensed, so the CSR reads all-1s instead of leaking the real digest.
+  always_comb begin : p_csr_part_digest
+    for (int unsigned k = 0; k < NumPart; k++) begin
+      if (PartInfo[k].secret && PartInfo[k].hw_digest &&
+          (reg2hw.secret_digest_read_lock.q || cptra_ss_debug_intent_i)) begin
+        csr_part_digest[k] = (part_digest[k] == '0) ? '0 : {ScrmblBlockWidth{1'b1}};
+      end else begin
+        csr_part_digest[k] = part_digest[k];
+      end
+    end
+  end
+
   always_comb begin : p_csr_assign
     // Not all partition digests are consumed, and assigning them to an unused_* signal in the
     // function below does not seem to work for some linters.
     unused_part_digest = ^part_digest;
     // Assign named CSRs (like digests).
-    hw2reg = named_reg_assign(part_digest);
+    hw2reg = named_reg_assign(csr_part_digest);
     // DAI related CSRs
     hw2reg.direct_access_rdata = dai_rdata;
     // ANDing this state with dai_idle write-protects all DAI regs during pending operations.
@@ -959,14 +978,13 @@ end
   // read-only over TAP/DMI. That capture completes before the MCI boot sequencer
   // releases cptra_ss_rst_b_o and asserts the FC init request, so the value is
   // stable and cannot be deasserted mid-session. No sticky latch is needed here;
-  // MCI is the single latch point for the M1/M2/M3 zeroization protections.
+  // MCI is the single latch point for the debug-intent zeroization protections.
 
   // SEC_CM: SECRET.MEM.SCRAMBLE
   // SEC_CM: PART.MEM.DIGEST
   otp_ctrl_scrmbl u_otp_ctrl_scrmbl (
     .clk_i,
     .rst_ni,
-    // MCI-latched debug intent (stable before FC init) keeps M2 key gating engaged.
     .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i ),
     .cmd_i         ( scrmbl_req_bundle.cmd       ),
     .mode_i        ( scrmbl_req_bundle.mode      ),
@@ -1050,8 +1068,8 @@ end
     .error_o          ( part_error[DaiIdx]                    ),
     .fsm_err_o        ( part_fsm_err[DaiIdx]                  ),
     .part_access_i    ( part_access_dai                       ),
-    // MCI-latched debug intent (stable before FC init) keeps M3 digest short-circuit engaged.
     .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i         ),
+    .digest_read_lock_i ( reg2hw.secret_digest_read_lock.q     ),
     .dai_addr_i       ( dai_addr                              ),
     .dai_cmd_i        ( dai_cmd                               ),
     .dai_req_i        ( dai_req                               ),
@@ -1199,7 +1217,6 @@ end
         .clk_i,
         .rst_ni,
         .init_req_i        ( part_init_req                   ),
-        // MCI-latched debug intent (stable before FC init) keeps M1 data_o gating engaged.
         .cptra_ss_debug_intent_i ( cptra_ss_debug_intent_i   ),
         .init_done_o       ( part_init_done[k]               ),
         .integ_chk_req_i   ( integ_chk_req[k]                ),
