@@ -114,7 +114,7 @@ logic [28:0]                    exec_region_end_calc;
 logic [28:0]                    exec_region_end;  // TODO: Report to status register?
 logic                           exec_region_overflow;
 // fw_sram_exec_region_size size is 16 bits so the max size 
-// the exec region can be is (0xFFF + 1) << 12 =  10_000_000
+// the exec region can be is (0xFFFF + 1) << 12 =  10_000_000
 // Which bit 28 set.
 logic [28:0] exec_region_size_bytes;
 
@@ -224,7 +224,7 @@ assign dmi_axi_collision_error = cif_resp_if.dv & mcu_sram_dmi_data_req;
 ///////////////////////////////////////////////
 assign exec_region_base = '0;
 // 4KB = 2^12
-assign exec_region_size_bytes   = {13'b0, (fw_sram_exec_region_size + 16'b1)} << 12; 
+assign exec_region_size_bytes   = {12'b0, 17'(fw_sram_exec_region_size + 16'b1)} << 12; 
 // Calculate final address based on the fw_sram_exec_region_size.
 assign exec_region_end_calc     = exec_region_base + exec_region_size_bytes - 1;
 // Check if there was overflow due to fw_sram_exec_region_size being larger than the entire
