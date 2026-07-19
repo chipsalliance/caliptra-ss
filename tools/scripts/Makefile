@@ -80,7 +80,8 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  fuse_ctrl \
 		  lc_ctrl \
 		  wdt \
-		  usb
+		  usb \
+		  spi_host
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
