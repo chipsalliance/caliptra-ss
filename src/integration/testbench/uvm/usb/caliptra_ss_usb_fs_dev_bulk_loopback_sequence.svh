@@ -14,16 +14,33 @@
 
 // =============================================================================
 // USB Full-Speed device bulk loopback sequence.
-
+//
 // Sequence flow:
 //   1. Wait for FS host link to reach ENABLED.
-//   2. Start SOF generation to keep the FS link alive.
-//   3. Post-reset settling delay for MCU firmware to arm EP0.
-//   4. Full enumeration (GET_DESC/GET_STATUS/SET_ADDRESS/GET_DESC/
+//   2. Issue an explicit USB bus reset (SE0 for tdrst=150us) via the VIP
+//      protocol service sequencer. In FS mode with high_speed_capable=0 the
+//      SVT VIP host goes directly from attach to ENABLED without driving SE0.
+//      The NXP IP_3511HS device controller requires receiving a bus reset to
+//      transition from power-on state into DEFAULT state (address=0, EP0 armed,
+//      UTMI TX enabled). Without this the DUT never generates ACK or DATA
+//      responses and every enumeration transfer ABORTs at the SETUP stage.
+//   3. Start SOF generation to keep the FS link alive between transfers.
+//   4. Post-reset settling delay for MCU firmware to handle DRES_C and re-arm
+//      EP0 buffers.
+//   5. Full enumeration (GET_DESC/GET_STATUS/SET_ADDRESS/GET_DESC/
 //      GET_CONFIG/SET_CONFIG/GET_CONFIG verify).
-//   5. Send 64 bytes of bulk OUT data to EP1 (byte pattern i=0..63).
-//   6. Read 64 bytes back from EP1 IN (loopback).
-//   7. Allow MCU firmware time to complete loopback and log result.
+//      Each control transfer uses finish_item then a separate wait_xfer_done
+//      call -- the same sequential pattern used by the working init and
+//      hs_dev_bulk_out sequences. Do NOT fork NOTIFY_USB_TRANSFER_ENDED inside
+//      finish_item; the trigger is level-sticky in SVT and wait_trigger works
+//      correctly when called after finish_item returns.
+//   6. Send 64 bytes of bulk OUT data to EP1 (byte pattern i=0..63).
+//      NOTIFY wait is forked BEFORE finish_item for bulk transfers only because
+//      a single 64-byte FS packet can complete within the same delta-cycle
+//      window as finish_item and the trigger would be missed.
+//   7. Read 64 bytes back from EP1 IN (loopback).
+//   8. Verify loopback data matches sent bytes.
+//   9. Allow MCU firmware time to complete loopback and log result.
 // =============================================================================
 
 class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
@@ -52,6 +69,10 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
 
     // -------------------------------------------------------------------------
     // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
+    // Mirrors caliptra_ss_usb_init_sequence and caliptra_ss_usb_hs_dev_bulk_out_sequence:
+    // finish_item only inside this task, no NOTIFY wait. The caller must call
+    // wait_xfer_done() after this task returns to synchronize with transfer
+    // completion on the physical bus.
     // -------------------------------------------------------------------------
     task do_control_xfer(
         input bit [7:0]  bm_request_type_dir,
@@ -87,11 +108,12 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         end
         finish_item(req, -1);
         `uvm_info("USB_FS_LOOPBACK_SEQ",
-            $sformatf("CONTROL %s done (addr=%0d)", label, device_addr), UVM_LOW)
+            $sformatf("CONTROL %s issued (addr=%0d).", label, device_addr), UVM_LOW)
     endtask
 
     // -------------------------------------------------------------------------
-    // Helper: wait for host-side transfer completion.
+    // Helper: wait for host-side transfer completion on the physical bus.
+    // Called after each do_control_xfer() and after bulk finish_item().
     // -------------------------------------------------------------------------
     task wait_xfer_done(svt_usb_agent agent_h, string label);
         agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
@@ -144,7 +166,13 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         join
         `uvm_info("USB_FS_LOOPBACK_SEQ", "FS host link ENABLED.", UVM_LOW)
 
-        // Step 2: Start SOF generation.
+        // Step 2 (removed): Explicit SE0 bus reset via se0_seq is NOT needed.
+        // drive_reset_time is set in the test cfg so the VIP autonomously drives
+        // SE0 for 150 us BEFORE transitioning to ENABLED (same as HS mode which
+        // drives SE0+chirp mandatorily per USB 2.0 spec). By the time this
+        // sequence sees ENABLED the DUT has already received its bus reset.
+
+        // Step 3: Start SOF generation to keep the FS link alive.
         begin
             svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
             sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
@@ -153,10 +181,16 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
             `uvm_info("USB_FS_LOOPBACK_SEQ", "SOF generation started.", UVM_LOW)
         end
 
-        // Step 3: Settling delay for MCU firmware EP0 re-arm after bus reset.
-        #20us;
+        // Step 4: Post-reset settling delay.
+        // Allow MCU firmware time to handle DRES_C interrupt, call
+        // usb_handle_bus_reset() / usb_ep0_reinit(), and re-arm EP0 buffers
+        // before the first SETUP token arrives on the bus.
+        #50us;
 
-        // Step 4: Full FS device enumeration.
+        // Step 5: Full FS device enumeration.
+        // Pattern matches caliptra_ss_usb_init_sequence and
+        // caliptra_ss_usb_hs_dev_bulk_out_sequence: do_control_xfer()
+        // calls finish_item; explicit wait_xfer_done() waits for NOTIFY.
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
             0, "GET_DESC_DEV_addr0", usb_cfg);
@@ -199,7 +233,7 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         `uvm_info("USB_FS_LOOPBACK_SEQ", "FS enumeration complete.", UVM_LOW)
         #10us;
 
-        // Step 5: Send 64 bytes of bulk OUT data to EP1.
+        // Step 6: Send 64 bytes of bulk OUT data to EP1.
         // Data pattern: byte[i] = i (0x00, 0x01, ... 0x3F).
         send_data = new[64];
         for (i = 0; i < 64; i++) send_data[i] = i[7:0];
@@ -209,24 +243,38 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         bulk_out_req.cfg = usb_cfg;
         bulk_out_req.payload.USER_DEFINED_ALGORITHM_wt   = 1;
         bulk_out_req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
-        bulk_out_req.fix_anchors(0, 1, 0);
+        bulk_out_req.fix_anchors(0, 2, 0);
         if (!bulk_out_req.randomize() with {
-                xfer_type                   == svt_usb_transfer::BULK_OUT_TRANSFER;
-                device_address              == 1;
-                payload_intended_byte_count == 64;
+                xfer_type                              == svt_usb_transfer::BULK_OUT_TRANSFER;
+                device_address                         == 1;
+                endpoint_number                        == 1;
+                payload_intended_byte_count            == 64;
+                aligned_transfer_ends_with_zero_length == 0;
             }) begin
             `uvm_fatal("USB_FS_LOOPBACK_SEQ", "Bulk OUT randomize() failed")
         end
         for (i = 0; i < 64; i++) bulk_out_req.payload.data[i] = send_data[i];
-        finish_item(bulk_out_req, -1);
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            "FS Bulk OUT issued (64 bytes, EP1, addr=1).", UVM_LOW)
-        wait_xfer_done(host_agent_h, "FS_BULK_OUT_EP1");
+
+        // Fork the NOTIFY wait BEFORE finish_item for bulk transfers.
+        // A single 64-byte FS bulk packet completes very fast; if wait_trigger()
+        // is called after finish_item the event may have already fired and the
+        // task hangs. This race does not affect control transfers (longer
+        // multi-stage DATA+STATUS phases give enough slack for sequential calls).
+        fork
+            begin
+                finish_item(bulk_out_req, -1);
+                `uvm_info("USB_FS_LOOPBACK_SEQ",
+                    "FS Bulk OUT issued (64 bytes, EP1, addr=1).", UVM_LOW)
+            end
+            begin
+                wait_xfer_done(host_agent_h, "FS_BULK_OUT_EP1");
+            end
+        join
 
         // Allow MCU firmware time to copy EP1 OUT data to EP1 IN buffer and arm IN.
         #20us;
 
-        // Step 6: Read 64 bytes back from EP1 IN (loopback).
+        // Step 7: Read 64 bytes back from EP1 IN (loopback).
         bulk_in_req = svt_usb_transfer::type_id::create("bulk_in_req");
         start_item(bulk_in_req, -1, p_sequencer.xfer_sequencer);
         bulk_in_req.cfg = usb_cfg;
@@ -234,16 +282,45 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         if (!bulk_in_req.randomize() with {
                 xfer_type                   == svt_usb_transfer::BULK_IN_TRANSFER;
                 device_address              == 1;
+                endpoint_number             == 1;
                 payload_intended_byte_count == 64;
             }) begin
             `uvm_fatal("USB_FS_LOOPBACK_SEQ", "Bulk IN randomize() failed")
         end
-        finish_item(bulk_in_req, -1);
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            "FS Bulk IN issued (64 bytes, EP1, addr=1).", UVM_LOW)
-        wait_xfer_done(host_agent_h, "FS_BULK_IN_EP1");
 
-        // Step 7: Allow MCU firmware time to complete and log result.
+        fork
+            begin
+                finish_item(bulk_in_req, -1);
+                `uvm_info("USB_FS_LOOPBACK_SEQ",
+                    "FS Bulk IN issued (64 bytes, EP1, addr=1).", UVM_LOW)
+            end
+            begin
+                wait_xfer_done(host_agent_h, "FS_BULK_IN_EP1");
+            end
+        join
+
+        // Step 8: Verify loopback data content.
+        begin
+            int mismatch_count;
+            mismatch_count = 0;
+            for (int unsigned bi = 0; bi < 64; bi++) begin
+                if (bulk_in_req.payload.data[bi] !== send_data[bi]) begin
+                    `uvm_error("USB_FS_LOOPBACK_SEQ",
+                        $sformatf("Loopback mismatch at byte[%0d]: sent=0x%02h received=0x%02h",
+                                  bi, send_data[bi], bulk_in_req.payload.data[bi]))
+                    mismatch_count++;
+                end
+            end
+            if (mismatch_count == 0)
+                `uvm_info("USB_FS_LOOPBACK_SEQ",
+                    "Loopback data check PASSED: all 64 bytes match.", UVM_LOW)
+            else
+                `uvm_error("USB_FS_LOOPBACK_SEQ",
+                    $sformatf("Loopback data check FAILED: %0d byte(s) mismatched.",
+                              mismatch_count))
+        end
+
+        // Allow MCU firmware time to complete and log result.
         #20us;
 
         `uvm_info("USB_FS_LOOPBACK_SEQ",

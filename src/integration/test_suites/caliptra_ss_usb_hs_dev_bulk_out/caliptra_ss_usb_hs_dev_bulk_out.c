@@ -34,8 +34,10 @@
 #define USB_POLL_TIMEOUT              30000
 // EP1 OUT buffer placed after EP0 buffers in USB SRAM (EP0 uses 0x000-0x1FF).
 #define USB_SRAM_EP1_OUT_BUF_OFFSET   0x200u
-// 4096 bytes = 1024 x 4-byte words (HS bulk, 8 x 512-byte packets).
-#define USB_HS_BULK_TRANSFER_BYTES    4096u
+// 2048 bytes = 512 x 4-byte words (HS bulk, 4 x 512-byte packets).
+// Capped at 2048 B so the EP1 OUT buffer (at SRAM offset 0x200) fits
+// within the 4096-byte USB SRAM (0x200..0x9FF).
+#define USB_HS_BULK_TRANSFER_BYTES    2048u
 #define USB_EP_LIST_EP1_OUT_OFFSET    0x010u
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
@@ -109,35 +111,40 @@ void main(void) {
             lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         }
 
-        if (ep1_armed) {
+        // EP1 OUT completion: use INTSTAT EP1OUT bit rather than polling the
+        // EP list ACTIVE bit directly. The EP1OUT interrupt is set by hardware
+        // only after the USB DMA engine has fully committed all data and the
+        // packet handshake is complete. Polling ACTIVE alone can race against
+        // the final DMA write, causing a single-byte corruption on the last
+        // 512-byte packet when the VIP performs a retry.
+        if (ep1_armed && (reg_data & USBHSD_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
             uint32_t ep1_entry = usb_ep1_out_read();
-            if (!(ep1_entry & USB_EP_ENTRY_ACTIVE)) {
-                uint32_t residual = (ep1_entry >> 11) & 0x7FFFu;
-                uint32_t received = USB_HS_BULK_TRANSFER_BYTES - residual;
-                VPRINTF(LOW, "MCU: EP1 OUT complete - received %d bytes\n", received);
+            uint32_t residual  = (ep1_entry >> 11) & 0x7FFFu;
+            uint32_t received  = USB_HS_BULK_TRANSFER_BYTES - residual;
+            VPRINTF(LOW, "MCU: EP1 OUT complete - received %d bytes\n", received);
 
-                // Verify COUNT pattern: word[i] == i
-                uint32_t errors = 0;
-                for (uint32_t i = 0; i < USB_HS_BULK_TRANSFER_BYTES; i += 4) {
-                    uint32_t actual   = lsu_read_32(USB_DMA_BASE_ADDR
-                                                    + USB_SRAM_EP1_OUT_BUF_OFFSET + i);
-                    uint32_t expected = i / 4u;
-                    if (actual != expected) {
-                        VPRINTF(LOW,
-                            "MCU: MISMATCH at offset 0x%x: got 0x%x expected 0x%x\n",
-                            i, actual, expected);
-                        errors++;
-                    }
+            // Verify COUNT pattern: word[i] == i
+            uint32_t errors = 0;
+            for (uint32_t i = 0; i < USB_HS_BULK_TRANSFER_BYTES; i += 4) {
+                uint32_t actual   = lsu_read_32(USB_DMA_BASE_ADDR
+                                                + USB_SRAM_EP1_OUT_BUF_OFFSET + i);
+                uint32_t expected = i / 4u;
+                if (actual != expected) {
+                    VPRINTF(LOW,
+                        "MCU: MISMATCH at offset 0x%x: got 0x%x expected 0x%x\n",
+                        i, actual, expected);
+                    errors++;
                 }
-
-                if (errors == 0)
-                    VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check PASSED\n");
-                else
-                    VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check FAILED (%d errors)\n",
-                            errors);
-
-                bulk_done = true;
             }
+
+            if (errors == 0)
+                VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check PASSED\n");
+            else
+                VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check FAILED (%d errors)\n",
+                        errors);
+
+            bulk_done = true;
         }
 
         if (poll_count % 2000 == 0 && poll_count > 0) {

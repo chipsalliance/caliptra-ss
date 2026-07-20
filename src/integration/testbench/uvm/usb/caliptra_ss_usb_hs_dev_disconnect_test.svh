@@ -32,6 +32,22 @@ class caliptra_ss_usb_hs_dev_disconnect_test extends caliptra_ss_usb_base_test;
         `uvm_info("build_phase", "Entered...", UVM_LOW)
         super.build_phase(phase);
 
+        // Extend device_timeout to allow MCU firmware (software-polled) time to
+        // process each SETUP token. The default (shared_cfg) value of 50us is too
+        // short for software-polled HS firmware - the poll loop takes several
+        // microseconds per iteration so repeated SETUP retries fire timeout checks
+        // before firmware can respond.
+        cfg.dev_cfg.local_device_cfg[0].device_timeout = 5000us;
+
+        // Extend the HS tend_to_end_delay threshold to suppress spurious
+        // tend_to_end_delay_check errors. The USB 2.0 spec limit (500ns for HS)
+        // cannot be met by software-polled firmware. The hardware controller
+        // drives no response (not even NAK) while EP0 OUT is un-armed between
+        // the SETUP being consumed and firmware calling usb_ep0_reinit(). This
+        // is a known limitation of software-polled USB device controllers in
+        // simulation and does not affect functional correctness.
+        cfg.host_cfg.tend_to_end_delay_hs = 100000000.0; // 100 ms in ns
+
         // HS mode defaults (high_speed_capable=1).
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",

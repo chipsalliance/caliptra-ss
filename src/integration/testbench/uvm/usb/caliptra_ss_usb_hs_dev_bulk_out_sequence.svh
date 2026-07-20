@@ -20,13 +20,15 @@
 //   3. Short settling delay for MCU firmware post-reset EP0 re-arm.
 //   4. Enumerate DUT device (GET_DESC/GET_STATUS/SET_ADDRESS/GET_DESC/
 //      GET_CONFIG/SET_CONFIG/GET_CONFIG_verify).
-//   5. Send 4096 bytes of bulk OUT data to EP1 via HS.
-//      Pattern: 32-bit words 0x00000000, 0x00000001, ..., 0x000003FF
-//      (1024 words x 4 bytes = 4096 bytes), matching original COUNT format.
+//   5. Send 2048 bytes of bulk OUT data to EP1 via HS.
+//      Pattern: 32-bit words 0x00000000, 0x00000001, ..., 0x000001FF
+//      (512 words x 4 bytes = 2048 bytes, 4 x 512-byte HS bulk packets).
+//      Capped at 2048 B so the EP1 buffer (SRAM offset 0x200..0x9FF) fits
+//      within the 4096-byte USB SRAM (addr bus is only 9 bits wide).
 //   6. Allow MCU firmware time to verify the data.
 // =============================================================================
 
-`define USB_HS_DEV_BULK_WORDS 1024
+`define USB_HS_DEV_BULK_WORDS 512
 
 class caliptra_ss_usb_hs_dev_bulk_out_sequence extends uvm_sequence;
 
@@ -191,8 +193,8 @@ class caliptra_ss_usb_hs_dev_bulk_out_sequence extends uvm_sequence;
         `uvm_info("USB_HS_DEV_BULK_SEQ", "HS enumeration complete.", UVM_LOW)
         #10us;
 
-        // Step 5: Send 4096 bytes bulk OUT via EP1 (HS, 512-byte packets x 8).
-        // Data pattern: word[i] = i for i = 0..1023 (COUNT format from original).
+        // Step 5: Send 2048 bytes bulk OUT via EP1 (HS, 512-byte packets x 4).
+        // Data pattern: word[i] = i for i = 0..511 (COUNT format from original).
         bulk_data = new[`USB_HS_DEV_BULK_WORDS * 4];
         for (int unsigned w = 0; w < `USB_HS_DEV_BULK_WORDS; w++) begin
             word_val = w;
@@ -209,22 +211,36 @@ class caliptra_ss_usb_hs_dev_bulk_out_sequence extends uvm_sequence;
         bulk_req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
         bulk_req.fix_anchors(0, 1, 0);
         if (!bulk_req.randomize() with {
-                xfer_type                   == svt_usb_transfer::BULK_OUT_TRANSFER;
-                device_address              == 1;
-                payload_intended_byte_count == (`USB_HS_DEV_BULK_WORDS * 4);
+                xfer_type                              == svt_usb_transfer::BULK_OUT_TRANSFER;
+                device_address                         == 1;
+                endpoint_number                        == 1;
+                payload_intended_byte_count            == (`USB_HS_DEV_BULK_WORDS * 4);
+                aligned_transfer_ends_with_zero_length == 0;
             }) begin
             `uvm_fatal("USB_HS_DEV_BULK_SEQ", "Bulk OUT randomize() failed")
         end
         for (int unsigned bi = 0; bi < (`USB_HS_DEV_BULK_WORDS * 4); bi++)
             bulk_req.payload.data[bi] = bulk_data[bi];
-        finish_item(bulk_req, -1);
-        `uvm_info("USB_HS_DEV_BULK_SEQ",
-            "HS Bulk OUT issued (4096 bytes, EP1, addr=1).", UVM_LOW)
 
-        wait_xfer_done(host_agent_h, "HS_BULK_OUT_EP1");
+        // Fork the NOTIFY_USB_TRANSFER_ENDED wait BEFORE finish_item so the
+        // trigger is armed before the VIP drives the transfer onto the bus.
+        // For short bulk transfers (few packets) the VIP can complete and fire
+        // NOTIFY_USB_TRANSFER_ENDED before the thread resumes after finish_item,
+        // causing wait_trigger() to miss the pulse and hang indefinitely.
+        // Forking the wait first eliminates the race.
+        fork
+            begin
+                finish_item(bulk_req, -1);
+                `uvm_info("USB_HS_DEV_BULK_SEQ",
+                    "HS Bulk OUT issued (2048 bytes, EP1, addr=1).", UVM_LOW)
+            end
+            begin
+                wait_xfer_done(host_agent_h, "HS_BULK_OUT_EP1");
+            end
+        join
 
         // Step 6: Allow MCU time to verify.
-        #20us;
+        #50us;
 
         `uvm_info("USB_HS_DEV_BULK_SEQ", "HS device bulk OUT sequence complete.", UVM_LOW)
     endtask
