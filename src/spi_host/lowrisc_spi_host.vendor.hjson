@@ -21,6 +21,14 @@
       from:      "hw/ip/spi_device/rtl/spi_device_pkg.sv",
       to:        "./spi_device_pkg.sv",
       patch_dir: "device"
+    },
+    {
+      from:      "hw/ip/spi_host/dv",
+      to:        "../dv"
+    },
+    {
+      from:      "hw/ip/spi_host/data",
+      to:        "../data"
     }
   ]
 }
