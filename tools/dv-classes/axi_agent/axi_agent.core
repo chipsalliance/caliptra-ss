@@ -1,0 +1,69 @@
+CAPI=2:
+# Copyright lowRISC contributors.
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:dv:axi_agent:0.1"
+description: "AXI agent"
+filesets:
+  files_dv:
+    depend:
+      - lowrisc:dv:dv_utils
+    files:
+      - axi_read_data_if.sv
+      - axi_read_request_if.sv
+      - axi_write_data_if.sv
+      - axi_write_request_if.sv
+      - axi_write_response_if.sv
+
+      - axi_agent_pkg.sv
+      - axi_agent_cfg.svh: {is_include_file: true}
+
+      - axi_reset_item.svh: {is_include_file: true}
+      - axi_status_item.svh: {is_include_file: true}
+      - axi_txn_request_item.svh: {is_include_file: true}
+      - axi_response_accept_item.svh: {is_include_file: true}
+      - axi_read_data_item.svh: {is_include_file: true}
+      - axi_write_data_item.svh: {is_include_file: true}
+      - axi_write_response_item.svh: {is_include_file: true}
+
+      - axi_fixed_write_req_item.svh: {is_include_file: true}
+      - axi_fixed_write_rsp_item.svh: {is_include_file: true}
+      - axi_fixed_read_req_item.svh: {is_include_file: true}
+      - axi_fixed_read_rsp_item.svh: {is_include_file: true}
+
+      - axi_reset_monitor_aw.svh: {is_include_file: true}
+      - axi_reset_monitor_w.svh: {is_include_file: true}
+      - axi_reset_monitor_b.svh: {is_include_file: true}
+      - axi_reset_monitor_ar.svh: {is_include_file: true}
+      - axi_reset_monitor_r.svh: {is_include_file: true}
+
+      - axi_mgr_write_request_driver.svh: {is_include_file: true}
+      - axi_mgr_write_data_driver.svh: {is_include_file: true}
+      - axi_mgr_write_response_driver.svh: {is_include_file: true}
+      - axi_mgr_read_request_driver.svh: {is_include_file: true}
+      - axi_mgr_read_data_driver.svh: {is_include_file: true}
+
+      - axi_response_router.svh: {is_include_file: true}
+
+      - axi_reg_op_item.svh: {is_include_file: true}
+      - axi_reg_adapter.svh: {is_include_file: true}
+
+      - axi_mgr_agent.svh: {is_include_file: true}
+
+      - seq_lib/axi_mgr_txn_request_seq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_write_data_seq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_write_single_data_seq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_write_response_seq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_read_data_seq.svh: {is_include_file: true}
+
+      - seq_lib/axi_mgr_write_fixed_vseq.svh: {is_include_file: true}
+      - seq_lib/axi_mgr_read_fixed_vseq.svh: {is_include_file: true}
+
+      - seq_lib/axi_mgr_register_layer_vseq.svh: {is_include_file: true}
+
+    file_type: systemVerilogSource
+
+targets:
+  default:
+    filesets:
+      - files_dv

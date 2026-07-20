@@ -1,0 +1,162 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+//
+
+module tb;
+  // dep packages
+  import uvm_pkg::*;
+  import dv_utils_pkg::*;
+  import spi_host_env_pkg::*;
+  import spi_host_test_pkg::*;
+  import caliptra_ss_spi_host_reg_pkg::*;
+
+  import caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_req_t;
+  import caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_rsp_t;
+
+  // macro includes
+  `include "uvm_macros.svh"
+  `include "dv_macros.svh"
+
+  wire clk, rst_n;
+  wire [NUM_MAX_INTERRUPTS-1:0] interrupts;
+  wire [3:0]                    si_pulldown;
+  wire [3:0]                    so_pulldown;
+  wire [3:0]                    sio;
+
+  logic                         cio_sck_o;
+  logic                         cio_sck_en_o;
+  logic [SPI_HOST_NUM_CS-1:0]   cio_csb_o;
+  logic [SPI_HOST_NUM_CS-1:0]   cio_csb_en_o;
+  logic [3:0]                   cio_sd_o;
+  logic [3:0]                   cio_sd_en_o;
+  logic [3:0]                   cio_sd_i;
+  logic                         intr_error;
+  logic                         intr_event;
+  wire                          intg_error;
+
+  caliptra_ss_passthrough_req_t passthrough_i;
+  caliptra_ss_passthrough_rsp_t passthrough_o;
+
+  // interfaces
+  clk_rst_if   clk_rst_if(.clk(clk), .rst_n(rst_n));
+  pins_if #(NUM_MAX_INTERRUPTS) intr_if(.pins(interrupts));
+  pins_if #(1) intg_error_if(.pins(intg_error));
+
+  // AXI Interface
+  axi_if #(
+    .AW(32),
+    .DW(32),
+    .IW(1),
+    .UW(32)
+  ) axi_if (
+    .clk(clk),
+    .rst_n(rst_n)
+  );
+
+  spi_if       spi_if(.rst_n(rst_n), .sio(sio));
+  spi_passthrough_if       spi_passthrough_if(.rst_n(rst_n));
+
+  // DUT: Caliptra SS SPI Host AXI wrapper
+  spi_host_axi #(
+    .NumCS(SPI_HOST_NUM_CS),
+    .CmdDepth(8),
+    .AxiAw(32),
+    .AxiDw(32),
+    .AxiUw(32),
+    .AxiIw(1)
+  ) dut (
+    .clk_i                (clk),
+    .rst_ni               (rst_n),
+
+    // AXI i/f
+    .s_axi_w_if           (axi_if.w_sub),
+    .s_axi_r_if           (axi_if.r_sub),
+
+    // Register integrity error
+    .intg_error_o         (intg_error),
+
+    // SPI i/o
+    .cio_sck_o            (cio_sck_o),
+    .cio_sck_en_o         (cio_sck_en_o),
+    .cio_csb_o            (cio_csb_o),
+    .cio_csb_en_o         (cio_csb_en_o),
+    .cio_sd_o             (cio_sd_o),
+    .cio_sd_en_o          (cio_sd_en_o),
+    .cio_sd_i             (cio_sd_i),
+
+    // Passthrough i/o
+    .passthrough_i        (passthrough_i),
+    .passthrough_o        (passthrough_o),
+
+    // Interrupt i/f
+    .intr_error_o         (intr_error),
+    .intr_spi_event_o     (intr_event)
+  );
+
+  assign passthrough_i.passthrough_en = spi_passthrough_if.passthrough_en;
+  assign passthrough_i.sck_en         = spi_passthrough_if.sck_en;
+  assign passthrough_i.csb_en         = spi_passthrough_if.csb_en;
+  assign passthrough_i.s_en           = spi_passthrough_if.s_en;
+  assign passthrough_i.csb            = spi_passthrough_if.csb;
+  assign passthrough_i.sck            = spi_passthrough_if.sck;
+
+  assign passthrough_i.s                 = spi_passthrough_if.is;
+  assign spi_passthrough_if.os           = passthrough_o.s;
+  assign spi_passthrough_if.cio_sck_o    = cio_sck_o;
+  assign spi_passthrough_if.cio_sck_en_o = cio_sck_en_o;
+  assign spi_passthrough_if.cio_csb_o    = cio_csb_o;
+  assign spi_passthrough_if.cio_csb_en_o = cio_csb_en_o;
+  assign spi_passthrough_if.cio_sd_en_o  = cio_sd_en_o;
+  assign spi_passthrough_if.cio_sd_o     = cio_sd_o;
+
+  assign cio_sd_i = spi_passthrough_if.passthrough_en ? spi_passthrough_if.cio_sd_i : si_pulldown;
+
+  // configure spi_if i/o
+  assign spi_if.sck = (cio_sck_en_o) ? cio_sck_o : 1'bz;
+  for (genvar i = 0; i < 4; i++) begin : gen_tri_state
+    pullup (weak1) pd_in_i (si_pulldown[i]);
+    pullup (weak1) pd_out_i (so_pulldown[i]);
+    assign sio[i]  = (cio_sd_en_o[i]) ? cio_sd_o[i] : 'z;
+    assign (highz0, pull1) sio[i] = !cio_sd_en_o[i];
+    assign si_pulldown[i] = sio[i];
+
+    if (i < SPI_HOST_NUM_CS) begin : gen_drive_csb
+      assign spi_if.csb[i] = cio_csb_en_o[i] ? cio_csb_o[i] : 1'b1;
+    end
+  end
+
+  assign interrupts[SpiHostError] = intr_error;
+  assign interrupts[SpiHostEvent] = intr_event;
+
+  // Bind
+  bind dut.u_caliptra_ss_spi_host.u_spi_core spi_host_fsm_if fast_prescaler_bound_if();
+
+  initial begin
+    // drive clk and rst_n from clk_if
+    clk_rst_if.set_active();
+    uvm_config_db#(virtual clk_rst_if)::set(null, "*.env", "clk_rst_vif", clk_rst_if);
+    uvm_config_db#(intr_vif)::set(null, "*.env", "intr_vif", intr_if);
+    uvm_config_db#(virtual pins_if #(1))::set(null, "*.env", "intg_error_vif", intg_error_if);
+    uvm_config_db#(virtual spi_passthrough_if)::set(null, "*.env", "spi_passthrough_vif",
+                                                 spi_passthrough_if);
+    uvm_config_db#(virtual axi_if)::set(null, "*.env.m_axi_agent*", "vif", axi_if);
+    uvm_config_db#(virtual spi_if)::set(null, "*.env.m_spi_agent*", "vif", spi_if);
+
+    uvm_config_db#(virtual spi_host_fsm_if)::set(null, "*.env", "fast_prescaler_bound_if",
+                                                 dut.u_caliptra_ss_spi_host.u_spi_core.fast_prescaler_bound_if);
+    $timeformat(-12, 0, " ps", 12);
+    run_test();
+  end
+
+  `ASSERT(Sck_A,   passthrough_i.passthrough_en -> passthrough_i.sck == cio_sck_o, clk, !rst_n)
+  `ASSERT(Sck_En_A,passthrough_i.passthrough_en -> passthrough_i.sck_en == cio_sck_en_o,
+          clk, !rst_n)
+  `ASSERT(Csb_A,   passthrough_i.passthrough_en -> passthrough_i.csb == cio_csb_o, clk, !rst_n)
+  `ASSERT(Csb_En_A,passthrough_i.passthrough_en -> passthrough_i.csb_en == cio_csb_en_o,
+          clk, !rst_n)
+  `ASSERT(S_En_A,  passthrough_i.passthrough_en -> passthrough_i.s_en == cio_sd_en_o, clk, !rst_n)
+  `ASSERT(Sd_O_A,  passthrough_i.passthrough_en -> passthrough_i.s == cio_sd_o, clk, !rst_n)
+  `ASSERT(Sd_I_A,  passthrough_i.passthrough_en -> passthrough_o.s == cio_sd_i, clk, !rst_n)
+
+endmodule
