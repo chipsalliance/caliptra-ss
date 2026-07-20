@@ -142,6 +142,95 @@ void boot_usb_core(void) {
     VPRINTF(LOW, "MCU: boot_usb_core - done\n");
 }
 
+// -------------------------------------------------------------------------
+// boot_usb_core_fs - Initialize the USB device controller in FS-only mode
+//
+// Identical to boot_usb_core() except that DEVCMDSTAT bit 21 (PFSC - Port
+// Force Full Speed Connect) is set before connecting. Setting PFSC prevents
+// the device controller from emitting K-chirp after bus reset, so the UTMI
+// TX is ready for FS packet exchange immediately. Use this function in tests
+// that run with a FS-only host (e.g. SVT VIP with high_speed_capable=0)
+// where no chirp reply will be driven and the default chirp timeout (~2.2ms)
+// would stall the first SETUP transfer.
+//
+// DO NOT call this function when HS operation is required.
+// -------------------------------------------------------------------------
+void boot_usb_core_fs(void) {
+    uint32_t reg_data;
+
+    VPRINTF(LOW, "MCU: boot_usb_core_fs - initializing USB device controller (FS-only)\n");
+
+    // --- Step 0a: Enable device-mode in the OTG PHY mux ---
+    reg_data = USBHSH_PORTMODE_PORT_MODE_MASK;
+    lsu_write_32(SOC_USBHSH_PORTMODE, reg_data);
+    VPRINTF(LOW, "MCU: USB PORTMODE configured (dev mode, write-only) = 0x%x\n", reg_data);
+
+    // Read DEVCMDSTAT to check initial state
+    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT initial = 0x%x\n", reg_data);
+
+    // --- Step 0: Initialize SRAM via DMA port ---
+
+    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP), addr_offset = 0x140>>6 = 5
+    uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
+                           | USB_EP_ENTRY_NBYTES(8)
+                           | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_OUT_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
+    VPRINTF(LOW, "MCU: EP0 OUT entry = 0x%x\n", ep0_out_entry);
+
+    // EP0 SETUP buffer address entry: addr_offset = 0x100>>6 = 4
+    uint32_t ep0_setup_entry = USB_EP_ENTRY_ADDR(USB_SRAM_SETUP_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x004, ep0_setup_entry);
+
+    // EP0 IN entry: Active=0, NBytes=0, addr_offset = 0x180>>6 = 6
+    uint32_t ep0_in_entry = USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x008, ep0_in_entry);
+
+    // Reserved word
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x00C, 0x00000000);
+
+    // Zero out remaining EP entries (EP1-EP4, 4 words each)
+    for (uint32_t i = 0x010; i < 0x100; i += 4) {
+        lsu_write_32(USB_DMA_BASE_ADDR + i, 0x00000000);
+    }
+    VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
+
+    // --- Step 1: Set EP list base address ---
+    lsu_write_32(SOC_USBHSD_EPLISTSTART, 0x00000000);
+
+    // --- Step 2: Set data buffer page address ---
+    lsu_write_32(SOC_USBHSD_DATABUFSTART, 0x00000000);
+
+    // --- Step 3: Enable device in FS-only mode ---
+    // PFSC (bit 21) suppresses the device-side K-chirp so that the UTMI TX
+    // initializes immediately for FS. Without PFSC the chirp state machine
+    // would wait ~2.2ms for a J-chirp reply that a FS-only host never sends,
+    // delaying the first SETUP ACK beyond the VIP tend_to_end_delay_fs window.
+    reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
+             | USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK
+             | USBHSD_DEVCMDSTAT_DCON_MASK
+             | USBHSD_DEVCMDSTAT_PFSC_MASK;
+    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
+
+    // Read back to confirm
+    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
+
+    // --- Step 4: Enable interrupts ---
+    lsu_write_32(SOC_USBHSD_INTEN,
+        USBHSD_INTSTAT_DEV_INT_MASK |
+        USBHSD_INTSTAT_EP0OUT_MASK  |
+        USBHSD_INTSTAT_EP0IN_MASK);
+    VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
+        USBHSD_INTSTAT_DEV_INT_MASK | USBHSD_INTSTAT_EP0OUT_MASK | USBHSD_INTSTAT_EP0IN_MASK);
+
+    // --- Step 5: Clear pending interrupts ---
+    lsu_write_32(SOC_USBHSD_INTSTAT, 0xC0000FFF);
+
+    VPRINTF(LOW, "MCU: boot_usb_core_fs - done\n");
+}
+
 void usb_ep0_reinit(void) {
     uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
                            | USB_EP_ENTRY_NBYTES(8)

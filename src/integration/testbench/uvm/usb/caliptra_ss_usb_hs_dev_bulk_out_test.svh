@@ -34,11 +34,17 @@ class caliptra_ss_usb_hs_dev_bulk_out_test extends caliptra_ss_usb_base_test;
 
         // HS device mode: leave high_speed_capable=1 (default).
         // EP1: BULK OUT at HS, 512-byte max packet.
+        // allow_aligned_transfer_without_zero_length=1: the NXP IP_3516 firmware
+        // never appends a ZLP after a max-packet-aligned bulk OUT transfer.
+        // Without this, the VIP constraint fixed_dev_ep_ustr_valid_ranges forces
+        // aligned_transfer_ends_with_zero_length=1, causing the VIP to send a ZLP
+        // that the firmware NAKs, eventually ABORTing the transfer after ~1.35ms.
         cfg.dev_cfg.local_device_cfg[0].device_timeout              = 5000us;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].direction   = svt_usb_types::OUT;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].speed       = svt_usb_types::HS;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].max_packet_size =
             `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[1].allow_aligned_transfer_without_zero_length = 1;
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",

@@ -42,7 +42,7 @@ void main(void) {
     int      loopback_done;
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_fs();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -50,12 +50,37 @@ void main(void) {
     dma_base      = USB_DMA_BASE_ADDR;
     loopback_done = 0;
 
-    /* Arm EP1 OUT to receive 64 bytes into SRAM at offset 0x200 */
+    /*
+     * EP command/status list layout (NXP IP_3511 Integration Guide s4.2.3):
+     *   0x000 = EP0 OUT  (cmd/status)
+     *   0x004 = EP0 SETUP buffer address
+     *   0x008 = EP0 IN   (cmd/status)
+     *   0x00C = reserved
+     *   0x010 = EP1 OUT  Buffer 0 (cmd/status)
+     *   0x014 = EP1 OUT  Buffer 1 (double-buffer; unused in single-buffer mode)
+     *   0x018 = EP1 IN   Buffer 0 (cmd/status)
+     *   0x01C = EP1 IN   Buffer 1 (double-buffer; unused in single-buffer mode)
+     *
+     * Initial EP1 OUT arm happens here. After any bus reset the hardware
+     * clears the Active bit on ALL endpoints. usb_handle_bus_reset() only
+     * restores EP0 entries (usb_ep0_reinit). EP1 OUT must be explicitly
+     * re-armed after the bus reset so the device can ACK the bulk OUT packet
+     * the host sends after enumeration.
+     */
     ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64) | USB_EP_ENTRY_ADDR(0x200);
     lsu_write_32(dma_base + 0x010, ep1out_entry);
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
+        uint32_t prev_dres = lsu_read_32(SOC_USBHSD_DEVCMDSTAT)
+                             & USBHSD_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
+        /* Re-arm EP1 OUT after bus reset (hardware clears Active on all EPs) */
+        if (prev_dres) {
+            ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64)
+                         | USB_EP_ENTRY_ADDR(0x200);
+            lsu_write_32(dma_base + 0x010, ep1out_entry);
+        }
+
         reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
         intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
 
@@ -74,14 +99,15 @@ void main(void) {
                 rx_word = lsu_read_32(dma_base + 0x200 + i);
                 lsu_write_32(dma_base + 0x240 + i, rx_word);
             }
-            /* Arm EP1 IN to send the loopback data */
-            ep1in_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64) | USB_EP_ENTRY_ADDR(0x240);
+            /* Arm EP1 IN Buffer 0 (offset 0x018) to send the loopback data */
+            ep1in_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64)
+                        | USB_EP_ENTRY_ADDR(0x240);
             lsu_write_32(dma_base + 0x018, ep1in_entry);
             loopback_done = 1;
         }
 
         if (loopback_done && !(lsu_read_32(dma_base + 0x018) & USB_EP_ENTRY_ACTIVE)) {
-            /* EP1 IN transfer completed */
+            /* EP1 IN transfer completed: hardware cleared Active bit */
             VPRINTF(LOW, "USB FS dev bulk loopback PASSED\r\n");
             break;
         }

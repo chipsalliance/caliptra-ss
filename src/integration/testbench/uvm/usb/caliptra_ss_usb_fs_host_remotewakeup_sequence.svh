@@ -54,8 +54,8 @@ class caliptra_ss_usb_fs_host_remotewakeup_sequence extends uvm_sequence;
         svt_usb_agent                                host_agent_h;
         uvm_component                                parent_comp;
         svt_usb_status                               shared_status;
-        svt_usb_protocol_service_20_suspend_sequence suspend_seq;
-        svt_usb_protocol_service_20_resume_sequence  resume_seq;
+        svt_usb_protocol_service_20_sof_off_sequence suspend_seq;
+        svt_usb_protocol_service_resume_transfer_processing_sequence  resume_seq;
 
         parent_comp = p_sequencer.get_parent();
         if (!$cast(host_agent_h, parent_comp))
@@ -100,7 +100,7 @@ class caliptra_ss_usb_fs_host_remotewakeup_sequence extends uvm_sequence;
 
         // Step 4: Host drives SUSPEND signaling.
         `uvm_info("USB_FS_REMWAKE_SEQ", "Host driving SUSPEND...", UVM_LOW)
-        suspend_seq = svt_usb_protocol_service_20_suspend_sequence::type_id::create(
+        suspend_seq = svt_usb_protocol_service_20_sof_off_sequence::type_id::create(
             "suspend_seq");
         suspend_seq.start(p_sequencer.prot_service_sequencer);
         `uvm_info("USB_FS_REMWAKE_SEQ", "SUSPEND signaling complete.", UVM_LOW)
@@ -110,7 +110,7 @@ class caliptra_ss_usb_fs_host_remotewakeup_sequence extends uvm_sequence;
 
         // Step 6: Host drives RESUME signaling.
         `uvm_info("USB_FS_REMWAKE_SEQ", "Host driving RESUME...", UVM_LOW)
-        resume_seq = svt_usb_protocol_service_20_resume_sequence::type_id::create(
+        resume_seq = svt_usb_protocol_service_resume_transfer_processing_sequence::type_id::create(
             "resume_seq");
         resume_seq.start(p_sequencer.prot_service_sequencer);
         `uvm_info("USB_FS_REMWAKE_SEQ", "RESUME signaling complete.", UVM_LOW)
