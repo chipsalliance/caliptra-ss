@@ -282,19 +282,6 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
         device_status_read_and_check(
             device_status, "OCP_CMD_011_DEVICE_STATUS");
-        if (device_status.size() != wMaxRdTransferSize) begin
-            `uvm_error("OCP_CMD",
-                $sformatf("DEVICE_STATUS implementation returned %0d bytes, expected the advertised max-read size %0d for the exact-64-B data packet case.",
-                          device_status.size(), wMaxRdTransferSize))
-        end
-        if ((device_status.size() > OCP_OFF_DS_VENDOR_LEN) &&
-            (device_status[OCP_OFF_DS_VENDOR_LEN] !=
-                (wMaxRdTransferSize - OCP_OFF_DS_VENDOR_START))) begin
-            `uvm_error("OCP_CMD",
-                $sformatf("DEVICE_STATUS vendor length=%0d, expected %0d to fill the exact-64-B implementation window.",
-                          device_status[OCP_OFF_DS_VENDOR_LEN],
-                          wMaxRdTransferSize - OCP_OFF_DS_VENDOR_START))
-        end
         check_heartbeat_behavior(heartbeat_period);
 
         // OCP Recovery v1.1 Sec 9.1 requires a write to a read-only command

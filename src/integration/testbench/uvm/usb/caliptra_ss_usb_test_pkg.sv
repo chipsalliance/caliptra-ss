@@ -16,18 +16,19 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 155;
+  localparam int USB_PKG_VERSION = 159;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   import svt_uvm_pkg::*;
   import svt_usb_uvm_pkg::*;
-  import usb_ocp_recovery_pkg::*;
+  import caliptra_ss_usb_common_pkg::*;
+  import caliptra_ss_usb_ocp_recovery_tb_pkg::*;
  
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_xfer_helpers.svh"
+  `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"

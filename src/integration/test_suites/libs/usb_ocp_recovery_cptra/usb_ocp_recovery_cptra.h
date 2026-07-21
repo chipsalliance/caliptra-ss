@@ -35,6 +35,14 @@ uint32_t cptra_usb_ocp_recovery_pack_ctrl(uint8_t cms,
                                           uint8_t image_selection,
                                           uint8_t activate);
 
+uint8_t cptra_usb_ocp_recovery_read_device_status(uint8_t *device_status);
+
+uint8_t cptra_usb_ocp_recovery_poll_device_status(
+    uint8_t target_status,
+    uint32_t poll_iterations,
+    uint32_t consecutive_dma_error_limit,
+    uint8_t *last_status);
+
 uint32_t cptra_usb_ocp_recovery_read_image_size_words(void);
 
 uint8_t cptra_usb_ocp_recovery_read_fifo_status(uint8_t *fifo_status,

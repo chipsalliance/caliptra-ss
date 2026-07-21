@@ -26,11 +26,8 @@
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
-#include "soc_ifc_ss.h"
+#include "usb_ocp_recovery_cptra.h"
 
-#define CPTRA_OCP_RECOVERY_BYTE0_MASK 0xFFu
-#define CPTRA_OCP_RECOVERY_DMA_RETRIES 3u
-#define CPTRA_OCP_RECOVERY_RETRY_DELAY 16u
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_READY_FOR_RECOVERY_IMAGE 0x03u
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING 0x04u
 #define OCP_RECOVERY_SCRATCH_WORDS 16u
@@ -51,12 +48,6 @@ volatile caliptra_intr_received_s cptra_intr_rcv = {0};
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
-static inline uint64_t recovery_base(void) {
-    uint64_t lo = (uint64_t)lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_L);
-    uint64_t hi = (uint64_t)lsu_read_32(CLP_SOC_IFC_REG_SS_RECOVERY_IFC_BASE_ADDR_H);
-    return (hi << 32) | lo;
-}
-
 static inline void spin_delay(uint32_t cycles) {
     for (uint32_t ii = 0; ii < cycles; ++ii) {
         __asm__ volatile ("nop");
@@ -68,160 +59,6 @@ static void fail_and_halt(const char *msg) {
     SEND_STDOUT_CTRL(0x1);
     while (1) {
     }
-}
-
-static uint8_t cptra_ocp_recovery_read_dword(uint64_t addr, uint32_t *value) {
-    return soc_ifc_axi_dma_read_ahb_payload_with_status(addr, 0u, value, sizeof(*value), 0u);
-}
-
-static uint8_t cptra_ocp_recovery_read_dword_retry(uint64_t addr, uint32_t *value) {
-    uint8_t status;
-    for (uint32_t attempt = 0; attempt < CPTRA_OCP_RECOVERY_DMA_RETRIES; ++attempt) {
-        status = cptra_ocp_recovery_read_dword(addr, value);
-        if (status == 0u) {
-            return 0u;
-        }
-        spin_delay(CPTRA_OCP_RECOVERY_RETRY_DELAY);
-    }
-    return 1u;
-}
-
-static uint8_t cptra_ocp_recovery_write_dword(uint64_t addr, uint32_t value) {
-    return soc_ifc_axi_dma_send_ahb_payload_with_status(addr, 0u, &value, sizeof(value), 0u);
-}
-
-uint8_t cptra_ocp_recovery_read_device_status(uint8_t *device_status) {
-    uint32_t device_status_word = 0u;
-
-    if (device_status == 0) {
-        return 1u;
-    }
-
-    // OCP Recovery v1.1 9.2, DEVICE_STATUS / Table 9-5: byte 0 is the device status.
-    // Use retry wrapper to handle transient AXI DMA errors during USB bus activity.
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, &device_status_word) != 0u) {
-        return 1u;
-    }
-
-    *device_status = (uint8_t)(device_status_word & CPTRA_OCP_RECOVERY_BYTE0_MASK);
-    return 0u;
-}
-
-uint8_t cptra_ocp_recovery_poll_device_status(uint8_t target_status, uint32_t timeout_iters) {
-    uint8_t device_status;
-
-    while (timeout_iters-- != 0u) {
-        if (cptra_ocp_recovery_read_device_status(&device_status) != 0u) {
-            return 1u;
-        }
-        if (device_status == target_status) {
-            return 0u;
-        }
-    }
-
-    return 1u;
-}
-
-// Poll DEVICE_STATUS for the target status with retry and progress reporting.
-// Returns 0 on success (target status reached), 1 on DMA error, 2 on timeout.
-// poll_iters: number of poll iterations before timeout
-// dma_err_limit: max consecutive DMA errors before giving up
-// last_status: output param for last observed DEVICE_STATUS (may be NULL)
-uint8_t cptra_ocp_recovery_poll_device_status_robust(
-    uint8_t target_status,
-    uint32_t poll_iters,
-    uint32_t dma_err_limit,
-    uint8_t *last_status) {
-
-    uint8_t device_status = 0u;
-    uint32_t consecutive_dma_errs = 0u;
-
-    for (uint32_t iter = 0; iter < poll_iters; ++iter) {
-        if (cptra_ocp_recovery_read_device_status(&device_status) != 0u) {
-            consecutive_dma_errs++;
-            if (consecutive_dma_errs >= dma_err_limit) {
-                if (last_status != 0) {
-                    *last_status = device_status;
-                }
-                return 1u;
-            }
-            spin_delay(CPTRA_OCP_RECOVERY_RETRY_DELAY * 4u);
-            continue;
-        }
-        consecutive_dma_errs = 0u;
-
-        if (device_status == target_status) {
-            if (last_status != 0) {
-                *last_status = device_status;
-            }
-            return 0u;
-        }
-
-        spin_delay(CPTRA_OCP_RECOVERY_RETRY_DELAY);
-    }
-
-    if (last_status != 0) {
-        *last_status = device_status;
-    }
-    return 2u;
-}
-
-uint32_t cptra_ocp_recovery_read_image_size_words(void) {
-    uint32_t ctrl1 = 0u;
-
-    // OCP Recovery v1.1 Sec 9.2 INDIRECT_FIFO_CTRL: IMAGE_SIZE is the image
-    // size to load, in 4-byte (DWORD) units. The register map is I3C-identical
-    // (secure_firmware_recovery_interface.rdl): IMAGE_SIZE is the full 32-bit
-    // INDIRECT_FIFO_CTRL_1 register, so a single read returns it directly.
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1, &ctrl1) != 0u) {
-        return 0u;
-    }
-    return ctrl1;
-}
-
-uint8_t cptra_ocp_recovery_read_fifo_status(uint8_t *fifo_status, uint32_t *write_index) {
-    uint32_t fifo_status_word = 0u;
-    uint32_t write_index_word = 0u;
-
-    if ((fifo_status == 0) || (write_index == 0)) {
-        return 1u;
-    }
-
-    // OCP Recovery v1.1 9.2, INDIRECT_FIFO_STATUS / Table 9-14: byte 0 is FIFO status and bytes 4..7 are Write Index.
-    // Use retry wrapper to handle transient AXI DMA errors during USB bus activity.
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0, &fifo_status_word) != 0u) {
-        return 1u;
-    }
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_1, &write_index_word) != 0u) {
-        return 1u;
-    }
-
-    *fifo_status = (uint8_t)(fifo_status_word & CPTRA_OCP_RECOVERY_BYTE0_MASK);
-    *write_index = write_index_word;
-    return 0u;
-}
-
-uint8_t cptra_ocp_recovery_drain_fifo(uint32_t image_size_words, uint32_t *dest, uint32_t dest_words) {
-    // OCP Recovery v1.1 8.2.5 and 9.2, INDIRECT_FIFO_DATA / Table 9-15:
-    // INDIRECT_FIFO_DATA is a fixed FIFO data register; each AXI read pops the
-    // next DWORD. Caliptra Core reaches the recovery aperture only through the
-    // AXI DMA engine. Drain with SINGLE-BEAT reads (one DMA transaction per
-    // DWORD): each read is an independent, well-spaced AXI access at the fixed
-    // INDIRECT_FIFO_DATA address that pops exactly one DWORD. This is the
-    // verified-correct drain path; the FIXED-address multi-beat burst is a
-    // throughput optimization that is reopened pending a per-beat-pop fix.
-    if ((dest == 0) || (image_size_words == 0u)) {
-        return 1u;
-    }
-    uint32_t words = (image_size_words < dest_words) ? image_size_words : dest_words;
-    for (uint32_t ii = 0u; ii < words; ++ii) {
-        uint32_t word = 0u;
-        if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA, &word) != 0u) {
-            return 1u;
-        }
-        dest[ii] = word;
-    }
-    return 0u;
 }
 
 // Verify the drained recovery image matches the deterministic pattern the USB
@@ -258,7 +95,7 @@ void main(void) {
     VPRINTF(LOW, "Caliptra USB OCP recovery consumer test\n");
     VPRINTF(LOW, "=======================================\n");
 
-    rec_base = recovery_base();
+    rec_base = cptra_usb_ocp_recovery_get_base();
     VPRINTF(LOW, "CPTRA: recovery aperture base lo=0x%08x hi=0x%08x\n",
             (uint32_t)rec_base,
             (uint32_t)(rec_base >> 32));
@@ -292,7 +129,7 @@ void main(void) {
     VPRINTF(LOW, "CPTRA: polling DEVICE_STATUS for Recovery Pending (iters=%u, dma_err_limit=%u)\n",
             OCP_RECOVERY_POLL_ITERS, OCP_RECOVERY_DMA_ERR_LIMIT);
 
-    poll_result = cptra_ocp_recovery_poll_device_status_robust(
+    poll_result = cptra_usb_ocp_recovery_poll_device_status(
         CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING,
         OCP_RECOVERY_POLL_ITERS,
         OCP_RECOVERY_DMA_ERR_LIMIT,
@@ -312,7 +149,7 @@ void main(void) {
         VPRINTF(LOW, "CPTRA: DEVICE_STATUS reached Recovery Pending (0x04)\n");
     }
 
-    image_size_words = cptra_ocp_recovery_read_image_size_words();
+    image_size_words = cptra_usb_ocp_recovery_read_image_size_words();
     if (image_size_words == 0u) {
         // OCP Recovery v1.1 Sec 9.2: by the time DEVICE_STATUS reports the
         // recovery image is available, the device must have programmed a
@@ -323,19 +160,22 @@ void main(void) {
     if (image_size_words > OCP_RECOVERY_SCRATCH_WORDS) {
         fail_and_halt("CPTRA: IMAGE_SIZE exceeds drain scratch capacity");
     }
-    if (cptra_ocp_recovery_read_fifo_status(&fifo_status, &last_write_index) != 0u) {
+    if (cptra_usb_ocp_recovery_read_fifo_status(
+            &fifo_status, &last_write_index) != 0u) {
         fail_and_halt("CPTRA: INDIRECT_FIFO_STATUS DMA read failed");
     }
     VPRINTF(LOW, "CPTRA: fifo_status=0x%02x write_index=0x%08x before drain\n",
             fifo_status,
             last_write_index);
     VPRINTF(LOW, "CPTRA: draining %u dwords from INDIRECT_FIFO_DATA\n", image_size_words);
-    if (cptra_ocp_recovery_drain_fifo(image_size_words,
-                                      scratch,
-                                      OCP_RECOVERY_SCRATCH_WORDS) != 0u) {
+    if (cptra_usb_ocp_recovery_drain_fifo(
+            image_size_words,
+            scratch,
+            OCP_RECOVERY_SCRATCH_WORDS) != 0u) {
         fail_and_halt("CPTRA: INDIRECT_FIFO_DATA DMA drain failed");
     }
-    if (cptra_ocp_recovery_read_fifo_status(&fifo_status, &last_write_index) != 0u) {
+    if (cptra_usb_ocp_recovery_read_fifo_status(
+            &fifo_status, &last_write_index) != 0u) {
         fail_and_halt("CPTRA: post-drain INDIRECT_FIFO_STATUS DMA read failed");
     }
     VPRINTF(LOW, "CPTRA: drained %u dwords; final write_index=0x%08x fifo_status=0x%02x first_word=0x%08x\n",
@@ -350,13 +190,15 @@ void main(void) {
     VPRINTF(LOW, "CPTRA: drained image content verified (%u dwords)\n", image_size_words);
 
     VPRINTF(LOW, "CPTRA: clearing RECOVERY_CTRL activation after verified FIFO drain\n");
-    if (cptra_ocp_recovery_read_dword_retry(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
-                                            &recovery_ctrl_word) != 0u) {
+    if (cptra_usb_ocp_recovery_read_dword_retry(
+            SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
+            &recovery_ctrl_word) != 0u) {
         fail_and_halt("CPTRA: RECOVERY_CTRL read before activation clear failed");
     }
     recovery_ctrl_word &= 0xFF00FFFFu;
-    if (cptra_ocp_recovery_write_dword(SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
-                                       recovery_ctrl_word) != 0u) {
+    if (cptra_usb_ocp_recovery_write_dword(
+            SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL,
+            recovery_ctrl_word) != 0u) {
         fail_and_halt("CPTRA: RECOVERY_CTRL activation clear write failed");
     }
 
