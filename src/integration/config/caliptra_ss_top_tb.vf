@@ -966,6 +966,8 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_common_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/tb_top_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/axi_slv.sv

@@ -60,7 +60,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         if ((req == null) || (req.status == svt_sequence_item::ABORTED)) begin
             return OCP_XFER_ABORTED;
         end
-        if (req.results_status != '0) begin
+        if (!caliptra_ss_usb_xfer_successful(req)) begin
             return OCP_XFER_NON_SUCCESS;
         end
         return OCP_XFER_SUCCESS;
@@ -112,7 +112,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 bytes[offset + 1], bytes[offset]};
     endfunction
 
-    protected virtual task ocp_class_xfer(
+    protected virtual task ocp_class_xfer_result(
         input bit dir_in,
         input ocp_cmd_t cmd_code,
         input bit [15:0] wlength,
@@ -188,6 +188,21 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             UVM_NONE)
     endtask
 
+    protected virtual task ocp_class_xfer(
+        input bit dir_in,
+        input bit [7:0] cmd_code,
+        input bit [15:0] wlength,
+        ref bit [7:0] payload_bytes[$],
+        ref bit [7:0] resp_bytes[$],
+        input string label);
+
+        caliptra_ss_usb_ocp_xfer_result_e result;
+
+        ocp_class_xfer_result(
+            dir_in, ocp_cmd_t'(cmd_code), wlength,
+            payload_bytes, resp_bytes, result, label);
+    endtask
+
     protected virtual task ocp_try_read(
         input ocp_cmd_t cmd_code,
         ref bit [7:0] resp_bytes[$],
@@ -196,8 +211,9 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         bit [7:0] empty_payload[$];
         empty_payload.delete();
-        ocp_class_xfer(1'b1, cmd_code, 16'(wMaxRdTransferSize),
-                       empty_payload, resp_bytes, result, label);
+        ocp_class_xfer_result(
+            1'b1, cmd_code, 16'(wMaxRdTransferSize),
+            empty_payload, resp_bytes, result, label);
     endtask
 
     protected virtual task ocp_read(
@@ -226,8 +242,9 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 $sformatf("%s payload length %0d exceeds wMaxWrTransferSize=%0d.",
                           label, payload_bytes.size(), wMaxWrTransferSize))
         end
-        ocp_class_xfer(1'b0, cmd_code, 16'(payload_bytes.size()),
-                       payload_bytes, resp_bytes, result, label);
+        ocp_class_xfer_result(
+            1'b0, cmd_code, 16'(payload_bytes.size()),
+            payload_bytes, resp_bytes, result, label);
     endtask
 
     protected virtual task ocp_write(
@@ -827,8 +844,9 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         if (dir_in) begin
             bit [7:0] empty_payload[$];
             empty_payload.delete();
-            ocp_class_xfer(1'b1, cmd_code, 16'(wMaxRdTransferSize),
-                           empty_payload, response, result, label);
+            ocp_class_xfer_result(
+                1'b1, cmd_code, 16'(wMaxRdTransferSize),
+                empty_payload, response, result, label);
         end else begin
             ocp_try_write(cmd_code, payload_bytes, result, label);
         end

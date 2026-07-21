@@ -63,7 +63,7 @@ uint8_t main(void) {
     // class endpoints (OCP Recovery v1.1 sec 8.5: recovery interface must be
     // advertised before any class request; otherwise GET_DESCRIPTOR(CONFIG) and
     // class requests would be STALLed).
-    boot_usb_core(usb_ocp_recovery_get_config_descriptor,
+    boot_usb_core(usb_ocp_recovery_get_v1p1_config_descriptor,
                   usb_ocp_recovery_handle_class_request);
     usb_dump_state("post-boot");
 

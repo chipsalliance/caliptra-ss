@@ -15,13 +15,15 @@
 #include <stdint.h>
 
 #include "caliptra_defines.h"
+#include "caliptra_isr.h"
 #include "printf.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
-#include "soc_ifc_ss.h"
 #include "usb_ocp_recovery_cptra.h"
 
 volatile char *stdout = (char *)STDOUT;
+volatile uint32_t intr_count = 0;
+volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
 #ifdef CPT_VERBOSITY
 enum printf_verbosity verbosity_g = CPT_VERBOSITY;

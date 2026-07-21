@@ -96,9 +96,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     // Centralized so a future VIP version-bump that renames either
     // field can be patched in one place.
     protected virtual function bit is_xfer_successful(svt_usb_transfer t);
-        if (t == null) return 0;
-        return (t.results_status == '0) &&
-               (t.status != svt_sequence_item::ABORTED);
+        return caliptra_ss_usb_xfer_successful(t);
     endfunction
 
     // -------------------------------------------------------------------------
@@ -144,7 +142,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
 
         // Per-command predicates. Cast to the OCP cmd enum so
         // the case arms use spec-named symbols instead of raw 8'h22/etc.
-        case (caliptra_ss_usb_ocp_recovery_cmd_e'(cmd_code))
+        case (cmd_code)
 
             // PROT_CAP (sec 9.2): IN responses must begin with the
             // 8-byte ASCII magic "OCP RECV".
@@ -164,10 +162,12 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                             bit mismatch;
                             mismatch = 1'b0;
                             for (int i = 0; i < 8; i++) begin
-                                if (t.payload.data[i] !== OCP_PROT_CAP_MAGIC[i]) begin
+                                if (t.payload.data[i] !==
+                                        OCP_SPEC_PROT_CAP_MAGIC[i]) begin
                                     `uvm_error("OCPREC_MARK",
                                         $sformatf("PROT_CAP magic mismatch at byte %0d: exp=0x%02h got=0x%02h",
-                                                  i, OCP_PROT_CAP_MAGIC[i],
+                                                  i,
+                                                  OCP_SPEC_PROT_CAP_MAGIC[i],
                                                   t.payload.data[i]))
                                     mismatch = 1'b1;
                                 end
