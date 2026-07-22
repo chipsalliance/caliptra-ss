@@ -203,19 +203,49 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo(uint32_t image_size_words,
                                           uint32_t *destination,
                                           uint32_t destination_words)
 {
-    uint32_t words_to_read;
+    const cptra_usb_ocp_recovery_drain_config_t config = {
+        .initial_delay_cycles = 0u,
+        .words_per_service = image_size_words,
+        .inter_service_delay_cycles = 0u,
+    };
+
+    return cptra_usb_ocp_recovery_drain_fifo_configured(
+        image_size_words, destination, destination_words, &config);
+}
+
+uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
+    uint32_t image_size_words,
+    uint32_t *destination,
+    uint32_t destination_words,
+    const cptra_usb_ocp_recovery_drain_config_t *config)
+{
+    uint32_t words_per_service;
+    uint32_t words_in_service;
 
     if ((destination == 0) || (image_size_words == 0u) ||
-        (image_size_words > destination_words)) {
+        (image_size_words > destination_words) || (config == 0)) {
         return 1u;
     }
 
-    words_to_read = image_size_words;
-    for (uint32_t index = 0u; index < words_to_read; ++index) {
+    words_per_service = config->words_per_service;
+    if (words_per_service == 0u) {
+        return 1u;
+    }
+
+    cptra_usb_ocp_recovery_delay(config->initial_delay_cycles);
+    words_in_service = 0u;
+    for (uint32_t index = 0u; index < image_size_words; ++index) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
                 SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
                 &destination[index]) != 0u) {
             return 1u;
+        }
+        words_in_service++;
+        if ((words_in_service == words_per_service) &&
+            ((index + 1u) < image_size_words)) {
+            cptra_usb_ocp_recovery_delay(
+                config->inter_service_delay_cycles);
+            words_in_service = 0u;
         }
     }
     return 0u;

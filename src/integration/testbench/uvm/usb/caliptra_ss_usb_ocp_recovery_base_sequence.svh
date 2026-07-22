@@ -301,15 +301,30 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         ocp_write(OCP_CMD_INDIRECT_FIFO_CTRL, payload, label);
     endtask
 
-    protected virtual task indirect_fifo_data_write(
+    protected virtual task indirect_fifo_data_try_write(
         ref bit [7:0] payload[$],
+        output caliptra_ss_usb_ocp_xfer_result_e result,
         input string label);
 
         if (payload.size() < OCP_SPEC_MIN_LEN_INDIRECT_FIFO_DATA) begin
             `uvm_fatal("OCP_BASE",
                 $sformatf("%s requires at least one payload byte.", label))
         end
-        ocp_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, label);
+        ocp_try_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, result, label);
+    endtask
+
+    protected virtual task indirect_fifo_data_write(
+        ref bit [7:0] payload[$],
+        input string label);
+
+        caliptra_ss_usb_ocp_xfer_result_e result;
+
+        indirect_fifo_data_try_write(payload, result, label);
+        if (result != OCP_XFER_SUCCESS) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s cmd=0x%02h did not complete successfully (%s).",
+                          label, OCP_CMD_INDIRECT_FIFO_DATA, result.name()))
+        end
     endtask
 
     protected virtual task indirect_fifo_status_read(
