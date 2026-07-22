@@ -247,7 +247,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                               label, cmd_code),
                     UVM_LOW)
             end else begin
-                for (int i = 0; i < wlength; i++) begin
+                int copy_count;
+                copy_count = (req.payload.data.size() < wlength) ?
+                             req.payload.data.size() : wlength;
+                for (int i = 0; i < copy_count; i++) begin
                     resp_bytes.push_back(req.payload.data[i]);
                 end
             end
@@ -321,6 +324,97 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         end
         return 0;
     endfunction
+
+    protected virtual task read_fifo_status_and_check(
+        input  int unsigned exp_empty,
+        input  int unsigned exp_full,
+        input  int unsigned exp_wr_idx,
+        input  int unsigned exp_rd_idx,
+        input  string       label,
+        ref    bit [7:0]    resp_bytes[$]);
+        bit [7:0] empty_q[$];
+        int unsigned wr_idx;
+        int unsigned rd_idx;
+        int unsigned fifo_size;
+        int unsigned max_transfer;
+        bit          got_empty;
+        bit          got_full;
+
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(resp_bytes),
+                       .label(label));
+        if (resp_bytes.size() < 20) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s returned %0d bytes; need >= 20 to decode INDIRECT_FIFO_STATUS.",
+                          label, resp_bytes.size()))
+            return;
+        end
+
+        wr_idx = {resp_bytes[7], resp_bytes[6], resp_bytes[5], resp_bytes[4]};
+        rd_idx = {resp_bytes[11], resp_bytes[10], resp_bytes[9], resp_bytes[8]};
+        fifo_size = {resp_bytes[15], resp_bytes[14], resp_bytes[13], resp_bytes[12]};
+        max_transfer = {resp_bytes[19], resp_bytes[18], resp_bytes[17], resp_bytes[16]};
+        got_empty = resp_bytes[0][0];
+        got_full  = resp_bytes[0][1];
+
+        if (got_empty != exp_empty) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s EMPTY=%0d, expected %0d.", label, got_empty, exp_empty))
+        end
+        if (got_full != exp_full) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s FULL=%0d, expected %0d.", label, got_full, exp_full))
+        end
+        if (wr_idx != exp_wr_idx) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s WRITE_INDEX=%0d, expected %0d.", label, wr_idx, exp_wr_idx))
+        end
+        if (rd_idx != exp_rd_idx) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s READ_INDEX=%0d, expected %0d.", label, rd_idx, exp_rd_idx))
+        end
+        if (fifo_size != usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s FIFO_SIZE=%0d, expected %0d.",
+                          label, fifo_size, usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS))
+        end
+        if (max_transfer != usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s MAX_TRANSFER_SIZE=%0d, expected %0d.",
+                          label, max_transfer, usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS))
+        end
+    endtask
+
+    protected virtual task read_fifo_data_and_check(
+        input  bit [31:0] exp_dword,
+        input  string     label,
+        ref    bit [7:0]  resp_bytes[$]);
+        bit [7:0] empty_q[$];
+        bit [31:0] got_dword;
+
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(resp_bytes),
+                       .label(label));
+        if (resp_bytes.size() < 4) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s returned %0d bytes; need >= 4 to decode one FIFO DWORD.",
+                          label, resp_bytes.size()))
+            return;
+        end
+        got_dword = {resp_bytes[3], resp_bytes[2], resp_bytes[1], resp_bytes[0]};
+        if (got_dword != exp_dword) begin
+            `uvm_error("OCPREC",
+                $sformatf("%s DATA=0x%08h, expected 0x%08h.", label, got_dword, exp_dword))
+        end
+    endtask
 
     // -------------------------------------------------------------------------
     // body(): full OCP Recovery EP0 choreography
@@ -913,8 +1007,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //     FIFO synthesis path). This verifies the read-back mirrors the
         //     just-written CMS=0 and IMAGE_SIZE=12 (DWORD units), confirming
         //     both the read routing and the hw=w drive. Sec 9.2:
-        //       byte 0     : CMS        -> 0   (CTRL_0 @ 0x184)
-        //       bytes 4..7 : IMAGE_SIZE -> 12  (CTRL_1 @ 0x188, LE)
+        //       byte 0     : CMS        -> 0
+        //       bytes 2..5 : IMAGE_SIZE -> 12 (LE)
         resp_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
@@ -922,9 +1016,9 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .payload_bytes(empty_q),
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL_RDBK"));
-        if (resp_q.size() >= 8) begin
+        if (resp_q.size() >= OCP_LEN_INDIRECT_FIFO_CTRL) begin
             int unsigned img_sz_rb;
-            img_sz_rb = {resp_q[7], resp_q[6], resp_q[5], resp_q[4]};
+            img_sz_rb = {resp_q[5], resp_q[4], resp_q[3], resp_q[2]};
             `uvm_info("OCPREC",
                 $sformatf("INDIRECT_FIFO_CTRL read-back: CMS=0x%02h IMAGE_SIZE=%0d (4B units; expected CMS=0, IMAGE_SIZE=12)",
                           resp_q[0], img_sz_rb), UVM_NONE)
@@ -938,8 +1032,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                               img_sz_rb))
         end else begin
             `uvm_error("OCPREC",
-                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need >= 8 (regblock read routing).",
-                          resp_q.size()))
+                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need %0d (regblock read routing).",
+                          resp_q.size(), OCP_LEN_INDIRECT_FIFO_CTRL))
         end
 
         // 5b. INDIRECT_FIFO_DATA OUT: push 48 bytes (12 dwords)
@@ -988,31 +1082,12 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //       bytes 8..11  : READ_INDEX  (4-byte units, LE)
         //       bytes 12..15 : FIFO_SIZE   (4-byte units, LE)
         //       bytes 16..19 : MAX_TRANSFER_SIZE (bytes, LE)
-        empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(fifo_status),
-                       .label("OCPREC_INDIRECT_FIFO_STATUS"));
-        if (fifo_status.size() >= 8) begin
-            int unsigned wr_idx;
-            wr_idx = {fifo_status[7], fifo_status[6],
-                      fifo_status[5], fifo_status[4]};
-            `uvm_info("OCPREC",
-                $sformatf("INDIRECT_FIFO_STATUS: EMPTY=%0d FULL=%0d WRITE_INDEX=%0d (4B units; expected %0d)",
-                          fifo_status[0], fifo_status[1], wr_idx, n_dwords),
-                UVM_NONE)
-            if (wr_idx != n_dwords) begin
-                `uvm_error("OCPREC",
-                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d after pushing %0d dwords (sec 9.2).",
-                              wr_idx, n_dwords, n_dwords))
-            end
-        end else begin
-            `uvm_error("OCPREC",
-                $sformatf("INDIRECT_FIFO_STATUS returned %0d bytes; need >= 8 to extract WRITE_INDEX (sec 9.2).",
-                          fifo_status.size()))
-        end
+        read_fifo_status_and_check(.exp_empty(0),
+                                   .exp_full(0),
+                                   .exp_wr_idx(n_dwords),
+                                   .exp_rd_idx(0),
+                                   .label("OCPREC_INDIRECT_FIFO_STATUS"),
+                                   .resp_bytes(fifo_status));
 
         // 5d. Poll DEVICE_STATUS until firmware advances past
         //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
