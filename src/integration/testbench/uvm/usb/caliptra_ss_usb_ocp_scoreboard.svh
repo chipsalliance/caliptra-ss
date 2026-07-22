@@ -53,10 +53,13 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     // caliptra_ss_usb_ocp_recovery_sequence.svh (same package scope) instead
     // of redeclaring the byte array here.
 
-    // Accumulated INDIRECT_FIFO_DATA bytes (OUT direction). The scoreboard
-    // compares these against the FIFO state reported by
-    // INDIRECT_FIFO_STATUS (IN direction).
-    protected bit [7:0]   pushed_fifo_bytes[$];
+    // Spec model for the INDIRECT_FIFO ring (OCP Recovery v1.1 Sec 8.2.5).
+    // The queue stores accepted DWORD payload bytes in FIFO order, while the
+    // indices and occupancy track the externally visible modulo-65 ring.
+    protected bit [7:0]   expected_fifo_bytes[$];
+    protected int unsigned expected_write_index;
+    protected int unsigned expected_actual_occupancy;
+    protected int unsigned expected_visible_occupancy;
 
     // Per-cmd, per-direction counters: [cmd_code][0=OUT, 1=IN].
     protected int unsigned xfer_count[bit[7:0]][2];
@@ -64,6 +67,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     protected int unsigned total_prot_cap_in;
     protected int unsigned total_prot_cap_mismatch;
     protected int unsigned total_fifo_data_out_bytes;
+    protected int unsigned total_fifo_data_in;
     protected int unsigned total_fifo_status_in;
     // Count transfers that arrived with a non-success status so
     // they can be reported and skipped from PROT_CAP / FIFO accounting.
@@ -81,24 +85,106 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         total_prot_cap_in           = 0;
         total_prot_cap_mismatch     = 0;
         total_fifo_data_out_bytes   = 0;
+        total_fifo_data_in          = 0;
         total_fifo_status_in        = 0;
         total_nonsuccess_xfers      = 0;
+        expected_write_index        = 0;
+        expected_actual_occupancy   = 0;
+        expected_visible_occupancy  = 0;
     endfunction
 
-    // Returns 1 if the transfer completed successfully on the
-    // bus, 0 otherwise (NAK / STALL / TIMEOUT / etc.). Synopsys USB VIP
-    // does NOT expose a "SUCCESSFUL" enum. Per UVM Class Reference for
-    // svt_usb_transfer, the canonical success predicate is
-    // `results_status == '0` (each bit flags a specific failure mode;
-    // OR of all bits is 0 on a clean transfer). The inherited `status`
-    // member is the svt_sequence_item processing-state enum (INITIAL/
-    // ACTIVE/ACCEPT/ABORTED/...), only used here to rule out ABORTED.
-    // Centralized so a future VIP version-bump that renames either
-    // field can be patched in one place.
+    // Returns 1 if the transfer completed successfully on the bus, 0 otherwise
+    // (NAK / STALL / TIMEOUT / etc.). In this SVT USB VIP revision, OUT control
+    // transfers retire with status==ACCEPT even when results_status carries a
+    // non-zero bookkeeping bit, while IN transfers report a clean completion
+    // through results_status=='0'. Use the direction-specific predicate so the
+    // scoreboard models accepted FIFO writes and still treats failed IN reads as
+    // non-success.
     protected virtual function bit is_xfer_successful(svt_usb_transfer t);
         if (t == null) return 0;
+        if (t.setup_data_bmrequesttype_dir == svt_usb_types::HOST_TO_DEVICE) begin
+            return (t.status == svt_sequence_item::ACCEPT);
+        end
         return (t.results_status == '0) &&
                (t.status != svt_sequence_item::ABORTED);
+    endfunction
+
+    // The VIP can classify an OUT control transfer as non-success after it has
+    // delivered the complete DATA stage. FIFO state is changed by that DATA
+    // stage, so model it whenever the observed payload is complete and the
+    // transfer was not aborted.
+    protected virtual function bit has_complete_out_payload(svt_usb_transfer t);
+        if (t == null) return 0;
+        if (t.setup_data_bmrequesttype_dir != svt_usb_types::HOST_TO_DEVICE) return 0;
+        if (t.status == svt_sequence_item::ABORTED) return 0;
+        if (t.payload == null) return 0;
+        return (t.payload.data.size() >= t.setup_data_w_length);
+    endfunction
+
+    protected virtual function int unsigned fifo_ring_next(int unsigned idx);
+        return (idx == usb_ocp_recovery_pkg::OCP_FIFO_INDEX_MAX) ? 0 : (idx + 1);
+    endfunction
+
+    protected virtual function void reset_fifo_model();
+        expected_fifo_bytes.delete();
+        expected_write_index = 0;
+        expected_actual_occupancy  = 0;
+        expected_visible_occupancy = 0;
+    endfunction
+
+    protected virtual function void model_fifo_push(svt_usb_transfer t);
+        int word_count;
+        int byte_idx;
+        if (t.payload == null) return;
+        if ((t.setup_data_w_length % 4) != 0) begin
+            `uvm_warning("OCPREC_MARK",
+                $sformatf("INDIRECT_FIFO_DATA OUT length %0d is not DWORD aligned; scoreboard models only full DWORD pushes.",
+                          t.setup_data_w_length))
+        end
+        word_count = t.setup_data_w_length / 4;
+        for (int word = 0; word < word_count; word++) begin
+            if (expected_visible_occupancy < usb_ocp_recovery_pkg::OCP_FIFO_PHYSICAL_DEPTH_DWORDS) begin
+                byte_idx = word * 4;
+                expected_fifo_bytes.push_back(t.payload.data[byte_idx + 0]);
+                expected_fifo_bytes.push_back(t.payload.data[byte_idx + 1]);
+                expected_fifo_bytes.push_back(t.payload.data[byte_idx + 2]);
+                expected_fifo_bytes.push_back(t.payload.data[byte_idx + 3]);
+                expected_write_index = fifo_ring_next(expected_write_index);
+                expected_actual_occupancy++;
+                expected_visible_occupancy++;
+            end
+        end
+        total_fifo_data_out_bytes += t.setup_data_w_length;
+    endfunction
+
+    protected virtual function void model_fifo_pop_and_check(svt_usb_transfer t);
+        bit [7:0] exp_byte;
+        if (t.payload == null) begin
+            `uvm_error("OCPREC_MARK",
+                "INDIRECT_FIFO_DATA IN observed with null payload.")
+            return;
+        end
+        if (t.payload.data.size() < 4) begin
+            `uvm_error("OCPREC_MARK",
+                $sformatf("INDIRECT_FIFO_DATA IN payload too short: %0d bytes, need >= 4.",
+                          t.payload.data.size()))
+            return;
+        end
+        total_fifo_data_in++;
+        if (expected_fifo_bytes.size() < 4) begin
+            `uvm_error("OCPREC_MARK",
+                "INDIRECT_FIFO_DATA IN observed while scoreboard expected FIFO empty.")
+            return;
+        end
+        for (int i = 0; i < 4; i++) begin
+            exp_byte = expected_fifo_bytes.pop_front();
+            if (t.payload.data[i] !== exp_byte) begin
+                `uvm_error("OCPREC_MARK",
+                    $sformatf("INDIRECT_FIFO_DATA byte %0d mismatch: exp=0x%02h got=0x%02h.",
+                              i, exp_byte, t.payload.data[i]))
+            end
+        end
+        expected_actual_occupancy--;
     endfunction
 
     // -------------------------------------------------------------------------
@@ -183,48 +269,103 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             // is checked against this log.
             OCP_REC_CMD_INDIRECT_FIFO_DATA: begin
                 if (!dir_in) begin
-                    if (!xfer_ok) begin
+                    if (!has_complete_out_payload(t)) begin
                         `uvm_info("OCPREC_MARK",
-                            "INDIRECT_FIFO_DATA OUT skipped: transfer status NON_SUCCESS; bytes NOT accumulated into pushed_fifo_bytes.",
+                            "INDIRECT_FIFO_DATA OUT skipped: DATA payload was incomplete or aborted.",
                             UVM_NONE)
-                    end else if (t.payload == null) begin
-                        `uvm_error("OCPREC_MARK",
-                            "INDIRECT_FIFO_DATA OUT observed with null payload.")
                     end else begin
-                        for (int i = 0; i < t.setup_data_w_length; i++) begin
-                            pushed_fifo_bytes.push_back(t.payload.data[i]);
-                        end
-                        total_fifo_data_out_bytes += t.setup_data_w_length;
+                        model_fifo_push(t);
                     end
+                end else if (!xfer_ok) begin
+                    `uvm_info("OCPREC_MARK",
+                        "INDIRECT_FIFO_DATA IN skipped: transfer status NON_SUCCESS; pop-order comparison suppressed.",
+                        UVM_NONE)
+                end else begin
+                    model_fifo_pop_and_check(t);
                 end
             end
 
-            // INDIRECT_FIFO_STATUS (sec 9.2): byte[0]=EMPTY,
-            // byte[1]=FULL, bytes[4..7]=WRITE_INDEX (4-byte units).
+            // INDIRECT_FIFO_CTRL writes with Reset=1 clear the protocol ring and
+            // payload store (OCP Recovery v1.1 Sec 9.2 INDIRECT_FIFO_CTRL).
+            OCP_REC_CMD_INDIRECT_FIFO_CTRL: begin
+                if (!dir_in && has_complete_out_payload(t) &&
+                    (t.setup_data_w_length >= 2) && t.payload.data[1][0]) begin
+                    reset_fifo_model();
+                end
+            end
+
+            // INDIRECT_FIFO_STATUS (sec 9.2): byte[0]=EMPTY, byte[1]=FULL,
+            // bytes[4..7]=WRITE_INDEX, bytes[8..11]=READ_INDEX, bytes[12..15]
+            // = FIFO_SIZE, bytes[16..19] = MAX_TRANSFER_SIZE.
             OCP_REC_CMD_INDIRECT_FIFO_STATUS: begin
                 if (dir_in) begin
                     if (!xfer_ok) begin
                         `uvm_info("OCPREC_MARK",
-                            "INDIRECT_FIFO_STATUS IN skipped: transfer status NON_SUCCESS; WRITE_INDEX comparison suppressed.",
+                            "INDIRECT_FIFO_STATUS IN skipped: transfer status NON_SUCCESS; FIFO ring comparison suppressed.",
                             UVM_NONE)
                     end else begin
                         total_fifo_status_in++;
                         if (t.payload == null) begin
                             `uvm_error("OCPREC_MARK",
                                 "INDIRECT_FIFO_STATUS IN observed with null payload.")
+                        end else if (t.payload.data.size() < 20) begin
+                            `uvm_error("OCPREC_MARK",
+                                $sformatf("INDIRECT_FIFO_STATUS payload too short: %0d bytes, need >= 20.",
+                                          t.payload.data.size()))
                         end else begin
                             int unsigned wr_idx;
-                            int unsigned expected_dwords;
+                            int unsigned rd_idx;
+                            int unsigned visible_occupancy;
+                            int unsigned fifo_size;
+                            int unsigned max_transfer;
+                            bit got_empty;
+                            bit got_full;
                             wr_idx = {t.payload.data[7], t.payload.data[6],
                                       t.payload.data[5], t.payload.data[4]};
-                            expected_dwords = pushed_fifo_bytes.size() / 4;
-                            if (wr_idx != expected_dwords) begin
+                            rd_idx = {t.payload.data[11], t.payload.data[10],
+                                      t.payload.data[9], t.payload.data[8]};
+                            fifo_size = {t.payload.data[15], t.payload.data[14],
+                                         t.payload.data[13], t.payload.data[12]};
+                            max_transfer = {t.payload.data[19], t.payload.data[18],
+                                            t.payload.data[17], t.payload.data[16]};
+                            got_empty = t.payload.data[0][0];
+                            got_full  = t.payload.data[0][1];
+                            visible_occupancy = (wr_idx >= rd_idx) ?
+                                (wr_idx - rd_idx) :
+                                (wr_idx + usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS - rd_idx);
+                            if (visible_occupancy < expected_actual_occupancy ||
+                                visible_occupancy > expected_visible_occupancy) begin
                                 `uvm_error("OCPREC_MARK",
-                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d (from %0d pushed bytes). Mismatch at dword index %0d (sec 9.2).",
-                                              wr_idx, expected_dwords,
-                                              pushed_fifo_bytes.size(),
-                                              expected_dwords < wr_idx ? expected_dwords : wr_idx))
+                                    $sformatf("INDIRECT_FIFO_STATUS visible occupancy=%0d outside conservative range [%0d,%0d].",
+                                              visible_occupancy, expected_actual_occupancy, expected_visible_occupancy))
                             end
+                            if (got_empty !== (visible_occupancy == 0)) begin
+                                `uvm_error("OCPREC_MARK",
+                                    $sformatf("INDIRECT_FIFO_STATUS.EMPTY=%0d, expected %0d.",
+                                              got_empty, visible_occupancy == 0))
+                            end
+                            if (got_full !== (visible_occupancy == usb_ocp_recovery_pkg::OCP_FIFO_PHYSICAL_DEPTH_DWORDS)) begin
+                                `uvm_error("OCPREC_MARK",
+                                    $sformatf("INDIRECT_FIFO_STATUS.FULL=%0d, expected %0d.",
+                                              got_full,
+                                              visible_occupancy == usb_ocp_recovery_pkg::OCP_FIFO_PHYSICAL_DEPTH_DWORDS))
+                            end
+                            if (wr_idx != expected_write_index) begin
+                                `uvm_error("OCPREC_MARK",
+                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d.",
+                                              wr_idx, expected_write_index))
+                            end
+                            if (fifo_size != usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS) begin
+                                `uvm_error("OCPREC_MARK",
+                                    $sformatf("INDIRECT_FIFO_STATUS.FIFO_SIZE=%0d, expected %0d.",
+                                              fifo_size, usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS))
+                            end
+                            if (max_transfer != usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS) begin
+                                `uvm_error("OCPREC_MARK",
+                                    $sformatf("INDIRECT_FIFO_STATUS.MAX_TRANSFER_SIZE=%0d, expected %0d.",
+                                              max_transfer, usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS))
+                            end
+                            expected_visible_occupancy = visible_occupancy;
                         end
                     end
                 end
@@ -278,11 +419,11 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         end
 
         `uvm_info_context("OCPREC_MARK",
-            $sformatf("OCPREC_SUMMARY total=%0d nonsuccess=%0d prot_cap_in=%0d prot_cap_mismatch=%0d fifo_data_out_bytes=%0d fifo_status_in=%0d%s",
+            $sformatf("OCPREC_SUMMARY total=%0d nonsuccess=%0d prot_cap_in=%0d prot_cap_mismatch=%0d fifo_data_out_bytes=%0d fifo_data_in=%0d fifo_status_in=%0d%s",
                       total_class_xfers, total_nonsuccess_xfers,
                       total_prot_cap_in,
                       total_prot_cap_mismatch, total_fifo_data_out_bytes,
-                      total_fifo_status_in, line),
+                      total_fifo_data_in, total_fifo_status_in, line),
             UVM_NONE, this)
     endfunction
 
