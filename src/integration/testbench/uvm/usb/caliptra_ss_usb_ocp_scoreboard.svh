@@ -33,11 +33,10 @@
 //     usb_vip_ocp_recovery_class_xfers.md sec 6.
 //   * For PROT_CAP IN responses: first 8 payload bytes must
 //     equal ASCII "OCP RECV" (sec 9.2 "Magic String").
-//   * For INDIRECT_FIFO_DATA OUT requests: the data-stage
-//     payload is captured into expected_fifo_data. On the next
-//     INDIRECT_FIFO_STATUS IN read, WRITE_INDEX (bytes 4..7,
-//     in 4-byte units) is compared against the total dwords previously
-//     pushed -- mismatch raises UVM_ERROR with the offending dword index.
+//   * For successful INDIRECT_FIFO_DATA OUT requests, the data-stage payload
+//     is committed to the FIFO byte model. Non-success attempts are rejected
+//     without changing that model. On INDIRECT_FIFO_STATUS IN reads,
+//     WRITE_INDEX is compared with committed dwords modulo FIFO_SIZE.
 //   * Per-command, per-direction observation counters are maintained
 //     and emitted as a UVM_NONE summary line in report_phase.
 // =============================================================================
@@ -53,10 +52,10 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     // caliptra_ss_usb_ocp_recovery_sequence.svh (same package scope) instead
     // of redeclaring the byte array here.
 
-    // Accumulated INDIRECT_FIFO_DATA bytes (OUT direction). The scoreboard
-    // compares these against the FIFO state reported by
-    // INDIRECT_FIFO_STATUS (IN direction).
-    protected bit [7:0]   pushed_fifo_bytes[$];
+    // Committed INDIRECT_FIFO_DATA bytes (OUT direction), OCP Recovery v1.1
+    // Sections 8.2.5 and 9.2.
+    protected bit [7:0] committed_fifo_bytes[$];
+    protected int unsigned committed_fifo_dwords;
 
     // Per-cmd, per-direction counters: [cmd_code][0=OUT, 1=IN].
     protected int unsigned xfer_count[bit[7:0]][2];
@@ -65,6 +64,11 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     protected int unsigned total_prot_cap_mismatch;
     protected int unsigned total_fifo_data_out_bytes;
     protected int unsigned total_fifo_status_in;
+    protected int unsigned total_fifo_rejected_attempts;
+    protected int unsigned last_fifo_write_index;
+    protected int unsigned last_fifo_read_index;
+    protected int unsigned last_fifo_size;
+    protected int unsigned last_fifo_max_transfer;
     // Count transfers that arrived with a non-success status so
     // they can be reported and skipped from PROT_CAP / FIFO accounting.
     protected int unsigned total_nonsuccess_xfers;
@@ -82,6 +86,12 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         total_prot_cap_mismatch     = 0;
         total_fifo_data_out_bytes   = 0;
         total_fifo_status_in        = 0;
+        total_fifo_rejected_attempts = 0;
+        committed_fifo_dwords        = 0;
+        last_fifo_write_index       = 0;
+        last_fifo_read_index        = 0;
+        last_fifo_size              = 0;
+        last_fifo_max_transfer      = 0;
         total_nonsuccess_xfers      = 0;
     endfunction
 
@@ -184,23 +194,53 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             OCP_REC_CMD_INDIRECT_FIFO_DATA: begin
                 if (!dir_in) begin
                     if (!xfer_ok) begin
+                        total_fifo_rejected_attempts++;
                         `uvm_info("OCPREC_MARK",
-                            "INDIRECT_FIFO_DATA OUT skipped: transfer status NON_SUCCESS; bytes NOT accumulated into pushed_fifo_bytes.",
+                            "INDIRECT_FIFO_DATA OUT rejected: transfer status NON_SUCCESS; committed FIFO model unchanged.",
                             UVM_NONE)
                     end else if (t.payload == null) begin
                         `uvm_error("OCPREC_MARK",
                             "INDIRECT_FIFO_DATA OUT observed with null payload.")
+                    end else if (t.payload.data.size() <
+                                 t.setup_data_w_length) begin
+                        `uvm_error("OCPREC_MARK",
+                            $sformatf("INDIRECT_FIFO_DATA OUT payload has %0d bytes, shorter than wLength=%0d.",
+                                      t.payload.data.size(),
+                                      t.setup_data_w_length))
                     end else begin
                         for (int i = 0; i < t.setup_data_w_length; i++) begin
-                            pushed_fifo_bytes.push_back(t.payload.data[i]);
+                            committed_fifo_bytes.push_back(t.payload.data[i]);
                         end
+                        committed_fifo_dwords +=
+                            (t.setup_data_w_length + 3) / 4;
                         total_fifo_data_out_bytes += t.setup_data_w_length;
                     end
                 end
             end
 
-            // INDIRECT_FIFO_STATUS (sec 9.2): byte[0]=EMPTY,
-            // byte[1]=FULL, bytes[4..7]=WRITE_INDEX (4-byte units).
+            // INDIRECT_FIFO_CTRL (sec 9.2): a successful write with RESET=1
+            // returns both FIFO indices to their initial empty state. Flush the
+            // committed-byte model at the same protocol-visible boundary.
+            OCP_REC_CMD_INDIRECT_FIFO_CTRL: begin
+                if (!dir_in && xfer_ok && (t.payload != null) &&
+                    (t.setup_data_w_length >= OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) &&
+                    (t.payload.data.size() >=
+                        OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) &&
+                    (t.payload.data[OCP_OFF_IFC_RESET] == 8'h01)) begin
+                    committed_fifo_bytes.delete();
+                    committed_fifo_dwords = 0;
+                    last_fifo_write_index = 0;
+                    last_fifo_read_index = 0;
+                    `uvm_info("OCPREC_MARK",
+                        "INDIRECT_FIFO_CTRL RESET observed; committed FIFO model cleared.",
+                        UVM_NONE)
+                end
+            end
+
+            // INDIRECT_FIFO_STATUS (sec 9.2): status flags are in byte 0;
+            // bytes 4..7 are WRITE_INDEX, bytes 8..11 are READ_INDEX,
+            // bytes 12..15 are FIFO_SIZE, and bytes 16..19 are
+            // MAX_TRANSFER_SIZE.
             OCP_REC_CMD_INDIRECT_FIFO_STATUS: begin
                 if (dir_in) begin
                     if (!xfer_ok) begin
@@ -212,17 +252,41 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                         if (t.payload == null) begin
                             `uvm_error("OCPREC_MARK",
                                 "INDIRECT_FIFO_STATUS IN observed with null payload.")
+                        end else if (t.payload.data.size() <
+                                     OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) begin
+                            `uvm_error("OCPREC_MARK",
+                                $sformatf("INDIRECT_FIFO_STATUS IN payload has %0d bytes, expected at least %0d.",
+                                          t.payload.data.size(),
+                                          OCP_SPEC_LEN_INDIRECT_FIFO_STATUS))
                         end else begin
                             int unsigned wr_idx;
+                            int unsigned rd_idx;
+                            int unsigned fifo_size;
+                            int unsigned max_transfer;
                             int unsigned expected_dwords;
                             wr_idx = {t.payload.data[7], t.payload.data[6],
                                       t.payload.data[5], t.payload.data[4]};
-                            expected_dwords = pushed_fifo_bytes.size() / 4;
+                            rd_idx = {t.payload.data[11], t.payload.data[10],
+                                      t.payload.data[9], t.payload.data[8]};
+                            fifo_size = {
+                                t.payload.data[15], t.payload.data[14],
+                                t.payload.data[13], t.payload.data[12]};
+                            max_transfer = {
+                                t.payload.data[19], t.payload.data[18],
+                                t.payload.data[17], t.payload.data[16]};
+                            last_fifo_write_index = wr_idx;
+                            last_fifo_read_index = rd_idx;
+                            last_fifo_size = fifo_size;
+                            last_fifo_max_transfer = max_transfer;
+                            expected_dwords = committed_fifo_dwords;
+                            if (fifo_size != 0)
+                                expected_dwords %= fifo_size;
                             if (wr_idx != expected_dwords) begin
                                 `uvm_error("OCPREC_MARK",
-                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d (from %0d pushed bytes). Mismatch at dword index %0d (sec 9.2).",
+                                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d from %0d committed bytes with FIFO_SIZE=%0d. Mismatch at dword index %0d (OCP Recovery v1.1 Sec 9.2).",
                                               wr_idx, expected_dwords,
-                                              pushed_fifo_bytes.size(),
+                                              committed_fifo_bytes.size(),
+                                              fifo_size,
                                               expected_dwords < wr_idx ? expected_dwords : wr_idx))
                             end
                         end
@@ -278,11 +342,17 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         end
 
         `uvm_info_context("OCPREC_MARK",
-            $sformatf("OCPREC_SUMMARY total=%0d nonsuccess=%0d prot_cap_in=%0d prot_cap_mismatch=%0d fifo_data_out_bytes=%0d fifo_status_in=%0d%s",
+            $sformatf("OCPREC_SUMMARY total=%0d nonsuccess=%0d prot_cap_in=%0d prot_cap_mismatch=%0d fifo_data_out_bytes=%0d fifo_committed_bytes=%0d fifo_committed_dwords=%0d fifo_rejected_attempts=%0d fifo_status_in=%0d last_write_index=%0d last_read_index=%0d last_fifo_size=%0d last_max_transfer=%0d%s",
                       total_class_xfers, total_nonsuccess_xfers,
                       total_prot_cap_in,
-                      total_prot_cap_mismatch, total_fifo_data_out_bytes,
-                      total_fifo_status_in, line),
+                      total_prot_cap_mismatch,
+                      total_fifo_data_out_bytes,
+                      committed_fifo_bytes.size(),
+                      committed_fifo_dwords,
+                      total_fifo_rejected_attempts,
+                      total_fifo_status_in,
+                      last_fifo_write_index, last_fifo_read_index,
+                      last_fifo_size, last_fifo_max_transfer, line),
             UVM_NONE, this)
     endfunction
 

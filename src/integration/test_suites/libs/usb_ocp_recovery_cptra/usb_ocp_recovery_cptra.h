@@ -20,6 +20,12 @@
 #define CPTRA_USB_OCP_RECOVERY_DMA_RETRIES 3u
 #define CPTRA_USB_OCP_RECOVERY_RETRY_DELAY 16u
 
+typedef struct {
+    uint32_t initial_delay_cycles;
+    uint32_t words_per_service;
+    uint32_t inter_service_delay_cycles;
+} cptra_usb_ocp_recovery_drain_config_t;
+
 uint64_t cptra_usb_ocp_recovery_get_base(void);
 
 uint8_t cptra_usb_ocp_recovery_read_dword(uint64_t address,
@@ -51,5 +57,11 @@ uint8_t cptra_usb_ocp_recovery_read_fifo_status(uint8_t *fifo_status,
 uint8_t cptra_usb_ocp_recovery_drain_fifo(uint32_t image_size_words,
                                           uint32_t *destination,
                                           uint32_t destination_words);
+
+uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
+    uint32_t image_size_words,
+    uint32_t *destination,
+    uint32_t destination_words,
+    const cptra_usb_ocp_recovery_drain_config_t *config);
 
 #endif // USB_OCP_RECOVERY_CPTRA_H
