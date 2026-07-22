@@ -41,17 +41,23 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         `uvm_field_enum(ocp_fifo_flow_control_strategy_e, strategy, UVM_DEFAULT)
         `uvm_field_int(cms, UVM_DEFAULT)
         `uvm_field_queue_int(image_bytes, UVM_DEFAULT)
+        `uvm_field_int(image_dwords, UVM_DEFAULT)
+        `uvm_field_int(pattern_base, UVM_DEFAULT)
         `uvm_field_int(poll_delay, UVM_DEFAULT)
         `uvm_field_int(max_polls, UVM_DEFAULT)
         `uvm_field_int(max_retries, UVM_DEFAULT)
+        `uvm_field_int(completion_wait, UVM_DEFAULT)
     `uvm_object_utils_end
 
     ocp_fifo_flow_control_strategy_e strategy;
     bit [7:0]                        cms;
     byte_queue_t                     image_bytes;
+    int unsigned                     image_dwords;
+    bit [31:0]                       pattern_base;
     time                             poll_delay;
     int unsigned                     max_polls;
     int unsigned                     max_retries;
+    time                             completion_wait;
 
     int unsigned successful_attempts;
     int unsigned rejected_attempts;
@@ -85,13 +91,30 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         super.new(name);
         strategy           = FIFO_FLOW_BY_INDICES;
         cms                = 8'h00;
+        image_dwords       = 96;
+        pattern_base       = 32'hC0DE_0000;
         poll_delay         = 1us;
         max_polls          = 100;
         max_retries        = 10;
+        completion_wait    = 500us;
         successful_attempts = 0;
         rejected_attempts   = 0;
         observed_naks       = 0;
         fifo_flow_cg = new();
+    endfunction
+
+    protected virtual function void generate_default_image();
+        bit [31:0] word;
+
+        if (image_bytes.size() != 0) return;
+        for (int unsigned word_index = 0;
+             word_index < image_dwords; word_index++) begin
+            word = pattern_base | 32'(word_index);
+            image_bytes.push_back(word[7:0]);
+            image_bytes.push_back(word[15:8]);
+            image_bytes.push_back(word[23:16]);
+            image_bytes.push_back(word[31:24]);
+        end
     endfunction
 
     protected virtual function int unsigned bytes_to_dwords(
@@ -181,28 +204,21 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                           status.max_transfer_dwords))
             return;
         end
-        if ((status.write_index >= status.fifo_size) ||
-            (status.read_index >= status.fifo_size)) begin
-            `uvm_error("OCP_FIFO_FLOW",
-                $sformatf("%s indices out of range: write=%0d read=%0d size=%0d.",
-                          label, status.write_index, status.read_index,
-                          status.fifo_size))
-            return;
-        end
-
         occupancy = fifo_occupancy(
             status.write_index, status.read_index, status.fifo_size);
         space = fifo_space(
             status.write_index, status.read_index, status.fifo_size);
-        if (status.empty !== (occupancy == 0)) begin
-            `uvm_error("OCP_FIFO_FLOW",
-                $sformatf("%s EMPTY=%0b conflicts with index occupancy=%0d per OCP Recovery v1.1 Sec 8.2.5 and 9.2.",
-                          label, status.empty, occupancy))
-        end
-        if (status.full !== (space == 0)) begin
-            `uvm_error("OCP_FIFO_FLOW",
-                $sformatf("%s FULL=%0b conflicts with index space=%0d per OCP Recovery v1.1 Sec 8.2.5 and 9.2.",
-                          label, status.full, space))
+        if (strategy == FIFO_FLOW_BY_STATUS_FLAGS) begin
+            if (status.empty !== (occupancy == 0)) begin
+                `uvm_error("OCP_FIFO_FLOW",
+                    $sformatf("%s EMPTY=%0b conflicts with index occupancy=%0d per OCP Recovery v1.1 Sec 8.2.5 and 9.2.",
+                              label, status.empty, occupancy))
+            end
+            if (status.full !== (space == 0)) begin
+                `uvm_error("OCP_FIFO_FLOW",
+                    $sformatf("%s FULL=%0b conflicts with index space=%0d per OCP Recovery v1.1 Sec 8.2.5 and 9.2.",
+                              label, status.full, space))
+            end
         end
         fifo_flow_cg.sample(
             strategy, occupancy_state(status), 1'b0, 0, 1'b0);
@@ -262,8 +278,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 return;
             end
             successful_attempts++;
-            wrapped = ((status.write_index + chunk_dwords) >=
-                       status.fifo_size);
+            wrapped = (((status.write_index % status.fifo_size) +
+                        chunk_dwords) >= status.fifo_size);
             fifo_flow_cg.sample(
                 strategy, occupancy_state(status), wrapped,
                 chunk_dwords, 1'b0);
@@ -332,8 +348,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 return;
             end
             successful_attempts++;
-            wrapped = ((status.write_index + chunk_dwords) >=
-                       status.fifo_size);
+            wrapped = (((status.write_index % status.fifo_size) +
+                        chunk_dwords) >= status.fifo_size);
             fifo_flow_cg.sample(
                 strategy, occupancy_state(status), wrapped,
                 chunk_dwords, 1'b0);
@@ -393,14 +409,12 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 observed_naks += nak_count_after - nak_count_before;
                 if (result == OCP_XFER_SUCCESS) begin
                     successful_attempts++;
-                    wrapped = ((expected_write_index + chunk_dwords) >=
-                               status.fifo_size);
+                    wrapped = (((expected_write_index % status.fifo_size) +
+                                chunk_dwords) >= status.fifo_size);
                     fifo_flow_cg.sample(
                         strategy, occupancy_state(status), wrapped,
                         chunk_dwords, nak_observed || (retry != 0));
-                    expected_write_index =
-                        (expected_write_index + chunk_dwords) %
-                        status.fifo_size;
+                    expected_write_index += chunk_dwords;
                     offset_dwords += chunk_dwords;
                     break;
                 end
@@ -458,21 +472,31 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             null, get_full_name(), "cms", cms));
         void'(uvm_config_db#(byte_queue_t)::get(
             null, get_full_name(), "image_bytes", image_bytes));
+        void'(uvm_config_db#(int unsigned)::get(
+            null, get_full_name(), "image_dwords", image_dwords));
+        void'(uvm_config_db#(bit [31:0])::get(
+            null, get_full_name(), "pattern_base", pattern_base));
         void'(uvm_config_db#(time)::get(
             null, get_full_name(), "poll_delay", poll_delay));
         void'(uvm_config_db#(int unsigned)::get(
             null, get_full_name(), "max_polls", max_polls));
         void'(uvm_config_db#(int unsigned)::get(
             null, get_full_name(), "max_retries", max_retries));
+        void'(uvm_config_db#(time)::get(
+            null, get_full_name(), "completion_wait", completion_wait));
     endfunction
 
     virtual task body();
         apply_config();
+        generate_default_image();
         successful_attempts = 0;
         rejected_attempts = 0;
+        observed_naks = 0;
         `uvm_info("OCP_FIFO_FLOW",
-            $sformatf("OCP_FIFO_FLOW_START strategy=%s cms=%0d image_bytes=%0d",
-                      strategy.name(), cms, image_bytes.size()),
+            $sformatf("OCP_FIFO_FLOW_START strategy=%s cms=%0d image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t",
+                      strategy.name(), cms, image_bytes.size(),
+                      bytes_to_dwords(image_bytes.size()), pattern_base,
+                      poll_delay, max_polls, max_retries, completion_wait),
             UVM_NONE)
         initialize_ocp_transport();
         nak_callback =
@@ -483,6 +507,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             svt_usb_link_monitor_callback)::add(
                 host_agent_h.link_mon, nak_callback);
         caliptra_ss_usb_nak_monitor_callback::reset_nak_count();
+        recovery_ctrl_write(
+            cms, 8'h00, 1'b0, "OCP_FIFO_FLOW_RECOVERY_CTRL");
         if (image_bytes.size() != 0) begin
             indirect_fifo_ctrl_write(
                 cms, 1'b1, bytes_to_dwords(image_bytes.size()),
@@ -491,13 +517,22 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
         publish_transfer_count();
         `uvm_info("OCP_FIFO_FLOW",
-            $sformatf("OCP_FIFO_FLOW_SUMMARY strategy=%s image_bytes=%0d image_dwords=%0d successful_attempts=%0d rejected_attempts=%0d observed_naks=%0d transfers=%0d",
-                      strategy.name(), image_bytes.size(),
-                      bytes_to_dwords(image_bytes.size()),
-                      successful_attempts, rejected_attempts,
-                      observed_naks,
-                      transfers_issued),
+            $sformatf("OCP_FIFO_FLOW_SUMMARY strategy=%s image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t successful_attempts=%0d rejected_attempts=%0d observed_naks=%0d transfers=%0d",
+                       strategy.name(), image_bytes.size(),
+                       bytes_to_dwords(image_bytes.size()),
+                       pattern_base, poll_delay, max_polls, max_retries,
+                       completion_wait,
+                       successful_attempts, rejected_attempts,
+                       observed_naks,
+                       transfers_issued),
             UVM_NONE)
+        `uvm_info("OCP_FIFO_FLOW",
+            "Holding the main_phase objection for firmware completion.",
+            UVM_NONE)
+        #(completion_wait);
+        `uvm_error("OCP_FIFO_FLOW",
+            $sformatf("Firmware did not end simulation within completion_wait=%0t.",
+                      completion_wait))
     endtask
 
 endclass

@@ -279,8 +279,6 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                             last_fifo_size = fifo_size;
                             last_fifo_max_transfer = max_transfer;
                             expected_dwords = committed_fifo_dwords;
-                            if (fifo_size != 0)
-                                expected_dwords %= fifo_size;
                             if (wr_idx != expected_dwords) begin
                                 `uvm_error("OCPREC_MARK",
                                     $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d (4B units); scoreboard expected %0d from %0d committed bytes with FIFO_SIZE=%0d. Mismatch at dword index %0d (OCP Recovery v1.1 Sec 9.2).",
