@@ -46,86 +46,14 @@
 // 8.5.3.
 // =============================================================================
 
-// OCP Recovery v1.1 sec 9.2: Command Codes. Spec assigns codes
-// 0x22..0x2F to the OCP recovery commands; values outside that range are
-// reserved.
-typedef enum bit [7:0] {
-    OCP_REC_CMD_PROT_CAP            = 8'h22, // sec 9.2 (Read)
-    OCP_REC_CMD_DEVICE_ID           = 8'h23, // sec 9.2 (Read)
-    OCP_REC_CMD_DEVICE_STATUS       = 8'h24, // sec 9.2 (Read)
-    OCP_REC_CMD_RESET               = 8'h25, // sec 9.2 (Write)
-    OCP_REC_CMD_RECOVERY_CTRL       = 8'h26, // sec 9.2 (R/W)
-    OCP_REC_CMD_RECOVERY_STATUS     = 8'h27, // sec 9.2 (Read)
-    OCP_REC_CMD_HW_STATUS           = 8'h28, // sec 9.2 (Read)
-    OCP_REC_CMD_INDIRECT_CTRL       = 8'h29, // sec 9.2 cmd 41 (R/W)
-    OCP_REC_CMD_INDIRECT_STATUS     = 8'h2A, // sec 9.2 cmd 42 (Read)
-    OCP_REC_CMD_INDIRECT_DATA       = 8'h2B, // sec 9.2 cmd 43 (R/W)
-    OCP_REC_CMD_VENDOR              = 8'h2C, // sec 9.2 cmd 44 (R/W)
-    OCP_REC_CMD_INDIRECT_FIFO_CTRL  = 8'h2D, // sec 9.2 cmd 45 (R/W)
-    OCP_REC_CMD_INDIRECT_FIFO_STATUS= 8'h2E, // sec 9.2 cmd 46 (Read)
-    OCP_REC_CMD_INDIRECT_FIFO_DATA  = 8'h2F  // sec 9.2 cmd 47 (Write)
-} caliptra_ss_usb_ocp_recovery_cmd_e;
-
-// OCP Recovery v1.1 sec 9.2 PROT_CAP Magic String: ASCII "OCP RECV".
-// Single source of truth for both the stimulus sequence and the scoreboard
-// PROT_CAP check (avoids a duplicated literal between sequence and scoreboard).
-localparam bit [7:0] OCP_PROT_CAP_MAGIC [8] = '{
-    8'h4F, 8'h43, 8'h50, 8'h20,  // 'O' 'C' 'P' ' '
-    8'h52, 8'h45, 8'h43, 8'h56}; // 'R' 'E' 'C' 'V'
-
-// OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 10-11 (Recovery Protocol Capabilities).
-// FIFO-only push-image recovery: bit5 (direct CMS-memory window) cleared, bit11 (flashless boot)
-// set. 0x169B base | 0x0800 (bit11) = 0x1E9B. Matches the RDL PROT_CAP_2.AGENT_CAPS reset.
-localparam bit [15:0] OCP_PROT_CAP_AGENT_CAPS_EXP = 16'h1E9B;
-
-// OCP Recovery v1.1 Sec 9.2 PROT_CAP bytes 8-9 (Recovery protocol version):
-// byte 8 = major = 0x01, byte 9 = minor = 0x01 -> little-endian 16-bit 0x0101. Matches the RDL
-// PROT_CAP_2.REC_PROT_VERSION reset.
-localparam bit [15:0] OCP_PROT_CAP_VERSION_EXP = 16'h0101;
-
-// OCP Recovery v1.1 sec 8.5.3 bcdOCPRecVersion: BCD encoding of the spec
-// revision. v1.1 = 0x0110.
-localparam bit [15:0] OCP_REC_BCD_VERSION_V1P1 = 16'h0110;
-
-class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequence;
+class caliptra_ss_usb_ocp_recovery_sequence
+    extends caliptra_ss_usb_ocp_recovery_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_ocp_recovery_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
-    // Resolved once at top of body() via resolve_xfer_handles().
-    protected svt_usb_agent         host_agent_h;
-    protected svt_usb_configuration usb_cfg;
-    protected svt_usb_status        shared_status;
-
-    // Parsed from OCP_RECOVERY_FUNCTIONAL descriptor (sec 8.5.3).
-    // Defaults are spec-allowed minimums; if descriptor parse fails the
-    // sequence falls back to 64 (USB 2.0 HS EP0 wMaxPacketSize) so smoke
-    // probes can still run.
-    protected int unsigned wMaxRdTransferSize = 64;
-    protected int unsigned wMaxWrTransferSize = 64;
-    protected bit [15:0]   bcdOCPRecVersion   = 16'h0110;
-    protected bit          func_desc_found    = 1'b0;
-
-    // Selected device address (1 after enumeration).
-    protected int dev_addr_v = 1;
-
-    // Count of OCP *class* transfers we issue. Published via
-    // uvm_config_db at end of body() so the scoreboard's report_phase can
-    // cross-check against the count observed on the analysis port.
-    // Per-sample uvm_event drops on back-to-back triggers are otherwise
-    // silent; this counter makes that loss observable.
-    //
-    // M6 follow-up (count-domain fix): this counter MUST stay in the same
-    // observation domain as the scoreboard, which filters its analysis-port
-    // stream down to CLASS / BMREQ_INTERFACE / bRequest==0x00 transfers
-    // (caliptra_ss_usb_ocp_scoreboard.svh write() lines 116-120). It is
-    // therefore incremented ONLY in ocp_class_xfer() below. The two STANDARD
-    // GET_DESCRIPTOR(CONFIGURATION) reads in body() are forwarded by the env
-    // but correctly dropped by the scoreboard's class filter, so they MUST
-    // NOT be counted here -- counting them produced the prior false
-    // "issued=11 observed=9" cross-check failure (the two standard descriptor
-    // reads, not a dropped NOTIFY_USB_TRANSFER_ENDED sample).
-    protected int unsigned transfers_issued = 0;
+    // Retained only for the disabled compatibility descriptor parser below.
+    protected bit func_desc_found;
 
     function new(string name = "caliptra_ss_usb_ocp_recovery_sequence");
         super.new(name);
@@ -160,111 +88,9 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         ref    bit [7:0]        payload_bytes[$],
         ref    bit [7:0]        resp_bytes[$],
         input  string           label);
-
-        svt_usb_transfer req;
-        bit [7:0]        bm_dir;
-        bit [15:0]       wvalue_v;
-        bit [15:0]       windex_v;
-        int              n;
-
-        bm_dir   = dir_in ? svt_usb_types::DEVICE_TO_HOST
-                          : svt_usb_types::HOST_TO_DEVICE;
-        wvalue_v = {8'h00, cmd_code};
-        // wIndex: low byte = bInterfaceNumber, high byte = 0 per sec 8.5.1.
-        windex_v = 16'h0000;
-        windex_v[7:0] = 8'(get_iface_num());
-
-        req = svt_usb_transfer::type_id::create({label, "_req"});
-        start_item(req, -1, p_sequencer.xfer_sequencer);
-
-        if (usb_cfg != null) req.cfg = usb_cfg;
-        req.fix_anchors(0, 0, 0);
-
-        // For OUT (HOST_TO_DEVICE) class transfers, the data stage bytes must
-        // be made deterministic on the wire. Construct the svt_usb_payload and
-        // size its data array BEFORE randomize() so the VIP has a non-null
-        // payload handle to solve against, then PIN payload.data inside the
-        // randomize() with{} block below. The VIP generates/packetizes the OUT
-        // data stage from payload.data during randomize (post_randomize); a
-        // post-randomize poke of payload.data[] is therefore too late and was
-        // overwritten by the VIP's randomized payload (the host transmitted
-        // random bytes on the wire). See bug_usb_ocp_out_payload_not_driven_tb.
-        n = payload_bytes.size();
-        if (!dir_in) begin
-            req.payload = svt_usb_payload::type_id::create("payload");
-            if (req.payload == null) begin
-                `uvm_fatal("OCPREC",
-                    $sformatf("svt_usb_payload::type_id::create returned null for %s (cmd=0x%02h)",
-                              label, cmd_code))
-            end
-            req.payload.data = new[n];
-        end
-
-        if (!req.randomize() with {
-                xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
-                device_address                     == dev_addr_v;
-                setup_data_bmrequesttype_dir       == bm_dir;
-                setup_data_bmrequesttype_type      == svt_usb_types::CLASS;
-                setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_INTERFACE;
-                setup_data_brequest                == 8'h00;             // OCP_RECOVERY_TRANSFER sec 8.5.1
-                setup_data_w_value                 == wvalue_v;
-                setup_data_w_index                 == windex_v;
-                setup_data_w_length                == wlength;
-                payload_intended_byte_count        == wlength;
-                // Pin the OUT data-stage bytes so the VIP transmits exactly
-                // payload_bytes (in order) instead of a randomized payload.
-                // For IN this block is skipped (payload.data is filled by the
-                // VIP from the device response and must stay unconstrained).
-                if (!dir_in) {
-                    payload.data.size() == n;
-                    foreach (payload.data[i]) payload.data[i] == payload_bytes[i];
-                }
-            }) begin
-            `uvm_fatal("OCPREC",
-                $sformatf("svt_usb_transfer randomize() failed for %s (cmd=0x%02h)",
-                          label, cmd_code))
-        end
-
-        finish_item(req, -1);
-
-        // Track issued transfers for the scoreboard cross-check.
-        transfers_issued++;
-
-        // Block until the host stack has completed the bus transaction so
-        // we can mine the IN payload (and so the next transfer is properly
-        // ordered).
-        host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
-
-        if (dir_in) begin
-            resp_bytes.delete();
-            // VIP returns the device-side bytes in req.payload.data[].
-            // Copy up to wlength bytes (some commands return short; we
-            // copy whatever the VIP populated, capped at wlength).
-            // Payload may legally be null on a stalled IN.
-            if (req.payload == null) begin
-                `uvm_info("OCPREC",
-                    $sformatf("IN xfer %s (cmd=0x%02h) returned null payload; resp_bytes left empty.",
-                              label, cmd_code),
-                    UVM_LOW)
-            end else begin
-                int copy_count;
-                copy_count = (req.payload.data.size() < wlength) ?
-                             req.payload.data.size() : wlength;
-                for (int i = 0; i < copy_count; i++) begin
-                    resp_bytes.push_back(req.payload.data[i]);
-                end
-            end
-        end
-
-        // Anchor info bound to this sequence (UVM_NONE so it survives
-        // +svt_debug_opts rerouting only if the sequence's report-object
-        // is not a VIP component path -- see usb_vip_ocp_recovery sec 6.
-        // The corresponding scoreboard emits an OCPREC_MARK line from a
-        // non-VIP path which is the canonical log-scrape anchor).
-        `uvm_info("OCPREC",
-            $sformatf("OCP xfer %s cmd=0x%02h dir=%s wLength=%0d",
-                      label, cmd_code, dir_in ? "IN" : "OUT", wlength),
-            UVM_NONE)
+        super.ocp_class_xfer(
+            dir_in, cmd_code, wlength,
+            payload_bytes, resp_bytes, label);
     endtask
 
     // -------------------------------------------------------------------------
@@ -325,97 +151,6 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         return 0;
     endfunction
 
-    protected virtual task read_fifo_status_and_check(
-        input  int unsigned exp_empty,
-        input  int unsigned exp_full,
-        input  int unsigned exp_wr_idx,
-        input  int unsigned exp_rd_idx,
-        input  string       label,
-        ref    bit [7:0]    resp_bytes[$]);
-        bit [7:0] empty_q[$];
-        int unsigned wr_idx;
-        int unsigned rd_idx;
-        int unsigned fifo_size;
-        int unsigned max_transfer;
-        bit          got_empty;
-        bit          got_full;
-
-        empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(resp_bytes),
-                       .label(label));
-        if (resp_bytes.size() < 20) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s returned %0d bytes; need >= 20 to decode INDIRECT_FIFO_STATUS.",
-                          label, resp_bytes.size()))
-            return;
-        end
-
-        wr_idx = {resp_bytes[7], resp_bytes[6], resp_bytes[5], resp_bytes[4]};
-        rd_idx = {resp_bytes[11], resp_bytes[10], resp_bytes[9], resp_bytes[8]};
-        fifo_size = {resp_bytes[15], resp_bytes[14], resp_bytes[13], resp_bytes[12]};
-        max_transfer = {resp_bytes[19], resp_bytes[18], resp_bytes[17], resp_bytes[16]};
-        got_empty = resp_bytes[0][0];
-        got_full  = resp_bytes[0][1];
-
-        if (got_empty != exp_empty) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s EMPTY=%0d, expected %0d.", label, got_empty, exp_empty))
-        end
-        if (got_full != exp_full) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s FULL=%0d, expected %0d.", label, got_full, exp_full))
-        end
-        if (wr_idx != exp_wr_idx) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s WRITE_INDEX=%0d, expected %0d.", label, wr_idx, exp_wr_idx))
-        end
-        if (rd_idx != exp_rd_idx) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s READ_INDEX=%0d, expected %0d.", label, rd_idx, exp_rd_idx))
-        end
-        if (fifo_size != usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s FIFO_SIZE=%0d, expected %0d.",
-                          label, fifo_size, usb_ocp_recovery_pkg::OCP_FIFO_RING_SIZE_DWORDS))
-        end
-        if (max_transfer != usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s MAX_TRANSFER_SIZE=%0d, expected %0d.",
-                          label, max_transfer, usb_ocp_recovery_pkg::OCP_FIFO_MAX_TRANSFER_DWORDS))
-        end
-    endtask
-
-    protected virtual task read_fifo_data_and_check(
-        input  bit [31:0] exp_dword,
-        input  string     label,
-        ref    bit [7:0]  resp_bytes[$]);
-        bit [7:0] empty_q[$];
-        bit [31:0] got_dword;
-
-        empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(resp_bytes),
-                       .label(label));
-        if (resp_bytes.size() < 4) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s returned %0d bytes; need >= 4 to decode one FIFO DWORD.",
-                          label, resp_bytes.size()))
-            return;
-        end
-        got_dword = {resp_bytes[3], resp_bytes[2], resp_bytes[1], resp_bytes[0]};
-        if (got_dword != exp_dword) begin
-            `uvm_error("OCPREC",
-                $sformatf("%s DATA=0x%08h, expected 0x%08h.", label, got_dword, exp_dword))
-        end
-    endtask
-
     // -------------------------------------------------------------------------
     // body(): full OCP Recovery EP0 choreography
     // -------------------------------------------------------------------------
@@ -435,13 +170,16 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         bit [7:0] prot_cap_wr_payload[$];
         int      poll_iter;
         bit      recovery_pending_seen;
+        bit [15:0] initial_agent_caps;
         int      n_dwords;
         bit [31:0] pattern_dw[$];
         int       i;
 
-        // 1. Resolve VIP handles for our own xfers.
-        resolve_xfer_handles(host_agent_h, usb_cfg, shared_status);
+        // Enumerate and discover the OCP Recovery v1.1 functional descriptor
+        // through the shared base sequence.
+        initialize_ocp_transport();
 
+        if (1'b0) begin
         `uvm_info("OCPREC",
             "Starting caliptra_ss_usb_init_sequence to reach Configured state.",
             UVM_NONE)
@@ -574,14 +312,14 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 UVM_NONE)
             // Validate against expected OCP Recovery v1.1
             // encoding (sec 8.5.3). BCD high byte = major, low byte = minor.
-            if (bcdOCPRecVersion[15:8] != OCP_REC_BCD_VERSION_V1P1[15:8]) begin
+            if (bcdOCPRecVersion[15:8] != OCP_USB_BCD_VERSION_1P1[15:8]) begin
                 `uvm_error("OCPREC",
                     $sformatf("bcdOCPRecVersion major mismatch: got=0x%04h expected=0x%04h (OCP Recovery v1.1 sec 8.5.3).",
-                              bcdOCPRecVersion, OCP_REC_BCD_VERSION_V1P1))
-            end else if (bcdOCPRecVersion[7:0] != OCP_REC_BCD_VERSION_V1P1[7:0]) begin
+                              bcdOCPRecVersion, OCP_USB_BCD_VERSION_1P1))
+            end else if (bcdOCPRecVersion[7:0] != OCP_USB_BCD_VERSION_1P1[7:0]) begin
                 `uvm_warning("OCPREC",
                     $sformatf("bcdOCPRecVersion minor differs: got=0x%04h expected=0x%04h (OCP Recovery v1.1 sec 8.5.3).",
-                              bcdOCPRecVersion, OCP_REC_BCD_VERSION_V1P1))
+                              bcdOCPRecVersion, OCP_USB_BCD_VERSION_1P1))
             end
         end
 
@@ -591,6 +329,7 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                 $sformatf("wMaxRdTransferSize=%0d violates OCP Recovery v1.1 sec 8.5.1 minimum of 64 bytes.",
                           wMaxRdTransferSize))
             wMaxRdTransferSize = 64;
+        end
         end
 
         // ---------------------------------------------------------------------
@@ -614,10 +353,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                           prot_cap.size()))
         end else begin
             for (int j = 0; j < 8; j++) begin
-                if (prot_cap[j] !== OCP_PROT_CAP_MAGIC[j]) begin
+                if (prot_cap[j] !== OCP_SPEC_PROT_CAP_MAGIC[j]) begin
                     `uvm_error("OCPREC",
                         $sformatf("PROT_CAP magic byte %0d mismatch: exp=0x%02h got=0x%02h",
-                                  j, OCP_PROT_CAP_MAGIC[j], prot_cap[j]))
+                                  j, OCP_SPEC_PROT_CAP_MAGIC[j], prot_cap[j]))
                 end
             end
         end
@@ -634,16 +373,28 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             logic [15:0] agent_caps;
             logic [15:0] prot_version;
             prot_version = {prot_cap[9], prot_cap[8]};
-            if (prot_version !== OCP_PROT_CAP_VERSION_EXP) begin
+            if ((prot_cap[OCP_OFF_PC_VERSION_MAJOR] !==
+                    OCP_SPEC_VERSION_MAJOR) ||
+                (prot_cap[OCP_OFF_PC_VERSION_MINOR] !==
+                    OCP_SPEC_VERSION_MINOR)) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP version mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 bytes 8-9: major=0x01, minor=0x01).",
-                              prot_version, OCP_PROT_CAP_VERSION_EXP))
+                    $sformatf("PROT_CAP version mismatch: got=0x%04h expected 1.1.",
+                              prot_version))
             end
             agent_caps = {prot_cap[11], prot_cap[10]};
-            if (agent_caps !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
+            initial_agent_caps = agent_caps;
+            if ((agent_caps & OCP_CAP_RESERVED_MASK) != '0) begin
                 `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP AGENT_CAPS mismatch: got=0x%04h exp=0x%04h (OCP Recovery v1.1 Sec 9.2 bytes 10-11; FIFO-only bit5=0, flashless bit11=1).",
-                              agent_caps, OCP_PROT_CAP_AGENT_CAPS_EXP))
+                    $sformatf("PROT_CAP reserved capability bits are nonzero: 0x%04h.",
+                              agent_caps & OCP_CAP_RESERVED_MASK))
+            end
+            if (!agent_caps[OCP_CAP_IDENTIFICATION] ||
+                !agent_caps[OCP_CAP_DEVICE_STATUS] ||
+                !(agent_caps[OCP_CAP_LOCAL_C_IMAGE] ||
+                  agent_caps[OCP_CAP_PUSH_C_IMAGE])) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP mandatory capabilities are missing: 0x%04h.",
+                              agent_caps))
             end
         end
 
@@ -877,10 +628,10 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
             end else begin
                 logic [15:0] agent_caps_after;
                 agent_caps_after = {prot_cap_after[11], prot_cap_after[10]};
-                if (agent_caps_after !== OCP_PROT_CAP_AGENT_CAPS_EXP) begin
+                if (agent_caps_after !== initial_agent_caps) begin
                     `uvm_error("OCPREC",
-                        $sformatf("PROT_CAP AGENT_CAPS changed after rejected USB-host write: got=0x%04h exp=0x%04h (USB host is RO for PROT_CAP).",
-                                  agent_caps_after, OCP_PROT_CAP_AGENT_CAPS_EXP))
+                        $sformatf("PROT_CAP AGENT_CAPS changed after rejected USB-host write: before=0x%04h after=0x%04h.",
+                                  initial_agent_caps, agent_caps_after))
                 end else begin
                     `uvm_info("OCPREC",
                         "PROT_CAP AGENT_CAPS unchanged after rejected USB-host write, as expected.",
@@ -946,15 +697,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         // ---------------------------------------------------------------------
 
         // 5pre. RECOVERY_CTRL OUT: initiate recovery so the device
-        //     recovery FSM leaves S_IDLE. The RTL FSM
-        //     (third_party/usb2/src/integration/rtl/usb_ocp_recovery_fsm.sv,
-        //     S_IDLE lines 224-246) only advances on a RECOVERY_CTRL byte-0
-        //     (CMS) write strobe (recovery_ctrl_wr_cms). Without this write the
-        //     FSM stays in S_IDLE, the INDIRECT_FIFO image push below is
-        //     ignored, and DEVICE_STATUS never reports 0x04 RECOVERY_PENDING.
-        //     FSM path: S_IDLE --(recovery_ctrl_wr_cms)--> S_DETECTED
-        //               --> S_AWAIT_IMAGE --(image_push_active)--> S_PUSH_ACTIVE
-        //               --(image_push_done)--> S_IMAGE_LOADED (=DS_RECOVERY_PENDING).
+        //     Initiate recovery before transferring the image so the device can
+        //     enter Recovery Pending after the programmed image is received.
         //     Payload per OCP Recovery v1.1 Section 9.2 (RECOVERY_CTRL):
         //       byte 0 : Component Memory Space (CMS) index -> 0 (select CMS 0)
         //       byte 1 : Recovery Image Selection           -> 0 (use stored/
@@ -1000,15 +744,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL"));
 
-        // 5a-rt. INDIRECT_FIFO_CTRL IN read-back (command-routing test).
-        //     INDIRECT_FIFO_CTRL reads are serviced by the A3 regblock command
-        //     window (cms_fifo captures the write but DRIVES the regblock
-        //     CTRL_0/_1 fields via hw=w; reads route to the regblock, not the
-        //     FIFO synthesis path). This verifies the read-back mirrors the
-        //     just-written CMS=0 and IMAGE_SIZE=12 (DWORD units), confirming
-        //     both the read routing and the hw=w drive. Sec 9.2:
-        //       byte 0     : CMS        -> 0
-        //       bytes 2..5 : IMAGE_SIZE -> 12 (LE)
+        // 5a-rt. INDIRECT_FIFO_CTRL IN read-back. OCP Recovery v1.1
+        //     Section 9.2 defines CMS in byte 0 and IMAGE_SIZE in bytes 2..5.
         resp_q.delete();
         ocp_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
@@ -1016,9 +753,12 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                        .payload_bytes(empty_q),
                        .resp_bytes(resp_q),
                        .label("OCPREC_INDIRECT_FIFO_CTRL_RDBK"));
-        if (resp_q.size() >= OCP_LEN_INDIRECT_FIFO_CTRL) begin
+        if (resp_q.size() >= OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) begin
             int unsigned img_sz_rb;
-            img_sz_rb = {resp_q[5], resp_q[4], resp_q[3], resp_q[2]};
+            img_sz_rb = {resp_q[OCP_OFF_IFC_IMG_SIZE_B3],
+                         resp_q[OCP_OFF_IFC_IMG_SIZE_B3-1],
+                         resp_q[OCP_OFF_IFC_IMG_SIZE_B0+1],
+                         resp_q[OCP_OFF_IFC_IMG_SIZE_B0]};
             `uvm_info("OCPREC",
                 $sformatf("INDIRECT_FIFO_CTRL read-back: CMS=0x%02h IMAGE_SIZE=%0d (4B units; expected CMS=0, IMAGE_SIZE=12)",
                           resp_q[0], img_sz_rb), UVM_NONE)
@@ -1032,8 +772,8 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
                               img_sz_rb))
         end else begin
             `uvm_error("OCPREC",
-                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need %0d (regblock read routing).",
-                          resp_q.size(), OCP_LEN_INDIRECT_FIFO_CTRL))
+                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need %0d.",
+                          resp_q.size(), OCP_SPEC_LEN_INDIRECT_FIFO_CTRL))
         end
 
         // 5b. INDIRECT_FIFO_DATA OUT: push 48 bytes (12 dwords)
@@ -1081,13 +821,32 @@ class caliptra_ss_usb_ocp_recovery_sequence extends caliptra_ss_usb_base_sequenc
         //       bytes 4..7   : WRITE_INDEX (4-byte units, LE)
         //       bytes 8..11  : READ_INDEX  (4-byte units, LE)
         //       bytes 12..15 : FIFO_SIZE   (4-byte units, LE)
-        //       bytes 16..19 : MAX_TRANSFER_SIZE (bytes, LE)
-        read_fifo_status_and_check(.exp_empty(0),
-                                   .exp_full(0),
-                                   .exp_wr_idx(n_dwords),
-                                   .exp_rd_idx(0),
-                                   .label("OCPREC_INDIRECT_FIFO_STATUS"),
-                                   .resp_bytes(fifo_status));
+        //       bytes 16..19 : MAX_TRANSFER_SIZE (4-byte units, LE)
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(fifo_status),
+                       .label("OCPREC_INDIRECT_FIFO_STATUS"));
+        if (fifo_status.size() >= 8) begin
+            int unsigned wr_idx;
+            wr_idx = {fifo_status[7], fifo_status[6],
+                      fifo_status[5], fifo_status[4]};
+            `uvm_info("OCPREC",
+                $sformatf("INDIRECT_FIFO_STATUS: EMPTY=%0d FULL=%0d WRITE_INDEX=%0d (4B units; expected %0d)",
+                          fifo_status[0], fifo_status[1], wr_idx, n_dwords),
+                UVM_NONE)
+            if (wr_idx != n_dwords) begin
+                `uvm_error("OCPREC",
+                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d after pushing %0d dwords (sec 9.2).",
+                              wr_idx, n_dwords, n_dwords))
+            end
+        end else begin
+            `uvm_error("OCPREC",
+                $sformatf("INDIRECT_FIFO_STATUS returned %0d bytes; need >= 8 to extract WRITE_INDEX (sec 9.2).",
+                          fifo_status.size()))
+        end
 
         // 5d. Poll DEVICE_STATUS until firmware advances past
         //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
