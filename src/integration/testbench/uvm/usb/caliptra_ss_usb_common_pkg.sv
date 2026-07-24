@@ -55,7 +55,7 @@ function automatic bit caliptra_ss_usb_xfer_successful(
     input svt_usb_transfer transfer);
 
     if ((transfer == null) ||
-        (transfer.status == svt_sequence_item::ABORTED)) begin
+        (transfer.status != svt_sequence_item::ACCEPT)) begin
         return 1'b0;
     end
 
