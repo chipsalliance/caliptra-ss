@@ -26,10 +26,12 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
 
     protected bit [7:0] pending_fifo_bytes[$];
     protected int unsigned pending_write_dwords[$];
+    protected bit pending_write_success[$];
     protected bit [7:0] committed_fifo_bytes[$];
 
     protected bit          fifo_baseline_valid;
     protected bit          fifo_caps_valid;
+    protected bit          fifo_model_valid;
     protected int unsigned expected_write_index;
     protected int unsigned actual_read_index;
     protected int unsigned visible_read_index;
@@ -57,6 +59,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         super.build_phase(phase);
         transfer_imp = new("transfer_imp", this);
         reset_fifo_model();
+        fifo_baseline_valid = 1'b0;
         total_class_xfers          = 0;
         total_nonsuccess_xfers     = 0;
         total_prot_cap_in          = 0;
@@ -71,9 +74,11 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     protected virtual function void reset_fifo_model();
         pending_fifo_bytes.delete();
         pending_write_dwords.delete();
+        pending_write_success.delete();
         committed_fifo_bytes.delete();
         fifo_baseline_valid = 1'b1;
         fifo_caps_valid     = 1'b0;
+        fifo_model_valid    = 1'b1;
         expected_write_index = 0;
         actual_read_index    = 0;
         visible_read_index   = 0;
@@ -116,7 +121,8 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     endfunction
 
     protected virtual function void queue_fifo_write_attempt(
-        input svt_usb_transfer transfer);
+        input svt_usb_transfer transfer,
+        input bit transfer_succeeded);
         int start_index;
         int end_index;
         int unsigned delivered_bytes;
@@ -149,34 +155,89 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 transfer.payload.data[start_index + i]);
         end
         pending_write_dwords.push_back(delivered_dwords);
+        pending_write_success.push_back(transfer_succeeded);
         total_fifo_data_out_bytes += transfer.setup_data_w_length;
     endfunction
 
     protected virtual function void reconcile_fifo_writes(
         input int unsigned observed_write_index);
-        int unsigned advanced_dwords;
+        int unsigned observed_advance;
         int unsigned pending_dwords;
-        int unsigned accepted_bytes;
+        int unsigned accepted_dwords_remaining;
+        int unsigned attempt_dwords;
+        int unsigned accepted_dwords;
+        bit attempt_succeeded;
 
-        pending_dwords = pending_fifo_bytes.size() / 4;
-        advanced_dwords =
+        observed_advance =
             ring_distance(expected_write_index, observed_write_index);
-        if (advanced_dwords > pending_dwords) begin
-            `uvm_error("OCPREC_MARK",
-                $sformatf("WRITE_INDEX advanced by %0d DWORDs with only %0d pending observed DWORDs.",
-                          advanced_dwords, pending_dwords))
-            advanced_dwords = pending_dwords;
+        pending_dwords = 0;
+        foreach (pending_write_dwords[i]) begin
+            pending_dwords += pending_write_dwords[i];
         end
 
-        accepted_bytes = advanced_dwords * 4;
-        for (int unsigned i = 0; i < accepted_bytes; i++) begin
-            committed_fifo_bytes.push_back(
-                pending_fifo_bytes.pop_front());
+        if (pending_dwords < fifo_size) begin
+            accepted_dwords_remaining = observed_advance;
+            if (accepted_dwords_remaining > pending_dwords) begin
+                `uvm_error("OCPREC_MARK",
+                    $sformatf("WRITE_INDEX advanced by %0d DWORDs with only %0d observed pending DWORDs.",
+                              observed_advance, pending_dwords))
+                accepted_dwords_remaining = pending_dwords;
+                fifo_model_valid = 1'b0;
+            end
+        end else begin
+            accepted_dwords_remaining = 0;
+            foreach (pending_write_dwords[i]) begin
+                if (pending_write_success[i])
+                    accepted_dwords_remaining += pending_write_dwords[i];
+            end
+            if (((expected_write_index + accepted_dwords_remaining) %
+                    fifo_size) != observed_write_index) begin
+                `uvm_error("OCPREC_MARK",
+                    $sformatf("Modulo WRITE_INDEX=%0d cannot be reconciled unambiguously with %0d pending DWORDs and successful-transfer hints.",
+                              observed_write_index, pending_dwords))
+                fifo_model_valid = 1'b0;
+            end
         end
-        total_fifo_rejected_dwords +=
-            (pending_fifo_bytes.size() / 4);
-        pending_fifo_bytes.delete();
-        pending_write_dwords.delete();
+
+        while (pending_write_dwords.size() != 0) begin
+            attempt_dwords = pending_write_dwords.pop_front();
+            attempt_succeeded = pending_write_success.pop_front();
+            accepted_dwords = 0;
+            if (pending_dwords >= fifo_size) begin
+                if (attempt_succeeded)
+                    accepted_dwords = attempt_dwords;
+            end else if (accepted_dwords_remaining >= attempt_dwords) begin
+                accepted_dwords = attempt_dwords;
+                accepted_dwords_remaining -= attempt_dwords;
+            end else if (accepted_dwords_remaining != 0) begin
+                accepted_dwords = accepted_dwords_remaining;
+                accepted_dwords_remaining = 0;
+                fifo_model_valid = 1'b0;
+                `uvm_error("OCPREC_MARK",
+                    $sformatf("WRITE_INDEX accepted %0d of %0d DWORDs from one FIFO transfer; OCP Recovery v1.1 Sec 8.2.5 requires transfer-level NACK backpressure.",
+                              accepted_dwords, attempt_dwords))
+            end
+            if (attempt_succeeded && (accepted_dwords != attempt_dwords)) begin
+                `uvm_error("OCPREC_MARK",
+                    $sformatf("Successful FIFO transfer contained %0d DWORDs but WRITE_INDEX confirms only %0d accepted DWORDs.",
+                              attempt_dwords, accepted_dwords))
+            end
+
+            repeat (accepted_dwords * 4)
+                committed_fifo_bytes.push_back(
+                    pending_fifo_bytes.pop_front());
+            repeat ((attempt_dwords - accepted_dwords) * 4)
+                void'(pending_fifo_bytes.pop_front());
+            total_fifo_rejected_dwords +=
+                attempt_dwords - accepted_dwords;
+        end
+        if ((pending_dwords < fifo_size) &&
+            (accepted_dwords_remaining != 0)) begin
+            `uvm_error("OCPREC_MARK",
+                $sformatf("WRITE_INDEX has %0d unreconciled accepted DWORDs.",
+                          accepted_dwords_remaining))
+            fifo_model_valid = 1'b0;
+        end
         expected_write_index = observed_write_index;
     endfunction
 
@@ -190,6 +251,16 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             ((end_index - start_index) < 4)) begin
             `uvm_error("OCPREC_MARK",
                 "INDIRECT_FIFO_DATA IN did not contain one complete DWORD.")
+            return;
+        end
+        if ((end_index - start_index) != 4) begin
+            `uvm_error("OCPREC_MARK",
+                $sformatf("INDIRECT_FIFO_DATA IN returned %0d bytes; expected exactly one DWORD.",
+                          end_index - start_index))
+        end
+        if (!fifo_model_valid) begin
+            `uvm_warning("OCPREC_MARK",
+                "FIFO content comparison suppressed because an earlier write reconciliation made the passive model ambiguous.")
             return;
         end
         if (committed_fifo_bytes.size() < 4) begin
@@ -290,6 +361,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 visible_read_index = observed_read_index;
                 pending_fifo_bytes.delete();
                 pending_write_dwords.delete();
+                pending_write_success.delete();
             end
             fifo_caps_valid = 1'b1;
         end else begin
@@ -432,19 +504,25 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 if (!dir_in &&
                     caliptra_ss_usb_out_payload_complete(transfer) &&
                     (transfer.setup_data_w_length >=
-                        OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) &&
-                    (transfer.payload.data[OCP_OFF_IFC_RESET] == 8'h01)) begin
-                    reset_fifo_model();
-                    `uvm_info("OCPREC_MARK",
-                        "INDIRECT_FIFO_CTRL RESET established an empty FIFO model baseline.",
-                        UVM_NONE)
+                        OCP_SPEC_LEN_INDIRECT_FIFO_CTRL)) begin
+                    int start_index;
+                    int end_index;
+                    if (valid_payload_window(
+                            transfer, start_index, end_index) &&
+                        (transfer.payload.data[
+                            start_index + OCP_OFF_IFC_RESET] == 8'h01)) begin
+                        reset_fifo_model();
+                        `uvm_info("OCPREC_MARK",
+                            "INDIRECT_FIFO_CTRL RESET established an empty FIFO model baseline.",
+                            UVM_NONE)
+                    end
                 end
             end
 
             OCP_CMD_INDIRECT_FIFO_DATA: begin
                 if (!dir_in) begin
                     if (caliptra_ss_usb_out_payload_complete(transfer))
-                        queue_fifo_write_attempt(transfer);
+                        queue_fifo_write_attempt(transfer, xfer_ok);
                 end else if (xfer_ok &&
                              (region_type ==
                                 OCP_REGION_RECOVERY_CODE_WO)) begin
@@ -482,6 +560,13 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             `uvm_error("OCPREC_MARK",
                 $sformatf("OCPREC transfer-count mismatch: sequence issued=%0d scoreboard observed=%0d.",
                           issued, total_class_xfers))
+        end
+        if (uvm_config_db#(int unsigned)::get(
+                null, "", "ocp_expected_fifo_external_reads", issued) &&
+            (issued != total_fifo_external_reads)) begin
+            `uvm_error("OCPREC_MARK",
+                $sformatf("FIFO external-read count mismatch: expected=%0d observed=%0d.",
+                          issued, total_fifo_external_reads))
         end
 
         `uvm_info_context("OCPREC_MARK",

@@ -42,7 +42,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         `uvm_field_int(cms, UVM_DEFAULT)
         `uvm_field_queue_int(image_bytes, UVM_DEFAULT)
         `uvm_field_int(image_dwords, UVM_DEFAULT)
-        `uvm_field_int(pattern_base, UVM_DEFAULT)
         `uvm_field_int(poll_delay, UVM_DEFAULT)
         `uvm_field_int(max_polls, UVM_DEFAULT)
         `uvm_field_int(max_retries, UVM_DEFAULT)
@@ -414,7 +413,9 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                     fifo_flow_cg.sample(
                         strategy, occupancy_state(status), wrapped,
                         chunk_dwords, nak_observed || (retry != 0));
-                    expected_write_index += chunk_dwords;
+                    expected_write_index =
+                        (expected_write_index + chunk_dwords) %
+                        status.fifo_size;
                     offset_dwords += chunk_dwords;
                     break;
                 end
@@ -474,8 +475,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             null, get_full_name(), "image_bytes", image_bytes));
         void'(uvm_config_db#(int unsigned)::get(
             null, get_full_name(), "image_dwords", image_dwords));
-        void'(uvm_config_db#(bit [31:0])::get(
-            null, get_full_name(), "pattern_base", pattern_base));
         void'(uvm_config_db#(time)::get(
             null, get_full_name(), "poll_delay", poll_delay));
         void'(uvm_config_db#(int unsigned)::get(
