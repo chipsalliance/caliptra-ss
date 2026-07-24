@@ -5,8 +5,9 @@ pre-exec: |
   echo "Running pre_exec for test caliptra_ss_usb_ocp_fifo_ring"
   make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
        TESTNAME=caliptra_ss_usb_ocp_recovery_init \
-       CALIPTRA_TESTNAME=cptra_usb_ocp_recovery \
+       CALIPTRA_TESTNAME=cptra_usb_ocp_fifo_ring \
        CALIPTRA_AUX=usb_ocp_recovery_cptra \
+       CALIPTRA_CFLAGS="-DOCP_FIFO_RING_FULL_HOLD_CYCLES=50000u" \
        CALIPTRA_SS_CLK_FREQ=400 \
        mcu_program.hex \
        cptra_program.hex
