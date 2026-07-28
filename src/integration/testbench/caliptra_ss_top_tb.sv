@@ -82,6 +82,7 @@ module caliptra_ss_top_tb
     bit                         core_clk;
     logic                       cptra_ss_pwrgood_i;
     logic                       cptra_ss_rst_b_i;
+    logic                       cptra_ss_rst_b_o;
     logic                       cptra_ss_mci_cptra_rst_b_o;
     logic                       cptra_ss_rdc_clk_cg_o;
     logic                       cptra_ss_mcu_clk_cg_o;
@@ -1710,6 +1711,20 @@ module caliptra_ss_top_tb
             "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
     end
 
+    // OCP access-semantics observation interface.
+    // Exposes top-level architectural observations for source-qualified
+    // access-semantics tests. Signals are driven by assign statements below;
+    // the virtual interface is published through config_db for the associated
+    // UVM sequences.
+    caliptra_ss_usb_ocp_access_semantics_if ocp_access_semantics_if_inst();
+
+    initial begin
+        uvm_config_db#(
+            virtual caliptra_ss_usb_ocp_access_semantics_if)::set(
+                uvm_root::get(), "uvm_test_top.env",
+                "ocp_access_semantics_if", ocp_access_semantics_if_inst);
+    end
+
     // Conditionally launch UVM test infrastructure when +UVM_TESTNAME is set.
     // This is required to instantiate the UVM env/agents/sequences. Without it,
     // the USB VIP UVM classes are never constructed. The call is gated so that
@@ -1854,6 +1869,14 @@ module caliptra_ss_top_tb
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
     logic         cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o;
+    assign ocp_access_semantics_if_inst.fw_exec_ctrl =
+        cptra_ss_cptra_generic_fw_exec_ctrl_o;
+    assign ocp_access_semantics_if_inst.subsystem_reset_n =
+        cptra_ss_rst_b_o;
+    assign ocp_access_semantics_if_inst.recovery_payload_available =
+        cptra_ss_usb_recovery_payload_available_o;
+    assign ocp_access_semantics_if_inst.recovery_image_activated =
+        cptra_ss_usb_recovery_image_activated_o;
     logic         cptra_ss_mci_boot_seq_brkpoint_i;
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
@@ -1942,6 +1965,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_clk_cg_o,
         .cptra_ss_pwrgood_i(cptra_ss_pwrgood_i),
         .cptra_ss_rst_b_i(cptra_ss_rst_b_i),
+        .cptra_ss_rst_b_o,
         .cptra_ss_mci_cptra_rst_b_i(cptra_ss_mci_cptra_rst_b_o),
         .cptra_ss_mci_cptra_rst_b_o,
         .cptra_ss_mcu_rst_b_o,

@@ -66,4 +66,49 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
     uint32_t destination_words,
     const cptra_usb_ocp_recovery_drain_config_t *config);
 
+// -------------------------------------------------------------------------
+// Access-semantics CPUif and firmware-synchronization helpers.
+//
+// cptra_usb_ocp_recovery_signal_state
+//   Writes a firmware state code and optional data byte into
+//   SS_GENERIC_FW_EXEC_CTRL_0[10:3] and [18:11] respectively.
+//   The SS top exports these bits at fw_exec_ctrl_o[7:0] and [15:8].
+//   Bits [2:0] are left zero; they are not exported by the SS top.
+//   May be called from any test that needs to publish a handshake state.
+//
+// cptra_usb_ocp_recovery_read_device_status_word
+//   Reads the full 32-bit DEVICE_STATUS_0 word via DMA (with retry).
+//   PROT_ERROR occupies bits [15:8] of the returned word.
+//   This read is non-destructive with respect to source-qualified clear:
+//   only Recovery Agent USB reads clear PROT_ERROR per OCP Recovery v1.1
+//   Sec 9.1.
+//
+// cptra_usb_ocp_recovery_read_device_reset / write_device_reset
+//   Read/write the DEVICE_RESET register word via DMA (with retry).
+//
+// cptra_usb_ocp_recovery_read_recovery_ctrl / write_recovery_ctrl
+//   Read/write the RECOVERY_CTRL register word via DMA (with retry).
+//
+// cptra_usb_ocp_recovery_read_indirect_fifo_ctrl / write_indirect_fifo_ctrl
+//   Read/write the INDIRECT_FIFO_CTRL_0 register word via DMA (with retry).
+//
+// cptra_usb_ocp_recovery_read_caliptra_status
+//   Read the CALIPTRA_STATUS register word via DMA (with retry).
+// -------------------------------------------------------------------------
+
+void cptra_usb_ocp_recovery_signal_state(uint8_t state, uint8_t data);
+
+uint8_t cptra_usb_ocp_recovery_read_device_status_word(uint32_t *word);
+
+uint8_t cptra_usb_ocp_recovery_read_device_reset(uint32_t *val);
+uint8_t cptra_usb_ocp_recovery_write_device_reset(uint32_t val);
+
+uint8_t cptra_usb_ocp_recovery_read_recovery_ctrl(uint32_t *val);
+uint8_t cptra_usb_ocp_recovery_write_recovery_ctrl(uint32_t val);
+
+uint8_t cptra_usb_ocp_recovery_read_indirect_fifo_ctrl(uint32_t *val);
+uint8_t cptra_usb_ocp_recovery_write_indirect_fifo_ctrl(uint32_t val);
+
+uint8_t cptra_usb_ocp_recovery_read_caliptra_status(uint32_t *val);
+
 #endif // USB_OCP_RECOVERY_CPTRA_H

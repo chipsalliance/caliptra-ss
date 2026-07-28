@@ -267,3 +267,83 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
     }
     return 0u;
 }
+
+// ==========================================================================
+// Access-semantics CPUif and firmware-synchronization helpers.
+// ==========================================================================
+
+// Writes firmware state code and data into SS_GENERIC_FW_EXEC_CTRL_0.
+// State occupies bits [10:3], data occupies bits [18:11].
+// The SS top exports [127:3] as fw_exec_ctrl_o[124:0], so the sequence
+// observes state at [7:0] and data at [15:8] of that output.
+void cptra_usb_ocp_recovery_signal_state(uint8_t state, uint8_t data)
+{
+    uint32_t val = ((uint32_t)state << 3) | ((uint32_t)data << 11);
+    lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, val);
+}
+
+// Reads the full DEVICE_STATUS_0 word. PROT_ERROR is at bits [15:8].
+// CPUif reads are non-destructive for this source-qualified check:
+// only Recovery Agent USB reads clear PROT_ERROR.
+uint8_t cptra_usb_ocp_recovery_read_device_status_word(uint32_t *word)
+{
+    if (word == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, word);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_device_reset(uint32_t *val)
+{
+    if (val == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_DEVICE_RESET, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_write_device_reset(uint32_t val)
+{
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_DEVICE_RESET, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_recovery_ctrl(uint32_t *val)
+{
+    if (val == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_write_recovery_ctrl(uint32_t val)
+{
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_indirect_fifo_ctrl(uint32_t *val)
+{
+    if (val == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_write_indirect_fifo_ctrl(uint32_t val)
+{
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_caliptra_status(uint32_t *val)
+{
+    if (val == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_STATUS, val);
+}

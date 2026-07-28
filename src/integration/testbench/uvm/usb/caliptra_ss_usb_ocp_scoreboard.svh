@@ -55,6 +55,20 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         super.new(name, parent);
     endfunction
 
+    task run_phase(uvm_phase phase);
+        uvm_event fifo_model_reset_event;
+
+        fifo_model_reset_event =
+            uvm_event_pool::get_global("ocp_fifo_model_reset");
+        forever begin
+            fifo_model_reset_event.wait_trigger();
+            reset_fifo_model();
+            `uvm_info("OCPREC_MARK",
+                "FIFO passive model reset from externally observed firmware reset completion.",
+                UVM_NONE)
+        end
+    endtask
+
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
         transfer_imp = new("transfer_imp", this);

@@ -608,6 +608,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             `uvm_error("OCP_BASE",
                 $sformatf("PROT_CAP length=%0d, expected %0d per OCP Recovery v1.1 Sec 9.2.",
                           response.size(), expected_length))
+        end
+        if (response.size() < expected_length) begin
             agent_caps      = '0;
             cms_count       = '0;
             heartbeat_period = '0;
