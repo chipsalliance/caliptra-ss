@@ -133,7 +133,7 @@ bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup) {
     // OCP Recovery v1.1 Sec 8.5.1: the recovery class transfer SETUP
     // (bmRequestType[6:5]=Class, recipient=Interface,
     //  bRequest=OCP_RECOVERY_TRANSFER, wIndex[7:0]=REC_IFACE_NUM)
-    // is intercepted by the VHDL `usb_pie_recovery_arb` upstream of the
+    // is intercepted by the VHDL `usb_ocp_recovery_post_sync_arb` upstream of the
     // legacy EPCS and answered by the SV-side recovery RTL directly.
     // The MCU class hook MUST NOT claim the SETUP -- if it does, the
     // legacy EPCS sends a ZLP that wins the response race and the host
