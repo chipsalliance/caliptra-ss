@@ -593,7 +593,6 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_axi4_to_ahb.
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_lib.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_mem_lib.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_mem_if.sv
-${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_prim_generic_buf.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_prim_buf.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lsu/css_mcu0_el2_lsu_addrcheck.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lsu/css_mcu0_el2_lsu_bus_buffer.sv
