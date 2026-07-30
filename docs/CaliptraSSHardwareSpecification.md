@@ -974,7 +974,14 @@ MCU is an instance of VeeR EL2 core. The following features are enabled on MCU -
 
 If the MCU VeeR instance must be regenerated with new configuration, a shell script is available in the Caliptra Subsystem repository. The script is located at `tools/scripts/veer_build_command.sh`.
 
-The MCU is built with Dual-Core Lockstep (DCLS) enabled, which adds a shadow core running a fixed number of cycles behind the main core. The shadow core exposes its own retirement trace, and either core can be captured by the MCI trace buffer - see [MCU Trace Buffer](#mcu-trace-buffer).
+## Fault Injection Countermeasures
+
+The MUC is built with the following fault injection (FI) countermeasures:
+- Dual-Core Lockstep (DCLS). A shadow core is added, which runs 2 cycle behind the main core. A mismatch caused by a fault is detected and a fatal error is triggered. The shadow core exposes its own retirement trace, and either core can be captured by the MCI trace buffer - see [MCU Trace Buffer](#mcu-trace-buffer). The error comparison is disabled by default.
+- Register file read port comparison. The main core and the shadow core use their own register file instance. The read ports of both register files are compared, enabling the detection of corrupted registers once they are read. A fatal error is triggered on a mismatch.
+- Instruction cache address XOR infection. On a write to the iCache, the write address is XORed on top of the data. When the data is read back, the read address is XORed to reverse the operation. If a fault redirected the data (e.g., by injecting a fault into the address), the data is incorrectly XORed, yielding garbled data, which is detected by the iCache ECC check.
+- DCCM write readback. On each write to DCCM, the data is read back. On a mismatch, a fatal error is triggered. The feature can be disabled.
+- DCCM address XOR infection. Similar to the iCache XOR infection feature but for the DCCM.
 
 # Manufacturer Control Interface (MCI)
 
@@ -1358,7 +1365,7 @@ Masks are used to set the severity of each error for these components. These can
 | **Error Register Bits** | **Component**         | **Default Error Severity** | **Description**          |
 | :---------              | :---------            | :---------                 |:---------                |
 | Aggregate error[5:0]    | Caliptra core         | Both                       | [Caliptra errors](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling) |
-| Aggregate error[11:6]   | MCU                   | Both                       | DCCM double bit ECC error is fatal <br> DCCM single bit ECC error is non-fatal |
+| Aggregate error[11:6]   | MCU                   | Both                       | Fatal: [6] DCCM double bit ECC error, [7] [DCLS](#fault-injection-countermeasures) corruption detected, [8] [DCCM write readback](#fault-injection-countermeasures) mismatch, [11:9] unused <br> Non-fatal: [6] DCCM single bit ECC error, [11:7] unused |
 | Aggregate error[17:12]  | Life cycle controller | Fatal                      | [LCC alerts [14:12]](https://opentitan.org/book/hw/ip/lc_ctrl/doc/interfaces.html#security-alerts) |
 | Aggregate error[23:18]  | OTP Fuse controller   | Fatal                      | [FC Error [23]](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#interrupts), [FC alerts [22:18]](https://opentitan.org/book/hw/top_earlgrey/ip_autogen/otp_ctrl/doc/interfaces.html#security-alerts) |
 | Aggregate error[29:24]  | I3C                   | Non-Fatal                  | [Peripheral reset [25]](https://github.com/chipsalliance/i3c-core/blob/main/doc/source/overview.md#other-features) and [escalated reset [24]](https://github.com/chipsalliance/i3c-core/blob/main/doc/source/overview.md#other-features) pins from I3C   |
