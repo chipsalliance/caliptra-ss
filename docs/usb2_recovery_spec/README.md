@@ -17,8 +17,8 @@ repository's validation/stimulus firmware.
 ## 1. Overview and use model
 
 The USB2 block is a USB 2.0 device controller (PIE / DMA / register-interface
-SIE) that Caliptra Subsystem reuses unchanged for standard operation. The OCP
-Recovery enhancement adds a recovery interface on EP0 so that a USB **Recovery
+SIE) that Caliptra Subsystem uses for both standard USB scenarios and for OCP Recovery.
+The OCP Recovery enhancement adds a recovery interface on EP0 so that a USB **Recovery
 Agent (host)** can push a firmware image into the device and have **Caliptra**
 consume it. OCP "streaming boot" is the firmware-download use case of the
 recovery specification.
@@ -34,7 +34,7 @@ Two use models share the same device and EP0:
   over AXI.
 
 Both models are simultaneously available once the device is enumerated; the OCP
-path can be globally disabled by a chicken bit (Section 5).
+path can be globally disabled by a safety fallback bit (Section 5).
 
 ---
 
