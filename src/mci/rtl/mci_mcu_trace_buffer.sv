@@ -50,7 +50,10 @@ module mci_mcu_trace_buffer
     input logic        mcu_trace_rv_i_exception_ip,
     input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
     input logic        mcu_trace_rv_i_interrupt_ip,
-    input logic [31:0] mcu_trace_rv_i_tval_ip
+    input logic [31:0] mcu_trace_rv_i_tval_ip,
+
+    // Selects which MCU core drives the trace. 0: main core. 1: DCLS shadow core.
+    output logic       mcu_trace_source_sel
 
 );
 trace_buffer_csr__in_t trace_buffer_hwif_in;
@@ -96,6 +99,8 @@ assign write_trace_data_packet.trace_rv_i_address_ip     = mcu_trace_rv_i_addres
 assign write_trace_data_packet.trace_rv_i_insn_ip        = mcu_trace_rv_i_insn_ip;
 
 assign trace_buffer_hwif_in.CONFIG.trace_buffer_depth.next = TRACE_BUFFER_DWORD_DEPTH;
+
+assign mcu_trace_source_sel = trace_buffer_hwif_out.CONTROL.trace_source.value;
 
 // Reads and writes occur in 1 clock cycles
 assign cif_resp_if.req_hold = '0;

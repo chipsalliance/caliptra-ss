@@ -57,4 +57,10 @@ addrmap trace_buffer_csr {
         field {sw=rw; hw=rw; we;} ptr[32]=0;
     } READ_PTR;
 
+    reg {
+        name="Trace Control";
+        desc="Control bits for the Trace Buffer";
+        field {desc="Selects which MCU core's debug trace is captured. 0: main core (default). 1: DCLS shadow core. The shadow core trace lags the main core by RV_LOCKSTEP_DELAY cycles, so switching source mid-capture leaves a discontinuity in the buffer. Like the rest of this register block, only writable while debug is unlocked.";sw=rw; hw=r; } trace_source=0;
+    } CONTROL;
+
 };

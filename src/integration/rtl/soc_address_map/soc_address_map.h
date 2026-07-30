@@ -9430,6 +9430,12 @@
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
 #endif
+#define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONTROL                                                    (0x21010014)
+#ifndef MCU_TRACE_BUFFER_CSR_CONTROL
+#define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (0x14)
+#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
+#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (0x1)
+#endif
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                (0x215fffff)

@@ -8626,6 +8626,11 @@
 `ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 `define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (32'h10)
 `endif
+`ifndef MCU_TRACE_BUFFER_CSR_CONTROL
+`define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (32'h14)
+`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
+`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (32'h1)
+`endif
 `ifndef MCU_MBOX0_CSR_MBOX_LOCK
 `define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (32'h200000)
 `define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)

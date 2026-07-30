@@ -378,7 +378,7 @@ module mcu_top
     input  el2_mubi_pkg::el2_mubi_t mcu_dcls_disable_i,
     output el2_mubi_pkg::el2_mubi_t mcu_dcls_corruption_error_o,
 
-    // Shadow core trace (DCLS) — not connected in this integration
+    // Shadow core trace (DCLS)
     output logic [31:0] shadow_core_trace_rv_i_insn_ip,
     output logic [31:0] shadow_core_trace_rv_i_address_ip,
     output logic        shadow_core_trace_rv_i_valid_ip,

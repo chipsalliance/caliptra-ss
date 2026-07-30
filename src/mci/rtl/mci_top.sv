@@ -128,6 +128,9 @@ module mci_top
     input logic        mcu_trace_rv_i_interrupt_ip,
     input logic [31:0] mcu_trace_rv_i_tval_ip,
 
+    // Selects which MCU core drives the trace. 0: main core. 1: DCLS shadow core.
+    output logic       mcu_trace_source_sel,
+
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
 
@@ -468,7 +471,8 @@ mci_mcu_trace_buffer #(
     .mcu_trace_rv_i_ecause_ip,
     .mcu_trace_rv_i_interrupt_ip,
     .mcu_trace_rv_i_tval_ip,
-    
+    .mcu_trace_source_sel,
+
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_trace_buffer_req_if.response)
 

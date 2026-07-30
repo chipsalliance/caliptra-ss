@@ -820,6 +820,7 @@
 `define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_DATA                                                       (32'h21010008)
 `define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_WRITE_PTR                                                  (32'h2101000c)
 `define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR                                                   (32'h21010010)
+`define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONTROL                                                    (32'h21010014)
 `define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (32'h21400000)
 `define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (32'h21400000)
 `define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                (32'h215fffff)

@@ -340,6 +340,28 @@ module caliptra_ss_top
     logic        mcu_dmi_active; 
 
     // ----------------- MCU Trace within Subsystem -----------------------
+    // Trace of the main core and the shadow core. Switchable by a SW
+    // controllable MUX.
+    logic [31:0] mcu_main_core_trace_rv_i_insn_ip;
+    logic [31:0] mcu_main_core_trace_rv_i_address_ip;
+    logic        mcu_main_core_trace_rv_i_valid_ip;
+    logic        mcu_main_core_trace_rv_i_exception_ip;
+    logic [ 4:0] mcu_main_core_trace_rv_i_ecause_ip;
+    logic        mcu_main_core_trace_rv_i_interrupt_ip;
+    logic [31:0] mcu_main_core_trace_rv_i_tval_ip;
+
+    logic [31:0] mcu_shadow_core_trace_rv_i_insn_ip;
+    logic [31:0] mcu_shadow_core_trace_rv_i_address_ip;
+    logic        mcu_shadow_core_trace_rv_i_valid_ip;
+    logic        mcu_shadow_core_trace_rv_i_exception_ip;
+    logic [ 4:0] mcu_shadow_core_trace_rv_i_ecause_ip;
+    logic        mcu_shadow_core_trace_rv_i_interrupt_ip;
+    logic [31:0] mcu_shadow_core_trace_rv_i_tval_ip;
+
+    // MCI trace buffer CONTROL.trace_source.
+    // 0: main core. 1: shadow core.
+    logic        mcu_trace_source_sel;
+
     logic [31:0] mcu_trace_rv_i_insn_ip;
     logic [31:0] mcu_trace_rv_i_address_ip;
     logic        mcu_trace_rv_i_valid_ip;
@@ -800,13 +822,13 @@ module caliptra_ss_top
         .dbg_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB Debug master interface
         .dma_bus_clk_en         ( 1'b1  ),// Clock ratio b/w cpu core clk & AHB slave interface
 
-        .trace_rv_i_insn_ip     (mcu_trace_rv_i_insn_ip     ),
-        .trace_rv_i_address_ip  (mcu_trace_rv_i_address_ip  ),
-        .trace_rv_i_valid_ip    (mcu_trace_rv_i_valid_ip    ),
-        .trace_rv_i_exception_ip(mcu_trace_rv_i_exception_ip),
-        .trace_rv_i_ecause_ip   (mcu_trace_rv_i_ecause_ip   ),
-        .trace_rv_i_interrupt_ip(mcu_trace_rv_i_interrupt_ip),
-        .trace_rv_i_tval_ip     (mcu_trace_rv_i_tval_ip     ),
+        .trace_rv_i_insn_ip     (mcu_main_core_trace_rv_i_insn_ip     ),
+        .trace_rv_i_address_ip  (mcu_main_core_trace_rv_i_address_ip  ),
+        .trace_rv_i_valid_ip    (mcu_main_core_trace_rv_i_valid_ip    ),
+        .trace_rv_i_exception_ip(mcu_main_core_trace_rv_i_exception_ip),
+        .trace_rv_i_ecause_ip   (mcu_main_core_trace_rv_i_ecause_ip   ),
+        .trace_rv_i_interrupt_ip(mcu_main_core_trace_rv_i_interrupt_ip),
+        .trace_rv_i_tval_ip     (mcu_main_core_trace_rv_i_tval_ip     ),
 
         // JTAG Interface
         .jtag_tck               ( cptra_ss_mcu_jtag_tck_i ),
@@ -895,16 +917,43 @@ module caliptra_ss_top
         .mcu_dcls_disable_i(mcu_dcls_disable),
         .mcu_dcls_corruption_error_o(mcu_dcls_corruption_error),
 
-        // Shadow core trace (DCLS) - currently not connected
-        .shadow_core_trace_rv_i_insn_ip     (),
-        .shadow_core_trace_rv_i_address_ip  (),
-        .shadow_core_trace_rv_i_valid_ip    (),
-        .shadow_core_trace_rv_i_exception_ip(),
-        .shadow_core_trace_rv_i_ecause_ip   (),
-        .shadow_core_trace_rv_i_interrupt_ip(),
-        .shadow_core_trace_rv_i_tval_ip     ()
+        // Shadow core trace (DCLS)
+        .shadow_core_trace_rv_i_insn_ip     (mcu_shadow_core_trace_rv_i_insn_ip     ),
+        .shadow_core_trace_rv_i_address_ip  (mcu_shadow_core_trace_rv_i_address_ip  ),
+        .shadow_core_trace_rv_i_valid_ip    (mcu_shadow_core_trace_rv_i_valid_ip    ),
+        .shadow_core_trace_rv_i_exception_ip(mcu_shadow_core_trace_rv_i_exception_ip),
+        .shadow_core_trace_rv_i_ecause_ip   (mcu_shadow_core_trace_rv_i_ecause_ip   ),
+        .shadow_core_trace_rv_i_interrupt_ip(mcu_shadow_core_trace_rv_i_interrupt_ip),
+        .shadow_core_trace_rv_i_tval_ip     (mcu_shadow_core_trace_rv_i_tval_ip     )
 
     );
+
+    //=========================================================================-
+    // MCU Trace Source Mux
+    //
+    // Selects whether the MCI trace buffer takes the main or shadow core trace.
+    // By default, the main core is selected.
+    //=========================================================================-
+    always_comb begin
+        if (mcu_trace_source_sel) begin
+            mcu_trace_rv_i_insn_ip      = mcu_shadow_core_trace_rv_i_insn_ip;
+            mcu_trace_rv_i_address_ip   = mcu_shadow_core_trace_rv_i_address_ip;
+            mcu_trace_rv_i_valid_ip     = mcu_shadow_core_trace_rv_i_valid_ip;
+            mcu_trace_rv_i_exception_ip = mcu_shadow_core_trace_rv_i_exception_ip;
+            mcu_trace_rv_i_ecause_ip    = mcu_shadow_core_trace_rv_i_ecause_ip;
+            mcu_trace_rv_i_interrupt_ip = mcu_shadow_core_trace_rv_i_interrupt_ip;
+            mcu_trace_rv_i_tval_ip      = mcu_shadow_core_trace_rv_i_tval_ip;
+        end
+        else begin
+            mcu_trace_rv_i_insn_ip      = mcu_main_core_trace_rv_i_insn_ip;
+            mcu_trace_rv_i_address_ip   = mcu_main_core_trace_rv_i_address_ip;
+            mcu_trace_rv_i_valid_ip     = mcu_main_core_trace_rv_i_valid_ip;
+            mcu_trace_rv_i_exception_ip = mcu_main_core_trace_rv_i_exception_ip;
+            mcu_trace_rv_i_ecause_ip    = mcu_main_core_trace_rv_i_ecause_ip;
+            mcu_trace_rv_i_interrupt_ip = mcu_main_core_trace_rv_i_interrupt_ip;
+            mcu_trace_rv_i_tval_ip      = mcu_main_core_trace_rv_i_tval_ip;
+        end
+    end
 
     //=========================================================================-
     // i3c_core Instance
@@ -1128,6 +1177,7 @@ module caliptra_ss_top
         .mcu_trace_rv_i_ecause_ip   ,
         .mcu_trace_rv_i_interrupt_ip,
         .mcu_trace_rv_i_tval_ip     ,
+        .mcu_trace_source_sel       ,
 
 
         .mci_boot_seq_brkpoint(cptra_ss_mci_boot_seq_brkpoint_i),
