@@ -378,6 +378,9 @@ module mcu_top
     input  el2_mubi_pkg::el2_mubi_t mcu_dcls_disable_i,
     output el2_mubi_pkg::el2_mubi_t mcu_dcls_corruption_error_o,
 
+    // DCCM write-readback mismatch.
+    output logic                    mcu_dccm_write_readback_error_o,
+
     // Shadow core trace (DCLS)
     output logic [31:0] shadow_core_trace_rv_i_insn_ip,
     output logic [31:0] shadow_core_trace_rv_i_address_ip,
@@ -425,6 +428,8 @@ module mcu_top
   assign mem_export_icache.ic_tag_data_raw_packed_pre = ic_tag_data_raw_packed_pre;
   assign mem_export_icache.ic_tag_data_raw_pre        = ic_tag_data_raw_pre;
 
+  logic dccm_write_readback_error_pulse;
+
   css_mcu0_el2_veer_wrapper rvtop (
       .el2_mem_export(mem_export.veer_sram_src),
       .el2_icache_export(mem_export_icache.veer_icache_src),
@@ -433,8 +438,18 @@ module mcu_top
       .disable_corruption_detection_i(mcu_dcls_disable_i),
       .lockstep_err_injection_en_i(el2_mubi_pkg::El2MuBiFalse),
       .corruption_detected_o(mcu_dcls_corruption_error_o),
-      .dccm_write_readback_error(),
+      .dccm_write_readback_error(dccm_write_readback_error_pulse),
       .*
   );
+
+  // Latch the DCCM write readback error pulse.
+  always_ff @(posedge clk or negedge rst_l) begin
+      if (!rst_l) begin
+          mcu_dccm_write_readback_error_o <= 1'b0;
+      end
+      else if (dccm_write_readback_error_pulse) begin
+          mcu_dccm_write_readback_error_o <= 1'b1;
+      end
+  end
 
 endmodule
