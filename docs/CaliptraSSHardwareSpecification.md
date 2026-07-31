@@ -285,7 +285,10 @@ SPI shall be supported along with AXI streaming boot block
 
 *Figure: Caliptra 2.2 Subsystem Block Diagram*
 ![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS2p2.png)
-
+*Notes:*
+1. If an integration chooses to use USB for all the SOC/Platform facing flows, then it has an integration option to remove I3C
+2. SOCs will also have a choice of keeping both USB2 and I3C (USB2 shall always be there)
+   
 # Caliptra Subsystem Architectural Flows
 
 Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem) for more details.
@@ -1622,7 +1625,8 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
 - Please refer to USB2 specification in the [USB2 repo](https://github.com/chipsalliance/USB2) for more details such as
     - USB2 architecture and microarchitecture
     - Virtual hub programming (Caliptra MCU responsibility)
-    - OCP streaming boot microarchitecture in USB device 0
-    - Multi-Device support
+    - USB device programming
+    - OCP streaming boot microarchitecture implemented in USB device 0
+    - Multi-Device support microarchitecture
 - Caliptra SS MCU uses USB Device 0 for streaming boot and MCU supported MCTP scenarios (SPDM, PLDM)
-- USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
+- **Note:** USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
