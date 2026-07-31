@@ -1621,12 +1621,13 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
 # Caliptra SS USB2
 
 - Caliptra Subsystem 2.2 provides USB2 support
-- USB2 supports two USB devices - one for Caliptra MCU usage and one for SOC usage. Both the devices are independent of each other with separate AXI interfaces and dedicated DMA SRAM to each other.
+- USB2 supports two USB devices - one for Caliptra MCU usage and one for SOC usage. Both the USB devices are independent of each other. Each device has a separate AXI interfaces with a dedicated DMA SRAM.
+- Caliptra SS MCU uses USB Device 0 for streaming boot and MCU supported MCTP scenarios (eg. SPDM, PLDM)
+- **Note:** USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
 - Please refer to USB2 specification in the [USB2 repo](https://github.com/chipsalliance/USB2) for more details such as
     - USB2 architecture and microarchitecture
     - Virtual hub programming (Caliptra MCU responsibility)
     - USB device programming
     - OCP streaming boot microarchitecture implemented in USB device 0
     - Multi-Device support microarchitecture
-- Caliptra SS MCU uses USB Device 0 for streaming boot and MCU supported MCTP scenarios (SPDM, PLDM)
-- **Note:** USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
+
