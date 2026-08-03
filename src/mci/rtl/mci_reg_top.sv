@@ -419,7 +419,7 @@ assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_C
 // Security Related      
 ///////////////////////////////////////////////
 assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
-assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
+assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = mubi4_test_true_loose(security_state_o.debug_locked);
 assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
 
 
@@ -429,11 +429,11 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
         security_state_debug_locked_d <= '0;
     end
     else begin
-        security_state_debug_locked_d <= security_state_o.debug_locked;
+        security_state_debug_locked_d <= mubi4_test_true_loose(security_state_o.debug_locked);
     end
 end
 
-always_comb security_state_debug_locked_edge = security_state_o.debug_locked ^ security_state_debug_locked_d;
+always_comb security_state_debug_locked_edge = mubi4_test_true_loose(security_state_o.debug_locked) ^ security_state_debug_locked_d;
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
@@ -457,8 +457,8 @@ assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_s
 // DMI                   
 ///////////////////////////////////////////////
 
-assign mcu_dmi_core_enable          = !security_state_o.debug_locked;
-assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
+assign mcu_dmi_core_enable          = mubi4_test_false_strict(security_state_o.debug_locked);
+assign mcu_dmi_uncore_enable        = mubi4_test_false_strict(security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
 
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;

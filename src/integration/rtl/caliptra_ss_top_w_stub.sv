@@ -157,12 +157,19 @@ module caliptra_ss_top_w_stub(
     assign abr_memory_export.mem_inst0_bank1_rdata_o = '0;
     assign abr_memory_export.mem_inst1_rdata_o = '0;
     assign abr_memory_export.mem_inst2_rdata_o = '0;
-    assign abr_memory_export.mem_inst3_rdata_o = '0;
     assign abr_memory_export.sig_z_mem_rdata_o = '0;
     assign abr_memory_export.pk_mem_rdata_o = '0;
     assign abr_memory_export.sk_mem_bank0_rdata_o = '0;
     assign abr_memory_export.sk_mem_bank1_rdata_o = '0;
     assign abr_memory_export.w1_mem_rdata_o = '0;
+    // Masked memory read-data: this stub is the SRAM/resp side of abr_mem_if, so
+    // it must drive every *_rdata_o consumed by the design's `req` modport. The
+    // masked banks are unused in this stub configuration (MASKING_EN=0), so tie
+    // them to '0 per the abr_mem_if declaration. Fixes UndrivenInTerm-ML.
+    assign abr_memory_export.mem_inst0_bank0_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst0_bank1_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst1_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst2_masked_rdata_o = '0;
 
 
     logic cptra_ss_cptra_core_mbox_sram_cs_o;

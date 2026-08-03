@@ -554,7 +554,7 @@ module caliptra_ss_top
 
     logic mci_intr;
 
-    assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
+    assign cptra_in_debug_mode = mubi4_test_false_strict(mci_cptra_security_state.debug_locked); // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;

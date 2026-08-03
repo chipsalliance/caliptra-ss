@@ -449,7 +449,7 @@ mci_mcu_trace_buffer #(
     // MCI Resets
     .rst_b(cptra_ss_rst_b_o), 
 
-    .debug_en(!security_state_o.debug_locked),
+    .debug_en(mubi4_test_false_strict(security_state_o.debug_locked)), // Debug mode if not locked
     
     // DMI Access
     .dmi_reg_wen    (mcu_trace_buffer_dmi_reg_wen  ),
@@ -494,7 +494,7 @@ mci_mcu_sram_ctrl #(
     .cif_resp_if (mcu_sram_req_if.response),
     
     // Debug Mode
-    .debug_en(!security_state_o.debug_locked),
+    .debug_en(mubi4_test_false_strict(security_state_o.debug_locked)), // Debug mode if not locked
 
     // AXI Privileged requests
     .axi_mcu_lsu_req,
