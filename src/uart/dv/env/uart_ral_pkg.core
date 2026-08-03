@@ -1,0 +1,13 @@
+CAPI=2:
+filesets:
+  files_dv:
+    depend:
+    - lowrisc:dv:dv_base_reg
+    file_type: systemVerilogSource
+    files:
+    - uart_ral_pkg.sv
+name: lowrisc:dv:uart_ral_pkg
+targets:
+  default:
+    filesets:
+    - files_dv

@@ -89,11 +89,10 @@ task axi_mgr_write_fixed_vseq::body();
   // Create the sequence to send the write data (W). Its m_write_data_item field doesn't need
   // randomising: we can just set it to equal the value of m_fixed_req.m_write_data_item.
   w_seq = axi_mgr_write_single_data_seq::type_id::create("w_seq");
-  w_seq.m_write_data_item.rand_mode(0);
-  w_seq.m_write_data_item.copy(m_fixed_req.m_write_data_item);
   if (!w_seq.randomize()) begin
     `uvm_fatal(get_full_name(), "Failed to randomize w_seq.")
   end
+  w_seq.m_write_data_item.copy(m_fixed_req.m_write_data_item);
 
   // Create a sequence to receive a single write response (B). (This might or might not match our
   // ID, but that doesn't matter: the point is that we need to send it as a token)

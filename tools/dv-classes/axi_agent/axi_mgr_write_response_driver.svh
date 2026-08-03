@@ -82,6 +82,7 @@ task axi_mgr_write_response_driver::get_and_drive();
   forever begin
     seq_item_port.get_next_item(req);
     drive_req();
+    if (rsp != null) rsp.set_id_info(req);
     seq_item_port.item_done(rsp);
   end
 endtask
@@ -117,6 +118,8 @@ task axi_mgr_write_response_driver::drive_req();
       begin
         axi_write_response_item response;
 
+        m_vif.mgr_cb.bready <= 1'b0;
+        @(m_vif.mgr_cb);
         // For the time until bvalid is asserted, obey req.m_ready_without_valid_pct and assert
         // bready for some fraction of the total time.
         while (m_vif.mgr_cb.bvalid !== 1'b1) begin
@@ -130,19 +133,16 @@ task axi_mgr_write_response_driver::drive_req();
         // Read bready from the clocking block to see the last value we wrote. Practically speaking,
         // mgr_cb.bready will not be true unless we had at least one cycle in the loop above: we set
         // mgr_cb.bready <= 0 at the end of this task and also when a reset is seen in monitor_reset.
+        response = axi_write_response_item::type_id::create("response");
+        response.m_id   = m_vif.mgr_cb.bid;
+        response.m_resp = axi_write_response_item::bresp_e'(m_vif.mgr_cb.bresp);
+        response.m_user = m_vif.mgr_cb.buser;
+
         if (m_vif.bready_internal !== 1'b1) begin
           repeat (req.m_valid_to_ready_delay) @(m_vif.mgr_cb);
           m_vif.mgr_cb.bready <= 1'b1;
           @(m_vif.mgr_cb);
         end
-
-        // When we get here, we have finished accepting a response and we are at the end of a cycle
-        // where bvalid and bready were asserted. Fill the response output variable with a sequence
-        // item to represent the response that we have seen.
-        response = axi_write_response_item::type_id::create("response");
-        response.m_id   = m_vif.mgr_cb.bid;
-        response.m_resp = axi_write_response_item::bresp_e'(m_vif.mgr_cb.bresp);
-        response.m_user = m_vif.mgr_cb.buser;
 
         // Set rsp, which will pass the response back to the sequencer.
         rsp = response;

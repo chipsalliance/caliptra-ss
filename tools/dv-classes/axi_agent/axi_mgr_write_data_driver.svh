@@ -89,6 +89,7 @@ task axi_mgr_write_data_driver::get_and_drive();
     seq_item_port.get_next_item(req);
     status_item = axi_status_item::type_id::create("status_item");
     drive_req(status_item.m_sending_complete);
+    status_item.set_id_info(req);
     seq_item_port.item_done(status_item);
   end
 endtask
@@ -140,6 +141,9 @@ task axi_mgr_write_data_driver::drive_req(output bit item_sent);
 endtask
 
 task axi_mgr_write_data_driver::set_data_from_req();
+  req.m_data &= (1024'b1 << m_vif.data_width) - 1;
+  req.m_strb &= (128'b1 << ((m_vif.data_width + 7) / 8)) - 1;
+  req.m_user &= (512'b1 << m_vif.user_data_width) - 1;
   // Check that configurable-length item fields actually fit in the interface signals. Note: we can
   // safely drive all the bits in the clocking block here anyway: they will be truncated in the
   // interface when being reflected in the "*_internal" signal.

@@ -129,7 +129,7 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
 
   // The strb value to send on W, or the byte mask to use with rdata in an R response. This takes
   // size and byte_en into account.
-  bit [127:0] byte_mask = strb_from_size & item.m_rw.byte_en;
+  bit [127:0] byte_mask = strb_from_size;
 
   if (axsize > 7) begin
     `uvm_error(get_full_name(),
@@ -153,6 +153,8 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
       if (!read_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            m_fixed_req.m_id < (1 << 8);
+            m_fixed_req.m_user == (128'(local::byte_mask) << 18);
           }) begin
         `uvm_fatal(get_full_name(), "Failed to randomise read_vseq.")
       end
@@ -188,9 +190,13 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
       if (!write_vseq.randomize() with {
             m_fixed_req.m_addr == local::item.m_rw.addr;
             m_fixed_req.m_size == local::axsize;
+            m_fixed_req.m_id < (1 << 8);
 
-            m_fixed_req.m_write_data_item.m_data == local::item.m_rw.data;
-            m_fixed_req.m_write_data_item.m_strb == local::byte_mask;
+            m_fixed_req.m_write_data_item.m_data == 1024'(local::item.m_rw.data);
+            m_fixed_req.m_write_data_item.m_strb == 128'(local::byte_mask);
+            m_fixed_req.m_write_data_item.m_last == 1'b1;
+            m_fixed_req.m_write_data_item.m_user == 512'h0;
+            m_fixed_req.m_user == 128'h0;
           }) begin
         `uvm_fatal(get_full_name(), "Failed to randomise write_vseq.")
       end
@@ -205,6 +211,7 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
                     write_vseq.rsp.m_w_status.m_sending_complete);
       b_complete = (write_vseq.rsp.m_write_response != null);
 
+      `uvm_info(get_full_name(), $sformatf("DEBUG_WRITE: addr=0x%0h n_bits=%0d axsize=%0d byte_mask=0x%0h aw_comp=%d w_comp=%d b_comp=%d bresp=%s", item.m_rw.addr, item.m_rw.n_bits, axsize, byte_mask, aw_complete, w_complete, b_complete, (b_complete && write_vseq.rsp.m_write_response != null) ? write_vseq.rsp.m_write_response.m_resp.name() : "NULL"), UVM_LOW)
       item.m_rw.status = (aw_complete && w_complete && b_complete &&
                           write_vseq.rsp.m_write_response.m_resp inside {axi_write_response_item::BRespOkay, axi_write_response_item::BRespExOkay}) ?
                          UVM_IS_OK :

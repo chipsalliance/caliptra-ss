@@ -82,6 +82,7 @@ task axi_mgr_read_data_driver::get_and_drive();
   forever begin
     seq_item_port.get_next_item(req);
     drive_req();
+    if (rsp != null) rsp.set_id_info(req);
     seq_item_port.item_done(rsp);
   end
 endtask
@@ -114,34 +115,33 @@ task axi_mgr_read_data_driver::drive_req();
       begin
         axi_read_data_item read_data_item;
 
+        m_vif.mgr_cb.rready <= 1'b0;
+        @(m_vif.mgr_cb);
         // For the time until rvalid is asserted, obey req.m_ready_without_valid_pct and assert
         // rready for some fraction of the total time.
-        while (m_vif.mgr_cb.rvalid !== 1'b1) begin
-          m_vif.mgr_cb.rready <= $urandom_range(0, 99) < req.m_ready_without_valid_pct;
-          @(m_vif.mgr_cb);
-        end
-
         // At this point, rvalid has been asserted. If rready is true, the transfer has gone
         // through. If not, wait req.m_valid_to_ready_delay cycles before we assert ready.
         //
         // Read rready from the clocking block to see the last value we wrote. Practically speaking,
         // mgr_cb.rready will not be true unless we had at least one cycle in the loop above: we set
         // mgr_cb.rready <= 0 at the end of this task and also when a reset is seen in monitor_reset.
-        if (m_vif.rready_internal !== 1'b1) begin
-          repeat (req.m_valid_to_ready_delay) @(m_vif.mgr_cb);
-          m_vif.mgr_cb.rready <= 1'b1;
+        while (m_vif.mgr_cb.rvalid !== 1'b1) begin
+          m_vif.mgr_cb.rready <= $urandom_range(0, 99) < req.m_ready_without_valid_pct;
           @(m_vif.mgr_cb);
         end
 
-        // When we get here, we have finished accepting a response and we are at the end of a cycle
-        // where rvalid and rready were asserted. Write a sequence item to represent the response
-        // that we have seen to our read_data_item output argument.
         read_data_item = axi_read_data_item::type_id::create("read_data_item");
         read_data_item.m_id   = m_vif.mgr_cb.rid;
         read_data_item.m_data = m_vif.mgr_cb.rdata;
         read_data_item.m_resp = axi_read_data_item::rresp_e'(m_vif.mgr_cb.rresp);
         read_data_item.m_last = m_vif.mgr_cb.rlast;
         read_data_item.m_user = m_vif.mgr_cb.ruser;
+
+        if (m_vif.rready_internal !== 1'b1) begin
+          repeat (req.m_valid_to_ready_delay) @(m_vif.mgr_cb);
+          m_vif.mgr_cb.rready <= 1'b1;
+          @(m_vif.mgr_cb);
+        end
 
         rsp = read_data_item;
 

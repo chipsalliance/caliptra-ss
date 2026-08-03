@@ -15,7 +15,7 @@ endclass
 
 function axi_reg_adapter::new(string name="");
   super.new(name);
-  supports_byte_enable = 1;
+  supports_byte_enable = 0;
 
   // Setting this to true means that the "bus driver" (here, axi_mgr_register_layer_vseq) sends a
   // response to the sequencer.
