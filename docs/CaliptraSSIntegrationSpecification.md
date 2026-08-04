@@ -336,6 +336,10 @@ Internally, strap values are consumed at different points during the boot sequen
 | `aruser`        | UW                     | output          | input           |
 | `arid`          | IW                     | output          | input           |
 | `arlock`        | 1                      | output          | input           |
+| `arcache`       | 4                      | output          | input           |
+| `arprot`        | 3                      | output          | input           |
+| `arqos`         | 4                      | output          | input           |
+| `arregion`      | 4                      | output          | input           |
 | `arvalid`       | 1                      | output          | input           |
 | `arready`       | 1                      | input           | output          |
 | `rdata`         | DW                     | input           | output          |
@@ -351,6 +355,10 @@ Internally, strap values are consumed at different points during the boot sequen
 | `awuser`        | UW                     | output          | input           |
 | `awid`          | IW                     | output          | input           |
 | `awlock`        | 1                      | output          | input           |
+| `awcache`       | 4                      | output          | input           |
+| `awprot`        | 3                      | output          | input           |
+| `awqos`         | 4                      | output          | input           |
+| `awregion`      | 4                      | output          | input           |
 | `awvalid`       | 1                      | output          | input           |
 | `awready`       | 1                      | input           | output          |
 | `wdata`         | DW                     | output          | input           |
@@ -390,35 +398,11 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_w_sub`          | Caliptra Subsystem MCU ROM AXI write sub-interface. Writes to MCU ROM are not supported, this interface shall be left unconnected from AXI interconnect and tied to 0-value inputs. |
 | External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_r_sub`          | Caliptra Subsystem MCU ROM AXI read sub-interface |
 | External | axi_if    | na    | `cptra_ss_mcu_lsu_m_axi_if_w_mgr`          | Caliptra Subsystem MCU LSU AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awcache`        | Caliptra Subsystem MCU LSU AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_lsu_m_axi_if_awprot`         | Caliptra Subsystem MCU LSU AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awregion`       | Caliptra Subsystem MCU LSU AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awqos`          | Caliptra Subsystem MCU LSU AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_lsu_m_axi_if_r_mgr`          | Caliptra Subsystem MCU LSU AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arcache`        | Caliptra Subsystem MCU LSU AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_lsu_m_axi_if_arprot`         | Caliptra Subsystem MCU LSU AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arregion`       | Caliptra Subsystem MCU LSU AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arqos`          | Caliptra Subsystem MCU LSU AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_ifu_m_axi_if_w_mgr`          | Caliptra Subsystem MCU IFU AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awcache`        | Caliptra Subsystem MCU IFU AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_ifu_m_axi_if_awprot`         | Caliptra Subsystem MCU IFU AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awregion`       | Caliptra Subsystem MCU IFU AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awqos`          | Caliptra Subsystem MCU IFU AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_ifu_m_axi_if_r_mgr`          | Caliptra Subsystem MCU IFU AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arcache`        | Caliptra Subsystem MCU IFU AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_ifu_m_axi_if_arprot`         | Caliptra Subsystem MCU IFU AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arregion`       | Caliptra Subsystem MCU IFU AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arqos`          | Caliptra Subsystem MCU IFU AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_w_mgr`           | Caliptra Subsystem MCU System Bus AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awcache`        | Caliptra Subsystem MCU System Bus AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_sb_m_axi_if_awprot`         | Caliptra Subsystem MCU System Bus AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awregion`       | Caliptra Subsystem MCU System Bus AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awqos`          | Caliptra Subsystem MCU System Bus AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_r_mgr`           | Caliptra Subsystem MCU System Bus AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arcache`        | Caliptra Subsystem MCU System Bus AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_sb_m_axi_if_arprot`         | Caliptra Subsystem MCU System Bus AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arregion`       | Caliptra Subsystem MCU System Bus AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arqos`          | Caliptra Subsystem MCU System Bus AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_w_sub`              | Caliptra Subsystem I3C AXI write sub-interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_r_sub`              | Caliptra Subsystem I3C AXI read sub-interface |
 | External | input     | na    | `cptra_ss_lc_axi_wr_req_i`           | LC controller AXI write request input    |
@@ -594,10 +578,10 @@ Integrator must connect following list of manager and subordinates to axi interc
 
   | Manager AXI If Name           | Description                                                       |
   |-------------------------------|-------------------------------------------------------------------|
-  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU). Additional AXI signals (AxCACHE, AxPROT, AxREGION, AxQOS) are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals. |
-  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU). Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.            |
-  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only. Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.    |
-  | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions. Additional signals are unused and may be tied to 0 at the interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).           |
+  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU).                  |
+  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU).           |
+  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only.   |
+  | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions.         |
 
 - The following signals are unused for all AXI subordinate interfaces within Caliptra Subsystem. The AXI specification defines these signals as optional for a compliant AXI subordinate. They may be used by integrators to fine tune AXI interconnect behavior or performance. MCU AXI manager interfaces drive these signals, as documented in the VeeR EL2 specification. 
   - AxCACHE
