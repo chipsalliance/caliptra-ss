@@ -913,52 +913,8 @@ module caliptra_ss_top
     ) i3c (
         .clk_i                          (cptra_ss_clk_i),
         .rst_ni                         (cptra_ss_rst_b_o),
-    
-        // Read Address Channel
-        .arvalid_i                      (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
-        .arready_o                      (cptra_ss_i3c_s_axi_if_r_sub.arready),
-        .arid_i                         (cptra_ss_i3c_s_axi_if_r_sub.arid),
-        .araddr_i                       (cptra_ss_i3c_s_axi_if_r_sub.araddr[`AXI_ADDR_WIDTH-1:0]),
-        .arsize_i                       (cptra_ss_i3c_s_axi_if_r_sub.arsize),
-        .aruser_i                       (cptra_ss_i3c_s_axi_if_r_sub.aruser),
-        .arlen_i                        (cptra_ss_i3c_s_axi_if_r_sub.arlen),
-        .arburst_i                      (cptra_ss_i3c_s_axi_if_r_sub.arburst),
-        .arlock_i                       (cptra_ss_i3c_s_axi_if_r_sub.arlock),
-    
-        // Read Data Channel
-        .rvalid_o                       (cptra_ss_i3c_s_axi_if_r_sub.rvalid),
-        .rready_i                       (cptra_ss_i3c_s_axi_if_r_sub.rready),
-        .rid_o                          (cptra_ss_i3c_s_axi_if_r_sub.rid),
-        .rdata_o                        (cptra_ss_i3c_s_axi_if_r_sub.rdata),
-        .rresp_o                        (cptra_ss_i3c_s_axi_if_r_sub.rresp),
-        .rlast_o                        (cptra_ss_i3c_s_axi_if_r_sub.rlast),
-        .ruser_o                        (cptra_ss_i3c_s_axi_if_r_sub.ruser),
-    
-        // Write Address Channel
-        .awvalid_i                      (cptra_ss_i3c_s_axi_if_w_sub.awvalid),
-        .awready_o                      (cptra_ss_i3c_s_axi_if_w_sub.awready),
-        .awid_i                         (cptra_ss_i3c_s_axi_if_w_sub.awid),
-        .awaddr_i                       (cptra_ss_i3c_s_axi_if_w_sub.awaddr[`AXI_ADDR_WIDTH-1:0]),
-        .awsize_i                       (cptra_ss_i3c_s_axi_if_w_sub.awsize),
-        .awuser_i                       (cptra_ss_i3c_s_axi_if_w_sub.awuser),
-        .awlen_i                        (cptra_ss_i3c_s_axi_if_w_sub.awlen),
-        .awburst_i                      (cptra_ss_i3c_s_axi_if_w_sub.awburst),
-        .awlock_i                       (cptra_ss_i3c_s_axi_if_w_sub.awlock),
-    
-        // Write Data Channel
-        .wvalid_i                       (cptra_ss_i3c_s_axi_if_w_sub.wvalid),
-        .wuser_i                        (cptra_ss_i3c_s_axi_if_w_sub.wuser),
-        .wready_o                       (cptra_ss_i3c_s_axi_if_w_sub.wready),
-        .wdata_i                        (cptra_ss_i3c_s_axi_if_w_sub.wdata),
-        .wstrb_i                        (cptra_ss_i3c_s_axi_if_w_sub.wstrb),
-        .wlast_i                        (cptra_ss_i3c_s_axi_if_w_sub.wlast),
-    
-        // Write Response Channel
-        .bvalid_o                       (cptra_ss_i3c_s_axi_if_w_sub.bvalid),
-        .bready_i                       (cptra_ss_i3c_s_axi_if_w_sub.bready),
-        .bresp_o                        (cptra_ss_i3c_s_axi_if_w_sub.bresp),
-        .bid_o                          (cptra_ss_i3c_s_axi_if_w_sub.bid),
-        .buser_o                        (cptra_ss_i3c_s_axi_if_w_sub.buser),
+        .s_axi_w_if                     (cptra_ss_i3c_s_axi_if_w_sub),
+        .s_axi_r_if                     (cptra_ss_i3c_s_axi_if_r_sub),
     
         // I3C Signals
         .scl_i                          (cptra_ss_i3c_scl_i),
