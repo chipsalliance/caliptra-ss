@@ -15,6 +15,15 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_cptra_bringup/mcu_cptra_bringup: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_lock_sticky/smoke_test_fc_pk_lock_sticky: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_prod_pk_lock_per_bit/smoke_test_fc_prod_pk_lock_per_bit: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_manuf_pk_lock/smoke_test_fc_manuf_pk_lock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_per_bit/smoke_test_fc_ratchet_seed_lock_per_bit: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_lock_independence/smoke_test_fc_pk_lock_independence: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_volatile_lock_reset_clear/smoke_test_fc_volatile_lock_reset_clear: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_pk_volatile_lock_persistence/smoke_test_fc_pk_volatile_lock_persistence: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_manuf_pk_lock_persistence/smoke_test_fc_manuf_pk_lock_persistence: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ratchet_seed_lock_persistence/smoke_test_fc_ratchet_seed_lock_persistence: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_ocp_lock_zeroization/smoke_test_fc_ocp_lock_zeroization: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_prov_lcc_tokens/smoke_test_fc_prov_lcc_tokens: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_hello_world/mcu_hello_world: { weight: 100 }
@@ -110,3 +119,9 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_secret_prog_in_dbg/smoke_test_fc_secret_prog_in_dbg: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_filter_rule_write_zer_id/smoke_test_fc_filter_rule_write_zer_id: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_with_state_error/caliptra_ss_lcc_volatile_unlock_with_state_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_secret_zeroize/smoke_test_fc_debug_intent_secret_zeroize: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_secret_zeroize_baseline/smoke_test_fc_debug_intent_secret_zeroize_baseline: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_lc_transition/smoke_test_fc_debug_intent_lc_transition: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_debug_intent_integrity_check/smoke_test_fc_debug_intent_integrity_check: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_digest_read_dai_vs_csr/smoke_test_fc_digest_read_dai_vs_csr: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_fc_digest_read_debug_intent_mcu/smoke_test_fc_digest_read_debug_intent_mcu: { weight: 10 }

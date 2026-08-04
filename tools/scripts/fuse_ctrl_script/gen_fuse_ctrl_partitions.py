@@ -95,12 +95,23 @@ def main():
             log.error("failed to parse yaml file: %s" % err)
             exit(1)
 
+    num_vendor_pk_fuses = vendor["num_vendor_pk_fuses"]
+    num_manuf_vendor_pk_fuses = vendor.get("num_manuf_vendor_pk_fuses", 1)
+
+    if not (0 <= num_manuf_vendor_pk_fuses <= num_vendor_pk_fuses):
+        log.error("num_manuf_vendor_pk_fuses must be between 0 and num_vendor_pk_fuses")
+        exit(1)
+    if num_manuf_vendor_pk_fuses not in (0, 1):
+        log.error("num_manuf_vendor_pk_fuses must be 0 or 1 for this release")
+        exit(1)
+
     # Render mmap HJSON
     render_template(
         template=TEMPLATES_PATH / MMAP_TEMPLATE,
         target_path=DATA_OUTPUT_PATH / MMAP_TEMPLATE.replace(".tpl", ""),
         params={
-            "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
+            "num_vendor_pk_fuses": num_vendor_pk_fuses,
+            "num_manuf_vendor_pk_fuses": num_manuf_vendor_pk_fuses,
             "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
             "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"],
             "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"]
@@ -114,7 +125,11 @@ def main():
     render_template(
         template=TEMPLATES_PATH / HJSON_TEMPLATE,
         target_path=DATA_OUTPUT_PATH / HJSON_TEMPLATE.replace(".tpl", ""),
-        params={"otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_HJSON}
+        params={
+            "otp_mmap": otp_mmap,
+            "gen_comment": HEADER_COMMENT_HJSON,
+            "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"]
+        }
     )
 
     output_path = Path("src") / "fuse_ctrl" / "rtl" 
@@ -125,7 +140,8 @@ def main():
         target_path=RTL_OUTPUT_PATH / PART_PKG_TEMPLATE.replace(".tpl", ""),
         params={
             "otp_mmap": otp_mmap, "gen_comment": HEADER_COMMENT_SV,
-            "num_vendor_pk_fuses": vendor["num_vendor_pk_fuses"],
+            "num_vendor_pk_fuses": num_vendor_pk_fuses,
+            "num_manuf_vendor_pk_fuses": num_manuf_vendor_pk_fuses,
             "num_vendor_secret_fuses": vendor["num_vendor_secret_fuses"],
             "num_vendor_non_secret_fuses": vendor["num_vendor_non_secret_fuses"],
             "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"]
@@ -140,7 +156,11 @@ def main():
     render_template(
         template=TEMPLATES_PATH / RDL_TEMPLATE,
         target_path=RDL_OUTPUT_PATH / RDL_TEMPLATE.replace(".tpl", ""),
-        params={"partitions": otp_mmap.config["partitions"]}
+        params={
+            "partitions": otp_mmap.config["partitions"],
+            "num_ratchet_seed_partitions": vendor["num_ratchet_seed_partitions"],
+            "num_manuf_vendor_pk_fuses": num_manuf_vendor_pk_fuses
+        }
     )
 
     # Render C header and source file

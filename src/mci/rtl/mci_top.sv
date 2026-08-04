@@ -66,6 +66,7 @@ module mci_top
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_sram_config_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
+    output logic mci_ss_debug_intent,
     
     // RDC
     output logic rdc_clk_dis,
@@ -250,12 +251,6 @@ module mci_top
     logic mcu_mbox1_target_user_done;
     logic soc_req_mbox0_lock;
     logic soc_req_mbox1_lock;
-
-    // Other
-    logic mci_ss_debug_intent;
-
-
-
 
 // Clock gating only using RDC clock gating functionality
 clk_gate cg ( 

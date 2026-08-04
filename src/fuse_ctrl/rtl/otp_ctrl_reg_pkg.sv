@@ -482,7 +482,7 @@ package otp_ctrl_reg_pkg;
   parameter int PrimAw = 5;
 
   // Number of registers for every interface
-  parameter int NumRegsCore = 105;
+  parameter int NumRegsCore = 107;
   parameter int NumRegsPrim = 8;
 
   ///////////////////////////////////////////////
@@ -657,8 +657,16 @@ package otp_ctrl_reg_pkg;
   } otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_7_read_lock_reg_t;
 
   typedef struct packed {
+    logic        q;
+  } otp_ctrl_reg2hw_secret_digest_read_lock_reg_t;
+
+  typedef struct packed {
     logic [31:0] q;
   } otp_ctrl_reg2hw_vendor_pk_hash_volatile_lock_reg_t;
+
+  typedef struct packed {
+    logic [31:0] q;
+  } otp_ctrl_reg2hw_manuf_pk_hash_volatile_lock_reg_t;
 
   typedef struct packed {
     logic [31:0] q;
@@ -876,47 +884,49 @@ package otp_ctrl_reg_pkg;
 
   // Register -> HW type for core interface
   typedef struct packed {
-    otp_ctrl_reg2hw_intr_state_reg_t intr_state; // [282:281]
-    otp_ctrl_reg2hw_intr_enable_reg_t intr_enable; // [280:279]
-    otp_ctrl_reg2hw_intr_test_reg_t intr_test; // [278:275]
-    otp_ctrl_reg2hw_alert_test_reg_t alert_test; // [274:265]
-    otp_ctrl_reg2hw_direct_access_regwen_reg_t direct_access_regwen; // [264:263]
-    otp_ctrl_reg2hw_direct_access_cmd_reg_t direct_access_cmd; // [262:255]
-    otp_ctrl_reg2hw_direct_access_address_reg_t direct_access_address; // [254:243]
-    otp_ctrl_reg2hw_direct_access_wdata_mreg_t [1:0] direct_access_wdata; // [242:179]
-    otp_ctrl_reg2hw_check_trigger_reg_t check_trigger; // [178:175]
-    otp_ctrl_reg2hw_check_timeout_reg_t check_timeout; // [174:143]
-    otp_ctrl_reg2hw_integrity_check_period_reg_t integrity_check_period; // [142:111]
-    otp_ctrl_reg2hw_consistency_check_period_reg_t consistency_check_period; // [110:79]
-    otp_ctrl_reg2hw_sw_manuf_partition_read_lock_reg_t sw_manuf_partition_read_lock; // [78:78]
-    otp_ctrl_reg2hw_svn_partition_read_lock_reg_t svn_partition_read_lock; // [77:77]
+    otp_ctrl_reg2hw_intr_state_reg_t intr_state; // [315:314]
+    otp_ctrl_reg2hw_intr_enable_reg_t intr_enable; // [313:312]
+    otp_ctrl_reg2hw_intr_test_reg_t intr_test; // [311:308]
+    otp_ctrl_reg2hw_alert_test_reg_t alert_test; // [307:298]
+    otp_ctrl_reg2hw_direct_access_regwen_reg_t direct_access_regwen; // [297:296]
+    otp_ctrl_reg2hw_direct_access_cmd_reg_t direct_access_cmd; // [295:288]
+    otp_ctrl_reg2hw_direct_access_address_reg_t direct_access_address; // [287:276]
+    otp_ctrl_reg2hw_direct_access_wdata_mreg_t [1:0] direct_access_wdata; // [275:212]
+    otp_ctrl_reg2hw_check_trigger_reg_t check_trigger; // [211:208]
+    otp_ctrl_reg2hw_check_timeout_reg_t check_timeout; // [207:176]
+    otp_ctrl_reg2hw_integrity_check_period_reg_t integrity_check_period; // [175:144]
+    otp_ctrl_reg2hw_consistency_check_period_reg_t consistency_check_period; // [143:112]
+    otp_ctrl_reg2hw_sw_manuf_partition_read_lock_reg_t sw_manuf_partition_read_lock; // [111:111]
+    otp_ctrl_reg2hw_svn_partition_read_lock_reg_t svn_partition_read_lock; // [110:110]
     otp_ctrl_reg2hw_vendor_test_partition_read_lock_reg_t
-        vendor_test_partition_read_lock; // [76:76]
+        vendor_test_partition_read_lock; // [109:109]
     otp_ctrl_reg2hw_vendor_hashes_manuf_partition_read_lock_reg_t
-        vendor_hashes_manuf_partition_read_lock; // [75:75]
+        vendor_hashes_manuf_partition_read_lock; // [108:108]
     otp_ctrl_reg2hw_vendor_hashes_prod_partition_read_lock_reg_t
-        vendor_hashes_prod_partition_read_lock; // [74:74]
+        vendor_hashes_prod_partition_read_lock; // [107:107]
     otp_ctrl_reg2hw_vendor_revocations_prod_partition_read_lock_reg_t
-        vendor_revocations_prod_partition_read_lock; // [73:73]
+        vendor_revocations_prod_partition_read_lock; // [106:106]
     otp_ctrl_reg2hw_vendor_non_secret_prod_partition_read_lock_reg_t
-        vendor_non_secret_prod_partition_read_lock; // [72:72]
+        vendor_non_secret_prod_partition_read_lock; // [105:105]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_0_read_lock_reg_t
-        cptra_ss_lock_hek_prod_0_read_lock; // [71:71]
+        cptra_ss_lock_hek_prod_0_read_lock; // [104:104]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_1_read_lock_reg_t
-        cptra_ss_lock_hek_prod_1_read_lock; // [70:70]
+        cptra_ss_lock_hek_prod_1_read_lock; // [103:103]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_2_read_lock_reg_t
-        cptra_ss_lock_hek_prod_2_read_lock; // [69:69]
+        cptra_ss_lock_hek_prod_2_read_lock; // [102:102]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_3_read_lock_reg_t
-        cptra_ss_lock_hek_prod_3_read_lock; // [68:68]
+        cptra_ss_lock_hek_prod_3_read_lock; // [101:101]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_4_read_lock_reg_t
-        cptra_ss_lock_hek_prod_4_read_lock; // [67:67]
+        cptra_ss_lock_hek_prod_4_read_lock; // [100:100]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_5_read_lock_reg_t
-        cptra_ss_lock_hek_prod_5_read_lock; // [66:66]
+        cptra_ss_lock_hek_prod_5_read_lock; // [99:99]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_6_read_lock_reg_t
-        cptra_ss_lock_hek_prod_6_read_lock; // [65:65]
+        cptra_ss_lock_hek_prod_6_read_lock; // [98:98]
     otp_ctrl_reg2hw_cptra_ss_lock_hek_prod_7_read_lock_reg_t
-        cptra_ss_lock_hek_prod_7_read_lock; // [64:64]
-    otp_ctrl_reg2hw_vendor_pk_hash_volatile_lock_reg_t vendor_pk_hash_volatile_lock; // [63:32]
+        cptra_ss_lock_hek_prod_7_read_lock; // [97:97]
+    otp_ctrl_reg2hw_secret_digest_read_lock_reg_t secret_digest_read_lock; // [96:96]
+    otp_ctrl_reg2hw_vendor_pk_hash_volatile_lock_reg_t vendor_pk_hash_volatile_lock; // [95:64]
+    otp_ctrl_reg2hw_manuf_pk_hash_volatile_lock_reg_t manuf_pk_hash_volatile_lock; // [63:32]
     otp_ctrl_reg2hw_ratchet_seed_volatile_lock_reg_t ratchet_seed_volatile_lock; // [31:0]
   } otp_ctrl_core_reg2hw_t;
 
@@ -1032,52 +1042,54 @@ package otp_ctrl_reg_pkg;
   parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK_OFFSET = 13'h e0;
   parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK_OFFSET = 13'h e4;
   parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK_OFFSET = 13'h e8;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK_OFFSET = 13'h ec;
-  parameter logic [CoreAw-1:0] OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK_OFFSET = 13'h f0;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET = 13'h f4;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET = 13'h f8;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h fc;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 100;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0_OFFSET = 13'h 104;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_1_OFFSET = 13'h 108;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_0_OFFSET = 13'h 10c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_1_OFFSET = 13'h 110;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_0_OFFSET = 13'h 114;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_1_OFFSET = 13'h 118;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_0_OFFSET = 13'h 11c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_1_OFFSET = 13'h 120;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h 124;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 128;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0_OFFSET = 13'h 12c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1_OFFSET = 13'h 130;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_0_OFFSET = 13'h 134;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_1_OFFSET = 13'h 138;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h 13c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 140;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 144;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 148;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 14c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 150;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 154;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 158;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 15c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 160;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0_OFFSET = 13'h 164;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1_OFFSET = 13'h 168;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0_OFFSET = 13'h 16c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1_OFFSET = 13'h 170;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0_OFFSET = 13'h 174;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1_OFFSET = 13'h 178;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0_OFFSET = 13'h 17c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1_OFFSET = 13'h 180;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0_OFFSET = 13'h 184;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1_OFFSET = 13'h 188;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0_OFFSET = 13'h 18c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1_OFFSET = 13'h 190;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0_OFFSET = 13'h 194;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1_OFFSET = 13'h 198;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0_OFFSET = 13'h 19c;
-  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1_OFFSET = 13'h 1a0;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_DIGEST_READ_LOCK_OFFSET = 13'h ec;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK_OFFSET = 13'h f0;
+  parameter logic [CoreAw-1:0] OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK_OFFSET = 13'h f4;
+  parameter logic [CoreAw-1:0] OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK_OFFSET = 13'h f8;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0_OFFSET = 13'h fc;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1_OFFSET = 13'h 100;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h 104;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 108;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0_OFFSET = 13'h 10c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_1_OFFSET = 13'h 110;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_0_OFFSET = 13'h 114;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_1_OFFSET = 13'h 118;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_0_OFFSET = 13'h 11c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_1_OFFSET = 13'h 120;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_0_OFFSET = 13'h 124;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_1_OFFSET = 13'h 128;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h 12c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 130;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0_OFFSET = 13'h 134;
+  parameter logic [CoreAw-1:0] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1_OFFSET = 13'h 138;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_0_OFFSET = 13'h 13c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_1_OFFSET = 13'h 140;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_0_OFFSET = 13'h 144;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_1_OFFSET = 13'h 148;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 14c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 150;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 154;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 158;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 15c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 160;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0_OFFSET = 13'h 164;
+  parameter logic [CoreAw-1:0] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1_OFFSET = 13'h 168;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0_OFFSET = 13'h 16c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1_OFFSET = 13'h 170;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0_OFFSET = 13'h 174;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1_OFFSET = 13'h 178;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0_OFFSET = 13'h 17c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1_OFFSET = 13'h 180;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0_OFFSET = 13'h 184;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1_OFFSET = 13'h 188;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0_OFFSET = 13'h 18c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1_OFFSET = 13'h 190;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0_OFFSET = 13'h 194;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1_OFFSET = 13'h 198;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0_OFFSET = 13'h 19c;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1_OFFSET = 13'h 1a0;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0_OFFSET = 13'h 1a4;
+  parameter logic [CoreAw-1:0] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1_OFFSET = 13'h 1a8;
 
   // Reset values for hwext registers and their fields for core interface
   parameter logic [1:0] OTP_CTRL_INTR_TEST_RESVAL = 2'h 0;
@@ -1431,7 +1443,9 @@ package otp_ctrl_reg_pkg;
     OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK,
     OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK,
     OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK,
+    OTP_CTRL_SECRET_DIGEST_READ_LOCK,
     OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK,
+    OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK,
     OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK,
     OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0,
     OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1,
@@ -1480,7 +1494,7 @@ package otp_ctrl_reg_pkg;
   } otp_ctrl_core_id_e;
 
   // Register width information to check illegal writes for core interface
-  parameter logic [3:0] OTP_CTRL_CORE_PERMIT [105] = '{
+  parameter logic [3:0] OTP_CTRL_CORE_PERMIT [107] = '{
     4'b 0001, // index[  0] OTP_CTRL_INTR_STATE
     4'b 0001, // index[  1] OTP_CTRL_INTR_ENABLE
     4'b 0001, // index[  2] OTP_CTRL_INTR_TEST
@@ -1540,52 +1554,54 @@ package otp_ctrl_reg_pkg;
     4'b 0001, // index[ 56] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_READ_LOCK
     4'b 0001, // index[ 57] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_READ_LOCK
     4'b 0001, // index[ 58] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_READ_LOCK
-    4'b 1111, // index[ 59] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
-    4'b 1111, // index[ 60] OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK
-    4'b 1111, // index[ 61] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0
-    4'b 1111, // index[ 62] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1
-    4'b 1111, // index[ 63] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0
-    4'b 1111, // index[ 64] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1
-    4'b 1111, // index[ 65] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0
-    4'b 1111, // index[ 66] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_1
-    4'b 1111, // index[ 67] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_0
-    4'b 1111, // index[ 68] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_1
-    4'b 1111, // index[ 69] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_0
-    4'b 1111, // index[ 70] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_1
-    4'b 1111, // index[ 71] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_0
-    4'b 1111, // index[ 72] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_1
-    4'b 1111, // index[ 73] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_0
-    4'b 1111, // index[ 74] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_1
-    4'b 1111, // index[ 75] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0
-    4'b 1111, // index[ 76] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1
-    4'b 1111, // index[ 77] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_0
-    4'b 1111, // index[ 78] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_1
-    4'b 1111, // index[ 79] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_0
-    4'b 1111, // index[ 80] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_1
-    4'b 1111, // index[ 81] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_0
-    4'b 1111, // index[ 82] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_1
-    4'b 1111, // index[ 83] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0
-    4'b 1111, // index[ 84] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1
-    4'b 1111, // index[ 85] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0
-    4'b 1111, // index[ 86] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1
-    4'b 1111, // index[ 87] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0
-    4'b 1111, // index[ 88] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1
-    4'b 1111, // index[ 89] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0
-    4'b 1111, // index[ 90] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1
-    4'b 1111, // index[ 91] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0
-    4'b 1111, // index[ 92] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1
-    4'b 1111, // index[ 93] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0
-    4'b 1111, // index[ 94] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1
-    4'b 1111, // index[ 95] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0
-    4'b 1111, // index[ 96] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1
-    4'b 1111, // index[ 97] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0
-    4'b 1111, // index[ 98] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1
-    4'b 1111, // index[ 99] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0
-    4'b 1111, // index[100] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1
-    4'b 1111, // index[101] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0
-    4'b 1111, // index[102] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1
-    4'b 1111, // index[103] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0
-    4'b 1111  // index[104] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1
+    4'b 0001, // index[ 59] OTP_CTRL_SECRET_DIGEST_READ_LOCK
+    4'b 1111, // index[ 60] OTP_CTRL_VENDOR_PK_HASH_VOLATILE_LOCK
+    4'b 1111, // index[ 61] OTP_CTRL_MANUF_PK_HASH_VOLATILE_LOCK
+    4'b 1111, // index[ 62] OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK
+    4'b 1111, // index[ 63] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_0
+    4'b 1111, // index[ 64] OTP_CTRL_SW_TEST_UNLOCK_PARTITION_DIGEST_1
+    4'b 1111, // index[ 65] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_0
+    4'b 1111, // index[ 66] OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_1
+    4'b 1111, // index[ 67] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_0
+    4'b 1111, // index[ 68] OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_1
+    4'b 1111, // index[ 69] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_0
+    4'b 1111, // index[ 70] OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_1
+    4'b 1111, // index[ 71] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_0
+    4'b 1111, // index[ 72] OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_1
+    4'b 1111, // index[ 73] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_0
+    4'b 1111, // index[ 74] OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_1
+    4'b 1111, // index[ 75] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_0
+    4'b 1111, // index[ 76] OTP_CTRL_SW_MANUF_PARTITION_DIGEST_1
+    4'b 1111, // index[ 77] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_0
+    4'b 1111, // index[ 78] OTP_CTRL_SECRET_LC_TRANSITION_PARTITION_DIGEST_1
+    4'b 1111, // index[ 79] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_0
+    4'b 1111, // index[ 80] OTP_CTRL_VENDOR_TEST_PARTITION_DIGEST_1
+    4'b 1111, // index[ 81] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_0
+    4'b 1111, // index[ 82] OTP_CTRL_VENDOR_HASHES_MANUF_PARTITION_DIGEST_1
+    4'b 1111, // index[ 83] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_0
+    4'b 1111, // index[ 84] OTP_CTRL_VENDOR_HASHES_PROD_PARTITION_DIGEST_1
+    4'b 1111, // index[ 85] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_0
+    4'b 1111, // index[ 86] OTP_CTRL_VENDOR_REVOCATIONS_PROD_PARTITION_DIGEST_1
+    4'b 1111, // index[ 87] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_0
+    4'b 1111, // index[ 88] OTP_CTRL_VENDOR_SECRET_PROD_PARTITION_DIGEST_1
+    4'b 1111, // index[ 89] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_0
+    4'b 1111, // index[ 90] OTP_CTRL_VENDOR_NON_SECRET_PROD_PARTITION_DIGEST_1
+    4'b 1111, // index[ 91] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_0
+    4'b 1111, // index[ 92] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_0_DIGEST_1
+    4'b 1111, // index[ 93] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_0
+    4'b 1111, // index[ 94] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_1_DIGEST_1
+    4'b 1111, // index[ 95] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_0
+    4'b 1111, // index[ 96] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_2_DIGEST_1
+    4'b 1111, // index[ 97] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_0
+    4'b 1111, // index[ 98] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_3_DIGEST_1
+    4'b 1111, // index[ 99] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_0
+    4'b 1111, // index[100] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_4_DIGEST_1
+    4'b 1111, // index[101] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_0
+    4'b 1111, // index[102] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_5_DIGEST_1
+    4'b 1111, // index[103] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_0
+    4'b 1111, // index[104] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_6_DIGEST_1
+    4'b 1111, // index[105] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_0
+    4'b 1111  // index[106] OTP_CTRL_CPTRA_SS_LOCK_HEK_PROD_7_DIGEST_1
   };
 
   ///////////////////////////////////////////////

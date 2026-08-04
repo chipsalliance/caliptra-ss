@@ -1379,6 +1379,14 @@ package mci_reg_pkg;
 
     typedef struct packed{
         logic value;
+    } mci_reg__SS_DEBUG_INTENT_MCU__debug_intent__out_t;
+
+    typedef struct packed{
+        mci_reg__SS_DEBUG_INTENT_MCU__debug_intent__out_t debug_intent;
+    } mci_reg__SS_DEBUG_INTENT_MCU__out_t;
+
+    typedef struct packed{
+        logic value;
         logic swmod;
     } mci_reg__SS_CONFIG_DONE_STICKY__done__out_t;
 
@@ -1496,6 +1504,7 @@ package mci_reg_pkg;
         mci_reg__GENERIC_INPUT_WIRES__out_t [2-1:0]GENERIC_INPUT_WIRES;
         mci_reg__GENERIC_OUTPUT_WIRES__out_t [2-1:0]GENERIC_OUTPUT_WIRES;
         mci_reg__SS_DEBUG_INTENT__out_t SS_DEBUG_INTENT;
+        mci_reg__SS_DEBUG_INTENT_MCU__out_t SS_DEBUG_INTENT_MCU;
         mci_reg__SS_CONFIG_DONE_STICKY__out_t SS_CONFIG_DONE_STICKY;
         mci_reg__SS_CONFIG_DONE__out_t SS_CONFIG_DONE;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;

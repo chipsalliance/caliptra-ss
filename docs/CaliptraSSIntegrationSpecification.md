@@ -257,17 +257,17 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 
 **SoC Specific** in below table means the size of the memory is not fixed and can be configured based on the design requirements by integrator. The actual size will depend on the specific implementation and configuration of the Caliptra Subsystem.
 
-| **Device** | **Memory Name**       | **Interface**                        | **Size** | **Access Type** | **Description**                                                                 |
-  |---------------------|-----------------------|--------------------------------------|----------|-----------------|---------------------------------------------------------------------------------|
-  | **MCU0**            | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                     | Read-Only             | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. | 
-  | **MCU0**            | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                     | Read/Write            | Memory export for MCU0 access                                                                                                                           |
-  | **MCU0**            | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                     | Read/Write            | Shared memory between MCI and MCU for data storage                                                                                                      |
-  | **MAILBOX**         | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX0 communication                                                                                                                          |
-  | **MAILBOX**         | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                     | Read/Write            | Memory for MBOX1 communication                                                                                                                          |
-  | **Caliptra Core**   | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to Caliptra Core spec      | Read/Write            | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core                                                                  |
-  | **Caliptra Core**   | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to Caliptra Core spec      | Read-Only             | Interface for Caliptra ROM                                                                                                                              |
-  | **Caliptra Core**   | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to Caliptra Core spec      | Read/Write            | Interface for Caliptra mailbox memory                                                                                                                   |
-  | **Caliptra Core**   | Caliptra MLDSA SRAM   | `mldsa_memory_export_req`            | Refer to Caliptra Core spec      | Read/Write            | Interface for SRAM instantiated within Adams Bridge block                                                                                               |
+| **Device**        | **Memory Name**       | **Interface**                        | **Size**                    | **Access Type** | **Description**                                                                                                                          |
+|-------------------|-----------------------|--------------------------------------|-----------------------------|-----------------|------------------------------------------------------------------------------------------------------------------------------------------|
+| **MCU0**          | Instruction ROM       | `mcu_rom_mem_export_if`              | SoC Specific                | Read-Only       | Stores the instructions for MCU0 execution. Write-enable (we) and write-data (wdata) signals must be left unconnected, as MCU ROM has no write support. |
+| **MCU0**          | Memory Export         | `cptra_ss_mcu0_el2_mem_export`       | SoC Specific                | Read/Write      | Memory export for MCU0 access.                                                                                                           |
+| **MCU0**          | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                | Read/Write      | Shared memory between MCI and MCU for data storage.                                                                                      |
+| **MAILBOX**       | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX0 communication.                                                                                                          |
+| **MAILBOX**       | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX1 communication.                                                                                                          |
+| **Caliptra Core** | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core.                                                 |
+| **Caliptra Core** | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read-Only       | Interface for Caliptra ROM.                                                                                                              |
+| **Caliptra Core** | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for Caliptra mailbox memory.                                                                                                   |
+| **Caliptra Core** | Adams Bridge SRAM     | `abr_memory_export_req`              | Refer to [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs) | Read/Write      | Interface for SRAM instantiated within Adams Bridge block.                                                                               |
 
 # Caliptra Subsystem Top
 
@@ -310,7 +310,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 1      | `cptra_ss_strap_ocp_lock_en_i`            | OCP L.O.C.K. enable. Allows OCP L.O.C.K. in progress to be set enabling hardware features specific to OCP L.O.C.K. such as AES Keyvault write path, Keyvault filtering rules, and Key Release via AXI DMA. Must be driven with a constant value 0 or 1.  |
 | External | input     | 64     | `cptra_ss_strap_external_staging_area_base_addr_i`            | Base AXI address for the external staging area used by Caliptra Core FW to stage FW images due to reduced MBOX SRAM size. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area) for more details.    |
 
-#### Strap Timing Requirements
+### Strap Timing Requirements
 
 **All strap inputs listed in the table above, as well as `cptra_ss_cptra_obf_key_i`, `cptra_ss_cptra_csr_hmac_key_i`, `cptra_ss_lc_sec_volatile_raw_unlock_en_i`, `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`, and `cptra_ss_FIPS_ZEROIZATION_PPD_i`, must be driven to their intended values and held stable before `cptra_ss_rst_b_i` is deasserted. These signals must not transition for the duration of the boot session (until the next reset assertion).**
 
@@ -336,6 +336,10 @@ Internally, strap values are consumed at different points during the boot sequen
 | `aruser`        | UW                     | output          | input           |
 | `arid`          | IW                     | output          | input           |
 | `arlock`        | 1                      | output          | input           |
+| `arcache`       | 4                      | output          | input           |
+| `arprot`        | 3                      | output          | input           |
+| `arqos`         | 4                      | output          | input           |
+| `arregion`      | 4                      | output          | input           |
 | `arvalid`       | 1                      | output          | input           |
 | `arready`       | 1                      | input           | output          |
 | `rdata`         | DW                     | input           | output          |
@@ -351,6 +355,10 @@ Internally, strap values are consumed at different points during the boot sequen
 | `awuser`        | UW                     | output          | input           |
 | `awid`          | IW                     | output          | input           |
 | `awlock`        | 1                      | output          | input           |
+| `awcache`       | 4                      | output          | input           |
+| `awprot`        | 3                      | output          | input           |
+| `awqos`         | 4                      | output          | input           |
+| `awregion`      | 4                      | output          | input           |
 | `awvalid`       | 1                      | output          | input           |
 | `awready`       | 1                      | input           | output          |
 | `wdata`         | DW                     | output          | input           |
@@ -390,35 +398,11 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_w_sub`          | Caliptra Subsystem MCU ROM AXI write sub-interface. Writes to MCU ROM are not supported, this interface shall be left unconnected from AXI interconnect and tied to 0-value inputs. |
 | External | axi_if    | na    | `cptra_ss_mcu_rom_s_axi_if_r_sub`          | Caliptra Subsystem MCU ROM AXI read sub-interface |
 | External | axi_if    | na    | `cptra_ss_mcu_lsu_m_axi_if_w_mgr`          | Caliptra Subsystem MCU LSU AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awcache`        | Caliptra Subsystem MCU LSU AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_lsu_m_axi_if_awprot`         | Caliptra Subsystem MCU LSU AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awregion`       | Caliptra Subsystem MCU LSU AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_awqos`          | Caliptra Subsystem MCU LSU AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_lsu_m_axi_if_r_mgr`          | Caliptra Subsystem MCU LSU AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arcache`        | Caliptra Subsystem MCU LSU AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_lsu_m_axi_if_arprot`         | Caliptra Subsystem MCU LSU AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arregion`       | Caliptra Subsystem MCU LSU AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_lsu_m_axi_if_arqos`          | Caliptra Subsystem MCU LSU AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_ifu_m_axi_if_w_mgr`          | Caliptra Subsystem MCU IFU AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awcache`        | Caliptra Subsystem MCU IFU AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_ifu_m_axi_if_awprot`         | Caliptra Subsystem MCU IFU AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awregion`       | Caliptra Subsystem MCU IFU AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_awqos`          | Caliptra Subsystem MCU IFU AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_ifu_m_axi_if_r_mgr`          | Caliptra Subsystem MCU IFU AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arcache`        | Caliptra Subsystem MCU IFU AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_ifu_m_axi_if_arprot`         | Caliptra Subsystem MCU IFU AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arregion`       | Caliptra Subsystem MCU IFU AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_ifu_m_axi_if_arqos`          | Caliptra Subsystem MCU IFU AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_w_mgr`           | Caliptra Subsystem MCU System Bus AXI write manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awcache`        | Caliptra Subsystem MCU System Bus AXI write manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_sb_m_axi_if_awprot`         | Caliptra Subsystem MCU System Bus AXI write manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awregion`       | Caliptra Subsystem MCU System Bus AXI write manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_awqos`          | Caliptra Subsystem MCU System Bus AXI write manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_r_mgr`           | Caliptra Subsystem MCU System Bus AXI read manager interface |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arcache`        | Caliptra Subsystem MCU System Bus AXI read manager address transaction attributes signal |
-| External | Output    | 3     | `cptra_ss_mcu_sb_m_axi_if_arprot`         | Caliptra Subsystem MCU System Bus AXI read manager address protection type signal        |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arregion`       | Caliptra Subsystem MCU System Bus AXI read manager address region identifier signal      |
-| External | Output    | 4     | `cptra_ss_mcu_sb_m_axi_if_arqos`          | Caliptra Subsystem MCU System Bus AXI read manager address quality of service signal     |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_w_sub`              | Caliptra Subsystem I3C AXI write sub-interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_r_sub`              | Caliptra Subsystem I3C AXI read sub-interface |
 | External | input     | na    | `cptra_ss_lc_axi_wr_req_i`           | LC controller AXI write request input    |
@@ -594,10 +578,10 @@ Integrator must connect following list of manager and subordinates to axi interc
 
   | Manager AXI If Name           | Description                                                       |
   |-------------------------------|-------------------------------------------------------------------|
-  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU). Additional AXI signals (AxCACHE, AxPROT, AxREGION, AxQOS) are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals. |
-  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU). Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.            |
-  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only. Additional AXI (AxCACHE, AxPROT, AxREGION, AxQOS) signals are present in the top-level port list that are not part of the axi_if interface, but are members of the same AXI connection point. If integrators use an AXI interconnect that makes use of these signals, the additional AXI signals must be connected to the same interconnect port alongside the axi_if signals.    |
-  | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions. Additional signals are unused and may be tied to 0 at the interconnect (AxCACHE, AxPROT, AxREGION, AxQOS).           |
+  | `cptra_ss_mcu_lsu_m_axi_if`   | Manager interface for MCU Load/Store Unit (LSU).                  |
+  | `cptra_ss_mcu_ifu_m_axi_if`   | Manager interface for MCU Instruction Fetch Unit (IFU).           |
+  | `cptra_ss_mcu_sb_m_axi_if`    | Manager interface for MCU System Bus (SB). Used for debug only.   |
+  | `cptra_ss_cptra_core_m_axi_if`| Manager interface for the Caliptra Core AXI transactions.         |
 
 - The following signals are unused for all AXI subordinate interfaces within Caliptra Subsystem. The AXI specification defines these signals as optional for a compliant AXI subordinate. They may be used by integrators to fine tune AXI interconnect behavior or performance. MCU AXI manager interfaces drive these signals, as documented in the VeeR EL2 specification. 
   - AxCACHE
@@ -693,7 +677,8 @@ Arbitrary reset assertions/deassertions should not be done unless the integrator
 ### Overview
 
 SRAMs are instantiated at the SoC level. Caliptra Subsystem provides the interface to export SRAMs from internal components. Components that export SRAMs include:
- - Caliptra Core (see Caliptra Core integration specification)
+ - Caliptra Core (see [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md))
+ - Adams Bridge (see [Adams Bridge Documentation](https://github.com/chipsalliance/adams-bridge/tree/main/docs))
  - MCU (RISC-V core)
  - MCI (Mailbox SRAM and MCU SRAM)
 
@@ -1003,6 +988,7 @@ This field defaults to 4 bytes but can be extended to accommodate storage of a f
      Additionally, these secrets are broadcasted with this input port: `otp_broadcast_o`. Therefore, this port, its propagated signals, and its driver signals must also not be scannable.
   - Since Fuse Controller scrambles secret partition with PRESENT chipher, this chiper keys, autogenerated from the OTP memory map HJSON, must be excluded from the scan path. Although these values are parameters defined in `otp_ctrl_part_pkg.sv`, the registers driven by these parameters must be excluded from the scan path.
   - Note, the LC token partitions are not considered secret as only the cSHAKE128 hashes of each token are stored, not the raw tokens themselves.
+  - The Fuse Controller additionally implements three hardening mechanisms that protect the secret partition hardware digests: the physical debug-intent strap (`cptra_ss_debug_intent_i`), which is sampled before Fuse Controller initialization; the `SECRET_DIGEST_READ_LOCK` Fuse Controller CSR; and the `SS_DEBUG_INTENT_MCU` MCI register. The latter two are set by the MCU after Fuse Controller initialization. Only the strap additionally prevents the secret partitions' digests from being loaded into the partition buffers; the other two cannot. All three, however, ensure that there is no software path to read the digest fields through either the named CSR or the DAI. For more details, see [Debug Intent Secret Zeroization](CaliptraSSHardwareSpecification.md#debug-intent-secret-zeroization). This is a defense-in-depth measure only: it does not remove the scan-path exclusion requirements above. The integrator must still exclude the secret buffering flops, the scrambler-key registers, and the `otp_broadcast_o` signals from the scan chain.
 
 ---
 ## Direct Access Interface
@@ -1019,9 +1005,12 @@ CSR Name                             | Description
 [`DIRECT_ACCESS_CMD`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_cmd)     | Command register to trigger a read or a write access.
 [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#direct_access_regwen)  | Write protection register for DAI.
 
+When debug intent is asserted — or the `SECRET_DIGEST_READ_LOCK` CSR is set — a DAI read of a secret partition's hardware digest returns zero, and the corresponding named digest CSR returns only a provisioned indicator (all-ones if the sensed digest is provisioned/non-zero, otherwise zero) instead of the real digest. This applies to every secret partition that carries a hardware digest, including `SECRET_LC_TRANSITION_PARTITION`. See [Debug Intent Secret Zeroization](CaliptraSSHardwareSpecification.md#debug-intent-secret-zeroization).
+
 ## Initialization
 
 The OTP controller initializes automatically upon power-up and is fully operational by the time the processor boots.
+When debug intent is asserted via the physical strap (i.e., before this initialization), the zeroized secret partitions are not sensed and their buffer registers remain zero, while `SECRET_LC_TRANSITION_PARTITION` is sensed normally so the Life Cycle Controller can still transition; the controller still completes initialization. Debug intent asserted later through the `SS_DEBUG_INTENT_MCU` register does not change sensing (the partitions are already sensed) but still masks the digest reads. See [Debug Intent Secret Zeroization](CaliptraSSHardwareSpecification.md#debug-intent-secret-zeroization).
 The only initialization steps that SW should perform are:
 
 1. Check that the OTP controller has successfully initialized by reading [`STATUS`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status). I.e., make sure that none of the ERROR bits are set, and that the DAI is idle ([`STATUS.DAI_IDLE`](../src/fuse_ctrl/doc/otp_ctrl_registers.md#status)).
@@ -1129,7 +1118,7 @@ Zeroization is implemented within the fuse controller RTL module. It is therefor
 
 ## How to test : Smoke & more
 The smoke test focuses on ensuring basic functionality and connectivity of the FC & LCC.
-**TODO** More details will be provided once FC is ready to test.
+
 
 ## Generating the Fuse Partitions
 
@@ -1653,7 +1642,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | Input  | `AXI_USER_WIDTH` | `strap_mcu_sram_config_axi_user`       | AXI USER populating MCU FW Image in MCU SRAM.  Exposed to SOC via `cptra_ss_strap_mcu_sram_config_axi_user_i`                                      |
 | External | Input  | `AXI_USER_WIDTH` | `strap_mci_soc_config_axi_user`       | AXI USER with MCU privilages in MCI reg. Use for Romless config. 0x0: Disable 0xFFFFFFFF: Debug (all AXI users get this privilage). Exposed to SOC via `cptra_ss_strap_mci_soc_config_axi_user_i`                                        |
 | External | Input  | 32             | `strap_mcu_reset_vector`  | Default reset vector for MCI. Can be overridden via MCI register write. Exposed to SOC via `cptra_ss_strap_mcu_reset_vector_i`|
-| External | Input  | 32             | `ss_debug_intent`  | Debug intent |
+| External | Input  | 32             | `ss_debug_intent`  | Debug intent strap. Captured into the read-only (over DMI) `SS_DEBUG_INTENT` register and OR'd with the MCU-writable `SS_DEBUG_INTENT_MCU` register to form the effective debug intent. |
 
 
 **Table: MCI CG Controls**

@@ -430,23 +430,47 @@ addrmap otp_ctrl {
 % endfor
 
     reg {
-        desc = "Volatile write lock for vendor public key hashes.";
+        desc = "Global volatile read lock for secret partition HW digest CSRs and DAI digest readback. W1S: writing 1 sets the lock bit, writing 0 leaves the bit unchanged, and only reset clears the register.";
         default sw = rw;
         default hw = r;
+        default woset = true;
         field {
-            desc = "One-hot encoded";
+            desc = "Global volatile read lock for secret partition HW digest CSRs and DAI digest readback. W1S: writing 1 sets the lock bit, writing 0 leaves the bit unchanged, and only reset clears the register.";
             reset = 0x0;
-        } PERIOD [31:0];
+        } LOCK [0:0];
+    } SECRET_DIGEST_READ_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
+
+    reg {
+        desc = "Volatile write lock for production vendor public key hashes. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.";
+        default sw = rw;
+        default hw = r;
+        default woset = true;
+        field {
+            desc = "Volatile write lock for production vendor public key hashes. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks the corresponding PROD vendor public key hash entry, where bit 0 maps to CPTRA_CORE_VENDOR_PK_HASH_1.";
+            reset = 0x0;
+        } LOCK [31:0];
     } VENDOR_PK_HASH_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
 
     reg {
-        desc = "Volatile write lock for ratchet seed partitions.";
+        desc = "Volatile write lock for the manufacturing vendor public key hash. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.";
         default sw = rw;
         default hw = r;
+        default woset = true;
         field {
-            desc = "One-hot encoded";
+            desc = "Volatile write lock for the manufacturing vendor public key hash. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit 0 locks CPTRA_CORE_VENDOR_PK_HASH_0 in VENDOR_HASHES_MANUF_PARTITION; bits 31:1 are reserved.";
             reset = 0x0;
-        } PERIOD [31:0];
+        } LOCK [31:0];
+    } MANUF_PK_HASH_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
+
+    reg {
+        desc = "Volatile write lock for ratchet seed partitions. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.";
+        default sw = rw;
+        default hw = r;
+        default woset = true;
+        field {
+            desc = "Volatile write lock for ratchet seed partitions. W1S: writing 1 sets a lock bit, writing 0 leaves the bit unchanged, and only reset clears the register. Bit i locks CPTRA_SS_LOCK_HEK_PROD_i.";
+            reset = 0x0;
+        } LOCK [31:0];
     } RATCHET_SEED_VOLATILE_LOCK @ ${"0x%X" % + inc_ptr(0x4)};
 
     regfile digest_t {

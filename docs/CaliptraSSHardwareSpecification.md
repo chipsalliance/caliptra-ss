@@ -535,12 +535,12 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 <a name="locking-the-validated-public-key-partition"></a>
 
-During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
+During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries for the remainder of the current boot. This ensures that the validated key’s fuse entry remains immutable until the next subsystem reset (warm or cold) re-runs the boot flow. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
 
 1. **PK Hash Partition**
    - **Purpose:**
      - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
-     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
+     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM via the volatile lock CSR, making them immutable for the rest of the current boot. The lock clears on any subsystem reset (warm or cold), at which point the FC re-runs OTP init and ROM re-validates.
    - **Layout & Details:**
      - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.
        - **Default N:** 1
@@ -565,21 +565,22 @@ During firmware authentication, the ROM validates the vendor public keys provide
        - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
 3. **Volatile Locking Mechanism**
 
-  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
+  - The FC implements volatile write locks with sticky W1S CSRs. Each lock bit is effectively write-once per boot: writing a 1 sets the selected lock bit; writing 0 cannot clear an already-set bit. Once set, the bit remains set for the rest of the current boot and clears on the next subsystem reset (warm or cold), at which point the FC re-runs OTP init.
+  - `MANUF_PK_HASH_VOLATILE_LOCK` bit 0 locks `CPTRA_CORE_VENDOR_PK_HASH_0` and `CPTRA_CORE_PQC_KEY_TYPE_0` in `VENDOR_HASHES_MANUF_PARTITION`. This is a volatile-only manufacturing safety lock; lifecycle state already prevents MANUF partition writes after manufacturing closure.
+  - `VENDOR_PK_HASH_VOLATILE_LOCK` bit i locks production vendor hash i+1 (`CPTRA_CORE_VENDOR_PK_HASH_1` through `CPTRA_CORE_VENDOR_PK_HASH_N`) and the associated PQC key type entry.
+  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. The CSR is a fixed 32-bit W1S register and is always present in the SoC address map regardless of `num_ratchet_seed_partitions`, but only the first `num_ratchet_seed_partitions` bits carry semantic meaning; bits beyond that index are reserved/RAZ. When `num_ratchet_seed_partitions == 0` the CSR remains accessible for SW ABI stability but never gates a partition.
+  - These fields are bit masks with one bit per lock target; they are not threshold or ordinal encodings.
      - **Example:**
 
        ```c
-       // Lock the 3rd vendor public key hash and all higher order key hashes
-       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
+       // Lock CPTRA_CORE_VENDOR_PK_HASH_3 and its associated PQC key type.
+       write_register(otp_ctrl.VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 2);
        // This operation disables any further write updates to the validated public key fuse region.
        ```
 
   -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
   - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
-  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
+  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request, which requires a subsystem reset (warm or cold) to clear the volatile lock and re-enter ROM.
   - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
 
 ---
@@ -600,10 +601,56 @@ These integrity checks verify whether the contents of the buffer registers remai
 
 ---
 
+## Debug Intent Secret Zeroization
+
+As a defense-in-depth enhancement, the Fuse Controller hides the hardware digests of provisioned secret partitions from software while debug intent is asserted.
+
+### Effective debug intent
+
+MCI forms the centralized debug-intent signal distributed across the Caliptra Subsystem (including the Fuse Controller) as the logical **OR** of two sources:
+
+- The **physical debug-intent strap**, captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register.
+- The **`SS_DEBUG_INTENT_MCU`** register — a write-1-set (W1S) bit that MCU ROM (or the SoC Config Agent) may set over AXI, but only before `SS_CONFIG_DONE_STICKY` is set. It is retained across warm reset and cleared only on cold reset, and once set it cannot be cleared by software (a write of 0 has no effect). This lets the MCU assert debug intent from a register write instead of relying solely on the GPIO strap.
+
+The physical strap is sampled *before* the Fuse Controller initializes, so partitions are never sensed when the strap drives debug intent. `SS_DEBUG_INTENT_MCU` can be set by MCU ROM *after* the Fuse Controller has already sensed the partitions; in that case the buffers already hold the provisioned values, but the digest-read masking below still prevents software from reading the real digests.
+
+### Secret hardware-digest read masking
+
+While debug intent is asserted, every secret partition that carries a hardware digest — **including** `SECRET_LC_TRANSITION_PARTITION` — hides its digest from software:
+
+- The named digest CSR returns only a **provisioned indicator**: all-ones when the sensed digest is non-zero (provisioned), or zero when the sensed digest is zero (unprovisioned, or flushed by the zeroization below). The real digest value is never returned.
+- The Direct Access Interface (DAI) hardware-digest read returns zero.
+
+### Secret partition zeroization
+
+In addition, when debug intent is asserted before Fuse Controller initialization (i.e., driven by the physical strap before sensing), every secret partition that carries a hardware digest **except** `SECRET_LC_TRANSITION_PARTITION` is flushed:
+
+- The partition is not sensed into its buffer registers; the buffer contents stay at their reset value (zero).
+- The PRESENT scrambler key used to descramble the partition is forced to zero, so no `RndCnstKey`-derived value is latched into the scrambler key state.
+- The background integrity and consistency checks are acknowledged without accessing the fuse macro, so they neither run nor fail for these partitions.
+- Because the buffer stays zero, the digest-read masking above returns zero for these partitions.
+
+`SECRET_LC_TRANSITION_PARTITION` is intentionally excluded from the zeroization (buffer flush) so that the Life Cycle Controller (LCC) can still perform conditional state transitions while debug intent is asserted:
+
+- The partition is sensed and descrambled with its real key, and its tokens are broadcast to the LCC.
+- Its background integrity and consistency checks run normally.
+- The tokens are stored only as cSHAKE128 hashes rather than raw secrets, and the partition stays read-locked, so its raw contents are not exposed. Its hardware digest is still masked as described above — all-ones on the named digest CSR (because the partition is sensed and provisioned) and zero on the DAI read — so the real digest is not exposed.
+
+- A secret partition's data field (as opposed to its digest field) is never readable by software regardless of this digest hardening: the secret data is broadcast only over a dedicated port and has no software read path.
+
+### `SECRET_DIGEST_READ_LOCK`
+
+Independently of debug intent, the Fuse Controller provides the `SECRET_DIGEST_READ_LOCK` CSR — a write-1-set (W1S) lock (a write of 0 has no effect). When set, it applies the same secret hardware-digest read masking described above (provisioned indicator on the named digest CSR, zero on the DAI read) to every secret partition that carries a hardware digest, **without** flushing the buffers or otherwise altering partition sensing. This lets software hide the secret digests on demand even when debug intent is not asserted.
+
+This enhancement protects the secrets provisioned in the manufacturing and production states. It is an additional layer of defense and does not remove the scan-path exclusion requirements described in the [Integration Specification](CaliptraSSIntegrationSpecification.md).
+
+---
+
 ## Notes
 
 - **Zeroization of Secret Partitions:**
   Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+- **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
 - **Further Information:**
@@ -627,6 +674,8 @@ Hence the OTP controller performs a blank check and returns an error if a write 
 It is an overview of the architecture of the Life-Cycle Controller (LCC) Module for its use in the Caliptra Subsystem. The LCC is responsible for managing the life-cycle states of the system, ensuring secure transitions between states, and enforcing security policies.
 
 ## Caliptra Subsystem, SOC Debug Architecture Interaction
+
+**Note — sources of debug intent:** Throughout this section, "debug intent" refers to the *effective* debug-intent signal that MCI distributes across the Caliptra Subsystem, not to the physical strap alone. As described in [Effective debug intent](#effective-debug-intent), this signal is the logical OR of the physical `DEBUG_INTENT_STRAP` (captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register) and the MCU-writable `SS_DEBUG_INTENT_MCU` register (a W1S bit settable only before `SS_CONFIG_DONE_STICKY`). The strap is therefore not the only way to assert debug intent; the MCU can also assert it through `SS_DEBUG_INTENT_MCU`. The two sources also differ in how they affect the secret digest CSRs: because the physical strap suppresses fuse-macro sensing entirely (the secret partitions are never read into their buffers), their named digest CSRs always read back as zero and can never return the all-ones provisioned indicator, whereas `SS_DEBUG_INTENT_MCU` (like `SECRET_DIGEST_READ_LOCK`) masks the digests only after the partitions have already been sensed, so the CSR still reflects whether each digest field is provisioned (all-ones) or unprovisioned (zero).
 
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
@@ -996,7 +1045,7 @@ MCI has the following types of straps:
 |`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
 |`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
 |`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
-|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Shows the intent to put the part in a debug-unlocked state. This strap is not writable by SW via AXI, and it is read-only over DMI. Debug intent can additionally be asserted by the MCU through the AXI-writable `SS_DEBUG_INTENT_MCU` register (W1S, settable only before `SS_CONFIG_DONE_STICKY`); that register is OR'd with this strap to form the effective debug intent.|
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
@@ -1411,7 +1460,7 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 **MCU Core Enable**: Debug Mode
 
-**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** DEBUG_INTENT strap set
+**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** debug intent asserted (effective debug intent — physical strap **OR** `SS_DEBUG_INTENT_MCU`)
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable*
 
@@ -1474,7 +1523,7 @@ Illegal accesses will result in writes being dropped and reads returning 0.
 | CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
 | FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
 | MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
+| SS\_DEBUG\_INTENT | 0x78 | RO |  | Yes |
 | SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
 | SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
 | MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |
