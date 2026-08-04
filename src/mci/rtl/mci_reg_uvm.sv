@@ -2614,6 +2614,36 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SS_DEBUG_INTENT
 
+    // Reg - mci_reg::SS_DEBUG_INTENT_MCU
+    class mci_reg__SS_DEBUG_INTENT_MCU extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mci_reg__SS_DEBUG_INTENT_MCU_bit_cg debug_intent_bit_cg[1];
+        mci_reg__SS_DEBUG_INTENT_MCU_fld_cg fld_cg;
+        rand uvm_reg_field debug_intent;
+
+        function new(string name = "mci_reg__SS_DEBUG_INTENT_MCU");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.debug_intent = new("debug_intent");
+            this.debug_intent.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(debug_intent_bit_cg[bt]) debug_intent_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mci_reg__SS_DEBUG_INTENT_MCU
+
     // Reg - mci_reg::SS_CONFIG_DONE_STICKY
     class mci_reg__SS_CONFIG_DONE_STICKY extends uvm_reg;
         protected uvm_reg_data_t m_current;
@@ -10672,6 +10702,7 @@ package mci_reg_uvm;
         rand mci_reg__DEBUG_IN DEBUG_IN;
         rand mci_reg__DEBUG_OUT DEBUG_OUT;
         rand mci_reg__SS_DEBUG_INTENT SS_DEBUG_INTENT;
+        rand mci_reg__SS_DEBUG_INTENT_MCU SS_DEBUG_INTENT_MCU;
         rand mci_reg__SS_CONFIG_DONE_STICKY SS_CONFIG_DONE_STICKY;
         rand mci_reg__SS_CONFIG_DONE SS_CONFIG_DONE;
         rand mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG PROD_DEBUG_UNLOCK_PK_HASH_REG[8][12];
@@ -11031,6 +11062,11 @@ package mci_reg_uvm;
 
             this.SS_DEBUG_INTENT.build();
             this.default_map.add_reg(this.SS_DEBUG_INTENT, 'h418);
+            this.SS_DEBUG_INTENT_MCU = new("SS_DEBUG_INTENT_MCU");
+            this.SS_DEBUG_INTENT_MCU.configure(this);
+
+            this.SS_DEBUG_INTENT_MCU.build();
+            this.default_map.add_reg(this.SS_DEBUG_INTENT_MCU, 'h41c);
             this.SS_CONFIG_DONE_STICKY = new("SS_CONFIG_DONE_STICKY");
             this.SS_CONFIG_DONE_STICKY.configure(this);
 

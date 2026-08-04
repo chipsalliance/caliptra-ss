@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+{
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_1": 0x318372c87790628a05f493b472f04808
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_2": 0x55e74f3cd6931045c7b443ef17c78a78
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_3": 0x8597a5fadbc26815799258021644aa12
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_4": 0xc7439b6f6e9dc51c121f023f34d1ea6e
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_5": 0xb0225ece49db216d20978af403fd9df1
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_6": 0x7f10dc894290a4adc400e922cfc0871c
+    "CPTRA_SS_TEST_UNLOCK_TOKEN_7": 0xbaaa3138802efa05ae6ee16767e87f3e
+    "CPTRA_SS_TEST_EXIT_TO_MANUF_TOKEN": 0xb5fe15775f066362341d24782f533ae9
+    "CPTRA_SS_MANUF_TO_PROD_TOKEN": 0x51c001f2c721179d5d8318f4f622abb6
+    "CPTRA_SS_PROD_TO_PROD_END_TOKEN": 0xd6b633a0826d5ba4e7818e5b25b8649d
+    "CPTRA_SS_RMA_TOKEN": 0x318372c87790628a05f493b472f04808
+}

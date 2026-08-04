@@ -535,12 +535,12 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 <a name="locking-the-validated-public-key-partition"></a>
 
-During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries until the next cold reset. This ensures that the validated key’s fuse entry remains immutable. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
+During firmware authentication, the ROM validates the vendor public keys provided in the firmware payload. These keys, which support ECC, MLDSA, and LMS algorithms, are individually hashed and compared against stored fuse values (e.g., `CPTRA_CORE_VENDOR_PK_HASH_n`). Once a valid key is identified, the ROM locks that specific public key hash and all higher-order public key hash entries for the remainder of the current boot. This ensures that the validated key’s fuse entry remains immutable until the next subsystem reset (warm or cold) re-runs the boot flow. Importantly, the locking mechanism is applied only to the public key hashes. The associated revocation bits, which allow for runtime key revocation, remain unlocked. To support this, the fuse controller (FC) implements two distinct partitions:
 
 1. **PK Hash Partition**
    - **Purpose:**
      - Contains the `CPTRA_CORE_VENDOR_PK_HASH[i]` registers for *i* ranging from 1 to N.
-     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM, making them immutable until a cold reset.
+     - Once a key is validated, the corresponding hash and all higher-order hashes are locked by MCU ROM via the volatile lock CSR, making them immutable for the rest of the current boot. The lock clears on any subsystem reset (warm or cold), at which point the FC re-runs OTP init and ROM re-validates.
    - **Layout & Details:**
      - **Partition Items:** `CPTRA_CORE_VENDOR_PK_HASH[i]` where *i* ranges from 1 to N.
        - **Default N:** 1
@@ -565,21 +565,22 @@ During firmware authentication, the ROM validates the vendor public keys provide
        - This partition is kept separate from the PK hash partition to allow for runtime updates even after the validated public key is locked.
 3. **Volatile Locking Mechanism**
 
-  - To ensure that the validated public key remains immutable once selected, the FC uses a volatile lock mechanism implemented via the new register `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-  - Once the ROM determines the valid public key (e.g., the 3rd key is selected), it locks the corresponding fuse entries in the PK hash partition.
-  - The lock is applied by writing a specific value to `otp_ctrl.VENDOR_PK_HASH_LOCK`.
-- If the OCP L.O.C.K. is enabled, the same lock mechanism is also applied on `CPTRA_SS_LOCK_HEK_PROD_X` fuse patitions.
+  - The FC implements volatile write locks with sticky W1S CSRs. Each lock bit is effectively write-once per boot: writing a 1 sets the selected lock bit; writing 0 cannot clear an already-set bit. Once set, the bit remains set for the rest of the current boot and clears on the next subsystem reset (warm or cold), at which point the FC re-runs OTP init.
+  - `MANUF_PK_HASH_VOLATILE_LOCK` bit 0 locks `CPTRA_CORE_VENDOR_PK_HASH_0` and `CPTRA_CORE_PQC_KEY_TYPE_0` in `VENDOR_HASHES_MANUF_PARTITION`. This is a volatile-only manufacturing safety lock; lifecycle state already prevents MANUF partition writes after manufacturing closure.
+  - `VENDOR_PK_HASH_VOLATILE_LOCK` bit i locks production vendor hash i+1 (`CPTRA_CORE_VENDOR_PK_HASH_1` through `CPTRA_CORE_VENDOR_PK_HASH_N`) and the associated PQC key type entry.
+  - If OCP L.O.C.K. ratchet seed partitions are enabled by the integrator, `RATCHET_SEED_VOLATILE_LOCK` bit i locks ratchet seed partition `CPTRA_SS_LOCK_HEK_PROD_i`. The CSR is a fixed 32-bit W1S register and is always present in the SoC address map regardless of `num_ratchet_seed_partitions`, but only the first `num_ratchet_seed_partitions` bits carry semantic meaning; bits beyond that index are reserved/RAZ. When `num_ratchet_seed_partitions == 0` the CSR remains accessible for SW ABI stability but never gates a partition.
+  - These fields are bit masks with one bit per lock target; they are not threshold or ordinal encodings.
      - **Example:**
 
        ```c
-       // Lock the 3rd vendor public key hash and all higher order key hashes
-       write_register(otp_ctrl.VENDOR_PK_HASH_LOCK, 0xFFF2);
+       // Lock CPTRA_CORE_VENDOR_PK_HASH_3 and its associated PQC key type.
+       write_register(otp_ctrl.VENDOR_PK_HASH_VOLATILE_LOCK, 1u << 2);
        // This operation disables any further write updates to the validated public key fuse region.
        ```
 
   -  The ROM polls the [`STATUS`](../src/fuse_ctrl/doc/registers.md#status) register until the Direct Access Interface (DAI) returns to idle, confirming the completion of the lock operation. If any errors occur, appropriate error recovery measures are initiated.
   - Once locked, the PK hash partition cannot be modified, ensuring that the validated public key remains unchanged, thereby preserving the secure boot chain.
-  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request. Therefore, requires cold-reset.
+  - If there needs to be update or programming sequence in PK_HASH set, it needs to be in ROM execution time based on a valid request, which requires a subsystem reset (warm or cold) to clear the volatile lock and re-enter ROM.
   - The PK hash revocation partition remains unlocked. This design allows the chip owner to update revocation bits and PQC type settings at runtime, enabling the dynamic revocation of keys without affecting the locked public key.
 
 ---
@@ -600,10 +601,56 @@ These integrity checks verify whether the contents of the buffer registers remai
 
 ---
 
+## Debug Intent Secret Zeroization
+
+As a defense-in-depth enhancement, the Fuse Controller hides the hardware digests of provisioned secret partitions from software while debug intent is asserted.
+
+### Effective debug intent
+
+MCI forms the centralized debug-intent signal distributed across the Caliptra Subsystem (including the Fuse Controller) as the logical **OR** of two sources:
+
+- The **physical debug-intent strap**, captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register.
+- The **`SS_DEBUG_INTENT_MCU`** register — a write-1-set (W1S) bit that MCU ROM (or the SoC Config Agent) may set over AXI, but only before `SS_CONFIG_DONE_STICKY` is set. It is retained across warm reset and cleared only on cold reset, and once set it cannot be cleared by software (a write of 0 has no effect). This lets the MCU assert debug intent from a register write instead of relying solely on the GPIO strap.
+
+The physical strap is sampled *before* the Fuse Controller initializes, so partitions are never sensed when the strap drives debug intent. `SS_DEBUG_INTENT_MCU` can be set by MCU ROM *after* the Fuse Controller has already sensed the partitions; in that case the buffers already hold the provisioned values, but the digest-read masking below still prevents software from reading the real digests.
+
+### Secret hardware-digest read masking
+
+While debug intent is asserted, every secret partition that carries a hardware digest — **including** `SECRET_LC_TRANSITION_PARTITION` — hides its digest from software:
+
+- The named digest CSR returns only a **provisioned indicator**: all-ones when the sensed digest is non-zero (provisioned), or zero when the sensed digest is zero (unprovisioned, or flushed by the zeroization below). The real digest value is never returned.
+- The Direct Access Interface (DAI) hardware-digest read returns zero.
+
+### Secret partition zeroization
+
+In addition, when debug intent is asserted before Fuse Controller initialization (i.e., driven by the physical strap before sensing), every secret partition that carries a hardware digest **except** `SECRET_LC_TRANSITION_PARTITION` is flushed:
+
+- The partition is not sensed into its buffer registers; the buffer contents stay at their reset value (zero).
+- The PRESENT scrambler key used to descramble the partition is forced to zero, so no `RndCnstKey`-derived value is latched into the scrambler key state.
+- The background integrity and consistency checks are acknowledged without accessing the fuse macro, so they neither run nor fail for these partitions.
+- Because the buffer stays zero, the digest-read masking above returns zero for these partitions.
+
+`SECRET_LC_TRANSITION_PARTITION` is intentionally excluded from the zeroization (buffer flush) so that the Life Cycle Controller (LCC) can still perform conditional state transitions while debug intent is asserted:
+
+- The partition is sensed and descrambled with its real key, and its tokens are broadcast to the LCC.
+- Its background integrity and consistency checks run normally.
+- The tokens are stored only as cSHAKE128 hashes rather than raw secrets, and the partition stays read-locked, so its raw contents are not exposed. Its hardware digest is still masked as described above — all-ones on the named digest CSR (because the partition is sensed and provisioned) and zero on the DAI read — so the real digest is not exposed.
+
+- A secret partition's data field (as opposed to its digest field) is never readable by software regardless of this digest hardening: the secret data is broadcast only over a dedicated port and has no software read path.
+
+### `SECRET_DIGEST_READ_LOCK`
+
+Independently of debug intent, the Fuse Controller provides the `SECRET_DIGEST_READ_LOCK` CSR — a write-1-set (W1S) lock (a write of 0 has no effect). When set, it applies the same secret hardware-digest read masking described above (provisioned indicator on the named digest CSR, zero on the DAI read) to every secret partition that carries a hardware digest, **without** flushing the buffers or otherwise altering partition sensing. This lets software hide the secret digests on demand even when debug intent is not asserted.
+
+This enhancement protects the secrets provisioned in the manufacturing and production states. It is an additional layer of defense and does not remove the scan-path exclusion requirements described in the [Integration Specification](CaliptraSSIntegrationSpecification.md).
+
+---
+
 ## Notes
 
 - **Zeroization of Secret Partitions:**
   Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+- **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
 - **Further Information:**
@@ -628,6 +675,8 @@ It is an overview of the architecture of the Life-Cycle Controller (LCC) Module 
 
 ## Caliptra Subsystem, SOC Debug Architecture Interaction
 
+**Note — sources of debug intent:** Throughout this section, "debug intent" refers to the *effective* debug-intent signal that MCI distributes across the Caliptra Subsystem, not to the physical strap alone. As described in [Effective debug intent](#effective-debug-intent), this signal is the logical OR of the physical `DEBUG_INTENT_STRAP` (captured once during the cold-boot reset window into the `SS_DEBUG_INTENT` register) and the MCU-writable `SS_DEBUG_INTENT_MCU` register (a W1S bit settable only before `SS_CONFIG_DONE_STICKY`). The strap is therefore not the only way to assert debug intent; the MCU can also assert it through `SS_DEBUG_INTENT_MCU`. The two sources also differ in how they affect the secret digest CSRs: because the physical strap suppresses fuse-macro sensing entirely (the secret partitions are never read into their buffers), their named digest CSRs always read back as zero and can never return the all-ones provisioned indicator, whereas `SS_DEBUG_INTENT_MCU` (like `SECRET_DIGEST_READ_LOCK`) masks the digests only after the partitions have already been sensed, so the CSR still reflects whether each digest field is provisioned (all-ones) or unprovisioned (zero).
+
 Figure below shows the Debug Architecture of the Caliptra Subsystem and some important high-level signals routed towards SOC. The table in Key Components and Interfaces section shows all the signals that are available to SOC (outside of Caliptra Subsystem usage).
 
 *Figure: Caliptra Subsystem & SOC Debug Architecture Interaction*
@@ -650,7 +699,7 @@ The figure below shows the LCC state transition and Caliptra Subsystem enhanceme
 | TEST_UNLOCKED{N}   | FUSE            | Transition from RAW state using token stored in FUSE. This state is used for manufacturing and production testing. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are enabled. It is expected that LCC tokens will be provisioned into FUSE during these states. Once provisioned, these tokens are no longer readable by software.|
 | MANUF              | FUSE            | Transition from TEST_UNLOCKED state using token stored in FUSE. This is a mutually exclusive state to PROD and PROD_END. To enter this state, MANUF_TOKEN is required. This state is used for developing provisioning and mission mode. In this state, UDS and Field Entropy FUSE partitions can be provisioned. During this state: CLTAP (chip level TAPs) is enabled; Debug functions are enabled; DFT functions are disabled |
 | PROD               | FUSE            | Transition from MANUF state using token stored in FUSE. PROD is a mutually exclusive state to MANUF and PROD_END. To enter this state, PROD_TOKEN is required. This state is used both for provisioning and mission mode. During this state: CLTAP is disabled; Debug functions are disabled; DFT functions are disabled; Caliptra Subsytem can grant SoC debug unlock flow if the conditions provided in “SoC Debug Flow and Architecture for Production Mode” section are satisfied. SoC debug unlock overwrites the signals and gives the following cases: CLTAP is enabled; Debug functions are enabled based on the defined debug policy; DFT is enabled but this DFT enable is called SOC_DFT_EN, which has less capabilities than DFT_EN granted in TEST_UNLOCKED. |
-| PROD_END           | FUSE            | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a PROD_END token is required. It also means that Caliptra-SS cannot enter debug mode anymore. Only transition to SCRAP mode is allowed.|
+| PROD_END           | FUSE            | This state is identical in functionality to PROD, except the device is never allowed to transition to RMA state. To enter this state, a PROD_END token is required. Only transition to SCRAP mode is allowed.|
 | RMA                | FUSE            | Transition from TEST_UNLOCKED / PROD / MANUF using token stored in FUSE. It is not possible to reach this state from PROD_END. If the RMA transition is requested, the request must follow the asserted RMA PPD pin. Without this pin, RMA request is discarded. See `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` in [Caliptra Subsystem Integration Specification Document](CaliptraSSIntegrationSpecification.md). When transitioning from PROD or MANUF, an RMA_UNLOCK token is required. When transitioning from TEST_UNLOCKED, no RMA_UNLOCK token is required. During this state: CLTAP is enabled; Debug functions are enabled; DFT functions are enabled |
 | SCRAP              | FUSE            | Transition from any state. If the SCRAP transition is requested, the request must follow the asserted SCRAP PPD pin. Without this pin, SCRAP request is discarded. See `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i` in [Caliptra Subsystem Integration Specification Document](CaliptraSSIntegrationSpecification.md). During SCRAP state the device is completely dead. All functions, including CPU execution are disabled. The only exception is the TAP of the life cycle controller which is always accessible so that the device state can be read out. No owner consent is required to transition to SCRAP. Note also, SCRAP is meant as an EOL manufacturing state. Transition to this state is always purposeful and persistent, it is NOT part of the device’s native security countermeasure to transition to this state.|
 | INVALID            | FUSE            | Invalid is any combination of FUSE values that do not fall in the categories above. It is the “default” state of life cycle when no other conditions match. Functionally, INVALID is identical to SCRAP in that no functions are allowed and no transitions are allowed. A user is not able to explicitly transition into INVALID (unlike SCRAP), instead, INVALID is meant to cover in-field corruptions, failures or active attacks.|
@@ -680,15 +729,16 @@ In the manufacturing phase, the Caliptra Subsystem asserts SOC_HW_DEBUG_EN high,
 | RAW 				               | Low 		            | Low 			         | Low 			         |
 | TEST_LOCKED 			            | Low 		            | Low 			         | Low 			         |
 | TEST_UNLOCKED 		            | High 		            | High 			         | High 			         |
-| MANUF* 			               | Low 		            | Low 			         | High 			         |
+| MANUF* 			               | Low 		            | TOKEN - CONDITIONED**  | High 			         |
 | PROD* 			                  | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
 | PROD_END 			               | Low 		            | Low 			         | Low 			         |
+| PROD_END* 			                | Low 		            | TOKEN - CONDITIONED** | TOKEN - CONDITIONED** |
 | RMA 				               | High***	            | High 			         | High 			         |
 | SCRAP 			                  | Low 		            | Low 			         | Low 			         |
 | INVALID 			               | Low 		            | Low 			         | Low 			         |
 | POST_TRANSITION 	            | Low 		            | Low 			         | Low 			         |
 
-*: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD states. This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
+*: Caliptra can enter debug mode and update these signals even though LCC is in MANUF or PROD, PROD_END states. This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
 
 **: SOC_DFT_EN and SOC_HW_DEBUG_EN can be high if Caliptra SS grants debug mode (either manufacturing or production). This case is explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”. SOC_HW_DEBUG_EN is set high to open CLTAP and SOC_DFT_EN enables DFT by SoC design support. However, this condition also needs to go through the flow described in “SoC Debug Flow and Architecture for Production Mode”. Caliptra Subsystem state should be set to either the manufacturing mode debug unlock or Level 0 of the production debug unlock.
 
@@ -740,7 +790,7 @@ The following figure illustrates how Caliptra Subsystem enters the manufacturing
 
 The Caliptra Subsystem includes SoC debugger logic that supports Caliptra’s production debug mode. This debugger logic extends the capabilities of the Lifecycle Controller (LCC) by providing a production debug mode architecture that the LCC does not inherently support, except in the RMA state. This architecture manages the initiation and handling of the production debug mode separately from the LCC's lifecycle states.
 
-The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD state. Before the debug unlock flow, the MCU reads all hashed public keys from the fuse macros and writes them to the `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK` registers. Additionally, the MCU sets the number of public keys used for production debug unlock by writing to the `SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES` register. The value `DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET` represents an address offset, while `NUM_OF_DEBUG_AUTH_PK_HASHES` defines how many public keys are available for reading. These two values establish the debug policy depth for different debugging levels.
+The process of enabling production debug mode begins when the DEBUG_INTENT_STRAP pin is asserted high via the SoC’s GPIO. This pin signals Caliptra to start the debug mode when the LCC is in the PROD and PROD_END states. Before the debug unlock flow, the MCU reads all hashed public keys from the fuse macros and writes them to the `SS_PROD_DEBUG_UNLOCK_AUTH_PK_HASH_REG_BANK` registers. Additionally, the MCU sets the number of public keys used for production debug unlock by writing to the `SS_NUM_OF_PROD_DEBUG_UNLOCK_AUTH_PK_HASHES` register. The value `DEBUG_AUTH_PK_HASH_REG_BANK_OFFSET` represents an address offset, while `NUM_OF_DEBUG_AUTH_PK_HASHES` defines how many public keys are available for reading. These two values establish the debug policy depth for different debugging levels.
 
 ### Overview of Debug Unlock Initiation
 
@@ -748,11 +798,13 @@ The process begins when the platform sets three conditions:
 
 - The `DEBUG_INTENT` field in the `SS_DEBUG_INTENT` register.
 - The `PROD_DEBUG_UNLOCK_REQ` bit in the `SS_DBG_MANUF_SERVICE_REG_REQ` register.
-- The `BOOTFSM_GO_ADDR` to allow Caliptra Core to continue its execution.
+- The `CPTRA_BOOT_GO` allows Caliptra Core to continue its execution.
 On reset, the Caliptra ROM checks these two signals. If both are asserted, the ROM begins the production debug unlock process.
 Upon detecting a valid debug intent:
 - Caliptra hardware erases its secret assets, including the Unique Device Secret (UDS) and Field Entropy, before exposing any debug interfaces, ensuring sensitive data is irreversibly destroyed.
 - Caliptra ROM sets the `TAP_MAILBOX_AVAILABLE` and `PROD_DBG_UNLOCK_IN_PROGRESS` bits in the `SS_DBG_MANUF_SERVICE_REG_RSP` register.
+
+**Note:** Similar to the manufacturing debug flow, BootFSMBrk must be asserted to halt Caliptra ROM execution. Otherwise, the ROM may advance past the debug request before `PROD_DEBUG_UNLOCK_REQ` is populated. BootFSMBrk is a prerequisite for entering the debug flow ONLY if Caliptra core ROM needs to be debugged; for run-time injection of prod debug unlock token, setting BootFSMBrk is not required.
 
 ### Secure Debug Unlock Protocol
 
@@ -804,6 +856,9 @@ Upon detecting a valid debug intent:
 - If authentication succeeds, Caliptra ROM does not immediately grant full production debug mode. Instead, the ROM sets the appropriate **"debug level"** signal, which corresponds to the type of debug access being requested.
 - Caliptra ROM writes CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL register, which will be wired to the specific debug enable signal. This signal is part of an N-wide signal that is mapped to the payload encoding received during the debug request. N is defined by NUM_OF_DEBUG_AUTH_PK_HASHES. The default version of N is 8. The payload encoding can either be one-hot encoded or a general encoded format, and this signal is passed to the SoC to allow it to make the final decision about the level of debug access that should be granted. In Caliptra’s subsystem-specific implementation, the logic is configured to handle one-hot encoding for these 8 bits. The level 0 bit is routed to both Caliptra and the MCU TAP interface, allowing them to unlock based on this level of debug access. This granular approach ensures that the system can selectively unlock different levels of debugging capability, depending on the payload and the authorization level provided by the debugger.
 
+**Granting Production Debug Mode with Caliptra Runtime FW:**
+Although the flow above describes ROM-based authentication, the same challenge–response mechanism may be executed by Caliptra Runtime Firmware. In this case, RT FW performs the challenge-response authentication steps via mailbox commands, which will be used to update the debug unlock level. **The DEBUG_INTENT_STRAP must still be asserted high before Caliptra subsystem is out of reset.** This ensures that even RT-based debug enablement remains gated by hardware intent and cannot be triggered purely through software.
+
 ## Masking Logic for Debugging Features in Production Debug Mode (MCI)
 
 In the production debug mode, the SoC can enable certain debugging features—such as DFT_EN and SOC_HW_DEBUG_EN—using a masking mechanism implemented within the Manufacturer Control Interface (MCI). This masking infrastructure allows the SoC to selectively control debug features that are normally gated by Caliptra’s internal signals. The masking logic functions as a set of registers, implemented in the MCI, that can be written by the SoC to override or enable specific debugging functionalities in production debug mode.
@@ -832,11 +887,11 @@ The LCC provides specific decoding signals—DFT_EN, SOC_DFT_EN, SOC_HW_DEBUG_EN
 
 **Manufacturing Non-Debug Mode:** This state occurs when the LCC is in the MANUF state, with SOC_HW_DEBUG_EN high and DFT_EN and  SOC_DFT_EN low. In this state, the secrets have been programmed into the system, and the Caliptra can generate CSR (Certificate Signing Request) upon request. However, it remains in a secure, non-debug mode to prevent reading secrets through the debugging interfaces.
 
-**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, SOC_DFT_EN can be set high if LSB of CALIPTRA_SS_SOC_DEBUG_UNLOCK_LEVEL is set to high in MANUF debug state [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
+**Manufacturing Debug Mode:** Also occurring in the MANUF state, this mode is enabled when SOC_HW_DEBUG_EN is high. Here, the Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. In this state, DFT_EN is low. However, SOC_DFT_EN can be set high if LSB of `MCI_REG_SOC_DFT_EN_0` is set to high in MANUF debug state [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
 
 **Production Non-Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with all debug signals (DFT_EN, SOC_HW_DEBUG_EN) set to low. The Caliptra Core operates in a secure mode with no debug access, suitable for fully deployed production environments.
 
-**Production Debug Mode:** This state is active when the LCC is in the PROD, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN can be set high and CLTAP can be open if MCI masking logic is used [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
+**Production Debug Mode:** This state is active when the LCC is in the PROD or PROD_END states, with debug DFT_EN, SOC_HW_DEBUG_EN set to low. Caliptra Core provides debugging capabilities while maintaining security measures suitable for manufacturing environments. However, SOC_DFT_EN and SOC_HW_DEBUG_EN can be set high with MCI masking registers [MCI-LCC-Signal-Masking](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#masking-logic-for-debugging-features-in-production-debug-mode-mci).
 
 **Production Debug Mode in RMA:** In the RMA state, all debug signals are set high, allowing full debugging access. This state is typically used for end-of-life scenarios where detailed inspection of the system's operation is required.
 
@@ -854,13 +909,14 @@ The table below summarizes the relationship between the LCC state, the decoder o
 | PROD 					               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
 | PROD* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | PROD_END 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                       |
+| PROD_END* 				                  | Low 	      | High**          | High** 		         | Prod Debug                           |
 | RMA 					               | High 		   | High 		      | High 			         | Prod Debug                           |
 | SCRAP 				                  | Low 		   | Low 		      | Low 			         |Prod Non-Debug                            |
 | INVALID 				               | Low 		   | Low 		      | Low 			         | Prod Non-Debug                            |
 
 **Note:** In RAW, TEST_LOCKED, SCRAP and INVALID states, Caliptra “Core” is not brought out of reset.
-*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
-**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in debug mode of MANUF and PROD states.
+*: These states are Caliptra SS’s extension to LCC. Although the LCC is in either MANUF or PROD, PROD_END states, Caliptra core can grant debug mode through the logics explained in “How does Caliptra Subsystem enable manufacturing debug mode?” and “SoC Debug Flow and Architecture for Production Mode”.
+**: SOC_HW_DEBUG_EN and DFT_EN can be overridden by SoC support in debug mode of MANUF and PROD, PROD_END states.
 
 ## Exception: Non-Volatile Debugging Infrastructure and Initial RAW State Operations
 
@@ -989,7 +1045,7 @@ MCI has the following types of straps:
 |`strap_mcu_sram_config_axi_user`|Non-configurable Direct|MCU SRAM Config agent who is given special access to MCU SRAM Execution region to load FW image. Typically set to Caliptra's AXI User.|
 |`strap_mci_soc_config_axi_user`|Non-configurable Direct|MCI SOC Config User (MSCU). AXI agent with MCI configuration access. |
 |`strap_mcu_reset_vector`|Configurable Sampled|Default MCU reset vector.|
-|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Show the intent to put the part in a debug unlocked state. Although not writable by SW via AXI. This is writable via DMI.|
+|`ss_debug_intent`|Non-configurable Sampled| Provides some debug access to MCI. Shows the intent to put the part in a debug-unlocked state. This strap is not writable by SW via AXI, and it is read-only over DMI. Debug intent can additionally be asserted by the MCU through the AXI-writable `SS_DEBUG_INTENT_MCU` register (W1S, settable only before `SS_CONFIG_DONE_STICKY`); that register is OR'd with this strap to form the effective debug intent.|
 
 ### Subsystem Boot Finite State Machine (CSS-BootFSM)
 
@@ -1404,7 +1460,7 @@ MCI provides the logic for these enables. When the following condition(s) are me
 
 **MCU Core Enable**: Debug Mode
 
-**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** DEBUG_INTENT strap set
+**MCU Uncore Enable**: Debug Mode **OR** LCC Manufacturing Mode **OR** debug intent asserted (effective debug intent — physical strap **OR** `SS_DEBUG_INTENT_MCU`)
 
 *Note: These are the exact same controls Calipitra Core uses for DMI enable*
 
@@ -1467,7 +1523,7 @@ Illegal accesses will result in writes being dropped and reads returning 0.
 | CPTRA\_BOOT\_GO | 0x75 | RW |  | Yes |
 | FW\_SRAM\_EXEC\_REGION\_SIZE | 0x76 | RW |  | Yes |
 | MCU\_RESET\_VECTOR | 0x77 | RW |  | Yes |
-| SS\_DEBUG\_INTENT | 0x78 | RW |  | Yes |
+| SS\_DEBUG\_INTENT | 0x78 | RO |  | Yes |
 | SS\_CONFIG\_DONE | 0x79 | RW |  | Yes |
 | SS\_CONFIG\_DONE\_STICKY | 0x7A | RW |  | Yes |
 | MCU\_NMI\_VECTOR | 0x7B | RW |  | Yes |

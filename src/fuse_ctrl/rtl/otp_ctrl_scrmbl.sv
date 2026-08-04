@@ -76,6 +76,7 @@ module otp_ctrl_scrmbl
 (
   input                               clk_i,
   input                               rst_ni,
+  input                               cptra_ss_debug_intent_i,
   // input data and command
   input otp_scrmbl_cmd_e              cmd_i,
   input digest_mode_e                 mode_i,
@@ -129,6 +130,7 @@ module otp_ctrl_scrmbl
 
 
   // Align these arrays to power of 2's to prevent X's in the muxing operations further below.
+  localparam logic [ScrmblKeyWidth-1:0] DebugScrmblKey = '0;
   logic [2**$clog2(NumScrmblKeys)-1:0][ScrmblKeyWidth-1:0] otp_enc_key_lut;
   logic [2**$clog2(NumScrmblKeys)-1:0][ScrmblKeyWidth-1:0] otp_dec_key_lut;
   logic [2**$clog2(NumDigestSets)-1:0][ScrmblKeyWidth-1:0] digest_const_lut;
@@ -174,6 +176,7 @@ module otp_ctrl_scrmbl
   logic [ScrmblKeyWidth-1:0]    dec_key_out, enc_key_out;
   logic [4:0]                   dec_idx_out, enc_idx_out;
   logic [ScrmblKeyWidth-1:0]    otp_digest_const_mux, otp_enc_key_mux, otp_dec_key_mux;
+  logic [ScrmblKeyWidth-1:0]    otp_enc_key_mux_gated, otp_dec_key_mux_gated;
   logic [ScrmblBlockWidth-1:0]  otp_digest_iv_mux;
 
   typedef enum logic [2:0] {SelEncDataOut,
@@ -201,6 +204,15 @@ module otp_ctrl_scrmbl
   assign otp_digest_const_mux = digest_const_lut[DigestSetSelWidth'(sel_i)];
   assign otp_digest_iv_mux    = digest_iv_lut[DigestSetSelWidth'(sel_i)];
 
+  // SEC_CM: debug intent forces scrambler init keys to zero so key_state_q cannot latch a
+  // real RndCnstKey-derived value in scan/DFT mode. Digest constants and IVs remain untouched.
+  // Exception: the SecretLifeCycleTransitionKey is kept live so the LC transition partition can
+  // still be descrambled and its tokens broadcast to LCC while debug intent is asserted.
+  assign otp_enc_key_mux_gated = (cptra_ss_debug_intent_i && (sel_i != SecretLifeCycleTransitionKey)) ?
+                                 DebugScrmblKey : otp_enc_key_mux;
+  assign otp_dec_key_mux_gated = (cptra_ss_debug_intent_i && (sel_i != SecretLifeCycleTransitionKey)) ?
+                                 DebugScrmblKey : otp_dec_key_mux;
+
   // Make sure we always select a valid key / digest constant.
   `CALIPTRA_ASSERT(CheckNumEncKeys_A, key_state_sel == SelEncKeyInit  |-> sel_i < NumScrmblKeys)
   `CALIPTRA_ASSERT(CheckNumDecKeys_A, key_state_sel == SelDecKeyInit  |-> sel_i < NumScrmblKeys)
@@ -214,11 +226,30 @@ module otp_ctrl_scrmbl
 
   assign key_state_d     = (key_state_sel == SelDecKeyOut)      ? dec_key_out          :
                            (key_state_sel == SelEncKeyOut)      ? enc_key_out          :
-                           (key_state_sel == SelDecKeyInit)     ? otp_dec_key_mux      :
-                           (key_state_sel == SelEncKeyInit)     ? otp_enc_key_mux      :
+                           (key_state_sel == SelDecKeyInit)     ? otp_dec_key_mux_gated :
+                           (key_state_sel == SelEncKeyInit)     ? otp_enc_key_mux_gated :
                            (key_state_sel == SelDigestConst)    ? otp_digest_const_mux :
                            (key_state_sel == SelDigestChained)  ? {data_state_q, data_shadow_q} :
                                                                   {data_i, data_shadow_q};
+
+  // What: Debug intent forces scrambler decrypt/encrypt key initialization to zero, except for the
+  //       SecretLifeCycleTransitionKey which is intentionally kept live for LCC transitions.
+  // Why: Secret RndCnstKey-derived values must not be loaded into the scrambler key state in debug.
+  `CALIPTRA_ASSERT(DebugScrmblKeyZero_A,
+      (cptra_ss_debug_intent_i &&
+       (sel_i != SecretLifeCycleTransitionKey) &&
+       (key_state_sel == SelDecKeyInit || key_state_sel == SelEncKeyInit))
+      |->
+      key_state_d == '0)
+
+  // What: The SecretLifeCycleTransitionKey stays live even under debug intent.
+  // Why: LCC must still descramble and receive its transition tokens to perform state transitions.
+  `CALIPTRA_ASSERT(DebugScrmblLcKeyLive_A,
+      (cptra_ss_debug_intent_i &&
+       (sel_i == SecretLifeCycleTransitionKey) &&
+       (key_state_sel == SelDecKeyInit || key_state_sel == SelEncKeyInit))
+      |->
+      key_state_d != '0)
 
   // Initialize the round index state with 1 in all cases, except for the decrypt operation.
   assign idx_state_d     = (key_state_sel == SelDecKeyOut)      ? dec_idx_out                     :
