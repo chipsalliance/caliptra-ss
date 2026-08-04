@@ -35,23 +35,7 @@ module caliptra_ss_top_tb_axi_64_to_32_downsizer (
     input logic clk,
     input logic rst_n,
     axi_if      m_axi_if,
-    input logic [3:0] m_axi_if_arcache,
-    input logic [2:0] m_axi_if_arprot,
-    input logic [3:0] m_axi_if_arregion,
-    input logic [3:0] m_axi_if_arqos,
-    input logic [3:0] m_axi_if_awcache,
-    input logic [2:0] m_axi_if_awprot,
-    input logic [3:0] m_axi_if_awregion,
-    input logic [3:0] m_axi_if_awqos,
-    axi_if      s_axi_if,
-    output logic [3:0] s_axi_if_arcache,
-    output logic [2:0] s_axi_if_arprot,
-    output logic [3:0] s_axi_if_arregion,
-    output logic [3:0] s_axi_if_arqos,
-    output logic [3:0] s_axi_if_awcache,
-    output logic [2:0] s_axi_if_awprot,
-    output logic [3:0] s_axi_if_awregion,
-    output logic [3:0] s_axi_if_awqos
+    axi_if      s_axi_if
 );
 
 import axi_pkg::*;
@@ -192,20 +176,20 @@ always_ff@(posedge clk or negedge rst_n) begin
         m_axi_if_r_ctx.axuser   <= m_axi_if.aruser ;
         m_axi_if_r_ctx.axid     <= m_axi_if.arid   ;
         m_axi_if_r_ctx.axlock   <= m_axi_if.arlock ;
-        m_axi_if_r_ctx.axcache  <= m_axi_if_arcache  ;
-        m_axi_if_r_ctx.axprot   <= m_axi_if_arprot   ;
-        m_axi_if_r_ctx.axregion <= m_axi_if_arregion ;
-        m_axi_if_r_ctx.axqos    <= m_axi_if_arqos    ;
+        m_axi_if_r_ctx.axcache  <= m_axi_if.arcache  ;
+        m_axi_if_r_ctx.axprot   <= m_axi_if.arprot   ;
+        m_axi_if_r_ctx.axregion <= m_axi_if.arregion ;
+        m_axi_if_r_ctx.axqos    <= m_axi_if.arqos    ;
 
         s_axi_if_r_ctx.axaddr   <= m_axi_if.araddr ;
         s_axi_if_r_ctx.axburst  <= m_axi_if.arburst;
         s_axi_if_r_ctx.axuser   <= m_axi_if.aruser ;
         s_axi_if_r_ctx.axid     <= m_axi_if.arid   ;
         s_axi_if_r_ctx.axlock   <= m_axi_if.arlock ;
-        s_axi_if_r_ctx.axcache  <= m_axi_if_arcache  ;
-        s_axi_if_r_ctx.axprot   <= m_axi_if_arprot   ;
-        s_axi_if_r_ctx.axregion <= m_axi_if_arregion ;
-        s_axi_if_r_ctx.axqos    <= m_axi_if_arqos    ;
+        s_axi_if_r_ctx.axcache  <= m_axi_if.arcache  ;
+        s_axi_if_r_ctx.axprot   <= m_axi_if.arprot   ;
+        s_axi_if_r_ctx.axregion <= m_axi_if.arregion ;
+        s_axi_if_r_ctx.axqos    <= m_axi_if.arqos    ;
         if (m_axi_if.arsize <= 2) begin
             s_axi_if_r_ctx.axsize   <= m_axi_if.arsize ;
             s_axi_if_r_ctx.axlen    <= m_axi_if.arlen  ;
@@ -230,10 +214,10 @@ assign s_axi_if.arlen    = s_axi_if_r_ctx.axlen   ;
 assign s_axi_if.aruser   = s_axi_if_r_ctx.axuser  ;
 assign s_axi_if.arid     = s_axi_if_r_ctx.axid    ;
 assign s_axi_if.arlock   = s_axi_if_r_ctx.axlock  ;
-assign s_axi_if_arcache  = s_axi_if_r_ctx.axcache ;
-assign s_axi_if_arprot   = s_axi_if_r_ctx.axprot  ;
-assign s_axi_if_arregion = s_axi_if_r_ctx.axregion;
-assign s_axi_if_arqos    = s_axi_if_r_ctx.axqos   ;
+assign s_axi_if.arcache  = s_axi_if_r_ctx.axcache ;
+assign s_axi_if.arprot   = s_axi_if_r_ctx.axprot  ;
+assign s_axi_if.arregion = s_axi_if_r_ctx.axregion;
+assign s_axi_if.arqos    = s_axi_if_r_ctx.axqos   ;
 
 assign m_axi_if.arready = !rd_active;
 
@@ -369,20 +353,20 @@ always_ff@(posedge clk or negedge rst_n) begin
         m_axi_if_w_ctx.axuser   <= m_axi_if.awuser ;
         m_axi_if_w_ctx.axid     <= m_axi_if.awid   ;
         m_axi_if_w_ctx.axlock   <= m_axi_if.awlock ;
-        m_axi_if_w_ctx.axcache  <= m_axi_if_awcache  ;
-        m_axi_if_w_ctx.axprot   <= m_axi_if_awprot   ;
-        m_axi_if_w_ctx.axregion <= m_axi_if_awregion ;
-        m_axi_if_w_ctx.axqos    <= m_axi_if_awqos    ;
+        m_axi_if_w_ctx.axcache  <= m_axi_if.awcache  ;
+        m_axi_if_w_ctx.axprot   <= m_axi_if.awprot   ;
+        m_axi_if_w_ctx.axregion <= m_axi_if.awregion ;
+        m_axi_if_w_ctx.axqos    <= m_axi_if.awqos    ;
 
         s_axi_if_w_ctx.axaddr   <= m_axi_if.awaddr ;
         s_axi_if_w_ctx.axburst  <= m_axi_if.awburst;
         s_axi_if_w_ctx.axuser   <= m_axi_if.awuser ;
         s_axi_if_w_ctx.axid     <= m_axi_if.awid   ;
         s_axi_if_w_ctx.axlock   <= m_axi_if.awlock ;
-        s_axi_if_w_ctx.axcache  <= m_axi_if_awcache  ;
-        s_axi_if_w_ctx.axprot   <= m_axi_if_awprot   ;
-        s_axi_if_w_ctx.axregion <= m_axi_if_awregion ;
-        s_axi_if_w_ctx.axqos    <= m_axi_if_awqos    ;
+        s_axi_if_w_ctx.axcache  <= m_axi_if.awcache  ;
+        s_axi_if_w_ctx.axprot   <= m_axi_if.awprot   ;
+        s_axi_if_w_ctx.axregion <= m_axi_if.awregion ;
+        s_axi_if_w_ctx.axqos    <= m_axi_if.awqos    ;
         if (m_axi_if.awsize <= 2) begin
             s_axi_if_w_ctx.axsize   <= m_axi_if.awsize ;
             s_axi_if_w_ctx.axlen    <= m_axi_if.awlen  ;
@@ -407,10 +391,10 @@ assign s_axi_if.awlen    = s_axi_if_w_ctx.axlen   ;
 assign s_axi_if.awuser   = s_axi_if_w_ctx.axuser  ;
 assign s_axi_if.awid     = s_axi_if_w_ctx.axid    ;
 assign s_axi_if.awlock   = s_axi_if_w_ctx.axlock  ;
-assign s_axi_if_awcache  = s_axi_if_w_ctx.axcache ;
-assign s_axi_if_awprot   = s_axi_if_w_ctx.axprot  ;
-assign s_axi_if_awregion = s_axi_if_w_ctx.axregion;
-assign s_axi_if_awqos    = s_axi_if_w_ctx.axqos   ;
+assign s_axi_if.awcache  = s_axi_if_w_ctx.axcache ;
+assign s_axi_if.awprot   = s_axi_if_w_ctx.axprot  ;
+assign s_axi_if.awregion = s_axi_if_w_ctx.axregion;
+assign s_axi_if.awqos    = s_axi_if_w_ctx.axqos   ;
 
 assign m_axi_if.awready = !wr_active;
 
@@ -516,10 +500,10 @@ assign s_axi_if.bready = m_axi_if.bready;
             .AWSIZE  (m_axi_if.awsize),
             .AWBURST (m_axi_if.awburst),
             .AWLOCK  (m_axi_if.awlock),
-            .AWCACHE (m_axi_if_awcache ),
-            .AWPROT  (m_axi_if_awprot  ),
-            .AWQOS   (m_axi_if_awqos   ),
-            .AWREGION(m_axi_if_awregion),
+            .AWCACHE (m_axi_if.awcache ),
+            .AWPROT  (m_axi_if.awprot  ),
+            .AWQOS   (m_axi_if.awqos   ),
+            .AWREGION(m_axi_if.awregion),
             .AWUSER  (m_axi_if.awuser),
             .AWVALID (m_axi_if.awvalid),
             .AWREADY (m_axi_if.awready),
@@ -546,10 +530,10 @@ assign s_axi_if.bready = m_axi_if.bready;
             .ARSIZE  (m_axi_if.arsize),
             .ARBURST (m_axi_if.arburst),
             .ARLOCK  (m_axi_if.arlock),
-            .ARCACHE (m_axi_if_arcache ),
-            .ARPROT  (m_axi_if_arprot  ),
-            .ARQOS   (m_axi_if_arqos   ),
-            .ARREGION(m_axi_if_arregion),
+            .ARCACHE (m_axi_if.arcache ),
+            .ARPROT  (m_axi_if.arprot  ),
+            .ARQOS   (m_axi_if.arqos   ),
+            .ARREGION(m_axi_if.arregion),
             .ARUSER  (m_axi_if.aruser),
             .ARVALID (m_axi_if.arvalid),
             .ARREADY (m_axi_if.arready),
