@@ -95,6 +95,9 @@ module mci_top
     // MCU Reset vector
     input  logic [31:0] strap_mcu_reset_vector, // default reset vector
     output logic [31:0] mcu_reset_vector,       // reset vector used by MCU
+
+    // MCU DCLS disable (MUBI4)
+    output logic [3:0]  mcu_dcls_disable,
     input  logic mcu_no_rom_config,                // Determines boot sequencer boot flow
 
     // MCU Halt Signals
@@ -124,6 +127,9 @@ module mci_top
     input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
     input logic        mcu_trace_rv_i_interrupt_ip,
     input logic [31:0] mcu_trace_rv_i_tval_ip,
+
+    // Selects which MCU core drives the trace. 0: main core. 1: DCLS shadow core.
+    output logic       mcu_trace_source_sel,
 
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
@@ -465,7 +471,8 @@ mci_mcu_trace_buffer #(
     .mcu_trace_rv_i_ecause_ip,
     .mcu_trace_rv_i_interrupt_ip,
     .mcu_trace_rv_i_tval_ip,
-    
+    .mcu_trace_source_sel,
+
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_trace_buffer_req_if.response)
 
@@ -620,6 +627,7 @@ mci_reg_top #(
     // MCU Reset vector
     .strap_mcu_reset_vector, // default reset vector
     .mcu_reset_vector,       // reset vector used by MCU
+    .mcu_dcls_disable,
 
     // SS error signals
     .agg_error_fatal,

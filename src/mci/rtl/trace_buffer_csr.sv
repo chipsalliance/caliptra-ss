@@ -71,6 +71,7 @@ module trace_buffer_csr (
         logic DATA;
         logic WRITE_PTR;
         logic READ_PTR;
+        logic CONTROL;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_req;
@@ -84,6 +85,7 @@ module trace_buffer_csr (
         decoded_reg_strb.DATA = cpuif_req_masked & (cpuif_addr == 5'h8);
         decoded_reg_strb.WRITE_PTR = cpuif_req_masked & (cpuif_addr == 5'hc);
         decoded_reg_strb.READ_PTR = cpuif_req_masked & (cpuif_addr == 5'h10);
+        decoded_reg_strb.CONTROL = cpuif_req_masked & (cpuif_addr == 5'h14);
     end
 
     // Pass down signals to next stage
@@ -130,6 +132,12 @@ module trace_buffer_csr (
                 logic load_next;
             } ptr;
         } READ_PTR;
+        struct packed{
+            struct packed{
+                logic next;
+                logic load_next;
+            } trace_source;
+        } CONTROL;
     } field_combo_t;
     field_combo_t field_combo;
 
@@ -162,6 +170,11 @@ module trace_buffer_csr (
                 logic [31:0] value;
             } ptr;
         } READ_PTR;
+        struct packed{
+            struct packed{
+                logic value;
+            } trace_source;
+        } CONTROL;
     } field_storage_t;
     field_storage_t field_storage;
 
@@ -294,6 +307,27 @@ module trace_buffer_csr (
         end
     end
     assign hwif_out.READ_PTR.ptr.value = field_storage.READ_PTR.ptr.value;
+    // Field: trace_buffer_csr.CONTROL.trace_source
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.CONTROL.trace_source.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.CONTROL && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.CONTROL.trace_source.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+            load_next_c = '1;
+        end
+        field_combo.CONTROL.trace_source.next = next_c;
+        field_combo.CONTROL.trace_source.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            field_storage.CONTROL.trace_source.value <= 1'h0;
+        end else if(field_combo.CONTROL.trace_source.load_next) begin
+            field_storage.CONTROL.trace_source.value <= field_combo.CONTROL.trace_source.next;
+        end
+    end
+    assign hwif_out.CONTROL.trace_source.value = field_storage.CONTROL.trace_source.value;
 
     //--------------------------------------------------------------------------
     // Write response
@@ -311,7 +345,7 @@ module trace_buffer_csr (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [5-1:0][31:0] readback_array;
+    logic [6-1:0][31:0] readback_array;
     assign readback_array[0][0:0] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.wrapped.value : '0;
     assign readback_array[0][1:1] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.valid_data.value : '0;
     assign readback_array[0][31:2] = '0;
@@ -319,6 +353,8 @@ module trace_buffer_csr (
     assign readback_array[2][31:0] = (decoded_reg_strb.DATA && !decoded_req_is_wr) ? field_storage.DATA.data.value : '0;
     assign readback_array[3][31:0] = (decoded_reg_strb.WRITE_PTR && !decoded_req_is_wr) ? field_storage.WRITE_PTR.ptr.value : '0;
     assign readback_array[4][31:0] = (decoded_reg_strb.READ_PTR && !decoded_req_is_wr) ? field_storage.READ_PTR.ptr.value : '0;
+    assign readback_array[5][0:0] = (decoded_reg_strb.CONTROL && !decoded_req_is_wr) ? field_storage.CONTROL.trace_source.value : '0;
+    assign readback_array[5][31:1] = '0;
 
     // Reduce the array
     always_comb begin
@@ -326,7 +362,7 @@ module trace_buffer_csr (
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<5; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<6; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

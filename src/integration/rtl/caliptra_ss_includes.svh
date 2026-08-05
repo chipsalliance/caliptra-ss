@@ -23,5 +23,10 @@
 `define VEER_INTR_VEC_MCI                 1
 `define VEER_INTR_VEC_I3C                 2
 `define VEER_INTR_EXT_LSB                 3
+
+// Use the caliptra-ss prim_buf implementation inside the VeeR EL2 core.
+`ifndef RV_PRIM_BUF_IMPL
+  `define RV_PRIM_BUF_IMPL caliptra_prim_buf
+`endif
     
 `endif // CALIPTRA_SS_INCLUDES_SVH

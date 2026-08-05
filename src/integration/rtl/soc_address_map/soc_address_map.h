@@ -7400,6 +7400,12 @@
 #ifndef MCI_REG_MCU_RESET_VECTOR
 #define MCI_REG_MCU_RESET_VECTOR                                                                    (0x114)
 #endif
+#define SOC_MCI_TOP_MCI_REG_MCU_DCLS_DISABLE                                                        (0x21000118)
+#ifndef MCI_REG_MCU_DCLS_DISABLE
+#define MCI_REG_MCU_DCLS_DISABLE                                                                    (0x118)
+#define MCI_REG_MCU_DCLS_DISABLE_MUBI_LOW                                                           (0)
+#define MCI_REG_MCU_DCLS_DISABLE_MUBI_MASK                                                          (0xf)
+#endif
 #define SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0                                                  (0x21000180)
 #ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
 #define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (0x180)
@@ -9423,6 +9429,12 @@
 #define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_READ_PTR                                                   (0x21010010)
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
+#endif
+#define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONTROL                                                    (0x21010014)
+#ifndef MCU_TRACE_BUFFER_CSR_CONTROL
+#define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (0x14)
+#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
+#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (0x1)
 #endif
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21400000)
