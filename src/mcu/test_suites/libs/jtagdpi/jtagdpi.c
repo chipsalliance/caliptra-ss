@@ -127,6 +127,12 @@ void *jtagdpi_create(const char *display_name, int listen_port) {
 
   // Create socket (port 0 lets the OS assign an ephemeral port)
   ctx->sock = tcp_server_create(display_name, listen_port);
+  if (ctx->sock == NULL) {
+    fprintf(stderr, "JTAG DPI: Error: failed to create TCP server for %s\n",
+            display_name);
+    free(ctx);
+    return NULL;
+  }
 #ifdef JTAGDPI_DEBUG
   ctx->init = 1;
 #endif
@@ -136,16 +142,26 @@ void *jtagdpi_create(const char *display_name, int listen_port) {
   // Get the actual port (may differ from listen_port when 0 was requested)
   int actual_port = tcp_server_get_port(ctx->sock);
 
-  // Write port file so OpenOCD can discover the port at runtime
+  // Write port file so OpenOCD can discover the port at runtime. Write to a
+  // temporary file first and rename() it into place: rename() is atomic on the
+  // same filesystem, so OpenOCD (which only waits for the ".port" file to
+  // exist) can never observe an empty or partially-written file.
   char port_filename[256];
+  char port_tmpname[256];
   snprintf(port_filename, sizeof(port_filename), "%s.port", display_name);
-  FILE *port_fp = fopen(port_filename, "w");
+  snprintf(port_tmpname, sizeof(port_tmpname), "%s.port.tmp", display_name);
+  FILE *port_fp = fopen(port_tmpname, "w");
   if (port_fp) {
     fprintf(port_fp, "%d\n", actual_port);
     fclose(port_fp);
+    if (rename(port_tmpname, port_filename) != 0) {
+      fprintf(stderr,
+              "JTAG DPI: Warning: could not rename port file %s -> %s\n",
+              port_tmpname, port_filename);
+    }
   } else {
     fprintf(stderr, "JTAG DPI: Warning: could not write port file %s\n",
-            port_filename);
+            port_tmpname);
   }
 
   printf(

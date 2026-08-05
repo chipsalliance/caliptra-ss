@@ -118,6 +118,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Unable to make socket non-blocking: %s (%d)\n",
             ctx->display_name, strerror(errno), errno);
+    close(sfd);
     return -1;
   }
 
@@ -127,6 +128,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Unable to set socket options: %s (%d)\n",
             ctx->display_name, strerror(errno), errno);
+    close(sfd);
     return -1;
   }
 
@@ -137,6 +139,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Unable to set socket nodelay: %s (%d)\n",
             ctx->display_name, strerror(errno), errno);
+    close(sfd);
     return -1;
   }
 
@@ -151,6 +154,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Failed to bind socket: %s (%d)\n", ctx->display_name,
             strerror(errno), errno);
+    close(sfd);
     return -1;
   }
 
@@ -161,6 +165,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Failed to get socket name: %s (%d)\n",
             ctx->display_name, strerror(errno), errno);
+    close(sfd);
     return -1;
   }
   ctx->actual_port = ntohs(bound_addr.sin_port);
@@ -170,6 +175,7 @@ static int start(struct tcp_server_ctx *ctx) {
   if (rv != 0) {
     fprintf(stderr, "%s: Failed to listen on socket: %s (%d)\n",
             ctx->display_name, strerror(errno), errno);
+    close(sfd);
     return -1;
   }
 
