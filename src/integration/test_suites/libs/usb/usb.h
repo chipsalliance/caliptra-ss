@@ -44,7 +44,22 @@
 //   [25:11] = NBytes (15-bit transfer length)
 //   [10:0]  = AddrOffset (buffer byte address >> 6)
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
+#define USB_EP_ENTRY_DISABLED     (1u << 30)
 #define USB_EP_ENTRY_STALL        (1u << 29)
+// T bit (bit 26) - Endpoint Type:
+//   0 = Generic (bulk / rate-feedback interrupt)
+//   1 = Periodic. The RF bit then selects isochronous vs interrupt.
+// RF bit (bit 27) - Rate Feedback / Toggle Value:
+//   When T=1: 0 = Isochronous (max packet <= 1024 bytes in HS)
+//             1 = Interrupt
+// To arm an isochronous endpoint set USB_EP_ENTRY_TYPE_PERIODIC and
+// leave USB_EP_ENTRY_RF_ISO (0) - i.e. do not set the RF bit.
+// Without T=1 the hardware treats the EP as generic (bulk) and sends
+// ACK/NAK handshakes, which is wrong for isochronous per USB 2.0 spec
+// and the NXP IP Integration Guide (section 4.2.3).
+#define USB_EP_ENTRY_TYPE_PERIODIC (1u << 26)
+#define USB_EP_ENTRY_RF_ISO        (0u)
+#define USB_EP_ENTRY_RF_INT        (1u << 27)
 #define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
 #define USB_EP_ENTRY_ADDR(off)    (((uint32_t)(off) >> 6) & 0x7FFu)
 
@@ -124,6 +139,13 @@ extern const uint32_t usb_default_device_descriptor[5];
 // the EP command/status list and SRAM buffers, enable device mode and
 // interrupts.
 void boot_usb_core(void);
+
+// Initialize the USB device controller in FS-only mode: identical to
+// boot_usb_core() but sets DEVCMDSTAT bit 21 (PFSC) to suppress device-side
+// K-chirp. Use in tests with a FS-only host VIP (high_speed_capable=0) so
+// the UTMI TX is ready immediately after bus reset instead of waiting ~2.2ms
+// for the chirp timeout. Do NOT use when HS operation is required.
+void boot_usb_core_fs(void);
 
 // Re-arm EP0 OUT, SETUP, and IN buffer address entries in the EP list.
 // Must be called after any bus reset to restore hardware-cleared entries.
