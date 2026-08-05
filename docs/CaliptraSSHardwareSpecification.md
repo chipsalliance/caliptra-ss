@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Hardware Specification </h1>
-<h3 align="center"> Version 2p1 </h3>
+<h3 align="center"> Version 2p2 (WIP) </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -13,29 +13,35 @@
   - [Caliptra-subsystem-mode](#caliptra-subsystem-mode)
   - [Caliptra Subsystem Architectural Requirements](#caliptra-subsystem-architectural-requirements)
   - [Caliptra Subsystem HW Requirements](#caliptra-subsystem-hw-requirements)
-    - [Caliptra 2.0 HW requirements (Subsystem Support)](#caliptra-20-hw-requirements-subsystem-support)
-    - [Caliptra 2.0 HW requirements (Not subsystem related)](#caliptra-20-hw-requirements-not-subsystem-related)
+    - [Caliptra 2.0/2.1 HW requirements (Subsystem Support)](#caliptra-2021-hw-requirements-subsystem-support)
+    - [Caliptra 2.2 HW requirements (Subsystem Support)](#caliptra-22-hw-requirements-subsystem-support)
+    - [Caliptra 2.0/2.1 HW requirements (Not subsystem related)](#caliptra-2021-hw-requirements-not-subsystem-related)
+    - [Caliptra Potential Future HW Features](#caliptra-potential-future-hw-features)
     - [MCU HW requirements](#mcu-hw-requirements)
-    - [Subsystem Components HW requirements](#subsystem-components-hw-requirements)
+    - [Caliptra 2.0/2.1 Subsystem Components HW requirements](#caliptra-2021-subsystem-components-hw-requirements)
       - [Fabric](#fabric)
       - [MCU SRAM](#mcu-sram)
       - [MCU ROM](#mcu-rom)
       - [I3C](#i3c)
       - [Fuse Controller](#fuse-controller)
       - [MCI](#mci)
+    - [Caliptra 2.2 Subsystem Components HW requirements](#caliptra-22-subsystem-components-hw-requirements)
+      - [USB](#usb)
+      - [SPI](#spi)
   - [Caliptra Subsystem Hardware Block Diagram](#caliptra-subsystem-hardware-block-diagram)
 - [Caliptra Subsystem Architectural Flows](#caliptra-subsystem-architectural-flows)
-- [I3C Streaming Boot (Recovery) Interface](#i3c-streaming-boot-recovery-interface)
-  - [Streaming Boot (Recovery) Interface hard coded logic](#streaming-boot-recovery-interface-hard-coded-logic)
-  - [Hardware Registers](#hardware-registers)
-  - [Streaming Boot (Recovery) Interface Wires](#streaming-boot-recovery-interface-wires)
-  - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
-  - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
-  - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
-- [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
-  - [AXI Streaming Boot Flow implementation](#axi-streaming-boot-flow-implementation)
-  - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
-  - [AXI Streaming Boot CSRs](#axi-streaming-boot-csrs)
+  - [USB Streaming Boot (Caliptra SS 2.2)](#usb-streaming-boot-caliptra-ss-22)
+  - [I3C Streaming Boot (Recovery) Interface](#i3c-streaming-boot-recovery-interface)
+    - [Streaming Boot (Recovery) Interface hard coded logic](#streaming-boot-recovery-interface-hard-coded-logic)
+    - [Hardware Registers](#hardware-registers)
+    - [Streaming Boot (Recovery) Interface Wires](#streaming-boot-recovery-interface-wires)
+    - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
+    - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
+    - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
+  - [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
+    - [AXI Streaming Boot Flow implementation](#axi-streaming-boot-flow-implementation)
+    - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
+    - [AXI Streaming Boot CSRs](#axi-streaming-boot-csrs)
 - [Caliptra Core AXI Manager \& DMA assist](#caliptra-core-axi-manager--dma-assist)
   - [AXI Feature Support](#axi-feature-support)
   - [Routes](#routes)
@@ -52,6 +58,11 @@
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
+  - [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization)
+    - [Effective debug intent](#effective-debug-intent)
+    - [Secret hardware-digest read masking](#secret-hardware-digest-read-masking)
+    - [Secret partition zeroization](#secret-partition-zeroization)
+    - [`SECRET_DIGEST_READ_LOCK`](#secret_digest_read_lock)
   - [Notes](#notes)
   - [General Guidance](#general-guidance)
     - [Reset Considerations](#reset-considerations)
@@ -117,6 +128,7 @@
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
+- [Caliptra SS USB2](#caliptra-ss-usb2)
 
 # Scope
 
@@ -159,8 +171,8 @@ Caliptra owns the recovery interface (peripheral independent) and Caliptra is TH
 - Note: Widgets that toggle the reset or other wires that set security permissions are SOC specific implementations.
 
 6. Fuse controller for provisioning Caliptra fuses -> IFP (In-field programmable) fusing is performed by MCU RT; SW partition fuses in fuse controller are managed by MCU (ROM or RT); Caliptra HW is responsible for reading the secret fuses (Caliptra ROM, MCU ROM or any other SOC ROM or any RT FW should NOT have access to read the secret fuses in production).
-7. Recovery stack must be implemented. Please refer to I3C recovery section for more details and references.
-OCP Recovery registers implemented in I3C must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
+7. Recovery stack must be implemented. Please refer to I3C and USB recovery section for more details and references.
+OCP Recovery registers implemented in I3C and USB must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
 8. Supports silicon t0 boot to load and run required FW across chiplets.
 9. OCP recovery stack is implemented in Caliptra for Caliptra-subsystem-mode
 10. MCU SRAM (or part of the SRAM that is mapped for Code/Data execution) should be readable/writeable ONLY by Caliptra until Caliptra gives permission to MCU to use it.
@@ -173,7 +185,7 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 
 ## Caliptra Subsystem HW Requirements
 
-### Caliptra 2.0 HW requirements (Subsystem Support)
+### Caliptra 2.0/2.1 HW requirements (Subsystem Support)
 
 1. Full AXI read/write channels (aka AXI manager) for subsystem (for MCU and Caliptra)
     a. For backward compatibility, AXI mgr. interface can be a no-connect and that configuration is validated.
@@ -182,11 +194,11 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 - Read MMIO space for variable length.
 - Data returned from the above read can be exposed directly to the FW OR allow it to be written to a subsystem/SOC destination as programmed by ROM/FW.
 - Programmable logic to allow for SOC directed writes (from FW or from the above route back) to be sent through the SHA accelerator.
-- (Future open/stretch goal): If AES engine accelerator is integrated into Caliptra, then implement decryption before sending the writes back to the destination programmed by the ROM/FW.
+- If AES engine accelerator is integrated into Caliptra, then implement decryption before sending the writes back to the destination programmed by the ROM/FW.
 - This widget should have accessibility in manufacturing and debug mode over JTAG (can be exposed using the same JTAG interface as Caliptra 1.0). Ensure through validation that no asset can be read using this widget in those modes.
 
 3. Expand manuf flow register to include UDS programming request steps
-4. SOC Key Release HW (Required for OCP Lock flow too)
+4. SOC Key Release HW (Required for OCP Lock flow too) - 2.1 Note: Was implemented for OCP LOCK but didnt follow SOC KV implementation requirement below
 
 - Separate SOC Key Vault must be implemented (it is a separate structure from the current Caliptra KV).
 - In at least one configuration, the SOC KV must be implemented as an SRAM that is external and configurable by the SOC OR or an internal configurable SOC KV structure. If this is achievable within the Caliptra 2.0 milestone, only one of these would be the chosen implementation and configuration. This will be a design decision based on effort & schedule.
@@ -195,11 +207,21 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 - Destination address to which the key must be written to is programmed by the Caliptra FW into AXI MGR DMA HW.
 - SOC KV must have the same attributes as Caliptra internal KV. Additionally, it must also have an attribute of read-once and clear.
 
-### Caliptra 2.0 HW requirements (Not subsystem related)
+### Caliptra 2.2 HW requirements (Subsystem Support)
+
+1. Shall include Dual-noise source support
+2. Shall upgrade ABR to the latest source (ABR 3.0)
+
+### Caliptra 2.0/2.1 HW requirements (Not subsystem related)
 
 1. Ability to use two or more cryptos concurrently
 2. Change APB -> AXI-Sub with the same capabilities (AXI USERID filtering replaces PAUSER based filtering, multiple targets for SHA acc, mailbox, fuses, registers etc. all)
-3. Future/Stretch Goal: Parity support on AXI-SUB & MGR
+
+### Caliptra Potential Future HW Features
+
+1. Parity support on AXI-SUB & MGR
+2. Dual core lock step for VeeR EL2 on Caliptra core
+3. MCU VeeR Data caching
 
 ### MCU HW requirements
 
@@ -213,8 +235,8 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 8. NV-storage peripheral shall be built in such a way that it will only accept transactions from MCU.
 9. Support for MCU first fetch vector to direct towards MCU SRAM post reset
 
-### Subsystem Components HW requirements
-
+### Caliptra 2.0/2.1 Subsystem Components HW requirements
+   
 #### Fabric
 
 1. AXI Interconnect connects Caliptra, I3C, Fuse Controller, Life Cycle Controller, MCU and its memory components with the rest of the SOC.
@@ -242,7 +264,7 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 3. AXI Sub must be supported.
 4. UserID to MCU and Caliptra
 5. MCU access lock for I3C recovery and data (FIFO) registers until recovery flow is completed. In other words, MCU ROM must not impact the data flow into Recovery IFC registers.
-Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
+Stretch Goal (Met in 2.0/2.1): DMA data payload back to destination (Caliptra)
 
 #### Fuse Controller
 
@@ -254,19 +276,39 @@ Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
 6. When debug mode is intended to be enabled & when enabled, all secrets/assets as defined should be wiped and provide the indication to SOC for any secrets/assets it may have.
 
 #### MCI
-- HW logic to move secret fuses from Fuse controller to Caliptra.
+- HW logic to move secret fuses from Fuse controller to Caliptra (2.0/2.1 note: Implemented by MCU ROM for all non-secret fuses and secret fuses directly go to Caliptra core without any ROM or additional HW involvement).
+
+### Caliptra 2.2 Subsystem Components HW requirements
+
+#### USB
+
+1. USB2 integration with streaming boot support
+2. USB2 shall implement two devices - one for Caliptra subsystem usage and one for SOC usage
+
+#### SPI
+
+SPI shall be supported along with AXI streaming boot block
 
 ## Caliptra Subsystem Hardware Block Diagram
 
-*Figure: Caliptra Subsystem Block Diagram*
+*Figure: Caliptra 2.0/2.1 Subsystem Block Diagram*
 
 ![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/Subsystem.png)
 
+*Figure: Caliptra 2.2 Subsystem Block Diagram*
+![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS2p2.png)
+*Notes:*
+1. If an integration chooses to use USB for all the SOC/Platform facing flows, then it has an integration option to remove I3C
+2. SOCs will also have a choice of keeping both USB2 and I3C (USB2 shall always be there)
+   
 # Caliptra Subsystem Architectural Flows
 
 Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem) for more details.
 
-# I3C Streaming Boot (Recovery) Interface
+## USB Streaming Boot (Caliptra SS 2.2)
+=================== Coming Soon ===========================
+
+## I3C Streaming Boot (Recovery) Interface
 
 The I3C recovery interface acts as a standalone I3C target device for recovery. It will have a unique address compared to any other I3C endpoint for the device. It will comply with I3C Basic v1.1.1 specification. It will support I3C read and write transfer operations. It must support Max read and write data transfer of 1-256B excluding the command code (1 Byte), length (2 Byte), and PEC (1 Byte), total 4 Byte I3C header. Therefore, max recovery data per transfer will be limited to 256-byte data.
 
@@ -276,7 +318,7 @@ I3C recovery interface is responsible for the following list of actions:
 2. Updating status registers based on interaction of AC-RoT and other devices
 3. Asserting / Deasserting “payload_available” & “image_activated” signals
 
-## Streaming Boot (Recovery) Interface hard coded logic
+### Streaming Boot (Recovery) Interface hard coded logic
 
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
 
@@ -284,7 +326,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ![](./images/I3C-Recovery-IFC.png)
 
-## Hardware Registers
+### Hardware Registers
 
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
 
@@ -292,7 +334,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 **TODO:** Add a link to rdl -> html file
 
-## Streaming Boot (Recovery) Interface Wires
+### Streaming Boot (Recovery) Interface Wires
 
 1. **Payload available**
 
@@ -304,29 +346,29 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 - The I3C target will assert "image_activated" signal as soon as write to RECOVERY_CTRL register is received.
 - ROM will clear “image_activated” bit by writing to RECOVERY_CTRL register via DMA assist after the image is authenticated. As defined in the OCP Recovery Specification, RECOVERY_CTRL, byte 2 is used to specify the image activation control, and is Write-1-Clear. ROM must write 0xFF to this field to clear the image recovery status, which will also result in the Recovery Interface deasserting the “image_activated” signal to Caliptra.
 
-## I3C Streaming Boot (Recovery) Flow
+### I3C Streaming Boot (Recovery) Flow
 
 Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
 
-## Caliptra ROM Requirements for OCP Streaming Boot
+### Caliptra ROM Requirements for OCP Streaming Boot
 
 Caliptra firmware must follow these rules when implementing the OCP Streaming Boot flow:
 * Caliptra ROM and RT Firmware must wait for "image_activated" signal to assert before processing the image.
 * When image is sent to Caliptra Subsystem, Caliptra ROM & RT firmware must program DMA assist according to the rules defined in [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads).
 * Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
 
-## I3C and Caliptra-AXI Interactions
+### I3C and Caliptra-AXI Interactions
 
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
-# AXI Streaming Boot (Recovery) Interface
+## AXI Streaming Boot (Recovery) Interface
 
 This feature allows streaming data or firmware by MCU over the AXI bus of the I3C module which is repurposed as a streaming boot interface while disabling I3C usage.
 
-## AXI Streaming Boot Flow implementation
+### AXI Streaming Boot Flow implementation
 
 The AXI Streaming Boot flow reuses the logic already present in the I3C core used in the Caliptra-SS design, with a runtime option essentially bypassing most of the I3C core communication logic (including the I3C recovery flow logic).
 The loopback functionality is configurable via the [REC_INTF_CFG](https://chipsalliance.github.io/i3c-core/registers.html#rec-intf-cfg-register) CSR which is set to I3C mode by default.
@@ -335,7 +377,7 @@ The transactions to the I3C core may be filtered using the AXI ID field.
 The logic is implemented so that the streaming boot implementation in the Caliptra core (HW & ROM) can operate without any changes.
 In order to enable setting W1C streaming boot registers, AXI streaming mode introduces an additional register - `REC_INTF_REG_W1C_ACCESS`.
 
-## AXI Streaming Boot Handler
+### AXI Streaming Boot Handler
 
 In the regular (I3C) mode of the core, the Streaming Boot (Recovery) Handler strongly relies on the communication with the I3C Core internal logic by interfacing with TTI Queues.
 The bypass implementation modifies the I3C Core logic to allow direct access over the AXI bus to the structures specified by the OCP Streaming boot for compliance with the [Caliptra Subsystem Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-interface-hardware).
@@ -355,7 +397,7 @@ The dataflow in bypass mode (marked with green arrows) is depicted in the diagra
 *Figure: AXI Streaming Boot Handler in I3C Bypass Mode*
 ![](images/AXI-Recovery-Handler-Bypass.png)
 
-## AXI Streaming Boot CSRs
+### AXI Streaming Boot CSRs
 
 With the bypass feature enabled, the FIFO status CSRs in the Streaming Boot CSR file will be updated by the Streaming Bott Handler module.
 However, some registers like e.g. `INDIRECT_FIFO_CTRL` which are updated by I3C commands in a standard streaming boot flow, will have to be accessed and configured properly from the software running on the Caliptra MCU via the AXI bus.
@@ -1587,3 +1629,17 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 ### Reset Controls
 
 MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set these resets are directly controlled by the mcu_rst_b input intead of the internal MCI logic.
+
+# Caliptra SS USB2
+
+- Caliptra Subsystem 2.2 provides USB2 support
+- USB2 supports two USB devices - one for Caliptra MCU usage and one for SOC usage. Both the USB devices are independent of each other. Each device has a separate AXI interfaces with a dedicated DMA SRAM.
+- Caliptra SS MCU uses USB Device 0 for streaming boot and MCU supported MCTP scenarios (eg. SPDM, PLDM)
+- **Note:** USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
+- Please refer to USB2 specification in the [USB2 repo](https://github.com/chipsalliance/USB2) for more details such as
+    - USB2 architecture and microarchitecture
+    - Virtual hub programming (Caliptra MCU responsibility)
+    - USB device programming
+    - OCP streaming boot microarchitecture implemented in USB device 0
+    - Multi-Device support microarchitecture
+
