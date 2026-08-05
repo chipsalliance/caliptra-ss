@@ -10808,8 +10808,12 @@
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_NMI_PIN_MASK                                               (0x4)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_LOW                                             (3)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_MASK                                            (0x8)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (4)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xfffffff0)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_LOW                                               (4)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_MASK                                              (0x10)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_LOW                                     (5)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_MASK                                    (0x20)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (6)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xffffffc0)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL                                                    (0xa0030004)
 #ifndef SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL
@@ -10820,8 +10824,10 @@
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_PROT_OOO_MASK                                     (0x2)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_LOW                                       (2)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_MASK                                      (0x4)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (3)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (0xfffffff8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_LOW                                  (3)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_MASK                                 (0x8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (4)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (0xfffffff0)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_FW_ERROR_FATAL                                                        (0xa0030008)
 #ifndef SOC_IFC_REG_CPTRA_FW_ERROR_FATAL
