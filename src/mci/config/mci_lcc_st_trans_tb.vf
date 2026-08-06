@@ -20,8 +20,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/tb
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_macros.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_sram.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_ahb_srom.sv
@@ -132,7 +130,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_defines_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_macros.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_dma_req_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_dma_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_dma_reg.sv
@@ -140,7 +137,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_mgr_rd.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_mgr_wr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_dma_ctrl.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_dma_top.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_pdef.vh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/include/el2_def.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/common_defines.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/beh_lib.sv
@@ -153,7 +149,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_write_client.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_read_rule_check.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/keyvault/rtl/kv_write_rule_check.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_defines_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_macros.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_gen_hash.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_reg.sv
@@ -173,6 +168,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_arb.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_reg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_iccm_hash.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_top.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/wdt.sv
