@@ -18,6 +18,7 @@ module mci_reg_top
     import mci_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
     import mci_dmi_pkg::*;
+    import caliptra_prim_mubi_pkg::*;
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
@@ -176,7 +177,7 @@ logic mci_error_intr;
 logic mci_notif_intr;
     
 // Security
-logic security_state_debug_locked_d;
+caliptra_prim_mubi_pkg::mubi4_t security_state_debug_locked_d;
 logic security_state_debug_locked_edge;
 logic scan_mode_f;
 logic scan_mode_p;
@@ -426,14 +427,14 @@ assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
-        security_state_debug_locked_d <= '0;
+        security_state_debug_locked_d <= caliptra_prim_mubi_pkg::MuBi4True;
     end
     else begin
-        security_state_debug_locked_d <= mubi4_test_true_loose(security_state_o.debug_locked);
+        security_state_debug_locked_d <= security_state_o.debug_locked;
     end
 end
 
-always_comb security_state_debug_locked_edge = mubi4_test_true_loose(security_state_o.debug_locked) ^ security_state_debug_locked_d;
+always_comb security_state_debug_locked_edge = mubi4_test_true_loose(security_state_o.debug_locked) ^ mubi4_test_true_loose(security_state_debug_locked_d);
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
