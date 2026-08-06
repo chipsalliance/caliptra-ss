@@ -464,9 +464,7 @@ assign mcu_dmi_uncore_enable        = mubi4_test_false_strict(security_state_o.d
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
 //Uncore registers only open for debug unlock 
-always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked)  
-                                                 );
+always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & mubi4_test_false_strict(security_state_o.debug_locked);
 
 
 
