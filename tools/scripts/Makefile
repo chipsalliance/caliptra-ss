@@ -78,7 +78,8 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  mci \
 		  fuse_ctrl \
 		  lc_ctrl \
-		  wdt
+		  wdt \
+		  spi_host
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
@@ -276,7 +277,8 @@ VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=9
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=4
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
