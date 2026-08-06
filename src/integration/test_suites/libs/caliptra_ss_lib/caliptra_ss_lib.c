@@ -51,6 +51,7 @@ __attribute__((weak)) uint32_t xorshift32(void)
     return state;
 }
 
+
 void reset_fc_lcc_rtl(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_FC_LCC_RESET);
     VPRINTF(LOW, "LCC & Fuse_CTRL is under reset!\n");
