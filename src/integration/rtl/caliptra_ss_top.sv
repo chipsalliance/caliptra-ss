@@ -497,13 +497,26 @@ module caliptra_ss_top
         .cptra_error_non_fatal(cptra_error_non_fatal),
 
 `ifdef CALIPTRA_INTERNAL_TRNG
-        .etrng_req             (cptra_ss_cptra_core_etrng_req_o),
-        .itrng_data            (cptra_ss_cptra_core_itrng_data_i),
-        .itrng_valid           (cptra_ss_cptra_core_itrng_valid_i),
+        // Caliptra core now exposes a dual-iTRNG interface (entropy_combiner IP).
+        // The subsystem boundary carries a single physical iTRNG source, mapped to
+        // the primary (etrng0/itrng0) port. The second source is tied off with
+        // itrng1_en=0 so the combiner operates in single-source bypass mode,
+        // preserving the prior single-iTRNG behavior at the SS boundary.
+        .etrng0_req            (cptra_ss_cptra_core_etrng_req_o),
+        .etrng1_req            (                                 ),
+        .itrng0_data           (cptra_ss_cptra_core_itrng_data_i),
+        .itrng0_valid          (cptra_ss_cptra_core_itrng_valid_i),
+        .itrng1_data           (4'b0),
+        .itrng1_valid          (1'b0),
+        .itrng1_en             (1'b0),
 `else
-        .etrng_req             (    ),
-        .itrng_data            (4'b0),
-        .itrng_valid           (1'b0),
+        .etrng0_req            (    ),
+        .etrng1_req            (    ),
+        .itrng0_data           (4'b0),
+        .itrng0_valid          (1'b0),
+        .itrng1_data           (4'b0),
+        .itrng1_valid          (1'b0),
+        .itrng1_en             (1'b0),
 `endif
 
         // Subsystem mode straps
@@ -554,7 +567,7 @@ module caliptra_ss_top
 
     logic mci_intr;
 
-    assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
+    assign cptra_in_debug_mode = mubi4_test_false_strict(mci_cptra_security_state.debug_locked); // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
