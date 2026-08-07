@@ -32,7 +32,17 @@
 //********************************************************************************
 `ifndef CALIPTRA_SS_PRIM_ASSERT_SEC_CM_SVH
 `define CALIPTRA_SS_PRIM_ASSERT_SEC_CM_SVH
-  
+
+// Explicitly include the files that define the macros referenced below
+// (CALIPTRA_ASSERT_ERROR_TRIGGER_ERR and _CALIPTRA_SEC_CM_ALERT_MAX_CYC from
+// caliptra_prim_assert_sec_cm.svh; CALIPTRA_ASSERT_DEFAULT_CLK/RST from
+// caliptra_sva.svh; CALIPTRA_ASSUME_FPV from caliptra_prim_assert.sv). All are
+// include-guarded, so these are no-ops when this fragment is pulled in after
+// the corresponding files have already been included.
+`include "caliptra_sva.svh"
+`include "caliptra_prim_assert.sv"
+`include "caliptra_prim_assert_sec_cm.svh"
+
 `define CALIPTRA_SS_ASSERT_ERROR_TRIGGER_ALERT(NAME_, HIER_, ALERT_, GATE_, MAX_CYCLES_, ERR_NAME_)    \
   `CALIPTRA_ASSERT_ERROR_TRIGGER_ERR(NAME_, HIER_, ALERT_, GATE_, MAX_CYCLES_, ERR_NAME_, \
                             `CALIPTRA_ASSERT_DEFAULT_CLK, `CALIPTRA_ASSERT_DEFAULT_RST)                      \

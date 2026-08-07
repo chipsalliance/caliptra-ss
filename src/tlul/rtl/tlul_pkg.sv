@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 //
 
+`include "config_defines.svh"
+
 import caliptra_prim_pkg::*;
 import caliptra_prim_mubi_pkg::*;
 import caliptra_prim_secded_pkg::*;

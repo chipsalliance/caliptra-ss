@@ -258,6 +258,7 @@ clk_gate cg (
     .cptra_rst_b(cptra_ss_rst_b_o),
     .psel('0),
     .clk_gate_en('0),
+    .soc_ifc_top_busy('0),
     .cpu_halt_status('0),
     .rdc_clk_dis(rdc_clk_dis),
     .rdc_clk_dis_uc (fw_update_rdc_clk_dis),
