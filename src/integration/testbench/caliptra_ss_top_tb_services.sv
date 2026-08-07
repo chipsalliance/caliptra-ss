@@ -411,7 +411,7 @@ import tb_top_pkg::*;
                     release `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error;
                 end
                 8: begin
-                    force `MCI_REG_TOP_PATH.security_state_o.debug_locked = 1'b1;
+                    force `MCI_REG_TOP_PATH.security_state_o.debug_locked = caliptra_prim_mubi_pkg::MuBi4True;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.security_state_o.debug_locked;
                 end
