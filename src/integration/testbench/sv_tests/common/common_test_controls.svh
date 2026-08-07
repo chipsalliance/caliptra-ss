@@ -33,7 +33,7 @@ endtask
 
 task wait_debug_unlock();
     $display("[%t]: Waiting for debug unlock", $time);
-    wait(!`MCI_PATH.LCC_state_translator.security_state_o.debug_locked);
+    wait(mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked));
     $display("[%t]: Debug unlock complete", $time);
 endtask
 
