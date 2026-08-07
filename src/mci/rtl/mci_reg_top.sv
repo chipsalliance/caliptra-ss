@@ -427,7 +427,7 @@ assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
-        security_state_debug_locked_d <= caliptra_prim_mubi_pkg::MuBi4True;
+        security_state_debug_locked_d <= caliptra_prim_mubi_pkg::MuBi4False;
     end
     else begin
         security_state_debug_locked_d <= security_state_o.debug_locked;
