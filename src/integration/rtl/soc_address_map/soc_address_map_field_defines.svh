@@ -6923,6 +6923,11 @@
 `ifndef MCI_REG_MCU_RESET_VECTOR
 `define MCI_REG_MCU_RESET_VECTOR                                                                    (32'h114)
 `endif
+`ifndef MCI_REG_MCU_DCLS_DISABLE
+`define MCI_REG_MCU_DCLS_DISABLE                                                                    (32'h118)
+`define MCI_REG_MCU_DCLS_DISABLE_MUBI_LOW                                                           (0)
+`define MCI_REG_MCU_DCLS_DISABLE_MUBI_MASK                                                          (32'hf)
+`endif
 `ifndef MCI_REG_MBOX0_VALID_AXI_USER_0
 `define MCI_REG_MBOX0_VALID_AXI_USER_0                                                              (32'h180)
 `endif
@@ -8620,6 +8625,11 @@
 `endif
 `ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 `define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (32'h10)
+`endif
+`ifndef MCU_TRACE_BUFFER_CSR_CONTROL
+`define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (32'h14)
+`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
+`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (32'h1)
 `endif
 `ifndef MCU_MBOX0_CSR_MBOX_LOCK
 `define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (32'h200000)

@@ -22,6 +22,7 @@
 `define TRACE_BUFFER_CSR_DATA                                                                       (32'h8)
 `define TRACE_BUFFER_CSR_WRITE_PTR                                                                  (32'hc)
 `define TRACE_BUFFER_CSR_READ_PTR                                                                   (32'h10)
+`define TRACE_BUFFER_CSR_CONTROL                                                                    (32'h14)
 
 
 `endif

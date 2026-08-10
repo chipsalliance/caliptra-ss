@@ -35,6 +35,11 @@
 `ifndef TRACE_BUFFER_CSR_READ_PTR
 `define TRACE_BUFFER_CSR_READ_PTR                                                                   (32'h10)
 `endif
+`ifndef TRACE_BUFFER_CSR_CONTROL
+`define TRACE_BUFFER_CSR_CONTROL                                                                    (32'h14)
+`define TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                                   (0)
+`define TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                                  (32'h1)
+`endif
 
 
 `endif

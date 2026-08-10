@@ -1133,6 +1133,11 @@ task dump_signature ();
                 `endif
                 endcase
 
+`ifdef css_mcu0_RV_DCCM_ADDR_XOR
+                // Backdoor read bypasses the core read path, so undo the address XOR.
+                data[31:0] = data[31:0] ^ {i[`css_mcu0_RV_DCCM_BITS-1:2], i[`css_mcu0_RV_DCCM_BITS-1:2]};
+`endif
+
                 $fwrite(fp, "%08X\n", data[31:0]);
             end else
     `endif
@@ -1188,6 +1193,15 @@ endtask
 task slam_dccm_ram(input [31:0] addr, input[38:0] data);
     int bank, indx;
     bank = get_dccm_bank(addr, indx);
+`ifdef css_mcu0_RV_DCCM_ADDR_XOR
+    // Single point where backdoor writes enter the XOR'd domain. The core write path
+    // XORs the replicated word address into the stored DATA bits (ECC stays plain,
+    // computed over the original data); backdoor pokes bypass it, so apply the same
+    // fold here. Doing it in this task rather than at each call site keeps every
+    // caller correct by construction. Applied to every word (incl. data == 0): a plain
+    // zero word would de-XOR to {addr,addr} and fail the ECC check on the first read.
+    data[31:0] = data[31:0] ^ {addr[`css_mcu0_RV_DCCM_BITS-1:2], addr[`css_mcu0_RV_DCCM_BITS-1:2]};
+`endif
     `ifdef css_mcu0_RV_DCCM_ENABLE
     case(bank)
     0: `MCU_DRAM(0)[indx] = data;
