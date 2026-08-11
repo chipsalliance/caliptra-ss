@@ -368,5 +368,4 @@ inline uint32_t mcu_mbox_read_target_status(uint32_t mbox_num) {
     return rd_data;
 }
 
-
 #endif // CALIPTRA_SS_LIB
