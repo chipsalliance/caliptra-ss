@@ -115,11 +115,14 @@ void boot_usb_core(void) {
     // --- Step 2: Set data buffer page address ---
     lsu_write_32(SOC_USBHSD_DATABUFSTART, 0x00000000);
 
-    // --- Step 3: Enable device ---
+    // --- Step 3: Wait for VBUS ---
+    VPRINTF(LOW, "MCU: Wait VBUS\n");
+    while(!(lsu_read_32(SOC_USBHSD_DEVCMDSTAT) & USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK));
+
+    // --- Step 4: Enable device ---
     // HS link-up: do NOT set FORCE_FULLSPEED. The device controller will
     // perform HS chirp at the next bus reset.
     reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
-             | USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK
              | USBHSD_DEVCMDSTAT_DCON_MASK;
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
@@ -128,7 +131,7 @@ void boot_usb_core(void) {
     reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
 
-    // --- Step 4: Enable interrupts ---
+    // --- Step 5: Enable interrupts ---
     lsu_write_32(SOC_USBHSD_INTEN,
         USBHSD_INTSTAT_DEV_INT_MASK |
         USBHSD_INTSTAT_EP0OUT_MASK  |
@@ -136,7 +139,7 @@ void boot_usb_core(void) {
     VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
         USBHSD_INTSTAT_DEV_INT_MASK | USBHSD_INTSTAT_EP0OUT_MASK | USBHSD_INTSTAT_EP0IN_MASK);
 
-    // --- Step 5: Clear pending interrupts ---
+    // --- Step 6: Clear pending interrupts ---
     lsu_write_32(SOC_USBHSD_INTSTAT, 0xC0000FFF);
 
     VPRINTF(LOW, "MCU: boot_usb_core - done\n");
