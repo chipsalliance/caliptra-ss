@@ -79,6 +79,32 @@ void deassert_escalation() {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT, CMD_LC_TRIGGER_ESCALATION1_DIS);
 }
 
+// Local DAI-idle poll that does NOT check MCI AGG_ERROR_FATAL. This test
+// deliberately drives the fuse controller into a fatal alert (fatal_check_error)
+// via the escalation ports; that alert latches into the sticky (W1C)
+// AGG_ERROR_FATAL and survives the FC/LCC reset, so the shared wait_dai_op_idle()
+// would flag the expected escalation error. Here we only need to confirm the DAI
+// is idle after the reset before reading back the LC state.
+static void wait_dai_op_idle_no_fatal_check(void) {
+    uint32_t status;
+    // All status bits below DAI_IDLE are error bits (DAI_IDLE is the lowest of
+    // the non-error status bits), so DAI_IDLE - 1 masks the error bits.
+    uint32_t error_mask = OTP_CTRL_STATUS_DAI_IDLE_MASK - 1;
+
+    for (;;) {
+        status = lsu_read_32(SOC_OTP_CTRL_STATUS);
+
+        // Has an error been reported?
+        if (status & error_mask) break;
+
+        // Has the DAI become idle, with no check pending?
+        if ((status & OTP_CTRL_STATUS_DAI_IDLE_MASK) &&
+            !(status & OTP_CTRL_STATUS_CHECK_PENDING_MASK)) break;
+    }
+
+    VPRINTF(LOW, "wait_dai_op_idle_no_fatal_check: 0x%08X\n", status);
+}
+
 void main (void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
     
@@ -150,7 +176,10 @@ void main (void) {
     // After a reset the escalation should be cleared and the lc state back at the
     // pre-reset value.
     reset_fc_lcc_rtl();
-    wait_dai_op_idle(0);
+    // Use the local idle poll (not wait_dai_op_idle): the escalation deliberately
+    // raised an FC fatal alert that stays latched in AGG_ERROR_FATAL, which the
+    // shared helper would report as an unexpected error.
+    wait_dai_op_idle_no_fatal_check();
     lc_state_curr = read_lc_state();
     if (lc_state_curr != lc_state_init) {
         VPRINTF(LOW, "ERROR: lc state has not reverted back to pre-reset value\n");

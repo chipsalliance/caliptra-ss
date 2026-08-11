@@ -66,6 +66,7 @@ module mci_top
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mcu_sram_config_axi_user,
     input logic [$bits(s_axi_r_if.aruser)-1:0] strap_mci_soc_config_axi_user,
     input logic ss_debug_intent,
+    output logic mci_ss_debug_intent,
     
     // RDC
     output logic rdc_clk_dis,
@@ -250,12 +251,6 @@ module mci_top
     logic mcu_mbox1_target_user_done;
     logic soc_req_mbox0_lock;
     logic soc_req_mbox1_lock;
-
-    // Other
-    logic mci_ss_debug_intent;
-
-
-
 
 // Clock gating only using RDC clock gating functionality
 clk_gate cg ( 
@@ -454,7 +449,7 @@ mci_mcu_trace_buffer #(
     // MCI Resets
     .rst_b(cptra_ss_rst_b_o), 
 
-    .debug_en(!security_state_o.debug_locked),
+    .debug_en(mubi4_test_false_strict(security_state_o.debug_locked)), // Debug mode if not locked
     
     // DMI Access
     .dmi_reg_wen    (mcu_trace_buffer_dmi_reg_wen  ),
@@ -499,7 +494,7 @@ mci_mcu_sram_ctrl #(
     .cif_resp_if (mcu_sram_req_if.response),
     
     // Debug Mode
-    .debug_en(!security_state_o.debug_locked),
+    .debug_en(mubi4_test_false_strict(security_state_o.debug_locked)), // Debug mode if not locked
 
     // AXI Privileged requests
     .axi_mcu_lsu_req,

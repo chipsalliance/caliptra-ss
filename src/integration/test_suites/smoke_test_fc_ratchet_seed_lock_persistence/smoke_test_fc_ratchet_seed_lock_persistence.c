@@ -1,0 +1,132 @@
+//********************************************************************************
+// SPDX-License-Identifier: Apache-2.0
+//
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//********************************************************************************
+#include <stdint.h>
+
+#include "soc_address_map.h"
+#include "printf.h"
+#include "riscv_hw_if.h"
+#include "soc_ifc.h"
+#include "caliptra_ss_lc_ctrl_address_map.h"
+#include "caliptra_ss_lib.h"
+#include "fuse_ctrl.h"
+#include "lc_ctrl.h"
+#include "fuse_ctrl_mmap.h"
+
+volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+#ifdef CPT_VERBOSITY
+    enum printf_verbosity verbosity_g = CPT_VERBOSITY;
+#else
+    enum printf_verbosity verbosity_g = LOW;
+#endif
+
+static uint32_t pattern_word(uint32_t byte_offset) {
+    uint32_t word = 0;
+    for (uint32_t i = 0; i < 4; i++) {
+        word |= (((byte_offset + i) ^ 0x5au) & 0xffu) << (8u * i);
+    }
+    return word;
+}
+
+static void init_test(void) {
+    VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
+    mcu_cptra_init_d();
+    wait_dai_op_idle(0);
+    lcc_initialization();
+    grant_mcu_for_fc_writes();
+    initialize_otp_controller();
+}
+
+static void reset_fc_keep_otp(void) {
+    reset_fc_lcc_rtl();
+    wait_dai_op_idle(0);
+    grant_mcu_for_fc_writes();
+}
+
+static void expect_reg(uint32_t addr, uint32_t expected, const char *msg) {
+    uint32_t actual = lsu_read_32(addr);
+    if (actual != expected) {
+        handle_error("ERROR: %s expected 0x%08x actual 0x%08x\n", msg, expected, actual);
+    }
+}
+
+static void write_seed_word_pattern(const partition_t *p, uint32_t byte_offset,
+                                    uint32_t exp_status, uint32_t invert, const char *msg) {
+    uint32_t data0 = pattern_word(byte_offset);
+    uint32_t data1 = pattern_word(byte_offset + 4u);
+    if (invert) {
+        data0 = ~data0;
+        data1 = ~data1;
+    }
+    if (!dai_wr(p->address + byte_offset, data0, data1, p->granularity, exp_status)) {
+        handle_error("ERROR: %s seed byte offset %0d DAI write status mismatch\n", msg, byte_offset);
+    }
+}
+
+static void expect_seed_word_pattern(const partition_t *p, uint32_t byte_offset,
+                                     uint32_t invert, const char *msg) {
+    uint32_t actual0 = 0;
+    uint32_t actual1 = 0;
+    uint32_t expected0 = pattern_word(byte_offset);
+    uint32_t expected1 = pattern_word(byte_offset + 4u);
+    if (invert) {
+        expected0 = ~expected0;
+        expected1 = ~expected1;
+    }
+    if (!dai_rd(p->address + byte_offset, &actual0, &actual1, p->granularity, 0)) {
+        handle_error("ERROR: %s seed byte offset %0d DAI read status mismatch\n", msg, byte_offset);
+    }
+    if (actual0 != expected0 || (p->granularity > 32 && actual1 != expected1)) {
+        handle_error("ERROR: %s seed byte offset %0d expected 0x%08x 0x%08x actual 0x%08x 0x%08x\n",
+                     msg, byte_offset, expected0, expected1, actual0, actual1);
+    }
+}
+
+static void test_ratchet_seed_persistence(void) {
+    // Single 64-bit entry persistence proof against HekProd_0 byte_offset 0.
+    // Per-entry exhaustion and multi-offset loops were dropped because every
+    // entry in the partition shares the same volatile-lock primitive.
+    const partition_t *p = &partitions[CPTRA_SS_LOCK_HEK_PROD_0];
+    const uint32_t lock_mask = 1u << 0;
+
+    write_seed_word_pattern(p, 0, 0, 0, "initial ratchet seed0 program");
+    expect_seed_word_pattern(p, 0, 0, "initial ratchet seed0 readback");
+
+    reset_fc_keep_otp();
+    expect_seed_word_pattern(p, 0, 0, "post-reset ratchet seed0 readback");
+
+    lsu_write_32(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, lock_mask);
+    expect_reg(SOC_OTP_CTRL_RATCHET_SEED_VOLATILE_LOCK, lock_mask,
+               "ratchet seed volatile lock bit 0 not set");
+
+    // (iii) Attempt to overwrite the locked entry with the complement of its
+    // programmed value. A working lock blocks the write so the entry keeps its
+    // value; a dead lock would OR the complement in (P | ~P = all-ones). The
+    // status is not asserted -- the post-reset read-back below is the verdict.
+    (void)dai_wr(p->address, ~pattern_word(0), ~pattern_word(4u), p->granularity,
+                 OTP_CTRL_STATUS_DAI_ERROR_MASK);
+
+    // (iv) After reset the entry must still read its programmed value, not the
+    // all-ones a dead lock would have produced.
+    reset_fc_keep_otp();
+    expect_seed_word_pattern(p, 0, 0, "locked ratchet seed0 preserved value");
+}
+
+void main(void) {
+    init_test();
+    test_ratchet_seed_persistence();
+    SEND_STDOUT_CTRL(0xff);
+}

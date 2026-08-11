@@ -303,6 +303,7 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+VCS_COMP_OPTS += +define+SIMULATION
 VCS_COMP_OPTS += +define+SVT_UVM_TECHNOLOGY
 VCS_COMP_OPTS += +define+UVM_PACKER_MAX_BYTES=24000
 VCS_COMP_OPTS += +define+UVM_DISABLE_AUTO_ITEM_RECORDING
@@ -324,7 +325,6 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
-VCS_SIM_OPTS  += -mx_force
 VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
 ############# VCS Simulation Override Options #############

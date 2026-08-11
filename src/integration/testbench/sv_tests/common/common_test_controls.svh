@@ -33,7 +33,7 @@ endtask
 
 task wait_debug_unlock();
     $display("[%t]: Waiting for debug unlock", $time);
-    wait(!`MCI_PATH.LCC_state_translator.security_state_o.debug_locked);
+    wait(mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked));
     $display("[%t]: Debug unlock complete", $time);
 endtask
 
@@ -46,11 +46,16 @@ task bring_ctra_core_up();
     $display("[%t] Setting CPTRA FUSE DONE...", $time);
     bfm_axi_write_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FUSE_WR_DONE, `SOC_IFC_REG_CPTRA_FUSE_WR_DONE_DONE_MASK); 
 
+    // CPTRA_FLOW_STATUS.boot_fsm_ps now exposes the 3-bit *encoded* boot FSM
+    // value (soc_ifc_boot_fsm.sv boot_fsm_ps_encoded), NOT the sparse internal
+    // boot_fsm_state_e code. soc_ifc_pkg::BOOT_DONE is the sparse FSM state
+    // (10'b0001011101) and will never match the register field. Compare against
+    // the encoded value 3'd4 instead (matches soc_ifc.h BOOT_DONE == 0x4).
     $display("[%t] Waiting for CPTRA boot FSM BOOT_DONE", $time);
     bfm_axi_read_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS, reg_data);     
     reg_data = (reg_data & `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
 
-    while(reg_data !== BOOT_DONE) begin
+    while(reg_data !== 3'd4) begin
         bfm_axi_read_single_invalid_user(`SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS, reg_data);     
         reg_data = (reg_data & `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_MASK) >> `SOC_IFC_REG_CPTRA_FLOW_STATUS_BOOT_FSM_PS_LOW;
 

@@ -18,6 +18,7 @@ module mci_reg_top
     import mci_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
     import mci_dmi_pkg::*;
+    import caliptra_prim_mubi_pkg::*;
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
@@ -176,7 +177,7 @@ logic mci_error_intr;
 logic mci_notif_intr;
     
 // Security
-logic security_state_debug_locked_d;
+caliptra_prim_mubi_pkg::mubi4_t security_state_debug_locked_d;
 logic security_state_debug_locked_edge;
 logic scan_mode_f;
 logic scan_mode_p;
@@ -243,7 +244,9 @@ logic mcu_mbox0_target_user_done_p;
 logic mcu_mbox1_target_user_done_d;
 logic mcu_mbox1_target_user_done_p;
 
-logic strap_we_sticky;
+// SS_DEBUG_INTENT one-shot capture arm: armed at cold reset, disarmed after the
+// cold-boot capture window so the strap is latched only once per power cycle.
+logic ss_debug_intent_capture_armed;
 ///////////////////////////////////////////////
 // Sync to signals to local clock domain
 ///////////////////////////////////////////////
@@ -325,12 +328,24 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
-assign strap_we_sticky = strap_we & ~mci_reg_hwif_out.SS_CONFIG_DONE_STICKY.done.value;
+// SS_DEBUG_INTENT capture: the physical debug-intent strap is latched once
+// during the cold-boot reset window (while strap_we is high, giving the debugger
+// a window to set the strap), and is not resampled on the following warm resets.
+// The arm is set by cold reset (mci_pwrgood) and cleared once strap_we drops.
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if (~mci_pwrgood) begin
+        ss_debug_intent_capture_armed <= 1'b1;
+    end
+    else begin
+        if (!strap_we)
+            ss_debug_intent_capture_armed <= 1'b0;
+    end
+end
 
 // Value
 always_comb begin
     // STRAP with TAP ACCESS
-    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = strap_we_sticky ? ss_debug_intent : mcu_dmi_uncore_wdata[0];
+    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.next   = ss_debug_intent;
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.next           = strap_we ? strap_mcu_reset_vector : mcu_dmi_uncore_wdata ; 
     mci_reg_hwif_in.FC_FIPS_ZEROZATION_STS.status.next  = FIPS_ZEROIZATION_PPD_i;
 
@@ -354,8 +369,7 @@ end
 // Write enable
 always_comb begin
     // STRAPS with TAP ACCESS
-    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = strap_we_sticky | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
-                                                            (mcu_dmi_uncore_addr == MCI_DMI_SS_DEBUG_INTENT));
+    mci_reg_hwif_in.SS_DEBUG_INTENT.debug_intent.we     = ss_debug_intent_capture_armed & strap_we;
     mci_reg_hwif_in.MCU_RESET_VECTOR.vec.we             = strap_we | (mcu_dmi_uncore_dbg_unlocked_wr_en & 
                                                             (mcu_dmi_uncore_addr == MCI_DMI_MCU_RESET_VECTOR));
     
@@ -393,7 +407,8 @@ end
 assign mcu_sram_fw_exec_region_lock_dmi_override = MCI_DMI_MCI_HW_OVERRIDE_REG.mcu_sram_fw_exec_region_lock;
 
 
-assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value;
+assign mci_ss_debug_intent  = mci_reg_hwif_out.SS_DEBUG_INTENT.debug_intent.value
+                            | mci_reg_hwif_out.SS_DEBUG_INTENT_MCU.debug_intent.value;
 assign mcu_reset_vector     = mci_reg_hwif_out.MCU_RESET_VECTOR.vec.value;
 
 assign mci_reg_hwif_in.HW_CONFIG0.MCU_MBOX0_SRAM_SIZE.next = MCU_MBOX0_SIZE_KB;
@@ -405,21 +420,21 @@ assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_C
 // Security Related      
 ///////////////////////////////////////////////
 assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
-assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
+assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = mubi4_test_true_loose(security_state_o.debug_locked);
 assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
 
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
-        security_state_debug_locked_d <= '0;
+        security_state_debug_locked_d <= caliptra_prim_mubi_pkg::MuBi4False;
     end
     else begin
         security_state_debug_locked_d <= security_state_o.debug_locked;
     end
 end
 
-always_comb security_state_debug_locked_edge = security_state_o.debug_locked ^ security_state_debug_locked_d;
+always_comb security_state_debug_locked_edge = mubi4_test_true_loose(security_state_o.debug_locked) ^ mubi4_test_true_loose(security_state_debug_locked_d);
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
@@ -443,16 +458,14 @@ assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_s
 // DMI                   
 ///////////////////////////////////////////////
 
-assign mcu_dmi_core_enable          = !security_state_o.debug_locked;
-assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
+assign mcu_dmi_core_enable          = mubi4_test_false_strict(security_state_o.debug_locked);
+assign mcu_dmi_uncore_enable        = mubi4_test_false_strict(security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
 
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
 //Uncore registers only open for debug unlock 
-always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked)  
-                                                 );
+always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & mubi4_test_false_strict(security_state_o.debug_locked);
 
 
 

@@ -28,6 +28,8 @@ module caliptra_ss_top
     import soc_ifc_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
+    ,parameter CPTRA_SS_ROM_SIZE_KB = 256
+    ,parameter CPTRA_SS_ROM_DATA_W = 64
     ,parameter MCU_MBOX0_SIZE_KB = 4
     ,parameter [4:0] SET_MCU_MBOX0_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX0_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
@@ -327,6 +329,8 @@ module caliptra_ss_top
     output logic        cptra_error_non_fatal 
 );
 
+    localparam CPTRA_SS_ROM_AXI_ADDR_W = $clog2(CPTRA_SS_ROM_SIZE_KB*1024);
+
     logic [pt.PIC_TOTAL_INT:1]  ext_int;
     logic        [31:0]         agg_error_fatal;
     logic        [31:0]         agg_error_non_fatal;
@@ -420,6 +424,7 @@ module caliptra_ss_top
     // Inputs from OTP_Ctrl
     otp_ctrl_pkg::otp_lc_data_t from_otp_to_lcc_data_i;
     logic cptra_in_debug_mode;
+    logic mci_ss_debug_intent;
 
 
     soc_ifc_pkg::security_state_t mci_cptra_security_state;
@@ -564,13 +569,26 @@ module caliptra_ss_top
         .cptra_error_non_fatal(cptra_error_non_fatal),
 
 `ifdef CALIPTRA_INTERNAL_TRNG
-        .etrng_req             (cptra_ss_cptra_core_etrng_req_o),
-        .itrng_data            (cptra_ss_cptra_core_itrng_data_i),
-        .itrng_valid           (cptra_ss_cptra_core_itrng_valid_i),
+        // Caliptra core now exposes a dual-iTRNG interface (entropy_combiner IP).
+        // The subsystem boundary carries a single physical iTRNG source, mapped to
+        // the primary (etrng0/itrng0) port. The second source is tied off with
+        // itrng1_en=0 so the combiner operates in single-source bypass mode,
+        // preserving the prior single-iTRNG behavior at the SS boundary.
+        .etrng0_req            (cptra_ss_cptra_core_etrng_req_o),
+        .etrng1_req            (                                 ),
+        .itrng0_data           (cptra_ss_cptra_core_itrng_data_i),
+        .itrng0_valid          (cptra_ss_cptra_core_itrng_valid_i),
+        .itrng1_data           (4'b0),
+        .itrng1_valid          (1'b0),
+        .itrng1_en             (1'b0),
 `else
-        .etrng_req             (    ),
-        .itrng_data            (4'b0),
-        .itrng_valid           (1'b0),
+        .etrng0_req            (    ),
+        .etrng1_req            (    ),
+        .itrng0_data           (4'b0),
+        .itrng0_valid          (1'b0),
+        .itrng1_data           (4'b0),
+        .itrng1_valid          (1'b0),
+        .itrng1_en             (1'b0),
 `endif
 
         // Subsystem mode straps
@@ -591,7 +609,7 @@ module caliptra_ss_top
         .strap_ss_strap_generic_2                               ( cptra_ss_strap_generic_2_i ),
         .strap_ss_strap_generic_3                               ( cptra_ss_strap_generic_3_i ),
 
-        .ss_debug_intent                                        ( cptra_ss_debug_intent_i ),
+        .ss_debug_intent                                        ( mci_ss_debug_intent ),
 
         // Subsystem mode debug outputs
         .ss_dbg_manuf_enable(cptra_ss_dbg_manuf_enable_o),
@@ -622,7 +640,7 @@ module caliptra_ss_top
     logic mci_intr;
     logic usb_dev_irq;
 
-    assign cptra_in_debug_mode = !mci_cptra_security_state.debug_locked; // Debug mode if not locked
+    assign cptra_in_debug_mode = mubi4_test_false_strict(mci_cptra_security_state.debug_locked); // Debug mode if not locked
 
     //Interrupt connections
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
@@ -1208,52 +1226,8 @@ module caliptra_ss_top
     ) i3c (
         .clk_i                          (cptra_ss_clk_i),
         .rst_ni                         (cptra_ss_rst_b_o),
-    
-        // Read Address Channel
-        .arvalid_i                      (cptra_ss_i3c_s_axi_if_r_sub.arvalid),
-        .arready_o                      (cptra_ss_i3c_s_axi_if_r_sub.arready),
-        .arid_i                         (cptra_ss_i3c_s_axi_if_r_sub.arid),
-        .araddr_i                       (cptra_ss_i3c_s_axi_if_r_sub.araddr[`AXI_ADDR_WIDTH-1:0]),
-        .arsize_i                       (cptra_ss_i3c_s_axi_if_r_sub.arsize),
-        .aruser_i                       (cptra_ss_i3c_s_axi_if_r_sub.aruser),
-        .arlen_i                        (cptra_ss_i3c_s_axi_if_r_sub.arlen),
-        .arburst_i                      (cptra_ss_i3c_s_axi_if_r_sub.arburst),
-        .arlock_i                       (cptra_ss_i3c_s_axi_if_r_sub.arlock),
-    
-        // Read Data Channel
-        .rvalid_o                       (cptra_ss_i3c_s_axi_if_r_sub.rvalid),
-        .rready_i                       (cptra_ss_i3c_s_axi_if_r_sub.rready),
-        .rid_o                          (cptra_ss_i3c_s_axi_if_r_sub.rid),
-        .rdata_o                        (cptra_ss_i3c_s_axi_if_r_sub.rdata),
-        .rresp_o                        (cptra_ss_i3c_s_axi_if_r_sub.rresp),
-        .rlast_o                        (cptra_ss_i3c_s_axi_if_r_sub.rlast),
-        .ruser_o                        (cptra_ss_i3c_s_axi_if_r_sub.ruser),
-    
-        // Write Address Channel
-        .awvalid_i                      (cptra_ss_i3c_s_axi_if_w_sub.awvalid),
-        .awready_o                      (cptra_ss_i3c_s_axi_if_w_sub.awready),
-        .awid_i                         (cptra_ss_i3c_s_axi_if_w_sub.awid),
-        .awaddr_i                       (cptra_ss_i3c_s_axi_if_w_sub.awaddr[`AXI_ADDR_WIDTH-1:0]),
-        .awsize_i                       (cptra_ss_i3c_s_axi_if_w_sub.awsize),
-        .awuser_i                       (cptra_ss_i3c_s_axi_if_w_sub.awuser),
-        .awlen_i                        (cptra_ss_i3c_s_axi_if_w_sub.awlen),
-        .awburst_i                      (cptra_ss_i3c_s_axi_if_w_sub.awburst),
-        .awlock_i                       (cptra_ss_i3c_s_axi_if_w_sub.awlock),
-    
-        // Write Data Channel
-        .wvalid_i                       (cptra_ss_i3c_s_axi_if_w_sub.wvalid),
-        .wuser_i                        (cptra_ss_i3c_s_axi_if_w_sub.wuser),
-        .wready_o                       (cptra_ss_i3c_s_axi_if_w_sub.wready),
-        .wdata_i                        (cptra_ss_i3c_s_axi_if_w_sub.wdata),
-        .wstrb_i                        (cptra_ss_i3c_s_axi_if_w_sub.wstrb),
-        .wlast_i                        (cptra_ss_i3c_s_axi_if_w_sub.wlast),
-    
-        // Write Response Channel
-        .bvalid_o                       (cptra_ss_i3c_s_axi_if_w_sub.bvalid),
-        .bready_i                       (cptra_ss_i3c_s_axi_if_w_sub.bready),
-        .bresp_o                        (cptra_ss_i3c_s_axi_if_w_sub.bresp),
-        .bid_o                          (cptra_ss_i3c_s_axi_if_w_sub.bid),
-        .buser_o                        (cptra_ss_i3c_s_axi_if_w_sub.buser),
+        .s_axi_w_if                     (cptra_ss_i3c_s_axi_if_w_sub),
+        .s_axi_r_if                     (cptra_ss_i3c_s_axi_if_r_sub),
     
         // I3C Signals
         .scl_i                          (cptra_ss_i3c_scl_i),
@@ -1341,6 +1315,7 @@ module caliptra_ss_top
         .strap_mcu_sram_config_axi_user    (cptra_ss_strap_mcu_sram_config_axi_user_i),
         .strap_mci_soc_config_axi_user    (cptra_ss_strap_mci_soc_config_axi_user_i),
         .ss_debug_intent         ( cptra_ss_debug_intent_i ),
+        .mci_ss_debug_intent     ( mci_ss_debug_intent ),
 
         // -- connects to ss_generic_fw_exec_ctrl (bit 2)
         .mcu_sram_fw_exec_region_lock(cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i),
@@ -1556,6 +1531,7 @@ module caliptra_ss_top
         .rst_ni                     (cptra_ss_rst_b_o),
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
         .cptra_in_debug_mode_i      (cptra_in_debug_mode),
+        .cptra_ss_debug_intent_i    (mci_ss_debug_intent),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),

@@ -49,7 +49,7 @@ endtask
 
 // Verify when debug locked AXI reads return 0, writes are dropped and respond with error
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_AXI_READ_WRITE_DEBUG_REJECT_A,
-    `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.dv && `MCI_PATH.LCC_state_translator.security_state_o.debug_locked |->
+    `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.dv && mubi4_test_true_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked) |->
     !`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.s_cpuif_req &&
     !`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.s_cpuif_req_is_wr &&
     `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.rdata === '0 &&
@@ -60,7 +60,7 @@ endtask
 
 // Verify all DMI reads return 0 when in not in debug mode
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_READ_WRITE_DEBUG_REJECT_A,
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en &&`MCI_PATH.LCC_state_translator.security_state_o.debug_locked |->
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && mubi4_test_true_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked) |->
     !`MCI_PATH.i_mci_mcu_trace_buffer.dmi_wr_en_qual &&
     `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg === '0,
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -71,7 +71,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_DATA_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_DATA |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === mcu_trace_buffer[trace_buffer_rd_ptr_f],  
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -83,7 +83,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_STATUS_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_STATUS |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata[1:0] === {`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.valid_data.value,`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.wrapped.value}, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -94,7 +94,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_CONFIG_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_CONFIG |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CONFIG.trace_buffer_depth.value, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -105,7 +105,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_WR_PTR_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_WR_PTR |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_wr_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -116,7 +116,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_RD_PTR_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_rd_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -137,7 +137,7 @@ end
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_WRITE_RD_PTR_A,
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |=>
     mcu_trace_buffer_capture_write_data === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.READ_PTR, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 

@@ -286,7 +286,7 @@ module caliptra_ss_top_tb
 
     // MCU ROM Sub AXI Interface
     axi_if #(
-        .AW(32), //-- FIXME : Assign a common paramter
+        .AW(CPTRA_SS_ROM_AXI_ADDR_W_TB),
         .DW(64), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
@@ -979,6 +979,10 @@ module caliptra_ss_top_tb
     assign cptra_ss_i3c_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWBURST;
     assign cptra_ss_i3c_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWLOCK;
     assign cptra_ss_i3c_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWUSER;
+    assign cptra_ss_i3c_s_axi_if.awcache                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWCACHE;
+    assign cptra_ss_i3c_s_axi_if.awprot                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWPROT;
+    assign cptra_ss_i3c_s_axi_if.awqos                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWQOS;
+    assign cptra_ss_i3c_s_axi_if.awregion                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWREGION;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].AWREADY = cptra_ss_i3c_s_axi_if.awready;
     assign cptra_ss_i3c_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WVALID;
     assign cptra_ss_i3c_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].WDATA;
@@ -999,6 +1003,10 @@ module caliptra_ss_top_tb
     assign cptra_ss_i3c_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARBURST;
     assign cptra_ss_i3c_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARLOCK;
     assign cptra_ss_i3c_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARUSER;
+    assign cptra_ss_i3c_s_axi_if.arcache                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARCACHE;
+    assign cptra_ss_i3c_s_axi_if.arprot                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARPROT;
+    assign cptra_ss_i3c_s_axi_if.arqos                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARQOS;
+    assign cptra_ss_i3c_s_axi_if.arregion                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARREGION;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].ARREADY = cptra_ss_i3c_s_axi_if.arready;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RVALID  = cptra_ss_i3c_s_axi_if.rvalid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RDATA   = 64'(cptra_ss_i3c_s_axi_if.rdata);
@@ -1150,8 +1158,8 @@ module caliptra_ss_top_tb
     );
 
     axi_mem_if #(
-        .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W),
-        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W)
+        .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W_TB),
+        .DATA_WIDTH(CPTRA_SS_ROM_DATA_W_TB)
     ) mcu_rom_mem_export_if (
         .clk(core_clk),
         .rst_b(cptra_ss_rst_b_i)
@@ -1260,7 +1268,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag0"),
-        .ListenPort     (51983)
+        .ListenPort     (0)
     ) jtagdpi_cptra_core (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1483,7 +1491,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag2"),
-        .ListenPort     (64902)
+        .ListenPort     (0)
     ) jtagdpi_lcc (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1894,7 +1902,7 @@ module caliptra_ss_top_tb
     // JTAG DPI
     jtagdpi #(
         .Name           ("jtag1"),
-        .ListenPort     (60217)
+        .ListenPort     (0)
     ) jtagdpi_mcu (
         .clk_i          (core_clk),
         .rst_ni         (cptra_ss_rst_b_i),
@@ -1907,6 +1915,8 @@ module caliptra_ss_top_tb
     );
 
     caliptra_ss_top #(
+        .CPTRA_SS_ROM_SIZE_KB(CPTRA_SS_ROM_SIZE_KB_TB),
+        .CPTRA_SS_ROM_DATA_W(CPTRA_SS_ROM_DATA_W_TB),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
         .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH),
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
