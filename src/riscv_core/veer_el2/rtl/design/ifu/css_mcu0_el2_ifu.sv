@@ -23,6 +23,7 @@ module css_mcu0_el2_ifu
 import css_mcu0_el2_pkg::*;
 #(
 `include "css_mcu0_el2_param.vh"
+`include "css_mcu0_common_defines.vh"
  )
   (
    input logic free_l2clk,                   // Clock always.                  Through one clock header.  For flops with    second header built in.
