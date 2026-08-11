@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`include "mci_dmi_pkg.sv"
-
 module mci_reg_top 
     import mci_reg_pkg::*;
     import mci_pkg::*;
@@ -498,10 +496,10 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_FATAL.agg_error_fatal))  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   &  32'({mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value}) )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal))  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  mci_dmi_agg_error_non_fatal_concat(mci_reg_hwif_out.AGG_ERROR_NON_FATAL))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   &  32'(mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value) )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   &  32'(mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   &  32'(mci_reg_hwif_out.HW_ERROR_ENC.error_code.value)   )  |
@@ -544,10 +542,10 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   & `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_FATAL.agg_error_fatal))  |
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   & mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   & 32'({mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value}) )  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   & `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal))  |
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   & mci_dmi_agg_error_non_fatal_concat(mci_reg_hwif_out.AGG_ERROR_NON_FATAL))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   & 32'(mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value) )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   & 32'(mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   & 32'(mci_reg_hwif_out.HW_ERROR_ENC.error_code.value)   )  |
