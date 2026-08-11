@@ -291,6 +291,8 @@ VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
 VCS_ELAB_OPTS += +warn=noIWNF
 VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
+# axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
+VCS_ELAB_OPTS += +warn=noUII-L
 VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
