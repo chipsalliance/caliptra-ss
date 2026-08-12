@@ -15,6 +15,7 @@
 
 // all flops call the css_mcu0_rvdff flop
 
+`include "css_mcu0_common_defines.vh"
 
 module css_mcu0_rvdff #( parameter WIDTH=1, SHORT=0 )
    (

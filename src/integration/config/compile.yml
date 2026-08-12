@@ -264,6 +264,8 @@ global:
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
         - '+warn=noTFIPC,noMDVMO'
+        # axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
+        - '+warn=noUII-L'
 #        # ICPSD_W: Illegal combination of structural and procedural drivers, internal to
 #        # the Synopsys USB SVT VIP (svt_usb_utmi_dut_phy_if.svi).  The VIP declares these
 #        # signals as var logic with both initial-block and internal continuous-assign drivers;

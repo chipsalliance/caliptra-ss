@@ -17,11 +17,11 @@ OS:
 
 LINT:
  - Synopsys SpyGlass
-   - `Version U-2023.03-SP2-8 -- Aug 09, 2024`
+   - `Version Y-2026.03-SP1-1`
 
 Simulation:
  - Synopsys VCS with Verdi
-   - `Version R-2020.12-SP2-7_Full64`
+   - `Version Y-2026.03-SP1`
  - Synopsys VIP
    - `2025.06` SVT USB VIP
  - Mentor Graphics AVERY
@@ -47,8 +47,8 @@ RDC:
     - 2022.A.P10.2
 
 Synthesis:
- - Synopsys Design Compiler (R) NXT 
-    - Version U-2022.12-SP6
+ - Synopsys Fusion Compiler
+   - `Version X-2025.06-SP3`
 
 Scripts:
  - Python
