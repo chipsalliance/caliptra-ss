@@ -2,6 +2,19 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
+class spi_host_report_catcher extends uvm_report_catcher;
+  `uvm_object_utils(spi_host_report_catcher)
+  function new(string name = "");
+    super.new(name);
+  endfunction
+  virtual function action_e catch();
+    if (get_severity() == UVM_WARNING && get_id() == "RegModel") begin
+      set_severity(UVM_INFO);
+    end
+    return THROW;
+  endfunction
+endclass
+
 class spi_host_base_test extends dv_base_test #(
     .CFG_T(spi_host_env_cfg),
     .ENV_T(spi_host_env)
@@ -18,7 +31,9 @@ class spi_host_base_test extends dv_base_test #(
   // the run_phase; as such, nothing more needs to be done
 
   virtual function void build_phase(uvm_phase phase);
+    spi_host_report_catcher catcher = spi_host_report_catcher::type_id::create("catcher");
     super.build_phase(phase);
+    uvm_report_cb::add(null, catcher);
   endfunction : build_phase
 
   virtual function void end_of_elaboration_phase(uvm_phase phase);

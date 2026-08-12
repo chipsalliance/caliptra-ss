@@ -12,7 +12,7 @@ module spi_host_data_stable_sva #(
   input logic [NumCS-1:0]                                  cio_csb_o,
   input logic [3:0]                                        cio_sd_i,
   input logic [3:0]                                        cio_sd_en_o,
-  input caliptra_ss_spi_host_reg_pkg::spi_host_reg2hw_configopts_reg_t configopts,
+  input caliptra_ss_spi_host_reg_pkg::caliptra_ss_spi_host_reg2hw_configopts_mreg_t configopts,
   input caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_req_t                  passthrough_i
  );
 

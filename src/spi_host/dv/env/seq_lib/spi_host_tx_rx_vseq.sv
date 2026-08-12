@@ -33,12 +33,15 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
 
     num_wr = 0;
     num_rd = 0;
+    spi_host_txn_sent = 0;
     for (int n = 0; n < num_transactions; n++) begin
       generate_transaction();
       send_trans(transaction, wait_ready);
       if (wait_ready)
         wait_ready_for_command();
+      #1000ns;
     end
+    spi_host_txn_sent = 1;
   endtask
 
   // Read CSR.RXFIFO until spi_host is inactive and the fifo is empty.
@@ -47,13 +50,12 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
     bit [7:0] read_q[$];
     spi_host_status_t status;
 
-    // Wait until not-empty before entering the forever loop.
-    csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1));
     forever begin : read_rxfifo_until_empty_and_inactive
-      do begin
-        // Add some delay here so other tb tasks can use the bus while we spin.
-        #($urandom_range(500, 1000) * 1ns)
-        csr_rd(.ptr(ral.status), .value(status));
+      csr_rd(.ptr(ral.status), .value(status));
+      if (!status.active && status.rxempty && (status.rx_qd == 0)) begin
+        break;
+      end
+      if (status.rx_qd > 0) begin
         // Read again if only 1 entry, in case we call 'access_data_fifo' at a time the Q is empty
         // To avoid deadlock and timeout
         if (status.rx_qd == 1)
@@ -63,9 +65,9 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
                                     status.rx_qd), UVM_DEBUG)
           access_data_fifo(read_q, RxFifo);
         end
-      end while (status.rx_qd > 0);
-      if (!status.active && status.rxempty && (status.rx_qd == 0)) begin
-        break;
+      end else begin
+        // Add some delay here so other tb tasks can use the bus while we spin.
+        #($urandom_range(500, 1000) * 1ns);
       end
     end : read_rxfifo_until_empty_and_inactive
 

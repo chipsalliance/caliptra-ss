@@ -28,7 +28,7 @@ class spi_segment_item extends uvm_sequence_item;
   int                           num_cmd_bytes      = 4;
 
   // transaction len
-  int                           spi_len_min        = 2;
+  int                           spi_len_min        = 4;
   int                           spi_len_max        = 4;
 
   spi_cmd_e                     cmd;
@@ -105,7 +105,7 @@ class spi_segment_item extends uvm_sequence_item;
     }
 
     // ensure we only half or full word writes
-    !(seg_type == Dummy) -> (command_reg.len + 1) % 2 == 0;
+    !(seg_type == Dummy) -> (command_reg.len + 1) % 4 == 0;
     // default set keep transaction going
     command_reg.csaat == 1;
   }

@@ -644,13 +644,27 @@ package spi_host_ral_pkg;
     endfunction : new
 
     virtual function void build(csr_excl_item csr_excl = null);
+      len =
+          (dv_base_reg_field::
+           type_id::create("len"));
+      len.configure(
+        .parent(this),
+        .size(9),
+        .lsb_pos(0),
+        .access("WO"),
+        .volatile(0),
+        .reset(32'h0),
+        .has_reset(1),
+        .is_rand(1),
+        .individually_accessible(1));
+
       csaat =
           (dv_base_reg_field::
            type_id::create("csaat"));
       csaat.configure(
         .parent(this),
         .size(1),
-        .lsb_pos(0),
+        .lsb_pos(9),
         .access("WO"),
         .volatile(0),
         .reset(32'h0),
@@ -664,7 +678,7 @@ package spi_host_ral_pkg;
       speed.configure(
         .parent(this),
         .size(2),
-        .lsb_pos(1),
+        .lsb_pos(10),
         .access("WO"),
         .volatile(0),
         .reset(32'h0),
@@ -678,21 +692,7 @@ package spi_host_ral_pkg;
       direction.configure(
         .parent(this),
         .size(2),
-        .lsb_pos(3),
-        .access("WO"),
-        .volatile(0),
-        .reset(32'h0),
-        .has_reset(1),
-        .is_rand(1),
-        .individually_accessible(1));
-
-      len =
-          (dv_base_reg_field::
-           type_id::create("len"));
-      len.configure(
-        .parent(this),
-        .size(20),
-        .lsb_pos(5),
+        .lsb_pos(12),
         .access("WO"),
         .volatile(0),
         .reset(32'h0),
@@ -1134,19 +1134,19 @@ package spi_host_ral_pkg;
       default_map.add_reg(.rg(control),
                           .offset(32'hc));
       control.add_hdl_path_slice(
-          "u_reg.u_control_rx_watermark.q",
+          "u_reg.control_rx_watermark_qs",
           0, 8, 0, "BkdrRegPathRtl");
       control.add_hdl_path_slice(
-          "u_reg.u_control_tx_watermark.q",
+          "u_reg.control_tx_watermark_qs",
           8, 8, 0, "BkdrRegPathRtl");
       control.add_hdl_path_slice(
-          "u_reg.u_control_output_en.q",
+          "u_reg.control_output_en_qs",
           29, 1, 0, "BkdrRegPathRtl");
       control.add_hdl_path_slice(
-          "u_reg.u_control_sw_rst.q",
+          "u_reg.control_sw_rst_qs",
           30, 1, 0, "BkdrRegPathRtl");
       control.add_hdl_path_slice(
-          "u_reg.u_control_spien.q",
+          "u_reg.control_spien_qs",
           31, 1, 0, "BkdrRegPathRtl");
 
       status =
@@ -1237,7 +1237,7 @@ package spi_host_ral_pkg;
       csid.configure(.blk_parent(this));
       csid.build(csr_excl);
       default_map.add_reg(.rg(csid),
-                          .offset(32'h18));
+                          .offset(32'h1c));
       csid.add_hdl_path_slice(
           "u_reg.u_csid.q",
           0, 32, 0, "BkdrRegPathRtl");
@@ -1248,7 +1248,7 @@ package spi_host_ral_pkg;
       command.configure(.blk_parent(this));
       command.build(csr_excl);
       default_map.add_reg(.rg(command),
-                          .offset(32'h1c));
+                          .offset(32'h20));
       command.add_hdl_path_slice(
           "u_reg.u_command_csaat.qs",
           0, 1, 0, "BkdrRegPathRtl");
@@ -1271,7 +1271,7 @@ package spi_host_ral_pkg;
       error_enable.configure(.blk_parent(this));
       error_enable.build(csr_excl);
       default_map.add_reg(.rg(error_enable),
-                          .offset(32'h28));
+                          .offset(32'h2c));
       error_enable.add_hdl_path_slice(
           "u_reg.u_error_enable_cmdbusy.q",
           0, 1, 0, "BkdrRegPathRtl");
@@ -1294,7 +1294,7 @@ package spi_host_ral_pkg;
       error_status.configure(.blk_parent(this));
       error_status.build(csr_excl);
       default_map.add_reg(.rg(error_status),
-                          .offset(32'h2c));
+                          .offset(32'h30));
       error_status.add_hdl_path_slice(
           "u_reg.u_error_status_cmdbusy.q",
           0, 1, 0, "BkdrRegPathRtl");
@@ -1320,7 +1320,7 @@ package spi_host_ral_pkg;
       event_enable.configure(.blk_parent(this));
       event_enable.build(csr_excl);
       default_map.add_reg(.rg(event_enable),
-                          .offset(32'h30));
+                          .offset(32'h34));
       event_enable.add_hdl_path_slice(
           "u_reg.u_event_enable_rxfull.q",
           0, 1, 0, "BkdrRegPathRtl");
@@ -1346,13 +1346,13 @@ package spi_host_ral_pkg;
           spi_host_mem_rxdata::type_id::create("rxdata");
       rxdata.configure(.parent(this));
       default_map.add_mem(.mem(rxdata),
-                          .offset(32'h20),
+                          .offset(32'h24),
                           .rights("RO"));
       txdata =
           spi_host_mem_txdata::type_id::create("txdata");
       txdata.configure(.parent(this));
       default_map.add_mem(.mem(txdata),
-                          .offset(32'h24),
+                          .offset(32'h28),
                           .rights("WO"));
 
 

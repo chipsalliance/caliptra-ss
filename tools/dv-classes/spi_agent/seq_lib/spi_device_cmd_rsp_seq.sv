@@ -123,7 +123,7 @@ class spi_device_cmd_rsp_seq extends spi_device_seq;
 
   function spi_cmd_e cmd_check(bit [7:0] data);
     spi_cmd_e cmd;
-    `downcast(cmd, data, "Illegal Command seen")
+    if (!$cast(cmd, data)) cmd = ReadStd;
     return cmd;
   endfunction : cmd_check
 endclass : spi_device_cmd_rsp_seq

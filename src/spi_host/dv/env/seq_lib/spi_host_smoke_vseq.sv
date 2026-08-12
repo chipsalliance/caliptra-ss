@@ -22,6 +22,9 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
 
   virtual task body();
     `uvm_info(`gfn, "Starting 'spi_host_smoke_vseq'", UVM_DEBUG)
+    cfg.num_dummy = 0;
+    apply_reset("HARD");
+    spi_host_init();
     fork
       begin : isolation_fork
         fork
@@ -29,21 +32,27 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         join_none
 
         begin
-          wait_ready_for_command();
           start_spi_host_trans(num_trans);
-          csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
-          csr_spinwait(.ptr(ral.status.rxqd), .exp_data(8'h0));
+          csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0));
+          csr_spinwait(.ptr(ral.status.rxqd), .exp_data(8'h0), .backdoor(1'b0));
           cfg.clk_rst_vif.wait_clks(100);
         end
 
         disable fork;
       end
       begin
-        wait (num_rd > 0 || spi_host_txn_sent);
-        // Only calling rd_rx_fifo if there are reads on the bus
-        // otherwise `rd_rx_fifo` will lock up
-        if (num_rd > 0)
-          read_rx_fifo();
+        spi_host_status_t status_val;
+        // Wait for transaction to start or bytes to arrive, and continuously drain the RX FIFO
+        // This avoids deadlock with the Hardware Loopback which floods the RX FIFO in real-time.
+        while (!spi_host_txn_sent || status_val.rx_qd > 0 || !status_val.rxempty) begin
+          csr_rd(.ptr(ral.status), .value(status_val));
+          if (status_val.rx_qd > 0) begin
+            read_rx_fifo();
+          end
+          cfg.clk_rst_vif.wait_clks(10);
+        end
+        // Final drain just in case anything arrived right at the end
+        read_rx_fifo();
       end
     join
   endtask : body

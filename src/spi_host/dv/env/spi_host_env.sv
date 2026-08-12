@@ -21,6 +21,21 @@ class spi_host_env extends dv_base_env #(
     super.build_phase(phase);
     // create components
     m_axi_agent = axi_mgr_agent::type_id::create("m_axi_agent", this);
+    if (!uvm_config_db#(virtual axi_write_request_if)::get(this, "", "aw_vif", cfg.m_axi_agent_cfg.write_request_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get aw_vif")
+    end
+    if (!uvm_config_db#(virtual axi_write_data_if)::get(this, "", "w_vif", cfg.m_axi_agent_cfg.write_data_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get w_vif")
+    end
+    if (!uvm_config_db#(virtual axi_write_response_if)::get(this, "", "b_vif", cfg.m_axi_agent_cfg.write_response_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get b_vif")
+    end
+    if (!uvm_config_db#(virtual axi_read_request_if)::get(this, "", "ar_vif", cfg.m_axi_agent_cfg.read_request_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get ar_vif")
+    end
+    if (!uvm_config_db#(virtual axi_read_data_if)::get(this, "", "r_vif", cfg.m_axi_agent_cfg.read_data_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get r_vif")
+    end
     uvm_config_db#(axi_agent_cfg)::set(this, "m_axi_agent*", "cfg", cfg.m_axi_agent_cfg);
     // create components
     m_spi_agent = spi_agent::type_id::create("m_spi_agent", this);
@@ -39,6 +54,7 @@ class spi_host_env extends dv_base_env #(
   function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     if (cfg.is_active) begin
+      cfg.ral.set_base_addr(0, .randomize_base_addr(0));
       cfg.ral.default_map.set_sequencer(m_axi_agent.get_register_layering_sequencer(),
                                         m_axi_agent.get_layered_reg_adapter());
     end

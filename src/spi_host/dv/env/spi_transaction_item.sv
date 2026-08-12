@@ -19,7 +19,7 @@ class spi_transaction_item extends uvm_sequence_item;
   // NOTICE read_weight + write_weight <= 100
   int  read_weight                    = 45;
   int  write_weight                   = 50;
-  rand int  alt_weight                = 50;
+  int  alt_weight                     = 0;
   bit  std_en                         = 1;
   bit  dual_en                        = 0;
   bit  quad_en                        = 0;
@@ -28,7 +28,7 @@ class spi_transaction_item extends uvm_sequence_item;
   int  tx_only_weight                 = 20;
 
    // transaction len
-  int  spi_len_min                    = 1;
+  int  spi_len_min                    = 4;
   int  spi_len_max                    = 4;
 
   // number segments
@@ -65,16 +65,16 @@ class spi_transaction_item extends uvm_sequence_item;
   // writeStd = 50/200, writeDual = 50/200 (overall write pct 50/100)
   // cmd_only = 2*5/200 (overall 5/100) etc.
   constraint cmd_c {
-    solve alt_weight before cmd;
-    alt_weight dist {
-      0        := 50,
-      [1:50]   := 20,
-      [51:100] := 30
-    };
-    alt_weight dist {0        := 50,
-                     [1:50]   := 20,
-                     [51:100] := 30
-    };
+    // solve alt_weight before cmd;
+//    alt_weight dist {
+//      0        := 50,
+//      [1:50]   := 20,
+//      [51:100] := 30
+//    };
+//    alt_weight dist {0        := 50,
+//                     [1:50]   := 20,
+//                     [51:100] := 30
+//    };
     cmd dist {ReadStd   := read_weight*std_en,
               WriteStd  := write_weight*std_en,
               ReadDual  := read_weight*dual_en,

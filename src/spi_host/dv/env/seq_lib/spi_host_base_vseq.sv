@@ -93,6 +93,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
       [16:31] :/ 1,
       [32:cfg.seq_cfg.host_spi_max_rxwm] :/ 1
       };
+    spi_host_ctrl_reg.sw_rst == 0;
   }
 
   function void post_randomize();
@@ -150,7 +151,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
     input   uvm_path_e path = UVM_DEFAULT_PATH,
     input   uvm_reg_map map = null,
     input   uvm_reg_frontdoor user_ftdr = default_user_frontdoor,
-    input   uint spinwait_delay_ns = 0,
+    input   uint spinwait_delay_ns = 100,
     input   uint timeout_ns = default_spinwait_timeout_ns,
     input   compare_op_e compare_op = CompareOpEq,
     input   bit backdoor = 0,
@@ -246,7 +247,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
                                        input  uvm_reg_map       map = null,
                                        input  uvm_reg_frontdoor user_ftdr =
                                                                 default_user_frontdoor,
-                                       input  uint              spinwait_delay_ns = 0,
+                                       input  uint              spinwait_delay_ns = 100,
                                        input  uint              timeout_ns =
                                                                   cfg.csr_spinwait_timeout_ns,
                                        input  compare_op_e      compare_op = CompareOpEq,
@@ -270,12 +271,14 @@ class spi_host_base_vseq extends dv_base_vseq #(
   // Start sequences on the spi_agent (configured as a Device) that will respond to host bus activity.
   // Currently we use "spi_device_cmd_rsp_seq", which discards write-data, and responds with random data for reads.
   virtual task start_agent_reactive_seqs();
+/*
     fork
       for( int i = 0; i < SPI_HOST_NUM_CS; i++) begin
         m_spi_device_seq[i] = spi_device_cmd_rsp_seq::type_id::create($sformatf("spi_host[%0d]",i));
         m_spi_device_seq[i].start(p_sequencer.spi_sequencer_h);
       end
     join
+*/
   endtask : start_agent_reactive_seqs
 
   // Call this function to cleanup the above started reactive-sequences, such as if we
@@ -339,9 +342,10 @@ class spi_host_base_vseq extends dv_base_vseq #(
     // make sure data completely drained from fifo then release reset
     wait_for_fifos_empty(AllFifos);
     // Backdoor read to avoid writing something different to what's there
-    csr_rd(.ptr(ral.control), .value(control_reg), .backdoor(1));
+    csr_rd(.ptr(ral.control), .value(control_reg));
     control_reg[30] = 0; // SW reset field
     csr_wr(.ptr(ral.control), .value(control_reg));
+    ral.control.sw_rst.set(1'b0);
     spinwait_ctrl_obj.stop = 0;
     start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
     `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to SW_RST=0", UVM_DEBUG)
@@ -373,6 +377,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
     // activate spi_host dut
     ral.control.spien.set(1'b1);
     ral.control.output_en.set(1'b1);
+    ral.control.sw_rst.set(1'b0);
     csr_update(ral.control);
   endtask : program_control_reg
 
@@ -421,7 +426,11 @@ class spi_host_base_vseq extends dv_base_vseq #(
 
   // override apply_reset to handle core_reset domain
   virtual task apply_reset(string kind = "HARD");
+    if (kind == "HARD") begin
       super.apply_reset(kind);
+    end else if (kind == "SOFT") begin
+      program_spi_host_sw_reset();
+    end
   endtask
 
 
@@ -437,7 +446,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
 
 
   // wait dut ready for new command
-  virtual task wait_ready_for_command(bit backdoor = 1'b0);
+  virtual task wait_ready_for_command(bit backdoor = 1'b1);
     csr_spinwait(.ptr(ral.status.ready), .exp_data(1'b1), .backdoor(backdoor));
   endtask : wait_ready_for_command
 

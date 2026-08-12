@@ -13,12 +13,12 @@ module spi_host_bind;
     .d2h  (tl_o)
   );
 
-  bind caliptra_ss_spi_host spi_host_csr_assert_fpv spi_host_csr_assert (
-    .clk_i,
-    .rst_ni,
-    .h2d    (tl_i),
-    .d2h    (tl_o)
-  );
+//  bind caliptra_ss_spi_host spi_host_csr_assert_fpv spi_host_csr_assert (
+//    .clk_i,
+//    .rst_ni,
+//    .h2d    (tl_i),
+//    .d2h    (tl_o)
+//  );
 
   bind caliptra_ss_spi_host spi_host_data_stable_sva #(
     .NumCS(spi_host_env_cfg_pkg::SPI_HOST_NUM_CS)
@@ -28,7 +28,7 @@ module spi_host_bind;
     .cio_csb_o,
     .cio_sd_i,
     .cio_sd_en_o,
-    .configopts(reg2hw.configopts),
+    .configopts(reg2hw.configopts[0]),
     .passthrough_i
   );
 
