@@ -102,7 +102,6 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/asserts
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb
-+incdir+${UVM_HOME_2020}//src
 +incdir+${UVM_HOME_2020}/src
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest/sverilog/include
