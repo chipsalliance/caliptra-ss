@@ -21,7 +21,7 @@ LINT:
 
 Simulation:
  - Synopsys VCS with Verdi
-   - `Version X-2025.06-SP2`
+   - `Version R-2020.12-SP2-7_Full64`
  - Synopsys VIP
    - `2025.06` SVT USB VIP
  - Mentor Graphics AVERY
