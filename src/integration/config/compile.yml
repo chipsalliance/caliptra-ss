@@ -249,6 +249,8 @@ global:
         - '+warn=noIWNF'
         - '+warn=noPCWM-W'
         - '+warn=noTFIPC,noMDVMO'
+        # axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
+        - '+warn=noUII-L'
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c_core

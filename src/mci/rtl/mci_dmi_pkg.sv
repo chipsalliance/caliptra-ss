@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef MCI_DMI_PKG
-    `define MCI_DMI_PKG
-
 package mci_dmi_pkg;
 
     // UNCORE BASE ADDRESS: 0x50
@@ -84,15 +81,37 @@ package mci_dmi_pkg;
         logic mcu_sram_fw_exec_region_lock;
     } MCI_DMI_MCI_HW_OVERRIDE_REG_t;
 
-    `define SS_DMI_AGG_ERR_CONCAT(_sig_name) \
-    {``_sig_name``31.value,``_sig_name``30.value,``_sig_name``29.value,``_sig_name``28.value,\
-     ``_sig_name``27.value,``_sig_name``26.value,``_sig_name``25.value,``_sig_name``24.value,\
-     ``_sig_name``23.value,``_sig_name``22.value,``_sig_name``21.value,``_sig_name``20.value,\
-     ``_sig_name``19.value,``_sig_name``18.value,``_sig_name``17.value,``_sig_name``16.value,\
-     ``_sig_name``15.value,``_sig_name``14.value,``_sig_name``13.value,``_sig_name``12.value,\
-     ``_sig_name``11.value,``_sig_name``10.value,``_sig_name``9.value, ``_sig_name``8.value,\
-     ``_sig_name``7.value, ``_sig_name``6.value, ``_sig_name``5.value, ``_sig_name``4.value,\
-     ``_sig_name``3.value, ``_sig_name``2.value, ``_sig_name``1.value, ``_sig_name``0.value}
+    // Aggregate the 32 individually-named sticky error bits of an
+    // AGG_ERROR_{FATAL,NON_FATAL} register into a single 32-bit word for the
+    // DMI/TAP readback, ordered MSB=index 31 .. LSB=index 0. These replace the
+    // former `SS_DMI_AGG_ERR_CONCAT text-substitution macro (a `define is not
+    // appropriate inside a package): the register struct fields are discretely
+    // named (agg_error_fatal0 .. agg_error_fatal31) rather than an array, so
+    // each field is referenced explicitly.
+    function automatic logic [31:0] mci_dmi_agg_error_fatal_concat(
+        input mci_reg_pkg::mci_reg__AGG_ERROR_FATAL__out_t agg
+    );
+        return {agg.agg_error_fatal31.value, agg.agg_error_fatal30.value, agg.agg_error_fatal29.value, agg.agg_error_fatal28.value,
+                agg.agg_error_fatal27.value, agg.agg_error_fatal26.value, agg.agg_error_fatal25.value, agg.agg_error_fatal24.value,
+                agg.agg_error_fatal23.value, agg.agg_error_fatal22.value, agg.agg_error_fatal21.value, agg.agg_error_fatal20.value,
+                agg.agg_error_fatal19.value, agg.agg_error_fatal18.value, agg.agg_error_fatal17.value, agg.agg_error_fatal16.value,
+                agg.agg_error_fatal15.value, agg.agg_error_fatal14.value, agg.agg_error_fatal13.value, agg.agg_error_fatal12.value,
+                agg.agg_error_fatal11.value, agg.agg_error_fatal10.value, agg.agg_error_fatal9.value,  agg.agg_error_fatal8.value,
+                agg.agg_error_fatal7.value,  agg.agg_error_fatal6.value,  agg.agg_error_fatal5.value,  agg.agg_error_fatal4.value,
+                agg.agg_error_fatal3.value,  agg.agg_error_fatal2.value,  agg.agg_error_fatal1.value,  agg.agg_error_fatal0.value};
+    endfunction
+
+    function automatic logic [31:0] mci_dmi_agg_error_non_fatal_concat(
+        input mci_reg_pkg::mci_reg__AGG_ERROR_NON_FATAL__out_t agg
+    );
+        return {agg.agg_error_non_fatal31.value, agg.agg_error_non_fatal30.value, agg.agg_error_non_fatal29.value, agg.agg_error_non_fatal28.value,
+                agg.agg_error_non_fatal27.value, agg.agg_error_non_fatal26.value, agg.agg_error_non_fatal25.value, agg.agg_error_non_fatal24.value,
+                agg.agg_error_non_fatal23.value, agg.agg_error_non_fatal22.value, agg.agg_error_non_fatal21.value, agg.agg_error_non_fatal20.value,
+                agg.agg_error_non_fatal19.value, agg.agg_error_non_fatal18.value, agg.agg_error_non_fatal17.value, agg.agg_error_non_fatal16.value,
+                agg.agg_error_non_fatal15.value, agg.agg_error_non_fatal14.value, agg.agg_error_non_fatal13.value, agg.agg_error_non_fatal12.value,
+                agg.agg_error_non_fatal11.value, agg.agg_error_non_fatal10.value, agg.agg_error_non_fatal9.value,  agg.agg_error_non_fatal8.value,
+                agg.agg_error_non_fatal7.value,  agg.agg_error_non_fatal6.value,  agg.agg_error_non_fatal5.value,  agg.agg_error_non_fatal4.value,
+                agg.agg_error_non_fatal3.value,  agg.agg_error_non_fatal2.value,  agg.agg_error_non_fatal1.value,  agg.agg_error_non_fatal0.value};
+    endfunction
 
 endpackage
-`endif
