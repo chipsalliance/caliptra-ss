@@ -77,7 +77,7 @@ logic trace_buffer_reg_write_error;
 logic [31:0] c_cpuif_wr_biten; // Byte Enable mapping
 logic cif_illegal_access_error;
 logic dmi_wr_en_qual;
-
+logic [31:0] trace_buffer_reg_rd_data;
 
 
 ////////////////////////
@@ -209,6 +209,7 @@ endgenerate
 assign cif_illegal_access_error = cif_resp_if.dv & ~debug_en;
 
 assign cif_resp_if.error = trace_buffer_reg_read_error | trace_buffer_reg_write_error | cif_illegal_access_error;
+assign cif_resp_if.rdata = trace_buffer_reg_rd_data & {32{debug_en}}; // Return 0 if not in debug mode
 
 trace_buffer_csr i_trace_buffer_csr(
         .clk,
@@ -223,7 +224,7 @@ trace_buffer_csr i_trace_buffer_csr(
         .s_cpuif_req_stall_rd   (),   
         .s_cpuif_rd_ack         (),   
         .s_cpuif_rd_err         (trace_buffer_reg_read_error),
-        .s_cpuif_rd_data        (cif_resp_if.rdata),   
+        .s_cpuif_rd_data        (trace_buffer_reg_rd_data),
         .s_cpuif_wr_ack         (),     
         .s_cpuif_wr_err         (trace_buffer_reg_write_error),
 

@@ -5,6 +5,7 @@ package mcu_mbox_csr_pkg;
 
     localparam MCU_MBOX_CSR_DATA_WIDTH = 32;
     localparam MCU_MBOX_CSR_MIN_ADDR_WIDTH = 22;
+    localparam MCU_MBOX_CSR_SIZE = 'h200028;
 
     typedef struct packed{
         logic rd_ack;
@@ -219,14 +220,14 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__out_t mbox_hw_status;
     } mcu_mbox_csr__out_t;
 
-    typedef enum logic [31:0] {
+    typedef enum logic [1:0] {
         mcu_mbox_csr__mbox_target_status__status__mbox_status_e__CMD_BUSY = 'h0,
         mcu_mbox_csr__mbox_target_status__status__mbox_status_e__DATA_READY = 'h1,
         mcu_mbox_csr__mbox_target_status__status__mbox_status_e__CMD_COMPLETE = 'h2,
         mcu_mbox_csr__mbox_target_status__status__mbox_status_e__CMD_FAILURE = 'h3
     } mcu_mbox_csr__mbox_target_status__status__mbox_status_e_e;
 
-    typedef enum logic [31:0] {
+    typedef enum logic [1:0] {
         mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_BUSY = 'h0,
         mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__DATA_READY = 'h1,
         mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_COMPLETE = 'h2,

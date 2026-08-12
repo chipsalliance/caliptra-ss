@@ -4,7 +4,7 @@ package trace_buffer_csr_uvm;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
     `include "trace_buffer_csr_covergroups.svh"
-    // Reg - trace_buffer_csr::STATUS
+    // reg - trace_buffer_csr::STATUS
     class trace_buffer_csr__STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -39,7 +39,7 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__STATUS
 
-    // Reg - trace_buffer_csr::CONFIG
+    // reg - trace_buffer_csr::CONFIG
     class trace_buffer_csr__CONFIG extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -69,7 +69,7 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__CONFIG
 
-    // Reg - trace_buffer_csr::DATA
+    // reg - trace_buffer_csr::DATA
     class trace_buffer_csr__DATA extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -99,7 +99,7 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__DATA
 
-    // Reg - trace_buffer_csr::WRITE_PTR
+    // reg - trace_buffer_csr::WRITE_PTR
     class trace_buffer_csr__WRITE_PTR extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -129,7 +129,7 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__WRITE_PTR
 
-    // Reg - trace_buffer_csr::READ_PTR
+    // reg - trace_buffer_csr::READ_PTR
     class trace_buffer_csr__READ_PTR extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -159,7 +159,7 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__READ_PTR
 
-    // Addrmap - trace_buffer_csr
+    // addrmap - trace_buffer_csr
     class trace_buffer_csr extends uvm_reg_block;
         rand trace_buffer_csr__STATUS STATUS;
         rand trace_buffer_csr__CONFIG CONFIG;

@@ -5,6 +5,7 @@ package mci_reg_pkg;
 
     localparam MCI_REG_DATA_WIDTH = 32;
     localparam MCI_REG_MIN_ADDR_WIDTH = 13;
+    localparam MCI_REG_SIZE = 'h1454;
 
     typedef struct packed{
         logic [11:0] next;
@@ -1511,7 +1512,7 @@ package mci_reg_pkg;
         mci_reg__intr_block_t__out_t intr_block_rf;
     } mci_reg__out_t;
 
-    typedef enum logic [31:0] {
+    typedef enum logic [1:0] {
         mci_reg__SECURITY_STATE__device_lifecycle_e__DEVICE_UNPROVISIONED = 'h0,
         mci_reg__SECURITY_STATE__device_lifecycle_e__DEVICE_MANUFACTURING = 'h1,
         mci_reg__SECURITY_STATE__device_lifecycle_e__DEVICE_PRODUCTION = 'h3

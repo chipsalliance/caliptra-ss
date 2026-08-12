@@ -4,7 +4,7 @@ package mci_reg_uvm;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
     `include "mci_reg_covergroups.svh"
-    // Reg - mci_reg::HW_CAPABILITIES
+    // reg - mci_reg::HW_CAPABILITIES
     class mci_reg__HW_CAPABILITIES extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -34,7 +34,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CAPABILITIES
 
-    // Reg - mci_reg::FW_CAPABILITIES
+    // reg - mci_reg::FW_CAPABILITIES
     class mci_reg__FW_CAPABILITIES extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -64,7 +64,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_CAPABILITIES
 
-    // Reg - mci_reg::CAP_LOCK
+    // reg - mci_reg::CAP_LOCK
     class mci_reg__CAP_LOCK extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -94,7 +94,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__CAP_LOCK
 
-    // Reg - mci_reg::HW_REV_ID
+    // reg - mci_reg::HW_REV_ID
     class mci_reg__HW_REV_ID extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -124,7 +124,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_REV_ID
 
-    // Reg - mci_reg::FW_REV_ID
+    // reg - mci_reg::FW_REV_ID
     class mci_reg__FW_REV_ID extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -154,7 +154,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_REV_ID
 
-    // Reg - mci_reg::HW_CONFIG0
+    // reg - mci_reg::HW_CONFIG0
     class mci_reg__HW_CONFIG0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -189,7 +189,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG0
 
-    // Reg - mci_reg::HW_CONFIG1
+    // reg - mci_reg::HW_CONFIG1
     class mci_reg__HW_CONFIG1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -224,7 +224,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_CONFIG1
 
-    // Reg - mci_reg::MCU_IFU_AXI_USER
+    // reg - mci_reg::MCU_IFU_AXI_USER
     class mci_reg__MCU_IFU_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -254,7 +254,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_IFU_AXI_USER
 
-    // Reg - mci_reg::MCU_LSU_AXI_USER
+    // reg - mci_reg::MCU_LSU_AXI_USER
     class mci_reg__MCU_LSU_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -284,7 +284,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_LSU_AXI_USER
 
-    // Reg - mci_reg::MCU_SRAM_CONFIG_AXI_USER
+    // reg - mci_reg::MCU_SRAM_CONFIG_AXI_USER
     class mci_reg__MCU_SRAM_CONFIG_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -314,7 +314,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_SRAM_CONFIG_AXI_USER
 
-    // Reg - mci_reg::MCI_SOC_CONFIG_AXI_USER
+    // reg - mci_reg::MCI_SOC_CONFIG_AXI_USER
     class mci_reg__MCI_SOC_CONFIG_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -344,7 +344,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCI_SOC_CONFIG_AXI_USER
 
-    // Reg - mci_reg::FW_FLOW_STATUS
+    // reg - mci_reg::FW_FLOW_STATUS
     class mci_reg__FW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -374,7 +374,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_FLOW_STATUS
 
-    // Reg - mci_reg::HW_FLOW_STATUS
+    // reg - mci_reg::HW_FLOW_STATUS
     class mci_reg__HW_FLOW_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -404,7 +404,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_FLOW_STATUS
 
-    // Reg - mci_reg::RESET_REASON
+    // reg - mci_reg::RESET_REASON
     class mci_reg__RESET_REASON extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -444,7 +444,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__RESET_REASON
 
-    // Reg - mci_reg::RESET_STATUS
+    // reg - mci_reg::RESET_STATUS
     class mci_reg__RESET_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -479,7 +479,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__RESET_STATUS
 
-    // Reg - mci_reg::SECURITY_STATE
+    // reg - mci_reg::SECURITY_STATE
     class mci_reg__SECURITY_STATE extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -519,7 +519,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SECURITY_STATE
 
-    // Reg - mci_reg::HW_ERROR_FATAL
+    // reg - mci_reg::HW_ERROR_FATAL
     class mci_reg__HW_ERROR_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -559,7 +559,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_ERROR_FATAL
 
-    // Reg - mci_reg::AGG_ERROR_FATAL
+    // reg - mci_reg::AGG_ERROR_FATAL
     class mci_reg__AGG_ERROR_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -744,7 +744,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__AGG_ERROR_FATAL
 
-    // Reg - mci_reg::HW_ERROR_NON_FATAL
+    // reg - mci_reg::HW_ERROR_NON_FATAL
     class mci_reg__HW_ERROR_NON_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -779,7 +779,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_ERROR_NON_FATAL
 
-    // Reg - mci_reg::AGG_ERROR_NON_FATAL
+    // reg - mci_reg::AGG_ERROR_NON_FATAL
     class mci_reg__AGG_ERROR_NON_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -964,7 +964,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__AGG_ERROR_NON_FATAL
 
-    // Reg - mci_reg::FW_ERROR_FATAL
+    // reg - mci_reg::FW_ERROR_FATAL
     class mci_reg__FW_ERROR_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -994,7 +994,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_ERROR_FATAL
 
-    // Reg - mci_reg::FW_ERROR_NON_FATAL
+    // reg - mci_reg::FW_ERROR_NON_FATAL
     class mci_reg__FW_ERROR_NON_FATAL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1024,7 +1024,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_ERROR_NON_FATAL
 
-    // Reg - mci_reg::HW_ERROR_ENC
+    // reg - mci_reg::HW_ERROR_ENC
     class mci_reg__HW_ERROR_ENC extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1054,7 +1054,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__HW_ERROR_ENC
 
-    // Reg - mci_reg::FW_ERROR_ENC
+    // reg - mci_reg::FW_ERROR_ENC
     class mci_reg__FW_ERROR_ENC extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1084,7 +1084,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_ERROR_ENC
 
-    // Reg - mci_reg::FW_EXTENDED_ERROR_INFO
+    // reg - mci_reg::FW_EXTENDED_ERROR_INFO
     class mci_reg__FW_EXTENDED_ERROR_INFO extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1114,7 +1114,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_EXTENDED_ERROR_INFO
 
-    // Reg - mci_reg::internal_hw_error_fatal_mask
+    // reg - mci_reg::internal_hw_error_fatal_mask
     class mci_reg__internal_hw_error_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1154,7 +1154,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_hw_error_fatal_mask
 
-    // Reg - mci_reg::internal_hw_error_non_fatal_mask
+    // reg - mci_reg::internal_hw_error_non_fatal_mask
     class mci_reg__internal_hw_error_non_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1189,7 +1189,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_hw_error_non_fatal_mask
 
-    // Reg - mci_reg::internal_agg_error_fatal_mask
+    // reg - mci_reg::internal_agg_error_fatal_mask
     class mci_reg__internal_agg_error_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1374,7 +1374,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_agg_error_fatal_mask
 
-    // Reg - mci_reg::internal_agg_error_non_fatal_mask
+    // reg - mci_reg::internal_agg_error_non_fatal_mask
     class mci_reg__internal_agg_error_non_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1559,7 +1559,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_agg_error_non_fatal_mask
 
-    // Reg - mci_reg::internal_fw_error_fatal_mask
+    // reg - mci_reg::internal_fw_error_fatal_mask
     class mci_reg__internal_fw_error_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1589,7 +1589,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_fw_error_fatal_mask
 
-    // Reg - mci_reg::internal_fw_error_non_fatal_mask
+    // reg - mci_reg::internal_fw_error_non_fatal_mask
     class mci_reg__internal_fw_error_non_fatal_mask extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1619,7 +1619,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__internal_fw_error_non_fatal_mask
 
-    // Reg - mci_reg::WDT_TIMER1_EN
+    // reg - mci_reg::WDT_TIMER1_EN
     class mci_reg__WDT_TIMER1_EN extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1649,7 +1649,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER1_EN
 
-    // Reg - mci_reg::WDT_TIMER1_CTRL
+    // reg - mci_reg::WDT_TIMER1_CTRL
     class mci_reg__WDT_TIMER1_CTRL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1670,7 +1670,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.timer1_restart = new("timer1_restart");
-            this.timer1_restart.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.timer1_restart.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(timer1_restart_bit_cg[bt]) timer1_restart_bit_cg[bt] = new();
             end
@@ -1679,7 +1679,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER1_CTRL
 
-    // Reg - mci_reg::WDT_TIMER1_TIMEOUT_PERIOD
+    // reg - mci_reg::WDT_TIMER1_TIMEOUT_PERIOD
     class mci_reg__WDT_TIMER1_TIMEOUT_PERIOD extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1709,7 +1709,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER1_TIMEOUT_PERIOD
 
-    // Reg - mci_reg::WDT_TIMER2_EN
+    // reg - mci_reg::WDT_TIMER2_EN
     class mci_reg__WDT_TIMER2_EN extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1739,7 +1739,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER2_EN
 
-    // Reg - mci_reg::WDT_TIMER2_CTRL
+    // reg - mci_reg::WDT_TIMER2_CTRL
     class mci_reg__WDT_TIMER2_CTRL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1760,7 +1760,7 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.timer2_restart = new("timer2_restart");
-            this.timer2_restart.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.timer2_restart.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(timer2_restart_bit_cg[bt]) timer2_restart_bit_cg[bt] = new();
             end
@@ -1769,7 +1769,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER2_CTRL
 
-    // Reg - mci_reg::WDT_TIMER2_TIMEOUT_PERIOD
+    // reg - mci_reg::WDT_TIMER2_TIMEOUT_PERIOD
     class mci_reg__WDT_TIMER2_TIMEOUT_PERIOD extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1799,7 +1799,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_TIMER2_TIMEOUT_PERIOD
 
-    // Reg - mci_reg::WDT_STATUS
+    // reg - mci_reg::WDT_STATUS
     class mci_reg__WDT_STATUS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1834,7 +1834,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_STATUS
 
-    // Reg - mci_reg::WDT_CFG
+    // reg - mci_reg::WDT_CFG
     class mci_reg__WDT_CFG extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1864,7 +1864,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__WDT_CFG
 
-    // Reg - mci_reg::MCU_TIMER_CONFIG
+    // reg - mci_reg::MCU_TIMER_CONFIG
     class mci_reg__MCU_TIMER_CONFIG extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1894,7 +1894,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_TIMER_CONFIG
 
-    // Reg - mci_reg::MCU_RV_MTIME_L
+    // reg - mci_reg::MCU_RV_MTIME_L
     class mci_reg__MCU_RV_MTIME_L extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1924,7 +1924,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RV_MTIME_L
 
-    // Reg - mci_reg::MCU_RV_MTIME_H
+    // reg - mci_reg::MCU_RV_MTIME_H
     class mci_reg__MCU_RV_MTIME_H extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1954,7 +1954,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RV_MTIME_H
 
-    // Reg - mci_reg::MCU_RV_MTIMECMP_L
+    // reg - mci_reg::MCU_RV_MTIMECMP_L
     class mci_reg__MCU_RV_MTIMECMP_L extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -1984,7 +1984,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RV_MTIMECMP_L
 
-    // Reg - mci_reg::MCU_RV_MTIMECMP_H
+    // reg - mci_reg::MCU_RV_MTIMECMP_H
     class mci_reg__MCU_RV_MTIMECMP_H extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2014,7 +2014,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RV_MTIMECMP_H
 
-    // Reg - mci_reg::RESET_REQUEST
+    // reg - mci_reg::RESET_REQUEST
     class mci_reg__RESET_REQUEST extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2044,7 +2044,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__RESET_REQUEST
 
-    // Reg - mci_reg::MCI_BOOTFSM_GO
+    // reg - mci_reg::MCI_BOOTFSM_GO
     class mci_reg__MCI_BOOTFSM_GO extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2074,7 +2074,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCI_BOOTFSM_GO
 
-    // Reg - mci_reg::CPTRA_BOOT_GO
+    // reg - mci_reg::CPTRA_BOOT_GO
     class mci_reg__CPTRA_BOOT_GO extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2104,7 +2104,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__CPTRA_BOOT_GO
 
-    // Reg - mci_reg::FW_SRAM_EXEC_REGION_SIZE
+    // reg - mci_reg::FW_SRAM_EXEC_REGION_SIZE
     class mci_reg__FW_SRAM_EXEC_REGION_SIZE extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2134,7 +2134,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FW_SRAM_EXEC_REGION_SIZE
 
-    // Reg - mci_reg::MCU_NMI_VECTOR
+    // reg - mci_reg::MCU_NMI_VECTOR
     class mci_reg__MCU_NMI_VECTOR extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2164,7 +2164,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_NMI_VECTOR
 
-    // Reg - mci_reg::MCU_RESET_VECTOR
+    // reg - mci_reg::MCU_RESET_VECTOR
     class mci_reg__MCU_RESET_VECTOR extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2194,7 +2194,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MCU_RESET_VECTOR
 
-    // Reg - mci_reg::MBOX0_VALID_AXI_USER
+    // reg - mci_reg::MBOX0_VALID_AXI_USER
     class mci_reg__MBOX0_VALID_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2224,7 +2224,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MBOX0_VALID_AXI_USER
 
-    // Reg - mci_reg::MBOX0_AXI_USER_LOCK
+    // reg - mci_reg::MBOX0_AXI_USER_LOCK
     class mci_reg__MBOX0_AXI_USER_LOCK extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2254,7 +2254,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MBOX0_AXI_USER_LOCK
 
-    // Reg - mci_reg::MBOX1_VALID_AXI_USER
+    // reg - mci_reg::MBOX1_VALID_AXI_USER
     class mci_reg__MBOX1_VALID_AXI_USER extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2284,7 +2284,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MBOX1_VALID_AXI_USER
 
-    // Reg - mci_reg::MBOX1_AXI_USER_LOCK
+    // reg - mci_reg::MBOX1_AXI_USER_LOCK
     class mci_reg__MBOX1_AXI_USER_LOCK extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2314,7 +2314,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__MBOX1_AXI_USER_LOCK
 
-    // Reg - mci_reg::SOC_DFT_EN
+    // reg - mci_reg::SOC_DFT_EN
     class mci_reg__SOC_DFT_EN extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2344,7 +2344,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SOC_DFT_EN
 
-    // Reg - mci_reg::SOC_HW_DEBUG_EN
+    // reg - mci_reg::SOC_HW_DEBUG_EN
     class mci_reg__SOC_HW_DEBUG_EN extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2374,7 +2374,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SOC_HW_DEBUG_EN
 
-    // Reg - mci_reg::SOC_PROD_DEBUG_STATE
+    // reg - mci_reg::SOC_PROD_DEBUG_STATE
     class mci_reg__SOC_PROD_DEBUG_STATE extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2404,7 +2404,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SOC_PROD_DEBUG_STATE
 
-    // Reg - mci_reg::FC_FIPS_ZEROZATION
+    // reg - mci_reg::FC_FIPS_ZEROZATION
     class mci_reg__FC_FIPS_ZEROZATION extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2434,7 +2434,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FC_FIPS_ZEROZATION
 
-    // Reg - mci_reg::FC_FIPS_ZEROZATION_STS
+    // reg - mci_reg::FC_FIPS_ZEROZATION_STS
     class mci_reg__FC_FIPS_ZEROZATION_STS extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2464,7 +2464,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__FC_FIPS_ZEROZATION_STS
 
-    // Reg - mci_reg::GENERIC_INPUT_WIRES
+    // reg - mci_reg::GENERIC_INPUT_WIRES
     class mci_reg__GENERIC_INPUT_WIRES extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2494,7 +2494,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__GENERIC_INPUT_WIRES
 
-    // Reg - mci_reg::GENERIC_OUTPUT_WIRES
+    // reg - mci_reg::GENERIC_OUTPUT_WIRES
     class mci_reg__GENERIC_OUTPUT_WIRES extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2524,7 +2524,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__GENERIC_OUTPUT_WIRES
 
-    // Reg - mci_reg::DEBUG_IN
+    // reg - mci_reg::DEBUG_IN
     class mci_reg__DEBUG_IN extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2554,7 +2554,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__DEBUG_IN
 
-    // Reg - mci_reg::DEBUG_OUT
+    // reg - mci_reg::DEBUG_OUT
     class mci_reg__DEBUG_OUT extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2584,7 +2584,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__DEBUG_OUT
 
-    // Reg - mci_reg::SS_DEBUG_INTENT
+    // reg - mci_reg::SS_DEBUG_INTENT
     class mci_reg__SS_DEBUG_INTENT extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2614,7 +2614,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SS_DEBUG_INTENT
 
-    // Reg - mci_reg::SS_DEBUG_INTENT_MCU
+    // reg - mci_reg::SS_DEBUG_INTENT_MCU
     class mci_reg__SS_DEBUG_INTENT_MCU extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2644,7 +2644,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SS_DEBUG_INTENT_MCU
 
-    // Reg - mci_reg::SS_CONFIG_DONE_STICKY
+    // reg - mci_reg::SS_CONFIG_DONE_STICKY
     class mci_reg__SS_CONFIG_DONE_STICKY extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2674,7 +2674,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SS_CONFIG_DONE_STICKY
 
-    // Reg - mci_reg::SS_CONFIG_DONE
+    // reg - mci_reg::SS_CONFIG_DONE
     class mci_reg__SS_CONFIG_DONE extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2704,7 +2704,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__SS_CONFIG_DONE
 
-    // Reg - mci_reg::PROD_DEBUG_UNLOCK_PK_HASH_REG
+    // reg - mci_reg::PROD_DEBUG_UNLOCK_PK_HASH_REG
     class mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2734,7 +2734,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG
 
-    // Reg - mci_reg::intr_block_t::global_intr_en_t
+    // reg - mci_reg::intr_block_t::global_intr_en_t
     class mci_reg__intr_block_t__global_intr_en_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2769,7 +2769,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__global_intr_en_t
 
-    // Reg - mci_reg::intr_block_t::error0_intr_en_t
+    // reg - mci_reg::intr_block_t::error0_intr_en_t
     class mci_reg__intr_block_t__error0_intr_en_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -2824,7 +2824,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error0_intr_en_t
 
-    // Reg - mci_reg::intr_block_t::error1_intr_en_t
+    // reg - mci_reg::intr_block_t::error1_intr_en_t
     class mci_reg__intr_block_t__error1_intr_en_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3009,7 +3009,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_en_t
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_en_t
+    // reg - mci_reg::intr_block_t::notif0_intr_en_t
     class mci_reg__intr_block_t__notif0_intr_en_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3109,7 +3109,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif0_intr_en_t
 
-    // Reg - mci_reg::intr_block_t::notif1_intr_en_t
+    // reg - mci_reg::intr_block_t::notif1_intr_en_t
     class mci_reg__intr_block_t__notif1_intr_en_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3294,7 +3294,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif1_intr_en_t
 
-    // Reg - mci_reg::intr_block_t::global_intr_t_agg_sts0_9d4fcb80_agg_sts1_dd15d6db
+    // reg - mci_reg::intr_block_t::global_intr_t_agg_sts0_9d4fcb80_agg_sts1_dd15d6db
     class mci_reg__intr_block_t__global_intr_t_agg_sts0_9d4fcb80_agg_sts1_dd15d6db extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3329,7 +3329,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__global_intr_t_agg_sts0_9d4fcb80_agg_sts1_dd15d6db
 
-    // Reg - mci_reg::intr_block_t::global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496
+    // reg - mci_reg::intr_block_t::global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496
     class mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3364,7 +3364,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__global_intr_t_agg_sts0_fbbcc271_agg_sts1_5df57496
 
-    // Reg - mci_reg::intr_block_t::error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_ecc_unc_sts_61142362_error_mbox1_ecc_unc_sts_37b6febe_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2
+    // reg - mci_reg::intr_block_t::error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_ecc_unc_sts_61142362_error_mbox1_ecc_unc_sts_37b6febe_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2
     class mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_ecc_unc_sts_61142362_error_mbox1_ecc_unc_sts_37b6febe_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3419,7 +3419,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error0_intr_t_error_internal_sts_d246dbbd_error_mbox0_ecc_unc_sts_61142362_error_mbox1_ecc_unc_sts_37b6febe_error_mcu_sram_dmi_axi_collision_sts_946ceefb_error_wdt_timer1_timeout_sts_d5484b74_error_wdt_timer2_timeout_sts_275950a2
 
-    // Reg - mci_reg::intr_block_t::error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
+    // reg - mci_reg::intr_block_t::error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
     class mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3604,7 +3604,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_t_error_agg_error_fatal0_sts_fa132a82_error_agg_error_fatal10_sts_6f865c89_error_agg_error_fatal11_sts_fa6208a0_error_agg_error_fatal12_sts_721d3a75_error_agg_error_fatal13_sts_5c3990f4_error_agg_error_fatal14_sts_a694518f_error_agg_error_fatal15_sts_9f83da34_error_agg_error_fatal16_sts_d2008075_error_agg_error_fatal17_sts_c4477fd6_error_agg_error_fatal18_sts_7e56b5c7_error_agg_error_fatal19_sts_d910ce2f_error_agg_error_fatal1_sts_a502c972_error_agg_error_fatal20_sts_1c366f71_error_agg_error_fatal21_sts_3ffab23c_error_agg_error_fatal22_sts_cf97fe95_error_agg_error_fatal23_sts_b038dc4b_error_agg_error_fatal24_sts_46a7f9f2_error_agg_error_fatal25_sts_d3847056_error_agg_error_fatal26_sts_07ce5573_error_agg_error_fatal27_sts_686337e8_error_agg_error_fatal28_sts_47915955_error_agg_error_fatal29_sts_748fd418_error_agg_error_fatal2_sts_1eed1d52_error_agg_error_fatal30_sts_56c415d2_error_agg_error_fatal31_sts_9c4937bc_error_agg_error_fatal3_sts_7910568d_error_agg_error_fatal4_sts_b4f21204_error_agg_error_fatal5_sts_799bf567_error_agg_error_fatal6_sts_554d4d0d_error_agg_error_fatal7_sts_5e5cb629_error_agg_error_fatal8_sts_f823a735_error_agg_error_fatal9_sts_63fe0bbb
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188
+    // reg - mci_reg::intr_block_t::notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188
     class mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3704,7 +3704,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif0_intr_t_notif_cptra_mbox_cmd_avail_sts_4d052fbd_notif_cptra_mcu_reset_req_sts_950bd36c_notif_debug_locked_sts_c24329d3_notif_gen_in_toggle_sts_86556041_notif_mbox0_cmd_avail_sts_12bfde02_notif_mbox0_ecc_cor_sts_38cefb2e_notif_mbox0_soc_req_lock_sts_cb77cba3_notif_mbox0_target_done_sts_093b16a3_notif_mbox1_cmd_avail_sts_9a846b45_notif_mbox1_ecc_cor_sts_fb006582_notif_mbox1_soc_req_lock_sts_cca54089_notif_mbox1_target_done_sts_e855f732_notif_mcu_sram_ecc_cor_sts_95e5c2eb_notif_otp_operation_done_sts_e47c2306_notif_scan_mode_sts_1ac97188
 
-    // Reg - mci_reg::intr_block_t::notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
+    // reg - mci_reg::intr_block_t::notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
     class mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3889,7 +3889,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif1_intr_t_notif_agg_error_non_fatal0_sts_153b1f81_notif_agg_error_non_fatal10_sts_9bebb60c_notif_agg_error_non_fatal11_sts_8f4fbe62_notif_agg_error_non_fatal12_sts_8fdbfe78_notif_agg_error_non_fatal13_sts_fa5cd768_notif_agg_error_non_fatal14_sts_516359a7_notif_agg_error_non_fatal15_sts_0e9d571f_notif_agg_error_non_fatal16_sts_b79f75d3_notif_agg_error_non_fatal17_sts_0c18cbf4_notif_agg_error_non_fatal18_sts_83d64a1f_notif_agg_error_non_fatal19_sts_346fbbcc_notif_agg_error_non_fatal1_sts_35748ee2_notif_agg_error_non_fatal20_sts_5362c56e_notif_agg_error_non_fatal21_sts_aeabef1a_notif_agg_error_non_fatal22_sts_3a444065_notif_agg_error_non_fatal23_sts_b2d40317_notif_agg_error_non_fatal24_sts_f683d156_notif_agg_error_non_fatal25_sts_d230131e_notif_agg_error_non_fatal26_sts_151712ef_notif_agg_error_non_fatal27_sts_47032eac_notif_agg_error_non_fatal28_sts_3f7a4f3f_notif_agg_error_non_fatal29_sts_48f1fd41_notif_agg_error_non_fatal2_sts_a4970c79_notif_agg_error_non_fatal30_sts_01dd78e0_notif_agg_error_non_fatal31_sts_31f7f819_notif_agg_error_non_fatal3_sts_338aeee3_notif_agg_error_non_fatal4_sts_e4042c21_notif_agg_error_non_fatal5_sts_a127b4e1_notif_agg_error_non_fatal6_sts_529605e3_notif_agg_error_non_fatal7_sts_4bd45005_notif_agg_error_non_fatal8_sts_8310de42_notif_agg_error_non_fatal9_sts_d954a7c3
 
-    // Reg - mci_reg::intr_block_t::error0_intr_trig_t
+    // reg - mci_reg::intr_block_t::error0_intr_trig_t
     class mci_reg__intr_block_t__error0_intr_trig_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -3920,17 +3920,17 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.error_mcu_sram_dmi_axi_collision_trig = new("error_mcu_sram_dmi_axi_collision_trig");
-            this.error_mcu_sram_dmi_axi_collision_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_mcu_sram_dmi_axi_collision_trig.configure(this, 1, 0, "W1S", 1, 'h0, 1, 1, 0);
             this.error_internal_trig = new("error_internal_trig");
-            this.error_internal_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_internal_trig.configure(this, 1, 1, "W1S", 1, 'h0, 1, 1, 0);
             this.error_mbox0_ecc_unc_trig = new("error_mbox0_ecc_unc_trig");
-            this.error_mbox0_ecc_unc_trig.configure(this, 1, 2, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_mbox0_ecc_unc_trig.configure(this, 1, 2, "W1S", 1, 'h0, 1, 1, 0);
             this.error_mbox1_ecc_unc_trig = new("error_mbox1_ecc_unc_trig");
-            this.error_mbox1_ecc_unc_trig.configure(this, 1, 3, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_mbox1_ecc_unc_trig.configure(this, 1, 3, "W1S", 1, 'h0, 1, 1, 0);
             this.error_wdt_timer1_timeout_trig = new("error_wdt_timer1_timeout_trig");
-            this.error_wdt_timer1_timeout_trig.configure(this, 1, 4, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_wdt_timer1_timeout_trig.configure(this, 1, 4, "W1S", 1, 'h0, 1, 1, 0);
             this.error_wdt_timer2_timeout_trig = new("error_wdt_timer2_timeout_trig");
-            this.error_wdt_timer2_timeout_trig.configure(this, 1, 5, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_wdt_timer2_timeout_trig.configure(this, 1, 5, "W1S", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(error_mcu_sram_dmi_axi_collision_trig_bit_cg[bt]) error_mcu_sram_dmi_axi_collision_trig_bit_cg[bt] = new();
                 foreach(error_internal_trig_bit_cg[bt]) error_internal_trig_bit_cg[bt] = new();
@@ -3944,7 +3944,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error0_intr_trig_t
 
-    // Reg - mci_reg::intr_block_t::error1_intr_trig_t
+    // reg - mci_reg::intr_block_t::error1_intr_trig_t
     class mci_reg__intr_block_t__error1_intr_trig_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4027,69 +4027,69 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.error_agg_error_fatal31_trig = new("error_agg_error_fatal31_trig");
-            this.error_agg_error_fatal31_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal31_trig.configure(this, 1, 0, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal30_trig = new("error_agg_error_fatal30_trig");
-            this.error_agg_error_fatal30_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal30_trig.configure(this, 1, 1, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal29_trig = new("error_agg_error_fatal29_trig");
-            this.error_agg_error_fatal29_trig.configure(this, 1, 2, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal29_trig.configure(this, 1, 2, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal28_trig = new("error_agg_error_fatal28_trig");
-            this.error_agg_error_fatal28_trig.configure(this, 1, 3, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal28_trig.configure(this, 1, 3, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal27_trig = new("error_agg_error_fatal27_trig");
-            this.error_agg_error_fatal27_trig.configure(this, 1, 4, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal27_trig.configure(this, 1, 4, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal26_trig = new("error_agg_error_fatal26_trig");
-            this.error_agg_error_fatal26_trig.configure(this, 1, 5, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal26_trig.configure(this, 1, 5, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal25_trig = new("error_agg_error_fatal25_trig");
-            this.error_agg_error_fatal25_trig.configure(this, 1, 6, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal25_trig.configure(this, 1, 6, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal24_trig = new("error_agg_error_fatal24_trig");
-            this.error_agg_error_fatal24_trig.configure(this, 1, 7, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal24_trig.configure(this, 1, 7, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal23_trig = new("error_agg_error_fatal23_trig");
-            this.error_agg_error_fatal23_trig.configure(this, 1, 8, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal23_trig.configure(this, 1, 8, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal22_trig = new("error_agg_error_fatal22_trig");
-            this.error_agg_error_fatal22_trig.configure(this, 1, 9, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal22_trig.configure(this, 1, 9, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal21_trig = new("error_agg_error_fatal21_trig");
-            this.error_agg_error_fatal21_trig.configure(this, 1, 10, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal21_trig.configure(this, 1, 10, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal20_trig = new("error_agg_error_fatal20_trig");
-            this.error_agg_error_fatal20_trig.configure(this, 1, 11, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal20_trig.configure(this, 1, 11, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal19_trig = new("error_agg_error_fatal19_trig");
-            this.error_agg_error_fatal19_trig.configure(this, 1, 12, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal19_trig.configure(this, 1, 12, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal18_trig = new("error_agg_error_fatal18_trig");
-            this.error_agg_error_fatal18_trig.configure(this, 1, 13, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal18_trig.configure(this, 1, 13, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal17_trig = new("error_agg_error_fatal17_trig");
-            this.error_agg_error_fatal17_trig.configure(this, 1, 14, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal17_trig.configure(this, 1, 14, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal16_trig = new("error_agg_error_fatal16_trig");
-            this.error_agg_error_fatal16_trig.configure(this, 1, 15, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal16_trig.configure(this, 1, 15, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal15_trig = new("error_agg_error_fatal15_trig");
-            this.error_agg_error_fatal15_trig.configure(this, 1, 16, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal15_trig.configure(this, 1, 16, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal14_trig = new("error_agg_error_fatal14_trig");
-            this.error_agg_error_fatal14_trig.configure(this, 1, 17, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal14_trig.configure(this, 1, 17, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal13_trig = new("error_agg_error_fatal13_trig");
-            this.error_agg_error_fatal13_trig.configure(this, 1, 18, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal13_trig.configure(this, 1, 18, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal12_trig = new("error_agg_error_fatal12_trig");
-            this.error_agg_error_fatal12_trig.configure(this, 1, 19, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal12_trig.configure(this, 1, 19, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal11_trig = new("error_agg_error_fatal11_trig");
-            this.error_agg_error_fatal11_trig.configure(this, 1, 20, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal11_trig.configure(this, 1, 20, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal10_trig = new("error_agg_error_fatal10_trig");
-            this.error_agg_error_fatal10_trig.configure(this, 1, 21, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal10_trig.configure(this, 1, 21, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal9_trig = new("error_agg_error_fatal9_trig");
-            this.error_agg_error_fatal9_trig.configure(this, 1, 22, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal9_trig.configure(this, 1, 22, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal8_trig = new("error_agg_error_fatal8_trig");
-            this.error_agg_error_fatal8_trig.configure(this, 1, 23, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal8_trig.configure(this, 1, 23, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal7_trig = new("error_agg_error_fatal7_trig");
-            this.error_agg_error_fatal7_trig.configure(this, 1, 24, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal7_trig.configure(this, 1, 24, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal6_trig = new("error_agg_error_fatal6_trig");
-            this.error_agg_error_fatal6_trig.configure(this, 1, 25, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal6_trig.configure(this, 1, 25, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal5_trig = new("error_agg_error_fatal5_trig");
-            this.error_agg_error_fatal5_trig.configure(this, 1, 26, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal5_trig.configure(this, 1, 26, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal4_trig = new("error_agg_error_fatal4_trig");
-            this.error_agg_error_fatal4_trig.configure(this, 1, 27, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal4_trig.configure(this, 1, 27, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal3_trig = new("error_agg_error_fatal3_trig");
-            this.error_agg_error_fatal3_trig.configure(this, 1, 28, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal3_trig.configure(this, 1, 28, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal2_trig = new("error_agg_error_fatal2_trig");
-            this.error_agg_error_fatal2_trig.configure(this, 1, 29, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal2_trig.configure(this, 1, 29, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal1_trig = new("error_agg_error_fatal1_trig");
-            this.error_agg_error_fatal1_trig.configure(this, 1, 30, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal1_trig.configure(this, 1, 30, "W1S", 1, 'h0, 1, 1, 0);
             this.error_agg_error_fatal0_trig = new("error_agg_error_fatal0_trig");
-            this.error_agg_error_fatal0_trig.configure(this, 1, 31, "W1S", 0, 'h0, 1, 1, 0);
+            this.error_agg_error_fatal0_trig.configure(this, 1, 31, "W1S", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(error_agg_error_fatal31_trig_bit_cg[bt]) error_agg_error_fatal31_trig_bit_cg[bt] = new();
                 foreach(error_agg_error_fatal30_trig_bit_cg[bt]) error_agg_error_fatal30_trig_bit_cg[bt] = new();
@@ -4129,7 +4129,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__error1_intr_trig_t
 
-    // Reg - mci_reg::intr_block_t::notif0_intr_trig_t
+    // reg - mci_reg::intr_block_t::notif0_intr_trig_t
     class mci_reg__intr_block_t__notif0_intr_trig_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4178,35 +4178,35 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.notif_mcu_sram_ecc_cor_trig = new("notif_mcu_sram_ecc_cor_trig");
-            this.notif_mcu_sram_ecc_cor_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mcu_sram_ecc_cor_trig.configure(this, 1, 0, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_cptra_mcu_reset_req_trig = new("notif_cptra_mcu_reset_req_trig");
-            this.notif_cptra_mcu_reset_req_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_cptra_mcu_reset_req_trig.configure(this, 1, 1, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_gen_in_toggle_trig = new("notif_gen_in_toggle_trig");
-            this.notif_gen_in_toggle_trig.configure(this, 1, 2, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_gen_in_toggle_trig.configure(this, 1, 2, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox0_target_done_trig = new("notif_mbox0_target_done_trig");
-            this.notif_mbox0_target_done_trig.configure(this, 1, 3, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_target_done_trig.configure(this, 1, 3, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_target_done_trig = new("notif_mbox1_target_done_trig");
-            this.notif_mbox1_target_done_trig.configure(this, 1, 4, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_target_done_trig.configure(this, 1, 4, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox0_cmd_avail_trig = new("notif_mbox0_cmd_avail_trig");
-            this.notif_mbox0_cmd_avail_trig.configure(this, 1, 5, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_cmd_avail_trig.configure(this, 1, 5, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_cmd_avail_trig = new("notif_mbox1_cmd_avail_trig");
-            this.notif_mbox1_cmd_avail_trig.configure(this, 1, 6, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_cmd_avail_trig.configure(this, 1, 6, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_cptra_mbox_cmd_avail_trig = new("notif_cptra_mbox_cmd_avail_trig");
-            this.notif_cptra_mbox_cmd_avail_trig.configure(this, 1, 7, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_cptra_mbox_cmd_avail_trig.configure(this, 1, 7, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox0_ecc_cor_trig = new("notif_mbox0_ecc_cor_trig");
-            this.notif_mbox0_ecc_cor_trig.configure(this, 1, 8, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_ecc_cor_trig.configure(this, 1, 8, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_ecc_cor_trig = new("notif_mbox1_ecc_cor_trig");
-            this.notif_mbox1_ecc_cor_trig.configure(this, 1, 9, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_ecc_cor_trig.configure(this, 1, 9, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_debug_locked_trig = new("notif_debug_locked_trig");
-            this.notif_debug_locked_trig.configure(this, 1, 10, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_debug_locked_trig.configure(this, 1, 10, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_scan_mode_trig = new("notif_scan_mode_trig");
-            this.notif_scan_mode_trig.configure(this, 1, 11, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_scan_mode_trig.configure(this, 1, 11, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox0_soc_req_lock_trig = new("notif_mbox0_soc_req_lock_trig");
-            this.notif_mbox0_soc_req_lock_trig.configure(this, 1, 12, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox0_soc_req_lock_trig.configure(this, 1, 12, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_mbox1_soc_req_lock_trig = new("notif_mbox1_soc_req_lock_trig");
-            this.notif_mbox1_soc_req_lock_trig.configure(this, 1, 13, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_mbox1_soc_req_lock_trig.configure(this, 1, 13, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_otp_operation_done_trig = new("notif_otp_operation_done_trig");
-            this.notif_otp_operation_done_trig.configure(this, 1, 14, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_otp_operation_done_trig.configure(this, 1, 14, "W1S", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_mcu_sram_ecc_cor_trig_bit_cg[bt]) notif_mcu_sram_ecc_cor_trig_bit_cg[bt] = new();
                 foreach(notif_cptra_mcu_reset_req_trig_bit_cg[bt]) notif_cptra_mcu_reset_req_trig_bit_cg[bt] = new();
@@ -4229,7 +4229,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif0_intr_trig_t
 
-    // Reg - mci_reg::intr_block_t::notif1_intr_trig_t
+    // reg - mci_reg::intr_block_t::notif1_intr_trig_t
     class mci_reg__intr_block_t__notif1_intr_trig_t extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4312,69 +4312,69 @@ package mci_reg_uvm;
 
         virtual function void build();
             this.notif_agg_error_non_fatal31_trig = new("notif_agg_error_non_fatal31_trig");
-            this.notif_agg_error_non_fatal31_trig.configure(this, 1, 0, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal31_trig.configure(this, 1, 0, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal30_trig = new("notif_agg_error_non_fatal30_trig");
-            this.notif_agg_error_non_fatal30_trig.configure(this, 1, 1, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal30_trig.configure(this, 1, 1, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal29_trig = new("notif_agg_error_non_fatal29_trig");
-            this.notif_agg_error_non_fatal29_trig.configure(this, 1, 2, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal29_trig.configure(this, 1, 2, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal28_trig = new("notif_agg_error_non_fatal28_trig");
-            this.notif_agg_error_non_fatal28_trig.configure(this, 1, 3, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal28_trig.configure(this, 1, 3, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal27_trig = new("notif_agg_error_non_fatal27_trig");
-            this.notif_agg_error_non_fatal27_trig.configure(this, 1, 4, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal27_trig.configure(this, 1, 4, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal26_trig = new("notif_agg_error_non_fatal26_trig");
-            this.notif_agg_error_non_fatal26_trig.configure(this, 1, 5, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal26_trig.configure(this, 1, 5, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal25_trig = new("notif_agg_error_non_fatal25_trig");
-            this.notif_agg_error_non_fatal25_trig.configure(this, 1, 6, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal25_trig.configure(this, 1, 6, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal24_trig = new("notif_agg_error_non_fatal24_trig");
-            this.notif_agg_error_non_fatal24_trig.configure(this, 1, 7, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal24_trig.configure(this, 1, 7, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal23_trig = new("notif_agg_error_non_fatal23_trig");
-            this.notif_agg_error_non_fatal23_trig.configure(this, 1, 8, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal23_trig.configure(this, 1, 8, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal22_trig = new("notif_agg_error_non_fatal22_trig");
-            this.notif_agg_error_non_fatal22_trig.configure(this, 1, 9, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal22_trig.configure(this, 1, 9, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal21_trig = new("notif_agg_error_non_fatal21_trig");
-            this.notif_agg_error_non_fatal21_trig.configure(this, 1, 10, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal21_trig.configure(this, 1, 10, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal20_trig = new("notif_agg_error_non_fatal20_trig");
-            this.notif_agg_error_non_fatal20_trig.configure(this, 1, 11, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal20_trig.configure(this, 1, 11, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal19_trig = new("notif_agg_error_non_fatal19_trig");
-            this.notif_agg_error_non_fatal19_trig.configure(this, 1, 12, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal19_trig.configure(this, 1, 12, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal18_trig = new("notif_agg_error_non_fatal18_trig");
-            this.notif_agg_error_non_fatal18_trig.configure(this, 1, 13, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal18_trig.configure(this, 1, 13, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal17_trig = new("notif_agg_error_non_fatal17_trig");
-            this.notif_agg_error_non_fatal17_trig.configure(this, 1, 14, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal17_trig.configure(this, 1, 14, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal16_trig = new("notif_agg_error_non_fatal16_trig");
-            this.notif_agg_error_non_fatal16_trig.configure(this, 1, 15, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal16_trig.configure(this, 1, 15, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal15_trig = new("notif_agg_error_non_fatal15_trig");
-            this.notif_agg_error_non_fatal15_trig.configure(this, 1, 16, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal15_trig.configure(this, 1, 16, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal14_trig = new("notif_agg_error_non_fatal14_trig");
-            this.notif_agg_error_non_fatal14_trig.configure(this, 1, 17, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal14_trig.configure(this, 1, 17, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal13_trig = new("notif_agg_error_non_fatal13_trig");
-            this.notif_agg_error_non_fatal13_trig.configure(this, 1, 18, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal13_trig.configure(this, 1, 18, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal12_trig = new("notif_agg_error_non_fatal12_trig");
-            this.notif_agg_error_non_fatal12_trig.configure(this, 1, 19, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal12_trig.configure(this, 1, 19, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal11_trig = new("notif_agg_error_non_fatal11_trig");
-            this.notif_agg_error_non_fatal11_trig.configure(this, 1, 20, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal11_trig.configure(this, 1, 20, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal10_trig = new("notif_agg_error_non_fatal10_trig");
-            this.notif_agg_error_non_fatal10_trig.configure(this, 1, 21, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal10_trig.configure(this, 1, 21, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal9_trig = new("notif_agg_error_non_fatal9_trig");
-            this.notif_agg_error_non_fatal9_trig.configure(this, 1, 22, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal9_trig.configure(this, 1, 22, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal8_trig = new("notif_agg_error_non_fatal8_trig");
-            this.notif_agg_error_non_fatal8_trig.configure(this, 1, 23, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal8_trig.configure(this, 1, 23, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal7_trig = new("notif_agg_error_non_fatal7_trig");
-            this.notif_agg_error_non_fatal7_trig.configure(this, 1, 24, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal7_trig.configure(this, 1, 24, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal6_trig = new("notif_agg_error_non_fatal6_trig");
-            this.notif_agg_error_non_fatal6_trig.configure(this, 1, 25, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal6_trig.configure(this, 1, 25, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal5_trig = new("notif_agg_error_non_fatal5_trig");
-            this.notif_agg_error_non_fatal5_trig.configure(this, 1, 26, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal5_trig.configure(this, 1, 26, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal4_trig = new("notif_agg_error_non_fatal4_trig");
-            this.notif_agg_error_non_fatal4_trig.configure(this, 1, 27, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal4_trig.configure(this, 1, 27, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal3_trig = new("notif_agg_error_non_fatal3_trig");
-            this.notif_agg_error_non_fatal3_trig.configure(this, 1, 28, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal3_trig.configure(this, 1, 28, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal2_trig = new("notif_agg_error_non_fatal2_trig");
-            this.notif_agg_error_non_fatal2_trig.configure(this, 1, 29, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal2_trig.configure(this, 1, 29, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal1_trig = new("notif_agg_error_non_fatal1_trig");
-            this.notif_agg_error_non_fatal1_trig.configure(this, 1, 30, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal1_trig.configure(this, 1, 30, "W1S", 1, 'h0, 1, 1, 0);
             this.notif_agg_error_non_fatal0_trig = new("notif_agg_error_non_fatal0_trig");
-            this.notif_agg_error_non_fatal0_trig.configure(this, 1, 31, "W1S", 0, 'h0, 1, 1, 0);
+            this.notif_agg_error_non_fatal0_trig.configure(this, 1, 31, "W1S", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(notif_agg_error_non_fatal31_trig_bit_cg[bt]) notif_agg_error_non_fatal31_trig_bit_cg[bt] = new();
                 foreach(notif_agg_error_non_fatal30_trig_bit_cg[bt]) notif_agg_error_non_fatal30_trig_bit_cg[bt] = new();
@@ -4414,7 +4414,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__notif1_intr_trig_t
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e18ec58b
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e18ec58b
     class mci_reg__intr_block_t__intr_count_t_cnt_e18ec58b extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4444,7 +4444,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e18ec58b
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_b7754444
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_b7754444
     class mci_reg__intr_block_t__intr_count_t_cnt_b7754444 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4474,7 +4474,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_b7754444
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_ba1bf5f2
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_ba1bf5f2
     class mci_reg__intr_block_t__intr_count_t_cnt_ba1bf5f2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4504,7 +4504,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_ba1bf5f2
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_8903c392
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_8903c392
     class mci_reg__intr_block_t__intr_count_t_cnt_8903c392 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4534,7 +4534,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_8903c392
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_8575f7c3
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_8575f7c3
     class mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4564,7 +4564,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_8575f7c3
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c6c5aac2
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c6c5aac2
     class mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4594,7 +4594,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c6c5aac2
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_cc6839d2
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_cc6839d2
     class mci_reg__intr_block_t__intr_count_t_cnt_cc6839d2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4624,7 +4624,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_cc6839d2
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e85c8d3f
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e85c8d3f
     class mci_reg__intr_block_t__intr_count_t_cnt_e85c8d3f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4654,7 +4654,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e85c8d3f
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_173b981b
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_173b981b
     class mci_reg__intr_block_t__intr_count_t_cnt_173b981b extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4684,7 +4684,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_173b981b
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_ad70eca0
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_ad70eca0
     class mci_reg__intr_block_t__intr_count_t_cnt_ad70eca0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4714,7 +4714,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_ad70eca0
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9c63ebbb
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_9c63ebbb
     class mci_reg__intr_block_t__intr_count_t_cnt_9c63ebbb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4744,7 +4744,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_9c63ebbb
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_bdb11bdf
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_bdb11bdf
     class mci_reg__intr_block_t__intr_count_t_cnt_bdb11bdf extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4774,7 +4774,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_bdb11bdf
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_285c9356
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_285c9356
     class mci_reg__intr_block_t__intr_count_t_cnt_285c9356 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4804,7 +4804,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_285c9356
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_19ffb576
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_19ffb576
     class mci_reg__intr_block_t__intr_count_t_cnt_19ffb576 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4834,7 +4834,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_19ffb576
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_0cf58ec0
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_0cf58ec0
     class mci_reg__intr_block_t__intr_count_t_cnt_0cf58ec0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4864,7 +4864,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_0cf58ec0
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_dacb9e87
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_dacb9e87
     class mci_reg__intr_block_t__intr_count_t_cnt_dacb9e87 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4894,7 +4894,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_dacb9e87
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_3015e2c4
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_3015e2c4
     class mci_reg__intr_block_t__intr_count_t_cnt_3015e2c4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4924,7 +4924,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_3015e2c4
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e5e45c3e
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e5e45c3e
     class mci_reg__intr_block_t__intr_count_t_cnt_e5e45c3e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4954,7 +4954,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e5e45c3e
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_34d3db59
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_34d3db59
     class mci_reg__intr_block_t__intr_count_t_cnt_34d3db59 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -4984,7 +4984,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_34d3db59
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_6514ef70
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_6514ef70
     class mci_reg__intr_block_t__intr_count_t_cnt_6514ef70 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5014,7 +5014,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_6514ef70
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_3f94bf0e
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_3f94bf0e
     class mci_reg__intr_block_t__intr_count_t_cnt_3f94bf0e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5044,7 +5044,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_3f94bf0e
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_46df496a
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_46df496a
     class mci_reg__intr_block_t__intr_count_t_cnt_46df496a extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5074,7 +5074,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_46df496a
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_1e873d29
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_1e873d29
     class mci_reg__intr_block_t__intr_count_t_cnt_1e873d29 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5104,7 +5104,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_1e873d29
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_afb84a88
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_afb84a88
     class mci_reg__intr_block_t__intr_count_t_cnt_afb84a88 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5134,7 +5134,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_afb84a88
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c6327078
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c6327078
     class mci_reg__intr_block_t__intr_count_t_cnt_c6327078 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5164,7 +5164,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c6327078
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e49096ba
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e49096ba
     class mci_reg__intr_block_t__intr_count_t_cnt_e49096ba extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5194,7 +5194,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e49096ba
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_543b5a79
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_543b5a79
     class mci_reg__intr_block_t__intr_count_t_cnt_543b5a79 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5224,7 +5224,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_543b5a79
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_166aef9f
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_166aef9f
     class mci_reg__intr_block_t__intr_count_t_cnt_166aef9f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5254,7 +5254,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_166aef9f
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_970ffbe4
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_970ffbe4
     class mci_reg__intr_block_t__intr_count_t_cnt_970ffbe4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5284,7 +5284,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_970ffbe4
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_2c6710e8
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_2c6710e8
     class mci_reg__intr_block_t__intr_count_t_cnt_2c6710e8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5314,7 +5314,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_2c6710e8
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_38ef91b9
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_38ef91b9
     class mci_reg__intr_block_t__intr_count_t_cnt_38ef91b9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5344,7 +5344,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_38ef91b9
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_d47914ef
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_d47914ef
     class mci_reg__intr_block_t__intr_count_t_cnt_d47914ef extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5374,7 +5374,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_d47914ef
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_0e6d7fe8
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_0e6d7fe8
     class mci_reg__intr_block_t__intr_count_t_cnt_0e6d7fe8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5404,7 +5404,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_0e6d7fe8
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_f5e2a5f9
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_f5e2a5f9
     class mci_reg__intr_block_t__intr_count_t_cnt_f5e2a5f9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5434,7 +5434,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_f5e2a5f9
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_85aa0701
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_85aa0701
     class mci_reg__intr_block_t__intr_count_t_cnt_85aa0701 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5464,7 +5464,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_85aa0701
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_230ee14d
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_230ee14d
     class mci_reg__intr_block_t__intr_count_t_cnt_230ee14d extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5494,7 +5494,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_230ee14d
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_a729f814
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_a729f814
     class mci_reg__intr_block_t__intr_count_t_cnt_a729f814 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5524,7 +5524,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_a729f814
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_896729f1
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_896729f1
     class mci_reg__intr_block_t__intr_count_t_cnt_896729f1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5554,7 +5554,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_896729f1
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9b47838c
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_9b47838c
     class mci_reg__intr_block_t__intr_count_t_cnt_9b47838c extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5584,7 +5584,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_9b47838c
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e777f249
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e777f249
     class mci_reg__intr_block_t__intr_count_t_cnt_e777f249 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5614,7 +5614,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e777f249
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_57528cc1
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_57528cc1
     class mci_reg__intr_block_t__intr_count_t_cnt_57528cc1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5644,7 +5644,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_57528cc1
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_8c9c92fc
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_8c9c92fc
     class mci_reg__intr_block_t__intr_count_t_cnt_8c9c92fc extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5674,7 +5674,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_8c9c92fc
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_21a01ace
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_21a01ace
     class mci_reg__intr_block_t__intr_count_t_cnt_21a01ace extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5704,7 +5704,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_21a01ace
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_2eb23480
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_2eb23480
     class mci_reg__intr_block_t__intr_count_t_cnt_2eb23480 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5734,7 +5734,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_2eb23480
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_bcd65b0c
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_bcd65b0c
     class mci_reg__intr_block_t__intr_count_t_cnt_bcd65b0c extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5764,7 +5764,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_bcd65b0c
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_75e50de1
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_75e50de1
     class mci_reg__intr_block_t__intr_count_t_cnt_75e50de1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5794,7 +5794,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_75e50de1
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e14378f5
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e14378f5
     class mci_reg__intr_block_t__intr_count_t_cnt_e14378f5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5824,7 +5824,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e14378f5
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_d7e481f0
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_d7e481f0
     class mci_reg__intr_block_t__intr_count_t_cnt_d7e481f0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5854,7 +5854,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_d7e481f0
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_57ce756e
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_57ce756e
     class mci_reg__intr_block_t__intr_count_t_cnt_57ce756e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5884,7 +5884,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_57ce756e
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_7c08ad02
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_7c08ad02
     class mci_reg__intr_block_t__intr_count_t_cnt_7c08ad02 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5914,7 +5914,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_7c08ad02
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9f26fa46
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_9f26fa46
     class mci_reg__intr_block_t__intr_count_t_cnt_9f26fa46 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5944,7 +5944,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_9f26fa46
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_2d857802
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_2d857802
     class mci_reg__intr_block_t__intr_count_t_cnt_2d857802 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -5974,7 +5974,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_2d857802
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_a33acd57
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_a33acd57
     class mci_reg__intr_block_t__intr_count_t_cnt_a33acd57 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6004,7 +6004,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_a33acd57
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_6b0b8b72
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_6b0b8b72
     class mci_reg__intr_block_t__intr_count_t_cnt_6b0b8b72 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6034,7 +6034,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_6b0b8b72
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_814509ca
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_814509ca
     class mci_reg__intr_block_t__intr_count_t_cnt_814509ca extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6064,7 +6064,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_814509ca
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_6c105212
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_6c105212
     class mci_reg__intr_block_t__intr_count_t_cnt_6c105212 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6094,7 +6094,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_6c105212
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_a91d29fa
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_a91d29fa
     class mci_reg__intr_block_t__intr_count_t_cnt_a91d29fa extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6124,7 +6124,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_a91d29fa
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_053cf766
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_053cf766
     class mci_reg__intr_block_t__intr_count_t_cnt_053cf766 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6154,7 +6154,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_053cf766
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_dd50a72c
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_dd50a72c
     class mci_reg__intr_block_t__intr_count_t_cnt_dd50a72c extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6184,7 +6184,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_dd50a72c
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c256fff6
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c256fff6
     class mci_reg__intr_block_t__intr_count_t_cnt_c256fff6 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6214,7 +6214,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c256fff6
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_80025684
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_80025684
     class mci_reg__intr_block_t__intr_count_t_cnt_80025684 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6244,7 +6244,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_80025684
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_b88fb3da
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_b88fb3da
     class mci_reg__intr_block_t__intr_count_t_cnt_b88fb3da extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6274,7 +6274,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_b88fb3da
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c225cba5
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c225cba5
     class mci_reg__intr_block_t__intr_count_t_cnt_c225cba5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6304,7 +6304,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c225cba5
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_b0594ed5
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_b0594ed5
     class mci_reg__intr_block_t__intr_count_t_cnt_b0594ed5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6334,7 +6334,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_b0594ed5
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_00b48774
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_00b48774
     class mci_reg__intr_block_t__intr_count_t_cnt_00b48774 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6364,7 +6364,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_00b48774
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_aba426c3
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_aba426c3
     class mci_reg__intr_block_t__intr_count_t_cnt_aba426c3 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6394,7 +6394,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_aba426c3
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_cb69dcdb
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_cb69dcdb
     class mci_reg__intr_block_t__intr_count_t_cnt_cb69dcdb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6424,7 +6424,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_cb69dcdb
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c101eb8f
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c101eb8f
     class mci_reg__intr_block_t__intr_count_t_cnt_c101eb8f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6454,7 +6454,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c101eb8f
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_f5c7867e
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_f5c7867e
     class mci_reg__intr_block_t__intr_count_t_cnt_f5c7867e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6484,7 +6484,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_f5c7867e
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_3a6a25f3
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_3a6a25f3
     class mci_reg__intr_block_t__intr_count_t_cnt_3a6a25f3 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6514,7 +6514,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_3a6a25f3
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_0d5ca59f
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_0d5ca59f
     class mci_reg__intr_block_t__intr_count_t_cnt_0d5ca59f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6544,7 +6544,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_0d5ca59f
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_f0bd1785
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_f0bd1785
     class mci_reg__intr_block_t__intr_count_t_cnt_f0bd1785 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6574,7 +6574,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_f0bd1785
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_e2db60b9
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_e2db60b9
     class mci_reg__intr_block_t__intr_count_t_cnt_e2db60b9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6604,7 +6604,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_e2db60b9
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9c7842f5
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_9c7842f5
     class mci_reg__intr_block_t__intr_count_t_cnt_9c7842f5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6634,7 +6634,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_9c7842f5
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_9b9d6b19
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_9b9d6b19
     class mci_reg__intr_block_t__intr_count_t_cnt_9b9d6b19 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6664,7 +6664,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_9b9d6b19
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_807d15e0
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_807d15e0
     class mci_reg__intr_block_t__intr_count_t_cnt_807d15e0 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6694,7 +6694,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_807d15e0
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_be8f8f87
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_be8f8f87
     class mci_reg__intr_block_t__intr_count_t_cnt_be8f8f87 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6724,7 +6724,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_be8f8f87
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_40f36ffa
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_40f36ffa
     class mci_reg__intr_block_t__intr_count_t_cnt_40f36ffa extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6754,7 +6754,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_40f36ffa
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_3d1ba519
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_3d1ba519
     class mci_reg__intr_block_t__intr_count_t_cnt_3d1ba519 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6784,7 +6784,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_3d1ba519
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_f1535358
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_f1535358
     class mci_reg__intr_block_t__intr_count_t_cnt_f1535358 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6814,7 +6814,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_f1535358
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_ee53ded8
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_ee53ded8
     class mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6844,7 +6844,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_ee53ded8
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_fbf3c714
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_fbf3c714
     class mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6874,7 +6874,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_fbf3c714
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_c5d79517
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_c5d79517
     class mci_reg__intr_block_t__intr_count_t_cnt_c5d79517 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6904,7 +6904,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_c5d79517
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_d593a0b7
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_d593a0b7
     class mci_reg__intr_block_t__intr_count_t_cnt_d593a0b7 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6934,7 +6934,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_d593a0b7
 
-    // Reg - mci_reg::intr_block_t::intr_count_t_cnt_83e74d3f
+    // reg - mci_reg::intr_block_t::intr_count_t_cnt_83e74d3f
     class mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6964,7 +6964,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_t_cnt_83e74d3f
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_95b180a4
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_95b180a4
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_95b180a4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -6994,7 +6994,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_95b180a4
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_85b4132c
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_85b4132c
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_85b4132c extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7024,7 +7024,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_85b4132c
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_74d07ac5
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_74d07ac5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_74d07ac5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7054,7 +7054,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_74d07ac5
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_74acd18e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_74acd18e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_74acd18e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7084,7 +7084,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_74acd18e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_28374d24
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_28374d24
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_28374d24 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7114,7 +7114,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_28374d24
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1c451505
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1c451505
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_1c451505 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7144,7 +7144,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_1c451505
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_6360e3d6
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_6360e3d6
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_6360e3d6 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7174,7 +7174,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_6360e3d6
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_633a69b2
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_633a69b2
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_633a69b2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7204,7 +7204,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_633a69b2
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_14a3e211
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_14a3e211
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_14a3e211 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7234,7 +7234,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_14a3e211
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b1e11d04
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b1e11d04
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_b1e11d04 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7264,7 +7264,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_b1e11d04
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_13c3bb0e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_13c3bb0e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_13c3bb0e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7294,7 +7294,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_13c3bb0e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ce63ca01
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ce63ca01
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_ce63ca01 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7324,7 +7324,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_ce63ca01
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_0ad5f5e5
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_0ad5f5e5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_0ad5f5e5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7354,7 +7354,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_0ad5f5e5
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ccb7556e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ccb7556e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_ccb7556e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7384,7 +7384,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_ccb7556e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_faa59db2
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_faa59db2
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_faa59db2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7414,7 +7414,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_faa59db2
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_64b788d2
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_64b788d2
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_64b788d2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7444,7 +7444,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_64b788d2
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_07c841e3
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_07c841e3
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_07c841e3 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7474,7 +7474,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_07c841e3
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_51c2124e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_51c2124e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_51c2124e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7504,7 +7504,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_51c2124e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_f5ffe320
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_f5ffe320
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_f5ffe320 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7534,7 +7534,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_f5ffe320
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_022dbe36
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_022dbe36
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_022dbe36 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7564,7 +7564,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_022dbe36
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_039b3e0f
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_039b3e0f
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_039b3e0f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7594,7 +7594,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_039b3e0f
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fd2f42e6
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fd2f42e6
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_fd2f42e6 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7624,7 +7624,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_fd2f42e6
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_5fcabcf1
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_5fcabcf1
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_5fcabcf1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7654,7 +7654,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_5fcabcf1
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ea5dc7c6
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ea5dc7c6
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_ea5dc7c6 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7684,7 +7684,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_ea5dc7c6
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b41e4d59
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b41e4d59
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_b41e4d59 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7714,7 +7714,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_b41e4d59
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1caa6eda
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1caa6eda
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_1caa6eda extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7744,7 +7744,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_1caa6eda
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_66a4d7e8
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_66a4d7e8
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_66a4d7e8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7774,7 +7774,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_66a4d7e8
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_08e7fce4
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_08e7fce4
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_08e7fce4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7804,7 +7804,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_08e7fce4
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_55d70652
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_55d70652
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_55d70652 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7834,7 +7834,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_55d70652
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_0d9d2b21
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_0d9d2b21
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_0d9d2b21 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7864,7 +7864,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_0d9d2b21
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e57ba7f1
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e57ba7f1
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_e57ba7f1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7894,7 +7894,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_e57ba7f1
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e224923f
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e224923f
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_e224923f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7924,7 +7924,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_e224923f
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_f3cde110
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_f3cde110
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_f3cde110 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7954,7 +7954,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_f3cde110
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d93bd8ce
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d93bd8ce
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_d93bd8ce extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -7984,7 +7984,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_d93bd8ce
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_cde9364d
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_cde9364d
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_cde9364d extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8014,7 +8014,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_cde9364d
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_43211e33
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_43211e33
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_43211e33 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8044,7 +8044,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_43211e33
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_25a13b9f
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_25a13b9f
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_25a13b9f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8074,7 +8074,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_25a13b9f
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_43abecb1
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_43abecb1
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_43abecb1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8104,7 +8104,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_43abecb1
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c24554e4
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c24554e4
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_c24554e4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8134,7 +8134,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_c24554e4
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3bfbbcd9
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3bfbbcd9
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_3bfbbcd9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8164,7 +8164,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_3bfbbcd9
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7a9ff349
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7a9ff349
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8194,7 +8194,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_7a9ff349
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1907ed9d
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_1907ed9d
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_1907ed9d extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8224,7 +8224,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_1907ed9d
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8961fa6e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8961fa6e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_8961fa6e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8254,7 +8254,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_8961fa6e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fe81e5d8
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fe81e5d8
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_fe81e5d8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8284,7 +8284,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_fe81e5d8
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7bba0154
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7bba0154
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_7bba0154 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8314,7 +8314,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_7bba0154
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ab7dd9d8
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ab7dd9d8
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_ab7dd9d8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8344,7 +8344,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_ab7dd9d8
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_cc04f1be
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_cc04f1be
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_cc04f1be extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8374,7 +8374,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_cc04f1be
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fc55bcdc
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fc55bcdc
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_fc55bcdc extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8404,7 +8404,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_fc55bcdc
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b7a5d6e8
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b7a5d6e8
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_b7a5d6e8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8434,7 +8434,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_b7a5d6e8
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_15791c55
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_15791c55
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_15791c55 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8464,7 +8464,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_15791c55
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_aa2c240e
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_aa2c240e
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_aa2c240e extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8494,7 +8494,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_aa2c240e
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8ee829eb
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8ee829eb
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_8ee829eb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8524,7 +8524,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_8ee829eb
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c8fadcf1
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c8fadcf1
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_c8fadcf1 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8554,7 +8554,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_c8fadcf1
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_da30f263
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_da30f263
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_da30f263 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8584,7 +8584,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_da30f263
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4d7978ea
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4d7978ea
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_4d7978ea extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8614,7 +8614,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_4d7978ea
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_82eedd27
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_82eedd27
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_82eedd27 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8644,7 +8644,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_82eedd27
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8da87fd8
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8da87fd8
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_8da87fd8 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8674,7 +8674,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_8da87fd8
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_76576605
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_76576605
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_76576605 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8704,7 +8704,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_76576605
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_62e3bbd7
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_62e3bbd7
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_62e3bbd7 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8734,7 +8734,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_62e3bbd7
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_9f5615ea
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_9f5615ea
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_9f5615ea extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8764,7 +8764,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_9f5615ea
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_dfcf4fa2
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_dfcf4fa2
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_dfcf4fa2 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8794,7 +8794,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_dfcf4fa2
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e65aef10
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_e65aef10
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_e65aef10 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8824,7 +8824,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_e65aef10
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_205dab58
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_205dab58
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_205dab58 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8854,7 +8854,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_205dab58
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4a95f125
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4a95f125
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_4a95f125 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8884,7 +8884,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_4a95f125
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_34303832
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_34303832
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_34303832 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8914,7 +8914,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_34303832
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8f4e2fa9
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8f4e2fa9
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_8f4e2fa9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8944,7 +8944,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_8f4e2fa9
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fe99756f
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_fe99756f
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_fe99756f extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -8974,7 +8974,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_fe99756f
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ec918ac5
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_ec918ac5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_ec918ac5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9004,7 +9004,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_ec918ac5
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3159d8db
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3159d8db
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_3159d8db extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9034,7 +9034,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_3159d8db
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_71f656a5
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_71f656a5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_71f656a5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9064,7 +9064,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_71f656a5
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d0af2f85
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d0af2f85
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_d0af2f85 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9094,7 +9094,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_d0af2f85
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3d88c5b9
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_3d88c5b9
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_3d88c5b9 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9124,7 +9124,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_3d88c5b9
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c43b8bc4
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c43b8bc4
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_c43b8bc4 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9154,7 +9154,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_c43b8bc4
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8f2ab5ec
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_8f2ab5ec
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_8f2ab5ec extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9184,7 +9184,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_8f2ab5ec
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_6dc1feed
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_6dc1feed
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_6dc1feed extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9214,7 +9214,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_6dc1feed
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_079a053a
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_079a053a
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_079a053a extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9244,7 +9244,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_079a053a
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_57912bdf
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_57912bdf
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_57912bdf extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9274,7 +9274,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_57912bdf
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7acf18aa
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_7acf18aa
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_7acf18aa extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9304,7 +9304,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_7acf18aa
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_bf2d7bde
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_bf2d7bde
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_bf2d7bde extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9334,7 +9334,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_bf2d7bde
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b5035b1b
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_b5035b1b
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_b5035b1b extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9364,7 +9364,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_b5035b1b
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4ff89941
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_4ff89941
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9394,7 +9394,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_4ff89941
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d73ae1bb
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_d73ae1bb
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9424,7 +9424,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_d73ae1bb
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c2486cf5
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_c2486cf5
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_c2486cf5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9454,7 +9454,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_c2486cf5
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_01554b96
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_01554b96
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_01554b96 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9484,7 +9484,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_01554b96
 
-    // Reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_a7b8ef97
+    // reg - mci_reg::intr_block_t::intr_count_incr_t_pulse_a7b8ef97
     class mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -9514,7 +9514,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t__intr_count_incr_t_pulse_a7b8ef97
 
-    // Regfile - mci_reg::intr_block_t
+    // regfile - mci_reg::intr_block_t
     class mci_reg__intr_block_t extends uvm_reg_block;
         rand mci_reg__intr_block_t__global_intr_en_t global_intr_en_r;
         rand mci_reg__intr_block_t__error0_intr_en_t error0_intr_en_r;
@@ -10636,7 +10636,7 @@ package mci_reg_uvm;
         endfunction : build
     endclass : mci_reg__intr_block_t
 
-    // Addrmap - mci_reg
+    // addrmap - mci_reg
     class mci_reg extends uvm_reg_block;
         rand mci_reg__HW_CAPABILITIES HW_CAPABILITIES;
         rand mci_reg__FW_CAPABILITIES FW_CAPABILITIES;

@@ -54,22 +54,7 @@ module mcu_mbox_csr (
     assign s_cpuif_wr_err = cpuif_wr_err;
 
     logic cpuif_req_masked;
-    logic external_req;
     logic external_pending;
-    logic external_wr_ack;
-    logic external_rd_ack;
-    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
-        if(~hwif_in.rst_b) begin
-            external_pending <= '0;
-        end else begin
-            if(external_req & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
-            else if(external_wr_ack | external_rd_ack) external_pending <= '0;
-            assert(!external_wr_ack || (external_pending | external_req))
-                else $error("An external wr_ack strobe was asserted when no external request was active");
-            assert(!external_rd_ack || (external_pending | external_req))
-                else $error("An external rd_ack strobe was asserted when no external request was active");
-        end
-    end
 
     // Read & write latencies are balanced. Stalls not required
     // except if external
@@ -96,22 +81,26 @@ module mcu_mbox_csr (
         logic mbox_hw_status;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
-    logic decoded_strb_is_external;
+    logic decoded_err;
+    logic decoded_req_is_external;
 
     logic [21:0] decoded_addr;
-
     logic decoded_req;
     logic decoded_req_is_wr;
     logic [31:0] decoded_wr_data;
     logic [31:0] decoded_wr_biten;
 
     always_comb begin
+        automatic logic is_valid_addr;
+        automatic logic is_valid_rw;
         automatic logic is_external;
         is_external = '0;
+        is_valid_addr = '1; // No valid address check
+        is_valid_rw = '1; // No valid RW check
         decoded_reg_strb.MBOX_SRAM = cpuif_req_masked & (cpuif_addr >= 22'h0) & (cpuif_addr <= 22'h0 + 22'h1fffff);
         is_external |= cpuif_req_masked & (cpuif_addr >= 22'h0) & (cpuif_addr <= 22'h0 + 22'h1fffff);
-        decoded_reg_strb.mbox_lock = cpuif_req_masked & (cpuif_addr == 22'h200000);
-        decoded_reg_strb.mbox_user = cpuif_req_masked & (cpuif_addr == 22'h200004);
+        decoded_reg_strb.mbox_lock = cpuif_req_masked & (cpuif_addr == 22'h200000) & !cpuif_req_is_wr;
+        decoded_reg_strb.mbox_user = cpuif_req_masked & (cpuif_addr == 22'h200004) & !cpuif_req_is_wr;
         decoded_reg_strb.mbox_target_user = cpuif_req_masked & (cpuif_addr == 22'h200008);
         decoded_reg_strb.mbox_target_user_valid = cpuif_req_masked & (cpuif_addr == 22'h20000c);
         decoded_reg_strb.mbox_cmd = cpuif_req_masked & (cpuif_addr == 22'h200010);
@@ -119,14 +108,29 @@ module mcu_mbox_csr (
         decoded_reg_strb.mbox_execute = cpuif_req_masked & (cpuif_addr == 22'h200018);
         decoded_reg_strb.mbox_target_status = cpuif_req_masked & (cpuif_addr == 22'h20001c);
         decoded_reg_strb.mbox_cmd_status = cpuif_req_masked & (cpuif_addr == 22'h200020);
-        decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200024);
-        decoded_strb_is_external = is_external;
-        external_req = is_external;
+        decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200024) & !cpuif_req_is_wr;
+        decoded_err = '0;
+        decoded_req_is_external = is_external;
+    end
+    logic external_wr_ack;
+    logic external_rd_ack;
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            external_pending <= '0;
+        end else begin
+            if(decoded_req_is_external & ~external_wr_ack & ~external_rd_ack) external_pending <= '1;
+            else if(external_wr_ack | external_rd_ack) external_pending <= '0;
+            `ifndef SYNTHESIS
+                assert_bad_ext_wr_ack: assert(!external_wr_ack || (external_pending | decoded_req_is_external))
+                    else $error("An external wr_ack strobe was asserted when no external request was active");
+                assert_bad_ext_rd_ack: assert(!external_rd_ack || (external_pending | decoded_req_is_external))
+                    else $error("An external rd_ack strobe was asserted when no external request was active");
+            `endif
+        end
     end
 
     // Pass down signals to next stage
     assign decoded_addr = cpuif_addr;
-
     assign decoded_req = cpuif_req_masked;
     assign decoded_req_is_wr = cpuif_req_is_wr;
     assign decoded_wr_data = cpuif_wr_data;
@@ -267,8 +271,9 @@ module mcu_mbox_csr (
     } field_storage_t;
     field_storage_t field_storage;
 
+    // External region: mcu_mbox_csr.MBOX_SRAM
     assign hwif_out.MBOX_SRAM.req = decoded_reg_strb.MBOX_SRAM;
-    assign hwif_out.MBOX_SRAM.addr = decoded_addr[21:0];
+    assign hwif_out.MBOX_SRAM.addr = decoded_addr[20:0];
     assign hwif_out.MBOX_SRAM.req_is_wr = decoded_req_is_wr;
     assign hwif_out.MBOX_SRAM.wr_data = decoded_wr_data;
     assign hwif_out.MBOX_SRAM.wr_biten = decoded_wr_biten;
@@ -294,8 +299,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_lock.lock.value <= 1'h0;
-        end else if(field_combo.mbox_lock.lock.load_next) begin
-            field_storage.mbox_lock.lock.value <= field_combo.mbox_lock.lock.next;
+        end else begin
+            if(field_combo.mbox_lock.lock.load_next) begin
+                field_storage.mbox_lock.lock.value <= field_combo.mbox_lock.lock.next;
+            end
         end
     end
     assign hwif_out.mbox_lock.lock.value = field_storage.mbox_lock.lock.value;
@@ -319,8 +326,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_user.user.value <= 32'h0;
-        end else if(field_combo.mbox_user.user.load_next) begin
-            field_storage.mbox_user.user.value <= field_combo.mbox_user.user.next;
+        end else begin
+            if(field_combo.mbox_user.user.load_next) begin
+                field_storage.mbox_user.user.value <= field_combo.mbox_user.user.next;
+            end
         end
     end
     assign hwif_out.mbox_user.user.value = field_storage.mbox_user.user.value;
@@ -343,8 +352,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_target_user.user.value <= 32'h0;
-        end else if(field_combo.mbox_target_user.user.load_next) begin
-            field_storage.mbox_target_user.user.value <= field_combo.mbox_target_user.user.next;
+        end else begin
+            if(field_combo.mbox_target_user.user.load_next) begin
+                field_storage.mbox_target_user.user.value <= field_combo.mbox_target_user.user.next;
+            end
         end
     end
     assign hwif_out.mbox_target_user.user.value = field_storage.mbox_target_user.user.value;
@@ -367,8 +378,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_target_user_valid.valid.value <= 1'h0;
-        end else if(field_combo.mbox_target_user_valid.valid.load_next) begin
-            field_storage.mbox_target_user_valid.valid.value <= field_combo.mbox_target_user_valid.valid.next;
+        end else begin
+            if(field_combo.mbox_target_user_valid.valid.load_next) begin
+                field_storage.mbox_target_user_valid.valid.value <= field_combo.mbox_target_user_valid.valid.next;
+            end
         end
     end
     assign hwif_out.mbox_target_user_valid.valid.value = field_storage.mbox_target_user_valid.valid.value;
@@ -391,8 +404,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_cmd.command.value <= 32'h0;
-        end else if(field_combo.mbox_cmd.command.load_next) begin
-            field_storage.mbox_cmd.command.value <= field_combo.mbox_cmd.command.next;
+        end else begin
+            if(field_combo.mbox_cmd.command.load_next) begin
+                field_storage.mbox_cmd.command.value <= field_combo.mbox_cmd.command.next;
+            end
         end
     end
     // Field: mcu_mbox_csr.mbox_dlen.length
@@ -414,8 +429,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_dlen.length.value <= 32'h0;
-        end else if(field_combo.mbox_dlen.length.load_next) begin
-            field_storage.mbox_dlen.length.value <= field_combo.mbox_dlen.length.next;
+        end else begin
+            if(field_combo.mbox_dlen.length.load_next) begin
+                field_storage.mbox_dlen.length.value <= field_combo.mbox_dlen.length.next;
+            end
         end
     end
     assign hwif_out.mbox_dlen.length.value = field_storage.mbox_dlen.length.value;
@@ -435,12 +452,14 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_execute.execute.value <= 1'h0;
-        end else if(field_combo.mbox_execute.execute.load_next) begin
-            field_storage.mbox_execute.execute.value <= field_combo.mbox_execute.execute.next;
+        end else begin
+            if(field_combo.mbox_execute.execute.load_next) begin
+                field_storage.mbox_execute.execute.value <= field_combo.mbox_execute.execute.next;
+            end
         end
     end
     assign hwif_out.mbox_execute.execute.value = field_storage.mbox_execute.execute.value;
-    assign hwif_out.mbox_execute.execute.swmod = decoded_reg_strb.mbox_execute && decoded_req_is_wr;
+    assign hwif_out.mbox_execute.execute.swmod = decoded_reg_strb.mbox_execute && decoded_req_is_wr && |(decoded_wr_biten[0:0]);
     // Field: mcu_mbox_csr.mbox_target_status.status
     always_comb begin
         automatic logic [3:0] next_c;
@@ -460,8 +479,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_target_status.status.value <= 4'h0;
-        end else if(field_combo.mbox_target_status.status.load_next) begin
-            field_storage.mbox_target_status.status.value <= field_combo.mbox_target_status.status.next;
+        end else begin
+            if(field_combo.mbox_target_status.status.load_next) begin
+                field_storage.mbox_target_status.status.value <= field_combo.mbox_target_status.status.next;
+            end
         end
     end
     assign hwif_out.mbox_target_status.status.value = field_storage.mbox_target_status.status.value;
@@ -484,8 +505,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_target_status.done.value <= 1'h0;
-        end else if(field_combo.mbox_target_status.done.load_next) begin
-            field_storage.mbox_target_status.done.value <= field_combo.mbox_target_status.done.next;
+        end else begin
+            if(field_combo.mbox_target_status.done.load_next) begin
+                field_storage.mbox_target_status.done.value <= field_combo.mbox_target_status.done.next;
+            end
         end
     end
     assign hwif_out.mbox_target_status.done.value = field_storage.mbox_target_status.done.value;
@@ -508,8 +531,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_cmd_status.status.value <= 4'h0;
-        end else if(field_combo.mbox_cmd_status.status.load_next) begin
-            field_storage.mbox_cmd_status.status.value <= field_combo.mbox_cmd_status.status.next;
+        end else begin
+            if(field_combo.mbox_cmd_status.status.load_next) begin
+                field_storage.mbox_cmd_status.status.value <= field_combo.mbox_cmd_status.status.next;
+            end
         end
     end
     assign hwif_out.mbox_cmd_status.status.value = field_storage.mbox_cmd_status.status.value;
@@ -532,8 +557,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_hw_status.ecc_single_error.value <= 1'h0;
-        end else if(field_combo.mbox_hw_status.ecc_single_error.load_next) begin
-            field_storage.mbox_hw_status.ecc_single_error.value <= field_combo.mbox_hw_status.ecc_single_error.next;
+        end else begin
+            if(field_combo.mbox_hw_status.ecc_single_error.load_next) begin
+                field_storage.mbox_hw_status.ecc_single_error.value <= field_combo.mbox_hw_status.ecc_single_error.next;
+            end
         end
     end
     assign hwif_out.mbox_hw_status.ecc_single_error.value = field_storage.mbox_hw_status.ecc_single_error.value;
@@ -556,8 +583,10 @@ module mcu_mbox_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.mbox_hw_status.ecc_double_error.value <= 1'h0;
-        end else if(field_combo.mbox_hw_status.ecc_double_error.load_next) begin
-            field_storage.mbox_hw_status.ecc_double_error.value <= field_combo.mbox_hw_status.ecc_double_error.next;
+        end else begin
+            if(field_combo.mbox_hw_status.ecc_double_error.load_next) begin
+                field_storage.mbox_hw_status.ecc_double_error.value <= field_combo.mbox_hw_status.ecc_double_error.next;
+            end
         end
     end
     assign hwif_out.mbox_hw_status.ecc_double_error.value = field_storage.mbox_hw_status.ecc_double_error.value;
@@ -571,7 +600,7 @@ module mcu_mbox_csr (
         wr_ack |= hwif_in.MBOX_SRAM.wr_ack;
         external_wr_ack = wr_ack;
     end
-    assign cpuif_wr_ack = external_wr_ack | (decoded_req & decoded_req_is_wr & ~decoded_strb_is_external);
+    assign cpuif_wr_ack = external_wr_ack | (decoded_req & decoded_req_is_wr & ~decoded_req_is_external);
     // Writes are always granted with no error response
     assign cpuif_wr_err = '0;
 
@@ -590,40 +619,62 @@ module mcu_mbox_csr (
 
     assign readback_external_rd_ack = readback_external_rd_ack_c;
 
+    logic [21:0] rd_mux_addr;
+    logic [21:0] pending_rd_addr;
+    // Hold read mux address to guarantee it is stable throughout any external accesses
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            pending_rd_addr <= '0;
+        end else begin
+            if(decoded_req) pending_rd_addr <= decoded_addr;
+        end
+    end
+    assign rd_mux_addr = decoded_req ? decoded_addr : pending_rd_addr;
+
     logic readback_err;
     logic readback_done;
     logic [31:0] readback_data;
-
-    // Assign readback values to a flattened array
-    logic [11-1:0][31:0] readback_array;
-    assign readback_array[0] = hwif_in.MBOX_SRAM.rd_ack ? hwif_in.MBOX_SRAM.rd_data : '0;
-    assign readback_array[1][0:0] = (decoded_reg_strb.mbox_lock && !decoded_req_is_wr) ? field_storage.mbox_lock.lock.value : '0;
-    assign readback_array[1][31:1] = '0;
-    assign readback_array[2][31:0] = (decoded_reg_strb.mbox_user && !decoded_req_is_wr) ? field_storage.mbox_user.user.value : '0;
-    assign readback_array[3][31:0] = (decoded_reg_strb.mbox_target_user && !decoded_req_is_wr) ? field_storage.mbox_target_user.user.value : '0;
-    assign readback_array[4][0:0] = (decoded_reg_strb.mbox_target_user_valid && !decoded_req_is_wr) ? field_storage.mbox_target_user_valid.valid.value : '0;
-    assign readback_array[4][31:1] = '0;
-    assign readback_array[5][31:0] = (decoded_reg_strb.mbox_cmd && !decoded_req_is_wr) ? field_storage.mbox_cmd.command.value : '0;
-    assign readback_array[6][31:0] = (decoded_reg_strb.mbox_dlen && !decoded_req_is_wr) ? field_storage.mbox_dlen.length.value : '0;
-    assign readback_array[7][0:0] = (decoded_reg_strb.mbox_execute && !decoded_req_is_wr) ? field_storage.mbox_execute.execute.value : '0;
-    assign readback_array[7][31:1] = '0;
-    assign readback_array[8][3:0] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.status.value : '0;
-    assign readback_array[8][4:4] = (decoded_reg_strb.mbox_target_status && !decoded_req_is_wr) ? field_storage.mbox_target_status.done.value : '0;
-    assign readback_array[8][31:5] = '0;
-    assign readback_array[9][3:0] = (decoded_reg_strb.mbox_cmd_status && !decoded_req_is_wr) ? field_storage.mbox_cmd_status.status.value : '0;
-    assign readback_array[9][31:4] = '0;
-    assign readback_array[10][0:0] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_single_error.value : '0;
-    assign readback_array[10][1:1] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_double_error.value : '0;
-    assign readback_array[10][31:2] = '0;
-
-    // Reduce the array
     always_comb begin
         automatic logic [31:0] readback_data_var;
-        readback_done = decoded_req & ~decoded_req_is_wr & ~decoded_strb_is_external;
-        readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<11; i++) readback_data_var |= readback_array[i];
+        if((rd_mux_addr >= 22'h0) && (rd_mux_addr <= 22'h0 + 22'h1fffff)) begin
+            readback_data_var = hwif_in.MBOX_SRAM.rd_data;
+        end
+        if(rd_mux_addr == 22'h200000) begin
+            readback_data_var[0] = field_storage.mbox_lock.lock.value;
+        end
+        if(rd_mux_addr == 22'h200004) begin
+            readback_data_var[31:0] = field_storage.mbox_user.user.value;
+        end
+        if(rd_mux_addr == 22'h200008) begin
+            readback_data_var[31:0] = field_storage.mbox_target_user.user.value;
+        end
+        if(rd_mux_addr == 22'h20000c) begin
+            readback_data_var[0] = field_storage.mbox_target_user_valid.valid.value;
+        end
+        if(rd_mux_addr == 22'h200010) begin
+            readback_data_var[31:0] = field_storage.mbox_cmd.command.value;
+        end
+        if(rd_mux_addr == 22'h200014) begin
+            readback_data_var[31:0] = field_storage.mbox_dlen.length.value;
+        end
+        if(rd_mux_addr == 22'h200018) begin
+            readback_data_var[0] = field_storage.mbox_execute.execute.value;
+        end
+        if(rd_mux_addr == 22'h20001c) begin
+            readback_data_var[3:0] = field_storage.mbox_target_status.status.value;
+            readback_data_var[4] = field_storage.mbox_target_status.done.value;
+        end
+        if(rd_mux_addr == 22'h200020) begin
+            readback_data_var[3:0] = field_storage.mbox_cmd_status.status.value;
+        end
+        if(rd_mux_addr == 22'h200024) begin
+            readback_data_var[0] = field_storage.mbox_hw_status.ecc_single_error.value;
+            readback_data_var[1] = field_storage.mbox_hw_status.ecc_double_error.value;
+        end
         readback_data = readback_data_var;
+        readback_done = decoded_req & ~decoded_req_is_wr & ~decoded_req_is_external;
+        readback_err = '0;
     end
 
     assign external_rd_ack = readback_external_rd_ack;

@@ -4,7 +4,7 @@ package mcu_mbox_csr_uvm;
     `include "uvm_macros.svh"
     import uvm_pkg::*;
     `include "mcu_mbox_csr_covergroups.svh"
-    // Mem - mcu_mbox_csr::MBOX_SRAM
+    // mem - mcu_mbox_csr::MBOX_SRAM
     class mcu_mbox_csr__MBOX_SRAM extends uvm_reg_block;
         rand uvm_mem m_mem;
         
@@ -20,7 +20,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__MBOX_SRAM
 
-    // Reg - mcu_mbox_csr::mbox_lock
+    // reg - mcu_mbox_csr::mbox_lock
     class mcu_mbox_csr__mbox_lock extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -50,7 +50,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_lock
 
-    // Reg - mcu_mbox_csr::mbox_user_user_70a5ffab
+    // reg - mcu_mbox_csr::mbox_user_user_70a5ffab
     class mcu_mbox_csr__mbox_user_user_70a5ffab extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -80,7 +80,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_user_user_70a5ffab
 
-    // Reg - mcu_mbox_csr::mbox_target_user
+    // reg - mcu_mbox_csr::mbox_target_user
     class mcu_mbox_csr__mbox_target_user extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -110,7 +110,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_target_user
 
-    // Reg - mcu_mbox_csr::mbox_target_user_valid
+    // reg - mcu_mbox_csr::mbox_target_user_valid
     class mcu_mbox_csr__mbox_target_user_valid extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -140,7 +140,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_target_user_valid
 
-    // Reg - mcu_mbox_csr::mbox_cmd
+    // reg - mcu_mbox_csr::mbox_cmd
     class mcu_mbox_csr__mbox_cmd extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -170,7 +170,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_cmd
 
-    // Reg - mcu_mbox_csr::mbox_dlen
+    // reg - mcu_mbox_csr::mbox_dlen
     class mcu_mbox_csr__mbox_dlen extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -200,7 +200,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_dlen
 
-    // Reg - mcu_mbox_csr::mbox_execute
+    // reg - mcu_mbox_csr::mbox_execute
     class mcu_mbox_csr__mbox_execute extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -230,7 +230,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_execute
 
-    // Reg - mcu_mbox_csr::mbox_target_status
+    // reg - mcu_mbox_csr::mbox_target_status
     class mcu_mbox_csr__mbox_target_status extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -265,7 +265,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_target_status
 
-    // Reg - mcu_mbox_csr::mbox_cmd_status
+    // reg - mcu_mbox_csr::mbox_cmd_status
     class mcu_mbox_csr__mbox_cmd_status extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -295,7 +295,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_cmd_status
 
-    // Reg - mcu_mbox_csr::mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
+    // reg - mcu_mbox_csr::mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
     class mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5 extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
@@ -330,7 +330,7 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
 
-    // Addrmap - mcu_mbox_csr
+    // addrmap - mcu_mbox_csr
     class mcu_mbox_csr extends uvm_reg_block;
         rand mcu_mbox_csr__MBOX_SRAM MBOX_SRAM;
         rand mcu_mbox_csr__mbox_lock mbox_lock;

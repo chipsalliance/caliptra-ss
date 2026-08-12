@@ -73,20 +73,28 @@ module trace_buffer_csr (
         logic READ_PTR;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
+    logic decoded_err;
+    logic [4:0] decoded_addr;
     logic decoded_req;
     logic decoded_req_is_wr;
     logic [31:0] decoded_wr_data;
     logic [31:0] decoded_wr_biten;
 
     always_comb begin
-        decoded_reg_strb.STATUS = cpuif_req_masked & (cpuif_addr == 5'h0);
-        decoded_reg_strb.CONFIG = cpuif_req_masked & (cpuif_addr == 5'h4);
-        decoded_reg_strb.DATA = cpuif_req_masked & (cpuif_addr == 5'h8);
-        decoded_reg_strb.WRITE_PTR = cpuif_req_masked & (cpuif_addr == 5'hc);
+        automatic logic is_valid_addr;
+        automatic logic is_valid_rw;
+        is_valid_addr = '1; // No valid address check
+        is_valid_rw = '1; // No valid RW check
+        decoded_reg_strb.STATUS = cpuif_req_masked & (cpuif_addr == 5'h0) & !cpuif_req_is_wr;
+        decoded_reg_strb.CONFIG = cpuif_req_masked & (cpuif_addr == 5'h4) & !cpuif_req_is_wr;
+        decoded_reg_strb.DATA = cpuif_req_masked & (cpuif_addr == 5'h8) & !cpuif_req_is_wr;
+        decoded_reg_strb.WRITE_PTR = cpuif_req_masked & (cpuif_addr == 5'hc) & !cpuif_req_is_wr;
         decoded_reg_strb.READ_PTR = cpuif_req_masked & (cpuif_addr == 5'h10);
+        decoded_err = '0;
     end
 
     // Pass down signals to next stage
+    assign decoded_addr = cpuif_addr;
     assign decoded_req = cpuif_req_masked;
     assign decoded_req_is_wr = cpuif_req_is_wr;
     assign decoded_wr_data = cpuif_wr_data;
@@ -181,8 +189,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.STATUS.wrapped.value <= 1'h0;
-        end else if(field_combo.STATUS.wrapped.load_next) begin
-            field_storage.STATUS.wrapped.value <= field_combo.STATUS.wrapped.next;
+        end else begin
+            if(field_combo.STATUS.wrapped.load_next) begin
+                field_storage.STATUS.wrapped.value <= field_combo.STATUS.wrapped.next;
+            end
         end
     end
     assign hwif_out.STATUS.wrapped.value = field_storage.STATUS.wrapped.value;
@@ -202,8 +212,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.STATUS.valid_data.value <= 1'h0;
-        end else if(field_combo.STATUS.valid_data.load_next) begin
-            field_storage.STATUS.valid_data.value <= field_combo.STATUS.valid_data.next;
+        end else begin
+            if(field_combo.STATUS.valid_data.load_next) begin
+                field_storage.STATUS.valid_data.value <= field_combo.STATUS.valid_data.next;
+            end
         end
     end
     assign hwif_out.STATUS.valid_data.value = field_storage.STATUS.valid_data.value;
@@ -223,8 +235,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.CONFIG.trace_buffer_depth.value <= 32'h0;
-        end else if(field_combo.CONFIG.trace_buffer_depth.load_next) begin
-            field_storage.CONFIG.trace_buffer_depth.value <= field_combo.CONFIG.trace_buffer_depth.next;
+        end else begin
+            if(field_combo.CONFIG.trace_buffer_depth.load_next) begin
+                field_storage.CONFIG.trace_buffer_depth.value <= field_combo.CONFIG.trace_buffer_depth.next;
+            end
         end
     end
     assign hwif_out.CONFIG.trace_buffer_depth.value = field_storage.CONFIG.trace_buffer_depth.value;
@@ -244,8 +258,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.DATA.data.value <= 32'h0;
-        end else if(field_combo.DATA.data.load_next) begin
-            field_storage.DATA.data.value <= field_combo.DATA.data.next;
+        end else begin
+            if(field_combo.DATA.data.load_next) begin
+                field_storage.DATA.data.value <= field_combo.DATA.data.next;
+            end
         end
     end
     assign hwif_out.DATA.data.value = field_storage.DATA.data.value;
@@ -265,8 +281,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.WRITE_PTR.ptr.value <= 32'h0;
-        end else if(field_combo.WRITE_PTR.ptr.load_next) begin
-            field_storage.WRITE_PTR.ptr.value <= field_combo.WRITE_PTR.ptr.next;
+        end else begin
+            if(field_combo.WRITE_PTR.ptr.load_next) begin
+                field_storage.WRITE_PTR.ptr.value <= field_combo.WRITE_PTR.ptr.next;
+            end
         end
     end
     assign hwif_out.WRITE_PTR.ptr.value = field_storage.WRITE_PTR.ptr.value;
@@ -289,8 +307,10 @@ module trace_buffer_csr (
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
             field_storage.READ_PTR.ptr.value <= 32'h0;
-        end else if(field_combo.READ_PTR.ptr.load_next) begin
-            field_storage.READ_PTR.ptr.value <= field_combo.READ_PTR.ptr.next;
+        end else begin
+            if(field_combo.READ_PTR.ptr.load_next) begin
+                field_storage.READ_PTR.ptr.value <= field_combo.READ_PTR.ptr.next;
+            end
         end
     end
     assign hwif_out.READ_PTR.ptr.value = field_storage.READ_PTR.ptr.value;
@@ -306,28 +326,34 @@ module trace_buffer_csr (
     // Readback
     //--------------------------------------------------------------------------
 
+    logic [4:0] rd_mux_addr;
+    assign rd_mux_addr = decoded_addr;
+
     logic readback_err;
     logic readback_done;
     logic [31:0] readback_data;
-
-    // Assign readback values to a flattened array
-    logic [5-1:0][31:0] readback_array;
-    assign readback_array[0][0:0] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.wrapped.value : '0;
-    assign readback_array[0][1:1] = (decoded_reg_strb.STATUS && !decoded_req_is_wr) ? field_storage.STATUS.valid_data.value : '0;
-    assign readback_array[0][31:2] = '0;
-    assign readback_array[1][31:0] = (decoded_reg_strb.CONFIG && !decoded_req_is_wr) ? field_storage.CONFIG.trace_buffer_depth.value : '0;
-    assign readback_array[2][31:0] = (decoded_reg_strb.DATA && !decoded_req_is_wr) ? field_storage.DATA.data.value : '0;
-    assign readback_array[3][31:0] = (decoded_reg_strb.WRITE_PTR && !decoded_req_is_wr) ? field_storage.WRITE_PTR.ptr.value : '0;
-    assign readback_array[4][31:0] = (decoded_reg_strb.READ_PTR && !decoded_req_is_wr) ? field_storage.READ_PTR.ptr.value : '0;
-
-    // Reduce the array
     always_comb begin
         automatic logic [31:0] readback_data_var;
+        readback_data_var = '0;
+        if(rd_mux_addr == 5'h0) begin
+            readback_data_var[0] = field_storage.STATUS.wrapped.value;
+            readback_data_var[1] = field_storage.STATUS.valid_data.value;
+        end
+        if(rd_mux_addr == 5'h4) begin
+            readback_data_var[31:0] = field_storage.CONFIG.trace_buffer_depth.value;
+        end
+        if(rd_mux_addr == 5'h8) begin
+            readback_data_var[31:0] = field_storage.DATA.data.value;
+        end
+        if(rd_mux_addr == 5'hc) begin
+            readback_data_var[31:0] = field_storage.WRITE_PTR.ptr.value;
+        end
+        if(rd_mux_addr == 5'h10) begin
+            readback_data_var[31:0] = field_storage.READ_PTR.ptr.value;
+        end
+        readback_data = readback_data_var;
         readback_done = decoded_req & ~decoded_req_is_wr;
         readback_err = '0;
-        readback_data_var = '0;
-        for(int i=0; i<5; i++) readback_data_var |= readback_array[i];
-        readback_data = readback_data_var;
     end
 
     assign cpuif_rd_ack = readback_done;

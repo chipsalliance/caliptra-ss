@@ -5,6 +5,7 @@ package trace_buffer_csr_pkg;
 
     localparam TRACE_BUFFER_CSR_DATA_WIDTH = 32;
     localparam TRACE_BUFFER_CSR_MIN_ADDR_WIDTH = 5;
+    localparam TRACE_BUFFER_CSR_SIZE = 'h14;
 
     typedef struct packed{
         logic next;

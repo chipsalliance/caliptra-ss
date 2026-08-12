@@ -38,9 +38,11 @@ else
 fi
 cd "${CALIPTRA_SS_ROOT}"
 
-# Run the HTML Doc generator script (to update the REG macro header files)
-# and the individual reg generator script but then remove the docs directories
-# before checking if the script caused any file modifications
+# Run the individual reg generator script (to update the per-block RDL
+# collateral) and the HTML Doc generator script (to update the REG macro header
+# files) but then remove the docs directories before checking if the scripts
+# caused any file modifications
+bash "${CALIPTRA_SS_ROOT}/tools/scripts/reg_gen.sh"
 bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
 rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
 
