@@ -1409,6 +1409,12 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
      - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.data_q`
      - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.ecc_q`
 
+     The `SECRET_LC_TRANSITION` partition is also scrambled, so its contents pass through the shared scrambler datapath in the clear while the partition is descrambled during initialization. The scrambler working registers must therefore be excluded as well:
+     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_state_q`
+     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_shadow_q`
+     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::digest_state_q`
+     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::key_state_q`
+
 4. **RAW Unlock Token**:
    - The `cptra_ss_raw_unlock_token_hashed_i` top-level input defines the *hashed* value of the
      RAW unlock token. The hashed value is generated from the *unhashed* RAW unlock token, which
