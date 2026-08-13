@@ -1401,19 +1401,21 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
     Volatile-unlock state transitions are not reflected by the fuse controller, and therefore `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not capture state transitions granted exclusively by the life-cycle controller. To cover this case, the Caliptra Subsystem also broadcasts `caliptra_ss_volatile_raw_unlock_success_o`, which is asserted by the life-cycle controller to indicate that the volatile-unlock state has been granted.
 
 3. **Scan Path Exclusions**:
-   - The RAW\_UNLOCK token does **not** need to be excluded from the scan chain. It is not provisioned through the fuse macro; it is driven in through the `cptra_ss_raw_unlock_token_hashed_i` top-level input and is therefore held in gates.
-   - This token is accepted only in the `RAW` state, to switch from `RAW` to `TEST_UNLOCKED0`. Since the life-cycle controller is forward-only and no state can transition back to `RAW`, the token becomes unusable once the device leaves `RAW`. Caliptra Subsystem secrets are provisioned only in `MANUF` (`DEV`) or later states, because the fuse controller does not allow secret provisioning while debug/DFT is enabled, which is the case in the `TEST_UNLOCKED_x` states reachable with this token.
-   - This applies to Caliptra Subsystem assets and threat model only. An SoC concerned about reverse engineering of its own IP through DFT/debug access on blank parts may still exclude the token, using the hierarchies `*::lc_ctrl_fsm::hashed_tokens_{upper, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
-   - The remaining LC transition tokens are provisioned into the fuse macro, which stores only their cSHAKE128 digests and never the raw tokens. Since the first Caliptra Subsystem secret (UDS) is provisioned in `MANUF` (`DEV`), the tokens of interest are those used to transition from `MANUF` onwards. Of these, only the RMA token is a concern: the `MANUF -> PROD` and `-> PROD_END` transitions unlock states that do not enable debug, and transitions to `SCRAP` are unconditional.
-   - The RMA token **must** be excluded from the scan chain, because the `RMA` state enables debug and DFT. Even though only its cSHAKE128 digest is stored in the fuse macro, the digest must not be observable, due to the collision risk. The digests are held in the buffered register of the `SECRET_LC_TRANSITION` partition, which covers all LC transition tokens, so the following hierarchies must be excluded:
-     - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.data_q`
-     - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.ecc_q`
+   - **RAW\_UNLOCK token**: does **not** need to be excluded from the scan chain.
+     - It is not provisioned through the fuse macro; it is driven in through the `cptra_ss_raw_unlock_token_hashed_i` top-level input and is therefore held in gates.
+     - This token is accepted only in the `RAW` state, to switch from `RAW` to `TEST_UNLOCKED0`. Since the life-cycle controller is forward-only and no state can transition back to `RAW`, the token becomes unusable once the device leaves `RAW`. Caliptra Subsystem secrets are provisioned only in `MANUF` (`DEV`) or later states, because the fuse controller does not allow secret provisioning while debug/DFT is enabled, which is the case in the `TEST_UNLOCKED_x` states reachable with this token.
+     - This applies to Caliptra Subsystem assets and threat model only. An SoC concerned about reverse engineering of its own IP through DFT/debug access on blank parts may still exclude the token, using the hierarchies `*::lc_ctrl_fsm::hashed_tokens_{upper, lower}[RawUnlockTokenIdx]` and `*::lc_ctrl_fsm::hashed_token_mux`.
+   - **Fuse-provisioned LC transition tokens**: the fuse macro stores only their cSHAKE128 digests and never the raw tokens.
+     - Since the first Caliptra Subsystem secret (UDS) is provisioned in `MANUF` (`DEV`), the tokens of interest are those used to transition from `MANUF` onwards. Of these, only the RMA token is a concern: the `MANUF -> PROD` and `-> PROD_END` transitions unlock states that do not enable debug, and transitions to `SCRAP` are unconditional.
+     - The RMA token **must** be excluded from the scan chain, because the `RMA` state enables debug and DFT. Even though only its cSHAKE128 digest is stored in the fuse macro, the digest must not be observable, due to the collision risk. The digests are held in the buffered register of the `SECRET_LC_TRANSITION` partition, which covers all LC transition tokens, so the following hierarchies must be excluded:
+       - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.data_q`
+       - `*::u_otp_ctrl::gen_partitions[SecretLcTransitionPartitionIdx].gen_buffered.u_part_buf.u_otp_ctrl_ecc_reg.ecc_q`
 
-     The `SECRET_LC_TRANSITION` partition is also scrambled, so its contents pass through the shared scrambler datapath in the clear while the partition is descrambled during initialization. The scrambler working registers must therefore be excluded as well:
-     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_state_q`
-     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_shadow_q`
-     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::digest_state_q`
-     - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::key_state_q`
+       The `SECRET_LC_TRANSITION` partition is also scrambled, so its contents pass through the shared scrambler datapath in the clear while the partition is descrambled during initialization. The scrambler working registers must therefore be excluded as well:
+       - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_state_q`
+       - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::data_shadow_q`
+       - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::digest_state_q`
+       - `*::u_otp_ctrl::u_otp_ctrl_scrmbl::key_state_q`
 
 4. **RAW Unlock Token**:
    - The `cptra_ss_raw_unlock_token_hashed_i` top-level input defines the *hashed* value of the
