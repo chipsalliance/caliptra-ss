@@ -30,6 +30,12 @@
 
 #define USB_POLL_TIMEOUT 20000
 
+// Number of CONTROL transfers issued by caliptra_ss_usb_init_sequence.svh:
+// GET_DESCRIPTOR(addr0), GET_STATUS(addr0), SET_ADDRESS(1),
+// GET_DESCRIPTOR(addr1), GET_CONFIGURATION(addr1), SET_CONFIGURATION(1),
+// GET_CONFIGURATION(addr1) verify.
+#define USB_EXPECTED_TRANSFERS 7
+
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
 #ifdef CPT_VERBOSITY
@@ -98,6 +104,15 @@ void main (void) {
                 // the handler AFTER the SETUP bit is cleared.
                 usb_handle_control_transfer();
                 transfers_handled++;
+
+                // Once all CONTROL transfers issued by the UVM init sequence
+                // have been serviced, stop polling immediately. The sequence
+                // drops its uvm_phase objection right after the last transfer
+                // completes on the bus. This firmware should immediately
+                // report its pass/fail result to the testbench.
+                if (transfers_handled >= USB_EXPECTED_TRANSFERS) {
+                    break;
+                }
             }
         }
 
@@ -124,6 +139,14 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB INFO final = 0x%x\n", reg_data);
     VPRINTF(LOW, "MCU: USB init test - transfers handled: %d\n", transfers_handled);
 
-    VPRINTF(LOW, "MCU: USB init test - halting\n");
+    // Signal test completion to the testbench
+    if (transfers_handled >= USB_EXPECTED_TRANSFERS) {
+        VPRINTF(LOW, "MCU: USB init test - PASS - halting\n");
+        SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
+    } else {
+        VPRINTF(LOW, "MCU: USB init test - FAIL (expected %d transfers, got %d) - halting\n",
+                USB_EXPECTED_TRANSFERS, transfers_handled);
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    }
     csr_write_mpmc_halt();
 }

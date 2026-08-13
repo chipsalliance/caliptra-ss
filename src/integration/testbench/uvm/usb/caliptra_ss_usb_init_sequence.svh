@@ -389,6 +389,14 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "GET_CONFIGURATION_addr1_verify");
 
+        // Settling delay before dropping the objection. wait_xfer_done()
+        // only guarantees the bus transaction has ended; it does not wait
+        // for the DUT firmware to finish its own post-transfer bookkeeping.
+        // Dropping the objection immediately races the environment's own $finish
+        // against firmware and can end the simulation before
+        // firmware reports its result.
+        #50us;
+
         `uvm_info("USB_INIT", "USB init sequence complete.", UVM_LOW)
     endtask
 
