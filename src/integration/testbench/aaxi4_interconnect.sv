@@ -137,6 +137,7 @@ generate
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_LCC_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_SOC_SRAM_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_SPI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         
 endgenerate 
 
@@ -313,10 +314,23 @@ initial begin
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_wuser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.opt_buser_enable = 1; // optional, axi4_interconn_routings.sv need it
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.base_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR}; //64'h7000_0400;
-        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR} + 'h5FF;// 64'h7000_05FF;
+        slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_LC_CTRL_BASE_ADDR} + 'h1FF;// 64'h7000_05FF;
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_LCC_IDX].cfg_info.id_outstanding_depth = 4;
+
+        //-- SPI Host
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.passive_mode = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.opt_awuser_enable = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.opt_aruser_enable = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.opt_ruser_enable = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.opt_wuser_enable = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.opt_buser_enable = 1;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.base_address[0]  = {32'h0, `SOC_SPI_HOST_BASE_ADDR}; //64'h7000_0800;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.limit_address[0] = {32'h0, `SOC_SPI_HOST_BASE_ADDR} + 'hFF; //64'h7000_08FF;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.total_outstanding_depth = 4;
+        slave[`CSS_INTC_SINTF_SPI_IDX].cfg_info.id_outstanding_depth = 4;
 
 
 
@@ -399,6 +413,7 @@ initial begin
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
         slave[7].set("mem_uninitialized_value", 0);
+        slave[8].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -409,6 +424,7 @@ initial begin
         test.slave5= slave[5];
         test.slave6= slave[6];
         test.slave7= slave[7];
+        test.slave8= slave[8];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);
