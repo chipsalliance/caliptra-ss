@@ -125,6 +125,9 @@ requires:
   - lib_usb_ip_3515
   - lib_usb_ip_3516
 targets:
+  rtl_lint:
+    waiver_files:
+      - $MSFT_REPO_ROOT/src/usb2/config/design_lint/sglint_waivers
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
