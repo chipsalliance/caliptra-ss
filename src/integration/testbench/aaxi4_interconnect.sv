@@ -130,8 +130,11 @@ generate
     // NC, MCU ROM
     defparam slave_mon[`CSS_INTC_SINTF_NC0_IDX    ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
     defparam slave_mon[`CSS_INTC_SINTF_MCU_ROM_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH; // set DATA BUS WIDTH to match interconnect native width
-    // I3C, Caliptra SoC IFC, MCI, FC, LCC
+    // I3C, USB DMA, USB DEV, USB HOST, Caliptra SoC IFC, MCI, FC, LCC
     defparam slave_mon[`CSS_INTC_SINTF_I3C_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_USB_DMA_IDX      ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_USB_DEV_IDX      ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
+    defparam slave_mon[`CSS_INTC_SINTF_USB_HOST_IDX     ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_MCI_IDX          ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
     defparam slave_mon[`CSS_INTC_SINTF_FC_IDX           ].monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH/2; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
@@ -242,6 +245,21 @@ initial begin
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // set DATA BUS WIDTH to interconnect native width / 2 (32b)
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.total_outstanding_depth = 4;
         slave[`CSS_INTC_SINTF_I3C_IDX].cfg_info.id_outstanding_depth = 4;
+
+        //-- USB DMA
+        slave[`CSS_INTC_SINTF_USB_DMA_IDX].cfg_info.base_address[0]  = 64'h2001_0000; // TODO use addr map macro
+        slave[`CSS_INTC_SINTF_USB_DMA_IDX].cfg_info.limit_address[0] = 64'h2001_0000 + 64'hFFFF;
+        slave[`CSS_INTC_SINTF_USB_DMA_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
+
+        //-- USB DEV (device registers)
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.base_address[0]  = 64'h2000_0000; // TODO use addr map macro
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.limit_address[0] = 64'h2000_0000 + 64'h0FFF;
+        slave[`CSS_INTC_SINTF_USB_DEV_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
+
+        //-- USB HOST (host controller registers)
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.base_address[0]  = 64'h2000_1000;
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.limit_address[0] = 64'h2000_1000 + 64'h0FFF;
+        slave[`CSS_INTC_SINTF_USB_HOST_IDX].cfg_info.data_bus_bytes = AAXI_DATA_WIDTH >> 4; // 32b
 
         //-- MCU ROM MACRO / MCI_TOP 2nd instance
         slave[`CSS_INTC_SINTF_MCU_ROM_IDX].cfg_info.base_address[0] = {32'h0, 32'h8000_0000};
@@ -399,6 +417,9 @@ initial begin
         slave[5].set("mem_uninitialized_value", 0);
         slave[6].set("mem_uninitialized_value", 0);
         slave[7].set("mem_uninitialized_value", 0);
+        slave[8].set("mem_uninitialized_value", 0);
+        slave[9].set("mem_uninitialized_value", 0);
+        slave[10].set("mem_uninitialized_value", 0);
 
 
         test.slave0= slave[0];
@@ -409,6 +430,9 @@ initial begin
         test.slave5= slave[5];
         test.slave6= slave[6];
         test.slave7= slave[7];
+        test.slave8= slave[8];
+        test.slave9= slave[9];
+        test.slave10= slave[10];
 
         for (int i=0; i< AAXI_INTC_SLAVE_CNT; i++)
             test.slv_bfms.push_back(slave[i]);

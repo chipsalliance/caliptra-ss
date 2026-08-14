@@ -98,6 +98,7 @@ requires:
   - lc_ctrl
   - axi_mem_pkg
   - mcu_top
+  - ip_xxx_3516_hs_mem_wrapper
   - i3c_core
   - fuse_ctrl
   - mci_top
@@ -161,6 +162,7 @@ requires:
   - ast_pkg
   - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
+  - 3rd_party_snps_usb_vip::usb_vip
   - avery_vip
   - caliptra_ss_top_tb_coverage
 targets:
@@ -171,8 +173,10 @@ targets:
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
       - $COMPILE_ROOT/testbench/sv_tests/mci
       - $COMPILE_ROOT/testbench/sv_tests/common
+      - $COMPILE_ROOT/testbench/uvm/usb
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
       # - $COMPILE_ROOT/testbench/dasm.svi
@@ -227,12 +231,13 @@ global:
         - +define+AAXI_MAX_DATA_WIDTH=64
         - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
+        - +define+AAXI_SPORT_ID_WIDTH=8
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32
         - +define+CALIPTRA_INTERNAL_TRNG
-        - '-noinherit_timescale=1ns/1ps'
+        - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=8
+        - +define+AAXI_INTC_SLAVE_CNT=11
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
@@ -243,6 +248,16 @@ global:
         - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
         - +define+SIMULATION
+        # --- Synopsys USB SVT VIP compile options ---
+        - +define+SVT_UVM_TECHNOLOGY
+        - +define+UVM_PACKER_MAX_BYTES=24000
+        - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+        - +define+SYNOPSYS_SV
+        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME
+        - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+        - +define+SVT_VERSION=latest
+        - +define+SVT_MPHY_PKG_LOAD
+
       elab:
         #FIXME : remve this warning suppression
         #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
@@ -251,6 +266,19 @@ global:
         - '+warn=noTFIPC,noMDVMO'
         # axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
         - '+warn=noUII-L'
+#        # ICPSD_W: Illegal combination of structural and procedural drivers, internal to
+#        # the Synopsys USB SVT VIP (svt_usb_utmi_dut_phy_if.svi).  The VIP declares these
+#        # signals as var logic with both initial-block and internal continuous-assign drivers;
+#        # our structural assign to relay DUT outputs into the VIP also triggers this warning.
+#        # Cannot be resolved without modifying 3rd-party VIP code.  Suppressed to prevent
+#        # VCS from upgrading this to an error in future tool releases.
+#        - '+warn=noICPSD_W'
+        # SIMU-RESOLUTION: VCS informational note about simulation time resolution.
+        # DRTZ: Detect delay value roundoff to 0 based on timescale - benign
+        # rounding note present in mixed-language (VHDL+SV) builds.
+        # Both are caught as errors by the Playbook log parser but are
+        # harmless elaboration-time messages, so suppress them here.
+        - '-suppress=SIMU-RESOLUTION,DRTZ'
         - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
         - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c_core
@@ -268,3 +296,15 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
+        # --- Synopsys USB SVT VIP runtime options ---
+        # Enable SVT debug automation: activates protocol and link trace log
+        # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+        # config object properties (enable_prot_tracing, enable_link_tracing)
+        # gate which layers are written; physical layer tracing is disabled.
+        - '+svt_debug_opts'
+        # Uncomment to enable USB VIP debug logging
+        #- '+svt_usb_enable_debug'
+      dpi_compile:
+        # Allow gcc to tokenize UTF-8 source correctly (fixes Unicode curly-quote
+        # characters in #error text inside a false #if branch in uvm_hdl_vcs.c)
+        - '-finput-charset=UTF-8'

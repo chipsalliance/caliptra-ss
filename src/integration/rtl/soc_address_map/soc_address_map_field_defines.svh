@@ -16,6 +16,371 @@
 `define SOC_ADDRESS_MAP_FIELD_DEFINES_HEADER
 
 
+`ifndef USBHSD_DEVCMDSTAT
+`define USBHSD_DEVCMDSTAT                                                                           (32'h0)
+`define USBHSD_DEVCMDSTAT_DEV_ADDR_LOW                                                              (0)
+`define USBHSD_DEVCMDSTAT_DEV_ADDR_MASK                                                             (32'h7f)
+`define USBHSD_DEVCMDSTAT_DEV_EN_LOW                                                                (7)
+`define USBHSD_DEVCMDSTAT_DEV_EN_MASK                                                               (32'h80)
+`define USBHSD_DEVCMDSTAT_SETUP_LOW                                                                 (8)
+`define USBHSD_DEVCMDSTAT_SETUP_MASK                                                                (32'h100)
+`define USBHSD_DEVCMDSTAT_FORCE_NEEDCLK_LOW                                                         (9)
+`define USBHSD_DEVCMDSTAT_FORCE_NEEDCLK_MASK                                                        (32'h200)
+`define USBHSD_DEVCMDSTAT_FORCE_VBUS_LOW                                                            (10)
+`define USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK                                                           (32'h400)
+`define USBHSD_DEVCMDSTAT_LPM_SUP_LOW                                                               (11)
+`define USBHSD_DEVCMDSTAT_LPM_SUP_MASK                                                              (32'h800)
+`define USBHSD_DEVCMDSTAT_INTONNAK_AO_LOW                                                           (12)
+`define USBHSD_DEVCMDSTAT_INTONNAK_AO_MASK                                                          (32'h1000)
+`define USBHSD_DEVCMDSTAT_INTONNAK_AI_LOW                                                           (13)
+`define USBHSD_DEVCMDSTAT_INTONNAK_AI_MASK                                                          (32'h2000)
+`define USBHSD_DEVCMDSTAT_INTONNAK_CO_LOW                                                           (14)
+`define USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK                                                          (32'h4000)
+`define USBHSD_DEVCMDSTAT_INTONNAK_CI_LOW                                                           (15)
+`define USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK                                                          (32'h8000)
+`define USBHSD_DEVCMDSTAT_DCON_LOW                                                                  (16)
+`define USBHSD_DEVCMDSTAT_DCON_MASK                                                                 (32'h10000)
+`define USBHSD_DEVCMDSTAT_DSUS_LOW                                                                  (17)
+`define USBHSD_DEVCMDSTAT_DSUS_MASK                                                                 (32'h20000)
+`define USBHSD_DEVCMDSTAT_LPM_SUS_LOW                                                               (19)
+`define USBHSD_DEVCMDSTAT_LPM_SUS_MASK                                                              (32'h80000)
+`define USBHSD_DEVCMDSTAT_LPM_REWP_LOW                                                              (20)
+`define USBHSD_DEVCMDSTAT_LPM_REWP_MASK                                                             (32'h100000)
+`define USBHSD_DEVCMDSTAT_SPEED_LOW                                                                 (22)
+`define USBHSD_DEVCMDSTAT_SPEED_MASK                                                                (32'hc00000)
+`define USBHSD_DEVCMDSTAT_DCON_C_LOW                                                                (24)
+`define USBHSD_DEVCMDSTAT_DCON_C_MASK                                                               (32'h1000000)
+`define USBHSD_DEVCMDSTAT_DSUS_C_LOW                                                                (25)
+`define USBHSD_DEVCMDSTAT_DSUS_C_MASK                                                               (32'h2000000)
+`define USBHSD_DEVCMDSTAT_DRES_C_LOW                                                                (26)
+`define USBHSD_DEVCMDSTAT_DRES_C_MASK                                                               (32'h4000000)
+`define USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_LOW                                                        (28)
+`define USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK                                                       (32'h10000000)
+`define USBHSD_DEVCMDSTAT_PHY_TEST_MODE_LOW                                                         (29)
+`define USBHSD_DEVCMDSTAT_PHY_TEST_MODE_MASK                                                        (32'he0000000)
+`endif
+`ifndef USBHSD_INFO
+`define USBHSD_INFO                                                                                 (32'h4)
+`define USBHSD_INFO_FRAME_NR_LOW                                                                    (0)
+`define USBHSD_INFO_FRAME_NR_MASK                                                                   (32'h7ff)
+`define USBHSD_INFO_ERR_CODE_LOW                                                                    (11)
+`define USBHSD_INFO_ERR_CODE_MASK                                                                   (32'h7800)
+`define USBHSD_INFO_MINREV_LOW                                                                      (16)
+`define USBHSD_INFO_MINREV_MASK                                                                     (32'hff0000)
+`define USBHSD_INFO_MAJREV_LOW                                                                      (24)
+`define USBHSD_INFO_MAJREV_MASK                                                                     (32'hff000000)
+`endif
+`ifndef USBHSD_EPLISTSTART
+`define USBHSD_EPLISTSTART                                                                          (32'h8)
+`define USBHSD_EPLISTSTART_EP_LIST_PRG_LOW                                                          (8)
+`define USBHSD_EPLISTSTART_EP_LIST_PRG_MASK                                                         (32'hfff00)
+`define USBHSD_EPLISTSTART_EP_LIST_FIXED_LOW                                                        (20)
+`define USBHSD_EPLISTSTART_EP_LIST_FIXED_MASK                                                       (32'hfff00000)
+`endif
+`ifndef USBHSD_DATABUFSTART
+`define USBHSD_DATABUFSTART                                                                         (32'hc)
+`define USBHSD_DATABUFSTART_DA_BUF_LOW                                                              (18)
+`define USBHSD_DATABUFSTART_DA_BUF_MASK                                                             (32'hfffc0000)
+`endif
+`ifndef USBHSD_LPM
+`define USBHSD_LPM                                                                                  (32'h10)
+`define USBHSD_LPM_HIRD_HW_LOW                                                                      (0)
+`define USBHSD_LPM_HIRD_HW_MASK                                                                     (32'hf)
+`define USBHSD_LPM_HIRD_SW_LOW                                                                      (4)
+`define USBHSD_LPM_HIRD_SW_MASK                                                                     (32'hf0)
+`define USBHSD_LPM_DATA_PENDING_LOW                                                                 (8)
+`define USBHSD_LPM_DATA_PENDING_MASK                                                                (32'h100)
+`endif
+`ifndef USBHSD_EPSKIP
+`define USBHSD_EPSKIP                                                                               (32'h14)
+`define USBHSD_EPSKIP_SKIP_LOW                                                                      (0)
+`define USBHSD_EPSKIP_SKIP_MASK                                                                     (32'hfff)
+`endif
+`ifndef USBHSD_EPINUSE
+`define USBHSD_EPINUSE                                                                              (32'h18)
+`define USBHSD_EPINUSE_BUF_LOW                                                                      (2)
+`define USBHSD_EPINUSE_BUF_MASK                                                                     (32'hffc)
+`endif
+`ifndef USBHSD_EPBUFCFG
+`define USBHSD_EPBUFCFG                                                                             (32'h1c)
+`define USBHSD_EPBUFCFG_BUF_SB_LOW                                                                  (2)
+`define USBHSD_EPBUFCFG_BUF_SB_MASK                                                                 (32'hffc)
+`endif
+`ifndef USBHSD_INTSTAT
+`define USBHSD_INTSTAT                                                                              (32'h20)
+`define USBHSD_INTSTAT_EP0OUT_LOW                                                                   (0)
+`define USBHSD_INTSTAT_EP0OUT_MASK                                                                  (32'h1)
+`define USBHSD_INTSTAT_EP0IN_LOW                                                                    (1)
+`define USBHSD_INTSTAT_EP0IN_MASK                                                                   (32'h2)
+`define USBHSD_INTSTAT_EP1OUT_LOW                                                                   (2)
+`define USBHSD_INTSTAT_EP1OUT_MASK                                                                  (32'h4)
+`define USBHSD_INTSTAT_EP1IN_LOW                                                                    (3)
+`define USBHSD_INTSTAT_EP1IN_MASK                                                                   (32'h8)
+`define USBHSD_INTSTAT_EP2OUT_LOW                                                                   (4)
+`define USBHSD_INTSTAT_EP2OUT_MASK                                                                  (32'h10)
+`define USBHSD_INTSTAT_EP2IN_LOW                                                                    (5)
+`define USBHSD_INTSTAT_EP2IN_MASK                                                                   (32'h20)
+`define USBHSD_INTSTAT_EP3OUT_LOW                                                                   (6)
+`define USBHSD_INTSTAT_EP3OUT_MASK                                                                  (32'h40)
+`define USBHSD_INTSTAT_EP3IN_LOW                                                                    (7)
+`define USBHSD_INTSTAT_EP3IN_MASK                                                                   (32'h80)
+`define USBHSD_INTSTAT_EP4OUT_LOW                                                                   (8)
+`define USBHSD_INTSTAT_EP4OUT_MASK                                                                  (32'h100)
+`define USBHSD_INTSTAT_EP4IN_LOW                                                                    (9)
+`define USBHSD_INTSTAT_EP4IN_MASK                                                                   (32'h200)
+`define USBHSD_INTSTAT_EP5OUT_LOW                                                                   (10)
+`define USBHSD_INTSTAT_EP5OUT_MASK                                                                  (32'h400)
+`define USBHSD_INTSTAT_EP5IN_LOW                                                                    (11)
+`define USBHSD_INTSTAT_EP5IN_MASK                                                                   (32'h800)
+`define USBHSD_INTSTAT_FRAME_INT_LOW                                                                (30)
+`define USBHSD_INTSTAT_FRAME_INT_MASK                                                               (32'h40000000)
+`define USBHSD_INTSTAT_DEV_INT_LOW                                                                  (31)
+`define USBHSD_INTSTAT_DEV_INT_MASK                                                                 (32'h80000000)
+`endif
+`ifndef USBHSD_INTEN
+`define USBHSD_INTEN                                                                                (32'h24)
+`define USBHSD_INTEN_EP_INT_EN_LOW                                                                  (0)
+`define USBHSD_INTEN_EP_INT_EN_MASK                                                                 (32'hfff)
+`define USBHSD_INTEN_FRAME_INT_EN_LOW                                                               (30)
+`define USBHSD_INTEN_FRAME_INT_EN_MASK                                                              (32'h40000000)
+`define USBHSD_INTEN_DEV_INT_EN_LOW                                                                 (31)
+`define USBHSD_INTEN_DEV_INT_EN_MASK                                                                (32'h80000000)
+`endif
+`ifndef USBHSD_INTSETSTAT
+`define USBHSD_INTSETSTAT                                                                           (32'h28)
+`define USBHSD_INTSETSTAT_EP_SET_INT_LOW                                                            (0)
+`define USBHSD_INTSETSTAT_EP_SET_INT_MASK                                                           (32'hfff)
+`define USBHSD_INTSETSTAT_FRAME_SET_INT_LOW                                                         (30)
+`define USBHSD_INTSETSTAT_FRAME_SET_INT_MASK                                                        (32'h40000000)
+`define USBHSD_INTSETSTAT_DEV_SET_INT_LOW                                                           (31)
+`define USBHSD_INTSETSTAT_DEV_SET_INT_MASK                                                          (32'h80000000)
+`endif
+`ifndef USBHSD_EPTOGGLE
+`define USBHSD_EPTOGGLE                                                                             (32'h34)
+`define USBHSD_EPTOGGLE_TOGGLE_LOW                                                                  (0)
+`define USBHSD_EPTOGGLE_TOGGLE_MASK                                                                 (32'h3fffffff)
+`endif
+`ifndef USBHSD_ULPIDEBUG
+`define USBHSD_ULPIDEBUG                                                                            (32'h3c)
+`define USBHSD_ULPIDEBUG_PHY_ADDR_LOW                                                               (0)
+`define USBHSD_ULPIDEBUG_PHY_ADDR_MASK                                                              (32'hff)
+`define USBHSD_ULPIDEBUG_PHY_WDATA_LOW                                                              (8)
+`define USBHSD_ULPIDEBUG_PHY_WDATA_MASK                                                             (32'hff00)
+`define USBHSD_ULPIDEBUG_PHY_RDATA_LOW                                                              (16)
+`define USBHSD_ULPIDEBUG_PHY_RDATA_MASK                                                             (32'hff0000)
+`define USBHSD_ULPIDEBUG_PHY_RW_LOW                                                                 (24)
+`define USBHSD_ULPIDEBUG_PHY_RW_MASK                                                                (32'h1000000)
+`define USBHSD_ULPIDEBUG_PHY_ACCESS_LOW                                                             (25)
+`define USBHSD_ULPIDEBUG_PHY_ACCESS_MASK                                                            (32'h2000000)
+`define USBHSD_ULPIDEBUG_PHY_MODE_LOW                                                               (31)
+`define USBHSD_ULPIDEBUG_PHY_MODE_MASK                                                              (32'h80000000)
+`endif
+`ifndef USBHSH_CAPLENGTH_CHIPID
+`define USBHSH_CAPLENGTH_CHIPID                                                                     (32'h0)
+`define USBHSH_CAPLENGTH_CHIPID_CAPLENGTH_LOW                                                       (0)
+`define USBHSH_CAPLENGTH_CHIPID_CAPLENGTH_MASK                                                      (32'hff)
+`define USBHSH_CAPLENGTH_CHIPID_CHIPID_LOW                                                          (16)
+`define USBHSH_CAPLENGTH_CHIPID_CHIPID_MASK                                                         (32'hffff0000)
+`endif
+`ifndef USBHSH_HCSPARAMS
+`define USBHSH_HCSPARAMS                                                                            (32'h4)
+`define USBHSH_HCSPARAMS_N_PORTS_LOW                                                                (0)
+`define USBHSH_HCSPARAMS_N_PORTS_MASK                                                               (32'hf)
+`define USBHSH_HCSPARAMS_PPC_LOW                                                                    (4)
+`define USBHSH_HCSPARAMS_PPC_MASK                                                                   (32'h10)
+`define USBHSH_HCSPARAMS_P_INDICATOR_LOW                                                            (16)
+`define USBHSH_HCSPARAMS_P_INDICATOR_MASK                                                           (32'h10000)
+`endif
+`ifndef USBHSH_HCCPARAMS
+`define USBHSH_HCCPARAMS                                                                            (32'h8)
+`define USBHSH_HCCPARAMS_LPMC_LOW                                                                   (17)
+`define USBHSH_HCCPARAMS_LPMC_MASK                                                                  (32'h20000)
+`endif
+`ifndef USBHSH_FLADJ_FRINDEX
+`define USBHSH_FLADJ_FRINDEX                                                                        (32'hc)
+`define USBHSH_FLADJ_FRINDEX_FLADJ_LOW                                                              (0)
+`define USBHSH_FLADJ_FRINDEX_FLADJ_MASK                                                             (32'h3f)
+`define USBHSH_FLADJ_FRINDEX_FRINDEX_LOW                                                            (16)
+`define USBHSH_FLADJ_FRINDEX_FRINDEX_MASK                                                           (32'h3fff0000)
+`endif
+`ifndef USBHSH_ATL_PTD_BASE_ADDR
+`define USBHSH_ATL_PTD_BASE_ADDR                                                                    (32'h10)
+`define USBHSH_ATL_PTD_BASE_ADDR_ATL_CUR_LOW                                                        (4)
+`define USBHSH_ATL_PTD_BASE_ADDR_ATL_CUR_MASK                                                       (32'h1f0)
+`define USBHSH_ATL_PTD_BASE_ADDR_ATL_BASE_LOW                                                       (9)
+`define USBHSH_ATL_PTD_BASE_ADDR_ATL_BASE_MASK                                                      (32'hfffffe00)
+`endif
+`ifndef USBHSH_ISO_PTD_BASE_ADDR
+`define USBHSH_ISO_PTD_BASE_ADDR                                                                    (32'h14)
+`define USBHSH_ISO_PTD_BASE_ADDR_ISO_FIRST_LOW                                                      (5)
+`define USBHSH_ISO_PTD_BASE_ADDR_ISO_FIRST_MASK                                                     (32'h3e0)
+`define USBHSH_ISO_PTD_BASE_ADDR_ISO_BASE_LOW                                                       (10)
+`define USBHSH_ISO_PTD_BASE_ADDR_ISO_BASE_MASK                                                      (32'hfffffc00)
+`endif
+`ifndef USBHSH_INT_PTD_BASE_ADDR
+`define USBHSH_INT_PTD_BASE_ADDR                                                                    (32'h18)
+`define USBHSH_INT_PTD_BASE_ADDR_INT_FIRST_LOW                                                      (5)
+`define USBHSH_INT_PTD_BASE_ADDR_INT_FIRST_MASK                                                     (32'h3e0)
+`define USBHSH_INT_PTD_BASE_ADDR_INT_BASE_LOW                                                       (10)
+`define USBHSH_INT_PTD_BASE_ADDR_INT_BASE_MASK                                                      (32'hfffffc00)
+`endif
+`ifndef USBHSH_DATA_PAYLOAD_BASE_ADDR
+`define USBHSH_DATA_PAYLOAD_BASE_ADDR                                                               (32'h1c)
+`define USBHSH_DATA_PAYLOAD_BASE_ADDR_DAT_BASE_LOW                                                  (16)
+`define USBHSH_DATA_PAYLOAD_BASE_ADDR_DAT_BASE_MASK                                                 (32'hffff0000)
+`endif
+`ifndef USBHSH_USBCMD
+`define USBHSH_USBCMD                                                                               (32'h20)
+`define USBHSH_USBCMD_RS_LOW                                                                        (0)
+`define USBHSH_USBCMD_RS_MASK                                                                       (32'h1)
+`define USBHSH_USBCMD_HCRESET_LOW                                                                   (1)
+`define USBHSH_USBCMD_HCRESET_MASK                                                                  (32'h2)
+`define USBHSH_USBCMD_FLS_LOW                                                                       (2)
+`define USBHSH_USBCMD_FLS_MASK                                                                      (32'hc)
+`define USBHSH_USBCMD_LHCR_LOW                                                                      (7)
+`define USBHSH_USBCMD_LHCR_MASK                                                                     (32'h80)
+`define USBHSH_USBCMD_ATL_EN_LOW                                                                    (8)
+`define USBHSH_USBCMD_ATL_EN_MASK                                                                   (32'h100)
+`define USBHSH_USBCMD_ISO_EN_LOW                                                                    (9)
+`define USBHSH_USBCMD_ISO_EN_MASK                                                                   (32'h200)
+`define USBHSH_USBCMD_INT_EN_LOW                                                                    (10)
+`define USBHSH_USBCMD_INT_EN_MASK                                                                   (32'h400)
+`define USBHSH_USBCMD_HIRD_LOW                                                                      (24)
+`define USBHSH_USBCMD_HIRD_MASK                                                                     (32'hf000000)
+`define USBHSH_USBCMD_LPM_RWU_LOW                                                                   (28)
+`define USBHSH_USBCMD_LPM_RWU_MASK                                                                  (32'h10000000)
+`endif
+`ifndef USBHSH_USBSTS
+`define USBHSH_USBSTS                                                                               (32'h24)
+`define USBHSH_USBSTS_PCD_LOW                                                                       (2)
+`define USBHSH_USBSTS_PCD_MASK                                                                      (32'h4)
+`define USBHSH_USBSTS_FLR_LOW                                                                       (3)
+`define USBHSH_USBSTS_FLR_MASK                                                                      (32'h8)
+`define USBHSH_USBSTS_ATL_IRQ_LOW                                                                   (16)
+`define USBHSH_USBSTS_ATL_IRQ_MASK                                                                  (32'h10000)
+`define USBHSH_USBSTS_ISO_IRQ_LOW                                                                   (17)
+`define USBHSH_USBSTS_ISO_IRQ_MASK                                                                  (32'h20000)
+`define USBHSH_USBSTS_INT_IRQ_LOW                                                                   (18)
+`define USBHSH_USBSTS_INT_IRQ_MASK                                                                  (32'h40000)
+`define USBHSH_USBSTS_SOF_IRQ_LOW                                                                   (19)
+`define USBHSH_USBSTS_SOF_IRQ_MASK                                                                  (32'h80000)
+`endif
+`ifndef USBHSH_USBINTR
+`define USBHSH_USBINTR                                                                              (32'h28)
+`define USBHSH_USBINTR_PCDE_LOW                                                                     (2)
+`define USBHSH_USBINTR_PCDE_MASK                                                                    (32'h4)
+`define USBHSH_USBINTR_FLRE_LOW                                                                     (3)
+`define USBHSH_USBINTR_FLRE_MASK                                                                    (32'h8)
+`define USBHSH_USBINTR_ATL_IRQ_E_LOW                                                                (16)
+`define USBHSH_USBINTR_ATL_IRQ_E_MASK                                                               (32'h10000)
+`define USBHSH_USBINTR_ISO_IRQ_E_LOW                                                                (17)
+`define USBHSH_USBINTR_ISO_IRQ_E_MASK                                                               (32'h20000)
+`define USBHSH_USBINTR_INT_IRQ_E_LOW                                                                (18)
+`define USBHSH_USBINTR_INT_IRQ_E_MASK                                                               (32'h40000)
+`define USBHSH_USBINTR_SOF_E_LOW                                                                    (19)
+`define USBHSH_USBINTR_SOF_E_MASK                                                                   (32'h80000)
+`endif
+`ifndef USBHSH_PORTSC1
+`define USBHSH_PORTSC1                                                                              (32'h2c)
+`define USBHSH_PORTSC1_CCS_LOW                                                                      (0)
+`define USBHSH_PORTSC1_CCS_MASK                                                                     (32'h1)
+`define USBHSH_PORTSC1_CSC_LOW                                                                      (1)
+`define USBHSH_PORTSC1_CSC_MASK                                                                     (32'h2)
+`define USBHSH_PORTSC1_PED_LOW                                                                      (2)
+`define USBHSH_PORTSC1_PED_MASK                                                                     (32'h4)
+`define USBHSH_PORTSC1_PEDC_LOW                                                                     (3)
+`define USBHSH_PORTSC1_PEDC_MASK                                                                    (32'h8)
+`define USBHSH_PORTSC1_OCA_LOW                                                                      (4)
+`define USBHSH_PORTSC1_OCA_MASK                                                                     (32'h10)
+`define USBHSH_PORTSC1_OCC_LOW                                                                      (5)
+`define USBHSH_PORTSC1_OCC_MASK                                                                     (32'h20)
+`define USBHSH_PORTSC1_FPR_LOW                                                                      (6)
+`define USBHSH_PORTSC1_FPR_MASK                                                                     (32'h40)
+`define USBHSH_PORTSC1_SUSP_LOW                                                                     (7)
+`define USBHSH_PORTSC1_SUSP_MASK                                                                    (32'h80)
+`define USBHSH_PORTSC1_PR_LOW                                                                       (8)
+`define USBHSH_PORTSC1_PR_MASK                                                                      (32'h100)
+`define USBHSH_PORTSC1_SUS_L1_LOW                                                                   (9)
+`define USBHSH_PORTSC1_SUS_L1_MASK                                                                  (32'h200)
+`define USBHSH_PORTSC1_LS_LOW                                                                       (10)
+`define USBHSH_PORTSC1_LS_MASK                                                                      (32'hc00)
+`define USBHSH_PORTSC1_PP_LOW                                                                       (12)
+`define USBHSH_PORTSC1_PP_MASK                                                                      (32'h1000)
+`define USBHSH_PORTSC1_PFSC_LOW                                                                     (13)
+`define USBHSH_PORTSC1_PFSC_MASK                                                                    (32'h2000)
+`define USBHSH_PORTSC1_PIC_LOW                                                                      (14)
+`define USBHSH_PORTSC1_PIC_MASK                                                                     (32'hc000)
+`define USBHSH_PORTSC1_PTC_LOW                                                                      (16)
+`define USBHSH_PORTSC1_PTC_MASK                                                                     (32'hf0000)
+`define USBHSH_PORTSC1_PSPD_LOW                                                                     (20)
+`define USBHSH_PORTSC1_PSPD_MASK                                                                    (32'h300000)
+`define USBHSH_PORTSC1_WOO_LOW                                                                      (22)
+`define USBHSH_PORTSC1_WOO_MASK                                                                     (32'h400000)
+`define USBHSH_PORTSC1_SUS_STAT_LOW                                                                 (23)
+`define USBHSH_PORTSC1_SUS_STAT_MASK                                                                (32'h1800000)
+`define USBHSH_PORTSC1_DEV_ADD_LOW                                                                  (25)
+`define USBHSH_PORTSC1_DEV_ADD_MASK                                                                 (32'hfe000000)
+`endif
+`ifndef USBHSH_ATL_PTD_DONE_MAP
+`define USBHSH_ATL_PTD_DONE_MAP                                                                     (32'h30)
+`endif
+`ifndef USBHSH_ATL_PTD_SKIP_MAP
+`define USBHSH_ATL_PTD_SKIP_MAP                                                                     (32'h34)
+`endif
+`ifndef USBHSH_ISO_PTD_DONE_MAP
+`define USBHSH_ISO_PTD_DONE_MAP                                                                     (32'h38)
+`endif
+`ifndef USBHSH_ISO_PTD_SKIP_MAP
+`define USBHSH_ISO_PTD_SKIP_MAP                                                                     (32'h3c)
+`endif
+`ifndef USBHSH_INT_PTD_DONE_MAP
+`define USBHSH_INT_PTD_DONE_MAP                                                                     (32'h40)
+`endif
+`ifndef USBHSH_INT_PTD_SKIP_MAP
+`define USBHSH_INT_PTD_SKIP_MAP                                                                     (32'h44)
+`endif
+`ifndef USBHSH_LAST_PTD_INUSE
+`define USBHSH_LAST_PTD_INUSE                                                                       (32'h48)
+`define USBHSH_LAST_PTD_INUSE_ATL_LAST_LOW                                                          (0)
+`define USBHSH_LAST_PTD_INUSE_ATL_LAST_MASK                                                         (32'h1f)
+`define USBHSH_LAST_PTD_INUSE_ISO_LAST_LOW                                                          (8)
+`define USBHSH_LAST_PTD_INUSE_ISO_LAST_MASK                                                         (32'h1f00)
+`define USBHSH_LAST_PTD_INUSE_INT_LAST_LOW                                                          (16)
+`define USBHSH_LAST_PTD_INUSE_INT_LAST_MASK                                                         (32'h1f0000)
+`endif
+`ifndef USBHSH_UTMIPLUS_ULPI_DEBUG
+`define USBHSH_UTMIPLUS_ULPI_DEBUG                                                                  (32'h4c)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_ADDR_LOW                                                     (0)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_ADDR_MASK                                                    (32'hff)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_WDATA_LOW                                                    (8)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_WDATA_MASK                                                   (32'hff00)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_RDATA_LOW                                                    (16)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_RDATA_MASK                                                   (32'hff0000)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_RW_LOW                                                       (24)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_RW_MASK                                                      (32'h1000000)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_ACCESS_LOW                                                   (25)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_ACCESS_MASK                                                  (32'h2000000)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_MODE_LOW                                                     (31)
+`define USBHSH_UTMIPLUS_ULPI_DEBUG_PHY_MODE_MASK                                                    (32'h80000000)
+`endif
+`ifndef USBHSH_PORTMODE
+`define USBHSH_PORTMODE                                                                             (32'h50)
+`define USBHSH_PORTMODE_ID0_LOW                                                                     (0)
+`define USBHSH_PORTMODE_ID0_MASK                                                                    (32'h1)
+`define USBHSH_PORTMODE_ID0_EN_LOW                                                                  (8)
+`define USBHSH_PORTMODE_ID0_EN_MASK                                                                 (32'h100)
+`define USBHSH_PORTMODE_PORT_MODE_LOW                                                               (16)
+`define USBHSH_PORTMODE_PORT_MODE_MASK                                                              (32'h10000)
+`define USBHSH_PORTMODE_SW_CTRL_PDCOM_LOW                                                           (18)
+`define USBHSH_PORTMODE_SW_CTRL_PDCOM_MASK                                                          (32'h40000)
+`define USBHSH_PORTMODE_SW_PDCOM_LOW                                                                (19)
+`define USBHSH_PORTMODE_SW_PDCOM_MASK                                                               (32'h80000)
+`endif
+`ifndef USBHSH_PACKET_TURNAROUND_TIME
+`define USBHSH_PACKET_TURNAROUND_TIME                                                               (32'h84)
+`define USBHSH_PACKET_TURNAROUND_TIME_HOST_TIMEOUT_LOW                                              (0)
+`define USBHSH_PACKET_TURNAROUND_TIME_HOST_TIMEOUT_MASK                                             (32'h7ff)
+`endif
 `ifndef I3CCSR_I3CBASE_HCI_VERSION
 `define I3CCSR_I3CBASE_HCI_VERSION                                                                  (32'h0)
 `endif

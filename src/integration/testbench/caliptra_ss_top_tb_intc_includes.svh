@@ -32,6 +32,9 @@
     `define CSS_INTC_SINTF_FC_IDX            5
     `define CSS_INTC_SINTF_SOC_SRAM_IDX      6 
     `define CSS_INTC_SINTF_LCC_IDX           7
+    `define CSS_INTC_SINTF_USB_HOST_IDX      8
+    `define CSS_INTC_SINTF_USB_DMA_IDX       9
+    `define CSS_INTC_SINTF_USB_DEV_IDX       10
 
 
 

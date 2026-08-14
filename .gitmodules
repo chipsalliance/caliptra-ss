@@ -10,3 +10,7 @@
 	path = third_party/cocotbext-i3c
 	url = https://github.com/antmicro/cocotbext-i3c.git
 	branch = main
+[submodule "third_party/usb2"]
+	path = third_party/usb2
+	url = https://github.com/chipsalliance/usb2.git
+	branch = main

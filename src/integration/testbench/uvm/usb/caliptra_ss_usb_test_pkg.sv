@@ -1,6 +1,4 @@
-//********************************************************************************
 // SPDX-License-Identifier: Apache-2.0
-// 
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,16 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//********************************************************************************
+//
 
-`ifndef CALIPTRA_SS_INCLUDES_SVH
-`define CALIPTRA_SS_INCLUDES_SVH
+package caliptra_ss_usb_test_pkg;
 
-// Interrupt Assignments
-// NOTE Vector 0 is reserved by VeeR
-`define VEER_INTR_VEC_MCI                 1
-`define VEER_INTR_VEC_I3C                 2
-`define VEER_INTR_VEC_USB                 3
-`define VEER_INTR_EXT_LSB                 4
-    
-`endif // CALIPTRA_SS_INCLUDES_SVH
+  // Force VCS recompile when USB UVM package contents change.
+  localparam int USB_PKG_VERSION = 127;
+
+  import uvm_pkg::*;
+  `include "uvm_macros.svh"
+  import svt_uvm_pkg::*;
+  import svt_usb_uvm_pkg::*;
+ 
+
+  `include "caliptra_ss_usb_shared_cfg.svh"
+  `include "caliptra_ss_usb_env.svh"
+  `include "caliptra_ss_usb_init_sequence.svh"
+  `include "caliptra_ss_usb_base_test.svh"
+  `include "caliptra_ss_usb_basic_utmi_test.svh"
+
+endpackage

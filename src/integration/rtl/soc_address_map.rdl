@@ -24,8 +24,14 @@
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
+`include "../../../third_party/usb2/systemrdl/usbhsd.rdl"
+`include "../../../third_party/usb2/systemrdl/usbhsh.rdl"
 
 addrmap soc {
+
+    usbhsd usbhsd @ 0x2000_0000;
+
+    usbhsh usbhsh @ 0x2000_1000;
 
     I3CCSR I3CCSR @ 0x2000_4000;
 

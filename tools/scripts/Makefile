@@ -78,7 +78,8 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  mci \
 		  fuse_ctrl \
 		  lc_ctrl \
-		  wdt
+		  wdt \
+		  usb
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
@@ -168,7 +169,9 @@ endif
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf | grep -v '+incdir+\|+define+'))
+
+SYNOPSYS_SIM_SETUP = $(CALIPTRA_SS_ROOT)/third_party/usb2/tools/scripts/synopsys_sim.setup
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -226,8 +229,21 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
+VCS_DPI_INC_DIR := $(VCS_HOME)/linux64/include
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS += -I$(UVM_HOME_2020)/src/dpi -I$(VCS_DPI_INC_DIR)
+TB_DPI_SRCS += $(UVM_HOME_2020)/src/dpi/uvm_dpi.cc
+
+TB_DPI_DIR := $(BUILD_DIR)/dpi
+TB_DPI_OFILES := $(addprefix $(TB_DPI_DIR)/,jtagdpi.o tcp_server.o uvm_dpi.o)
+TB_DPI_SO := $(TB_DPI_DIR)/lib_dpi.so
+DPI_CFLAGS := -m64 -g \
+    -fPIC -finput-charset=UTF-8 \
+    -Wall -Wno-unused-variable -Wno-unused-function \
+    -DVCS \
+    $(TB_DPI_INCS) \
+    -shared -c
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -271,12 +287,13 @@ VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ADDR_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=8
 VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
-VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
+VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=11
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -286,6 +303,15 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+VCS_COMP_OPTS += +define+SIMULATION
+VCS_COMP_OPTS += +define+SVT_UVM_TECHNOLOGY
+VCS_COMP_OPTS += +define+UVM_PACKER_MAX_BYTES=24000
+VCS_COMP_OPTS += +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+VCS_COMP_OPTS += +define+SYNOPSYS_SV
+VCS_COMP_OPTS += +define+DESIGNWARE_INCDIR=$(DESIGNWARE_HOME_INC)
+VCS_COMP_OPTS += +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+VCS_COMP_OPTS += +define+SVT_VERSION=latest
+VCS_COMP_OPTS += +define+SVT_MPHY_PKG_LOAD
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
@@ -293,6 +319,7 @@ VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
 # axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
 VCS_ELAB_OPTS += +warn=noUII-L
+VCS_ELAB_OPTS += -suppress=SIMU-RESOLUTION,DRTZ
 VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
@@ -300,6 +327,10 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
+VCS_SIM_OPTS  += +svt_debug_opts
+VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
+############# VCS Simulation Override Options #############
+VCS_SIM_EXTRA_OPTS ?= 
 
 # Targets
 all: clean verilator
@@ -330,15 +361,36 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-vcs-build: $(TBFILES) $(TB_DPI_SRCS)
+vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
+	cp $(SYNOPSYS_SIM_SETUP) $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/rtl
+	USB_COMPILE_DIR=$(BUILD_DIR) \
+	vhdlan           -full64                -kdb=common_elab \
+	  -work rtl \
+	  -l vcs_vhdl_compile.log \
+	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
-	  -l vcs_compile.log \
+	  -work rtl \
+	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
-	  -assert enable_hier $(DUT) -o simv.$(DUT) +dpi -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
+	  -assert enable_hier $(DUT) -o simv.$(DUT)
+
+$(TB_DPI_DIR):
+	mkdir -p $(TB_DPI_DIR)
+
+$(TB_DPI_DIR)/%.o: $(TB_DPI_SRCS) | $(TB_DPI_DIR)
+	gcc $(DPI_CFLAGS) $(filter %$*.c %$*.cc,$(TB_DPI_SRCS)) -o $@
+
+$(TB_DPI_SO): $(TB_DPI_OFILES)
+	gcc -m64 \
+	    -fPIC \
+	    -shared \
+	    $(TB_DPI_OFILES) \
+	    -o $(TB_DPI_SO)
 
 ############ TEST Simulation ###############################
 
@@ -349,6 +401,7 @@ vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
+	  $(VCS_SIM_EXTRA_OPTS) \
 	  -l vcs_sim.log
 
 ############ Caliptra TEST build ######################
