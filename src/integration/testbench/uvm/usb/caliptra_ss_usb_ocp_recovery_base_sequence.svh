@@ -60,18 +60,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         if ((req == null) || (req.status == svt_sequence_item::ABORTED)) begin
             return OCP_XFER_ABORTED;
         end
-        // OCP Recovery v1.1 Section 8.2.5 FIFO writes can change ring state
-        // when the OUT DATA stage is accepted, before a later status-stage
-        // condition is reflected in the VIP result bitmap. Treat a complete
-        // FIFO DATA stage as delivered; subsequent STATUS reads determine how
-        // many DWORDs actually advanced WRITE_INDEX.
-        if ((req.setup_data_bmrequesttype_dir ==
-                svt_usb_types::HOST_TO_DEVICE) &&
-            (req.setup_data_w_value[7:0] ==
-                OCP_CMD_INDIRECT_FIFO_DATA) &&
-            caliptra_ss_usb_out_payload_complete(req)) begin
-            return OCP_XFER_SUCCESS;
-        end
         if (!caliptra_ss_usb_xfer_successful(req)) begin
             return OCP_XFER_NON_SUCCESS;
         end
@@ -615,10 +603,10 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         int unsigned expected_length;
         ocp_read(OCP_CMD_PROT_CAP, response, "OCP_CMD_001_PROT_CAP");
 
-        expected_length = OCP_OFF_PC_HEARTBEAT_PERIOD + 2;
+        expected_length = OCP_SPEC_LEN_PROT_CAP;
         if (response.size() != expected_length) begin
             `uvm_error("OCP_BASE",
-                $sformatf("PROT_CAP length=%0d, expected %0d including the reserved pad byte.",
+                $sformatf("PROT_CAP length=%0d, expected %0d per OCP Recovery v1.1 Sec 9.2.",
                           response.size(), expected_length))
             agent_caps      = '0;
             cms_count       = '0;
@@ -643,12 +631,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           response[OCP_OFF_PC_VERSION_MINOR],
                           OCP_SPEC_VERSION_MAJOR, OCP_SPEC_VERSION_MINOR))
         end
-        if (response[expected_length-1] != 8'h00) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("PROT_CAP reserved pad byte expected 0x00, got 0x%02h.",
-                          response[expected_length-1]))
-        end
-
         agent_caps = {
             response[OCP_OFF_PC_AGENT_CAPS_HI],
             response[OCP_OFF_PC_AGENT_CAPS_LO]};
