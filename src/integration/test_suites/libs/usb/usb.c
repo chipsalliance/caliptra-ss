@@ -331,7 +331,7 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
                 (void)usb_handle_control_transfer();
                 usb_transfers_handled++;
 
-                if (|expected_transfers && (transfers_handled >= expected_transfers)) {
+                if ((expected_transfers != 0) && (usb_transfers_handled >= expected_transfers)) {
                     break;
                 }
             }
