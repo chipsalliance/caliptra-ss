@@ -112,6 +112,15 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_async.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_async_simple.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_gf_mult.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_ctrl_decode.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_hwif_adapter.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_rb_adapter.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_cms_fifo.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_fsm.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_top.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/axilite_to_ahb.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/axi_to_ahb.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv
