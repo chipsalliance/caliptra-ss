@@ -16,26 +16,36 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 160;
+  localparam int USB_PKG_VERSION = 172;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   import svt_uvm_pkg::*;
   import svt_usb_uvm_pkg::*;
-  import usb_ocp_recovery_pkg::*;
+  import caliptra_ss_usb_common_pkg::*;
+  import caliptra_ss_usb_ocp_recovery_tb_pkg::*;
  
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_xfer_helpers.svh"
+  `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
+  `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
+  `include "caliptra_ss_usb_nak_monitor_callback.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_control_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
+  `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
   `include "caliptra_ss_usb_ocp_scoreboard.svh"
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
   `include "caliptra_ss_usb_base_test.svh"
   `include "caliptra_ss_usb_basic_utmi_test.svh"
   `include "caliptra_ss_usb_ocp_recovery_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_test.svh"
+  `include "caliptra_ss_usb_ocp_cmd_handling_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_control_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_usb_nak_test.svh"
 
 endpackage

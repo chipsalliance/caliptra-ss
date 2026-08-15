@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CALIPTRA_SS_USB_XFER_HELPERS_SV
-`define CALIPTRA_SS_USB_XFER_HELPERS_SV
+`ifndef CALIPTRA_SS_USB_BASE_SEQUENCE_SV
+`define CALIPTRA_SS_USB_BASE_SEQUENCE_SV
 
 // =============================================================================
 // caliptra_ss_usb_base_sequence
@@ -45,11 +45,6 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
         super.new(name);
     endfunction
 
-    // -------------------------------------------------------------------------
-    // Objection plumbing: when this sequence is launched stand-alone from a
-    // phase (no parent sequence), raise/drop the objection so the simulator
-    // stays in the run phase for the whole transfer choreography.
-    // -------------------------------------------------------------------------
     virtual task pre_start();
         uvm_phase phase;
         super.pre_start();
@@ -65,22 +60,12 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
             phase.drop_objection(this);
     endtask
 
-    // -------------------------------------------------------------------------
-    // Resolve the canonical handles needed to drive transfers on this
-    // virtual sequencer. Fails fatal if any handle cannot be resolved.
-    //
-    //  host_agent_h  : the svt_usb_agent that owns p_sequencer (parent comp).
-    //  usb_cfg       : the svt_usb_configuration the agent was built with.
-    //  shared_status : the svt_usb_status object the link FSM writes to.
-    //
-    // The svt_usb_status returned by p_sequencer.get_shared_status(this)
-    // is the same object instance held in host_agent_h.shared_status
-    // (verified empirically in USB_PKG_VERSION 125).
-    // -------------------------------------------------------------------------
-    virtual task resolve_xfer_handles(output svt_usb_agent         host_agent_h,
-                                      output svt_usb_configuration usb_cfg,
-                                      output svt_usb_status        shared_status);
-        uvm_component     parent_comp;
+    virtual task resolve_xfer_handles(
+        output svt_usb_agent host_agent_h,
+        output svt_usb_configuration usb_cfg,
+        output svt_usb_status shared_status);
+
+        uvm_component parent_comp;
         svt_configuration get_cfg;
 
         parent_comp = p_sequencer.get_parent();
@@ -102,30 +87,22 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
                 "Unable to cast configuration to svt_usb_configuration")
     endtask
 
-    // -------------------------------------------------------------------------
-    // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
-    //
-    // Uses the canonical VIP pattern: set cfg + fix_anchors before randomize
-    // (see $VIPROOT examples usb_directed_transfers_sequence.sv).
-    // -------------------------------------------------------------------------
     task do_control_xfer(
-        input bit [7:0]  bm_request_type_dir,    // svt_usb_types direction enum
-        input bit [7:0]  bm_request_type_type,   // svt_usb_types type enum
-        input bit [7:0]  bm_request_type_recip,  // svt_usb_types recipient enum
-        input bit [7:0]  brequest_val,
+        input bit [7:0] bm_request_type_dir,
+        input bit [7:0] bm_request_type_type,
+        input bit [7:0] bm_request_type_recip,
+        input bit [7:0] brequest_val,
         input bit [15:0] wvalue,
         input bit [15:0] windex,
         input bit [15:0] wlength,
-        input int        device_addr,
-        input string     label,
-        input svt_usb_configuration usb_cfg = null
-    );
+        input int device_addr,
+        input string label,
+        input svt_usb_configuration usb_cfg = null);
+
         svt_usb_transfer req;
+
         req = svt_usb_transfer::type_id::create({label, "_req"});
         start_item(req, -1, p_sequencer.xfer_sequencer);
-        // Set cfg so the transfer's internal constraints can resolve
-        // device/endpoint anchors. fix_anchors(dev_idx, ep_idx, upstream_idx)
-        // tells the randomizer which remote_device_cfg entry to use.
         if (usb_cfg != null)
             req.cfg = usb_cfg;
         req.fix_anchors(0, 0, 0);
@@ -144,26 +121,11 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
                 $sformatf("svt_usb_transfer randomize() failed for %s", label))
         end
         finish_item(req, -1);
-        // Anchor message for log scraping: promoted to UVM_NONE so it appears
-        // in sim.log even when +svt_debug_opts reroutes lower verbosities to
-        // svt_debug.transcript.
         `uvm_info("USB_INIT",
             $sformatf("CONTROL %s done (addr=%0d wValue=0x%04x wLength=0x%04x)",
                       label, device_addr, wvalue, wlength), UVM_NONE)
     endtask
 
-    // -------------------------------------------------------------------------
-    // Helper: wait for host-side transfer completion.
-    //
-    // The xfer_sequencer accepts transfers into its pending queue and
-    // finish_item returns immediately. The protocol scheduler sends the
-    // transfer on the bus asynchronously. We must wait for
-    // NOTIFY_USB_TRANSFER_ENDED before proceeding.
-    //
-    // Pattern from VIP example:
-    //   attach_bulk_xfers_detach_hs_sequence.sv (fork/join on
-    //   host_agent.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger)
-    // -------------------------------------------------------------------------
     task wait_xfer_done(svt_usb_agent agent_h, string label);
         agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
         `uvm_info("USB_INIT",
@@ -172,4 +134,4 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
 
 endclass
 
-`endif // CALIPTRA_SS_USB_XFER_HELPERS_SV
+`endif // CALIPTRA_SS_USB_BASE_SEQUENCE_SV
