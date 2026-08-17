@@ -15,9 +15,9 @@
 // =============================================================================
 // caliptra_ss_usb_ocp_access_semantics_if
 //
-// TB-owned observation interface for OCP Recovery access-semantics tests.
-// Exposes only architectural top-level outputs and firmware synchronization
-// signals; no internal DUT signals are probed.
+// TB-owned synchronization interface for OCP Recovery CPUif tests. It exposes
+// architectural top-level outputs and a generation-qualified command channel
+// to Caliptra firmware; no internal DUT signals are probed.
 //
 // Signal mapping for SS-level OCP Recovery access-semantics checks:
 //
@@ -29,6 +29,7 @@
 //     Firmware convention for these tests:
 //       state[7:0] -> register[10:3] -> fw_exec_ctrl[7:0]
 //       data[7:0]  -> register[18:11] -> fw_exec_ctrl[15:8]
+//       generation[15:0] -> register[34:19] -> fw_exec_ctrl[31:16]
 //
 //   subsystem_reset_n
 //     Connected to cptra_ss_rst_b_o. Used by sequences to verify that
@@ -47,14 +48,27 @@
 
 interface caliptra_ss_usb_ocp_access_semantics_if;
 
+    localparam logic [31:0] FW_COMMAND_MAGIC = 32'h4F43_5041;
+    localparam logic [7:0] FW_COMMAND_SET_PATH_DISABLE = 8'h01;
+    localparam logic [7:0] FW_COMMAND_CLEAR_PATH_DISABLE = 8'h02;
+    localparam logic [7:0] FW_STATE_COMMAND_BUSY = 8'h1F;
+    localparam logic [7:0] FW_STATE_PATH_READY = 8'h20;
+    localparam logic [7:0] FW_STATE_PATH_DISABLED = 8'h21;
+    localparam logic [7:0] FW_STATE_PATH_ENABLED = 8'h22;
+    localparam logic [7:0] FW_STATE_COMMAND_ERROR = 8'h2F;
+
     // Architectural top-level observations, driven by assign in the TB.
     logic [124:0] fw_exec_ctrl;
     logic         subsystem_reset_n;
     logic         recovery_payload_available;
     logic         recovery_image_activated;
+    logic [63:0]  fw_command_wires;
+    bit           fw_command_active;
     bit           subsystem_reset_seen;
     bit           recovery_image_activated_seen;
 
+    initial fw_command_wires = '0;
+    initial fw_command_active = 1'b0;
     initial subsystem_reset_seen = 1'b0;
     initial recovery_image_activated_seen = 1'b0;
 
@@ -80,6 +94,10 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
     // -------------------------------------------------------------------------
     function automatic logic [7:0] get_fw_data();
         return fw_exec_ctrl[15:8];
+    endfunction
+
+    function automatic logic [15:0] get_fw_generation();
+        return fw_exec_ctrl[31:16];
     endfunction
 
     // -------------------------------------------------------------------------
@@ -120,6 +138,84 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
             end
             #(poll_period);
         end
+    endtask
+
+    task automatic issue_fw_command(
+        input logic [7:0] opcode,
+        input logic [15:0] generation);
+
+        fw_command_wires = {
+            FW_COMMAND_MAGIC,
+            generation,
+            opcode,
+            8'h00
+        };
+        fw_command_active = 1'b1;
+    endtask
+
+    function automatic void clear_fw_command();
+        fw_command_active = 1'b0;
+        fw_command_wires = '0;
+    endfunction
+
+    task automatic wait_for_fw_state_generation_bounded(
+        input  logic [7:0]  target_state,
+        input  logic [15:0] target_generation,
+        input  time         timeout,
+        output bit          found);
+
+        found = 1'b0;
+        if ((get_fw_state() === target_state) &&
+            (get_fw_generation() === target_generation)) begin
+            found = 1'b1;
+            return;
+        end
+
+        fork
+            begin
+                wait (
+                    (((fw_exec_ctrl[7:0] === target_state) ||
+                      (fw_exec_ctrl[7:0] === FW_STATE_COMMAND_ERROR)) &&
+                     (fw_exec_ctrl[31:16] === target_generation)));
+                found = fw_exec_ctrl[7:0] === target_state;
+            end
+            begin
+                #(timeout);
+            end
+        join_any
+        disable fork;
+    endtask
+
+    task automatic set_path_disable_bounded(
+        input  bit          disabled,
+        input  logic [15:0] generation,
+        input  time         timeout,
+        output bit          complete);
+
+        logic [7:0] opcode;
+        logic [7:0] expected_state;
+        logic [7:0] observed_data;
+
+        opcode = disabled ?
+            FW_COMMAND_SET_PATH_DISABLE :
+            FW_COMMAND_CLEAR_PATH_DISABLE;
+        expected_state = disabled ?
+            FW_STATE_PATH_DISABLED :
+            FW_STATE_PATH_ENABLED;
+
+        issue_fw_command(opcode, generation);
+        wait_for_fw_state_generation_bounded(
+            expected_state,
+            generation,
+            timeout,
+            complete);
+        if (complete) begin
+            observed_data = get_fw_data();
+            if (observed_data[0] !== disabled) begin
+                complete = 1'b0;
+            end
+        end
+        clear_fw_command();
     endtask
 
     function automatic void clear_subsystem_reset_seen();

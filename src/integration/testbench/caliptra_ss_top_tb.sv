@@ -1201,6 +1201,7 @@ module caliptra_ss_top_tb
 
     ras_test_ctrl_t ras_test_ctrl;
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
+    logic [63:0] cptra_ss_cptra_core_generic_input_wires_bfm;
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
     logic        cptra_ss_cptra_core_etrng_req_o;
     logic  [3:0] cptra_ss_cptra_core_itrng_data_i;
@@ -1250,7 +1251,7 @@ module caliptra_ss_top_tb
 
         .ras_test_ctrl(ras_test_ctrl),
 
-        .generic_input_wires(cptra_ss_cptra_core_generic_input_wires_i),
+        .generic_input_wires(cptra_ss_cptra_core_generic_input_wires_bfm),
 
         .cptra_error_fatal(cptra_error_fatal),
         .cptra_error_non_fatal(cptra_error_non_fatal),
@@ -1904,6 +1905,10 @@ module caliptra_ss_top_tb
         cptra_ss_usb_recovery_payload_available_o;
     assign ocp_access_semantics_if_inst.recovery_image_activated =
         cptra_ss_usb_recovery_image_activated_o;
+    assign cptra_ss_cptra_core_generic_input_wires_i =
+        ocp_access_semantics_if_inst.fw_command_active ?
+        ocp_access_semantics_if_inst.fw_command_wires :
+        cptra_ss_cptra_core_generic_input_wires_bfm;
     logic         cptra_ss_mci_boot_seq_brkpoint_i;
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
