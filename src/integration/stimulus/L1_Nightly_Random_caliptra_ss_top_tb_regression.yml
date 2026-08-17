@@ -44,3 +44,15 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_rma_no_ppd_pin/caliptra_ss_lcc_st_trans_rma_no_ppd_pin: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_state/caliptra_ss_lcc_volatile_unlock_wrong_state: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_otp_prog_error/caliptra_ss_lcc_otp_prog_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_bulk_loopback/caliptra_ss_usb_fs_dev_bulk_loopback: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_usbd_conn/caliptra_ss_usb_usbd_conn: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_bulk_out/caliptra_ss_usb_hs_dev_bulk_out: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_nbyte/caliptra_ss_usb_hs_dev_nbyte: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_remote_wakeup/caliptra_ss_usb_hs_dev_remote_wakeup: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_resume/caliptra_ss_usb_hs_dev_resume: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_iso_out/caliptra_ss_usb_hs_dev_iso_out: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_clock/caliptra_ss_usb_fs_clock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_conn/caliptra_ss_usb_hs_conn: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_bulk_out/caliptra_ss_usb_hs_host_bulk_out: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_remotewakeup/caliptra_ss_usb_hs_host_remotewakeup: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_iso_out/caliptra_ss_usb_hs_host_iso_out: { weight: 100 }
