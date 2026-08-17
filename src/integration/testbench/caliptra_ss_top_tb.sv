@@ -1712,6 +1712,14 @@ module caliptra_ss_top_tb
             "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
     end
 
+    assign i_caliptra_ss_bfm_services_if.mcu_halt_status = cptra_ss_mcu_halt_status_o;
+
+    // Expose the bfm_services_if to the USB UVM environment via config_db.
+    initial begin
+        uvm_config_db#(virtual caliptra_ss_bfm_services_if)::set(uvm_root::get(),
+            "uvm_test_top", "bfm_services_if", i_caliptra_ss_bfm_services_if);
+    end
+
     // Conditionally launch UVM test infrastructure when +UVM_TESTNAME is set.
     // This is required to instantiate the UVM env/agents/sequences. Without it,
     // the USB VIP UVM classes are never constructed. The call is gated so that

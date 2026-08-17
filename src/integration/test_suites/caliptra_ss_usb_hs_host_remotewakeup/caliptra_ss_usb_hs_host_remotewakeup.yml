@@ -8,6 +8,7 @@ pre-exec: |
        CALIPTRA_TESTNAME=cptra_bringup \
        CALIPTRA_AUX=soc_ifc_ss \
        CALIPTRA_SS_CLK_FREQ=400 \
+       USB_HOST_PHY_TEST=1 \
        mcu_program.hex \
        cptra_program.hex
 plusargs:

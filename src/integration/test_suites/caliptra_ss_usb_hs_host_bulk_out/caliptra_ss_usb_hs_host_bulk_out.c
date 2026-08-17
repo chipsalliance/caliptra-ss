@@ -14,12 +14,10 @@
 //
 // Description: USB High-Speed host bulk OUT test firmware for the Caliptra Subsystem.
 //
-// This test follows the NIOBE usb_hs_host_bulk_out.cpp test step by step.
-//
 // DUT role: USB HOST (ip_3515 ATL host controller, SOC_USBHSH_* registers).
 // VIP role: USB DEVICE (SVT VIP device sequence, receives 256B bulk OUT from DUT).
 //
-// Test flow (mirrors NIOBE usb_hs_host_bulk_out.cpp):
+// Test flow:
 //   1. Boot MCU. Assert HCRESET, poll until cleared.
 //   2. Clear PORTMODE[16] to select HOST mode (after HCRESET).
 //   3. Set RS (Run/Stop).
@@ -43,7 +41,6 @@
 //  13. Read PTD word 3: verify Active=0, NrBytesTransfered=7168.
 //  14. Print PASSED/FAILED and halt.
 //
-// Reference: NIOBE usb_hs_host_bulk_out.cpp (ip_xxx_3516_hs_mem_sms host_traffic_1).
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -59,7 +56,7 @@
 // Timeout / retry constants (MCU clk ~333 MHz, ~3 ns/iter in RTL simulation)
 // ---------------------------------------------------------------------------
 #define HCRESET_POLL_MAX    20000u    // iterations waiting for HCRESET to clear
-// HS chirp handshaking requires ~10ms (NIOBE uses mrt_wait(_10MS)). In
+// HS chirp handshaking requires ~10ms. In
 // simulation the VIP tdrst timer is set to 50us.  Timeline:
 //   - MCU writes PR at ~44 us sim time (observed from MCU VPRINTF).
 //   - VIP attaches at ~10 us (poweron_auto_attach_delay), J-state visible.
@@ -129,7 +126,7 @@
 #define CTRL_PTD_W3_STATUS  PTD_W3(1, 0, 0, 0, 1, 0xF, 0)     // 0x80788000
 
 // ---------------------------------------------------------------------------
-// USB SRAM layout (same as NIOBE: PTD at base, data at base+0x400)
+// USB SRAM layout (PTD at base, data at base+0x400)
 //
 //   USB_DMA_BASE_ADDR (0x20010000): USB SRAM start
 //   +0x000 .. +0x3FF (1024 B): ATL PTD area (32 slots x 16 bytes)
@@ -141,7 +138,7 @@
 // ---------------------------------------------------------------------------
 #define USB_DMA_BASE            0x20010000u
 #define USB_ATL_PTD_BASE        (USB_DMA_BASE)              // PTD slot 0 at base+0
-#define USB_DATA_BASE           (USB_DMA_BASE + 0x400u)     // data at base+1KB (NIOBE pattern)
+#define USB_DATA_BASE           (USB_DMA_BASE + 0x400u)     // data at base+1KB
 #define USB_HS_BULK_BYTES       256u                         // 256 bytes = 0x100 (one HS bulk packet, for fast simulation)
 #define USB_HS_MAX_PACKET       512u                         // HS bulk max packet
 #define USB_DATA_START_ADDR     0x400u                       // PTD DataStartAddress field value (raw byte offset into SRAM)
@@ -149,7 +146,7 @@
 // ---------------------------------------------------------------------------
 // ATL PTD 4-word encoding (ip_3515 / ip_3528 format).
 //
-// Bit positions verified against NIOBE golden values:
+// Bit positions verified against golden values:
 //   verify_equal(atl_descriptor[0], 0x32000001)
 //   verify_equal(atl_descriptor[1], 0x0000F011)
 //   verify_equal(atl_descriptor[2], 0x04009C00)
@@ -305,14 +302,14 @@ void main(void)
     // -----------------------------------------------------------------------
     // Caliptra core bringup -- must happen BEFORE the USB port-reset spin so
     // the Caliptra FW does not time out and call $finish while the MCU is
-    // still holding PR.  NIOBE has no Caliptra; we advance the breakpoint
+    // still holding PR.  We advance the breakpoint
     // immediately after boot so Caliptra proceeds in parallel with USB init.
     // -----------------------------------------------------------------------
     mcu_cptra_advance_brkpoint();
     VPRINTF(LOW, "MCU: Caliptra brkpoint advanced. Starting USB init.\n");
 
     // -----------------------------------------------------------------------
-    // Step 1: HCRESET (NIOBE: LPC_USB_HS0_HOST->USBCMD |= HCRESET)
+    // Step 1: HCRESET (LPC_USB_HS0_HOST->USBCMD |= HCRESET)
     // PORTMODE must be set AFTER HCRESET -- HCRESET restores PORTMODE default
     // (device=1), so writing HOST mode before reset would be undone.
     // -----------------------------------------------------------------------
@@ -330,7 +327,7 @@ void main(void)
     VPRINTF(LOW, "MCU: PORTMODE = HOST.\n");
 
     // -----------------------------------------------------------------------
-    // Step 3: Run/Stop (NIOBE: LPC_USB_HS0_HOST->USBCMD = RS)
+    // Step 3: Run/Stop (LPC_USB_HS0_HOST->USBCMD = RS)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBCMD, USBHSH_RS);
     VPRINTF(LOW, "MCU: USBCMD RS set.\n");
@@ -343,7 +340,7 @@ void main(void)
     // ~8 ATL config register writes remain before ATL_EN, which fires well
     // within the twtrev=301 us deadline.
     //
-    // NIOBE PTD values (from usb_hs_host_bulk_out.cpp verify_equal checks):
+    // PTD values:
     //   W0=0x32000001: MULT=3[29:28], MaxPkt=0x200[26:16], V=1[0]
     //   W1=0x0000F011: RL=0xF[15:12], EP=1[7:4], DevAddr=1[6:0]
     //   W2=0x04009C00: DataStartAddr=0x400[26:16], I=1[15], NrBytes=0x1C00[14:0]
@@ -377,7 +374,7 @@ void main(void)
 
     // -----------------------------------------------------------------------
     // Step 5: Initialize 7KB data payload at USB_DATA_BASE.
-    // Pattern: word[i] = i  (NIOBE: data_payload[i] = i for i=0..1791)
+    // Pattern: word[i] = i  (data_payload[i] = i for i=0..1791)
     // Done BEFORE port reset -- ~340 us write must not consume the 301 us
     // twtrev window that opens when the VIP exits BUS_RESET (RECEIVING_IS).
     // -----------------------------------------------------------------------
@@ -394,7 +391,7 @@ void main(void)
     // and the VIP enters RECEIVING_IS, only two writes remain: USBSTS clear
     // and ATL_EN. Those two writes take ~1.3 us, well within twtrev=301 us.
     //
-    // NIOBE does these writes after port reset; here we hoist them earlier to
+    // Here we hoist them earlier to
     // satisfy the simulation timing constraint.
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_ATL_PTD_BASE_ADDR,     USB_DMA_BASE);
@@ -407,7 +404,7 @@ void main(void)
 
     // -----------------------------------------------------------------------
     // Step 7: Port Power then Port Reset -- NO PFSC (HS capable).
-    // NIOBE uses read-modify-write (|=) for both PP and PR so that any
+    // read-modify-write (|=) for both PP and PR so that any
     // sticky W1C bits already set in PORTSC1 are not inadvertently cleared.
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) | USBHSH_PP);
@@ -416,7 +413,7 @@ void main(void)
 
     // -----------------------------------------------------------------------
     // Step 8: Hold PR long enough for HS chirp handshaking.
-    // NIOBE: mrt_wait(_10MS). In simulation chirp completes at 714 us. After
+    // In simulation chirp completes at 714 us. After
     // chirp ATL drives J starting at 764 us; tlinestate_duration timer starts
     // (66 us, expires 830 us). ATL must stop before 814 us (next K toggle).
     // PR_HOLD_DELAY=53000 iters x ~14 ns/iter = ~742 us hold. PR deasserts at
@@ -425,13 +422,13 @@ void main(void)
     // -----------------------------------------------------------------------
     for (volatile uint32_t d = 0; d < PR_HOLD_DELAY; d++) { /* spin */ }
 
-    // Clear PR (keep PP) via read-modify-write, matching NIOBE: PORTSC1 &= ~PR.
+    // Clear PR (keep PP) via read-modify-write, PORTSC1 &= ~PR.
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) & ~USBHSH_PR);
     VPRINTF(LOW, "MCU: PR deasserted. Waiting for port reset to complete...\n");
 
     // -----------------------------------------------------------------------
     // Step 9: Poll until PR clears (DUT completes reset sequence).
-    // (NIOBE: while(LPC_USB_HS0_HOST->PORTSC1 & PR))
+    // while(LPC_USB_HS0_HOST->PORTSC1 & PR))
     // -----------------------------------------------------------------------
     if (!poll_until_clear(SOC_USBHSH_PORTSC1, USBHSH_PR, PR_CLEAR_POLL_MAX, "PORTSC1.PR")) {
         VPRINTF(LOW, "MCU: WARNING - PR did not clear. Continuing.\n");
@@ -447,7 +444,6 @@ void main(void)
     // where all memory is 0 (V=0, Active=0), so all 32 slots are skipped and
     // only SOF microframes are issued -- no BULK OUT tokens ever generated.
     //
-    // NIOBE writes all of these registers AFTER port reset. We must do the same.
     // The PTD written in Step 4 (before PR) is also lost because its SRAM
     // location is correct but the ATL base pointer was reset to 0. Re-writing
     // both the config regs AND the PTD here makes the ATL find slot 0 on the
@@ -492,7 +488,7 @@ void main(void)
 
     // -----------------------------------------------------------------------
     // Step 11: Verify PSPD = HS (0x2) -- post-ATL_EN verification.
-    // (NIOBE: if (value != 0x2) terminateTest(FAIL, ...))
+    // (if (value != 0x2) terminateTest(FAIL, ...))
     // -----------------------------------------------------------------------
     reg  = lsu_read_32(SOC_USBHSH_PORTSC1);
     pspd = (reg & USBHSH_PSPD_MASK) >> USBHSH_PSPD_SHIFT;
@@ -505,7 +501,7 @@ void main(void)
 
     // -----------------------------------------------------------------------
     // Step 12: Verify PED and clear PEDC via read-modify-write.
-    // NIOBE: if ((PORTSC1 & PEDC) && (PORTSC1 & PED)) PORTSC1 |= PEDC else FAIL
+    // if ((PORTSC1 & PEDC) && (PORTSC1 & PED)) PORTSC1 |= PEDC else FAIL
     // -----------------------------------------------------------------------
     if ((reg & USBHSH_PEDC) && (reg & USBHSH_PED)) {
         lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) | USBHSH_PEDC);

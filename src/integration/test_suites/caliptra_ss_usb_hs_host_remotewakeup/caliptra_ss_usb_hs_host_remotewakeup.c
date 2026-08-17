@@ -14,12 +14,10 @@
 //
 // Description: USB HS host remote wakeup test firmware for the Caliptra Subsystem.
 //
-// This test follows the NIOBE usb_hs_host_remotewakeup.cpp test step by step.
-//
 // DUT role: USB HOST (ip_3515 ATL host controller, SOC_USBHSH_* registers).
 // VIP role: USB DEVICE (SVT VIP device sequence, initiates remote wakeup).
 //
-// Test flow (mirrors NIOBE usb_hs_host_remotewakeup.cpp):
+// Test flow :
 //   1. Boot MCU. Advance Caliptra breakpoint.
 //   2. Assert HCRESET, poll until cleared.
 //   3. Set PORTMODE[16]=0 (HOST mode) after HCRESET.
@@ -41,31 +39,21 @@
 //   9. Disable USBINTR. Set PORTSC1.SUSP (bit7) to suspend the port.
 //      Guide sec 4.1.2.12: SW writes SUSP=1 to put enabled port in L2 suspend.
 //      SUS_L1 bit9=0 (default) means L2 suspend. A write of zero to SUSP is ignored.
-//  10. Spin ~4ms (substitutes for NIOBE mrt_wait(_2MS) x2 -- TB checks no SOF).
+//  10. Spin ~4ms (TB checks no SOF).
 //  11. Stop host: USBCMD = 0. Re-start host: USBCMD = RS.
-//      (Matches NIOBE: turn off host, then re-enable after needclk handling.)
+//      (turn off host, then re-enable after needclk handling.)
 //  12. Verify PORTSC1.SUSP is still set (device-initiated remote wakeup wake
 //      signal has been detected; host must continue resume signaling).
 //  13. Assert FPR (Force Port Resume, bit6) to continue resume signaling.
 //      Guide: resume K-state driven as long as FPR=1. SW times L2 resume and
 //      clears FPR by writing PORTSC1 = PP | PED (FPR=0 -> HW clears SUSP).
-//      Spin ~10ms per NIOBE. Write PP|PED to end signaling.
+//      Write PP|PED to end signaling.
 //  14. Verify PORTSC1.SUSP is now clear (resume complete).
 //      Guide: HW unconditionally clears SUSP when SW sets FPR to zero.
 //  15. Clear all USBSTS. Re-enable SOF interrupt. Poll for 3 SOF_IRQ events.
 //      This confirms normal microframe traffic after resume.
 //  16. Print PASSED and halt.
 //
-// NIOBE-to-Caliptra mapping notes:
-//   - NIOBE semaphore/ISR SOF_IRQ  -> poll USBHSH_USBSTS_SOF_IRQ_MASK (W1C)
-//   - NIOBE mrt_wait(_2MS)         -> DELAY_2MS spin loop
-//   - NIOBE mrt_wait(_10MS)        -> DELAY_10MS spin loop
-//   - NIOBE power_service::enterDeepSleep() -> not applicable; replaced by
-//     USBCMD=0 then USBCMD=RS (bare-metal has no deep sleep)
-//   - NIOBE GPIO TB status check   -> not needed; VIP/SVT handles TB checks
-//   - NIOBE LPC_USB_HS0_HOST->*    -> SOC_USBHSH_* registers
-//
-// Reference: NIOBE usb_hs_host_remotewakeup.cpp.
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -94,7 +82,6 @@
 #define PCD_POLL_MAX        200000u   // iterations waiting for PCD in USBSTS
 #define SOF_POLL_MAX        2000000u  // iterations waiting for each SOF_IRQ
 
-// Delay substitutes for NIOBE mrt_wait() calls.
 // At ~14 ns/iter: 2 ms = ~143000 iters; 10 ms = ~714000 iters.
 // Use conservative values to ensure correct timing in RTL simulation.
 // NOTE: DELAY_10MS is reduced to 300us (21420 iters) for simulation speed.
@@ -200,12 +187,12 @@ void main(void)
     boot_mcu();
 
     // Advance Caliptra breakpoint immediately so Caliptra FW proceeds in
-    // parallel with USB init. NIOBE has no Caliptra; same pattern as bulk_out.
+    // parallel with USB init. Same pattern as bulk_out.
     mcu_cptra_advance_brkpoint();
     VPRINTF(LOW, "MCU: Caliptra brkpt advanced. Starting USB host init.\n");
 
     // -----------------------------------------------------------------------
-    // Step 1: HCRESET (NIOBE: LPC_USB_HS0_HOST->USBCMD |= HCRESET)
+    // Step 1: HCRESET (LPC_USB_HS0_HOST->USBCMD |= HCRESET)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBCMD, lsu_read_32(SOC_USBHSH_USBCMD) | USBHSH_HCRESET);
     if (!poll_until_clear(SOC_USBHSH_USBCMD, USBHSH_HCRESET, HCRESET_POLL_MAX, "HCRESET")) {
@@ -243,7 +230,7 @@ void main(void)
             USBHSH_PORTMODE_SW_CTRL_PDCOM_MASK);
 
     // -----------------------------------------------------------------------
-    // Step 3: Run/Stop (NIOBE: LPC_USB_HS0_HOST->USBCMD = RS)
+    // Step 3: Run/Stop (LPC_USB_HS0_HOST->USBCMD = RS)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBCMD, USBHSH_RS);
     VPRINTF(LOW, "MCU: USBCMD RS set.\n");
@@ -251,7 +238,7 @@ void main(void)
     // -----------------------------------------------------------------------
     // Step 4: Set port power (PP, bit12).
     // Guide sec 4.1.2.12: If PPC=1 in HCSPARAMS, PP is RW. Set PP=1 to power port.
-    // (NIOBE: LPC_USB_HS0_HOST->PORTSC1 |= PP)
+    // (LPC_USB_HS0_HOST->PORTSC1 |= PP)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) | USBHSH_PP);
     VPRINTF(LOW, "MCU: PP set.\n");
@@ -260,9 +247,9 @@ void main(void)
     // Step 5: Wait for PCD (port connect detect) in USBSTS.
     // Guide sec 4.1.2.10: PCD bit2 is set when CCS transitions 0->1 (device
     // attaches). This fires when the VIP device connects after PP is asserted.
-    // Must be handled BEFORE PR -- matches NIOBE sequence:
+    // Must be handled BEFORE PR:
     //   RS -> wait PCD -> clear CSC -> set PR -> hold -> clear PR
-    // (NIOBE: while (USBSTS != PCD); USBSTS = PCD; verify CSC; clear CSC)
+    // (while (USBSTS != PCD); USBSTS = PCD; verify CSC; clear CSC)
     // -----------------------------------------------------------------------
     if (!poll_until_set(SOC_USBHSH_USBSTS, USBHSH_PCD, PCD_POLL_MAX, "USBSTS.PCD")) {
         VPRINTF(LOW, "MCU: WARNING - PCD did not set. Continuing.\n");
@@ -282,7 +269,7 @@ void main(void)
     // Guide sec 4.1.2.12: SW writes PR=1 to start, PR=0 to end reset sequence.
     // HW will clear PR when reset sequence is complete. SW polls until PR=0,
     // then reads PSPD to determine attached device speed.
-    // (NIOBE: PORTSC1 |= PR; mrt_wait(_10MS); PORTSC1 &= ~PR; wait PR clear)
+    // (PORTSC1 |= PR; mrt_wait(_10MS); PORTSC1 &= ~PR; wait PR clear)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) | USBHSH_PR);
     VPRINTF(LOW, "MCU: PR asserted. Holding for HS chirp (~742 us)...\n");
@@ -290,7 +277,7 @@ void main(void)
     // Hold PR long enough for HS chirp handshaking (see timing comment at top).
     for (volatile uint32_t d = 0; d < PR_HOLD_DELAY; d++) { /* spin */ }
 
-    // Clear PR (keep PP) -- NIOBE: PORTSC1 &= ~PR
+    // Clear PR (keep PP) -- PORTSC1 &= ~PR
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) & ~USBHSH_PR);
     VPRINTF(LOW, "MCU: PR deasserted. Waiting for HW to self-clear PR...\n");
 
@@ -303,7 +290,7 @@ void main(void)
     // Step 7: Verify PSPD=HS (bits[21:20]=0b10) and check PED+PEDC.
     // Guide: PSPD valid only when PR=0. PSPD: 00=LS 01=FS 10=HS 11=reserved.
     // Guide: PEDC bit3 W1C set when PED transitions. SW writes 1 to clear.
-    // (NIOBE: verify_equal(PORTSC1 & PEDC, PEDC); PORTSC1 |= PEDC)
+    // (verify_equal(PORTSC1 & PEDC, PEDC); PORTSC1 |= PEDC)
     // -----------------------------------------------------------------------
     reg  = lsu_read_32(SOC_USBHSH_PORTSC1);
     pspd = (reg & USBHSH_PSPD_MASK_F) >> USBHSH_PSPD_SHIFT;
@@ -330,7 +317,7 @@ void main(void)
     // Guide sec 4.1.2.10: SOF_IRQ bit19 RWC -- set every SOF microframe (125us).
     // SW writes 1 to clear.
     // Poll for 2 SOF_IRQ events (confirms host is generating microframes).
-    // (NIOBE: USBINTR = 0xFFFFFFFF; sema_micrf_irq.get() x2 via usb_isr SOF_IRQ)
+    // (USBINTR = 0xFFFFFFFF; sema_micrf_irq.get() x2 via usb_isr SOF_IRQ)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBSTS,  0xFFFFFFFFu);  // clear all pending W1C bits
     lsu_write_32(SOC_USBHSH_USBINTR, USBHSH_SOF_EN);
@@ -349,7 +336,7 @@ void main(void)
     // continues to send SOF tokens every 125us until RS=0 (USBCMD=0).
     // To stop SOF generation so the VIP device detects bus idle and enters
     // SUSPEND, we must clear RS immediately after setting PORTSC1.SUSP.
-    // (NIOBE: USBINTR = 0; PORTSC1 |= SUSPEND; dev_clk_enable(false) which
+    // (USBINTR = 0; PORTSC1 |= SUSPEND; dev_clk_enable(false) which
     //  stops the USB clock and thus SOF -- equivalent to USBCMD=0 here)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBINTR, 0x00000000u);
@@ -382,22 +369,20 @@ void main(void)
     // VIP tinactivity: VIP enters SUSPEND ~700us after USBCMD=0 (500us twtrev
     // + 200us tinactivity). The 5ms firmware wait is well above 700us.
     //
-    // (NIOBE: mrt_wait(_2MS); mrt_wait(_2MS) -- original 4ms, but in NIOBE
-    //  the PIE clock may differ; use 5ms here for margin.)
     // -----------------------------------------------------------------------
     VPRINTF(LOW, "MCU: Waiting ~5ms (PIE T_THSIDLE=4ms, VIP enters SUSPEND)...\n");
     for (volatile uint32_t d = 0; d < DELAY_5MS; d++) { /* spin */ }
 
     // -----------------------------------------------------------------------
     // Step 11: Re-start host.
-    // (NIOBE: USBCMD = RS after deep sleep / needclk handling)
+    // (USBCMD = RS after deep sleep / needclk handling)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBCMD, USBHSH_RS);
     VPRINTF(LOW, "MCU: Host restarted (USBCMD=RS).\n");
 
     // -----------------------------------------------------------------------
     // Step 12: Verify PORTSC1.SUSP is still set.
-    // (NIOBE: verify_equal(PORTSC1 & 0xFFFFF3FF, 0x002014C5 & 0xFFFFF3FF)
+    // (verify_equal(PORTSC1 & 0xFFFFF3FF, 0x002014C5 & 0xFFFFF3FF)
     //  -- suspend should remain asserted after device-initiated remote wakeup)
     // -----------------------------------------------------------------------
     reg = lsu_read_32(SOC_USBHSH_PORTSC1);
@@ -414,10 +399,7 @@ void main(void)
     // Guide: HW unconditionally clears SUSP when SW sets FPR to zero (i.e.
     // when FPR transitions from 1 to 0, SUSP is cleared by HW).
     // Writing PORTSC1 = PP | PED effectively sets FPR=0 and preserves PP+PED,
-    // which causes HW to clear SUSP. This matches NIOBE: PORTSC1 = PP | PED.
-    // Timing: mrt_wait(_100US) + mrt_wait(_10MS) + mrt_wait(_100US) ~= 10.2ms.
-    // (NIOBE: PORTSC1 |= FPR; mrt_wait(_100US); mrt_wait(_10MS); mrt_wait(_100US);
-    //         PORTSC1 = PP | PED)
+    // which causes HW to clear SUSP. PORTSC1 = PP | PED.
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_PORTSC1, lsu_read_32(SOC_USBHSH_PORTSC1) | USBHSH_FPR);
     VPRINTF(LOW, "MCU: FPR set (driving resume K-state). PORTSC1=0x%x\n",
@@ -428,7 +410,7 @@ void main(void)
     for (volatile uint32_t d = 0; d < DELAY_100US; d++) { /* spin */ }
 
     // End resume signaling: write PP | PED (FPR=0). HW clears SUSP.
-    // (NIOBE: PORTSC1 = PP | PED)
+    // (PORTSC1 = PP | PED)
     lsu_write_32(SOC_USBHSH_PORTSC1, USBHSH_PP | USBHSH_PED);
     for (volatile uint32_t d = 0; d < DELAY_10US; d++) { /* spin */ }
     VPRINTF(LOW, "MCU: FPR cleared (resume ended). PORTSC1=0x%x\n",
@@ -437,7 +419,7 @@ void main(void)
     // -----------------------------------------------------------------------
     // Step 14: Verify PORTSC1.SUSP is now clear (resume complete).
     // Guide: HW clears SUSP when FPR transitions to zero.
-    // (NIOBE: verify_equal(PORTSC1 & 0xFFFFF3FF, 0x00201005 & 0xFFFFF3FF))
+    // (verify_equal(PORTSC1 & 0xFFFFF3FF, 0x00201005 & 0xFFFFF3FF))
     // -----------------------------------------------------------------------
     reg = lsu_read_32(SOC_USBHSH_PORTSC1);
     VPRINTF(LOW, "MCU: Post-resume PORTSC1=0x%x (expect SUSP=0, FPR=0)\n", reg);
@@ -452,7 +434,7 @@ void main(void)
     // Step 15: Clear all USBSTS. Re-enable SOF interrupt (USBINTR bit19=SOF_E).
     // Poll for 3 SOF_IRQ events (confirms normal microframe traffic post-resume).
     // Guide: SOF_IRQ bit19 is set every 125us microframe. W1C.
-    // (NIOBE: USBSTS=0xFFFFFFFF; USBINTR=0xFFFFFFFF; sema_micrf_irq.get() x3)
+    // (USBSTS=0xFFFFFFFF; USBINTR=0xFFFFFFFF; sema_micrf_irq.get() x3)
     // -----------------------------------------------------------------------
     lsu_write_32(SOC_USBHSH_USBSTS,  0xFFFFFFFFu);  // clear all W1C bits
     lsu_write_32(SOC_USBHSH_USBINTR, USBHSH_SOF_EN);
