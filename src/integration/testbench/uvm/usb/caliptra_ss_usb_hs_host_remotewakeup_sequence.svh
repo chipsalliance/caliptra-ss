@@ -18,8 +18,6 @@
 // DUT role  : USB HOST  -- ip_3515 host controller (SOC_USBHSH_* registers).
 // VIP role  : DEVICE/SERIAL_IF HS agent. Initiates remote wakeup from SUSPEND.
 //
-// This sequence mirrors the NIOBE usb_hs_host_remotewakeup.cpp flow:
-//
 //   1. Wait for VIP DEVICE link state RECEIVING_IS (HS idle after chirp).
 //      This corresponds to the DUT completing port reset (PR cleared, PSPD=HS).
 //
@@ -40,11 +38,6 @@
 //      The MCU firmware detects FPR/SUSP cleared and polls 3 post-resume SOFs.
 //
 //   6. Wait for MCU to complete post-resume SOF polling and halt.
-//
-// Sequence flow matches NIOBE test:
-//   NIOBE: sema_micrf_irq x2 -> suspend -> needclk fall -> deep sleep ->
-//          needclk rise (device K-state) -> FPR -> sema_micrf_irq x3
-//   Here:  RECEIVING_IS -> SUSPEND -> remote_wakeup_seq -> RECEIVING_IS
 //
 // VIP topology: same as bulk_out test.
 //   Single DEVICE/SERIAL_IF HS agent installed as cfg.host_cfg.
@@ -191,8 +184,6 @@ class caliptra_ss_usb_hs_host_remotewakeup_sequence extends uvm_sequence;
         //   tinactivity = 200us  : inactivity timer for SUSPEND entry.
         //                          Starts after twtrev expires.
         //
-        // (NIOBE reference: "sema_usb_needclk_fall.get()" -- needclk goes low
-        //  when the device has entered suspend and the USB clock can stop.)
         // -----------------------------------------------------------------------
         `uvm_info("USB_HS_HOST_RWKUP_SEQ",
             "Waiting for VIP DEVICE to enter SUSPEND (MCU stopped SOF, twtrev=500us, tinactivity=200us)...",
@@ -233,7 +224,6 @@ class caliptra_ss_usb_hs_host_remotewakeup_sequence extends uvm_sequence;
         //   - Waits ~10ms then writes PORTSC1=PP|PED to end resume
         //
         // (Reference: SVT b2b_phy suspend_remote_wakeup_sequence.sv,
-        //  NIOBE: "sema_usb_needclk_rise.get()" -> FPR -> PP|PED)
         // -----------------------------------------------------------------------
         begin
             svt_usb_link_service_device_remote_wakeup_sequence rwkup_seq;

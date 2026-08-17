@@ -272,7 +272,11 @@ CFLAGS += $(TB_DPI_INCS)
 ############# VCS Compile options #############
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
-#VCS_COMP_OPTS += +define+CALIPTRA_USB_HOST_PHY_TEST
+# Pass USB_HOST_PHY_TEST=1 on the make command line to enable this define
+# without disturbing VCS_COMP_OPTS variable expansion order.
+ifdef USB_HOST_PHY_TEST
+VCS_COMP_OPTS += +define+CALIPTRA_USB_HOST_PHY_TEST
+endif
 VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
 VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
