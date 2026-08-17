@@ -47,6 +47,7 @@ class caliptra_ss_usb_ocp_recovery_env extends caliptra_ss_usb_env;
     `uvm_component_utils(caliptra_ss_usb_ocp_recovery_env)
 
     caliptra_ss_usb_ocp_scoreboard               scoreboard;
+    caliptra_ss_usb_ocp_arbiter_checker          arbiter_checker;
     uvm_analysis_port #(svt_usb_transfer)        host_transfer_observed_port;
 
     function new(string name = "caliptra_ss_usb_ocp_recovery_env",
@@ -67,6 +68,9 @@ function void caliptra_ss_usb_ocp_recovery_env::build_phase(uvm_phase phase);
         new("host_transfer_observed_port", this);
     scoreboard =
         caliptra_ss_usb_ocp_scoreboard::type_id::create("scoreboard", this);
+    arbiter_checker =
+        caliptra_ss_usb_ocp_arbiter_checker::type_id::create(
+            "arbiter_checker", this);
     // Republish the shared_cfg at the global wildcard scope so
     // the OCP recovery sequence's lookup at uvm_config_db::get(null, "",
     // "cfg", scfg) hits. The base env::build_phase only sets it under
@@ -83,6 +87,23 @@ endfunction
 function void caliptra_ss_usb_ocp_recovery_env::connect_phase(uvm_phase phase);
     super.connect_phase(phase);
     host_transfer_observed_port.connect(scoreboard.transfer_imp);
+    host_transfer_observed_port.connect(arbiter_checker.transfer_imp);
+
+    if ((host_agent != null) &&
+        (host_agent.link_mon != null)) begin
+        uvm_callbacks#(
+            svt_usb_link_monitor,
+            svt_usb_link_monitor_callback)::add(
+                host_agent.link_mon,
+                arbiter_checker.packet_callback);
+    end else begin
+        `uvm_fatal("OCPREC_ENV",
+            "USB link monitor is unavailable for arbiter packet observation.")
+    end
+
+    uvm_config_db#(
+        caliptra_ss_usb_ocp_arbiter_checker)::set(
+            null, "*", "ocp_arbiter_checker", arbiter_checker);
 endfunction
 
 // -----------------------------------------------------------------------------

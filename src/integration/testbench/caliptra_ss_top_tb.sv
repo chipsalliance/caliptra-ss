@@ -1646,6 +1646,33 @@ module caliptra_ss_top_tb
     logic [8:0]   cptra_ss_usb_mem_a_o;
     logic         cptra_ss_usb_mem_web_out_o;
     logic [63:0]  cptra_ss_usb_mem_bsel_o;
+    logic [63:0]  usb_legacy_ep0_host_ack;
+    logic [63:0]  cptra_ss_mci_generic_output_wires_o;
+
+    caliptra_ss_usb_legacy_ep0_observer_if
+        usb_legacy_ep0_observer_if_inst (
+            .clk             (core_clk),
+            .mem_cs          (cptra_ss_usb_mem_cs_o),
+            .mem_web_out     (cptra_ss_usb_mem_web_out_o),
+            .mem_word_addr   (cptra_ss_usb_mem_a_o),
+            .mem_write_data  (cptra_ss_usb_mem_d_o),
+            .mem_byte_select (cptra_ss_usb_mem_bsel_o),
+            .fw_snapshot_data(
+                cptra_ss_mci_generic_output_wires_o[31:0]),
+            .fw_snapshot_header(
+                cptra_ss_mci_generic_output_wires_o[63:32]),
+            .host_snapshot_ack(
+                usb_legacy_ep0_host_ack[31:0])
+        );
+    assign usb_legacy_ep0_host_ack[63:32] = '0;
+
+    initial begin
+        uvm_config_db#(
+            virtual caliptra_ss_usb_legacy_ep0_observer_if)::set(
+                uvm_root::get(), "uvm_test_top.env",
+                "usb_legacy_ep0_observer_if",
+                usb_legacy_ep0_observer_if_inst);
+    end
 
     // Behavioral SRAM model for USB core (512 x 64-bit)
     logic [63:0] usb_sram [0:511];
@@ -1881,7 +1908,10 @@ module caliptra_ss_top_tb
     logic         cptra_ss_mcu_no_rom_config_i;
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
     logic [63:0]  cptra_ss_mci_generic_input_wires_i;
-    logic [63:0]  cptra_ss_mci_generic_output_wires_o;
+    logic [63:0]  cptra_ss_mci_generic_input_wires_services;
+    assign cptra_ss_mci_generic_input_wires_i =
+        cptra_ss_mci_generic_input_wires_services |
+        usb_legacy_ep0_host_ack;
     logic         cptra_ss_all_error_fatal_o;
     logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
@@ -2268,7 +2298,8 @@ module caliptra_ss_top_tb
         .cptra_ss_rdc_clk_cg_o,
         .cycleCnt                    (cycleCnt                    ),
         .cptra_ss_mcu0_el2_mem_export(cptra_ss_mcu0_el2_mem_export),
-        .cptra_ss_mci_generic_input_wires_o(cptra_ss_mci_generic_input_wires_i),
+        .cptra_ss_mci_generic_input_wires_o(
+            cptra_ss_mci_generic_input_wires_services),
         .soc_bfm_if(i_caliptra_ss_bfm_services_if.tb_services),
         .cptra_ss_soc_sram_axi_if,
         .cptra_ss_mci_mcu_sram_req_if,
