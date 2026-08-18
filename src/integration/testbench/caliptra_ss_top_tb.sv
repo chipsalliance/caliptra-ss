@@ -1890,18 +1890,18 @@ module caliptra_ss_top_tb
 
     // USB ULPI PHY interface
     logic         cptra_ss_usb_ulpi_clk_i;         // TODO: connect to USB VIP
-    logic [7:0]   cptra_ss_usb_ulpi_rxdata_i;
-    logic [7:0]   cptra_ss_usb_ulpi_txdata_o;
-    logic         cptra_ss_usb_ulpi_txenable_o;
-    logic         cptra_ss_usb_ulpi_dir_i;
-    logic         cptra_ss_usb_ulpi_stp_o;
-    logic         cptra_ss_usb_ulpi_nxt_i;
-    logic         cptra_ss_usb_ulpi_ddr_sel_i;
+    logic [7:0]   cptra_ss_usb_ulpi_rxdata_i;      // TODO: connect to USB VIP
+    logic [7:0]   cptra_ss_usb_ulpi_txdata_o;      // TODO: connect to USB VIP
+    logic         cptra_ss_usb_ulpi_txenable_o;    // TODO: connect to USB VIP
+    logic         cptra_ss_usb_ulpi_dir_i;         // TODO: connect to USB VIP
+    logic         cptra_ss_usb_ulpi_stp_o;         // TODO: connect to USB VIP
+    logic         cptra_ss_usb_ulpi_nxt_i;         // TODO: connect to USB VIP
+    logic         cptra_ss_usb_ulpi_ddr_sel_i;     // TODO: connect to USB VIP
     assign cptra_ss_usb_ulpi_clk_i     = '0;       // TODO: connect to USB VIP
-    assign cptra_ss_usb_ulpi_rxdata_i  = '0;
-    assign cptra_ss_usb_ulpi_dir_i     = '0;
-    assign cptra_ss_usb_ulpi_nxt_i     = '0;
-    assign cptra_ss_usb_ulpi_ddr_sel_i = '0;
+    assign cptra_ss_usb_ulpi_rxdata_i  = '0;       // TODO: connect to USB VIP
+    assign cptra_ss_usb_ulpi_dir_i     = '0;       // TODO: connect to USB VIP
+    assign cptra_ss_usb_ulpi_nxt_i     = '0;       // TODO: connect to USB VIP
+    assign cptra_ss_usb_ulpi_ddr_sel_i = '0;       // TODO: connect to USB VIP
 
     // USB recovery interface
     logic         cptra_ss_usb_recovery_payload_available_o;
