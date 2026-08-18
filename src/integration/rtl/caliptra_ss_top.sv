@@ -955,9 +955,12 @@ module caliptra_ss_top
 
     );
 
-    //=========================================================================-
+    //=========================================================================
     // USB core Instance
-    //=========================================================================-
+    //=========================================================================
+
+    logic cptra_ss_usb_payload_available_w;
+    logic cptra_ss_usb_ocp_firmware_activated_w;
 
     ip_xxx_3516_hs_mem_wrapper #(
         .AXI_DATA_WIDTH       (`CALIPTRA_AXI_DATA_WIDTH),
@@ -1217,38 +1220,12 @@ module caliptra_ss_top
         // wired in a later phase.
         .rec_trigger            (1'b0),
         .soc_boot_ack           (1'b0),
-        .image_ready            (cptra_ss_usb_image_ready_w),
+        .payload_available      (cptra_ss_usb_payload_available_w),
         .ocp_firmware_activated (cptra_ss_usb_ocp_firmware_activated_w)
     );
 
-    // Recovery sideband fan-out from usb_core_i (ip_xxx_3516_hs_mem_wrapper)
-    // up to SS-top sideband outputs.  Wrapper exposes:
-    //   image_ready             -> drives recovery_payload_available_o
-    //   ocp_firmware_activated  -> drives recovery_image_activated_o
-    // OCP Recovery v1.1 Sec 8 sideband semantics, in line with how the I3C
-    // recovery interface drives the matching i3c_recovery_* outputs at
-    // caliptra_ss_top.sv lines 1269-1270.
-    //
-    // CDC: as of the Phase 1 OCP recovery delta, u_ocp_recovery runs in
-    // utmi_clk (60 MHz UTMI domain) while these consumers live in
-    // cptra_ss_clk_i.  Both signals are slow, level-mode steady flags
-    // (set once at boot, level-held), so a 2-FF synchronizer per signal
-    // is sufficient.  See usb_rtl_combined_fixes_report.md residual #2.
-    logic [1:0] cptra_ss_usb_image_ready_sync_q;
-    logic [1:0] cptra_ss_usb_ocp_firmware_activated_sync_q;
-    always_ff @(posedge cptra_ss_clk_i or negedge cptra_ss_rst_b_o) begin
-        if (!cptra_ss_rst_b_o) begin
-            cptra_ss_usb_image_ready_sync_q            <= 2'b00;
-            cptra_ss_usb_ocp_firmware_activated_sync_q <= 2'b00;
-        end else begin
-            cptra_ss_usb_image_ready_sync_q            <= {cptra_ss_usb_image_ready_sync_q[0],
-                                                           cptra_ss_usb_image_ready_w};
-            cptra_ss_usb_ocp_firmware_activated_sync_q <= {cptra_ss_usb_ocp_firmware_activated_sync_q[0],
-                                                           cptra_ss_usb_ocp_firmware_activated_w};
-        end
-    end
-    assign cptra_ss_usb_recovery_payload_available_o = cptra_ss_usb_image_ready_sync_q[1];
-    assign cptra_ss_usb_recovery_image_activated_o   = cptra_ss_usb_ocp_firmware_activated_sync_q[1];
+    assign cptra_ss_usb_recovery_payload_available_o = cptra_ss_usb_payload_available_w;
+    assign cptra_ss_usb_recovery_image_activated_o   = cptra_ss_usb_ocp_firmware_activated_w;
     
     //=========================================================================-
     // i3c_core Instance
