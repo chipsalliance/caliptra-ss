@@ -171,7 +171,7 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
             return;
         end
 
-        fork
+        fork : fw_state_generation_timeout
             begin
                 wait (
                     (((fw_exec_ctrl[7:0] === target_state) ||
@@ -183,7 +183,7 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
                 #(timeout);
             end
         join_any
-        disable fork;
+        disable fw_state_generation_timeout;
     endtask
 
     task automatic set_path_disable_bounded(

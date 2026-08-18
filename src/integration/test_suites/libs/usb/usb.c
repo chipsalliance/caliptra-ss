@@ -494,6 +494,11 @@ uint32_t usb_legacy_ep0_get_setup_dispatch_count(void)
     return usb_setup_dispatch_count;
 }
 
+uint32_t usb_legacy_ep0_get_bus_reset_count(void)
+{
+    return usb_bus_reset_count;
+}
+
 void usb_set_device_address(uint8_t addr) {
     usb_dev_addr_shadow = (uint8_t)(addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
@@ -515,10 +520,6 @@ void usb_dump_state(const char *tag) {
 uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
     for (uint32_t poll_count = 0; (max_iters == 0u) || (poll_count < max_iters); poll_count++) {
         uint32_t reg_data;
-
-        if (poll_count == 0u) {
-            usb_transfers_handled = 0u;
-        }
 
         usb_handle_bus_reset();
 

@@ -285,6 +285,7 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         logic [31:0] post_dispatch;
         logic [31:0] baseline_out_irq;
         logic [31:0] post_out_irq;
+        int unsigned expected_out_irq_delta;
 
         if (observed_transfers.size() != 1) begin
             `uvm_error("OCP_ARB_CHECK",
@@ -328,10 +329,19 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             observer_vif.SNAPSHOT_FIELD_EP0_OUT_COUNT];
         post_out_irq = observer_vif.get_snapshot_field(
             observer_vif.SNAPSHOT_FIELD_EP0_OUT_COUNT);
-        if ((post_out_irq - baseline_out_irq) != 32'd1) begin
+        // Every legacy control transfer produces an EP0 OUT interrupt for
+        // SETUP. Packet evidence determines whether a later OUT data or status
+        // stage completed, including transfers that abort after SETUP.
+        expected_out_irq_delta = 1;
+        if (packet_callback.legacy_out_stage_completed()) begin
+            expected_out_irq_delta++;
+        end
+        if ((post_out_irq - baseline_out_irq) !=
+                expected_out_irq_delta) begin
             `uvm_error("OCP_ARB_CHECK",
-                $sformatf("Legacy EP0 OUT interrupt count advanced by %0d; expected exactly one.",
-                          post_out_irq - baseline_out_irq))
+                $sformatf("Legacy EP0 OUT interrupt count advanced by %0d; expected %0d from the control-transfer stages.",
+                          post_out_irq - baseline_out_irq,
+                          expected_out_irq_delta))
         end
 
         unclaimed_windows_checked++;

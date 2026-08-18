@@ -17,6 +17,8 @@
 // mechanism never writes the USB SRAM it is checking.
 interface caliptra_ss_usb_legacy_ep0_observer_if (
     input  logic        clk,
+    input  logic        utmi_clk,
+    input  logic [1:0]  utmi_line_state,
     input  logic        mem_cs,
     input  logic        mem_web_out,
     input  logic [8:0]  mem_word_addr,
@@ -24,7 +26,13 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     input  logic [63:0] mem_byte_select,
     input  logic [31:0] fw_snapshot_data,
     input  logic [31:0] fw_snapshot_header,
-    output logic [31:0] host_snapshot_ack
+    input  logic        mcu_axi_awvalid,
+    input  logic        mcu_axi_awready,
+    input  logic        mcu_axi_bvalid,
+    input  logic        mcu_axi_bready,
+    output logic [31:0] host_snapshot_ack,
+    output logic [31:0] host_mcu_command,
+    output logic        host_mcu_command_active
 );
 
     localparam int unsigned SNAPSHOT_FIELD_COUNT = 18;
@@ -52,6 +60,12 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     localparam logic [7:0] SNAPSHOT_DATA_MAGIC  = 8'hA5;
     localparam logic [7:0] SNAPSHOT_READY_MAGIC = 8'h5A;
     localparam logic [7:0] SNAPSHOT_ACK_MAGIC   = 8'hC3;
+    localparam logic [7:0] MCU_COMMAND_MAGIC    = 8'hB7;
+    localparam logic [7:0] MCU_COMMAND_ACK_MAGIC = 8'hD6;
+    localparam logic [3:0] MCU_COMMAND_PUBLISH_BASELINE = 4'h1;
+    localparam logic [3:0] MCU_COMMAND_PUBLISH_POST = 4'h2;
+    localparam logic [3:0] MCU_COMMAND_RELEASE_CALIPTRA = 4'h3;
+    localparam logic [3:0] MCU_COMMAND_PUBLISH_RESET_POST = 4'h4;
 
     localparam logic [1:0] SNAPSHOT_STATE_BASELINE = 2'h1;
     localparam logic [1:0] SNAPSHOT_STATE_POST     = 2'h2;
@@ -71,6 +85,12 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     logic [15:0] active_generation;
     logic [15:0] snapshot_generation;
     logic [1:0]  snapshot_state;
+    int unsigned mcu_axi_writes_outstanding;
+    realtime core_clock_reference;
+    realtime core_clock_period;
+    realtime utmi_clock_reference;
+    realtime utmi_clock_period;
+    realtime se0_start_time;
 
     function automatic logic [31:0] make_header(
         input logic [7:0]  magic,
@@ -98,6 +118,12 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
 
     // The SRAM write-enable is active low.
     always @(posedge clk) begin
+        if (core_clock_reference == 0.0) begin
+            core_clock_reference = $realtime;
+        end else if (core_clock_period == 0.0) begin
+            core_clock_period = $realtime - core_clock_reference;
+        end
+
         if (observation_active && mem_cs && !mem_web_out) begin
             usb_sram_write_t write_item;
             write_item.generation = active_generation;
@@ -107,6 +133,27 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
                 byte_enable_mask(mem_byte_select);
             observed_writes.push_back(write_item);
         end
+
+        case ({
+            mcu_axi_awvalid && mcu_axi_awready,
+            mcu_axi_bvalid && mcu_axi_bready
+        })
+            2'b10: mcu_axi_writes_outstanding++;
+            2'b01: begin
+                if (mcu_axi_writes_outstanding != 0) begin
+                    mcu_axi_writes_outstanding--;
+                end
+            end
+            default: ;
+        endcase
+    end
+
+    always @(posedge utmi_clk) begin
+        if (utmi_clock_reference == 0.0) begin
+            utmi_clock_reference = $realtime;
+        end else if (utmi_clock_period == 0.0) begin
+            utmi_clock_period = $realtime - utmi_clock_reference;
+        end
     end
 
     initial begin
@@ -115,7 +162,15 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
         active_generation = '0;
         snapshot_generation = '0;
         snapshot_state = '0;
+        mcu_axi_writes_outstanding = 0;
+        core_clock_reference = 0.0;
+        core_clock_period = 0.0;
+        utmi_clock_reference = 0.0;
+        utmi_clock_period = 0.0;
+        se0_start_time = 0.0;
         host_snapshot_ack = '0;
+        host_mcu_command = '0;
+        host_mcu_command_active = 1'b0;
         observed_writes.delete();
         for (int unsigned field_index = 0;
              field_index < SNAPSHOT_FIELD_COUNT;
@@ -137,7 +192,7 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
         snapshot_valid = 1'b0;
         host_snapshot_ack = '0;
 
-        fork
+        fork : receive_snapshot_timeout
             begin
                 for (int unsigned field_index = 0;
                      field_index < SNAPSHOT_FIELD_COUNT;
@@ -165,6 +220,11 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
                     state,
                     SNAPSHOT_READY_FIELD,
                     generation));
+                // The MCI register output changes when write data is accepted,
+                // before the AXI write response returns. Drain the MCU LSU
+                // write channel so ending a test cannot strand the final
+                // READY-header response.
+                wait (mcu_axi_writes_outstanding == 0);
                 snapshot_state = state;
                 snapshot_generation = generation;
                 snapshot_valid = 1'b1;
@@ -174,8 +234,66 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
                 #(timeout);
             end
         join_any
-        disable fork;
+        disable receive_snapshot_timeout;
         host_snapshot_ack = '0;
+    endtask
+
+    function automatic logic [31:0] make_mcu_command(
+        input logic [3:0]  opcode,
+        input logic [15:0] generation,
+        input logic [3:0]  expected_legacy_dispatch_delta);
+        return {
+            MCU_COMMAND_MAGIC,
+            opcode,
+            expected_legacy_dispatch_delta,
+            generation
+        };
+    endfunction
+
+    function automatic logic [31:0] make_mcu_command_ack(
+        input logic [3:0]  opcode,
+        input logic [15:0] generation,
+        input logic [3:0]  expected_legacy_dispatch_delta);
+        return {
+            MCU_COMMAND_ACK_MAGIC,
+            opcode,
+            expected_legacy_dispatch_delta,
+            generation
+        };
+    endfunction
+
+    // Firmware acknowledges command sampling before performing the requested
+    // publication. Holding the command until that acknowledgement prevents a
+    // generic-wire pulse from being missed by polling firmware.
+    task automatic issue_mcu_command_bounded(
+        input  logic [3:0]  opcode,
+        input  logic [15:0] generation,
+        input  logic [3:0]  expected_legacy_dispatch_delta,
+        input  time         timeout,
+        output bit          acknowledged);
+
+        logic [31:0] expected_ack;
+
+        acknowledged = 1'b0;
+        host_mcu_command = make_mcu_command(
+            opcode, generation, expected_legacy_dispatch_delta);
+        host_mcu_command_active = 1'b1;
+        expected_ack = make_mcu_command_ack(
+            opcode, generation, expected_legacy_dispatch_delta);
+
+        fork : mcu_command_ack_timeout
+            begin
+                wait (fw_snapshot_header === expected_ack);
+                acknowledged = 1'b1;
+            end
+            begin
+                #(timeout);
+            end
+        join_any
+        disable mcu_command_ack_timeout;
+
+        host_mcu_command_active = 1'b0;
+        host_mcu_command = '0;
     endtask
 
     function automatic bit start_window(input logic [15:0] generation);
@@ -224,5 +342,81 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
         input int unsigned field_index);
         return snapshot_fields[field_index];
     endfunction
+
+    task automatic wait_launch_phase(input int unsigned phase_index);
+        case (phase_index)
+            0: @(posedge utmi_clk);
+            1: @(negedge utmi_clk);
+            2: @(posedge clk);
+            3: @(negedge clk);
+            4: begin @(posedge utmi_clk); #1ps; end
+            5: begin @(negedge utmi_clk); #1ps; end
+            6: begin @(posedge clk); #1ps; end
+            7: begin @(negedge clk); #1ps; end
+            default: @(posedge utmi_clk);
+        endcase
+    endtask
+
+    function automatic bit get_setup_clock_phases(
+        input realtime setup_time,
+        output time utmi_phase,
+        output time core_phase,
+        output time utmi_period,
+        output time core_period);
+
+        time utmi_elapsed;
+        time core_elapsed;
+        time utmi_period_time;
+        time core_period_time;
+
+        if ((utmi_clock_period == 0.0) || (core_clock_period == 0.0) ||
+            (setup_time < utmi_clock_reference) ||
+            (setup_time < core_clock_reference)) begin
+            utmi_phase = 0;
+            core_phase = 0;
+            utmi_period = 0;
+            core_period = 0;
+            return 1'b0;
+        end
+        utmi_elapsed = time'(setup_time - utmi_clock_reference);
+        core_elapsed = time'(setup_time - core_clock_reference);
+        utmi_period_time = time'(utmi_clock_period);
+        core_period_time = time'(core_clock_period);
+        utmi_phase = utmi_elapsed % utmi_period_time;
+        core_phase = core_elapsed % core_period_time;
+        utmi_period = utmi_period_time;
+        core_period = core_period_time;
+        return 1'b1;
+    endfunction
+
+    function automatic void arm_reset_signal_observation();
+        se0_start_time =
+            (utmi_line_state == 2'b00) ? $realtime : 0.0;
+    endfunction
+
+    task automatic wait_for_reset_signal_bounded(
+        input time timeout,
+        output bit observed,
+        output time duration);
+
+        observed = 1'b0;
+        duration = 0;
+        fork : reset_signal_timeout
+            begin
+                if (se0_start_time == 0.0) begin
+                    wait (utmi_line_state == 2'b00);
+                    se0_start_time = $realtime;
+                end
+                wait (utmi_line_state != 2'b00);
+                duration = time'($realtime - se0_start_time);
+                observed = 1'b1;
+            end
+            begin
+                #(timeout);
+            end
+        join_any
+        disable reset_signal_timeout;
+        se0_start_time = 0.0;
+    endtask
 
 endinterface : caliptra_ss_usb_legacy_ep0_observer_if

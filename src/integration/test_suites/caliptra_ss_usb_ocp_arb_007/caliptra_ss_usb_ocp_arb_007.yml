@@ -1,0 +1,14 @@
+seed: 1
+testname: caliptra_ss_usb_ocp_arb_007
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_ocp_arb_007"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_ocp_post_sync_arbiter \
+       CALIPTRA_TESTNAME=cptra_usb_ocp_post_sync_arbiter \
+       CALIPTRA_AUX=usb_ocp_recovery_cptra \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_ocp_arb_007_test'

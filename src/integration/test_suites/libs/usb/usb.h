@@ -46,6 +46,21 @@
 #define USB_LEGACY_EP0_READY_FIELD      0x1Fu
 #define USB_LEGACY_EP0_SNAPSHOT_FIELDS  18u
 
+// MCU generic input wire 1 carries one generation-qualified observer command.
+// The 32-bit format is magic[31:24], opcode[23:20], expected legacy SETUP
+// dispatch delta[19:16], and generation[15:0].
+#define USB_LEGACY_EP0_COMMAND_MAGIC             0xB7u
+#define USB_LEGACY_EP0_COMMAND_ACK_MAGIC         0xD6u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_BASELINE  0x1u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_POST      0x2u
+#define USB_LEGACY_EP0_COMMAND_RELEASE_CALIPTRA  0x3u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_RESET_POST 0x4u
+#define USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT       24u
+#define USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT      20u
+#define USB_LEGACY_EP0_COMMAND_DELTA_SHIFT       16u
+#define USB_LEGACY_EP0_COMMAND_NIBBLE_MASK       0xFu
+#define USB_LEGACY_EP0_COMMAND_GENERATION_MASK   0xFFFFu
+
 typedef enum {
     USB_LEGACY_EP0_SNAPSHOT_BASELINE = 1u,
     USB_LEGACY_EP0_SNAPSHOT_POST     = 2u
@@ -246,5 +261,6 @@ void usb_legacy_ep0_capture_snapshot(
     usb_legacy_ep0_snapshot_t *snapshot);
 
 uint32_t usb_legacy_ep0_get_setup_dispatch_count(void);
+uint32_t usb_legacy_ep0_get_bus_reset_count(void);
 
 #endif // USB_DRV_H

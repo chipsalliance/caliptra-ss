@@ -1648,11 +1648,17 @@ module caliptra_ss_top_tb
     logic         cptra_ss_usb_mem_web_out_o;
     logic [63:0]  cptra_ss_usb_mem_bsel_o;
     logic [63:0]  usb_legacy_ep0_host_ack;
+    logic [31:0]  usb_legacy_ep0_mcu_command;
+    logic         usb_legacy_ep0_mcu_command_active;
     logic [63:0]  cptra_ss_mci_generic_output_wires_o;
+    bit           usb_utmi_clk;
 
     caliptra_ss_usb_legacy_ep0_observer_if
         usb_legacy_ep0_observer_if_inst (
             .clk             (core_clk),
+            .utmi_clk        (usb_utmi_clk),
+            .utmi_line_state (
+                usb_20_mac_if.utmi_dut_mac_if.LineState),
             .mem_cs          (cptra_ss_usb_mem_cs_o),
             .mem_web_out     (cptra_ss_usb_mem_web_out_o),
             .mem_word_addr   (cptra_ss_usb_mem_a_o),
@@ -1662,8 +1668,20 @@ module caliptra_ss_top_tb
                 cptra_ss_mci_generic_output_wires_o[31:0]),
             .fw_snapshot_header(
                 cptra_ss_mci_generic_output_wires_o[63:32]),
+            .mcu_axi_awvalid(
+                cptra_ss_mcu_lsu_m_axi_if.awvalid),
+            .mcu_axi_awready(
+                cptra_ss_mcu_lsu_m_axi_if.awready),
+            .mcu_axi_bvalid(
+                cptra_ss_mcu_lsu_m_axi_if.bvalid),
+            .mcu_axi_bready(
+                cptra_ss_mcu_lsu_m_axi_if.bready),
             .host_snapshot_ack(
-                usb_legacy_ep0_host_ack[31:0])
+                usb_legacy_ep0_host_ack[31:0]),
+            .host_mcu_command(
+                usb_legacy_ep0_mcu_command),
+            .host_mcu_command_active(
+                usb_legacy_ep0_mcu_command_active)
         );
     assign usb_legacy_ep0_host_ack[63:32] = '0;
 
@@ -1722,7 +1740,6 @@ module caliptra_ss_top_tb
     // 60 MHz UTMI clock for USB 2.0 HS mode (period = 16667 ps)
     parameter realtime USB_UTMI_CLK_PERIOD = 16667ps;
 
-    bit usb_utmi_clk;
     initial begin
         usb_utmi_clk = 0;
         #(USB_UTMI_CLK_PERIOD/2); // No clock edge at T=0
@@ -1914,9 +1931,13 @@ module caliptra_ss_top_tb
     logic [31:0]  cptra_ss_strap_mcu_reset_vector_i;
     logic [63:0]  cptra_ss_mci_generic_input_wires_i;
     logic [63:0]  cptra_ss_mci_generic_input_wires_services;
-    assign cptra_ss_mci_generic_input_wires_i =
-        cptra_ss_mci_generic_input_wires_services |
-        usb_legacy_ep0_host_ack;
+    assign cptra_ss_mci_generic_input_wires_i[31:0] =
+        cptra_ss_mci_generic_input_wires_services[31:0] |
+        usb_legacy_ep0_host_ack[31:0];
+    assign cptra_ss_mci_generic_input_wires_i[63:32] =
+        usb_legacy_ep0_mcu_command_active ?
+        usb_legacy_ep0_mcu_command :
+        cptra_ss_mci_generic_input_wires_services[63:32];
     logic         cptra_ss_all_error_fatal_o;
     logic         cptra_ss_all_error_non_fatal_o;
     logic [31:0]  cptra_ss_strap_mcu_lsu_axi_user_i;
