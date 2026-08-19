@@ -15,6 +15,10 @@
 
 #include "usb.h"
 
+// Device RTL implements PFSC at DEVCMDSTAT[21], but the register collateral
+// marks the bit reserved and therefore does not generate a software mask.
+#define USB_DEVCMDSTAT_PFSC_MASK (1U << 21)
+
 // Shadow of the staged device-address (DEVCMDSTAT[6:0]).
 //
 // Hardware quirk (IP-XXX-3511): DEVCMDSTAT[6:0] reads return the LIVE
@@ -212,7 +216,7 @@ void boot_usb_core_fs(void) {
     reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
              | USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK
              | USBHSD_DEVCMDSTAT_DCON_MASK
-             | USBHSD_DEVCMDSTAT_PFSC_MASK;
+             | USB_DEVCMDSTAT_PFSC_MASK;
     lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
 
