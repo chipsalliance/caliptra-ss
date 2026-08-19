@@ -29,24 +29,44 @@
         <th>Name</th>
         <th></th>
     </tr>
-    <tr id="RESERVED_31_3">
-        <td>[31:3]</td>
-        <td><a href="#RESERVED_31_3.desc">RESERVED_31_3</a></td>
+    <tr id="RESERVED_31_4">
+        <td>[31:4]</td>
+        <td><a href="#RESERVED_31_4.desc">RESERVED_31_4</a></td>
         <td>
             <span title='Read-only'>r</span></td>
         <td>0x0
         </td>
         <td>
-            <input id="_FieldValueTesterRESERVED_31_3" class="field-value-tester"
+            <input id="_FieldValueTesterRESERVED_31_4" class="field-value-tester"
                 type="text" autocomplete="off"
-                data-name="RESERVED_31_3" oninput="onDecodedFieldInput(this)"/>
+                data-name="RESERVED_31_4" oninput="onDecodedFieldInput(this)"/>
         </td>
         <td>Reserved</td>
         <td>
-            <button type="button" id="_RadixButtonRESERVED_31_3" class="radix-button"
+            <button type="button" id="_RadixButtonRESERVED_31_4" class="radix-button"
                 title="Switch radix" aria-label="Switch radix"
-                data-name="RESERVED_31_3" onclick="onRadixSwitch(this)">H</button>
-            <a class="headerlink" href="#RESERVED_31_3" title="Permalink to this row"></a>
+                data-name="RESERVED_31_4" onclick="onRadixSwitch(this)">H</button>
+            <a class="headerlink" href="#RESERVED_31_4" title="Permalink to this row"></a>
+        </td>
+    </tr>
+    <tr id="BATCH_ABORTED">
+        <td>[3]</td>
+        <td><a href="#BATCH_ABORTED.desc">BATCH_ABORTED</a></td>
+        <td>
+            <span title='Read-only'>r</span></td>
+        <td>0x0
+        </td>
+        <td>
+            <input id="_FieldValueTesterBATCH_ABORTED" class="field-value-tester"
+                type="text" autocomplete="off"
+                data-name="BATCH_ABORTED" oninput="onDecodedFieldInput(this)"/>
+        </td>
+        <td>FIFO batch aborted sticky status</td>
+        <td>
+            <button type="button" id="_RadixButtonBATCH_ABORTED" class="radix-button"
+                title="Switch radix" aria-label="Switch radix"
+                data-name="BATCH_ABORTED" onclick="onRadixSwitch(this)">H</button>
+            <a class="headerlink" href="#BATCH_ABORTED" title="Permalink to this row"></a>
         </td>
     </tr>
     <tr id="IMAGE_DONE">
@@ -119,11 +139,18 @@
 </p>
 <hr/><h2>Field Descriptions</h2>
 
-<h3 id="RESERVED_31_3.desc">RESERVED_31_3 - Reserved
-    <a class="headerlink" href="#RESERVED_31_3.desc" title="Permalink to this headline"></a>
+<h3 id="RESERVED_31_4.desc">RESERVED_31_4 - Reserved
+    <a class="headerlink" href="#RESERVED_31_4.desc" title="Permalink to this headline"></a>
 </h3>
-<div id="_Content.RESERVED_31_3.desc">
+<div id="_Content.RESERVED_31_4.desc">
 <p>Reserved for future Caliptra-specific status bits.</p>
+</div>
+
+<h3 id="BATCH_ABORTED.desc">BATCH_ABORTED - FIFO batch aborted sticky status
+    <a class="headerlink" href="#BATCH_ABORTED.desc" title="Permalink to this headline"></a>
+</h3>
+<div id="_Content.BATCH_ABORTED.desc">
+<p>Sticky: set when a new EP0 SETUP aborts a claimed INDIRECT_FIFO_DATA OUT transfer and flushes the unconsumed batch. Cleared by an INDIRECT_FIFO_CTRL reset.</p>
 </div>
 
 <h3 id="IMAGE_DONE.desc">IMAGE_DONE - Image done sticky status
