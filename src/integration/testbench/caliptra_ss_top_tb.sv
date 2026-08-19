@@ -1818,7 +1818,6 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.utmi_dut_mac_if.FsLsSerialMode    = 1'b0;
     assign usb_20_mac_if.utmi_dut_mac_if.IdPullup          = 1'b0;
     // DrvVbus=1: unconditionally assert VBUS presence on the UTMI interface.
-    // In NIOBE the analog is vbus=1'b1 in the test module (usb_hs_xvc.vbus).
     // The SVT remote_phys_lane reads DrvVbus to decide VbusValid on the UTMI
     // bus.  When VIP acts as a USB DEVICE (phys_lane[0]=UTMI_LINK), the device
     // link SM (device_b_sm) waits for VbusValid=1 before processing bus-reset.
@@ -1832,7 +1831,9 @@ module caliptra_ss_top_tb
     // topology there is no VIP PHY model to drive this, so assert it here
     // unconditionally to match DrvVbus=1.  Without this the B SM stays stuck in
     // BUS_RESET after tsigatt even though vip_sess_vld is internally 1.
+`ifdef CALIPTRA_USB_HOST_PHY_TEST
     assign usb_20_mac_if.utmi_dut_mac_if.VbusValid         = 1'b1;
+`endif
     assign usb_20_mac_if.utmi_dut_mac_if.ChrgVbus          = 1'b0;
     assign usb_20_mac_if.utmi_dut_mac_if.DischrgVbus       = 1'b0;
     assign usb_20_mac_if.utmi_dut_mac_if.TxBitstuffEnable  = 1'b0;
@@ -2006,8 +2007,8 @@ module caliptra_ss_top_tb
     // PHY also asserts VbusValid=1 / SessEnd=0 (because DrvVbus=1), so this
     // change is value-identical and causes no regression.
     `ifndef CALIPTRA_USB_HOST_PHY_TEST
-    assign cptra_ss_usb_USB_VBus_i = 1'b1;
-    assign cptra_ss_usb_sessend_i  = 1'b0;
+    assign cptra_ss_usb_USB_VBus_i = usb_20_mac_if.utmi_dut_mac_if.VbusValid;
+    assign cptra_ss_usb_sessend_i  = usb_20_mac_if.utmi_dut_mac_if.SessEnd;
     `endif
 
     // USB ULPI PHY interface
