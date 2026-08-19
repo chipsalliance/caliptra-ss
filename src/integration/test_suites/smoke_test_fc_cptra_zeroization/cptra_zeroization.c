@@ -184,13 +184,18 @@ static bool zeroize_partition(uint32_t partition_id) {
     return false;
   }
 
-  // Read the digest to determine if the partition is locked. Read via DAI to
-  // avoid having to calculate the digest register offset.
-  dma_dai_rd(p->digest_address, &read_data[0], &read_data[1], 64, 0);
-  if (read_data[0] == 0 && read_data[1] == 0) {
-    VPRINTF(LOW, "ERROR: partition_id: %d is NOT locked\n", partition_id);
-    return false;
-  }
+  // NOTE: We intentionally do not check the partition digest here to determine
+  // whether the partition is locked. This flow runs with debug intent asserted,
+  // and the fuse controller deliberately hides the secret partitions' hardware
+  // digests in that case: a DAI read of a secret partition digest skips the OTP
+  // read entirely and returns 0, and the named digest CSR is masked to a
+  // provisioned indicator. When debug intent is asserted through the physical
+  // strap (before fuse controller initialization), the secret partitions are
+  // never sensed at all, so both paths read back 0 regardless of whether the
+  // partition is actually locked. A digest-based lock check therefore produces
+  // a false negative here. Zeroization itself is unaffected, because the DAI
+  // drives the fuse macro directly, so we proceed and verify the result of each
+  // zeroization step below instead.
 
   // Zeroize marker field.
   dma_dai_zer(p->zer_address, &read_data[0], &read_data[1], 64, 0);
