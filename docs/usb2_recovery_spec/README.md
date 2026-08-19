@@ -196,13 +196,19 @@ Clocked by `dev_axi_aclk`
 
 ### 4.4 CMS image FIFO
 
-The image data path (OCP v1.1 Sec 8.2.5) is a 65-slot logical ring exposed through
-`INDIRECT_FIFO_*` and backed by a synchronous 64-DWORD FIFO. Producer (host writes
-via the arbiter), consumer (Caliptra reads via EXT/AXI), the register block, and
-firmware all share `dev_axi_aclk`, so occupancy (`WRITE_INDEX`, `READ_INDEX`,
-full/empty) is reported exactly with no clock-crossing pointer lag. `WRITE_INDEX`
-advances only on accepted writes; `READ_INDEX` is derived as
-`(WRITE_INDEX - depth) mod 65`.
+The image data path is exposed through `INDIRECT_FIFO_*` and backed by a
+synchronous 64-DWORD FIFO. `FIFO_SIZE` and `MAX_TRANSFER_SIZE` both report 64
+DWORDs. `WRITE_INDEX` and `READ_INDEX` wrap modulo 64 and are debug fields:
+they may be equal at both empty and full, so `FULL` and `EMPTY` are the
+authoritative occupancy indicators.
+
+The host supplies normal 64-B OUT transfers while the FIFO is available.
+`payload_available` asserts when the FIFO reaches 64 DWORDs, or when a nonempty
+terminal image batch completes, and remains asserted until the FIFO is empty.
+Caliptra waits for this level before reading `INDIRECT_FIFO_DATA`; while it is
+asserted, later FIFO DATA OUT transfers receive USB NAK until the batch drains.
+The final DWORD of a non-4-byte-aligned transfer is zero-padded at the FIFO
+write boundary. Caliptra uses the image byte length to ignore padding.
 
 ### 4.5 EXT / AXI register + drain path
 
@@ -210,7 +216,7 @@ Caliptra reaches the OCP register aperture as an AXI master: SoC AXI fabric to t
 `axi2ahb`/C3 bridge to the EXT side of the A0 reg-bus arbiter to the A3 register
 block / A4 FIFO. All OCP register reads/writes and the image drain
 (`INDIRECT_FIFO_DATA` reads) flow through this path; there is no separate sideband
-drain port.
+drain port. EXT FIFO-data reads are held until `payload_available` is asserted.
 
 ### 4.6 Recovery state machine (block A5)
 
@@ -236,6 +242,11 @@ stateDiagram-v2
     S_DONE --> S_DETECTED: rec_trigger
     S_AWAIT_IMAGE --> S_ERROR: fifo_overflow or size mismatch
     S_PUSH_ACTIVE --> S_ERROR: fifo_overflow or size mismatch
+    S_AWAIT_IMAGE --> S_AWAIT_IMAGE: FIFO reset or batch abort
+    S_PUSH_ACTIVE --> S_AWAIT_IMAGE: FIFO reset or batch abort
+    S_IMAGE_LOADED --> S_AWAIT_IMAGE: FIFO reset or batch abort
+    S_ACTIVATE --> S_AWAIT_IMAGE: FIFO reset or batch abort
+    S_BOOT_REQ --> S_AWAIT_IMAGE: FIFO reset or batch abort
     S_RESETTING --> S_IDLE
     S_ERROR --> S_RESETTING: DEVICE_RESET
 
@@ -339,14 +350,18 @@ master it interacts with the OCP recovery register aperture:
 1. **Detect recovery.** Poll `DEVICE_STATUS` until byte 0 reports Recovery Pending
    (`0x4`, OCP v1.1 Sec 9.2), i.e. the device holds a recovery image awaiting
    activation.
-2. **Size the transfer.** Read the image length from `INDIRECT_FIFO_CTRL` and
-   observe FIFO occupancy via `INDIRECT_FIFO_STATUS`.
+2. **Wait for a batch.** Wait for `cptra_ss_usb_recovery_payload_available_o`;
+   then read the image length from `INDIRECT_FIFO_CTRL` and inspect
+   `INDIRECT_FIFO_STATUS`. Use FULL/EMPTY rather than equal indices to determine
+   occupancy.
 3. **Drain.** Read `INDIRECT_FIFO_DATA` repeatedly (one DWORD per read) until the
-   image is consumed; each read pops one DWORD from the CMS FIFO. Because occupancy
-   is exact, the status registers reflect a just-popped slot on the next cycle.
-4. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
+   notified batch is empty. Each read pops one DWORD from the CMS FIFO.
+4. **Recover an aborted batch.** Poll `CALIPTRA_STATUS.BATCH_ABORTED`. If set, discard
+   any local image state and write `INDIRECT_FIFO_CTRL.RESET` to clear the sticky
+   status and rearm the FIFO before accepting a restarted host batch.
+5. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
    authentication path.
-5. **Activate / report.** On success, drive image selection and activation via
+6. **Activate / report.** On success, drive image selection and activation via
    `RECOVERY_CTRL` (OCP v1.1 Sec 9.2) and boot the image; on failure, report via
    `RECOVERY_STATUS`.
 
@@ -374,7 +389,8 @@ not duplicated here:
 Commands in the aperture: `PROT_CAP`, `DEVICE_ID`, `DEVICE_STATUS`, `DEVICE_RESET`,
 `RECOVERY_CTRL`, `RECOVERY_STATUS`, `HW_STATUS`, `INDIRECT_FIFO_CTRL`,
 `INDIRECT_FIFO_STATUS`, `INDIRECT_FIFO_DATA`, plus the Caliptra-specific
-`CALIPTRA_CTRL` (`OCP_PATH_DISABLE`).
+`CALIPTRA_CTRL` (`OCP_PATH_DISABLE`) and `CALIPTRA_STATUS`
+(`REGION_RESET`, `OVERFLOW`, `IMAGE_DONE`, `BATCH_ABORTED`).
 
 ---
 
@@ -386,9 +402,10 @@ Commands in the aperture: `PROT_CAP`, `DEVICE_ID`, `DEVICE_STATUS`, `DEVICE_RESE
 - **Legacy transparency.** A claimed transfer produces zero legacy side effects; an
   unclaimed transfer is replayed bit-identically. Standard enumeration is
   unaffected whether or not `OCP_PATH_DISABLE` is set.
-- **Exact FIFO occupancy.** The single-clock synchronous CMS FIFO makes
-  `WRITE_INDEX`, `READ_INDEX`, and full/empty exact (no CDC lag), so Caliptra never
-  sees a stale over-report of available data.
+- **Batch integrity.** A superseding SETUP or bus reset during a claimed FIFO OUT
+  transfer clears A2/A4 state, flushes the unconsumed batch, and sets
+  `CALIPTRA_STATUS.BATCH_ABORTED`. A host CRC error or lost-ACK retry does not
+  create a duplicate FIFO write.
 - **SETUP handshake.** The device always ACKs the SETUP stage (USB 2.0 Sec
   8.4.6.4); claimed SETUPs are trapped and answered, never NAK/STALLed at the SETUP
   stage.
