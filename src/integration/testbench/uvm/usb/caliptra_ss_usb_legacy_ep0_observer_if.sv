@@ -30,6 +30,11 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     input  logic        mcu_axi_awready,
     input  logic        mcu_axi_bvalid,
     input  logic        mcu_axi_bready,
+    input  logic        mcu_axi_arvalid,
+    input  logic        mcu_axi_arready,
+    input  logic        mcu_axi_rvalid,
+    input  logic        mcu_axi_rready,
+    input  logic        mcu_axi_rlast,
     output logic [31:0] host_snapshot_ack,
     output logic [31:0] host_mcu_command,
     output logic        host_mcu_command_active
@@ -86,6 +91,7 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     logic [15:0] snapshot_generation;
     logic [1:0]  snapshot_state;
     int unsigned mcu_axi_writes_outstanding;
+    int unsigned mcu_axi_reads_outstanding;
     realtime core_clock_reference;
     realtime core_clock_period;
     realtime utmi_clock_reference;
@@ -146,6 +152,19 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
             end
             default: ;
         endcase
+
+        case ({
+            mcu_axi_arvalid && mcu_axi_arready,
+            mcu_axi_rvalid && mcu_axi_rready && mcu_axi_rlast
+        })
+            2'b10: mcu_axi_reads_outstanding++;
+            2'b01: begin
+                if (mcu_axi_reads_outstanding != 0) begin
+                    mcu_axi_reads_outstanding--;
+                end
+            end
+            default: ;
+        endcase
     end
 
     always @(posedge utmi_clk) begin
@@ -163,6 +182,7 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
         snapshot_generation = '0;
         snapshot_state = '0;
         mcu_axi_writes_outstanding = 0;
+        mcu_axi_reads_outstanding = 0;
         core_clock_reference = 0.0;
         core_clock_period = 0.0;
         utmi_clock_reference = 0.0;
@@ -355,6 +375,42 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
             7: begin @(negedge clk); #1ps; end
             default: @(posedge utmi_clk);
         endcase
+    endtask
+
+    task automatic wait_for_mcu_axi_idle(
+        input time timeout,
+        output bit idle);
+
+        localparam int unsigned QUIET_CYCLES = 4;
+
+        idle = 1'b0;
+        fork : mcu_axi_idle_timeout
+            begin
+                while (!idle) begin
+                    bit quiet;
+
+                    wait ((mcu_axi_writes_outstanding == 0) &&
+                          (mcu_axi_reads_outstanding == 0));
+                    quiet = 1'b1;
+                    repeat (QUIET_CYCLES) begin
+                        @(negedge clk);
+                        if ((mcu_axi_writes_outstanding != 0) ||
+                            (mcu_axi_reads_outstanding != 0) ||
+                            (mcu_axi_awvalid && mcu_axi_awready) ||
+                            (mcu_axi_arvalid && mcu_axi_arready)) begin
+                            quiet = 1'b0;
+                        end
+                    end
+                    if (quiet) begin
+                        idle = 1'b1;
+                    end
+                end
+            end
+            begin
+                #(timeout);
+            end
+        join_any
+        disable mcu_axi_idle_timeout;
     endtask
 
     function automatic bit get_setup_clock_phases(

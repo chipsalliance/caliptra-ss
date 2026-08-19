@@ -1676,6 +1676,16 @@ module caliptra_ss_top_tb
                 cptra_ss_mcu_lsu_m_axi_if.bvalid),
             .mcu_axi_bready(
                 cptra_ss_mcu_lsu_m_axi_if.bready),
+            .mcu_axi_arvalid(
+                cptra_ss_mcu_lsu_m_axi_if.arvalid),
+            .mcu_axi_arready(
+                cptra_ss_mcu_lsu_m_axi_if.arready),
+            .mcu_axi_rvalid(
+                cptra_ss_mcu_lsu_m_axi_if.rvalid),
+            .mcu_axi_rready(
+                cptra_ss_mcu_lsu_m_axi_if.rready),
+            .mcu_axi_rlast(
+                cptra_ss_mcu_lsu_m_axi_if.rlast),
             .host_snapshot_ack(
                 usb_legacy_ep0_host_ack[31:0]),
             .host_mcu_command(

@@ -74,10 +74,13 @@ function void caliptra_ss_usb_base_test::final_phase(uvm_phase phase);
 
     svr = uvm_report_server::get_server();
     if (svr.get_severity_count(UVM_FATAL) +
-        svr.get_severity_count(UVM_ERROR) > 0)
+        svr.get_severity_count(UVM_ERROR) > 0) begin
         `uvm_info("final_phase", "\nSvtTestEpilog: Failed\n", UVM_NONE)
-    else
+        $display("* TESTCASE FAILED");
+    end else begin
         `uvm_info("final_phase", "\nSvtTestEpilog: Passed\n", UVM_NONE)
+        $display("* TESTCASE PASSED");
+    end
 
     `uvm_info("final_phase", "Exiting...", UVM_LOW)
 endfunction

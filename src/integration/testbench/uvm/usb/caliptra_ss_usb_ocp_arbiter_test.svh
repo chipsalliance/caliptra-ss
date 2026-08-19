@@ -32,18 +32,6 @@ class caliptra_ss_usb_ocp_arbiter_test_base
         super.build_phase(phase);
     endfunction
 
-    virtual function void final_phase(uvm_phase phase);
-        uvm_report_server server;
-
-        super.final_phase(phase);
-        server = uvm_report_server::get_server();
-        if ((server.get_severity_count(UVM_FATAL) +
-             server.get_severity_count(UVM_ERROR)) == 0) begin
-            $display("* TESTCASE PASSED");
-        end else begin
-            $display("* TESTCASE FAILED");
-        end
-    endfunction
 endclass
 
 class caliptra_ss_usb_ocp_arb_001_test

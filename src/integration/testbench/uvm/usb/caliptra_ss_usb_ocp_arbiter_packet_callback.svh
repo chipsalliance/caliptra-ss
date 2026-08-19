@@ -224,7 +224,8 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
             end
             if (out_data_seen &&
                 (packet_records[index].direction == PACKET_RX) &&
-                (packet_records[index].pid_name == svt_usb_packet::ACK)) begin
+                ((packet_records[index].pid_name == svt_usb_packet::ACK) ||
+                 (packet_records[index].pid_name == svt_usb_packet::NYET))) begin
                 return 1'b1;
             end
         end
