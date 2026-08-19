@@ -49,8 +49,6 @@
 #define USBHSD_DEVCMDSTAT_LPM_SUS_MASK                                                              (0x80000)
 #define USBHSD_DEVCMDSTAT_LPM_REWP_LOW                                                              (20)
 #define USBHSD_DEVCMDSTAT_LPM_REWP_MASK                                                             (0x100000)
-#define USBHSD_DEVCMDSTAT_PFSC_LOW                                                                  (21)
-#define USBHSD_DEVCMDSTAT_PFSC_MASK                                                                 (0x200000)
 #define USBHSD_DEVCMDSTAT_SPEED_LOW                                                                 (22)
 #define USBHSD_DEVCMDSTAT_SPEED_MASK                                                                (0xc00000)
 #define USBHSD_DEVCMDSTAT_DCON_C_LOW                                                                (24)
