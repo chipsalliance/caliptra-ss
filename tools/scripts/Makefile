@@ -19,6 +19,7 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
+export USB_COMPILE_DIR := $(BUILD_DIR)
 
 ifndef CALIPTRA_SS_CLK_FREQ
 CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 333 400)
@@ -271,6 +272,11 @@ CFLAGS += $(TB_DPI_INCS)
 ############# VCS Compile options #############
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
+# Pass USB_HOST_PHY_TEST=1 on the make command line to enable this define
+# without disturbing VCS_COMP_OPTS variable expansion order.
+ifdef USB_HOST_PHY_TEST
+VCS_COMP_OPTS += +define+CALIPTRA_USB_HOST_PHY_TEST
+endif
 VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
 VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
