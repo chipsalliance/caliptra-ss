@@ -71,7 +71,7 @@ static void acknowledge_sampled_command(uint32_t command,
     for (uint32_t iteration = 0u;
          iteration < COMMAND_COMPLETION_ITERATION_LIMIT;
          ++iteration) {
-        usb_event_loop(1u);
+        usb_event_loop(1u, 0u);
         if (lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1) !=
             command) {
             return;
@@ -95,7 +95,7 @@ uint8_t main(void)
     mcu_cptra_user_init();
 
     while (!mcu_cptra_mb_ready_nb() || !usb_is_configured()) {
-        usb_event_loop(1u);
+        usb_event_loop(1u, 0u);
     }
     while (1) {
         uint32_t command;
@@ -104,7 +104,7 @@ uint8_t main(void)
         uint8_t expected_delta;
         uint16_t generation;
 
-        usb_event_loop(1u);
+        usb_event_loop(1u, 0u);
         command = lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
         magic = (uint8_t)(command >> USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT);
         if (magic != USB_LEGACY_EP0_COMMAND_MAGIC) {
@@ -138,7 +138,7 @@ uint8_t main(void)
         uint8_t expected_delta;
         uint16_t generation;
 
-        usb_event_loop(1u);
+        usb_event_loop(1u, 0u);
         command = lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
         magic = (uint8_t)(command >> USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT);
         if (magic != USB_LEGACY_EP0_COMMAND_MAGIC) {
@@ -194,7 +194,7 @@ uint8_t main(void)
             for (uint32_t iteration = 0u;
                  iteration < COMMAND_COMPLETION_ITERATION_LIMIT;
                  ++iteration) {
-                usb_event_loop(1u);
+                usb_event_loop(1u, 0u);
                 if (usb_legacy_ep0_get_setup_dispatch_count() ==
                     target_dispatch_count) {
                     target_seen = 1u;
@@ -224,7 +224,7 @@ uint8_t main(void)
             for (uint32_t iteration = 0u;
                  iteration < RESET_COMPLETION_ITERATION_LIMIT;
                  ++iteration) {
-                usb_event_loop(1u);
+                usb_event_loop(1u, 0u);
                 if (usb_legacy_ep0_get_bus_reset_count() >
                     baseline_bus_reset_count) {
                     target_seen = 1u;
