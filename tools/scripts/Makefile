@@ -107,7 +107,7 @@ TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/ml_kem_fixed
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -405,6 +405,7 @@ verilator: mcu_program.hex verilator-build
 
 vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/ml-kem/tv
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
 	  $(VCS_SIM_EXTRA_OPTS) \
