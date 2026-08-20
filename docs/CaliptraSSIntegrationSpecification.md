@@ -2831,8 +2831,6 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS-Cfg-4         | I3C                   | The Verilog macro `DISABLE_INPUT_FF` must NOT be defined. Defining it removes the synchronizer flip-flop on the I3C SCL input signal, creating a CDC violation.                                                                                                                                                                                                                                                                                                                           | Functionality |
 | CSS-Core-1        | Caliptra Core         | In addition to all requirements listed in this table, integrators must adhere to all integration requirements defined in the Caliptra Core Integration Specification. Caliptra Subsystem Integration Requirements supplement but do not replace any Caliptra Core Integration Requirements.                                                                                                                                                                                               | Trademark Compliance |
 
-\* **Note: Deviation or exemption from requirements marked with * may be permitted if documented justification is provided and approved by the SRP and TAC.**
-
 # Terminology
 
 | Abbreviation | Term                                   | Description                                                                                      |
