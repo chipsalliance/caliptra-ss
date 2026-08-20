@@ -204,6 +204,11 @@ targets:
                 && echo "[PRE-EXEC] Copying MLDSA vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 .
                 && echo "[PRE-EXEC] Copying MLDSA debug vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug .
                 && echo "[PRE-EXEC] Copying mldsa directed vector to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex .
+                && echo "[PRE-EXEC] Copying ML-KEM python vector generator to ${pwd}" && mkdir -p ml-kem/tv
+                && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem/random_test_ml_kem.py ml-kem/
+                && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem/ml_kem.py ml-kem/
+                && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem/Module.py ml-kem/
+                && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem/utils.py ml-kem/
                 && echo "[PRE-EXEC] Copying otp-img.2048.vmem to ${pwd}" && cp $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp-img.2048.vmem .'
     post_exec: 'if [[ -f ./cm.log ]]; then rm ./cm.log; else echo "Did not find cm.log"; fi'
 global:
