@@ -40,4 +40,13 @@ smoke_test_fuse_zeroize # To be removed from design: https://github.com/chipsall
 caliptra_ss_jtag_manuf_dbg # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
 caliptra_ss_jtag_uds_prog # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
 
-
+# USB
+caliptra_ss_usb_fs_host_intnak # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_remotewakeup # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_remotewakeup_fromdevice # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_traffic # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_idau_sec_level # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_root2 # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_powerdown # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_resume # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_dev_powerdown # FIXME: Device test is yet to be enabled
