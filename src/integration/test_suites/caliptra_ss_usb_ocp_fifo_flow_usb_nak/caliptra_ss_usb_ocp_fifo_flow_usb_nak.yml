@@ -6,7 +6,7 @@ pre-exec: |
        TESTNAME=caliptra_ss_usb_ocp_recovery_init \
        CALIPTRA_TESTNAME=cptra_usb_ocp_fifo_flow_control \
        CALIPTRA_AUX=usb_ocp_recovery_cptra \
-       CALIPTRA_CFLAGS="-DOCP_FIFO_FLOW_INITIAL_DELAY_CYCLES=50000u -DOCP_FIFO_FLOW_WORDS_PER_SERVICE=4u -DOCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES=2000u" \
+       CALIPTRA_CFLAGS="-DOCP_FIFO_FLOW_INITIAL_DELAY_CYCLES=1000u -DOCP_FIFO_FLOW_WORDS_PER_SERVICE=4u -DOCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES=2000u" \
        CALIPTRA_SS_CLK_FREQ=400 \
        mcu_program.hex \
        cptra_program.hex

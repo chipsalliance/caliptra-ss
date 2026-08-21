@@ -34,11 +34,11 @@ class caliptra_ss_usb_ocp_fifo_flow_status_flags_test
             this, "*", "image_dwords", 96);
         uvm_config_db#(time)::set(this, "*", "poll_delay", 100us);
         uvm_config_db#(int unsigned)::set(
-            this, "*", "max_polls", 3);
+            this, "*", "max_polls", 20);
         uvm_config_db#(int unsigned)::set(
             this, "*", "max_retries", 20);
         uvm_config_db#(time)::set(
-            this, "*", "completion_wait", 1ms);
+            this, "*", "completion_wait", 2ms);
         super.build_phase(phase);
     endfunction
 

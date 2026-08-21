@@ -34,10 +34,11 @@
 #define OCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES 3000u
 #endif
 
+#define OCP_FIFO_FLOW_FINAL_VALID_BYTES 3u
+
 #define OCP_FIFO_FLOW_PATTERN_BASE 0xC0DE0000u
 #define OCP_FIFO_FLOW_POLL_DELAY_CYCLES 32u
 #define OCP_FIFO_FLOW_POLL_LIMIT 200000u
-#define OCP_FIFO_STATUS_FULL_MASK (1u << 1)
 #define SS_GENERIC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 
 volatile char *stdout = (char *)STDOUT;
@@ -68,7 +69,6 @@ static void fail_and_halt(const char *message)
 void main(void)
 {
     uint32_t image_size_words = 0u;
-    uint32_t drained_words = 0u;
     uint32_t poll_count = 0u;
 
     VPRINTF(LOW, "CPTRA: USB OCP FIFO flow-control consumer starting\n");
@@ -96,68 +96,41 @@ void main(void)
 
     spin_delay(OCP_FIFO_FLOW_INITIAL_DELAY_CYCLES);
     VPRINTF(LOW, "CPTRA: draining %u FIFO flow-control words\n",
-            image_size_words);
-    while (drained_words < image_size_words) {
-        uint8_t fifo_status;
-        uint32_t write_index;
-        uint32_t read_index;
-        uint32_t fifo_size;
-        uint32_t available_words;
-        uint32_t service_words;
+             image_size_words);
+    for (uint32_t index = 0u; index < image_size_words; ++index) {
+        uint32_t word = 0u;
+        uint32_t expected = OCP_FIFO_FLOW_PATTERN_BASE | index;
 
-        if (cptra_usb_ocp_recovery_read_fifo_status(
-                &fifo_status, &write_index,
-                &read_index, &fifo_size) != 0u) {
-            fail_and_halt("CPTRA: FIFO state read failed");
+        // The EXT read is held until the current FIFO batch becomes available.
+        // This is the architectural synchronization point between the USB
+        // producer and Caliptra consumer.
+        if (cptra_usb_ocp_recovery_read_dword_retry(
+                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                &word) != 0u) {
+            fail_and_halt("CPTRA: FIFO data read failed");
         }
-        if ((fifo_size < 2u) || (write_index >= fifo_size) ||
-            (read_index >= fifo_size)) {
-            fail_and_halt("CPTRA: FIFO ring status is invalid");
+        if (((index + 1u) == image_size_words) &&
+            (OCP_FIFO_FLOW_FINAL_VALID_BYTES < 4u)) {
+            uint32_t valid_mask =
+                (1u << (OCP_FIFO_FLOW_FINAL_VALID_BYTES * 8u)) - 1u;
+            expected &= valid_mask;
         }
-        available_words =
-            (write_index + fifo_size - read_index) %
-            fifo_size;
-        if ((available_words == 0u) &&
-            ((fifo_status & OCP_FIFO_STATUS_FULL_MASK) != 0u)) {
-            available_words = fifo_size - 1u;
-        }
-        if (available_words == 0u) {
-            spin_delay(OCP_FIFO_FLOW_POLL_DELAY_CYCLES);
-            continue;
+        if (word != expected) {
+            VPRINTF(FATAL,
+                    "CPTRA: FIFO word %u got 0x%08x expected 0x%08x\n",
+                    index, word, expected);
+            fail_and_halt("CPTRA: FIFO data ordering mismatch");
         }
 
-        service_words = available_words;
-        if (service_words > OCP_FIFO_FLOW_WORDS_PER_SERVICE) {
-            service_words = OCP_FIFO_FLOW_WORDS_PER_SERVICE;
+        if ((((index + 1u) % OCP_FIFO_FLOW_WORDS_PER_SERVICE) == 0u) &&
+            ((index + 1u) < image_size_words)) {
+            spin_delay(OCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES);
         }
-        if (service_words > (image_size_words - drained_words)) {
-            service_words = image_size_words - drained_words;
-        }
-
-        for (uint32_t index = 0u; index < service_words; ++index) {
-            uint32_t word = 0u;
-            uint32_t expected = OCP_FIFO_FLOW_PATTERN_BASE |
-                                (drained_words + index);
-
-            if (cptra_usb_ocp_recovery_read_dword_retry(
-                    SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
-                    &word) != 0u) {
-                fail_and_halt("CPTRA: FIFO data read failed");
-            }
-            if (word != expected) {
-                VPRINTF(FATAL,
-                        "CPTRA: FIFO word %u got 0x%08x expected 0x%08x\n",
-                        drained_words + index, word, expected);
-                fail_and_halt("CPTRA: FIFO data ordering mismatch");
-            }
-        }
-
-        drained_words += service_words;
-        spin_delay(OCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES);
     }
 
     VPRINTF(LOW, "CPTRA: verified %u FIFO flow-control words\n",
-            drained_words);
+             image_size_words);
+    spin_delay(10000u);
     lsu_write_32(
         CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
         SS_GENERIC_FW_EXEC_CTRL_GO_MASK);

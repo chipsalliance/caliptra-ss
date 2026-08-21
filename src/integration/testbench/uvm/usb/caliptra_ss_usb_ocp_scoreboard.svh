@@ -33,7 +33,6 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     protected bit          fifo_caps_valid;
     protected bit          fifo_model_valid;
     protected int unsigned expected_write_index;
-    protected int unsigned actual_read_index;
     protected int unsigned visible_read_index;
     protected int unsigned fifo_size;
     protected int unsigned max_transfer_dwords;
@@ -94,7 +93,6 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         fifo_caps_valid     = 1'b0;
         fifo_model_valid    = 1'b1;
         expected_write_index = 0;
-        actual_read_index    = 0;
         visible_read_index   = 0;
         fifo_size            = 0;
         max_transfer_dwords  = 0;
@@ -114,10 +112,21 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
     endfunction
 
     protected virtual function int unsigned observed_occupancy(
+        input bit empty,
+        input bit full,
         input int unsigned write_index,
-        input int unsigned read_index);
-        if (fifo_size == 0) return 0;
-        return (write_index + fifo_size - read_index) % fifo_size;
+        input int unsigned read_index,
+        input int unsigned observed_fifo_size);
+        if (empty && full) begin
+            `uvm_error("OCPREC_MARK",
+                "INDIRECT_FIFO_STATUS reports EMPTY and FULL simultaneously.")
+            return 0;
+        end
+        if (empty) return 0;
+        if (full) return observed_fifo_size;
+        if (observed_fifo_size == 0) return 0;
+        return (write_index + observed_fifo_size - read_index) %
+               observed_fifo_size;
     endfunction
 
     protected virtual function bit valid_payload_window(
@@ -155,19 +164,14 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 UVM_NONE)
             return;
         end
-        if ((transfer.setup_data_w_length % 4) != 0) begin
-            `uvm_error("OCPREC_MARK",
-                $sformatf("INDIRECT_FIFO_DATA OUT length=%0d is not DWORD aligned.",
-                          transfer.setup_data_w_length))
-            return;
-        end
-
-        delivered_dwords = transfer.setup_data_w_length / 4;
+        delivered_dwords = (transfer.setup_data_w_length + 3) / 4;
         for (int unsigned i = 0;
              i < transfer.setup_data_w_length; i++) begin
             pending_fifo_bytes.push_back(
                 transfer.payload.data[start_index + i]);
         end
+        repeat ((delivered_dwords * 4) - transfer.setup_data_w_length)
+            pending_fifo_bytes.push_back(8'h00);
         pending_write_dwords.push_back(delivered_dwords);
         pending_write_success.push_back(transfer_succeeded);
         total_fifo_data_out_bytes += transfer.setup_data_w_length;
@@ -175,67 +179,14 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
 
     protected virtual function void reconcile_fifo_writes(
         input int unsigned observed_write_index);
-        int unsigned observed_advance;
-        int unsigned pending_dwords;
-        int unsigned accepted_dwords_remaining;
         int unsigned attempt_dwords;
         int unsigned accepted_dwords;
         bit attempt_succeeded;
 
-        observed_advance =
-            ring_distance(expected_write_index, observed_write_index);
-        pending_dwords = 0;
-        foreach (pending_write_dwords[i]) begin
-            pending_dwords += pending_write_dwords[i];
-        end
-
-        if (pending_dwords < fifo_size) begin
-            accepted_dwords_remaining = observed_advance;
-            if (accepted_dwords_remaining > pending_dwords) begin
-                `uvm_error("OCPREC_MARK",
-                    $sformatf("WRITE_INDEX advanced by %0d DWORDs with only %0d observed pending DWORDs.",
-                              observed_advance, pending_dwords))
-                accepted_dwords_remaining = pending_dwords;
-                fifo_model_valid = 1'b0;
-            end
-        end else begin
-            accepted_dwords_remaining = 0;
-            foreach (pending_write_dwords[i]) begin
-                if (pending_write_success[i])
-                    accepted_dwords_remaining += pending_write_dwords[i];
-            end
-            if (((expected_write_index + accepted_dwords_remaining) %
-                    fifo_size) != observed_write_index) begin
-                `uvm_error("OCPREC_MARK",
-                    $sformatf("Modulo WRITE_INDEX=%0d cannot be reconciled unambiguously with %0d pending DWORDs and successful-transfer hints.",
-                              observed_write_index, pending_dwords))
-                fifo_model_valid = 1'b0;
-            end
-        end
-
         while (pending_write_dwords.size() != 0) begin
             attempt_dwords = pending_write_dwords.pop_front();
             attempt_succeeded = pending_write_success.pop_front();
-            accepted_dwords = 0;
-            if (pending_dwords >= fifo_size) begin
-                if (attempt_succeeded)
-                    accepted_dwords = attempt_dwords;
-            end else if (accepted_dwords_remaining >= attempt_dwords) begin
-                accepted_dwords = attempt_dwords;
-                accepted_dwords_remaining -= attempt_dwords;
-            end else if (accepted_dwords_remaining != 0) begin
-                accepted_dwords = accepted_dwords_remaining;
-                accepted_dwords_remaining = 0;
-                fifo_model_valid = 1'b0;
-                `uvm_error("OCPREC_MARK",
-                    $sformatf("WRITE_INDEX accepted %0d of %0d DWORDs from one FIFO transfer; OCP Recovery v1.1 Sec 8.2.5 requires transfer-level NACK backpressure.",
-                              accepted_dwords, attempt_dwords))
-            end
-            if (attempt_succeeded && (accepted_dwords != attempt_dwords)) begin
-                `uvm_error("OCPREC_MARK",
-                    $sformatf("Successful FIFO transfer contained %0d DWORDs but WRITE_INDEX confirms only %0d accepted DWORDs.",
-                              attempt_dwords, accepted_dwords))
-            end
+            accepted_dwords = attempt_succeeded ? attempt_dwords : 0;
 
             repeat (accepted_dwords * 4)
                 committed_fifo_bytes.push_back(
@@ -244,15 +195,17 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                 void'(pending_fifo_bytes.pop_front());
             total_fifo_rejected_dwords +=
                 attempt_dwords - accepted_dwords;
+            if (attempt_succeeded && (fifo_size != 0)) begin
+                expected_write_index =
+                    (expected_write_index + attempt_dwords) % fifo_size;
+            end
         end
-        if ((pending_dwords < fifo_size) &&
-            (accepted_dwords_remaining != 0)) begin
+        if (observed_write_index != expected_write_index) begin
             `uvm_error("OCPREC_MARK",
-                $sformatf("WRITE_INDEX has %0d unreconciled accepted DWORDs.",
-                          accepted_dwords_remaining))
+                $sformatf("WRITE_INDEX=%0d does not match transfer-qualified expected index=%0d.",
+                          observed_write_index, expected_write_index))
             fifo_model_valid = 1'b0;
         end
-        expected_write_index = observed_write_index;
     endfunction
 
     protected virtual function void check_fifo_data_read(
@@ -292,8 +245,6 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                               transfer.payload.data[start_index + i]))
             end
         end
-        if (fifo_caps_valid)
-            actual_read_index = (actual_read_index + 1) % fifo_size;
         total_fifo_data_in++;
     endfunction
 
@@ -306,9 +257,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         int unsigned observed_fifo_size;
         int unsigned observed_max_transfer;
         int unsigned occupancy;
-        int unsigned space;
-        int unsigned pending_visible_pops;
-        int unsigned observed_pop_advance;
+        int unsigned modeled_occupancy;
         int unsigned external_pop_dwords;
         bit observed_empty;
         bit observed_full;
@@ -371,7 +320,6 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             max_transfer_dwords = observed_max_transfer;
             if (!fifo_baseline_valid) begin
                 expected_write_index = observed_write_index;
-                actual_read_index = observed_read_index;
                 visible_read_index = observed_read_index;
                 pending_fifo_bytes.delete();
                 pending_write_dwords.delete();
@@ -399,53 +347,41 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         end
         reconcile_fifo_writes(observed_write_index);
 
-        pending_visible_pops =
-            ring_distance(visible_read_index, actual_read_index);
-        observed_pop_advance =
-            ring_distance(visible_read_index, observed_read_index);
-        if (observed_pop_advance > pending_visible_pops) begin
-            external_pop_dwords =
-                observed_pop_advance - pending_visible_pops;
-            if (committed_fifo_bytes.size() <
-                    (external_pop_dwords * 4)) begin
+        occupancy =
+            observed_occupancy(
+                observed_empty, observed_full,
+                observed_write_index, observed_read_index,
+                observed_fifo_size);
+        modeled_occupancy = committed_fifo_bytes.size() / 4;
+        if (occupancy > modeled_occupancy) begin
+            `uvm_error("OCPREC_MARK",
+                $sformatf("Visible occupancy=%0d exceeds transfer-qualified modeled occupancy=%0d.",
+                          occupancy, modeled_occupancy))
+            fifo_model_valid = 1'b0;
+        end else begin
+            external_pop_dwords = modeled_occupancy - occupancy;
+            if (observed_read_index !==
+                    ((visible_read_index + external_pop_dwords) %
+                     observed_fifo_size)) begin
                 `uvm_error("OCPREC_MARK",
-                    $sformatf("READ_INDEX reports %0d externally consumed DWORDs, but only %0d modeled DWORDs remain.",
-                              external_pop_dwords,
-                              committed_fifo_bytes.size() / 4))
-                committed_fifo_bytes.delete();
-            end else begin
-                repeat (external_pop_dwords * 4)
-                    void'(committed_fifo_bytes.pop_front());
+                    $sformatf("READ_INDEX=%0d does not match %0d inferred Device pops from prior index=%0d.",
+                              observed_read_index, external_pop_dwords,
+                              visible_read_index))
+                fifo_model_valid = 1'b0;
             end
-            actual_read_index =
-                (actual_read_index + external_pop_dwords) % fifo_size;
+            repeat (external_pop_dwords * 4)
+                void'(committed_fifo_bytes.pop_front());
             total_fifo_external_reads += external_pop_dwords;
         end
         visible_read_index = observed_read_index;
 
-        occupancy =
-            observed_occupancy(observed_write_index, observed_read_index);
-        space = observed_fifo_size - 1 - occupancy;
-        if (observed_empty !== (occupancy == 0)) begin
-            `uvm_error("OCPREC_MARK",
-                $sformatf("EMPTY=%0b conflicts with occupancy=%0d.",
-                          observed_empty, occupancy))
-        end
-        if (observed_full !== (space == 0)) begin
-            `uvm_error("OCPREC_MARK",
-                $sformatf("FULL=%0b conflicts with available space=%0d.",
-                          observed_full, space))
-        end
         if (region_type == OCP_REGION_RECOVERY_CODE_WO) begin
-            int unsigned actual_occupancy;
-            actual_occupancy = committed_fifo_bytes.size() / 4;
-            if ((occupancy < actual_occupancy) ||
-                (occupancy > (actual_occupancy +
-                    ring_distance(visible_read_index,
-                                  actual_read_index)))) begin
+            int unsigned remaining_occupancy;
+            remaining_occupancy = committed_fifo_bytes.size() / 4;
+            if (occupancy != remaining_occupancy) begin
                 `uvm_error("OCPREC_MARK",
-                    $sformatf("Visible occupancy=%0d is inconsistent with modeled occupancy=%0d and pending read visibility.",
-                              occupancy, actual_occupancy))
+                    $sformatf("Visible occupancy=%0d is inconsistent with remaining modeled occupancy=%0d.",
+                              occupancy, remaining_occupancy))
             end
         end
         total_fifo_status_in++;

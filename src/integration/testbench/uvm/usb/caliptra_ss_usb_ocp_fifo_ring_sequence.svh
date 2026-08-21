@@ -19,12 +19,13 @@
 //
 // Test intent:
 //   1. Discover FIFO_SIZE and transfer limits at runtime from INDIRECT_FIFO_STATUS.
-//   2. Reset the ring and fill FIFO_SIZE-1 slots with deterministic DWORDs.
-//   3. While the FIFO is full, attempt one additional write and prove the
-//      Device issues a packet-level USB NAK and the ring state is unchanged.
-//   4. Poll for firmware to pop the first DWORD (READ_INDEX advances by 1).
-//   5. Push the final DWORD causing WRITE_INDEX to wrap modulo FIFO_SIZE.
-//   6. Poll for firmware to drain all remaining DWORDs and FIFO to be EMPTY.
+//   2. Reset the FIFO and fill FIFO_SIZE DWORDs with deterministic data.
+//   3. Report a compliance failure if the equality-crossing transfer is
+//      accepted; OCP Recovery v1.1 Sec 8.2.5 requires NACK before W == R.
+//   4. Start one additional DATA transfer and allow the VIP to retry its DATA
+//      stage after NAK without issuing another SETUP.
+//   5. Require the retry to ACK after Caliptra drains the first batch, then
+//      poll the terminal one-DWORD batch to EMPTY.
 //
 // OCP Recovery v1.1 Sec 9.2 defines region type 0b000 as write-only from
 // the Recovery Agent; the RA must never issue an IN transfer on
@@ -48,7 +49,6 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
     // Upper bounds for Device state-transition polls.
     // Values are chosen to accommodate simulation latency without coupling to
     // any specific RTL depth or clock ratio.
-    localparam int unsigned OCP_FIFO_RING_MAX_POP_POLLS   = 512;
     localparam int unsigned OCP_FIFO_RING_MAX_EMPTY_POLLS = 256;
 
     // NAK monitor callback registered against the link monitor to detect
@@ -59,22 +59,14 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         super.new(name);
     endfunction
 
-    // Occupancy formula from OCP Recovery v1.1 Sec 8.2.5.
-    protected virtual function int unsigned ring_occupancy(
+    protected virtual function int unsigned visible_occupancy(
         input fifo_status_s status);
+        if (status.empty && status.full) return 0;
+        if (status.empty) return 0;
+        if (status.full) return status.fifo_size;
         if (status.fifo_size == 0) return 0;
         return (status.write_index + status.fifo_size -
                 status.read_index) % status.fifo_size;
-    endfunction
-
-    // Available space formula from OCP Recovery v1.1 Sec 8.2.5.
-    // Space is 0 when WRITE_INDEX+1 mod FIFO_SIZE would equal READ_INDEX (FULL).
-    protected virtual function int unsigned ring_space(
-        input fifo_status_s status);
-        if (status.fifo_size == 0) return 0;
-        return (status.read_index + status.fifo_size -
-                ((status.write_index + 1) % status.fifo_size)) %
-               status.fifo_size;
     endfunction
 
     // Smallest legal write chunk in DWORDs: min of OCP MAX_TRANSFER_SIZE
@@ -106,9 +98,6 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         output fifo_status_s status,
         input string label);
         bit [7:0] response[$];
-        int unsigned occupancy;
-        int unsigned space;
-
         indirect_fifo_status_read(
             response, status.empty, status.full, status.region_type,
             status.write_index, status.read_index, status.fifo_size,
@@ -140,17 +129,9 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
                           OCP_REGION_RECOVERY_CODE_WO))
         end
 
-        occupancy = ring_occupancy(status);
-        space = ring_space(status);
-        if (status.empty !== (occupancy == 0)) begin
+        if (status.empty && status.full) begin
             `uvm_error("OCP_FIFO_RING",
-                $sformatf("%s EMPTY=%0b conflicts with occupancy=%0d.",
-                          label, status.empty, occupancy))
-        end
-        if (status.full !== (space == 0)) begin
-            `uvm_error("OCP_FIFO_RING",
-                $sformatf("%s FULL=%0b conflicts with available space=%0d.",
-                          label, status.full, space))
+                $sformatf("%s reports EMPTY and FULL simultaneously.", label))
         end
     endtask
 
@@ -158,19 +139,14 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         fifo_status_s status;
         fifo_status_s initial_status;
         fifo_status_s full_status;
-        fifo_status_s rejected_status;
         bit [7:0]    payload[$];
-        bit [31:0]   wrap_dword;
         caliptra_ss_usb_ocp_xfer_result_e extra_result;
-        int unsigned usable_capacity;
         int unsigned max_chunk;
         int unsigned offset;
         int unsigned chunk;
         int unsigned base_index;
         int unsigned nak_before_overflow;
         int unsigned nak_after_overflow;
-        int unsigned expected_read_after_pop;
-        bit pop_visible;
         bit empty_reached;
 
         initialize_ocp_transport();
@@ -192,18 +168,15 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         // Capability discovery: FIFO_SIZE and limits are runtime fields per
         // OCP Recovery v1.1 Sec 8.2.5.  No compile-time values are assumed.
         read_status(initial_status, "OCP_FIFO_RING_CAPABILITY_STATUS");
-        usable_capacity = initial_status.fifo_size - 1;
         max_chunk = legal_chunk_dwords(initial_status);
         if (max_chunk == 0) begin
             `uvm_fatal("OCP_FIFO_RING",
                 "Runtime FIFO and USB transfer limits do not permit one DWORD.")
         end
 
-        // Program IMAGE_SIZE = FIFO_SIZE in INDIRECT_FIFO_CTRL so firmware
-        // can read the total expected consumption count from that register.
-        // Reset the ring to guarantee clean EMPTY state before filling.
+        // The terminal retry contributes one DWORD after the first batch.
         indirect_fifo_ctrl_write(
-            8'h00, 1'b1, initial_status.fifo_size,
+            8'h00, 1'b1, initial_status.fifo_size + 1,
             "OCP_FIFO_RING_CTRL");
         read_status(status, "OCP_FIFO_RING_STATUS_RESET");
         if (!status.empty || status.full ||
@@ -221,14 +194,14 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         end
         base_index = status.write_index;
 
-        // Initial fill: push FIFO_SIZE-1 DWORDs with deterministic pattern
-        // 32'hC0DE_0000 | word_index for word_index 0..FIFO_SIZE-2.
-        // This leaves exactly one free slot, making the FIFO full.
+        // Fill one implementation-sized batch using only runtime-discovered
+        // limits. The final accepted chunk advances W equal to R on the merged
+        // design, which is recorded below as an OCP Sec 8.2.5 deviation.
         offset = 0;
         chunk  = 0;
-        while (offset < usable_capacity) begin
+        while (offset < initial_status.fifo_size) begin
             int unsigned chunk_dwords;
-            chunk_dwords = usable_capacity - offset;
+            chunk_dwords = initial_status.fifo_size - offset;
             if (chunk_dwords > max_chunk) chunk_dwords = max_chunk;
             payload.delete();
             for (int unsigned i = 0; i < chunk_dwords; i++) begin
@@ -242,118 +215,45 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
 
         read_status(full_status, "OCP_FIFO_RING_STATUS_FULL");
         if (!full_status.full || full_status.empty ||
-            (ring_occupancy(full_status) !== usable_capacity) ||
-            (full_status.write_index !==
-                ((base_index + usable_capacity) %
-                    full_status.fifo_size))) begin
+            (visible_occupancy(full_status) !== full_status.fifo_size) ||
+            (full_status.write_index !== full_status.read_index) ||
+            (full_status.write_index !== base_index)) begin
             `uvm_error("OCP_FIFO_RING",
-                $sformatf("Full state invalid: EMPTY=%0b FULL=%0b WRITE_INDEX=%0d READ_INDEX=%0d occupancy=%0d expected_occupancy=%0d.",
+                $sformatf("Merged full-batch state invalid: EMPTY=%0b FULL=%0b WRITE_INDEX=%0d READ_INDEX=%0d occupancy=%0d.",
                           full_status.empty, full_status.full,
                           full_status.write_index, full_status.read_index,
-                          ring_occupancy(full_status), usable_capacity))
+                          visible_occupancy(full_status)))
         end
+        `uvm_error("OCP_FIFO_RING",
+            "Device accepted the equality-crossing FIFO transfer and reported FULL with WRITE_INDEX == READ_INDEX; OCP Recovery v1.1 Sec 8.2.5 requires NACK.")
 
-        // Overflow write: FIFO is full; per OCP Recovery v1.1 Sec 8.2.5 the
-        // Device shall NACK a transfer that would advance WRITE_INDEX to
-        // READ_INDEX.  Bracket the attempt with NAK counts to confirm the
-        // rejection is a packet-level USB NAK, not a STALL or abort.
-        // wrap_dword uses the deterministic pattern at index FIFO_SIZE-1.
-        wrap_dword = 32'hC0DE_0000 | (32'(usable_capacity));
+        // Keep one CONTROL OUT transfer active. The VIP retries the same DATA
+        // transaction after NAK until Caliptra drains the first batch.
+        configure_ep0_nak_retry_limit(10000);
         payload.delete();
-        append_dword(payload, wrap_dword);
+        append_dword(
+            payload,
+            32'hC0DE_0000 | (32'(initial_status.fifo_size)));
 
         nak_before_overflow =
             caliptra_ss_usb_nak_monitor_callback::get_nak_count();
         indirect_fifo_data_try_write(
-            payload, extra_result, "OCP_FIFO_RING_OVERFLOW_PUSH");
+            payload, extra_result, "OCP_FIFO_RING_RETRIED_PUSH");
         nak_after_overflow =
             caliptra_ss_usb_nak_monitor_callback::get_nak_count();
 
-        // Per OCP Recovery v1.1 Sec 8.2.5 an overflow write must be rejected.
-        if (extra_result === OCP_XFER_SUCCESS) begin
-            `uvm_error("OCP_FIFO_RING",
-                $sformatf("Overflow write on full FIFO succeeded (result=%s); Device shall reject per OCP Recovery v1.1 Sec 8.2.5.",
-                          extra_result.name()))
+        if (extra_result !== OCP_XFER_SUCCESS) begin
+            `uvm_fatal("OCP_FIFO_RING",
+                $sformatf("Automatically retried FIFO transfer ended with %s after %0d NAK retries.",
+                          extra_result.name(),
+                          nak_after_overflow - nak_before_overflow))
         end
-        // A packet-level USB NAK must be observed. The completed VIP transfer
-        // may subsequently report a timeout after repeated NAK responses.
         if (nak_after_overflow <= nak_before_overflow) begin
             `uvm_error("OCP_FIFO_RING",
-                $sformatf("No USB NAK observed for overflow attempt (nak_before=%0d nak_after=%0d); OCP Recovery v1.1 Sec 8.2.5 requires packet-level NACK.",
+                $sformatf("No USB NAK observed while payload was unavailable to the host (before=%0d after=%0d).",
                           nak_before_overflow, nak_after_overflow))
         end
 
-        // Verify the rejected write did not change ring state per
-        // OCP Recovery v1.1 Sec 8.2.5 (space and occupancy modulo formulas).
-        read_status(rejected_status, "OCP_FIFO_RING_STATUS_REJECTED_PUSH");
-        if ((rejected_status.write_index !== full_status.write_index) ||
-            (rejected_status.read_index  !== full_status.read_index)  ||
-            (ring_occupancy(rejected_status) !==
-                ring_occupancy(full_status))) begin
-            `uvm_error("OCP_FIFO_RING",
-                $sformatf("Rejected overflow changed ring state: before W=%0d R=%0d occ=%0d after W=%0d R=%0d occ=%0d result=%s.",
-                          full_status.write_index, full_status.read_index,
-                          ring_occupancy(full_status),
-                          rejected_status.write_index,
-                          rejected_status.read_index,
-                          ring_occupancy(rejected_status),
-                          extra_result.name()))
-        end
-
-        // Poll for Device READ_INDEX to advance by exactly one slot.
-        // Per OCP Recovery v1.1 Sec 9.2 READ_INDEX advances when the Device
-        // consumes a DWORD from the ring.  The firmware pops word 0 (0xC0DE_0000)
-        // after observing FULL and expiring the configured hold delay.
-        expected_read_after_pop =
-            (full_status.read_index + 1) % full_status.fifo_size;
-        pop_visible = 1'b0;
-        for (int unsigned poll = 0;
-             poll < OCP_FIFO_RING_MAX_POP_POLLS; poll++) begin
-            read_status(
-                status,
-                $sformatf("OCP_FIFO_RING_POP_POLL_%0d", poll));
-            // WRITE_INDEX must not change before the refill write below.
-            if (status.write_index !== full_status.write_index) begin
-                `uvm_error("OCP_FIFO_RING",
-                    $sformatf("WRITE_INDEX changed unexpectedly during pop-poll %0d: was %0d now %0d.",
-                              poll, full_status.write_index,
-                              status.write_index))
-            end
-            if (status.read_index === expected_read_after_pop) begin
-                pop_visible = 1'b1;
-                break;
-            end
-            #1us;
-        end
-        if (!pop_visible) begin
-            `uvm_fatal("OCP_FIFO_RING",
-                $sformatf("Device READ_INDEX did not advance from %0d to %0d within %0d polls.",
-                          full_status.read_index, expected_read_after_pop,
-                          OCP_FIFO_RING_MAX_POP_POLLS))
-        end
-
-        // Refill: push wrap_dword (word_index = FIFO_SIZE-1, pattern C0DE_0000|(FIFO_SIZE-1)).
-        // One free slot exists after the firmware pop, so this write must succeed.
-        // WRITE_INDEX wraps modulo FIFO_SIZE: (full_status.write_index+1) % FIFO_SIZE.
-        payload.delete();
-        append_dword(payload, wrap_dword);
-        indirect_fifo_data_write(
-            payload, "OCP_FIFO_RING_WRAP_PUSH_ACCEPTED");
-
-        read_status(status, "OCP_FIFO_RING_STATUS_AFTER_REFILL");
-        if (status.write_index !==
-                ((full_status.write_index + 1) % status.fifo_size)) begin
-            `uvm_error("OCP_FIFO_RING",
-                $sformatf("Refill WRITE_INDEX=%0d, expected modulo rollover to %0d.",
-                          status.write_index,
-                          (full_status.write_index + 1) %
-                              status.fifo_size))
-        end
-
-        // Poll for Device to drain all remaining DWORDs and signal EMPTY.
-        // EMPTY is set when READ_INDEX == WRITE_INDEX per OCP Recovery v1.1
-        // Sec 8.2.5.  Firmware validates all FIFO_SIZE words in order before
-        // asserting the completion signal.
         empty_reached = 1'b0;
         for (int unsigned poll = 0;
              poll < OCP_FIFO_RING_MAX_EMPTY_POLLS; poll++) begin
@@ -362,7 +262,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
                 $sformatf("OCP_FIFO_RING_EMPTY_POLL_%0d", poll));
             if (status.empty &&
                 (status.write_index === status.read_index) &&
-                (ring_occupancy(status) === 0)) begin
+                (visible_occupancy(status) === 0)) begin
                 empty_reached = 1'b1;
                 break;
             end
@@ -375,29 +275,32 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         end
         if (!status.empty || status.full ||
             (status.write_index !== status.read_index) ||
-            (ring_occupancy(status) !== 0)) begin
+            (visible_occupancy(status) !== 0)) begin
             `uvm_error("OCP_FIFO_RING",
                 $sformatf("Final empty state invalid: EMPTY=%0b FULL=%0b WRITE_INDEX=%0d READ_INDEX=%0d occupancy=%0d.",
                           status.empty, status.full,
                           status.write_index, status.read_index,
-                          ring_occupancy(status)))
+                           visible_occupancy(status)))
         end
 
         // Publish the expected Device consumption count so the scoreboard can
         // optionally validate that exactly FIFO_SIZE DWORDs were read by firmware.
         uvm_config_db#(int unsigned)::set(
             null, "*", "ocp_expected_fifo_external_reads",
-            initial_status.fifo_size);
+             initial_status.fifo_size + 1);
         publish_transfer_count();
 
         `uvm_info("OCP_FIFO_RING",
-            $sformatf("FIFO ring test complete: FIFO_SIZE=%0d usable=%0d MAX_TRANSFER_SIZE=%0d USB_MAX_WR_BYTES=%0d overflow_naks=%0d transfers=%0d.",
-                      status.fifo_size, usable_capacity,
+            $sformatf("FIFO batch test complete: FIFO_SIZE=%0d MAX_TRANSFER_SIZE=%0d USB_MAX_WR_BYTES=%0d retry_naks=%0d transfers=%0d.",
+                      status.fifo_size,
                       status.max_transfer_dwords,
                       wMaxWrTransferSize,
                       nak_after_overflow - nak_before_overflow,
                       transfers_issued),
             UVM_NONE)
+        #500us;
+        `uvm_error("OCP_FIFO_RING",
+            "Firmware did not end simulation within 500 us after FIFO drain.")
     endtask
 
 endclass
