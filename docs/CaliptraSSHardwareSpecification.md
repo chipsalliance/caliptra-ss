@@ -97,6 +97,8 @@
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [MCU Mailbox Locking](#mcu-mailbox-locking)
       - [MCU Mailbox Target User](#mcu-mailbox-target-user)
+      - [MCU Mailbox SRAM Ownership](#mcu-mailbox-sram-ownership)
+      - [MCU Mailbox Status Registers](#mcu-mailbox-status-registers)
       - [MCU Mailbox Fully addressable SRAM](#mcu-mailbox-fully-addressable-sram)
       - [MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)
       - [MCU Mailbox Interrupts](#mcu-mailbox-interrupts)
@@ -1171,48 +1173,132 @@ There are 5 trusted AXI Users determined at build time via parameters or via MCI
 
 Any untrusted AXI user trying to read or write the mailbox will receive an AXI error response ([MCU Mailbox Errors](#mcu-mailbox-errors)).
 
-Trusted users always have read access to the CSRs in the mailbox, but require a [lock](#mcu-mailbox-locking) to write the CSRs or read/write the SRAM.
+Trusted users always have read access to the CSRs in the mailbox, but require MBOX [lock](#mcu-mailbox-locking) to write the CSRs. SRAM reads and writes require the trusted user to be the current [exclusive SRAM owner](#mcu-mailbox-sram-ownership).
 
 #### MCU Mailbox Locking
 
-A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requestor has read access to the entire mailbox and write access to:
+A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requester has read access to the mailbox CSRs and write access to:
 
 - All mailbox registers except the following will be RO:
   -  CMD_STATUS
   -  TARGET_STATUS
-  -  TARGET_DONE
   -  TARGET_USER
-- Mailbox SRAM
-Unlocking/releasing occurs when the requestor writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+- Mailbox SRAM while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership)
+
+Unlocking/releasing occurs when the Requester writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM.
 
 #### MCU Mailbox Target User
 
-A Target user is an additional user that can access and process the MBOX request. This user can only be setup by MCU and only valid when the TARGET_USER_VALID bit is set.
+A Target user is a
+[trusted AXI user](#mcu-mailbox-limited-trusted-axi-users) that MCU selects to
+participate in a mailbox transaction. MCU is the only agent that programs
+`TARGET_USER`.
+
+AXI user value 0 is reserved and shall not be assigned to any agent. Writing
+`TARGET_USER=0` therefore selects no Target user, which is the state of the
+register when no Target is engaged.
+
+Writing a nonzero value to `TARGET_USER` locks the register. It becomes
+read-only to software and cannot be reprogrammed or cleared by software. Only
+hardware clears it, either on a terminal `TARGET_STATUS` write or when the
+mailbox is released. This guarantees that the selected Target user cannot be
+changed while that Target owns the SRAM.
 
 One example of when a Target user becomes necessary is when the SOC wants Caliptra to process a MBOX request. The SOC will obtain a lock, MCU will see the command request is for Caliptra, MCU will add Caliptra as the Target user and notify Caliptra.
 
 Another example is when MCU itself obtains the mailbox lock. It will add a Target user and notify the Target user via AXI or some other mechanism.
 
-A Target user has read access to the entire mailbox and write access to:
+A Target user has read access to the mailbox CSRs, and write access to:
 
 - DLEN register
 - TARGET_STATUS register
-- TARGET_DONE register
-- Mailbox SRAM
+- Mailbox SRAM while it is the current [SRAM owner](#mcu-mailbox-sram-ownership)
 
-The Target user will notify MCU it is done processing by setting TARGET_STATUS and TARGET_DONE. Setting TARGET_DONE will interrupt MCU. If required, MCU will then update the CMD_STATUS register with the final status of the command for the Requestor.
+The Target user shall finish all SRAM and DMA accesses before writing a
+terminal `TARGET_STATUS` value, because that write ends its
+[SRAM ownership](#mcu-mailbox-sram-ownership).
 
-If a second Target user is required it is the MCU's responsibility to:
+If a second Target user is required, MCU shall wait for the first Target to
+publish a terminal `TARGET_STATUS`. Hardware clears `TARGET_USER` on that
+write, which unlocks the register so MCU can program the next nonzero Target
+user. `EXECUTE` remains 1 and the SRAM contents are preserved, so a re-grant
+does not require releasing the mailbox.
 
-1. Clear TARGET_STATUS
-2. Clear TARGET_DONE
-3. Set new TARGET_USER
 
-Otherwise these registers are cleared when the mailbox lock is released.
+#### MCU Mailbox SRAM Ownership
 
-Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
+The SRAM owner is derived from mailbox state. Ownership is a combinational function of the mailbox
+registers, evaluated in the following precedence order.
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis"}}}%%
+flowchart TD
+    accTitle: MCU mailbox SRAM owner resolution
+    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER, and CMD_STATUS state.
+
+    Q1{"MBOX_LOCK set?"}
+    Q2{"SRAM zeroizing?"}
+    Q3{"EXECUTE = 1?"}
+    Q4{"TARGET_USER nonzero?"}
+    Q5{"CMD_STATUS = BUSY?"}
+
+    NONE(["No software owner"])
+    TGTO(["TARGET_USER agent"])
+    MCUO(["MCU"])
+    HOLD(["Lock holder"])
+
+    Q1 -- No --> NONE
+    Q1 -- Yes --> Q2
+    Q2 -- Yes --> NONE
+    Q2 -- No --> Q3
+    Q3 -- No --> HOLD
+    Q3 -- Yes --> Q4
+    Q4 -- No --> Q5
+    Q4 -- Yes --> TGTO
+    Q5 -- No --> HOLD
+    Q5 -- Yes --> MCUO
+```
+
+Because ownership is combinational, each register write below is what moves
+the exclusive owner from one agent to the next.
+
+| Event | New exclusive SRAM owner |
+|---|---|
+| MCI reset | MCU, as the reset lock holder |
+| `LOCK` read returns 0 | The reading agent becomes lock holder |
+| `EXECUTE=1` while `TARGET_USER=0` | MCU |
+| `TARGET_USER` nonzero while `EXECUTE=1` | The named `TARGET_USER` agent |
+| Target writes terminal `TARGET_STATUS` | MCU, and hardware clears and unlocks `TARGET_USER` |
+| MCU writes non-BUSY `CMD_STATUS` | Lock holder |
+| `EXECUTE=0` | None, and hardware begins zeroization |
+| Zeroization completes | None, `LOCK` clears and the mailbox is reusable |
+
+Writing `EXECUTE=0` always revokes all software SRAM access and enters
+zeroization, including while a Target owns the SRAM.
+
+#### MCU Mailbox Status Registers
+
+`CMD_STATUS` and `TARGET_STATUS` use the following encodings:
+
+| Value | Meaning |
+|---:|---|
+| 0 | BUSY |
+| 1 | DATA_READY |
+| 2 | COMPLETE |
+| 3 | FAILURE |
+
+The two status registers serve different polling domains. Only MCU writes
+`CMD_STATUS`, and the original Requester polls it. Only the current Target
+writes `TARGET_STATUS`, and MCU reads it. A terminal Target status shall not be
+visible as command completion to the original Requester until MCU separately
+writes a terminal `CMD_STATUS`.
+
+Hardware resets `TARGET_STATUS` to BUSY on each Target handoff.
+
+`CMD_STATUS` is not used when MCU is the Requester, because there is no
+external Requester to serve. In that case MCU reads `TARGET_STATUS` directly.
 
 #### MCU Mailbox Fully addressable SRAM
 
@@ -1245,17 +1331,22 @@ It is expected that agents write their content from 0 to DLEN. If an agent write
 
 The following interrupts are sent to MCU:
 
-| **Interrupt** | **Description**     |
-| :---------         | :---------     |
-| SOC request MBOX             | Asserted when MCU has MBOX lock and an SOC agent tries to obtain the lock. MCU can decide to release the mailbox if this happens.        |
-| Mailbox data available from SOC             | Asserted when a SOC agent gets lock and assert the EXECUTE register, indicating data is availalbe for MCU.        |
-| Target Done          | Asserted when the Target user is done processing the data and is ready for MCU to consume or pass data to Requestor.         |
+| **Interrupt** | **Signal** | **Description**     |
+| :---------         | :---------     | :---------     |
+| SOC request MBOX             | `notif_mbox*_soc_req_lock` | Asserted when MCU has MBOX lock and an SOC agent tries to obtain the lock. MCU can decide to release the mailbox if this happens.        |
+| Mailbox data available from SOC             | `notif_mbox*_cmd_avail` | Asserted when a SOC agent gets lock and asserts the EXECUTE register, indicating data is available for MCU.        |
+| Target complete          | `notif_mbox*_target_done` | Asserted when the Target user writes a terminal TARGET_STATUS.         |
 
-The following interrup(s) are available for SOC consumption:
+Each interrupt has a corresponding enable, status, trigger, and count register
+field in the MCI register block, named with the `_en`, `_sts`, `_trig`, and
+`_intr_count_r` suffixes.
 
-| **Interrupt** | **Description**     |
-| :---------         | :---------     |
-| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is available for SOC consumption.        |
+The following signal is available for SOC consumption.
+
+| **Interrupt** | **Signal** | **Description**     |
+| :---------         | :---------     | :---------     |
+| Mailbox data available from MCU             | `cptra_ss_soc_mcu_mbox*_data_avail` | Asserted while MCU holds the mailbox lock and EXECUTE is 1.  |
+
 
 #### MCU Mailbox Errors
 
@@ -1264,7 +1355,7 @@ Each mailbox has the following errors:
 | **Error Type** | **Response**     | **Description** |
 | :---------         | :---------     | :---------     |
 | Untrusted User Access | Read:<br>&nbsp;- Data return 0 <br>&nbsp;- AXI Error<br>Write:<br>&nbsp;- Data dropped<br>&nbsp;- AXI Error | When an [Untrusted user](#mcu-mailbox-limited-trusted-axi-users) tries to access any address within the MBOX. |
-| Trusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a lock<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
+| Trusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access mailbox SRAM when it is not the current owner<br>- Write a register it does not have access to<br>- Access an illegal SRAM address within the mailbox |
 | Single Bit ECC Error |- Interrupt to MCU<br>- Mailbox ECC SB status set<br>- Data corrected | Single bit ECC error while reading Mailbox. |
 | Double Bit ECC Error |- Error interrupt to MCU<br> - HW_NON_FATAL error set for SOC consumption<br>- Mailbox ECC DB status set<br>- Invalid data returned | Double bit ECC error while reading Mailbox. |
 
@@ -1272,9 +1363,32 @@ Whenever an agent reads data from the SRAM they either need to consume the Doubl
 
 #### MCU Mailbox MCU Access
 
-When there is a mailbox lock the MCU has full access to the mailbox CSRs and SRAM in order to facilitage interactions and help with any lockup.
+MCU has read access to the mailbox CSRs at all times. MCU write access is
+determined by its role in the current transaction, and follows the
+[status register](#mcu-mailbox-status-registers) writer rules.
 
-It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
+MCU is the only agent that may write `TARGET_USER`, and only while the register
+reads 0. See [MCU Mailbox Target User](#mcu-mailbox-target-user).
+
+When an external Requester holds the lock, MCU is the only agent that may write
+`CMD_STATUS`. The Requester owns `CMD`, `DLEN`, and `EXECUTE` in this
+transaction, so those registers are read-only to MCU.
+
+When MCU holds the lock it is the Requester and has Requester write access to
+`CMD`, `DLEN`, and `EXECUTE`.
+
+| CSR | MCU holds the lock | An external Requester holds the lock |
+|---|---|---|
+| `CMD` | RW | RO |
+| `DLEN` | RW | RO |
+| `EXECUTE` | RW | RO |
+| `TARGET_USER` | RW while 0 | RW while 0 |
+| `CMD_STATUS` | Unused | RW |
+| `TARGET_STATUS` | RO | RO |
+| `LOCK`, `USER` | Per mailbox locking rules | Per mailbox locking rules |
+
+MCU can access mailbox SRAM only while MCU is the current
+[SRAM owner](#mcu-mailbox-sram-ownership).
 
 #### MCU Mailbox Address Map
 
@@ -1642,4 +1756,3 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
     - USB device programming
     - OCP streaming boot microarchitecture implemented in USB device 0
     - Multi-Device support microarchitecture
-
