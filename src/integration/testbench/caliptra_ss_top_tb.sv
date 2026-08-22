@@ -1703,29 +1703,6 @@ module caliptra_ss_top_tb
                 usb_legacy_ep0_observer_if_inst);
     end
 
-    // Behavioral SRAM model for USB core (512 x 64-bit)
-    logic [63:0] usb_sram [0:511];
-    // Zero-init the SRAM and the read-data port to prevent X-prop on the legacy
-    // USB DMA AHB read path when the MCU reads a location it has not yet
-    // written.  Without this, axi_to_ahb's u_r_resp_fifo trips its DataKnown_A
-    // assertion the first time a DMA read of an unwritten address completes.
-    initial begin
-        foreach (usb_sram[i]) usb_sram[i] = '0;
-        cptra_ss_usb_mem_q_i = '0;
-    end
-    always @(posedge core_clk) begin
-        if (cptra_ss_usb_mem_cs_o) begin
-            if (!cptra_ss_usb_mem_web_out_o) begin
-                // Write: apply byte-select mask
-                for (int b = 0; b < 8; b++) begin
-                    if (cptra_ss_usb_mem_bsel_o[b*8 +: 8] != 8'h00)
-                        usb_sram[cptra_ss_usb_mem_a_o][b*8 +: 8] <= cptra_ss_usb_mem_d_o[b*8 +: 8];
-                end
-            end
-            cptra_ss_usb_mem_q_i <= usb_sram[cptra_ss_usb_mem_a_o];
-        end
-    end
-
     // =========================================================================
     // Synopsys USB SVT VIP UTMI+ connection
     //
@@ -2341,7 +2318,13 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
-        .mcu_rom_mem_export_if
+        .mcu_rom_mem_export_if,
+        .usb_sram_cs_i             (cptra_ss_usb_mem_cs_o),
+        .usb_sram_we_i             (!cptra_ss_usb_mem_web_out_o),
+        .usb_sram_addr_i           (cptra_ss_usb_mem_a_o),
+        .usb_sram_wdata_i          (cptra_ss_usb_mem_d_o),
+        .usb_sram_bsel_i           (cptra_ss_usb_mem_bsel_o),
+        .usb_sram_rdata_o          (cptra_ss_usb_mem_q_i)
     );
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
