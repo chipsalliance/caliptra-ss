@@ -38,7 +38,7 @@ class caliptra_ss_usb_ocp_fifo_flow_usb_nak_test
         uvm_config_db#(int unsigned)::set(
             this, "*", "max_retries", 3);
         uvm_config_db#(time)::set(
-            this, "*", "completion_wait", 1ms);
+            this, "*", "completion_wait", 2ms);
         super.build_phase(phase);
     endfunction
 

@@ -106,9 +106,14 @@ class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_base_sequence;
     protected svt_usb_agent         host_agent_h;
     protected svt_usb_configuration usb_cfg;
     protected svt_usb_status        shared_status;
+    protected virtual caliptra_ss_usb_legacy_ep0_observer_if
+        legacy_observer_vif;
+    bit post_reset_only;
 
     function new(string name = "caliptra_ss_usb_init_sequence");
         super.new(name);
+        post_reset_only = 1'b0;
+        legacy_observer_vif = null;
     endfunction
 
     // -------------------------------------------------------------------------
@@ -341,9 +346,29 @@ class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_base_sequence;
         resolve_xfer_handles(host_agent_h, usb_cfg, shared_status);
 
         wait_link_enabled();
-        start_sof();
+        if (!post_reset_only) begin
+            start_sof();
+        end
         enumerate_to_addr1();
         select_config_1();
+
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
+                    null,
+                    "uvm_test_top.env",
+                    "usb_legacy_ep0_observer_if",
+                    legacy_observer_vif)) begin
+            `uvm_fatal("USB_INIT",
+                "usb_legacy_ep0_observer_if not found for AXI drain")
+        end
+        begin
+            bit axi_idle;
+            legacy_observer_vif.wait_for_mcu_axi_idle(100us, axi_idle);
+            if (!axi_idle) begin
+                `uvm_error("USB_INIT",
+                    "MCU AXI did not reach an idle point after enumeration")
+            end
+        end
 
         // Settling delay before dropping the objection. wait_xfer_done()
         // only guarantees the bus transaction has ended; it does not wait

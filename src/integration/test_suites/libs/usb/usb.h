@@ -39,6 +39,54 @@
 #define USB_SRAM_EP0_OUT_BUF_OFFSET  0x140u
 #define USB_SRAM_EP0_IN_BUF_OFFSET   0x180u
 
+#define USB_LEGACY_EP0_SNAPSHOT_VERSION 1u
+#define USB_LEGACY_EP0_DATA_MAGIC       0xA5u
+#define USB_LEGACY_EP0_READY_MAGIC      0x5Au
+#define USB_LEGACY_EP0_ACK_MAGIC        0xC3u
+#define USB_LEGACY_EP0_READY_FIELD      0x1Fu
+#define USB_LEGACY_EP0_SNAPSHOT_FIELDS  18u
+
+// MCU generic input wire 1 carries one generation-qualified observer command.
+// The 32-bit format is magic[31:24], opcode[23:20], expected legacy SETUP
+// dispatch delta[19:16], and generation[15:0].
+#define USB_LEGACY_EP0_COMMAND_MAGIC             0xB7u
+#define USB_LEGACY_EP0_COMMAND_ACK_MAGIC         0xD6u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_BASELINE  0x1u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_POST      0x2u
+#define USB_LEGACY_EP0_COMMAND_RELEASE_CALIPTRA  0x3u
+#define USB_LEGACY_EP0_COMMAND_PUBLISH_RESET_POST 0x4u
+#define USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT       24u
+#define USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT      20u
+#define USB_LEGACY_EP0_COMMAND_DELTA_SHIFT       16u
+#define USB_LEGACY_EP0_COMMAND_NIBBLE_MASK       0xFu
+#define USB_LEGACY_EP0_COMMAND_GENERATION_MASK   0xFFFFu
+
+typedef enum {
+    USB_LEGACY_EP0_SNAPSHOT_BASELINE = 1u,
+    USB_LEGACY_EP0_SNAPSHOT_POST     = 2u
+} usb_legacy_ep0_snapshot_state_t;
+
+typedef struct {
+    uint32_t publish_sequence;
+    uint32_t setup_word0;
+    uint32_t setup_word1;
+    uint32_t ep0_out_descriptor;
+    uint32_t ep0_setup_descriptor;
+    uint32_t ep0_in_descriptor;
+    uint32_t ep0_reserved_descriptor;
+    uint32_t devcmdstat;
+    uint32_t intstat;
+    uint32_t inten;
+    uint32_t configuration;
+    uint32_t transfers_handled;
+    uint32_t bus_reset_count;
+    uint32_t ep0_irq_count;
+    uint32_t ep0_out_irq_count;
+    uint32_t ep0_in_irq_count;
+    uint32_t setup_dispatch_count;
+    uint32_t snapshot_version;
+} usb_legacy_ep0_snapshot_t;
+
 // EP command/status list entry bit fields (from RTL usb_dma.m.vhdl line 420:
 //   "epinfo_nbytes <= dma_rdata(25 downto 11);" and line 421:
 //   "epinfo_addr_offset <= dma_rdata(C_DALB-7 downto 0);" with C_DALB=17
@@ -198,5 +246,21 @@ void usb_set_device_address(uint8_t addr);
 // USB 2.0 sec 9.4.7 / 9.1.1.5. Used to gate the MCU->Caliptra recovery
 // handoff until USB enumeration is complete.
 uint8_t usb_is_configured(void);
+
+// Capture the complete legacy baseline and publish it field-by-field over the
+// MCI generic-wire handshake. UVM starts SRAM observation only after firmware
+// publishes the matching generation-qualified ready header.
+void usb_legacy_ep0_publish_baseline(uint16_t generation);
+
+// Capture legacy state after firmware has observed the target command's
+// semantic completion condition, then publish the matching generation over the
+// same generic-wire handshake.
+void usb_legacy_ep0_publish_post_snapshot(uint16_t generation);
+
+void usb_legacy_ep0_capture_snapshot(
+    usb_legacy_ep0_snapshot_t *snapshot);
+
+uint32_t usb_legacy_ep0_get_setup_dispatch_count(void);
+uint32_t usb_legacy_ep0_get_bus_reset_count(void);
 
 #endif // USB_DRV_H

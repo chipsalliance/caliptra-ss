@@ -43,7 +43,13 @@ import tb_top_pkg::*;
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox1_sram_req_if,
-  axi_mem_if                         mcu_rom_mem_export_if
+  axi_mem_if                         mcu_rom_mem_export_if,
+  input  logic                       usb_sram_cs_i,
+  input  logic                       usb_sram_we_i,
+  input  logic [8:0]                 usb_sram_addr_i,
+  input  logic [63:0]                usb_sram_wdata_i,
+  input  logic [63:0]                usb_sram_bsel_i,
+  output logic [63:0]                usb_sram_rdata_o
 );
 
     `include "caliptra_ss_tb_cmd_list.svh"
@@ -1015,8 +1021,33 @@ end
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),
        .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata ^ mcu_sram_wdata_bitflip),
+       .wmask_i ('1),
        .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
+
+    logic [63:0] usb_sram_write_mask;
+
+    for (genvar byte_idx = 0; byte_idx < 8; byte_idx++) begin : usb_sram_mask
+        assign usb_sram_write_mask[byte_idx*8 +: 8] =
+            (usb_sram_bsel_i[byte_idx*8 +: 8] != 8'h00) ?
+            8'hff : 8'h00;
+    end
+
+    caliptra_ss_sram #(
+        .DEPTH            (512),
+        .DATA_WIDTH       (64),
+        .ADDR_WIDTH       (9),
+        .READ_DURING_WRITE(1'b1),
+        .INIT_RDATA_ZERO  (1'b1)
+    ) usb_sram (
+        .clk_i   (clk),
+        .cs_i    (usb_sram_cs_i),
+        .we_i    (usb_sram_we_i),
+        .addr_i  (usb_sram_addr_i),
+        .wdata_i (usb_sram_wdata_i),
+        .wmask_i (usb_sram_write_mask),
+        .rdata_o (usb_sram_rdata_o)
+    );
 
     // -- LMEM PRELOAD
     caliptra_sram #(

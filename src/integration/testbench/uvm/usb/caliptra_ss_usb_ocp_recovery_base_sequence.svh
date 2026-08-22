@@ -36,6 +36,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
     protected bit [15:0]   bcdOCPRecVersion;
     protected int unsigned dev_addr_v;
     protected int unsigned transfers_issued;
+    protected caliptra_ss_usb_ping_retry_callback ping_retry_callback;
+    protected bit ping_retry_callback_registered;
 
     function new(string name = "caliptra_ss_usb_ocp_recovery_base_sequence");
         super.new(name);
@@ -44,6 +46,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         bcdOCPRecVersion   = OCP_USB_BCD_VERSION_1P1;
         dev_addr_v         = 1;
         transfers_issued   = 0;
+        ping_retry_callback_registered = 1'b0;
     endfunction
 
     protected virtual function int get_iface_num();
@@ -173,7 +176,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         finish_item(req, -1);
         transfers_issued++;
         host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
-
         result = get_xfer_result(req);
         if (dir_in && (result == OCP_XFER_SUCCESS)) begin
             copy_in_payload(req, wlength, resp_bytes);
@@ -186,6 +188,31 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                       label, cmd_code, dir_in ? "IN" : "OUT", wlength,
                       result.name(), resp_bytes.size()),
             UVM_NONE)
+    endtask
+
+    protected virtual task configure_ep0_nak_retry_limit(
+        input int unsigned retry_limit);
+        if ((usb_cfg == null) ||
+            (usb_cfg.remote_device_cfg.size() == 0) ||
+            (usb_cfg.remote_device_cfg[0].endpoint_cfg.size() == 0)) begin
+            `uvm_fatal("OCP_BASE",
+                "EP0 configuration is unavailable for NAK retry setup.")
+        end
+        usb_cfg.remote_device_cfg[0].endpoint_cfg[0].
+            max_retry_due_to_nak = retry_limit;
+        usb_cfg.remote_device_cfg[0].endpoint_cfg[0].
+            max_retry_due_to_nak_before_moving_to_next_ep = 1;
+        if (!ping_retry_callback_registered) begin
+            ping_retry_callback =
+                caliptra_ss_usb_ping_retry_callback::type_id::create(
+                    "ping_retry_callback");
+            uvm_callbacks#(
+                svt_usb_protocol,
+                svt_usb_protocol_callbacks)::add(
+                    host_agent_h.prot, ping_retry_callback);
+            ping_retry_callback_registered = 1'b1;
+        end
+        host_agent_h.reconfigure(usb_cfg);
     endtask
 
     protected virtual task ocp_class_xfer(
@@ -608,6 +635,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             `uvm_error("OCP_BASE",
                 $sformatf("PROT_CAP length=%0d, expected %0d per OCP Recovery v1.1 Sec 9.2.",
                           response.size(), expected_length))
+        end
+        if (response.size() < expected_length) begin
             agent_caps      = '0;
             cms_count       = '0;
             heartbeat_period = '0;

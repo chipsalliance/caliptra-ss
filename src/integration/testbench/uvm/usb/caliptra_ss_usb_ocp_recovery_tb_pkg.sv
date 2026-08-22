@@ -255,4 +255,51 @@ typedef enum logic [1:0] {
     FIFO_FLOW_BY_USB_NAK
 } ocp_fifo_flow_control_strategy_e;
 
+// ==========================================================================
+// Access-semantics firmware handshake state codes (TB side).
+//
+// These values define the software-visible handshake contract between each
+// Caliptra firmware image and its UVM sequence. The encoding is declared on
+// both sides because C firmware cannot import the SystemVerilog package. A
+// state code is written by firmware into
+// SS_GENERIC_FW_EXEC_CTRL_0[10:3]; the sequence observes it at
+// fw_exec_ctrl[7:0] on the caliptra_ss_usb_ocp_access_semantics_if.
+// An optional data byte occupies SS_GENERIC_FW_EXEC_CTRL_0[18:11] and
+// appears at fw_exec_ctrl[15:8].
+// ==========================================================================
+
+// DEVICE_STATUS source-qualified clear handshake.
+// Source-qualified clear: CPUif reads are non-destructive; only RA USB
+// reads clear PROT_ERROR (OCP Recovery v1.1 Sec 9.1).
+localparam logic [7:0] DS_SEM_STATE_READY              = 8'h01;
+localparam logic [7:0] DS_SEM_STATE_CPU_READ_PRESERVED = 8'h02;
+localparam logic [7:0] DS_SEM_STATE_USB_CLEAR_OBSERVED = 8'h03;
+localparam logic [7:0] DS_SEM_STATE_STRESS_SET_SEEN    = 8'h04;
+localparam logic [7:0] DS_SEM_STATE_STRESS_CLEAR_SEEN  = 8'h05;
+
+// DEVICE_RESET and INDIRECT_FIFO_CTRL W1DC handshake.
+// W1DC source qualification: DEVICE_RESET CPUif write stores value and does
+// not trigger RA action; INDIRECT_FIFO_CTRL RESET self-clears after
+// consumption (OCP Recovery v1.1 Sec 9.2 DEVICE_RESET, INDIRECT_FIFO_CTRL).
+localparam logic [7:0] W1DC_SEM_STATE_READY                   = 8'h01;
+localparam logic [7:0] W1DC_SEM_STATE_FW_DEVICE_RESET_STORED  = 8'h11;
+localparam logic [7:0] W1DC_SEM_STATE_FW_DEVICE_RESET_CLEARED = 8'h12;
+localparam logic [7:0] W1DC_SEM_STATE_FIFO_NONEMPTY_SEEN      = 8'h13;
+localparam logic [7:0] W1DC_SEM_STATE_USB_FIFO_RESET_OBSERVED = 8'h14;
+localparam logic [7:0] W1DC_SEM_STATE_FW_FIFO_RESET_OBSERVED  = 8'h15;
+localparam logic [7:0] W1DC_SEM_STATE_FIFO_UNSUPPORTED        = 8'h16;
+
+// RECOVERY_CTRL activation handshake.
+// Recovery activation source qualification: firmware nonzero writes to
+// RECOVERY_CTRL.ACTIVATE do not trigger activation; only firmware zero write
+// after RA sets the field causes the externally visible activation action
+// (OCP Recovery v1.1 Sec 9.2 RECOVERY_CTRL).
+localparam logic [7:0] RA_SEM_STATE_READY                 = 8'h01;
+localparam logic [7:0] RA_SEM_STATE_FW_NONZERO_STORED_PRE = 8'h21;
+localparam logic [7:0] RA_SEM_STATE_FW_PRE_RA_CLEARED     = 8'h22;
+localparam logic [7:0] RA_SEM_STATE_RA_ACTIVATE_PENDING   = 8'h23;
+localparam logic [7:0] RA_SEM_STATE_FW_NONZERO_AFTER_RA   = 8'h24;
+localparam logic [7:0] RA_SEM_STATE_FW_ZERO_ARMED         = 8'h25;
+localparam logic [7:0] RA_SEM_STATE_FW_ACTIVATE_CLEARED   = 8'h26;
+
 endpackage

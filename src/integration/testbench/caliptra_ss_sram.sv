@@ -19,23 +19,32 @@ module caliptra_ss_sram #(
    parameter DEPTH      = 64
   ,parameter DATA_WIDTH = 32
   ,parameter ADDR_WIDTH = $clog2(DEPTH)
+  ,parameter READ_DURING_WRITE = 1'b0
+  ,parameter INIT_RDATA_ZERO   = 1'b0
 ) (
   input  logic                       clk_i,
   input  logic                       cs_i,
   input  logic                       we_i,
   input  logic [ADDR_WIDTH-1:0]      addr_i,
   input  logic [DATA_WIDTH-1:0]      wdata_i,
+  input  logic [DATA_WIDTH-1:0]      wmask_i,
   output logic [DATA_WIDTH-1:0]      rdata_o
 );
 
 
   bit [ DATA_WIDTH-1:0] ram[0:DEPTH-1];
 
+  initial begin
+    if (INIT_RDATA_ZERO) begin
+      rdata_o = '0;
+    end
+  end
+
   always @(posedge clk_i) begin
     if (cs_i & we_i) begin
-      ram[addr_i] <= wdata_i;
+      ram[addr_i] <= (ram[addr_i] & ~wmask_i) | (wdata_i & wmask_i);
     end
-    if (cs_i & ~we_i) begin
+    if (cs_i & (~we_i | READ_DURING_WRITE)) begin
       rdata_o <= ram[addr_i];
     end
   end

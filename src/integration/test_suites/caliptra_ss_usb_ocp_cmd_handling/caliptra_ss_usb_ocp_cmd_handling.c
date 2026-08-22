@@ -47,13 +47,13 @@ uint8_t main(void)
     // quiescent ready state. OCP Recovery v1.1 Sec 8.5 requires the Device to
     // respond to Recovery Agent commands after USB reaches Configured state.
     while (!mcu_cptra_mb_ready_nb() || !usb_is_configured()) {
-        usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0);
+        usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
     }
 
     // The UVM Recovery Agent owns test completion. Firmware remains quiescent
     // except for servicing USB SETUP traffic and never reads DEVICE_STATUS, so
     // it cannot race the RA clear-on-read checks from OCP Recovery v1.1 Sec 9.1.
     while (1) {
-        usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0);
+        usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
     }
 }

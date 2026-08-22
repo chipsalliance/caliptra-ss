@@ -36,6 +36,15 @@ static uint8_t usb_dev_addr_shadow = 0;
 // bus reset (device returns to Default state per USB 2.0 §9.1.1.3).
 static uint8_t usb_current_config = 0;
 static uint32_t usb_transfers_handled = 0;
+static uint32_t usb_bus_reset_count = 0;
+static uint32_t usb_ep0_irq_count = 0;
+static uint32_t usb_ep0_out_irq_count = 0;
+static uint32_t usb_ep0_in_irq_count = 0;
+static uint32_t usb_setup_dispatch_count = 0;
+static uint32_t usb_snapshot_publish_sequence = 0;
+static uint8_t usb_ep0_in_pending_latched = 0;
+static uint8_t usb_baseline_ready_pending = 0;
+static uint16_t usb_baseline_ready_generation = 0;
 
 const uint8_t *(*usb_config_descriptor_override)(uint16_t *len) = 0;
 bool (*usb_class_request_override)(const usb_setup_pkt_t *setup) = 0;
@@ -198,6 +207,8 @@ void usb_handle_bus_reset(void) {
         return;
     }
     VPRINTF(LOW, "MCU: USB bus reset detected\n");
+    usb_bus_reset_count++;
+    usb_ep0_in_pending_latched = 0u;
     // Bus reset returns device address to 0 per USB spec; update shadow so all
     // subsequent DEVCMDSTAT RMW writes carry the reset address.
     usb_dev_addr_shadow = 0;
@@ -286,6 +297,208 @@ uint8_t usb_is_configured(void) {
     return (usb_current_config != 0u) ? 1u : 0u;
 }
 
+void usb_legacy_ep0_capture_snapshot(
+    usb_legacy_ep0_snapshot_t *snapshot)
+{
+    if (snapshot == 0) {
+        return;
+    }
+
+    snapshot->publish_sequence = ++usb_snapshot_publish_sequence;
+    snapshot->setup_word0 = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET);
+    snapshot->setup_word1 = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET + 4u);
+    snapshot->ep0_out_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000u);
+    snapshot->ep0_setup_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x004u);
+    snapshot->ep0_in_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008u);
+    snapshot->ep0_reserved_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00Cu);
+    snapshot->devcmdstat = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    snapshot->intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
+    snapshot->inten = lsu_read_32(SOC_USBHSD_INTEN);
+    snapshot->configuration = (uint32_t)usb_current_config;
+    snapshot->transfers_handled = usb_transfers_handled;
+    snapshot->bus_reset_count = usb_bus_reset_count;
+    snapshot->ep0_irq_count = usb_ep0_irq_count;
+    snapshot->ep0_out_irq_count = usb_ep0_out_irq_count;
+    snapshot->ep0_in_irq_count = usb_ep0_in_irq_count;
+    snapshot->setup_dispatch_count = usb_setup_dispatch_count;
+    snapshot->snapshot_version = USB_LEGACY_EP0_SNAPSHOT_VERSION;
+}
+
+static uint32_t usb_legacy_ep0_snapshot_header(
+    uint8_t magic,
+    usb_legacy_ep0_snapshot_state_t state,
+    uint8_t field_index,
+    uint16_t generation)
+{
+    return
+        ((uint32_t)magic << 24) |
+        (((uint32_t)state & 0x3u) << 22) |
+        (((uint32_t)field_index & 0x1Fu) << 17) |
+        (uint32_t)generation;
+}
+
+static void usb_legacy_ep0_publish_field(
+    usb_legacy_ep0_snapshot_state_t state,
+    uint8_t field_index,
+    uint16_t generation,
+    uint32_t value)
+{
+    uint32_t header = usb_legacy_ep0_snapshot_header(
+        USB_LEGACY_EP0_DATA_MAGIC,
+        state,
+        field_index,
+        generation);
+    uint32_t expected_ack = usb_legacy_ep0_snapshot_header(
+        USB_LEGACY_EP0_ACK_MAGIC,
+        state,
+        field_index,
+        generation);
+
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+        value);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        header);
+    while (lsu_read_32(
+            SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0) !=
+            expected_ack) {
+    }
+
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        0u);
+    while (lsu_read_32(
+            SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0) != 0u) {
+    }
+}
+
+static void usb_legacy_ep0_publish_snapshot(
+    const usb_legacy_ep0_snapshot_t *snapshot,
+    uint16_t generation,
+    usb_legacy_ep0_snapshot_state_t state)
+{
+    if (snapshot == 0) {
+        return;
+    }
+
+    usb_legacy_ep0_publish_field(
+        state, 0u, generation,
+        snapshot->publish_sequence);
+    usb_legacy_ep0_publish_field(
+        state, 1u, generation,
+        snapshot->setup_word0);
+    usb_legacy_ep0_publish_field(
+        state, 2u, generation,
+        snapshot->setup_word1);
+    usb_legacy_ep0_publish_field(
+        state, 3u, generation,
+        snapshot->ep0_out_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 4u, generation,
+        snapshot->ep0_setup_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 5u, generation,
+        snapshot->ep0_in_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 6u, generation,
+        snapshot->ep0_reserved_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 7u, generation,
+        snapshot->devcmdstat);
+    usb_legacy_ep0_publish_field(
+        state, 8u, generation,
+        snapshot->intstat);
+    usb_legacy_ep0_publish_field(
+        state, 9u, generation,
+        snapshot->inten);
+    usb_legacy_ep0_publish_field(
+        state, 10u, generation,
+        snapshot->configuration);
+    usb_legacy_ep0_publish_field(
+        state, 11u, generation,
+        snapshot->transfers_handled);
+    usb_legacy_ep0_publish_field(
+        state, 12u, generation,
+        snapshot->bus_reset_count);
+    usb_legacy_ep0_publish_field(
+        state, 13u, generation,
+        snapshot->ep0_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 14u, generation,
+        snapshot->ep0_out_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 15u, generation,
+        snapshot->ep0_in_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 16u, generation,
+        snapshot->setup_dispatch_count);
+    usb_legacy_ep0_publish_field(
+        state, 17u, generation,
+        snapshot->snapshot_version);
+}
+
+void usb_legacy_ep0_publish_baseline(uint16_t generation)
+{
+    usb_legacy_ep0_snapshot_t snapshot;
+
+    // Baseline publication is observational only. The successful marker
+    // transfer has already completed normal legacy servicing and armed EP0 for
+    // the next request; changing controller state here would alter the path
+    // being verified.
+    usb_legacy_ep0_capture_snapshot(&snapshot);
+    usb_legacy_ep0_publish_snapshot(
+        &snapshot,
+        generation,
+        USB_LEGACY_EP0_SNAPSHOT_BASELINE);
+    VPRINTF(LOW,
+            "MCU: EP0 observer baseline gen=%u EP0OUT=0x%08x EP0IN=0x%08x DEVCMDSTAT=0x%08x INTSTAT=0x%08x\n",
+            generation,
+            snapshot.ep0_out_descriptor,
+            snapshot.ep0_in_descriptor,
+            snapshot.devcmdstat,
+            snapshot.intstat);
+    usb_baseline_ready_generation = generation;
+    usb_baseline_ready_pending = 1u;
+}
+
+void usb_legacy_ep0_publish_post_snapshot(uint16_t generation)
+{
+    usb_legacy_ep0_snapshot_t snapshot;
+
+    usb_legacy_ep0_capture_snapshot(&snapshot);
+    usb_legacy_ep0_publish_snapshot(
+        &snapshot,
+        generation,
+        USB_LEGACY_EP0_SNAPSHOT_POST);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+        snapshot.publish_sequence);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        usb_legacy_ep0_snapshot_header(
+            USB_LEGACY_EP0_READY_MAGIC,
+            USB_LEGACY_EP0_SNAPSHOT_POST,
+            USB_LEGACY_EP0_READY_FIELD,
+            generation));
+}
+
+uint32_t usb_legacy_ep0_get_setup_dispatch_count(void)
+{
+    return usb_setup_dispatch_count;
+}
+
+uint32_t usb_legacy_ep0_get_bus_reset_count(void)
+{
+    return usb_bus_reset_count;
+}
+
 void usb_set_device_address(uint8_t addr) {
     usb_dev_addr_shadow = (uint8_t)(addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
     uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
@@ -308,13 +521,19 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
     for (uint32_t poll_count = 0; (max_iters == 0u) || (poll_count < max_iters); poll_count++) {
         uint32_t reg_data;
 
-        if (poll_count == 0u) {
-            usb_transfers_handled = 0u;
-        }
-
         usb_handle_bus_reset();
 
         reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
+        if ((reg_data & USBHSD_INTSTAT_EP0IN_MASK) != 0u) {
+            if (usb_ep0_in_pending_latched == 0u) {
+                usb_ep0_in_irq_count++;
+                usb_ep0_irq_count++;
+            }
+            usb_ep0_in_pending_latched = 1u;
+        } else {
+            usb_ep0_in_pending_latched = 0u;
+        }
+
         if ((reg_data & USBHSD_INTSTAT_DEV_INT_MASK) != 0u) {
             uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
@@ -325,6 +544,8 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
         }
 
         if ((reg_data & USBHSD_INTSTAT_EP0OUT_MASK) != 0u) {
+            usb_ep0_out_irq_count++;
+            usb_ep0_irq_count++;
             lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
 
             if ((lsu_read_32(SOC_USBHSD_DEVCMDSTAT) & USBHSD_DEVCMDSTAT_SETUP_MASK) != 0u) {
@@ -350,6 +571,23 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
                     (int)usb_transfers_handled);
         }
 
+        if (usb_baseline_ready_pending != 0u) {
+            // Publish readiness after a complete poll iteration. Firmware then
+            // immediately enters the next iteration, minimizing the interval
+            // between the semantic ready indication and EP0 service.
+            lsu_write_32(
+                SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+                usb_snapshot_publish_sequence);
+            lsu_write_32(
+                SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+                usb_legacy_ep0_snapshot_header(
+                    USB_LEGACY_EP0_READY_MAGIC,
+                    USB_LEGACY_EP0_SNAPSHOT_BASELINE,
+                    USB_LEGACY_EP0_READY_FIELD,
+                    usb_baseline_ready_generation));
+            usb_baseline_ready_pending = 0u;
+        }
+
         // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
         // between consecutive polls, which exceeds the host VIP IN-retry
         // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
@@ -372,14 +610,25 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
 bool usb_handle_control_transfer(void) {
     usb_setup_pkt_t pkt;
     bool handled = false;
+    uint32_t intstat;
 
+    usb_setup_dispatch_count++;
     usb_read_setup_packet(&pkt);
 
     uint8_t req_type  = USB_BMREQTYPE_TYPE(pkt.bmRequestType);
     uint8_t recipient = USB_BMREQTYPE_RECIPIENT(pkt.bmRequestType);
 
-    // Clear EP0 IN interrupt before programming response
+    // Clear EP0 IN interrupt before programming the response. Reset the edge
+    // latch at the same operation so a subsequent completion can increment the
+    // sticky counter even if no polling iteration observed the low interval.
+    intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
+    if (((intstat & USBHSD_INTSTAT_EP0IN_MASK) != 0u) &&
+        (usb_ep0_in_pending_latched == 0u)) {
+        usb_ep0_in_irq_count++;
+        usb_ep0_irq_count++;
+    }
     lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    usb_ep0_in_pending_latched = 0u;
 
     if (req_type == USB_TYPE_STANDARD) {
         if (recipient == USB_RECIP_DEVICE) {

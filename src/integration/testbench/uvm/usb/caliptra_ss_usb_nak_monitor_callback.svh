@@ -47,4 +47,34 @@ class caliptra_ss_usb_nak_monitor_callback
 
 endclass
 
+class caliptra_ss_usb_ping_retry_callback
+    extends svt_usb_protocol_callbacks;
+
+    `uvm_object_utils(caliptra_ss_usb_ping_retry_callback)
+
+    function new(string name = "caliptra_ss_usb_ping_retry_callback");
+        super.new(name);
+    endfunction
+
+    virtual function void randomized_transaction(
+        svt_usb_protocol component,
+        svt_usb_transfer transfer,
+        int transaction_ix,
+        svt_usb_types::protocol_randomization_point_enum rand_point);
+
+        svt_usb_transaction transaction;
+
+        if ((transfer != null) &&
+            (transfer.get_xfer_type_val() ==
+                svt_usb_transfer::CONTROL_TRANSFER) &&
+            $cast(transaction, transfer.implementation[transaction_ix])) begin
+            // Synopsys USB VIP uses PING flow control for HS CONTROL OUT.
+            // Pace retries so the Device-side EXT consumer can service the
+            // available FIFO batch without creating a new SETUP.
+            transaction.ping_to_ping_delay = 125us;
+        end
+    endfunction
+
+endclass
+
 `endif // CALIPTRA_SS_USB_NAK_MONITOR_CALLBACK_SV
