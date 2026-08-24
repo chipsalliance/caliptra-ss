@@ -316,7 +316,7 @@ module caliptra_ss_uart_core (
     if (uart_fifo_txilvl >= (TxFifoDepthW-2)) begin
       tx_watermark_thresh = TxFifoDepthW'(TxFifoDepth/2);
     end else begin
-      tx_watermark_thresh = 1'b1 << uart_fifo_txilvl;
+      tx_watermark_thresh = TxFifoDepthW'(1'b1) << uart_fifo_txilvl;
     end
     event_tx_watermark = tx_fifo_depth < tx_watermark_thresh;
   end
@@ -344,7 +344,7 @@ module caliptra_ss_uart_core (
       // The maximum valid threshold threshold is an exception and saturates at RxFifoDepth-2.
       rx_watermark_thresh = RxFifoDepthW'(RxFifoDepth-2);
     end else begin
-      rx_watermark_thresh = 1'b1 << uart_fifo_rxilvl;
+      rx_watermark_thresh = RxFifoDepthW'(1'b1) << uart_fifo_rxilvl;
     end
     event_rx_watermark = rx_fifo_depth >= rx_watermark_thresh;
   end
