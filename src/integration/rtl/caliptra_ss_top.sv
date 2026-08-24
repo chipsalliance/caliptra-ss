@@ -1680,7 +1680,7 @@ module caliptra_ss_top
     //=========================================================================-
     if (SPI_HOST_ENA) begin : gen_spi_host_axi
 
-        logic unused_spi_host_passthrough;
+        caliptra_ss_spi_device_pkg::caliptra_ss_passthrough_rsp_t unused_spi_host_passthrough;
 
         spi_host_axi #(
             .NumCS   (SPI_HOST_NUM_CS),
@@ -1730,8 +1730,8 @@ module caliptra_ss_top
         ) axi_sub_spi_host_Axi_err_resp_i (
             .clk       (cptra_ss_clk_i),
             .rst_n     (cptra_ss_rst_b_o),
-            .s_axi_w_if(s_axi_w_if),
-            .s_axi_r_if(s_axi_r_if),
+            .s_axi_w_if(cptra_ss_spi_host_s_axi_if_w_sub),
+            .s_axi_r_if(cptra_ss_spi_host_s_axi_if_r_sub),
             .dv        (),
             .addr      (),
             .write     (),

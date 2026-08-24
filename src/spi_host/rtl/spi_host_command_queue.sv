@@ -36,8 +36,7 @@ module caliptra_ss_spi_host_command_queue #(
   logic [CmdDepthW-1:0] cmd_depth;
 
   caliptra_prim_fifo_sync #(
-    .Width($bits(caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t) +
-           caliptra_ss_spi_host_cmd_pkg::CSW),
+    .Width($bits(caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t)),
     .Pass(0),
     .Depth(CmdDepth)
   ) cmd_fifo (
