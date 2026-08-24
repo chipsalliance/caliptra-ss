@@ -40,7 +40,7 @@ package caliptra_ss_spi_host_cmd_pkg;
     logic [1:0]  speed;
     logic        cmd_wr_en;
     logic        cmd_rd_en;
-    logic [19:0] len;
+    logic [8:0]  len;
     logic        csaat;
   } caliptra_ss_segment_t;
 
