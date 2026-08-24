@@ -2038,7 +2038,8 @@ The MCU uC can function as an intermediary between agents such as Caliptra uC
 and other SoC agents. MCU MBOX SRAM has one exclusive owner at a time, and MCU
 accesses the SRAM only while it is that owner. See
 [MCU Mailbox MCU Access](./CaliptraSSHardwareSpecification.md#mcu-mailbox-mcu-access)
-for the MCU CSR access rules used by the flows below.
+for the MCU CSR access rules used by the flows below. Software can observe the
+current owner through `MBOX_HW_STATUS.SRAM_OWNER`.
 
 The [Caliptra SS HW MCU Mailbox Spec](./CaliptraSSHardwareSpecification.md#mcu-mailbox) has more details about the specific registers and interrupts used in the mailbox flows.
 
@@ -2075,9 +2076,10 @@ sequenceDiagram
     participant SOC as SOC Target
 
     MCU->>MBOX: Read LOCK
-    MBOX-->>MCU: 0, lock granted and owner=MCU
+    MBOX-->>MCU: 0, lock granted and owner=ROOT (MCU)
     MCU->>MBOX: Write SRAM, DLEN, and CMD
     MCU->>MBOX: Write TARGET_USER=SOC
+    MCU->>MBOX: Write TARGET_USER_VALID=1
     MCU->>MBOX: Write EXECUTE=1
     Note over MBOX,SOC: owner=SOC
     alt Target uses the subsystem sideband wire
@@ -2087,7 +2089,7 @@ sequenceDiagram
     end
     SOC->>MBOX: Process or update SRAM and DLEN
     SOC->>MBOX: Write terminal TARGET_STATUS
-    Note over MCU,MBOX: owner=MCU. HW clears and unlocks TARGET_USER
+    Note over MCU,MBOX: owner=ROOT (MCU). HW clears TARGET_USER and TARGET_USER_VALID
     MBOX-)MCU: notif_mbox*_target_done interrupt
     MCU->>MBOX: Read TARGET_STATUS
     MCU->>MBOX: Write EXECUTE=0
@@ -2099,7 +2101,7 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     accTitle: SOC sender to MCU mailbox flow
-    accDescr: A SOC sender stages a command, transfers exclusive SRAM ownership to MCU, polls command status, reads the response, and releases the mailbox.
+    accDescr: A SOC sender stages a command, transfers exclusive SRAM ownership to the root agent, typically MCU, polls command status, reads the response, and releases the mailbox.
     autonumber
     participant SOC as SOC Requester
     participant MBOX as MCU MBOX
@@ -2109,7 +2111,7 @@ sequenceDiagram
     MBOX-->>SOC: 0, lock granted and owner=SOC
     SOC->>MBOX: Write SRAM, DLEN, and CMD
     SOC->>MBOX: Write EXECUTE=1
-    Note over SOC,MBOX: owner=MCU
+    Note over SOC,MBOX: owner=ROOT (MCU)
     MBOX-)MCU: notif_mbox*_cmd_avail interrupt
     par Requester polls while MCU processes
         loop While CMD_STATUS is BUSY
@@ -2134,7 +2136,7 @@ staging DMA.
 ```mermaid
 sequenceDiagram
     accTitle: SOC sender routed through MCU to a target
-    accDescr: Exclusive SRAM ownership moves from a SOC sender to MCU, to a selected target, back to MCU, and finally to the original sender.
+    accDescr: Exclusive SRAM ownership moves from a SOC sender to the root agent, typically MCU, to a selected target, back to the root agent, and finally to the original sender.
     autonumber
     participant REQ as SOC Requester
     participant MBOX as MCU MBOX
@@ -2144,16 +2146,17 @@ sequenceDiagram
     REQ->>MBOX: Read LOCK and stage SRAM, DLEN, CMD
     Note over REQ,MBOX: owner=SOC Requester
     REQ->>MBOX: Write EXECUTE=1
-    Note over MCU,MBOX: owner=MCU
+    Note over MCU,MBOX: owner=ROOT (MCU)
     MBOX-)MCU: notif_mbox*_cmd_avail interrupt
     MCU->>MBOX: Validate command, range, and target identity
     MCU->>MBOX: Write TARGET_USER=TGT
+    MCU->>MBOX: Write TARGET_USER_VALID=1
     Note over MBOX,TGT: owner=Target
     MCU->>TGT: Sideband notification, for example a Caliptra mailbox command
     Note over MBOX,TGT: No MCU MBOX interrupt or data-avail wire asserts here
     TGT->>MBOX: Process or update SRAM and DLEN
     TGT->>MBOX: Write terminal TARGET_STATUS
-    Note over MCU,MBOX: owner=MCU. HW clears and unlocks TARGET_USER
+    Note over MCU,MBOX: owner=ROOT (MCU). HW clears TARGET_USER and TARGET_USER_VALID
     MBOX-)MCU: notif_mbox*_target_done interrupt
     MCU->>MBOX: Read TARGET_STATUS and finalize response
     MCU->>MBOX: Write non-BUSY CMD_STATUS
@@ -2169,8 +2172,9 @@ The Requester regains ownership only after MCU writes non-BUSY `CMD_STATUS`.
 
 Because the SOC Requester holds the lock in this flow, the
 `cptra_ss_soc_mcu_mbox*_data_avail` wire stays deasserted when MCU programs
-`TARGET_USER`. The Target learns that it owns the SRAM only through the
-sideband notification, so MCU shall grant `TARGET_USER` before sending it.
+the target configuration. The Target learns that it owns the SRAM only through
+the sideband notification, so MCU shall write `TARGET_USER`, set
+`TARGET_USER_VALID`, and then send the notification.
 
 ### MCU JTAG/DMI Access
 

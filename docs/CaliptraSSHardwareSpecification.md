@@ -1179,11 +1179,8 @@ Trusted users always have read access to the CSRs in the mailbox, but require MB
 
 A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requester has read access to the mailbox CSRs and write access to:
 
-- All mailbox registers except the following will be RO:
-  -  CMD_STATUS
-  -  TARGET_STATUS
-  -  TARGET_USER
-- Mailbox SRAM while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership)
+- CMD and EXECUTE registers
+- DLEN register and mailbox SRAM while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership)
 
 Unlocking/releasing occurs when the Requester writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
@@ -1192,39 +1189,43 @@ On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN 
 #### MCU Mailbox Target User
 
 A Target user is a
-[trusted AXI user](#mcu-mailbox-limited-trusted-axi-users) that MCU selects to
-participate in a mailbox transaction. MCU is the only agent that programs
-`TARGET_USER`.
+[trusted AXI user](#mcu-mailbox-limited-trusted-axi-users) that Root selects to
+participate in a mailbox transaction. Root, typically MCU, is the only agent
+that programs `TARGET_USER` and `TARGET_USER_VALID`.
 
-AXI user value 0 is reserved and shall not be assigned to any agent. Writing
-`TARGET_USER=0` therefore selects no Target user, which is the state of the
-register when no Target is engaged.
+Root shall write the Target AXI identity to `TARGET_USER` and then write
+`TARGET_USER_VALID=1`. The numeric value in `TARGET_USER` has no ownership
+meaning while valid is 0. 
 
-Writing a nonzero value to `TARGET_USER` locks the register. It becomes
-read-only to software and cannot be reprogrammed or cleared by software. Only
-hardware clears it, either on a terminal `TARGET_STATUS` write or when the
-mailbox is released. This guarantees that the selected Target user cannot be
-changed while that Target owns the SRAM.
+While `TARGET_USER_VALID=0`, Root may write either target configuration
+register. Writing `TARGET_USER_VALID=1` locks both registers against all
+software writes. Software cannot retarget the mailbox or clear valid after the
+grant. Hardware clears and unlocks both registers on a terminal
+`TARGET_STATUS` write or when the mailbox is released.
 
-One example of when a Target user becomes necessary is when the SOC wants Caliptra to process a MBOX request. The SOC will obtain a lock, MCU will see the command request is for Caliptra, MCU will add Caliptra as the Target user and notify Caliptra.
+One example of when a Target user becomes necessary is when the SOC wants
+Caliptra to process a MBOX request. The SOC will obtain a lock, MCU will see the
+command request is for Caliptra, MCU will program Caliptra as the Target user,
+set `TARGET_USER_VALID`, and notify Caliptra.
 
-Another example is when MCU itself obtains the mailbox lock. It will add a Target user and notify the Target user via AXI or some other mechanism.
+Another example is when MCU itself obtains the mailbox lock. It will program a
+Target user, set `TARGET_USER_VALID`, and notify the Target user via AXI or
+some other mechanism.
 
 A Target user has read access to the mailbox CSRs, and write access to:
 
-- DLEN register
 - TARGET_STATUS register
-- Mailbox SRAM while it is the current [SRAM owner](#mcu-mailbox-sram-ownership)
+- DLEN register and mailbox SRAM while it is the current [SRAM owner](#mcu-mailbox-sram-ownership)
 
 The Target user shall finish all SRAM and DMA accesses before writing a
 terminal `TARGET_STATUS` value, because that write ends its
 [SRAM ownership](#mcu-mailbox-sram-ownership).
 
 If a second Target user is required, MCU shall wait for the first Target to
-publish a terminal `TARGET_STATUS`. Hardware clears `TARGET_USER` on that
-write, which unlocks the register so MCU can program the next nonzero Target
-user. `EXECUTE` remains 1 and the SRAM contents are preserved, so a re-grant
-does not require releasing the mailbox.
+publish a terminal `TARGET_STATUS` during normal operation. Hardware clears
+`TARGET_USER` and `TARGET_USER_VALID` on that write, after which MCU can
+program and validate the next Target user. `EXECUTE` remains 1 and the SRAM
+contents are preserved, so a re-grant does not require releasing the mailbox.
 
 
 #### MCU Mailbox SRAM Ownership
@@ -1236,17 +1237,17 @@ registers, evaluated in the following precedence order.
 %%{init: {"flowchart": {"curve": "basis"}}}%%
 flowchart TD
     accTitle: MCU mailbox SRAM owner resolution
-    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER, and CMD_STATUS state.
+    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
 
     Q1{"MBOX_LOCK set?"}
     Q2{"SRAM zeroizing?"}
     Q3{"EXECUTE = 1?"}
-    Q4{"TARGET_USER nonzero?"}
+    Q4{"TARGET_USER_VALID = 1?"}
     Q5{"CMD_STATUS = BUSY?"}
 
     NONE(["No software owner"])
     TGTO(["TARGET_USER agent"])
-    MCUO(["MCU"])
+    ROOTO(["Root AXI user"])
     HOLD(["Lock holder"])
 
     Q1 -- No --> NONE
@@ -1258,7 +1259,7 @@ flowchart TD
     Q4 -- No --> Q5
     Q4 -- Yes --> TGTO
     Q5 -- No --> HOLD
-    Q5 -- Yes --> MCUO
+    Q5 -- Yes --> ROOTO
 ```
 
 Because ownership is combinational, each register write below is what moves
@@ -1266,17 +1267,21 @@ the exclusive owner from one agent to the next.
 
 | Event | New exclusive SRAM owner |
 |---|---|
-| MCI reset | MCU, as the reset lock holder |
+| MCI reset | Root, as the reset lock holder |
 | `LOCK` read returns 0 | The reading agent becomes lock holder |
-| `EXECUTE=1` while `TARGET_USER=0` | MCU |
-| `TARGET_USER` nonzero while `EXECUTE=1` | The named `TARGET_USER` agent |
-| Target writes terminal `TARGET_STATUS` | MCU, and hardware clears and unlocks `TARGET_USER` |
+| `EXECUTE=1` while `TARGET_USER_VALID=0` | Root |
+| Root writes `TARGET_USER_VALID=1` while `EXECUTE=1` | The agent named by `TARGET_USER` |
+| Target writes terminal `TARGET_STATUS` | Root, and hardware clears `TARGET_USER` and `TARGET_USER_VALID` |
 | MCU writes non-BUSY `CMD_STATUS` | Lock holder |
 | `EXECUTE=0` | None, and hardware begins zeroization |
 | Zeroization completes | None, `LOCK` clears and the mailbox is reusable |
 
 Writing `EXECUTE=0` always revokes all software SRAM access and enters
 zeroization, including while a Target owns the SRAM.
+
+`DLEN` write access follows SRAM ownership. Only the current SRAM owner may
+write `DLEN`, so the agent that produced the data in the SRAM is the agent that
+reports its length.
 
 #### MCU Mailbox Status Registers
 
@@ -1299,6 +1304,15 @@ Hardware resets `TARGET_STATUS` to BUSY on each Target handoff.
 
 `CMD_STATUS` is not used when MCU is the Requester, because there is no
 external Requester to serve. In that case MCU reads `TARGET_STATUS` directly.
+
+`MBOX_HW_STATUS.SRAM_OWNER` reports the current exclusive SRAM owner:
+
+| Value | Owner |
+|---:|---|
+| 0 | None |
+| 1 | Requester/lock holder |
+| 2 | Root AXI user, typically MCU |
+| 3 | Target selected by `TARGET_USER` while `TARGET_USER_VALID=1` |
 
 #### MCU Mailbox Fully addressable SRAM
 
@@ -1367,22 +1381,29 @@ MCU has read access to the mailbox CSRs at all times. MCU write access is
 determined by its role in the current transaction, and follows the
 [status register](#mcu-mailbox-status-registers) writer rules.
 
-MCU is the only agent that may write `TARGET_USER`, and only while the register
-reads 0. See [MCU Mailbox Target User](#mcu-mailbox-target-user).
+Root is the only agent that may write `TARGET_USER` and
+`TARGET_USER_VALID`. Both registers are writable only while
+`TARGET_USER_VALID=0`. See
+[MCU Mailbox Target User](#mcu-mailbox-target-user).
 
 When an external Requester holds the lock, MCU is the only agent that may write
-`CMD_STATUS`. The Requester owns `CMD`, `DLEN`, and `EXECUTE` in this
-transaction, so those registers are read-only to MCU.
+`CMD_STATUS`. The Requester owns `CMD` and `EXECUTE` in this transaction, so
+those registers are read-only to MCU.
 
 When MCU holds the lock it is the Requester and has Requester write access to
-`CMD`, `DLEN`, and `EXECUTE`.
+`CMD` and `EXECUTE`.
+
+`DLEN` follows [SRAM ownership](#mcu-mailbox-sram-ownership). MCU has write
+access to `DLEN` while it is the current SRAM owner, so it can report the length
+of a response it produced.
 
 | CSR | MCU holds the lock | An external Requester holds the lock |
 |---|---|---|
 | `CMD` | RW | RO |
-| `DLEN` | RW | RO |
+| `DLEN` | RW while MCU owns the SRAM | RW while MCU owns the SRAM |
 | `EXECUTE` | RW | RO |
-| `TARGET_USER` | RW while 0 | RW while 0 |
+| `TARGET_USER` | RW while `TARGET_USER_VALID=0` | RW while `TARGET_USER_VALID=0` |
+| `TARGET_USER_VALID` | RW while 0 | RW while 0 |
 | `CMD_STATUS` | Unused | RW |
 | `TARGET_STATUS` | RO | RO |
 | `LOCK`, `USER` | Per mailbox locking rules | Per mailbox locking rules |
