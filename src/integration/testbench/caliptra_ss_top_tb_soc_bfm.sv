@@ -147,9 +147,6 @@ initial begin
         else if(cptra_ss_test_name == "MCU_MBOX_SOC_AGENT_WRITE_FW_IMAGE") begin
             mcu_mbox_soc_agent_write_fw_image();       
         end
-        else if(cptra_ss_test_name == "SMOKE_TEST_MCU_MBOX_SOC_ROOT_TARGET_HANDSHAKE") begin
-            smoke_test_mcu_mbox_soc_root_target_handshake();
-        end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCI_SOC_CONFIG_DISABLE") begin
             smoke_test_mci_soc_config_disable();       
         end

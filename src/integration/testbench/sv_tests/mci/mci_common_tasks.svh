@@ -235,22 +235,12 @@ task get_mcu_mbox_lock_address(output logic [AXI_AW-1:0] addr);
     addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK;
 endtask
 
-// Return the MBOX0 valid-user register address for a supported slot.
-task get_mcu_mbox_valid_axi_user_address(output logic [AXI_AW-1:0] addr, input int user_index = 0);
-    case (user_index)
-        0: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0;
-        1: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1;
-        default: $fatal(1, "Unsupported MBOX0 valid AXI user index: %0d", user_index);
-    endcase
+task get_mcu_mbox_valid_axi_user_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0;
 endtask
 
-// Return the MBOX0 valid-user lock address for a supported slot.
-task get_mcu_mbox_axi_user_lock_address(output logic [AXI_AW-1:0] addr, input int user_index = 0);
-    case (user_index)
-        0: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0;
-        1: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1;
-        default: $fatal(1, "Unsupported MBOX0 AXI user lock index: %0d", user_index);
-    endcase
+task get_mcu_mbox_axi_user_lock_address(output logic [AXI_AW-1:0] addr);
+    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0;
 endtask
 
 task get_mcu_mbox_sram_base_addr(output logic [AXI_AW-1:0] addr, input int mbox_num = 0);
@@ -287,30 +277,6 @@ task get_mcu_mbox_cmd_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
         addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD;
 endtask
 
-// Return the selected mailbox TARGET_USER address.
-task get_mcu_mbox_target_user_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
-    if (mbox_num == 0)
-        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER;
-    else if (mbox_num == 1)
-        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER;
-endtask
-
-// Return the selected mailbox TARGET_USER_VALID address.
-task get_mcu_mbox_target_user_valid_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
-    if (mbox_num == 0)
-        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID;
-    else if (mbox_num == 1)
-        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID;
-endtask
-
-// Return the selected mailbox TARGET_STATUS address.
-task get_mcu_mbox_target_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
-    if (mbox_num == 0)
-        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS;
-    else if (mbox_num == 1)
-        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS;
-endtask
-
 task get_cptra_boot_go_address(output logic [AXI_AW-1:0] addr);
     addr = `SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO;
 endtask
@@ -320,14 +286,6 @@ task get_mbox_mcu_cmd_status_addr(output logic [AXI_AW-1:0] addr, input int mbox
         addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS;
     else if (mbox_num == 1)
         addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS;
-endtask
-
-// Return the selected mailbox hardware-status address.
-task get_mcu_mbox_hw_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
-    if (mbox_num == 0)
-        addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS;
-    else if (mbox_num == 1)
-        addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS;
 endtask
 
 task mcu_trace_buffer_random_inject_trace_data();
