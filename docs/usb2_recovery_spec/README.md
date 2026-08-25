@@ -126,7 +126,10 @@ flowchart TB
     a3["A3 rb_adapter + register block"]
     a4["A4 cms_fifo (sync, 64 DWORD)"]
     a5["A5 recovery FSM"]
-    bridge["axi2ahb / C3 bridge"]
+    ahb["dev AXI-to-AHB bridge"]
+    split["USB local-aperture split<br/>package-defined recovery offset"]
+    legacy_ahb["legacy usbhsd AHB path<br/>offset 0x000-0x7ff"]
+    rec_ahb["recovery AHB transaction FSM<br/>raw offset 0x000-0x7ff"]
     fab["SoC AXI fabric (dev_axi_aclk)"]
     fw["MCU RV core"]
     cptra["Caliptra core"]
@@ -135,18 +138,18 @@ flowchart TB
     pie -.->|CDC| sync --> arb
     arb -->|legacy| dma --> regif
     arb -->|"OCP (rec_*)"| a2 --> a0 --> a3 --> a4 --> a5
-    regif <-->|"enum / init"| bridge
-    a0 <-->|"EXT reg-bus"| bridge
-    bridge <--> fab
+    fab <--> ahb --> split
+    split --> legacy_ahb --> regif
+    split --> rec_ahb -->|"raw EXT aperture offset"| a0
     fab <--> fw
     fab <--> cptra
 ```
 
 Blocks A2-A5 are internal to `usb_ocp_recovery_top` (clock domains are listed in
-Section 4.1). The `<-->` links are bidirectional register buses: the C3 bridge fans
-out to both the OCP EXT reg-bus (A0) and the legacy `usb_reg_if`, so the MCU (enum /
-init) and Caliptra (OCP recovery) reach their register targets through the same
-fabric-to-bridge path.
+Section 4.1). The SoC reaches both the legacy controller and recovery aperture
+through the same device AXI-to-AHB bridge. The wrapper performs only
+package-defined coarse aperture ownership selection; it does not translate an
+AHB access into an OCP command.
 
 ### 4.1 Clock domains
 
@@ -159,7 +162,29 @@ fabric-to-bridge path.
 recovery logic runs on the SoC clock, so the recovery register and FIFO surfaces
 are single-domain and require no OCP-specific CDC.
 
-### 4.2 Post-synchronizer arbiter
+### 4.2 Reset architecture
+
+The recovery stack receives the USB device subordinate reset directly as
+`dev_axi_aresetn` and uses active-low reset naming throughout.
+
+- **Handwritten recovery logic.** `usb_ocp_recovery_top`, A2, A3, the handwritten
+  A4 control logic, and A5 use synchronous `rst_ni` logic in the `dev_axi_aclk`
+  domain. A4's `caliptra_prim_fifo_sync` storage primitive receives the same
+  active-low reset asynchronously. Its separate synchronous `clr_i` is the
+  mechanism for a FIFO flush or transfer abort, so a batch reset does not rely on
+  a reset assertion/release sequence.
+- **Generated register block.** The RDL declares `rst_ni` as an
+  `activelow`, `async` reset signal and makes it the default `resetsignal`.
+  PeakRDL-generated field storage therefore resets on
+  `negedge hwif_in.rst_ni`. `usb_ocp_recovery_top` drives
+  `rb_hwif_in.rst_ni` from its `rst_ni` input. The
+  generated module retains a legacy active-high `rst` compatibility input, tied
+  to `~rst_ni` at integration; field storage reset polarity is controlled by the
+  RDL-generated `hwif_in.rst_ni` signal.
+- **Assertions.** Handwritten assertion blocks are enabled only when `rst_ni` is
+  high, and their temporal properties are disabled while it is low.
+
+### 4.3 Post-synchronizer arbiter
 
 `usb_ocp_recovery_post_sync_arb`
 (`third_party/usb2/src/ip_xxx_3511/RTL/usb_ocp_recovery_post_sync_arb.{e,m}.vhdl`)
@@ -181,7 +206,7 @@ Because the device must ACK the SETUP stage (USB 2.0 Sec 8.4.6.4), a claimed SET
 is trapped and answered with a fabricated bit-accurate response; unclaimed SETUPs
 are replayed to the legacy DMA so standard enumeration is unaffected.
 
-### 4.3 `usb_ocp_recovery_top` (OCP service stack)
+### 4.4 `usb_ocp_recovery_top` (OCP service stack)
 
 Clocked by `dev_axi_aclk`
 (`third_party/usb2/src/integration/rtl/usb_ocp_recovery_top.sv`):
@@ -189,12 +214,12 @@ Clocked by `dev_axi_aclk`
 | Block | File | Role |
 |---|---|---|
 | **A2** ctrl_decode | `usb_ocp_recovery_ctrl_decode.sv` | Decodes the claimed EP0 SETUP/DATA into a word-wide register-bus (`rb_*`) access stream. |
-| **A0** reg-bus arbiter | (in `usb_ocp_recovery_top.sv`) | Arbitrates the internal register bus between the USB side and the EXT/AXI side; USB has priority, EXT proceeds when USB is idle. |
-| **A3** rb_adapter + register block | `usb_ocp_recovery_rb_adapter.sv`, `usb_ocp_recovery_hwif_adapter.sv`, register block | Routes a command to the register block or the CMS FIFO; enforces the OCP command aperture and `PROTOCOL_ERROR`. |
+| **A0** reg-bus arbiter | (in `usb_ocp_recovery_top.sv`) | Arbitrates the internal register bus between the USB command side and raw EXT aperture accesses; USB has priority, EXT proceeds when USB is idle. |
+| **A3** rb_adapter + register block | `usb_ocp_recovery_rb_adapter.sv`, `usb_ocp_recovery_hwif_adapter.sv`, register block | Maps USB commands to RDL-derived base offsets. EXT accesses bypass this command mapping and use their raw aperture offset directly at the generated CPU interface. |
 | **A4** cms_fifo | `usb_ocp_recovery_cms_fifo.sv` | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus `WRITE_INDEX`/`READ_INDEX`/full/empty status. |
 | **A5** fsm | `usb_ocp_recovery_fsm.sv` | Recovery state, `RECOVERY_CTRL.ACTIVATE` handling, `PROTOCOL_ERROR` latch, image accounting. |
 
-### 4.4 CMS image FIFO
+### 4.5 CMS image FIFO
 
 The image data path is exposed through `INDIRECT_FIFO_*` and backed by a
 synchronous 64-DWORD FIFO. `FIFO_SIZE` and `MAX_TRANSFER_SIZE` both report 64
@@ -210,15 +235,37 @@ asserted, later FIFO DATA OUT transfers receive USB NAK until the batch drains.
 The final DWORD of a non-4-byte-aligned transfer is zero-padded at the FIFO
 write boundary. Caliptra uses the image byte length to ignore padding.
 
-### 4.5 EXT / AXI register + drain path
+### 4.6 EXT / AXI register + drain path
 
 Caliptra reaches the OCP register aperture as an AXI master: SoC AXI fabric to the
-`axi2ahb`/C3 bridge to the EXT side of the A0 reg-bus arbiter to the A3 register
-block / A4 FIFO. All OCP register reads/writes and the image drain
-(`INDIRECT_FIFO_DATA` reads) flow through this path; there is no separate sideband
-drain port. EXT FIFO-data reads are held until `payload_available` is asserted.
+device AXI-to-AHB bridge and then the package-defined recovery portion of the
+local USB device aperture. `usb_ocp_recovery_pkg` is the source of truth:
+`OCP_RECOVERY_APERTURE_OFFSET_BYTES`, `OCP_RECOVERY_APERTURE_SIZE_BYTES`, and
+the derived `OCP_RECOVERY_APERTURE_ADDR_W` define the split and raw offset
+width. For the current 4 KiB local USB window:
 
-### 4.6 Recovery state machine (block A5)
+- `0x000-0x7ff` remains the legacy `usbhsd` register aperture.
+- `0x800-0xfff` is the recovery aperture. The wrapper range-checks the
+  package-defined offset and end, subtracts the package-defined base,
+  DWORD-aligns the resulting raw offset, and captures it with the AHB
+  transaction metadata.
+
+The captured offset is passed as `ext_aperture_offset` into the A0/A3 path.
+For EXT accesses, A3 drives that raw offset directly onto the generated CPUif
+address; the generated RDL register block performs the per-register address
+decode. The old wrapper table that converted an AHB address to an OCP command and
+command-relative offset has been removed. USB traffic remains command-based, as
+required by the OCP USB transport, and A3 maps only that USB path from command plus
+word offset to the RDL aperture.
+
+The wrapper holds a raw EXT request through the AHB completion handshake and
+captures the returned data/error in the completion cycle. All OCP register
+reads/writes and the image drain (`INDIRECT_FIFO_DATA` reads) use this path; there
+is no separate sideband drain port. EXT FIFO-data reads are held until
+`payload_available` is asserted, and EXT FIFO accesses are deferred while a claimed
+USB FIFO transfer owns the resource.
+
+### 4.7 Recovery state machine (block A5)
 
 The recovery FSM (`usb_ocp_recovery_fsm.sv`) implements the OCP v1.1 Sec 6 recovery
 process. It consumes control-field write strobes from the register block (A3) and
