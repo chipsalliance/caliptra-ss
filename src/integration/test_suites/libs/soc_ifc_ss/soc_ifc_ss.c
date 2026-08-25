@@ -205,11 +205,10 @@ void cptra_mcu_mbox_wait_execute(uint32_t mbox_num, uint32_t attempt_count) {
 void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_count) {
     uint32_t read_payload[1];
     uint32_t mbox_data;
-    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR TARGET USER VALID\n", mbox_num);
+    VPRINTF(LOW, "CALIPTRA: MCU MBOX%x WAIT FOR TARGET_USER_VALID\n", mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
-        mbox_data = read_payload[0];
-        mbox_data = mbox_data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
+        mbox_data = read_payload[0] & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
         if(mbox_data) {
             return;
         }
@@ -227,10 +226,11 @@ uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num) {
     return data;
 }
 
-void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status) {
-    VPRINTF(LOW, "CALIPTRA: Set TARGET_USER_STATUS Done in MBOX%x with CMD: 0x%x\n", mbox_num, targ_status);
-    uint32_t write_data = MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK |
-                                (targ_status >> MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW);
+// Writing a terminal (non-BUSY) status relinquishes Target ownership of the SRAM.
+void cptra_mcu_mbox_set_target_status(uint32_t mbox_num, enum mcu_mbox_target_status targ_status) {
+    VPRINTF(LOW, "CALIPTRA: Set TARGET_STATUS in MBOX%x with status: 0x%x\n", mbox_num, targ_status);
+    uint32_t write_data = (targ_status << MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW) &
+                                MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK;
     cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, write_data);
 
 }
@@ -328,8 +328,9 @@ uint32_t cptra_mcu_mbox_read_target_user(uint32_t mbox_num) {
 }
 
 void cptra_mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
-    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data); 
-    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, data);
+    VPRINTF(LOW, "CALIPTRA: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data);
+    cptra_axi_dword_write(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num,
+                          data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK);
 }
 
 uint32_t cptra_mcu_mbox_read_target_user_valid(uint32_t mbox_num) {

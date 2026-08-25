@@ -55,7 +55,7 @@ void mcu_mbox_get_and_check_sram_data(uint32_t mbox_num, uint32_t expected_dlen,
 
 }
 
-void mcu_mbox_check_target_non_accessible_regs(uint32_t mbox_num, uint32_t caliptra_uc_axi_id, bool target_valid) {
+void mcu_mbox_check_target_non_accessible_regs(uint32_t mbox_num, uint32_t expected_target_user) {
     if(mcu_mbox_read_cmd(mbox_num) != 0xFADECAFE) {
         VPRINTF(FATAL, "MCU: Mbox%x CMD was changed by Target User\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
@@ -76,18 +76,14 @@ void mcu_mbox_check_target_non_accessible_regs(uint32_t mbox_num, uint32_t calip
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if (mcu_mbox_read_hw_status(mbox_num) != 0) {
-        VPRINTF(FATAL, "MCU: Mbox%x MBOX HW_STATUS was changed by Target User\n", mbox_num);
+    if ((mcu_mbox_read_hw_status(mbox_num) &
+         ~MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x MBOX HW_STATUS error bits changed by Target User\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-    if (mcu_mbox_read_target_user(mbox_num) != caliptra_uc_axi_id) {
+    if (mcu_mbox_read_target_user(mbox_num) != expected_target_user) {
         VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER was changed by Target User\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-    if (mcu_mbox_read_target_user_valid(mbox_num) != (uint32_t) target_valid ) {
-        VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER_VALID was changed by Target User\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -116,14 +112,14 @@ void mcu_mbox_send_data_no_wait_status(uint32_t mbox_num, uint32_t mbox_dlen, ui
 
 // Test (in conjuction with Caliptra uC C code) exercise the TARGET_USER aspects of the MCU Mbox 
 // Caliptra uC will be the target user
-// 1. MCU acquires Mbox lock and writes information in the mailbox CSRs and SRAM and sets execute (without setting target user)
-// 2. MCU will set TARGET_USER but not TARGET_USER_VALID and set execute
-// 3. Caliptra uC will wait for execute and attempt writing/reading SRAM and reading/writing CSRs (all writing should fail and SRAM should return 0s)
-// 4. Caliptra uC will attempt acquiring lock (as a sync point so MCU can see if any contents were able to be changed).
-// 4. MCU will set TARGET_USER_VALID
-// 5. Caliptra uC will read the mailbox CSRs and SRAM and check that the data is what was written by the MCU
-// 6. Caliptra uC will attempt to write to the mailbox CSRs and SRAM and set TARGET_STATUS/DONE
-// 7. MCU will check that only SRAM and DLEN has changed 
+// 1. MCU acquires Mbox lock, writes the mailbox CSRs and SRAM, and sets execute
+//    with TARGET_USER_VALID still 0, so Root owns the SRAM
+// 2. Caliptra uC waits for execute and attempts writing/reading SRAM and reading/writing CSRs (all writing should fail and SRAM should return 0s)
+// 3. Caliptra uC attempts acquiring lock (as a sync point so MCU can see if any contents were able to be changed).
+// 4. MCU writes TARGET_USER and then TARGET_USER_VALID, granting ownership
+// 5. Caliptra uC reads the mailbox CSRs and SRAM and checks that the data is what was written by the MCU
+// 6. Caliptra uC writes to the mailbox SRAM/DLEN and writes a terminal TARGET_STATUS, returning ownership to MCU
+// 7. MCU checks that both target configuration registers were cleared by hardware
 
 void main (void) {
     int argc=0;
@@ -191,9 +187,7 @@ void main (void) {
 
     mcu_mbox_send_data_no_wait_status(mbox_num, mcu_mbox_dlen, mcu_mbox_data);
 
-    // Set TARGET_USER
-    mcu_mbox_write_target_user(mbox_num, caliptra_uc_axi_id);
-
+    // TARGET_USER_VALID stays 0 so Root keeps ownership when EXECUTE is set.
     mcu_mbox_set_execute(mbox_num);
 
     // Wait for SOC request while MCU has lock interrupt
@@ -208,15 +202,15 @@ void main (void) {
     // Check that TARGET was unable to change Mbox SRAM or CSRs
     mcu_mbox_get_and_check_sram_data(mbox_num, mcu_mbox_dlen, mcu_mbox_data);
 
-    bool target_valid = false;
-    mcu_mbox_check_target_non_accessible_regs(mbox_num, caliptra_uc_axi_id, target_valid);
+    mcu_mbox_check_target_non_accessible_regs(mbox_num, 0);
 
-    // Set TARGET_USER_VALID
+    // Configure and grant SRAM ownership to the Target.
+    mcu_mbox_write_target_user(mbox_num, caliptra_uc_axi_id);
     mcu_mbox_write_target_user_valid(mbox_num, 1);
 
-    // Wait for TARGET_STATUS DONE and COMPLETE
-    if (!mcu_mbox_wait_for_target_status_done(mbox_num, MCU_MBOX_TARGET_STATUS_COMPLETE, 10000)) {
-        VPRINTF(FATAL, "MCU: Mbox%x Target status not done and complete\n", mbox_num);
+    // Wait for the Target to publish a terminal TARGET_STATUS
+    if (!mcu_mbox_wait_for_target_status(mbox_num, MCU_MBOX_TARGET_STATUS_COMPLETE, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Target status not complete\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -253,8 +247,13 @@ void main (void) {
 
     mcu_mbox_get_and_check_sram_data(mbox_num, mbox_dlen, clptra_expected_data);
 
-    target_valid = true;
-    mcu_mbox_check_target_non_accessible_regs(mbox_num, caliptra_uc_axi_id, target_valid);
+    // Hardware clears both target configuration registers on terminal status.
+    if (mcu_mbox_read_target_user_valid(mbox_num) != 0) {
+        VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER_VALID was not cleared\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+    mcu_mbox_check_target_non_accessible_regs(mbox_num, 0);
 
     VPRINTF(LOW, "MCU: Sequence complete\n");
 

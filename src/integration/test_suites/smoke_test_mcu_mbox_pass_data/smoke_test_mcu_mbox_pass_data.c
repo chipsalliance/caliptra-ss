@@ -161,7 +161,15 @@ void main (void) {
 
     mcu_mbox_update_status(mbox_num, MCU_MBOX_DATA_READY);
 
+    if(!mcu_mbox_wait_for_user_execute(mbox_num, 0, 10000)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Caliptra did not clear execute\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
     VPRINTF(LOW, "MCU: Sequence complete\n");
-    
+
+    SEND_STDOUT_CTRL(0xff);
+
     while(1);
 }

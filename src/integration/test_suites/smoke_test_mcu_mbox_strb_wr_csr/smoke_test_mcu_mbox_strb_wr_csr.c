@@ -108,22 +108,13 @@ void main (void) {
         while(1);
     }
 
-    // MBOX: Write and check TARGET_USER_VALID with STRBW
-    VPRINTF(LOW, "MCU: Mbox%x write TARGET_USER_VALID with STRBW\n", mbox_num);
-    lsu_write_8(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0x1);
-
-    if (mcu_mbox_read_target_user_valid(mbox_num) != 0x1) {
-        VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER_VALID not written properly with STRBW\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
     // MBOX: Write and check TARGET_STATUS with STRBW
     VPRINTF(LOW, "MCU: Mbox%x write TARGET_STATUS with STRBW\n", mbox_num);
+    uint32_t target_status_before = mcu_mbox_read_target_status(mbox_num);
     lsu_write_8(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, 0x3);
 
-    if (mcu_mbox_read_target_status(mbox_num) != 0x3) {
-        VPRINTF(FATAL, "MCU: Mbox%x TARGET_STATUS not written properly with STRBW\n", mbox_num);
+    if (mcu_mbox_read_target_status(mbox_num) != target_status_before) {
+        VPRINTF(FATAL, "MCU: Mbox%x TARGET_STATUS was writable by Root\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -141,6 +132,21 @@ void main (void) {
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
+    }
+
+    // TARGET_USER_VALID accepts a byte write and locks both target fields.
+    lsu_write_8(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 1);
+    if (mcu_mbox_read_target_user_valid(mbox_num) != 1) {
+        VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER_VALID byte write failed\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    lsu_write_8(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, 0);
+    if(mcu_mbox_read_target_user(mbox_num) != mask) {
+        VPRINTF(FATAL, "MCU: Mbox%x TARGET_USER changed after valid was set\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
     }
 
     SEND_STDOUT_CTRL(0xff);

@@ -84,6 +84,12 @@ localparam MCI_MCU_SRAM_IF_ADDR_W = $bits(mcu_mbox_sram_req_if.req.addr);
 mcu_mbox_csr__out_t hwif_out;
 mcu_mbox_csr__in_t hwif_in;
 
+logic [$bits(cif_resp_if.req_data.wdata)-1:0] s_cpuif_wr_biten;
+logic s_cpuif_req_stall_wr_nc;
+logic s_cpuif_req_stall_rd_nc;
+logic s_cpuif_rd_ack_nc;
+logic s_cpuif_wr_ack_nc;
+
 logic mbox_valid_user;
 logic mbox_valid_user_req;
 logic mbox_valid_user_error;
@@ -92,8 +98,10 @@ logic csr_read_error;
 logic csr_write_error;
 
 logic valid_requester_req;
-logic valid_root_req; 
 logic valid_target_req;
+logic valid_root_req;
+logic valid_sram_owner_req;
+logic target_cfg_write_en;
 
 logic mbox_target_user     ; 
 logic mbox_requester_user  ; 
@@ -102,8 +110,26 @@ logic mbox_target_user_req ;
 logic mbox_requester_user_req;
 logic mbox_axi_root_user_req ;
 
+logic mbox_target_user_valid;
+logic mbox_target_user_valid_q;
+logic mbox_target_granted;
+logic execute_set;
+logic cmd_status_busy;
+logic target_status_busy;
+logic target_status_busy_q;
+logic target_terminal_write;
+
+// Encoded owner drives SRAM access control and CSR readback.
+typedef enum logic [1:0] {
+    MBOX_OWNER_NONE      = 2'b00,
+    MBOX_OWNER_REQUESTER = 2'b01,
+    MBOX_OWNER_ROOT      = 2'b10,
+    MBOX_OWNER_TARGET    = 2'b11
+} mcu_mbox_owner_e;
+
+mcu_mbox_owner_e sram_owner;
+
 logic lock_set;
-logic valid_requester_target_req;
 
 logic execute_valid_write;
 logic mbox_sram_zero_done;
@@ -132,7 +158,6 @@ assign hwif_in.rst_b = rst_b;
 // Valid User 
 ///////////////////////////////////////////////
 
-
 //Check if SoC request is coming from a valid user
 //There are 5 valid user registers, check if user attribute matches any of them
 //Check if user matches Default Valid user parameter - this user value is always valid
@@ -154,19 +179,19 @@ assign mbox_valid_user_error = !mbox_valid_user & cif_resp_if.dv;
 ///////////////////////////////////////////////
 
 // No need to add in mbox_valid_user_req since to access the CSRs you need to be a valid user
-assign mbox_target_user     = hwif_out.mbox_target_user_valid.valid.value & (hwif_out.mbox_target_user.user.value == cif_resp_if.req_data.user);
-assign mbox_requester_user  = hwif_out.mbox_user.user.value == cif_resp_if.req_data.user;
-assign mbox_axi_root_user   = strap_root_axi_user == cif_resp_if.req_data.user;
+assign mbox_target_user_valid = hwif_out.mbox_target_user_valid.valid.value;
+assign mbox_target_user       = mbox_target_user_valid & (hwif_out.mbox_target_user.user.value == cif_resp_if.req_data.user);
+assign mbox_requester_user    = hwif_out.mbox_user.user.value == cif_resp_if.req_data.user;
+assign mbox_axi_root_user     = strap_root_axi_user == cif_resp_if.req_data.user;
 
-assign mbox_target_user_req     = cif_resp_if.dv & mbox_target_user   ; 
-assign mbox_requester_user_req  = cif_resp_if.dv & mbox_requester_user;
-assign mbox_axi_root_user_req   = cif_resp_if.dv & mbox_axi_root_user ;
+assign mbox_target_user_req    = cif_resp_if.dv & mbox_target_user;
+assign mbox_requester_user_req = cif_resp_if.dv & mbox_requester_user;
+assign mbox_axi_root_user_req  = cif_resp_if.dv & mbox_axi_root_user;
+
 
 ///////////////////////////////////////////////
-// CSR access checks
+// CSR Access Qualification
 ///////////////////////////////////////////////
-
-
 
 // lock_set is used in RDL to lock the USER register. Need to do this on the 
 // same clock cycle as HWSET otherwise user isn't updated in time. 
@@ -176,15 +201,55 @@ assign mbox_axi_root_user_req   = cif_resp_if.dv & mbox_axi_root_user ;
 // registers.
 assign lock_set = (hwif_in.mbox_lock.lock.hwset | hwif_out.mbox_lock.lock.value) & !mbox_sram_zero_in_progress;
 
-assign valid_requester_target_req = lock_set & (mbox_axi_root_user_req | mbox_requester_user_req | mbox_target_user_req);
-assign valid_target_req           = lock_set & (mbox_axi_root_user_req | mbox_target_user_req);
-assign valid_requester_req        = lock_set & (mbox_axi_root_user_req | mbox_requester_user_req);
-assign valid_root_req             = lock_set & (mbox_axi_root_user_req);
+// Each CSR is writable by exactly one role. MCU is not granted access to a
+// register it does not own; when MCU holds the lock it qualifies as the
+// Requester through mbox_requester_user_req.
+assign valid_requester_req = lock_set & mbox_requester_user_req;
+assign valid_target_req    = lock_set & mbox_target_user_req;
+assign valid_root_req      = lock_set & mbox_axi_root_user_req;
+assign target_cfg_write_en = valid_root_req & !mbox_target_user_valid;
 
-assign hwif_in.valid_requester_target_req = valid_requester_target_req; 
-assign hwif_in.valid_target_req           = valid_target_req         ; 
-assign hwif_in.valid_requester_req        = valid_requester_req      ; 
-assign hwif_in.valid_root_req             = valid_root_req           ; 
+assign hwif_in.valid_requester_req   = valid_requester_req  ;
+assign hwif_in.valid_target_req      = valid_target_req     ;
+assign hwif_in.valid_root_req        = valid_root_req       ;
+assign hwif_in.target_cfg_write_en   = target_cfg_write_en  ;
+
+///////////////////////////////////////////////
+// SRAM Ownership
+///////////////////////////////////////////////
+
+// Ownership is a pure function of mailbox state. lock_set already excludes the
+// zeroization window, so !lock_set implies no owner.
+assign execute_set     = hwif_out.mbox_execute.execute.value;
+assign cmd_status_busy = (hwif_out.mbox_cmd_status.status.value == mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_BUSY);
+
+always_comb begin
+    sram_owner = MBOX_OWNER_NONE;
+    if (lock_set) begin
+        if (execute_set &  mbox_target_user_valid) begin
+            sram_owner = MBOX_OWNER_TARGET;
+        end else if (execute_set & !mbox_target_user_valid &  cmd_status_busy) begin
+            sram_owner = MBOX_OWNER_ROOT;
+        end else if (!execute_set | (!mbox_target_user_valid & !cmd_status_busy)) begin
+            sram_owner = MBOX_OWNER_REQUESTER;
+        end
+    end
+end
+
+// SRAM and DLEN follow the single resolved owner.
+always_comb begin
+    valid_sram_owner_req = 1'b0;
+    unique case (sram_owner)
+        MBOX_OWNER_REQUESTER: valid_sram_owner_req = mbox_requester_user_req;
+        MBOX_OWNER_ROOT:      valid_sram_owner_req = mbox_axi_root_user_req;
+        MBOX_OWNER_TARGET:    valid_sram_owner_req = mbox_target_user_req;
+        default:              valid_sram_owner_req = 1'b0;
+    endcase
+end
+
+assign hwif_in.valid_sram_owner_req = valid_sram_owner_req;
+assign hwif_in.mbox_hw_status.sram_owner.next = sram_owner;
+
 
 
 ///////////////////////////////////////////////
@@ -201,6 +266,34 @@ always_ff @(posedge clk or negedge rst_b) begin
     end
 end
 
+// Detect the BUSY-to-terminal transition caused by an accepted Target write.
+assign target_status_busy = (hwif_out.mbox_target_status.status.value ==
+                             mcu_mbox_csr__mbox_target_status__status__mbox_status_e__CMD_BUSY);
+
+always_ff @(posedge clk or negedge rst_b) begin
+    if (!rst_b) begin
+        target_status_busy_q <= 1'b1;
+    end else begin
+        target_status_busy_q <= target_status_busy;
+    end
+end
+
+assign target_terminal_write = target_status_busy_q && !target_status_busy;
+
+// Detect a new target grant from the TARGET_USER_VALID rising edge.
+always_ff @(posedge clk or negedge rst_b) begin
+    if (!rst_b) begin
+        mbox_target_user_valid_q <= 1'b0;
+    end else begin
+        mbox_target_user_valid_q <= mbox_target_user_valid;
+    end
+end
+
+assign mbox_target_granted = mbox_target_user_valid & !mbox_target_user_valid_q;
+
+///////////////////////////////////////////////
+// SRAM Zeroization
+///////////////////////////////////////////////
 sram_zeroization_gadget #(
     .SRAM_DEPTH(MCU_MBOX_SRAM_DEPTH),
     .SRAM_DATA_WIDTH(MCU_MBOX_SRAM_DATA_W)
@@ -260,6 +353,10 @@ end
 // Release the mailbox after execute has had 0 written to it
 assign mbox_release = !hwif_out.mbox_execute.execute.value && execute_valid_write;  
 
+///////////////////////////////////////////////
+// Register Clear and Lock Control
+///////////////////////////////////////////////
+
 // One reset lock in root_user. Otherwise when lock is not set and user reads
 // the registers set the lock.
 assign hwif_in.mbox_lock.lock.hwset = (!hwif_out.mbox_lock.lock.value & hwif_out.mbox_lock.lock.swmod) | rst_mbox_lock_req; 
@@ -270,11 +367,12 @@ assign hwif_in.mbox_lock.lock.hwclr = mbox_sram_zero_done;
 // All other registers are cleared on MBOX release when execute is cleared.
 assign hwif_in.mbox_dlen.length.hwclr = mbox_release; 
 assign hwif_in.mbox_cmd_status.status.hwclr = mbox_release; 
-assign hwif_in.mbox_target_user_valid.valid.hwclr = mbox_release; 
-assign hwif_in.mbox_target_status.status.hwclr = mbox_release; 
-assign hwif_in.mbox_target_status.done.hwclr = mbox_release; 
+// TARGET_STATUS resets to BUSY on every Target handoff, not just on release.
+assign hwif_in.mbox_target_status.status.hwclr = mbox_release | mbox_target_granted;
 assign hwif_in.mbox_cmd.command.hwclr = mbox_release; 
-assign hwif_in.mbox_target_user.user.hwclr = mbox_release; 
+// A terminal TARGET_STATUS write clears and unlocks the target configuration.
+assign hwif_in.mbox_target_user.user.hwclr = mbox_release | target_terminal_write;
+assign hwif_in.mbox_target_user_valid.valid.hwclr = mbox_release | target_terminal_write;
 assign hwif_in.mbox_user.user.hwclr = mbox_release; 
 
 // User locking is done via RDL. Only need to pass the user value to the HWIF if
@@ -293,7 +391,7 @@ assign soc_req_mbox_locked = lock_set && (hwif_out.mbox_user.user.value == strap
 assign soc_mbox_data_available = hwif_out.mbox_execute.execute.value && (hwif_out.mbox_user.user.value != strap_root_axi_user);
 assign root_mbox_data_available = hwif_out.mbox_execute.execute.value && (hwif_out.mbox_user.user.value == strap_root_axi_user);
 
-assign target_user_done = hwif_out.mbox_target_status.done.value;
+assign target_user_done = target_terminal_write;
 
 ///////////////////////////////////////////////
 // Memory Interface 
@@ -310,9 +408,9 @@ assign valid_sram_addr = !invalid_sram_addr;
 /////
 // SRAM Controls
 /////
-// Only send request if the address is valid and proper user access
-assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_requester_target_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_BYTE_ADDR_W-1:2];
-assign mcu_mbox_sram_req_cs = (valid_requester_target_req & valid_sram_addr & hwif_out.MBOX_SRAM.req);
+// Only the current SRAM owner may access the SRAM, and only at a valid address.
+assign mcu_mbox_sram_req_addr = {MCU_MBOX_SRAM_ADDR_W{(valid_sram_owner_req & valid_sram_addr)}} & hwif_out.MBOX_SRAM.addr[MCU_MBOX_BYTE_ADDR_W-1:2];
+assign mcu_mbox_sram_req_cs = (valid_sram_owner_req & valid_sram_addr & hwif_out.MBOX_SRAM.req);
 assign mcu_mbox_sram_req_we = (mcu_mbox_sram_req_cs & hwif_out.MBOX_SRAM.req_is_wr);
 
 
@@ -323,8 +421,8 @@ assign mcu_mbox_sram_req_we = (mcu_mbox_sram_req_cs & hwif_out.MBOX_SRAM.req_is_
 // Assign same cycle.
 assign hwif_in.MBOX_SRAM.wr_ack = hwif_out.MBOX_SRAM.req & hwif_out.MBOX_SRAM.req_is_wr;
 
-// Setting write data only if valid address and prper user access
-assign mcu_mbox_sram_req_if.req.wdata.data = {MCU_MBOX_SRAM_DATA_W{(valid_requester_target_req & valid_sram_addr)}} & mcu_mbox_sram_wr_data;
+// Setting write data only if valid address and proper ownership
+assign mcu_mbox_sram_req_if.req.wdata.data = {MCU_MBOX_SRAM_DATA_W{(valid_sram_owner_req & valid_sram_addr)}} & mcu_mbox_sram_wr_data;
 
 // From RISC-V core beh_lib.sv
 // 32-bit data width hardcoded
@@ -342,7 +440,7 @@ always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
         sram_rd_ecc_en <= 1'b0;
     end else begin
-        sram_rd_ecc_en <= hwif_out.MBOX_SRAM.req & ~hwif_out.MBOX_SRAM.req_is_wr & valid_sram_addr & valid_requester_target_req;
+        sram_rd_ecc_en <= hwif_out.MBOX_SRAM.req & ~hwif_out.MBOX_SRAM.req_is_wr & valid_sram_addr & valid_sram_owner_req;
     end
 end
 
@@ -390,11 +488,6 @@ assign cif_resp_if.error = mbox_valid_user_error | csr_read_error | csr_write_er
 ///////////////////////////////////////////////
 // MBOX CSR                 
 ///////////////////////////////////////////////
-logic [$bits(cif_resp_if.req_data.wdata)-1:0] s_cpuif_wr_biten;
-logic s_cpuif_req_stall_wr_nc;
-logic s_cpuif_req_stall_rd_nc;
-logic s_cpuif_rd_ack_nc;
-logic s_cpuif_wr_ack_nc;
 
 genvar i;
 generate
@@ -428,8 +521,20 @@ mcu_mbox_csr(
     .hwif_out(hwif_out)
 );
 
+///////////////////////////////////////////////
+// Assertions
+///////////////////////////////////////////////
+
 // Strobe writes to SRAM are not supported
 `CALIPTRA_ASSERT_NEVER(ERR_MCU_MBOX_NO_STRB_TO_SRAM, (hwif_out.MBOX_SRAM.req && hwif_out.MBOX_SRAM.req_is_wr && !(&hwif_out.MBOX_SRAM.wr_biten)), clk, !rst_b)
+
+// The selected target identity is immutable while TARGET_USER_VALID is set.
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_MBOX_TARGET_USER_LOCKED,
+    ($past(mbox_target_user_valid) && mbox_target_user_valid &&
+     (hwif_out.mbox_target_user.user.value != $past(hwif_out.mbox_target_user.user.value))), clk, !rst_b)
+
+// Software must never reach the SRAM while it is being zeroized.
+`CALIPTRA_ASSERT_NEVER(ERR_MCU_MBOX_ACCESS_DURING_ZEROIZE, (mcu_mbox_sram_req_cs && mbox_sram_zero_in_progress), clk, !rst_b)
 
 
 endmodule

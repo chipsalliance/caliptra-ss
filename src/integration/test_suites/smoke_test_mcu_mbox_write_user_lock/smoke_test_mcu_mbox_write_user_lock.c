@@ -31,7 +31,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 
-void mcu_mbox_write_sram_and_csrs(uint32_t mbox_num){
+void mcu_mbox_check_root_access(uint32_t mbox_num, uint32_t target_axi_user) {
     uint32_t mbox_data[] = { 0x00000000,
                             0x11111111,
                             0x22222222,
@@ -50,10 +50,19 @@ void mcu_mbox_write_sram_and_csrs(uint32_t mbox_num){
                             0xffffffff };
 
     uint32_t mbox_resp_data;
-    uint32_t mbox_dlen;
+    const uint32_t mbox_dlen = sizeof(mbox_data);
+    uint32_t test_data;
+    uint32_t value_before;
 
-    // Do SRAM and CSRs write while user has lock
-    //// MBOX: Write data
+    VPRINTF(LOW, "MCU: Mbox%x checking Root access while external Requester holds lock\n", mbox_num);
+
+    if (mcu_mbox_read_sram_owner(mbox_num) != MCU_MBOX_SRAM_OWNER_ROOT) {
+        VPRINTF(FATAL, "MCU: Mbox%x SRAM owner should be Root after Requester sets EXECUTE\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    // Root owns the response SRAM and DLEN while the command is BUSY.
     for (uint32_t ii = 0; ii < mbox_dlen/4; ii++) {
         VPRINTF(LOW, "MCU: Writing to MBOX%x data: 0x%x\n", mbox_num, mbox_data[ii]); 
         lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR+(4*ii) + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_data[ii]);
@@ -70,109 +79,105 @@ void mcu_mbox_write_sram_and_csrs(uint32_t mbox_num){
         }
     }
 
-    uint32_t test_data = xorshift32();
-    //// MBOX: Write DLEN
-    VPRINTF(LOW, "MCU: Writing MBOX%x DLEN: 0x%x\n", mbox_num, test_data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
+    VPRINTF(LOW, "MCU: Writing MBOX%x DLEN: 0x%x\n", mbox_num, mbox_dlen);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, mbox_dlen);
 
-    VPRINTF(LOW, "MCU: Reading MBOX DLEN\n"); 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x DLEN during user MB lock\n", mbox_num);
+    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num) != mbox_dlen) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x DLEN as Root\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Write CMD
-    test_data = xorshift32();
-    VPRINTF(LOW, "MCU: Writing Mbox%x MBOX_CMD: 0x%x\n", mbox_num, test_data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
-
-    VPRINTF(LOW, "MCU: Reading MBOX DLEN\n"); 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD during user MB lock\n", mbox_num);
+    // CMD and EXECUTE belong to the external Requester, not Root.
+    value_before = mcu_mbox_read_cmd(mbox_num);
+    mcu_mbox_write_cmd(mbox_num, ~value_before);
+    if (mcu_mbox_read_cmd(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root changed Requester-owned CMD\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Write CMD_STATUS
-    test_data = xorshift32();
-    VPRINTF(LOW, "MCU: Writing Mbox%x MBOX_CMD_STATUS: 0x%x\n", mbox_num, test_data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
-
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != (test_data & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK)) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD_STATUS during user MB lock\n", mbox_num);
+    value_before = mcu_mbox_read_execute(mbox_num);
+    mcu_mbox_clear_execute(mbox_num);
+    if ((value_before != 1) || (mcu_mbox_read_execute(mbox_num) != value_before)) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root changed Requester-owned EXECUTE\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Try writing MBOX_USER
+    // USER, LOCK, and HW_STATUS are read-only.
     test_data = xorshift32();
-    VPRINTF(LOW, "MCU: Trying Mbox%x MBOX_USER Write: 0x%x\n", mbox_num, test_data); 
+    value_before = mcu_mbox_read_mbox_user(mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
-
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num) == test_data) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x MBOX_USER register\n", mbox_num);
+    if (mcu_mbox_read_mbox_user(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Changed read-only Mbox%x USER\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Try writing MBOX_LOCK
-    VPRINTF(LOW, "MCU: Trying Mbox%x MBOX_LOCK write to 0\n", mbox_num); 
+    value_before = mcu_mbox_read_lock(mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
-
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num) != 0x1) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x MBOX_LOCK register\n", mbox_num);
+    if (mcu_mbox_read_lock(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Changed read-only Mbox%x LOCK\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Try writing HW_STATUS
-    test_data = xorshift32();
-    VPRINTF(LOW, "MCU: Trying Mbox%x HW_STATUS write: 0%x\n", mbox_num, test_data); 
+    value_before = mcu_mbox_read_hw_status(mbox_num);
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK | MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK);
-    
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num) != 0x0) {
-        VPRINTF(FATAL, "MCU: Was able to change read-only Mbox%x HW_STATUS register\n", mbox_num);
+    if (mcu_mbox_read_hw_status(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Changed read-only Mbox%x HW_STATUS\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Write TARGET_USER
-    test_data = xorshift32();
-    VPRINTF(LOW, "MCU: Writing Mbox%x TARGET_USER write: 0x%x\n", mbox_num, test_data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, test_data);
-
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num) != test_data) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%xTARGET_USER during user MB lock\n", mbox_num);
+    // Root owns target configuration and CMD_STATUS.
+    mcu_mbox_write_target_user(mbox_num, target_axi_user);
+    if (mcu_mbox_read_target_user(mbox_num) != target_axi_user) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x TARGET_USER as Root\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Write TARGET_USER_VALID
-    VPRINTF(LOW, "MCU: Writing Mbox%x TARGET_USER_VALID write to 0\n", mbox_num); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK);
-
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num) != MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x TARGET_USER_VALID during user MB lock\n", mbox_num);
+    value_before = mcu_mbox_read_target_status(mbox_num);
+    mcu_mbox_write_target_status(mbox_num, MCU_MBOX_TARGET_STATUS_FAILURE);
+    if (mcu_mbox_read_target_status(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root changed Target-owned TARGET_STATUS\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    //// MBOX: Clear execute
-    VPRINTF(LOW, "MCU: Clearing Execute in Mbox%x\n", mbox_num);
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0x0);
+    mcu_mbox_write_target_user_valid(mbox_num, 1);
+    if (mcu_mbox_read_target_user_valid(mbox_num) != 1) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x TARGET_USER_VALID as Root\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+    if (mcu_mbox_read_sram_owner(mbox_num) != MCU_MBOX_SRAM_OWNER_TARGET) {
+        VPRINTF(FATAL, "MCU: Mbox%x SRAM owner should be Target after grant\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 
-    if (lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num) != 0) {
-        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x EXECUTE during user MB lock\n", mbox_num);
+    mcu_mbox_write_cmd_status(mbox_num, MCU_MBOX_CMD_COMPLETE);
+    if (mcu_mbox_read_cmd_status(mbox_num) != MCU_MBOX_CMD_COMPLETE) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD_STATUS as Root\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+    if (mcu_mbox_read_sram_owner(mbox_num) != MCU_MBOX_SRAM_OWNER_TARGET) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root CMD_STATUS write stole ownership from Target\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 }
 
-// Test (in conjuction with Caliptra uC C code) does a series of MCU mailbox writes and reads between MCU and Caliptra uC
+// Test (in conjunction with Caliptra uC C code) checks MCU Root access while an
+// external Requester holds the mailbox lock.
 // 1. Caliptra uC acquires mailbox, writes data to SRAM, sets EXECUTE
 // 2. MCU waits for execute
-// 3. MCU writes SRAM and CSRs reads them back to confirm writes could occur for RW registers (and not for RO)
+// 3. MCU verifies Root can write response SRAM/DLEN, target configuration, and
+//    CMD_STATUS, but cannot write Requester-owned CMD/EXECUTE or TARGET_STATUS
 
 void main (void) {
     int argc=0;
@@ -221,7 +226,7 @@ void main (void) {
         while(1);
     }
     
-    mcu_mbox_write_sram_and_csrs(mbox_num);
+    mcu_mbox_check_root_access(mbox_num, caliptra_uc_axi_id);
 
     VPRINTF(LOW, "MCU: Sequence complete\n");
 
