@@ -161,6 +161,9 @@ typedef struct {
     uint16_t wLength;
 } usb_setup_pkt_t;
 
+typedef const uint8_t *(*usb_config_descriptor_provider_t)(uint16_t *len);
+typedef bool (*usb_class_request_handler_t)(const usb_setup_pkt_t *setup);
+
 // -------------------------------------------------------------------------
 // Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
 // Defined in usb.c. Tests that need a custom descriptor may define their own
@@ -178,8 +181,8 @@ extern const uint32_t usb_default_device_descriptor[5];
 // config-descriptor and class-request hooks BEFORE enumeration can begin;
 // pass 0 for either to use the built-in default (no config descriptor /
 // STALL class requests).
-void boot_usb_core(const uint8_t *(*config_desc_fn)(uint16_t *len),
-                   bool (*class_req_fn)(const usb_setup_pkt_t *setup));
+void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
+                   usb_class_request_handler_t class_req_fn);
 
 // Re-arm EP0 OUT, SETUP, and IN buffer address entries in the EP list.
 // Must be called after any bus reset to restore hardware-cleared entries.
