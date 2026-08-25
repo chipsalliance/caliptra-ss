@@ -172,7 +172,7 @@ void cptra_mcu_mbox_wait_for_status(uint32_t mbox_num, uint32_t attempt_count, e
     VPRINTF(LOW, "Caliptra: Waiting for Mbox%x Status: 0x%x\n", mbox_num, cmd_status);
     addr = SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num;
     for(uint32_t ii=0; ii<attempt_count; ii++) {
-        status = cptra_axi_dword_read(addr) & MCU_MBOX0_CSR_MBOX_LOCK_LOCK_MASK;
+        status = (cptra_axi_dword_read(addr) & MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_MASK) >> MCU_MBOX0_CSR_MBOX_CMD_STATUS_STATUS_LOW;
 
         if(status == cmd_status){
             VPRINTF(LOW, "Caliptra: Mbox%x Status 0x%x Seen!\n", mbox_num, cmd_status);
