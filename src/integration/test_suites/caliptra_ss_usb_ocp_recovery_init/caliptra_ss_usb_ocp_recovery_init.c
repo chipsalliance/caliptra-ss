@@ -53,8 +53,6 @@ uint8_t main(void) {
     VPRINTF(LOW, "MCU: USB OCP recovery init test\n");
     VPRINTF(LOW, "===============================\n\n");
 
-    boot_mcu();
-
     usb_dump_state("pre-boot");
     // Boot the USB device controller AND advertise the OCP recovery interface
     // in one step: the OCP composite config descriptor + recovery class-request
@@ -63,11 +61,15 @@ uint8_t main(void) {
     // class endpoints (OCP Recovery v1.1 sec 8.5: recovery interface must be
     // advertised before any class request; otherwise GET_DESCRIPTOR(CONFIG) and
     // class requests would be STALLed).
-    boot_usb_core(usb_ocp_recovery_get_v1p1_config_descriptor,
-                  usb_ocp_recovery_handle_class_request);
+    mcu_cptra_init_d(
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cptra_wdt_cfg_0=1u,
+        .cfg_boot_usb_core=true,
+        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
+        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
     usb_dump_state("post-boot");
 
-    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
 
     // Per debug RCA (research/usb_setup_nak_root_cause.md): the Caliptra

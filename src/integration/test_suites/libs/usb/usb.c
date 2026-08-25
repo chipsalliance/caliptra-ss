@@ -100,8 +100,8 @@ const uint32_t usb_default_device_descriptor[5] = {
 //   0x140-0x17F: EP0 OUT data buffer (64 bytes)
 //   0x180-0x1BF: EP0 IN data buffer (64 bytes)
 // -------------------------------------------------------------------------
-void boot_usb_core(const uint8_t *(*config_desc_fn)(uint16_t *len),
-                   bool (*class_req_fn)(const usb_setup_pkt_t *setup)) {
+void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
+                   usb_class_request_handler_t class_req_fn) {
     uint32_t reg_data;
 
     // Install the application's USB config-descriptor and class-request hooks

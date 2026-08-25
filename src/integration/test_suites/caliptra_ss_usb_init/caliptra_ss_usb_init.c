@@ -53,16 +53,15 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU: USB init test\n=================\n\n");
 
-    // Standard MCU boot sequence
-    boot_mcu();
+    // Initialize USB before releasing Caliptra's boot breakpoint so the PHY and
+    // pull-up can settle while Caliptra completes boot. Null hooks select the
+    // built-in USB descriptors and standard-request handling.
+    mcu_cptra_init_d(
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cptra_wdt_cfg_0=1u,
+        .cfg_boot_usb_core=true);
 
-    // Initialize USB device controller BEFORE Caliptra bringup.
-    // USB PHY and pull-up need time to settle while Caliptra boots.
-    // No application descriptor/class hooks: use the built-in USB defaults.
-    boot_usb_core(0, 0);
-
-    // Caliptra core bringup
-    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 

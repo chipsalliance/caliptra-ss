@@ -256,10 +256,22 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // CPTRA WDT CONFIGURATION
     ///////////////////////////////
     if (args.cfg_cptra_wdt) {
-        update_cptra_wdt_cfg(1000, 250, 0);
+        update_cptra_wdt_cfg(args.cptra_timer_cfg,
+                             args.cptra_wdt_cfg_1,
+                             args.cptra_wdt_cfg_0);
     }
-    else{
+    else if (!args.cfg_cptra_wdt) {
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip CPTRA WDT\n");
+    }
+
+    /////////////////////////////////
+    // BOOT USB
+    /////////////////////////////////
+    if (args.cfg_boot_usb_core) {
+        boot_usb_core(args.usb_config_desc_fn, args.usb_class_req_fn);
+    }
+    else {
+        VPRINTF(LOW, "MCU: Skipping USB Core boot\n");
     }
 
     /////////////////////////////////

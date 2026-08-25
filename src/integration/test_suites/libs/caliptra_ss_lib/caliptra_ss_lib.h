@@ -20,6 +20,7 @@
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
+#include "usb.h"
 #include "stdint.h"
 #include <stdbool.h>
 
@@ -135,6 +136,14 @@ typedef struct {
 
     // WDT
     bool cfg_cptra_wdt;
+    uint16_t cptra_timer_cfg;
+    uint16_t cptra_wdt_cfg_1;
+    uint16_t cptra_wdt_cfg_0;
+
+    // USB
+    bool cfg_boot_usb_core;
+    usb_config_descriptor_provider_t usb_config_desc_fn;
+    usb_class_request_handler_t usb_class_req_fn;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -158,8 +167,15 @@ typedef struct {
     .cfg_boot_i3c_core          = false, \
     /* Trigger Prod ROM */                    \
     .cfg_trigger_prod_rom            = false, \
-    /* WDT */                                \
-    .cfg_cptra_wdt                   = false
+    /* WDT */                                 \
+    .cfg_cptra_wdt                   = false,  \
+    .cptra_timer_cfg                 = 1000u,  \
+    .cptra_wdt_cfg_1                 = 250u,   \
+    .cptra_wdt_cfg_0                 = 0u,     \
+    /* USB */                                 \
+    .cfg_boot_usb_core               = false,  \
+    .usb_config_desc_fn              = 0,      \
+    .usb_class_req_fn                = 0
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!

@@ -88,10 +88,13 @@ uint8_t main(void)
     uint32_t baseline_bus_reset_count = 0u;
     uint8_t baseline_valid = 0u;
 
-    boot_mcu();
-    boot_usb_core(usb_ocp_recovery_get_v1p1_config_descriptor,
-                  usb_ocp_recovery_handle_class_request);
-    mcu_cptra_advance_brkpoint();
+    mcu_cptra_init_d(
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cptra_wdt_cfg_0=1u,
+        .cfg_boot_usb_core=true,
+        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
+        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
     mcu_cptra_user_init();
 
     while (!mcu_cptra_mb_ready_nb() || !usb_is_configured()) {
