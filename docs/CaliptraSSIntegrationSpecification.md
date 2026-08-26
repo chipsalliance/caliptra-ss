@@ -2235,7 +2235,7 @@ If the SOC supports MCU No Rom Config the SOC must drive the halt_ack/status dur
 
 MCI exposed the debug state of the chip to MCU via an interrupt `notif_debug_locked_sts` and a status register `SECURITY_STATE.debug_locked`. There is no defined use case for this feature at subsystem level, unlike in Caliptra where security assets are cleared when entering debug locked state. Therefore, it is recommended this interrupt remains disabled using `notif_debug_locked_en`.
 
-If there is a need to use debug state the recommened flow to avoid missing a debug locked transition is:
+If there is a need to use debug state the recommended flow to avoid missing a debug locked transition is:
 
 1. Out of reset MCU W1C `notif_debug_locked_sts`
 2. MCU reads `SECURITY_STATE.debug_locked` and acts on the value seen

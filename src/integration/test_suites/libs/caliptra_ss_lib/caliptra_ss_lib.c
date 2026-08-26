@@ -737,14 +737,14 @@ void boot_i3c_reg(void) {
     //-- PROT_CAP
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers..\n");
     
-    i3c_reg_data = 0x2050434f;
+    i3c_reg_data = I3C_PROT_CAP_0_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
-    i3c_reg_data = 0x56434552;
+    i3c_reg_data = I3C_PROT_CAP_1_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
 
-    i3c_reg_data = 0x00000101;
+    i3c_reg_data = I3C_PROT_CAP_2_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_2 with 'h %0x\n", i3c_reg_data);    
 
