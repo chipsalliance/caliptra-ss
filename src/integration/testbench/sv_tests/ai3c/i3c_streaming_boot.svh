@@ -51,8 +51,7 @@ class i3c_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 		test_log.substep("Reading PROT_CAP register");
 		
-		exp_data = new[15];
-		exp_data = '{'h4f, 'h43, 'h50, 'h20, 'h52, 'h45, 'h43, 'h56, 'h01, 'h01, 'h00, 'h00, 'h00, 'h00, 'h00};
+		build_prot_cap_exp_data(exp_data);
 		i3c_read(recovery_target_addr, `I3C_CORE_PROT_CAP, 15, data);
 		check_data(data, exp_data, 15);
 

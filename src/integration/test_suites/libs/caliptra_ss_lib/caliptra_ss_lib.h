@@ -28,6 +28,27 @@
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
 
+// OCP recovery PROT_CAP values programmed by boot_i3c_reg().
+// The MCU is the single owner of PROT_CAP; no other agent may write these registers.
+// The AI3C testbench golden vector in
+// src/integration/testbench/sv_tests/ai3c/cptra_ss_i3c_core_defines.svh must match.
+#define I3C_PROT_CAP_0_VALUE            0x2050434f  // "OCP " magic
+#define I3C_PROT_CAP_1_VALUE            0x56434552  // "RECV" magic
+
+// PROT_CAP_2: byte 8 major version, byte 9 minor version, bytes 10-11 agent capabilities
+// Only Identification and FIFO CMS (INDIRECT_FIFO_CTRL) are advertised.
+#define I3C_PROT_CAP_MAJOR_VERSION      0x1
+#define I3C_PROT_CAP_MINOR_VERSION      0x1
+#define I3C_PROT_CAP_IDENTIFICATION_BIT 0   // Identification (DEVICE_ID structure)
+#define I3C_PROT_CAP_FIFO_CMS_BIT       12  // FIFO CMS support (INDIRECT_FIFO_CTRL)
+
+#define I3C_PROT_CAP_AGENT_CAPS         ((1 << I3C_PROT_CAP_IDENTIFICATION_BIT) | \
+                                         (1 << I3C_PROT_CAP_FIFO_CMS_BIT))
+
+#define I3C_PROT_CAP_2_VALUE            ((I3C_PROT_CAP_MAJOR_VERSION << 0)  | \
+                                         (I3C_PROT_CAP_MINOR_VERSION << 8)  | \
+                                         (I3C_PROT_CAP_AGENT_CAPS    << 16))
+
 #define FC_LCC_CMD_OFFSET 0x90
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
 #define CMD_FORCE_FC_AWUSER_CPTR_CORE   FC_LCC_CMD_OFFSET + 0x03
