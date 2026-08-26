@@ -36,14 +36,13 @@
 #define I3C_PROT_CAP_1_VALUE            0x56434552  // "RECV" magic
 
 // PROT_CAP_2: byte 8 major version, byte 9 minor version, bytes 10-11 agent capabilities
+// Only Identification and FIFO CMS (INDIRECT_FIFO_CTRL) are advertised.
 #define I3C_PROT_CAP_MAJOR_VERSION      0x1
 #define I3C_PROT_CAP_MINOR_VERSION      0x1
-#define I3C_PROT_CAP_PUSH_C_IMAGE_BIT   7   // Push-C-Image support
-#define I3C_PROT_CAP_FLASHLESS_BOOT_BIT 11  // Flashless boot (from reset)
+#define I3C_PROT_CAP_IDENTIFICATION_BIT 0   // Identification (DEVICE_ID structure)
 #define I3C_PROT_CAP_FIFO_CMS_BIT       12  // FIFO CMS support (INDIRECT_FIFO_CTRL)
 
-#define I3C_PROT_CAP_AGENT_CAPS         ((1 << I3C_PROT_CAP_PUSH_C_IMAGE_BIT)   | \
-                                         (1 << I3C_PROT_CAP_FLASHLESS_BOOT_BIT) | \
+#define I3C_PROT_CAP_AGENT_CAPS         ((1 << I3C_PROT_CAP_IDENTIFICATION_BIT) | \
                                          (1 << I3C_PROT_CAP_FIFO_CMS_BIT))
 
 #define I3C_PROT_CAP_2_VALUE            ((I3C_PROT_CAP_MAJOR_VERSION << 0)  | \

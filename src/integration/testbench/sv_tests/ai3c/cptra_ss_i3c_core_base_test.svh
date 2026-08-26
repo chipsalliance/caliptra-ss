@@ -450,13 +450,13 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
     //-- PROT_CAP is programmed once by the MCU in boot_i3c_reg(), so every I3C test expects the
     //-- same value. Bytes 0-7 hold the "OCP RECV" magic, bytes 8-9 the protocol major/minor
     //-- version, bytes 10-11 the agent capabilities and bytes 12-14 are reserved as zero.
+    //-- FIFO CMS and Identification are the only advertised capabilities.
     virtual task build_prot_cap_exp_data(output bit [7:0] exp_data[]);
 
         exp_data = new[15];
         exp_data = '{'h4f, 'h43, 'h50, 'h20, 'h52, 'h45, 'h43, 'h56, 'h01, 'h01, 'h00, 'h00, 'h00, 'h00, 'h00};
-        exp_data[10] |= 1 << `I3C_PROT_CAP_PUSH_C_IMAGE_BIT;              //-- Push-C-Image support
-        exp_data[11] |= 1 << (`I3C_PROT_CAP_FLASHLESS_BOOT_BIT - 8);      //-- Flashless boot (from reset)
-        exp_data[11] |= 1 << (`I3C_PROT_CAP_FIFO_CMS_BIT - 8);            //-- FIFO CMS support (INDIRECT_FIFO_CTRL)
+        exp_data[10] |= 1 << `I3C_PROT_CAP_IDENTIFICATION_BIT;  //-- Identification (DEVICE_ID structure)
+        exp_data[11] |= 1 << (`I3C_PROT_CAP_FIFO_CMS_BIT - 8);  //-- FIFO CMS support (INDIRECT_FIFO_CTRL)
 
         test_log.substep($psprintf("Expected PROT_CAP agent capabilities: 'h %0h%0h", exp_data[11], exp_data[10]));
 
