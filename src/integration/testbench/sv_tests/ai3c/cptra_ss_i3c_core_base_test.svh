@@ -458,7 +458,7 @@ class cptra_ss_i3c_core_base_test extends ai3ct_base;
         exp_data[10] |= 1 << `I3C_PROT_CAP_IDENTIFICATION_BIT;  //-- Identification (DEVICE_ID structure)
         exp_data[11] |= 1 << (`I3C_PROT_CAP_FIFO_CMS_BIT - 8);  //-- FIFO CMS support (INDIRECT_FIFO_CTRL)
 
-        test_log.substep($psprintf("Expected PROT_CAP agent capabilities: 'h %0h%0h", exp_data[11], exp_data[10]));
+        test_log.substep($psprintf("Expected PROT_CAP agent capabilities: 'h %02h%02h", exp_data[11], exp_data[10]));
 
     endtask
 
