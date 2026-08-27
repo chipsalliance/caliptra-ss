@@ -151,7 +151,7 @@ jobs:
 
   # Check generated RDL outputs
   rdl_check:
-    name: RDL Generation Check
+    name: RDL File Check
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name == 'pull_request') || (github.event_name == 'workflow_dispatch') }}
     steps:
