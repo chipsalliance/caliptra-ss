@@ -752,6 +752,12 @@
 #define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_LOW                                                    (0)
 #define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_MASK                                                   (0x1)
 #endif
+#define MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU                                                         (0x41c)
+#ifndef MCI_REG_SS_DEBUG_INTENT_MCU
+#define MCI_REG_SS_DEBUG_INTENT_MCU                                                                 (0x41c)
+#define MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_LOW                                                (0)
+#define MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_MASK                                               (0x1)
+#endif
 #define MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY                                                       (0x440)
 #ifndef MCI_REG_SS_CONFIG_DONE_STICKY
 #define MCI_REG_SS_CONFIG_DONE_STICKY                                                               (0x440)
@@ -2648,8 +2654,6 @@
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
-#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
 #define MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                       (0x600020)
 #ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
@@ -2664,6 +2668,8 @@
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
 #endif
 #define MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                             (0x800000)
 #define MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                                   (0x800000)
@@ -2707,8 +2713,6 @@
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
-#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
 #define MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                       (0xa00020)
 #ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
@@ -2723,6 +2727,8 @@
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
 #endif
 #define MCI_TOP_MCU_SRAM_BASE_ADDR                                                                  (0xc00000)
 #define MCI_TOP_MCU_SRAM_END_ADDR                                                                   (0xdfffff)

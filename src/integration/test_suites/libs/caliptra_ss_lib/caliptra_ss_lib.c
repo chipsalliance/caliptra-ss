@@ -577,14 +577,15 @@ bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count)
     return false;
 }
 
-bool mcu_mbox_wait_for_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count) {
-    VPRINTF(LOW, "MCU: Waiting for caliptra (as TARGET USER) to set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+// A terminal (non-BUSY) TARGET_STATUS write by the Target returns SRAM ownership
+// to MCU and clears TARGET_USER in hardware.
+bool mcu_mbox_wait_for_target_status(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra (as TARGET USER) to set TARGET_STATUS to completion code: 0x%x (%x\n", status, mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         uint32_t reg_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
-        bool target_done = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK) != 0;
         reg_data = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK) >> MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW;
-        if(target_done & (reg_data == status)){
-            VPRINTF(LOW, "MCU: Caliptra (as TARGET USER) set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+        if(reg_data == status){
+            VPRINTF(LOW, "MCU: Caliptra (as TARGET USER) set TARGET_STATUS to completion code: 0x%x (%x\n", status, mbox_num);
             return true;
         }
     }

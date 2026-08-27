@@ -149,7 +149,7 @@ jobs:
             export CALIPTRA_SS_ROOT=$GITHUB_WORKSPACE
             $GITHUB_WORKSPACE/.github/scripts/license_header_check.sh
 
-  # Check RDL files for modifications
+  # Check generated RDL outputs
   rdl_check:
     name: RDL File Check
     runs-on: ubuntu-22.04

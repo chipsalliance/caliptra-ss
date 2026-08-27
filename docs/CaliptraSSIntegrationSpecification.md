@@ -116,15 +116,15 @@
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [Reset](#reset-1)
       - [MCU Mailbox Doorbell Command DLEN](#mcu-mailbox-doorbell-command-dlen)
-      - [MCI Debug Lock Status](#mci-debug-lock-status)
-      - [MCU to SOC Receiver Flow](#mcu-to-soc-receiver-flow)
-      - [SOC Sender to MCU Flow](#soc-sender-to-mcu-flow)
-      - [SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)](#soc-sender-to-soc-receiver-communication-flow-mcu-as-intermediary)
+      - [MCU to SOC Target Flow](#mcu-to-soc-target-flow)
+      - [SOC Requester to MCU Flow](#soc-requester-to-mcu-flow)
+      - [SOC Requester to SOC Target Communication Flow (MCU as intermediary)](#soc-requester-to-soc-target-communication-flow-mcu-as-intermediary)
     - [MCU JTAG/DMI Access](#mcu-jtagdmi-access)
       - [MCU SRAM JTAG Access](#mcu-sram-jtag-access)
     - [MCU Trace Buffer](#mcu-trace-buffer)
     - [MCU Halt Ack Interface](#mcu-halt-ack-interface)
   - [Sequences : Reset, Boot,](#sequences--reset-boot)
+    - [MCI Debug Lock Status](#mci-debug-lock-status)
     - [MCI Boot Sequencer](#mci-boot-sequencer)
       - [Breakpoint Flow](#breakpoint-flow)
       - [MCU No ROM Config](#mcu-no-rom-config)
@@ -2034,9 +2034,14 @@ Each mailbox can be used for secure and restricted communication between externa
 
 The mailboxes are generic with some specific protocols and legal operations/accesses to ensure their secured and restricted aspect. The command, statuses, and data that are intepreted by the MCU microcontroller (uC), Caliptra uC or other SoC agent are not defined or enforced in this specification.
 
-Since the MCU uC has root access to the mailboxes (even when the mailbox is locked), it can function as an intermediary and facilitate communication between 2 agents (such as Caliptra uC and other SoC agents).
+The MCU uC can function as an intermediary between agents such as Caliptra uC
+and other SoC agents. MCU MBOX SRAM has one exclusive owner at a time, and MCU
+accesses the SRAM only while it is that owner. See
+[MCU Mailbox MCU Access](./CaliptraSSHardwareSpecification.md#mcu-mailbox-mcu-access)
+for the MCU CSR access rules used by the flows below. Software can observe the
+current owner through `MBOX_HW_STATUS.SRAM_OWNER`.
 
-The [Caliptra SS HW MCU Mailbox Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-mailbox) has more details about the specific registers and interrupts used in the mailbox flows.
+The [Caliptra SS HW MCU Mailbox Spec](./CaliptraSSHardwareSpecification.md#mcu-mailbox) has more details about the specific registers and interrupts used in the mailbox flows.
 
 #### MCU Mailbox Limited Trusted AXI users
 
@@ -2055,75 +2060,121 @@ The mailboxes start locked by MCU to prevent any data leaks across warm reset.  
 
 An MBOX doorbell command has no data. When MBOX_DLEN = 0 and MBOX_EXECUTION is cleared, the clearing logic erases the entire MBOX SRAM. To avoid long delays caused by this clearing, firmware should set MBOX_DLEN = 1 when issuing doorbell commands.
 
-#### MCI Debug Lock Status
+#### MCU to SOC Target Flow
 
-MCI exposed the debug state of the chip to MCU via an interrupt `notif_debug_locked_sts` and a status register `SECURITY_STATE.debug_locked`. There is no defined use case for this feature at subsystem level, unlike in Caliptra where security assets are cleared when entering debug locked state. Therefore, it is recommended this interrupt remains disabled using `notif_debug_locked_en`.
+MCU uses
+[`TARGET_USER`](./CaliptraSSHardwareSpecification.md#mcu-mailbox-target-user)
+to identify the SOC Target.
 
-If there is a need to use debug state the recommened flow to avoid missing a debug locked transition is:
+```mermaid
+sequenceDiagram
+    accTitle: MCU requester to SOC receiver mailbox flow
+    accDescr: MCU stages a request, grants exclusive SRAM ownership to a selected SOC receiver, receives target status, and releases the mailbox for zeroization.
+    autonumber
+    participant MCU
+    participant MBOX as MCU MBOX
+    participant SOC as SOC Target
 
-1. Out of reset MCU W1C `notif_debug_locked_sts`
-2. MCU reads `SECURITY_STATE.debug_locked` and acts on the value seen
-3. MCU enables the interrupt using `notif_debug_locked_en`
+    MCU->>MBOX: Read LOCK
+    MBOX-->>MCU: 0, lock granted and owner=ROOT (MCU)
+    MCU->>MBOX: Write SRAM, DLEN, and CMD
+    MCU->>MBOX: Write TARGET_USER=SOC
+    MCU->>MBOX: Write TARGET_USER_VALID=1
+    MCU->>MBOX: Write EXECUTE=1
+    Note over MBOX,SOC: owner=SOC
+    alt Target uses the subsystem sideband wire
+        MBOX-)SOC: cptra_ss_soc_mcu_mbox*_data_avail asserts
+    else MCU notifies the Target directly
+        MCU->>SOC: Sideband notification, for example a mailbox command
+    end
+    SOC->>MBOX: Process or update SRAM and DLEN
+    SOC->>MBOX: Write terminal TARGET_STATUS
+    Note over MCU,MBOX: owner=ROOT (MCU). HW clears TARGET_USER and TARGET_USER_VALID
+    MBOX-)MCU: notif_mbox*_target_done interrupt
+    MCU->>MBOX: Read TARGET_STATUS
+    MCU->>MBOX: Write EXECUTE=0
+    Note over MBOX: SRAM zeroizes through maximum DLEN, then LOCK clears
+```
 
-#### MCU to SOC Receiver Flow
+#### SOC Requester to MCU Flow
 
-1. MCU attempts to lock mailbox by reading ```MBOX_LOCK``` register
-  - If read returns 0, LOCK is granted and will be set to 1
-  - If read returns 1, MBOX is locked for another agent
-2. MCU writes data to ```MBOX_SRAM```
-3. MCU writes data length in bytes to ```MBOX_DLEN```
-4. MCU writes command to ```MBOX_CMD``` register
-5. MCU sets ```MBOX_TARGET_USER``` to SOC Receiver AXI and sets MBOX_TARGET_USER_VALID to 1
-5. MCU writes 1 to ```MBOX_EXECUTE``` register (which asserts cptra_ss_soc_mcu_mbox*_data_avail output)
-6. MCU can directly inform receiver depending on receiver capabilities OR receiver could use cptra_ss_soc_mcu_mbox*_data_avail wire to directly generate an interrupt
-7. Receiver processes command and data in mailbox
-8. Receiver updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
-9. Reciever updates status in ```MBOX_TARGET_STATUS.STATUS``` and sets ```MBOX_TARGET_STATUS.DONE```
-  - This generates interrupt MBOX*_TARGET_DONE to MCU
-10. MCU (in response to MBOX*_TARGET_DONE interrupt) will write 0 to ```MBOX_EXECUTE``` to release the MBOX
-11. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
-  - Mailbox lock cannot be re-acquired until zeroization is complete
+```mermaid
+sequenceDiagram
+    accTitle: SOC sender to MCU mailbox flow
+    accDescr: A SOC sender stages a command, transfers exclusive SRAM ownership to the root agent, typically MCU, polls command status, reads the response, and releases the mailbox.
+    autonumber
+    participant SOC as SOC Requester
+    participant MBOX as MCU MBOX
+    participant MCU
 
-#### SOC Sender to MCU Flow
+    SOC->>MBOX: Read LOCK
+    MBOX-->>SOC: 0, lock granted and owner=SOC
+    SOC->>MBOX: Write SRAM, DLEN, and CMD
+    SOC->>MBOX: Write EXECUTE=1
+    Note over SOC,MBOX: owner=ROOT (MCU)
+    MBOX-)MCU: notif_mbox*_cmd_avail interrupt
+    par Requester polls while MCU processes
+        loop While CMD_STATUS is BUSY
+            SOC->>MBOX: Read CMD_STATUS
+            MBOX-->>SOC: BUSY
+        end
+    and MCU handles request
+        MCU->>MBOX: Process request and prepare response
+        MCU->>MBOX: Write non-BUSY CMD_STATUS
+    end
+    Note over SOC,MBOX: owner=SOC
+    SOC->>MBOX: Read response SRAM and DLEN
+    SOC->>MBOX: Write EXECUTE=0
+    Note over MBOX: SRAM zeroizes through maximum DLEN, then LOCK clears
+```
 
-1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
-  - If read returns 0, LOCK is granted and will be set to 1
-  - If read returns 1, MBOX is locked for another agent
-2. Sender writes data to ```MBOX_SRAM```
-3. Sender writes data length in bytes to ```MBOX_DLEN```
-4. Sender writes command to ```MBOX_CMD``` register
-5. Sender writes 1 to ```MBOX_EXECUTE``` register
-  - This generates MBOX*_CMD_AVAIL interrupt to MCU
-6. MCU processes command and data in mailbox
-7. MCU updates ```MBOX_SRAM``` and ```MBOX_DLEN``` (if there is data to return).
-8. MCU update ```MBOX_CMD_STATUS``` with desired status code
-9. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
-10. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
-  - Mailbox lock cannot be re-acquired until zeroization is complete
+#### SOC Requester to SOC Target Communication Flow (MCU as intermediary)
 
-#### SOC Sender to SOC Receiver Communication Flow (MCU as intermediary)
+The Target may be a SOC agent or the Caliptra AXI user used for external
+staging DMA.
 
-1. Sender attempts to lock mailbox by reading ```MBOX_LOCK``` register
-  - If read returns 0, LOCK is granted and will be set to 1
-  - If read returns 1, MBOX is locked for another agent
-2. Sender writes data to ```MBOX_SRAM```
-3. Sender writes data length in bytes to MBOX_DLEN
-4. Sender writes command to ```MBOX_CMD``` register
-5. Sender writes 1 to ```MBOX_EXECUTE``` register
-  - This generates MBOX*_CMD_AVAIL interrupt to MCU
-6. Sender reads/polls ```MBOX_CMD_STATUS``` for desired completion/ready status
-7. MCU (in response to MBOX*_CMD_AVAIL interrupt) processes command and data
-8. MCU sets ```MBOX_TARGET_USER``` to SOC Receiver AXI and sets MBOX_TARGET_USER_VALID to 1
-9. MCU notifies SOC Receiver they can access MBOX (method depends on SOC Receiver capabilities)
-10. Receiver reads MBOX and processes command and/or data
-11. Receiver potentially updates data in ```MBOX_SRAM``` and ```MBOX_DLEN```
-12. Reciever updates status in ```MBOX_TARGET_STATUS.STATUS``` and sets ```MBOX_TARGET_STATUS.DONE```
-  - This generates interrupt MBOX*_TARGET_DONE to MCU
-13. MCU (in response to MBOX*_TARGET_DONE interrupt) will update ```MBOX_CMD_STATUS``` with final status
-14. Sender sees final desired ```MBOX_CMD_STATUS```
-15. Sender writes 0 to ```MBOX_EXECUTE``` to release the MBOX
-16. MCI clears MBOX CSRs and zeros out data from 0 to the max DLEN set during the whole lock session in ```MBOX_SRAM```
-  - Mailbox lock cannot be re-acquired until zeroization is complete
+```mermaid
+sequenceDiagram
+    accTitle: SOC sender routed through MCU to a target
+    accDescr: Exclusive SRAM ownership moves from a SOC sender to the root agent, typically MCU, to a selected target, back to the root agent, and finally to the original sender.
+    autonumber
+    participant REQ as SOC Requester
+    participant MBOX as MCU MBOX
+    participant MCU
+    participant TGT as SOC or Caliptra Target
+
+    REQ->>MBOX: Read LOCK and stage SRAM, DLEN, CMD
+    Note over REQ,MBOX: owner=SOC Requester
+    REQ->>MBOX: Write EXECUTE=1
+    Note over MCU,MBOX: owner=ROOT (MCU)
+    MBOX-)MCU: notif_mbox*_cmd_avail interrupt
+    MCU->>MBOX: Validate command, range, and target identity
+    MCU->>MBOX: Write TARGET_USER=TGT
+    MCU->>MBOX: Write TARGET_USER_VALID=1
+    Note over MBOX,TGT: owner=Target
+    MCU->>TGT: Sideband notification, for example a Caliptra mailbox command
+    Note over MBOX,TGT: No MCU MBOX interrupt or data-avail wire asserts here
+    TGT->>MBOX: Process or update SRAM and DLEN
+    TGT->>MBOX: Write terminal TARGET_STATUS
+    Note over MCU,MBOX: owner=ROOT (MCU). HW clears TARGET_USER and TARGET_USER_VALID
+    MBOX-)MCU: notif_mbox*_target_done interrupt
+    MCU->>MBOX: Read TARGET_STATUS and finalize response
+    MCU->>MBOX: Write non-BUSY CMD_STATUS
+    Note over REQ,MBOX: owner=SOC Requester
+    REQ->>MBOX: Read CMD_STATUS and response
+    REQ->>MBOX: Write EXECUTE=0
+    Note over MBOX: SRAM zeroizes through maximum DLEN, then LOCK clears
+```
+
+`TARGET_STATUS` and `CMD_STATUS` are
+[separate handshakes](./CaliptraSSHardwareSpecification.md#mcu-mailbox-status-registers).
+The Requester regains ownership only after MCU writes non-BUSY `CMD_STATUS`.
+
+Because the SOC Requester holds the lock in this flow, the
+`cptra_ss_soc_mcu_mbox*_data_avail` wire stays deasserted when MCU programs
+the target configuration. The Target learns that it owns the SRAM only through
+the sideband notification, so MCU shall write `TARGET_USER`, set
+`TARGET_USER_VALID`, and then send the notification.
 
 ### MCU JTAG/DMI Access
 
@@ -2179,6 +2230,16 @@ If the SOC supports MCU No Rom Config the SOC must drive the halt_ack/status dur
 | `cptra_ss_mcu_halt_req_o`     | output    | Used to enable/disable the SOC control of ack/status |
 
 ## Sequences : Reset, Boot,
+
+### MCI Debug Lock Status
+
+MCI exposed the debug state of the chip to MCU via an interrupt `notif_debug_locked_sts` and a status register `SECURITY_STATE.debug_locked`. There is no defined use case for this feature at subsystem level, unlike in Caliptra where security assets are cleared when entering debug locked state. Therefore, it is recommended this interrupt remains disabled using `notif_debug_locked_en`.
+
+If there is a need to use debug state the recommended flow to avoid missing a debug locked transition is:
+
+1. Out of reset MCU W1C `notif_debug_locked_sts`
+2. MCU reads `SECURITY_STATE.debug_locked` and acts on the value seen
+3. MCU enables the interrupt using `notif_debug_locked_en`
 
 ### MCI Boot Sequencer
 

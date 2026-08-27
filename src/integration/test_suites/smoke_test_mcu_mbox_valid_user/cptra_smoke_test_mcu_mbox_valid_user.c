@@ -193,16 +193,11 @@ void caliptra_ss_mcu_mbox_send_data_no_wait_status(uint32_t mbox_num) {
         while(1);
     }
 
-    // Attempt TARGET_USER_VALID write
-    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x TARGET_USER_VALID write\n", mbox_num);
-    write_payload[0] = MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
+    write_payload[0] = 1;
     soc_ifc_axi_dma_send_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, write_payload, 4, 0);
-
     soc_ifc_axi_dma_read_ahb_payload(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 0, read_payload, 4, 0);
-    data_length = read_payload[0];
-
-    if (data_length == MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER was able to be writen by USER: 0x%x \n", mbox_num, 0);
+    if (read_payload[0] != 0) {
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER_VALID was writable by USER\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }

@@ -47,8 +47,6 @@
 `define MCU_MBOX_CSR_MBOX_TARGET_STATUS                                                             (32'h20001c)
 `define MCU_MBOX_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                  (0)
 `define MCU_MBOX_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                 (32'hf)
-`define MCU_MBOX_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                    (4)
-`define MCU_MBOX_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                   (32'h10)
 `endif
 `ifndef MCU_MBOX_CSR_MBOX_CMD_STATUS
 `define MCU_MBOX_CSR_MBOX_CMD_STATUS                                                                (32'h200020)
@@ -61,6 +59,8 @@
 `define MCU_MBOX_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                           (32'h1)
 `define MCU_MBOX_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                            (1)
 `define MCU_MBOX_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                           (32'h2)
+`define MCU_MBOX_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                  (2)
+`define MCU_MBOX_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                 (32'hc)
 `endif
 
 
