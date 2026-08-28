@@ -2565,6 +2565,10 @@ module caliptra_ss_top_tb
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
     `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
 
+    if (SPI_HOST_ENA_TB) begin : gen_spi_host_onehot_assert
+        `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(SpiHostRegWeOnehotCheck_A, caliptra_ss_dut.gen_spi_host_axi.spi_host_axi_i.u_caliptra_ss_spi_host.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
+    end
+
 
 endmodule
 
