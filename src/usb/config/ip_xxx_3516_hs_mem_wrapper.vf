@@ -116,7 +116,6 @@ ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_ctrl_decode.sv
-${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_hwif_adapter.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_rb_adapter.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_cms_fifo.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_fsm.sv

@@ -215,7 +215,7 @@ Clocked by `dev_axi_aclk`
 |---|---|---|
 | **A2** ctrl_decode | `usb_ocp_recovery_ctrl_decode.sv` | Decodes the claimed EP0 SETUP/DATA into a word-wide register-bus (`rb_*`) access stream. |
 | **A0** reg-bus arbiter | (in `usb_ocp_recovery_top.sv`) | Arbitrates the internal register bus between the USB command side and raw EXT aperture accesses; USB has priority, EXT proceeds when USB is idle. |
-| **A3** rb_adapter + register block | `usb_ocp_recovery_rb_adapter.sv`, `usb_ocp_recovery_hwif_adapter.sv`, register block | Maps USB commands to RDL-derived base offsets. EXT accesses bypass this command mapping and use their raw aperture offset directly at the generated CPU interface. |
+| **A3** USB hardware endpoint, rb_adapter + register block | `usb_ocp_recovery_rb_adapter.sv`, `usb_ocp_recovery_reg.sv` | The top-level USB hardware endpoint maps USB commands to RDL-derived base offsets and keeps USB traffic outside firmware CPUif. EXT accesses bypass command mapping and use their raw aperture offset directly at the generated CPU interface. |
 | **A4** cms_fifo | `usb_ocp_recovery_cms_fifo.sv` | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus `WRITE_INDEX`/`READ_INDEX`/full/empty status. |
 | **A5** fsm | `usb_ocp_recovery_fsm.sv` | Recovery state, `RECOVERY_CTRL.ACTIVATE` handling, `PROTOCOL_ERROR` latch, image accounting. |
 
@@ -464,8 +464,8 @@ Commands in the aperture: `PROT_CAP`, `DEVICE_ID`, `DEVICE_STATUS`, `DEVICE_RESE
 - Arbiter: `third_party/usb2/src/ip_xxx_3511/RTL/usb_ocp_recovery_post_sync_arb.{e,m}.vhdl`
 - Service stack: `third_party/usb2/src/integration/rtl/usb_ocp_recovery_top.sv`
   (+ `usb_ocp_recovery_ctrl_decode.sv`, `usb_ocp_recovery_rb_adapter.sv`,
-  `usb_ocp_recovery_hwif_adapter.sv`, `usb_ocp_recovery_cms_fifo.sv`,
-  `usb_ocp_recovery_fsm.sv`, `usb_ocp_recovery_pkg.sv`)
+  `usb_ocp_recovery_cms_fifo.sv`, `usb_ocp_recovery_fsm.sv`,
+  `usb_ocp_recovery_pkg.sv`)
 - Integration wrapper: `third_party/usb2/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv`
 - Register map: `third_party/usb2/systemrdl/usb_ocp_recovery_reg.rdl`
 - Protocol-flow companion: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
