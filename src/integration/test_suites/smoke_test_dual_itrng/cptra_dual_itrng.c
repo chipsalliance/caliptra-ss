@@ -40,6 +40,7 @@
 #include "riscv-csr.h"
 #include "soc_ifc.h"
 #include "riscv_hw_if.h"
+#include "caliptra_ss_lib.h"
 #include <string.h>
 #include <stdint.h>
 #include "printf.h"
@@ -58,7 +59,6 @@ void main(void) {
     uint32_t hw_cfg;
     uint32_t itrng_en;
     uint32_t dual_itrng_en;
-    uint32_t error = 0;
 
     VPRINTF(LOW, "----------------------------------\nCaliptra: SS dual-iTRNG smoke test\n----------------------------------\n");
 
@@ -73,8 +73,7 @@ void main(void) {
     // The subsystem build always compiles the internal TRNG in, so ES0/CSRNG
     // and the combiner must be present.
     if (!itrng_en) {
-        VPRINTF(FATAL, "ERROR: iTRNG_en is 0; subsystem build must have CALIPTRA_INTERNAL_TRNG\n");
-        error++;
+        handle_error("ERROR: iTRNG_en is 0; subsystem build must have CALIPTRA_INTERNAL_TRNG\n");
     }
 
     // dual_iTRNG_en mirrors the itrng1_en strap driven from the SS boundary.
@@ -82,19 +81,10 @@ void main(void) {
     // here means the strap was lost somewhere between the SS top-level port and
     // soc_ifc, which is exactly the integration break this test guards.
     if (!dual_itrng_en) {
-        VPRINTF(FATAL, "ERROR: dual_iTRNG_en is 0 with +CLP_ITRNG1_EN set;\n");
-        VPRINTF(FATAL, "       cptra_ss_cptra_core_itrng1_en_i did not reach soc_ifc\n");
-        error++;
-    } else {
-        VPRINTF(LOW, "Dual iTRNG strap reached soc_ifc: entropy_combiner in combine mode\n");
+        handle_error("ERROR: dual_iTRNG_en is 0 with +CLP_ITRNG1_EN set; cptra_ss_cptra_core_itrng1_en_i did not reach soc_ifc\n");
     }
 
-    if (error) {
-        VPRINTF(FATAL, "Caliptra: SS dual-iTRNG smoke test FAILED (%d error(s))\n", error);
-        SEND_STDOUT_CTRL(0x1);
-        while (1);
-    }
-
+    VPRINTF(LOW, "Dual iTRNG strap reached soc_ifc: entropy_combiner in combine mode\n");
     VPRINTF(LOW, "Caliptra: SS dual-iTRNG smoke test PASSED\n");
 
     // Signal the MCU that Caliptra bringup and the check both succeeded.
