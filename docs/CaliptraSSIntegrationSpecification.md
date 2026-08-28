@@ -440,9 +440,13 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | `CALIPTRA_IMEM_ADDR_WIDTH` | `cptra_ss_cptra_core_imem_addr_o` | Instruction memory address output |
 | External | input     | `CALIPTRA_IMEM_DATA_WIDTH` | `cptra_ss_cptra_core_imem_rdata_i` | Instruction memory read data input |
 | External | input     | 1     | `cptra_ss_cptra_core_bootfsm_bp_i`   | Boot FSM breakpoint input                |
-| External | output    | 1     | `cptra_ss_cptra_core_etrng_req_o`    | External TRNG request output             |
-| External | input     | 4     | `cptra_ss_cptra_core_itrng_data_i`   | Internal TRNG data input                 |
-| External | input     | 1     | `cptra_ss_cptra_core_itrng_valid_i`  | Internal TRNG valid input                |
+| External | output    | 1     | `cptra_ss_cptra_core_etrng0_req_o`   | External TRNG request output for physical noise source 0 (primary) |
+| External | output    | 1     | `cptra_ss_cptra_core_etrng1_req_o`   | External TRNG request output for physical noise source 1 (secondary). Asserted only while `cptra_ss_cptra_core_itrng1_en_i` is set |
+| External | input     | 4     | `cptra_ss_cptra_core_itrng0_data_i`  | Internal TRNG data input, physical noise source 0 |
+| External | input     | 1     | `cptra_ss_cptra_core_itrng0_valid_i` | Internal TRNG valid input, physical noise source 0 |
+| External | input     | 4     | `cptra_ss_cptra_core_itrng1_data_i`  | Internal TRNG data input, physical noise source 1. May be tied to 0 when `cptra_ss_cptra_core_itrng1_en_i` is 0 |
+| External | input     | 1     | `cptra_ss_cptra_core_itrng1_valid_i` | Internal TRNG valid input, physical noise source 1. May be tied to 0 when `cptra_ss_cptra_core_itrng1_en_i` is 0 |
+| External | input     | 1     | `cptra_ss_cptra_core_itrng1_en_i`    | Enables the secondary noise source (dual-iTRNG). 1: the Caliptra core `entropy_combiner` seeds CSRNG with `SHA3-384(ES0\|\|ES1)`. 0: single-source bypass, source 1 unused. Tie to 0 to retain single-iTRNG behavior |
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
 | External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |har

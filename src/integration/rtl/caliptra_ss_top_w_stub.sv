@@ -196,9 +196,13 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_cptra_core_bootfsm_bp_i;
 
 `ifdef CALIPTRA_INTERNAL_TRNG
-    logic cptra_ss_cptra_core_etrng_req_o;
-    logic [3:0] cptra_ss_cptra_core_itrng_data_i;
-    logic cptra_ss_cptra_core_itrng_valid_i;
+    logic cptra_ss_cptra_core_etrng0_req_o;
+    logic cptra_ss_cptra_core_etrng1_req_o;
+    logic [3:0] cptra_ss_cptra_core_itrng0_data_i;
+    logic cptra_ss_cptra_core_itrng0_valid_i;
+    logic [3:0] cptra_ss_cptra_core_itrng1_data_i;
+    logic cptra_ss_cptra_core_itrng1_valid_i;
+    logic cptra_ss_cptra_core_itrng1_en_i;
 `endif
 
     logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i;
@@ -380,8 +384,12 @@ module caliptra_ss_top_w_stub(
         cptra_ss_cptra_core_jtag_trst_n_i = '0;
         cptra_ss_cptra_core_bootfsm_bp_i = '0;
     `ifdef CALIPTRA_INTERNAL_TRNG
-        cptra_ss_cptra_core_itrng_data_i = '0;
-        cptra_ss_cptra_core_itrng_valid_i = '0;
+        cptra_ss_cptra_core_itrng0_data_i = '0;
+        cptra_ss_cptra_core_itrng0_valid_i = '0;
+        cptra_ss_cptra_core_itrng1_data_i = '0;
+        cptra_ss_cptra_core_itrng1_valid_i = '0;
+        // Secondary iTRNG source disabled: entropy_combiner stays in bypass mode.
+        cptra_ss_cptra_core_itrng1_en_i = '0;
     `endif
         cptra_ss_strap_mcu_lsu_axi_user_i = '0;
         cptra_ss_strap_mcu_ifu_axi_user_i = '0;
@@ -569,11 +577,15 @@ module caliptra_ss_top_w_stub(
        
     // TRNG Interface
     `ifdef CALIPTRA_INTERNAL_TRNG
-        // External Request
-        .cptra_ss_cptra_core_etrng_req_o,
-        // Physical Source for Internal TRNG
-        .cptra_ss_cptra_core_itrng_data_i,
-        .cptra_ss_cptra_core_itrng_valid_i,
+        // External Request (one per physical iTRNG source)
+        .cptra_ss_cptra_core_etrng0_req_o,
+        .cptra_ss_cptra_core_etrng1_req_o,
+        // Physical Sources for Internal TRNG
+        .cptra_ss_cptra_core_itrng0_data_i,
+        .cptra_ss_cptra_core_itrng0_valid_i,
+        .cptra_ss_cptra_core_itrng1_data_i,
+        .cptra_ss_cptra_core_itrng1_valid_i,
+        .cptra_ss_cptra_core_itrng1_en_i,
     `endif
     
     

@@ -62,3 +62,4 @@ contents:
         - ../test_suites/smoke_test_fc_debug_intent_integrity_check/smoke_test_fc_debug_intent_integrity_check.yml
         - ../test_suites/smoke_test_fc_digest_read_debug_intent_mcu/smoke_test_fc_digest_read_debug_intent_mcu.yml
         - ../test_suites/caliptra_ss_usb_init/caliptra_ss_usb_init.yml
+        - ../test_suites/smoke_test_dual_itrng/smoke_test_dual_itrng.yml

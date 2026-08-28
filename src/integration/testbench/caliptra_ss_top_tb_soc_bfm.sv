@@ -50,6 +50,14 @@ import css_mcu0_el2_pkg::*;
     output logic         cptra_ss_strap_ocp_lock_en_i,
     output logic [15:0]  cptra_ss_strap_key_release_key_size_i,
 
+    // Dual-iTRNG (entropy_combiner) controls. itrng1_en straps
+    // CPTRA_HW_CONFIG.dual_iTRNG_en inside the Caliptra core, which drives the
+    // combiner's combine_en. second_RNG_triggered models the secondary physical
+    // noise source coming online later than the primary one.
+    output logic         cptra_ss_cptra_core_itrng1_en_i,
+    input  logic         cptra_ss_cptra_core_etrng1_req_o,
+    output logic         second_RNG_triggered,
+
     output logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int,
 
     input  logic cptra_ss_mcu_halt_status_o,
@@ -318,6 +326,53 @@ initial begin
     else begin
         // Randomize when neither plusarg is set
         cptra_ss_strap_ocp_lock_en_i = $urandom();
+    end
+end
+
+
+///////////////////////////////////
+// DUAL iTRNG (ENTROPY COMBINER)
+//////////////////////////////////
+// itrng1_en straps CPTRA_HW_CONFIG.dual_iTRNG_en in the Caliptra core, which
+// drives the entropy_combiner's combine_en. When clear the combiner bypasses
+// to the primary source and the secondary iTRNG pins are unused, matching the
+// prior single-iTRNG behavior.
+initial begin
+    if ($test$plusargs("CLP_ITRNG1_EN")) begin
+        cptra_ss_cptra_core_itrng1_en_i = 1'b1;
+    end
+    else begin
+        cptra_ss_cptra_core_itrng1_en_i = 1'b0;
+    end
+end
+
+// The primary noise source responds directly to etrng0_req. The secondary one
+// is modeled as coming online a random number of cycles (0-100) after ES1
+// first asserts etrng1_req, so the combiner sees ES1 entropy arrive later than
+// ES0. Once triggered it latches until reset. +CLP_SECOND_RNG_DELAY overrides
+// the delay for reproducible runs.
+int unsigned second_rng_delay;
+int unsigned second_rng_count;
+
+initial begin
+    second_RNG_triggered = 1'b0;
+    second_rng_count     = 0;
+    if (!$value$plusargs("CLP_SECOND_RNG_DELAY=%d", second_rng_delay)) begin
+        second_rng_delay = $urandom_range(0, 100);
+    end
+    $display("SECOND_RNG_TRIGGERED will assert ~%0d cycle(s) after etrng1_req", second_rng_delay);
+end
+
+always @(posedge core_clk or negedge cptra_rst_b) begin
+    if (!cptra_rst_b) begin
+        second_RNG_triggered <= 1'b0;
+        second_rng_count     <= 0;
+    end
+    else if (!second_RNG_triggered && cptra_ss_cptra_core_etrng1_req_o) begin
+        if (second_rng_count >= second_rng_delay)
+            second_RNG_triggered <= 1'b1;
+        else
+            second_rng_count <= second_rng_count + 1;
     end
 end
 
