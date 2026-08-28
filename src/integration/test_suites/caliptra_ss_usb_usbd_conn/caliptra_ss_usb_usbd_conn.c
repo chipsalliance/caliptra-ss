@@ -37,22 +37,28 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core();
+    // Hub-enabled mode: boot_usb_core() calls usb_hub_init_and_connect()
+    // internally (programs HUB RAM, sets HUB_EN). Assert HUB_CONNECT here
+    // so the hub presents itself upstream and the host can see USBDC0 behind
+    // hub port 1. Without this call the hub never connects and DCON is never
+    // driven active.
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
 
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
             if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
         if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {
             VPRINTF(LOW, "USB USBD conn: device connected PASSED\r\n");

@@ -33,8 +33,8 @@ package caliptra_ss_usb_test_pkg;
   // FS testcases (pre-existing)
   `include "caliptra_ss_usb_fs_clock_sequence.svh"
   `include "caliptra_ss_usb_fs_clock_test.svh"
-  `include "caliptra_ss_usb_fs_host_traffic_sequence.svh"
-  `include "caliptra_ss_usb_fs_host_traffic_test.svh"
+//  `include "caliptra_ss_usb_fs_host_traffic_sequence.svh"
+//  `include "caliptra_ss_usb_fs_host_traffic_test.svh"
 
   // HS testcases
   `include "caliptra_ss_usb_hs_conn_sequence.svh"

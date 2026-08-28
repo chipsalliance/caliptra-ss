@@ -126,8 +126,19 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         dev_cfg.local_device_cfg[0].functionality_support = svt_usb_types::HS;
 //        dev_cfg.local_device_cfg[0].high_speed_capable    = 1'b1;
         dev_cfg.local_device_cfg[0].device_address        = 0;
+        // This device model (Dev1 in the caliptra-ss topology) is attached
+        // behind the embedded ip_xxx_3511_hs_mem_compound hub's downstream
+        // port 1. connected_hub_device_address=0 tells the VIP the parent hub
+        // is addressed at device address 0 (the hub's own control endpoint,
+        // matching the addressing convention used before SET_ADDRESS(1) is
+        // issued). hub_port_number=1 associates this device with hub
+        // downstream port 1, consistent with the SetPortFeature/
+        // ClearPortFeature(port=1) Hub Class bring-up sequence issued from
+        // caliptra_ss_usb_hs_dev_bulk_out_sequence.svh (hub_port_bringup()).
         dev_cfg.local_device_cfg[0].connected_hub_device_address = 0;
+        dev_cfg.local_device_cfg[0].hub_port_number        = 1;
         dev_cfg.local_device_cfg[0].num_endpoints         = num_endpoints;
+
         // Increase device_timeout to allow MCU firmware time to process
         // SETUP packets and prime endpoint buffers. Default scaledown
         // value is too aggressive for firmware-driven responses.

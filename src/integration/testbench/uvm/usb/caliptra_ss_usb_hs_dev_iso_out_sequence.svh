@@ -185,9 +185,90 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
         // Step 3: Settling delay for MCU firmware EP0 re-arm after bus reset.
         #20us;
 
-        // Step 4: Full HS device enumeration.
-        // Pattern identical to caliptra_ss_usb_hs_dev_bulk_out_sequence:
-        // do_control_xfer() issues finish_item; wait_xfer_done() waits for NOTIFY.
+        // Step 4: Full hub + USBDC0 enumeration.
+        // Mirrors caliptra_ss_usb_hs_dev_bulk_out_sequence exactly:
+        //   4a - enumerate HUB at addr 1
+        //   4b - bring up downstream port 1 (USBDC0)
+        //   4c - enumerate USBDC0 at addr 2
+
+        // ---------------------------------------------------------------
+        // Step 4a: Enumerate the HUB itself at address 1.
+        // ---------------------------------------------------------------
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0008,
+            0, "GET_DESC_DEV_addr0_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0_hub");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_1_hub");
+        #5us;
+
+        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        host_agent_h.reconfigure(usb_cfg);
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
+            1, "GET_DESC_DEV_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0009,
+            1, "GET_DESC_CFG9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0019,
+            1, "GET_DESC_CFG25_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG25_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h2900, 16'h0000, 16'h0009,
+            1, "GET_DESC_HUB9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_HUB9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
+            1, "SET_CONFIG_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_CONFIG_1_hub");
+
+        // ---------------------------------------------------------------
+        // Step 4b: Bring up downstream port 1 (where USBDC0 is attached).
+        // ---------------------------------------------------------------
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h00, 16'h0000, 16'h0001, 16'h0004,
+            1, "GetPortStatus_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "GetPortStatus_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0010, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_CONNECTION_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_CONNECTION_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h03, 16'h0004, 16'h0001, 16'h0000,
+            1, "SetFeature_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "SetFeature_PORT_RESET_Port1");
+        #10us;
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0014, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_RESET_Port1");
+        #10us;
+
+        // Reset VIP anchor to addr=0 before enumerating USBDC0.
+        // USBDC0, having just been port-reset, responds at address 0.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info("USB_HS_DEV_ISO_SEQ",
+            "Reset host agent remote device_address=0 before enumerating USBDC0.",
+            UVM_LOW)
+
+        // ---------------------------------------------------------------
+        // Step 4c: Enumerate USBDC0 (behind hub port 1) at address 2.
+        // ---------------------------------------------------------------
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
             0, "GET_DESC_DEV_addr0", usb_cfg);
@@ -199,32 +280,32 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
         wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
 
         do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0002, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_2", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_2");
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
         host_agent_h.reconfigure(usb_cfg);
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            1, "GET_DESC_DEV_addr1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1");
+            2, "GET_DESC_DEV_addr2", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr2");
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            1, "GET_CONFIG_addr1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_addr1");
+            2, "GET_CONFIG_addr2", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_CONFIG_addr2");
 
         do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            1, "SET_CONFIG_1", usb_cfg);
+            2, "SET_CONFIG_1", usb_cfg);
         wait_xfer_done(host_agent_h, "SET_CONFIG_1");
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            1, "GET_CONFIG_verify", usb_cfg);
+            2, "GET_CONFIG_verify", usb_cfg);
         wait_xfer_done(host_agent_h, "GET_CONFIG_verify");
 
         `uvm_info("USB_HS_DEV_ISO_SEQ", "HS enumeration complete.", UVM_LOW)
@@ -261,7 +342,7 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
             iso_req.fix_anchors(0, 2, 0);
             if (!iso_req.randomize() with {
                     xfer_type                   == svt_usb_transfer::ISOCHRONOUS_OUT_TRANSFER;
-                    device_address              == 1;
+                    device_address              == 2;
                     endpoint_number             == 2;
                     payload_intended_byte_count == `USB_HS_DEV_ISO_BYTES;
                     first_isoc_transaction      == 1;
@@ -289,9 +370,9 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
 
             // ----------------------------------------------------------------
             // Step 6: Allow firmware time to verify OUT data and arm EP2 IN.
-            // 500 us covers OUT data check (~48 us) + SRAM fill + EP list write.
+            // 100 us covers OUT data check (~48 us) + SRAM fill + EP list write.
             // ----------------------------------------------------------------
-            #500us;
+            #100us;
 
             // ----------------------------------------------------------------
             // Step 7a: ISO IN token 0 (Buffer 0, 512 bytes).
@@ -308,7 +389,7 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
             iso_in_req0.fix_anchors(0, 1, 0);
             if (!iso_in_req0.randomize() with {
                     xfer_type                   == svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER;
-                    device_address              == 1;
+                    device_address              == 2;
                     endpoint_number             == 2;
                     payload_intended_byte_count == `USB_HS_DEV_ISO_IN_BYTES;
                     first_isoc_transaction      == 1;
@@ -346,7 +427,7 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
             iso_in_req1.fix_anchors(0, 1, 0);
             if (!iso_in_req1.randomize() with {
                     xfer_type                   == svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER;
-                    device_address              == 1;
+                    device_address              == 2;
                     endpoint_number             == 2;
                     payload_intended_byte_count == `USB_HS_DEV_ISO_IN_BYTES;
                     first_isoc_transaction      == 1;
@@ -407,10 +488,11 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
                     $sformatf("Round %0d ISO IN FAILED: %0d/%0d bytes mismatched.",
                               round, iso_in_err_cnt, `USB_HS_DEV_ISO_BYTES))
 
-            // Inter-round gap: one full USB frame (1 ms) to allow firmware
-            // to re-arm EP2 OUT for the next round.
+            // Inter-round gap: two microframes (250 us) - firmware pre-arms
+            // EP2 OUT for the next round immediately after arming IN, so only
+            // a short settling delay is needed before the next ISO OUT token.
             if (round < `N_ISO_ROUNDS - 1)
-                #1000us;
+                #250us;
 
         end // for round
 
@@ -432,16 +514,15 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
         // FRAME_INT (INTSTAT bit 30) events over ~2 ms (60000 iters at ~33
         // ns/iter), then verifies INTEN FRAME_INT_EN is cleared after disable.
         //
-        // Timing (measured):
-        //   ~4340 us: sequence reaches this point (after ISO round 2 summary)
-        //   ~7504 us: firmware halts
-        //   Target SV end: ~7504 + 300 = ~7804 us
-        //   Hold needed: 7804 - 4340 = ~3464 us -> use 3400 us (measured ok).
+        // Timing: the sequence now reaches this point at ~2200 us (reduced
+        // inter-round delays). Firmware finishes the FRAME_INT phase ~5300 us
+        // after the sequence starts (~7500 us total). Hold 6000 us to ensure
+        // the SV objection outlasts the firmware halt.
         // ----------------------------------------------------------------
         `uvm_info("USB_HS_DEV_ISO_SEQ",
-            "All ISO rounds done. Holding 3400us for firmware FRAME_INT test phase...",
+            "All ISO rounds done. Holding 6000us for firmware FRAME_INT test phase...",
             UVM_LOW)
-        #3400us;
+        #6000us;
         `uvm_info("USB_HS_DEV_ISO_SEQ",
             "FRAME_INT phase observation window elapsed.", UVM_LOW)
 

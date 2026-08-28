@@ -353,21 +353,21 @@ module caliptra_ss_top_tb
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_usb_reg_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    ) cptra_ss_usb_hub_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_usb_host_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    ) cptra_ss_usb_dev0_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
     axi_if #(
         .AW(32), //-- FIXME : Assign a common paramter
         .DW(32), //-- FIXME : Assign a common paramter,
         .IW(`CALIPTRA_AXI_ID_WIDTH),
         .UW(`CALIPTRA_AXI_USER_WIDTH)
-    ) cptra_ss_usb_dma_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+    ) cptra_ss_usb_dev1_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));    
 
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
@@ -1027,118 +1027,118 @@ module caliptra_ss_top_tb
     assign cptra_ss_i3c_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_I3C_IDX].RREADY;
 
     //Interconnect 0 - USB DMA
-    assign cptra_ss_usb_dma_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWVALID;
-    assign cptra_ss_usb_dma_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWADDR[31:0];
-    assign cptra_ss_usb_dma_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWID;
-    assign cptra_ss_usb_dma_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWLEN;
-    assign cptra_ss_usb_dma_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWSIZE;
-    assign cptra_ss_usb_dma_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWBURST;
-    assign cptra_ss_usb_dma_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWLOCK;
-    assign cptra_ss_usb_dma_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWREADY = cptra_ss_usb_dma_s_axi_if.awready;
-    assign cptra_ss_usb_dma_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WVALID;
-    assign cptra_ss_usb_dma_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WDATA;
-    assign cptra_ss_usb_dma_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WSTRB;
-    assign cptra_ss_usb_dma_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WLAST;
-    assign cptra_ss_usb_dma_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WREADY  = cptra_ss_usb_dma_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BVALID  = cptra_ss_usb_dma_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BRESP   = cptra_ss_usb_dma_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BUSER   = cptra_ss_usb_dma_s_axi_if.buser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BID     = cptra_ss_usb_dma_s_axi_if.bid;
-    assign cptra_ss_usb_dma_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BREADY;
-    assign cptra_ss_usb_dma_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARVALID;
-    assign cptra_ss_usb_dma_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARADDR[31:0];
-    assign cptra_ss_usb_dma_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARID;
-    assign cptra_ss_usb_dma_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARLEN;
-    assign cptra_ss_usb_dma_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARSIZE;
-    assign cptra_ss_usb_dma_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARBURST;
-    assign cptra_ss_usb_dma_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARLOCK;
-    assign cptra_ss_usb_dma_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARREADY = cptra_ss_usb_dma_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RVALID  = cptra_ss_usb_dma_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RDATA   = 64'(cptra_ss_usb_dma_s_axi_if.rdata);
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RRESP   = cptra_ss_usb_dma_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RUSER   = cptra_ss_usb_dma_s_axi_if.ruser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RID     = cptra_ss_usb_dma_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RLAST   = cptra_ss_usb_dma_s_axi_if.rlast;
-    assign cptra_ss_usb_dma_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RREADY;
+    assign cptra_ss_usb_dev1_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWVALID;
+    assign cptra_ss_usb_dev1_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWADDR[31:0];
+    assign cptra_ss_usb_dev1_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWID;
+    assign cptra_ss_usb_dev1_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWLEN;
+    assign cptra_ss_usb_dev1_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWSIZE;
+    assign cptra_ss_usb_dev1_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWBURST;
+    assign cptra_ss_usb_dev1_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWLOCK;
+    assign cptra_ss_usb_dev1_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].AWREADY = cptra_ss_usb_dev1_s_axi_if.awready;
+    assign cptra_ss_usb_dev1_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WVALID;
+    assign cptra_ss_usb_dev1_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WDATA;
+    assign cptra_ss_usb_dev1_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WSTRB;
+    assign cptra_ss_usb_dev1_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WLAST;
+    assign cptra_ss_usb_dev1_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].WREADY  = cptra_ss_usb_dev1_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BVALID  = cptra_ss_usb_dev1_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BRESP   = cptra_ss_usb_dev1_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BUSER   = cptra_ss_usb_dev1_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BID     = cptra_ss_usb_dev1_s_axi_if.bid;
+    assign cptra_ss_usb_dev1_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].BREADY;
+    assign cptra_ss_usb_dev1_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARVALID;
+    assign cptra_ss_usb_dev1_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARADDR[31:0];
+    assign cptra_ss_usb_dev1_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARID;
+    assign cptra_ss_usb_dev1_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARLEN;
+    assign cptra_ss_usb_dev1_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARSIZE;
+    assign cptra_ss_usb_dev1_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARBURST;
+    assign cptra_ss_usb_dev1_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARLOCK;
+    assign cptra_ss_usb_dev1_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].ARREADY = cptra_ss_usb_dev1_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RVALID  = cptra_ss_usb_dev1_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RDATA   = 64'(cptra_ss_usb_dev1_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RRESP   = cptra_ss_usb_dev1_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RUSER   = cptra_ss_usb_dev1_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RID     = cptra_ss_usb_dev1_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RLAST   = cptra_ss_usb_dev1_s_axi_if.rlast;
+    assign cptra_ss_usb_dev1_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DMA_IDX].RREADY;
 
     //Interconnect 1 - USB DEV (device registers)
-    assign cptra_ss_usb_reg_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWVALID;
-    assign cptra_ss_usb_reg_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWADDR[31:0];
-    assign cptra_ss_usb_reg_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWID;
-    assign cptra_ss_usb_reg_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWLEN;
-    assign cptra_ss_usb_reg_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWSIZE;
-    assign cptra_ss_usb_reg_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWBURST;
-    assign cptra_ss_usb_reg_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWLOCK;
-    assign cptra_ss_usb_reg_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWREADY = cptra_ss_usb_reg_s_axi_if.awready;
-    assign cptra_ss_usb_reg_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WVALID;
-    assign cptra_ss_usb_reg_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WDATA;
-    assign cptra_ss_usb_reg_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WSTRB;
-    assign cptra_ss_usb_reg_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WLAST;
-    assign cptra_ss_usb_reg_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WREADY  = cptra_ss_usb_reg_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BVALID  = cptra_ss_usb_reg_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BRESP   = cptra_ss_usb_reg_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BUSER   = cptra_ss_usb_reg_s_axi_if.buser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BID     = cptra_ss_usb_reg_s_axi_if.bid;
-    assign cptra_ss_usb_reg_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BREADY;
-    assign cptra_ss_usb_reg_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARVALID;
-    assign cptra_ss_usb_reg_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARADDR[31:0];
-    assign cptra_ss_usb_reg_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARID;
-    assign cptra_ss_usb_reg_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARLEN;
-    assign cptra_ss_usb_reg_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARSIZE;
-    assign cptra_ss_usb_reg_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARBURST;
-    assign cptra_ss_usb_reg_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARLOCK;
-    assign cptra_ss_usb_reg_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARREADY = cptra_ss_usb_reg_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RVALID  = cptra_ss_usb_reg_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RDATA   = 64'(cptra_ss_usb_reg_s_axi_if.rdata);
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RRESP   = cptra_ss_usb_reg_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RUSER   = cptra_ss_usb_reg_s_axi_if.ruser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RID     = cptra_ss_usb_reg_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RLAST   = cptra_ss_usb_reg_s_axi_if.rlast;
-    assign cptra_ss_usb_reg_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RREADY;
+    assign cptra_ss_usb_hub_s_axi_if.awvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWVALID;
+    assign cptra_ss_usb_hub_s_axi_if.awaddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWADDR[31:0];
+    assign cptra_ss_usb_hub_s_axi_if.awid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWID;
+    assign cptra_ss_usb_hub_s_axi_if.awlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWLEN;
+    assign cptra_ss_usb_hub_s_axi_if.awsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWSIZE;
+    assign cptra_ss_usb_hub_s_axi_if.awburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWBURST;
+    assign cptra_ss_usb_hub_s_axi_if.awlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWLOCK;
+    assign cptra_ss_usb_hub_s_axi_if.awuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].AWREADY = cptra_ss_usb_hub_s_axi_if.awready;
+    assign cptra_ss_usb_hub_s_axi_if.wvalid                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WVALID;
+    assign cptra_ss_usb_hub_s_axi_if.wdata                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WDATA;
+    assign cptra_ss_usb_hub_s_axi_if.wstrb                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WSTRB;
+    assign cptra_ss_usb_hub_s_axi_if.wlast                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WLAST;
+    assign cptra_ss_usb_hub_s_axi_if.wuser                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].WREADY  = cptra_ss_usb_hub_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BVALID  = cptra_ss_usb_hub_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BRESP   = cptra_ss_usb_hub_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BUSER   = cptra_ss_usb_hub_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BID     = cptra_ss_usb_hub_s_axi_if.bid;
+    assign cptra_ss_usb_hub_s_axi_if.bready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].BREADY;
+    assign cptra_ss_usb_hub_s_axi_if.arvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARVALID;
+    assign cptra_ss_usb_hub_s_axi_if.araddr                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARADDR[31:0];
+    assign cptra_ss_usb_hub_s_axi_if.arid                       = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARID;
+    assign cptra_ss_usb_hub_s_axi_if.arlen                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARLEN;
+    assign cptra_ss_usb_hub_s_axi_if.arsize                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARSIZE;
+    assign cptra_ss_usb_hub_s_axi_if.arburst                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARBURST;
+    assign cptra_ss_usb_hub_s_axi_if.arlock                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARLOCK;
+    assign cptra_ss_usb_hub_s_axi_if.aruser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].ARREADY = cptra_ss_usb_hub_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RVALID  = cptra_ss_usb_hub_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RDATA   = 64'(cptra_ss_usb_hub_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RRESP   = cptra_ss_usb_hub_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RUSER   = cptra_ss_usb_hub_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RID     = cptra_ss_usb_hub_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RLAST   = cptra_ss_usb_hub_s_axi_if.rlast;
+    assign cptra_ss_usb_hub_s_axi_if.rready                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_DEV_IDX].RREADY;
 
     //-- USB HOST AXI subordinate wiring
-    assign cptra_ss_usb_host_s_axi_if.awvalid                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWVALID;
-    assign cptra_ss_usb_host_s_axi_if.awaddr                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWADDR[31:0];
-    assign cptra_ss_usb_host_s_axi_if.awid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWID;
-    assign cptra_ss_usb_host_s_axi_if.awlen                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWLEN;
-    assign cptra_ss_usb_host_s_axi_if.awsize                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWSIZE;
-    assign cptra_ss_usb_host_s_axi_if.awburst                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWBURST;
-    assign cptra_ss_usb_host_s_axi_if.awlock                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWLOCK;
-    assign cptra_ss_usb_host_s_axi_if.awuser                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWREADY = cptra_ss_usb_host_s_axi_if.awready;
-    assign cptra_ss_usb_host_s_axi_if.wvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WVALID;
-    assign cptra_ss_usb_host_s_axi_if.wdata                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WDATA;
-    assign cptra_ss_usb_host_s_axi_if.wstrb                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WSTRB;
-    assign cptra_ss_usb_host_s_axi_if.wlast                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WLAST;
-    assign cptra_ss_usb_host_s_axi_if.wuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WREADY  = cptra_ss_usb_host_s_axi_if.wready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BVALID  = cptra_ss_usb_host_s_axi_if.bvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BRESP   = cptra_ss_usb_host_s_axi_if.bresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BUSER   = cptra_ss_usb_host_s_axi_if.buser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BID     = cptra_ss_usb_host_s_axi_if.bid;
-    assign cptra_ss_usb_host_s_axi_if.bready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BREADY;
-    assign cptra_ss_usb_host_s_axi_if.arvalid                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARVALID;
-    assign cptra_ss_usb_host_s_axi_if.araddr                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARADDR[31:0];
-    assign cptra_ss_usb_host_s_axi_if.arid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARID;
-    assign cptra_ss_usb_host_s_axi_if.arlen                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARLEN;
-    assign cptra_ss_usb_host_s_axi_if.arsize                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARSIZE;
-    assign cptra_ss_usb_host_s_axi_if.arburst                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARBURST;
-    assign cptra_ss_usb_host_s_axi_if.arlock                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARLOCK;
-    assign cptra_ss_usb_host_s_axi_if.aruser                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARUSER;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARREADY = cptra_ss_usb_host_s_axi_if.arready;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RVALID  = cptra_ss_usb_host_s_axi_if.rvalid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RDATA   = cptra_ss_usb_host_s_axi_if.rdata;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RRESP   = cptra_ss_usb_host_s_axi_if.rresp;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RUSER   = cptra_ss_usb_host_s_axi_if.ruser;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RID     = cptra_ss_usb_host_s_axi_if.rid;
-    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RLAST   = cptra_ss_usb_host_s_axi_if.rlast;
-    assign cptra_ss_usb_host_s_axi_if.rready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RREADY;
+    assign cptra_ss_usb_dev0_s_axi_if.awvalid                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWVALID;
+    assign cptra_ss_usb_dev0_s_axi_if.awaddr                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWADDR[31:0];
+    assign cptra_ss_usb_dev0_s_axi_if.awid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWID;
+    assign cptra_ss_usb_dev0_s_axi_if.awlen                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWLEN;
+    assign cptra_ss_usb_dev0_s_axi_if.awsize                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWSIZE;
+    assign cptra_ss_usb_dev0_s_axi_if.awburst                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWBURST;
+    assign cptra_ss_usb_dev0_s_axi_if.awlock                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWLOCK;
+    assign cptra_ss_usb_dev0_s_axi_if.awuser                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].AWREADY = cptra_ss_usb_dev0_s_axi_if.awready;
+    assign cptra_ss_usb_dev0_s_axi_if.wvalid                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WVALID;
+    assign cptra_ss_usb_dev0_s_axi_if.wdata                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WDATA;
+    assign cptra_ss_usb_dev0_s_axi_if.wstrb                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WSTRB;
+    assign cptra_ss_usb_dev0_s_axi_if.wlast                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WLAST;
+    assign cptra_ss_usb_dev0_s_axi_if.wuser                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].WREADY  = cptra_ss_usb_dev0_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BVALID  = cptra_ss_usb_dev0_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BRESP   = cptra_ss_usb_dev0_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BUSER   = cptra_ss_usb_dev0_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BID     = cptra_ss_usb_dev0_s_axi_if.bid;
+    assign cptra_ss_usb_dev0_s_axi_if.bready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].BREADY;
+    assign cptra_ss_usb_dev0_s_axi_if.arvalid                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARVALID;
+    assign cptra_ss_usb_dev0_s_axi_if.araddr                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARADDR[31:0];
+    assign cptra_ss_usb_dev0_s_axi_if.arid                      = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARID;
+    assign cptra_ss_usb_dev0_s_axi_if.arlen                     = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARLEN;
+    assign cptra_ss_usb_dev0_s_axi_if.arsize                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARSIZE;
+    assign cptra_ss_usb_dev0_s_axi_if.arburst                   = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARBURST;
+    assign cptra_ss_usb_dev0_s_axi_if.arlock                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARLOCK;
+    assign cptra_ss_usb_dev0_s_axi_if.aruser                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].ARREADY = cptra_ss_usb_dev0_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RVALID  = cptra_ss_usb_dev0_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RDATA   = cptra_ss_usb_dev0_s_axi_if.rdata;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RRESP   = cptra_ss_usb_dev0_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RUSER   = cptra_ss_usb_dev0_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RID     = cptra_ss_usb_dev0_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RLAST   = cptra_ss_usb_dev0_s_axi_if.rlast;
+    assign cptra_ss_usb_dev0_s_axi_if.rready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RREADY;
 
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
@@ -1648,28 +1648,77 @@ module caliptra_ss_top_tb
     // USB non-AXI signal declarations (TODO: connect to Synopsys USB VIP)
     // =========================================================================
 
-    // USB SRAM interface
-    logic [63:0]  cptra_ss_usb_mem_q_i;
-    logic [63:0]  cptra_ss_usb_mem_d_o;
-    logic         cptra_ss_usb_mem_cs_o;
-    logic [8:0]   cptra_ss_usb_mem_a_o;
-    logic         cptra_ss_usb_mem_web_out_o;
-    logic [63:0]  cptra_ss_usb_mem_bsel_o;
+    // USB SRAM interfaces: hub descriptor SRAM, USBDC0 SRAM (MCU), USBDC1 SRAM (SoC-uC)
+    logic [63:0]  cptra_ss_usb_hub_desc_mem_q_i;
+    logic [63:0]  cptra_ss_usb_hub_desc_mem_d_o;
+    logic         cptra_ss_usb_hub_desc_mem_cs_o;
+    logic [8:0]   cptra_ss_usb_hub_desc_mem_a_o;
+    logic         cptra_ss_usb_hub_desc_mem_web_out_o;
+    logic [63:0]  cptra_ss_usb_hub_desc_mem_bsel_o;
 
-    // Behavioral SRAM model for USB core (512 x 64-bit)
-    logic [63:0] usb_sram [0:511];
+    logic [63:0]  cptra_ss_usb_dev0_mem_q_i;
+    logic [63:0]  cptra_ss_usb_dev0_mem_d_o;
+    logic         cptra_ss_usb_dev0_mem_cs_o;
+    logic [8:0]   cptra_ss_usb_dev0_mem_a_o;
+    logic         cptra_ss_usb_dev0_mem_web_out_o;
+    logic [63:0]  cptra_ss_usb_dev0_mem_bsel_o;
+
+    logic [63:0]  cptra_ss_usb_dev1_mem_q_i;
+    logic [63:0]  cptra_ss_usb_dev1_mem_d_o;
+    logic         cptra_ss_usb_dev1_mem_cs_o;
+    logic [8:0]   cptra_ss_usb_dev1_mem_a_o;
+    logic         cptra_ss_usb_dev1_mem_web_out_o;
+    logic [63:0]  cptra_ss_usb_dev1_mem_bsel_o;
+
+    // Behavioral SRAM models (512 x 64-bit each) for hub descriptor / dev0 / dev1
+    logic [63:0] usb_hub_desc_sram [0:511];
+    initial begin
+        for (int i = 0; i < 512; i++) usb_hub_desc_sram[i] = 64'h0;
+    end
     always @(posedge core_clk) begin
-        if (cptra_ss_usb_mem_cs_o) begin
-            if (!cptra_ss_usb_mem_web_out_o) begin
-                // Write: apply byte-select mask
+        if (cptra_ss_usb_hub_desc_mem_cs_o) begin
+            if (!cptra_ss_usb_hub_desc_mem_web_out_o) begin
                 for (int b = 0; b < 8; b++) begin
-                    if (cptra_ss_usb_mem_bsel_o[b*8 +: 8] != 8'h00)
-                        usb_sram[cptra_ss_usb_mem_a_o][b*8 +: 8] <= cptra_ss_usb_mem_d_o[b*8 +: 8];
+                    if (cptra_ss_usb_hub_desc_mem_bsel_o[b*8 +: 8] != 8'h00)
+                        usb_hub_desc_sram[cptra_ss_usb_hub_desc_mem_a_o][b*8 +: 8] <= cptra_ss_usb_hub_desc_mem_d_o[b*8 +: 8];
                 end
             end
-            cptra_ss_usb_mem_q_i <= usb_sram[cptra_ss_usb_mem_a_o];
+            cptra_ss_usb_hub_desc_mem_q_i <= usb_hub_desc_sram[cptra_ss_usb_hub_desc_mem_a_o];
         end
     end
+
+    logic [63:0] usb_dev0_sram [0:511];
+    initial begin
+        for (int i = 0; i < 512; i++) usb_dev0_sram[i] = 64'h0;
+    end
+    always @(posedge core_clk) begin
+        if (cptra_ss_usb_dev0_mem_cs_o) begin
+            if (!cptra_ss_usb_dev0_mem_web_out_o) begin
+                for (int b = 0; b < 8; b++) begin
+                    if (cptra_ss_usb_dev0_mem_bsel_o[b*8 +: 8] != 8'h00)
+                        usb_dev0_sram[cptra_ss_usb_dev0_mem_a_o][b*8 +: 8] <= cptra_ss_usb_dev0_mem_d_o[b*8 +: 8];
+                end
+            end
+            cptra_ss_usb_dev0_mem_q_i <= usb_dev0_sram[cptra_ss_usb_dev0_mem_a_o];
+        end
+    end
+
+    logic [63:0] usb_dev1_sram [0:511];
+    initial begin
+        for (int i = 0; i < 512; i++) usb_dev1_sram[i] = 64'h0;
+    end
+    always @(posedge core_clk) begin
+        if (cptra_ss_usb_dev1_mem_cs_o) begin
+            if (!cptra_ss_usb_dev1_mem_web_out_o) begin
+                for (int b = 0; b < 8; b++) begin
+                    if (cptra_ss_usb_dev1_mem_bsel_o[b*8 +: 8] != 8'h00)
+                        usb_dev1_sram[cptra_ss_usb_dev1_mem_a_o][b*8 +: 8] <= cptra_ss_usb_dev1_mem_d_o[b*8 +: 8];
+                end
+            end
+            cptra_ss_usb_dev1_mem_q_i <= usb_dev1_sram[cptra_ss_usb_dev1_mem_a_o];
+        end
+    end
+
 
     // =========================================================================
     // Synopsys USB SVT VIP UTMI+ connection
@@ -1734,7 +1783,6 @@ module caliptra_ss_top_tb
     // USB UTMI PHY interface signal declarations
     logic         cptra_ss_usb_utmi_clk_i;
     logic         cptra_ss_usb_utmi_dev_clk_lock_i;
-    logic         cptra_ss_usb_utmi_hst_clk_lock_i;
     logic [7:0]   cptra_ss_usb_utmi_rxdata_i;
     logic         cptra_ss_usb_utmi_rxvalid_i;
     logic         cptra_ss_usb_utmi_rxactive_i;
@@ -1744,18 +1792,13 @@ module caliptra_ss_top_tb
     logic         cptra_ss_usb_utmi_txready_i;
     logic         cptra_ss_usb_utmi_reset_o;
     logic         cptra_ss_usb_utmi_suspendm_o;
-    logic [1:0]   cptra_ss_usb_utmi_xcvrselect_o;
+    logic         cptra_ss_usb_utmi_xcvrselect_o;
     logic         cptra_ss_usb_utmi_termselect_o;
     logic [1:0]   cptra_ss_usb_utmi_opmode_o;
     logic [1:0]   cptra_ss_usb_utmi_linestate_i;
     logic [3:0]   cptra_ss_usb_utmi_vcontrol_o;
     logic         cptra_ss_usb_utmi_vcontrolloadm_o;
     logic [7:0]   cptra_ss_usb_utmi_vstatus_i;
-    logic         cptra_ss_usb_utmi_hostdisconnect_i;
-    logic         cptra_ss_usb_utmi_id_enable_o;
-    logic         cptra_ss_usb_utmi_id_value_i;
-    logic         cptra_ss_usb_utmi_dppulldown_o;
-    logic         cptra_ss_usb_utmi_dmpulldown_o;
     logic [1:0]   usb_dut_vip_xcvrselect;
 
     // --- UTMI clock and lock signals ---
@@ -1765,7 +1808,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_clk_i          = usb_20_mac_if.utmi_dut_mac_if.CLK;
 `endif
     assign cptra_ss_usb_utmi_dev_clk_lock_i = cptra_ss_pwrgood_i;
-    assign cptra_ss_usb_utmi_hst_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP modeled PHY outputs -> DUT device MAC inputs ---
     // For DUT=HOST PHY tests these signals are driven by nvs_usb_phy directly.
@@ -1776,8 +1818,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_rxerror_i        = usb_20_mac_if.utmi_dut_mac_if.RXError;
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
-    assign cptra_ss_usb_utmi_hostdisconnect_i = usb_20_mac_if.utmi_dut_mac_if.HostDisconnect;
-    assign cptra_ss_usb_utmi_id_value_i       = usb_20_mac_if.utmi_dut_mac_if.IdDig;
 `endif
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP
 
@@ -1793,12 +1833,12 @@ module caliptra_ss_top_tb
     // so normalize any non-HS value to UTMI+ FS instead of letting the VIP
     // interpret 2'b10 as a low-speed device attach.
     assign usb_dut_vip_xcvrselect =
-        (cptra_ss_usb_utmi_xcvrselect_o == 2'b00) ? 2'b00 : 2'b01;
+        (cptra_ss_usb_utmi_xcvrselect_o == 1'b0) ? 2'b00 : 2'b01;
     assign usb_20_mac_if.utmi_dut_mac_if.XcvrSelect  = usb_dut_vip_xcvrselect;
     assign usb_20_mac_if.utmi_dut_mac_if.TermSelect  = cptra_ss_usb_utmi_termselect_o;
     assign usb_20_mac_if.utmi_dut_mac_if.OpMode      = cptra_ss_usb_utmi_opmode_o;
-    assign usb_20_mac_if.utmi_dut_mac_if.DpPulldown  = cptra_ss_usb_utmi_dppulldown_o;
-    assign usb_20_mac_if.utmi_dut_mac_if.DmPulldown  = cptra_ss_usb_utmi_dmpulldown_o;
+    assign usb_20_mac_if.utmi_dut_mac_if.DpPulldown  = 1'b0;
+    assign usb_20_mac_if.utmi_dut_mac_if.DmPulldown  = 1'b0;
 
 
     // --- UTMI+ termination encoding -> legacy UTMI FsPullup / LsPullup ---
@@ -1813,8 +1853,14 @@ module caliptra_ss_top_tb
     //   the VIP device_b_sm in BUS_RESET forever.
     //
     // Keep LsPullup deasserted to avoid false LS-device attach detection.
+`ifdef CALIPTRA_USB_HOST_PHY_TEST
     assign usb_20_mac_if.utmi_dut_mac_if.FsPullup =
         (cptra_ss_usb_utmi_termselect_o == 1'b1) ? 1'b1 : 1'bz;
+`else 
+    assign usb_20_mac_if.utmi_dut_mac_if.FsPullup =
+        (cptra_ss_usb_utmi_termselect_o == 1'b1);
+`endif
+
     assign usb_20_mac_if.utmi_dut_mac_if.LsPullup = 1'b0;
 
     // --- DUT MAC tie-offs for unused MAC-output UTMI signals on mac_if ---
@@ -1932,7 +1978,7 @@ module caliptra_ss_top_tb
         .usb_databus16_8         (1'b0),
         .usb_datain8_15          (8'h0),
         .usb_txvalidh            (1'b0),
-        .usb_xcvr_select         (cptra_ss_usb_utmi_xcvrselect_o[0]),
+        .usb_xcvr_select         (cptra_ss_usb_utmi_xcvrselect_o),
         .usb_term_select         (cptra_ss_usb_utmi_termselect_o),
         .usb_suspendm            (cptra_ss_usb_utmi_suspendm_o),
         .usb_opmode              (cptra_ss_usb_utmi_opmode_o),
@@ -1944,9 +1990,9 @@ module caliptra_ss_top_tb
         .usb_datain0_7           (cptra_ss_usb_utmi_txdata_o),
         .usb_txvalid             (cptra_ss_usb_utmi_txvalid_o),
         .usb_id_pull_up          (1'b0),
-        .usb_id_input            (!cptra_ss_usb_utmi_dmpulldown_o),
-        .usb_dp_pull_down        (cptra_ss_usb_utmi_dppulldown_o),
-        .usb_dm_pull_down        (cptra_ss_usb_utmi_dmpulldown_o),
+        .usb_id_input            (1'b0),
+        .usb_dp_pull_down        (1'b0),
+        .usb_dm_pull_down        (1'b0),
         .usb_drv_vbus            (1'b1),
         .usb_chrg_vbus           (1'b0),
         .usb_dischrg_vbus        (1'b0),
@@ -1967,8 +2013,8 @@ module caliptra_ss_top_tb
         .usb_rxvalid             (cptra_ss_usb_utmi_rxvalid_i),
         .usb_rxactive            (cptra_ss_usb_utmi_rxactive_i),
         .usb_rxerror             (cptra_ss_usb_utmi_rxerror_i),
-        .usb_host_disconnect     (cptra_ss_usb_utmi_hostdisconnect_i),
-        .usb_id_dig              (cptra_ss_usb_utmi_id_value_i),
+        .usb_host_disconnect     (),
+        .usb_id_dig              (),
         .usb_a_valid             (),
         .usb_b_valid             (),
         .usb_vbus_valid          (cptra_ss_usb_USB_VBus_i),
@@ -2173,12 +2219,12 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_s_axi_if_r_sub   (cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub   (cptra_ss_i3c_s_axi_if.w_sub),
 
-        .cptra_ss_usb_dev_s_axi_if_r_sub(cptra_ss_usb_reg_s_axi_if.r_sub),
-        .cptra_ss_usb_dev_s_axi_if_w_sub(cptra_ss_usb_reg_s_axi_if.w_sub),
-        .cptra_ss_usb_host_s_axi_if_r_sub(cptra_ss_usb_host_s_axi_if.r_sub),
-        .cptra_ss_usb_host_s_axi_if_w_sub(cptra_ss_usb_host_s_axi_if.w_sub),
-        .cptra_ss_usb_dma_s_axi_if_r_sub(cptra_ss_usb_dma_s_axi_if.r_sub),
-        .cptra_ss_usb_dma_s_axi_if_w_sub(cptra_ss_usb_dma_s_axi_if.w_sub),
+        .cptra_ss_usb_hub_s_axi_if_r_sub(cptra_ss_usb_hub_s_axi_if.r_sub),
+        .cptra_ss_usb_hub_s_axi_if_w_sub(cptra_ss_usb_hub_s_axi_if.w_sub),
+        .cptra_ss_usb_dev0_s_axi_if_r_sub(cptra_ss_usb_dev0_s_axi_if.r_sub),
+        .cptra_ss_usb_dev0_s_axi_if_w_sub(cptra_ss_usb_dev0_s_axi_if.w_sub),
+        .cptra_ss_usb_dev1_s_axi_if_r_sub(cptra_ss_usb_dev1_s_axi_if.r_sub),
+        .cptra_ss_usb_dev1_s_axi_if_w_sub(cptra_ss_usb_dev1_s_axi_if.w_sub),
 
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
@@ -2333,16 +2379,29 @@ module caliptra_ss_top_tb
         .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
     // USB non-AXI signals (TODO: connect to Synopsys USB VIP)
-        .cptra_ss_usb_mem_q_i           (cptra_ss_usb_mem_q_i),
-        .cptra_ss_usb_mem_d_o           (cptra_ss_usb_mem_d_o),
-        .cptra_ss_usb_mem_cs_o          (cptra_ss_usb_mem_cs_o),
-        .cptra_ss_usb_mem_a_o           (cptra_ss_usb_mem_a_o),
-        .cptra_ss_usb_mem_web_out_o     (cptra_ss_usb_mem_web_out_o),
-        .cptra_ss_usb_mem_bsel_o        (cptra_ss_usb_mem_bsel_o),
+        .cptra_ss_usb_hub_desc_mem_q_i       (cptra_ss_usb_hub_desc_mem_q_i),
+        .cptra_ss_usb_hub_desc_mem_d_o       (cptra_ss_usb_hub_desc_mem_d_o),
+        .cptra_ss_usb_hub_desc_mem_cs_o      (cptra_ss_usb_hub_desc_mem_cs_o),
+        .cptra_ss_usb_hub_desc_mem_a_o       (cptra_ss_usb_hub_desc_mem_a_o),
+        .cptra_ss_usb_hub_desc_mem_web_out_o (cptra_ss_usb_hub_desc_mem_web_out_o),
+        .cptra_ss_usb_hub_desc_mem_bsel_o    (cptra_ss_usb_hub_desc_mem_bsel_o),
+
+        .cptra_ss_usb_dev0_mem_q_i           (cptra_ss_usb_dev0_mem_q_i),
+        .cptra_ss_usb_dev0_mem_d_o           (cptra_ss_usb_dev0_mem_d_o),
+        .cptra_ss_usb_dev0_mem_cs_o          (cptra_ss_usb_dev0_mem_cs_o),
+        .cptra_ss_usb_dev0_mem_a_o           (cptra_ss_usb_dev0_mem_a_o),
+        .cptra_ss_usb_dev0_mem_web_out_o     (cptra_ss_usb_dev0_mem_web_out_o),
+        .cptra_ss_usb_dev0_mem_bsel_o        (cptra_ss_usb_dev0_mem_bsel_o),
+
+        .cptra_ss_usb_dev1_mem_q_i           (cptra_ss_usb_dev1_mem_q_i),
+        .cptra_ss_usb_dev1_mem_d_o           (cptra_ss_usb_dev1_mem_d_o),
+        .cptra_ss_usb_dev1_mem_cs_o          (cptra_ss_usb_dev1_mem_cs_o),
+        .cptra_ss_usb_dev1_mem_a_o           (cptra_ss_usb_dev1_mem_a_o),
+        .cptra_ss_usb_dev1_mem_web_out_o     (cptra_ss_usb_dev1_mem_web_out_o),
+        .cptra_ss_usb_dev1_mem_bsel_o        (cptra_ss_usb_dev1_mem_bsel_o),
 
         .cptra_ss_usb_utmi_clk_i        (cptra_ss_usb_utmi_clk_i),
         .cptra_ss_usb_utmi_dev_clk_lock_i(cptra_ss_usb_utmi_dev_clk_lock_i),
-        .cptra_ss_usb_utmi_hst_clk_lock_i(cptra_ss_usb_utmi_hst_clk_lock_i),
         .cptra_ss_usb_utmi_rxdata_i     (cptra_ss_usb_utmi_rxdata_i),
         .cptra_ss_usb_utmi_rxvalid_i    (cptra_ss_usb_utmi_rxvalid_i),
         .cptra_ss_usb_utmi_rxactive_i   (cptra_ss_usb_utmi_rxactive_i),
@@ -2359,11 +2418,6 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_utmi_vcontrol_o   (cptra_ss_usb_utmi_vcontrol_o),
         .cptra_ss_usb_utmi_vcontrolloadm_o(cptra_ss_usb_utmi_vcontrolloadm_o),
         .cptra_ss_usb_utmi_vstatus_i    (cptra_ss_usb_utmi_vstatus_i),
-        .cptra_ss_usb_utmi_hostdisconnect_i(cptra_ss_usb_utmi_hostdisconnect_i),
-        .cptra_ss_usb_utmi_id_enable_o  (cptra_ss_usb_utmi_id_enable_o),
-        .cptra_ss_usb_utmi_id_value_i   (cptra_ss_usb_utmi_id_value_i),
-        .cptra_ss_usb_utmi_dppulldown_o (cptra_ss_usb_utmi_dppulldown_o),
-        .cptra_ss_usb_utmi_dmpulldown_o (cptra_ss_usb_utmi_dmpulldown_o),
 
         .cptra_ss_usb_ulpi_clk_i        (cptra_ss_usb_ulpi_clk_i),
         .cptra_ss_usb_ulpi_rxdata_i     (cptra_ss_usb_ulpi_rxdata_i),
