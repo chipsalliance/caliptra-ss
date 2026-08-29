@@ -212,6 +212,26 @@ OCP Recovery registers implemented in I3C and USB must follow the security filte
 ### Caliptra 2.2 HW requirements (Subsystem Support)
 
 1. Shall include Dual-noise source support
+
+   Two independent physical noise sources are carried to the subsystem boundary,
+   each with its own external request output, so an integrator can attach two
+   distinct noise-generation technologies:
+
+   - Source 0 (primary): `cptra_ss_cptra_core_etrng0_req_o`,
+     `cptra_ss_cptra_core_itrng0_data_i`, `cptra_ss_cptra_core_itrng0_valid_i`
+   - Source 1 (secondary): `cptra_ss_cptra_core_etrng1_req_o`,
+     `cptra_ss_cptra_core_itrng1_data_i`, `cptra_ss_cptra_core_itrng1_valid_i`
+   - Mode select: `cptra_ss_cptra_core_itrng1_en_i`
+
+   Inside the Caliptra core each source is conditioned by its own `entropy_src`,
+   and the `entropy_combiner` merges the two conditioned outputs as
+   `SHA3-384(ES0||ES1)` into the single CSRNG seed. When
+   `cptra_ss_cptra_core_itrng1_en_i` is 0 the combiner is transparently bypassed
+   (source 0 straight to CSRNG) and the source-1 pins may be left unconnected, so
+   single-noise-source integrations are unaffected. See the Caliptra Core
+   hardware specification, *Dual iTRNG entropy combiner*, for the combiner
+   architecture, its ROM power-on KAT, and the write-once AHB lock.
+
 2. Shall upgrade ABR to the latest source (ABR 3.0)
 
 ### Caliptra 2.0/2.1 HW requirements (Not subsystem related)

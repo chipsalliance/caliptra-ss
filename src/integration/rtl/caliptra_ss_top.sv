@@ -155,11 +155,18 @@ module caliptra_ss_top
 
 // TRNG Interface
 `ifdef CALIPTRA_INTERNAL_TRNG
-    // External Request
-    output logic             cptra_ss_cptra_core_etrng_req_o,
-    // Physical Source for Internal TRNG
-    input  logic [3:0]       cptra_ss_cptra_core_itrng_data_i,
-    input  logic             cptra_ss_cptra_core_itrng_valid_i,
+    // External Request (one per physical iTRNG source)
+    output logic             cptra_ss_cptra_core_etrng0_req_o,
+    output logic             cptra_ss_cptra_core_etrng1_req_o,
+    // Physical Source 0 for Internal TRNG (primary)
+    input  logic [3:0]       cptra_ss_cptra_core_itrng0_data_i,
+    input  logic             cptra_ss_cptra_core_itrng0_valid_i,
+    // Physical Source 1 for Internal TRNG (secondary, dual-iTRNG entropy combiner)
+    input  logic [3:0]       cptra_ss_cptra_core_itrng1_data_i,
+    input  logic             cptra_ss_cptra_core_itrng1_valid_i,
+    // Enables the secondary source. When 0 the entropy_combiner stays in
+    // single-source bypass mode and source 1 may be left unconnected.
+    input  logic             cptra_ss_cptra_core_itrng1_en_i,
 `endif
 
 // Caliptra SS MCU 
@@ -569,18 +576,21 @@ module caliptra_ss_top
         .cptra_error_non_fatal(cptra_error_non_fatal),
 
 `ifdef CALIPTRA_INTERNAL_TRNG
-        // Caliptra core now exposes a dual-iTRNG interface (entropy_combiner IP).
-        // The subsystem boundary carries a single physical iTRNG source, mapped to
-        // the primary (etrng0/itrng0) port. The second source is tied off with
-        // itrng1_en=0 so the combiner operates in single-source bypass mode,
-        // preserving the prior single-iTRNG behavior at the SS boundary.
-        .etrng0_req            (cptra_ss_cptra_core_etrng_req_o),
-        .etrng1_req            (                                 ),
-        .itrng0_data           (cptra_ss_cptra_core_itrng_data_i),
-        .itrng0_valid          (cptra_ss_cptra_core_itrng_valid_i),
-        .itrng1_data           (4'b0),
-        .itrng1_valid          (1'b0),
-        .itrng1_en             (1'b0),
+        // Caliptra core exposes a dual-iTRNG interface (entropy_combiner IP): two
+        // independent physical noise sources are conditioned by separate
+        // entropy_src blocks and combined as SHA3-384(ES0||ES1) into a single
+        // CSRNG seed. Both sources are carried to the subsystem boundary so an
+        // integrator can attach two distinct noise-generation technologies.
+        // itrng1_en selects combine vs bypass: when it is 0 the combiner passes
+        // source 0 through unchanged and the source-1 pins may be left
+        // unconnected, preserving the prior single-iTRNG behavior.
+        .etrng0_req            (cptra_ss_cptra_core_etrng0_req_o),
+        .etrng1_req            (cptra_ss_cptra_core_etrng1_req_o),
+        .itrng0_data           (cptra_ss_cptra_core_itrng0_data_i),
+        .itrng0_valid          (cptra_ss_cptra_core_itrng0_valid_i),
+        .itrng1_data           (cptra_ss_cptra_core_itrng1_data_i),
+        .itrng1_valid          (cptra_ss_cptra_core_itrng1_valid_i),
+        .itrng1_en             (cptra_ss_cptra_core_itrng1_en_i),
 `else
         .etrng0_req            (    ),
         .etrng1_req            (    ),
