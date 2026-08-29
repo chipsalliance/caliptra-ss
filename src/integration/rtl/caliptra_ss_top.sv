@@ -561,8 +561,10 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
 
-        .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i),
-        .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i),
+        .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i
+                             | cptra_ss_usb_recovery_payload_available_i),
+        .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i
+                                 | cptra_ss_usb_recovery_image_activated_i),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -1205,21 +1207,7 @@ module caliptra_ss_top
         .token_length_counter   (7'b0),/* TODO */
         .usb_token_length       (),    /* TODO */
 
-        // ---- OCP Recovery sideband -------------------------------------
-        // The wrapper has more sideband (rec_active, boot_req, device_reset_req,
-        // fatal_err); only the two below have SS-top sideband outputs today.
-        // The other four remain wrapper-internal until a downstream consumer
-        // wires them up (see phase1 RTL design report - sideband promotion).
-        // rec_trigger / soc_boot_ack are platform-defined OCP Recovery v1.1
-        // sideband inputs (Sec 8) with no SoC driver wired today; tie off to
-        // 0 to prevent X-propagation into u_ocp_recovery.u_a5_fsm (which would
-        // latch X into state_q and corrupt every downstream FSM output).
-        // rec_trigger=0 means "no platform-asserted recovery request" (host-
-        // initiated recovery via the command path still works).  soc_boot_ack=0
-        // means "MCU has not yet acked boot_req"; downstream consumer must be
-        // wired in a later phase.
-        .rec_trigger            (1'b0),
-        .soc_boot_ack           (1'b0),
+        // ---- OCP Recovery data-plane sideband --------------------------
         .payload_available      (cptra_ss_usb_payload_available_w),
         .ocp_firmware_activated (cptra_ss_usb_ocp_firmware_activated_w)
     );

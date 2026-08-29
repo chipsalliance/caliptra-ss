@@ -53,6 +53,11 @@ uint32_t cptra_usb_ocp_recovery_pack_ctrl(uint8_t cms,
                                           uint8_t activate);
 
 uint8_t cptra_usb_ocp_recovery_read_device_status(uint8_t *device_status);
+uint8_t cptra_usb_ocp_recovery_write_device_status(uint8_t device_status,
+                                                    uint16_t reason_code);
+uint8_t cptra_usb_ocp_recovery_write_recovery_status(
+    uint8_t recovery_status, uint8_t image_index, uint8_t vendor_status);
+uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations);
 
 uint8_t cptra_usb_ocp_recovery_poll_device_status(
     uint8_t target_status,

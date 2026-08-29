@@ -29,9 +29,9 @@ Two use models share the same device and EP0:
   handled exactly as the unmodified IP would, serviced by device firmware through
   the legacy register-interface endpoint interrupt path.
 - **OCP Recovery.** Recovery-class EP0 control transfers are claimed by dedicated
-  hardware (`usb_ocp_recovery_top`) and serviced autonomously, with no per-command
-  firmware intervention. Image DWORDs land in an on-chip FIFO that Caliptra drains
-  over AXI.
+  hardware (`usb_ocp_recovery_top`) and serviced without per-command firmware
+  intervention. Image DWORDs land in an on-chip FIFO that Caliptra drains over AXI;
+  Caliptra firmware owns recovery progress and the Recovery Agent-visible status.
 
 Both models are simultaneously available once the device is enumerated; the OCP
 path can be globally disabled by a safety fallback bit (Section 5).
@@ -85,13 +85,12 @@ sequenceDiagram
     RA->>HW: read PROT_CAP / DEVICE_STATUS
     RA->>HW: INDIRECT_FIFO_CTRL (image size)
     RA->>HW: INDIRECT_FIFO_DATA (push image DWORDs)
-    Note right of HW: device reports DEVICE_STATUS = Recovery Pending (0x4)
+    CP->>HW: publish DEVICE_STATUS = Recovery Pending (0x4)
     Note over HW,CP: D. Consume + boot (Caliptra)
-    CP->>HW: poll DEVICE_STATUS == 0x4 (AXI)
     CP->>HW: read INDIRECT_FIFO_CTRL / INDIRECT_FIFO_STATUS
     CP->>HW: drain N x INDIRECT_FIFO_DATA (AXI)
     CP->>CP: authenticate image
-    CP->>HW: RECOVERY_CTRL activate
+    CP->>HW: publish recovery result and clear RECOVERY_CTRL activation
 ```
 
 1. **A - Core bring-up.** Device firmware initializes the USB controller in device
@@ -103,10 +102,10 @@ sequenceDiagram
    capabilities/status and streams the image into the CMS FIFO via
    `INDIRECT_FIFO_DATA`. These OCP-class transfers are claimed and serviced
    entirely by `usb_ocp_recovery_top`; firmware is not involved per command.
-4. **D - Consume + boot (Caliptra).** Caliptra, acting as the recovery image
-   consumer, detects the recovery-pending state via `DEVICE_STATUS`, drains
-   `INDIRECT_FIFO_DATA` over AXI, authenticates the image, and activates it via
-   `RECOVERY_CTRL` (Section 7).
+4. **D - Consume + boot (Caliptra).** Caliptra waits for `payload_available`,
+   publishes the corresponding `DEVICE_STATUS` transition, drains
+   `INDIRECT_FIFO_DATA` over AXI, authenticates the image, publishes the result,
+   and clears `RECOVERY_CTRL.ACTIVATE_REC_IMG` after consumption.
 
 ---
 
@@ -125,7 +124,6 @@ flowchart TB
     a0["A0 reg-bus arbiter (USB vs EXT)"]
     a3["A3 rb_adapter + register block"]
     a4["A4 cms_fifo (sync, 64 DWORD)"]
-    a5["A5 recovery FSM"]
     ahb["dev AXI-to-AHB bridge"]
     split["USB local-aperture split<br/>package-defined recovery offset"]
     legacy_ahb["legacy usbhsd AHB path<br/>offset 0x000-0x7ff"]
@@ -137,7 +135,7 @@ flowchart TB
     bus --> phy --> pie
     pie -.->|CDC| sync --> arb
     arb -->|legacy| dma --> regif
-    arb -->|"OCP (rec_*)"| a2 --> a0 --> a3 --> a4 --> a5
+    arb -->|"OCP (rec_*)"| a2 --> a0 --> a3 --> a4
     fab <--> ahb --> split
     split --> legacy_ahb --> regif
     split --> rec_ahb -->|"raw EXT aperture offset"| a0
@@ -145,7 +143,7 @@ flowchart TB
     fab <--> cptra
 ```
 
-Blocks A2-A5 are internal to `usb_ocp_recovery_top` (clock domains are listed in
+Blocks A0/A2-A4 are internal to `usb_ocp_recovery_top` (clock domains are listed in
 Section 4.1). The SoC reaches both the legacy controller and recovery aperture
 through the same device AXI-to-AHB bridge. The wrapper performs only
 package-defined coarse aperture ownership selection; it does not translate an
@@ -167,8 +165,8 @@ are single-domain and require no OCP-specific CDC.
 The recovery stack receives the USB device subordinate reset directly as
 `dev_axi_aresetn` and uses active-low reset naming throughout.
 
-- **Handwritten recovery logic.** `usb_ocp_recovery_top`, A2, A3, the handwritten
-  A4 control logic, and A5 use synchronous `rst_ni` logic in the `dev_axi_aclk`
+- **Handwritten recovery logic.** `usb_ocp_recovery_top`, A2, A3, and the handwritten
+  A4 control logic use synchronous `rst_ni` logic in the `dev_axi_aclk`
   domain. A4's `caliptra_prim_fifo_sync` storage primitive receives the same
   active-low reset asynchronously. Its separate synchronous `clr_i` is the
   mechanism for a FIFO flush or transfer abort, so a batch reset does not rely on
@@ -216,8 +214,7 @@ Clocked by `dev_axi_aclk`
 | **A2** ctrl_decode | `usb_ocp_recovery_ctrl_decode.sv` | Decodes the claimed EP0 SETUP/DATA into a word-wide register-bus (`rb_*`) access stream. |
 | **A0** reg-bus arbiter | (in `usb_ocp_recovery_top.sv`) | Arbitrates the internal register bus between the USB command side and raw EXT aperture accesses; USB has priority, EXT proceeds when USB is idle. |
 | **A3** USB hardware endpoint, rb_adapter + register block | `usb_ocp_recovery_rb_adapter.sv`, `usb_ocp_recovery_reg.sv` | The top-level USB hardware endpoint maps USB commands to RDL-derived base offsets and keeps USB traffic outside firmware CPUif. EXT accesses bypass command mapping and use their raw aperture offset directly at the generated CPU interface. |
-| **A4** cms_fifo | `usb_ocp_recovery_cms_fifo.sv` | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus `WRITE_INDEX`/`READ_INDEX`/full/empty status. |
-| **A5** fsm | `usb_ocp_recovery_fsm.sv` | Recovery state, `RECOVERY_CTRL.ACTIVATE` handling, `PROTOCOL_ERROR` latch, image accounting. |
+| **A4** cms_fifo | `usb_ocp_recovery_cms_fifo.sv` | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus `WRITE_INDEX`/`READ_INDEX`/full/empty status and batch notification. |
 
 ### 4.5 CMS image FIFO
 
@@ -265,80 +262,33 @@ is no separate sideband drain port. EXT FIFO-data reads are held until
 `payload_available` is asserted, and EXT FIFO accesses are deferred while a claimed
 USB FIFO transfer owns the resource.
 
-### 4.7 Recovery state machine (block A5)
+### 4.7 Firmware-owned recovery procedure
 
-The recovery FSM (`usb_ocp_recovery_fsm.sv`) implements the OCP v1.1 Sec 6 recovery
-process. It consumes control-field write strobes from the register block (A3) and
-image-push progress from the CMS FIFO (A4), sequences the recovery, and drives the
-device status registers (`DEVICE_STATUS`, `RECOVERY_STATUS`) plus the SoC sideband
-(`recovery_active`, `image_ready`, `boot_req`, `device_reset_req`, `fatal_err`). It is
-a 10-state machine (`enum logic [3:0]`).
+The hardware does not implement an OCP recovery lifecycle state machine. Caliptra
+firmware owns `DEVICE_STATUS.DEV_STATUS`, `DEVICE_STATUS.REC_REASON_CODE`, all
+`RECOVERY_STATUS` fields, and `HW_STATUS.FATAL_ERR` through the EXT CPU interface.
+The USB Recovery Agent reads those same stored values but cannot write them. Firmware
+uses the OCP-defined state and reason encodings to report recovery entry, pending
+images, execution outcomes, and fatal conditions.
 
-```mermaid
-stateDiagram-v2
-    [*] --> S_IDLE
-    S_IDLE --> S_DETECTED: rec_trigger or RECOVERY_CTRL CMS write
-    S_DETECTED --> S_AWAIT_IMAGE
-    S_AWAIT_IMAGE --> S_PUSH_ACTIVE: image_push_active
-    S_PUSH_ACTIVE --> S_IMAGE_LOADED: image_push_done, size ok
-    S_IMAGE_LOADED --> S_PUSH_ACTIVE: image_push_active
-    S_AWAIT_IMAGE --> S_IMAGE_LOADED: image_push_done, size ok
-    S_IMAGE_LOADED --> S_ACTIVATE: ACTIVATE=0x0F and firmware clear
-    S_ACTIVATE --> S_BOOT_REQ
-    S_BOOT_REQ --> S_DONE: soc_boot_ack
-    S_DONE --> S_DETECTED: rec_trigger
-    S_AWAIT_IMAGE --> S_ERROR: fifo_overflow or size mismatch
-    S_PUSH_ACTIVE --> S_ERROR: fifo_overflow or size mismatch
-    S_AWAIT_IMAGE --> S_AWAIT_IMAGE: FIFO reset or batch abort
-    S_PUSH_ACTIVE --> S_AWAIT_IMAGE: FIFO reset or batch abort
-    S_IMAGE_LOADED --> S_AWAIT_IMAGE: FIFO reset or batch abort
-    S_ACTIVATE --> S_AWAIT_IMAGE: FIFO reset or batch abort
-    S_BOOT_REQ --> S_AWAIT_IMAGE: FIFO reset or batch abort
-    S_RESETTING --> S_IDLE
-    S_ERROR --> S_RESETTING: DEVICE_RESET
+`RECOVERY_CTRL.ACTIVATE_REC_IMG` is a request field: the Recovery Agent sets it and
+firmware clears it after it has consumed and verified the requested image. No
+`boot_req`, `soc_boot_ack`, `recovery_active`, or `image_ready` sideband is generated
+by the USB core. `recovery_image_activated` is the required Caliptra streaming-
+boot level indication and asserts whenever the stored
+`RECOVERY_CTRL.ACTIVATE_REC_IMG` value is `0x0F`, regardless of the write source.
+Firmware performs any platform boot or reset action under its own recovery procedure.
 
-    note right of S_RESETTING
-      A DEVICE_RESET write (ctrl byte != 0) from ANY
-      state enters S_RESETTING, which pulses
-      device_reset_req for one cycle and returns to S_IDLE.
-    end note
-```
+The only control-plane state in `usb_ocp_recovery_top` is the
+`DEVICE_STATUS.PROT_ERROR` sticky latch. USB-only unsupported-command and host-write-
+to-read-only-command decodes set it to the OCP-defined unsupported-command value.
+Only a completed Recovery Agent `DEVICE_STATUS` read clears it; firmware reads are
+non-destructive.
 
-State-to-status mapping (OCP v1.1 Sec 9.2):
-
-| State | DEVICE_STATUS byte 0 | RECOVERY_STATUS [3:0] | Sideband asserted |
-|---|---|---|---|
-| S_IDLE | 0x01 Device healthy | 0x0 Not in recovery | - |
-| S_DETECTED | 0x03 Recovery mode | 0x1 Awaiting image | recovery_active |
-| S_AWAIT_IMAGE | 0x03 Recovery mode | 0x1 Awaiting image | recovery_active |
-| S_PUSH_ACTIVE | 0x03 Recovery mode | 0x1 Awaiting image | recovery_active |
-| S_IMAGE_LOADED | 0x04 Recovery pending | 0x1 Awaiting image | recovery_active, image_ready |
-| S_ACTIVATE | 0x04 Recovery pending | 0x2 Booting image | recovery_active, image_ready |
-| S_BOOT_REQ | 0x05 Running recovery | 0x2 Booting image | recovery_active, image_ready, boot_req |
-| S_DONE | 0x05 Running recovery | 0x3 Recovery success | recovery_active |
-| S_ERROR | 0x0F Fatal error | 0xC Failed / 0xD Auth failure | fatal_err |
-| S_RESETTING | 0x00 Status pending | 0x0 Not in recovery | device_reset_req (pulse) |
-
-Key behaviors:
-
-- **Entry.** `S_IDLE -> S_DETECTED` on a platform `rec_trigger`, or when the host writes
-  the CMS-select byte of `RECOVERY_CTRL` (host-initiated recovery). `RECOVERY_STATUS`
-  byte 0 also carries the image index in bits [7:4].
-- **Image push.** `S_AWAIT_IMAGE`/`S_PUSH_ACTIVE` track FIFO push progress. On
-  `image_push_done` with `bytes_pushed == image_size` the FSM advances to
-  `S_IMAGE_LOADED`; a size mismatch or `fifo_overflow` diverts to `S_ERROR`.
-- **Two-party activation.** From `S_IMAGE_LOADED`, the Recovery Agent's
-  `RECOVERY_CTRL.ACTIVATE = 0x0F` sets an internal `activation_pending`, but the FSM
-  advances to `S_ACTIVATE` only after device firmware also clears activation
-  (`firmware_activate_clear`, i.e. Caliptra writes 0 to `RECOVERY_CTRL.ACTIVATE` after
-  it has drained and verified the image). This prevents boot before the image is
-  consumed.
-- **Boot.** `S_ACTIVATE -> S_BOOT_REQ` pulses `boot_req` to the SoC; `soc_boot_ack`
-  advances to `S_DONE`. A fresh `rec_trigger` from `S_DONE` re-enters recovery.
-- **Reset.** A `DEVICE_RESET` write with a non-zero control byte, from any state, enters
-  `S_RESETTING`, which pulses `device_reset_req` and returns to `S_IDLE`.
-- **Error.** `S_ERROR` latches `fatal_err`, reports `DEVICE_STATUS = 0x0F` and the
-  matching `RECOVERY_STATUS` failure code, and is sticky until a `DEVICE_RESET`.
+`DEVICE_RESET` remains stored until firmware consumes and clears it. In contrast,
+`INDIRECT_FIFO_CTRL.RESET` atomically clears A4 FIFO state and self-clears for
+subsequent readback, while `CALIPTRA_STATUS.REGION_RESET` retains the firmware-visible
+sticky reset history.
 
 ---
 

@@ -192,6 +192,39 @@ uint8_t cptra_usb_ocp_recovery_read_device_status(uint8_t *device_status)
     return 0u;
 }
 
+uint8_t cptra_usb_ocp_recovery_write_device_status(uint8_t device_status,
+                                                    uint16_t reason_code)
+{
+    uint32_t status_word = (uint32_t)device_status
+                         | ((uint32_t)reason_code << 16);
+
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, status_word);
+}
+
+uint8_t cptra_usb_ocp_recovery_write_recovery_status(
+    uint8_t recovery_status, uint8_t image_index, uint8_t vendor_status)
+{
+    uint32_t status_word = ((uint32_t)recovery_status & 0x0Fu)
+                         | (((uint32_t)image_index & 0x0Fu) << 4)
+                         | ((uint32_t)vendor_status << 8);
+
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_RECOVERY_STATUS, status_word);
+}
+
+uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations)
+{
+    for (uint32_t poll = 0u; poll < poll_iterations; ++poll) {
+        if (lsu_read_32(CLP_AXI_DMA_REG_STATUS0)
+            & AXI_DMA_REG_STATUS0_PAYLOAD_AVAILABLE_MASK) {
+            return 0u;
+        }
+        cptra_usb_ocp_recovery_delay(CPTRA_USB_OCP_RECOVERY_RETRY_DELAY);
+    }
+    return 1u;
+}
+
 uint8_t cptra_usb_ocp_recovery_poll_device_status(
     uint8_t target_status,
     uint32_t poll_iterations,
