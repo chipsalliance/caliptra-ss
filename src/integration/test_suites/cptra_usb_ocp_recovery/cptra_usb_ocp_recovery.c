@@ -30,6 +30,9 @@
 
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_READY_FOR_RECOVERY_IMAGE 0x03u
 #define CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING 0x04u
+#define CPTRA_OCP_RECOVERY_DEVICE_STATUS_RUNNING_RECOVERY 0x05u
+#define CPTRA_OCP_RECOVERY_STATUS_AWAITING_IMAGE 0x01u
+#define CPTRA_OCP_RECOVERY_STATUS_SUCCESS 0x03u
 #define OCP_RECOVERY_SCRATCH_WORDS 16u
 #define OCP_RECOVERY_CMS_REGION 0u
 #define OCP_RECOVERY_MBOX_DEST_ADDR 0x4400u
@@ -89,9 +92,7 @@ void main(void) {
     uint32_t fifo_size = 0u;
     uint32_t recovery_ctrl_word;
     uint64_t rec_base;
-    uint8_t dev_status = 0u;
     uint8_t fifo_status;
-    uint8_t poll_result;
 
     VPRINTF(LOW, "=======================================\n");
     VPRINTF(LOW, "Caliptra USB OCP recovery consumer test\n");
@@ -128,27 +129,25 @@ void main(void) {
     VPRINTF(LOW, "CPTRA: acknowledging RI_DOWNLOAD_FIRMWARE (MBOX_STATUS=CMD_COMPLETE)\n");
     lsu_write_32(CLP_MBOX_CSR_MBOX_STATUS, (uint32_t)CMD_COMPLETE);
 
-    VPRINTF(LOW, "CPTRA: polling DEVICE_STATUS for Recovery Pending (iters=%u, dma_err_limit=%u)\n",
-            OCP_RECOVERY_POLL_ITERS, OCP_RECOVERY_DMA_ERR_LIMIT);
+    if (cptra_usb_ocp_recovery_write_device_status(
+            CPTRA_OCP_RECOVERY_DEVICE_STATUS_READY_FOR_RECOVERY_IMAGE,
+            0u) != 0u
+        || cptra_usb_ocp_recovery_write_recovery_status(
+            CPTRA_OCP_RECOVERY_STATUS_AWAITING_IMAGE, 0u, 0u) != 0u) {
+        fail_and_halt("CPTRA: initial recovery status publish failed");
+    }
 
-    poll_result = cptra_usb_ocp_recovery_poll_device_status(
-        CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING,
-        OCP_RECOVERY_POLL_ITERS,
-        OCP_RECOVERY_DMA_ERR_LIMIT,
-        &dev_status);
-
-    if (poll_result == 1u) {
-        VPRINTF(FATAL, "CPTRA: DEVICE_STATUS DMA read failed after retries (last_status=0x%02x)\n", dev_status);
-        fail_and_halt("CPTRA: unrecoverable DMA error in DEVICE_STATUS poll");
-    } else if (poll_result == 2u) {
-        VPRINTF(WARNING, "CPTRA: DEVICE_STATUS poll timed out (last_status=0x%02x)\n", dev_status);
-        if (dev_status < CPTRA_OCP_RECOVERY_DEVICE_STATUS_READY_FOR_RECOVERY_IMAGE) {
-            fail_and_halt("CPTRA: recovery never reached READY_FOR_RECOVERY_IMAGE state");
-        }
-        // Continue with fallback drain if we at least reached READY_FOR_RECOVERY_IMAGE
-        VPRINTF(LOW, "CPTRA: proceeding with fallback drain (status=0x%02x)\n", dev_status);
+    VPRINTF(LOW, "CPTRA: waiting for a complete FIFO batch\n");
+    if (cptra_usb_ocp_recovery_wait_payload_available(
+            OCP_RECOVERY_POLL_ITERS) != 0u) {
+        fail_and_halt("CPTRA: recovery FIFO batch did not become available");
+    }
+    if (cptra_usb_ocp_recovery_write_device_status(
+            CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING,
+            0u) != 0u) {
+        fail_and_halt("CPTRA: Recovery Pending status publish failed");
     } else {
-        VPRINTF(LOW, "CPTRA: DEVICE_STATUS reached Recovery Pending (0x04)\n");
+        VPRINTF(LOW, "CPTRA: published Recovery Pending (0x04)\n");
     }
 
     image_size_words = cptra_usb_ocp_recovery_read_image_size_words();
@@ -192,6 +191,14 @@ void main(void) {
         fail_and_halt("CPTRA: drained recovery image content mismatch");
     }
     VPRINTF(LOW, "CPTRA: drained image content verified (%u dwords)\n", image_size_words);
+
+    if (cptra_usb_ocp_recovery_write_device_status(
+            CPTRA_OCP_RECOVERY_DEVICE_STATUS_RUNNING_RECOVERY,
+            0u) != 0u
+        || cptra_usb_ocp_recovery_write_recovery_status(
+            CPTRA_OCP_RECOVERY_STATUS_SUCCESS, 0u, 0u) != 0u) {
+        fail_and_halt("CPTRA: completion recovery status publish failed");
+    }
 
     VPRINTF(LOW, "CPTRA: clearing RECOVERY_CTRL activation after verified FIFO drain\n");
     if (cptra_usb_ocp_recovery_read_dword_retry(
