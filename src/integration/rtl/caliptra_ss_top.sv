@@ -965,6 +965,7 @@ module caliptra_ss_top
 
     );
 
+`ifndef NO_USB
     //=========================================================================-
     // USB core Instance
     //=========================================================================-
@@ -1212,6 +1213,7 @@ module caliptra_ss_top
         .token_length_counter   (7'b0),/* TODO */
         .usb_token_length       ()     /* TODO */
     );
+`endif
     assign cptra_ss_usb_recovery_payload_available_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
     assign cptra_ss_usb_recovery_image_activated_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
     

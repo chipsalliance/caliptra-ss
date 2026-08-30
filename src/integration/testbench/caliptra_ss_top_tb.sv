@@ -28,9 +28,11 @@
 `include "caliptra_ss_includes.svh"
 `include "caliptra_ss_top_tb_intc_includes.svh"
 
+`ifndef NO_SYNOPSYS_SVT
 // Synopsys USB SVT VIP includes
 `include "svt_usb_defines.svi"
 `include "svt_usb_if.uvm.svi"
+`endif
 // For DUT=HOST tests: include the Synopsys USB PHY model so the UTMI parallel
 // signals driven by the DUT HOST MAC are translated to/from the DP/DM serial
 // bus seen by the VIP DEVICE agent.
@@ -50,13 +52,17 @@ module caliptra_ss_top_tb
 );
 
     import tb_top_pkg::*;
+`ifndef NO_AVERY_VIP
     import aaxi_pkg::*;
+`endif
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import caliptra_top_tb_pkg::*;
+`ifndef NO_AVERY_VIP
     import ai2c_pkg::*;
     import ai3c_pkg::*;
     import avery_pkg_test::*;
+`endif
     import jtag_pkg::*;
     /**
      * Import UVM Package
@@ -64,18 +70,22 @@ module caliptra_ss_top_tb
     import uvm_pkg::*;
     `include "uvm_macros.svh"
 
+`ifndef NO_SYNOPSYS_SVT
     // Import the SVT package
     import svt_uvm_pkg::*;
 
     // Import the USB VIP
     import svt_usb_uvm_pkg::*;
+`endif
 
 `ifdef SVT_USB_INCLUDE_SEQ_PKG
     // Import the USB test suite sequence package
     import svt_usb_sequence_pkg::*;
 `endif
 
+`ifndef NO_SYNOPSYS_SVT
     import caliptra_ss_usb_test_pkg::*;
+`endif
 
     `include "caliptra_ss_assertion_overrides.svh"
 
@@ -243,10 +253,12 @@ module caliptra_ss_top_tb
    // AXI Interconnect
    //=========================================================================
 
+`ifndef NO_AVERY_VIP
     aaxi4_interconnect axi_interconnect(
         .core_clk (core_clk),
         .rst_l    (cptra_ss_rst_b_i)
     );
+`endif
 
     // AXI Interface
     axi_if #(
@@ -382,23 +394,23 @@ module caliptra_ss_top_tb
     // Signal that may be viewed in waves to review the mapping of
     // functional AXI interfaces to indexed ports of the interconnect
     struct packed {
-        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_LSU_IDX           ; // CSS_INTC_MINTF_MCU_LSU_IDX    0
-        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_IFU_IDX           ; // CSS_INTC_MINTF_MCU_IFU_IDX    1
-        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] MCU_SB_IDX            ; // CSS_INTC_MINTF_MCU_SB_IDX     2
-        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
-        logic [$clog2(AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
+        logic [$clog2(`AAXI_INTC_MASTER_CNT)-1:0] MCU_LSU_IDX           ; // CSS_INTC_MINTF_MCU_LSU_IDX    0
+        logic [$clog2(`AAXI_INTC_MASTER_CNT)-1:0] MCU_IFU_IDX           ; // CSS_INTC_MINTF_MCU_IFU_IDX    1
+        logic [$clog2(`AAXI_INTC_MASTER_CNT)-1:0] MCU_SB_IDX            ; // CSS_INTC_MINTF_MCU_SB_IDX     2
+        logic [$clog2(`AAXI_INTC_MASTER_CNT)-1:0] CPTRA_DMA_IDX         ; // CSS_INTC_MINTF_CPTRA_DMA_IDX  3
+        logic [$clog2(`AAXI_INTC_MASTER_CNT)-1:0] SOC_BFM_IDX           ; // CSS_INTC_MINTF_SOC_BFM_IDX    4
 
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCU_ROM_IDX      ; // CSS_INTC_SINTF_MCU_ROM_IDX       2
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6 
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_HOST_IDX     ; // CSS_INTC_SINTF_USB_HOST_IDX      8
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DMA_IDX      ; // CSS_INTC_SINTF_USB_DMA_IDX       9
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV_IDX      ; // CSS_INTC_SINTF_USB_DEV_IDX       10
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_NC0_IDX          ; // CSS_INTC_SINTF_NC0_IDX           0 /* Currently unconnected */
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_I3C_IDX          ; // CSS_INTC_SINTF_I3C_IDX           1
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCU_ROM_IDX      ; // CSS_INTC_SINTF_MCU_ROM_IDX       2
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_CPTRA_SOC_IFC_IDX; // CSS_INTC_SINTF_CPTRA_SOC_IFC_IDX 3
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_MCI_IDX          ; // CSS_INTC_SINTF_MCI_IDX           4
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6 
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_HOST_IDX     ; // CSS_INTC_SINTF_USB_HOST_IDX      8
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DMA_IDX      ; // CSS_INTC_SINTF_USB_DMA_IDX       9
+        logic [$clog2(`AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV_IDX      ; // CSS_INTC_SINTF_USB_DEV_IDX       10
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
@@ -419,6 +431,7 @@ module caliptra_ss_top_tb
         SINTF_USB_DEV_IDX      : `CSS_INTC_SINTF_USB_DEV_IDX
     };
 
+`ifndef NO_AVERY_VIP
     // AXI Interconnect upper address tie to 0
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX  ].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX  ].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
@@ -449,6 +462,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BUSER = '0;
 
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].BID = 8'h0;
+`endif
 
 
     //Interconnect 0 - MCU LSU
@@ -461,6 +475,7 @@ module caliptra_ss_top_tb
     // The workaround here is to force aligned accesses, and use _only_ wstrb
     // for lane control, which is compliant to AXI.
     `CALIPTRA_ASSERT(CPTRA_AXI_WR_32BITlsu, (cptra_ss_mcu_lsu_m_axi_if.awvalid && cptra_ss_mcu_lsu_m_axi_if.awready) -> (cptra_ss_mcu_lsu_m_axi_if.awsize < 3), core_clk, !cptra_ss_rst_b_i)
+`ifndef NO_AVERY_VIP
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWVALID = cptra_ss_mcu_lsu_m_axi_if.awvalid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWADDR[31:0]  = cptra_ss_mcu_lsu_m_axi_if.awaddr[31:0] & 32'hFFFF_FFFC /*FIXME*/;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].AWID    = cptra_ss_mcu_lsu_m_axi_if.awid;
@@ -505,6 +520,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_mcu_lsu_m_axi_if.rid                  = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RID;
     assign cptra_ss_mcu_lsu_m_axi_if.rlast                = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_LSU_IDX].RREADY  = cptra_ss_mcu_lsu_m_axi_if.rready;
+`endif
 
     //Interconnect 1 - MCU IFU
     // FIXME remove this downsizer once Avery VIP supports downsizing
@@ -514,6 +530,7 @@ module caliptra_ss_top_tb
         .m_axi_if         (cptra_ss_mcu_ifu_m_axi_if         ),
         .s_axi_if         (cptra_ss_mcu_ifu_ds_m_axi_if      )
     );
+`ifndef NO_AVERY_VIP
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_IFU_IDX].AWVALID = cptra_ss_mcu_ifu_ds_m_axi_if.awvalid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_IFU_IDX].AWADDR[31:0]  = cptra_ss_mcu_ifu_ds_m_axi_if.awaddr;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_MCU_IFU_IDX].AWID    = cptra_ss_mcu_ifu_ds_m_axi_if.awid;
@@ -734,6 +751,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_cptra_core_m_axi_if.rid               = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_CPTRA_DMA_IDX].RID;
     assign cptra_ss_cptra_core_m_axi_if.rlast             = axi_interconnect.mintf_arr[`CSS_INTC_MINTF_CPTRA_DMA_IDX].RLAST;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_CPTRA_DMA_IDX].RREADY  = cptra_ss_cptra_core_m_axi_if.rready;
+`endif
 
     assign m_axi_bfm_if_FIXME.awready                   = '0;
     assign m_axi_bfm_if_FIXME.wready                    = '0;
@@ -748,6 +766,7 @@ module caliptra_ss_top_tb
     assign m_axi_bfm_if_FIXME.rid                       = '0;
     assign m_axi_bfm_if_FIXME.rlast                     = '0;
     assign m_axi_bfm_if_FIXME.ruser                     = '0;
+`ifndef NO_AVERY_VIP
     //Interconnect 4 - master bfm
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].AWVALID  = m_axi_bfm_if.awvalid;
     assign axi_interconnect.mintf_arr[`CSS_INTC_MINTF_SOC_BFM_IDX].AWADDR[31:0]   = m_axi_bfm_if.awaddr;
@@ -1139,6 +1158,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RID     = cptra_ss_usb_host_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RLAST   = cptra_ss_usb_host_s_axi_if.rlast;
     assign cptra_ss_usb_host_s_axi_if.rready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RREADY;
+`endif
 
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
@@ -1429,6 +1449,7 @@ module caliptra_ss_top_tb
     //     .bid            (axi_interconnect.sintf_arr[0].BID)
 
     // );
+`ifndef NO_AVERY_VIP
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].ARADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_NC0_IDX].AWADDR[aaxi_pkg::AAXI_ADDR_WIDTH-1:32] = 32'h0;
 
@@ -1476,6 +1497,7 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RID           = cptra_ss_mcu_rom_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RLAST         = cptra_ss_mcu_rom_s_axi_if.rlast;
     assign cptra_ss_mcu_rom_s_axi_if.rready            = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_MCU_ROM_IDX].RREADY;
+`endif
 
 
 
@@ -1598,6 +1620,7 @@ module caliptra_ss_top_tb
         .err_o          ( cptra_ss_fuse_macro_outputs_tb.err_o )
     );
 
+`ifndef NO_AVERY_VIP
     // --- I3C env and interface ---
     ai3c_env i3c_env0;
     wand  SCL;
@@ -1606,6 +1629,7 @@ module caliptra_ss_top_tb
     // --- Avery I3C master ---
     ai3c_device#(`AI3C_LANE_NUM) master0;
     ai3c_intf#(`AI3C_LANE_NUM) master0_intf(SDA, SCL);
+`endif
 
     // // // --- Avery I3C slave ---
     // ai3c_device#(`AI3C_LANE_NUM) slaves[$];
@@ -1625,6 +1649,7 @@ module caliptra_ss_top_tb
     initial begin
         string avy_test_name;
 
+`ifndef NO_AVERY_VIP
         // --- Avery I3C slave ---
         // slave = new("slave", , AI3C_SLAVE, slave_intf);
         // slave.log.enable_bus_tracker = 1;
@@ -1666,6 +1691,7 @@ module caliptra_ss_top_tb
             master0.set("start_bfm");
             ai3c_run_test(avy_test_name, i3c_env0);
         end
+`endif
 
     end
 
@@ -1696,6 +1722,7 @@ module caliptra_ss_top_tb
         end
     end
 
+`ifndef NO_SYNOPSYS_SVT
     // =========================================================================
     // Synopsys USB SVT VIP UTMI+ connection
     //
@@ -1736,6 +1763,7 @@ module caliptra_ss_top_tb
         uvm_config_db#(virtual svt_usb_if)::set(uvm_root::get(),
             "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
     end
+`endif
 
     assign i_caliptra_ss_bfm_services_if.mcu_halt_status = cptra_ss_mcu_halt_status_o;
 
@@ -1786,14 +1814,17 @@ module caliptra_ss_top_tb
     // --- UTMI clock and lock signals ---
     // For DUT=HOST PHY tests (CALIPTRA_USB_HOST_PHY_TEST), the clock comes from
     // the nvs_usb_phy output rather than the VIP UTMI interface clock.
+`ifndef NO_SYNOPSYS_SVT
 `ifndef CALIPTRA_USB_HOST_PHY_TEST
     assign cptra_ss_usb_utmi_clk_i          = usb_20_mac_if.utmi_dut_mac_if.CLK;
+`endif
 `endif
     assign cptra_ss_usb_utmi_dev_clk_lock_i = cptra_ss_pwrgood_i;
     assign cptra_ss_usb_utmi_hst_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP modeled PHY outputs -> DUT device MAC inputs ---
     // For DUT=HOST PHY tests these signals are driven by nvs_usb_phy directly.
+`ifndef NO_SYNOPSYS_SVT
 `ifndef CALIPTRA_USB_HOST_PHY_TEST
     assign cptra_ss_usb_utmi_rxdata_i         = usb_20_mac_if.utmi_dut_mac_if.DataOut;
     assign cptra_ss_usb_utmi_rxvalid_i        = usb_20_mac_if.utmi_dut_mac_if.RXValid;
@@ -1882,6 +1913,7 @@ module caliptra_ss_top_tb
     end
     assign usb_20_mac_if.utmi_dut_mac_if.clk = usb_utmi_clk;
     assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
+`endif
 
     // Declare VBus/SessEnd ahead of the ifdef block: nvs_usb_phy drives these
     // as outputs inside CALIPTRA_USB_HOST_PHY_TEST, so they must be visible
@@ -2039,10 +2071,12 @@ module caliptra_ss_top_tb
     // controller port power-up sequence.  In device-mode tests the remote_cfg
     // PHY also asserts VbusValid=1 / SessEnd=0 (because DrvVbus=1), so this
     // change is value-identical and causes no regression.
+`ifndef NO_SYNOPSYS_SVT
     `ifndef CALIPTRA_USB_HOST_PHY_TEST
     assign cptra_ss_usb_USB_VBus_i = usb_20_mac_if.utmi_dut_mac_if.VbusValid;
     assign cptra_ss_usb_sessend_i  = usb_20_mac_if.utmi_dut_mac_if.SessEnd;
     `endif
+`endif
 
     // USB ULPI PHY interface
     logic         cptra_ss_usb_ulpi_clk_i;         // TODO: connect to USB VIP
@@ -2348,10 +2382,17 @@ module caliptra_ss_top_tb
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),
 
+`ifndef NO_AVERY_VIP
         .cptra_ss_i3c_scl_i(master0_intf.scl_and),
         .cptra_ss_i3c_sda_i(master0_intf.sda_and),
         .cptra_ss_i3c_scl_o(master0_intf.scl_and),
         .cptra_ss_i3c_sda_o(master0_intf.sda_and),
+`else
+        .cptra_ss_i3c_scl_i('0),
+        .cptra_ss_i3c_sda_i('0),
+        .cptra_ss_i3c_scl_o(),
+        .cptra_ss_i3c_sda_o(),
+`endif
         .cptra_ss_i3c_scl_oe,
         .cptra_ss_i3c_sda_oe,
         .cptra_ss_sel_od_pp_o,
@@ -2484,7 +2525,9 @@ module caliptra_ss_top_tb
 
 endmodule
 
+`ifndef NO_AVERY_VIP
 // --- Avery I3C Test Case Bench ---
 // This is the top level module for the Avery I3C test case bench.
 // it triggers i3c test cases.
 `include "ai3c_tests_bench.sv"
+`endif
