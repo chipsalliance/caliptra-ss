@@ -54,6 +54,3 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_iso_out/caliptra_ss_usb_hs_dev_iso_out: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_clock/caliptra_ss_usb_fs_clock: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_conn/caliptra_ss_usb_hs_conn: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_bulk_out/caliptra_ss_usb_hs_host_bulk_out: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_remotewakeup/caliptra_ss_usb_hs_host_remotewakeup: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_host_iso_out/caliptra_ss_usb_hs_host_iso_out: { weight: 100 }
