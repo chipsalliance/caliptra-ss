@@ -225,15 +225,12 @@ stateDiagram-v2
     T_DATA --> T_TRAP: replacement EP0 SETUP
     T_STATUS --> T_TRAP: replacement EP0 SETUP
 
-    T_IDLE --> T_IDLE: bus reset or device disconnect
-    T_TRAP --> T_IDLE: bus reset or device disconnect
-    T_REPLAY_REQ --> T_IDLE: bus reset or device disconnect
-    T_REPLAY_ALIGN --> T_IDLE: bus reset or device disconnect
-    T_REPLAY_DATA --> T_IDLE: bus reset or device disconnect
-    T_REPLAY_END --> T_IDLE: bus reset or device disconnect
-    T_PASS --> T_IDLE: bus reset or device disconnect
-    T_DATA --> T_IDLE: bus reset or device disconnect
-    T_STATUS --> T_IDLE: bus reset or device disconnect
+    note right of T_IDLE
+        From any state, hardware reset,
+        USB bus reset, or device disconnect
+        discards transfer-local state
+        and returns to T_IDLE.
+    end note
 ```
 
 `T_TRAP` always owns the SETUP response long enough to capture and classify it.
