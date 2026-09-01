@@ -185,7 +185,7 @@ The recovery stack receives the USB device subordinate reset directly as
 ### 4.3 Post-synchronizer arbiter
 
 `usb_ocp_recovery_post_sync_arb`
-(`third_party/usb2/src/ip_xxx_3511/RTL/usb_ocp_recovery_post_sync_arb.{e,m}.vhdl`)
+(`third_party/usb2/src/ip_xxx_3511/RTL/usb_ocp_recovery_post_sync_arb.m.vhdl`)
 splices into the hclk side of `usb_synchronizer`, between the synchronizer and its
 two legacy consumers (`usb_dma`, `usb_reg_if`). It:
 
@@ -203,6 +203,45 @@ two legacy consumers (`usb_dma`, `usb_reg_if`). It:
 Because the device must ACK the SETUP stage (USB 2.0 Sec 8.4.6.4), a claimed SETUP
 is trapped and answered with a fabricated bit-accurate response; unclaimed SETUPs
 are replayed to the legacy DMA so standard enumeration is unaffected.
+
+#### Arbiter transfer state machine
+
+```mermaid
+stateDiagram-v2
+    [*] --> T_IDLE
+    T_IDLE --> T_TRAP: EP0 SETUP
+    T_TRAP --> T_DATA: claimed OCP SETUP, wLength != 0
+    T_TRAP --> T_STATUS: claimed OCP SETUP, wLength = 0
+    T_TRAP --> T_REPLAY_REQ: unclaimed SETUP
+    T_REPLAY_REQ --> T_REPLAY_ALIGN: legacy DMA response valid
+    T_REPLAY_ALIGN --> T_REPLAY_DATA
+    T_REPLAY_DATA --> T_REPLAY_END
+    T_REPLAY_END --> T_IDLE: replay complete
+    T_REPLAY_END --> T_TRAP: pending EP0 SETUP
+    T_REPLAY_END --> T_PASS: pending non-EP0 request
+    T_PASS --> T_IDLE
+    T_DATA --> T_STATUS: claimed data stage complete
+    T_STATUS --> T_IDLE: claimed status and RX drain complete
+    T_DATA --> T_TRAP: replacement EP0 SETUP
+    T_STATUS --> T_TRAP: replacement EP0 SETUP
+
+    T_IDLE --> T_IDLE: bus reset or device disconnect
+    T_TRAP --> T_IDLE: bus reset or device disconnect
+    T_REPLAY_REQ --> T_IDLE: bus reset or device disconnect
+    T_REPLAY_ALIGN --> T_IDLE: bus reset or device disconnect
+    T_REPLAY_DATA --> T_IDLE: bus reset or device disconnect
+    T_REPLAY_END --> T_IDLE: bus reset or device disconnect
+    T_PASS --> T_IDLE: bus reset or device disconnect
+    T_DATA --> T_IDLE: bus reset or device disconnect
+    T_STATUS --> T_IDLE: bus reset or device disconnect
+```
+
+`T_TRAP` always owns the SETUP response long enough to capture and classify it.
+Only `T_DATA` and `T_STATUS` own a claimed recovery transfer; those states suppress
+legacy DMA/register delivery and use the recovery stack's RX/TX staging. A new EP0
+SETUP abandons a claimed transfer and becomes the next trapped request. Hardware
+reset, USB bus reset, or synchronized `usbreg_dev_connect` deassertion discards all
+transfer-local state and returns the arbiter to `T_IDLE`.
 
 ### 4.4 `usb_ocp_recovery_top` (OCP service stack)
 
