@@ -33,7 +33,7 @@ DATA_OUTPUT_PATH = Path("src") / "fuse_ctrl" / "data"
 DOC_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "doc"
 RTL_OUTPUT_PATH  = Path("src") / "fuse_ctrl" / "rtl"
 C_OUTPUT_PATH    = Path("src") / "integration" / "rtl"
-RDL_OUTPUT_PATH    = Path("src") / "fuse_ctrl" / "rtl"
+RDL_OUTPUT_PATH    = Path("src") / "fuse_ctrl" / "rdl"
 
 ## Doc table files
 PARTITIONS_TABLE_FILE = "otp_ctrl_partitions.md"

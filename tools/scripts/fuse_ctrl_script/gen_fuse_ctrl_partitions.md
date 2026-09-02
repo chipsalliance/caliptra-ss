@@ -71,8 +71,9 @@ src/fuse_ctrl/rtl
 ├── otp_ctrl_part_pkg.sv
 ├── otp_ctrl_core_reg_top.sv
 └── otp_ctrl_reg_pkg.sv
+src/fuse_ctrl/rdl
+└── otp_ctrl.rdl
 src/fuse_ctrl/data
-├── otp_ctrl.rdl
 ├── otp_ctrl_mmap.hjson
 └── otp_ctrl.hjson
 src/fuse_ctrl/doc

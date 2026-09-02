@@ -1416,7 +1416,7 @@ Internal    |input       |   253  | `cptra_ss_mcu_ext_int` |                    
 
 ## Fuse Macro Memory Map / Fuse Controller CSR Address Map
 
-See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
+See [Life-cycle Controller Register Map](../src/lc_ctrl/rdl/lc_ctrl.rdl).
 
 ## LC Integration Requirements
 
