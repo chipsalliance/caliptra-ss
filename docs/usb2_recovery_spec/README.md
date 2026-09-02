@@ -1,15 +1,11 @@
 # USB2 OCP Recovery Enhancements - Microarchitecture Specification
 
-Status: design complete (post-synchronizer arbiter architecture).
+Status: design nearly-complete (OCP Recovery arbiter architecture).
 
 Scope: the OCP Secure Firmware Recovery enhancements added to the Caliptra
 Subsystem USB 2.0 device block (`third_party/usb2`). This document describes
 *definitively how the hardware is implemented in RTL* and how *production*
-firmware is expected to interact with it. It does not describe the
-repository's validation/stimulus firmware.
-
-> Companion document: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
-> gives the command-level, actor-oriented protocol flow.
+firmware is expected to interact with it.
 
 > Register reference note: Section 7 below inlines the full register/field
 > layout as a temporary measure. Once the generated register-reference HTML
@@ -52,6 +48,9 @@ recovery interface number.
 
 ## 2. High-level recovery flow
 
+> Refer to companion document: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
+> for the command-level, actor-oriented protocol flow.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -67,15 +66,14 @@ sequenceDiagram
     HW->>FW: EP0 SETUP interrupt (legacy path)
     FW->>HW: service SET_ADDRESS / SET_CONFIGURATION
     Note over RA,HW: C. Recovery + image push (autonomous OCP HW)
-    RA->>HW: read PROT_CAP / DEVICE_STATUS
-    RA->>HW: INDIRECT_FIFO_CTRL (image size)
-    RA->>HW: INDIRECT_FIFO_DATA (push image DWORDs)
+    RA->>HW: poll DEVICE_STATUS
+    CP->>HW: set PROT_CAP, DEVICE_ID, DEVICE_STATUS, RECOVERY_STATUS
+    RA->>HW: send recovery image
     CP->>HW: publish DEVICE_STATUS = Recovery Pending (0x4)
     Note over HW,CP: D. Consume + boot (Caliptra)
-    CP->>HW: read INDIRECT_FIFO_CTRL / INDIRECT_FIFO_STATUS
-    CP->>HW: drain N x INDIRECT_FIFO_DATA (AXI)
+    CP->>HW: drain image and load to memory
     CP->>CP: authenticate image
-    CP->>HW: publish recovery result and clear RECOVERY_CTRL activation
+    CP->>HW: publish recovery result
 ```
 
 1. **A - Core bring-up.** Device firmware initializes the USB controller in device
@@ -97,42 +95,55 @@ sequenceDiagram
 ## 3. Microarchitecture
 
 ```mermaid
-flowchart TB
+flowchart LR
     bus["USB 2.0 bus (D+/D-)"]
     phy["USB PHY / UTMI (utmi_clk)"]
-    pie["usb_pie : PIE EP0 engine (utmi_clk)"]
-    sync["usb_synchronizer : SIE CDC (utmi to hclk)"]
-    arb["usb_ocp_recovery_post_sync_arb<br/>SETUP trap, OCP classify, replay unclaimed (hclk)"]
-    dma["usb_dma : EP-table DMA"]
-    regif["usb_reg_if : EP0 IRQ / status"]
-    a2["A2 ctrl_decode (SETUP to reg-bus)"]
-    a0["A0 reg-bus arbiter (USB vs EXT)"]
-    a3["A3 rb_adapter + register block"]
-    a4["A4 cms_fifo (sync, 64 DWORD)"]
-    ahb["dev AXI-to-AHB bridge"]
+    pie["usb_pie<br/>PIE EP0 engine (utmi_clk)"]
+    sync["usb_synchronizer<br/>SIE CDC (utmi to hclk)"]
+    arb["usb_ocp_recovery_post_sync_arb<br/>SETUP trap, OCP classify (hclk)"]
+
+    subgraph legacy["Legacy / DMA path"]
+        direction LR
+        dma["usb_dma<br/>EP-table DMA"]
+        regif["usb_reg_if<br/>EP0 IRQ / status"]
+        dma --> regif
+    end
+
+    subgraph recovery["OCP recovery trap path"]
+        direction LR
+        a2["A2 ctrl_decode<br/>SETUP to reg-bus"]
+        a0["A0 reg-bus arbiter<br/>USB vs EXT"]
+        a3["A3 rb_adapter +<br/>register block"]
+        a4["A4 cms_fifo<br/>sync, 64 DWORD"]
+        a2 --> a0 --> a3 --> a4
+    end
+
+    legacy_ahb["legacy usbhsd AHB target<br/>offset 0x000-0x7ff"]
+    rec_ahb["recovery AHB transaction FSM<br/>offset 0x800-0xfff"]
     split["USB local-aperture split<br/>package-defined recovery offset"]
-    legacy_ahb["legacy usbhsd AHB path<br/>offset 0x000-0x7ff"]
-    rec_ahb["recovery AHB transaction FSM<br/>raw offset 0x000-0x7ff"]
+    ahb["dev AXI-to-AHB bridge"]
     fab["SoC AXI fabric (dev_axi_aclk)"]
-    fw["MCU RV core"]
-    cptra["Caliptra core"]
 
     bus --> phy --> pie
     pie -.->|CDC| sync --> arb
-    arb -->|legacy| dma --> regif
-    arb -->|"OCP (rec_*)"| a2 --> a0 --> a3 --> a4
-    fab <--> ahb --> split
-    split --> legacy_ahb --> regif
-    split --> rec_ahb -->|"raw EXT aperture offset"| a0
-    fab <--> fw
-    fab <--> cptra
+    arb -->|legacy| dma
+    arb -->|"OCP (rec_*)"| a2
+    regif <--> legacy_ahb
+    a0 <-->|"raw EXT aperture offset"| rec_ahb
+    legacy_ahb <--> split
+    rec_ahb <--> split
+    split <--> ahb <--> fab
 ```
 
 Blocks A0/A2-A4 are internal to `usb_ocp_recovery_top` (clock domains are listed in
 Section 3.1). The SoC reaches both the legacy controller and recovery aperture
-through the same device AXI-to-AHB bridge. The wrapper performs only
-package-defined coarse aperture ownership selection; it does not translate an
-AHB access into an OCP command.
+through the same device AXI-to-AHB bridge (right side); the split and the recovery
+AHB transaction FSM live in the integration wrapper. USB-sourced traffic enters
+each path from the left (through the arbiter); firmware/Caliptra AXI traffic
+enters the same two paths from the right (through the bridge), which is why
+`regif` and `a0` each have a bidirectional link to their respective AHB-side
+block. The wrapper performs only package-defined coarse aperture ownership
+selection; it does not translate an AHB access into an OCP command.
 
 ### 3.1 Clock domains
 
@@ -335,19 +346,22 @@ Both paths are always structurally present; the arbiter routes per transfer:
 ## 5. Required initialization before OCP recovery
 
 OCP recovery is only serviceable after the USB device controller is initialized and
-the device is enumerated and configured. This is the responsibility of the
-integrator's device firmware. At minimum it must:
+the device is enumerated and configured. This device-controller bring-up and
+enumeration is MCU firmware's responsibility, following the general USB2 device
+programming flow in the
+[USB2 Programmer's Guide](https://github.com/chipsalliance/usb2/blob/main/docs/USB2_Programmers_Guide.md)
+(cold-boot sequencing, device-mode/EP0 initialization, and standard enumeration).
+That guide is the authoritative source for the generic controller bring-up steps;
+this document only calls out the one OCP-recovery-specific requirement layered on
+top of it:
 
-1. **Advertise the recovery interface** by presenting the OCP recovery
-   configuration/interface/functional descriptors (Section 1) before connecting to
-   the host, so the host discovers the recovery interface during enumeration.
-2. **Initialize the controller in device mode**: select device mode, program the
-   EP0 descriptor/DMA structures and the endpoint-list and data-buffer base
-   registers, enable device mode, and enable and clear the device/EP0 interrupt
-   sources.
-3. **Complete standard USB enumeration over the legacy path**: service the bus
-   reset and the host's `GET_DESCRIPTOR` / `SET_ADDRESS` / `SET_CONFIGURATION`
-   until the device reaches the configured state.
+- **Advertise the recovery interface** by presenting the OCP recovery
+  configuration/interface/functional descriptors (Section 1) before connecting to
+  the host, so the host discovers the recovery interface during enumeration.
+
+MCU firmware also programs the pre-Caliptra placeholder contents of `PROT_CAP`,
+`DEVICE_ID`, and `DEVICE_STATUS` so the interface is enumerable before Caliptra
+comes online; Caliptra firmware finalizes those registers once it boots (Section 6).
 
 Only after the device is configured are recovery-class control transfers claimed
 and serviced. The OCP path itself needs no separate enable and remains active while
@@ -364,20 +378,26 @@ and serviced. The OCP path itself needs no separate enable and remains active wh
 Caliptra is the recovery image consumer (the OCP "Device Firmware" role). As an AXI
 master it interacts with the OCP recovery register aperture:
 
-1. **Detect recovery.** Poll `DEVICE_STATUS` until byte 0 reports Recovery Pending
+1. **Finalize configuration.** Once Caliptra comes online, finalize the
+   `PROT_CAP` capability bitmap and `DEVICE_ID` left as MCU-programmed
+   placeholders, then set `DEVICE_STATUS` to a real value. This is what enables
+   the recovery interface for meaningful discovery/connection by the host: until
+   this point `DEVICE_STATUS` reads back the pending value MCU set, and the host
+   is expected to keep polling.
+2. **Detect recovery.** Poll `DEVICE_STATUS` until byte 0 reports Recovery Pending
    (`0x4`), i.e. the device holds a recovery image awaiting activation.
-2. **Wait for a batch.** Wait for `cptra_ss_usb_recovery_payload_available_o`;
+3. **Wait for a batch.** Wait for `cptra_ss_usb_recovery_payload_available_o`;
    then read the image length from `INDIRECT_FIFO_CTRL` and inspect
    `INDIRECT_FIFO_STATUS`. Use FULL/EMPTY rather than equal indices to determine
    occupancy.
-3. **Drain.** Read `INDIRECT_FIFO_DATA` repeatedly (one DWORD per read) until the
+4. **Drain.** Read `INDIRECT_FIFO_DATA` repeatedly (one DWORD per read) until the
    notified batch is empty. Each read pops one DWORD from the CMS FIFO.
-4. **Recover an aborted batch.** Poll `CALIPTRA_STATUS.BATCH_ABORTED`. If set, discard
+5. **Recover an aborted batch.** Poll `CALIPTRA_STATUS.BATCH_ABORTED`. If set, discard
    any local image state and write `INDIRECT_FIFO_CTRL.RESET` to clear the sticky
    status and rearm the FIFO before accepting a restarted host batch.
-5. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
+6. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
    authentication path.
-6. **Activate / report.** On success, drive image selection and activation via
+7. **Activate / report.** On success, drive image selection and activation via
    `RECOVERY_CTRL` and boot the image; on failure, report via `RECOVERY_STATUS`.
 
 OCP commands used on this path: `DEVICE_STATUS`, `INDIRECT_FIFO_CTRL`,
