@@ -6446,7 +6446,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.HW_FLOW_STATUS.boot_fsm.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.HW_FLOW_STATUS.boot_fsm.next;
         load_next_c = '1;
@@ -6532,7 +6532,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_STATUS.cptra_reset_sts.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.RESET_STATUS.cptra_reset_sts.next;
         load_next_c = '1;
@@ -6553,7 +6553,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.RESET_STATUS.mcu_reset_sts.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.RESET_STATUS.mcu_reset_sts.next;
         load_next_c = '1;
@@ -9972,7 +9972,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.WDT_STATUS.t1_timeout.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.WDT_STATUS.t1_timeout.next;
         load_next_c = '1;
@@ -9993,7 +9993,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.WDT_STATUS.t2_timeout.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.WDT_STATUS.t2_timeout.next;
         load_next_c = '1;
@@ -10510,7 +10510,7 @@ module mci_reg (
             automatic logic load_next_c;
             next_c = field_storage.GENERIC_INPUT_WIRES[i0].wires.value;
             load_next_c = '0;
-        
+
             // HW Write
             next_c = hwif_in.GENERIC_INPUT_WIRES[i0].wires.next;
             load_next_c = '1;
@@ -12452,7 +12452,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.intr_block_rf.error_global_intr_r.agg_sts0.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_out.intr_block_rf.error0_internal_intr_r.intr;
         load_next_c = '1;
@@ -12472,7 +12472,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.intr_block_rf.error_global_intr_r.agg_sts1.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_out.intr_block_rf.error1_internal_intr_r.intr;
         load_next_c = '1;
@@ -12495,7 +12495,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.intr_block_rf.notif_global_intr_r.agg_sts0.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_out.intr_block_rf.notif0_internal_intr_r.intr;
         load_next_c = '1;
@@ -12515,7 +12515,7 @@ module mci_reg (
         automatic logic load_next_c;
         next_c = field_storage.intr_block_rf.notif_global_intr_r.agg_sts1.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_out.intr_block_rf.notif1_internal_intr_r.intr;
         load_next_c = '1;
