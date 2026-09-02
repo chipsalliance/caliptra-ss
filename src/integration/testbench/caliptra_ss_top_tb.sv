@@ -186,6 +186,7 @@ module caliptra_ss_top_tb
     //--
     logic                                 cptra_ss_soc_dft_en_o;
     logic                                 cptra_ss_soc_hw_debug_en_o;
+    logic                                 cptra_ss_otp_dft_en_o;
 
     css_mcu0_el2_mem_if         cptra_ss_mcu0_el2_mem_export ();
     el2_mem_if                  cptra_ss_cptra_core_el2_mem_export ();
@@ -2344,6 +2345,7 @@ module caliptra_ss_top_tb
 
         .cptra_ss_soc_dft_en_o,
         .cptra_ss_soc_hw_debug_en_o,
+        .cptra_ss_otp_dft_en_o,
 
         .cptra_ss_fuse_macro_outputs_i (cptra_ss_fuse_macro_outputs_tb),
         .cptra_ss_fuse_macro_inputs_o  (cptra_ss_fuse_macro_inputs_tb),

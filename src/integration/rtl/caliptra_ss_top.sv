@@ -20,6 +20,8 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
+`include "caliptra_prim_assert.sv"
+`include "caliptra_sva.svh"
 `include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
 
@@ -244,6 +246,13 @@ module caliptra_ss_top
     output lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o,
     output logic caliptra_ss_otp_state_valid_o,
     output logic caliptra_ss_volatile_raw_unlock_success_o,
+
+    // Enables debug of the fuse macro wrapper logic. High only when the life
+    // cycle state read out of OTP is valid, the LCC DFT enable is On, and the
+    // steady-state life cycle is not RMA. Intended for the non-secret OTP
+    // wrapper DFT/characterization interface only; it gives no path to scan the
+    // secret partitions.
+    output logic cptra_ss_otp_dft_en_o,
 
 
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o,
@@ -1437,6 +1446,63 @@ module caliptra_ss_top
     );
 
     // lcc_steady_state_from_otp
+
+    //=========================================================================-
+    // Fuse macro wrapper DFT enable
+    //
+    // Gates debug / characterization access to the fuse (OTP) macro wrapper.
+    // Asserted only when all three hold:
+    //   1. the life cycle state read out of OTP is valid,
+    //   2. the LCC DFT enable (lc_dft_en_i) is On, and
+    //   3. the steady-state life cycle is not RMA.
+    //
+    // caliptra_ss_otp_state_valid_o is combinational while
+    // caliptra_ss_life_cycle_steady_state_o is registered, so the state the
+    // valid qualifies is only settled in the following cycle. The valid is
+    // therefore delayed by one cycle before it is combined with the state, so
+    // the two are aligned and the output can never open on a stale state.
+    //=========================================================================-
+    logic caliptra_ss_otp_state_valid_d;
+
+    always_ff @(posedge cptra_ss_rdc_clk_cg_o or negedge cptra_ss_rst_b_o) begin
+        if (!cptra_ss_rst_b_o) begin
+            caliptra_ss_otp_state_valid_d <= 1'b0;
+            cptra_ss_otp_dft_en_o          <= 1'b0;
+        end
+        else begin
+            caliptra_ss_otp_state_valid_d <= caliptra_ss_otp_state_valid_o;
+            cptra_ss_otp_dft_en_o          <= caliptra_ss_otp_state_valid_d
+                                           & (lc_dft_en_i == lc_ctrl_pkg::On)
+                                           & (caliptra_ss_life_cycle_steady_state_o != lc_ctrl_state_pkg::LcStRma);
+        end
+    end
+
+    // Cover that each qualifying condition was actually exercised and that the
+    // output reflects it on the following cycle. Reset argument is the
+    // active-high in-reset condition, matching the macro's disable iff.
+    `CALIPTRA_COVER(OtpDftEnGranted_C,
+            (caliptra_ss_otp_state_valid_d
+             && (lc_dft_en_i == lc_ctrl_pkg::On)
+             && (caliptra_ss_life_cycle_steady_state_o != lc_ctrl_state_pkg::LcStRma))
+            ##1 cptra_ss_otp_dft_en_o,
+            cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
+
+    `CALIPTRA_COVER(OtpDftEnBlockedInRma_C,
+            (caliptra_ss_otp_state_valid_d
+             && (lc_dft_en_i == lc_ctrl_pkg::On)
+             && (caliptra_ss_life_cycle_steady_state_o == lc_ctrl_state_pkg::LcStRma))
+            ##1 !cptra_ss_otp_dft_en_o,
+            cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
+
+    `CALIPTRA_COVER(OtpDftEnBlockedNoLcDftEn_C,
+            (caliptra_ss_otp_state_valid_d
+             && (lc_dft_en_i != lc_ctrl_pkg::On))
+            ##1 !cptra_ss_otp_dft_en_o,
+            cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
+
+    `CALIPTRA_COVER(OtpDftEnBlockedNoStateValid_C,
+            (!caliptra_ss_otp_state_valid_d) ##1 !cptra_ss_otp_dft_en_o,
+            cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
 
     //=========================================================================-
     // Life-cycle Controller Instance : 

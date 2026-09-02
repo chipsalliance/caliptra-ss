@@ -464,6 +464,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
 | External | output  | 1     | `caliptra_ss_otp_state_valid_o`              | One-bit valid indicator for the broadcast life-cycle state (`caliptra_ss_life_cycle_steady_state_o`).                                |
 | External | output | 1 | `caliptra_ss_volatile_raw_unlock_success_o` | Asserted when the life-cycle controller grants the volatile-unlock state and remains asserted until the next power-cycle. This transition bypasses the fuse macro, so `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not reflect it. |
+| External | output | 1 | `cptra_ss_otp_dft_en_o` | Fuse macro wrapper DFT enable. High only when the OTP life cycle state is valid, the Life Cycle Controller DFT enable is `On`, and the steady-state life cycle is not `RMA`. Gates debug of the non-secret fuse macro wrapper logic only; it provides no path to scan the secret partitions. See [FC Macro Test Interface](#fc-macro-test-interface). |
 | External | output    | na     | `cptra_ss_lc_escalate_en_o`    | Life-cycle controller signal indicating that escalation is enabled at LCC and FC       |
 | External | output    | na     | `cptra_ss_lc_check_byp_en_o`    | Life-cycle controller signal indicating that external clock is accepted     |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
@@ -1303,6 +1304,50 @@ program arbitrary OTP memory locations through the test interface. Only
 specific, pre-defined test locations shall be readable and programmable. Access
 to debug access interface must also be disabled once the device is in
 mission mode (i.e. PROD life cycle state).
+
+### `cptra_ss_otp_dft_en_o` — fuse macro wrapper DFT enable
+
+Caliptra Subsystem exposes a dedicated single-bit output,
+`cptra_ss_otp_dft_en_o`, that the integrator shall use to gate the fuse macro
+wrapper's DFT / characterization interface. It is registered on
+`cptra_ss_rdc_clk_cg_o` and reset by `cptra_ss_rst_b_o`, and is asserted only
+when all of the following hold:
+
+1. The life cycle state read out of OTP is valid. Note that
+   `caliptra_ss_otp_state_valid_o` is combinational while the decoded state is
+   registered, so the state it qualifies is only settled in the *following*
+   cycle. The valid is therefore delayed by one cycle internally before it is
+   combined with the state, so the output can never open on a stale state.
+2. The Life Cycle Controller DFT enable (`lc_dft_en_i`) is `On`.
+3. The steady-state life cycle (`caliptra_ss_life_cycle_steady_state_o`) is not
+   `RMA`.
+
+Otherwise the signal is low and fuse macro debug shall be disabled.
+
+Note that this signal is derived directly from the Life Cycle Controller DFT
+enable. Unlike `cptra_ss_soc_dft_en_o`, it is **not** additionally asserted by
+the MCI debug-unlock mask registers, so a debug-unlock grant alone does not open
+the fuse macro wrapper.
+
+**Why this signal exists.** Bring-up and failure analysis of the fuse macro
+wrapper require visibility into the wrapper logic itself — running BIST/repair
+flows and writing characterization values over the wrapper's test interface.
+Reusing `cptra_ss_soc_dft_en_o` for this purpose would be too permissive,
+because that signal is also asserted in `RMA`. `cptra_ss_otp_dft_en_o` therefore
+carries the same DFT grant with the additional RMA qualification, giving the
+integrator a single pin to gate fuse macro debug.
+
+**Scope and restrictions.** This signal enables debug of the **fuse macro
+wrapper logic only**. It does not, and shall not be used to, provide any path
+to scan or otherwise observe the contents of the secret OTP partitions. It
+shall be connected only to the **non-secret** OTP wrapper DFT logic; the scan
+exclusions in [FC Integration Requirements](#fc-integration-requirements)
+continue to apply in full and are not relaxed by this signal.
+
+**Access restriction.** Debug performed through this interface shall be
+reachable only over the JTAG interface or by the MCU. The integrator shall
+ensure that no other SoC component can drive or observe the fuse macro test
+interface gated by this signal.
 
 ## Life Cycle OTP Programming Behavior and Integrator Responsibilities
 During a life‑cycle transition, the Caliptra Life Cycle Controller performs two OTP write operations to the transition‑counter and life‑cycle‑state fields. This behavior is architecturally defined and required for secure, fault‑resistant state progression. Although only one field changes in each phase, both fields reside within the same OTP word, so the macro receives two programming operations that may include writing some bits to the same value they already hold. This programming pattern is expected and safe for OTP implementations that correctly support word‑level writes, including rewriting a bit with the same value (1 -> 1).
