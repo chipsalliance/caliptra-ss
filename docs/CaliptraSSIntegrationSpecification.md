@@ -2836,7 +2836,7 @@ The following lint violations are known and expected in the current implementati
 #### Signal Width Mismatches
 | Location | Description | Justification |
 |----------|-------------|---------------|
-| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/generated/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
 
 #### Undriven signals
 These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
