@@ -7,7 +7,7 @@ package mcu_mbox_csr_uvm;
     // Mem - mcu_mbox_csr::MBOX_SRAM
     class mcu_mbox_csr__MBOX_SRAM extends uvm_reg_block;
         rand uvm_mem m_mem;
-        
+
         function new(string name = "mcu_mbox_csr__MBOX_SRAM");
             super.new(name);
         endfunction : new
