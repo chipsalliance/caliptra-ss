@@ -16,6 +16,6 @@
 
 export CALIPTRA_ROOT="${CALIPTRA_ROOT:-$CALIPTRA_SS_ROOT/third_party/caliptra-rtl}"
 
-python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rtl/mci_reg.rdl
-python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rtl/mcu_mbox_csr.rdl
-python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rtl/trace_buffer_csr.rdl
+python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rdl/mci_reg.rdl
+python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rdl/mcu_mbox_csr.rdl
+python3 $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/reg_gen.py $CALIPTRA_SS_ROOT/src/mci/rdl/trace_buffer_csr.rdl
