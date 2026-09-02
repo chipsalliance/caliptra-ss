@@ -17,10 +17,10 @@
 // // This file contains the address map for the SOC.
 // // It is used to generate the address map for the SOC.
 
-`include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_doc.rdl"
-`include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr.rdl" 
+`include "../../../third_party/caliptra-rtl/src/soc_ifc/rdl/soc_ifc_doc.rdl"
+`include "../../../third_party/caliptra-rtl/src/soc_ifc/rdl/mbox_csr.rdl"
 `include "../../../src/mci/rdl/mci_top.rdl"
-`include "../../../third_party/caliptra-rtl/src/soc_ifc/rtl/sha512_acc_csr.rdl"
+`include "../../../third_party/caliptra-rtl/src/soc_ifc/rdl/sha512_acc_csr.rdl"
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
