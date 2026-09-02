@@ -252,7 +252,7 @@ module caliptra_ss_top
     // steady-state life cycle is not RMA. Intended for the non-secret OTP
     // wrapper DFT/characterization interface only; it gives no path to scan the
     // secret partitions.
-    output logic cptra_ss_fc_dft_en_o,
+    output logic cptra_ss_otp_dft_en_o,
 
 
     output lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o,
@@ -1467,11 +1467,11 @@ module caliptra_ss_top
     always_ff @(posedge cptra_ss_rdc_clk_cg_o or negedge cptra_ss_rst_b_o) begin
         if (!cptra_ss_rst_b_o) begin
             caliptra_ss_otp_state_valid_d <= 1'b0;
-            cptra_ss_fc_dft_en_o          <= 1'b0;
+            cptra_ss_otp_dft_en_o          <= 1'b0;
         end
         else begin
             caliptra_ss_otp_state_valid_d <= caliptra_ss_otp_state_valid_o;
-            cptra_ss_fc_dft_en_o          <= caliptra_ss_otp_state_valid_d
+            cptra_ss_otp_dft_en_o          <= caliptra_ss_otp_state_valid_d
                                            & (lc_dft_en_i == lc_ctrl_pkg::On)
                                            & (caliptra_ss_life_cycle_steady_state_o != lc_ctrl_state_pkg::LcStRma);
         end
@@ -1480,28 +1480,28 @@ module caliptra_ss_top
     // Cover that each qualifying condition was actually exercised and that the
     // output reflects it on the following cycle. Reset argument is the
     // active-high in-reset condition, matching the macro's disable iff.
-    `CALIPTRA_COVER(FcDftEnGranted_C,
+    `CALIPTRA_COVER(OtpDftEnGranted_C,
             (caliptra_ss_otp_state_valid_d
              && (lc_dft_en_i == lc_ctrl_pkg::On)
              && (caliptra_ss_life_cycle_steady_state_o != lc_ctrl_state_pkg::LcStRma))
-            ##1 cptra_ss_fc_dft_en_o,
+            ##1 cptra_ss_otp_dft_en_o,
             cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
 
-    `CALIPTRA_COVER(FcDftEnBlockedInRma_C,
+    `CALIPTRA_COVER(OtpDftEnBlockedInRma_C,
             (caliptra_ss_otp_state_valid_d
              && (lc_dft_en_i == lc_ctrl_pkg::On)
              && (caliptra_ss_life_cycle_steady_state_o == lc_ctrl_state_pkg::LcStRma))
-            ##1 !cptra_ss_fc_dft_en_o,
+            ##1 !cptra_ss_otp_dft_en_o,
             cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
 
-    `CALIPTRA_COVER(FcDftEnBlockedNoLcDftEn_C,
+    `CALIPTRA_COVER(OtpDftEnBlockedNoLcDftEn_C,
             (caliptra_ss_otp_state_valid_d
              && (lc_dft_en_i != lc_ctrl_pkg::On))
-            ##1 !cptra_ss_fc_dft_en_o,
+            ##1 !cptra_ss_otp_dft_en_o,
             cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
 
-    `CALIPTRA_COVER(FcDftEnBlockedNoStateValid_C,
-            (!caliptra_ss_otp_state_valid_d) ##1 !cptra_ss_fc_dft_en_o,
+    `CALIPTRA_COVER(OtpDftEnBlockedNoStateValid_C,
+            (!caliptra_ss_otp_state_valid_d) ##1 !cptra_ss_otp_dft_en_o,
             cptra_ss_rdc_clk_cg_o, !cptra_ss_rst_b_o)
 
     //=========================================================================-

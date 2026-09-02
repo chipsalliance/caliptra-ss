@@ -464,7 +464,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
 | External | output  | 1     | `caliptra_ss_otp_state_valid_o`              | One-bit valid indicator for the broadcast life-cycle state (`caliptra_ss_life_cycle_steady_state_o`).                                |
 | External | output | 1 | `caliptra_ss_volatile_raw_unlock_success_o` | Asserted when the life-cycle controller grants the volatile-unlock state and remains asserted until the next power-cycle. This transition bypasses the fuse macro, so `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` do not reflect it. |
-| External | output | 1 | `cptra_ss_fc_dft_en_o` | Fuse macro wrapper DFT enable. High only when the OTP life cycle state is valid, the Life Cycle Controller DFT enable is `On`, and the steady-state life cycle is not `RMA`. Gates debug of the non-secret fuse macro wrapper logic only; it provides no path to scan the secret partitions. See [FC Macro Test Interface](#fc-macro-test-interface). |
+| External | output | 1 | `cptra_ss_otp_dft_en_o` | Fuse macro wrapper DFT enable. High only when the OTP life cycle state is valid, the Life Cycle Controller DFT enable is `On`, and the steady-state life cycle is not `RMA`. Gates debug of the non-secret fuse macro wrapper logic only; it provides no path to scan the secret partitions. See [FC Macro Test Interface](#fc-macro-test-interface). |
 | External | output    | na     | `cptra_ss_lc_escalate_en_o`    | Life-cycle controller signal indicating that escalation is enabled at LCC and FC       |
 | External | output    | na     | `cptra_ss_lc_check_byp_en_o`    | Life-cycle controller signal indicating that external clock is accepted     |
 | External | output    | 64    | `cptra_ss_mci_generic_output_wires_o` | Generic output wires for MCI            |
@@ -1305,10 +1305,10 @@ specific, pre-defined test locations shall be readable and programmable. Access
 to debug access interface must also be disabled once the device is in
 mission mode (i.e. PROD life cycle state).
 
-### `cptra_ss_fc_dft_en_o` — fuse macro wrapper DFT enable
+### `cptra_ss_otp_dft_en_o` — fuse macro wrapper DFT enable
 
 Caliptra Subsystem exposes a dedicated single-bit output,
-`cptra_ss_fc_dft_en_o`, that the integrator shall use to gate the fuse macro
+`cptra_ss_otp_dft_en_o`, that the integrator shall use to gate the fuse macro
 wrapper's DFT / characterization interface. It is registered on
 `cptra_ss_rdc_clk_cg_o` and reset by `cptra_ss_rst_b_o`, and is asserted only
 when all of the following hold:
@@ -1333,7 +1333,7 @@ the fuse macro wrapper.
 wrapper require visibility into the wrapper logic itself — running BIST/repair
 flows and writing characterization values over the wrapper's test interface.
 Reusing `cptra_ss_soc_dft_en_o` for this purpose would be too permissive,
-because that signal is also asserted in `RMA`. `cptra_ss_fc_dft_en_o` therefore
+because that signal is also asserted in `RMA`. `cptra_ss_otp_dft_en_o` therefore
 carries the same DFT grant with the additional RMA qualification, giving the
 integrator a single pin to gate fuse macro debug.
 

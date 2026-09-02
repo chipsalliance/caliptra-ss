@@ -1,13 +1,13 @@
 ---
 # Fuse macro wrapper DFT enable smoke test.
 # Starts deterministically in RAW (--lc-state 0) and walks
-# RAW -> TEST_UNLOCKED0 -> RMA, checking cptra_ss_fc_dft_en_o is low in RAW,
+# RAW -> TEST_UNLOCKED0 -> RMA, checking cptra_ss_otp_dft_en_o is low in RAW,
 # high in TEST_UNLOCKED0, and low again in RMA.
 seed: 1
-testname: smoke_test_fc_dft_en
+testname: smoke_test_otp_dft_en
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_fc_dft_en]" &&
+  echo "Running pre_exec for [smoke_test_otp_dft_en]" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py --seed ${PLAYBOOK_RANDOM_SEED} --lc-state 0 --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson -o otp-img.2048.vmem &&
   CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex &&
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_fc_dft_en mcu_program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_otp_dft_en mcu_program.hex

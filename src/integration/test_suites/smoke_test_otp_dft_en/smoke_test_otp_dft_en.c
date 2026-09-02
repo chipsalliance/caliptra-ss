@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// smoke_test_fc_dft_en
+// smoke_test_otp_dft_en
 //
-// Checks the fuse macro wrapper DFT enable output (cptra_ss_fc_dft_en_o) across
+// Checks the fuse macro wrapper DFT enable output (cptra_ss_otp_dft_en_o) across
 // a RAW -> TEST_UNLOCKED0 -> RMA life cycle walk.
 //
 // The output is high only when all three qualifiers hold: the OTP life cycle
@@ -30,7 +30,7 @@
 // signal merely tracking SOC_DFT_EN.
 //
 // The signal is an RTL output with no register view, so the checks are issued
-// as TB service commands (CMD_FC_DFT_EN_EXPECT_LOW/HIGH); the testbench samples
+// as TB service commands (CMD_OTP_DFT_EN_EXPECT_LOW/HIGH); the testbench samples
 // the pin and fails the test directly on a mismatch.
 
 #include <string.h>
@@ -62,11 +62,11 @@ static uint32_t zero_tok[4]       = {0};
 
 static void expect_dft_en(bool expected_high, const char *where) {
     // Let the LCC decode settle before sampling: otp_state_valid_o needs a cycle
-    // after the state read-out, and cptra_ss_fc_dft_en_o is registered on top.
+    // after the state read-out, and cptra_ss_otp_dft_en_o is registered on top.
     mcu_sleep(256);
     lsu_write_32(SOC_MCI_TOP_MCI_REG_DEBUG_OUT,
-                 expected_high ? CMD_FC_DFT_EN_EXPECT_HIGH : CMD_FC_DFT_EN_EXPECT_LOW);
-    VPRINTF(LOW, "MCU: [%s] expecting fc_dft_en = %d\n", where, expected_high ? 1 : 0);
+                 expected_high ? CMD_OTP_DFT_EN_EXPECT_HIGH : CMD_OTP_DFT_EN_EXPECT_LOW);
+    VPRINTF(LOW, "MCU: [%s] expecting otp_dft_en = %d\n", where, expected_high ? 1 : 0);
 }
 
 void main (void) {
