@@ -156,6 +156,25 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
     └── scripts
 ```
 
+### Per-block layout ###
+Sub-components under `src/` follow the layout below.
+Not every block contains every directory (e.g. only blocks with a register interface have `rdl/` and `rtl/generated/`; only blocks with a UVM testbench have a `uvmf_<block>/` tree)
+Generated files under `rtl/generated/` and `dv/generated/` are produced by `tools/scripts/reg_gen.sh`(which drives the register generator in the `caliptra-rtl` submodule) from the RDL sources in `rdl/`; do not edit them by hand.
+```
+src/<block>
+|-- config              # Compile manifests for this block
+|   |-- compile.yml     #   sim-tools compile.yml block description (filesets + dependencies)
+|   |-- <block>.vf      #   Design filelist (absolute paths, CALIPTRA_SS_ROOT-prefixed)
+|   `-- <block>_tb.vf   #   Unit-testbench filelist (optional)
+|-- rdl                 # SystemRDL sources ({block}_reg.rdl, doc addrmaps) — inputs to reg_gen
+|-- rtl                 # Hand-written synthesisable RTL (+ generated register-macro headers)
+|   `-- generated       #   Generated regblock outputs: {addrmap}.sv, {addrmap}_pkg.sv
+|-- dv                  # Design-verification sources
+|   `-- generated       #   Generated UVM RAL model: {rdl_stem}_uvm.sv
+|-- tb                  # Standalone SystemVerilog unit testbench (optional)
+`-- stimulus            # Standalone-TB stimulus / test vectors (optional)
+```
+
 ## **Verilog File Lists** ##
 VF files provide absolute filepaths (prefixed by the `CALIPTRA_SS_ROOT` environment variable) to each compile target for the associated component.<BR>
 The "Integration" sub-component contains the top-level fileset for Caliptra Subsystem. `src/integration/config/compile.yml` defines the required filesets and sub-component dependencies for this build target. All of the files/dependencies for compiling the top-level testbench are explicitly listed in `src/integration/config/caliptra_ss_top_tb.vf`. Users may compile the entire design using only this VF filelist.<BR>
