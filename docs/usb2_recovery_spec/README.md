@@ -385,20 +385,16 @@ master it interacts with the OCP recovery register aperture:
    the recovery interface for meaningful discovery/connection by the host: until
    this point `DEVICE_STATUS` reads back the pending value MCU set, and the host
    is expected to keep polling.
-2. **Detect recovery.** Poll `DEVICE_STATUS` until byte 0 reports Recovery Pending
-   (`0x4`), i.e. the device holds a recovery image awaiting activation.
+2. **Detect recovery.** Set `RECOVERY_STATUS` to `0x1` (awaiting recovery image), then
+   monitor `RECOVERY_CTRL` for a command from the host.
 3. **Wait for a batch.** Wait for `cptra_ss_usb_recovery_payload_available_o`;
    then read the image length from `INDIRECT_FIFO_CTRL` and inspect
-   `INDIRECT_FIFO_STATUS`. Use FULL/EMPTY rather than equal indices to determine
-   occupancy.
-4. **Drain.** Read `INDIRECT_FIFO_DATA` repeatedly (one DWORD per read) until the
-   notified batch is empty. Each read pops one DWORD from the CMS FIFO.
-5. **Recover an aborted batch.** Poll `CALIPTRA_STATUS.BATCH_ABORTED`. If set, discard
-   any local image state and write `INDIRECT_FIFO_CTRL.RESET` to clear the sticky
-   status and rearm the FIFO before accepting a restarted host batch.
-6. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
+   `INDIRECT_FIFO_STATUS`.
+4. **Drain.** Burst data from `INDIRECT_FIFO_DATA` repeatedly until the
+   notified batch is empty. Each read in the burst pops one DWORD from the CMS FIFO.
+5. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
    authentication path.
-7. **Activate / report.** On success, drive image selection and activation via
+6. **Activate / report.** On success, drive image selection and activation via
    `RECOVERY_CTRL` and boot the image; on failure, report via `RECOVERY_STATUS`.
 
 OCP commands used on this path: `DEVICE_STATUS`, `INDIRECT_FIFO_CTRL`,
@@ -408,7 +404,8 @@ OCP commands used on this path: `DEVICE_STATUS`, `INDIRECT_FIFO_CTRL`,
 > (clear-on-read, RW, RO) is the contract between the Recovery Agent (USB host) and
 > the device. It is not a contract for internal firmware (EXT/AXI) accesses; for
 > example, `DEVICE_STATUS` Protocol-Error clear-on-read applies to host reads, not
-> to Caliptra reads.
+> to Caliptra reads. Caliptra is able to write to spec-defined RO fields (such as
+> RECOVERY_REASON).
 
 ---
 
