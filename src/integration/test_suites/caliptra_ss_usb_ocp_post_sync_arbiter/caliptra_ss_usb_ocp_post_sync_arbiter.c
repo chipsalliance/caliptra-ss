@@ -157,6 +157,20 @@ uint8_t main(void)
         generation = (uint16_t)(command &
             USB_LEGACY_EP0_COMMAND_GENERATION_MASK);
 
+        if ((opcode == USB_LEGACY_EP0_COMMAND_CLEAR_DCON) ||
+            (opcode == USB_LEGACY_EP0_COMMAND_SET_DCON)) {
+            if (!generation_is_newer(generation, last_generation) ||
+                (expected_delta != 0u)) {
+                continue;
+            }
+            usb_set_device_connect(
+                opcode == USB_LEGACY_EP0_COMMAND_SET_DCON);
+            acknowledge_sampled_command(
+                command, opcode, expected_delta, generation);
+            last_generation = generation;
+            continue;
+        }
+
         if (opcode == USB_LEGACY_EP0_COMMAND_PUBLISH_BASELINE) {
             if (!generation_is_newer(generation, last_generation)) {
                 continue;

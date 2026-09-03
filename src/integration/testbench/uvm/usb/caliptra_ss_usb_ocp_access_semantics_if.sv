@@ -62,22 +62,58 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
     logic         subsystem_reset_n;
     logic         recovery_payload_available;
     logic         recovery_image_activated;
+    logic         i3c_recovery_payload_available;
+    logic         i3c_recovery_image_activated;
     logic [63:0]  fw_command_wires;
     bit           fw_command_active;
     bit           subsystem_reset_seen;
+    bit           recovery_payload_available_seen;
     bit           recovery_image_activated_seen;
+    bit           i3c_recovery_payload_available_seen;
+    bit           i3c_recovery_image_activated_seen;
+    realtime      recovery_payload_available_asserted_at;
+    realtime      fw_state_changed_at;
+    realtime      recovery_payload_observed_at;
 
     initial fw_command_wires = '0;
     initial fw_command_active = 1'b0;
     initial subsystem_reset_seen = 1'b0;
+    initial recovery_payload_available_seen = 1'b0;
     initial recovery_image_activated_seen = 1'b0;
+    initial i3c_recovery_payload_available_seen = 1'b0;
+    initial i3c_recovery_image_activated_seen = 1'b0;
+    initial recovery_payload_available_asserted_at = 0.0;
+    initial fw_state_changed_at = 0.0;
+    initial recovery_payload_observed_at = 0.0;
 
     always @(negedge subsystem_reset_n) begin
         subsystem_reset_seen = 1'b1;
     end
 
+    always @(posedge recovery_payload_available) begin
+        if (!recovery_payload_available_seen) begin
+            recovery_payload_available_asserted_at = $realtime;
+        end
+        recovery_payload_available_seen = 1'b1;
+    end
+
     always @(posedge recovery_image_activated) begin
         recovery_image_activated_seen = 1'b1;
+    end
+
+    always @(posedge i3c_recovery_payload_available) begin
+        i3c_recovery_payload_available_seen = 1'b1;
+    end
+
+    always @(posedge i3c_recovery_image_activated) begin
+        i3c_recovery_image_activated_seen = 1'b1;
+    end
+
+    always @(fw_exec_ctrl[7:0]) begin
+        fw_state_changed_at = $realtime;
+        if (fw_exec_ctrl[7:0] === 8'h31) begin
+            recovery_payload_observed_at = $realtime;
+        end
     end
 
     // -------------------------------------------------------------------------
@@ -222,9 +258,23 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
         subsystem_reset_seen = 1'b0;
     endfunction
 
+    function automatic void clear_recovery_payload_available_seen();
+        recovery_payload_available_seen =
+            (recovery_payload_available === 1'b1);
+        recovery_payload_available_asserted_at =
+            recovery_payload_available_seen ? $realtime : 0.0;
+    endfunction
+
     function automatic void clear_recovery_image_activated_seen();
         recovery_image_activated_seen =
             (recovery_image_activated === 1'b1);
+    endfunction
+
+    function automatic void clear_i3c_recovery_seen();
+        i3c_recovery_payload_available_seen =
+            (i3c_recovery_payload_available === 1'b1);
+        i3c_recovery_image_activated_seen =
+            (i3c_recovery_image_activated === 1'b1);
     endfunction
 
 endinterface : caliptra_ss_usb_ocp_access_semantics_if

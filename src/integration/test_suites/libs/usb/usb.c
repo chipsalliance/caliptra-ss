@@ -505,6 +505,30 @@ void usb_set_device_address(uint8_t addr) {
     usb_devcmdstat_write(cmd);
 }
 
+void usb_set_device_connect(uint8_t connected) {
+    uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+
+    cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK |
+             USBHSD_DEVCMDSTAT_DCON_C_MASK |
+             USBHSD_DEVCMDSTAT_DSUS_C_MASK |
+             USBHSD_DEVCMDSTAT_DRES_C_MASK);
+    if (connected != 0u) {
+        while ((lsu_read_32(SOC_USBHSD_DEVCMDSTAT) &
+                USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
+        }
+        cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK |
+                 USBHSD_DEVCMDSTAT_DCON_C_MASK |
+                 USBHSD_DEVCMDSTAT_DSUS_C_MASK |
+                 USBHSD_DEVCMDSTAT_DRES_C_MASK);
+        cmd |= USBHSD_DEVCMDSTAT_DEV_EN_MASK |
+               USBHSD_DEVCMDSTAT_DCON_MASK;
+    } else {
+        cmd &= ~USBHSD_DEVCMDSTAT_DCON_MASK;
+    }
+    usb_devcmdstat_write(cmd);
+}
+
 void usb_dump_state(const char *tag) {
     const char *label = (tag != 0) ? tag : "state";
     uint32_t reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);

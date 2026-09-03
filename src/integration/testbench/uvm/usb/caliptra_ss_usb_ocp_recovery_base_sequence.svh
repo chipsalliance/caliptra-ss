@@ -924,6 +924,26 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             null, "*", "ocp_transfers_issued", transfers_issued);
     endtask
 
+    protected virtual task wait_mcu_axi_idle_before_finish(
+        input string label);
+
+        virtual caliptra_ss_usb_legacy_ep0_observer_if observer_vif;
+        bit idle;
+
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
+                    null, "uvm_test_top.env",
+                    "usb_legacy_ep0_observer_if", observer_vif)) begin
+            `uvm_fatal("OCP_BASE",
+                $sformatf("%s could not obtain the MCU AXI observer.", label))
+        end
+        observer_vif.wait_for_mcu_axi_idle(100us, idle);
+        if (!idle) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s MCU AXI did not reach an idle interval.", label))
+        end
+    endtask
+
 endclass
 
 `endif // CALIPTRA_SS_USB_OCP_RECOVERY_BASE_SEQUENCE_SV

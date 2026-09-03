@@ -15,10 +15,9 @@
 // ==========================================================================
 // cptra_usb_ocp_recovery_activation_access_semantics: Caliptra core firmware
 //
-// Verifies OCP Recovery v1.1 Sec 9.2 RECOVERY_CTRL.ACTIVATE source
-// qualification. The activation action is gated: firmware nonzero writes
-// do not cause activation; only firmware writing zero after the RA has set
-// the field triggers the externally visible action.
+// Exercises OCP Recovery v1.1 Sec 9.2 RECOVERY_CTRL.ACTIVATE stored-level
+// semantics. Firmware and Recovery Agent writes share one stored field:
+// 0x0F asserts the architectural activation indication and zero deasserts it.
 //
 // Firmware/UVM synchronization state encoding:
 //   0x01 READY                   - firmware ready
@@ -27,12 +26,11 @@
 //   0x22 FW_PRE_RA_CLEARED       - firmware cleared ACTIVATE=0 before RA sets
 //   0x23 RA_ACTIVATE_PENDING     - RA has set ACTIVATE=0x0F; firmware reading
 //                                  0x0F repeatedly, confirms pending
-//   0x24 FW_NONZERO_AFTER_RA     - firmware wrote ACTIVATE=0x0F after RA set;
-//                                  readback still 0x0F (stored, not triggering)
+//   0x24 FW_NONZERO_AFTER_RA     - firmware rewrote ACTIVATE=0x0F after RA set;
+//                                  readback still 0x0F and level remains high
 //   0x25 FW_ZERO_ARMED           - firmware observed the RA protocol-error
 //                                  trigger and waits for the RA clear
-//   0x26 FW_ACTIVATE_CLEARED     - firmware wrote ACTIVATE=0; this triggers
-//                                  the externally visible activation action
+//   0x26 FW_ACTIVATE_CLEARED     - firmware wrote ACTIVATE=0; level is low
 // ==========================================================================
 
 #include <stdint.h>
@@ -82,6 +80,7 @@ enum printf_verbosity verbosity_g = LOW;
 // Maximum polling iterations.
 #define RA_POLL_LIMIT 200000u
 #define RA_STATE_HOLD_CYCLES 10000u
+#define RA_IMAGE_ACTIVATED_MASK AXI_DMA_REG_STATUS0_IMAGE_ACTIVATED_MASK
 
 static void ra_state_hold(void)
 {
@@ -159,6 +158,18 @@ static uint8_t ra_poll_protocol_error(uint8_t expect_set)
     return 1u;
 }
 
+static uint8_t ra_poll_image_activated(uint8_t expect_set)
+{
+    for (uint32_t i = 0u; i < RA_POLL_LIMIT; ++i) {
+        uint32_t status = lsu_read_32(CLP_AXI_DMA_REG_STATUS0);
+        if (((status & RA_IMAGE_ACTIVATED_MASK) != 0u) ==
+                (expect_set != 0u)) {
+            return 0u;
+        }
+    }
+    return 1u;
+}
+
 void main(void)
 {
     uint32_t rc_word = 0u;
@@ -189,10 +200,8 @@ void main(void)
     // -----------------------------------------------------------------
     // Pre-RA firmware nonzero write to RECOVERY_CTRL.ACTIVATE.
     //
-    // Write ACTIVATE=0x0F before the RA has set the field. This write
-    // must be stored (readback confirms) but must not trigger activation,
-    // because no RA USB write has been issued yet and the required
-    // firmware-zero consumption has not occurred.
+    // Write ACTIVATE=0x0F before the RA has set the field. Readback confirms
+    // the firmware store that asserts the shared activation level.
     // -----------------------------------------------------------------
 
     // Build RECOVERY_CTRL word: CMS=0, IMG_SEL=0, ACTIVATE=0x0F.
@@ -219,14 +228,20 @@ void main(void)
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
+    if (ra_poll_image_activated(1u) != 0u) {
+        VPRINTF(ERROR,
+                "CPTRA: combined AXI-DMA image-activated status did not assert\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
 
     VPRINTF(LOW,
-            "CPTRA: RECOVERY_CTRL ACTIVATE=0x%02x stored pre-RA (no activation)\n",
+            "CPTRA: RECOVERY_CTRL ACTIVATE=0x%02x stored pre-RA; level asserted\n",
             activate_byte);
     cptra_usb_ocp_recovery_signal_state(RA_FW_STATE_FW_NONZERO_STORED_PRE, 0u);
     ra_state_hold();
 
-    // Clear ACTIVATE via CPUif. No activation triggered.
+    // Clear ACTIVATE via CPUif; the shared activation level deasserts.
     if (cptra_usb_ocp_recovery_write_recovery_ctrl(0u) != 0u) {
         VPRINTF(ERROR, "CPTRA: DMA write RECOVERY_CTRL ACTIVATE=0 failed\n");
         SEND_STDOUT_CTRL(0x1);
@@ -244,6 +259,12 @@ void main(void)
         VPRINTF(ERROR,
                 "CPTRA: RECOVERY_CTRL ACTIVATE not zero after pre-RA clear: 0x%08x\n",
                 rc_word);
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
+    if (ra_poll_image_activated(0u) != 0u) {
+        VPRINTF(ERROR,
+                "CPTRA: combined AXI-DMA image-activated status did not clear\n");
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
@@ -291,13 +312,19 @@ void main(void)
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
+    if (ra_poll_image_activated(1u) != 0u) {
+        VPRINTF(ERROR,
+                "CPTRA: RA activation did not reach combined AXI-DMA status\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
 
     VPRINTF(LOW, "CPTRA: RA ACTIVATE=0x0F is pending\n");
     cptra_usb_ocp_recovery_signal_state(RA_FW_STATE_RA_ACTIVATE_PENDING, 0u);
 
     // -----------------------------------------------------------------
-    // Firmware nonzero write to ACTIVATE after RA has set it.
-    // This write must store the value without triggering activation.
+    // Firmware rewrites ACTIVATE after RA has set it. The value remains 0x0F
+    // and the shared activation level remains asserted.
     // -----------------------------------------------------------------
 
     rc_word = (uint32_t)RA_RC_ACTIVATE_CODE << RA_RC_ACTIVATE_SHIFT;
@@ -316,9 +343,10 @@ void main(void)
     }
 
     activate_byte = (uint8_t)((rc_word & RA_RC_ACTIVATE_MASK) >> RA_RC_ACTIVATE_SHIFT);
-    if (activate_byte == 0u) {
+    if (activate_byte != RA_RC_ACTIVATE_CODE) {
         VPRINTF(ERROR,
-                "CPTRA: RECOVERY_CTRL ACTIVATE is zero after FW nonzero write post-RA\n");
+                "CPTRA: RECOVERY_CTRL ACTIVATE post-RA readback 0x%02x, expected 0x%02x\n",
+                activate_byte, RA_RC_ACTIVATE_CODE);
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
@@ -341,13 +369,12 @@ void main(void)
     }
 
     // -----------------------------------------------------------------
-    // Firmware writes ACTIVATE=0. This triggers the externally visible
-    // activation action (recovery_image_activated output asserts).
+    // Firmware writes ACTIVATE=0, deasserting the shared activation level.
     // -----------------------------------------------------------------
 
     if (cptra_usb_ocp_recovery_write_recovery_ctrl(0u) != 0u) {
         VPRINTF(ERROR,
-                "CPTRA: DMA write RECOVERY_CTRL ACTIVATE=0 (trigger) failed\n");
+                "CPTRA: DMA write RECOVERY_CTRL ACTIVATE=0 (clear) failed\n");
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
@@ -367,9 +394,15 @@ void main(void)
         SEND_STDOUT_CTRL(0x1);
         while (1) {}
     }
+    if (ra_poll_image_activated(0u) != 0u) {
+        VPRINTF(ERROR,
+                "CPTRA: final activation clear did not reach combined AXI-DMA status\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
 
     VPRINTF(LOW,
-            "CPTRA: RECOVERY_CTRL ACTIVATE cleared by firmware; activation triggered\n");
+            "CPTRA: RECOVERY_CTRL ACTIVATE cleared by firmware; level deasserted\n");
     cptra_usb_ocp_recovery_signal_state(RA_FW_STATE_FW_ACTIVATE_CLEARED, 0u);
 
     VPRINTF(LOW,

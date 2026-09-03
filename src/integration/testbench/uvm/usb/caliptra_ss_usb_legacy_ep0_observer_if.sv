@@ -71,6 +71,8 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     localparam logic [3:0] MCU_COMMAND_PUBLISH_POST = 4'h2;
     localparam logic [3:0] MCU_COMMAND_RELEASE_CALIPTRA = 4'h3;
     localparam logic [3:0] MCU_COMMAND_PUBLISH_RESET_POST = 4'h4;
+    localparam logic [3:0] MCU_COMMAND_CLEAR_DCON = 4'h5;
+    localparam logic [3:0] MCU_COMMAND_SET_DCON = 4'h6;
 
     localparam logic [1:0] SNAPSHOT_STATE_BASELINE = 2'h1;
     localparam logic [1:0] SNAPSHOT_STATE_POST     = 2'h2;

@@ -40,6 +40,8 @@
 #define OCP_RECOVERY_POLL_ITERS 50000u
 #define OCP_RECOVERY_DMA_ERR_LIMIT 20u
 #define SS_GENERIC_FW_EXEC_CTRL_GO_MASK (1u << 2)
+#define OCP_FW_STATE_RECOVERY_PENDING 0x30u
+#define OCP_FW_STATE_PAYLOAD_OBSERVED 0x31u
 
 volatile char* stdout = (char *)STDOUT;
 volatile uint32_t intr_count = 0;
@@ -142,6 +144,8 @@ void main(void) {
             OCP_RECOVERY_POLL_ITERS) != 0u) {
         fail_and_halt("CPTRA: recovery FIFO batch did not become available");
     }
+    cptra_usb_ocp_recovery_signal_state(
+        OCP_FW_STATE_PAYLOAD_OBSERVED, 0u);
     if (cptra_usb_ocp_recovery_write_device_status(
             CPTRA_OCP_RECOVERY_DEVICE_STATUS_RECOVERY_PENDING,
             0u) != 0u) {
@@ -149,6 +153,8 @@ void main(void) {
     } else {
         VPRINTF(LOW, "CPTRA: published Recovery Pending (0x04)\n");
     }
+    cptra_usb_ocp_recovery_signal_state(
+        OCP_FW_STATE_RECOVERY_PENDING, 0u);
 
     image_size_words = cptra_usb_ocp_recovery_read_image_size_words();
     if (image_size_words == 0u) {

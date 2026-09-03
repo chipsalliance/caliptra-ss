@@ -219,6 +219,7 @@ global:
         - '-sverilog -full64'
         - '-debug_access+all'
         - +define+CLP_ASSERT_ON
+        - +define+ABR_ASSERT_ON
         - +define+AVERY_ASSERT_ON
         - +define+AVERY_MONITOR_ON
         # Used in caliptra_top_sva to find signals
