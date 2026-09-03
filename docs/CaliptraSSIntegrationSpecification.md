@@ -70,7 +70,7 @@
   - [Sequences: Reset, Boot](#sequences-reset-boot)
   - [UDS \& Field Entropy FIPS Zeroization Sequence](#uds--field-entropy-fips-zeroization-sequence)
   - [FIPS Zeroization Sequence For ECC](#fips-zeroization-sequence-for-ecc)
-  - [Miscellanious Fuse Integration Guidelines](#miscellanious-fuse-integration-guidelines)
+  - [Miscellaneous Fuse Integration Guidelines](#miscellaneous-fuse-integration-guidelines)
   - [How to test : Smoke \& more](#how-to-test--smoke--more)
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
@@ -161,6 +161,8 @@
     - [Known Lint Issue](#known-lint-issue)
       - [Signal Width Mismatches](#signal-width-mismatches)
       - [Undriven signals](#undriven-signals)
+- [Trademark Compliance](#trademark-compliance)
+  - [SoC Integration Requirements](#soc-integration-requirements)
 - [Terminology](#terminology)
 
 
@@ -188,7 +190,7 @@ The components described in this document are either obtained from open-source G
 | IP/Block      | Code (GitHub URL)                                                         | Documentation (URL)                                                           |
 |---------------|---------------------------------------------------------------------------|-------------------------------------------------------------------------------|
 | Caliptra      | [GitHub - chipsalliance/Caliptra](https://github.com/chipsalliance/Caliptra)| [Caliptra Gen 2.0 Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/caliptra_20/Caliptra.md)
-| Caliptra-SS   | [GitHub - chipsalliance/caliptra-ss](https://github.com/chipsalliance/caliptra-ss)| [Hardware Specification Document](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md)
+| Caliptra-SS   | [GitHub - chipsalliance/caliptra-ss](https://github.com/chipsalliance/caliptra-ss)| [Hardware Specification Document](./CaliptraSSHardwareSpecification.md)
 | Caliptra-rtl  | [GitHub - chipsalliance/caliptra-rtl](https://github.com/chipsalliance/caliptra-rtl)      | [Caliptra RTL documentation](https://github.com/chipsalliance/caliptra-rtl/tree/main/docs) |
 | Cores-VeeR    | [GitHub - chipsalliance/Cores-VeeR-EL2](https://github.com/chipsalliance/Cores-VeeR-EL2)  | [VeeR EL2 Programmer’s Reference Manual](https://chipsalliance.github.io/Cores-VeeR-EL2/html/main/docs_rendered/html/index.html) |
 | I3C-Core      | [GitHub - chipsalliance/i3c-core](https://github.com/chipsalliance/i3c-core)              | [I3C core documentation](https://github.com/chipsalliance/i3c-core?tab=readme-ov-file#i3c-core) |
@@ -223,12 +225,13 @@ By performing these design and verification tasks, the integrator ensures that t
 
 | File | Description |
 |------|------|
-| [css_mcu0_dmi_jtag_to_core_sync.v](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_jtag_to_core_sync.v)      |Replace with a technology-specific sync cell. This synchronizer implements edge detection logic using a delayed flip flop on the output domain to produce a pulse output. Integrators must take care to ensure logical equivalence when replacing this logic with custom cells.|
-|[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvclkhdr/css_mcu0_rvoclkhdr with a technology-specific clock gater. Modifying this file may not be necessary if integrators override the clock gate module that is used by setting TECH_SPECIFIC_EC_RV_ICG.|
-|[css_mcu0_beh_lib.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvsyncss (and css_mcu0_rvsyncss_fpga if the design will be implemented on an FPGA) with a technology-specific sync cell.|
+| [css_mcu0_dmi_jtag_to_core_sync.v](../src/riscv_core/veer_el2/rtl/design/dmi/css_mcu0_dmi_jtag_to_core_sync.v)      |Replace with a technology-specific sync cell. This synchronizer implements edge detection logic using a delayed flip flop on the output domain to produce a pulse output. Integrators must take care to ensure logical equivalence when replacing this logic with custom cells.|
+|[css_mcu0_beh_lib.sv](../src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvclkhdr/css_mcu0_rvoclkhdr with a technology-specific clock gater. Modifying this file may not be necessary if integrators override the clock gate module that is used by setting TECH_SPECIFIC_EC_RV_ICG.|
+|[css_mcu0_beh_lib.sv](../src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv)|Replace css_mcu0_rvsyncss (and css_mcu0_rvsyncss_fpga if the design will be implemented on an FPGA) with a technology-specific sync cell.|
 |[src/integration/rtl/caliptra_ss_includes.svh](../src/integration/rtl/caliptra_ss_includes.svh)|Modify the parameter `CPTRA_SS_ROM_SIZE_KB` to define the correct size of the MCU ROM in integrated design. No other parameters in this file are permitted to be modified. |
 
 
+[MCU Core Configuration Customization](#mcu-core-configuration-customization)
 [Caliptra Core RTL modifications](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#integrator-rtl-modification-requirements)
 
 It is mandatory that any build processes used (e.g. simulation, lint, synthesis) define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`, as described in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md). This ensures that Caliptra provides all Subsystem-related features and configuration. Example build scripts provided in the Caliptra Subsystem repository (such as [Makefile](../tools/scripts/Makefile)) demonstrate how this might be performed.
@@ -458,7 +461,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
 | External | input     | 1     | `cptra_ss_lc_Allow_RMA_or_SCRAP_on_PPD_i`     | Allow RMA or SCRAP on PPD input                   |
 | External | input     | 1     | `cptra_ss_FIPS_ZEROIZATION_PPD_i`    | Zeroization request with PPD input. If FIPS zeroization flow is required, it shall be set before Caliptra SS is out of reset.       |
-| External |input      |   1   | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`        | Enables Volatile TEST_UNLOCKED0 state transition infra (see [Volatile-Unlock](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations))|
+| External |input      |   1   | `cptra_ss_lc_sec_volatile_raw_unlock_en_i`        | Enables Volatile TEST_UNLOCKED0 state transition infra (see [Volatile-Unlock](./CaliptraSSHardwareSpecification.md#exception-non-volatile-debugging-infrastructure-and-initial-raw-state-operations))|
 | External | output    | 1     | `cptra_ss_dbg_manuf_enable_o`    | Indication that the debug is unlocked for manufacturing state and this is set by Caliptra Core        |
 | External | output    | 64    | `cptra_ss_cptra_core_soc_prod_dbg_unlock_level_o`    | Indication that the debug is unlocked for production state. Each bit represents a debug level. Currently, 8-bit is supported with Caliptra ROM |
 | External | output    | na     | `caliptra_ss_life_cycle_steady_state_o`    | Life-cycle state broadcasted by fuse macro for any additional SOC specific use cases       |
@@ -503,14 +506,14 @@ Internally, strap values are consumed at different points during the boot sequen
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 333* MHz to 400 MHz
+  - **Required Frequency** 333* MHz minimum
     - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
       - 333 MHz was calculated assuming SCL PAD -> D and SDA Q -> PAD timing is 0. SOCs with large timing delays might need to run at a faster clock frequency to meet tSCO timing of 12ns. 
     - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
     - Previous I3C Core releases permitted use of a 170 MHz clock as part of a faulty configuration that involved disabling input synchronizers. This configuration produces CDC violations and is no longer permitted. If integrators follow the requirement for 333MHz clock and do not disable synchronizers, CDC in the phy is clean. The following issues include discussion about the CDC violations from the invalid configuration:
        - [I3C Repo CDC Issue](https://github.com/chipsalliance/i3c-core/issues/72)
        - [Caliptra-SS Repo I3C CDC Issue](https://github.com/chipsalliance/caliptra-ss/issues/777) 
-  - **Clock Source** Must be derived from the SoC’s clock generation module or a stable external oscillator.
+  - **Clock Source** Must be derived from the SoC’s clock generation module or a stable on-die oscillator.
   - **Integration Notes**
      1. Verify that the SoC or system-level clock source provides a stable clock.
      2. The clock signal must be properly buffered if necessary to meet the subsystem's setup and hold timing requirements.
@@ -527,8 +530,8 @@ The `cptra_ss_rdc_clk_cg_o` output clock is a clock gated version of `cptra_ss_c
      3. Clock gating controlled by `cptra_ss_warm_reset_rdc_clk_dis_o`.
      4. Any SOC logic on a deeper reset domain than CSS can use this clock to resolve RDC issues.
 
-The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`. It is gated whenever `cptra_ss_mcu_rst_b_o` is asserted to avoid RDC issues within the MCU warm and cold reset domains. 
-  
+The `cptra_ss_mcu_clk_cg_o` output clock is a gated version of `cptra_ss_clk_i`. It is gated whenever `cptra_ss_mcu_rst_b_o` is asserted to avoid RDC issues within the MCU warm and cold reset domains.
+
   - **Signal Name** `cptra_ss_mcu_clk_cg_o`
   - **Required Frequency** Same as `cptra_ss_clk_i`.
   - **Clock Source** Caliptra SS MCI clock gater
@@ -549,7 +552,7 @@ The `cptra_ss_rst_b_i` signal is the primary reset input for the Caliptra Subsys
      - If the reset source is asynchronous, a synchronizer circuit must be used before connecting to the subsystem.
      - During SoC initialization, assert this reset signal until all subsystem clocks and required power domains are stable.
      - It is **illegal** to only toggle `cptra_ss_rst_b_i` until both Caliptra and MCU have received at least one FW update. Failure to follow this requirement could cause them to execute out of an uninitialized SRAM.
-     - SOC should assert `cptra_ss_reset_b_i` after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle. This will guarantee no outstanding AXI transactions from MCU and help avoid RDC issues.  
+     - SOC should assert `cptra_ss_reset_b_i` after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle. This will guarantee no outstanding AXI transactions from MCU and help avoid RDC issues.
 
 The `cptra_ss_rst_b_o` is a delayed version of `cptra_ss_rst_b_i` to ensure `cptra_ss_rdc_clk_cg_o` is gated before reset is asserted. This reset is needed for the purpose of RDC between the warm reset domain and the cold reset/memory domain.
 
@@ -596,7 +599,7 @@ Integrator must connect following list of manager and subordinates to axi interc
 
 - AXI USER width is 32-bits for all AXI interfaces in the Caliptra Subsystem. Only the Address User signals are used (ARUSER and AWUSER) for secure access filtering. Other USER signals are either tied to 0 or not used (WUSER, RUSER, BUSER). ARUSER and AWUSER must be passed unmodified through the AXI interconnect to all AXI subordinates in the Subsystem. Each logic block inside the Subsystem is responsible for performing its own AXI User filtering based on access privileges. AXI interconnect is only responsible for passing the unmodified signals along with the transaction requests, not for performing any access filtering.
 
-- AXI ID width at each MCU manager interface must not be modified from the configured values. ID width for each of the MCU AXI Manager interfaces is defined by the <IF_NAME>_BUS_TAG parameter from this file: [css_mcu0_el2_param.vh](https://github.com/chipsalliance/caliptra-ss/blob/main/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh). Port connections may be seen in [mcu_top.sv](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mcu/rtl/mcu_top.sv). ID Width of the Caliptra DMA AXI Manager interface is defined in [soc_ifc_pkg.sv](../third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv).
+- AXI ID width at each MCU manager interface must not be modified from the configured values. ID width for each of the MCU AXI Manager interfaces is defined by the <IF_NAME>_BUS_TAG parameter from this file: [css_mcu0_el2_param.vh](../src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh). Port connections may be seen in [mcu_top.sv](../src/mcu/rtl/mcu_top.sv). ID Width of the Caliptra DMA AXI Manager interface is defined in [soc_ifc_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/soc_ifc/rtl/soc_ifc_pkg.sv).
   * IFU_BUS_TAG: 3. Interconnect should support ID values 0-7.
   * LSU_BUS_TAG: 3. Interconnect should support ID values 0-7.
   * SB_BUS_TAG: 1. Interconnect should support ID values 0,1.
@@ -621,6 +624,8 @@ Integrator must connect following list of manager and subordinates to axi interc
     |------------------|------------------|-------------------|---------------------------|
     | 64'h5000_0000    | 64'h5FFF_FFFF    | MCU DCCM             | MCU Data Closely Coupled Memory. No external subordinates may be assigned address space in the same 256MiB region as the DCCM. For more details, refer to the VeeR EL2 Programmer's Reference Manual.   |
     | 64'h6000_0000    | 64'h6FFF_FFFF    | MCU PIC              | MCU Programmable Interrupt Controller. No external subordinates may be assigned address space in the same 256MiB region as the PIC. For more details, refer to the VeeR EL2 Programmer's Reference Manual.    |
+
+  - Integrators are permitted to define a new configuration for the MCU (as described in [MCU Core Configuration Customization](#MCU-Core-Configuration-Customization)), which may include reassigning these restricted regions to new addresses. In this case, the new address regions must adhere to this same requirement on avoiding conflicts.
 
 - Subordinate Address Map (reference only) / List of sub connected to Interconnect
 
@@ -657,9 +662,9 @@ See Hitless Update Flow to understand exactly when this signal shall be set/clea
 
 ### Caliptra Core Reset Control
 
-Typically Caliptra reset is directly controlled by MCI. This means `cptra_ss_mci_cptra_rst_b_o` is directly looped back to  `cptra_ss_mci_cptra_rst_b_i`.
+Typically Caliptra reset is directly controlled by MCI. This means `cptra_ss_mci_cptra_rst_b_o` is directly looped back to `cptra_ss_mci_cptra_rst_b_i`.
 
-If an SOC wants to keep Caliptra in reset they can tie off `cptra_ss_mci_cptra_rst_b_i` and not user  `cptra_ss_mci_cptra_rst_b_o`.
+If an SOC wants to keep Caliptra in reset they can tie off `cptra_ss_mci_cptra_rst_b_i` and not use `cptra_ss_mci_cptra_rst_b_o`.
 
 If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals.
 
@@ -671,7 +676,7 @@ Typically MCU reset is directly controlled by MCI. This means `cptra_ss_mcu_rst_
 
 The SOC can choose to delay the MCU reset deassertion. The SOC should be aware that MCU clock enable is based off `cptra_ss_mcu_rst_b_o`.
 
-If the SOC wants to delay assertion of MCU reset this can be done, but integrators need to be aware the MCU reset counter (`MIN_MCU_RST_COUNTER_WIDTH`) starts counting when `cptra_ss_mcu_rst_b_i` asserts. Meaning MCU could be in reset for shorter than expected. To resolve this issue the SOC should implement their own reset counter to delay the reset deassertion. 
+If the SOC wants to delay assertion of MCU reset this can be done, but integrators need to be aware the MCU reset counter (`MIN_MCU_RST_COUNTER_WIDTH`) starts counting when `cptra_ss_mcu_rst_b_i` asserts. Meaning MCU could be in reset for shorter than expected. To resolve this issue the SOC should implement their own reset counter to delay the reset deassertion.
 
 Arbitrary reset assertions/deassertions should not be done unless the integrator understands exactly what they are doing. This can cause RDC issues within Caliptra SS.
 
@@ -758,7 +763,7 @@ Note that the example assumes that data and ECC codes are in non-deterministic b
 #### Caliptra Subsystem error handling flow
 
 1. Any implementation of error and recovery flows must adhere to the error handling requirements specified in [Caliptra.md](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#error-reporting-and-handling)
-2. See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure and error handling in Caliptra Subsystem.
+2. See [MCI error handling](./CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure and error handling in Caliptra Subsystem.
 3. SoC level reporting and handling of fatal & non-fatal errors is product-specific architecture, outside the scope of Caliptra Subsystem definition. For example, a CPU and a PCIe device may handle fatal and non-fatal errors differently.
 
 
@@ -871,7 +876,7 @@ Integrators have two main approaches for handling MCI memory mapping:
 
 When MCU SRAM and MCU MBOX SRAM remain within the main MCI address space (not split off), integrators should consider the following access limitations:
 
-**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU. 
+**DWORD Access Requirement**: MCI peripherals (MCI CSRs, MCU trace buffer CSRs, etc) **require** "side effect" attribute enabled. When "side effect" is enabled **dword-aligned accesses are required**. Unaligned accesses, like accessing a `uint8_t`, are not permitted and will result in a read fault error in the MCU.
 
 If you want to avoid these DWORD alignment limitations and allow more flexible access patterns, you can choose to implement the [Split Memory Mapping](#split-memory-mapping) (Option 2) in your AXI interconnect for MCU SRAM and/or MCU MBOX SRAM. This allows the SRAMs to be placed in regions without the side effect attribute.
 
@@ -889,7 +894,7 @@ If you want to enable MCU iCache functionality, you must implement the [Split Me
 
 This linker script defines the memory layout for the **MCU** firmware. It specifies the placement of various sections, ensuring proper memory mapping and execution flow.
 
-**Example** Linker File can be found at : [ integration/test_suite/libs/riscv_hw_if/link.ld  ](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/test_suites/libs/riscv_hw_if/link.ld)
+**Example** Linker File can be found at : [ integration/test_suite/libs/riscv_hw_if/link.ld  ](../src/integration/test_suites/libs/riscv_hw_if/link.ld)
 
 By following this linker script configuration, the **validation** firmware can be correctly mapped and executed within the **Caliptra Subsystem**. Memory mapping for the validation firmware follows these principles:
  - Instructions are stored in ROM for initial boot (.text)
@@ -901,7 +906,7 @@ By following this linker script configuration, the **validation** firmware can b
 
 | External interrupt vector                | Description                                                                 |
 |--------------------------------|-----------------------------------------------------------------------------|
-|  1              | MCI interrupts see [MCI interrupt spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-interrupts) and [MCI interrupt registers](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.intr_block_rf)    |
+|  1              | MCI interrupts see [MCI interrupt spec](./CaliptraSSHardwareSpecification.md#mci-interrupts) and [MCI interrupt registers](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.intr_block_rf)    |
 |  2              | I3C Interrupts    |
 | 255:3 | Exposed to SOC via `cptra_ss_mcu_ext_int`|
 
@@ -998,7 +1003,7 @@ This field defaults to 4 bytes but can be extended to accommodate storage of a f
 ---
 ## Direct Access Interface
 
-Fuse macros has to be programmed via the Direct Access Interface, which is comprised of the following CSRs:
+Fuse macros has to be programmed via the Direct Access Interface, which comprises the following CSRs:
 
 CSR Name                             | Description
 -------------------------------------|------------------------------------
@@ -1093,7 +1098,7 @@ The hardware will set [`DIRECT_ACCESS_REGWEN`](../src/fuse_ctrl/doc/otp_ctrl_reg
    - Validate readiness by checking the `FUSE_CTRL_STATUS` register.
 
 ## UDS & Field Entropy FIPS Zeroization Sequence
-This sequence follows the "theory of operation" stated in this ['fuse-zeroization-programmer's-guide'](https://github.com/chipsalliance/caliptra-ss/blob/main/src/fuse_ctrl/doc/fuse_ctrl_zeroization_programmers_guide.md)
+This sequence follows the "theory of operation" stated in this ['fuse-zeroization-programmer's-guide'](../src/fuse_ctrl/doc/fuse_ctrl_zeroization_programmers_guide.md)
 
 Follow these steps in order to correctly zeroize the fuses and verify the operation for any partition that requires FIPS zeroization to be set (determined by zeroizable flag when a partition is generated).
 1. Assert Physical Presence: Set the FIPS_zeroization_PPD pin high before taking the Caliptra subsystem out of reset. This confirms physical presence and authorizes the zeroization. When this signal is asserted, it triggers preemptive zeroization of secret FUSEs. The **MCU ROM** samples `cptra_ss_FIPS_ZEROIZATION_PPD_i` by reading the corresponding register storing its value in MCI. If `cptra_ss_FIPS_ZEROIZATION_PPD_i == HIGH`, the MCU ROM writes `32'hFFFF_FFFF` to the `ss_soc_MCU_ROM_zeroization_mask_reg` register of **MCI**. If this mask register is not set by MCU, the zeroization request is aborted by the fuse controller.
@@ -1109,10 +1114,10 @@ Follow these steps in order to correctly zeroize the fuses and verify the operat
 ## FIPS Zeroization Sequence For ECC
 Zeroization is implemented within the fuse controller RTL module. It is therefore the integrator’s responsibility to ensure that the ECC bits in the corresponding fuse partition are also zeroized when a zeroization command is issued to the fuse macro. To achieve this, the integrator must provide a dedicated implementation in the fuse macro wrapper to handle zeroization of the ECC bits.
 
-## Miscellanious Fuse Integration Guidelines
+## Miscellaneous Fuse Integration Guidelines
 - If there is a provisioning step where SW (non-secret) and secret partitions need to be programmed within the same reset/power cycle of a SOC, then SW partition needs to be programmed first
 - Whenever a secret partition is programmed, it requires a FC reset, implying it requires a SOC reset
-- ECC bits inside fuse macros MUST be zeroized per FIPS guidelines. Since these bits are implemented by SOC a a part of OTP gasket, SOC should also implement FIPS zeroization of the ECC for UDS, FE, Ratchet Seeds (OCP lock), any vendor secrets (if required by FIPS).
+- ECC bits inside fuse macros MUST be zeroized per FIPS guidelines. Since these bits are implemented by SOC as a part of OTP gasket, SOC should also implement FIPS zeroization of the ECC for UDS, FE, Ratchet Seeds (OCP lock), any vendor secrets (if required by FIPS).
 - FIPS zeroization of the ECC bits of a given partition must be done after the FIPS zeroization of the partition data, zeroization marker and digest.
 - UDS & FE MUST ONLY be FIPS zeroized by Caliptra Core (by Subsystem default design construction doesnt allow anyone else to do this operation).
   - DAI Command Error Checking: The Caliptra core is responsible for checking the result of each DAI zeroization command to ensure it completed successfully. Any errors must be handled appropriately.
@@ -1280,15 +1285,15 @@ Because of these dynamic shifts:
 - The **CMD register address** must be explicitly provided, even though the other fuse controller registers are laid out consecutively.
 
 #### Strap Definitions
-- **`cptra_ss_strap_generic_0_i`**  
+- **`cptra_ss_strap_generic_0_i`**
   A 32-bit input strap that encodes:
   - **Upper 16 bits**: Bit index of the idle status bit (`IDLE_BIT_STATUS`) within `SOC_OTP_CTRL_STATUS`.
   - **Lower 16 bits**: Offset address of `SOC_OTP_CTRL_STATUS` within the `SOC_IFC_REG` space, relative to `SOC_OTP_CTRL_BASE_ADDR`.
 
   This allows the ROM to accurately monitor the fuse controller's idle state regardless of partition-induced shifts.
 
-- **`cptra_ss_strap_generic_1_i`**  
-  A 32-bit input strap that provides the address of the **CMD register**.  
+- **`cptra_ss_strap_generic_1_i`**
+  A 32-bit input strap that provides the address of the **CMD register**.
   Since the fuse controller registers are laid out consecutively, specifying the CMD register is sufficient for the ROM to infer the locations of adjacent registers like `ADDR`, `WDATA0`, and `RDATA0`.
 
 
@@ -1394,7 +1399,7 @@ External    |interface   |   1    | `jtag_o`              | `cptra_ss_lc_ctrl_jt
 External    |input       |   1    | `scan_rst_ni`         | `cptra_ss_lc_ctrl_scan_rst_ni_i`    | LC controller scan reset input, active low|
 Internal    |output      |   3    | `alerts`              |                                     | Alert outputs generated by LCC if there is an error due to one of following: register bus, lc state and fuse programming |
 External    |input       |   1    | `esc_scrap_state0`    | `cptra_ss_lc_esclate_scrap_state0_i`| An escalation input that leads LC controller to enter into SCRAP mode  |
-External    |input       |   1    | `esc_scrap_state1`    | `cptra_ss_lc_esclate_scrap_state1_i`| An escalation input that eads LC controller to enter into SCRAP mode  |
+External    |input       |   1    | `esc_scrap_state1`    | `cptra_ss_lc_esclate_scrap_state1_i`| An escalation input that leads LC controller to enter into SCRAP mode  |
 Internal    |input       |   1    | `pwr_lc_i`            |                                     | A power initilization input coming from MCI |
 Internal    |struct      |   1    | `pwr_lc_o`            |                                     | Two outputs show: (i) LC controller can accept a request, (ii) LC is initialized. |
 Internal    |struct      |   1    | `lc_otp_vendor_test_o`|                                     | Access to fuse controller for vendor test partitions |
@@ -1404,7 +1409,7 @@ Internal    |struct      |   1    | `lc_otp_program_i`    |                     
 Internal    |struct      |   1    | `otp_lc_data_i`       |                                     | Broadcasted values from the fuse controller |
 Internal    |output      |   1    | `lc_dft_en_o`         |                                     | DFT enable to MCI |
 Internal    |output      |   1    | `lc_hw_debug_en_o`    |                                     | CLTAP enable to MCI |
-Internal    |output      |   1    | `lc_escalate_en_o`    |  `cptra_ss_lc_escalate_en_o`        | Broadcast signal to promote esclation in SoC |
+Internal    |output      |   1    | `lc_escalate_en_o`    |  `cptra_ss_lc_escalate_en_o`        | Broadcast signal to promote escalation in SoC |
 Internal    |output      |   1    | `lc_check_byp_en_o`   |  `cptra_ss_lc_check_byp_en_o`       | External clock status delivery signal to fuse controller |
 External    |output      |   1    | `lc_clk_byp_req_o`    | `cptra_ss_lc_clk_byp_req_o`         | A request port to swtich from LCC clock to external clock |
 External    |input       |   1    | `lc_clk_byp_ack_i`    | `cptra_ss_lc_clk_byp_ack_i`         | Acknowledgment signal to indicate external clock request is accepted              |
@@ -1434,7 +1439,7 @@ See [Life-cycle Controller Register Map](../src/lc_ctrl/rtl/lc_ctrl.rdl).
 
     To protect from clock stretching attacks Caliptra mandates using a clock source that is constructed within the SOC (eg. PLL, Calibrated Ring Oscillator, etc). For such a clock source, a SOC may require fuses to be programmed. TP programming demands a reliable and deterministic clock signal to ensure correct fuse write operations; which SOC may not have during the early phases of manufacturing flow due to above constraints. In order to overcome this issue, this `external clock` can be used typically in the manufacturing phase of a SOC; and for such SOCs this external clock is supplied from a platform (e.g an ATE). Since the Caliptra subsystem includes only one clock input (`cptra_ss_clk_i`), the SoC integrator is responsible for ensuring that this input can be switched to a stable source.
 
-    The Life-cycle Controller requires a token to execute conditional state transitions. All tokens reside within a single partition, which the integrator can lock only once. Therefore, if any required tokens are not programmed before the partition is locked, they will remain at their default value of 0 and cannot be updated afterward. 
+    The Life-cycle Controller requires a token to execute conditional state transitions. All tokens reside within a single partition, which the integrator can lock only once. Therefore, if any required tokens are not programmed before the partition is locked, they will remain at their default value of 0 and cannot be updated afterward.
 
     - The life-cycle controller exposes an `LC_STATE` register that carries the life-cycle controller state, which the SoC can read to determine the current life-cycle state. In addition, the Caliptra Subsystem top level provides the `caliptra_ss_life_cycle_steady_state_o` and `caliptra_ss_otp_state_valid_o` signals, which are broadcast from the fuse controller. Whenever `caliptra_ss_otp_state_valid_o` is asserted, `caliptra_ss_life_cycle_steady_state_o` reflects the latest life-cycle state stored in the fuse macro in the following cycle. Because the fuse controller is initialized earlier than the life-cycle controller, these broadcast state signals are derived from the fuse controller. Note that `caliptra_ss_otp_state_valid_o` is driven low by the fuse controller if a fatal error occurs in the fuse controller or if an escalation signal is asserted by the life-cycle controller. In contrast, `LC_STATE` provides the life-cycle controller’s own view of the state, independent of the fuse controller’s errors such as entering SCRAP state.
 
@@ -1675,7 +1680,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | :---- | :---- | :---- | :---- | :---- | :---- |
 | External | Input | 1 | `clk` |  | MCI Clock. Connected to subsystem top level clk input.|
 | External | Output | 1 | `mcu_clk_cg` |  | MCU clock gated when MCU in reset for RDC. Exposed as `cptra_ss_mcu_clk_cg_o` externally.|
-| External | Output | 1 | `cptra_ss_rdc_clk_cg` |  | MCI SS clock gated when caliptra reset asserted for RDC. Should be used whenever their is a Warm reset ->  cold reset crossing in design. Must be paired with `cptra_ss_rst_b_o` reset for proper gating. Exposed to SOC as `cptra_ss_rdc_clk_cg_o`|
+| External | Output | 1 | `cptra_ss_rdc_clk_cg` |  | MCI SS clock gated when caliptra reset asserted for RDC. Should be used whenever there is a warm reset ->  cold reset crossing in design. Must be paired with `cptra_ss_rst_b_o` reset for proper gating. Exposed to SOC as `cptra_ss_rdc_clk_cg_o`|
 
 **Table: MCI Resets**
 
@@ -1896,7 +1901,7 @@ The two regions have different access protection. The size of the regions is dyn
 
   - **Integrator RTL modification requirements**
 
-    MCI reused synchronizer modules from Caliptra Core like caliptra\_2ff\_syn.sv. Integrators are required to replace these modules with technology-specific sync cells.
+    MCI reuses synchronizer modules from Caliptra Core, including caliptra_2ff_sync.sv and caliptra_prim_flop_2sync.sv. Integrators are required to replace these modules with technology-specific sync cells.
 
     MCI does not itself contain modules that need to be directly modified by the integrator.
 
@@ -1908,7 +1913,7 @@ The two regions have different access protection. The size of the regions is dyn
 
     Activity on any bit of the `mci_generic_input_wires` triggers a notification interrupt to the microcontroller indicating a bit toggle.
 
-    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.  
+    The following tables describe the allocation of functionality on `mci_generic_input_wires` and `mci_generic_output_wires`. Bits not assigned to a function can be used by the SOC for their own needs. These generic wires could be reserved by CHIPS Alliance in future Caliptra drops. Any unused inputs shall be tied off to 0 and outputs left unconnected.
 
     **Table: MCI Generic Input Allocation**
 
@@ -1921,7 +1926,7 @@ The two regions have different access protection. The size of the regions is dyn
     | Bits | Name | Description |
     | :---- | :---- | :---- |
     | 63:0 | RESERVED | No allocated function |
-    
+
 ### Error Aggregation Connectivity Requirements
 
 MCI aggregates all fatal and non-fatal errors for Caliptra SS via two ports `agg_error_fatal` and `agg_error_non_fatal`. These errors are:
@@ -1933,7 +1938,7 @@ Errors connected to this infrastructure are required to be level signals. Pulses
 
 MCU has the ability to independently mask these aggregated interrupts to its own interrupt and to the `all_error_fatal` and `all_error_non_fatal` output ports.
 
-Aggregate error connections can be see in [Caliptra SS HW Spec: MCI Error Handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling).
+Aggregate error connections can be see in [Caliptra SS HW Spec: MCI Error Handling](./CaliptraSSHardwareSpecification.md#mci-error-handling).
 
 ### Subsystem Internal Fuse Controller Initialization Connectivity Requirements
 
@@ -2099,7 +2104,7 @@ If build-time integration straps are not used for configuring the trusted MBOX A
    - `MBOX*_VALID_AXI_USER`
    - `MBOX*_AXI_USER_LOCK`
 
-See [Caliptra SS MCU Trusted AXI Users](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSIntegrationSpecification.md#mcu-mailbox-limited-trusted-axi-users) for more details.
+See [Caliptra SS MCU Trusted AXI Users](./CaliptraSSHardwareSpecification.md#mcu-mailbox-limited-trusted-axi-users) for more details.
 
 #### Reset
 
@@ -2229,7 +2234,7 @@ the sideband notification, so MCU shall write `TARGET_USER`, set
 
 ![](images/MCI-DMI-Interface.png)
 
-MCI provides access JTAG security for MCU. Detailed debug architecture can be found in [MCI debug spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-debug). Some notes about MCI debug arcitecture:
+MCI provides access JTAG security for MCU. Detailed debug architecture can be found in [MCI debug spec](./CaliptraSSHardwareSpecification.md#mci-debug). Some notes about MCI debug arcitecture:
 
 1. MCI registers are accessed via the MCU DMI uncore address space.
 2. Limited MCU JTAG access is provided to MCI DMI registers by setting `cptra_ss_debug_intent_i`
@@ -2245,7 +2250,7 @@ MCU SRAM is fully accessable via MCU JTAG. MCU must be halted before accessing M
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. The full trace buffer spec is [here](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-trace-buffer). High level notes about trace buffer:
+MCI hosts the MCU trace buffer. The full trace buffer spec is [here](./CaliptraSSHardwareSpecification.md#mcu-trace-buffer). High level notes about trace buffer:
 
 1. It can only be accessed when debug unlocked
 2. It can be accessed via AXI or DMI
@@ -2329,7 +2334,7 @@ The expected boot sequence is:
 
 1. MCI brought out of reset
 2. MCI boot FSM progresses to `WAIT_FOR_CPTRA_BOOT_GO`
-3. Trusted SOC agent does configuration MCU ROM typically executes. See [CSS HW spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#subsystem-boot-finite-state-machine-css-bootfsm)
+3. Trusted SOC agent does configuration MCU ROM typically executes. See [CSS HW spec](./CaliptraSSHardwareSpecification.md#subsystem-boot-finite-state-machine-css-bootfsm)
 4. Trusted SOC agent sets `CPTRA_BOOT_GO.go` bringing Caliptra out of reset
 5. Trusted SOC agent executes [MCU FW Boot Update](#mcu-fw-boot-update) with Caliptra
   - When SOC agent sees `notif_cptra_mcu_reset_req_sts` set by Caliptra, SOC will see `cptra_ss_mcu_halt_req_o` asserted by MCI Boot FSM. SOC must assert `cptra_ss_mcu_halt_status_i` and `cptra_ss_mcu_halt_ack_i` back to MCI. When SOC sees `cptra_ss_mcu_halt_req_o` deassert SOC shall give full control of these signals back to MCU.
@@ -2367,7 +2372,7 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 
 
 ### MCU FW Update Flows
-The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](./CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
 
 Registers relevant to these flows:
 - Caliptra
@@ -2477,7 +2482,7 @@ Setup assumes all interrupts to MCU and all\_error\_non\_fatal are enabled via M
    4.  W1C agg\_error\_non\_fatal0
 4. Once MCU and SOC have finished their flows all interrupts will be cleared
 
-See [MCI error handling](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
+See [MCI error handling](./CaliptraSSHardwareSpecification.md#mci-error-handling) for more details on MCI error infrastructure.
 
 ## Other requirements
 
@@ -2570,7 +2575,7 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 | `i3c_scl_io`                      | inout     | 1 bit (else)              | I3C clock line (analog/digital)                                      |
 | `i3c_sda_io`                      | inout     | 1 bit (else)              | I3C data line (analog/digital)                                       |
 | `recovery_payload_available_o`    | output    | 1 bit                     | Indicates recovery payload is available and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_payload_available_o` to SOC |
-| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC | 
+| `recovery_image_activated_o`      | output    | 1 bit                     | Indicates the recovery image is activated and used by Caliptra Core. Exposed as `cptra_ss_i3c_recovery_image_activated_o` to SOC |
 | `peripheral_reset_o`              | output    | 1 bit                     | Resets connected peripherals                                         |
 | `peripheral_reset_done_i`         | input     | 1 bit                     | Acknowledges peripheral reset completion                             |
 | `escalated_reset_o`               | output    | 1 bit                     | Escalated reset output                                               |
@@ -2779,7 +2784,7 @@ The below waveform illustrates how various resets of Caliptra SS and Caliptra Co
 
 ![](images/Reset_sequencing.png)
 
-The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for atleast 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
+The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for at least 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
 
 ## RDC Waivers
 
@@ -2836,10 +2841,10 @@ The following lint violations are known and expected in the current implementati
 #### Signal Width Mismatches
 | Location | Description | Justification |
 |----------|-------------|---------------|
-| [mcu_mbox_csr.sv:271](https://github.com/chipsalliance/caliptra-ss/blob/main/src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
+| [mcu_mbox_csr.sv:271](../src/mci/rtl/mcu_mbox_csr.sv#L271) | Signal width mismatch | MSB on RHS will be optimized out during synthesis |
 
 #### Undriven signals
-These are undriven signals and deemed to be OK. If exposed to SOC leave unconnected when integrating.
+These are undriven signals and deemed to be OK. If exposed to SoC leave unconnected when integrating.
 
 | Location | Signal | Justification |
 |----------|--------|---------------|
@@ -2847,6 +2852,97 @@ These are undriven signals and deemed to be OK. If exposed to SOC leave unconnec
 | [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `ifu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
 | [`el2_veer.sv`](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/riscv_core/veer_el2/rtl/el2_veer.sv) | `lsu_axi_bready_ahb` | Caliptra Core internal RV processor uses AHB, not AXI interface, so AXI is unconnected |
 
+
+# Trademark Compliance
+
+## SoC Integration Requirements
+
+This section defines a table of integration requirements that are mandatory for an integrator's design to receive the Caliptra Subsystem Trademark. Integrators must read and comply with the guidance defined through this specification and in the [Caliptra Subsystem Hardware Specification](./CaliptraSSHardwareSpecification.md) to successfully integrate Caliptra Subsystem in their design. The purpose of this table is to remove ambiguity around integration requirements and to provide a deterministic reference for confirming compliance.
+
+| Category          | Originating Block     | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Rationale     |
+| :--               | :--                   | :--                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :--           |
+| CSS_Clk_1         | I3C                   | Clock frequency of primary input clock `cptra_ss_clk_i` must be a minimum of 333 MHz. SoCs with non-zero SCL PAD→D or SDA Q→PAD timing delays may require a higher minimum frequency to meet the 12 ns tSCO constraint, described further in [I3C Core Physical Layer](https://chipsalliance.github.io/i3c-core/phy.html#common-phy-layer).                                                                                                                                               | Functionality |
+| CSS_Clk_2         | Caliptra Subsystem    | MCU SRAM and Mailbox memories must be connected to the Caliptra Subsystem RDC output clock, `cptra_ss_rdc_clk_cg_o`.                                                                                                                                                                                                                                                                                                                                                                      | Timing |
+| CSS_Clk_3         | Caliptra Subsystem    | The core clock (`cptra_ss_clk_i`) frequency must be at least twice the TCK clock frequency of each JTAG TAP endpoint so that JTAG data passes correctly through the DMI synchronizers.                                                                                                                                                                                                                                                                                                    | Timing |
+| CSS_Rst_1         | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must assert for a minimum duration of 32 clock cycles.                                                                                                                                                                                                                                                                                                                                                                                  | Functionality |
+| CSS_Rst_2         | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must be deasserted synchronous to `cptra_ss_clk_i`.                                                                                                                                                                                                                                                                                                                                                                                     | Timing |
+| CSS_Rst_3         | Caliptra Subsystem    | `cptra_ss_rst_b_o` must be used for memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption.                                                                                                                                                                                                                                                                                                                                                                               | Timing |
+| CSS_Rst_4         | MCI                   | Integrators must not issue a warm reset (toggle `cptra_ss_rst_b_i`) until both Caliptra and MCU have each received and successfully loaded at least one firmware image. Resetting before firmware initialization risks execution from uninitialized SRAM.                                                                                                                                                                                                                                 | Functionality |
+| CSS_Rst_5         | MCI                   | SoC should not assert `cptra_ss_rst_b_i` until after `cptra_ss_mcu_halt_status_o` is asserted to guarantee MCU is idle and no outstanding AXI transactions.                                                                                                                                                                                                                                                                                                                               | Functionality |
+| CSS_Pwr_1         | Caliptra Subsystem    | `cptra_ss_pwrgood_i` must be generated by the power management unit or system power controller to properly reflect SoC power condition.                                                                                                                                                                                                                                                                                                                                                   | Functionality |
+| CSS_Pwr_2         | Caliptra Subsystem    | `cptra_ss_pwrgood_i` deassertion must be synchronous to `cptra_ss_clk_i` to prevent metastability issues.                                                                                                                                                                                                                                                                                                                                                                                 | Timing |
+| CSS_Pwr_3         | Caliptra Subsystem    | SRAMs must NOT go through BIST or repair flows across a warm reset; SRAM repair must occur during cold reset before deasserting `cptra_ss_rst_b_i`.                                                                                                                                                                                                                                                                                                                                       | Functionality |
+| CSS_Axi_1         | Caliptra Subsystem    | AXI DATA WIDTHS of all components (both manager and subordinate interfaces) connected to the AXI interconnect must be unmodified from the default configuration, as alternative data width values are unverified.                                                                                                                                                                                                                                                                         | Functionality |
+| CSS_Axi_2         | MCI                   | AXI ADDR_WIDTH must be wide enough to fully address the MCI address space.                                                                                                                                                                                                                                                                                                                                                                                                                | Functionality |
+| CSS_Axi_3         | MCI                   | MCI base address must align to the MCI total addressable space calculated from MCU_SRAM_OFFSET + MCU_SRAM_SIZE.                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
+| CSS_Axi_4         | Caliptra Subsystem    | ARUSER and AWUSER (32-bit) must be passed unmodified through the AXI interconnect to all AXI subordinates for secure access filtering.                                                                                                                                                                                                                                                                                                                                                    | Threat Model |
+| CSS_Axi_5         | Caliptra Subsystem    | AXI ID width at each MCU manager interface must not be modified from configured values (IFU_BUS_TAG: 3, LSU_BUS_TAG: 3, SB_BUS_TAG: 1).                                                                                                                                                                                                                                                                                                                                                   | Functionality |
+| CSS_Axi_6         | Caliptra Subsystem    | The SoC AXI interconnect routing policy must prevent untrusted AXI managers from being routed to Caliptra Subsystem subordinate interfaces. While each block performs its own AXI USER-based access filtering, the interconnect routing policy is required as a defense-in-depth first line of defense.                                                                                                                                                                                   | Threat Model |
+| CSS_Axi_7         | MCI                   | `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_mcu_ifu_axi_user_i` must be driven from constant, non-software-programmable sources throughout the boot session. These straps directly define the MCU's outgoing ARUSER and AWUSER identity and must not be routed through mutable logic. See [Strap Timing Requirements](#strap-timing-requirements) and [Connecting AXI Interconnect](#connecting-axi-interconnect).                                                            | Threat Model |
+| CSS_Axi_8         | MCI                   | When using [MCU No ROM Config](#mcu-no-rom-config), `cptra_ss_strap_mci_soc_config_axi_user_i` must identify the designated trusted SoC configuration agent, which must be distinct from the MCU. When using [No Caliptra Core Config](#no-caliptra-core-config), `cptra_ss_strap_mcu_sram_config_axi_user_i` must identify the designated trusted SoC firmware-provisioning agent, which must be distinct from the MCU. The SoC must prevent all other agents from generating AXI transactions that match either configured identity. `cptra_ss_strap_mci_soc_config_axi_user_i` must be 0 when no SoC configuration agent is authorized; its `32'hFFFF_FFFF` debug wildcard must not be used in production. | Threat Model |
+| CSS_Axi_9         | MCI                   | For each instantiated MCI mailbox, integrators must define the subset of trusted AXI users permitted to access it. Before any SoC agent uses the mailbox, integrators must either configure the trusted-user list at integration time with `SET_MCU_MBOX{0,1}_AXI_USER_INTEG` and `MCU_MBOX{0,1}_VALID_AXI_USER`, or program and lock `MBOX*_VALID_AXI_USER` with `MBOX*_AXI_USER_LOCK`. All identities outside the defined trusted-user subset must remain unauthorized. See [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users).                                                                                          | Threat Model |
+| CSS_Axi_10        | Caliptra Subsystem    | The SoC must drive a defined 32-bit ARUSER or AWUSER identity on every AXI request that can reach an AXI_USER-filtering Caliptra Subsystem block: MCI (including MCU SRAM and MCI mailboxes), Fuse Controller, or I3C. The AXI_USER identity must identify the originating AXI agent and must not be replaced with other transaction metadata. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements. See [Connecting AXI Interconnect](#connecting-axi-interconnect). | Threat Model |
+| CSS_Axi_11        | Caliptra Subsystem    | AXI_USER identities configured as authorized users for MCI, Fuse Controller, or I3C must uniquely identify a single AXI agent or trust domain. The SoC must prevent an agent from generating an ARUSER or AWUSER value assigned to another agent, and must ensure that every possible AXI_USER value generated by an unauthorized agent cannot match a configured authorized identity. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements.    | Threat Model |
+| CSS_Mem_1         | Caliptra Subsystem    | SRAMs must be instantiated outside of the Caliptra Subsystem boundary and connected via memory export interfaces.                                                                                                                                                                                                                                                                                                                                                                         | Functionality |
+| CSS_Mem_2         | Caliptra Subsystem    | All entries in SRAM must be initialized to 0 value prior to deasserting `cptra_ss_rst_b_i` during cold reset.                                                                                                                                                                                                                                                                                                                                                                             | Functionality |
+| CSS_Mem_3         | MCI                   | MCU SRAM size must be a minimum of 4KB and maximum of 2MB, configured via `MCU_SRAM_SIZE_KB` parameter.                                                                                                                                                                                                                                                                                                                                                                                   | Functionality |
+| CSS_Mem_4         | MCU                   | MCU ROM write-enable (we) and write-data (wdata) signals must be left unconnected as MCU ROM has no write support.                                                                                                                                                                                                                                                                                                                                                                        | Functionality |
+| CSS_Mem_5         | MCI                   | MCU MBOX SRAM sizes are set via `MCU_MBOX0_SIZE_KB` and `MCU_MBOX1_SIZE_KB` parameters and must be configured with a maximum size of 2MB each.                                                                                                                                                                                                                                                                                                                                            | Functionality |
+| CSS_Mem_6         | Caliptra Subsystem    | An SoC-provided external staging area used in place of the MCU MBOX SRAM must implement an equivalent one-way ownership handoff. Once the image is loaded, the SoC must lock the staging area for exclusive Caliptra access. The lock must prevent all other agents from reading or writing the staging area and may be released only by Caliptra.  See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area). | Threat Model |
+| CSS_FC_1          | Fuse Controller       | Secret fuse fields (UDS and Field-Entropy) and their corresponding flip-flops must be excluded from the scan chain (both scan-in and scan-out paths). This requirement parallels the Caliptra Core scan exclusion requirement for device keys.                                                                                                                                                                                                                                            | Threat Model |
+| CSS_FC_2          | Fuse Controller       | Buffering flops for SECRET_MANUF_PARTITION, SECRET_PROD_PARTITION_0-3, and SECRET_LC_TRANSITION must be excluded from the scan chain.                                                                                                                                                                                                                                                                                                                                                     | Threat Model |
+| CSS_FC_3          | Fuse Controller       | OTP broadcast port `otp_broadcast_o`, its propagated signals, and driver signals must not be included in the scan chain.                                                                                                                                                                                                                                                                                                                                                                  | Threat Model |
+| CSS_FC_4          | Fuse Controller       | PRESENT cipher keys in `otp_ctrl_part_pkg.sv` and registers driven by these parameters must be excluded from the scan chain.                                                                                                                                                                                                                                                                                                                                                              | Threat Model |
+| CSS_FC_5          | Fuse Controller       | Caliptra Core must be the only entity that can perform FIPS zeroization of UDS and Field Entropy. Note: per ISO 19790:2025 (as adopted by FIPS), zeroization of identity keys is not mandated; this requirement applies only when zeroization is supported by the SoC.                                                                                                                                                                                                                    | Functionality |
+| CSS_FC_6          | Fuse Controller       | As part of OTP gasket implementation for all fuse partitions containing secrets that must be zeroized, integrators MUST implement zeroization of the corresponding Error Correction Code (ECC) bits inside fuse macros per FIPS guidelines. Refer to [FIPS Zeroization Sequence For ECC](#fips-zeroization-sequence-for-ecc) for more details.                                                                                                                                            | Functionality |
+| CSS_FC_7          | Fuse Controller       | `cptra_ss_strap_generic_0_i` must encode the idle bit location and STATUS register offset for fuse controller.                                                                                                                                                                                                                                                                                                                                                                            | Functionality |
+| CSS_FC_8          | Fuse Controller       | `cptra_ss_strap_generic_1_i` must provide the address of the CMD register for fuse controller.                                                                                                                                                                                                                                                                                                                                                                                            | Functionality |
+| CSS_FC_9          | Fuse Controller       | The OTP macro or wrapper must be compliant with requirements for burn semantics and word-level rewrites as described in [Life Cycle OTP Programming Behavior and Integrator Responsibilities](#life-cycle-otp-programming-behavior-and-integrator-responsibilities).                                                                                                                                                                                                                      | Functionality |
+| CSS_FC_10         | Fuse Controller       | Fuse map addresses for `SECRET_MANUF_PARTITION` and `SECRET_PROD_PARTITION_0`-`SECRET_PROD_PARTITION_3` must not be modified. The Fuse Controller filter relies on these addresses being fixed for access control to the secret partitions containing UDS seed and field entropy.                                                                                                                                                                                                         | Threat Model |
+| CSS_FC_11         | Fuse Controller       | The total number of fuse partitions configured by the integrator must fit within the available error bits in the Fuse Controller `STATUS` register. Each additional partition consumes one error bit; integrators extending the fuse map must verify the partition count does not exceed available `STATUS` bits.                                                                                                                                                                         | Functionality |
+| CSS_FC_12         | Fuse Controller       | The integrator must implement the fuse macro wrapper such that it aligns with the Fuse Controller protocol and supports operations including zeroization (data, zeroization marker, digest, and ECC bits) and macro error reporting. The wrapper provided in the caliptra-ss testbench is a model only and must be replaced for production integration.                                                                                                                                   | Functionality |
+| CSS_FC_13         | Fuse Controller       | The Fuse Controller performs digest-based integrity checking only for hardware (HW) partitions. The integrator must provide integrity checking of software (SW) partitions, either in the fuse macro wrapper or in MCU firmware.                                                                                                                                                                                                                                                          | Threat Model |
+| CSS_FC_14         | Fuse Controller       | Any change to the number of fuse partitions or partition definitions must be produced by the Caliptra fuse-generation Python script (not via hand edits to generated RTL).                                                                                                                                                                                                                                                                                                                | Trademark Compliance |
+| CSS_FC_15         | Fuse Controller       | Integrators must define, document, and implement a manufacturing plan that aligns fuse provisioning sequencing with the lifecycle states in which each partition can legally be provisioned.                                                                                                                                                                                                                                                                                              | Functionality |
+| CSS_FC_16         | Fuse Controller       | Access to the Fuse Controller must be restricted to Caliptra Core and the MCU, to prevent access to non-secret fuses (such as PK revocation) that impact device policy. Integrators must add interconnect policies or isolation logic to prevent other SoC agents from accessing the Fuse Controller registers and storage. This requirement is for defense-in-depth beyond the implemented AXI User filtering logic defined in [Programming Interface](#programming-interface-1).        | Threat Model |
+| CSS_FC_17         | Fuse Controller       | OTP scrambling constants in `otp_ctrl_part_pkg.sv` (`RndCnstKey`, `RndCnstDigestConst`, `RndCnstDigestIV` - the PRESENT cipher keys and digest constants/IVs) must be regenerated by each integrator using the fuse-generation script with a unique secret seed (`--seed`). Shipping the open-source default constants would cause all devices to share the same OTP scrambling key, enabling decryption of secret partitions (UDS, field entropy, LC tokens) if the defaults were known. | Threat Model |
+| CSS_FC_18         | Fuse Controller       | Integrators must connect SoC-level tamper-detection sources to `cptra_ss_lc_esclate_scrap_state0_i`/`cptra_ss_lc_esclate_scrap_state1_i` to satisfy FIPS 140-3 tamper-response requirements. `caliptra_ss_otp_state_valid_o` is driven low whenever a Fuse Controller fatal error occurs or `lc_escalate_en` is asserted, so integrators must not rely on OTP-derived life-cycle state while it is deasserted.                                                                            | Threat Model |
+| CSS_FC_19         | Fuse Controller       | The `cptra_ss_FIPS_ZEROIZATION_PPD_i` physical pin can trigger irreversible state transitions. Integrators should include glitch mitigation on this pin (e.g., analog filtering, synchronization, and multi-cycle qualification) so a transient glitch cannot cause unintended FIPS zeroization.                                                                                                                                                                                          | Functionality |
+| CSS_FC_20         | Fuse Controller       | The Fuse Controller instantiates a single scrambler (`u_otp_ctrl_scrmbl`) that is time-multiplexed across all partitions, so its working registers cannot be excluded per partition. Exclude only these three registers from the scan chain: `data_state_q` (64b), `data_shadow_q` (64b) and `digest_state_q` (64b), 192 flops in total. The PRESENT round-function logic, the scrambler FSM and the arbiter do not need to be excluded, and the scrambler key registers are already covered by the PRESENT cipher key requirement in this table. Partition contents pass through these registers in the clear while being descrambled. The debug intent strap prevents UDS and Field Entropy from being sensed, but `SECRET_LC_TRANSITION` is intentionally still sensed so that the Life Cycle Controller retains its transition tokens, so the RMA token digest reaches these registers in every debug scenario. | Threat Model |
+| CSS_FC_21         | Fuse Controller       | The `cptra_ss_otp_dft_en_o` output is provided to enable debug capabilities in the fuse macro wrapper logic. It is asserted only in the `TEST_UNLOCKED*` life cycle states, and is not re-asserted in later states where secrets may have been provisioned. Integrators must use this signal, rather than `cptra_ss_soc_dft_en_o`, to gate the fuse macro wrapper DFT interface. | Threat Model |
+| CSS_LCC_1         | Life Cycle Controller | LC transition token scan exclusions must follow [LC Integration Requirements](#lc-integration-requirements).                                                                                                                                                                                                                                                                                                                                                                              | Threat Model |
+| CSS_LCC_2         | Life Cycle Controller | `Allow_RMA_or_SCRAP_on_PPD` GPIO strap must be tied to 0 if not being used to prevent breaking LC controller's internal FSM.                                                                                                                                                                                                                                                                                                                                                              | Functionality |
+| CSS_LCC_3         | Life Cycle Controller | The `Allow_RMA_or_SCRAP_on_PPD` and escalation input pins (`esc_scrap_state0`, `esc_scrap_state1`) can trigger irreversible lifecycle transitions (e.g., SCRAP). Integrators should include glitch mitigation on these inputs (e.g., filtering, synchronization, multi-cycle qualification) so a transient glitch cannot cause unintended state transitions.                                                                                                                              | Functionality |
+| CSS_LCC_4         | Life Cycle Controller | SoC must respond to external clock switch request with acknowledgement within 2 clock cycles of internal clock.                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
+| CSS_LCC_5         | Life Cycle Controller | All required tokens for state transitions must be programmed before the token partition is locked, as they cannot be updated afterward.                                                                                                                                                                                                                                                                                                                                                   | Functionality |
+| CSS_LCC_6         | Life Cycle Controller | If a volatile-unlock state transition method is used, the integrator's DFT/test infrastructure must account for the unlock state being lost on power cycle (volatile unlock is reflected only via `caliptra_ss_volatile_raw_unlock_success_o`, not in fuse-controller broadcast state).                                                                                                                                                                                                   | Functionality |
+| CSS_LCC_7         | Life Cycle Controller | The Life Cycle Controller debug-decoding signals must be used as gating logic in the SoC's DFT/DFD process so that debug authorization is enforced in the integrator's DFT/DFD flows.                                                                                                                                                                                                                                                                                                     | Functionality |
+| CSS_LCC_8         | Life Cycle Controller | Once the Life Cycle Controller reaches `TEST_UNLOCKED0`, integrators must provision all required LCC TOKEN fuse partitions (e.g., transition tokens, RMA token) prior to locking the token partition.                                                                                                                                                                                                                                                                                     | Functionality |
+| CSS_LCC_9         | Life Cycle Controller | LCC transition TOKENs and `MANUF_DEBUG_UNLOCK` TOKENs must be generated from a cryptographically secure entropy source compliant with standards like [NIST SP 800-90A](https://csrc.nist.gov/pubs/sp/800/90/a/r1/final), [SP 800-90B](https://csrc.nist.gov/pubs/sp/800/90/b/final), [SP 800-90C](https://csrc.nist.gov/pubs/sp/800/90/c/4pd).                                                                                                                                            | Threat Model |
+| CSS_LCC_10        | Life Cycle Controller | Integrators must decode `cptra_ss_lc_escalate_en_o` using its full `lc_ctrl_pkg::lc_tx_t` encoding (`On=4'b0101`, `Off=4'b1010`), treating any non-`Off` value as an active escalation, and must not implement a software or hardware path to clear it once asserted (it returns to `Off` only via system reset). If consumed outside the LC clock domain, it must be resynchronized with a multibit-preserving synchronizer rather than a per-bit 2FF sync.                              | Threat Model |
+| CSS_LCC_11        | Life Cycle Controller | Integrators must define, document, and implement SoC-level behavior in response to `cptra_ss_lc_escalate_en_o` assertion, propagating the same lockdown it triggers internally today (permanent lockout of Fuse Controller partitions and the Life Cycle Controller's KMAC interface) to other dependent SoC blocks (e.g., gating debug/DFT enables and key material, routing to system-level recovery).                                                                                  | Threat Model |
+| CSS_MCI_1         | MCI                   | `cptra_ss_mcu_halt_status_o` and `cptra_ss_mcu_halt_ack_o` must be looped back to their respective input ports unless the SoC supports MCU No ROM Config. An integrator that does not use the loopback must satisfy all applicable requirements in [MCU Halt Ack Interface](#mcu-halt-ack-interface), [MCU No ROM Config](#mcu-no-rom-config), and [MCU FW Boot Update](#mcu-fw-boot-update). The integrator must follow applicable recommendations in those sections unless it documents a technically sound rationale that demonstrates the alternative provides equivalent or better functionality and security. | Functionality |
+| CSS_MCI_2         | MCI                   | Errors connected to MCI aggregate error infrastructure must be level signals; pulses are not permitted.                                                                                                                                                                                                                                                                                                                                                                                   | Functionality |
+| CSS_MCI_3         | MCI                   | `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o` must be looped back to `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i` unless the SoC controls MCU firmware updates. An integrator that does not use the loopback must satisfy all applicable requirements in [FW Execution Control Connections](#fw-execution-control-connections), [MCI Caliptra Core Connectivity Requirements](#mci-caliptra-core-connectivity-requirements), and [MCU FW Update Flows](#mcu-fw-update-flows). The integrator must follow applicable recommendations in those sections unless it documents a technically sound rationale that demonstrates the alternative provides equivalent or better functionality and security. | Functionality |
+| CSS_MCI_4         | MCI                   | `cptra_ss_mci_cptra_rst_b_o` must be looped back to `cptra_ss_mci_cptra_rst_b_i` unless the SoC modifies Caliptra reset control. An integrator that does not use the loopback must satisfy all applicable requirements in [Caliptra Core Reset Control](#caliptra-core-reset-control), [MCI Integration Requirements](#mci-integration-requirements), and [Reset Ordering](#reset-ordering). The integrator must follow applicable recommendations in those sections unless it documents a technically sound rationale that demonstrates the alternative provides equivalent or better functionality and security. | Functionality |
+| CSS_MCI_5         | MCI                   | SoC integrators must analyze RDC and CDC effects of any modification to Caliptra or MCU reset control to ensure safety of the logic against metastability.                                                                                                                                                                                                                                                                                                                                | Timing |
+| CSS_MCI_6         | MCI                   | `SOC_DFT_EN` and `SOC_HW_DEBUG_EN` outputs are not guaranteed stable during scan mode. Integrators must not rely on their stability once scan mode is active and must independently stabilize any downstream DFT/debug control signals derived from them, per [DFT Reset Control](#mci-integration-requirements).                                                                                                       | Threat Model |
+| CSS_I3C_1         | I3C                   | Connect `cptra_ss_i3c_recovery_payload_available_o` to `cptra_ss_i3c_recovery_payload_available_i` if no external I3C. Integrators using an external I3C must implement equivalent logic to provide as an input.                                                                                                                                                                                                                                                                          | Functionality |
+| CSS_I3C_2         | I3C                   | Connect `cptra_ss_i3c_recovery_image_activated_o` to `cptra_ss_i3c_recovery_image_activated_i` if no external I3C. Integrators using an external I3C must implement equivalent logic to provide as an input.                                                                                                                                                                                                                                                                              | Functionality |
+| CSS_I3C_3         | I3C                   | I3C targets must be programmed with STATIC address and a unique set of PID/BCR/DCR CSRs via AXI                                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
+| CSS_I3C_4         | I3C                   | The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface; this selection is mutually exclusive and cannot be changed dynamically after boot.                                                                                                                                                                                                                                                                              | Functionality |
+| CSS_I3C_5         | I3C                   | If the SoC requires both AXI Recovery and standard I3C Target functionality simultaneously, a second I3C core must be instantiated outside of Caliptra SS.                                                                                                                                                                                                                                                                                                                                | Functionality |
+| CSS_Tech_1        | MCU                   | `css_mcu0_dmi_jtag_to_core_sync.v` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves reset behavior. The replacement must generate exactly one `clk`-cycle `reg_en` and `reg_wr_en` pulse for each synchronized JTAG read or write request. See CSS_Tech_6 for validation requirements.                                                                                                                            | Timing |
+| CSS_Tech_2        | MCU                   | Technology-specific clock gaters must replace `css_mcu0_rvclkhdr`/`css_mcu0_rvoclkhdr` in `css_mcu0_beh_lib.sv` or set TECH_SPECIFIC_EC_RV_ICG.                                                                                                                                                                                                                                                                                                                                           | Timing |
+| CSS_Tech_3        | MCU                   | `css_mcu0_rvsyncss` in `css_mcu0_beh_lib.sv` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves width, reset polarity, and reset values. See CSS_Tech_6 for validation requirements.                                                                                                                                                                                                                                | Timing |
+| CSS_Tech_4        | MCI                   | Technology-specific replacements are required for the Caliptra Core synchronizers reused by MCI, including `caliptra_2ff_sync` and `caliptra_prim_flop_2sync`, and for clock-gating cells. Synchronizer replacements must meet CSS_Tech_6; in particular, MCI reset-window, boot, halt, error, and firmware-update crossings require latency analysis. See [MCI Integration Requirements](#mci-integration-requirements).                                                                 | Timing |
+| CSS_Tech_5        | Caliptra Core         | Integrators must perform all technology-specific cell replacements documented as recommendations in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#Integrator-RTL-modification-requirements). All clock-gating and synchronizer cell replacements defined in that section are mandatory in Caliptra Subsystem integrations; synchronizer replacements must meet CSS_Tech_6.               | Functionality |
+| CSS_Tech_6        | Caliptra Subsystem    | For every synchronizer replacement required by CSS_Tech_1, CSS_Tech_3, CSS_Tech_4, or CSS_Tech_5, the library implementation must implement synchronizer functionality that is equivalent to the replaced module. Additional synchronizer stages are permitted only after the integrator validates that its added destination-clock latency preserves reset and boot ordering, pulse/event delivery, asynchronous FIFO behavior, and multi-bit security-state behavior. The integrator owns CDC/RDC sign-off, targeted protocol simulation, and regression validation of every replaced instance and its downstream logic. | Timing |
+| CSS_Cfg_1         | Caliptra Subsystem    | Build processes must define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`.                                                                                                                                                                                                                                                                                                                                                                                                                  | Functionality |
+| CSS_Cfg_2         | Caliptra Subsystem    | Build processes must define the Verilog macro `CALIPTRA_INTERNAL_TRNG`. Integrations of Caliptra Subsystem shall not use an external TRNG. The TRNG self-test threshold registers (`CPTRA_iTRNG_ENTROPY_CONFIG0` and `CPTRA_iTRNG_ENTROPY_CONFIG1`) MUST be set to non-zero values to enable entropy self-testing. These requirements supplement but do not replace any Caliptra Core Integration Requirements pertaining to Internal TRNG.                                               | Functionality |
+| CSS_Cfg_3         | MCU                   | Integrators are permitted to reconfigure the MCU for their own needs per [MCU Core Configuration Customization](#MCU-Core-Configuration-Customization), but integrators shall not replace the MCU with any alternative microprocessor core.                                                                                                                                                                                                                                               | Functionality |
+| CSS_Cfg_4         | I3C                   | The Verilog macro `DISABLE_INPUT_FF` must NOT be defined. Defining it removes the synchronizer flip-flop on the I3C SCL input signal, creating a CDC violation.                                                                                                                                                                                                                                                                                                                           | Functionality |
+| CSS_Core_1        | Caliptra Core         | In addition to all requirements listed in this table, integrators must adhere to all integration requirements defined in the Caliptra Core Integration Specification. Caliptra Subsystem Integration Requirements supplement but do not replace any Caliptra Core Integration Requirements.                                                                                                                                                                                               | Trademark Compliance |
 
 # Terminology
 
