@@ -304,12 +304,11 @@ uses the OCP-defined state and reason encodings to report recovery entry, pendin
 images, execution outcomes, and fatal conditions.
 
 `RECOVERY_CTRL.ACTIVATE_REC_IMG` is a request field: the Recovery Agent sets it and
-firmware clears it after it has consumed and verified the requested image. No
-`boot_req`, `soc_boot_ack`, `recovery_active`, or `image_ready` sideband is generated
-by the USB core. `recovery_image_activated` is the required Caliptra streaming-
-boot level indication and asserts whenever the stored
-`RECOVERY_CTRL.ACTIVATE_REC_IMG` value is `0x0F`, regardless of the write source.
-Firmware performs any platform boot or reset action under its own recovery procedure.
+firmware clears it after it has consumed and verified the requested image.
+`recovery_image_activated` is the required Caliptra streaming-boot level indication
+and asserts whenever the stored `RECOVERY_CTRL.ACTIVATE_REC_IMG` value is
+`0x0F`, regardless of the write source. Firmware performs any platform
+boot or reset action under its own recovery procedure.
 
 The only control-plane state in `usb_ocp_recovery_top` is the
 `DEVICE_STATUS.PROT_ERROR` sticky latch. USB-only unsupported-command and host-write-
