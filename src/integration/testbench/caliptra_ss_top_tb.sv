@@ -1909,6 +1909,10 @@ module caliptra_ss_top_tb
         cptra_ss_usb_recovery_payload_available_o;
     assign ocp_access_semantics_if_inst.recovery_image_activated =
         cptra_ss_usb_recovery_image_activated_o;
+    assign ocp_access_semantics_if_inst.i3c_recovery_payload_available =
+        cptra_ss_i3c_recovery_payload_available_o;
+    assign ocp_access_semantics_if_inst.i3c_recovery_image_activated =
+        cptra_ss_i3c_recovery_image_activated_o;
     assign cptra_ss_cptra_core_generic_input_wires_i =
         ocp_access_semantics_if_inst.fw_command_active ?
         ocp_access_semantics_if_inst.fw_command_wires :

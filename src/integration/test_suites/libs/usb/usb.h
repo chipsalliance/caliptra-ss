@@ -55,6 +55,8 @@
 #define USB_LEGACY_EP0_COMMAND_PUBLISH_POST      0x2u
 #define USB_LEGACY_EP0_COMMAND_RELEASE_CALIPTRA  0x3u
 #define USB_LEGACY_EP0_COMMAND_PUBLISH_RESET_POST 0x4u
+#define USB_LEGACY_EP0_COMMAND_CLEAR_DCON        0x5u
+#define USB_LEGACY_EP0_COMMAND_SET_DCON          0x6u
 #define USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT       24u
 #define USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT      20u
 #define USB_LEGACY_EP0_COMMAND_DELTA_SHIFT       16u
@@ -243,6 +245,9 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup);
 
 // Update the USB device address field in DEVCMDSTAT.
 void usb_set_device_address(uint8_t addr);
+
+// Update the device-connect bit while preserving the staged device address.
+void usb_set_device_connect(uint8_t connected);
 
 // Returns 1 once the device has reached the USB Configured state (a
 // SET_CONFIGURATION with a non-zero value has been accepted), else 0.

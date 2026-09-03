@@ -100,16 +100,25 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
     // write_fifo_dwords: write two deterministic DWORDs to the FIFO.
     // -------------------------------------------------------------------------
     protected virtual task write_fifo_dwords(input string label);
+        write_fifo_dword_values(
+            FIFO_DWORD_0, FIFO_DWORD_1, label);
+    endtask
+
+    protected virtual task write_fifo_dword_values(
+        input bit [31:0] dword0,
+        input bit [31:0] dword1,
+        input string label);
+
         bit [7:0] payload[$];
 
         // Each DWORD is written as a 4-byte OUT transfer to INDIRECT_FIFO_DATA.
-        payload = '{FIFO_DWORD_0[7:0],  FIFO_DWORD_0[15:8],
-                    FIFO_DWORD_0[23:16], FIFO_DWORD_0[31:24]};
+        payload = '{dword0[7:0],  dword0[15:8],
+                    dword0[23:16], dword0[31:24]};
         ocp_write(OCP_CMD_INDIRECT_FIFO_DATA, payload,
                   {label, "_FIFO_DW0"});
 
-        payload = '{FIFO_DWORD_1[7:0],  FIFO_DWORD_1[15:8],
-                    FIFO_DWORD_1[23:16], FIFO_DWORD_1[31:24]};
+        payload = '{dword1[7:0],  dword1[15:8],
+                    dword1[23:16], dword1[31:24]};
         ocp_write(OCP_CMD_INDIRECT_FIFO_DATA, payload,
                   {label, "_FIFO_DW1"});
     endtask
@@ -225,8 +234,13 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
         caliptra_ss_usb_ocp_xfer_result_e result;
         caliptra_ss_usb_ocp_xfer_result_e rb_result;
         uvm_event fifo_model_reset_event;
+        bit skip_platform_actions;
 
         if (!get_sem_vif()) return;
+        skip_platform_actions = 1'b0;
+        void'(uvm_config_db#(bit)::get(
+            null, get_full_name(), "skip_platform_actions",
+            skip_platform_actions));
 
         initialize_ocp_transport();
         prot_cap_read_and_check(agent_caps, cms_count, heartbeat_period);
@@ -342,6 +356,26 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             `uvm_info("W1DC_SEQ",
                 "INDIRECT_FIFO not advertised; unsupported-command error verified.",
                 UVM_NONE)
+        end
+
+        if (skip_platform_actions) begin
+            indirect_fifo_ctrl_write(
+                8'h00, 1'b0, 32'd2,
+                "OCP_FIFO_RESET_POST_VERIFY_SETUP");
+            write_fifo_dword_values(
+                32'h13579BDF,
+                32'h2468ACE0,
+                "OCP_FIFO_RESET_POST_VERIFY");
+            wait_fw_state(
+                W1DC_SEM_STATE_POST_RESET_DRAIN,
+                "OCP_FIFO_RESET_POST_DRAIN");
+            check_fifo_reset_fw("OCP_FIFO_RESET_POST_EMPTY");
+            wait_mcu_axi_idle_before_finish("OCP_DEVICE_FIFO_CLEAR");
+            publish_transfer_count();
+            `uvm_info("W1DC_SEQ",
+                "Device and FIFO clear validation complete.",
+                UVM_NONE)
+            return;
         end
 
         // Check next-reset capabilities before the potentially disruptive

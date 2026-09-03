@@ -156,6 +156,10 @@ localparam int OCP_DEVICE_STATUS_VENDOR_LEN_MAX = 248;
 localparam logic [15:0] OCP_REC_REASON_STANDARD_MAX = 16'h0012;
 localparam logic [15:0] OCP_REC_REASON_VENDOR_MIN   = 16'h0080;
 localparam logic [15:0] OCP_REC_REASON_VENDOR_MAX   = 16'h00FF;
+localparam logic [15:0] OCP_REC_REASON_NONE             = 16'h0000;
+localparam logic [15:0] OCP_REC_REASON_AUTH_RECOVERY_FW = 16'h000F;
+localparam logic [15:0] OCP_REC_REASON_FORCED_RECOVERY  = 16'h0011;
+localparam logic [15:0] OCP_REC_REASON_FLASHLESS_BOOT   = 16'h0012;
 
 // RECOVERY_STATUS, OCP Recovery v1.1 Section 9.2.
 localparam int OCP_OFF_RS_STATUS_IMAGE_INDEX = 0;
@@ -180,6 +184,7 @@ localparam int OCP_OFF_HW_DEV_STATUS    = 0;
 localparam int OCP_OFF_HW_VENDOR_STATUS = 1;
 localparam int OCP_OFF_HW_CTEMP         = 2;
 localparam int OCP_OFF_HW_VENDOR_LEN    = 3;
+localparam logic [7:0] OCP_HW_STATUS_FATAL_ERR = 8'h04;
 localparam logic [7:0] OCP_HW_STATUS_RESERVED_MASK = 8'hF8;
 localparam int OCP_HW_STATUS_VENDOR_LEN_MAX = 251;
 
@@ -301,5 +306,11 @@ localparam logic [7:0] RA_SEM_STATE_RA_ACTIVATE_PENDING   = 8'h23;
 localparam logic [7:0] RA_SEM_STATE_FW_NONZERO_AFTER_RA   = 8'h24;
 localparam logic [7:0] RA_SEM_STATE_FW_ZERO_ARMED         = 8'h25;
 localparam logic [7:0] RA_SEM_STATE_FW_ACTIVATE_CLEARED   = 8'h26;
+localparam logic [7:0] OCP_FW_STATE_RECOVERY_PENDING = 8'h30;
+localparam logic [7:0] OCP_FW_STATE_PAYLOAD_OBSERVED = 8'h31;
+localparam logic [7:0] OCP_STATUS_OWNERSHIP_STATE_READY = 8'h40;
+localparam logic [7:0] OCP_STATUS_OWNERSHIP_STATE_PROTECTED = 8'h41;
+localparam logic [7:0] OCP_STATUS_OWNERSHIP_STATE_DONE = 8'h42;
+localparam logic [7:0] W1DC_SEM_STATE_POST_RESET_DRAIN    = 8'h17;
 
 endpackage

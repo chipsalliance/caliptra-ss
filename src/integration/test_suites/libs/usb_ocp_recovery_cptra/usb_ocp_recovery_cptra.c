@@ -213,6 +213,30 @@ uint8_t cptra_usb_ocp_recovery_write_recovery_status(
         SOC_USB_OCP_RECOVERY_REG_RECOVERY_STATUS, status_word);
 }
 
+uint8_t cptra_usb_ocp_recovery_read_recovery_status(uint32_t *word)
+{
+    if (word == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_RECOVERY_STATUS, word);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_hw_status(uint32_t *word)
+{
+    if (word == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_HW_STATUS, word);
+}
+
+uint8_t cptra_usb_ocp_recovery_write_hw_status(uint32_t word)
+{
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_HW_STATUS, word);
+}
+
 uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations)
 {
     for (uint32_t poll = 0u; poll < poll_iterations; ++poll) {

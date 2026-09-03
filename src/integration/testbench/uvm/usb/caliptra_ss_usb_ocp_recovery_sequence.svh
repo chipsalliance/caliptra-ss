@@ -52,9 +52,67 @@ class caliptra_ss_usb_ocp_recovery_sequence
     `uvm_object_utils(caliptra_ss_usb_ocp_recovery_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
+    protected virtual caliptra_ss_usb_ocp_access_semantics_if sem_vif;
+
     function new(string name = "caliptra_ss_usb_ocp_recovery_sequence");
         super.new(name);
     endfunction
+
+    protected virtual function bit get_sem_vif();
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_ocp_access_semantics_if)::get(
+                    null, "uvm_test_top.env",
+                    "ocp_access_semantics_if", sem_vif)) begin
+            `uvm_fatal("OCP_FW_STATUS",
+                "ocp_access_semantics_if not found in config_db")
+            return 1'b0;
+        end
+        return 1'b1;
+    endfunction
+
+    protected virtual task wait_firmware_ready_status();
+        bit [7:0] device_status[$];
+        bit [7:0] recovery_status[$];
+        bit       reached;
+
+        reached = 1'b0;
+        for (int unsigned poll = 0; poll < 20; poll++) begin
+            ocp_read(
+                OCP_REC_CMD_DEVICE_STATUS,
+                device_status,
+                $sformatf("OCP_FW_DEVICE_STATUS_READY_%0d", poll));
+            ocp_read(
+                OCP_REC_CMD_RECOVERY_STATUS,
+                recovery_status,
+                $sformatf("OCP_FW_RECOVERY_STATUS_READY_%0d", poll));
+
+            if ((device_status.size() > OCP_OFF_DS_VENDOR_LEN) &&
+                (recovery_status.size() >= OCP_SPEC_LEN_RECOVERY_STATUS) &&
+                (device_status[OCP_OFF_DS_STATUS] ===
+                    OCP_DEVICE_STATUS_RECOVERY_MODE) &&
+                (device_status[OCP_OFF_DS_PROT_ERROR] ===
+                    OCP_PROTOCOL_ERROR_NONE) &&
+                (recovery_status[
+                    OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] ===
+                    OCP_RECOVERY_STATUS_AWAITING_IMAGE) &&
+                (recovery_status[
+                    OCP_OFF_RS_STATUS_IMAGE_INDEX][7:4] === 4'h0) &&
+                (recovery_status[OCP_OFF_RS_VENDOR_STATUS] === 8'h00)) begin
+                reached = 1'b1;
+                break;
+            end
+            #5us;
+        end
+
+        if (!reached) begin
+            `uvm_error("OCP_FW_STATUS",
+                "Firmware did not publish Recovery Mode/Awaiting Image status within the bounded interval.")
+        end else begin
+            `uvm_info("OCP_FW_STATUS",
+                "Firmware-published Recovery Mode/Awaiting Image status observed through USB.",
+                UVM_NONE)
+        end
+    endtask
 
     // -------------------------------------------------------------------------
     // body(): full OCP Recovery EP0 choreography
@@ -73,14 +131,27 @@ class caliptra_ss_usb_ocp_recovery_sequence
         bit [7:0] prot_cap_wr_payload[$];
         int      poll_iter;
         bit      recovery_pending_seen;
+        bit      firmware_pending_seen;
         bit [15:0] initial_agent_caps;
         int      n_dwords;
         bit [31:0] pattern_dw[$];
         int       i;
 
+        if (!get_sem_vif()) return;
+
         // Enumerate and discover the OCP Recovery v1.1 functional descriptor
         // through the shared base sequence.
         initialize_ocp_transport();
+        sem_vif.clear_i3c_recovery_seen();
+        if (sem_vif.i3c_recovery_payload_available !== 1'b0) begin
+            `uvm_fatal("OCP_PAYLOAD_ROUTE",
+                "I3C payload-available source is not quiescent for USB route validation.")
+        end
+        if (sem_vif.recovery_payload_available !== 1'b0) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "USB recovery payload_available was high before the image transfer.")
+        end
+        sem_vif.clear_recovery_payload_available_seen();
 
         // ---------------------------------------------------------------------
         // 4. Probe (smoke) phase
@@ -165,43 +236,10 @@ class caliptra_ss_usb_ocp_recovery_sequence
                       dev_id.size() > 3 ? dev_id[3] : 8'h00),
             UVM_NONE)
 
-        // 4c. DEVICE_STATUS IN. byte[0] is Device Status code;
-        //     sec 9.2 defines 0x00 = Status Pending, 0x01 = Device
-        //     Healthy. Other values are also legal but logged for visibility.
-        empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(dev_status),
-                       .label("OCPREC_DEVICE_STATUS"));
-        if (dev_status.size() < 1) begin
-            `uvm_error("OCPREC",
-                "DEVICE_STATUS returned 0 bytes; expected at least 1 (Device Status).")
-        end else begin
-            `uvm_info("OCPREC",
-                $sformatf("DEVICE_STATUS[0]=0x%02h (sec 9.2 reason code).",
-                          dev_status[0]),
-                UVM_NONE)
-        end
-
-        // 4d. RECOVERY_STATUS IN.
-        empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(rec_status),
-                       .label("OCPREC_RECOVERY_STATUS"));
-        if (rec_status.size() < 1) begin
-            `uvm_error("OCPREC",
-                "RECOVERY_STATUS returned 0 bytes; expected at least 1 (sec 9.2).")
-        end else begin
-            `uvm_info("OCPREC",
-                $sformatf("RECOVERY_STATUS[0]=0x%02h (sec 9.2).",
-                          rec_status[0]),
-                UVM_NONE)
-        end
+        // 4c-4d. Firmware publication begins after the MCU mailbox handoff,
+        // which can lag USB configuration. Poll the two firmware-owned status
+        // commands together instead of sampling a legal pre-publication value.
+        wait_firmware_ready_status();
 
         // ---------------------------------------------------------------------
         // Unsupported-command PROTOCOL_ERROR negative check (OCP
@@ -598,14 +636,9 @@ class caliptra_ss_usb_ocp_recovery_sequence
                           fifo_status.size()))
         end
 
-        // 5d. Poll DEVICE_STATUS until firmware advances past
-        //     the awaiting-image phase. Per OCP Recovery v1.1 Sec 9.2
-        //     DEVICE_STATUS byte 0 holds "Device Status"; the FSM raises it
-        //     to 0x04 RECOVERY_PENDING on S_IMAGE_LOADED, while
-        //     RECOVERY_STATUS byte 0 stays at 0x01 Awaiting Image until
-        //     activation. Polling DEVICE_STATUS therefore observes the
-        //     correct image-loaded transition. Bounded iterations so the
-        //     test fails closed if firmware never advances.
+        // 5d. Poll DEVICE_STATUS until firmware publishes Recovery Pending
+        //     after observing payload_available. The bounded loop fails closed
+        //     if firmware never advances.
         poll_iter = 0;
         recovery_pending_seen = 1'b0;
         forever begin
@@ -628,7 +661,7 @@ class caliptra_ss_usb_ocp_recovery_sequence
             // Exit on RECOVERY_PENDING (0x04) per sec 9.2: the
             // device has loaded a recovery image and is ready for the
             // activation step (RECOVERY_CTRL.activate=0x0F, Sec 9.2).
-            if (dev_status[0] == 8'h04) begin
+            if (dev_status[0] == OCP_DEVICE_STATUS_RECOVERY_PENDING) begin
                 recovery_pending_seen = 1'b1;
                 break;
             end
@@ -646,12 +679,57 @@ class caliptra_ss_usb_ocp_recovery_sequence
             #50us;
         end
 
-        // The Recovery Agent requests activation after the device reports the
-        // FIFO image is loaded. This sets the standard OCP field to 0x0F but
-        // does not boot immediately: firmware drains and verifies the image,
-        // then writes the same field to zero as the device-side clear.
         if (recovery_pending_seen) begin
-            recovery_ctrl_payload = '{8'h00, 8'h00, 8'h0F};
+            sem_vif.wait_for_fw_state_bounded(
+                OCP_FW_STATE_RECOVERY_PENDING,
+                200,
+                1us,
+                firmware_pending_seen);
+            if (!firmware_pending_seen) begin
+                `uvm_error("OCP_PAYLOAD_ROUTE",
+                    "Firmware Recovery Pending publication was not observed.")
+            end else if (!sem_vif.recovery_payload_available_seen) begin
+                `uvm_error("OCP_PAYLOAD_ROUTE",
+                    "Firmware published Recovery Pending without a USB payload_available assertion.")
+            end else if (sem_vif.recovery_payload_observed_at == 0.0) begin
+                `uvm_error("OCP_PAYLOAD_ROUTE",
+                    "Firmware payload-observed publication timestamp was not captured.")
+            end else if (sem_vif.recovery_payload_available_asserted_at >
+                         sem_vif.recovery_payload_observed_at) begin
+                `uvm_error("OCP_PAYLOAD_ROUTE",
+                    $sformatf("USB payload_available asserted at %0t after firmware observed the combined status at %0t.",
+                              sem_vif.recovery_payload_available_asserted_at,
+                              sem_vif.recovery_payload_observed_at))
+            end else if (sem_vif.i3c_recovery_payload_available_seen) begin
+                `uvm_error("OCP_PAYLOAD_ROUTE",
+                    "I3C payload-available source asserted during USB route validation.")
+            end else begin
+                `uvm_info("OCP_PAYLOAD_ROUTE",
+                    "USB payload_available asserted before firmware published Recovery Pending.",
+                    UVM_NONE)
+            end
+
+            empty_q.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(rec_status),
+                           .label("OCP_FW_RECOVERY_STATUS_PENDING"));
+            if ((rec_status.size() < OCP_SPEC_LEN_RECOVERY_STATUS) ||
+                (rec_status[OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] !==
+                    OCP_RECOVERY_STATUS_AWAITING_IMAGE)) begin
+                `uvm_error("OCP_FW_STATUS",
+                    "Firmware Recovery Pending milestone did not preserve RECOVERY_STATUS Awaiting Image.")
+            end
+        end
+
+        // The Recovery Agent requests activation after the device reports the
+        // FIFO image is loaded. Firmware drains and verifies the image before
+        // publishing Running Recovery and Recovery Successful.
+        if (recovery_pending_seen) begin
+            recovery_ctrl_payload =
+                '{8'h00, 8'h00, OCP_RC_ACTIVATE_CODE};
             `uvm_info("OCPREC",
                 "RECOVERY_CTRL (cmd 0x26) OUT: CMS=0, ImgSel=0, Activate=0x0F. Requesting activation after RECOVERY_PENDING.",
                 UVM_NONE)
@@ -663,42 +741,19 @@ class caliptra_ss_usb_ocp_recovery_sequence
                            .label("OCPREC_RECOVERY_CTRL_ACTIVATE"));
         end
 
-        // End-of-test handshake (Problem 1 fix).
-        //
-        // Observing DEVICE_STATUS==0x04 RECOVERY_PENDING only means the device
-        // FSM has loaded the recovery image; the streaming-boot is NOT yet
-        // complete. Caliptra still has to drain the INDIRECT_FIFO, write
-        // RECOVERY_CTRL.activate, and assert SS_GENERIC_FW_EXEC_CTRL_0[2]
-        // (observed ~40 us after 0x04), after which the MCU firmware reports
-        // the result by writing TB_CMD_END_SIM_WITH_SUCCESS to its TB mailbox.
-        // That mailbox write is what truly ends the simulation: the TB services
-        // block (caliptra_ss_top_tb_services.sv) calls $finish on it,
-        // pre-empting everything else.
-        //
-        // Previously, body() returned the instant 0x04 was seen. That dropped
-        // the main_phase default-sequence objection and let uvm_root $finish
-        // the sim ~93 ns AFTER FW_EXEC_CTRL asserted -- before the MCU could
-        // observe it and report the pass. The MCU handoff was lost.
-        //
-        // Fix: once RECOVERY_PENDING is seen, keep body() (and therefore the
-        // main_phase objection) alive so the MCU can complete the streaming
-        // boot and drive its pass. The real terminal event is the MCU's
-        // TB_CMD_END_SIM_WITH_SUCCESS $finish, which interrupts the wait below
-        // the moment it occurs -- so on a passing run this wait ends early via
-        // that external $finish. The bound is a fail-safe only: it is large
-        // enough to cover the observed drain->activate->signal->MCU-pass
-        // latency (~40 us) with ample margin, yet well under the UVM test
-        // timeout, so a firmware that never finishes still terminates the
-        // sequence (with whatever errors were logged) rather than hanging
-        // unbounded.
+        if (sem_vif.i3c_recovery_payload_available_seen) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "I3C payload-available source was not quiescent across the recovery flow.")
+        end
+
+        // Keep the sequence objection active while firmware drains and verifies
+        // the image, publishes completion status, and signals MCU completion.
         if (recovery_pending_seen) begin
             `uvm_info("OCPREC",
                 "DEVICE_STATUS=0x04 RECOVERY_PENDING observed. Holding the main_phase objection so the MCU can complete streaming-boot and report TB_CMD_END_SIM_WITH_SUCCESS (which $finishes the sim). Bounded fail-safe wait engaged.",
                 UVM_NONE)
-            // Bounded keep-alive. The MCU's TB_CMD_END_SIM_WITH_SUCCESS $finish
-            // normally ends the sim long before this elapses.
             #200us;
-            `uvm_warning("OCPREC",
+            `uvm_error("OCPREC",
                 "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
         end
 

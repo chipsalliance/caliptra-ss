@@ -255,6 +255,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
             end
         end
 
+        wait_mcu_axi_idle_before_finish("DEVICE_STATUS_SEMANTICS");
         publish_transfer_count();
 
         `uvm_info("DS_SEM_SEQ",
@@ -262,7 +263,6 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
                       STRESS_ITERATIONS),
             UVM_NONE)
 
-        #1us;
     endtask
 
 endclass

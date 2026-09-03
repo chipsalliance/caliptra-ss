@@ -66,6 +66,9 @@ enum printf_verbosity verbosity_g = LOW;
 #define W1DC_FW_STATE_USB_FIFO_RESET_OBSERVED 0x14u
 #define W1DC_FW_STATE_FW_FIFO_RESET_OBSERVED  0x15u
 #define W1DC_FW_STATE_FIFO_UNSUPPORTED        0x16u
+#define W1DC_FW_STATE_POST_RESET_DRAIN        0x17u
+#define W1DC_POST_RESET_DWORD_0 0x13579BDFu
+#define W1DC_POST_RESET_DWORD_1 0x2468ACE0u
 
 // DEVICE_RESET register field masks (OCP Recovery v1.1 Sec 9.2).
 // RESET_CTRL is byte 0 (bits [7:0]) of the DEVICE_RESET register word.
@@ -427,7 +430,34 @@ void main(void)
         W1DC_FW_STATE_FW_FIFO_RESET_OBSERVED,
         fw_reset_stuck ? 0x01u : 0x00u);
 
-    VPRINTF(LOW, "CPTRA: W1DC access-semantics firmware complete\n");
+    if (w1dc_poll_fifo_occupancy(2u) != 0u) {
+        VPRINTF(ERROR,
+                "CPTRA: post-reset verification payload did not arrive\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
+    {
+        uint32_t data0 = 0u;
+        uint32_t data1 = 0u;
+        if (cptra_usb_ocp_recovery_read_dword_retry(
+                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                &data0) != 0u
+            || cptra_usb_ocp_recovery_read_dword_retry(
+                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                &data1) != 0u
+            || data0 != W1DC_POST_RESET_DWORD_0
+            || data1 != W1DC_POST_RESET_DWORD_1) {
+            VPRINTF(ERROR,
+                    "CPTRA: post-reset FIFO data mismatch 0x%08x 0x%08x\n",
+                    data0, data1);
+            SEND_STDOUT_CTRL(0x1);
+            while (1) {}
+        }
+    }
+    cptra_usb_ocp_recovery_signal_state(
+        W1DC_FW_STATE_POST_RESET_DRAIN, 0u);
+    VPRINTF(LOW,
+            "CPTRA: post-reset distinct payload drained without stale data\n");
 
     // UVM sequence owns completion. Firmware remains alive.
     while (1) {}
