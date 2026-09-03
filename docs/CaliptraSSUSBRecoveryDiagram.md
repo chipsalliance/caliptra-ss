@@ -258,10 +258,9 @@ uses these actors:
 
 ### F. Multi-stage continuation or final completion (Caliptra-owned)
 
-44. **Device Firmware [Caliptra], more stages required:** Increment
-    `RecoveryImageIndex`, set `RECOVERY_STATUS=0x1` (Awaiting recovery image),
-    set `DEVICE_STATUS=0x3` (Recovery mode), reset/prepare the FIFO for the next
-    image, and deassert stale payload-available state from the prior stage.
+44. **Device Firmware [Caliptra], more stages required:** Reset the FIFO for
+    the next image, increment `RecoveryImageIndex`, set `RECOVERY_STATUS=0x1`
+    (Awaiting recovery image), set `DEVICE_STATUS=0x3` (Recovery mode).
 
 45. **Recovery Agent [Host], more stages required:** Observe the new image
     index and repeat steps 24-43 for that stage. Repeat until every required
