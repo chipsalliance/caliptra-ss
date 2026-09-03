@@ -97,43 +97,53 @@ sequenceDiagram
 ```mermaid
 flowchart TB
     bus["USB 2.0 bus (D+/D-)"]
-    phy["USB PHY / UTMI (utmi_clk)"]
-    pie["usb_pie<br/>PIE EP0 engine (utmi_clk)"]
-    sync["usb_synchronizer<br/>SIE CDC (utmi to hclk)"]
-    arb["usb_ocp_recovery_post_sync_arb<br/>SETUP trap, OCP classify (hclk)"]
+
+    subgraph soc["SoC"]
+        direction TB
+        phy["USB PHY / UTMI (utmi_clk)"]
+
+        subgraph core["USB Core"]
+            direction TB
+            pie["usb_pie<br/>PIE EP0 engine (utmi_clk)"]
+            sync["usb_synchronizer<br/>SIE CDC (utmi to hclk)"]
+            arb["usb_ocp_recovery_post_sync_arb<br/>SETUP trap, OCP classify (hclk)"]
+
+            subgraph legacy["Legacy / DMA path"]
+                direction TB
+                dma["usb_dma<br/>EP-table DMA"]
+                regif["usb_reg_if<br/>EP0 IRQ / status"]
+                legacy_ahb["legacy usbhsd AHB target<br/>offset 0x000-0x7ff"]
+                dma --> regif --> legacy_ahb
+            end
+
+            subgraph recovery["OCP recovery trap path"]
+                direction TB
+                a2["A2 ctrl_decode<br/>SETUP to reg-bus"]
+                a0["A0 reg-bus arbiter<br/>USB vs EXT"]
+                a3["A3 rb_adapter +<br/>register block"]
+                a4["A4 cms_fifo<br/>sync, 64 DWORD"]
+                rec_ahb["recovery AHB transaction FSM<br/>offset 0x800-0xfff"]
+                a2 --> a0 --> a3 --> a4
+                a0 <-->|"raw EXT aperture offset"| rec_ahb
+            end
+
+            arb -->|legacy| dma
+            arb -->|"OCP (rec_*)"| a2
+
+            split["USB local-aperture split<br/>package-defined recovery offset"]
+            ahb["dev AXI-to-AHB bridge"]
+
+            legacy_ahb <--> split
+            rec_ahb <--> split
+            split <--> ahb
+        end
+
+        fab["SoC AXI fabric (dev_axi_aclk)"]
+        ahb <--> fab
+    end
 
     bus --> phy --> pie
-    pie -.->|CDC| sync --> arb
-
-    subgraph legacy["Legacy / DMA path"]
-        direction TB
-        dma["usb_dma<br/>EP-table DMA"]
-        regif["usb_reg_if<br/>EP0 IRQ / status"]
-        legacy_ahb["legacy usbhsd AHB target<br/>offset 0x000-0x7ff"]
-        dma --> regif --> legacy_ahb
-    end
-
-    subgraph recovery["OCP recovery trap path"]
-        direction TB
-        a2["A2 ctrl_decode<br/>SETUP to reg-bus"]
-        a0["A0 reg-bus arbiter<br/>USB vs EXT"]
-        a3["A3 rb_adapter +<br/>register block"]
-        a4["A4 cms_fifo<br/>sync, 64 DWORD"]
-        rec_ahb["recovery AHB transaction FSM<br/>offset 0x800-0xfff"]
-        a2 --> a0 --> a3 --> a4
-        a0 <-->|"raw EXT aperture offset"| rec_ahb
-    end
-
-    arb -->|legacy| dma
-    arb -->|"OCP (rec_*)"| a2
-
-    split["USB local-aperture split<br/>package-defined recovery offset"]
-    ahb["dev AXI-to-AHB bridge"]
-    fab["SoC AXI fabric (dev_axi_aclk)"]
-
-    legacy_ahb <--> split
-    rec_ahb <--> split
-    split <--> ahb <--> fab
+    pie --> sync --> arb
 ```
 
 Blocks A0/A2-A4 are internal to `usb_ocp_recovery_top` (clock domains are listed in
