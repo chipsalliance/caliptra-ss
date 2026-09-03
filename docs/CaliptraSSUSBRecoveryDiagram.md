@@ -179,17 +179,17 @@ uses these actors:
 28. **Recovery Agent [Host]:** Partition the image into ordered chunks. Each
     chunk must be no larger than all of:
     the remaining image bytes, `INDIRECT_FIFO_STATUS.MaxTransferSize`, and the
-    USB functional descriptor's `wMaxWrTransferSize`. Four-byte-aligned chunk
-    sizes avoid padding gaps in the FIFO index.
+    USB functional descriptor's `wMaxWrTransferSize`.
 
 29. **Recovery Agent [Host]:** Write the next chunk with
     `INDIRECT_FIFO_DATA` (`0x2F`) in one EP0 Control OUT transfer.
 
 30. **Recovery Device [USB Core]:** Validate the USB control transfer, append
     the accepted bytes to the selected FIFO, and advance the write index in
-    four-byte units. A transfer that would advance the write index to the read
-    index must be rejected rather than overwrite unread image data. Over USB,
-    rejection is represented through the binding's EP0 error/STALL handling.
+    four-byte units. A transfer that would overflow the internal FIFO must be
+    rejected rather than overwrite unread image data. Over USB,
+    rejection is represented through flow control (NAK or NYET handshake tokens
+    per the USB 2.0 PING protocol).
 
 31. **Recovery Device [USB Core] -> Device Firmware [Caliptra]:** Assert or
     maintain the Caliptra-specific recovery-payload-available indication when
