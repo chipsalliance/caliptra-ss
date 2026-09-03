@@ -370,6 +370,14 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_usb_dma_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+    // SPI Host AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(32),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_spi_host_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
     axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i;
@@ -400,6 +408,7 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_HOST_IDX     ; // CSS_INTC_SINTF_USB_HOST_IDX      8
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DMA_IDX      ; // CSS_INTC_SINTF_USB_DMA_IDX       9
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV_IDX      ; // CSS_INTC_SINTF_USB_DEV_IDX       10
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SPI_IDX          ; // CSS_INTC_SINTF_SPI_IDX           11
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
@@ -417,7 +426,8 @@ module caliptra_ss_top_tb
         SINTF_LCC_IDX          : `CSS_INTC_SINTF_LCC_IDX,
         SINTF_USB_HOST_IDX     : `CSS_INTC_SINTF_USB_HOST_IDX,
         SINTF_USB_DMA_IDX      : `CSS_INTC_SINTF_USB_DMA_IDX,
-        SINTF_USB_DEV_IDX      : `CSS_INTC_SINTF_USB_DEV_IDX
+        SINTF_USB_DEV_IDX      : `CSS_INTC_SINTF_USB_DEV_IDX,
+        SINTF_SPI_IDX          : `CSS_INTC_SINTF_SPI_IDX
     };
 
     // AXI Interconnect upper address tie to 0
@@ -1140,6 +1150,51 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RID     = cptra_ss_usb_host_s_axi_if.rid;
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RLAST   = cptra_ss_usb_host_s_axi_if.rlast;
     assign cptra_ss_usb_host_s_axi_if.rready                    = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_USB_HOST_IDX].RREADY;
+    //Interconnect - SPI Host
+    assign cptra_ss_spi_host_s_axi_if.awvalid               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWVALID;
+    assign cptra_ss_spi_host_s_axi_if.awaddr                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWADDR[31:0];
+    assign cptra_ss_spi_host_s_axi_if.awid                  = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWID;
+    assign cptra_ss_spi_host_s_axi_if.awlen                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWLEN;
+    assign cptra_ss_spi_host_s_axi_if.awsize                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWSIZE;
+    assign cptra_ss_spi_host_s_axi_if.awburst               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWBURST;
+    assign cptra_ss_spi_host_s_axi_if.awlock                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWLOCK;
+    assign cptra_ss_spi_host_s_axi_if.awuser                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWUSER;
+    assign cptra_ss_spi_host_s_axi_if.awcache               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWCACHE;
+    assign cptra_ss_spi_host_s_axi_if.awprot                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWPROT;
+    assign cptra_ss_spi_host_s_axi_if.awqos                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWQOS;
+    assign cptra_ss_spi_host_s_axi_if.awregion              = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWREGION;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].AWREADY = cptra_ss_spi_host_s_axi_if.awready;
+    assign cptra_ss_spi_host_s_axi_if.wvalid                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WVALID;
+    assign cptra_ss_spi_host_s_axi_if.wdata                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WDATA;
+    assign cptra_ss_spi_host_s_axi_if.wstrb                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WSTRB;
+    assign cptra_ss_spi_host_s_axi_if.wlast                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WLAST;
+    assign cptra_ss_spi_host_s_axi_if.wuser                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].WREADY  = cptra_ss_spi_host_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].BVALID  = cptra_ss_spi_host_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].BRESP   = cptra_ss_spi_host_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].BUSER   = cptra_ss_spi_host_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].BID     = cptra_ss_spi_host_s_axi_if.bid;
+    assign cptra_ss_spi_host_s_axi_if.bready                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].BREADY;
+    assign cptra_ss_spi_host_s_axi_if.arvalid               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARVALID;
+    assign cptra_ss_spi_host_s_axi_if.araddr                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARADDR[31:0];
+    assign cptra_ss_spi_host_s_axi_if.arid                  = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARID;
+    assign cptra_ss_spi_host_s_axi_if.arlen                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARLEN;
+    assign cptra_ss_spi_host_s_axi_if.arsize                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARSIZE;
+    assign cptra_ss_spi_host_s_axi_if.arburst               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARBURST;
+    assign cptra_ss_spi_host_s_axi_if.arlock                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARLOCK;
+    assign cptra_ss_spi_host_s_axi_if.aruser                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARUSER;
+    assign cptra_ss_spi_host_s_axi_if.arcache               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARCACHE;
+    assign cptra_ss_spi_host_s_axi_if.arprot                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARPROT;
+    assign cptra_ss_spi_host_s_axi_if.arqos                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARQOS;
+    assign cptra_ss_spi_host_s_axi_if.arregion              = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARREGION;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].ARREADY = cptra_ss_spi_host_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RVALID  = cptra_ss_spi_host_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RDATA   = 64'(cptra_ss_spi_host_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RRESP   = cptra_ss_spi_host_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RUSER   = cptra_ss_spi_host_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RID     = cptra_ss_spi_host_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RLAST   = cptra_ss_spi_host_s_axi_if.rlast;
+    assign cptra_ss_spi_host_s_axi_if.rready                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RREADY;
 
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
@@ -2068,6 +2123,19 @@ module caliptra_ss_top_tb
     logic         cptra_usb_axi_user_id_filtering_enable_i;
     assign cptra_usb_axi_user_id_filtering_enable_i = 1'b1; // TODO: make configurable
 
+
+    // --- SPI host env and interface ---
+    logic cptra_ss_sck_o;
+    logic cptra_ss_sck_en_o;
+    logic [SPI_HOST_NUM_CS_TB-1:0] cptra_ss_csb_o;
+    logic [SPI_HOST_NUM_CS_TB-1:0] cptra_ss_csb_en_o;
+    logic [3:0] cptra_ss_sd_o;
+    logic [3:0] cptra_ss_sd_en_o;
+    logic [3:0] cptra_ss_sd_i;
+
+    assign cptra_ss_sd_i              = '0;
+
+
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
     logic         cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o;
@@ -2150,7 +2218,10 @@ module caliptra_ss_top_tb
         .MCU_MBOX1_SIZE_KB(MCU_MBOX1_SIZE_KB),
         .SET_MCU_MBOX1_AXI_USER_INTEG(SET_MCU_MBOX1_AXI_USER_INTEG),
         .MCU_MBOX1_VALID_AXI_USER(MCU_MBOX1_VALID_AXI_USER),
-        .G_SIM_CHIRP_TIMERS(1)
+        .G_SIM_CHIRP_TIMERS(1),
+        .SPI_HOST_ENA(SPI_HOST_ENA_TB),
+        .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS_TB),
+        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH_TB)
     )
     caliptra_ss_dut (
 
@@ -2205,6 +2276,10 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_host_s_axi_if_w_sub(cptra_ss_usb_host_s_axi_if.w_sub),
         .cptra_ss_usb_dma_s_axi_if_r_sub(cptra_ss_usb_dma_s_axi_if.r_sub),
         .cptra_ss_usb_dma_s_axi_if_w_sub(cptra_ss_usb_dma_s_axi_if.w_sub),
+
+    // SPI AXI interface
+        .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
+        .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
 
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
@@ -2417,6 +2492,13 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_recovery_image_activated_i    (cptra_ss_usb_recovery_image_activated_o),
 
         .cptra_usb_axi_user_id_filtering_enable_i   (cptra_usb_axi_user_id_filtering_enable_i),
+        .cptra_ss_sck_o,
+        .cptra_ss_sck_en_o,
+        .cptra_ss_csb_o,
+        .cptra_ss_csb_en_o,
+        .cptra_ss_sd_o,
+        .cptra_ss_sd_en_o,
+        .cptra_ss_sd_i,
 
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,
@@ -2482,6 +2564,10 @@ module caliptra_ss_top_tb
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
     `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(OtpPrimOnehotCheck_A, u_otp.u_reg_top.u_caliptra_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
+
+    if (SPI_HOST_ENA_TB) begin : gen_spi_host_onehot_assert
+        `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(SpiHostRegWeOnehotCheck_A, caliptra_ss_dut.gen_spi_host_axi.spi_host_axi_i.u_caliptra_ss_spi_host.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
+    end
 
 
 endmodule
