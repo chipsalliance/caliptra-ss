@@ -168,81 +168,88 @@ uses these actors:
     `CMS=0`, `Reset=1`, and `ImageSize` equal to the complete image size in
     four-byte units. This resets the FIFO read and write indexes.
 
-26. **Recovery Agent [Host]:** Read `INDIRECT_FIFO_STATUS` (`0x2E`). Confirm
-    that the selected region is a write-only code space, and record FIFO size,
-    maximum transfer size, write index, and read index.
+26. **Device Firmware [Caliptra]:** Read `INDIRECT_FIFO_CTRL.ImageSize` once,
+    after the host's write in step 25 takes effect, and latch the complete
+    image size locally. Caliptra does not re-read this field again during the
+    transfer; the drain loop in step 32 tracks remaining/received word counts
+    from this single latched value.
 
-27. **Recovery Agent [Host]:** Partition the image into ordered chunks. Each
+27. **Recovery Agent [Host]:** Read `INDIRECT_FIFO_STATUS` (`0x2E`). Confirm
+    that the selected region is a write-only code space, and record FIFO size
+    and maximum transfer size.
+
+28. **Recovery Agent [Host]:** Partition the image into ordered chunks. Each
     chunk must be no larger than all of:
     the remaining image bytes, `INDIRECT_FIFO_STATUS.MaxTransferSize`, and the
     USB functional descriptor's `wMaxWrTransferSize`. Four-byte-aligned chunk
     sizes avoid padding gaps in the FIFO index.
 
-28. **Recovery Agent [Host]:** Write the next chunk with
+29. **Recovery Agent [Host]:** Write the next chunk with
     `INDIRECT_FIFO_DATA` (`0x2F`) in one EP0 Control OUT transfer.
 
-29. **Recovery Device [USB Core]:** Validate the USB control transfer, append
+30. **Recovery Device [USB Core]:** Validate the USB control transfer, append
     the accepted bytes to the selected FIFO, and advance the write index in
     four-byte units. A transfer that would advance the write index to the read
     index must be rejected rather than overwrite unread image data. Over USB,
     rejection is represented through the binding's EP0 error/STALL handling.
 
-30. **Recovery Device [USB Core] -> Device Firmware [Caliptra]:** Assert or
+31. **Recovery Device [USB Core] -> Device Firmware [Caliptra]:** Assert or
     maintain the Caliptra-specific recovery-payload-available indication when
     FIFO image data is available. In Caliptra Subsystem this is exposed as
     `cptra_ss_usb_recovery_payload_available_o`.
 
-31. **Device Firmware [Caliptra]:** Read `INDIRECT_FIFO_CTRL.ImageSize` and
-    `INDIRECT_FIFO_STATUS`; drain available words by reading the fixed
+32. **Device Firmware [Caliptra]:** Drain available words by reading the fixed
     `INDIRECT_FIFO_DATA` aperture; store them in the destination image buffer;
     and thereby advance the FIFO read index.
 
-32. **Recovery Agent [Host]:** Apply FIFO flow control as needed. It may retry
-    after a rejected full-FIFO write, or read `INDIRECT_FIFO_STATUS` and
-    calculate free space from the read and write indexes before issuing more
+33. **Recovery Agent [Host]:** Apply FIFO flow control as needed. The host
+    either continuously issues `INDIRECT_FIFO_DATA` writes and relies on
+    USB-level flow control (the device's NAK/NYET responses) to pace delivery
+    to the available FIFO space, or polls `INDIRECT_FIFO_STATUS.STATUS` for
+    the `FIFO_FULL`/`FIFO_EMPTY` bits before issuing more
     `INDIRECT_FIFO_DATA` writes.
 
-33. **Recovery Agent [Host], Recovery Device [USB Core], and Device Firmware
-    [Caliptra]:** Repeat steps 28-32 until the Recovery Agent has written and
+34. **Recovery Agent [Host], Recovery Device [USB Core], and Device Firmware
+    [Caliptra]:** Repeat steps 29-33 until the Recovery Agent has written and
     Device Firmware has consumed all `ImageSize` words without reordering or
     omission.
 
-34. **Device Firmware [Caliptra]:** Verify that the full expected image has
+35. **Device Firmware [Caliptra]:** Verify that the full expected image has
     arrived, close the writable recovery region as needed to prevent
     time-of-check/time-of-use modification, and perform the device's required
     image integrity, authenticity, anti-rollback, and placement checks.
 
-35. **Device Firmware [Caliptra]:** Set `DEVICE_STATUS=0x4` (Recovery Pending)
+36. **Device Firmware [Caliptra]:** Set `DEVICE_STATUS=0x4` (Recovery Pending)
     when the complete image is waiting for activation. The recovery reason code
     remains populated.
 
-36. **Recovery Agent [Host]:** Poll `DEVICE_STATUS` (`0x24`) until byte 0 is
+37. **Recovery Agent [Host]:** Poll `DEVICE_STATUS` (`0x24`) until byte 0 is
     `0x4`. A fatal or boot-failure status terminates the successful flow.
 
 ### E. Activate and boot the image (Caliptra-owned)
 
-37. **Recovery Agent [Host]:** Write `RECOVERY_CTRL` (`0x26`) with the selected
+38. **Recovery Agent [Host]:** Write `RECOVERY_CTRL` (`0x26`) with the selected
     code CMS/image mode and `ActivateRecoveryImage=0xF`.
 
-38. **Recovery Device [USB Core] -> Device Firmware [Caliptra]:** Latch the
+39. **Recovery Device [USB Core] -> Device Firmware [Caliptra]:** Latch the
     write-one activation request and signal it to the recovery firmware/FSM.
     The device clears the activation field after accepting the request.
 
-39. **Device Firmware [Caliptra]:** Set
+40. **Device Firmware [Caliptra]:** Set
     `RECOVERY_STATUS.DeviceRecoveryStatus=0x2` (Booting recovery image), then
     restart through the immutable device trust anchor. A management reset may
     implement this activation if it does not violate the required recovery
     behavior.
 
-40. **Device Firmware [Caliptra]:** Authenticate and launch the selected
+41. **Device Firmware [Caliptra]:** Authenticate and launch the selected
     recovery image stage. The running stage may initialize additional hardware
     or prepare storage required for a later recovery image.
 
-41. **Recovery Device [USB Core]:** Keep the OCP Recovery EP0 interface
+42. **Recovery Device [USB Core]:** Keep the OCP Recovery EP0 interface
     responsive across the activation/restart so the Recovery Agent can observe
     progress and provide another image if requested.
 
-42. **Recovery Agent [Host]:** Poll `RECOVERY_STATUS` (`0x27`) and
+43. **Recovery Agent [Host]:** Poll `RECOVERY_STATUS` (`0x27`) and
     `DEVICE_STATUS` (`0x24`) within the device's advertised maximum response
     time. Interpret the result as follows:
     - `RECOVERY_STATUS=0x1` with an incremented `RecoveryImageIndex`: another
@@ -253,30 +260,30 @@ uses these actors:
 
 ### F. Multi-stage continuation or final completion (Caliptra-owned)
 
-43. **Device Firmware [Caliptra], more stages required:** Increment
+44. **Device Firmware [Caliptra], more stages required:** Increment
     `RecoveryImageIndex`, set `RECOVERY_STATUS=0x1` (Awaiting recovery image),
     set `DEVICE_STATUS=0x3` (Recovery mode), reset/prepare the FIFO for the next
     image, and deassert stale payload-available state from the prior stage.
 
-44. **Recovery Agent [Host], more stages required:** Observe the new image
-    index and repeat steps 24-42 for that stage. Repeat until every required
+45. **Recovery Agent [Host], more stages required:** Observe the new image
+    index and repeat steps 24-43 for that stage. Repeat until every required
     device firmware image has been transferred, accepted, activated, and
     booted.
 
-45. **Device Firmware [Caliptra], final stage successful:** Set
+46. **Device Firmware [Caliptra], final stage successful:** Set
     `RECOVERY_STATUS=0x3` (Recovery successful). While the recovery image is
     running, `DEVICE_STATUS=0x5` (Running Recovery Image) is the defined
     intermediate device state.
 
-46. **Device Firmware [Caliptra]:** Complete the device-specific transition
+47. **Device Firmware [Caliptra]:** Complete the device-specific transition
     from recovery firmware to operational firmware.
 
-47. **Device Firmware [Caliptra]:** Set `DEVICE_STATUS=0x1` (Device Healthy)
+48. **Device Firmware [Caliptra]:** Set `DEVICE_STATUS=0x1` (Device Healthy)
     once operational firmware is running. This is the terminal successful
     state requested for the diagram: all required device firmware has been
     transferred and booted.
 
-48. **Recovery Agent [Host]:** Read `RECOVERY_STATUS=0x3` and
+49. **Recovery Agent [Host]:** Read `RECOVERY_STATUS=0x3` and
     `DEVICE_STATUS=0x1`, then end the recovery session.
 
 ## Error branches to retain in the diagram
@@ -404,16 +411,17 @@ sequenceDiagram
         Note over Agent,FW: D. Transfer Recovery Image via Indirect FIFO CMS
         Agent->>USB: OCP OUT: RECOVERY_CTRL (0x26) CMS=0, RecoveryImageSelection=0x1, Activate=0
         Agent->>USB: OCP OUT: INDIRECT_FIFO_CTRL (0x2D) CMS=0, Reset=1, ImageSize=N words
+        FW->>USB: INDIRECT_FIFO_CTRL.ImageSize (read once, latch N locally)
         Agent->>USB: OCP IN: INDIRECT_FIFO_STATUS (0x2E)
-        USB-->>Agent: FIFO size, MaxTransferSize, write index, read index
+        USB-->>Agent: FIFO size, MaxTransferSize, STATUS (FIFO_EMPTY/FIFO_FULL)
         loop Until all ImageSize words transferred and consumed
             Agent->>USB: OCP OUT: INDIRECT_FIFO_DATA (0x2F) -- next chunk
+            Note over Agent,USB: Host paces chunks via NAK/NYET flow control<br/>or by polling INDIRECT_FIFO_STATUS.STATUS
             USB->>USB: Append chunk to FIFO, advance write index
             USB-->>FW: Assert cptra_ss_usb_recovery_payload_available_o
-            FW->>USB: INDIRECT_FIFO_CTRL.ImageSize + INDIRECT_FIFO_STATUS
             FW->>USB: INDIRECT_FIFO_DATA aperture (drain available words)
             USB->>USB: Advance FIFO read index
-            FW->>FW: Store words in image buffer
+            FW->>FW: Store words in image buffer; track against latched N
         end
         FW->>FW: Verify full image received, close recovery region, integrity / authenticity / anti-rollback check
         FW->>USB: DEVICE_STATUS=0x4 (Recovery Pending)
