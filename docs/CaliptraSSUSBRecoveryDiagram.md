@@ -170,9 +170,7 @@ uses these actors:
 
 26. **Device Firmware [Caliptra]:** Read `INDIRECT_FIFO_CTRL.ImageSize` once,
     after the host's write in step 25 takes effect, and latch the complete
-    image size locally. Caliptra does not re-read this field again during the
-    transfer; the drain loop in step 32 tracks remaining/received word counts
-    from this single latched value.
+    image size locally.
 
 27. **Recovery Agent [Host]:** Read `INDIRECT_FIFO_STATUS` (`0x2E`). Confirm
     that the selected region is a write-only code space, and record FIFO size
