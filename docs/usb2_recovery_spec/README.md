@@ -158,14 +158,14 @@ selection; it does not translate an AHB access into an OCP command.
 
 ### 3.1 Clock domains
 
-| Domain | Blocks |
-|---|---|
-| `utmi_clk` (PHY/PIE) | USB PHY/UTMI, `usb_pie` EP0 protocol engine |
-| `hclk == dev_axi_aclk` (SoC) | `usb_synchronizer` (hclk side), `usb_ocp_recovery_post_sync_arb`, `usb_dma`, `usb_reg_if`, all of `usb_ocp_recovery_top`, the EXT/AXI bridge |
+| Domain | Frequency (MHz) | Blocks |
+|---|---|---|
+| `utmi_clk` (PHY/PIE) | 60 | USB PHY/UTMI, `usb_pie` EP0 protocol engine |
+| `hclk == dev_axi_aclk` (SoC) | Min: 60Mhz Max: Integration-specific | `usb_synchronizer` (hclk side), `usb_ocp_recovery_post_sync_arb`, `usb_dma`, `usb_reg_if`, all of `usb_ocp_recovery_top`, the EXT/AXI bridge |
 
 `usb_synchronizer` is the single USB clock-domain crossing (utmi to hclk). All OCP
 recovery logic runs on the SoC clock, so the recovery register and FIFO surfaces
-are single-domain and require no OCP-specific CDC.
+are single-domain and require no specific CDC.
 
 ### 3.2 Reset architecture
 
