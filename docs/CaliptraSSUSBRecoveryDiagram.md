@@ -419,7 +419,7 @@ sequenceDiagram
             USB-->>FW: Assert cptra_ss_usb_recovery_payload_available_o
             FW->>USB: INDIRECT_FIFO_DATA aperture (drain available words)
             USB->>USB: Advance FIFO read index
-            FW->>FW: Store words in image buffer; track against latched N
+            FW->>FW: Store words in image buffer, track against latched N
         end
         FW->>FW: Verify full image received, close recovery region, integrity / authenticity / anti-rollback check
         FW->>USB: DEVICE_STATUS=0x4 (Recovery Pending)
