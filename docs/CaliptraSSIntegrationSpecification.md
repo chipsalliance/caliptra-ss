@@ -302,8 +302,8 @@ File at this path in the repository includes parameters and defines for Caliptra
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
 | External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
 | External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Provides the Caliptra ROM with a 32-bit pointer to the fuse controller’s command register (CMD), enabling ROM-level control or triggering of fuse operations. |
-| External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
-| External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
+| External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Provides Caliptra ROM entropy source (CSRNG) configuration used during initialization when `CALIPTRA_INTERNAL_TRNG` is enabled. See the [Caliptra Core Integration Specification: Internal TRNG](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#internal-trng) for the authoritative behavior and related configuration details. |
+| External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Provides Caliptra ROM Stable Owner Key controls. See the strap function binding table in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) for the authoritative definition. |
 | External | input     | 1      | `cptra_ss_debug_intent_i`                 | Physical presence bit required to initiate the debug unlock flow. For more details, refer to the [Production Debug Unlock Flow](CaliptraSSHardwareSpecification.md#production-debug-unlock-architecture) and [How does Caliptra Subsystem enable manufacturing debug mode?](CaliptraSSHardwareSpecification.md#how-does-caliptra-subsystem-enable-manufacturing-debug-mode). For SOCs that choose to use these features, this port should be connected to a GPIO|
 | External | input     | 16     | `cptra_ss_strap_key_release_key_size_i`   | OCP L.O.C.K. MEK byte size. Expected to be 0x40.  |
 | External | input     | 64     | `cptra_ss_strap_key_release_base_addr_i`  | OCP L.O.C.K. MEK release base address.  |
@@ -1269,7 +1269,7 @@ Fuse Controller.
 
 ### Generic Strap Port Usage for FC Register Locations
 
-To support flexible integration across varying fuse partition generations, Caliptra ROM uses two generic strap ports to locate fuse controller registers.
+To support flexible integration across varying fuse partition generations, Caliptra ROM uses two generic strap ports to locate fuse controller registers. Only `cptra_ss_strap_generic_0_i` and `cptra_ss_strap_generic_1_i` participate in this fuse-controller register discovery flow.
 
 #### Why These Straps Are Needed
 
@@ -1290,6 +1290,12 @@ Because of these dynamic shifts:
 - **`cptra_ss_strap_generic_1_i`**  
   A 32-bit input strap that provides the address of the **CMD register**.  
   Since the fuse controller registers are laid out consecutively, specifying the CMD register is sufficient for the ROM to infer the locations of adjacent registers like `ADDR`, `WDATA0`, and `RDATA0`.
+
+#### Other Generic Strap Allocations
+
+- **`cptra_ss_strap_generic_2_i`**: Provides Caliptra ROM entropy source (CSRNG) configuration used during initialization when `CALIPTRA_INTERNAL_TRNG` is enabled. For the authoritative definition, including the TRNG self-test configuration that ROM derives from this strap, see the [Caliptra Core Integration Specification: Internal TRNG](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#internal-trng) and [TRNG self-test ROM configuration](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#trng-self-test-rom-configuration).
+
+- **`cptra_ss_strap_generic_3_i`**: Provides Caliptra ROM Stable Owner Key controls. For the authoritative definition, see the strap function binding table in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md).
 
 
 ## FC Macro Test Interface
