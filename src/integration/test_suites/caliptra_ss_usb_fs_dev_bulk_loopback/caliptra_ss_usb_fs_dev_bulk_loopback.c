@@ -43,6 +43,7 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_fs();
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -66,34 +67,39 @@ void main(void) {
      * restores EP0 entries (usb_ep0_reinit). EP1 OUT must be explicitly
      * re-armed after the bus reset so the device can ACK the bulk OUT packet
      * the host sends after enumeration.
+     *
+     * Use USB_EP_ENTRY_ABS_ADDR so the DMA engine reconstructs the correct
+     * absolute AXI buffer address. DATABUFSTART only contributes bits[31:22];
+     * addr_offset must equal bits[16:6] of the absolute AXI address.
      */
-    ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64) | USB_EP_ENTRY_ADDR(0x200);
+    ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64)
+                 | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + 0x200u);
     lsu_write_32(dma_base + 0x010, ep1out_entry);
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
-        uint32_t prev_dres = lsu_read_32(SOC_USBHSD_DEVCMDSTAT)
+        uint32_t prev_dres = lsu_read_32(USB_DEV0_DEVCMDSTAT)
                              & USBHSD_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
         /* Re-arm EP1 OUT after bus reset (hardware clears Active on all EPs) */
         if (prev_dres) {
             ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64)
-                         | USB_EP_ENTRY_ADDR(0x200);
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + 0x200u);
             lsu_write_32(dma_base + 0x010, ep1out_entry);
         }
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
 
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
             if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
         if (!loopback_done && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
             /* Copy received data from EP1 OUT buffer to EP1 IN buffer */
             for (i = 0; i < 64; i += 4) {
                 rx_word = lsu_read_32(dma_base + 0x200 + i);
@@ -101,7 +107,7 @@ void main(void) {
             }
             /* Arm EP1 IN Buffer 0 (offset 0x018) to send the loopback data */
             ep1in_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64)
-                        | USB_EP_ENTRY_ADDR(0x240);
+                        | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + 0x240u);
             lsu_write_32(dma_base + 0x018, ep1in_entry);
             loopback_done = 1;
         }

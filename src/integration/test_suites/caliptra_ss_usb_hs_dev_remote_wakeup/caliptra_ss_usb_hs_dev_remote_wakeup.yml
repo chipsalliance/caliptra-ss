@@ -12,3 +12,10 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_remote_wakeup_test'
+  # Enables caliptra_ss_usb_suspend_resume_checker.sv, which owns the DUT-side
+  # pass/fail condition for this test (UTMI SuspendM low then high again). The
+  # "=1" form is required: run_caliptra_test.py only forwards plusargs matching
+  # +NAME=VALUE, and $test$plusargs() matches on prefix so the value itself is
+  # ignored. Without this the checker is inert and the test cannot fail on DUT
+  # behaviour.
+  - '+usb_suspend_resume_check=1'

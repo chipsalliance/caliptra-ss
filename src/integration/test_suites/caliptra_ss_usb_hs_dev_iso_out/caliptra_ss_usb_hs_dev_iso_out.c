@@ -121,11 +121,11 @@ static void usb_ep2_out_arm(uint32_t round) {
                      | USB_EP_ENTRY_TYPE_PERIODIC
                      | USB_EP_ENTRY_RF_ISO
                      | USB_EP_ENTRY_NBYTES(USB_HS_ISO_TRANSFER_BYTES)
-                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_OUT_BUF_OFFSET);
+                     | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP2_OUT_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_OUT_OFFSET, ep2_out);
 
-    uint32_t inten = lsu_read_32(SOC_USBHSD_INTEN);
-    lsu_write_32(SOC_USBHSD_INTEN, inten | USBHSD_INTSTAT_EP2OUT_MASK);
+    uint32_t inten = lsu_read_32(USB_DEV0_INTEN);
+    lsu_write_32(USB_DEV0_INTEN, inten | USBHSD_INTSTAT_EP2OUT_MASK);
     VPRINTF(LOW, "MCU: EP2 OUT (ISO) armed for round %d\n", round);
 }
 
@@ -154,11 +154,11 @@ static void usb_ep2_in_arm(uint32_t round, uint32_t round_base) {
     // (0=DATA0). Do NOT set USB_EP_ENTRY_TYPE_PERIODIC on IN entries.
     uint32_t ep2_in_buf0 = USB_EP_ENTRY_ACTIVE
                          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
-                         | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_IN_BUF_OFFSET);
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET);
     uint32_t ep2_in_buf1 = USB_EP_ENTRY_ACTIVE
                          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
-                         | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_IN_BUF_OFFSET
-                                             + USB_HS_ISO_IN_BUF_BYTES);
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET
+                                                 + USB_HS_ISO_IN_BUF_BYTES);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF0_OFFSET, ep2_in_buf0);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF1_OFFSET, ep2_in_buf1);
 
@@ -187,6 +187,7 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core();
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -198,11 +199,11 @@ void main(void) {
          poll_count++) {
 
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV0_INTSTAT);
 
         // DEV_INT: bus reset change.
         if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep2_out_armed) {
@@ -210,13 +211,13 @@ void main(void) {
                     VPRINTF(LOW, "MCU: Bus reset - EP2 arm cleared\n");
                 }
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT: handle control transfers / enumeration.
         if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 // Arm EP2 OUT for round 0 on first SETUP after enumeration.
@@ -229,13 +230,13 @@ void main(void) {
 
         // EP0 IN: clear interrupt (status phase completion).
         if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         }
 
         // EP2 OUT ISO completion: hardware fires INTSTAT EP2OUT after receive.
         // This is the primary state-advance signal for all rounds.
         if (ep2_out_armed && (reg_data & USBHSD_INTSTAT_EP2OUT_MASK)) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP2OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP2OUT_MASK);
 
             uint32_t ep2_entry = usb_ep2_out_read();
             uint32_t residual  = (ep2_entry >> 11) & 0x7FFFu;
@@ -324,8 +325,8 @@ void main(void) {
             VPRINTF(LOW,
                 "MCU: [poll %d out_round %d] DEVCMDSTAT=0x%x INTSTAT=0x%x\n",
                 poll_count, out_round,
-                lsu_read_32(SOC_USBHSD_DEVCMDSTAT),
-                lsu_read_32(SOC_USBHSD_INTSTAT));
+                lsu_read_32(USB_DEV0_DEVCMDSTAT),
+                lsu_read_32(USB_DEV0_INTSTAT));
         }
     }
 
@@ -360,13 +361,13 @@ void main(void) {
         uint32_t inten_val;
 
         // Clear any stale FRAME_INT by writing 1 to INTSTAT bit 30.
-        lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+        lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
 
         // Enable FRAME_INT interrupt generation.
-        inten_val = lsu_read_32(SOC_USBHSD_INTEN);
-        lsu_write_32(SOC_USBHSD_INTEN, inten_val | USBHSD_INTEN_FRAME_INT_EN_MASK);
+        inten_val = lsu_read_32(USB_DEV0_INTEN);
+        lsu_write_32(USB_DEV0_INTEN, inten_val | USBHSD_INTEN_FRAME_INT_EN_MASK);
         VPRINTF(LOW, "MCU: FRAME_INT_EN enabled (INTEN=0x%x)\n",
-                lsu_read_32(SOC_USBHSD_INTEN));
+                lsu_read_32(USB_DEV0_INTEN));
     }
 
     // Step 2: Count FRAME_INT events over the poll window.
@@ -375,10 +376,10 @@ void main(void) {
         uint32_t fi;
 
         for (fi = 0; fi < FRAME_INT_POLL_WINDOW; fi++) {
-            uint32_t istat = lsu_read_32(SOC_USBHSD_INTSTAT);
+            uint32_t istat = lsu_read_32(USB_DEV0_INTSTAT);
             if (istat & USBHSD_INTSTAT_FRAME_INT_MASK) {
                 // Clear the bit (W1C) immediately to count individual events.
-                lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+                lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
                 frame_int_count++;
             }
         }
@@ -408,15 +409,15 @@ void main(void) {
         uint32_t inten_val;
         uint32_t inten_after;
 
-        inten_val = lsu_read_32(SOC_USBHSD_INTEN);
-        lsu_write_32(SOC_USBHSD_INTEN,
+        inten_val = lsu_read_32(USB_DEV0_INTEN);
+        lsu_write_32(USB_DEV0_INTEN,
                      inten_val & ~USBHSD_INTEN_FRAME_INT_EN_MASK);
 
         // Small spin to let the write propagate, then read back INTEN.
         for (uint32_t k = 0; k < 10u; k++)
-            (void)lsu_read_32(SOC_USBHSD_INTEN);
+            (void)lsu_read_32(USB_DEV0_INTEN);
 
-        inten_after = lsu_read_32(SOC_USBHSD_INTEN);
+        inten_after = lsu_read_32(USB_DEV0_INTEN);
         if (inten_after & USBHSD_INTEN_FRAME_INT_EN_MASK)
             VPRINTF(LOW,
                 "MCU: FRAME_INT_EN disable check FAILED - FRAME_INT_EN still set (INTEN=0x%x)\n",

@@ -45,26 +45,48 @@ void main(void) {
     VPRINTF(LOW, "MCU: hs_dev_resume test\n");
     boot_mcu();
     boot_usb_core();
+    // usb_hub_init_and_connect() (called inside boot_usb_core()) has already
+    // programmed the HUB RAM and set HUB_EN, and USBDC0's own EP list /
+    // DEVCMDSTAT / DCON are now fully programmed. usb_hub_connect() sets
+    // HUB_CONNECT so the host sees the hub on the bus and begins enumerating
+    // its downstream port 0 (USBDC0), per the two-phase janus_hub_ctrl_bfm.sv
+    // sequencing (hub-composite IP migration checklist item 7).
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
-    // lsu_write_32(SOC_USBHSD_INTEN, lsu_read_32(SOC_USBHSD_INTEN) | 0xFFFFFFFF);
-    lsu_write_32(SOC_USBHSD_INTEN,
-    lsu_read_32(SOC_USBHSD_INTEN) | USBHSD_INTEN_FRAME_INT_EN_MASK);
-    // lsu_write_32(SOC_USBHSD_INTSETSTAT, lsu_read_32(SOC_USBHSD_INTSETSTAT) | 0xFFFFFFFF);
+    // Register access retargeted from the legacy single-device SOC_USBHSD_*
+    // bank to the hub-composite USBDC0 register bank (USB_DEV0_*). The base
+    // address moved (0x2000_0000 hub bank -> 0x2000_1000 USBDC0 bank); the
+    // *_MASK bitfield macros from soc_address_map.h are offset-independent and
+    // remain valid (migration checklist item 1 and section B).
+    // lsu_write_32(USB_DEV0_INTEN, lsu_read_32(USB_DEV0_INTEN) | 0xFFFFFFFF);
+    lsu_write_32(USB_DEV0_INTEN,
+    lsu_read_32(USB_DEV0_INTEN) | USBHSD_INTEN_FRAME_INT_EN_MASK);
+    // lsu_write_32(USB_DEV0_INTSETSTAT, lsu_read_32(USB_DEV0_INTSETSTAT) | 0xFFFFFFFF);
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         // usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
+            } else {
+                // Status-stage ZLP OUT for a control-read completed. HW cleared
+                // ACTIVE on the EP0 OUT descriptor; re-arm it so the next SETUP
+                // is received instead of NAK'd. Hub-mode enumeration issues many
+                // more control transfers (hub enum + port bring-up + USBDC0
+                // enum), so EP0 OUT must be re-armed on every status ZLP
+                // (migration checklist item 9; matches janus_ahb_fw_bfm.sv
+                // dma_write32(EP0_OUT_DESC, 0xa0000000)).
+                usb_ep0_arm_out();
+            }
         }
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
             // reg_data was sampled at the top of the loop (before the DEV_INT
             // W1C write below), so DSUS_C is still readable here.
@@ -74,7 +96,7 @@ void main(void) {
             // DEVCMDSTAT.  Do NOT re-read DEVCMDSTAT before the DSUS_C check
             // or the bit will appear clear.
             // usb_handle_bus_reset();
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
             // Require DSUS (steady-state suspended bit) to also be set when
             // DSUS_C fires. During HS bus reset / chirp the controller can
             // assert DSUS_C transiently while DSUS=0 (device is resetting, not
@@ -83,14 +105,14 @@ void main(void) {
             if (!dsus_seen && (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK)
                            && (reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
                 // Suspend detected: clear DSUS_C (W1C) and record.
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
-                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
+                lsu_write_32(USB_DEV0_DEVCMDSTAT,
+                    lsu_read_32(USB_DEV0_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
                 dsus_seen = 1;
                 VPRINTF(LOW, "MCU: hs_dev_resume suspend detected DEVCMDSTAT=0x%x\n", reg_data);
             } else if (dsus_seen) {
                 // Re-read DEVCMDSTAT for the DSUS (current-state) bit, which is
                 // not a change-detect bit and is safe to read after the W1C.
-                reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+                reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
                 if (!(reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
                     // Resume detected: DSUS cleared after suspend was seen.
                     VPRINTF(LOW, "USB HS device resume PASSED\r\n");
