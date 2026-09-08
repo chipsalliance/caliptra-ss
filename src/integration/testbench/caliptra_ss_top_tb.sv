@@ -2037,10 +2037,232 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.utmi_dut_mac_if.clk = usb_utmi_clk;
     assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
 
+    // --- USB Full Speed link-speed checker ---
+    // Observes the UTMI+ interface and proves that the link is running at
+    // Full Speed (12 Mbit/s) rather than High Speed, by checking the PHY
+    // speed-select pins and by measuring the RXValid byte spacing. Entirely
+    // inert unless +usb_fs_speed_check is passed on the simv command line, so
+    // it has no effect on tests that do not ask for it. See
+    // caliptra_ss_usb_fs_speed_checker.sv for the rationale on why the link
+    // speed cannot be inferred from any clock frequency in this testbench.
+    caliptra_ss_usb_fs_speed_checker i_caliptra_ss_usb_fs_speed_checker (
+        .utmi_clk   (cptra_ss_usb_utmi_clk_i),
+        .utmi_reset (cptra_ss_usb_utmi_reset_o),
+        .rxactive   (cptra_ss_usb_utmi_rxactive_i),
+        .rxvalid    (cptra_ss_usb_utmi_rxvalid_i),
+        .rxdata     (cptra_ss_usb_utmi_rxdata_i),
+        .xcvrselect (cptra_ss_usb_utmi_xcvrselect_o),
+        .termselect (cptra_ss_usb_utmi_termselect_o),
+        .opmode     (cptra_ss_usb_utmi_opmode_o),
+        .linestate  (cptra_ss_usb_utmi_linestate_i)
+    );
+
+    // --- USB suspend / resume checker ---
+    // Gives caliptra_ss_usb_hs_dev_remote_wakeup a DUT-side pass/fail
+    // condition by watching the UTMI+ SuspendM output of the device
+    // controller, instead of trusting the host-side VIP link state alone.
+    // Inert unless +usb_suspend_resume_check is passed on the simv command
+    // line. It also publishes uvm_events that let the stimulus sequence stop
+    // dwelling as soon as the DUT reacts. See
+    // caliptra_ss_usb_suspend_resume_checker.sv for the full rationale.
+    caliptra_ss_usb_suspend_resume_checker i_caliptra_ss_usb_suspend_resume_checker (
+        .utmi_clk (cptra_ss_usb_utmi_clk_i),
+        .suspendm (cptra_ss_usb_utmi_suspendm_o)
+    );
+
+    // Declare VBus/SessEnd ahead of the ifdef block: nvs_usb_phy drives these
+    // as outputs inside CALIPTRA_USB_HOST_PHY_TEST, so they must be visible
+    // before the instantiation.
+    logic         cptra_ss_usb_USB_VBus_i;
+    logic         cptra_ss_usb_sessend_i;
+
+    // =========================================================================
+    // nvs_usb_phy instantiation block for DUT=HOST tests.
+    //
+    // When CALIPTRA_USB_HOST_PHY_TEST is defined:
+    //   - A second svt_usb_if (usb_20_serial_if) is created for the VIP DEVICE
+    //     agent configured with USB_20_SERIAL_IF topology.
+    //   - nvs_usb_phy bridges the DUT HOST MAC UTMI outputs to the DP/DM serial
+    //     bus, and drives all UTMI return signals (LineState, RXActive, TXReady,
+    //     DataOut, VbusValid, etc.) back to the DUT.
+    //   - The PHY 60 MHz clock output is used as cptra_ss_usb_utmi_clk_i.
+    //   - DP/DM wor bus connects PHY to VIP serial interface via tran primitives.
+    // =========================================================================
+`ifdef CALIPTRA_USB_HOST_PHY_TEST
+
+    // Serial DP/DM interface for VIP DEVICE agent (USB_20_SERIAL_IF topology).
+    svt_usb_if usb_20_serial_if();
+
+    // Shared bidirectional DP/DM bus (wor = wire-or for open-drain).
+    wor usb_dp, usb_dm;
+
+    // 480 Mb/s bit period in ps.
+    parameter int usb_20_simulation_cycle = 2083;
+
+    // Serial clock for VIP (4x oversampling): toggles at simulation_cycle/8 ps
+    // to produce a 120 MHz observation clock for the VIP serial layer.
+    bit usb_20_serial_clock_for_VIP;
+    initial begin
+        usb_20_serial_clock_for_VIP = 0;
+        #(usb_20_simulation_cycle);
+        forever begin
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #((usb_20_simulation_cycle/2) - (3*(usb_20_simulation_cycle/8)));
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #(usb_20_simulation_cycle/8);
+            usb_20_serial_clock_for_VIP = ~usb_20_serial_clock_for_VIP;
+            #((usb_20_simulation_cycle - (usb_20_simulation_cycle/2))
+              - (3*(usb_20_simulation_cycle/8)));
+        end
+    end
+    assign usb_20_serial_if.usb_20_serial_if.clk = usb_20_serial_clock_for_VIP;
+
+    // PHY 60 MHz clock output -> DUT UTMI clock.
+    wire utmi_clock_from_phy;
+    assign cptra_ss_usb_utmi_clk_i = utmi_clock_from_phy;
+
+    // VBUS present for simulation.
+    assign usb_20_serial_if.usb_20_serial_if.vbus = 1'b1;
+
+    // nvs_usb_phy: DUT HOST MAC UTMI outputs -> DP/DM serial bus,
+    // and DP/DM bus -> UTMI return signals back to DUT.
+    // usb_id_input = !DmPulldown: HOST sets DmPulldown=1, so id_input=0 (HOST).
+    defparam SNPS_PHY_INST.USB_INST_NAME = "SNPS_PHY_INST";
+    nvs_usb_phy SNPS_PHY_INST (
+        .usb_clk_in              (usb_20_serial_if.usb_20_serial_if.clk1x_480Mhz),
+        .usb_reset               (cptra_ss_usb_utmi_reset_o),
+        .usb_databus16_8         (1'b0),
+        .usb_datain8_15          (8'h0),
+        .usb_txvalidh            (1'b0),
+        .usb_xcvr_select         (cptra_ss_usb_utmi_xcvrselect_o[0]),
+        .usb_term_select         (cptra_ss_usb_utmi_termselect_o),
+        .usb_suspendm            (cptra_ss_usb_utmi_suspendm_o),
+        .usb_opmode              (cptra_ss_usb_utmi_opmode_o),
+        .DATA                    (),
+        .STROBE                  (),
+        .hsic_en                 (1'b0),
+        .DP                      (usb_dp),
+        .DM                      (usb_dm),
+        .usb_datain0_7           (cptra_ss_usb_utmi_txdata_o),
+        .usb_txvalid             (cptra_ss_usb_utmi_txvalid_o),
+        .usb_id_pull_up          (1'b0),
+        .usb_id_input            (!cptra_ss_usb_utmi_dmpulldown_o),
+        .usb_dp_pull_down        (cptra_ss_usb_utmi_dppulldown_o),
+        .usb_dm_pull_down        (cptra_ss_usb_utmi_dmpulldown_o),
+        .usb_drv_vbus            (1'b1),
+        .usb_chrg_vbus           (1'b0),
+        .usb_dischrg_vbus        (1'b0),
+        .usb_tx_bit_stuff_enable (1'b0),
+        .usb_tx_bit_stuff_enable_h(1'b0),
+        .usb_tx_dat              (1'b0),
+        .usb_tx_se0              (1'b0),
+        .usb_tx_enable_n         (1'b1),
+        .usb_fs_ls_serial_mode   (1'b0),
+        .tb_HostDisconnect        (1'b0),
+        .Vbus                    (usb_20_serial_if.usb_20_serial_if.vbus),
+        .usb_clk_out             (utmi_clock_from_phy),
+        .usb_linestate           (cptra_ss_usb_utmi_linestate_i),
+        .usb_txready             (cptra_ss_usb_utmi_txready_i),
+        .usb_dataout0_7          (cptra_ss_usb_utmi_rxdata_i),
+        .usb_dataout8_15         (),
+        .usb_rxvalidh            (),
+        .usb_rxvalid             (cptra_ss_usb_utmi_rxvalid_i),
+        .usb_rxactive            (cptra_ss_usb_utmi_rxactive_i),
+        .usb_rxerror             (cptra_ss_usb_utmi_rxerror_i),
+        .usb_host_disconnect     (cptra_ss_usb_utmi_hostdisconnect_i),
+        .usb_id_dig              (cptra_ss_usb_utmi_id_value_i),
+        .usb_a_valid             (),
+        .usb_b_valid             (),
+        .usb_vbus_valid          (cptra_ss_usb_USB_VBus_i),
+        .usb_sess_end            (cptra_ss_usb_sessend_i),
+        .usb_rx_dp               (),
+        .usb_rx_dm               (),
+        .usb_rx_rcv              (),
+        .usb_stp                 (),
+        .usb_phy_debug_reg       ({19'b0,
+                                   usb_20_serial_if.usb_20_serial_if.clk1x_480Mhz,
+                                   1'b0, 11'b0})
+    );
+
+    // Connect shared wor DP/DM bus to VIP DEVICE serial interface.
+    tran dp_xmit(usb_dp, usb_20_serial_if.usb_20_serial_if.dp);
+    tran dm_xmit(usb_dm, usb_20_serial_if.usb_20_serial_if.dm);
+
+    // Supply PHY-side clock to the VIP UTMI monitor interface so protocol
+    // decoding uses the correct 60 MHz clock once HS negotiation completes.
+    assign usb_20_mac_if.utmi_dut_phy_if.CLK =
+        ((usb_20_mac_if.utmi_dut_phy_if.Reset) ||
+         (!usb_20_mac_if.utmi_dut_phy_if.SuspendM)) ?
+        usb_20_serial_if.usb_20_serial_if.clk1x_480Mhz : utmi_clock_from_phy;
+
+    // Publish serial VIF so UVM env can hand it to the DEVICE agent.
+    initial begin
+        uvm_config_db#(virtual svt_usb_if)::set(uvm_root::get(),
+            "uvm_test_top.env", "usb_20_serial_if", usb_20_serial_if);
+    end
+
+`endif // CALIPTRA_USB_HOST_PHY_TEST
+
     // USB power / VBus interface
-    // Feed the PHY model's session state back to the compound device inputs.
-    assign cptra_ss_usb_USB_VBus_i = usb_20_mac_if.utmi_dut_mac_if.VbusValid;
-    assign cptra_ss_usb_sessend_i  = usb_20_mac_if.utmi_dut_mac_if.SessEnd;
+    logic         cptra_ss_usb_vbuscomp_on_o;
+    logic         cptra_ss_usb_chrgvbus_o;
+    logic         cptra_ss_usb_dischrgvbus_o;
+    // The VIP owns VBus.  cptra_ss_usb_USB_VBus_i and cptra_ss_usb_sessend_i
+    // used to be constant assigns:
+    //     assign cptra_ss_usb_USB_VBus_i = 1'b1;
+    //     assign cptra_ss_usb_sessend_i  = 1'b0;
+    //
+    // cptra_ss_usb_USB_VBus_i is the only path VBus has into the design, so a
+    // constant 1 made VBus removal unobservable: DEVCMDSTAT.VBUS_DEBOUNCED
+    // could never clear and DCON_C could never fire.  The
+    // caliptra_ss_usb_hs_dev_disconnect firmware waits for exactly that
+    // condition, so it could only ever time out.  The VIP physical service
+    // sequences vbus_off / vbus_on on their own do not help either, because
+    // they act on the VIP side of the link and never reach this DUT pin.
+    //
+    // caliptra_ss_usb_vbus_driver closes that gap.  It samples the VIP UTMI
+    // VbusValid / SessEnd outputs, which the testbench deliberately leaves
+    // undriven above, and forwards the resolved value to these two DUT pins.
+    // One svt_usb_physical_service_vbus_off_sequence therefore moves both the
+    // VIP link state machine and the DUT power pin, and the two cannot
+    // desynchronise.  This is the physically correct model as well: a device
+    // never sources the 5 V rail, it only senses what the host supplies
+    // through the cable.
+    //
+    // The driver never forwards X/Z to a DUT power input.  If the VIP is not
+    // driving, it holds the last known-good value (default VBus=1 / SessEnd=0,
+    // bit-identical to the old tie-off) and reports once at UVM_LOW.
+    //
+    // Stimulus does not move the pin, but can wait for it: the driver services
+    // the global uvm_events usb_vbus_off_req / usb_vbus_on_req and answers with
+    // usb_vbus_off_done / usb_vbus_on_done once the pin has reached the asked
+    // level.  See docs/usb_vip_vbus_ownership.md.
+    //
+    // The ifndef guard is load bearing.  Host-DUT tests put the VIP in DEVICE
+    // mode on USB_20_SERIAL_IF through nvs_usb_phy, where device_b_sm *reads*
+    // VbusValid instead of driving it and nvs_usb_phy drives these two pins
+    // directly.  Both this driver and the released VbusValid assign must stay
+    // out of that build - do not remove the guard.
+    `ifndef CALIPTRA_USB_HOST_PHY_TEST
+
+    caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
+        .vbus           (cptra_ss_usb_USB_VBus_i),
+        .sessend        (cptra_ss_usb_sessend_i),
+        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
+        .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
+    );
+
+    `endif
 
     // USB ULPI PHY interface
     // These tests exercise UTMI only, so all ULPI inputs remain inactive.

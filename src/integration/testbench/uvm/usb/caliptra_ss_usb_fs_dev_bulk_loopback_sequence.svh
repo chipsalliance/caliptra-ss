@@ -187,10 +187,90 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         // before the first SETUP token arrives on the bus.
         #50us;
 
-        // Step 5: Full FS device enumeration.
-        // Pattern matches caliptra_ss_usb_init_sequence and
-        // caliptra_ss_usb_hs_dev_bulk_out_sequence: do_control_xfer()
-        // calls finish_item; explicit wait_xfer_done() waits for NOTIFY.
+        // Step 5: Full hub + USBDC0 enumeration.
+        // Mirrors caliptra_ss_usb_hs_dev_bulk_out_sequence:
+        //   5a - enumerate HUB at addr 1
+        //   5b - bring up downstream port 1 (USBDC0)
+        //   5c - enumerate USBDC0 at addr 2
+
+        // ---------------------------------------------------------------
+        // Step 5a: Enumerate the HUB itself at address 1.
+        // ---------------------------------------------------------------
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0008,
+            0, "GET_DESC_DEV_addr0_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0_hub");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_1_hub");
+        #5us;
+
+        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        host_agent_h.reconfigure(usb_cfg);
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
+            1, "GET_DESC_DEV_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0009,
+            1, "GET_DESC_CFG9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0019,
+            1, "GET_DESC_CFG25_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG25_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h2900, 16'h0000, 16'h0009,
+            1, "GET_DESC_HUB9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_HUB9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
+            1, "SET_CONFIG_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_CONFIG_1_hub");
+
+        // ---------------------------------------------------------------
+        // Step 5b: Bring up downstream port 1 (where USBDC0 is attached).
+        // ---------------------------------------------------------------
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h00, 16'h0000, 16'h0001, 16'h0004,
+            1, "GetPortStatus_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "GetPortStatus_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0010, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_CONNECTION_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_CONNECTION_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h03, 16'h0004, 16'h0001, 16'h0000,
+            1, "SetFeature_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "SetFeature_PORT_RESET_Port1");
+        #10us;
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0014, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_RESET_Port1");
+        #10us;
+
+        // Reset VIP anchor to addr=0 before enumerating USBDC0.
+        // USBDC0, having just been port-reset, responds at address 0.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info("USB_FS_LOOPBACK_SEQ",
+            "Reset host agent remote device_address=0 before enumerating USBDC0.",
+            UVM_LOW)
+
+        // ---------------------------------------------------------------
+        // Step 5c: Enumerate USBDC0 (behind hub port 1) at address 2.
+        // ---------------------------------------------------------------
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
             0, "GET_DESC_DEV_addr0", usb_cfg);
@@ -202,32 +282,32 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
 
         do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0002, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_2", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_2");
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
         host_agent_h.reconfigure(usb_cfg);
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            1, "GET_DESC_DEV_addr1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1");
+            2, "GET_DESC_DEV_addr2", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr2");
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            1, "GET_CONFIG_addr1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_addr1");
+            2, "GET_CONFIG_addr2", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_CONFIG_addr2");
 
         do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            1, "SET_CONFIG_1", usb_cfg);
+            2, "SET_CONFIG_1", usb_cfg);
         wait_xfer_done(host_agent_h, "SET_CONFIG_1");
 
         do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
             svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            1, "GET_CONFIG_verify", usb_cfg);
+            2, "GET_CONFIG_verify", usb_cfg);
         wait_xfer_done(host_agent_h, "GET_CONFIG_verify");
 
         `uvm_info("USB_FS_LOOPBACK_SEQ", "FS enumeration complete.", UVM_LOW)
@@ -246,7 +326,7 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         bulk_out_req.fix_anchors(0, 2, 0);
         if (!bulk_out_req.randomize() with {
                 xfer_type                              == svt_usb_transfer::BULK_OUT_TRANSFER;
-                device_address                         == 1;
+                device_address                         == 2;
                 endpoint_number                        == 1;
                 payload_intended_byte_count            == 64;
                 aligned_transfer_ends_with_zero_length == 0;
@@ -264,7 +344,7 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
             begin
                 finish_item(bulk_out_req, -1);
                 `uvm_info("USB_FS_LOOPBACK_SEQ",
-                    "FS Bulk OUT issued (64 bytes, EP1, addr=1).", UVM_LOW)
+                    "FS Bulk OUT issued (64 bytes, EP1, addr=2).", UVM_LOW)
             end
             begin
                 wait_xfer_done(host_agent_h, "FS_BULK_OUT_EP1");
@@ -281,7 +361,7 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         bulk_in_req.fix_anchors(0, 1, 0);
         if (!bulk_in_req.randomize() with {
                 xfer_type                   == svt_usb_transfer::BULK_IN_TRANSFER;
-                device_address              == 1;
+                device_address              == 2;
                 endpoint_number             == 1;
                 payload_intended_byte_count == 64;
             }) begin
@@ -292,7 +372,7 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
             begin
                 finish_item(bulk_in_req, -1);
                 `uvm_info("USB_FS_LOOPBACK_SEQ",
-                    "FS Bulk IN issued (64 bytes, EP1, addr=1).", UVM_LOW)
+                    "FS Bulk IN issued (64 bytes, EP1, addr=2).", UVM_LOW)
             end
             begin
                 wait_xfer_done(host_agent_h, "FS_BULK_IN_EP1");

@@ -13,14 +13,28 @@
 `define CALIPTRA_SS_USB_HS_CONN_SEQUENCE_SV
 
 // =============================================================================
-// USB High-Speed connection sequence.
-
+// USB High-Speed connection sequence (hub-composite IP).
+//
+// On the new hub-composite IP (ip_xxx_3511_hs_mem_compound_wrapper) the DUT is
+// an on-chip 2-port USB hub with an embedded downstream device controller
+// (USBDC0). The HS link only comes up on the upstream port after the MCU
+// firmware performs the two-phase hub bring-up: boot_usb_core() sets HUB_EN,
+// then usb_hub_connect() sets HUB_CONNECT. Only after HUB_CONNECT does the hub
+// present itself on the bus, so the host sees connect / reset / HS chirp and
+// the link reaches ENABLED.
+//
+// This sequence is a passive link-up observer (no device enumeration); it is
+// unchanged in intent from the legacy flow because it only watches the upstream
+// link state, which is still valid once the hub connects upstream.
+//
 // Sequence flow:
-//   1. Wait for host link to reach ENABLED (HS link-up after reset/chirp).
+//   1. Wait for host link to reach ENABLED (HS link-up after the hub connects
+//      upstream and completes reset/chirp).
 //   2. Start SOF generation to keep the HS link alive.
 //   3. Hold an observation window so the link state can be inspected.
 // MCU firmware (caliptra_ss_usb_hs_conn.c) boots the USB device controller
-// in HS mode and loops polling DEVCMDSTAT to confirm the connection.
+// in HS mode, connects the hub upstream, and loops polling DEVCMDSTAT
+// (USB_DEV0_DEVCMDSTAT) to confirm the connection.
 // =============================================================================
 class caliptra_ss_usb_hs_conn_sequence extends uvm_sequence;
 

@@ -92,6 +92,9 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
         if (!$cast(usb_cfg, get_cfg))
             `uvm_fatal("USB_HS_RES_SEQ","Cannot cast cfg to svt_usb_configuration")
 
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] body() begin - hub-composite HS resume sequence starting.", UVM_NONE)
+
         // Start SOF so the link can negotiate HS and reach ENABLED.
         begin
             svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
@@ -99,6 +102,8 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
             sof_on_seq.start(p_sequencer.prot_service_sequencer);
             `uvm_info("USB_HS_RES_SEQ","SOF generation started.",UVM_LOW)
         end
+        `uvm_info("USB_HS_RES_SEQ", "[DBG] Phase: waiting for HS link ENABLED.", UVM_NONE)
+
 
         fork
             begin: WAIT_EN
@@ -118,67 +123,146 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
         // packet arrives. 20 us matches the settling delay used in hs_dev_nbyte.
         #20us;
 
-        // --- Enumeration ---
+        // --- Hub-aware enumeration (hub-composite IP) ---
+        // The USBDC0 device now sits BEHIND an on-chip 2-port hub. The host
+        // must enumerate the HUB itself at addr 1, explicitly bring up its
+        // downstream port 1, then enumerate USBDC0 at addr 2. See
+        // claude_md/09_usb_hub_composite_migration.md section E and the
+        // reference caliptra_ss_usb_hs_dev_bulk_out_sequence.svh.
 
-        // GET_DESCRIPTOR (device descriptor, 18 bytes) at addr=0.
-        do_control_xfer(
-            .bm_request_type_dir   (svt_usb_types::DEVICE_TO_HOST),
-            .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
-            .brequest_val          (8'h06),
-            .wvalue                (16'h0100),
-            .windex                (16'h0000),
-            .wlength               (16'h0012),
-            .device_addr           (0),
-            .label                 ("GET_DESC_DEV_addr0"),
-            .usb_cfg               (usb_cfg)
-        );
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
+        // ---------------------------------------------------------------
+        // Step A: Enumerate the HUB itself at address 1.
+        // ---------------------------------------------------------------
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Step A: enumerating HUB at address 1.", UVM_NONE)
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0008,
+            0, "GET_DESC_DEV_addr0_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0_hub");
 
-        // Wait for MCU to finish GET_DESCRIPTOR processing and EP1 initial arming
-        // before SET_ADDRESS. Without this gap the MCU is still writing EP1 OUT
-        // entries when SET_ADDRESS SETUP arrives, causing STATUS ZLP timeout.
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_1_hub");
+        #5us;
 
-        // SET_ADDRESS to 1 (still at addr=0).
-        do_control_xfer(
-            .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
-            .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
-            .brequest_val          (8'h05),
-            .wvalue                (16'h0001),
-            .windex                (16'h0000),
-            .wlength               (16'h0000),
-            .device_addr           (0),
-            .label                 ("SET_ADDRESS_1"),
-            .usb_cfg               (usb_cfg)
-        );
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
-
-        // Update VIP anchor to addr=1 so SET_CFG satisfies the VIP constraint
-        // fixed_dev_ep_ustr_valid_ranges (device_address == dev_anchor).
         usb_cfg.remote_device_cfg[0].device_address = 7'd1;
         host_agent_h.reconfigure(usb_cfg);
-        `uvm_info("USB_HS_RES_SEQ","Reconfigured host agent with remote device_address=1.",UVM_LOW)
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Reconfigured VIP anchor remote device_address=1 (HUB).", UVM_NONE)
 
-        // SET_CONFIGURATION 1 at new addr=1.
-        do_control_xfer(
-            .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
-            .bm_request_type_type  (svt_usb_types::STANDARD),
-            .bm_request_type_recip (svt_usb_types::BMREQ_DEVICE),
-            .brequest_val          (8'h09),
-            .wvalue                (16'h0001),
-            .windex                (16'h0000),
-            .wlength               (16'h0000),
-            .device_addr           (1),
-            .label                 ("SET_CONFIGURATION_1"),
-            .usb_cfg               (usb_cfg)
-        );
-        wait_xfer_done(host_agent_h, "SET_CONFIGURATION_1");
-        `uvm_info("USB_HS_RES_SEQ","Enumeration done.",UVM_LOW)
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
+            1, "GET_DESC_DEV_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0009,
+            1, "GET_DESC_CFG9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0019,
+            1, "GET_DESC_CFG25_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_CFG25_addr1_hub");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h2900, 16'h0000, 16'h0009,
+            1, "GET_DESC_HUB9_addr1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_HUB9_addr1_hub");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
+            1, "SET_CONFIG_1_hub", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_CONFIG_1_hub");
+
+        // ---------------------------------------------------------------
+        // Step B: Bring up downstream port 1 (where USBDC0 is attached).
+        // ---------------------------------------------------------------
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Step B: bringing up hub downstream port 1.", UVM_NONE)
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h00, 16'h0000, 16'h0001, 16'h0004,
+            1, "GetPortStatus_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "GetPortStatus_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0010, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_CONNECTION_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_CONNECTION_Port1");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h03, 16'h0004, 16'h0001, 16'h0000,
+            1, "SetFeature_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "SetFeature_PORT_RESET_Port1");
         #10us;
 
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
+            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0014, 16'h0001, 16'h0000,
+            1, "ClearFeature_C_PORT_RESET_Port1", usb_cfg);
+        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_RESET_Port1");
+        #10us;
+
+        // Reset the VIP anchor back to addr=0 before addressing the freshly
+        // port-reset USBDC0 (which responds at address 0 like any reset
+        // device). Without this the VIP fixed_dev_ep_ustr_valid_ranges
+        // constraint (address == anchored 1) contradicts the transfer's WITH
+        // constraint (address == 0) and randomize() UVM_FATALs.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Reset VIP anchor remote device_address=0 before USBDC0 enum.",
+            UVM_NONE)
+
+        // ---------------------------------------------------------------
+        // Step C: Enumerate USBDC0 (behind hub port 1) at address 2.
+        // ---------------------------------------------------------------
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Step C: enumerating USBDC0 at address 2.", UVM_NONE)
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
+            0, "GET_DESC_DEV_addr0", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h00, 16'h0000, 16'h0000, 16'h0002,
+            0, "GET_STATUS_addr0", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0002, 16'h0000, 16'h0000,
+            0, "SET_ADDRESS_2", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_ADDRESS_2");
+        #5us;
+
+        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Reconfigured VIP anchor remote device_address=2 (USBDC0).",
+            UVM_NONE)
+
+        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
+            2, "GET_DESC_DEV_addr2", usb_cfg);
+        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr2");
+
+        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
+            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
+            2, "SET_CONFIG_1", usb_cfg);
+        wait_xfer_done(host_agent_h, "SET_CONFIG_1");
+
+        `uvm_info("USB_HS_RES_SEQ","Enumeration done.",UVM_LOW)
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Hub-aware enumeration complete; USBDC0 addressed at 2.",
+            UVM_NONE)
+        #10us;
+
+
         // --- Suspend: stop SOF so device enters suspend state ---
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] Phase: SUSPEND - stopping SOF, holding 2500us.", UVM_NONE)
         `uvm_info("USB_HS_RES_SEQ","Suspending (SOF OFF)...",UVM_LOW)
+
         begin
             svt_usb_protocol_service_20_sof_off_sequence susp;
             susp = svt_usb_protocol_service_20_sof_off_sequence::type_id::create("susp");
@@ -196,6 +280,9 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
         // USB_20_CLEAR_PORT_SUSPEND command which causes the VIP host to drive
         // K for the spec-required duration and then end-of-resume signaling.
         // Prerequisites: bus must be in SUSPENDED state.
+        `uvm_info("USB_HS_RES_SEQ",
+            $sformatf("[DBG] Phase: RESUME - driving FPR (K) to USBDC0 addr=%0d.",
+                usb_cfg.remote_device_cfg[0].device_address), UVM_NONE)
         `uvm_info("USB_HS_RES_SEQ","Resuming (FPR) - driving K on bus...",UVM_LOW)
         begin
             svt_usb_link_service_clear_suspend_sequence link_resume_seq;
@@ -203,6 +290,7 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
             link_resume_seq.device_address = usb_cfg.remote_device_cfg[0].device_address;
             link_resume_seq.start(p_sequencer.link_service_sequencer);
         end
+
         $display("FPR resuming done");
 
         // Restart SOF after FPR. The link_service_clear_suspend sequence drives
@@ -225,15 +313,26 @@ class caliptra_ss_usb_hs_dev_resume_sequence extends uvm_sequence;
                     $sformatf("Waiting ENABLED: link=%0s cnt=%0d",
                         shared_status.link_usb_20_state.name(), poll_cnt), UVM_HIGH)
             end
-            if (shared_status.link_usb_20_state == svt_usb_types::ENABLED)
+            if (shared_status.link_usb_20_state == svt_usb_types::ENABLED) begin
+                `uvm_info("USB_HS_RES_SEQ",
+                    $sformatf("[DBG] RESUME result: link ENABLED after %0d us poll.",
+                        poll_cnt), UVM_NONE)
                 `uvm_info("USB_HS_RES_SEQ","Device resumed - link ENABLED.",UVM_LOW)
-            else
+            end
+            else begin
+                `uvm_info("USB_HS_RES_SEQ",
+                    $sformatf("[DBG] RESUME result: TIMEOUT, link=%0s.",
+                        shared_status.link_usb_20_state.name()), UVM_NONE)
                 `uvm_error("USB_HS_RES_SEQ",
                     $sformatf("Timeout waiting for ENABLED after FPR; link=%0s",
                         shared_status.link_usb_20_state.name()))
+            end
         end
         #100us;
+        `uvm_info("USB_HS_RES_SEQ",
+            "[DBG] body() end - sequence complete.", UVM_NONE)
         `uvm_info("USB_HS_RES_SEQ","caliptra_ss_usb_hs_dev_resume_sequence complete.",UVM_LOW)
+
     endtask
 endclass
 
