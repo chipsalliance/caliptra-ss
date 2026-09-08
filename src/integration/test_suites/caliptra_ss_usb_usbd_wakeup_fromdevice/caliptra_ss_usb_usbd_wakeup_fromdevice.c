@@ -30,39 +30,46 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
     enum printf_verbosity verbosity_g = LOW;
 #endif
 
+/* Device-initiated wakeup: host suspends, device asserts K resume via DRES_C. */
 void main(void) {
     uint32_t reg_data;
     uint32_t poll_count;
     uint32_t intstat;
+    uint32_t dsus_seen;
 
     boot_mcu();
     boot_usb_core();
-    // Hub-enabled mode: boot_usb_core() calls usb_hub_init_and_connect()
-    // internally (programs HUB RAM, sets HUB_EN). Assert HUB_CONNECT here
-    // so the hub presents itself upstream and the host can see USBDC0 behind
-    // hub port 1. Without this call the hub never connects and DCON is never
-    // driven active.
-    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
+    dsus_seen = 0;
+
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
-        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
+        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
 
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
             if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
-        if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {
-            VPRINTF(LOW, "USB USBD conn: device connected PASSED\r\n");
-            break;
+        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            if (!dsus_seen && (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK)) {
+                /* Bus suspended - device asserts remote wakeup (K) via DRES_C */
+                lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
+                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT) |
+                    USBHSD_DEVCMDSTAT_DSUS_C_MASK | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+                dsus_seen = 1;
+            } else if (dsus_seen && !(reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
+                VPRINTF(LOW, "USB USBD wakeup fromdevice PASSED\r\n");
+                break;
+            }
         }
     }
 

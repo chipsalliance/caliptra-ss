@@ -49,11 +49,22 @@ void main(void) {
 
     boot_mcu();
 
-    // boot_usb_core() brings up the USB device controller in HS mode.
-    // The VIP host (high_speed_capable=1) will perform HS chirp negotiation.
+    // boot_usb_core() brings up the USB device controller in HS mode. On the
+    // new hub-composite IP it also programs+validates the HUB RAM and sets
+    // HUB_EN (via usb_hub_init_and_connect()); USBDC0 is an embedded downstream
+    // device of the on-chip hub, not a device directly on the bus.
     boot_usb_core();
 
+    // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core(); now that
+    // USBDC0's EP list / DEVCMDSTAT / DCON are fully programmed it is safe to
+    // connect the hub upstream. usb_hub_connect() sets HUB_CONNECT, per the
+    // reference janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this
+    // will the host see the hub on the bus, perform HS chirp, and enumerate
+    // its downstream port 0 (USBDC0).
+    usb_hub_connect();
+
     mcu_cptra_advance_brkpoint();
+
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
@@ -62,7 +73,7 @@ void main(void) {
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT && !connected; poll_count++) {
         usb_handle_bus_reset();
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
 
         // DCON bit indicates device is connected (pullup enabled / VBUS present).
         if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {

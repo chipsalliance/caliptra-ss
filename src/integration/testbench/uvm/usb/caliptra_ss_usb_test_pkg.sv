@@ -63,8 +63,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_host_iso_out_test.svh"
 //  `include "caliptra_ss_usb_hs_host_powerdown_sequence.svh"
 //  `include "caliptra_ss_usb_hs_host_powerdown_test.svh"
-  `include "caliptra_ss_usb_hs_host_remotewakeup_sequence.svh"
-  `include "caliptra_ss_usb_hs_host_remotewakeup_test.svh"
+//  `include "caliptra_ss_usb_hs_host_remotewakeup_sequence.svh"
+//  `include "caliptra_ss_usb_hs_host_remotewakeup_test.svh"
 //  `include "caliptra_ss_usb_hs_host_resume_sequence.svh"
 //  `include "caliptra_ss_usb_hs_host_resume_test.svh"
 
@@ -85,5 +85,9 @@ package caliptra_ss_usb_test_pkg;
   // USBD testcases
   `include "caliptra_ss_usb_usbd_conn_sequence.svh"
   `include "caliptra_ss_usb_usbd_conn_test.svh"
+//  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"
+//  `include "caliptra_ss_usb_usbd_wakeup_test.svh"
+//  `include "caliptra_ss_usb_usbd_wakeup_fromdevice_sequence.svh"
+//  `include "caliptra_ss_usb_usbd_wakeup_fromdevice_test.svh"
 
 endpackage

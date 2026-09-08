@@ -14,31 +14,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Description: USB Full-Speed clock test for the Caliptra Subsystem.
+// Description: USB Full-Speed link test for the Caliptra Subsystem.
 //
-//  This test verifies that the USB clock path is active and toggling after
-//  the USB device controller is brought up. The USB reference clock is
-//  generated inside the AST (src/ast/rtl/usb_clk.sv, usb_osc.sv ->
-//  clk_src_usb_o) and feeds the USB controller's utmi_clk. Firmware brings
-//  the USB device controller up via the standard boot_usb_core() and idles
-//  so that the clock path stays active; frequency checking is done by a
-//  TB-bound SystemVerilog checker (caliptra_ss_usb_fs_clock_checker.sv)
-//  bound to the AST clk_src_usb_o net.
+//  This test brings the USB device controller up in Full-Speed-only mode
+//  behind the compound hub and keeps it alive long enough for the testbench
+//  checker to prove that the link is actually running at Full Speed.
 //
-//  IMPORTANT - Full-speed selection:
-//  The USB device controller DOES NOT provide a software "force full speed"
-//  control bit in DEVCMDSTAT. DEVCMDSTAT.SPEED ([23:22], mask 0xC00000) is
-//  READ-ONLY status; it reports the negotiated speed and cannot be written
-//  to force FS. Full-speed operation must be selected on the PHY/link side:
-//    - Set high_speed_capable=0 in the UVM host cfg (caliptra_ss_usb_shared_cfg)
-//      so the VIP remote-device model does not offer HS chirp; OR
-//    - Force UTMI xcvrselect/termselect/opmode to FS values in the TB.
-//  This firmware does not (and cannot) override the negotiated speed; it only
-//  brings the device controller up with standard defaults and then idles so
-//  the USB clock path stays active for the TB checker.
+//  Speed observation:
+//  There is no USB clock whose frequency encodes the link speed in this
+//  testbench. The AST clock generators (src/ast/rtl/usb_clk.sv, usb_osc.sv,
+//  clk_src_usb_o) are NOT compiled into caliptra_ss_top_tb, and the UTMI
+//  clock rate is the same for HS and FS. USB speed is carried by the
+//  protocol and by the PHY speed-select pins, not by a clock rate. The link
+//  speed is therefore checked by caliptra_ss_usb_fs_speed_checker.sv, which
+//  observes the UTMI interface directly: it requires xcvrselect/termselect
+//  to be at their FS values and measures the RXValid byte period in
+//  simulation time (about 666.7 ns at 12 Mbit/s versus 16.7 ns at
+//  480 Mbit/s). The byte period is measured as elapsed time rather than as a
+//  count of UTMI clocks on purpose, because the UTMI clock frequency at that
+//  interface is VIP-generated and is not the 60 MHz the testbench defines for
+//  its own usb_utmi_clk. It is enabled by the +usb_fs_speed_check plusarg
+//  from this test's .yml descriptor.
+
 //
-//  Boot order: boot MCU -> bring USB device controller up -> bring up Caliptra
-//  core -> idle so the USB clock keeps toggling for the TB checker window.
+//  Full-speed selection:
+//  DEVCMDSTAT.SPEED ([23:22], mask 0xC00000) is READ-ONLY status and cannot
+//  be written to force FS. FS is selected on two sides:
+//    - The UVM test sets high_speed_capable=0 in the host cfg, so the VIP
+//      never offers HS chirp.
+//    - Firmware calls boot_usb_core_fs(), which sets DEVCMDSTAT.PFSC (Port
+//      Force Full Speed Connect) so the device controller does not emit
+//      K-chirp and does not stall ~2.2 ms waiting for a J-chirp reply that
+//      an FS-only host never sends.
+//
+//  Boot order: boot MCU -> boot USB device controller FS (which also does
+//  hub bring-up phase 1: HUB RAM + HUB_EN) -> usb_hub_connect() (phase 2:
+//  HUB_CONNECT, now that USBDC0 is programmed) -> bring up Caliptra core ->
+//  idle so the link stays up for the checker's observation window.
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -49,9 +61,10 @@
 #include "stdint.h"
 #include "veer-csr.h"
 
-// Number of idle poll iterations to keep the USB clock toggling so the TB
-// frequency checker has a stable observation window.
-#define USB_FS_IDLE_ITERS 20000
+// Number of idle poll iterations to keep the link up so the TB speed checker
+// has a stable observation window. The checker only needs a handful of
+// received bytes, so this is kept short to save simulation time.
+#define USB_FS_IDLE_ITERS 4000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -71,34 +84,42 @@ void main (void) {
     // Standard MCU boot sequence.
     boot_mcu();
 
-    // Bring the USB device controller up using the standard shared bring-up
-    // function. Full-speed operation is selected by the PHY/VIP configuration,
-    // not by a firmware register write (DEVCMDSTAT.SPEED is read-only status).
-    boot_usb_core();
+    // Bring the USB device controller up in FS-only mode. boot_usb_core_fs()
+    // sets DEVCMDSTAT.PFSC to suppress the device-side K-chirp, and performs
+    // hub bring-up phase 1 (HUB RAM programming + HUB_EN) before programming
+    // USBDC0. Do not use boot_usb_core() here: it leaves the device HS-capable
+    // and the chirp FSM would stall waiting for a J-chirp reply that the
+    // FS-only host VIP never drives.
+    boot_usb_core_fs();
+
+    // Hub bring-up phase 2: assert HUB_CONNECT now that USBDC0 is fully
+    // programmed, so the upstream host can see the hub and enumerate the
+    // embedded device. Without this the host never sees anything on the bus.
+    usb_hub_connect();
 
     // Caliptra core bringup.
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
-    VPRINTF(LOW, "MCU: Caliptra core ready, USB clock active. Idling for checker.\n");
+    VPRINTF(LOW, "MCU: Caliptra core ready, USB link up. Idling for checker.\n");
 
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
     // SPEED is read-only status; log the negotiated speed for diagnostic use.
     VPRINTF(LOW, "MCU: USB negotiated SPEED field = 0x%x\n",
             (reg_data & USBHSD_DEVCMDSTAT_SPEED_MASK) >> USBHSD_DEVCMDSTAT_SPEED_LOW);
-    reg_data = lsu_read_32(SOC_USBHSD_INFO);
+    reg_data = lsu_read_32(USB_DEV0_INFO);
     VPRINTF(LOW, "MCU: USB INFO = 0x%x\n", reg_data);
 
-    // Idle loop: keep the device enabled while the TB frequency checker
-    // observes clk_src_usb_o. Also service any bus reset so the link does not
-    // drop out during the observation window.
+    // Idle loop: keep the device enabled while the TB speed checker observes
+    // the UTMI interface. Also service any bus reset so the link does not drop
+    // out during the observation window.
     for (uint32_t i = 0; i < USB_FS_IDLE_ITERS; i++) {
         usb_handle_bus_reset();
     }
 
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     VPRINTF(LOW, "MCU: USB FS clock test - halting\n");
     csr_write_mpmc_halt();

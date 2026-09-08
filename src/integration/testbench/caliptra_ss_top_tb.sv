@@ -1939,6 +1939,39 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.utmi_dut_mac_if.clk = usb_utmi_clk;
     assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
 
+    // --- USB Full Speed link-speed checker ---
+    // Observes the UTMI+ interface and proves that the link is running at
+    // Full Speed (12 Mbit/s) rather than High Speed, by checking the PHY
+    // speed-select pins and by measuring the RXValid byte spacing. Entirely
+    // inert unless +usb_fs_speed_check is passed on the simv command line, so
+    // it has no effect on tests that do not ask for it. See
+    // caliptra_ss_usb_fs_speed_checker.sv for the rationale on why the link
+    // speed cannot be inferred from any clock frequency in this testbench.
+    caliptra_ss_usb_fs_speed_checker i_caliptra_ss_usb_fs_speed_checker (
+        .utmi_clk   (cptra_ss_usb_utmi_clk_i),
+        .utmi_reset (cptra_ss_usb_utmi_reset_o),
+        .rxactive   (cptra_ss_usb_utmi_rxactive_i),
+        .rxvalid    (cptra_ss_usb_utmi_rxvalid_i),
+        .rxdata     (cptra_ss_usb_utmi_rxdata_i),
+        .xcvrselect (cptra_ss_usb_utmi_xcvrselect_o),
+        .termselect (cptra_ss_usb_utmi_termselect_o),
+        .opmode     (cptra_ss_usb_utmi_opmode_o),
+        .linestate  (cptra_ss_usb_utmi_linestate_i)
+    );
+
+    // --- USB suspend / resume checker ---
+    // Gives caliptra_ss_usb_hs_dev_remote_wakeup a DUT-side pass/fail
+    // condition by watching the UTMI+ SuspendM output of the device
+    // controller, instead of trusting the host-side VIP link state alone.
+    // Inert unless +usb_suspend_resume_check is passed on the simv command
+    // line. It also publishes uvm_events that let the stimulus sequence stop
+    // dwelling as soon as the DUT reacts. See
+    // caliptra_ss_usb_suspend_resume_checker.sv for the full rationale.
+    caliptra_ss_usb_suspend_resume_checker i_caliptra_ss_usb_suspend_resume_checker (
+        .utmi_clk (cptra_ss_usb_utmi_clk_i),
+        .suspendm (cptra_ss_usb_utmi_suspendm_o)
+    );
+
     // Declare VBus/SessEnd ahead of the ifdef block: nvs_usb_phy drives these
     // as outputs inside CALIPTRA_USB_HOST_PHY_TEST, so they must be visible
     // before the instantiation.
@@ -2086,18 +2119,51 @@ module caliptra_ss_top_tb
     logic         cptra_ss_usb_vbuscomp_on_o;
     logic         cptra_ss_usb_chrgvbus_o;
     logic         cptra_ss_usb_dischrgvbus_o;
-    // DrvVbus is unconditionally 1 (VBUS always present in simulation).
-    // Drive VBus_i=1 and SessEnd=0 directly rather than reading back VbusValid
-    // and SessEnd from the VIP UTMI interface.  Those signals are only driven by
-    // the VIP remote_cfg PHY model, which is not instantiated when the VIP acts
-    // as a USB DEVICE (HOST-mode DUT tests).  Reading from an undriven signal
-    // produces X on cptra_ss_usb_USB_VBus_i, which stalls the DUT ATL host
-    // controller port power-up sequence.  In device-mode tests the remote_cfg
-    // PHY also asserts VbusValid=1 / SessEnd=0 (because DrvVbus=1), so this
-    // change is value-identical and causes no regression.
+    // The VIP owns VBus.  cptra_ss_usb_USB_VBus_i and cptra_ss_usb_sessend_i
+    // used to be constant assigns:
+    //     assign cptra_ss_usb_USB_VBus_i = 1'b1;
+    //     assign cptra_ss_usb_sessend_i  = 1'b0;
+    //
+    // cptra_ss_usb_USB_VBus_i is the only path VBus has into the design, so a
+    // constant 1 made VBus removal unobservable: DEVCMDSTAT.VBUS_DEBOUNCED
+    // could never clear and DCON_C could never fire.  The
+    // caliptra_ss_usb_hs_dev_disconnect firmware waits for exactly that
+    // condition, so it could only ever time out.  The VIP physical service
+    // sequences vbus_off / vbus_on on their own do not help either, because
+    // they act on the VIP side of the link and never reach this DUT pin.
+    //
+    // caliptra_ss_usb_vbus_driver closes that gap.  It samples the VIP UTMI
+    // VbusValid / SessEnd outputs, which the testbench deliberately leaves
+    // undriven above, and forwards the resolved value to these two DUT pins.
+    // One svt_usb_physical_service_vbus_off_sequence therefore moves both the
+    // VIP link state machine and the DUT power pin, and the two cannot
+    // desynchronise.  This is the physically correct model as well: a device
+    // never sources the 5 V rail, it only senses what the host supplies
+    // through the cable.
+    //
+    // The driver never forwards X/Z to a DUT power input.  If the VIP is not
+    // driving, it holds the last known-good value (default VBus=1 / SessEnd=0,
+    // bit-identical to the old tie-off) and reports once at UVM_LOW.
+    //
+    // Stimulus does not move the pin, but can wait for it: the driver services
+    // the global uvm_events usb_vbus_off_req / usb_vbus_on_req and answers with
+    // usb_vbus_off_done / usb_vbus_on_done once the pin has reached the asked
+    // level.  See docs/usb_vip_vbus_ownership.md.
+    //
+    // The ifndef guard is load bearing.  Host-DUT tests put the VIP in DEVICE
+    // mode on USB_20_SERIAL_IF through nvs_usb_phy, where device_b_sm *reads*
+    // VbusValid instead of driving it and nvs_usb_phy drives these two pins
+    // directly.  Both this driver and the released VbusValid assign must stay
+    // out of that build - do not remove the guard.
     `ifndef CALIPTRA_USB_HOST_PHY_TEST
-    assign cptra_ss_usb_USB_VBus_i = usb_20_mac_if.utmi_dut_mac_if.VbusValid;
-    assign cptra_ss_usb_sessend_i  = usb_20_mac_if.utmi_dut_mac_if.SessEnd;
+
+    caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
+        .vbus           (cptra_ss_usb_USB_VBus_i),
+        .sessend        (cptra_ss_usb_sessend_i),
+        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
+        .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
+    );
+
     `endif
 
     // USB ULPI PHY interface

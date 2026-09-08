@@ -997,5 +997,9 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_bfm_services_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_fs_speed_checker.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_suspend_resume_checker.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_mcu_console_fail_checker.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_vbus_driver.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_soc_bfm.sv

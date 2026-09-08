@@ -37,8 +37,11 @@
 //   0x200-0x23F  EP1 OUT 32-byte receive buffer (USB_SRAM_EP1_OUT_BUF_OFFSET)
 //
 // After a short-packet transfer the hardware advances the buffer pointer in
-// the EP list entry by one 64-byte aligned chunk:
-//   expected addr_offset_field = (USB_SRAM_EP1_OUT_BUF_OFFSET + 64) >> 6
+// the EP list entry by one 64-byte aligned chunk. On the hub-composite IP the
+// AddrOffset field encodes bits[16:6] of the ABSOLUTE AXI buffer address, so
+// the expected value is derived from the DMA base (see
+// USB_EP1_ADDR_OFFSET_EXPECTED below), not from the raw relative SRAM offset.
+
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -69,10 +72,18 @@
 #define USB_EP_LIST_EP1_OUT_OFFSET   0x010u
 
 // After a short-packet transfer the hardware advances the buffer address
-// pointer by one 64-byte chunk.  The entry field holds (byte_addr >> 6),
-// so the expected field value after one transfer is:
-//   (USB_SRAM_EP1_OUT_BUF_OFFSET + 64) >> 6
-#define USB_EP1_ADDR_OFFSET_EXPECTED  ((USB_SRAM_EP1_OUT_BUF_OFFSET + 64u) >> 6)
+// pointer by one 64-byte chunk.  The AddrOffset field holds bits[16:6] of the
+// ABSOLUTE AXI buffer address on the hub-composite IP (see
+// USB_EP_ENTRY_ABS_ADDR in usb.h and migration checklist item 2), NOT the raw
+// relative SRAM offset.  It must therefore be derived the same way the entry is
+// armed in usb_ep1_out_arm() - from USB_DEV0_DMA_BASE_ADDR + the SRAM offset -
+// plus the one 64-byte chunk the hardware advances after a short packet:
+//   USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET + 64)
+// The previous definition used the legacy relative-offset formula
+// ((USB_SRAM_EP1_OUT_BUF_OFFSET + 64) >> 6 = 0x9) which does not account for
+// the DMA base and mismatched the real hardware value (0x4D).
+#define USB_EP1_ADDR_OFFSET_EXPECTED \
+    USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET + 64u)
 
 // Number of short-packet iterations (i = 1 .. USB_NBYTE_ITERATIONS).
 #define USB_NBYTE_ITERATIONS         5
@@ -89,12 +100,17 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // buffer.  Sets Active=1 so the hardware DMA will accept the next OUT token.
 // Arms EP1 OUT with A=1, NBytes=0x20, AddrOffset=USB_SRAM_EP1_OUT_BUF_OFFSET>>6.
 static void usb_ep1_out_arm(void) {
+    // Use USB_EP_ENTRY_ABS_ADDR so the DMA engine reconstructs the correct
+    // absolute AXI buffer address on the hub-composite IP. DATABUFSTART only
+    // contributes bits[31:22], so addr_offset must be bits[16:6] of the
+    // absolute AXI address (USB_DEV0_DMA_BASE_ADDR + SRAM offset).
     uint32_t entry = USB_EP_ENTRY_ACTIVE
                    | USB_EP_ENTRY_NBYTES(USB_HS_NBYTE_BUDGET)
-                   | USB_EP_ENTRY_ADDR(USB_SRAM_EP1_OUT_BUF_OFFSET);
+                   | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, entry);
     VPRINTF(LOW, "MCU: EP1 OUT armed (entry=0x%08x)\n", entry);
 }
+
 
 // Re-arm EP1 OUT for the next transfer without the TR (toggle-reset) bit.
 //
@@ -109,12 +125,14 @@ static void usb_ep1_out_arm(void) {
 // packet arrives.  The DATA toggle alternates naturally (DATA0->DATA1->...),
 // which the SVT host VIP tracks correctly via ACK/NAK handshake.
 static void usb_ep1_out_rearm_toggle_reset(void) {
+    // Use USB_EP_ENTRY_ABS_ADDR (hub-composite IP); see usb_ep1_out_arm().
     uint32_t entry = USB_EP_ENTRY_ACTIVE
                    | USB_EP_ENTRY_NBYTES(USB_HS_NBYTE_BUDGET)
-                   | USB_EP_ENTRY_ADDR(USB_SRAM_EP1_OUT_BUF_OFFSET);
+                   | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, entry);
     VPRINTF(LOW, "MCU: EP1 OUT re-armed (no TR) (entry=0x%08x)\n", entry);
 }
+
 
 void main(void) {
     uint32_t reg_data;
@@ -137,7 +155,15 @@ void main(void) {
     // Standard MCU and Caliptra core boot sequence.
     boot_mcu();
     boot_usb_core();
+    // usb_hub_init_and_connect() (called inside boot_usb_core()) has already
+    // programmed the HUB RAM and set HUB_EN, and USBDC0's EP list / DEVCMDSTAT
+    // / DCON are now fully programmed. usb_hub_connect() sets HUB_CONNECT so
+    // the host sees the hub on the bus and begins enumerating its downstream
+    // port 0 (USBDC0), per the two-phase janus_hub_ctrl_bfm.sv sequencing
+    // (hub-composite IP migration checklist item 7).
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
+
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
@@ -158,8 +184,13 @@ void main(void) {
         // Handle bus reset (clears device address, re-arms EP0).
         usb_handle_bus_reset();
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        // Register access retargeted from the legacy single-device SOC_USBHSD_*
+        // bank to the hub-composite USBDC0 register bank (USB_DEV0_*). Base
+        // moved 0x2000_0000 -> 0x2000_1000; the *_MASK bitfield macros are
+        // offset-independent and stay valid (migration checklist item 1).
+        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
+
 
         // DEV_INT: bus-level events (reset, connect change).
         if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
@@ -170,12 +201,12 @@ void main(void) {
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT interrupt: SETUP or status-phase OUT.
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
             if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 // Arm EP1 OUT after the first SETUP response (after
@@ -187,13 +218,22 @@ void main(void) {
                     VPRINTF(LOW, "MCU: EP1 OUT armed for iteration %d (expecting %d bytes)\n",
                             iter, iter);
                 }
+            } else {
+                // Status-stage ZLP OUT for a control-read completed. HW cleared
+                // ACTIVE on the EP0 OUT descriptor; re-arm it so the next SETUP
+                // is received instead of NAK'd. Hub-mode enumeration issues many
+                // more control transfers (hub enum + port bring-up + USBDC0
+                // enum), so EP0 OUT must be re-armed on every status ZLP
+                // (migration checklist item 9).
+                usb_ep0_arm_out();
             }
         }
 
         // EP0 IN interrupt: clear it.
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         }
+
 
         // Track FRAME_INT: set flag whenever the SOF interrupt is observed.
         // FRAME_INT fires every 1 ms (SOF period). It is not guaranteed to
@@ -202,7 +242,8 @@ void main(void) {
         // EP1OUT completion instead of re-reading INTSTAT at that moment.
         if (intstat & USBHSD_INTSTAT_FRAME_INT_MASK) {
             frame_int_seen = true;
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+
         }
 
         // EP1 OUT transfer complete: detect via INTSTAT.EP1OUT bit.
@@ -243,7 +284,8 @@ void main(void) {
 
             // Clear EP1OUT status bit (W1C). FRAME_INT was already cleared
             // above when it was first observed in the poll loop.
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+
 
             // entry was already latched above while Active=0.
 
@@ -325,8 +367,9 @@ void main(void) {
                 USB_NBYTE_ITERATIONS);
     }
 
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
+
     VPRINTF(LOW, "MCU: USB HS nbyte test - halting\n");
     csr_write_mpmc_halt();
 }
