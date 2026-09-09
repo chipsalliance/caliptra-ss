@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+diff --git a/src/spi_host/model/spiflash.sv b/src/spi_host/model/spiflash.sv
+index 705c333..c11e22a 100644
+--- a/src/spi_host/model/spiflash.sv
++++ b/src/spi_host/model/spiflash.sv
+@@ -473,7 +473,7 @@ program spiflash #(
+     automatic int unsigned    dummy_cycle = 0;
+ 
+     // get address field
+-    get_address(IoSingle, AddrCfg, address);
++    get_address(IoQuad, AddrCfg, address);
+     $display("T:%0d] SPIFlash: Read Address %8Xh", $time, address);
+     if (address[31:StorageAw] != '0) begin
+       $display("Out-of-Bound Address received: %8Xh", address);
+@@ -540,7 +540,7 @@ program spiflash #(
+     status[0][StatusBUSY] = 1'b 1;
+ 
+     // get address field
+-    get_address(IoSingle, AddrCfg, address);
++    get_address(IoQuad, AddrCfg, address);
+     $display("T:%0d] SPIFlash: Program Address %8Xh", $time, address);
+     if (address[31:StorageAw] != '0) begin
+       $display("Out-of-Bound Address received");
