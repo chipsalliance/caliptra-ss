@@ -10737,7 +10737,7 @@ package mci_reg_uvm;
             foreach(this.FW_REV_ID[i0]) begin
                 this.FW_REV_ID[i0] = new($sformatf("FW_REV_ID[%0d]", i0));
                 this.FW_REV_ID[i0].configure(this);
-                
+
                 this.FW_REV_ID[i0].build();
                 this.default_map.add_reg(this.FW_REV_ID[i0], 'h10 + i0*'h4);
             end
@@ -10839,7 +10839,7 @@ package mci_reg_uvm;
             foreach(this.FW_EXTENDED_ERROR_INFO[i0]) begin
                 this.FW_EXTENDED_ERROR_INFO[i0] = new($sformatf("FW_EXTENDED_ERROR_INFO[%0d]", i0));
                 this.FW_EXTENDED_ERROR_INFO[i0].configure(this);
-                
+
                 this.FW_EXTENDED_ERROR_INFO[i0].build();
                 this.default_map.add_reg(this.FW_EXTENDED_ERROR_INFO[i0], 'h70 + i0*'h4);
             end
@@ -10886,7 +10886,7 @@ package mci_reg_uvm;
             foreach(this.WDT_TIMER1_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER1_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].configure(this);
-                
+
                 this.WDT_TIMER1_TIMEOUT_PERIOD[i0].build();
                 this.default_map.add_reg(this.WDT_TIMER1_TIMEOUT_PERIOD[i0], 'hb8 + i0*'h4);
             end
@@ -10903,7 +10903,7 @@ package mci_reg_uvm;
             foreach(this.WDT_TIMER2_TIMEOUT_PERIOD[i0]) begin
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0] = new($sformatf("WDT_TIMER2_TIMEOUT_PERIOD[%0d]", i0));
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].configure(this);
-                
+
                 this.WDT_TIMER2_TIMEOUT_PERIOD[i0].build();
                 this.default_map.add_reg(this.WDT_TIMER2_TIMEOUT_PERIOD[i0], 'hc8 + i0*'h4);
             end
@@ -10915,7 +10915,7 @@ package mci_reg_uvm;
             foreach(this.WDT_CFG[i0]) begin
                 this.WDT_CFG[i0] = new($sformatf("WDT_CFG[%0d]", i0));
                 this.WDT_CFG[i0].configure(this);
-                
+
                 this.WDT_CFG[i0].build();
                 this.default_map.add_reg(this.WDT_CFG[i0], 'hd4 + i0*'h4);
             end
@@ -10977,49 +10977,49 @@ package mci_reg_uvm;
             foreach(this.MBOX0_VALID_AXI_USER[i0]) begin
                 this.MBOX0_VALID_AXI_USER[i0] = new($sformatf("MBOX0_VALID_AXI_USER[%0d]", i0));
                 this.MBOX0_VALID_AXI_USER[i0].configure(this);
-                
+
                 this.MBOX0_VALID_AXI_USER[i0].build();
                 this.default_map.add_reg(this.MBOX0_VALID_AXI_USER[i0], 'h180 + i0*'h4);
             end
             foreach(this.MBOX0_AXI_USER_LOCK[i0]) begin
                 this.MBOX0_AXI_USER_LOCK[i0] = new($sformatf("MBOX0_AXI_USER_LOCK[%0d]", i0));
                 this.MBOX0_AXI_USER_LOCK[i0].configure(this);
-                
+
                 this.MBOX0_AXI_USER_LOCK[i0].build();
                 this.default_map.add_reg(this.MBOX0_AXI_USER_LOCK[i0], 'h1a0 + i0*'h4);
             end
             foreach(this.MBOX1_VALID_AXI_USER[i0]) begin
                 this.MBOX1_VALID_AXI_USER[i0] = new($sformatf("MBOX1_VALID_AXI_USER[%0d]", i0));
                 this.MBOX1_VALID_AXI_USER[i0].configure(this);
-                
+
                 this.MBOX1_VALID_AXI_USER[i0].build();
                 this.default_map.add_reg(this.MBOX1_VALID_AXI_USER[i0], 'h1c0 + i0*'h4);
             end
             foreach(this.MBOX1_AXI_USER_LOCK[i0]) begin
                 this.MBOX1_AXI_USER_LOCK[i0] = new($sformatf("MBOX1_AXI_USER_LOCK[%0d]", i0));
                 this.MBOX1_AXI_USER_LOCK[i0].configure(this);
-                
+
                 this.MBOX1_AXI_USER_LOCK[i0].build();
                 this.default_map.add_reg(this.MBOX1_AXI_USER_LOCK[i0], 'h1e0 + i0*'h4);
             end
             foreach(this.SOC_DFT_EN[i0]) begin
                 this.SOC_DFT_EN[i0] = new($sformatf("SOC_DFT_EN[%0d]", i0));
                 this.SOC_DFT_EN[i0].configure(this);
-                
+
                 this.SOC_DFT_EN[i0].build();
                 this.default_map.add_reg(this.SOC_DFT_EN[i0], 'h300 + i0*'h4);
             end
             foreach(this.SOC_HW_DEBUG_EN[i0]) begin
                 this.SOC_HW_DEBUG_EN[i0] = new($sformatf("SOC_HW_DEBUG_EN[%0d]", i0));
                 this.SOC_HW_DEBUG_EN[i0].configure(this);
-                
+
                 this.SOC_HW_DEBUG_EN[i0].build();
                 this.default_map.add_reg(this.SOC_HW_DEBUG_EN[i0], 'h308 + i0*'h4);
             end
             foreach(this.SOC_PROD_DEBUG_STATE[i0]) begin
                 this.SOC_PROD_DEBUG_STATE[i0] = new($sformatf("SOC_PROD_DEBUG_STATE[%0d]", i0));
                 this.SOC_PROD_DEBUG_STATE[i0].configure(this);
-                
+
                 this.SOC_PROD_DEBUG_STATE[i0].build();
                 this.default_map.add_reg(this.SOC_PROD_DEBUG_STATE[i0], 'h310 + i0*'h4);
             end
@@ -11036,14 +11036,14 @@ package mci_reg_uvm;
             foreach(this.GENERIC_INPUT_WIRES[i0]) begin
                 this.GENERIC_INPUT_WIRES[i0] = new($sformatf("GENERIC_INPUT_WIRES[%0d]", i0));
                 this.GENERIC_INPUT_WIRES[i0].configure(this);
-                
+
                 this.GENERIC_INPUT_WIRES[i0].build();
                 this.default_map.add_reg(this.GENERIC_INPUT_WIRES[i0], 'h400 + i0*'h4);
             end
             foreach(this.GENERIC_OUTPUT_WIRES[i0]) begin
                 this.GENERIC_OUTPUT_WIRES[i0] = new($sformatf("GENERIC_OUTPUT_WIRES[%0d]", i0));
                 this.GENERIC_OUTPUT_WIRES[i0].configure(this);
-                
+
                 this.GENERIC_OUTPUT_WIRES[i0].build();
                 this.default_map.add_reg(this.GENERIC_OUTPUT_WIRES[i0], 'h408 + i0*'h4);
             end
@@ -11080,7 +11080,7 @@ package mci_reg_uvm;
             foreach(this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0, i1]) begin
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1] = new($sformatf("PROD_DEBUG_UNLOCK_PK_HASH_REG[%0d][%0d]", i0, i1));
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].configure(this);
-                
+
                 this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1].build();
                 this.default_map.add_reg(this.PROD_DEBUG_UNLOCK_PK_HASH_REG[i0][i1], 'h480 + i0*'h30 + i1*'h4);
             end

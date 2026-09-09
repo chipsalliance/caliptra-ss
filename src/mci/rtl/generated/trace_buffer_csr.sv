@@ -171,7 +171,7 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.STATUS.wrapped.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.STATUS.wrapped.next;
         load_next_c = '1;
@@ -192,7 +192,7 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.STATUS.valid_data.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.STATUS.valid_data.next;
         load_next_c = '1;
@@ -213,7 +213,7 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.CONFIG.trace_buffer_depth.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.CONFIG.trace_buffer_depth.next;
         load_next_c = '1;
@@ -234,7 +234,7 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.DATA.data.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.DATA.data.next;
         load_next_c = '1;
@@ -255,7 +255,7 @@ module trace_buffer_csr (
         automatic logic load_next_c;
         next_c = field_storage.WRITE_PTR.ptr.value;
         load_next_c = '0;
-        
+
         // HW Write
         next_c = hwif_in.WRITE_PTR.ptr.next;
         load_next_c = '1;
