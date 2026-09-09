@@ -902,6 +902,8 @@ ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_shift_register.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_window.sv
+${CALIPTRA_SS_ROOT}/src/spi_host/model/spi_device_pkg.sv
+${CALIPTRA_SS_ROOT}/src/spi_host/model/spiflash.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_core.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_top.sv
