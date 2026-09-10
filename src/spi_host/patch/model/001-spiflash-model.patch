@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This patch enables process_after_csb so that the pages written through CmdPageProgram opcode can
+# get stored into the flash storage in backend_page_program()
+
+diff --git a/src/spi_host/model/spiflash.sv b/src/spi_host/model/spiflash.sv
+index 67c6fe3..412eff5 100644
+--- a/src/spi_host/model/spiflash.sv
++++ b/src/spi_host/model/spiflash.sv
+@@ -196,7 +196,7 @@ program spiflash #(
+       automatic bit             early_termination;
+       automatic int unsigned    excessive_sck = 0;
+       // Indication of process needed after CSb release
+-      automatic bit             process_after_csb = 1'b 0;
++      automatic bit             process_after_csb = 1'b1;
+       // Big loop. Wait transaction
+       sd_en = 4'h 0; // Off the output by default
+       wait(csb == 1'b 0);
