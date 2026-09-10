@@ -33,10 +33,10 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_error_handling/smoke_test_error_handling: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_clock_bypass/caliptra_ss_lcc_clock_bypass: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_errors/caliptra_ss_lcc_errors: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_reg_rand_test/mci_reg_rand_test: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_ro_reg_rand_test/mci_ro_reg_rand_test: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_pk_hash_reg_rand_test/mci_pk_hash_reg_rand_test: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_err_intr_reg_rand_test/mci_err_intr_reg_rand_test: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_reg_rand_test/mci_reg_rand_test: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_ro_reg_rand_test/mci_ro_reg_rand_test: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_pk_hash_reg_rand_test/mci_pk_hash_reg_rand_test: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/mci_err_intr_reg_rand_test/mci_err_intr_reg_rand_test: { weight: 10 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_invalid_token/caliptra_ss_lcc_st_trans_invalid_token: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_max_cnt/caliptra_ss_lcc_st_trans_max_cnt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_scrap_no_ppd_pin/caliptra_ss_lcc_st_trans_scrap_no_ppd_pin: { weight: 100 }
