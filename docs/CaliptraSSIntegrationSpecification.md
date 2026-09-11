@@ -75,7 +75,7 @@
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
   - [Overview](#overview-4)
-  - [Paramteres \& Defines](#paramteres--defines)
+  - [Parameters \& Defines](#parameters--defines)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
     - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
       - [Why These Straps Are Needed](#why-these-straps-are-needed)
@@ -176,7 +176,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 | Date            |   Document Version | Description       |
 |-----------------|--------------------|-------------------|
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
-| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
+| Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifications updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
 | Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
 
 </div>
@@ -283,7 +283,7 @@ File at this path in the repository includes parameters and defines for Caliptra
 
 ## Interfaces & Signals
 
-**IMPORTANT NOTE**: All signals assumed to by synchronous to `cptra_ss_clk_i`.
+**IMPORTANT NOTE**: All signals assumed to be synchronous to `cptra_ss_clk_i`.
 
 **Table: Caliptra SS Straps**
 
@@ -1150,7 +1150,7 @@ per-word ECC is assumed to be handled inside the wrapper, which means that the
 word width exposed as part of the generalized interface is the effective word
 width.
 
-## Paramteres & Defines
+## Parameters & Defines
 
 | Parameter             | Default                    | Description                                         |
 |-----------------------|----------------------------|-----------------------------------------------------|
@@ -1489,7 +1489,7 @@ The LC Controller's programming interface facilitates lifecycle state transition
    - Trigger the state transition by writing `0x1` to `LC_CTRL_TRANSITION_CMD_OFFSET`.
    - Poll the `LC_CTRL_STATUS_OFFSET` register to monitor for successful state transition or detect errors such as token errors, OTP errors, or RMA strap violations.
    - Each TEST_UNLOCKED state has its own TOKEN (see See [Fuse Memory Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)).
-   - During a state transition, an asserted reset or zeorization command can cause permanent life-cycle state corruption.
+   - During a state transition, an asserted reset or zeroization command can cause permanent life-cycle state corruption.
 
 3. **Token Validation**:
    - For conditional state transitions, provide the transition token before the transition request.
@@ -1532,7 +1532,7 @@ TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
    - Perform a reset sequence after each state transition routine
 
 2. **Boot Sequence**:
-   - Enable MCI that intilaize the LC controller.
+   - Enable MCI that initialize the LC controller.
    - Verify successful initialization by reading `LC_CTRL_STATUS_OFFSET`.
 
 4. **Error Scenarios**:
@@ -2016,7 +2016,7 @@ Below are the connections needed between MCI and LCC for the Gasket functionalit
 | ----- | :---: | ----- | ----- |
 | ss\_dbg\_manuf\_enable\_i | \<- | ss\_dbg\_manuf\_enable |  See [Caliptra Integration spec](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#soc-interface-definition)|
 | ss\_soc\_dbg\_unlock\_level\_i | \<- | ss\_soc\_dbg\_unlock\_level | See [Caliptra Integration spec](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#soc-interface-definition)|
-| security\_state\_o | \-\> | security\_state | See [LCC state tranlation table](CaliptraSSHardwareSpecification.md#lcc-interpretation-for-caliptra-core-security-states) |
+| security\_state\_o | \-\> | security\_state | See [LCC state translation table](CaliptraSSHardwareSpecification.md#lcc-interpretation-for-caliptra-core-security-states) |
 
 **Table: LCC Gasket - MCI to Caliptra SS Port Connections**
 
@@ -2372,7 +2372,7 @@ The following table defines the order in which resets can get asserted. A "\>\>"
 
 
 ### MCU FW Update Flows
-The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](./CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in theese flow. This section is meant to elaborate on how to use the given HW to meet the architectual spec.
+The hitless flow is described in full in [Caliptra Top Spec](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#subsystem-support-for-hitless-updates). The [Caliptra SS HW Spec](./CaliptraSSHardwareSpecification.md#mcu-hitless-update-handshake) spec gives details about the registers used in these flow. This section is meant to elaborate on how to use the given HW to meet the architectural spec.
 
 Registers relevant to these flows:
 - Caliptra
@@ -2663,7 +2663,7 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
     - Test transfers the recovery image
     - Boots the device using the recovery image
 
-  - **MCTP Test seqeunce**
+  - **MCTP Test sequence**
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
@@ -2751,7 +2751,7 @@ The below diagram illustrates the internal reset architecture of Caliptra SS.
 
 ![](images/Reset_Architecture.png)
 
-The reset block diagram below illustrates the RTL implemenation of various resets.
+The reset block diagram below illustrates the RTL implementation of various resets.
 
 ![](images/Reset_Block_Diagram.png)
 
@@ -2784,7 +2784,7 @@ The below waveform illustrates how various resets of Caliptra SS and Caliptra Co
 
 ![](images/Reset_sequencing.png)
 
-The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for at least 32 clock cycles for the reset assertion to propagate through various levels of hierarhcy.
+The red and blue line indicates that the input Caliptra SS warm reset (cptra_ss_rst_b_i) needs to be asserted for at least 32 clock cycles for the reset assertion to propagate through various levels of hierarchy.
 
 ## RDC Waivers
 
