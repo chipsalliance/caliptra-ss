@@ -2488,6 +2488,8 @@ See [MCI error handling](./CaliptraSSHardwareSpecification.md#mci-error-handling
 
 # I3C core
 
+[ERRATA-000 - I3C HDR Traffic](./CaliptraSSErrata.md##errata-001-i3c-hdr-traffic)
+
 ## Overview
 
 The I3C core in the Caliptra Subsystem is an I3C target composed of two separate I3C targets:
