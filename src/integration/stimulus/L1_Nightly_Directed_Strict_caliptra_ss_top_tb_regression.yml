@@ -122,6 +122,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_recovery_init/caliptra_ss_usb_ocp_recovery_init.yml
         - ../test_suites/caliptra_ss_usb_ocp_cmd_handling/caliptra_ss_usb_ocp_cmd_handling.yml
         - ../test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics.yml
+        - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix.yml
+        - ../test_suites/caliptra_ss_usb_ocp_firmware_protocol_error/caliptra_ss_usb_ocp_firmware_protocol_error.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_001/caliptra_ss_usb_ocp_arb_001.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_002/caliptra_ss_usb_ocp_arb_002.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_003/caliptra_ss_usb_ocp_arb_003.yml

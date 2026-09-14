@@ -50,6 +50,15 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
     protected int unsigned claimed_windows_checked;
     protected int unsigned unclaimed_windows_checked;
 
+    // Mirrored-SETUP behavior. When enabled the checker treats real
+    // SETUP SRAM overwrite, SETUP flag/address update via setup_received and
+    // legacy toggle initialization as permitted effects of a claimed SETUP
+    // and only requires the suppressed effects (no successful-SETUP DMA
+    // interrupt, no MCU dispatch, no EP0 data/status IRQ activity).
+    // Tests that require strict "zero legacy side effects" semantics can
+    // override this via uvm_config_db.
+    protected bit mirrored_setup_mode;
+
     function new(
         string name = "caliptra_ss_usb_ocp_arbiter_checker",
         uvm_component parent = null);
@@ -83,6 +92,16 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         windows_checked = 0;
         claimed_windows_checked = 0;
         unclaimed_windows_checked = 0;
+        // Default to the strict "no legacy SETUP side effects"
+        // expectation so all existing arbiter-observation tests keep their
+        // legacy contract. The two new mirrored-SETUP tests opt in
+        // explicitly via their build_phase using
+        //   uvm_config_db#(bit)::set(this, "*",
+        //       "ocp_arbiter_mirrored_setup_mode", 1'b1);
+        mirrored_setup_mode = 1'b0;
+        void'(uvm_config_db#(bit)::get(
+            null, "", "ocp_arbiter_mirrored_setup_mode",
+            mirrored_setup_mode));
     endfunction
 
     function void write(input svt_usb_transfer transfer);
@@ -209,19 +228,97 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         logic [31:0] post_devcmdstat;
         logic [31:0] baseline_intstat;
         logic [31:0] post_intstat;
+        logic [31:0] baseline_transfers;
+        logic [31:0] post_transfers;
+        int unsigned mirrored_setup_writes;
+        int unsigned other_writes;
 
-        if (observer_vif.write_count() != 0) begin
-            `uvm_error("OCP_ARB_CHECK",
-                $sformatf("Claimed transfer window produced %0d legacy USB SRAM writes.",
-                          observer_vif.write_count()))
+        mirrored_setup_writes = 0;
+        other_writes = 0;
+        for (int unsigned wi = 0; wi < observer_vif.write_count(); wi++) begin
+            if (observer_vif.get_write_word_address(wi) ==
+                    USB_SETUP_SRAM_WORD_ADDRESS) begin
+                mirrored_setup_writes++;
+            end else begin
+                other_writes++;
+            end
         end
 
-        check_field_unchanged(
-            observer_vif.SNAPSHOT_FIELD_SETUP_WORD0,
-            "Legacy SETUP SRAM word 0");
-        check_field_unchanged(
-            observer_vif.SNAPSHOT_FIELD_SETUP_WORD1,
-            "Legacy SETUP SRAM word 1");
+        if (mirrored_setup_mode) begin
+            svt_usb_transfer last_claimed;
+            logic [63:0] expected_setup;
+            logic [63:0] actual_setup;
+            logic [7:0]  setup_byte_coverage;
+
+            if (other_writes != 0) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    $sformatf({"Claimed transfer window produced %0d legacy ",
+                               "USB SRAM writes outside the SETUP window; only ",
+                               "mirrored SETUP SRAM updates are permitted."},
+                              other_writes))
+            end
+            // setup_received and the mirrored SETUP SRAM write must be
+            // forwarded for every claimed SETUP. Zero writes with an active
+            // claimed transfer indicates the mirror path never fired.
+            if (observed_transfers.size() == 0) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    {"Claimed observation window contained no completed ",
+                     "USB transfer; cannot verify mirrored SETUP content."})
+            end else if (mirrored_setup_writes == 0) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    {"Mirrored SETUP requires at least one legacy SETUP-",
+                     "aperture SRAM write per claimed SETUP (plan Sec 1); ",
+                     "observed zero."})
+            end else begin
+                // The SETUP SRAM must end up equal to the most recent
+                // claimed transfer's host-transmitted SETUP bytes.
+                last_claimed = observed_transfers[
+                    observed_transfers.size() - 1];
+                expected_setup = expected_setup_line(last_claimed);
+                actual_setup = observed_setup_line(setup_byte_coverage);
+                if (setup_byte_coverage != 8'hFF) begin
+                    `uvm_error("OCP_ARB_CHECK",
+                        $sformatf({"Mirrored SETUP SRAM write coverage was ",
+                                   "0x%02h; all eight host SETUP bytes must ",
+                                   "reach the SETUP SRAM aperture."},
+                                  setup_byte_coverage))
+                end
+                if (actual_setup !== expected_setup) begin
+                    `uvm_error("OCP_ARB_CHECK",
+                        $sformatf({"Mirrored SETUP SRAM mismatch: expected ",
+                                   "0x%016h got 0x%016h."},
+                                  expected_setup, actual_setup))
+                end
+            end
+            `uvm_info("OCP_ARB_CHECK",
+                $sformatf({"Mirrored SETUP permitted effects: SRAM_SETUP_writes=%0d ",
+                           "word0 0x%08h->0x%08h word1 0x%08h->0x%08h."},
+                          mirrored_setup_writes,
+                          baseline_fields[
+                              observer_vif.SNAPSHOT_FIELD_SETUP_WORD0],
+                          observer_vif.get_snapshot_field(
+                              observer_vif.SNAPSHOT_FIELD_SETUP_WORD0),
+                          baseline_fields[
+                              observer_vif.SNAPSHOT_FIELD_SETUP_WORD1],
+                          observer_vif.get_snapshot_field(
+                              observer_vif.SNAPSHOT_FIELD_SETUP_WORD1)),
+                UVM_NONE)
+        end else begin
+            if (observer_vif.write_count() != 0) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    $sformatf("Claimed transfer window produced %0d legacy USB SRAM writes.",
+                              observer_vif.write_count()))
+            end
+            check_field_unchanged(
+                observer_vif.SNAPSHOT_FIELD_SETUP_WORD0,
+                "Legacy SETUP SRAM word 0");
+            check_field_unchanged(
+                observer_vif.SNAPSHOT_FIELD_SETUP_WORD1,
+                "Legacy SETUP SRAM word 1");
+        end
+
+        // Descriptors must never change during a claimed window: no legacy
+        // firmware handler runs and no firmware programs EP0 descriptors.
         check_field_unchanged(
             observer_vif.SNAPSHOT_FIELD_EP0_OUT_DESC,
             "Legacy EP0 OUT descriptor");
@@ -235,17 +332,25 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             observer_vif.SNAPSHOT_FIELD_EP0_RSVD_DESC,
             "Legacy EP0 reserved descriptor");
 
-        baseline_devcmdstat = baseline_fields[
-            observer_vif.SNAPSHOT_FIELD_DEVCMDSTAT];
-        post_devcmdstat = observer_vif.get_snapshot_field(
-            observer_vif.SNAPSHOT_FIELD_DEVCMDSTAT);
-        if ((post_devcmdstat & USB_DEVCMDSTAT_STABLE_MASK) !==
-            (baseline_devcmdstat & USB_DEVCMDSTAT_STABLE_MASK)) begin
-            `uvm_error("OCP_ARB_CHECK",
-                $sformatf("Stable DEVCMDSTAT fields changed 0x%08h -> 0x%08h during claimed transfer window.",
-                          baseline_devcmdstat, post_devcmdstat))
+        // DEVCMDSTAT stable fields are only checked in strict mode.
+        // Under mirrored SETUP, SETUP-pending and device-address fields may
+        // update via setup_received.
+        if (!mirrored_setup_mode) begin
+            baseline_devcmdstat = baseline_fields[
+                observer_vif.SNAPSHOT_FIELD_DEVCMDSTAT];
+            post_devcmdstat = observer_vif.get_snapshot_field(
+                observer_vif.SNAPSHOT_FIELD_DEVCMDSTAT);
+            if ((post_devcmdstat & USB_DEVCMDSTAT_STABLE_MASK) !==
+                (baseline_devcmdstat & USB_DEVCMDSTAT_STABLE_MASK)) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    $sformatf("Stable DEVCMDSTAT fields changed 0x%08h -> 0x%08h during claimed transfer window.",
+                              baseline_devcmdstat, post_devcmdstat))
+            end
         end
 
+        // Suppressed effect regardless of mode: no claimed EP0 IRQ activity
+        // (SETUP-received, data, or STATUS IRQs are all owned by OCP and must
+        // not reach the legacy EP0 interrupt path).
         baseline_intstat = baseline_fields[
             observer_vif.SNAPSHOT_FIELD_INTSTAT];
         post_intstat = observer_vif.get_snapshot_field(
@@ -257,9 +362,31 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
                           baseline_intstat, post_intstat))
         end
 
-        check_counter_unchanged(
-            observer_vif.SNAPSHOT_FIELD_TRANSFERS,
-            "Legacy transfer-dispatch count");
+        // Strict mode requires no DMA descriptor request. Under mirrored
+        // SETUP the real DMA performs the SETUP SRAM
+        // write, which may advance the DMA transfer counter by at most one
+        // for the SETUP itself. Nothing beyond one is expected because no
+        // claimed EP0 DATA/STATUS/PING may reach DMA.
+        baseline_transfers = baseline_fields[
+            observer_vif.SNAPSHOT_FIELD_TRANSFERS];
+        post_transfers = observer_vif.get_snapshot_field(
+            observer_vif.SNAPSHOT_FIELD_TRANSFERS);
+        if (mirrored_setup_mode) begin
+            if ((post_transfers - baseline_transfers) > 32'd1) begin
+                `uvm_error("OCP_ARB_CHECK",
+                    $sformatf({"Legacy DMA transfer count advanced by %0d ",
+                               "during claimed window; at most one mirrored ",
+                               "SETUP is permitted."},
+                              post_transfers - baseline_transfers))
+            end
+        end else begin
+            check_counter_unchanged(
+                observer_vif.SNAPSHOT_FIELD_TRANSFERS,
+                "Legacy transfer-dispatch count");
+        end
+
+        // Suppressed effects: no claimed successful-SETUP DMA IRQ, no EP0
+        // OUT/IN IRQ, no MCU dispatch of the claimed SETUP.
         check_counter_unchanged(
             observer_vif.SNAPSHOT_FIELD_EP0_IRQ_COUNT,
             "Legacy EP0 interrupt count");

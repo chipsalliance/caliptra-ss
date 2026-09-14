@@ -493,6 +493,53 @@ uint8_t cptra_usb_ocp_recovery_write_indirect_fifo_ctrl(uint32_t val)
         SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, val);
 }
 
+uint8_t cptra_usb_ocp_recovery_read_caliptra_ctrl(uint32_t *val)
+{
+    if (val == 0) {
+        return 1u;
+    }
+    return cptra_usb_ocp_recovery_read_dword_retry(
+        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_device_status_prot_error(
+    uint8_t *prot_error)
+{
+    uint32_t word = 0u;
+
+    if (prot_error == 0) {
+        return 1u;
+    }
+    if (cptra_usb_ocp_recovery_read_device_status_word(&word) != 0u) {
+        return 1u;
+    }
+    *prot_error = (uint8_t)(
+        (word & USB_OCP_RECOVERY_REG_DEVICE_STATUS_0_PROT_ERROR_MASK) >>
+        USB_OCP_RECOVERY_REG_DEVICE_STATUS_0_PROT_ERROR_LOW);
+    return 0u;
+}
+
+uint8_t cptra_usb_ocp_recovery_verify_device_status_prot_error_stable(
+    uint8_t *prot_error)
+{
+    uint8_t first = 0u;
+    uint8_t second = 0u;
+
+    if (cptra_usb_ocp_recovery_read_device_status_prot_error(&first) != 0u) {
+        return 1u;
+    }
+    if (cptra_usb_ocp_recovery_read_device_status_prot_error(&second) != 0u) {
+        return 1u;
+    }
+    if (first != second) {
+        return 2u;
+    }
+    if (prot_error != 0) {
+        *prot_error = first;
+    }
+    return 0u;
+}
+
 uint8_t cptra_usb_ocp_recovery_read_path_disable(uint8_t *disabled)
 {
     uint32_t value;
@@ -526,6 +573,32 @@ uint8_t cptra_usb_ocp_recovery_set_path_disable(uint8_t disabled)
     return observed == (disabled != 0u) ? 0u : 2u;
 }
 
+uint8_t cptra_usb_ocp_recovery_request_general_protocol_error(void)
+{
+    uint32_t ctrl_word = 0u;
+    uint8_t batch_aborted = 0u;
+
+    if (cptra_usb_ocp_recovery_read_batch_aborted(&batch_aborted) != 0u) {
+        return 1u;
+    }
+    if (batch_aborted == 0u) {
+        return 2u;
+    }
+    if (cptra_usb_ocp_recovery_read_caliptra_ctrl(&ctrl_word) != 0u) {
+        return 1u;
+    }
+    if ((ctrl_word &
+         USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK) != 0u) {
+        return 3u;
+    }
+
+    ctrl_word = (ctrl_word &
+        USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK)
+        | USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK;
+    return cptra_usb_ocp_recovery_write_dword(
+        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, ctrl_word);
+}
+
 void cptra_usb_ocp_recovery_read_fw_command(uint32_t *command_word,
                                             uint32_t *command_magic)
 {
@@ -546,4 +619,19 @@ uint8_t cptra_usb_ocp_recovery_read_caliptra_status(uint32_t *val)
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
         SOC_USB_OCP_RECOVERY_REG_CALIPTRA_STATUS, val);
+}
+
+uint8_t cptra_usb_ocp_recovery_read_batch_aborted(uint8_t *aborted)
+{
+    uint32_t status = 0u;
+
+    if (aborted == 0) {
+        return 1u;
+    }
+    if (cptra_usb_ocp_recovery_read_caliptra_status(&status) != 0u) {
+        return 1u;
+    }
+    *aborted = (status &
+        USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_BATCH_ABORTED_MASK) != 0u;
+    return 0u;
 }

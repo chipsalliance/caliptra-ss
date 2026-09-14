@@ -51,6 +51,15 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
     protected bit data_stage_started;
     protected bit data_packet_seen;
     protected uvm_event stage_observed;
+    // Live setup-stage-ACK trigger. Firmware-error trigger sequences arm
+    // this before issuing a claimed control-OUT SETUP and use it to
+    // synchronize the abort/replacement-SETUP window without polling
+    // packet_records. Kept independent of stage_trigger_active so it can
+    // coexist with the existing DATA/STATUS-stage triggers used by ARB006.
+    protected bit setup_ack_trigger_active;
+    protected bit setup_ack_pending_setup_token;
+    protected bit setup_ack_pending_data0;
+    protected uvm_event setup_ack_observed;
 
     function new(
         string name = "caliptra_ss_usb_ocp_arbiter_packet_callback");
@@ -62,18 +71,58 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         data_stage_started = 1'b0;
         data_packet_seen = 1'b0;
         stage_observed = new("stage_observed");
+        setup_ack_trigger_active = 1'b0;
+        setup_ack_pending_setup_token = 1'b0;
+        setup_ack_pending_data0 = 1'b0;
+        setup_ack_observed = new("setup_ack_observed");
     endfunction
 
     function void start_window(input logic [15:0] generation);
         packet_records.delete();
         active_generation = generation;
         active = 1'b1;
+        // Defensive reset of the live setup-ACK tracker; callers that
+        // need the event must also call arm_setup_ack_trigger() to
+        // activate it inside this window.
+        setup_ack_trigger_active = 1'b0;
+        setup_ack_pending_setup_token = 1'b0;
+        setup_ack_pending_data0 = 1'b0;
+        setup_ack_observed.reset();
     endfunction
 
     function void stop_window();
         active = 1'b0;
         stage_trigger_active = 1'b0;
+        setup_ack_trigger_active = 1'b0;
     endfunction
+
+    // Arm the live setup-stage-ACK event. The event triggers on the next
+    // RX ACK that follows a TX SETUP token immediately followed by a
+    // TX 8-byte DATA0. A pending SETUP+DATA0 pair is discarded and the
+    // tracker restarted if any packet arrives out of order between them.
+    function void arm_setup_ack_trigger();
+        setup_ack_pending_setup_token = 1'b0;
+        setup_ack_pending_data0 = 1'b0;
+        setup_ack_observed.reset();
+        setup_ack_trigger_active = 1'b1;
+    endfunction
+
+    task wait_for_setup_ack_trigger(
+        input time timeout,
+        output bit observed);
+
+        observed = 1'b0;
+        fork : setup_ack_trigger_timeout
+            begin
+                setup_ack_observed.wait_trigger();
+                observed = 1'b1;
+            end
+            begin
+                #(timeout);
+            end
+        join_any
+        disable setup_ack_trigger_timeout;
+    endtask
 
     function void arm_stage_trigger(
         input svt_usb_transfer::xfer_stage_enum stage);
@@ -253,6 +302,43 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         record.retry_number = pkt.current_retry_number();
         record.observed_at = $realtime;
         packet_records.push_back(record);
+
+        // Live setup-stage-ACK tracking. Runs independently of the
+        // stage-trigger machinery so callers can arm both without
+        // interference.
+        if (setup_ack_trigger_active) begin
+            if ((direction == PACKET_TX) &&
+                (pkt.pid_name == svt_usb_packet::SETUP)) begin
+                // A new SETUP token restarts the pattern.
+                setup_ack_pending_setup_token = 1'b1;
+                setup_ack_pending_data0 = 1'b0;
+            end else if (setup_ack_pending_setup_token &&
+                         !setup_ack_pending_data0 &&
+                         (direction == PACKET_TX) &&
+                         (pkt.pid_name == svt_usb_packet::DATA0) &&
+                         (pkt.get_payload_byte_count() == 8)) begin
+                setup_ack_pending_data0 = 1'b1;
+            end else if (setup_ack_pending_data0 &&
+                         (direction == PACKET_RX) &&
+                         (pkt.pid_name == svt_usb_packet::ACK)) begin
+                setup_ack_pending_setup_token = 1'b0;
+                setup_ack_pending_data0 = 1'b0;
+                setup_ack_trigger_active = 1'b0;
+                setup_ack_observed.trigger();
+            end else if (setup_ack_pending_setup_token) begin
+                // Any other TX packet between SETUP and its DATA0, or
+                // any RX packet between the pattern beats other than
+                // the terminating ACK, discards the pending sequence.
+                if ((direction == PACKET_TX) &&
+                    (pkt.pid_name != svt_usb_packet::SETUP) &&
+                    !(setup_ack_pending_setup_token &&
+                      !setup_ack_pending_data0 &&
+                      (pkt.pid_name == svt_usb_packet::DATA0))) begin
+                    setup_ack_pending_setup_token = 1'b0;
+                    setup_ack_pending_data0 = 1'b0;
+                end
+            end
+        end
 
         if (!stage_trigger_active) begin
             return;

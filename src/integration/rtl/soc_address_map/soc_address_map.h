@@ -466,8 +466,12 @@
 #define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL                                                          (0x200)
 #define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_LOW                                     (0)
 #define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK                                    (0x1)
-#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_RESERVED_31_1_LOW                                        (1)
-#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_RESERVED_31_1_MASK                                       (0xfffffffe)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_CLAIM_ABORT_LOW                                      (1)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK                                     (0x2)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_LOW                           (2)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK                          (0x4)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_RESERVED_31_3_LOW                                        (3)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_RESERVED_31_3_MASK                                       (0xfffffff8)
 #endif
 #define SOC_USB_OCP_RECOVERY_REG_CALIPTRA_STATUS                                                    (0x20000a04)
 #ifndef USB_OCP_RECOVERY_REG_CALIPTRA_STATUS
@@ -478,8 +482,10 @@
 #define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_OVERFLOW_MASK                                          (0x2)
 #define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_IMAGE_DONE_LOW                                         (2)
 #define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_IMAGE_DONE_MASK                                        (0x4)
-#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_RESERVED_31_3_LOW                                      (3)
-#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_RESERVED_31_3_MASK                                     (0xfffffff8)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                      (3)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                     (0x8)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_RESERVED_31_4_LOW                                      (4)
+#define USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_RESERVED_31_4_MASK                                     (0xfffffff0)
 #endif
 #define SOC_USB_OCP_RECOVERY_REG_WINDOW_PAD                                                         (0x20000ffc)
 #ifndef USB_OCP_RECOVERY_REG_WINDOW_PAD

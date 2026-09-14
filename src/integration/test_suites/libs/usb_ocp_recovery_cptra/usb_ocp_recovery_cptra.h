@@ -20,6 +20,7 @@
 #define CPTRA_USB_OCP_RECOVERY_DMA_RETRIES 3u
 #define CPTRA_USB_OCP_RECOVERY_RETRY_DELAY 16u
 #define CPTRA_USB_OCP_RECOVERY_DMA_IDLE_POLLS 1000000u
+#define CPTRA_USB_OCP_RECOVERY_PROTOCOL_ERROR_GENERAL 0xFFu
 
 #define CPTRA_USB_OCP_FW_COMMAND_MAGIC 0x4F435041u
 #define CPTRA_USB_OCP_FW_COMMAND_SET_PATH_DISABLE 0x01u
@@ -114,9 +115,21 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
 // cptra_usb_ocp_recovery_read_caliptra_status
 //   Read the CALIPTRA_STATUS register word via DMA (with retry).
 //
+// cptra_usb_ocp_recovery_read_caliptra_ctrl
+//   Read the CALIPTRA_CTRL register word via DMA (with retry).
+//
+// cptra_usb_ocp_recovery_read_batch_aborted
+//   Read CALIPTRA_STATUS.BATCH_ABORTED through the Caliptra CPUif.
+//
 // cptra_usb_ocp_recovery_set_path_disable
 //   Writes CALIPTRA_CTRL.OCP_PATH_DISABLE through the Caliptra CPUif and
 //   verifies the requested state by readback.
+//
+// cptra_usb_ocp_recovery_request_general_protocol_error
+//   Issues the firmware-only CALIPTRA_CTRL.OCP_PROTOCOL_ERROR_GENERAL request
+//   after confirming CALIPTRA_STATUS.BATCH_ABORTED is asserted. The write keeps
+//   CALIPTRA_CTRL.OCP_PATH_DISABLE unchanged and refuses to touch the register
+//   if OCP_CLAIM_ABORT is still observed set.
 //
 // cptra_usb_ocp_recovery_read_fw_command
 //   Reads the two Caliptra generic-input words used by the UVM-to-firmware
@@ -140,10 +153,17 @@ uint8_t cptra_usb_ocp_recovery_write_recovery_ctrl(uint32_t val);
 uint8_t cptra_usb_ocp_recovery_read_indirect_fifo_ctrl(uint32_t *val);
 uint8_t cptra_usb_ocp_recovery_write_indirect_fifo_ctrl(uint32_t val);
 
+uint8_t cptra_usb_ocp_recovery_read_caliptra_ctrl(uint32_t *val);
 uint8_t cptra_usb_ocp_recovery_read_caliptra_status(uint32_t *val);
+uint8_t cptra_usb_ocp_recovery_read_batch_aborted(uint8_t *aborted);
 
+uint8_t cptra_usb_ocp_recovery_read_device_status_prot_error(
+    uint8_t *prot_error);
+uint8_t cptra_usb_ocp_recovery_verify_device_status_prot_error_stable(
+    uint8_t *prot_error);
 uint8_t cptra_usb_ocp_recovery_read_path_disable(uint8_t *disabled);
 uint8_t cptra_usb_ocp_recovery_set_path_disable(uint8_t disabled);
+uint8_t cptra_usb_ocp_recovery_request_general_protocol_error(void);
 
 void cptra_usb_ocp_recovery_read_fw_command(uint32_t *command_word,
                                             uint32_t *command_magic);

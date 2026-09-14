@@ -4,8 +4,9 @@ Status: design nearly-complete (OCP Recovery arbiter architecture).
 
 Scope: the OCP Secure Firmware Recovery enhancements added to the Caliptra
 Subsystem USB 2.0 device block (`third_party/usb2`). This document describes
-*definitively how the hardware is implemented in RTL* and how *production*
-firmware is expected to interact with it.
+the implemented RTL and the requirements on integrating production firmware.
+Explicitly marked proposed sections describe planned interfaces, not interfaces
+already available in RTL.
 
 > Register reference note: Section 7 below inlines the full register/field
 > layout as a temporary measure. Once the generated register-reference HTML
@@ -643,3 +644,124 @@ Padding-only register forcing the recovery aperture to occupy a natural 2 KiB ad
 ## 9. Companion documentation
 
 - Protocol-flow companion: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
+
+---
+
+## 10. Proposed mirrored-SETUP firmware contract
+
+**Status: revised proposal, not implemented.** The trap/replay implementation
+described above has not been replaced. The firmware coordinator, generation
+registers, protected-write machinery, and BEGIN/PUBLISH/END ABI previously
+proposed for this alternative are not part of the selected direction.
+The legacy firmware register interface is to remain unchanged.
+
+The proposal forwards real EP0 SETUP request/data to legacy DMA while observing
+the same eight-byte payload for OCP classification. A claimed SETUP may overwrite
+the legacy SETUP SRAM. The revised alternative forwards the valid
+`setup_received` indication for claimed as well as unclaimed SETUP, while
+suppressing the claimed SETUP's successful DMA interrupt publication. Its
+subsequent DATA/STATUS/PING transactions remain OCP-owned; other endpoints
+remain legacy-owned.
+
+### 10.1 Supersession and firmware responsibility
+
+A replacement SETUP supersedes the preceding EP0 operation (USB 2.0 Section
+5.5.5). Obsolete requests are not queued for later firmware execution.
+The new architecture does not add a hardware authorization/session mechanism
+to cancel CPU instructions or prevent stale firmware writes.
+
+If this alternative is adopted, production device firmware must:
+
+1. Retain its legacy responsibility to handle a new SETUP superseding an
+   unfinished EP0 request, including discarding the obsolete request.
+2. Recognize the OCP request envelope and active Recovery-interface assignment.
+   Leave claimed requests to hardware: do not execute them, arm a legacy
+   response, or issue a legacy STALL merely because they are class requests.
+   Respect OCP path disable when deciding whether hardware owns the request.
+3. Consume/clear the legacy SETUP-pending indication for a request left to OCP
+   using the existing interface and its SETUP-buffer coherence rules. Clearing
+   the software flag must not clear hardware OCP ownership.
+4. Do not require a legacy SETUP interrupt to service OCP recovery. Hardware
+   services claimed control transfers; Caliptra firmware uses Recovery
+   registers and `payload_available` for image processing. The legacy handler
+   need not run once per claimed SETUP. If it observes OCP bytes while handling
+   an earlier notification, it must leave that request to hardware.
+5. Apply its existing shared-SETUP-buffer supersession discipline when reading,
+   acknowledging, and acting on the request. A new payload may overwrite a
+   previous payload while firmware is active.
+
+Repository firmware is validation collateral only. The MCU legacy dispatcher
+checks SETUP inside an EP0OUT interrupt branch; the Caliptra Recovery library
+separately polls Recovery status and AXI-DMA `payload_available`. These are
+different flows. Suppressing a claimed SETUP's legacy interrupt does not
+prevent Recovery service. Any necessary legacy flag cleanup is bookkeeping,
+not a new per-OCP-command firmware dispatch requirement.
+
+`DEVCMDSTAT.SETUP` is a sticky pending bit, not a counter or generation number.
+If it was already one, another SETUP leaves it one. Forwarding `setup_received`
+does not by itself detect every replacement, make two SRAM word reads atomic,
+or cancel an already-executing handler. The actual firmware buffering/service
+assumptions must be established before claiming safety for all supersession
+timings. No atomic hardware cancellation guarantee is implied here.
+
+### 10.2 Hardware boundaries and remaining timing obligations
+
+The following remain requirements on the proposed hardware:
+
+- OCP captures and validates its own SETUP, maintains its own control toggles,
+  and isolates claimed DATA/STATUS/PING and NAK reporting from legacy DMA.
+- Forwarding valid `setup_received` preserves the existing software flag,
+  address update, and legacy toggle effects. The real PIE result is not
+  changed by the local DMA success mask.
+- Suppress only the associated claimed SETUP's DMA success until its consumer
+  has finished. A raw next `epinfo_req` is not itself proof of DMA retirement;
+  it can be OCP-owned and never delivered to DMA. Either establish the required
+  service bound or qualify mask release using the existing DMA response-valid
+  lifecycle for that transaction. No new DMA output is inherently required.
+  The existing DMA output is named `epinfo_sync_valid`; the structure connects
+  it through `epinfo_sync_valid_d` to the arbiter input `epinfo_sync_valid_dma`.
+  USB bus reset and hardware reset clear the arbiter's mask/tracking
+  unconditionally, without requiring a normal valid falling edge.
+- Do not let a pending software SETUP flag make later real SETUP requests
+  unreceivable. The existing `setup_not_cleared` gate has no SETUP exception;
+  firmware notification forwarding alone does not fix that limitation.
+  Evaluate an arbiter-side SETUP qualification of the DMA's existing
+  `usbreg_setup` input if preserving the DMA implementation is required.
+  Both actual receive readiness and PIE response timing must be satisfied.
+- Non-EP0 responses, success, and interrupts are selected by current endpoint
+  identity and are not suppressed by retained EP0 claim/stall state.
+- Late preparation of an obsolete legacy response may write SRAM/descriptors,
+  but cannot drive the wire while OCP owns EP0. Such writes are not physically
+  discarded by the response mux. On return to legacy traffic, do not expose an
+  obsolete armed response as the response to a new SETUP. Legacy firmware's
+  replacement-response preparation and SETUP acknowledgement must preserve
+  that ordering. Full-register/control writes can have effects beyond response
+  RAM and are not automatically neutralized by OCP response selection.
+
+### 10.3 Relationship to Caliptra firmware and error recovery
+
+The legacy SETUP observation/ignore requirement concerns device firmware, not
+per-command service of OCP recovery. Caliptra's FIFO drain and
+firmware-owned Recovery status obligations in Sections 3.7 and 6 remain.
+
+For an active, incomplete `INDIRECT_FIFO_DATA` write, disconnect aborts the
+operation whether RX is still arriving, fully staged, or partly committed.
+The batch-abort indication must describe the interrupted FIFO operation, not
+only a cycle on which a FIFO push occurred. Other OCP commands, a successfully
+completed transfer, and a CRC retry alone are not that event. The final
+abort/reset decode must cover all receive/validate/drain/status-wait states
+representing that incomplete operation.
+
+**Reconnect assumption:** a USB bus reset occurs after reconnection and before
+new SETUP or other endpoint transactions. Existing legacy DMA may remain
+valid-high if disconnect suppressed its natural `endtransfer`; the reconnect
+reset flushes that state. No early DMA-valid forcing, synthetic completion,
+or dedicated disconnect-reset mechanism is required for this case.
+
+OCP claim, staging and reservation cleanup on disconnect must not wait for
+DMA retirement. Any retained local DMA discard context is passive until
+normal retirement or reset. Reset detection and propagation must remain
+independent of that context, and reset clears all arbiter mask/admission/
+response tracking even if DMA-valid was still high. Reset is teardown, not
+a successful transfer completion. DCON assertion alone is not the condition
+for resuming endpoint traffic under this integration contract.

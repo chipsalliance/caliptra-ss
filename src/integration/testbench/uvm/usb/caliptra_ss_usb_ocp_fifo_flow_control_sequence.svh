@@ -217,6 +217,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
 
     protected virtual task push_by_indices();
         fifo_status_s status;
+        fifo_status_s post_status;
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
         int unsigned offset_dwords;
@@ -273,8 +274,21 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 (((status.write_index + chunk_dwords) %
                    status.fifo_size) == status.read_index)) begin
                 equality_deviation_reported = 1'b1;
-                `uvm_error("OCP_FIFO_FLOW",
-                    "Device accepted a FIFO transfer that advanced WRITE_INDEX equal to READ_INDEX; OCP Recovery v1.1 Sec 8.2.5 requires NACK.")
+                read_and_check_status(
+                    post_status,
+                    $sformatf("OCP_FIFO_INDEX_POST_BOUNDARY_%0d",
+                              chunk_number));
+                if (post_status.write_index == post_status.read_index) begin
+                    `uvm_error("OCP_FIFO_FLOW",
+                        "Device accepted a FIFO transfer that left live WRITE_INDEX equal to READ_INDEX; OCP Recovery v1.1 Sec 8.2.5 requires NACK.")
+                end else begin
+                    `uvm_info("OCP_FIFO_FLOW",
+                        $sformatf({"Boundary write was legal because the ",
+                                   "consumer advanced READ_INDEX from %0d to ",
+                                   "%0d before commit."},
+                                  status.read_index, post_status.read_index),
+                        UVM_NONE)
+                end
             end
             chunk_number++;
         end
