@@ -2131,10 +2131,9 @@ module caliptra_ss_top_tb
     logic [SPI_HOST_NUM_CS_TB-1:0] cptra_ss_csb_en_o;
     logic [3:0] cptra_ss_sd_o;
     logic [3:0] cptra_ss_sd_en_o;
-    logic [3:0] cptra_ss_sd_i;
+    wire  [3:0] cptra_ss_sd_i;
 
-    assign cptra_ss_sd_i              = '0;
-
+    assign (pull0, pull1) cptra_ss_sd_i = (cptra_ss_sd_en_o)? cptra_ss_sd_o : 'z;
 
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
@@ -2560,6 +2559,18 @@ module caliptra_ss_top_tb
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
         .mcu_rom_mem_export_if
+    );
+
+    spiflash u_spi_flash_0 (
+        .sck(cptra_ss_sck_o),
+        .csb(cptra_ss_csb_o[0]),
+        .sd(cptra_ss_sd_i)
+    );
+
+    spiflash u_spi_flash_1 (
+        .sck(cptra_ss_sck_o),
+        .csb(cptra_ss_csb_o[1]),
+        .sd(cptra_ss_sd_i)
     );
 
     `CALIPTRA_SS_ASSERT_PRIM_FSM_ERROR_TRIGGER_ALERT(OtpStateRegsCheck_A, u_otp.u_state_regs, 1'b0)
