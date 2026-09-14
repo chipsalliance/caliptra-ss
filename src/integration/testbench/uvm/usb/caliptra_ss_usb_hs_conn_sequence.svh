@@ -36,10 +36,12 @@
 // in HS mode, connects the hub upstream, and loops polling DEVCMDSTAT
 // (USB_DEV0_DEVCMDSTAT) to confirm the connection.
 // =============================================================================
-class caliptra_ss_usb_hs_conn_sequence extends uvm_sequence;
+// Extends caliptra_ss_usb_base_sequence (see caliptra_ss_usb_base_sequence.svh)
+// for pre_start()/post_start(). This sequence issues no control transfers, so
+// do_control_xfer()/wait_xfer_done() are unused here.
+class caliptra_ss_usb_hs_conn_sequence extends caliptra_ss_usb_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_hs_conn_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     int unsigned obs_window_us = 100;
 
@@ -47,65 +49,16 @@ class caliptra_ss_usb_hs_conn_sequence extends uvm_sequence;
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
     virtual task body();
-        svt_usb_agent        host_agent_h;
-        uvm_component        parent_comp;
-        svt_usb_status       shared_status;
+        svt_usb_status shared_status;
 
-        parent_comp = p_sequencer.get_parent();
-        if (!$cast(host_agent_h, parent_comp))
-            `uvm_fatal("USB_HS_CONN_SEQ",
-                $sformatf("Cannot cast p_sequencer parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
+        // Resolves via the base class instead of re-implementing the cast/
+        // null-check inline (see caliptra_ss_usb_base_sequence.svh).
+        shared_status = resolve_shared_status();
 
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null)
-            `uvm_fatal("USB_HS_CONN_SEQ",
-                "p_sequencer.get_shared_status(this) returned null.")
+        wait_for_link_enabled(shared_status, "HS host link");
 
-        `uvm_info("USB_HS_CONN_SEQ",
-            $sformatf("Waiting for HS host link ENABLED (current=%p)...",
-                      shared_status.link_usb_20_state),
-            UVM_LOW)
-
-        fork
-            begin: WAIT_EN
-                wait (shared_status.link_usb_20_state == svt_usb_types::ENABLED);
-                disable REPORT_LINK_STATE;
-            end
-            begin: REPORT_LINK_STATE
-                forever begin
-                    #10us `uvm_info("USB_HS_CONN_SEQ",
-                        $sformatf("host agent link_usb_20_state [%p]",
-                                  shared_status.link_usb_20_state),
-                        UVM_LOW);
-                end
-            end
-        join
-
-        `uvm_info("USB_HS_CONN_SEQ", "HS host link ENABLED. Starting SOF generation.", UVM_LOW)
-
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
-            sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on_seq");
-            sof_on_seq.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("USB_HS_CONN_SEQ", "SOF generation started.", UVM_LOW)
-        end
+        start_sof_generation();
 
         `uvm_info("USB_HS_CONN_SEQ",
             $sformatf("Holding HS connection observation window for %0d us.", obs_window_us),

@@ -43,88 +43,16 @@
 //   9. Allow MCU firmware time to complete loopback and log result.
 // =============================================================================
 
-class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
+class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends caliptra_ss_usb_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_fs_dev_bulk_loopback_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     function new(string name = "caliptra_ss_usb_fs_dev_bulk_loopback_sequence");
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Helper: issue a single CONTROL transfer on p_sequencer.xfer_sequencer.
-    // Mirrors caliptra_ss_usb_init_sequence and caliptra_ss_usb_hs_dev_bulk_out_sequence:
-    // finish_item only inside this task, no NOTIFY wait. The caller must call
-    // wait_xfer_done() after this task returns to synchronize with transfer
-    // completion on the physical bus.
-    // -------------------------------------------------------------------------
-    task do_control_xfer(
-        input bit [7:0]  bm_request_type_dir,
-        input bit [7:0]  bm_request_type_type,
-        input bit [7:0]  bm_request_type_recip,
-        input bit [7:0]  brequest_val,
-        input bit [15:0] wvalue,
-        input bit [15:0] windex,
-        input bit [15:0] wlength,
-        input int        device_addr,
-        input string     label,
-        input svt_usb_configuration usb_cfg = null
-    );
-        svt_usb_transfer req;
-        req = svt_usb_transfer::type_id::create({label, "_req"});
-        start_item(req, -1, p_sequencer.xfer_sequencer);
-        if (usb_cfg != null)
-            req.cfg = usb_cfg;
-        req.fix_anchors(0, 0, 0);
-        if (!req.randomize() with {
-                xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
-                device_address                     == device_addr;
-                setup_data_bmrequesttype_dir       == bm_request_type_dir;
-                setup_data_bmrequesttype_type      == bm_request_type_type;
-                setup_data_bmrequesttype_recipient == bm_request_type_recip;
-                setup_data_brequest                == brequest_val;
-                setup_data_w_value                 == wvalue;
-                setup_data_w_index                 == windex;
-                setup_data_w_length                == wlength;
-            }) begin
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ",
-                $sformatf("svt_usb_transfer randomize() failed for %s", label))
-        end
-        finish_item(req, -1);
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            $sformatf("CONTROL %s issued (addr=%0d).", label, device_addr), UVM_LOW)
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Helper: wait for host-side transfer completion on the physical bus.
-    // Called after each do_control_xfer() and after bulk finish_item().
-    // -------------------------------------------------------------------------
-    task wait_xfer_done(svt_usb_agent agent_h, string label);
-        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            $sformatf("Transfer %s completed on bus.", label), UVM_LOW)
-    endtask
-
     virtual task body();
         svt_usb_agent         host_agent_h;
-        uvm_component         parent_comp;
-        svt_configuration     get_cfg;
         svt_usb_configuration usb_cfg;
         svt_usb_status        shared_status;
         svt_usb_transfer      bulk_out_req;
@@ -132,54 +60,21 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         bit [7:0]             send_data[];
         int unsigned          i;
 
-        parent_comp = p_sequencer.get_parent();
-        if (!$cast(host_agent_h, parent_comp))
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ",
-                $sformatf("Cannot cast parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
-
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null)
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ", "get_shared_status returned null.")
-
-        p_sequencer.get_cfg(get_cfg);
-        if (!$cast(usb_cfg, get_cfg))
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ",
-                "Unable to cast configuration to svt_usb_configuration")
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
+        usb_cfg       = resolve_usb_cfg();
 
         // Step 1: Wait for FS link ENABLED.
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            $sformatf("Waiting for FS host link ENABLED (current=%p)...",
-                      shared_status.link_usb_20_state), UVM_LOW)
-        fork
-            begin: WAIT_EN
-                wait (shared_status.link_usb_20_state == svt_usb_types::ENABLED);
-                disable REPORT_LINK;
-            end
-            begin: REPORT_LINK
-                forever begin
-                    #10us `uvm_info("USB_FS_LOOPBACK_SEQ",
-                        $sformatf("link_usb_20_state=%p",
-                                  shared_status.link_usb_20_state), UVM_LOW);
-                end
-            end
-        join
-        `uvm_info("USB_FS_LOOPBACK_SEQ", "FS host link ENABLED.", UVM_LOW)
+        wait_for_link_enabled(shared_status, "FS host link");
 
-        // Step 2 (removed): Explicit SE0 bus reset via se0_seq is NOT needed.
+        // Step 2 (not needed): No explicit SE0 bus reset via se0_seq.
         // drive_reset_time is set in the test cfg so the VIP autonomously drives
         // SE0 for 150 us BEFORE transitioning to ENABLED (same as HS mode which
         // drives SE0+chirp mandatorily per USB 2.0 spec). By the time this
         // sequence sees ENABLED the DUT has already received its bus reset.
 
         // Step 3: Start SOF generation to keep the FS link alive.
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
-            sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
-                "sof_on_seq");
-            sof_on_seq.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("USB_FS_LOOPBACK_SEQ", "SOF generation started.", UVM_LOW)
-        end
+        start_sof_generation();
 
         // Step 4: Post-reset settling delay.
         // Allow MCU firmware time to handle DRES_C interrupt, call
@@ -187,197 +82,52 @@ class caliptra_ss_usb_fs_dev_bulk_loopback_sequence extends uvm_sequence;
         // before the first SETUP token arrives on the bus.
         #50us;
 
-        // Step 5: Full hub + USBDC0 enumeration.
-        // Mirrors caliptra_ss_usb_hs_dev_bulk_out_sequence:
-        //   5a - enumerate HUB at addr 1
-        //   5b - bring up downstream port 1 (USBDC0)
-        //   5c - enumerate USBDC0 at addr 2
-
-        // ---------------------------------------------------------------
-        // Step 5a: Enumerate the HUB itself at address 1.
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0008,
-            0, "GET_DESC_DEV_addr0_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0_hub");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_1_hub");
-        #5us;
-
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
-        host_agent_h.reconfigure(usb_cfg);
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            1, "GET_DESC_DEV_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0009,
-            1, "GET_DESC_CFG9_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_CFG9_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0019,
-            1, "GET_DESC_CFG25_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_CFG25_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h2900, 16'h0000, 16'h0009,
-            1, "GET_DESC_HUB9_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_HUB9_addr1_hub");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            1, "SET_CONFIG_1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_CONFIG_1_hub");
-
-        // ---------------------------------------------------------------
-        // Step 5b: Bring up downstream port 1 (where USBDC0 is attached).
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h00, 16'h0000, 16'h0001, 16'h0004,
-            1, "GetPortStatus_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GetPortStatus_Port1");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0010, 16'h0001, 16'h0000,
-            1, "ClearFeature_C_PORT_CONNECTION_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_CONNECTION_Port1");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h03, 16'h0004, 16'h0001, 16'h0000,
-            1, "SetFeature_PORT_RESET_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SetFeature_PORT_RESET_Port1");
-        #10us;
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0014, 16'h0001, 16'h0000,
-            1, "ClearFeature_C_PORT_RESET_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_RESET_Port1");
-        #10us;
-
-        // Reset VIP anchor to addr=0 before enumerating USBDC0.
-        // USBDC0, having just been port-reset, responds at address 0.
-        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
-        host_agent_h.reconfigure(usb_cfg);
-        `uvm_info("USB_FS_LOOPBACK_SEQ",
-            "Reset host agent remote device_address=0 before enumerating USBDC0.",
-            UVM_LOW)
-
-        // ---------------------------------------------------------------
-        // Step 5c: Enumerate USBDC0 (behind hub port 1) at address 2.
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            0, "GET_DESC_DEV_addr0", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h00, 16'h0000, 16'h0000, 16'h0002,
-            0, "GET_STATUS_addr0", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0002, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_2", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_2");
-        #5us;
-
-        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
-        host_agent_h.reconfigure(usb_cfg);
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            2, "GET_DESC_DEV_addr2", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr2");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            2, "GET_CONFIG_addr2", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_addr2");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            2, "SET_CONFIG_1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_CONFIG_1");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            2, "GET_CONFIG_verify", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_verify");
+        // Step 5: Enumerate the hub at address 1, bring up hub downstream
+        // port 1, then enumerate USBDC0 at address 2 (base-class A -> B -> C).
+        enumerate_hub_and_usbdc0(host_agent_h, usb_cfg);
 
         `uvm_info("USB_FS_LOOPBACK_SEQ", "FS enumeration complete.", UVM_LOW)
         #10us;
+
 
         // Step 6: Send 64 bytes of bulk OUT data to EP1.
         // Data pattern: byte[i] = i (0x00, 0x01, ... 0x3F).
         send_data = new[64];
         for (i = 0; i < 64; i++) send_data[i] = i[7:0];
 
-        bulk_out_req = svt_usb_transfer::type_id::create("bulk_out_req");
-        start_item(bulk_out_req, -1, p_sequencer.xfer_sequencer);
-        bulk_out_req.cfg = usb_cfg;
-        bulk_out_req.payload.USER_DEFINED_ALGORITHM_wt   = 1;
-        bulk_out_req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
-        bulk_out_req.fix_anchors(0, 2, 0);
-        if (!bulk_out_req.randomize() with {
-                xfer_type                              == svt_usb_transfer::BULK_OUT_TRANSFER;
-                device_address                         == 2;
-                endpoint_number                        == 1;
-                payload_intended_byte_count            == 64;
-                aligned_transfer_ends_with_zero_length == 0;
-            }) begin
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ", "Bulk OUT randomize() failed")
-        end
-        for (i = 0; i < 64; i++) bulk_out_req.payload.data[i] = send_data[i];
-
-        // Fork the NOTIFY wait BEFORE finish_item for bulk transfers.
-        // A single 64-byte FS bulk packet completes very fast; if wait_trigger()
-        // is called after finish_item the event may have already fired and the
-        // task hangs. This race does not affect control transfers (longer
-        // multi-stage DATA+STATUS phases give enough slack for sequential calls).
-        fork
-            begin
-                finish_item(bulk_out_req, -1);
-                `uvm_info("USB_FS_LOOPBACK_SEQ",
-                    "FS Bulk OUT issued (64 bytes, EP1, addr=2).", UVM_LOW)
-            end
-            begin
-                wait_xfer_done(host_agent_h, "FS_BULK_OUT_EP1");
-            end
-        join
+        // Bulk OUT via the base-class helper: it forks the NOTIFY wait before
+        // finish_item, which a single 64-byte FS bulk packet needs (the event
+        // can fire before a sequential wait would arm). See do_data_xfer() in
+        // caliptra_ss_usb_base_sequence.svh.
+        do_data_xfer(
+            .agent_h            (host_agent_h),
+            .usb_cfg            (usb_cfg),
+            .xfer_kind          (svt_usb_transfer::BULK_OUT_TRANSFER),
+            .device_addr        (2),
+            .ep_num             (1),
+            .byte_count         (64),
+            .ep_anchor_idx      (2),
+            .label              ("FS_BULK_OUT_EP1"),
+            .req                (bulk_out_req),
+            .obj_name           ("bulk_out_req"),
+            .payload_data       (send_data),
+            .no_zero_length_end (1));
 
         // Allow MCU firmware time to copy EP1 OUT data to EP1 IN buffer and arm IN.
         #20us;
 
         // Step 7: Read 64 bytes back from EP1 IN (loopback).
-        bulk_in_req = svt_usb_transfer::type_id::create("bulk_in_req");
-        start_item(bulk_in_req, -1, p_sequencer.xfer_sequencer);
-        bulk_in_req.cfg = usb_cfg;
-        bulk_in_req.fix_anchors(0, 1, 0);
-        if (!bulk_in_req.randomize() with {
-                xfer_type                   == svt_usb_transfer::BULK_IN_TRANSFER;
-                device_address              == 2;
-                endpoint_number             == 1;
-                payload_intended_byte_count == 64;
-            }) begin
-            `uvm_fatal("USB_FS_LOOPBACK_SEQ", "Bulk IN randomize() failed")
-        end
-
-        fork
-            begin
-                finish_item(bulk_in_req, -1);
-                `uvm_info("USB_FS_LOOPBACK_SEQ",
-                    "FS Bulk IN issued (64 bytes, EP1, addr=2).", UVM_LOW)
-            end
-            begin
-                wait_xfer_done(host_agent_h, "FS_BULK_IN_EP1");
-            end
-        join
+        do_data_xfer(
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_IN_TRANSFER),
+            .device_addr   (2),
+            .ep_num        (1),
+            .byte_count    (64),
+            .ep_anchor_idx (1),
+            .label         ("FS_BULK_IN_EP1"),
+            .req           (bulk_in_req),
+            .obj_name      ("bulk_in_req"));
 
         // Step 8: Verify loopback data content.
         begin

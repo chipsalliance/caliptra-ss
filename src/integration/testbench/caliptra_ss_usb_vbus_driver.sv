@@ -231,4 +231,3 @@ module caliptra_ss_usb_vbus_driver (
 
 endmodule
 
-// File contains AI-generated response based on internal company sources

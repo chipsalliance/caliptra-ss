@@ -49,16 +49,16 @@ void main(void) {
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
-        intstat  = lsu_read_32(USB_DEV0_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV_INTSTAT);
 
         if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
             if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
         if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
         if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {
             VPRINTF(LOW, "USB USBD conn: device connected PASSED\r\n");

@@ -49,267 +49,47 @@
 // byte range across 3 rounds with no overlap in the repeating 256-period).
 `define ISO_ROUND_OFFSET          8'd85
 
-class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
+class caliptra_ss_usb_hs_dev_iso_out_sequence extends caliptra_ss_usb_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_hs_dev_iso_out_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     function new(string name = "caliptra_ss_usb_hs_dev_iso_out_sequence");
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Helper: issue a single CONTROL transfer.
-    // Mirrors caliptra_ss_usb_hs_dev_bulk_out_sequence: finish_item only inside
-    // this task, no NOTIFY wait. The caller calls wait_xfer_done() afterwards.
-    // -------------------------------------------------------------------------
-    task do_control_xfer(
-        input bit [7:0]  bm_request_type_dir,
-        input bit [7:0]  bm_request_type_type,
-        input bit [7:0]  bm_request_type_recip,
-        input bit [7:0]  brequest_val,
-        input bit [15:0] wvalue,
-        input bit [15:0] windex,
-        input bit [15:0] wlength,
-        input int        device_addr,
-        input string     label,
-        input svt_usb_configuration usb_cfg = null
-    );
-        svt_usb_transfer req;
-        req = svt_usb_transfer::type_id::create({label, "_req"});
-        start_item(req, -1, p_sequencer.xfer_sequencer);
-        if (usb_cfg != null)
-            req.cfg = usb_cfg;
-        req.fix_anchors(0, 0, 0);
-        if (!req.randomize() with {
-                xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
-                device_address                     == device_addr;
-                setup_data_bmrequesttype_dir       == bm_request_type_dir;
-                setup_data_bmrequesttype_type      == bm_request_type_type;
-                setup_data_bmrequesttype_recipient == bm_request_type_recip;
-                setup_data_brequest                == brequest_val;
-                setup_data_w_value                 == wvalue;
-                setup_data_w_index                 == windex;
-                setup_data_w_length                == wlength;
-            }) begin
-            `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                $sformatf("randomize failed for %s", label))
-        end
-        finish_item(req, -1);
-        `uvm_info("USB_HS_DEV_ISO_SEQ",
-            $sformatf("CONTROL %s done (addr=%0d)", label, device_addr), UVM_LOW)
-    endtask
-
-    // -------------------------------------------------------------------------
-    // Helper: wait for host-side transfer completion.
-    // -------------------------------------------------------------------------
-    task wait_xfer_done(svt_usb_agent agent_h, string label);
-        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
-        `uvm_info("USB_HS_DEV_ISO_SEQ",
-            $sformatf("Transfer %s completed.", label), UVM_LOW)
-    endtask
-
     virtual task body();
-        svt_usb_agent        host_agent_h;
-        uvm_component        parent_comp;
-        svt_configuration    get_cfg;
+        svt_usb_agent         host_agent_h;
         svt_usb_configuration usb_cfg;
-        svt_usb_status       shared_status;
-        svt_usb_transfer     iso_req;
-        svt_usb_transfer     iso_in_req0;
-        svt_usb_transfer     iso_in_req1;
-        bit [7:0]            iso_data[];
-        int unsigned         iso_in_err_cnt;
-        int unsigned         total_err_cnt;
-        int unsigned         round;
-        bit [7:0]            rnd_base;   // per-round pattern offset
+        svt_usb_status        shared_status;
+        svt_usb_transfer      iso_req;
+        svt_usb_transfer      iso_in_req0;
+        svt_usb_transfer      iso_in_req1;
+        bit [7:0]             iso_data[];
+        int unsigned          iso_in_err_cnt;
+        int unsigned          total_err_cnt;
+        int unsigned          round;
+        bit [7:0]             rnd_base;   // per-round pattern offset
 
-        parent_comp = p_sequencer.get_parent();
-        if (!$cast(host_agent_h, parent_comp))
-            `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                $sformatf("Cannot cast parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
-
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null)
-            `uvm_fatal("USB_HS_DEV_ISO_SEQ", "get_shared_status returned null.")
-
-        p_sequencer.get_cfg(get_cfg);
-        if (!$cast(usb_cfg, get_cfg))
-            `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                "Unable to cast cfg to svt_usb_configuration")
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
+        usb_cfg       = resolve_usb_cfg();
 
         // Step 1: Wait for HS link ENABLED.
-        `uvm_info("USB_HS_DEV_ISO_SEQ",
-            $sformatf("Waiting for HS host link ENABLED (current=%p)...",
-                      shared_status.link_usb_20_state), UVM_LOW)
-        fork
-            begin: WAIT_EN
-                wait (shared_status.link_usb_20_state == svt_usb_types::ENABLED);
-                disable REPORT_LINK;
-            end
-            begin: REPORT_LINK
-                forever begin
-                    #10us `uvm_info("USB_HS_DEV_ISO_SEQ",
-                        $sformatf("link_usb_20_state=%p",
-                                  shared_status.link_usb_20_state), UVM_LOW);
-                end
-            end
-        join
-        `uvm_info("USB_HS_DEV_ISO_SEQ", "HS link ENABLED.", UVM_LOW)
+        wait_for_link_enabled(shared_status, "HS host link");
 
         // Step 2: Start SOF generation.
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on_seq;
-            sof_on_seq = svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
-                "sof_on");
-            sof_on_seq.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("USB_HS_DEV_ISO_SEQ", "SOF started.", UVM_LOW)
-        end
+        start_sof_generation();
 
         // Step 3: Settling delay for MCU firmware EP0 re-arm after bus reset.
         #20us;
 
-        // Step 4: Full hub + USBDC0 enumeration.
-        // Mirrors caliptra_ss_usb_hs_dev_bulk_out_sequence exactly:
-        //   4a - enumerate HUB at addr 1
-        //   4b - bring up downstream port 1 (USBDC0)
-        //   4c - enumerate USBDC0 at addr 2
-
-        // ---------------------------------------------------------------
-        // Step 4a: Enumerate the HUB itself at address 1.
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0008,
-            0, "GET_DESC_DEV_addr0_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0_hub");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0001, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_1_hub");
-        #5us;
-
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
-        host_agent_h.reconfigure(usb_cfg);
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            1, "GET_DESC_DEV_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0009,
-            1, "GET_DESC_CFG9_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_CFG9_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0200, 16'h0000, 16'h0019,
-            1, "GET_DESC_CFG25_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_CFG25_addr1_hub");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h2900, 16'h0000, 16'h0009,
-            1, "GET_DESC_HUB9_addr1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_HUB9_addr1_hub");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            1, "SET_CONFIG_1_hub", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_CONFIG_1_hub");
-
-        // ---------------------------------------------------------------
-        // Step 4b: Bring up downstream port 1 (where USBDC0 is attached).
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h00, 16'h0000, 16'h0001, 16'h0004,
-            1, "GetPortStatus_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "GetPortStatus_Port1");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0010, 16'h0001, 16'h0000,
-            1, "ClearFeature_C_PORT_CONNECTION_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_CONNECTION_Port1");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h03, 16'h0004, 16'h0001, 16'h0000,
-            1, "SetFeature_PORT_RESET_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SetFeature_PORT_RESET_Port1");
-        #10us;
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::CLASS,
-            svt_usb_types::BMREQ_OTHER, 8'h01, 16'h0014, 16'h0001, 16'h0000,
-            1, "ClearFeature_C_PORT_RESET_Port1", usb_cfg);
-        wait_xfer_done(host_agent_h, "ClearFeature_C_PORT_RESET_Port1");
-        #10us;
-
-        // Reset VIP anchor to addr=0 before enumerating USBDC0.
-        // USBDC0, having just been port-reset, responds at address 0.
-        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
-        host_agent_h.reconfigure(usb_cfg);
-        `uvm_info("USB_HS_DEV_ISO_SEQ",
-            "Reset host agent remote device_address=0 before enumerating USBDC0.",
-            UVM_LOW)
-
-        // ---------------------------------------------------------------
-        // Step 4c: Enumerate USBDC0 (behind hub port 1) at address 2.
-        // ---------------------------------------------------------------
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            0, "GET_DESC_DEV_addr0", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr0");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h00, 16'h0000, 16'h0000, 16'h0002,
-            0, "GET_STATUS_addr0", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_STATUS_addr0");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h05, 16'h0002, 16'h0000, 16'h0000,
-            0, "SET_ADDRESS_2", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_ADDRESS_2");
-        #5us;
-
-        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
-        host_agent_h.reconfigure(usb_cfg);
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h06, 16'h0100, 16'h0000, 16'h0012,
-            2, "GET_DESC_DEV_addr2", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_DESC_DEV_addr2");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            2, "GET_CONFIG_addr2", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_addr2");
-
-        do_control_xfer(svt_usb_types::HOST_TO_DEVICE, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h09, 16'h0001, 16'h0000, 16'h0000,
-            2, "SET_CONFIG_1", usb_cfg);
-        wait_xfer_done(host_agent_h, "SET_CONFIG_1");
-
-        do_control_xfer(svt_usb_types::DEVICE_TO_HOST, svt_usb_types::STANDARD,
-            svt_usb_types::BMREQ_DEVICE, 8'h08, 16'h0000, 16'h0000, 16'h0001,
-            2, "GET_CONFIG_verify", usb_cfg);
-        wait_xfer_done(host_agent_h, "GET_CONFIG_verify");
+        // Step 4: Enumerate the hub at address 1, bring up hub downstream
+        // port 1, then enumerate USBDC0 at address 2 (base-class A -> B -> C).
+        enumerate_hub_and_usbdc0(host_agent_h, usb_cfg);
 
         `uvm_info("USB_HS_DEV_ISO_SEQ", "HS enumeration complete.", UVM_LOW)
         #10us;
+
 
         // Steps 5-7: N_ISO_ROUNDS complete ISO OUT+IN round-trips.
         // Each round uses a different data pattern to verify that the DUT
@@ -328,45 +108,27 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
                           round, `N_ISO_ROUNDS - 1, rnd_base), UVM_LOW)
 
             // ----------------------------------------------------------------
-            // Step 5: ISO OUT — 1024 bytes, pattern byte[i] = (i+rnd_base)%256.
+            // Step 5: ISO OUT - 1024 bytes, pattern byte[i] = (i+rnd_base)%256.
             // ----------------------------------------------------------------
             for (int unsigned i = 0; i < `USB_HS_DEV_ISO_BYTES; i++)
                 iso_data[i] = 8'((i + rnd_base) % 256);
 
-            iso_req = svt_usb_transfer::type_id::create(
-                $sformatf("iso_out_req_r%0d", round));
-            start_item(iso_req, -1, p_sequencer.xfer_sequencer);
-            iso_req.cfg = usb_cfg;
-            iso_req.payload.USER_DEFINED_ALGORITHM_wt   = 1;
-            iso_req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
-            iso_req.fix_anchors(0, 2, 0);
-            if (!iso_req.randomize() with {
-                    xfer_type                   == svt_usb_transfer::ISOCHRONOUS_OUT_TRANSFER;
-                    device_address              == 2;
-                    endpoint_number             == 2;
-                    payload_intended_byte_count == `USB_HS_DEV_ISO_BYTES;
-                    first_isoc_transaction      == 1;
-                    last_isoc_transaction       == 1;
-                }) begin
-                `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                    $sformatf("ISO OUT randomize() failed (round %0d)", round))
-            end
-            for (int unsigned bi = 0; bi < `USB_HS_DEV_ISO_BYTES; bi++)
-                iso_req.payload.data[bi] = iso_data[bi];
-
-            // Fork NOTIFY wait before finish_item to avoid race with VIP.
-            fork
-                begin
-                    finish_item(iso_req, -1);
-                    `uvm_info("USB_HS_DEV_ISO_SEQ",
-                        $sformatf("HS ISO OUT round %0d issued (1024 bytes, EP2).",
-                                  round), UVM_LOW)
-                end
-                begin
-                    wait_xfer_done(host_agent_h,
-                        $sformatf("HS_ISO_OUT_EP2_r%0d", round));
-                end
-            join
+            // ISO OUT via the base-class data-transfer helper: it forks the
+            // NOTIFY_USB_TRANSFER_ENDED wait before finish_item (see
+            // do_data_xfer() in caliptra_ss_usb_base_sequence.svh).
+            do_data_xfer(
+                .agent_h         (host_agent_h),
+                .usb_cfg         (usb_cfg),
+                .xfer_kind       (svt_usb_transfer::ISOCHRONOUS_OUT_TRANSFER),
+                .device_addr     (2),
+                .ep_num          (2),
+                .byte_count      (`USB_HS_DEV_ISO_BYTES),
+                .ep_anchor_idx   (2),
+                .label           ($sformatf("HS_ISO_OUT_EP2_r%0d", round)),
+                .req             (iso_req),
+                .obj_name        ($sformatf("iso_out_req_r%0d", round)),
+                .payload_data    (iso_data),
+                .single_isoc_txn (1));
 
             // ----------------------------------------------------------------
             // Step 6: Allow firmware time to verify OUT data and arm EP2 IN.
@@ -382,33 +144,18 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
                 $sformatf("ISO IN round %0d token 0 (512 B, BUF0)...", round),
                 UVM_LOW)
 
-            iso_in_req0 = svt_usb_transfer::type_id::create(
-                $sformatf("iso_in_req0_r%0d", round));
-            start_item(iso_in_req0, -1, p_sequencer.xfer_sequencer);
-            iso_in_req0.cfg = usb_cfg;
-            iso_in_req0.fix_anchors(0, 1, 0);
-            if (!iso_in_req0.randomize() with {
-                    xfer_type                   == svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER;
-                    device_address              == 2;
-                    endpoint_number             == 2;
-                    payload_intended_byte_count == `USB_HS_DEV_ISO_IN_BYTES;
-                    first_isoc_transaction      == 1;
-                    last_isoc_transaction       == 1;
-                }) begin
-                `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                    $sformatf("ISO IN token 0 randomize() failed (round %0d)", round))
-            end
-            fork
-                begin
-                    finish_item(iso_in_req0, -1);
-                    `uvm_info("USB_HS_DEV_ISO_SEQ",
-                        $sformatf("ISO IN round %0d token 0 issued.", round), UVM_LOW)
-                end
-                begin
-                    wait_xfer_done(host_agent_h,
-                        $sformatf("HS_ISO_IN_EP2_BUF0_r%0d", round));
-                end
-            join
+            do_data_xfer(
+                .agent_h         (host_agent_h),
+                .usb_cfg         (usb_cfg),
+                .xfer_kind       (svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER),
+                .device_addr     (2),
+                .ep_num          (2),
+                .byte_count      (`USB_HS_DEV_ISO_IN_BYTES),
+                .ep_anchor_idx   (1),
+                .label           ($sformatf("HS_ISO_IN_EP2_BUF0_r%0d", round)),
+                .req             (iso_in_req0),
+                .obj_name        ($sformatf("iso_in_req0_r%0d", round)),
+                .single_isoc_txn (1));
 
             // One microframe gap before requesting the second 512-byte token.
             #125us;
@@ -420,33 +167,18 @@ class caliptra_ss_usb_hs_dev_iso_out_sequence extends uvm_sequence;
                 $sformatf("ISO IN round %0d token 1 (512 B, BUF1)...", round),
                 UVM_LOW)
 
-            iso_in_req1 = svt_usb_transfer::type_id::create(
-                $sformatf("iso_in_req1_r%0d", round));
-            start_item(iso_in_req1, -1, p_sequencer.xfer_sequencer);
-            iso_in_req1.cfg = usb_cfg;
-            iso_in_req1.fix_anchors(0, 1, 0);
-            if (!iso_in_req1.randomize() with {
-                    xfer_type                   == svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER;
-                    device_address              == 2;
-                    endpoint_number             == 2;
-                    payload_intended_byte_count == `USB_HS_DEV_ISO_IN_BYTES;
-                    first_isoc_transaction      == 1;
-                    last_isoc_transaction       == 1;
-                }) begin
-                `uvm_fatal("USB_HS_DEV_ISO_SEQ",
-                    $sformatf("ISO IN token 1 randomize() failed (round %0d)", round))
-            end
-            fork
-                begin
-                    finish_item(iso_in_req1, -1);
-                    `uvm_info("USB_HS_DEV_ISO_SEQ",
-                        $sformatf("ISO IN round %0d token 1 issued.", round), UVM_LOW)
-                end
-                begin
-                    wait_xfer_done(host_agent_h,
-                        $sformatf("HS_ISO_IN_EP2_BUF1_r%0d", round));
-                end
-            join
+            do_data_xfer(
+                .agent_h         (host_agent_h),
+                .usb_cfg         (usb_cfg),
+                .xfer_kind       (svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER),
+                .device_addr     (2),
+                .ep_num          (2),
+                .byte_count      (`USB_HS_DEV_ISO_IN_BYTES),
+                .ep_anchor_idx   (1),
+                .label           ($sformatf("HS_ISO_IN_EP2_BUF1_r%0d", round)),
+                .req             (iso_in_req1),
+                .obj_name        ($sformatf("iso_in_req1_r%0d", round)),
+                .single_isoc_txn (1));
 
             // ----------------------------------------------------------------
             // Data integrity check for this round.
