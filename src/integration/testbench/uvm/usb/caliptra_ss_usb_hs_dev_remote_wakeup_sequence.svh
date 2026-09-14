@@ -66,9 +66,8 @@
 // =============================================================================
 
 
-class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
+class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends caliptra_ss_usb_base_sequence;
     `uvm_object_utils(caliptra_ss_usb_hs_dev_remote_wakeup_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     // -------------------------------------------------------------------------
     // Sequence timing knobs.
@@ -158,24 +157,8 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
     virtual task body();
         svt_usb_agent    host_agent_h;
-        uvm_component    parent_comp;
         svt_usb_status   shared_status;
 
         // Handles to the events shared with the DUT-side checker. Resolved up
@@ -192,39 +175,17 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
         obs_window_ev  = uvm_event_pool::get_global(OBS_WINDOW_EVENT);
         arm_ev         = uvm_event_pool::get_global(ARM_EVENT);
 
-        parent_comp = p_sequencer.get_parent();
-
-        if (!$cast(host_agent_h, parent_comp))
-            `uvm_fatal("CALIPTRA_SS_USB_HS_D",
-                $sformatf("Cannot cast parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
-
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null)
-            `uvm_fatal("CALIPTRA_SS_USB_HS_D", "get_shared_status returned null.")
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
 
         // Step 1: Wait for HS link ENABLED.
-        fork
-            begin: WE
-                wait (shared_status.link_usb_20_state == svt_usb_types::ENABLED);
-                disable RE;
-            end
-            begin: RE
-                forever begin
-                    #10us `uvm_info("CALIPTRA_SS_USB_HS_D",
-                        $sformatf("link=%p", shared_status.link_usb_20_state), UVM_LOW);
-                end
-            end
-        join
-        `uvm_info("CALIPTRA_SS_USB_HS_D", "HS link ENABLED.", UVM_LOW)
+        // Note the ordering here is deliberately link-first, SOF-second, which
+        // is the reverse of the other USB tests: the suspend/resume checker
+        // arms on the first SOF, so SOF must not start before the link is up.
+        wait_for_link_enabled(shared_status, "HS host link");
 
         // Step 2: Start SOF generation.
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on;
-            sof_on = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on");
-            sof_on.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("CALIPTRA_SS_USB_HS_D", "SOF generation started.", UVM_LOW)
-        end
+        start_sof_generation();
 
         // Step 3: Settling delay after link-up.
         // The VIP link SM transitions through TRANSMIT -> ENABLED in the first

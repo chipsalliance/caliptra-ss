@@ -138,4 +138,3 @@ module caliptra_ss_mcu_console_fail_checker (
 
 endmodule
 
-// File contains AI-generated response based on internal company sources

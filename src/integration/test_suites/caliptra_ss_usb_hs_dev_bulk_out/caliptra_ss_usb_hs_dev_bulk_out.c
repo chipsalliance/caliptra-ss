@@ -52,18 +52,18 @@ static void usb_ep1_out_arm(void) {
     // Use USB_EP_ENTRY_ABS_ADDR so the DMA engine reconstructs the correct
     // absolute AXI buffer address. DATABUFSTART only contributes bits[31:22],
     // so addr_offset must be bits[16:6] of the absolute AXI address:
-    //   (USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET)
+    //   (USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET)
     //   = 0x20001100 + 0x200 = 0x20001300
     //   addr_offset = 0x20001300 >> 6 & 0x7FF = 0x4C
     uint32_t ep1_out = USB_EP_ENTRY_ACTIVE
                      | USB_EP_ENTRY_NBYTES(USB_HS_BULK_TRANSFER_BYTES)
-                     | USB_EP_ENTRY_ABS_ADDR(USB_DEV0_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
+                     | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET);
+    lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
     VPRINTF(LOW, "MCU: EP1 OUT armed for %d bytes\n", USB_HS_BULK_TRANSFER_BYTES);
 }
 
 static uint32_t usb_ep1_out_read(void) {
-    return lsu_read_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET);
+    return lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET);
 }
 
 void main(void) {
@@ -96,10 +96,10 @@ void main(void) {
 
 
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(USB_DEV0_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV_INTSTAT);
 
         if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
@@ -107,12 +107,12 @@ void main(void) {
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 // SETUP packet received - decode and respond.
                 usb_handle_control_transfer();
@@ -131,7 +131,7 @@ void main(void) {
         }
 
         if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         }
 
         // EP1 OUT completion: use INTSTAT EP1OUT bit rather than polling the
@@ -141,7 +141,7 @@ void main(void) {
         // the final DMA write, causing a single-byte corruption on the last
         // 512-byte packet when the VIP performs a retry.
         if (ep1_armed && (reg_data & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
 
             uint32_t ep1_entry = usb_ep1_out_read();
             uint32_t residual  = (ep1_entry >> 11) & 0x7FFFu;
@@ -151,7 +151,7 @@ void main(void) {
             // Verify COUNT pattern: word[i] == i
             uint32_t errors = 0;
             for (uint32_t i = 0; i < USB_HS_BULK_TRANSFER_BYTES; i += 4) {
-                uint32_t actual   = lsu_read_32(USB_DMA_BASE_ADDR
+                uint32_t actual   = lsu_read_32(USB_DEV_DMA_BASE_ADDR
                                                 + USB_SRAM_EP1_OUT_BUF_OFFSET + i);
                 uint32_t expected = i / 4u;
                 if (actual != expected) {
@@ -179,8 +179,8 @@ void main(void) {
         if (poll_count % 2000 == 0 && poll_count > 0) {
             VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x ep1_armed=%d\n",
                     poll_count,
-                    lsu_read_32(USB_DEV0_DEVCMDSTAT),
-                    lsu_read_32(USB_DEV0_INTSTAT),
+                    lsu_read_32(USB_DEV_DEVCMDSTAT),
+                    lsu_read_32(USB_DEV_INTSTAT),
                     (int)ep1_armed);
 
         }

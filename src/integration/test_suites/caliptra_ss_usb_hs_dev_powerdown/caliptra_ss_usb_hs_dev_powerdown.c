@@ -95,8 +95,8 @@ static volatile uint32_t usb_bus_reset_count = 0;
 // Service one pass of EP0 SETUP handling plus bus-reset handling on USBDC0.
 // Returns 1 if a control transfer was handled on this pass, else 0.
 static uint32_t usb_service_ep0_once(void) {
-    uint32_t reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
-    uint32_t intstat  = lsu_read_32(USB_DEV0_INTSTAT);
+    uint32_t reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
+    uint32_t intstat  = lsu_read_32(USB_DEV_INTSTAT);
     uint32_t handled  = 0;
 
     if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
@@ -104,11 +104,11 @@ static uint32_t usb_service_ep0_once(void) {
             usb_handle_bus_reset();
             usb_bus_reset_count++;
         }
-        lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
     }
 
     if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-        lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
         if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
             if (usb_handle_control_transfer()) {
                 handled = 1;
@@ -117,7 +117,7 @@ static uint32_t usb_service_ep0_once(void) {
     }
 
     if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-        lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
     }
 
     return handled;
@@ -237,7 +237,7 @@ void main(void) {
     // ------------------------------------------------------------------
     VPRINTF(LOW, "USB HS device powerdown PASSED\r\n");
 
-    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     csr_write_mpmc_halt();
 }

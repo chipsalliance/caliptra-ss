@@ -73,9 +73,9 @@ void main (void) {
     VPRINTF(LOW, "MCU: Caliptra core ready, entering USB event loop\n");
 
     // Read initial USB state
-    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
-    reg_data = lsu_read_32(USB_DEV0_INTSTAT);
+    reg_data = lsu_read_32(USB_DEV_INTSTAT);
     VPRINTF(LOW, "MCU: USB INTSTAT = 0x%x\n", reg_data);
 
 
@@ -86,23 +86,23 @@ void main (void) {
         usb_handle_bus_reset();
 
         // Check for device-level interrupts (bus reset, connect change)
-        reg_data = lsu_read_32(USB_DEV0_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV_INTSTAT);
         if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
             if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
             // Clear DEV_INT
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         // Check for EP0 OUT interrupt (SETUP or data)
         if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
             // Clear the EP0OUT interrupt
-            lsu_write_32(USB_DEV0_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
 
-            uint32_t cmd = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
                 // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
@@ -126,10 +126,10 @@ void main (void) {
 
         // Periodic diagnostic dump
         if (poll_count % 1000 == 0 && poll_count > 0) {
-            uint32_t diag_cmd     = lsu_read_32(USB_DEV0_DEVCMDSTAT);
-            uint32_t diag_int     = lsu_read_32(USB_DEV0_INTSTAT);
-            uint32_t ep0_out      = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
-            uint32_t ep0_in_diag  = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
+            uint32_t diag_cmd     = lsu_read_32(USB_DEV_DEVCMDSTAT);
+            uint32_t diag_int     = lsu_read_32(USB_DEV_INTSTAT);
+            uint32_t ep0_out      = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
+            uint32_t ep0_in_diag  = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
 
             VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled);
@@ -142,9 +142,9 @@ void main (void) {
     }
 
     // Report final state
-    reg_data = lsu_read_32(USB_DEV0_DEVCMDSTAT);
+    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
-    reg_data = lsu_read_32(USB_DEV0_INFO);
+    reg_data = lsu_read_32(USB_DEV_INFO);
     VPRINTF(LOW, "MCU: USB INFO final = 0x%x\n", reg_data);
 
     VPRINTF(LOW, "MCU: USB init test - transfers handled: %d\n", transfers_handled);
