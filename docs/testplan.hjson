@@ -1,0 +1,1040 @@
+{
+  name: Caliptra SS Testplan
+  testpoints:
+  [
+    {
+      name: caliptra_ss_fuse_ctrl_axi_id
+      desc: "This test performs DAI writes over the AXI bus on the boundaries of the fuse controller access table entries with randomized fuse writes and random AXI user ids."
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_axi_id
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_bus_ecc_error
+      desc: "This test injects ECC error on DAI write and validates ECC error reporting."
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_bus_ecc_error
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_escalation
+      desc: "This test triggers fault conditions in the fuse controller and verifies that all partitions are in terminal state."
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_escalation
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_external_clock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_external_clock
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_init_fail
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_init_fail
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_integrity_check
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_integrity_check
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_interrupts
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_interrupts
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_manuf_prod_prov
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_manuf_prod_prov
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_read_lock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_read_lock
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_registers
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_registers
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_test_unlocked0_prov
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_test_unlocked0_prov
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_unexpected_reset
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_unexpected_reset
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_volatile_lock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_volatile_lock
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_writeblank
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_writeblank
+      ]
+    }
+    {
+      name: caliptra_ss_fuse_ctrl_zeroization
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_fuse_ctrl_zeroization
+      ]
+    }
+    {
+      name: caliptra_ss_jtag_lcc_st_trans
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_jtag_lcc_st_trans
+      ]
+    }
+    {
+      name: caliptra_ss_jtag_manuf_dbg
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_jtag_manuf_dbg
+      ]
+    }
+    {
+      name: caliptra_ss_jtag_uds_prog
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_jtag_uds_prog
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_alert
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_alert
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_clock_bypass
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_clock_bypass
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_errors
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_errors
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_escalation
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_escalation
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_otp_prog_error
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_otp_prog_error
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans_invalid_state
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans_invalid_state
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans_invalid_token
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans_invalid_token
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans_max_cnt
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans_max_cnt
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans_rma_no_ppd_pin
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans_rma_no_ppd_pin
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_st_trans_scrap_no_ppd_pin
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_st_trans_scrap_no_ppd_pin
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_volatile_unlock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_volatile_unlock
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_volatile_unlock_wrong_state
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_volatile_unlock_wrong_state
+      ]
+    }
+    {
+      name: caliptra_ss_lcc_volatile_unlock_wrong_token
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_lcc_volatile_unlock_wrong_token
+      ]
+    }
+    {
+      name: caliptra_ss_mcu_sram_to_sha
+      desc: ""
+      stage: ""
+      tests:
+      [
+        caliptra_ss_mcu_sram_to_sha
+      ]
+    }
+    {
+      name: cptra_ss_i3c_recovery
+      desc: ""
+      stage: ""
+      tests:
+      [
+        cptra_ss_i3c_recovery
+      ]
+    }
+    {
+      name: i3c_smoke
+      desc: ""
+      stage: ""
+      tests:
+      [
+        i3c_smoke
+      ]
+    }
+    {
+      name: mci_err_intr_reg_rand_test
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mci_err_intr_reg_rand_test
+      ]
+    }
+    {
+      name: mci_pk_hash_reg_rand_test
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mci_pk_hash_reg_rand_test
+      ]
+    }
+    {
+      name: mci_reg_rand_test
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mci_reg_rand_test
+      ]
+    }
+    {
+      name: mci_ro_reg_rand_test
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mci_ro_reg_rand_test
+      ]
+    }
+    {
+      name: mcu_cptra_bringup
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_cptra_bringup
+      ]
+    }
+    {
+      name: mcu_hello_world
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_hello_world
+      ]
+    }
+    {
+      name: mcu_i3c_reg_rd_wr_cptra_i3c_strap
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_i3c_reg_rd_wr_cptra_i3c_strap
+      ]
+    }
+    {
+      name: mcu_intr_handler
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_intr_handler
+      ]
+    }
+    {
+      name: mcu_lmem_exe
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_lmem_exe
+      ]
+    }
+    {
+      name: mcu_mbox_lock_return_one_during_zeroize
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_mbox1_lock_return_one_during_zeroize
+        mcu_mbox0_lock_return_one_during_zeroize
+      ]
+    }
+    {
+      name: mcu_mbox_rand_rdwr
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_mbox1_rand_rdwr
+        mcu_mbox0_rand_rdwr
+      ]
+    }
+    {
+      name: mcu_mctp_smoke_test
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_mctp_smoke_test
+      ]
+    }
+    {
+      name: mcu_prod_rom_i3c_streaming_boot
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_prod_rom_i3c_streaming_boot
+      ]
+    }
+    {
+      name: mcu_prod_rom_to_sram_streaming_boot
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_prod_rom_to_sram_streaming_boot
+      ]
+    }
+    {
+      name: mcu_set_mci_cacheable
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_set_mci_cacheable
+      ]
+    }
+    {
+      name: mcu_test_rom_i3c_rand_streaming_boot
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_test_rom_i3c_rand_streaming_boot
+      ]
+    }
+    {
+      name: mcu_test_rom_i3c_reg_rd_wr
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_test_rom_i3c_reg_rd_wr
+      ]
+    }
+    {
+      name: mcu_test_rom_i3c_setmrl
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_test_rom_i3c_setmrl
+      ]
+    }
+    {
+      name: mcu_test_rom_i3c_streaming_boot
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_test_rom_i3c_streaming_boot
+      ]
+    }
+    {
+      name: mcu_test_rom_i3c_streaming_boot_sram
+      desc: ""
+      stage: ""
+      tests:
+      [
+        mcu_test_rom_i3c_streaming_boot_sram
+      ]
+    }
+    {
+      name: smoke_test_error_handling
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_error_handling
+      ]
+    }
+    {
+      name: smoke_test_fc_debug_unlock_token
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_debug_unlock_token
+      ]
+    }
+    {
+      name: smoke_test_fc_key_revocation
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_key_revocation
+      ]
+    }
+    {
+      name: smoke_test_fc_pk_volatile_lock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_pk_volatile_lock
+      ]
+    }
+    {
+      name: smoke_test_fc_prov_lcc_tokens
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_prov_lcc_tokens
+      ]
+    }
+    {
+      name: smoke_test_fc_random_item_prov
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_random_item_prov
+      ]
+    }
+    {
+      name: smoke_test_fc_registers
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_registers
+      ]
+    }
+    {
+      name: smoke_test_fc_unlock_transitions
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fc_unlock_transitions
+      ]
+    }
+    {
+      name: smoke_test_fuse_prov_with_axi_id
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fuse_prov_with_axi_id
+      ]
+    }
+    {
+      name: smoke_test_fuse_zeroize
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_fuse_zeroize
+      ]
+    }
+    {
+      name: smoke_test_jtag_lcc_registers
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_lcc_registers
+      ]
+    }
+    {
+      name: smoke_test_jtag_manuf_dbg
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_manuf_dbg
+      ]
+    }
+    {
+      name: smoke_test_jtag_mcu_bp
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_mcu_bp
+      ]
+    }
+    {
+      name: smoke_test_jtag_mcu_intent
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_mcu_intent
+      ]
+    }
+    {
+      name: smoke_test_jtag_mcu_sram
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_mcu_sram
+      ]
+    }
+    {
+      name: smoke_test_jtag_mcu_unlock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_mcu_unlock
+      ]
+    }
+    {
+      name: smoke_test_jtag_prod_dbg
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_prod_dbg
+      ]
+    }
+    {
+      name: smoke_test_jtag_uds_prog
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_jtag_uds_prog
+      ]
+    }
+    {
+      name: smoke_test_lcc_RMA
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_RMA
+      ]
+    }
+    {
+      name: smoke_test_lcc_kmac_kat
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_kmac_kat
+      ]
+    }
+    {
+      name: smoke_test_lcc_raw_non_zero_counter
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_raw_non_zero_counter
+      ]
+    }
+    {
+      name: smoke_test_lcc_raw_wrong_token
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_raw_wrong_token
+      ]
+    }
+    {
+      name: smoke_test_lcc_registers
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_registers
+      ]
+    }
+    {
+      name: smoke_test_lcc_scrap
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_scrap
+      ]
+    }
+    {
+      name: smoke_test_lcc_st_trans
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_lcc_st_trans
+      ]
+    }
+    {
+      name: smoke_test_mbox_csr_zeros_after_release
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mbox0_csr_zeros_after_release
+        smoke_test_mbox1_csr_zeros_after_release
+      ]
+    }
+    {
+      name: smoke_test_mci_axi_miss
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mci_axi_miss
+      ]
+    }
+    {
+      name: smoke_test_mci_brkpoint_axi
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mci_brkpoint_axi
+      ]
+    }
+    {
+      name: smoke_test_mci_soc_config_always_enable
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mci_soc_config_always_enable
+      ]
+    }
+    {
+      name: smoke_test_mci_soc_config_diff_mcu
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mci_soc_config_diff_mcu
+      ]
+    }
+    {
+      name: smoke_test_mci_soc_config_disable
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mci_soc_config_disable
+      ]
+    }
+    {
+      name: smoke_test_mcu_hitless
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_hitless
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0
+        smoke_test_mcu_mbox1
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_axi_param
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_axi_param
+        smoke_test_mcu_mbox0_axi_no_param
+        smoke_test_mcu_mbox1_axi_no_param
+        smoke_test_mcu_mbox0_axi_param
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_burst
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_burst
+        smoke_test_mcu_mbox1_burst
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_csrs_warm_rst
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_csrs_warm_rst
+        smoke_test_mcu_mbox0_csrs_warm_rst
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_ecc
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_ecc
+        smoke_test_mcu_mbox1_ecc
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_instantiation
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_instantiation
+        smoke_test_mcu_mbox1_instantiation
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_invalid_axi
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_invalid_axi
+        smoke_test_mcu_mbox1_invalid_axi
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_pass_data
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_pass_data
+        smoke_test_mcu_mbox0_pass_data
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_strb_wr_csr
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_strb_wr_csr
+        smoke_test_mcu_mbox0_strb_wr_csr
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_target_user
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_target_user
+        smoke_test_mcu_mbox0_target_user
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_usr_lock_out_zero
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox1_usr_lock_out_zero
+        smoke_test_mcu_mbox0_usr_lock_out_zero
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_valid_user
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_valid_user
+        smoke_test_mcu_mbox1_valid_user
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_write_user_lock
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_write_user_lock
+        smoke_test_mcu_mbox1_write_user_lock
+      ]
+    }
+    {
+      name: smoke_test_mcu_mbox_zeroize
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_mbox0_zeroize
+        smoke_test_mcu_mbox1_zeroize
+      ]
+    }
+    {
+      name: smoke_test_mcu_no_rom_config
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_no_rom_config_brkpoint
+        smoke_test_mcu_no_rom_config
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_byte_write
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_byte_write
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_debug_stress
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_debug_stress
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_ecc_db
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_ecc_db
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_ecc_sb
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_ecc_sb
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_execution_region
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_execution_region_max_size
+        smoke_test_mcu_sram_execution_region
+        smoke_test_mcu_sram_execution_region_random_sram_config_axi_user
+      ]
+    }
+    {
+      name: smoke_test_mcu_sram_protected_region
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_sram_protected_region
+      ]
+    }
+    {
+      name: smoke_test_mcu_trace_buffer
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_trace_buffer_63
+        smoke_test_mcu_trace_buffer_64
+        smoke_test_mcu_trace_buffer
+        smoke_test_mcu_trace_buffer_single
+        smoke_test_mcu_trace_buffer_random
+      ]
+    }
+    {
+      name: smoke_test_mcu_trace_buffer_no_debug
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_mcu_trace_buffer_no_debug
+      ]
+    }
+    {
+      name: smoke_test_wdt
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_wdt
+      ]
+    }
+    {
+      name: smoke_test_wdt_rst
+      desc: ""
+      stage: ""
+      tests:
+      [
+        smoke_test_wdt_rst
+      ]
+    }
+  ]
+}
