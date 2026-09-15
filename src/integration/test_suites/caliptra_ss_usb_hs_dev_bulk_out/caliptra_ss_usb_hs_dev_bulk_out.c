@@ -80,24 +80,24 @@ void main(void) {
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT && !bulk_done; poll_count++) {
 
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
-        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
                     ep1_armed = false;
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 transfers_handled++;
                 if (!ep1_armed) {
@@ -107,8 +107,8 @@ void main(void) {
             }
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
         // EP1 OUT completion: use INTSTAT EP1OUT bit rather than polling the
@@ -117,8 +117,8 @@ void main(void) {
         // packet handshake is complete. Polling ACTIVE alone can race against
         // the final DMA write, causing a single-byte corruption on the last
         // 512-byte packet when the VIP performs a retry.
-        if (ep1_armed && (reg_data & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+        if (ep1_armed && (reg_data & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
             uint32_t ep1_entry = usb_ep1_out_read();
             uint32_t residual  = (ep1_entry >> 11) & 0x7FFFu;
             uint32_t received  = USB_HS_BULK_TRANSFER_BYTES - residual;
@@ -150,8 +150,8 @@ void main(void) {
         if (poll_count % 2000 == 0 && poll_count > 0) {
             VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x ep1_armed=%d\n",
                     poll_count,
-                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT),
-                    lsu_read_32(SOC_USBHSD_INTSTAT),
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT),
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT),
                     (int)ep1_armed);
         }
     }

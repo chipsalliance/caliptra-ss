@@ -60,32 +60,32 @@ void main(void) {
         // Read DEVCMDSTAT and INTSTAT BEFORE calling usb_handle_bus_reset().
         // usb_handle_bus_reset() may issue W1C writes to DEVCMDSTAT which
         // would clear DCON_C before the check below, causing missed events.
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
         // Service EP0 OUT (including SETUP packets) so enumeration can complete.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
         // Handle device-level change events (bus reset, connect/disconnect).
         // Call after sampling reg_data so DCON_C is already captured above.
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
             usb_handle_bus_reset();
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // Detect DCON_C (device connection change). DCON_C is a sticky W1C bit
         // in DEVCMDSTAT; it is set when VBUS is removed or applied.
         // reg_data was sampled before any W1C writes so DCON_C is reliable here.
-        if (reg_data & USBHSD_DEVCMDSTAT_DCON_C_MASK) {
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DCON_C_MASK) {
             // Clear DCON_C (W1C).
-            lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
-                lsu_read_32(SOC_USBHSD_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DCON_C_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT,
+                lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) | DEV0_CSR_DEVCMDSTAT_DCON_C_MASK);
             events++;
             VPRINTF(LOW, "MCU: DCON_C event %d DEVCMDSTAT=0x%x\n", events, reg_data);
             if (events >= DCON_EVENTS_TARGET) {

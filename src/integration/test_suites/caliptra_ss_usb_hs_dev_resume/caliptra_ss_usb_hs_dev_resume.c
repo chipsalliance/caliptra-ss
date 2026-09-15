@@ -49,23 +49,23 @@ void main(void) {
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
-    // lsu_write_32(SOC_USBHSD_INTEN, lsu_read_32(SOC_USBHSD_INTEN) | 0xFFFFFFFF);
-    lsu_write_32(SOC_USBHSD_INTEN,
-    lsu_read_32(SOC_USBHSD_INTEN) | USBHSD_INTEN_FRAME_INT_EN_MASK);
-    // lsu_write_32(SOC_USBHSD_INTSETSTAT, lsu_read_32(SOC_USBHSD_INTSETSTAT) | 0xFFFFFFFF);
+    // lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN, lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | 0xFFFFFFFF);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
+    // lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSETSTAT, lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSETSTAT) | 0xFFFFFFFF);
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         // usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
             // reg_data was sampled at the top of the loop (before the DEV_INT
             // W1C write below), so DSUS_C is still readable here.
             // usb_handle_bus_reset() also reads DRES_C before the W1C write.
@@ -74,24 +74,24 @@ void main(void) {
             // DEVCMDSTAT.  Do NOT re-read DEVCMDSTAT before the DSUS_C check
             // or the bit will appear clear.
             // usb_handle_bus_reset();
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
             // Require DSUS (steady-state suspended bit) to also be set when
             // DSUS_C fires. During HS bus reset / chirp the controller can
             // assert DSUS_C transiently while DSUS=0 (device is resetting, not
             // truly suspended). Accepting that transient causes a false PASSED
             // before the real suspend/resume phase even begins.
-            if (!dsus_seen && (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK)
-                           && (reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
+            if (!dsus_seen && (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK)
+                           && (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK)) {
                 // Suspend detected: clear DSUS_C (W1C) and record.
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
-                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
+                lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT,
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) | DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK);
                 dsus_seen = 1;
                 VPRINTF(LOW, "MCU: hs_dev_resume suspend detected DEVCMDSTAT=0x%x\n", reg_data);
             } else if (dsus_seen) {
                 // Re-read DEVCMDSTAT for the DSUS (current-state) bit, which is
                 // not a change-detect bit and is safe to read after the W1C.
-                reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                if (!(reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
+                reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+                if (!(reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK)) {
                     // Resume detected: DSUS cleared after suspend was seen.
                     VPRINTF(LOW, "USB HS device resume PASSED\r\n");
                     break;

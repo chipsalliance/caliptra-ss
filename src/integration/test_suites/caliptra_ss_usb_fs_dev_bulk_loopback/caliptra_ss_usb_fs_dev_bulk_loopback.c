@@ -71,8 +71,8 @@ void main(void) {
     lsu_write_32(dma_base + 0x010, ep1out_entry);
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
-        uint32_t prev_dres = lsu_read_32(SOC_USBHSD_DEVCMDSTAT)
-                             & USBHSD_DEVCMDSTAT_DRES_C_MASK;
+        uint32_t prev_dres = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT)
+                             & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
         /* Re-arm EP1 OUT after bus reset (hardware clears Active on all EPs) */
         if (prev_dres) {
@@ -81,19 +81,19 @@ void main(void) {
             lsu_write_32(dma_base + 0x010, ep1out_entry);
         }
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
-        if (!loopback_done && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+        if (!loopback_done && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
             /* Copy received data from EP1 OUT buffer to EP1 IN buffer */
             for (i = 0; i < 64; i += 4) {
                 rx_word = lsu_read_32(dma_base + 0x200 + i);

@@ -98,7 +98,7 @@ requires:
   - lc_ctrl
   - axi_mem_pkg
   - mcu_top
-  - ip_xxx_3516_hs_mem_wrapper
+  - ip_xxx_3511_hs_mem_compound_wrapper
   - i3c_core
   - fuse_ctrl
   - mci_top
@@ -121,7 +121,8 @@ targets:
 ---
 provides: [caliptra_ss_top_w_stub]
 schema_version: 2.4.0
-requires: [caliptra_ss_top]
+requires:
+  - caliptra_ss_top
 targets:
   rtl:
     files:
@@ -242,7 +243,7 @@ global:
         - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=12
+        - +define+AAXI_INTC_SLAVE_CNT=13
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
