@@ -1,129 +1,70 @@
-# VHDL libraries are compiled in order:
-#   1. usb_lib          — shared packages + ip_xxx_3511 base RTL
-#   2. lib_usb_ip_3511  — ip_xxx_3511_hs high-speed wrapper
-#   3. lib_usb_ip_3515  — ip_xxx_3515_hs high-speed wrapper
-#   4. lib_usb_ip_3516  — ip_xxx_3516_hs_mem high-speed memory wrapper
+# SPDX-License-Identifier: Apache-2.0
 #
-# After the VHDL libraries, the SystemVerilog top-level wrapper
-# (ip_xxx_3516_hs_mem_wrapper) and its AXI-to-AHB converters are compiled.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Playbook compiles RTL VHDL sources into rtl. Alias usb_lib to that same
+# physical library so the compound USB's explicit usb_lib bindings resolve.
 ---
-# --------------------------------------------------------------------------
-# VHDL library: usb_lib
-# Source: third_party/usb2/src/cfg/rtl_base_filelist.f
-# --------------------------------------------------------------------------
 provides: [usb_lib]
 schema_version: 3.1.0
 targets:
   rtl:
-#    directories:
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL
     vhdl_files:
-      # VHDL packages
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_general_subcmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_subcmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_fs_emb_dev_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_configuration_subcmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/ip_xxx_3511.e.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/ip_xxx_3511_cmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_cfg_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_configuration_app_cmsis_dap_jtag_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_ep_config_hub_cmsis_dap_jtag_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_ep_config_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/usb_fs_hub_pkg.p.vhdl
-      # VHDL RTL
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_ahb_master.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_ahb_slave.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_clkrec.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_dma.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_dma.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_pie.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_reg_if.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_sof_timer.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_host_synchronizer.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_pie.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_reg_if.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_rgen.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_sie.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_sieint.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_synchronizer.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_timers_sf.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_tx_sf_dpdm.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/usb_upstreamled.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/usb_general_subcmp_pkg.p.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/usb_subcmp_pkg.p.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/usb_configuration_subcmp_pkg.p.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/usb_ep_config_hub_pkg.p.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/ahb_dma_slave.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ahb_slave.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_reg_if.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_dma.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_pie.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_synchronizer.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_mux.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep0_handler.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep_config_handler.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_app_hw_hub.m.vhdl
 ---
-# --------------------------------------------------------------------------
-# VHDL library: lib_usb_ip_3511
-# Source: third_party/usb2/src/cfg/usb_ip_3511_filelist.f
-# --------------------------------------------------------------------------
-provides: [lib_usb_ip_3511]
+provides: [lib_usb_compound]
 schema_version: 3.1.0
 requires:
   - usb_lib
 targets:
   rtl:
-#    directories:
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511_hs/INTERFACE
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511_hs/STRUCTURE
     vhdl_files:
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511_hs/INTERFACE/ip_xxx_3511_hs.e.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511_hs/INTERFACE/ip_xxx_3511_hs_cmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511_hs/STRUCTURE/ip_xxx_3511_hs_structure.a.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/ip_xxx_3511_hs_mem_compound.e.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure.a.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure_cfg.c.vhdl
+      - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/ip_xxx_3511_hs_mem_compound_cmp_pkg.p.vhdl
 ---
-# --------------------------------------------------------------------------
-# VHDL library: lib_usb_ip_3515
-# Source: third_party/usb2/src/cfg/usb_ip_3515_filelist.f
-# --------------------------------------------------------------------------
-provides: [lib_usb_ip_3515]
-schema_version: 3.1.0
-requires:
-  - usb_lib
+provides: [usb_compound_pkg]
+schema_version: 2.4.0
 targets:
+  tb:
+    files:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_compound_pkg.sv
   rtl:
-#    directories:
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3515_hs/INTERFACE
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3515_hs/STRUCTURE
-    vhdl_files:
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3515_hs/INTERFACE/ip_xxx_3515_hs.e.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3515_hs/INTERFACE/ip_xxx_3515_hs_cmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3515_hs/STRUCTURE/ip_xxx_3515_hs_structure.a.vhdl
+    files:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_compound_pkg.sv
 ---
-# --------------------------------------------------------------------------
-# VHDL library: lib_usb_ip_3516
-# Source: third_party/usb2/src/cfg/usb_ip_3516_filelist.f
-# --------------------------------------------------------------------------
-provides: [lib_usb_ip_3516]
-schema_version: 3.1.0
-requires:
-  - usb_lib
-targets:
-  rtl:
-#    directories:
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3516_hs_mem/INTERFACE
-#      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3516_hs_mem/STRUCTURE
-    vhdl_files:
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/INTERFACE/ahb_dma_slave_cmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3511/RTL/ahb_dma_slave.m.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3516_hs_mem/INTERFACE/ip_xxx_3516_hs_mem.e.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3516_hs_mem/INTERFACE/ip_xxx_3516_hs_mem_cmp_pkg.p.vhdl
-      - $COMPILE_ROOT/../../third_party/usb2/src/ip_xxx_3516_hs_mem/STRUCTURE/ip_xxx_3516_hs_mem_structure.a.vhdl
----
-# --------------------------------------------------------------------------
-# SystemVerilog top-level wrapper: usb2
-# Source: third_party/usb2/src/cfg/usb_verilog_top_filelist.f (RTL only)
-#
-# AXI-to-AHB converters and the ip_xxx_3516_hs_mem_wrapper provide the
-# AXI subordinate interface used by caliptra_ss_top.
-# --------------------------------------------------------------------------
-provides: [ip_xxx_3516_hs_mem_wrapper]
+provides: [ip_xxx_3511_hs_mem_compound_wrapper]
 schema_version: 2.4.0
 requires:
   - axi_sub
   - caliptra_prim
-  - lib_usb_ip_3511
-  - lib_usb_ip_3515
-  - lib_usb_ip_3516
+  - lib_usb_compound
+  - usb_compound_pkg
 targets:
   rtl_lint:
     waiver_files:
@@ -132,18 +73,78 @@ targets:
     directories:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
     files:
-      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/axilite_to_ahb.sv
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/axi_to_ahb.sv
-      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv
-    tops: [ip_xxx_3516_hs_mem_wrapper]
-#    pre_exec: |
-#      set -e
-#      if ! grep -qF "usb_lib :" synopsys_sim.setup 2>/dev/null; then
-#        export USB_ROOT="$CALIPTRA_SS_ROOT/third_party/usb2/src"
-#        mkdir -p usb_lib lib_usb_ip_3511 lib_usb_ip_3515 lib_usb_ip_3516
-#        printf "usb_lib : $(pwd)/usb_lib/\nlib_usb_ip_3511 : $(pwd)/lib_usb_ip_3511/\nlib_usb_ip_3515 : $(pwd)/lib_usb_ip_3515/\nlib_usb_ip_3516 : $(pwd)/lib_usb_ip_3516/\n" >> synopsys_sim.setup
-#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb2/src/cfg/usb_lib_filelist.f"
-#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb2/src/cfg/usb_ip_3511_filelist.f"
-#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb2/src/cfg/usb_ip_3515_filelist.f"
-#        vhdlan -full64 -kdb=common_elab -f "$CALIPTRA_SS_ROOT/third_party/usb2/src/cfg/usb_ip_3516_filelist.f"
-#      fi
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_compound_ahb_decoder.sv
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/ip_xxx_3511_hs_mem_compound_wrapper.sv
+    tops: [ip_xxx_3511_hs_mem_compound_wrapper]
+---
+provides: [usb_top_tb]
+schema_version: 2.4.0
+requires:
+  - ip_xxx_3511_hs_mem_compound_wrapper
+  - usb_compound_pkg
+  - avery_axi_uvm_lib
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/tb
+      - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest
+      - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest/sverilog/include
+      - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
+      - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest/sverilog/include
+    files:
+      - $COMPILE_ROOT/tb/ral/generated/usb_ral_config_pkg.sv
+      - $COMPILE_ROOT/tb/ral/generated/usb_combo_ral_pkg.sv
+      - $COMPILE_ROOT/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
+      - $COMPILE_ROOT/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
+      - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
+      - $COMPILE_ROOT/tb/usb_tb_pkg.sv
+      - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
+      - $COMPILE_ROOT/tb/usb_top_tb.sv
+    tops: [usb_top_tb]
+global:
+  tool:
+    vcs:
+      default:
+        - '-sverilog -full64'
+        - '-assert svaext'
+        - '-debug_access+all'
+        - '-noinherit_timescale=1ns/1ps'
+        # Match the subsystem's handling of redundant Avery package imports.
+        - '-suppress=SV-LCM-PPWI'
+        - +define+SIMULATION
+        - +define+UVM
+        - +define+AVERY_VCS
+        - +define+AVERY_ASSERT_ON
+        - +define+AVERY_MONITOR_ON
+        - +define+AVERY_AXI_UVM
+        - +define+AVERY_UVM
+        - +define+AVERY_AXI_USER
+        - +define+AVERY_NAMED_CONSTRUCTOR
+        - +define+AAXI_MAX_DATA_WIDTH=32
+        - +define+AAXI_MAX_ADDR_WIDTH=32
+        - +define+AAXI_MAX_ID_WIDTH=5
+        - +define+AAXI_MAX_ARUSER_WIDTH=32
+        - +define+AAXI_MAX_AWUSER_WIDTH=32
+        - +define+AAXI_MAX_WUSER_WIDTH=32
+        - +define+AAXI_MAX_BUSER_WIDTH=32
+        - +define+AAXI_MAX_RUSER_WIDTH=32
+        - +define+SVT_UVM_TECHNOLOGY
+        - +define+UVM_PACKER_MAX_BYTES=24000
+        - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+        - +define+SYNOPSYS_SV
+        - +define+DESIGNWARE_INCDIR=$DESIGNWARE_HOME
+        - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+        - +define+SVT_VERSION=latest
+        - +define+SVT_MPHY_PKG_LOAD
+        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+        - '-P $AVERY_PLI/tb_vcs64.tab'
+      elab:
+        # The TB instantiates axi_if; the separately analyzed RTL copy is unused.
+        - '+warn=noUII-L'
+        - '-suppress=SIMU-RESOLUTION,DRTZ'
+        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
+        - '-P $AVERY_PLI/tb_vcs64.tab'
+      sim:
+        - '+vpi'
+        - '+svt_debug_opts'

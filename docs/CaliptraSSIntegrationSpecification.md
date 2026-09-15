@@ -277,10 +277,25 @@ The integration of the Caliptra Subsystem begins with the instantiation of the t
 
 File at this path in the repository includes parameters and defines for Caliptra Subsystem [src/integration/rtl/caliptra_ss_includes.svh](../src/integration/rtl/caliptra_ss_includes.svh)
 
+The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl/caliptra_ss_top.sv). DEV0 is the MCU-facing USB device controller; DEV1 is the SoC-facing USB device controller.
+
+| Parameter | Default | Description |
+|:----------|:--------|:------------|
+| `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option for USB high-speed startup. Leave at `0` for hardware. |
+| `USB_C_DEV0_RAM_ADDRWIDTH` | `9` | Address width of DEV0 packet SRAM. Provide `2**USB_C_DEV0_RAM_ADDRWIDTH` 64-bit words; the default is 4 KiB. |
+| `USB_C_DEV1_RAM_ADDRWIDTH` | `9` | Address width of DEV1 packet SRAM. Provide `2**USB_C_DEV1_RAM_ADDRWIDTH` 64-bit words; the default is 4 KiB. |
+| `USB_C_DEV0_NBPHYSEP` | `14` | Number of physical endpoints for the MCU-facing DEV0 controller; forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. |
+| `USB_C_DEV1_NBPHYSEP` | `14` | Number of physical endpoints for the SoC-facing DEV1 controller; forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. |
+| `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
+
+The device endpoint counts can be configured independently, and each must be a multiple of two as required by the USB IP. They are separate from the hub's fixed `C_NBPHYSEP` value of `2`.
+
+Both endpoint-count parameters are also exposed by [caliptra_ss_top_w_stub](../src/integration/rtl/caliptra_ss_top_w_stub.sv) with the same names and defaults. The [integration testbench](../src/integration/testbench/caliptra_ss_top_tb.sv) exposes `USB_C_DEV0_NBPHYSEP_TB` and `USB_C_DEV1_NBPHYSEP_TB`, each defaulting to `14`, and forwards them to the corresponding DUT parameters.
+
 
 ## Interfaces & Signals
 
-**IMPORTANT NOTE**: All signals assumed to by synchronous to `cptra_ss_clk_i`.
+**IMPORTANT NOTE**: Unless stated otherwise, signals are assumed to be synchronous to `cptra_ss_clk_i`. USB PHY interfaces have separate clock inputs; see [USB Integration Notes](#usb-integration-notes).
 
 **Table: Caliptra SS Straps**
 
@@ -405,6 +420,14 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_r_mgr`           | Caliptra Subsystem MCU System Bus AXI read manager interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_w_sub`              | Caliptra Subsystem I3C AXI write sub-interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_r_sub`              | Caliptra Subsystem I3C AXI read sub-interface |
+| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_w_sub`    | Write access to DEV0 registers and hub control/descriptor storage. |
+| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_r_sub`    | Read access to DEV0 registers and hub control/descriptor storage. |
+| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_w_sub` | Write access to DEV0 packet SRAM. |
+| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_r_sub` | Read access to DEV0 packet SRAM. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_w_sub` | Write access to DEV1 control and status registers. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_r_sub` | Read access to DEV1 control and status registers. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_w_sub` | Write access to DEV1 packet SRAM. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_r_sub` | Read access to DEV1 packet SRAM. |
 | External | input     | na    | `cptra_ss_lc_axi_wr_req_i`           | LC controller AXI write request input    |
 | External | output    | na    | `cptra_ss_lc_axi_wr_rsp_o`           | LC controller AXI write response output  |
 | External | input     | na    | `cptra_ss_lc_axi_rd_req_i`           | LC controller AXI read request input     |
@@ -453,6 +476,51 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox0_data_avail`  | MCU Mailbox0 data available output            |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox1_data_avail`  | MCU Mailbox1 data available output            |
 | External | interface | na    | `cptra_ss_mcu0_el2_mem_export`       | MCU0 EL2 memory export interface         |
+| External | input     | 64    | `cptra_ss_usb_dev0_mem_q_i` | Data read from DEV0 SRAM. |
+| External | output    | 64    | `cptra_ss_usb_dev0_mem_d_o` | Data to write to DEV0 SRAM. |
+| External | output    | 1     | `cptra_ss_usb_dev0_mem_cs_o` | DEV0 SRAM chip select. |
+| External | output    | `USB_C_DEV0_RAM_ADDRWIDTH` | `cptra_ss_usb_dev0_mem_a_o` | DEV0 SRAM word address. |
+| External | output    | 1     | `cptra_ss_usb_dev0_mem_web_out_o` | DEV0 SRAM write enable, active low. |
+| External | output    | 64    | `cptra_ss_usb_dev0_mem_bsel_o` | DEV0 SRAM per-bit write mask, not a byte mask. |
+| External | input     | 64    | `cptra_ss_usb_dev1_mem_q_i` | Data read from DEV1 SRAM. |
+| External | output    | 64    | `cptra_ss_usb_dev1_mem_d_o` | Data to write to DEV1 SRAM. |
+| External | output    | 1     | `cptra_ss_usb_dev1_mem_cs_o` | DEV1 SRAM chip select. |
+| External | output    | `USB_C_DEV1_RAM_ADDRWIDTH` | `cptra_ss_usb_dev1_mem_a_o` | DEV1 SRAM word address. |
+| External | output    | 1     | `cptra_ss_usb_dev1_mem_web_out_o` | DEV1 SRAM write enable, active low. |
+| External | output    | 64    | `cptra_ss_usb_dev1_mem_bsel_o` | DEV1 SRAM per-bit write mask, not a byte mask. |
+| External | output    | 1     | `cptra_ss_usb_dev1_irq_o` | DEV1 interrupt request. Connect to the SoC interrupt controller. |
+| External | output    | 1     | `cptra_ss_usb_dev1_fiq_o` | DEV1 fast interrupt request. Connect to the SoC interrupt controller. |
+| External | input     | 1 | `cptra_ss_usb_utmi_clk_i` | UTMI interface clock from the PHY. |
+| External | input     | 1 | `cptra_ss_usb_utmi_clk_lock_i` | Indicates that the UTMI clock is stable. |
+| External | input     | 8 | `cptra_ss_usb_utmi_rxdata_i` | Received data from the PHY. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxvalid_i` | The PHY is presenting valid received data. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxactive_i` | The PHY is receiving a packet. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxerror_i` | The PHY detected a receive error. |
+| External | output    | 8 | `cptra_ss_usb_utmi_txdata_o` | Data for the PHY to transmit. |
+| External | output    | 1 | `cptra_ss_usb_utmi_txvalid_o` | The controller is presenting valid transmit data. |
+| External | input     | 1 | `cptra_ss_usb_utmi_txready_i` | The PHY can accept transmit data. |
+| External | output    | 1 | `cptra_ss_usb_utmi_reset_o` | Reset control for the PHY. |
+| External | output    | 1 | `cptra_ss_usb_utmi_suspendm_o` | Suspend control for the PHY. |
+| External | output    | 1 | `cptra_ss_usb_utmi_xcvrselect_o` | Selects the PHY transceiver speed. |
+| External | output    | 1 | `cptra_ss_usb_utmi_termselect_o` | Selects the PHY bus termination. |
+| External | output    | 2 | `cptra_ss_usb_utmi_opmode_o` | Selects the PHY operating mode. |
+| External | input     | 2 | `cptra_ss_usb_utmi_linestate_i` | USB data-line state reported by the PHY. |
+| External | output    | 4 | `cptra_ss_usb_utmi_vcontrol_o` | PHY-specific control value. Connect to the PHY vendor-control input. |
+| External | output    | 1 | `cptra_ss_usb_utmi_vcontrolloadm_o` | Tells the PHY when to load the vendor-control value. |
+| External | input     | 8 | `cptra_ss_usb_utmi_vstatus_i` | PHY-specific status from the PHY vendor-status output. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_clk_i` | ULPI interface clock from the PHY. |
+| External | input     | 8 | `cptra_ss_usb_ulpi_rxdata_i` | Data sampled from the ULPI data pins. |
+| External | output    | 8 | `cptra_ss_usb_ulpi_txdata_o` | Data to drive onto the ULPI data pins. |
+| External | output    | 1 | `cptra_ss_usb_ulpi_txenable_o` | Output enable for the ULPI data-pin drivers. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_dir_i` | PHY direction signal; indicates who drives the shared data bus. |
+| External | output    | 1 | `cptra_ss_usb_ulpi_stp_o` | Stop signal from the controller to the PHY. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_nxt_i` | PHY handshake signal for transferring the next data byte. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_ddr_sel_i` | Selects ULPI double-data-rate operation. Set to match the PHY mode. |
+| External | input     | 1 | `cptra_ss_usb_USB_VBus_i` | Indicates that USB VBus power is present. Connect to the VBus detector. |
+| External | output    | 1 | `cptra_ss_usb_vbuscomp_on_o` | Enables the external VBus comparator. |
+| External | output    | 1 | `cptra_ss_usb_chrgvbus_o` | Requests charging VBus through external PHY/power circuitry. |
+| External | output    | 1 | `cptra_ss_usb_dischrgvbus_o` | Requests discharging VBus through external PHY/power circuitry. |
+| External | input     | 1 | `cptra_ss_usb_sessend_i` | Indicates that VBus has fallen below the session-end threshold. |
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
@@ -487,7 +555,8 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 1     | `cptra_ss_i3c_recovery_image_activated_o`                | Indicates the recovery image is activated. If there is no external I3C it should be looped back to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C it can be combined with or replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`                  |
 | External | input     | 1     | `cptra_ss_i3c_recovery_image_activated_i`                | I3C indication for Caliptra Core that the recovery image is activated. If no external I3C should be connected to `cptra_ss_i3c_recovery_image_activated_o`. If there is an external I3C it can be connected to a combination of SOC logic + `cptra_ss_i3c_recovery_image_activated_o`                  |
 | External | input     | 64    | `cptra_ss_cptra_core_generic_input_wires_i` | Generic input wires for Caliptra core |
-| External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core scan mode input            |
+| External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core and USB scan mode input     |
+| External | input     | 1     | `cptra_ss_usb_async_disable_i`       | USB asynchronous logic disable input. Drive low for functional operation. |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
 | External | output    | 1     | `cptra_error_non_fatal`              | Non-fatal error output                   |
 | External | output    | 1     | `cptra_ss_mcu_halt_status_o`         | MCU halt status                          |

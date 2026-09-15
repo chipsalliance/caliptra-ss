@@ -1,0 +1,107 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Independent interface RAL configuration for the compound USB unitbench.
+# gen_ral.py generates four models and the base-address configuration consumed
+# by tb/ral/usb_reg_model.svh. It does not generate RTL or configure the DUT.
+# Run from the repository root:
+#   python3 tools/scripts/gen_ral.py --recipe src/usb/rdl/ral_exports.yml
+# Add --check to detect missing or stale packages without rewriting them.
+# All relative paths below are resolved from this recipe's directory.
+# Keep changes here or in the USB-local RDL, not in generated files.
+
+schema_version: 2
+config_output: ../tb/ral/generated/usb_ral_config_pkg.sv
+interfaces:
+  - name: combo
+    rdl:
+      file: ../../../third_party/usb2/systemrdl/usb_combo.rdl
+      definition: usb_combo
+      parameters:
+        DEV0_NBPHYSEP: 14
+        EPUB: 32
+        DAUB: 32
+        DALB: 17
+        EPFIFO_PAGE: 0x0008_0000
+        DATAFIFO_PAGE: 0x0008_0000
+        SINGLE_BUFFER_SUPPORTED: 1
+        DOUBLE_BUFFER_SUPPORTED: 1
+        TOGGLE_REG_READABLE: 1
+        DEV0_MINOR_REV: 0
+        DEV0_MAJOR_REV: 2
+        HUB_FIFO_WORDS: 172
+    base_address: 0x2010_0000
+    output:
+      path: ../tb/ral/generated/usb_combo_ral_pkg.sv
+      class_name: usb_combo
+      format: package
+      reuse_class_definitions: false
+      use_uvm_factory: false
+
+  - name: dev0_mem
+    rdl:
+      file: ../../../third_party/usb2/systemrdl/usb_device_memory.rdl
+      definition: usb_device_memory
+      parameters:
+        MEMORY_ENTRIES: 512
+    base_address: 0x3010_0000
+    output:
+      path: ../tb/ral/generated/usb_dev0_mem_ral_pkg.sv
+      class_name: usb_dev0_mem_ral
+      memory_instance: packet_mem
+      format: package
+      reuse_class_definitions: false
+      use_uvm_factory: false
+
+  - name: dev1_csr
+    rdl:
+      file: ../../../third_party/usb2/systemrdl/usbhsd.rdl
+      definition: usbhsd
+      parameters:
+        NBPHYSEP: 14
+        EPUB: 32
+        DAUB: 32
+        DALB: 17
+        EPFIFO_PAGE: 0x0008_0000
+        DATAFIFO_PAGE: 0x0008_0000
+        SINGLE_BUFFER_SUPPORTED: 1
+        DOUBLE_BUFFER_SUPPORTED: 1
+        TOGGLE_REG_READABLE: 1
+        PLL_ENABLE: 0
+        UTMI_SUPPORT: 1
+        ULPI_SUPPORT: 1
+        MINOR_REV: 0
+        MAJOR_REV: 2
+    base_address: 0x2010_2000
+    output:
+      path: ../tb/ral/generated/usb_dev1_csr_ral_pkg.sv
+      class_name: usb_dev1_csr
+      format: package
+      reuse_class_definitions: false
+      use_uvm_factory: false
+
+  - name: dev1_mem
+    rdl:
+      file: ../../../third_party/usb2/systemrdl/usb_device_memory.rdl
+      definition: usb_device_memory
+      parameters:
+        MEMORY_ENTRIES: 512
+    base_address: 0x3010_1000
+    output:
+      path: ../tb/ral/generated/usb_dev1_mem_ral_pkg.sv
+      class_name: usb_dev1_mem_ral
+      memory_instance: packet_mem
+      format: package
+      reuse_class_definitions: false
+      use_uvm_factory: false

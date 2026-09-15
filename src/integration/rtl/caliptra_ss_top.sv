@@ -40,7 +40,12 @@ module caliptra_ss_top
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
     ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
-    ,parameter G_SIM_CHIRP_TIMERS = 0
+    ,parameter USB_G_SIM_CHIRP_TIMERS = 0
+    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 9
+    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 9
+    ,parameter USB_C_DEV0_NBPHYSEP = 14
+    ,parameter USB_C_DEV1_NBPHYSEP = 14
+    ,parameter USB_C_HUB_FIFO_SIZE = 172
     ,parameter SPI_HOST_ENA = 1
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
@@ -89,17 +94,21 @@ module caliptra_ss_top
     axi_if.w_sub cptra_ss_i3c_s_axi_if_w_sub,
     axi_if.r_sub cptra_ss_i3c_s_axi_if_r_sub,
 
-// Caliptra SS USB Device AXI Sub Interface
-    axi_if.w_sub cptra_ss_usb_dev_s_axi_if_w_sub,
-    axi_if.r_sub cptra_ss_usb_dev_s_axi_if_r_sub,
+// Caliptra SS USB Combo AXI Sub Interface
+    axi_if.w_sub cptra_ss_usb_combo_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_usb_combo_s_axi_if_r_sub,
 
-// Caliptra SS USB Host AXI Sub Interface
-    axi_if.w_sub cptra_ss_usb_host_s_axi_if_w_sub,
-    axi_if.r_sub cptra_ss_usb_host_s_axi_if_r_sub,
+// Caliptra SS USB DEV0 Memory AXI Sub Interface
+    axi_if.w_sub cptra_ss_usb_dev0_mem_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_usb_dev0_mem_s_axi_if_r_sub,
 
-// Caliptra SS USB DMA AXI Sub Interface
-    axi_if.w_sub cptra_ss_usb_dma_s_axi_if_w_sub,
-    axi_if.r_sub cptra_ss_usb_dma_s_axi_if_r_sub,
+// Caliptra SS USB DEV1 CSR AXI Sub Interface
+    axi_if.w_sub cptra_ss_usb_dev1_csr_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_usb_dev1_csr_s_axi_if_r_sub,
+
+// Caliptra SS USB DEV1 Memory AXI Sub Interface
+    axi_if.w_sub cptra_ss_usb_dev1_mem_s_axi_if_w_sub,
+    axi_if.r_sub cptra_ss_usb_dev1_mem_s_axi_if_r_sub,
 
 // Caliptra SS SPI Host AXI Sub Interface
     axi_if.w_sub cptra_ss_spi_host_s_axi_if_w_sub,
@@ -286,18 +295,27 @@ module caliptra_ss_top
 
     input  logic cptra_i3c_axi_user_id_filtering_enable_i,
 
-// USB core SRAM interface
-    input  logic [63:0]                    cptra_ss_usb_mem_q_i,
-    output logic [63:0]                    cptra_ss_usb_mem_d_o,
-    output logic                           cptra_ss_usb_mem_cs_o,
-    output logic [8:0]                     cptra_ss_usb_mem_a_o,
-    output logic                           cptra_ss_usb_mem_web_out_o,
-    output logic [63:0]                    cptra_ss_usb_mem_bsel_o,
+// USB core SRAM interfaces
+    input  logic [63:0]                    cptra_ss_usb_dev0_mem_q_i,
+    output logic [63:0]                    cptra_ss_usb_dev0_mem_d_o,
+    output logic                           cptra_ss_usb_dev0_mem_cs_o,
+    output logic [USB_C_DEV0_RAM_ADDRWIDTH-1:0] cptra_ss_usb_dev0_mem_a_o,
+    output logic                           cptra_ss_usb_dev0_mem_web_out_o,
+    output logic [63:0]                    cptra_ss_usb_dev0_mem_bsel_o,
+
+    input  logic [63:0]                    cptra_ss_usb_dev1_mem_q_i,
+    output logic [63:0]                    cptra_ss_usb_dev1_mem_d_o,
+    output logic                           cptra_ss_usb_dev1_mem_cs_o,
+    output logic [USB_C_DEV1_RAM_ADDRWIDTH-1:0] cptra_ss_usb_dev1_mem_a_o,
+    output logic                           cptra_ss_usb_dev1_mem_web_out_o,
+    output logic [63:0]                    cptra_ss_usb_dev1_mem_bsel_o,
+
+    output logic                           cptra_ss_usb_dev1_irq_o,
+    output logic                           cptra_ss_usb_dev1_fiq_o,
 
 // USB core UTMI PHY interface
     input  logic                           cptra_ss_usb_utmi_clk_i,
-    input  logic                           cptra_ss_usb_utmi_dev_clk_lock_i,
-    input  logic                           cptra_ss_usb_utmi_hst_clk_lock_i,
+    input  logic                           cptra_ss_usb_utmi_clk_lock_i,
     input  logic [7:0]                     cptra_ss_usb_utmi_rxdata_i,
     input  logic                           cptra_ss_usb_utmi_rxvalid_i,
     input  logic                           cptra_ss_usb_utmi_rxactive_i,
@@ -307,18 +325,13 @@ module caliptra_ss_top
     input  logic                           cptra_ss_usb_utmi_txready_i,
     output logic                           cptra_ss_usb_utmi_reset_o,
     output logic                           cptra_ss_usb_utmi_suspendm_o,
-    output logic [1:0]                     cptra_ss_usb_utmi_xcvrselect_o,
+    output logic                           cptra_ss_usb_utmi_xcvrselect_o,
     output logic                           cptra_ss_usb_utmi_termselect_o,
     output logic [1:0]                     cptra_ss_usb_utmi_opmode_o,
     input  logic [1:0]                     cptra_ss_usb_utmi_linestate_i,
     output logic [3:0]                     cptra_ss_usb_utmi_vcontrol_o,
     output logic                           cptra_ss_usb_utmi_vcontrolloadm_o,
     input  logic [7:0]                     cptra_ss_usb_utmi_vstatus_i,
-    input  logic                           cptra_ss_usb_utmi_hostdisconnect_i,
-    output logic                           cptra_ss_usb_utmi_id_enable_o,
-    input  logic                           cptra_ss_usb_utmi_id_value_i,
-    output logic                           cptra_ss_usb_utmi_dppulldown_o,
-    output logic                           cptra_ss_usb_utmi_dmpulldown_o,
 
 // USB core ULPI PHY interface
     input  logic                           cptra_ss_usb_ulpi_clk_i,
@@ -336,6 +349,7 @@ module caliptra_ss_top
     output logic                           cptra_ss_usb_chrgvbus_o,
     output logic                           cptra_ss_usb_dischrgvbus_o,
     input  logic                           cptra_ss_usb_sessend_i,
+    input  logic                           cptra_ss_usb_async_disable_i,
 
     output logic cptra_ss_usb_recovery_payload_available_o, // TODO: drive from usb_core_i when recovery is supported
     input  logic cptra_ss_usb_recovery_payload_available_i,
@@ -1003,199 +1017,60 @@ module caliptra_ss_top
     // USB core Instance
     //=========================================================================-
 
-    ip_xxx_3516_hs_mem_wrapper #(
-        .AXI_DATA_WIDTH       (`CALIPTRA_AXI_DATA_WIDTH),
-        .AXI_ID_WIDTH         (`CALIPTRA_AXI_ID_WIDTH),
-        .AXI_USER_WIDTH       (`CALIPTRA_AXI_USER_WIDTH),
-        .AXI_DEV_ADDR_WIDTH   ($bits(cptra_ss_usb_dev_s_axi_if_r_sub.araddr)),
-        .AXI_DMA_ADDR_WIDTH   ($bits(cptra_ss_usb_dma_s_axi_if_r_sub.araddr)),
-        .AXI_HOST_ADDR_WIDTH  (32),
-        .G_SIM_CHIRP_TIMERS   (G_SIM_CHIRP_TIMERS)
+    ip_xxx_3511_hs_mem_compound_wrapper #(
+        .C_DEV0_RAM_ADDRWIDTH(USB_C_DEV0_RAM_ADDRWIDTH),
+        .C_DEV1_RAM_ADDRWIDTH(USB_C_DEV1_RAM_ADDRWIDTH),
+        .C_DEV0_NBPHYSEP(USB_C_DEV0_NBPHYSEP),
+        .C_DEV1_NBPHYSEP(USB_C_DEV1_NBPHYSEP),
+        .C_HUB_FIFO_SIZE     (USB_C_HUB_FIFO_SIZE),
+        .G_SIM_CHIRP_TIMERS  (USB_G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
-        // ---- Clock / Reset (all domains share the system clock) ----
-        .dev_axi_aclk     (cptra_ss_clk_i),
-        .dev_axi_aresetn  (cptra_ss_rst_b_o),
-        .host_axi_aclk    (cptra_ss_clk_i),
-        .host_axi_aresetn (cptra_ss_rst_b_o),
-        .dma_axi_aclk     (cptra_ss_clk_i),
-        .dma_axi_aresetn  (cptra_ss_rst_b_o),
+        // ---- Clock / Reset ----
+        .usb_axi_aclk     (cptra_ss_clk_i),
+        .usb_axi_aresetn  (cptra_ss_rst_b_o),
 
-        // ---- Device AXI Subordinate ---- (connected to top-level axi_if)
-        // AR
-        .dev_axi_araddr   (cptra_ss_usb_dev_s_axi_if_r_sub.araddr),
-        .dev_axi_arburst  (cptra_ss_usb_dev_s_axi_if_r_sub.arburst),
-        .dev_axi_arsize   (cptra_ss_usb_dev_s_axi_if_r_sub.arsize),
-        .dev_axi_arlen    (cptra_ss_usb_dev_s_axi_if_r_sub.arlen),
-        .dev_axi_aruser   (cptra_ss_usb_dev_s_axi_if_r_sub.aruser),
-        .dev_axi_arid     (cptra_ss_usb_dev_s_axi_if_r_sub.arid),
-        .dev_axi_arlock   (cptra_ss_usb_dev_s_axi_if_r_sub.arlock),
-        .dev_axi_arcache  (cptra_ss_usb_dev_s_axi_if_r_sub.arcache ),
-        .dev_axi_arprot   (cptra_ss_usb_dev_s_axi_if_r_sub.arprot  ),
-        .dev_axi_arqos    (cptra_ss_usb_dev_s_axi_if_r_sub.arqos   ),
-        .dev_axi_arregion (cptra_ss_usb_dev_s_axi_if_r_sub.arregion),
-        .dev_axi_arvalid  (cptra_ss_usb_dev_s_axi_if_r_sub.arvalid),
-        .dev_axi_arready  (cptra_ss_usb_dev_s_axi_if_r_sub.arready),
-        // R
-        .dev_axi_rdata    (cptra_ss_usb_dev_s_axi_if_r_sub.rdata),
-        .dev_axi_rresp    (cptra_ss_usb_dev_s_axi_if_r_sub.rresp),
-        .dev_axi_rid      (cptra_ss_usb_dev_s_axi_if_r_sub.rid),
-        .dev_axi_ruser    (cptra_ss_usb_dev_s_axi_if_r_sub.ruser),
-        .dev_axi_rlast    (cptra_ss_usb_dev_s_axi_if_r_sub.rlast),
-        .dev_axi_rvalid   (cptra_ss_usb_dev_s_axi_if_r_sub.rvalid),
-        .dev_axi_rready   (cptra_ss_usb_dev_s_axi_if_r_sub.rready),
-        // AW
-        .dev_axi_awaddr   (cptra_ss_usb_dev_s_axi_if_w_sub.awaddr),
-        .dev_axi_awburst  (cptra_ss_usb_dev_s_axi_if_w_sub.awburst),
-        .dev_axi_awsize   (cptra_ss_usb_dev_s_axi_if_w_sub.awsize),
-        .dev_axi_awlen    (cptra_ss_usb_dev_s_axi_if_w_sub.awlen),
-        .dev_axi_awuser   (cptra_ss_usb_dev_s_axi_if_w_sub.awuser),
-        .dev_axi_awid     (cptra_ss_usb_dev_s_axi_if_w_sub.awid),
-        .dev_axi_awlock   (cptra_ss_usb_dev_s_axi_if_w_sub.awlock),
-        .dev_axi_awcache  (cptra_ss_usb_dev_s_axi_if_w_sub.awcache ),
-        .dev_axi_awprot   (cptra_ss_usb_dev_s_axi_if_w_sub.awprot  ),
-        .dev_axi_awqos    (cptra_ss_usb_dev_s_axi_if_w_sub.awqos   ),
-        .dev_axi_awregion (cptra_ss_usb_dev_s_axi_if_w_sub.awregion),
-        .dev_axi_awvalid  (cptra_ss_usb_dev_s_axi_if_w_sub.awvalid),
-        .dev_axi_awready  (cptra_ss_usb_dev_s_axi_if_w_sub.awready),
-        // W
-        .dev_axi_wdata    (cptra_ss_usb_dev_s_axi_if_w_sub.wdata),
-        .dev_axi_wstrb    (cptra_ss_usb_dev_s_axi_if_w_sub.wstrb),
-        .dev_axi_wuser    (cptra_ss_usb_dev_s_axi_if_w_sub.wuser),
-        .dev_axi_wvalid   (cptra_ss_usb_dev_s_axi_if_w_sub.wvalid),
-        .dev_axi_wready   (cptra_ss_usb_dev_s_axi_if_w_sub.wready),
-        .dev_axi_wlast    (cptra_ss_usb_dev_s_axi_if_w_sub.wlast),
-        // B
-        .dev_axi_bresp    (cptra_ss_usb_dev_s_axi_if_w_sub.bresp),
-        .dev_axi_bid      (cptra_ss_usb_dev_s_axi_if_w_sub.bid),
-        .dev_axi_buser    (cptra_ss_usb_dev_s_axi_if_w_sub.buser),
-        .dev_axi_bvalid   (cptra_ss_usb_dev_s_axi_if_w_sub.bvalid),
-        .dev_axi_bready   (cptra_ss_usb_dev_s_axi_if_w_sub.bready),
+        // ---- AXI Interfaces ----
+        .combo_axi_if_w_sub   (cptra_ss_usb_combo_s_axi_if_w_sub),
+        .combo_axi_if_r_sub   (cptra_ss_usb_combo_s_axi_if_r_sub),
+        .dev0_mem_axi_if_w_sub(cptra_ss_usb_dev0_mem_s_axi_if_w_sub),
+        .dev0_mem_axi_if_r_sub(cptra_ss_usb_dev0_mem_s_axi_if_r_sub),
+        .dev1_csr_axi_if_w_sub(cptra_ss_usb_dev1_csr_s_axi_if_w_sub),
+        .dev1_csr_axi_if_r_sub(cptra_ss_usb_dev1_csr_s_axi_if_r_sub),
+        .dev1_mem_axi_if_w_sub(cptra_ss_usb_dev1_mem_s_axi_if_w_sub),
+        .dev1_mem_axi_if_r_sub(cptra_ss_usb_dev1_mem_s_axi_if_r_sub),
 
-        // ---- Host AXI Subordinate ---- (connected to top-level axi_if)
-        // AR
-        .host_axi_araddr  (cptra_ss_usb_host_s_axi_if_r_sub.araddr),
-        .host_axi_arburst (cptra_ss_usb_host_s_axi_if_r_sub.arburst),
-        .host_axi_arsize  (cptra_ss_usb_host_s_axi_if_r_sub.arsize),
-        .host_axi_arlen   (cptra_ss_usb_host_s_axi_if_r_sub.arlen),
-        .host_axi_aruser  (cptra_ss_usb_host_s_axi_if_r_sub.aruser),
-        .host_axi_arid    (cptra_ss_usb_host_s_axi_if_r_sub.arid),
-        .host_axi_arlock  (cptra_ss_usb_host_s_axi_if_r_sub.arlock),
-        .host_axi_arcache (cptra_ss_usb_host_s_axi_if_r_sub.arcache ),
-        .host_axi_arprot  (cptra_ss_usb_host_s_axi_if_r_sub.arprot  ),
-        .host_axi_arqos   (cptra_ss_usb_host_s_axi_if_r_sub.arqos   ),
-        .host_axi_arregion(cptra_ss_usb_host_s_axi_if_r_sub.arregion),
-        .host_axi_arvalid (cptra_ss_usb_host_s_axi_if_r_sub.arvalid),
-        .host_axi_arready (cptra_ss_usb_host_s_axi_if_r_sub.arready),
-        // R
-        .host_axi_rdata   (cptra_ss_usb_host_s_axi_if_r_sub.rdata),
-        .host_axi_rresp   (cptra_ss_usb_host_s_axi_if_r_sub.rresp),
-        .host_axi_rid     (cptra_ss_usb_host_s_axi_if_r_sub.rid),
-        .host_axi_ruser   (cptra_ss_usb_host_s_axi_if_r_sub.ruser),
-        .host_axi_rlast   (cptra_ss_usb_host_s_axi_if_r_sub.rlast),
-        .host_axi_rvalid  (cptra_ss_usb_host_s_axi_if_r_sub.rvalid),
-        .host_axi_rready  (cptra_ss_usb_host_s_axi_if_r_sub.rready),
-        // AW
-        .host_axi_awaddr  (cptra_ss_usb_host_s_axi_if_w_sub.awaddr),
-        .host_axi_awburst (cptra_ss_usb_host_s_axi_if_w_sub.awburst),
-        .host_axi_awsize  (cptra_ss_usb_host_s_axi_if_w_sub.awsize),
-        .host_axi_awlen   (cptra_ss_usb_host_s_axi_if_w_sub.awlen),
-        .host_axi_awuser  (cptra_ss_usb_host_s_axi_if_w_sub.awuser),
-        .host_axi_awid    (cptra_ss_usb_host_s_axi_if_w_sub.awid),
-        .host_axi_awlock  (cptra_ss_usb_host_s_axi_if_w_sub.awlock),
-        .host_axi_awcache (cptra_ss_usb_host_s_axi_if_w_sub.awcache ),
-        .host_axi_awprot  (cptra_ss_usb_host_s_axi_if_w_sub.awprot  ),
-        .host_axi_awqos   (cptra_ss_usb_host_s_axi_if_w_sub.awqos   ),
-        .host_axi_awregion(cptra_ss_usb_host_s_axi_if_w_sub.awregion),
-        .host_axi_awvalid (cptra_ss_usb_host_s_axi_if_w_sub.awvalid),
-        .host_axi_awready (cptra_ss_usb_host_s_axi_if_w_sub.awready),
-        // W
-        .host_axi_wdata   (cptra_ss_usb_host_s_axi_if_w_sub.wdata),
-        .host_axi_wstrb   (cptra_ss_usb_host_s_axi_if_w_sub.wstrb),
-        .host_axi_wuser   (cptra_ss_usb_host_s_axi_if_w_sub.wuser),
-        .host_axi_wvalid  (cptra_ss_usb_host_s_axi_if_w_sub.wvalid),
-        .host_axi_wready  (cptra_ss_usb_host_s_axi_if_w_sub.wready),
-        .host_axi_wlast   (cptra_ss_usb_host_s_axi_if_w_sub.wlast),
-        // B
-        .host_axi_bresp   (cptra_ss_usb_host_s_axi_if_w_sub.bresp),
-        .host_axi_bid     (cptra_ss_usb_host_s_axi_if_w_sub.bid),
-        .host_axi_buser   (cptra_ss_usb_host_s_axi_if_w_sub.buser),
-        .host_axi_bvalid  (cptra_ss_usb_host_s_axi_if_w_sub.bvalid),
-        .host_axi_bready  (cptra_ss_usb_host_s_axi_if_w_sub.bready),
+        // ---- SRAM Interfaces ----
+        .dev0_mem_q      (cptra_ss_usb_dev0_mem_q_i),
+        .dev0_mem_d      (cptra_ss_usb_dev0_mem_d_o),
+        .dev0_mem_cs     (cptra_ss_usb_dev0_mem_cs_o),
+        .dev0_mem_a      (cptra_ss_usb_dev0_mem_a_o),
+        .dev0_mem_web_out(cptra_ss_usb_dev0_mem_web_out_o),
+        .dev0_mem_bsel   (cptra_ss_usb_dev0_mem_bsel_o),
+        .dev1_mem_q      (cptra_ss_usb_dev1_mem_q_i),
+        .dev1_mem_d      (cptra_ss_usb_dev1_mem_d_o),
+        .dev1_mem_cs     (cptra_ss_usb_dev1_mem_cs_o),
+        .dev1_mem_a      (cptra_ss_usb_dev1_mem_a_o),
+        .dev1_mem_web_out(cptra_ss_usb_dev1_mem_web_out_o),
+        .dev1_mem_bsel   (cptra_ss_usb_dev1_mem_bsel_o),
 
-        // ---- DMA AXI Subordinate ---- (connected to top-level axi_if)
-        // AR
-        .dma_axi_araddr   (cptra_ss_usb_dma_s_axi_if_r_sub.araddr),
-        .dma_axi_arburst  (cptra_ss_usb_dma_s_axi_if_r_sub.arburst),
-        .dma_axi_arsize   (cptra_ss_usb_dma_s_axi_if_r_sub.arsize),
-        .dma_axi_arlen    (cptra_ss_usb_dma_s_axi_if_r_sub.arlen),
-        .dma_axi_aruser   (cptra_ss_usb_dma_s_axi_if_r_sub.aruser),
-        .dma_axi_arid     (cptra_ss_usb_dma_s_axi_if_r_sub.arid),
-        .dma_axi_arlock   (cptra_ss_usb_dma_s_axi_if_r_sub.arlock),
-        .dma_axi_arcache  (cptra_ss_usb_dma_s_axi_if_r_sub.arcache ),
-        .dma_axi_arprot   (cptra_ss_usb_dma_s_axi_if_r_sub.arprot  ),
-        .dma_axi_arqos    (cptra_ss_usb_dma_s_axi_if_r_sub.arqos   ),
-        .dma_axi_arregion (cptra_ss_usb_dma_s_axi_if_r_sub.arregion),
-        .dma_axi_arvalid  (cptra_ss_usb_dma_s_axi_if_r_sub.arvalid),
-        .dma_axi_arready  (cptra_ss_usb_dma_s_axi_if_r_sub.arready),
-        // R
-        .dma_axi_rdata    (cptra_ss_usb_dma_s_axi_if_r_sub.rdata),
-        .dma_axi_rresp    (cptra_ss_usb_dma_s_axi_if_r_sub.rresp),
-        .dma_axi_rid      (cptra_ss_usb_dma_s_axi_if_r_sub.rid),
-        .dma_axi_ruser    (cptra_ss_usb_dma_s_axi_if_r_sub.ruser),
-        .dma_axi_rlast    (cptra_ss_usb_dma_s_axi_if_r_sub.rlast),
-        .dma_axi_rvalid   (cptra_ss_usb_dma_s_axi_if_r_sub.rvalid),
-        .dma_axi_rready   (cptra_ss_usb_dma_s_axi_if_r_sub.rready),
-        // AW
-        .dma_axi_awaddr   (cptra_ss_usb_dma_s_axi_if_w_sub.awaddr),
-        .dma_axi_awburst  (cptra_ss_usb_dma_s_axi_if_w_sub.awburst),
-        .dma_axi_awsize   (cptra_ss_usb_dma_s_axi_if_w_sub.awsize),
-        .dma_axi_awlen    (cptra_ss_usb_dma_s_axi_if_w_sub.awlen),
-        .dma_axi_awuser   (cptra_ss_usb_dma_s_axi_if_w_sub.awuser),
-        .dma_axi_awid     (cptra_ss_usb_dma_s_axi_if_w_sub.awid),
-        .dma_axi_awlock   (cptra_ss_usb_dma_s_axi_if_w_sub.awlock),
-        .dma_axi_awcache  (cptra_ss_usb_dma_s_axi_if_w_sub.awcache ),
-        .dma_axi_awprot   (cptra_ss_usb_dma_s_axi_if_w_sub.awprot  ),
-        .dma_axi_awqos    (cptra_ss_usb_dma_s_axi_if_w_sub.awqos   ),
-        .dma_axi_awregion (cptra_ss_usb_dma_s_axi_if_w_sub.awregion),
-        .dma_axi_awvalid  (cptra_ss_usb_dma_s_axi_if_w_sub.awvalid),
-        .dma_axi_awready  (cptra_ss_usb_dma_s_axi_if_w_sub.awready),
-        // W
-        .dma_axi_wdata    (cptra_ss_usb_dma_s_axi_if_w_sub.wdata),
-        .dma_axi_wstrb    (cptra_ss_usb_dma_s_axi_if_w_sub.wstrb),
-        .dma_axi_wuser    (cptra_ss_usb_dma_s_axi_if_w_sub.wuser),
-        .dma_axi_wvalid   (cptra_ss_usb_dma_s_axi_if_w_sub.wvalid),
-        .dma_axi_wready   (cptra_ss_usb_dma_s_axi_if_w_sub.wready),
-        .dma_axi_wlast    (cptra_ss_usb_dma_s_axi_if_w_sub.wlast),
-        // B
-        .dma_axi_bresp    (cptra_ss_usb_dma_s_axi_if_w_sub.bresp),
-        .dma_axi_bid      (cptra_ss_usb_dma_s_axi_if_w_sub.bid),
-        .dma_axi_buser    (cptra_ss_usb_dma_s_axi_if_w_sub.buser),
-        .dma_axi_bvalid   (cptra_ss_usb_dma_s_axi_if_w_sub.bvalid),
-        .dma_axi_bready   (cptra_ss_usb_dma_s_axi_if_w_sub.bready),
-
-        // ---- SRAM Interface ----
-        .mem_q            (cptra_ss_usb_mem_q_i),
-        .mem_d            (cptra_ss_usb_mem_d_o),
-        .mem_cs           (cptra_ss_usb_mem_cs_o),
-        .mem_a            (cptra_ss_usb_mem_a_o),
-        .mem_web_out      (cptra_ss_usb_mem_web_out_o),
-        .mem_bsel         (cptra_ss_usb_mem_bsel_o),
-
-        // ---- Interrupt Outputs ----
-        .dev_usb_int_req_irq  (usb_dev_irq),
-        .dev_usb_Int_req_fiq  (/* TODO */),
-        .dev_usbframetoggle   (/* TODO */),
-        .host_usb_int_req_irq (/* TODO */),
+        // ---- Interrupt / Diagnostic Signals ----
+        .dev0_usb_irq    (usb_dev_irq),
+        .dev1_usb_irq    (cptra_ss_usb_dev1_irq_o),
+        .dev1_usb_fiq    (cptra_ss_usb_dev1_fiq_o),
+        // DEV0 FIQ and diagnostic outputs are not routed in this integration.
+        .dev0_usb_fiq    (),// FIXME: review if these signals should be connected or routed to SOC
+        .usb_frametoggle (),// FIXME: review if these signals should be connected or routed to SOC
+        .usb_needclk     (),// FIXME: review if these signals should be connected or routed to SOC
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
         .vbuscomp_on      (cptra_ss_usb_vbuscomp_on_o),
-        .chrgvbus         (cptra_ss_usb_chrgvbus_o),
-        .dischrgvbus      (cptra_ss_usb_dischrgvbus_o),
+        .chrg_vbus        (cptra_ss_usb_chrgvbus_o),
+        .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
 
         // ---- OTG / Session Signals ----
-        .avalid           (1'b1),  /* TODO: OTG session */
-        .sessend          (cptra_ss_usb_sessend_i),  /* TODO: OTG session */
+        .avalid           (1'b1),                    /* TODO: OTG session */
+        .sessend          (cptra_ss_usb_sessend_i), /* TODO: OTG session */
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
@@ -1215,11 +1090,6 @@ module caliptra_ss_top
         .utmi_vcontrol    (cptra_ss_usb_utmi_vcontrol_o),
         .utmi_vcontrolloadm(cptra_ss_usb_utmi_vcontrolloadm_o),
         .utmi_vstatus     (cptra_ss_usb_utmi_vstatus_i),
-        .utmi_hostdisconnect(cptra_ss_usb_utmi_hostdisconnect_i),
-        .utmi_id_enable   (cptra_ss_usb_utmi_id_enable_o),
-        .utmi_id_value    (cptra_ss_usb_utmi_id_value_i),
-        .utmi_dppulldown  (cptra_ss_usb_utmi_dppulldown_o),
-        .utmi_dmpulldown  (cptra_ss_usb_utmi_dmpulldown_o),
 
         // ---- ULPI PHY Interface ----
         .ulpi_clk         (cptra_ss_usb_ulpi_clk_i),
@@ -1232,19 +1102,14 @@ module caliptra_ss_top
         .ulpi_ddr_sel     (cptra_ss_usb_ulpi_ddr_sel_i),
 
         // ---- Misc Tied-off Signals ----
-        .pdcom                  (),    /* TODO */
-        .dev_usb_needclk        (),    /* TODO */
-        .host_usb_needclk       (),    /* TODO */
-        .dev_sys_donotwakeup_n  (1'b1),/* TODO */
-        .host_sys_donotwakeup_n (1'b1),/* TODO */
-        .dev_sys_wakeup_n       (1'b1),/* TODO */
-        .dev_sys_utmi_clkin_lock (cptra_ss_usb_utmi_dev_clk_lock_i),/* TODO */
-        .host_sys_utmi_clkin_lock(cptra_ss_usb_utmi_hst_clk_lock_i),/* TODO */
-        .host_usb_overcurrent_n (1'b1),/* TODO */
-        .host_usb_portindicator (),    /* TODO */
-        .host_usb_portpower     (),    /* TODO */
-        .token_length_counter   (7'b0),/* TODO */
-        .usb_token_length       ()     /* TODO */
+        // FIXME: Tie-offs to review.
+        .sys_donotwakeup_n   (1'b1),                          /* FIXME */
+        .sys_dev_wakeup_n    (1'b1),                          /* FIXME */
+        .sys_utmi_clkin_lock (cptra_ss_usb_utmi_clk_lock_i), /* FIXME */
+        .USB_EnableHub       (1'b0),                          /* FIXME */
+        .USB_self_powered    (1'b1),                          /* FIXME */
+        .testmode            (cptra_ss_cptra_core_scan_mode_i),
+        .async_disable       (cptra_ss_usb_async_disable_i)
     );
     assign cptra_ss_usb_recovery_payload_available_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported
     assign cptra_ss_usb_recovery_image_activated_o = 1'b0; // TODO: drive from usb_core_i when recovery is supported

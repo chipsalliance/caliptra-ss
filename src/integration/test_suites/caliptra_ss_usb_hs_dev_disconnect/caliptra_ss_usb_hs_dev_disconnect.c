@@ -75,9 +75,9 @@ void main(void) {
     // With FORCE_VBUS=1 the DUT ignores VBus removal; DCON_C never fires
     // and disconnect detection is impossible.
     {
-        uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        cmd &= ~USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK;
-        lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+        uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        cmd &= ~DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK;
+        lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, cmd);
         VPRINTF(LOW, "MCU: FORCE_VBUS cleared (DEVCMDSTAT=0x%x)\n", cmd);
     }
 
@@ -97,24 +97,24 @@ void main(void) {
          poll_count < USB_POLL_TIMEOUT && xfer_count < USB_ENUM_XFER_COUNT;
          poll_count++) {
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
         // DEV_INT: bus-level events (bus reset, connect/disconnect change).
         // Read DEVCMDSTAT before the W1C write - the W1C on DEV_INT also
         // clears the change-detect bits (DRES_C, DSUS_C, DCON_C) in
         // DEVCMDSTAT, so reg_data must be sampled first.
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT: SETUP or status-phase OUT token.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 if (usb_handle_control_transfer()) {
                     xfer_count++;
                     VPRINTF(LOW, "MCU: enumeration transfer %d of %d\n",
@@ -124,8 +124,8 @@ void main(void) {
         }
 
         // EP0 IN: clear interrupt.
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
     }
 
@@ -144,48 +144,48 @@ void main(void) {
     // VPRINTF(LOW, "MCU: Phase 2 - waiting for %d SOF events\n", USB_SOF_COUNT);
 
     // Clear any pending FRAME_INT before enabling.
-    lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
 
     // Enable FRAME_INT in INTEN.
-    lsu_write_32(SOC_USBHSD_INTEN,
-                 lsu_read_32(SOC_USBHSD_INTEN) | USBHSD_INTEN_FRAME_INT_EN_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+                 lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
 
     // sof_count = 0;
     // for (poll_count = 0;
     //      poll_count < USB_POLL_TIMEOUT && sof_count < USB_SOF_COUNT;
     //      poll_count++) {
 
-    //     reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    //     intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+    //     reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    //     intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
-    //     if (intstat & USBHSD_INTSTAT_FRAME_INT_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+    //     if (intstat & DEV0_CSR_INTSTAT_FRAME_INT_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
     //         sof_count++;
     //         VPRINTF(LOW, "MCU: SOF event %d\n", sof_count);
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-    //         if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+    //     if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+    //         if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
     //             usb_handle_bus_reset();
     //         }
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-    //         if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+    //     if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+    //         if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
     //             usb_handle_control_transfer();
     //         }
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    //     if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
     //     }
     // }
 
     // Disable FRAME_INT.
-    lsu_write_32(SOC_USBHSD_INTEN,
-                 lsu_read_32(SOC_USBHSD_INTEN) & ~USBHSD_INTEN_FRAME_INT_EN_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+                 lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) & ~DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
 
     // if (sof_count < USB_SOF_COUNT) {
     //     VPRINTF(LOW, "MCU: FAIL - SOF timeout (got %d of %d)\n",
@@ -208,42 +208,42 @@ void main(void) {
     // ------------------------------------------------------------------
     VPRINTF(LOW, "MCU: Phase 3 - waiting for disconnect (DCON_C + VBUS_DEBOUNCED=0)\n");
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
         // Service EP0 on every pass (VIP may send SETUP packets while waiting).
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
             }
         }
 
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
         // DCON_C is a change-detect bit sampled before any W1C write above,
         // so its value in reg_data is still valid for the check below.
-        if ((reg_data & USBHSD_DEVCMDSTAT_DCON_C_MASK) &&
-            !(reg_data & USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK)) {
+        if ((reg_data & DEV0_CSR_DEVCMDSTAT_DCON_C_MASK) &&
+            !(reg_data & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK)) {
             VPRINTF(LOW, "MCU: Disconnect detected - DEVCMDSTAT=0x%x\n", reg_data);
 
             // Clear DCON so FsPullup/TermSelect de-asserts.
             // VIP link state machine requires FsPullup low to leave ENABLED.
             {
-                uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                cmd &= ~USBHSD_DEVCMDSTAT_DCON_MASK;
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+                uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+                cmd &= ~DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+                lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, cmd);
                 VPRINTF(LOW, "MCU: DCON cleared (DEVCMDSTAT=0x%x)\n", cmd);
             }
 
             // Clear DCON_C (W1C) after DCON is de-asserted.
             // Use RMW so DEV_EN and all other sticky bits are preserved.
             {
-                uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                cmd |= USBHSD_DEVCMDSTAT_DCON_C_MASK;
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+                uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+                cmd |= DEV0_CSR_DEVCMDSTAT_DCON_C_MASK;
+                lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, cmd);
             }
             break;
         }
@@ -255,8 +255,8 @@ void main(void) {
     }
 
     // Verify VBUS_DEBOUNCED is clear after disconnect.
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    if (reg_data & USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) {
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    if (reg_data & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) {
         VPRINTF(LOW, "MCU: FAIL - VBUS_DEBOUNCED still set after disconnect (DEVCMDSTAT=0x%x)\n",
                 reg_data);
         csr_write_mpmc_halt();
@@ -276,8 +276,8 @@ void main(void) {
     // ------------------------------------------------------------------
     VPRINTF(LOW, "MCU: Phase 3b - waiting for VBus to return (VBUS_DEBOUNCED)\n");
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        if (reg_data & USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) {
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) {
             VPRINTF(LOW, "MCU: VBus returned - DEVCMDSTAT=0x%x\n", reg_data);
             break;
         }
@@ -292,9 +292,9 @@ void main(void) {
     // eventually brings the link back to ENABLED.
     
     {
-        uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        cmd |= USBHSD_DEVCMDSTAT_DCON_MASK;
-        lsu_write_32(SOC_USBHSD_DEVCMDSTAT, cmd);
+        uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        cmd |= DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+        lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, cmd);
         VPRINTF(LOW, "MCU: DCON re-asserted (DEVCMDSTAT=0x%x)\n", cmd);
     }
 
@@ -309,19 +309,19 @@ void main(void) {
          poll_count < USB_POLL_TIMEOUT && xfer_count < USB_ENUM_XFER_COUNT;
          poll_count++) {
 
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 if (usb_handle_control_transfer()) {
                     xfer_count++;
                     VPRINTF(LOW, "MCU: re-enumeration transfer %d of %d\n",
@@ -330,8 +330,8 @@ void main(void) {
             }
         }
 
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
     }
 
@@ -348,45 +348,45 @@ void main(void) {
     // VPRINTF(LOW, "MCU: Phase 5 - waiting for %d SOF events after reconnect\n",
     //         USB_SOF_COUNT);
 
-    lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
-    lsu_write_32(SOC_USBHSD_INTEN,
-                 lsu_read_32(SOC_USBHSD_INTEN) | USBHSD_INTEN_FRAME_INT_EN_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+                 lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
 
     // sof_count = 0;
     // for (poll_count = 0;
     //      poll_count < USB_POLL_TIMEOUT && sof_count < USB_SOF_COUNT;
     //      poll_count++) {
 
-    //     reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    //     intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+    //     reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    //     intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
 
-    //     if (intstat & USBHSD_INTSTAT_FRAME_INT_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+    //     if (intstat & DEV0_CSR_INTSTAT_FRAME_INT_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
     //         sof_count++;
     //         VPRINTF(LOW, "MCU: SOF event %d (post-reconnect)\n", sof_count);
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-    //         if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+    //     if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+    //         if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
     //             usb_handle_bus_reset();
     //         }
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-    //         if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+    //     if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+    //         if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
     //             usb_handle_control_transfer();
     //         }
     //     }
 
-    //     if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-    //         lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    //     if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+    //         lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
     //     }
     // }
 
-    // lsu_write_32(SOC_USBHSD_INTEN,
-    //              lsu_read_32(SOC_USBHSD_INTEN) & ~USBHSD_INTEN_FRAME_INT_EN_MASK);
+    // lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+    //              lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) & ~DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
 
     // if (sof_count < USB_SOF_COUNT) {
     //     VPRINTF(LOW, "MCU: FAIL - SOF timeout after reconnect (got %d of %d)\n",
@@ -399,7 +399,7 @@ void main(void) {
     // All phases passed.
     // ------------------------------------------------------------------
     VPRINTF(LOW, "MCU: USB HS disconnect test PASSED\n");
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     csr_write_mpmc_halt();
 }

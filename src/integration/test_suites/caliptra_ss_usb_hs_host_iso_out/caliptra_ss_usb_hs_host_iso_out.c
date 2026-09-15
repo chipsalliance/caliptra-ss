@@ -37,7 +37,7 @@
 //
 // Test flow:
 //   1.  Boot MCU, HCRESET, set HOST mode, RS.
-//   2.  Write ISO PTD slot 0 at USB SRAM base (0x20010000).
+//   2.  Write ISO PTD slot 0 at the DEV0 USB SRAM base.
 //   3.  Initialize 1024-byte payload at USB_DATA_BASE (SRAM+0x400): word[i]=i.
 //   4.  SET_CONFIGURATION(1) to addr=1 via ATL CTRL PTD (enumerate VIP EP1).
 //   5.  Re-configure ISO list registers (ISO_PTD_BASE, ISO_SKIP, LAST_PTD).
@@ -87,17 +87,17 @@
 
 // ---------------------------------------------------------------------------
 // USB SRAM layout
-//   0x20010000 + 0x000: ISO PTD slot 0 OUT (32 bytes, 0x000-0x01F)
-//   0x20010000 + 0x020: ISO PTD slot 1 IN  (32 bytes, 0x020-0x03F)
-//   0x20010000 + 0x400: ISO OUT payload    (1024 bytes, word[i]=i)
-//   0x20010000 + 0x800: ISO IN  rx buffer  (1024 bytes, written by controller)
+//   DEV0 SRAM + 0x000: ISO PTD slot 0 OUT (32 bytes, 0x000-0x01F)
+//   DEV0 SRAM + 0x020: ISO PTD slot 1 IN  (32 bytes, 0x020-0x03F)
+//   DEV0 SRAM + 0x400: ISO OUT payload    (1024 bytes, word[i]=i)
+//   DEV0 SRAM + 0x800: ISO IN  rx buffer  (1024 bytes, written by controller)
 //
-//   ATL PTD area also at 0x20010000 but only used transiently for enumeration.
+//   The ATL PTD area also starts at DEV0 SRAM but is used only during enumeration.
 //   ISO PTD slot 0 occupies bytes 0x000-0x01F (32 bytes). ATL slot 0 is
 //   bytes 0x000-0x00F (16 bytes). They overlap in slot 0 but enumeration
 //   (ATL) finishes before ISO starts, so this is safe.
 // ---------------------------------------------------------------------------
-#define USB_DMA_BASE           0x20010000u
+#define USB_DMA_BASE           SOC_USB_DEV0_MEM_BASE_ADDR
 #define USB_ISO_PTD_BASE       (USB_DMA_BASE)
 #define USB_ATL_PTD_BASE       (USB_DMA_BASE)
 #define USB_DATA_BASE          (USB_DMA_BASE + 0x400u)
