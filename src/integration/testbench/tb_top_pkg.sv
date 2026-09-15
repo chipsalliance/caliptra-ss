@@ -86,6 +86,13 @@ package tb_top_pkg;
         parameter SPI_HOST_CMD_DEPTH_TB = `SPI_HOST_CMD_DEPTH_TB;
     `endif
 
+    // UART
+    `ifndef UART_ENA_TB
+        parameter UART_ENA_TB           = 1;
+    `else
+        parameter UART_ENA_TB           = `UART_ENA_TB;
+    `endif
+
     // SOC SRAM
     localparam SOC_SRAM_SIZE_BYTES   = 16384; // 16KB
     localparam SOC_SRAM_ADDR_WIDTH   = $clog2(SOC_SRAM_SIZE_BYTES);
