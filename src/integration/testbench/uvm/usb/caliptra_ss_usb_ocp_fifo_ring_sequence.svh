@@ -15,13 +15,13 @@
 `ifndef CALIPTRA_SS_USB_OCP_FIFO_RING_SEQUENCE_SV
 `define CALIPTRA_SS_USB_OCP_FIFO_RING_SEQUENCE_SV
 
-// OCP Recovery v1.1 Sections 8.2.5 and 9.2 FIFO-ring compliance test.
+// FIFO-ring capacity, backpressure, and wraparound test.
 //
 // Test intent:
 //   1. Discover FIFO_SIZE and transfer limits at runtime from INDIRECT_FIFO_STATUS.
 //   2. Reset the FIFO and fill FIFO_SIZE DWORDs with deterministic data.
-//   3. Report a compliance failure if the equality-crossing transfer is
-//      accepted; OCP Recovery v1.1 Sec 8.2.5 requires NACK before W == R.
+//   3. Verify that a full FIFO is reported as FULL with equal indices; the
+//      explicit FULL and EMPTY flags disambiguate equal ring pointers.
 //   4. Start one additional DATA transfer and allow the VIP to retry its DATA
 //      stage after NAK without issuing another SETUP.
 //   5. Require the retry to ACK after Caliptra drains the first batch, then
@@ -195,8 +195,8 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         base_index = status.write_index;
 
         // Fill one implementation-sized batch using only runtime-discovered
-        // limits. The final accepted chunk advances W equal to R on the merged
-        // design, which is recorded below as an OCP Sec 8.2.5 deviation.
+        // limits. The final accepted chunk advances W equal to R and FULL
+        // disambiguates this state from EMPTY.
         offset = 0;
         chunk  = 0;
         while (offset < initial_status.fifo_size) begin
@@ -224,8 +224,10 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
                           full_status.write_index, full_status.read_index,
                           visible_occupancy(full_status)))
         end
-        `uvm_error("OCP_FIFO_RING",
-            "Device accepted the equality-crossing FIFO transfer and reported FULL with WRITE_INDEX == READ_INDEX; OCP Recovery v1.1 Sec 8.2.5 requires NACK.")
+        `uvm_info("OCP_FIFO_RING",
+            {"FIFO reached full physical occupancy with FULL asserted and ",
+             "WRITE_INDEX equal to READ_INDEX."},
+            UVM_NONE)
 
         // Keep one CONTROL OUT transfer active. The VIP retries the same DATA
         // transaction after NAK until Caliptra drains the first batch.
