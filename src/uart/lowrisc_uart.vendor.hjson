@@ -1,0 +1,21 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+{
+  name: "lowrisc_uart",
+  target_dir: "rtl",
+  patch_dir: "patch",
+
+  upstream: {
+    url: "https://github.com/lowRISC/opentitan.git",
+    rev: "earlgrey_1.0.0",
+  },
+
+  mapping: [
+    {
+      from:      "hw/ip/uart/rtl",
+      to:        ".",
+      patch_dir: "."
+    }
+  ]
+}
