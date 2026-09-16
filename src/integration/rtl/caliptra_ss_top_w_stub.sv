@@ -34,7 +34,10 @@ module caliptra_ss_top_w_stub #(
     input logic cptra_ss_clk_i,
     input logic cptra_ss_cptra_core_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tck_i,
-    input jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i
+    input jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i,
+    input logic cptra_ss_usb_utmi_clk_i,
+    input logic cptra_ss_usb_ulpi_clk_i,
+    input logic cptra_ss_usb_utmi_clk_lock_i
 );
 
     import axi_pkg::*;
@@ -343,8 +346,6 @@ module caliptra_ss_top_w_stub #(
     logic        cptra_ss_usb_dev1_fiq_o;
 
 // USB core UTMI PHY interface
-    logic        cptra_ss_usb_utmi_clk_i;
-    logic        cptra_ss_usb_utmi_clk_lock_i;
     logic [7:0]  cptra_ss_usb_utmi_rxdata_i;
     logic        cptra_ss_usb_utmi_rxvalid_i;
     logic        cptra_ss_usb_utmi_rxactive_i;
@@ -363,7 +364,6 @@ module caliptra_ss_top_w_stub #(
     logic [7:0]  cptra_ss_usb_utmi_vstatus_i;
 
 // USB core ULPI PHY interface
-    logic        cptra_ss_usb_ulpi_clk_i;
     logic [7:0]  cptra_ss_usb_ulpi_rxdata_i;
     logic [7:0]  cptra_ss_usb_ulpi_txdata_o;
     logic        cptra_ss_usb_ulpi_txenable_o;
@@ -469,8 +469,6 @@ module caliptra_ss_top_w_stub #(
         cptra_ss_usb_dev1_mem_q_i = '0;
 
     // USB core UTMI PHY interface
-        cptra_ss_usb_utmi_clk_i = '0;
-        cptra_ss_usb_utmi_clk_lock_i = '0;
         cptra_ss_usb_utmi_rxdata_i = '0;
         cptra_ss_usb_utmi_rxvalid_i = '0;
         cptra_ss_usb_utmi_rxactive_i = '0;
@@ -480,7 +478,6 @@ module caliptra_ss_top_w_stub #(
         cptra_ss_usb_utmi_vstatus_i = '0;
 
     // USB core ULPI PHY interface
-        cptra_ss_usb_ulpi_clk_i = '0;
         cptra_ss_usb_ulpi_rxdata_i = '0;
         cptra_ss_usb_ulpi_dir_i = '0;
         cptra_ss_usb_ulpi_nxt_i = '0;
