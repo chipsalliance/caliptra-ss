@@ -27,6 +27,7 @@
 `include "../../../third_party/usb2/systemrdl/usbhsd.rdl"
 `include "../../../third_party/usb2/systemrdl/usbhsh.rdl"
 `include "../../../src/spi_host/rtl/spi_host.rdl"
+`include "../../../src/uart/rtl/uart.rdl"
 
 addrmap soc {
 
@@ -49,4 +50,6 @@ addrmap soc {
     lc_ctrl lc_ctrl @ 0x7000_0400;
 
     spi_host spi_host @ 0x7000_0800;
+
+    uart uart @ 0x7000_0C00;
 };

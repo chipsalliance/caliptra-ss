@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+diff --git a/uart_core.sv b/uart_core.sv
+index a316b883..642f518b 100644
+--- a/uart_core.sv
++++ b/uart_core.sv
+@@ -316,7 +316,7 @@ module caliptra_ss_uart_core (
+     if (uart_fifo_txilvl >= (TxFifoDepthW-2)) begin
+       tx_watermark_thresh = TxFifoDepthW'(TxFifoDepth/2);
+     end else begin
+-      tx_watermark_thresh = 1'b1 << uart_fifo_txilvl;
++      tx_watermark_thresh = TxFifoDepthW'(1'b1) << uart_fifo_txilvl;
+     end
+     event_tx_watermark = tx_fifo_depth < tx_watermark_thresh;
+   end
+@@ -344,7 +344,7 @@ module caliptra_ss_uart_core (
+       // The maximum valid threshold threshold is an exception and saturates at RxFifoDepth-2.
+       rx_watermark_thresh = RxFifoDepthW'(RxFifoDepth-2);
+     end else begin
+-      rx_watermark_thresh = 1'b1 << uart_fifo_rxilvl;
++      rx_watermark_thresh = RxFifoDepthW'(1'b1) << uart_fifo_rxilvl;
+     end
+     event_rx_watermark = rx_fifo_depth >= rx_watermark_thresh;
+   end
