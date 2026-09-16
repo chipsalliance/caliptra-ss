@@ -293,7 +293,7 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 
 ## Interfaces & Signals
 
-**IMPORTANT NOTE**: Unless stated otherwise, signals are assumed to be synchronous to `cptra_ss_clk_i`. USB PHY interfaces have separate clock inputs; see [USB Integration Notes](#usb-integration-notes).
+**IMPORTANT NOTE**: Unless stated otherwise, signals are assumed to be synchronous to `cptra_ss_clk_i`.
 
 **Table: Caliptra SS Straps**
 
@@ -488,32 +488,32 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 64    | `cptra_ss_usb_dev1_mem_bsel_o` | DEV1 SRAM per-bit write mask, not a byte mask. |
 | External | output    | 1     | `cptra_ss_usb_dev1_irq_o` | DEV1 interrupt request. Connect to the SoC interrupt controller. |
 | External | output    | 1     | `cptra_ss_usb_dev1_fiq_o` | DEV1 fast interrupt request. Connect to the SoC interrupt controller. |
-| External | input     | 1 | `cptra_ss_usb_utmi_clk_i` | UTMI interface clock from the PHY. |
-| External | input     | 1 | `cptra_ss_usb_utmi_clk_lock_i` | Indicates that the UTMI clock is stable. |
-| External | input     | 8 | `cptra_ss_usb_utmi_rxdata_i` | Received data from the PHY. |
-| External | input     | 1 | `cptra_ss_usb_utmi_rxvalid_i` | The PHY is presenting valid received data. |
-| External | input     | 1 | `cptra_ss_usb_utmi_rxactive_i` | The PHY is receiving a packet. |
-| External | input     | 1 | `cptra_ss_usb_utmi_rxerror_i` | The PHY detected a receive error. |
-| External | output    | 8 | `cptra_ss_usb_utmi_txdata_o` | Data for the PHY to transmit. |
-| External | output    | 1 | `cptra_ss_usb_utmi_txvalid_o` | The controller is presenting valid transmit data. |
-| External | input     | 1 | `cptra_ss_usb_utmi_txready_i` | The PHY can accept transmit data. |
-| External | output    | 1 | `cptra_ss_usb_utmi_reset_o` | Reset control for the PHY. |
-| External | output    | 1 | `cptra_ss_usb_utmi_suspendm_o` | Suspend control for the PHY. |
-| External | output    | 1 | `cptra_ss_usb_utmi_xcvrselect_o` | Selects the PHY transceiver speed. |
-| External | output    | 1 | `cptra_ss_usb_utmi_termselect_o` | Selects the PHY bus termination. |
-| External | output    | 2 | `cptra_ss_usb_utmi_opmode_o` | Selects the PHY operating mode. |
-| External | input     | 2 | `cptra_ss_usb_utmi_linestate_i` | USB data-line state reported by the PHY. |
-| External | output    | 4 | `cptra_ss_usb_utmi_vcontrol_o` | PHY-specific control value. Connect to the PHY vendor-control input. |
-| External | output    | 1 | `cptra_ss_usb_utmi_vcontrolloadm_o` | Tells the PHY when to load the vendor-control value. |
-| External | input     | 8 | `cptra_ss_usb_utmi_vstatus_i` | PHY-specific status from the PHY vendor-status output. |
-| External | input     | 1 | `cptra_ss_usb_ulpi_clk_i` | ULPI interface clock from the PHY. |
-| External | input     | 8 | `cptra_ss_usb_ulpi_rxdata_i` | Data sampled from the ULPI data pins. |
-| External | output    | 8 | `cptra_ss_usb_ulpi_txdata_o` | Data to drive onto the ULPI data pins. |
-| External | output    | 1 | `cptra_ss_usb_ulpi_txenable_o` | Output enable for the ULPI data-pin drivers. |
-| External | input     | 1 | `cptra_ss_usb_ulpi_dir_i` | PHY direction signal; indicates who drives the shared data bus. |
-| External | output    | 1 | `cptra_ss_usb_ulpi_stp_o` | Stop signal from the controller to the PHY. |
-| External | input     | 1 | `cptra_ss_usb_ulpi_nxt_i` | PHY handshake signal for transferring the next data byte. |
-| External | input     | 1 | `cptra_ss_usb_ulpi_ddr_sel_i` | Selects ULPI double-data-rate operation. Set to match the PHY mode. |
+| External | input     | 1 | `cptra_ss_usb_utmi_clk_i` | Clock from the PHY for the UTMI interface, separate from `cptra_ss_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_clk_lock_i` | PHY clock-status input indicating that `cptra_ss_usb_utmi_clk_i` is stable; not a UTMI-clocked data signal. |
+| External | input     | 8 | `cptra_ss_usb_utmi_rxdata_i` | Received data from the PHY. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxvalid_i` | The PHY is presenting valid received data. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxactive_i` | The PHY is receiving a packet. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_rxerror_i` | The PHY detected a receive error. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 8 | `cptra_ss_usb_utmi_txdata_o` | Data for the PHY to transmit. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_utmi_txvalid_o` | The controller is presenting valid transmit data. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_txready_i` | The PHY can accept transmit data. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_utmi_reset_o` | Reset control for the PHY, generated on `cptra_ss_clk_i` rather than `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_utmi_suspendm_o` | Suspend/wakeup control for the PHY; can change while `cptra_ss_usb_utmi_clk_i` is stopped. |
+| External | output    | 1 | `cptra_ss_usb_utmi_xcvrselect_o` | Selects the PHY transceiver speed. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_utmi_termselect_o` | Selects the PHY bus termination. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 2 | `cptra_ss_usb_utmi_opmode_o` | Selects the PHY operating mode. Clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 2 | `cptra_ss_usb_utmi_linestate_i` | USB data-line state reported by the PHY. Sampled on `cptra_ss_usb_utmi_clk_i` during active operation; also used for wake detection while that clock is stopped. |
+| External | output    | 4 | `cptra_ss_usb_utmi_vcontrol_o` | PHY-specific control value. Connect to the PHY vendor-control input; associated UTMI interface clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_utmi_vcontrolloadm_o` | Tells the PHY when to load the vendor-control value; associated UTMI interface clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 8 | `cptra_ss_usb_utmi_vstatus_i` | PHY-specific status from the PHY vendor-status output; associated UTMI interface clock: `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_clk_i` | Clock from the PHY for the ULPI interface, separate from `cptra_ss_clk_i`. |
+| External | input     | 8 | `cptra_ss_usb_ulpi_rxdata_i` | Data sampled from the ULPI data pins on `cptra_ss_usb_ulpi_clk_i` during active operation; also carries asynchronous line-state/wakeup indications in low-power mode. |
+| External | output    | 8 | `cptra_ss_usb_ulpi_txdata_o` | Data to drive onto the ULPI data pins. Clock: `cptra_ss_usb_ulpi_clk_i`. |
+| External | output    | 1 | `cptra_ss_usb_ulpi_txenable_o` | Output enable for the ULPI data-pin drivers. Interface clock: `cptra_ss_usb_ulpi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_dir_i` | PHY direction signal; indicates who drives the shared data bus. Interface clock: `cptra_ss_usb_ulpi_clk_i` during active operation; also used in low-power wake detection. |
+| External | output    | 1 | `cptra_ss_usb_ulpi_stp_o` | Stop signal from the controller to the PHY. Interface clock: `cptra_ss_usb_ulpi_clk_i` during active operation; also used to request wakeup while that clock is stopped. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_nxt_i` | PHY handshake signal for transferring the next data byte. Clock: `cptra_ss_usb_ulpi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_ulpi_ddr_sel_i` | Static selection of double-data-rate operation on `cptra_ss_usb_ulpi_clk_i`. Set to match the PHY mode. |
 | External | input     | 1 | `cptra_ss_usb_USB_VBus_i` | Indicates that USB VBus power is present. Connect to the VBus detector. |
 | External | output    | 1 | `cptra_ss_usb_vbuscomp_on_o` | Enables the external VBus comparator. |
 | External | output    | 1 | `cptra_ss_usb_chrgvbus_o` | Requests charging VBus through external PHY/power circuitry. |
