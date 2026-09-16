@@ -106,7 +106,7 @@ TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/ml_kem_fixed
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -272,6 +272,11 @@ CFLAGS += $(TB_DPI_INCS)
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
 VCS_COMP_OPTS += +define+ABR_ASSERT_ON
+# Pass USB_HOST_PHY_TEST=1 on the make command line to enable this define
+# without disturbing VCS_COMP_OPTS variable expansion order.
+ifdef USB_HOST_PHY_TEST
+VCS_COMP_OPTS += +define+CALIPTRA_USB_HOST_PHY_TEST
+endif
 VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
 VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
@@ -294,7 +299,7 @@ VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=11
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=12
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -403,6 +408,7 @@ verilator: mcu_program.hex verilator-build
 
 vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/ml-kem/tv
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
 	  $(VCS_SIM_EXTRA_OPTS) \

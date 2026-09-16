@@ -114,6 +114,7 @@
 `define MCI_TOP_MCI_REG_DEBUG_IN                                                                    (32'h410)
 `define MCI_TOP_MCI_REG_DEBUG_OUT                                                                   (32'h414)
 `define MCI_TOP_MCI_REG_SS_DEBUG_INTENT                                                             (32'h418)
+`define MCI_TOP_MCI_REG_SS_DEBUG_INTENT_MCU                                                         (32'h41c)
 `define MCI_TOP_MCI_REG_SS_CONFIG_DONE_STICKY                                                       (32'h440)
 `define MCI_TOP_MCI_REG_SS_CONFIG_DONE                                                              (32'h444)
 `define MCI_TOP_MCI_REG_PROD_DEBUG_UNLOCK_PK_HASH_REG_0_0                                           (32'h480)

@@ -27,12 +27,10 @@
 #endif
 
 // -------------------------------------------------------------------------
-// DMA slave base address and SRAM buffer layout constants.
-// These are not RDL-specified and therefore not present in any generated
-// header. All USB register addresses and field masks are in soc_address_map.h
-// under the USBHSD_* / USBHSH_* naming convention; use those directly.
+// DEV0 packet SRAM buffer layout. Retain the driver alias for existing device
+// tests; host-controller registers are not part of the compound USB map.
 // -------------------------------------------------------------------------
-#define USB_DMA_BASE_ADDR            0x20010000u
+#define USB_DMA_BASE_ADDR            SOC_USB_DEV0_MEM_BASE_ADDR
 
 #define USB_SRAM_EP_LIST_OFFSET      0x000u
 #define USB_SRAM_SETUP_BUF_OFFSET    0x100u
@@ -92,15 +90,42 @@ typedef struct {
 // EP command/status list entry bit fields (from RTL usb_dma.m.vhdl line 420:
 //   "epinfo_nbytes <= dma_rdata(25 downto 11);" and line 421:
 //   "epinfo_addr_offset <= dma_rdata(C_DALB-7 downto 0);" with C_DALB=17
-//   in our integration → addr_offset at bits [10:0]).
+//   in our integration -> addr_offset at bits [10:0]).
 //   [31]    = Active
 //   [29]    = Stall
 //   [25:11] = NBytes (15-bit transfer length)
 //   [10:0]  = AddrOffset (buffer byte address >> 6)
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
+#define USB_EP_ENTRY_DISABLED     (1u << 30)
 #define USB_EP_ENTRY_STALL        (1u << 29)
+// T bit (bit 26) - Endpoint Type:
+//   0 = Generic (bulk / rate-feedback interrupt)
+//   1 = Periodic. The RF bit then selects isochronous vs interrupt.
+// RF bit (bit 27) - Rate Feedback / Toggle Value:
+//   When T=1: 0 = Isochronous (max packet <= 1024 bytes in HS)
+//             1 = Interrupt
+// To arm an isochronous endpoint set USB_EP_ENTRY_TYPE_PERIODIC and
+// leave USB_EP_ENTRY_RF_ISO (0) - i.e. do not set the RF bit.
+// Without T=1 the hardware treats the EP as generic (bulk) and sends
+// ACK/NAK handshakes, which is wrong for isochronous per USB 2.0 spec
+// and the NXP IP Integration Guide (section 4.2.3).
+#define USB_EP_ENTRY_TYPE_PERIODIC (1u << 26)
+#define USB_EP_ENTRY_RF_ISO        (0u)
+#define USB_EP_ENTRY_RF_INT        (1u << 27)
 #define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
 #define USB_EP_ENTRY_ADDR(off)    (((uint32_t)(off) >> 6) & 0x7FFu)
+
+#define USB_DEV0_ENDPOINT_INTERRUPT_MASK \
+    (DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK | \
+     DEV0_CSR_INTSTAT_EP1OUT_MASK | DEV0_CSR_INTSTAT_EP1IN_MASK | \
+     DEV0_CSR_INTSTAT_EP2OUT_MASK | DEV0_CSR_INTSTAT_EP2IN_MASK | \
+     DEV0_CSR_INTSTAT_EP3OUT_MASK | DEV0_CSR_INTSTAT_EP3IN_MASK | \
+     DEV0_CSR_INTSTAT_EP4OUT_MASK | DEV0_CSR_INTSTAT_EP4IN_MASK | \
+     DEV0_CSR_INTSTAT_EP5OUT_MASK | DEV0_CSR_INTSTAT_EP5IN_MASK | \
+     DEV0_CSR_INTSTAT_EP_UPPER_MASK)
+#define USB_DEV0_IMPLEMENTED_INTERRUPT_MASK \
+    (USB_DEV0_ENDPOINT_INTERRUPT_MASK | DEV0_CSR_INTSTAT_FRAME_INT_MASK | \
+     DEV0_CSR_INTSTAT_DEV_INT_MASK)
 
 // -------------------------------------------------------------------------
 // USB 2.0 standard request codes (bRequest field of SETUP packet)
@@ -185,6 +210,13 @@ extern const uint32_t usb_default_device_descriptor[5];
 // STALL class requests).
 void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
                    usb_class_request_handler_t class_req_fn);
+
+// Initialize the USB device controller in FS-only mode: identical to
+// boot_usb_core() but sets DEVCMDSTAT bit 21 (PFSC) to suppress device-side
+// K-chirp. Use in tests with a FS-only host VIP (high_speed_capable=0) so
+// the UTMI TX is ready immediately after bus reset instead of waiting ~2.2ms
+// for the chirp timeout. Do NOT use when HS operation is required.
+void boot_usb_core_fs(void);
 
 // Re-arm EP0 OUT, SETUP, and IN buffer address entries in the EP list.
 // Must be called after any bus reset to restore hardware-cleared entries.

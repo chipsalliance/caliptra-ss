@@ -23,6 +23,7 @@
 `define VEER_INTR_VEC_MCI                 1
 `define VEER_INTR_VEC_I3C                 2
 `define VEER_INTR_VEC_USB                 3
-`define VEER_INTR_EXT_LSB                 4
+`define VEER_INTR_VEC_SPIH                4
+`define VEER_INTR_EXT_LSB                 5
     
 `endif // CALIPTRA_SS_INCLUDES_SVH

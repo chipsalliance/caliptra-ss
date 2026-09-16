@@ -186,6 +186,24 @@ module fc_lcc_tb_services (
             release `MCI_PATH.LCC_state_translator.state_error;
             $asserton(0, `MCI_PATH.LCC_state_translator.UnProvSIGNAL_with_Volatile_Decoding_A);
           end
+          CMD_OTP_DFT_EN_EXPECT_LOW: begin
+            if (caliptra_ss_top_tb.cptra_ss_otp_dft_en_o !== 1'b0) begin
+              $display("ERROR: fc_lcc_tb_services: cptra_ss_otp_dft_en_o=%0b, expected 0 (fuse macro debug must be closed)",
+                       caliptra_ss_top_tb.cptra_ss_otp_dft_en_o);
+              $display("* TESTCASE FAILED");
+              $finish;
+            end
+            $display("fc_lcc_tb_services: cptra_ss_otp_dft_en_o is low, as expected");
+          end
+          CMD_OTP_DFT_EN_EXPECT_HIGH: begin
+            if (caliptra_ss_top_tb.cptra_ss_otp_dft_en_o !== 1'b1) begin
+              $display("ERROR: fc_lcc_tb_services: cptra_ss_otp_dft_en_o=%0b, expected 1 (fuse macro debug must be open)",
+                       caliptra_ss_top_tb.cptra_ss_otp_dft_en_o);
+              $display("* TESTCASE FAILED");
+              $finish;
+            end
+            $display("fc_lcc_tb_services: cptra_ss_otp_dft_en_o is high, as expected");
+          end
           default: begin
             // No action for unrecognized commands.
           end

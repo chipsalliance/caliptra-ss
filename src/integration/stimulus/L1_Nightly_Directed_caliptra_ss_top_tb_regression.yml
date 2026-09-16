@@ -138,3 +138,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_arb_007/caliptra_ss_usb_ocp_arb_007: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_fifo_flow_usb_nak/caliptra_ss_usb_ocp_fifo_flow_usb_nak: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_clk_gating/smoke_test_clk_gating: { weight: 10 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_otp_dft_en/smoke_test_otp_dft_en: { weight: 100 }

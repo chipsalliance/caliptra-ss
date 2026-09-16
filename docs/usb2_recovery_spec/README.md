@@ -4,9 +4,8 @@ Status: design nearly-complete (OCP Recovery arbiter architecture).
 
 Scope: the OCP Secure Firmware Recovery enhancements added to the Caliptra
 Subsystem USB 2.0 device block (`third_party/usb2`). This document describes
-the implemented RTL and the requirements on integrating production firmware.
-Explicitly marked proposed sections describe planned interfaces, not interfaces
-already available in RTL.
+*definitively how the hardware is implemented in RTL* and how *production*
+firmware is expected to interact with it.
 
 > Register reference note: Section 7 below inlines the full register/field
 > layout as a temporary measure. Once the generated register-reference HTML

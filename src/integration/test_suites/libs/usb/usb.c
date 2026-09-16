@@ -31,9 +31,9 @@
 // staged address regardless of call order.
 static uint8_t usb_dev_addr_shadow = 0;
 
-// Shadow of the currently-selected configuration value (USB 2.0 §9.4.7).
+// Shadow of the currently-selected configuration value (USB 2.0 section 9.4.7).
 // Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on
-// bus reset (device returns to Default state per USB 2.0 §9.1.1.3).
+// bus reset (device returns to Default state per USB 2.0 section 9.1.1.3).
 static uint8_t usb_current_config = 0;
 static uint32_t usb_transfers_handled = 0;
 static uint32_t usb_bus_reset_count = 0;
@@ -50,9 +50,9 @@ const uint8_t *(*usb_config_descriptor_override)(uint16_t *len) = 0;
 bool (*usb_class_request_override)(const usb_setup_pkt_t *setup) = 0;
 
 static void usb_devcmdstat_write(uint32_t val) {
-    val = (val & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK)
-        | (usb_dev_addr_shadow & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, val);
+    val = (val & ~DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK)
+        | (usb_dev_addr_shadow & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, val);
 }
 
 __attribute__((weak))
@@ -114,17 +114,8 @@ void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
 
     VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller\n");
 
-    // --- Step 0a: Enable device-mode in the OTG PHY mux ---
-    // PORTMODE.PORT_MODE (bit 16) drives the VHDL dev_enable signal that
-    // routes UTMI signals between host and device controllers in the OTG
-    // PHY mux. Must be set to 1 so the device controller sees the UTMI bus.
-    // Other PORTMODE bits are reset-default; write the PORT_MODE bit directly.
-    reg_data = USBHSH_PORTMODE_PORT_MODE_MASK;
-    lsu_write_32(SOC_USBHSH_PORTMODE, reg_data);
-    VPRINTF(LOW, "MCU: USB PORTMODE configured (dev mode, write-only) = 0x%x\n", reg_data);
-
     // Read DEVCMDSTAT to check initial state
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT initial = 0x%x\n", reg_data);
 
     // --- Step 0: Initialize SRAM via DMA port ---
@@ -154,39 +145,123 @@ void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
     VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
 
     // --- Step 1: Set EP list base address ---
-    lsu_write_32(SOC_USBHSD_EPLISTSTART, 0x00000000);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_EPLISTSTART, 0x00000000);
 
     // --- Step 2: Set data buffer page address ---
-    lsu_write_32(SOC_USBHSD_DATABUFSTART, 0x00000000);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DATABUFSTART, 0x00000000);
 
     // --- Step 3: Wait for VBUS ---
     VPRINTF(LOW, "MCU: Wait VBUS\n");
-    while(!(lsu_read_32(SOC_USBHSD_DEVCMDSTAT) & USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK));
+    while(!(lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK));
 
     // --- Step 4: Enable device ---
     // HS link-up: do NOT set FORCE_FULLSPEED. The device controller will
     // perform HS chirp at the next bus reset.
-    reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
-             | USBHSD_DEVCMDSTAT_DCON_MASK;
-    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
+    reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
+             | DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
 
     // Read back to confirm
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
 
     // --- Step 5: Enable interrupts ---
-    lsu_write_32(SOC_USBHSD_INTEN,
-        USBHSD_INTSTAT_DEV_INT_MASK |
-        USBHSD_INTSTAT_EP0OUT_MASK  |
-        USBHSD_INTSTAT_EP0IN_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+        DEV0_CSR_INTSTAT_DEV_INT_MASK |
+        DEV0_CSR_INTSTAT_EP0OUT_MASK  |
+        DEV0_CSR_INTSTAT_EP0IN_MASK);
     VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
-        USBHSD_INTSTAT_DEV_INT_MASK | USBHSD_INTSTAT_EP0OUT_MASK | USBHSD_INTSTAT_EP0IN_MASK);
+        DEV0_CSR_INTSTAT_DEV_INT_MASK | DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK);
 
     // --- Step 6: Clear pending interrupts ---
-    lsu_write_32(SOC_USBHSD_INTSTAT, 0xC0000FFF);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, USB_DEV0_IMPLEMENTED_INTERRUPT_MASK);
 
     VPRINTF(LOW, "MCU: boot_usb_core - done\n");
+}
+
+// -------------------------------------------------------------------------
+// boot_usb_core_fs - Initialize the USB device controller in FS-only mode
+//
+// Identical to boot_usb_core() except that DEVCMDSTAT bit 21 (PFSC - Port
+// Force Full Speed Connect) is set before connecting. Setting PFSC prevents
+// the device controller from emitting K-chirp after bus reset, so the UTMI
+// TX is ready for FS packet exchange immediately. Use this function in tests
+// that run with a FS-only host (e.g. SVT VIP with high_speed_capable=0)
+// where no chirp reply will be driven and the default chirp timeout (~2.2ms)
+// would stall the first SETUP transfer.
+//
+// DO NOT call this function when HS operation is required.
+// -------------------------------------------------------------------------
+void boot_usb_core_fs(void) {
+    uint32_t reg_data;
+
+    VPRINTF(LOW, "MCU: boot_usb_core_fs - initializing USB device controller (FS-only)\n");
+
+    // Read DEVCMDSTAT to check initial state
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT initial = 0x%x\n", reg_data);
+
+    // --- Step 0: Initialize SRAM via DMA port ---
+
+    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP), addr_offset = 0x140>>6 = 5
+    uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
+                           | USB_EP_ENTRY_NBYTES(8)
+                           | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_OUT_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
+    VPRINTF(LOW, "MCU: EP0 OUT entry = 0x%x\n", ep0_out_entry);
+
+    // EP0 SETUP buffer address entry: addr_offset = 0x100>>6 = 4
+    uint32_t ep0_setup_entry = USB_EP_ENTRY_ADDR(USB_SRAM_SETUP_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x004, ep0_setup_entry);
+
+    // EP0 IN entry: Active=0, NBytes=0, addr_offset = 0x180>>6 = 6
+    uint32_t ep0_in_entry = USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x008, ep0_in_entry);
+
+    // Reserved word
+    lsu_write_32(USB_DMA_BASE_ADDR + 0x00C, 0x00000000);
+
+    // Zero out remaining EP entries (EP1-EP4, 4 words each)
+    for (uint32_t i = 0x010; i < 0x100; i += 4) {
+        lsu_write_32(USB_DMA_BASE_ADDR + i, 0x00000000);
+    }
+    VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
+
+    // --- Step 1: Set EP list base address ---
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_EPLISTSTART, 0x00000000);
+
+    // --- Step 2: Set data buffer page address ---
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DATABUFSTART, 0x00000000);
+
+    // --- Step 3: Enable device in FS-only mode ---
+    // PFSC (bit 21) suppresses the device-side K-chirp so that the UTMI TX
+    // initializes immediately for FS. Without PFSC the chirp state machine
+    // would wait ~2.2ms for a J-chirp reply that a FS-only host never sends,
+    // delaying the first SETUP ACK beyond the VIP tend_to_end_delay_fs window.
+    reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
+             | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
+             | DEV0_CSR_DEVCMDSTAT_DCON_MASK
+             | DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK;
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, reg_data);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
+
+    // Read back to confirm
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
+
+    // --- Step 4: Enable interrupts ---
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+        DEV0_CSR_INTSTAT_DEV_INT_MASK |
+        DEV0_CSR_INTSTAT_EP0OUT_MASK  |
+        DEV0_CSR_INTSTAT_EP0IN_MASK);
+    VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
+        DEV0_CSR_INTSTAT_DEV_INT_MASK | DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK);
+
+    // --- Step 5: Clear pending interrupts ---
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, USB_DEV0_IMPLEMENTED_INTERRUPT_MASK);
+
+    VPRINTF(LOW, "MCU: boot_usb_core_fs - done\n");
 }
 
 void usb_ep0_reinit(void) {
@@ -202,8 +277,8 @@ void usb_ep0_reinit(void) {
 }
 
 void usb_handle_bus_reset(void) {
-    uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    if (!(cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK)) {
+    uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    if (!(cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK)) {
         return;
     }
     VPRINTF(LOW, "MCU: USB bus reset detected\n");
@@ -212,16 +287,16 @@ void usb_handle_bus_reset(void) {
     // Bus reset returns device address to 0 per USB spec; update shadow so all
     // subsequent DEVCMDSTAT RMW writes carry the reset address.
     usb_dev_addr_shadow = 0;
-    // USB 2.0 §9.1.1.3: reset returns the device to the Default state with
+    // USB 2.0 section 9.1.1.3: reset returns the device to the Default state with
     // no configuration selected. Mirror that in the firmware shadow so a
     // subsequent GET_CONFIGURATION reports 0 until SET_CONFIGURATION runs.
     usb_current_config = 0;
     // Clear DRES_C (W1C)
-    usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+    usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
     usb_ep0_reinit();
     // Reset device address to 0 per USB spec
-    cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    cmd &= ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK;
+    cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    cmd &= ~DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK;
     usb_devcmdstat_write(cmd);
 }
 
@@ -286,8 +361,8 @@ void usb_ep0_arm_out(void) {
 }
 
 void usb_clear_setup_bit(void) {
-    uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_SETUP_MASK);
+    uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_SETUP_MASK);
 }
 
 uint8_t usb_is_configured(void) {
@@ -500,8 +575,8 @@ uint32_t usb_legacy_ep0_get_bus_reset_count(void)
 }
 
 void usb_set_device_address(uint8_t addr) {
-    usb_dev_addr_shadow = (uint8_t)(addr & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
-    uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    usb_dev_addr_shadow = (uint8_t)(addr & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK);
+    uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     usb_devcmdstat_write(cmd);
 }
 
@@ -651,7 +726,7 @@ bool usb_handle_control_transfer(void) {
         usb_ep0_in_irq_count++;
         usb_ep0_irq_count++;
     }
-    lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
     usb_ep0_in_pending_latched = 0u;
 
     if (req_type == USB_TYPE_STANDARD) {
@@ -680,9 +755,9 @@ bool usb_handle_control_transfer(void) {
                     if (have_descriptor) {
                         usb_ep0_arm_out();
                         // Enable IntOnNAK_CO for status-phase detection
-                        uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-                        cmd |= USBHSD_DEVCMDSTAT_INTONNAK_CO_MASK;
-                        cmd &= ~USBHSD_DEVCMDSTAT_INTONNAK_CI_MASK;
+                        uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+                        cmd |=  DEV0_CSR_DEVCMDSTAT_INTONNAK_CO_MASK;
+                        cmd &= ~DEV0_CSR_DEVCMDSTAT_INTONNAK_CI_MASK;
                         usb_devcmdstat_write(cmd);
                         handled = true;
                     } else {
@@ -738,7 +813,7 @@ bool usb_handle_control_transfer(void) {
                     // Standard device SET_CONFIGURATION: wValue low byte is
                     // the configuration value. The device descriptor declares
                     // bNumConfigurations=1, so accept 0 (unconfigure) or 1
-                    // and stall any other value per USB 2.0 §9.4.7.
+                    // and stall any other value per USB 2.0 section 9.4.7.
                     uint8_t new_cfg = (uint8_t)(pkt.wValue & 0xFFu);
                     if (new_cfg <= 1u) {
                         usb_current_config = new_cfg;
@@ -830,10 +905,3 @@ bool usb_handle_control_transfer(void) {
 
     return handled;
 }
-
-//,. .,
-//) o (
-// The MCU build currently pulls only usb.o from libs/usb. Include the
-// recovery helper implementation here so its symbols link automatically
-// without requiring per-test makefile edits.
-#include "usb_ocp_recovery.c"

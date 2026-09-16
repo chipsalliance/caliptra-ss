@@ -106,6 +106,7 @@ void main(void) {
     cptra_mcu_mbox_acquire_lock_set_execute(0, 100);
 
     cptra_mcu_mbox_wait_for_status(0, 1000, MCU_MBOX_CMD_COMPLETE);
+    cptra_mcu_mbox_write_execute(0, 0);
 
     while(1);
 

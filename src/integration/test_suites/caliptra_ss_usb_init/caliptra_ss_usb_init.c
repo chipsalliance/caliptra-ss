@@ -24,7 +24,6 @@
 #include "riscv_hw_if.h"
 #include "soc_ifc.h"
 #include "caliptra_ss_lib.h"
-#define USB_EVENT_LOOP_DIAG_PERIOD 1000u
 #include "usb.h"
 #include "stdint.h"
 #include "veer-csr.h"
@@ -49,6 +48,7 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 void main (void) {
 
     uint32_t reg_data;
+    uint32_t poll_count;
     uint32_t transfers_handled = 0;
 
     VPRINTF(LOW, "=================\nMCU: USB init test\n=================\n\n");
@@ -74,7 +74,7 @@ void main (void) {
 
     // Report final state
     usb_dump_state("final");
-    reg_data = lsu_read_32(SOC_USBHSD_INFO);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INFO);
     VPRINTF(LOW, "MCU: USB INFO final = 0x%x\n", reg_data);
 
     // Signal test completion to the testbench

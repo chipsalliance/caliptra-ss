@@ -36,45 +36,6 @@ volatile uint32_t intr_count       = 0;
 
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
-//  Function Name : update_prot_cap
-//  Description   : 
-//  Caliptra ROM updates the PROT_CAP register 
-//  to set "Flashless boot (From RESET)", "FIFO CMS Support", and "Push-C-Image Support".
-void update_prot_cap(){
-    
-    uint32_t i3c_reg_data; 
-    
-    VPRINTF(LOW, "CPTRA: executing update_prot_cap \n"); 
-
-    // PROT CAP REGISTERs need to be updated by MCU, not CALIPTRA
-    // // 0x52454356 = "RECV"
-    // i3c_reg_data = 0x52454356;
-    // VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
-    // soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, 0, &i3c_reg_data, 4, 0);
-    
-    // // 0x4f435020 = "OCP "
-    // i3c_reg_data = 0x4f435020;
-    // VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
-    // soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, 0, &i3c_reg_data, 4, 0);
-    
-    // Write PROT_CAP_2
-    // Bytes 8,9,10,11: 0x00000000
-    // Byte 8: Major version number = 0x1
-    // Byte 9: Minor version number = 0x1
-    // Byte 10-11, value {0x1} to Bit 7: Push-C-Image support
-    // Byte 10-11, value {0x1} to Bit 11: Flashless boot (from reset) 
-    // Byte 10-11, value {0x1} to Bit 12: FIFO CMS support (INDIRECT_FIFO_CTRL)
-    i3c_reg_data = 0x00000000;
-    i3c_reg_data = 0x1 << (0  + 0)  | i3c_reg_data; // Major version number
-    i3c_reg_data = 0x1 << (8  + 0)  | i3c_reg_data; // Minor version number
-    i3c_reg_data = 0x1 << (16 + 7)  | i3c_reg_data; // Push-C-Image support
-    i3c_reg_data = 0x1 << (16 + 11) | i3c_reg_data; // Flashless boot (from reset)
-    i3c_reg_data = 0x1 << (16 + 12) | i3c_reg_data; // FIFO CMS support (INDIRECT_FIFO_CTRL)
-    VPRINTF(LOW, "CPTRA: Writing SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2 with 'h %0x\n", i3c_reg_data);
-    soc_ifc_axi_dma_send_ahb_payload(SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, 0, &i3c_reg_data, 4, 0);	
-
-}
-
 // Function Name : update_device_status
 // Description   : 
 // To start streaming boot, Caliptra ROM updates the DEVICE_STATUS register 
@@ -268,8 +229,6 @@ void recovery_sequence() {
     
     uint32_t fw_image_size;
     uint32_t i3c_reg_data;
-
-    update_prot_cap();
 
     // Write DEVICE_STATUS_0
     // Byte 0    : 0x3 : Recovery mode - ready to accept recovery image

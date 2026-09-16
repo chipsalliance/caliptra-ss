@@ -31,6 +31,61 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
   `include "caliptra_ss_usb_nak_monitor_callback.svh"
+
+  `include "caliptra_ss_usb_base_test.svh"
+  `include "caliptra_ss_usb_basic_utmi_test.svh"
+
+  // FS testcases (pre-existing)
+  `include "caliptra_ss_usb_fs_clock_sequence.svh"
+  `include "caliptra_ss_usb_fs_clock_test.svh"
+  // Legacy DUT-host tests are retired: compound USB has no host controller.
+  // Their source files remain archived, but are not registered in this package.
+
+  // HS testcases
+  `include "caliptra_ss_usb_hs_conn_sequence.svh"
+  `include "caliptra_ss_usb_hs_conn_test.svh"
+  `include "caliptra_ss_usb_hs_dev_bulk_out_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_bulk_out_test.svh"
+  `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
+  `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_nbyte_test.svh"
+  `include "caliptra_ss_usb_hs_dev_powerdown_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_powerdown_test.svh"
+  `include "caliptra_ss_usb_hs_dev_remote_wakeup_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_remote_wakeup_test.svh"
+  `include "caliptra_ss_usb_hs_dev_resume_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_resume_test.svh"
+//  `include "caliptra_ss_usb_hs_dev_ctrl_ep_sequence.svh"
+//  `include "caliptra_ss_usb_hs_dev_ctrl_ep_test.svh"
+//  `include "caliptra_ss_usb_hs_dev_sof_sequence.svh"
+//  `include "caliptra_ss_usb_hs_dev_sof_test.svh"
+  `include "caliptra_ss_usb_hs_dev_iso_out_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_iso_out_test.svh"
+//  `include "caliptra_ss_usb_hs_host_powerdown_sequence.svh"
+//  `include "caliptra_ss_usb_hs_host_powerdown_test.svh"
+//  `include "caliptra_ss_usb_hs_host_resume_sequence.svh"
+//  `include "caliptra_ss_usb_hs_host_resume_test.svh"
+
+  // FS additional testcases
+  `include "caliptra_ss_usb_fs_dev_bulk_loopback_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_bulk_loopback_test.svh"
+//  `include "caliptra_ss_usb_fs_host_intnak_sequence.svh"
+//  `include "caliptra_ss_usb_fs_host_intnak_test.svh"
+//  `include "caliptra_ss_usb_fs_host_remotewakeup_sequence.svh"
+//  `include "caliptra_ss_usb_fs_host_remotewakeup_test.svh"
+//  `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence.svh"
+//  `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test.svh"
+//  `include "caliptra_ss_usb_fs_idau_sec_level_sequence.svh"
+//  `include "caliptra_ss_usb_fs_idau_sec_level_test.svh"
+//  `include "caliptra_ss_usb_fs_root2_sequence.svh"
+//  `include "caliptra_ss_usb_fs_root2_test.svh"
+
+  // USBD testcases
+  `include "caliptra_ss_usb_usbd_conn_sequence.svh"
+  `include "caliptra_ss_usb_usbd_conn_test.svh"
+
+  // OCP Recovery sequences
   `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_arbiter_packet_callback.svh"
   `include "caliptra_ss_usb_ocp_arbiter_checker.svh"
@@ -46,8 +101,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_firmware_status_ownership_sequence.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
+
   `include "caliptra_ss_usb_ocp_scoreboard.svh"
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
+
+  // OCP Recovery tests
   `include "caliptra_ss_usb_base_test.svh"
   `include "caliptra_ss_usb_basic_utmi_test.svh"
   `include "caliptra_ss_usb_ocp_recovery_test.svh"

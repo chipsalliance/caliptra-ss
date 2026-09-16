@@ -162,7 +162,7 @@ void main (void) {
             while(1);
         }
 
-        // Set TARGET_USER and TARGET_USER_VALID
+        // Configure and grant Caliptra as the Target.
         mcu_mbox_write_target_user(mbox_num, caliptra_uc_axi_id);
         mcu_mbox_write_target_user_valid(mbox_num, 1);
 

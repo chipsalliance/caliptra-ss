@@ -654,6 +654,11 @@
 `define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_LOW                                                    (0)
 `define MCI_REG_SS_DEBUG_INTENT_DEBUG_INTENT_MASK                                                   (32'h1)
 `endif
+`ifndef MCI_REG_SS_DEBUG_INTENT_MCU
+`define MCI_REG_SS_DEBUG_INTENT_MCU                                                                 (32'h41c)
+`define MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_LOW                                                (0)
+`define MCI_REG_SS_DEBUG_INTENT_MCU_DEBUG_INTENT_MASK                                               (32'h1)
+`endif
 `ifndef MCI_REG_SS_CONFIG_DONE_STICKY
 `define MCI_REG_SS_CONFIG_DONE_STICKY                                                               (32'h440)
 `define MCI_REG_SS_CONFIG_DONE_STICKY_DONE_LOW                                                      (0)
@@ -2249,8 +2254,6 @@
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
-`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
 `ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
 `define MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
@@ -2263,6 +2266,8 @@
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
 `endif
 `ifndef MCU_MBOX1_CSR_MBOX_LOCK
 `define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (32'h200000)
@@ -2295,8 +2300,6 @@
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
-`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
 `ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
 `define MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
@@ -2309,6 +2312,8 @@
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
 `endif
 
 

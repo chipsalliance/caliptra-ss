@@ -45,6 +45,7 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 
 		bit [7:0] data[];
 		bit [7:0] read_data[];
+		bit [7:0] exp_data[];
 		int       random_data_count;
 
 		//-- I3C bus initialization and address assignment
@@ -54,6 +55,8 @@ class i3c_reg_rd_wr extends cptra_ss_i3c_core_base_test;
 		test_log.step("Step : Reading Read Only Registers");
 
 		read_reg(recovery_target_addr,`I3C_CORE_PROT_CAP, 15, read_data);
+		build_prot_cap_exp_data(exp_data);
+		check_data(read_data, exp_data, 15);
 		read_reg(recovery_target_addr,`I3C_CORE_DEVICE_ID,  24, read_data);
 		read_reg(recovery_target_addr,`I3C_CORE_DEVICE_STATUS,  7, read_data);
 		read_reg(recovery_target_addr,`I3C_CORE_RECOVERY_STATUS,  2, read_data);

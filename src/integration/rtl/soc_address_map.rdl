@@ -24,26 +24,23 @@
 `include "../../../third_party/i3c-core/src/rdl/registers.rdl"
 `include "../../../src/fuse_ctrl/rtl/otp_ctrl.rdl"
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
-`include "../../../third_party/usb2/systemrdl/usbhsd.rdl"
-`include "../../../third_party/usb2/systemrdl/usbhsh.rdl"
-`include "../../../third_party/usb2/systemrdl/usb_ocp_recovery_reg.rdl"
+`include "../../../third_party/usb2/systemrdl/usb_device_memory.rdl"
+`include "../../../third_party/usb2/systemrdl/usb_combo.rdl"
+`include "../../../src/spi_host/rtl/spi_host.rdl"
 
 addrmap soc {
 
-    usbhsd usbhsd @ 0x2000_0000;
+    usb_combo usb_combo @ 0x2000_0000;
 
-    usbhsh usbhsh @ 0x2000_1000;
+    usbhsd usb_dev1_csr @ 0x2000_2000;
 
-    // OCP Recovery v1.1 register file exposed by the USB device subsystem
-    // (third_party/usb2).  Placed in the upper 2 KiB (offset 0x800) of the
-    // shared 4 KiB USB device subordinate window so integrators configure a
-    // single contiguous 0x2000_0000-0x2000_0FFF AXI region for the USB device
-    // (usbhsd legacy registers at 0x000, OCP recovery at 0x800).  Reached via
-    // the existing dev_axi tap into the recovery rb_* reg-bus; consumed by
-    // Caliptra firmware as SS_RECOVERY_IFC_BASE_ADDR per OCP Recovery v1.1
-    // Sec 8.5 / 9.2 and the streaming-boot handoff pattern
-    // (cptra_test_rom_streaming_boot.c).
-    usb_ocp_recovery_reg usb_ocp_recovery_reg @ 0x2000_0800;
+    external usb_device_memory #(
+        .MEMORY_ENTRIES(512)
+    ) usb_dev0_mem @ 0x3000_0000;
+
+    external usb_device_memory #(
+        .MEMORY_ENTRIES(512)
+    ) usb_dev1_mem @ 0x3000_1000;
 
     I3CCSR I3CCSR @ 0x2000_4000;
 
@@ -58,4 +55,6 @@ addrmap soc {
     otp_ctrl otp_ctrl @ 0x7000_0000;
 
     lc_ctrl lc_ctrl @ 0x7000_0400;
+
+    spi_host spi_host @ 0x7000_0800;
 };

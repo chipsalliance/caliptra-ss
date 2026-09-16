@@ -48,3 +48,9 @@
 `define I3C_CORE_INDIRECT_FIFO_CTRL      (7'd45)
 `define I3C_CORE_INDIRECT_FIFO_STATUS    (7'd46)
 `define I3C_CORE_INDIRECT_FIFO_DATA      (7'd47)
+
+// PROT_CAP agent capability bits (bytes 10-11 of the PROT_CAP payload).
+// Only Identification and FIFO CMS (INDIRECT_FIFO_CTRL) are advertised.
+// Must stay in sync with boot_i3c_reg() in src/integration/test_suites/libs/caliptra_ss_lib/caliptra_ss_lib.c
+`define I3C_PROT_CAP_IDENTIFICATION_BIT  (0)
+`define I3C_PROT_CAP_FIFO_CMS_BIT        (12)

@@ -33,58 +33,6 @@ enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 enum printf_verbosity verbosity_g = LOW;
 #endif
 
-// This struct is used to store the partition information used in the test.
-typedef struct partition_info {
-  // Partition identifier. Used to access partition in the partitions array.
-  uint32_t id;
-  // Offset to the digest0 register.
-  uint32_t digest0;
-  // Offset to the digest1 register.
-  uint32_t digest1;
-} partition_info_t;
-
-const partition_info_t kPartitionsInfo[] = {
-    {
-        .id = SECRET_MANUF_PARTITION,
-        .digest0 = SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_0,
-        .digest1 = SOC_OTP_CTRL_SECRET_MANUF_PARTITION_DIGEST_DIGEST_1,
-    },
-    {
-        .id = SECRET_PROD_PARTITION_0,
-        .digest0 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_0,
-        .digest1 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_0_DIGEST_DIGEST_1,
-    },
-    {
-        .id = SECRET_PROD_PARTITION_1,
-        .digest0 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_0,
-        .digest1 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_1_DIGEST_DIGEST_1,
-    },
-    {
-        .id = SECRET_PROD_PARTITION_2,
-        .digest0 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_0,
-        .digest1 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_2_DIGEST_DIGEST_1,
-    },
-    {
-        .id = SECRET_PROD_PARTITION_3,
-        .digest0 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_0,
-        .digest1 = SOC_OTP_CTRL_SECRET_PROD_PARTITION_3_DIGEST_DIGEST_1,
-    },
-};
-const uint32_t kNumPartitions =
-    sizeof(kPartitionsInfo) / sizeof(kPartitionsInfo[0]);
-
-// Check that the digest is zeroized or not.
-static bool check_digest(const partition_info_t *partition_info, bool expected_zeroized) {
-  uint32_t digest[2];
-  digest[0] = lsu_read_32(partition_info->digest0);
-  digest[1] = lsu_read_32(partition_info->digest1);
-  if (expected_zeroized) {
-    return digest[0] == UINT32_MAX && digest[1] == UINT32_MAX;
-  }
-  // If not zeroized, the digest should not be all ones.
-  return digest[0] != UINT32_MAX || digest[1] != UINT32_MAX;
-}
-
 void main(void) {
   VPRINTF(LOW, "=====================================\n"
                "MCU Caliptra Boot Go\n"
@@ -138,13 +86,23 @@ void main(void) {
   reset_fc_lcc_rtl();
   wait_dai_op_idle(0);
 
-  // At this point, the partitions should be zeroized.
-  for (uint32_t i = 0; i < kNumPartitions; i++) {
-    if (!check_digest(&kPartitionsInfo[i], /*expected_zeroized=*/true)) {
-      VPRINTF(LOW, "MCU ERROR: Partition %d is not zeroized\n", kPartitionsInfo[i].id);
-      break;
-    }
-  }
+  // NOTE: Zeroization is verified on the Caliptra side, which checks the
+  // readback of every zeroization step (marker, fuse words and digest) for each
+  // partition. There is deliberately no MCU-side verification here, because the
+  // MCU cannot observe the result of the zeroization in this configuration:
+  //
+  //   - A DAI read of the secret partitions is rejected by the fuse controller
+  //     filter. The access control table reserves the 0x48-0xF0 address range
+  //     for the Caliptra core, and the zeroization markers and digests of the
+  //     secret partitions live in that range, so an MCU DAI read of them is
+  //     discarded and reports an access error.
+  //   - The named digest CSRs are readable by the MCU, but this test runs with
+  //     debug intent asserted through the physical strap. The secret partitions
+  //     are therefore never sensed, so the digest CSRs are masked and read back
+  //     zero regardless of the actual fuse contents.
+  //
+  // The fuse controller reset above is still exercised, to confirm the fuse
+  // controller re-initializes cleanly once the partitions have been zeroized.
 
   for (uint8_t ii = 0; ii < 160; ii++) {
     // Sleep loop as "nop".

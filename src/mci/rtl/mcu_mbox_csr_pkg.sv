@@ -67,12 +67,7 @@ package mcu_mbox_csr_pkg;
     } mcu_mbox_csr__mbox_target_status__status__in_t;
 
     typedef struct packed{
-        logic hwclr;
-    } mcu_mbox_csr__mbox_target_status__done__in_t;
-
-    typedef struct packed{
         mcu_mbox_csr__mbox_target_status__status__in_t status;
-        mcu_mbox_csr__mbox_target_status__done__in_t done;
     } mcu_mbox_csr__mbox_target_status__in_t;
 
     typedef struct packed{
@@ -92,16 +87,22 @@ package mcu_mbox_csr_pkg;
     } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__in_t;
 
     typedef struct packed{
+        logic [1:0] next;
+    } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__sram_owner__in_t;
+
+    typedef struct packed{
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_single_error_next_1ebd8f42_wel_1ebd8f42__in_t ecc_single_error;
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__ecc_double_error_next_1ebd8f42_wel_1ebd8f42__in_t ecc_double_error;
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__sram_owner__in_t sram_owner;
     } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__in_t;
 
     typedef struct packed{
         logic rst_b;
-        logic valid_requester_target_req;
+        logic valid_sram_owner_req;
         logic valid_target_req;
         logic valid_requester_req;
         logic valid_root_req;
+        logic target_cfg_write_en;
         mcu_mbox_csr__MBOX_SRAM__external__in_t MBOX_SRAM;
         mcu_mbox_csr__mbox_lock__in_t mbox_lock;
         mcu_mbox_csr__mbox_user_user_70a5ffab__in_t mbox_user;
@@ -149,6 +150,7 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic value;
+        logic swmod;
     } mcu_mbox_csr__mbox_target_user_valid__valid__out_t;
 
     typedef struct packed{
@@ -174,15 +176,11 @@ package mcu_mbox_csr_pkg;
 
     typedef struct packed{
         logic [3:0] value;
+        logic swmod;
     } mcu_mbox_csr__mbox_target_status__status__out_t;
 
     typedef struct packed{
-        logic value;
-    } mcu_mbox_csr__mbox_target_status__done__out_t;
-
-    typedef struct packed{
         mcu_mbox_csr__mbox_target_status__status__out_t status;
-        mcu_mbox_csr__mbox_target_status__done__out_t done;
     } mcu_mbox_csr__mbox_target_status__out_t;
 
     typedef struct packed{
@@ -232,6 +230,13 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_COMPLETE = 'h2,
         mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_FAILURE = 'h3
     } mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e_e;
+
+    typedef enum logic [31:0] {
+        mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__NONE = 'h0,
+        mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__REQUESTER = 'h1,
+        mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__ROOT = 'h2,
+        mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__TARGET = 'h3
+    } mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e_e;
 
     localparam MCU_MBOX_CSR_ADDR_WIDTH = 32'd22;
 

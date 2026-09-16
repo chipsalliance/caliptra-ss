@@ -90,33 +90,73 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
     // ---------- Route VIP interfaces to agents ----------
     // The host agent consumes this interface for the remote_cfg UTMI PHY.
     if (usb_20_mac_if != null) begin
-        uvm_config_db#(USB_IF)::set(this, "host_agent", "usb_20_if", usb_20_mac_if);
+        // HOST agent with remote_cfg PHY (existing device tests) looks up "usb_20_if".
+        uvm_config_db#(USB_IF)::set(this, "host_agent", "usb_20_if",     usb_20_mac_if);
+        // DEVICE agent with UTMI_IF (host-mode DUT tests, VIP acts as device) looks up
+        // "usb_20_mac_if".  Register the same interface handle under both keys so both
+        // usage patterns find the interface without any other code change.
+        uvm_config_db#(USB_IF)::set(this, "host_agent", "usb_20_mac_if", usb_20_mac_if);
     end else begin
         `uvm_warning("build_phase",
             "usb_20_mac_if is null - host_agent will have no UTMI vif.")
     end
 
-    // ---------- Create remote_cfg via canonical clone-of-dev_cfg pattern ----
-    // Clone dev_cfg into remote_cfg and override component_subtype = PHY so the
-    // host agent models the device-side UTMI PHY without creating a second
-    // agent. The clone inherits UTMI, speed, and endpoint settings from dev_cfg.
-    if (!$cast(remote_cfg, cfg.dev_cfg.clone())) begin
-        `uvm_fatal("build_phase",
-            "Unable to clone dev_cfg into remote_cfg")
+`ifdef CALIPTRA_USB_HOST_PHY_TEST
+    // For DUT=HOST PHY tests: the VIP DEVICE agent uses USB_20_SERIAL_IF and
+    // needs the usb_20_serial_if virtual interface (connected to nvs_usb_phy
+    // DP/DM bus).  Retrieve it from config_db and register it under the key
+    // the SVT USB agent expects for serial interface lookup ("usb_20_if").
+    begin
+        USB_IF usb_20_serial_if_vif;
+        void'(uvm_config_db#(virtual svt_usb_if)::get(null, get_full_name(),
+              "usb_20_serial_if", usb_20_serial_if_vif));
+        if (usb_20_serial_if_vif != null) begin
+            // Override the "usb_20_if" key so the DEVICE agent picks up the
+            // serial interface instead of the UTMI interface registered above.
+            uvm_config_db#(USB_IF)::set(this, "host_agent", "usb_20_if",
+                usb_20_serial_if_vif);
+            `uvm_info("build_phase",
+                "CALIPTRA_USB_HOST_PHY_TEST: usb_20_serial_if registered to host_agent as usb_20_if",
+                UVM_LOW)
+        end else begin
+            `uvm_warning("build_phase",
+                "CALIPTRA_USB_HOST_PHY_TEST: usb_20_serial_if is null - DEVICE agent has no serial vif")
+        end
     end
-    remote_cfg.component_subtype = svt_usb_configuration::PHY;
-    uvm_config_db#(svt_usb_configuration)::set(this, "host_agent",
-        "remote_cfg", remote_cfg);
+`endif // CALIPTRA_USB_HOST_PHY_TEST
 
-    /**
-     * Double check that the remote configuration is valid before moving on
-     */
-    if (remote_cfg == null) begin
-        `uvm_fatal("build_phase", "remote_cfg is null. Unable to continue.")
-    end else if (!remote_cfg.is_valid(0)) begin
-        `uvm_fatal("build_phase", "remote_cfg failed is_valid() check. Unable to continue.")
+    // ---------- Create remote_cfg via canonical clone-of-dev_cfg pattern ----
+    // For normal HOST agent tests: clone dev_cfg into remote_cfg and override
+    // component_subtype = PHY so the host agent models the device-side UTMI PHY
+    // without creating a second agent.
+    //
+    // For DEVICE agent tests (e.g. caliptra_ss_usb_fs_host_traffic_test where
+    // the VIP acts as a USB device and the DUT is the host): skip remote_cfg
+    // entirely.  The DEVICE agent already carries its own cross-references
+    // (remote_host_cfg / remote_device_cfg) set up in the test's build_phase.
+    // Injecting a cloned remote_cfg would cause is_valid() to fail because the
+    // interface types of the DEVICE host_cfg (UTMI_IF) and the cloned dev_cfg
+    // would not match.
+    if (cfg.host_cfg.component_type == svt_usb_types::HOST) begin
+        if (!$cast(remote_cfg, cfg.dev_cfg.clone())) begin
+            `uvm_fatal("build_phase",
+                "Unable to clone dev_cfg into remote_cfg")
+        end
+        remote_cfg.component_subtype = svt_usb_configuration::PHY;
+        uvm_config_db#(svt_usb_configuration)::set(this, "host_agent",
+            "remote_cfg", remote_cfg);
+
+        if (remote_cfg == null) begin
+            `uvm_fatal("build_phase", "remote_cfg is null. Unable to continue.")
+        end else if (!remote_cfg.is_valid(0)) begin
+            `uvm_fatal("build_phase", "remote_cfg failed is_valid() check. Unable to continue.")
+        end else begin
+            `uvm_info("build_phase", $psprintf("remote_cfg passed is_valid() check. Contents:\n%0s", remote_cfg.sprint()), UVM_HIGH)
+        end
     end else begin
-        `uvm_info("build_phase", $psprintf("remote_cfg passed is_valid() check. Contents:\n%0s", remote_cfg.sprint()), UVM_HIGH)
+        `uvm_info("build_phase",
+            "host_cfg.component_type == DEVICE: skipping remote_cfg clone (VIP is the device).",
+            UVM_LOW)
     end
 
     // ---------- System-level sequence-item report ----------

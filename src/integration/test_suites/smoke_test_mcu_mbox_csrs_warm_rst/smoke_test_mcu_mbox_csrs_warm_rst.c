@@ -102,8 +102,16 @@ void main (void) {
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
-        if(mcu_mbox_read_hw_status(mbox_num) != 0) {
-            VPRINTF(FATAL, "MCU: Mbox%x mbox_hw_status should be zero\n", mbox_num);
+        uint32_t hw_status = mcu_mbox_read_hw_status(mbox_num);
+        uint32_t hw_error_mask = MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK |
+                                 MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK;
+        if((hw_status & hw_error_mask) != 0) {
+            VPRINTF(FATAL, "MCU: Mbox%x HW status error bits should be zero\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
+        if(mcu_mbox_read_sram_owner(mbox_num) != MCU_MBOX_SRAM_OWNER_REQUESTER) {
+            VPRINTF(FATAL, "MCU: Mbox%x SRAM owner should be reset lock holder\n", mbox_num);
             SEND_STDOUT_CTRL(0x1);
             while(1);
         }
@@ -123,9 +131,9 @@ void main (void) {
         mcu_mbox_write_dlen(mbox_num, xorshift32());
         mcu_mbox_write_cmd(mbox_num, xorshift32());
         mcu_mbox_write_cmd_status(mbox_num, 0xf);
-        mcu_mbox_write_target_user(mbox_num, xorshift32());
+        mcu_mbox_write_target_user(mbox_num, caliptra_uc_axi_id);
         mcu_mbox_write_target_user_valid(mbox_num, 1);
-        mcu_mbox_write_target_status(mbox_num, 0xffffffff);
+        // TARGET_STATUS is writable only by the current Target, so MCU cannot dirty it here.
         // Write to SRAM with single bit error
         SEND_STDOUT_CTRL(TB_CMD_INJECT_MBOX_SRAM_SINGLE_ECC_ERROR);
 

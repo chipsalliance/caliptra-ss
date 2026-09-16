@@ -36,6 +36,12 @@ interface caliptra_ss_bfm_services_if (
     
     logic end_test_success;
 
+    // mcu_halt_status: mirrors cptra_ss_mcu_halt_status_o from the TB top.
+    // Used by the USB UVM base test phase_ready_to_end() monitor to detect
+    // that MCU firmware has called csr_write_mpmc_halt(), ensuring no
+    // outstanding AXI transactions remain when the UVM run_phase ends.
+    logic mcu_halt_status;
+
     // Define modports
     modport bfm (
         output end_test_success,

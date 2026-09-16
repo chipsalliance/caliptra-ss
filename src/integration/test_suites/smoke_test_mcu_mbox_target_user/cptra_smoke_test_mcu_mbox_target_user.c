@@ -183,31 +183,25 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
         while(1);
     } 
 
-    // Attempt TARGET_USER write
+    // Attempt target configuration writes.
+    uint32_t target_user_before = cptra_mcu_mbox_read_target_user(mbox_num);
+    uint32_t target_valid_before = cptra_mcu_mbox_read_target_user_valid(mbox_num);
     mbox_wr_data = 0xDEADBEEF;
     VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x TARGET_USER write: 0x%x\n", mbox_num, mbox_wr_data);
 
     cptra_mcu_mbox_write_target_user(mbox_num, mbox_wr_data);
     mbox_rd_data = cptra_mcu_mbox_read_target_user(mbox_num);
 
-    if (mbox_rd_data == 0xdeadbeef) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER was able to be writen by USER: 0x%x \n", mbox_num, mbox_rd_data);
+    if (mbox_rd_data != target_user_before) {
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER changed by Target: 0x%x\n", mbox_num, mbox_rd_data);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
 
-    // Attempt TARGET_USER_VALID write
-    mbox_rd_data = cptra_mcu_mbox_read_target_user_valid(mbox_num) & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
-    VPRINTF(LOW, "CALIPTRA: Current MCU MBOX%x TARGET_USER_VALID value: 0x%x\n", mbox_num, mbox_rd_data);
-
-    mbox_wr_data = ~mbox_rd_data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK;
-    VPRINTF(LOW, "CALIPTRA: Attempting MCU MBOX%x TARGET_USER_VALID write: 0x%x\n", mbox_num, mbox_wr_data);
-
-    cptra_mcu_mbox_write_target_user_valid(mbox_num, mbox_wr_data);
+    cptra_mcu_mbox_write_target_user_valid(mbox_num, ~target_valid_before);
     mbox_rd_data = cptra_mcu_mbox_read_target_user_valid(mbox_num);
-
-    if (mbox_rd_data == mbox_wr_data) {
-        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER_VALID was able to be writen by USER: 0x%x \n", mbox_num, 0);
+    if (mbox_rd_data != target_valid_before) {
+        VPRINTF(FATAL, "CALIPTRA: MCU MBOX%x TARGET_USER_VALID changed by Target: 0x%x\n", mbox_num, mbox_rd_data);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -215,14 +209,14 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
 
 // Test (in conjuction with Caliptra uC C code) exercise the TARGET_USER aspects of the MCU Mbox 
 // Caliptra uC will be the target user
-// 1. MCU acquires Mbox lock and writes information in the mailbox CSRs and SRAM and sets execute (without setting target user)
-// 2. MCU will set TARGET_USER but not TARGET_USER_VALID and set execute
-// 3. Caliptra uC will wait for execute and attempt writing/reading SRAM and writing CSRs (all of which should fail)
-// 4. Caliptra uC will attempt acquiring lock (as a sync point so MCU can see if any contents were able to be changed).
-// 4. MCU will set TARGET_USER_VALID
-// 5. Caliptra uC will read the mailbox CSRs and SRAM and check that the data is what was written by the MCU
-// 6. Caliptra uC will attempt to write to the mailbox CSRs and SRAM and set TARGET_STATUS/DONE
-// 7. MCU will check that only SRAM and DLEN has changed 
+// 1. MCU acquires Mbox lock, writes the mailbox CSRs and SRAM, and sets execute
+//    with TARGET_USER_VALID still 0, so Root owns the SRAM
+// 2. Caliptra uC waits for execute and attempts writing/reading SRAM and writing CSRs (all of which should fail)
+// 3. Caliptra uC attempts acquiring lock (as a sync point so MCU can see if any contents were able to be changed).
+// 4. MCU writes TARGET_USER and TARGET_USER_VALID, granting SRAM ownership to the Target
+// 5. Caliptra uC reads the mailbox CSRs and SRAM and checks that the data is what was written by the MCU
+// 6. Caliptra uC writes to the mailbox SRAM/DLEN and writes a terminal TARGET_STATUS, returning ownership to MCU
+// 7. MCU checks that only SRAM and DLEN changed and both target fields cleared
 
 void main(void) {
         int argc=0;
@@ -267,7 +261,7 @@ void main(void) {
         // Attempt to acquire lock even though MCU has the lock (as a sync point for the self-checking on the MCU side)
         cptra_mcu_mbox_acquire_lock(mbox_num, 1, false);
 
-        // Wait for TARGET_USER_VALID to be set
+        // Wait for MCU to grant Target ownership.
         cptra_mcu_mbox_wait_target_user_valid(mbox_num, 1000);
 
         // Get the data written by MCU in mailbox and check expected data and CSRs
@@ -313,8 +307,9 @@ void main(void) {
         target_valid = true;
         cptra_mcu_mbox_target_write_sram_and_csrs(mbox_num, sizeof(clptra_write_data), clptra_write_data, target_valid);
 
-        // Set TARGET_STATUS DONE and COMPLETE
-        cptra_mcu_mbox_set_target_status_done(mbox_num, MCU_MBOX_TARGET_STATUS_COMPLETE);
+        // Terminal TARGET_STATUS returns ownership to Root and clears both
+        // target configuration registers.
+        cptra_mcu_mbox_set_target_status(mbox_num, MCU_MBOX_TARGET_STATUS_COMPLETE);
 
         VPRINTF(LOW, "CALIPTRA: Sequence complete\n");
 
