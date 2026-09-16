@@ -33,8 +33,6 @@ package caliptra_ss_usb_test_pkg;
   // FS testcases (pre-existing)
   `include "caliptra_ss_usb_fs_clock_sequence.svh"
   `include "caliptra_ss_usb_fs_clock_test.svh"
-  // Legacy DUT-host tests are retired: compound USB has no host controller.
-  // Their source files remain archived, but are not registered in this package.
 
   // HS testcases
   `include "caliptra_ss_usb_hs_conn_sequence.svh"
