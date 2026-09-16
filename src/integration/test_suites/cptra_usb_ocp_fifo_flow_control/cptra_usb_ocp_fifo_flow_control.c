@@ -105,7 +105,7 @@ void main(void)
         // This is the architectural synchronization point between the USB
         // producer and Caliptra consumer.
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &word) != 0u) {
             fail_and_halt("CPTRA: FIFO data read failed");
         }

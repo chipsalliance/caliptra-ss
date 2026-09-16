@@ -183,7 +183,7 @@ uint8_t cptra_usb_ocp_recovery_read_device_status(uint8_t *device_status)
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0,
+            SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_0,
             &status_word) != 0u) {
         return 1u;
     }
@@ -199,7 +199,7 @@ uint8_t cptra_usb_ocp_recovery_write_device_status(uint8_t device_status,
                          | ((uint32_t)reason_code << 16);
 
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, status_word);
+        SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_0, status_word);
 }
 
 uint8_t cptra_usb_ocp_recovery_write_recovery_status(
@@ -210,7 +210,7 @@ uint8_t cptra_usb_ocp_recovery_write_recovery_status(
                          | ((uint32_t)vendor_status << 8);
 
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_RECOVERY_STATUS, status_word);
+        SOC_USB_COMBO_RECOVERY_RECOVERY_STATUS, status_word);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_recovery_status(uint32_t *word)
@@ -219,7 +219,7 @@ uint8_t cptra_usb_ocp_recovery_read_recovery_status(uint32_t *word)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_RECOVERY_STATUS, word);
+        SOC_USB_COMBO_RECOVERY_RECOVERY_STATUS, word);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_hw_status(uint32_t *word)
@@ -228,13 +228,13 @@ uint8_t cptra_usb_ocp_recovery_read_hw_status(uint32_t *word)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_HW_STATUS, word);
+        SOC_USB_COMBO_RECOVERY_HW_STATUS, word);
 }
 
 uint8_t cptra_usb_ocp_recovery_write_hw_status(uint32_t word)
 {
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_HW_STATUS, word);
+        SOC_USB_COMBO_RECOVERY_HW_STATUS, word);
 }
 
 uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations)
@@ -297,7 +297,7 @@ uint32_t cptra_usb_ocp_recovery_read_image_size_words(void)
     uint32_t image_size_words = 0u;
 
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_1,
             &image_size_words) != 0u) {
         return 0u;
     }
@@ -319,22 +319,22 @@ uint8_t cptra_usb_ocp_recovery_read_fifo_status(uint8_t *fifo_status,
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0,
             &status_word) != 0u) {
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_1,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_1,
             &write_index_word) != 0u) {
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_2,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_2,
             &read_index_word) != 0u) {
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_3,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_3,
             &fifo_size_word) != 0u) {
         return 1u;
     }
@@ -384,7 +384,7 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
     words_in_service = 0u;
     for (uint32_t index = 0u; index < image_size_words; ++index) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &destination[index]) != 0u) {
             return 1u;
         }
@@ -445,7 +445,7 @@ uint8_t cptra_usb_ocp_recovery_read_device_status_word(uint32_t *word)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_DEVICE_STATUS_0, word);
+        SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_0, word);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_device_reset(uint32_t *val)
@@ -454,13 +454,13 @@ uint8_t cptra_usb_ocp_recovery_read_device_reset(uint32_t *val)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_DEVICE_RESET, val);
+        SOC_USB_COMBO_RECOVERY_DEVICE_RESET, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_write_device_reset(uint32_t val)
 {
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_DEVICE_RESET, val);
+        SOC_USB_COMBO_RECOVERY_DEVICE_RESET, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_recovery_ctrl(uint32_t *val)
@@ -469,13 +469,13 @@ uint8_t cptra_usb_ocp_recovery_read_recovery_ctrl(uint32_t *val)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, val);
+        SOC_USB_COMBO_RECOVERY_RECOVERY_CTRL, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_write_recovery_ctrl(uint32_t val)
 {
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_RECOVERY_CTRL, val);
+        SOC_USB_COMBO_RECOVERY_RECOVERY_CTRL, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_indirect_fifo_ctrl(uint32_t *val)
@@ -484,13 +484,13 @@ uint8_t cptra_usb_ocp_recovery_read_indirect_fifo_ctrl(uint32_t *val)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, val);
+        SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_0, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_write_indirect_fifo_ctrl(uint32_t val)
 {
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_0, val);
+        SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_0, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_caliptra_ctrl(uint32_t *val)
@@ -499,7 +499,7 @@ uint8_t cptra_usb_ocp_recovery_read_caliptra_ctrl(uint32_t *val)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, val);
+        SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_device_status_prot_error(
@@ -514,8 +514,8 @@ uint8_t cptra_usb_ocp_recovery_read_device_status_prot_error(
         return 1u;
     }
     *prot_error = (uint8_t)(
-        (word & USB_OCP_RECOVERY_REG_DEVICE_STATUS_0_PROT_ERROR_MASK) >>
-        USB_OCP_RECOVERY_REG_DEVICE_STATUS_0_PROT_ERROR_LOW);
+        (word & RECOVERY_DEVICE_STATUS_0_PROT_ERROR_MASK) >>
+        RECOVERY_DEVICE_STATUS_0_PROT_ERROR_LOW);
     return 0u;
 }
 
@@ -548,11 +548,11 @@ uint8_t cptra_usb_ocp_recovery_read_path_disable(uint8_t *disabled)
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, &value) != 0u) {
+            SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL, &value) != 0u) {
         return 1u;
     }
     *disabled = (value &
-        USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK) != 0u;
+        RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK) != 0u;
     return 0u;
 }
 
@@ -562,9 +562,9 @@ uint8_t cptra_usb_ocp_recovery_set_path_disable(uint8_t disabled)
     uint8_t observed;
 
     value = disabled ?
-        USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK : 0u;
+        RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK : 0u;
     if (cptra_usb_ocp_recovery_write_dword(
-            SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, value) != 0u) {
+            SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL, value) != 0u) {
         return 1u;
     }
     if (cptra_usb_ocp_recovery_read_path_disable(&observed) != 0u) {
@@ -588,15 +588,15 @@ uint8_t cptra_usb_ocp_recovery_request_general_protocol_error(void)
         return 1u;
     }
     if ((ctrl_word &
-         USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK) != 0u) {
+         RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK) != 0u) {
         return 3u;
     }
 
     ctrl_word = (ctrl_word &
-        USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK)
-        | USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK;
+        RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK)
+        | RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK;
     return cptra_usb_ocp_recovery_write_dword(
-        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_CTRL, ctrl_word);
+        SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL, ctrl_word);
 }
 
 void cptra_usb_ocp_recovery_read_fw_command(uint32_t *command_word,
@@ -618,7 +618,7 @@ uint8_t cptra_usb_ocp_recovery_read_caliptra_status(uint32_t *val)
         return 1u;
     }
     return cptra_usb_ocp_recovery_read_dword_retry(
-        SOC_USB_OCP_RECOVERY_REG_CALIPTRA_STATUS, val);
+        SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS, val);
 }
 
 uint8_t cptra_usb_ocp_recovery_read_batch_aborted(uint8_t *aborted)
@@ -632,6 +632,6 @@ uint8_t cptra_usb_ocp_recovery_read_batch_aborted(uint8_t *aborted)
         return 1u;
     }
     *aborted = (status &
-        USB_OCP_RECOVERY_REG_CALIPTRA_STATUS_BATCH_ABORTED_MASK) != 0u;
+        RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK) != 0u;
     return 0u;
 }

@@ -439,8 +439,8 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_COMBO_IDX    ; // CSS_INTC_SINTF_USB_COMB_IDX      8
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV0_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV0_MEM_IDX  9
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_CSR_IDX ; // CSS_INTC_SINTF_USB_DEV1_CSR_IDX  10
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV1_MEM_IDX  11
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SPI_IDX          ; // CSS_INTC_SINTF_SPI_IDX           12
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV1_MEM_IDX  12
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SPI_IDX          ; // CSS_INTC_SINTF_SPI_IDX           11
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
@@ -2064,10 +2064,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_ulpi_nxt_i     = '0;       // TODO: connect to USB VIP
     assign cptra_ss_usb_ulpi_ddr_sel_i = '0;       // TODO: connect to USB VIP
 
-    // USB recovery interface
-    logic         cptra_ss_usb_recovery_payload_available_o;
-    logic         cptra_ss_usb_recovery_image_activated_o;
-
     // USB AXI user filtering
     assign cptra_usb_axi_user_id_filtering_enable_i = 1'b1; // TODO: make configurable
     assign cptra_ss_usb_async_disable_i = 1'b0;
@@ -2150,7 +2146,7 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_USB_OCP_RECOVERY_REG_BASE_ADDR};
+    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_USB_COMBO_RECOVERY_BASE_ADDR};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;

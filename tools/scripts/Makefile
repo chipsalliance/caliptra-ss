@@ -121,6 +121,9 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+ifeq (0,$(shell grep -e '\#include "usb_ocp_recovery.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += usb_ocp_recovery.o
+endif
 endif
 
 # Only build the mcu_isr lib (which consumes a large block of DCCM) if it is

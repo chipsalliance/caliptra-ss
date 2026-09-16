@@ -115,7 +115,7 @@ static uint8_t ra_poll_image_size_nonzero(void)
     uint32_t size_word = 0u;
     for (uint32_t i = 0u; i < RA_POLL_LIMIT; ++i) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_CTRL_1,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_1,
                 &size_word) != 0u) {
             continue;
         }
@@ -132,7 +132,7 @@ static uint8_t ra_poll_fifo_nonempty(void)
     uint32_t status_word = 0u;
     for (uint32_t i = 0u; i < RA_POLL_LIMIT; ++i) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0,
                 &status_word) != 0u) {
             continue;
         }
@@ -285,7 +285,7 @@ void main(void)
 
     fifo_data = 0u;
     if (cptra_usb_ocp_recovery_read_dword_retry(
-            SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+            SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
             &fifo_data) != 0u) {
         VPRINTF(ERROR, "CPTRA: DMA read FIFO data failed\n");
         SEND_STDOUT_CTRL(0x1);

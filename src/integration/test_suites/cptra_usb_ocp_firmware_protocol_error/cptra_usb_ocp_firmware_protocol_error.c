@@ -94,20 +94,20 @@ static void fw_error_wait_for_general_request_clear(uint8_t expected_path_disabl
     uint32_t ctrl_word = 0u;
     uint32_t expected_path_disable_mask =
         expected_path_disable != 0u ?
-        USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK : 0u;
+        RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK : 0u;
 
     for (uint32_t poll = 0u; poll < FW_ERROR_POLL_LIMIT; ++poll) {
         if (cptra_usb_ocp_recovery_read_caliptra_ctrl(&ctrl_word) != 0u) {
             continue;
         }
         if ((ctrl_word &
-             USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK) !=
+             RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK) !=
             expected_path_disable_mask) {
             fw_error_fail_and_halt(
                 "CPTRA: OCP_PATH_DISABLE changed during general-error request");
         }
         if ((ctrl_word &
-             USB_OCP_RECOVERY_REG_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK)
+             RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK)
             == 0u) {
             return;
         }

@@ -88,7 +88,7 @@ enum printf_verbosity verbosity_g = LOW;
 #define W1DC_CALIPTRA_STATUS_REGION_RESET_MASK 0x00000001u
 #define W1DC_PROT_ERROR_MASK 0x0000FF00u
 #define W1DC_FIFO_CAP_MASK \
-    USB_OCP_RECOVERY_REG_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK
+    RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK
 
 // Maximum polling iterations.
 #define W1DC_POLL_LIMIT 200000u
@@ -101,19 +101,19 @@ static uint8_t w1dc_poll_fifo_nonempty(uint32_t *write_idx,
     uint32_t status_word = 0u;
     for (uint32_t i = 0u; i < W1DC_POLL_LIMIT; ++i) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0,
                 &status_word) != 0u) {
             continue;
         }
         if (!(status_word & W1DC_IFS_EMPTY_MASK)) {
             if (write_idx != 0) {
                 cptra_usb_ocp_recovery_read_dword_retry(
-                    SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_1,
+                    SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_1,
                     write_idx);
             }
             if (read_idx != 0) {
                 cptra_usb_ocp_recovery_read_dword_retry(
-                    SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_2,
+                    SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_2,
                     read_idx);
             }
             return 0u;
@@ -151,17 +151,17 @@ static uint8_t w1dc_poll_fifo_empty_indices_match(uint32_t *write_idx,
     uint32_t wi = 0u, ri = 0u;
     for (uint32_t i = 0u; i < W1DC_POLL_LIMIT; ++i) {
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_0,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0,
                 &status_word) != 0u) {
             continue;
         }
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_1,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_1,
                 &wi) != 0u) {
             continue;
         }
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_STATUS_2,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_2,
                 &ri) != 0u) {
             continue;
         }
@@ -290,7 +290,7 @@ void main(void)
     {
         uint32_t prot_cap_2 = 0u;
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_PROT_CAP_2,
+                SOC_USB_COMBO_RECOVERY_PROT_CAP_2,
                 &prot_cap_2) != 0u) {
             VPRINTF(ERROR, "CPTRA: PROT_CAP_2 read failed\n");
             SEND_STDOUT_CTRL(0x1);
@@ -440,10 +440,10 @@ void main(void)
         uint32_t data0 = 0u;
         uint32_t data1 = 0u;
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &data0) != 0u
             || cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &data1) != 0u
             || data0 != W1DC_POST_RESET_DWORD_0
             || data1 != W1DC_POST_RESET_DWORD_1) {

@@ -392,9 +392,9 @@ void usb_legacy_ep0_capture_snapshot(
         USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008u);
     snapshot->ep0_reserved_descriptor = lsu_read_32(
         USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00Cu);
-    snapshot->devcmdstat = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    snapshot->intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
-    snapshot->inten = lsu_read_32(SOC_USBHSD_INTEN);
+    snapshot->devcmdstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    snapshot->intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+    snapshot->inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
     snapshot->configuration = (uint32_t)usb_current_config;
     snapshot->transfers_handled = usb_transfers_handled;
     snapshot->bus_reset_count = usb_bus_reset_count;
@@ -581,33 +581,33 @@ void usb_set_device_address(uint8_t addr) {
 }
 
 void usb_set_device_connect(uint8_t connected) {
-    uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
 
-    cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK |
-             USBHSD_DEVCMDSTAT_DCON_C_MASK |
-             USBHSD_DEVCMDSTAT_DSUS_C_MASK |
-             USBHSD_DEVCMDSTAT_DRES_C_MASK);
+    cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
+             DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
+             DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
+             DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
     if (connected != 0u) {
-        while ((lsu_read_32(SOC_USBHSD_DEVCMDSTAT) &
-                USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
+        while ((lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) &
+                DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
         }
-        cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK |
-                 USBHSD_DEVCMDSTAT_DCON_C_MASK |
-                 USBHSD_DEVCMDSTAT_DSUS_C_MASK |
-                 USBHSD_DEVCMDSTAT_DRES_C_MASK);
-        cmd |= USBHSD_DEVCMDSTAT_DEV_EN_MASK |
-               USBHSD_DEVCMDSTAT_DCON_MASK;
+        cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
+        cmd |= DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK |
+               DEV0_CSR_DEVCMDSTAT_DCON_MASK;
     } else {
-        cmd &= ~USBHSD_DEVCMDSTAT_DCON_MASK;
+        cmd &= ~DEV0_CSR_DEVCMDSTAT_DCON_MASK;
     }
     usb_devcmdstat_write(cmd);
 }
 
 void usb_dump_state(const char *tag) {
     const char *label = (tag != 0) ? tag : "state";
-    uint32_t reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-    uint32_t intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
+    uint32_t reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    uint32_t intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
     uint32_t ep0_out = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
     uint32_t ep0_in = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
 
@@ -622,8 +622,8 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
 
         usb_handle_bus_reset();
 
-        reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
-        if ((reg_data & USBHSD_INTSTAT_EP0IN_MASK) != 0u) {
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        if ((reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) != 0u) {
             if (usb_ep0_in_pending_latched == 0u) {
                 usb_ep0_in_irq_count++;
                 usb_ep0_irq_count++;
@@ -633,21 +633,24 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
             usb_ep0_in_pending_latched = 0u;
         }
 
-        if ((reg_data & USBHSD_INTSTAT_DEV_INT_MASK) != 0u) {
-            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        if ((reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) != 0u) {
+            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
-            if ((cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) != 0u) {
+            if ((cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) != 0u) {
                 usb_handle_bus_reset();
             }
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT,
+                         DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
-        if ((reg_data & USBHSD_INTSTAT_EP0OUT_MASK) != 0u) {
+        if ((reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) != 0u) {
             usb_ep0_out_irq_count++;
             usb_ep0_irq_count++;
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT,
+                         DEV0_CSR_INTSTAT_EP0OUT_MASK);
 
-            if ((lsu_read_32(SOC_USBHSD_DEVCMDSTAT) & USBHSD_DEVCMDSTAT_SETUP_MASK) != 0u) {
+            if ((lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) &
+                 DEV0_CSR_DEVCMDSTAT_SETUP_MASK) != 0u) {
                 (void)usb_handle_control_transfer();
                 usb_transfers_handled++;
 
@@ -663,8 +666,8 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
             VPRINTF(LOW,
                     "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
                     (int)poll_count,
-                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT),
-                    lsu_read_32(SOC_USBHSD_INTSTAT),
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT),
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT),
                     lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000),
                     lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008),
                     (int)usb_transfers_handled);
@@ -720,8 +723,8 @@ bool usb_handle_control_transfer(void) {
     // Clear EP0 IN interrupt before programming the response. Reset the edge
     // latch at the same operation so a subsequent completion can increment the
     // sticky counter even if no polling iteration observed the low interval.
-    intstat = lsu_read_32(SOC_USBHSD_INTSTAT);
-    if (((intstat & USBHSD_INTSTAT_EP0IN_MASK) != 0u) &&
+    intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+    if (((intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) != 0u) &&
         (usb_ep0_in_pending_latched == 0u)) {
         usb_ep0_in_irq_count++;
         usb_ep0_irq_count++;

@@ -155,7 +155,7 @@ void main(void)
         uint32_t expected = OCP_FIFO_RING_PATTERN_BASE | i;
         word = 0u;
         if (cptra_usb_ocp_recovery_read_dword_retry(
-                SOC_USB_OCP_RECOVERY_REG_INDIRECT_FIFO_DATA,
+                SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA,
                 &word) != 0u) {
             VPRINTF(FATAL,
                     "CPTRA: FIFO DWORD read failed at word_index=%u\n", i);
