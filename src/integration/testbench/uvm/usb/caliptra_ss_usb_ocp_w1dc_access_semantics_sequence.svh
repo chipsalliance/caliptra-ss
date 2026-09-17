@@ -227,6 +227,8 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
         bit [7:0]   heartbeat_period;
         bit [7:0]   payload[$];
         bit [7:0]   empty_payload[$];
+        bit         reset_command_supported;
+        bit [7:0]   unsupported_reset_parameter_error;
         bit         reset_n_stable;
         bit         reset_deasserted;
         bit         reset_reasserted;
@@ -244,6 +246,15 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
 
         initialize_ocp_transport();
         prot_cap_read_and_check(agent_caps, cms_count, heartbeat_period);
+        reset_command_supported =
+            agent_caps[OCP_CAP_FORCED_RECOVERY] ||
+            agent_caps[OCP_CAP_MGMT_RESET] ||
+            agent_caps[OCP_CAP_DEVICE_RESET] ||
+            agent_caps[OCP_CAP_INTERFACE_ISOLATION] ||
+            agent_caps[OCP_CAP_FLASHLESS_BOOT];
+        unsupported_reset_parameter_error = reset_command_supported ?
+            OCP_PROTOCOL_ERROR_UNSUPPORTED_PARAMETER :
+            OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND;
 
         // Wait firmware READY.
         wait_fw_state(W1DC_SEM_STATE_READY, "W1DC_READY");
@@ -352,7 +363,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_INDIRECT_FIFO_CTRL, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "W1DC_FIFO_UNADVERTISED");
+                "W1DC_FIFO_UNADVERTISED", 1'b1);
             `uvm_info("W1DC_SEQ",
                 "INDIRECT_FIFO not advertised; unsupported-command error verified.",
                 UVM_NONE)
@@ -397,8 +408,8 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             payload = '{8'h00, 8'h0F, 8'h00};
             ocp_expect_protocol_error(
                 1'b0, OCP_CMD_DEVICE_RESET, payload,
-                OCP_PROTOCOL_ERROR_UNSUPPORTED_PARAMETER,
-                "W1DC_FORCED_RECOVERY_UNADVERTISED");
+                unsupported_reset_parameter_error,
+                "W1DC_FORCED_RECOVERY_UNADVERTISED", 1'b1);
         end
 
         if (agent_caps[OCP_CAP_FLASHLESS_BOOT]) begin
@@ -418,8 +429,8 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             payload = '{8'h00, 8'h0E, 8'h00};
             ocp_expect_protocol_error(
                 1'b0, OCP_CMD_DEVICE_RESET, payload,
-                OCP_PROTOCOL_ERROR_UNSUPPORTED_PARAMETER,
-                "W1DC_FLASHLESS_UNADVERTISED");
+                unsupported_reset_parameter_error,
+                "W1DC_FLASHLESS_UNADVERTISED", 1'b1);
         end
 
         // -----------------------------------------------------------------
@@ -432,7 +443,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_DEVICE_RESET, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "W1DC_DEVICE_RESET_UNADVERTISED");
+                "W1DC_DEVICE_RESET_UNADVERTISED", 1'b1);
             `uvm_info("W1DC_SEQ",
                 "DEVICE_RESET not advertised; unsupported-command error verified.",
                 UVM_NONE)
@@ -500,6 +511,21 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
                 `uvm_error("W1DC_SEQ",
                     "DEVICE_RESET readback could not be completed after reset recovery.")
             end
+        end
+
+        if (agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
+            indirect_fifo_ctrl_write(
+                8'h00, 1'b0, 32'd2,
+                "OCP_FIFO_RESET_POST_VERIFY_SETUP");
+            write_fifo_dword_values(
+                32'h13579BDF,
+                32'h2468ACE0,
+                "OCP_FIFO_RESET_POST_VERIFY");
+            wait_fw_state(
+                W1DC_SEM_STATE_POST_RESET_DRAIN,
+                "OCP_FIFO_RESET_POST_DRAIN");
+            check_fifo_reset_fw("OCP_FIFO_RESET_POST_EMPTY");
+            wait_mcu_axi_idle_before_finish("OCP_W1DC_FINISH");
         end
 
         publish_transfer_count();

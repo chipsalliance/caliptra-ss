@@ -114,7 +114,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_HW_STATUS, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "OCP_CMD_007_HW_STATUS_UNADVERTISED");
+                "OCP_CMD_007_HW_STATUS_UNADVERTISED", 1'b1);
             mark_check("OCP_CMD_007",
                 "unadvertised HW_STATUS reported unsupported");
         end
@@ -141,7 +141,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_VENDOR, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "OCP_CMD_009_VENDOR_UNADVERTISED");
+                "OCP_CMD_009_VENDOR_UNADVERTISED", 1'b1);
             mark_check("OCP_CMD_009",
                 "unadvertised VENDOR command reported unsupported");
         end
@@ -174,7 +174,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_INDIRECT_CTRL, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "OCP_INDIRECT_CTRL_UNADVERTISED");
+                "OCP_INDIRECT_CTRL_UNADVERTISED", 1'b1);
         end
 
         if (agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
@@ -189,7 +189,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_INDIRECT_FIFO_CTRL, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "OCP_INDIRECT_FIFO_CTRL_UNADVERTISED");
+                "OCP_INDIRECT_FIFO_CTRL_UNADVERTISED", 1'b1);
         end
     endtask
 
@@ -217,7 +217,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             ocp_expect_protocol_error(
                 1'b1, OCP_CMD_DEVICE_RESET, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-                "OCP_DEVICE_RESET_UNADVERTISED");
+                "OCP_DEVICE_RESET_UNADVERTISED", 1'b1);
         end
     endtask
 
@@ -292,7 +292,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         ocp_expect_protocol_error(
             1'b0, OCP_CMD_PROT_CAP, rejected_write,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-            "OCP_CMD_004_PROT_CAP_WRITE_TO_RO");
+            "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
         mark_check("OCP_CMD_004",
             "write-to-RO error latched and cleared by consecutive RA reads");
 

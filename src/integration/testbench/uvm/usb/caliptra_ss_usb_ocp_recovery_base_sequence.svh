@@ -873,7 +873,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input ocp_cmd_t cmd_code,
         ref bit [7:0] payload_bytes[$],
         input ocp_protocol_error_e expected_error,
-        input string label);
+        input string label,
+        input bit stall_expected);
 
         bit [7:0] response[$];
         bit [7:0] device_status[$];
@@ -888,9 +889,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end else begin
             ocp_try_write(cmd_code, payload_bytes, result, label);
         end
-        if (result == OCP_XFER_ABORTED) begin
+        // Synopsys reports STALL-terminated control transfers as ABORTED.
+        // Some in-band errors, such as a host write to read-only PROT_CAP,
+        // complete successfully while setting PROTOCOL_ERROR.
+        if (stall_expected && (result == OCP_XFER_SUCCESS)) begin
             `uvm_error("OCP_BASE",
-                $sformatf("%s transfer aborted before the protocol response completed.",
+                $sformatf("%s erroneous transfer completed successfully.",
                           label))
         end
 

@@ -125,6 +125,17 @@ const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len) {
     return usb_ocp_recovery_v1p1_config_descriptor;
 }
 
+bool usb_ocp_recovery_apply_capability_policy(void) {
+    uint32_t prot_cap_2 =
+        lsu_read_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2);
+
+    prot_cap_2 &= ~USB_OCP_RECOVERY_UNSUPPORTED_PLATFORM_CAPS_MASK;
+    lsu_write_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2, prot_cap_2);
+
+    return (lsu_read_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2) &
+            USB_OCP_RECOVERY_UNSUPPORTED_PLATFORM_CAPS_MASK) == 0u;
+}
+
 bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup) {
     if (setup == NULL) {
         return false;

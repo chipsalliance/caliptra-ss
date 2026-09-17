@@ -53,7 +53,9 @@ uint8_t main(void) {
     VPRINTF(LOW, "MCU: USB OCP recovery init test\n");
     VPRINTF(LOW, "===============================\n\n");
 
-    usb_dump_state("pre-boot");
+    if (!usb_ocp_recovery_apply_capability_policy()) {
+        handle_error("MCU: Failed to apply USB Recovery capability policy\n");
+    }
     // Boot the USB device controller AND advertise the OCP recovery interface
     // in one step: the OCP composite config descriptor + recovery class-request
     // handler are installed as boot_usb_core's hooks, so any host VIP

@@ -87,6 +87,7 @@ enum printf_verbosity verbosity_g = LOW;
 // CALIPTRA_STATUS REGION_RESET bit (bit 0).
 #define W1DC_CALIPTRA_STATUS_REGION_RESET_MASK 0x00000001u
 #define W1DC_PROT_ERROR_MASK 0x0000FF00u
+#define W1DC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 #define W1DC_FIFO_CAP_MASK \
     RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK
 
@@ -459,6 +460,11 @@ void main(void)
     VPRINTF(LOW,
             "CPTRA: post-reset distinct payload drained without stale data\n");
 
-    // UVM sequence owns completion. Firmware remains alive.
+    lsu_write_32(
+        CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
+        lsu_read_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0) |
+            W1DC_FW_EXEC_CTRL_GO_MASK);
+
+    // MCU owns final test completion after observing the GO indication.
     while (1) {}
 }

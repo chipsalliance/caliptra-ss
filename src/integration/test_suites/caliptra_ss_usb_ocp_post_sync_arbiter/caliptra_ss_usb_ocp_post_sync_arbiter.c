@@ -88,6 +88,9 @@ uint8_t main(void)
     uint32_t baseline_bus_reset_count = 0u;
     uint8_t baseline_valid = 0u;
 
+    if (!usb_ocp_recovery_apply_capability_policy()) {
+        handle_error("MCU: Failed to apply USB Recovery capability policy\n");
+    }
     mcu_cptra_init_d(
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,

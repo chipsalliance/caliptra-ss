@@ -39,6 +39,13 @@
 #define USB_OCP_RECOVERY_INDIRECT_FIFO_DATA_OFFSET \
     USB_OCP_RECOVERY_REG_OFFSET(SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA)
 
+#define USB_OCP_RECOVERY_UNSUPPORTED_PLATFORM_CAPS_MASK \
+    (RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK | \
+     RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK | \
+     RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK | \
+     RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK | \
+     RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK)
+
 // USB 2.0 Section 9.6.3 Table 9-10: a configuration descriptor is 9 bytes long.
 #define USB_STD_CONFIGURATION_DESCRIPTOR_LENGTH 0x09u
 
@@ -87,6 +94,11 @@ const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len);
 // descriptor layout from Section 8.5.3: reserved byte at offset 3, maximum
 // write/read transfer sizes at offsets 4/6, and BCD version at offset 8.
 const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len);
+
+// Apply the platform capability policy before connecting the USB device.
+// Unsupported reset, recovery-mode, flashless-boot, and interface-mastering
+// features are removed from the firmware-programmable PROT_CAP bitmap.
+bool usb_ocp_recovery_apply_capability_policy(void);
 
 // Class-request hook for OCP Recovery EP0 traffic.  The VHDL PIE arbiter
 // classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed requests to the
