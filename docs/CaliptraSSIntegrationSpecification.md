@@ -284,7 +284,7 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 
 | Parameter | Default | Description |
 |:----------|:--------|:------------|
-| `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option for USB high-speed startup. Leave at `0` for hardware. |
+| `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option to reduce runtime of USB high-speed startup. Leave at `0` for synthesis or GLS. |
 | `USB_C_DEV0_RAM_ADDRWIDTH` | `9` | Address width of DEV0 packet SRAM. Provide `2**USB_C_DEV0_RAM_ADDRWIDTH` 64-bit words; the default is 4 KiB. |
 | `USB_C_DEV1_RAM_ADDRWIDTH` | `9` | Address width of DEV1 packet SRAM. Provide `2**USB_C_DEV1_RAM_ADDRWIDTH` 64-bit words; the default is 4 KiB. |
 | `USB_C_DEV0_NBPHYSEP` | `14` | Number of physical endpoints for the MCU-facing DEV0 controller; forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. |
