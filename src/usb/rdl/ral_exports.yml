@@ -29,7 +29,7 @@ interfaces:
       file: ../../../third_party/usb2/systemrdl/usb_combo.rdl
       definition: usb_combo
       parameters:
-        DEV0_NBPHYSEP: 14
+        DEV0_NBPHYSEP: 28
         EPUB: 32
         DAUB: 32
         DALB: 17
@@ -54,7 +54,7 @@ interfaces:
       file: ../../../third_party/usb2/systemrdl/usb_device_memory.rdl
       definition: usb_device_memory
       parameters:
-        MEMORY_ENTRIES: 512
+        MEMORY_ENTRIES: 8192
     base_address: 0x3010_0000
     output:
       path: ../tb/ral/generated/usb_dev0_mem_ral_pkg.sv
@@ -69,7 +69,7 @@ interfaces:
       file: ../../../third_party/usb2/systemrdl/usbhsd.rdl
       definition: usbhsd
       parameters:
-        NBPHYSEP: 14
+        NBPHYSEP: 28
         EPUB: 32
         DAUB: 32
         DALB: 17
@@ -96,8 +96,8 @@ interfaces:
       file: ../../../third_party/usb2/systemrdl/usb_device_memory.rdl
       definition: usb_device_memory
       parameters:
-        MEMORY_ENTRIES: 512
-    base_address: 0x3010_1000
+        MEMORY_ENTRIES: 8192
+    base_address: 0x3011_0000
     output:
       path: ../tb/ral/generated/usb_dev1_mem_ral_pkg.sv
       class_name: usb_dev1_mem_ral

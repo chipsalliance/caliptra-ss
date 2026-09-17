@@ -41,10 +41,10 @@ module caliptra_ss_top
     ,parameter MCU_SRAM_SIZE_KB = 512
     ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
     ,parameter USB_G_SIM_CHIRP_TIMERS = 0
-    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 9
-    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 9
-    ,parameter USB_C_DEV0_NBPHYSEP = 14
-    ,parameter USB_C_DEV1_NBPHYSEP = 14
+    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV0_NBPHYSEP = 28
+    ,parameter USB_C_DEV1_NBPHYSEP = 28
     ,parameter USB_C_HUB_FIFO_SIZE = 172
     ,parameter SPI_HOST_ENA = 1
     ,parameter SPI_HOST_NUM_CS = 2

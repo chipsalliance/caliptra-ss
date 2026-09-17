@@ -115,7 +115,7 @@
 #ifndef DEV0_CSR_EPSKIP
 #define DEV0_CSR_EPSKIP                                                                             (0x14)
 #define DEV0_CSR_EPSKIP_SKIP_LOW                                                                    (0)
-#define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (0xffff)
+#define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (0x3fffffff)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_EPINUSE                                                              (0x20000018)
 #ifndef DEV0_CSR_EPINUSE
@@ -123,13 +123,13 @@
 #define DEV0_CSR_EPINUSE_EP0_BUF_LOW                                                                (0)
 #define DEV0_CSR_EPINUSE_EP0_BUF_MASK                                                               (0x3)
 #define DEV0_CSR_EPINUSE_BUF_LOW                                                                    (2)
-#define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (0xfffc)
+#define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (0x3ffffffc)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_EPBUFCFG                                                             (0x2000001c)
 #ifndef DEV0_CSR_EPBUFCFG
 #define DEV0_CSR_EPBUFCFG                                                                           (0x1c)
 #define DEV0_CSR_EPBUFCFG_BUF_SB_LOW                                                                (2)
-#define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (0xfffc)
+#define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (0x3ffffffc)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_INTSTAT                                                              (0x20000020)
 #ifndef DEV0_CSR_INTSTAT
@@ -159,7 +159,7 @@
 #define DEV0_CSR_INTSTAT_EP5IN_LOW                                                                  (11)
 #define DEV0_CSR_INTSTAT_EP5IN_MASK                                                                 (0x800)
 #define DEV0_CSR_INTSTAT_EP_UPPER_LOW                                                               (12)
-#define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (0xf000)
+#define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (0x3ffff000)
 #define DEV0_CSR_INTSTAT_FRAME_INT_LOW                                                              (30)
 #define DEV0_CSR_INTSTAT_FRAME_INT_MASK                                                             (0x40000000)
 #define DEV0_CSR_INTSTAT_DEV_INT_LOW                                                                (31)
@@ -169,7 +169,7 @@
 #ifndef DEV0_CSR_INTEN
 #define DEV0_CSR_INTEN                                                                              (0x24)
 #define DEV0_CSR_INTEN_EP_INT_EN_LOW                                                                (0)
-#define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (0xffff)
+#define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (0x3fffffff)
 #define DEV0_CSR_INTEN_FRAME_INT_EN_LOW                                                             (30)
 #define DEV0_CSR_INTEN_FRAME_INT_EN_MASK                                                            (0x40000000)
 #define DEV0_CSR_INTEN_DEV_INT_EN_LOW                                                               (31)
@@ -203,7 +203,7 @@
 #define DEV0_CSR_INTSETSTAT_EP5IN_LOW                                                               (11)
 #define DEV0_CSR_INTSETSTAT_EP5IN_MASK                                                              (0x800)
 #define DEV0_CSR_INTSETSTAT_EP_UPPER_LOW                                                            (12)
-#define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (0xf000)
+#define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (0x3ffff000)
 #define DEV0_CSR_INTSETSTAT_FRAME_INT_LOW                                                           (30)
 #define DEV0_CSR_INTSETSTAT_FRAME_INT_MASK                                                          (0x40000000)
 #define DEV0_CSR_INTSETSTAT_DEV_INT_LOW                                                             (31)
@@ -213,7 +213,7 @@
 #ifndef DEV0_CSR_INTROUTE
 #define DEV0_CSR_INTROUTE                                                                           (0x2c)
 #define DEV0_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                          (0)
-#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (0xffff)
+#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (0x3fffffff)
 #define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                       (30)
 #define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                      (0x40000000)
 #define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                         (31)
@@ -241,7 +241,7 @@
 #ifndef DEV0_CSR_EPTOGGLE
 #define DEV0_CSR_EPTOGGLE                                                                           (0x34)
 #define DEV0_CSR_EPTOGGLE_TOGGLE_LOW                                                                (0)
-#define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (0xffff)
+#define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (0x3fffffff)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_CLKCTRL                                                              (0x20000038)
 #ifndef DEV0_CSR_CLKCTRL
@@ -381,7 +381,7 @@
 #ifndef USB_DEV1_CSR_EPSKIP
 #define USB_DEV1_CSR_EPSKIP                                                                         (0x14)
 #define USB_DEV1_CSR_EPSKIP_SKIP_LOW                                                                (0)
-#define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (0xffff)
+#define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (0x3fffffff)
 #endif
 #define SOC_USB_DEV1_CSR_EPINUSE                                                                    (0x20002018)
 #ifndef USB_DEV1_CSR_EPINUSE
@@ -389,13 +389,13 @@
 #define USB_DEV1_CSR_EPINUSE_EP0_BUF_LOW                                                            (0)
 #define USB_DEV1_CSR_EPINUSE_EP0_BUF_MASK                                                           (0x3)
 #define USB_DEV1_CSR_EPINUSE_BUF_LOW                                                                (2)
-#define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (0xfffc)
+#define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (0x3ffffffc)
 #endif
 #define SOC_USB_DEV1_CSR_EPBUFCFG                                                                   (0x2000201c)
 #ifndef USB_DEV1_CSR_EPBUFCFG
 #define USB_DEV1_CSR_EPBUFCFG                                                                       (0x1c)
 #define USB_DEV1_CSR_EPBUFCFG_BUF_SB_LOW                                                            (2)
-#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (0xfffc)
+#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (0x3ffffffc)
 #endif
 #define SOC_USB_DEV1_CSR_INTSTAT                                                                    (0x20002020)
 #ifndef USB_DEV1_CSR_INTSTAT
@@ -425,7 +425,7 @@
 #define USB_DEV1_CSR_INTSTAT_EP5IN_LOW                                                              (11)
 #define USB_DEV1_CSR_INTSTAT_EP5IN_MASK                                                             (0x800)
 #define USB_DEV1_CSR_INTSTAT_EP_UPPER_LOW                                                           (12)
-#define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (0xf000)
+#define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (0x3ffff000)
 #define USB_DEV1_CSR_INTSTAT_FRAME_INT_LOW                                                          (30)
 #define USB_DEV1_CSR_INTSTAT_FRAME_INT_MASK                                                         (0x40000000)
 #define USB_DEV1_CSR_INTSTAT_DEV_INT_LOW                                                            (31)
@@ -435,7 +435,7 @@
 #ifndef USB_DEV1_CSR_INTEN
 #define USB_DEV1_CSR_INTEN                                                                          (0x24)
 #define USB_DEV1_CSR_INTEN_EP_INT_EN_LOW                                                            (0)
-#define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (0xffff)
+#define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (0x3fffffff)
 #define USB_DEV1_CSR_INTEN_FRAME_INT_EN_LOW                                                         (30)
 #define USB_DEV1_CSR_INTEN_FRAME_INT_EN_MASK                                                        (0x40000000)
 #define USB_DEV1_CSR_INTEN_DEV_INT_EN_LOW                                                           (31)
@@ -469,7 +469,7 @@
 #define USB_DEV1_CSR_INTSETSTAT_EP5IN_LOW                                                           (11)
 #define USB_DEV1_CSR_INTSETSTAT_EP5IN_MASK                                                          (0x800)
 #define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_LOW                                                        (12)
-#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (0xf000)
+#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (0x3ffff000)
 #define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_LOW                                                       (30)
 #define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_MASK                                                      (0x40000000)
 #define USB_DEV1_CSR_INTSETSTAT_DEV_INT_LOW                                                         (31)
@@ -479,7 +479,7 @@
 #ifndef USB_DEV1_CSR_INTROUTE
 #define USB_DEV1_CSR_INTROUTE                                                                       (0x2c)
 #define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                      (0)
-#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (0xffff)
+#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (0x3fffffff)
 #define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                   (30)
 #define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                  (0x40000000)
 #define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                     (31)
@@ -507,7 +507,7 @@
 #ifndef USB_DEV1_CSR_EPTOGGLE
 #define USB_DEV1_CSR_EPTOGGLE                                                                       (0x34)
 #define USB_DEV1_CSR_EPTOGGLE_TOGGLE_LOW                                                            (0)
-#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (0xffff)
+#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (0x3fffffff)
 #endif
 #define SOC_USB_DEV1_CSR_CLKCTRL                                                                    (0x20002038)
 #ifndef USB_DEV1_CSR_CLKCTRL
@@ -10061,9 +10061,9 @@
 #define SOC_MCI_TOP_MCU_SRAM_BASE_ADDR                                                              (0x21c00000)
 #define SOC_MCI_TOP_MCU_SRAM_END_ADDR                                                               (0x21dfffff)
 #define SOC_USB_DEV0_MEM_BASE_ADDR                                                                  (0x30000000)
-#define SOC_USB_DEV0_MEM_END_ADDR                                                                   (0x30000fff)
-#define SOC_USB_DEV1_MEM_BASE_ADDR                                                                  (0x30001000)
-#define SOC_USB_DEV1_MEM_END_ADDR                                                                   (0x30001fff)
+#define SOC_USB_DEV0_MEM_END_ADDR                                                                   (0x3000ffff)
+#define SOC_USB_DEV1_MEM_BASE_ADDR                                                                  (0x30010000)
+#define SOC_USB_DEV1_MEM_END_ADDR                                                                   (0x3001ffff)
 #define SOC_OTP_CTRL_BASE_ADDR                                                                      (0x70000000)
 #define SOC_OTP_CTRL_INTERRUPT_STATE                                                                (0x70000000)
 #ifndef OTP_CTRL_INTERRUPT_STATE

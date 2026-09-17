@@ -106,19 +106,19 @@
 `ifndef DEV0_CSR_EPSKIP
 `define DEV0_CSR_EPSKIP                                                                             (32'h14)
 `define DEV0_CSR_EPSKIP_SKIP_LOW                                                                    (0)
-`define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (32'hffff)
+`define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (32'h3fffffff)
 `endif
 `ifndef DEV0_CSR_EPINUSE
 `define DEV0_CSR_EPINUSE                                                                            (32'h18)
 `define DEV0_CSR_EPINUSE_EP0_BUF_LOW                                                                (0)
 `define DEV0_CSR_EPINUSE_EP0_BUF_MASK                                                               (32'h3)
 `define DEV0_CSR_EPINUSE_BUF_LOW                                                                    (2)
-`define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (32'hfffc)
+`define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (32'h3ffffffc)
 `endif
 `ifndef DEV0_CSR_EPBUFCFG
 `define DEV0_CSR_EPBUFCFG                                                                           (32'h1c)
 `define DEV0_CSR_EPBUFCFG_BUF_SB_LOW                                                                (2)
-`define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (32'hfffc)
+`define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (32'h3ffffffc)
 `endif
 `ifndef DEV0_CSR_INTSTAT
 `define DEV0_CSR_INTSTAT                                                                            (32'h20)
@@ -147,7 +147,7 @@
 `define DEV0_CSR_INTSTAT_EP5IN_LOW                                                                  (11)
 `define DEV0_CSR_INTSTAT_EP5IN_MASK                                                                 (32'h800)
 `define DEV0_CSR_INTSTAT_EP_UPPER_LOW                                                               (12)
-`define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (32'hf000)
+`define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (32'h3ffff000)
 `define DEV0_CSR_INTSTAT_FRAME_INT_LOW                                                              (30)
 `define DEV0_CSR_INTSTAT_FRAME_INT_MASK                                                             (32'h40000000)
 `define DEV0_CSR_INTSTAT_DEV_INT_LOW                                                                (31)
@@ -156,7 +156,7 @@
 `ifndef DEV0_CSR_INTEN
 `define DEV0_CSR_INTEN                                                                              (32'h24)
 `define DEV0_CSR_INTEN_EP_INT_EN_LOW                                                                (0)
-`define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (32'hffff)
+`define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (32'h3fffffff)
 `define DEV0_CSR_INTEN_FRAME_INT_EN_LOW                                                             (30)
 `define DEV0_CSR_INTEN_FRAME_INT_EN_MASK                                                            (32'h40000000)
 `define DEV0_CSR_INTEN_DEV_INT_EN_LOW                                                               (31)
@@ -189,7 +189,7 @@
 `define DEV0_CSR_INTSETSTAT_EP5IN_LOW                                                               (11)
 `define DEV0_CSR_INTSETSTAT_EP5IN_MASK                                                              (32'h800)
 `define DEV0_CSR_INTSETSTAT_EP_UPPER_LOW                                                            (12)
-`define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (32'hf000)
+`define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (32'h3ffff000)
 `define DEV0_CSR_INTSETSTAT_FRAME_INT_LOW                                                           (30)
 `define DEV0_CSR_INTSETSTAT_FRAME_INT_MASK                                                          (32'h40000000)
 `define DEV0_CSR_INTSETSTAT_DEV_INT_LOW                                                             (31)
@@ -198,7 +198,7 @@
 `ifndef DEV0_CSR_INTROUTE
 `define DEV0_CSR_INTROUTE                                                                           (32'h2c)
 `define DEV0_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                          (0)
-`define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (32'hffff)
+`define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (32'h3fffffff)
 `define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                       (30)
 `define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                      (32'h40000000)
 `define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                         (31)
@@ -224,7 +224,7 @@
 `ifndef DEV0_CSR_EPTOGGLE
 `define DEV0_CSR_EPTOGGLE                                                                           (32'h34)
 `define DEV0_CSR_EPTOGGLE_TOGGLE_LOW                                                                (0)
-`define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (32'hffff)
+`define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (32'h3fffffff)
 `endif
 `ifndef DEV0_CSR_CLKCTRL
 `define DEV0_CSR_CLKCTRL                                                                            (32'h38)
@@ -349,19 +349,19 @@
 `ifndef USB_DEV1_CSR_EPSKIP
 `define USB_DEV1_CSR_EPSKIP                                                                         (32'h14)
 `define USB_DEV1_CSR_EPSKIP_SKIP_LOW                                                                (0)
-`define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (32'hffff)
+`define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (32'h3fffffff)
 `endif
 `ifndef USB_DEV1_CSR_EPINUSE
 `define USB_DEV1_CSR_EPINUSE                                                                        (32'h18)
 `define USB_DEV1_CSR_EPINUSE_EP0_BUF_LOW                                                            (0)
 `define USB_DEV1_CSR_EPINUSE_EP0_BUF_MASK                                                           (32'h3)
 `define USB_DEV1_CSR_EPINUSE_BUF_LOW                                                                (2)
-`define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (32'hfffc)
+`define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (32'h3ffffffc)
 `endif
 `ifndef USB_DEV1_CSR_EPBUFCFG
 `define USB_DEV1_CSR_EPBUFCFG                                                                       (32'h1c)
 `define USB_DEV1_CSR_EPBUFCFG_BUF_SB_LOW                                                            (2)
-`define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (32'hfffc)
+`define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (32'h3ffffffc)
 `endif
 `ifndef USB_DEV1_CSR_INTSTAT
 `define USB_DEV1_CSR_INTSTAT                                                                        (32'h20)
@@ -390,7 +390,7 @@
 `define USB_DEV1_CSR_INTSTAT_EP5IN_LOW                                                              (11)
 `define USB_DEV1_CSR_INTSTAT_EP5IN_MASK                                                             (32'h800)
 `define USB_DEV1_CSR_INTSTAT_EP_UPPER_LOW                                                           (12)
-`define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (32'hf000)
+`define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (32'h3ffff000)
 `define USB_DEV1_CSR_INTSTAT_FRAME_INT_LOW                                                          (30)
 `define USB_DEV1_CSR_INTSTAT_FRAME_INT_MASK                                                         (32'h40000000)
 `define USB_DEV1_CSR_INTSTAT_DEV_INT_LOW                                                            (31)
@@ -399,7 +399,7 @@
 `ifndef USB_DEV1_CSR_INTEN
 `define USB_DEV1_CSR_INTEN                                                                          (32'h24)
 `define USB_DEV1_CSR_INTEN_EP_INT_EN_LOW                                                            (0)
-`define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (32'hffff)
+`define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (32'h3fffffff)
 `define USB_DEV1_CSR_INTEN_FRAME_INT_EN_LOW                                                         (30)
 `define USB_DEV1_CSR_INTEN_FRAME_INT_EN_MASK                                                        (32'h40000000)
 `define USB_DEV1_CSR_INTEN_DEV_INT_EN_LOW                                                           (31)
@@ -432,7 +432,7 @@
 `define USB_DEV1_CSR_INTSETSTAT_EP5IN_LOW                                                           (11)
 `define USB_DEV1_CSR_INTSETSTAT_EP5IN_MASK                                                          (32'h800)
 `define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_LOW                                                        (12)
-`define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (32'hf000)
+`define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (32'h3ffff000)
 `define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_LOW                                                       (30)
 `define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_MASK                                                      (32'h40000000)
 `define USB_DEV1_CSR_INTSETSTAT_DEV_INT_LOW                                                         (31)
@@ -441,7 +441,7 @@
 `ifndef USB_DEV1_CSR_INTROUTE
 `define USB_DEV1_CSR_INTROUTE                                                                       (32'h2c)
 `define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                      (0)
-`define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (32'hffff)
+`define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (32'h3fffffff)
 `define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                   (30)
 `define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                  (32'h40000000)
 `define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                     (31)
@@ -467,7 +467,7 @@
 `ifndef USB_DEV1_CSR_EPTOGGLE
 `define USB_DEV1_CSR_EPTOGGLE                                                                       (32'h34)
 `define USB_DEV1_CSR_EPTOGGLE_TOGGLE_LOW                                                            (0)
-`define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (32'hffff)
+`define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (32'h3fffffff)
 `endif
 `ifndef USB_DEV1_CSR_CLKCTRL
 `define USB_DEV1_CSR_CLKCTRL                                                                        (32'h38)

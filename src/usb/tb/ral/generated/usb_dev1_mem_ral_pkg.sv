@@ -31,7 +31,7 @@ package usb_dev1_mem_ral_pkg;
 
         virtual function void build();
             this.default_map = create_map("reg_map", 0, 8.0, UVM_NO_ENDIAN);
-            this.m_mem = new("m_mem", 512, 64, "RW");
+            this.m_mem = new("m_mem", 8192, 64, "RW");
             this.m_mem.configure(this);
             this.default_map.add_mem(this.m_mem, 0);
         endfunction : build

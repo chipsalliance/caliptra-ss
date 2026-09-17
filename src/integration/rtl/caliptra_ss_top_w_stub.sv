@@ -24,10 +24,10 @@ module caliptra_ss_top_w_stub #(
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
     ,parameter USB_G_SIM_CHIRP_TIMERS = 0
-    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 9
-    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 9
-    ,parameter USB_C_DEV0_NBPHYSEP = 14
-    ,parameter USB_C_DEV1_NBPHYSEP = 14
+    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV0_NBPHYSEP = 28
+    ,parameter USB_C_DEV1_NBPHYSEP = 28
     ,parameter USB_C_HUB_FIFO_SIZE = 172
     ,parameter UART_ENA = 1
 )(

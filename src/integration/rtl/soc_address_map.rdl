@@ -31,17 +31,21 @@
 
 addrmap soc {
 
-    usb_combo usb_combo @ 0x2000_0000;
+    usb_combo #(
+        .DEV0_NBPHYSEP(28)
+    ) usb_combo @ 0x2000_0000;
 
-    usbhsd usb_dev1_csr @ 0x2000_2000;
+    usbhsd #(
+        .NBPHYSEP(28)
+    ) usb_dev1_csr @ 0x2000_2000;
 
     external usb_device_memory #(
-        .MEMORY_ENTRIES(512)
+        .MEMORY_ENTRIES(8192)
     ) usb_dev0_mem @ 0x3000_0000;
 
     external usb_device_memory #(
-        .MEMORY_ENTRIES(512)
-    ) usb_dev1_mem @ 0x3000_1000;
+        .MEMORY_ENTRIES(8192)
+    ) usb_dev1_mem @ 0x3001_0000;
 
     I3CCSR I3CCSR @ 0x2000_4000;
 

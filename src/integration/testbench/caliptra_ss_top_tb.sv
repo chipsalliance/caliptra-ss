@@ -37,10 +37,10 @@
 module caliptra_ss_top_tb
 #(
     `include "css_mcu0_el2_param.vh"
-    ,parameter int unsigned USB_C_DEV0_RAM_ADDRWIDTH_TB = 9
-    ,parameter int unsigned USB_C_DEV1_RAM_ADDRWIDTH_TB = 9
-    ,parameter int unsigned USB_C_DEV0_NBPHYSEP_TB = 14
-    ,parameter int unsigned USB_C_DEV1_NBPHYSEP_TB = 14
+    ,parameter int unsigned USB_C_DEV0_RAM_ADDRWIDTH_TB = 13
+    ,parameter int unsigned USB_C_DEV1_RAM_ADDRWIDTH_TB = 13
+    ,parameter int unsigned USB_C_DEV0_NBPHYSEP_TB = 28
+    ,parameter int unsigned USB_C_DEV1_NBPHYSEP_TB = 28
 );
 
     import tb_top_pkg::*;
