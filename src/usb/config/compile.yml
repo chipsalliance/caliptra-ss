@@ -12,10 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# Playbook compiles RTL VHDL sources into rtl. Alias usb_lib to that same
-# physical library so the compound USB's explicit usb_lib bindings resolve.
 ---
-provides: [usb_lib]
+provides: [lib_usb_compound]
 schema_version: 3.1.0
 targets:
   rtl:
@@ -35,14 +33,6 @@ targets:
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep_config_handler.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_app_hw_hub.m.vhdl
----
-provides: [lib_usb_compound]
-schema_version: 3.1.0
-requires:
-  - usb_lib
-targets:
-  rtl:
-    vhdl_files:
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/ip_xxx_3511_hs_mem_compound.e.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure.a.vhdl
       - $COMPILE_ROOT/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure_cfg.c.vhdl
