@@ -1,0 +1,9 @@
+document:
+  schema: 1.0
+
+contents:
+  - tests:
+      tags: ["L1", "usb_top_tb", "Promote"]
+      paths:
+        - ../tests/usb_init.yml
+        - ../tests/usb_endpoint_rw.yml
