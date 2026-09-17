@@ -284,11 +284,11 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 
 | Parameter | Default | Description |
 |:----------|:--------|:------------|
-| `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option for USB high-speed startup. Leave at `0` for hardware. |
+| `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option to reduce runtime of USB high-speed startup. Leave at `0` for synthesis or GLS. |
 | `USB_C_DEV0_RAM_ADDRWIDTH` | `13` | Address width of DEV0 packet SRAM. Provide `2**USB_C_DEV0_RAM_ADDRWIDTH` 64-bit words; the default is 8192 words (64 KiB). |
 | `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Address width of DEV1 packet SRAM. Provide `2**USB_C_DEV1_RAM_ADDRWIDTH` 64-bit words; the default is 8192 words (64 KiB). |
-| `USB_C_DEV0_NBPHYSEP` | `28` | Non-EP0 directional endpoints for the MCU-facing DEV0 controller: EP1-EP14 IN/OUT, plus the separate EP0 IN/OUT. Must be even and at most 28 with the current interrupt register layout. |
-| `USB_C_DEV1_NBPHYSEP` | `28` | Non-EP0 directional endpoints for the SoC-facing DEV1 controller: EP1-EP14 IN/OUT, plus the separate EP0 IN/OUT. Must be even and at most 28 with the current interrupt register layout. |
+| `USB_C_DEV0_NBPHYSEP` | `28` | Number of physical endpoints for the MCU-facing DEV0 controller (excluding EP0); forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
+| `USB_C_DEV1_NBPHYSEP` | `28` | Number of physical endpoints for the SoC-facing DEV1 controller (excluding EP0); forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
 
 ## Interfaces & Signals
