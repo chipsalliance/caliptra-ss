@@ -16,8 +16,8 @@
 #include "printf.h"
 #include "riscv_hw_if.h"
 #include "spi_host.h"
+#include "caliptra_ss_lib.h"
 #include <stddef.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -45,10 +45,10 @@ struct command_segment_fields_s setup_segment_fields(uint32_t opcode) {
   // SPI Flash is 1MB consist of 4096 pages with a page size of 256B. SPI Flash model use LSB byte
   // of flash_addr as the page offset. This test will write 256B to the flash so ensure the last
   // byte of the flash_addr points to the start of the page.
-  segment_fields.flash_addr = (rand() % 0x100000) & 0xFFF00u;
+  segment_fields.flash_addr = (xorshift32() % 0x100000) & 0xFFF00u;
 
   for (uint8_t i = 0; i < FIFO_DEPTH; i++) {
-    segment_fields.data[i] = rand();
+    segment_fields.data[i] = xorshift32();
   }
 
   return segment_fields;
