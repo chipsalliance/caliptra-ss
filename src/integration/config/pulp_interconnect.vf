@@ -1,5 +1,5 @@
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/include
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench_src/common_cells/include
++incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/include
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/common_cells/src/caliptra_ss_tb_cf_math_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/common_cells/src/caliptra_ss_tb_lzc.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/common_cells/src/caliptra_ss_tb_onehot_to_bin.sv
@@ -27,5 +27,3 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/src/caliptra_ss_tb_axi_dw_
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/src/caliptra_ss_tb_axi_dw_converter.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/src/caliptra_ss_tb_axi_xbar_unmuxed.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench_src/axi/src/caliptra_ss_tb_axi_xbar.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_axi_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/pulp_interconnect.sv

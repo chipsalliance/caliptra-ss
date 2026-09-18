@@ -1,3 +1,0 @@
-+incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
-${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp_pkg.sv
-${CALIPTRA_SS_ROOT}/src/integration/testbench/prim_generic_otp_pkg.sv

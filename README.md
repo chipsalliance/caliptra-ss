@@ -28,7 +28,7 @@ Simulation:
    - `avery/2025.1_20250313` AXI interconnect and I3C VIP
    - The AXI interconnect VIP is only required for the default build; the open-source PULP AXI crossbar can be selected instead (see [AXI Interconnect Selection](#axi-interconnect-selection)). The I3C VIP is always required.
  - ARM AXI Protocol Checker
-   - `BP063-BU-01000-r0p1-00rel0` Axi4PC.sv must be acquired from the ARM website
+   - `BP063-BU-01000-r0p1-00rel0` Axi4PC.sv must be acquired from the ARM website for both Avery and PULP AXI builds
  - UVM installation
    - `Version 1800.2-2020`
 
@@ -100,7 +100,7 @@ Required for simulation:<BR>
 `ADAMSBRIDGE_ROOT`: Defines the absolute path to the Adams-Bridge submodule root. Must be defined as `${CALIPTRA_ROOT}/submodules/adams-bridge`.<BR>
 `CALIPTRA_PRIM_ROOT`: Set to $CALIPTRA_ROOT/src/caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
 `CALIPTRA_PRIM_MODULE_PREFIX`: Set to caliptra_prim_generic for simulation. See Caliptra core integration specification for technology specific instructions.
-`CALIPTRA_AXI4PC_DIR`: Path to the directory that contains the ARM AXI4 Protocol Checker file. This file must be acquired from the Arm website by integrators, as it contains copyrighted materials.<BR>
+`CALIPTRA_AXI4PC_DIR`: Path to the directory that contains the ARM AXI4 Protocol Checker file. Required for both Avery and PULP AXI builds. This file must be acquired from the Arm website by integrators, as it contains copyrighted materials.<BR>
 `AVERY_HOME`: Installation root for Avery VIP<BR>
 `AVERY_PLI`: Directory within AVERY\_HOME that contains avery\_pli<BR>
 `AVERY_SIM`: Directory within AVERY\_HOME that contains avery\_sim<BR>
@@ -110,8 +110,6 @@ Required for simulation:<BR>
 `VCS_HOME`: Path to the installation of VCS
 `DESIGNWARE_HOME`: Path to common/shared library code for Synopsys SVT VIP
 `DESIGNWARE_HOME_USB`: Path to SVT USB VIP installation
-`CSS_AXI_FLIST`: Path to the AXI-interconnect filelist fragment included by `caliptra_ss_top_tb.vf`. Set and exported automatically by the provided Makefile based on `PULP_AXI`; only define it manually when compiling directly from the VF filelist (see [AXI Interconnect Selection](#axi-interconnect-selection)).<BR>
-
 Required for Firmware (i.e. Test suites) makefile:<BR>
   `TESTNAME`: Contains the name of one of the tests listed inside the `$CALIPTRA_SS_ROOT/src/integration/test_suites` folder; used for simulations with `caliptra_ss_top_tb` tests<BR>
   `CALIPTRA_TESTNAME`: Identifies which firmware test will be compiled and executed on the Caliptra Core RV processor as part of the Subsystem test. This may indicate the name of a directory inside `$CALIPTRA_ROOT/src/integration/test_suites`, or it may indicate the name of a test firmware file contained inside the caliptra-ss repository for execution on Caliptra core. In this case, the file must be:
@@ -160,12 +158,10 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 
 ## **Verilog File Lists** ##
 VF files provide absolute filepaths (prefixed by the `CALIPTRA_SS_ROOT` environment variable) to each compile target for the associated component.<BR>
-The "Integration" sub-component contains the top-level fileset for Caliptra Subsystem. `src/integration/config/compile.yml` defines the required filesets and sub-component dependencies for this build target. Nearly all files/dependencies for compiling the top-level testbench are explicitly listed in `src/integration/config/caliptra_ss_top_tb.vf`. That filelist ends with a `-f ${CSS_AXI_FLIST}` include that pulls in the AXI-interconnect–specific sources; `CSS_AXI_FLIST` must point at either `caliptra_ss_top_tb_axi_avery.vf` (default) or `caliptra_ss_top_tb_axi_pulp.vf` (see [AXI Interconnect Selection](#axi-interconnect-selection)). The provided Makefile sets and exports `CSS_AXI_FLIST` automatically; users compiling directly from the VF filelist must define it themselves.<BR>
+The "Integration" sub-component contains the top-level filesets for Caliptra Subsystem. `src/integration/config/compile.yml` separates shared Avery infrastructure (`avery_vip`), Avery I3C VIP (`avery_i3c`), Avery AXI VIP (`avery_axi`), the ARM AXI protocol checker (`axi4pc`), and the PULP AXI implementation (`pulp_interconnect`). `caliptra_ss_top_tb` is the default provider and generates `src/integration/config/caliptra_ss_top_tb.vf` with the Avery AXI interconnect. `caliptra_ss_top_tb_pulp` generates `src/integration/config/caliptra_ss_top_tb_pulp.vf` with the PULP AXI interconnect. Both filelists elaborate the `caliptra_ss_top_tb` SystemVerilog top.<BR>
 Verilog file lists are generated via VCS and included in the config directory for each unit. File lists define the compilation sources (including all dependencies) required to build and simulate a given module or testbench, and should be used by integrators for simulation, lint, and synthesis. Compilation using the provided Verilog file lists requires all [environment variables](#environment-variables) to be defined.
 
-Important: Users must download the [ARM AXI4 Protocol Checker](https://developer.arm.com/downloads/view/BP063) from ARM, as it is a dependency
-of both the Avery AXI VIP and the PULP AXI crossbar (which instantiates the `Axi4PC` protocol checkers directly). These files contain proprietary materials and therefore are not included in the
-caliptra-ss GitHub repository.
+Important: Users must download the [ARM AXI4 Protocol Checker](https://developer.arm.com/downloads/view/BP063) from ARM. Both the Avery and PULP AXI builds require it; the PULP interconnect instantiates the checker when `TB_PULP_AXI4PC` is defined. These files contain proprietary materials and therefore are not included in the caliptra-ss GitHub repository.
 
 ## **Simulation Flow** ##
 
@@ -191,7 +187,7 @@ caliptra-ss GitHub repository.
 1. Invoke `${CALIPTRA_SS_ROOT}/tools/scripts/Makefile` with target 'mcu_program.hex' to produce SRAM initialization files from the firmware found in `src/integration/test_suites/${TESTNAME}`
     - E.g.: `make -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile mcu_program.hex`
     - NOTE: TESTNAME may also be overridden in the makefile command line invocation, e.g. `make -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile TESTNAME=mcu_hello_world program.hex`
-1. Compile complete project using `src/integration/config/caliptra_ss_top_tb.vf` as a compilation target in VCS. When running the `vcs` command to generate simv, users should ensure that `caliptra_ss_top_tb` and `ai3c_tests_bench` are explicitly specified as the top-level components in their command.
+1. Compile the complete project using `src/integration/config/caliptra_ss_top_tb.vf` for the default Avery AXI interconnect or `src/integration/config/caliptra_ss_top_tb_pulp.vf` for the PULP AXI interconnect. When running the `vcs` command to generate simv, users should ensure that `caliptra_ss_top_tb` and `ai3c_tests_bench` are explicitly specified as the top-level components in their command.
     - NOTE: The following macro values must be defined (or omitted) to match the value provided during firmware compilation. The full L0 regression suite includes tests that will fail if the firmware and hardware configuration has a discrepancy.
       - CALIPTRA_INTERNAL_TRNG
 1. Copy the test generator scripts to the run output directory:
@@ -208,14 +204,14 @@ caliptra-ss GitHub repository.
 
 The Caliptra Subsystem testbench can be built with either of two AXI interconnects between the manager and subordinate endpoints:
 
-- **Avery AXI interconnect VIP** (default, `PULP_AXI=0`): the proprietary Mentor Graphics AVERY interconnect. Requires the `AVERY_AXI` environment variable and a valid Avery license.
-- **PULP AXI crossbar** (`PULP_AXI=1`): the open-source [PULP `axi`](https://github.com/pulp-platform/axi) crossbar, vendored (and uniquified) under `src/integration/testbench_src/`. Requires no Avery AXI VIP; the AXI protocol checkers are provided by the ARM `Axi4PC` checker.
+- **Avery AXI interconnect VIP** (default, `PULP_AXI=0`): the proprietary Mentor Graphics AVERY interconnect, compiled from the `caliptra_ss_top_tb` provider. Requires the `AVERY_AXI` environment variable and a valid Avery license.
+- **PULP AXI crossbar** (`PULP_AXI=1`): the open-source [PULP `axi`](https://github.com/pulp-platform/axi) crossbar, vendored (and uniquified) under `src/integration/testbench_src/` and compiled from the `caliptra_ss_top_tb_pulp` provider. It does not require the Avery AXI VIP, but the testbench still requires the Avery I3C VIP and PLI. ARM `Axi4PC` instances provide protocol checking on the PULP AXI ports.
 
 Select the interconnect via the `PULP_AXI` make variable, e.g.:
 
 `make -C <path/to/run/folder> -f ${CALIPTRA_SS_ROOT}/tools/scripts/Makefile PULP_AXI=1 TESTNAME=${TESTNAME} CALIPTRA_TESTNAME=${CALIPTRA_TESTNAME} vcs`
 
-For `PULP_AXI=1` the Makefile passes `+define+TB_PULP_AXI` and `+define+TB_PULP_AXI4PC` and sets/exports `CSS_AXI_FLIST` to `caliptra_ss_top_tb_axi_pulp.vf`; for the default it uses the Avery `+define+`s and `caliptra_ss_top_tb_axi_avery.vf`. Either way, `caliptra_ss_top_tb.vf` pulls in the selected fragment via its trailing `-f ${CSS_AXI_FLIST}` line. When compiling directly from the VF filelist (without the Makefile), define `CSS_AXI_FLIST` and the matching `+define+`s yourself.
+For `PULP_AXI=1`, the Makefile compiles `caliptra_ss_top_tb_pulp.vf` and passes `+define+TB_PULP_AXI` and `+define+TB_PULP_AXI4PC`. By default, it compiles `caliptra_ss_top_tb.vf` and passes the Avery AXI interconnect defines. In both configurations, the elaborated top remains `caliptra_ss_top_tb`. When compiling directly from a filelist without the Makefile, select the corresponding filelist and pass its matching defines.
 
 ## **MCU Veer-EL2 Core Configuration** ##
 
