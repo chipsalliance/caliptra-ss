@@ -51,15 +51,27 @@ module fc_lcc_tb_services (
         case (tb_service_cmd)
           CMD_FORCE_FC_AWUSER_CPTR_CORE: begin
             $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CLPTRA_CORE_AXI_USER");
+`ifndef VERILATOR
             force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = `CPTRA_SS_TOP_PATH.cptra_ss_strap_caliptra_dma_axi_user_i;
-          end
+`else
+            $fatal("[%m]: fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = CLPTRA_CORE_AXI_USER");
+`endif
+         end
           CMD_FORCE_FC_AWUSER_MCU: begin
             $display("fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = MCU_LSU_AXI_USER");
+`ifndef VERILATOR
             force `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser = `CPTRA_SS_TOP_PATH.cptra_ss_strap_mcu_lsu_axi_user_i;
+`else
+            $fatal("[%m]: fc_lcc_tb_services: Forcing fuse ctrl core_axi_wr_req.awuser = MCU_LSU_AXI_USER");
+`endif
           end
           CMD_RELEASE_AWUSER: begin
             $display("fc_lcc_tb_services: Releasing fuse ctrl's force on core_axi_wr_req.awuser");
+`ifndef VERILATOR
             release `FC_PATH.u_fuse_ctrl_filter.core_axi_wr_req.awuser;
+`else
+            $fatal("[%m]: fc_lcc_tb_services: Releasing fuse ctrl's force on core_axi_wr_req.awuser");
+`endif
           end
           CMD_FC_FORCE_ZEROIZATION: begin
             $display("fc_lcc_tb_services: Forcing FIPS_ZEROIZATION_PPD_i = 1, ROM mask = 32'hFFFFFFFF, and lcc_is_in_SCRAP_mode = 0");
@@ -81,7 +93,8 @@ module fc_lcc_tb_services (
             release `FC_PATH.lcc_is_in_SCRAP_mode;
           end
           CMD_FORCE_LC_TOKENS: begin
-            $display("fc_lcc_tb_services: Forcing LCC TOKENS");            
+            $display("fc_lcc_tb_services: Forcing LCC TOKENS");
+`ifndef VERILATOR
             force `LCC_PATH.otp_lc_data_i.test_tokens_valid = 4'b0101; //from_otp_caliptra_ss_lc_data_i.test_tokens_valid;//caliptra_ss_lc_tx_t'(On);
             force `LCC_PATH.otp_lc_data_i.test_unlock_token = 128'h3852_305b_aecf_5ff1_d5c1_d25f_6db9_058d;
             force `LCC_PATH.otp_lc_data_i.test_exit_dev_token = 128'hd10ceca9_725373ec_32ac874c_7381bd54;
@@ -89,6 +102,9 @@ module fc_lcc_tb_services (
             force `LCC_PATH.otp_lc_data_i.prod_exit_prodend_token = 128'hdb17c6f2_fa63d690_734a8a31_6147d7e5;
             force `LCC_PATH.otp_lc_data_i.rma_token_valid = 4'b0101;//from_otp_caliptra_ss_lc_data_i.rma_token_valid;//caliptra_ss_lc_tx_t'(On);
             force `LCC_PATH.otp_lc_data_i.rma_token = 128'h67926115_6880f4cc_51785553_16c51e4d;
+`else
+            $fatal("[%m]: fc_lcc_tb_services: Forcing LCC TOKENS");
+`endif
           end
           CMD_LC_FORCE_RMA_SCRAP_PPD: begin
             $display("fc_lcc_tb_services: Forcing Allow_RMA_or_SCRAP_on_PPD  = 1");
@@ -146,7 +162,11 @@ module fc_lcc_tb_services (
           end
           CMD_LC_FAULT_CNTR: begin
             $display("fc_lcc_tb_services: fault lcc cntr fuse");
+`ifndef VERILATOR
             force `LCC_PATH.u_lc_ctrl_fsm.u_lc_ctrl_state_transition.lc_cnt_i[0] = '0;
+`else
+            $fatal("[%m]: fc_lcc_tb_services: fault lcc cntr fuse");
+`endif
           end
           CMD_DISABLE_CLK_BYP_ACK: begin
             $display("fc_lcc_tb_services: disable clk_byp_ack");

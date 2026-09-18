@@ -143,7 +143,11 @@ import tb_top_pkg::*;
             //force `MCI_PATH.mcu_sram_fw_exec_region_lock = 1'b1;
         end 
         if ($test$plusargs("CALIPTRA_SS_JTAG_MCI_BRK")) begin
+`ifndef VERILATOR
             force `MCI_PATH.from_otp_to_lcc_program_i.state = PROD_state;
+`else
+            assert(`MCI_PATH.from_otp_to_lcc_program_i.state == PROD_state);
+`endif
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_debug_intent_i = 1'b1;
             force `CPTRA_SS_TB_TOP_NAME.cptra_ss_mci_boot_seq_brkpoint_i = 1'b1;
             $display("APPLYING FORCE (caliptra_ss_top_tb_services): MCI_PATH.state is PROD_state");  
@@ -411,9 +415,13 @@ import tb_top_pkg::*;
                     release `MCI_REG_TOP_PATH.mbox1_sram_single_ecc_error;
                 end
                 8: begin
+`ifndef VERILATOR
                     force `MCI_REG_TOP_PATH.security_state_o.debug_locked = caliptra_prim_mubi_pkg::MuBi4True;
                     @(negedge clk);
                     release `MCI_REG_TOP_PATH.security_state_o.debug_locked;
+`else
+                    $fatal("[%m]: force release `MCI_REG_TOP_PATH.security_state_o.debug_locked");
+`endif
                 end
                 9: begin
                     force `MCI_REG_TOP_PATH.scan_mode = 1'b1;
