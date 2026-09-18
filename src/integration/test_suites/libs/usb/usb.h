@@ -23,12 +23,209 @@
 #include <stdbool.h>
 
 // -------------------------------------------------------------------------
+// USB Hub composite IP (ip_xxx_3511_hs_mem_compound_wrapper) entity address
+// map.
+//
+// The composite wrapper exposes three independent AXI subordinate ports:
+//   hub_axi  - HUB control/status registers (2 regs) + HUB RAM
+//   dev0_axi - USBDC0 registers (MCU-owned device controller)
+//   dev1_axi - USBDC1 registers (SoC-uC-owned device controller)
+//
+// Per the NIC400 address map (see asib_cptra_ss_mcu_lsu_m0.xml), from the
+// MCU LSU master:
+//   cptra_usb_host_s5   (0x2000_1000 - 0x2000_1FFF) -> dev0_axi (MCU-owned)
+//   cptra_usb_device_s6 (0x2000_0000 - 0x2000_0FFF) -> hub_axi
+//   cptra_usb_dma_s7    (0x2001_0000 - 0x2001_FFFF) -> dev1_axi (SoC-uC-owned)
+//
+// The legacy SOC_USBHSD_*/SOC_USBHSH_* macros in soc_address_map.h were
+// generated for the previous single-device USB IP and do NOT reflect this
+// new entity mapping:
+//   - SOC_USBHSD_* (base 0x2000_0000) lands on the HUB's 2-register bank,
+//     not on a full USBDC register bank.
+//   - SOC_USBHSH_* (base 0x2000_1000) was generated with legacy EHCI-style
+//     host register names (CAPLENGTH_CHIPID, HCSPARAMS, USBCMD, PORTSC1,
+//     etc.) and does not match the USBDC register layout either, even
+//     though 0x2000_1000 is the address range that now correctly reaches
+//     the MCU's own USBDC0 device controller (dev0_axi) per the NIC map.
+//
+// USB_DEV0_REG_BASE_ADDR below is therefore the correct base address for
+// the MCU-owned USBDC0 register bank. The wrapper splits each entity's
+// AXI aperture into a register region (offset < DEV0_REG_ADDR_TOP) and a
+// DMA/SRAM region (offset >= DEV0_REG_ADDR_TOP); DEV0_REG_ADDR_TOP is
+// currently 0x100 (see ip_xxx_3511_hs_mem_compound_wrapper.sv, pending
+// USB2-PRG-001), so USB_DEV0_DMA_BASE_ADDR is set to
+// USB_DEV0_REG_BASE_ADDR + 0x100. This still fits comfortably within the
+// 4KB s5 NIC window (0x2000_1000-0x2000_1FFF).
+// -------------------------------------------------------------------------
+#define USB_DEV0_REG_BASE_ADDR       0x20001000u
+#define USB_DEV0_DMA_BASE_ADDR       0x20001100u
+
+// -------------------------------------------------------------------------
+// USBDC1 (dev1_axi) base addresses.
+//
+// dev1_axi is the second embedded device controller of the compound IP. It
+// maps to the NIC400 slave port cptra_usb_dma_s7 (0x2001_0000 -
+// 0x2001_FFFF). The MCU LSU master decodes this window (see
+// nic400_asib_cptra_ss_mcu_lsu_m0_decode_cptra_64.v: decode_int[12] covers
+// 0x2001_0000..0x2001_FFFF), and caliptra_ss_top.sv wires dev1_axi fully,
+// so MCU test firmware can drive USBDC1 with no RTL change. The
+// "SoC-uC-owned" wording above is a fabric access-control policy statement,
+// not a hardware restriction of this testbench.
+//
+// The wrapper splits the dev1 aperture the same way as dev0, with
+// DEV1_REG_ADDR_TOP = 0x100 (ip_xxx_3511_hs_mem_compound_wrapper.sv), so
+// the dev1 register bank sits at 0x2001_0000 and the dev1 DMA/SRAM region
+// at 0x2001_0100 - a structural mirror of dev0.
+//
+// CAVEAT: some host-side tests reuse 0x2001_0000 as scratch PTD/SRAM space
+// (for example caliptra_ss_usb_hs_host_bulk_out.c). Those host tests and
+// the dev1 device tests therefore must not be run against this window at
+// the same time within one test.
+// -------------------------------------------------------------------------
+#define USB_DEV1_REG_BASE_ADDR       0x20010000u
+#define USB_DEV1_DMA_BASE_ADDR       0x20010100u
+
+// -------------------------------------------------------------------------
+// Device selection for the shared USB test library.
+//
+// usb.c is compiled per test into that test's own build directory, so the
+// device under test is selected at compile time with -DUSB_DEV_SEL=<0|1>
+// passed through BUILD_CFLAGS from the test yml, e.g.
+//   BUILD_CFLAGS="-DUSB_DEV_SEL=1"
+// Default is 0 (USBDC0) so every pre-existing test keeps its behaviour
+// without any yml change.
+//
+// All library code and all device-agnostic test code must use the neutral
+// USB_DEV_* macros below. The absolute USB_DEV0_*/USB_DEV1_* macros remain
+// available for code that must address one specific controller regardless
+// of the selection.
+// -------------------------------------------------------------------------
+#ifndef USB_DEV_SEL
+#define USB_DEV_SEL 0
+#endif
+
+#if (USB_DEV_SEL == 1)
+#define USB_DEV_REG_BASE_ADDR        USB_DEV1_REG_BASE_ADDR
+#define USB_DEV_DMA_BASE_ADDR        USB_DEV1_DMA_BASE_ADDR
+#elif (USB_DEV_SEL == 0)
+#define USB_DEV_REG_BASE_ADDR        USB_DEV0_REG_BASE_ADDR
+#define USB_DEV_DMA_BASE_ADDR        USB_DEV0_DMA_BASE_ADDR
+#else
+#error "USB_DEV_SEL must be 0 (USBDC0) or 1 (USBDC1)"
+#endif
+
+
+// -------------------------------------------------------------------------
+// HUB control/status register (hub_axi aperture).
+//
+// hub_axi maps to cptra_usb_device_s6 (0x2000_0000 - 0x2000_0FFF).
+//
+// IMPORTANT - descriptor store migration (IP branch usb_hub_ram):
+// The hub descriptor store used to be an external 64-bit SRAM reached
+// through a dedicated descriptor DMA AHB port, which firmware had to
+// program (descriptors + SETUP-match table + dev-link pointer) before
+// enabling the hub. That whole path no longer exists. The descriptor
+// store is now an internal flip-flop array inside the compound IP that
+// self-initializes from a ROM constant at reset, so firmware has nothing
+// to program: the only firmware action left is the two-phase enable of
+// the hub control register below.
+//
+// Consequently every USB_HUB_RAM_* offset macro and every SETUP-match
+// entry field macro that used to live here has been removed. The hub
+// status register was never implemented and is removed as well.
+//
+// The hub control/status register is word 15 of the hub register file
+// (C_HUB_CS), i.e. AHB byte offset 0x3C in the hub aperture:
+//   bit  0 = HUB_EN       (structural mux select; hub entity enabled and
+//                          presents USBDC0/USBDC1 as embedded downstream
+//                          devices)
+//   bit 16 = HUB_CONNECT  (hub connects to the upstream port, ANDed with
+//                          VBus valid inside the IP)
+//
+// HUB_EN bit position: the RTL samples bit 0, but the IP's own reference
+// BFM still writes bit 7 (its legacy position). Until the IP owner
+// confirms which is authoritative, USBHUB_CTRL_HUB_EN_MASK sets BOTH
+// bits so the sequence works either way. Bit 7 is a don't-care for the
+// current RTL.
+//
+// Note also that the IP asserts hub_write_lock once HUB_EN and
+// HUB_CONNECT are both set, and word 15 is itself inside the locked
+// array, so firmware cannot clear HUB_CONNECT afterwards. The only
+// disconnect stimulus available is VBus removal.
+// -------------------------------------------------------------------------
+#define USB_HUB_REG_BASE_ADDR        0x20000000u
+#define USB_HUB_CTRL                 (USB_HUB_REG_BASE_ADDR + 0x03Cu)
+
+#define USBHUB_CTRL_HUB_EN_MASK      ((1u << 0) | (1u << 7))
+#define USBHUB_CTRL_HUB_CONNECT_MASK (1u << 16)
+
+// NOTE: the former USB_HUB_RAM_* layout offsets, the SETUP-match table
+// dword-address / descriptor-slot-base helpers, and the SETUP-match entry
+// field byte offsets used to live here. They all described the external
+// descriptor SRAM that firmware had to program, which no longer exists
+// (see the migration note above), so they have been deleted rather than
+// re-derived: the internal ROM constant owns that layout now and its
+// byte offsets differ from the previous firmware-chosen ones.
+
+// USBDC0 register offsets from USB_DEV0_REG_BASE_ADDR (same 16-register
+// layout as the legacy SOC_USBHSD_* bank; the *_MASK/*_SHIFT bitfield
+// macros from soc_address_map.h are offset-independent and remain valid).
+#define USB_DEV0_DEVCMDSTAT   (USB_DEV0_REG_BASE_ADDR + 0x00u)
+#define USB_DEV0_INFO         (USB_DEV0_REG_BASE_ADDR + 0x04u)
+#define USB_DEV0_EPLISTSTART  (USB_DEV0_REG_BASE_ADDR + 0x08u)
+#define USB_DEV0_DATABUFSTART (USB_DEV0_REG_BASE_ADDR + 0x0cu)
+#define USB_DEV0_LPM          (USB_DEV0_REG_BASE_ADDR + 0x10u)
+#define USB_DEV0_EPSKIP       (USB_DEV0_REG_BASE_ADDR + 0x14u)
+#define USB_DEV0_EPINUSE      (USB_DEV0_REG_BASE_ADDR + 0x18u)
+#define USB_DEV0_EPBUFCFG     (USB_DEV0_REG_BASE_ADDR + 0x1cu)
+#define USB_DEV0_INTSTAT      (USB_DEV0_REG_BASE_ADDR + 0x20u)
+#define USB_DEV0_INTEN        (USB_DEV0_REG_BASE_ADDR + 0x24u)
+#define USB_DEV0_INTSETSTAT   (USB_DEV0_REG_BASE_ADDR + 0x28u)
+#define USB_DEV0_EPTOGGLE     (USB_DEV0_REG_BASE_ADDR + 0x34u)
+#define USB_DEV0_ULPIDEBUG    (USB_DEV0_REG_BASE_ADDR + 0x3cu)
+
+// USBDC1 register offsets from USB_DEV1_REG_BASE_ADDR. The register layout
+// is identical to USBDC0 - only the aperture base differs.
+#define USB_DEV1_DEVCMDSTAT   (USB_DEV1_REG_BASE_ADDR + 0x00u)
+#define USB_DEV1_INFO         (USB_DEV1_REG_BASE_ADDR + 0x04u)
+#define USB_DEV1_EPLISTSTART  (USB_DEV1_REG_BASE_ADDR + 0x08u)
+#define USB_DEV1_DATABUFSTART (USB_DEV1_REG_BASE_ADDR + 0x0cu)
+#define USB_DEV1_LPM          (USB_DEV1_REG_BASE_ADDR + 0x10u)
+#define USB_DEV1_EPSKIP       (USB_DEV1_REG_BASE_ADDR + 0x14u)
+#define USB_DEV1_EPINUSE      (USB_DEV1_REG_BASE_ADDR + 0x18u)
+#define USB_DEV1_EPBUFCFG     (USB_DEV1_REG_BASE_ADDR + 0x1cu)
+#define USB_DEV1_INTSTAT      (USB_DEV1_REG_BASE_ADDR + 0x20u)
+#define USB_DEV1_INTEN        (USB_DEV1_REG_BASE_ADDR + 0x24u)
+#define USB_DEV1_INTSETSTAT   (USB_DEV1_REG_BASE_ADDR + 0x28u)
+#define USB_DEV1_EPTOGGLE     (USB_DEV1_REG_BASE_ADDR + 0x34u)
+#define USB_DEV1_ULPIDEBUG    (USB_DEV1_REG_BASE_ADDR + 0x3cu)
+
+// Device-neutral register macros. These resolve to the USBDC selected by
+// USB_DEV_SEL and are what the shared library (usb.c) and all replicated
+// test firmware use.
+#define USB_DEV_DEVCMDSTAT    (USB_DEV_REG_BASE_ADDR + 0x00u)
+#define USB_DEV_INFO          (USB_DEV_REG_BASE_ADDR + 0x04u)
+#define USB_DEV_EPLISTSTART   (USB_DEV_REG_BASE_ADDR + 0x08u)
+#define USB_DEV_DATABUFSTART  (USB_DEV_REG_BASE_ADDR + 0x0cu)
+#define USB_DEV_LPM           (USB_DEV_REG_BASE_ADDR + 0x10u)
+#define USB_DEV_EPSKIP        (USB_DEV_REG_BASE_ADDR + 0x14u)
+#define USB_DEV_EPINUSE       (USB_DEV_REG_BASE_ADDR + 0x18u)
+#define USB_DEV_EPBUFCFG      (USB_DEV_REG_BASE_ADDR + 0x1cu)
+#define USB_DEV_INTSTAT       (USB_DEV_REG_BASE_ADDR + 0x20u)
+#define USB_DEV_INTEN         (USB_DEV_REG_BASE_ADDR + 0x24u)
+#define USB_DEV_INTSETSTAT    (USB_DEV_REG_BASE_ADDR + 0x28u)
+#define USB_DEV_EPTOGGLE      (USB_DEV_REG_BASE_ADDR + 0x34u)
+#define USB_DEV_ULPIDEBUG     (USB_DEV_REG_BASE_ADDR + 0x3cu)
+
+
+// -------------------------------------------------------------------------
 // DMA slave base address and SRAM buffer layout constants.
 // These are not RDL-specified and therefore not present in any generated
-// header. All USB register addresses and field masks are in soc_address_map.h
-// under the USBHSD_* / USBHSH_* naming convention; use those directly.
+// header. USB_DMA_BASE_ADDR is kept as an alias of USB_DEV0_DMA_BASE_ADDR
+// for source compatibility with existing test firmware; new code should
+// prefer USB_DEV0_DMA_BASE_ADDR directly.
 // -------------------------------------------------------------------------
-#define USB_DMA_BASE_ADDR            0x20010000u
+#define USB_DMA_BASE_ADDR            USB_DEV0_DMA_BASE_ADDR
 
 #define USB_SRAM_EP_LIST_OFFSET      0x000u
 #define USB_SRAM_SETUP_BUF_OFFSET    0x100u
@@ -61,7 +258,23 @@
 #define USB_EP_ENTRY_RF_ISO        (0u)
 #define USB_EP_ENTRY_RF_INT        (1u << 27)
 #define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
+// USB_EP_ENTRY_ADDR(off) - legacy macro that takes a raw offset value >> 6.
+// NOTE: use USB_EP_ENTRY_ABS_ADDR(abs) instead for all data-buffer EP entries.
+// See USB_EP_ENTRY_ABS_ADDR below.
 #define USB_EP_ENTRY_ADDR(off)    (((uint32_t)(off) >> 6) & 0x7FFu)
+// USB_EP_ENTRY_ABS_ADDR(abs_addr) - computes the AddrOffset field [10:0] of
+// an EP command/status list entry from the ABSOLUTE AXI byte address of the
+// data buffer. This is the correct formula for this design:
+//   DATABUFSTART only contributes bits[31:22] to the DMA address (C_DALB=22).
+//   The DMA engine reconstructs the buffer address as:
+//     {DATABUFSTART[31:22], addr_offset[10:0], word[3:0], 2'b00}
+//   so addr_offset must equal bits[16:6] of the absolute AXI buffer address.
+//   Passing (USB_DEV0_DMA_BASE_ADDR + SRAM_offset) gives the correct result:
+//     e.g. SETUP buf: (0x20001100+0x100)>>6 & 0x7FF = 0x20001200>>6 & 0x7FF
+//                   = 0x800048 & 0x7FF = 0x048
+//   This makes the DMA-written address 0x20000000|(0x48<<6)=0x20001200 match
+//   the MCU's AXI read address 0x20001200, so SRAM word indices agree.
+#define USB_EP_ENTRY_ABS_ADDR(abs_addr) (((uint32_t)(abs_addr) >> 6) & 0x7FFu)
 
 // -------------------------------------------------------------------------
 // USB 2.0 standard request codes (bRequest field of SETUP packet)
@@ -125,11 +338,39 @@ typedef struct {
 } usb_setup_pkt_t;
 
 // -------------------------------------------------------------------------
-// Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
-// Defined in usb.c. Tests that need a custom descriptor may define their own
-// array and pass it directly to usb_ep0_send_data().
+// USB 2.0 standard device descriptor (18 bytes, wire layout).
+//
+// This struct is packed so its byte layout maps 1:1 onto the EP0 IN SRAM
+// buffer that the device controller DMA serves to the host on a
+// GET_DESCRIPTOR(DEVICE) request. Multi-byte fields (bcdUSB, idVendor,
+// idProduct, bcdDevice) are little-endian, matching the USB wire order and
+// the RISC-V little-endian byte order, so no swapping is needed when the
+// struct is copied word-by-word into SRAM.
 // -------------------------------------------------------------------------
-extern const uint32_t usb_default_device_descriptor[5];
+typedef struct __attribute__((packed)) {
+    uint8_t  bLength;            // Descriptor size in bytes (18)
+    uint8_t  bDescriptorType;    // DEVICE descriptor type (1)
+    uint16_t bcdUSB;             // USB spec release number (0x0200 = USB 2.0)
+    uint8_t  bDeviceClass;       // Class code
+    uint8_t  bDeviceSubClass;    // Subclass code
+    uint8_t  bDeviceProtocol;    // Protocol code
+    uint8_t  bMaxPacketSize0;    // Max packet size for EP0 (64)
+    uint16_t idVendor;           // Vendor ID
+    uint16_t idProduct;          // Product ID
+    uint16_t bcdDevice;          // Device release number
+    uint8_t  iManufacturer;      // Index of manufacturer string descriptor
+    uint8_t  iProduct;           // Index of product string descriptor
+    uint8_t  iSerialNumber;      // Index of serial-number string descriptor
+    uint8_t  bNumConfigurations; // Number of possible configurations (1)
+} usb_device_descriptor_t;
+
+// Fixed device descriptors for the two embedded controllers. DEV0 and DEV1
+// differ in idProduct and bcdDevice so a scoreboard can tell which
+// controller answered the host. Defined in usb.c. The controller actually
+// served is selected at compile time by USB_DEV_SEL (see
+// usb_ep0_send_device_descriptor()).
+extern const usb_device_descriptor_t usb_dev0_device_descriptor;
+extern const usb_device_descriptor_t usb_dev1_device_descriptor;
 
 // -------------------------------------------------------------------------
 // USB driver API
@@ -161,6 +402,13 @@ void usb_read_setup_packet(usb_setup_pkt_t *pkt);
 // Write data[] to the EP0 IN SRAM buffer and arm EP0 IN to transmit nbytes.
 void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes);
 
+// Write the fixed device descriptor of the compile-time-selected controller
+// (usb_dev1_device_descriptor when USB_DEV_SEL==1, else
+// usb_dev0_device_descriptor) into the EP0 IN SRAM buffer and arm EP0 IN to
+// transmit nbytes. Called from the GET_DESCRIPTOR(DEVICE) handler when the
+// host requests the device descriptor.
+void usb_ep0_send_device_descriptor(uint32_t nbytes);
+
 // Arm EP0 IN with a zero-length packet (status phase for host-to-device
 // control transfers).
 void usb_ep0_send_zlp(void);
@@ -186,4 +434,38 @@ bool usb_handle_control_transfer(void);
 // Update the USB device address field in DEVCMDSTAT.
 void usb_set_device_address(uint8_t addr);
 
+// Clear DEVCMDSTAT.FORCE_NEEDCLK so the device controller stops requesting
+// the UTMI clock unconditionally and can actually enter suspend.
+//
+// boot_usb_core() / boot_usb_core_fs() set FORCE_NEEDCLK during bring-up.
+// While it is set, usbreg_pll_on holds the compound-structure clock_on term
+// high, which keeps reloading clk_off_counter to CLOCKOFF_CYCLE, which in
+// turn holds utmi_suspendm high - so no suspend edge is ever visible to a
+// UTMI-level suspend/resume checker.
+//
+// Call after enumeration completes and before host-side suspend stimulus is
+// armed. Suspend-oriented tests only; leave FORCE_NEEDCLK set elsewhere.
+// FORCE_VBUS is not modified.
+void usb_allow_clock_stop(void);
+
+// Program the HUB RAM (descriptors + SETUP-match table), validate via
+// readback, then set HUB_EN in the HUB Control register. HUB_CONNECT is
+// NOT set here - call usb_hub_connect() separately afterward, per the
+// reference janus_hub_ctrl_bfm.sv two-phase sequencing (HUB_EN alone
+// first, then HUB_EN|HUB_CONNECT together after a settling delay). Must
+// be called before the host can ever see USBDC0 or USBDC1, per USB Hub
+// Composite Device User Guide section 3.2.7.
+void usb_hub_init_and_connect(void);
+
+// Set HUB_CONNECT (together with HUB_EN, which must already be set by a
+// prior usb_hub_init_and_connect() call) in the HUB Control register,
+// connecting the hub entity to the upstream port. Call this after
+// usb_hub_init_and_connect() and after USBDC0 is ready (boot_usb_core()),
+// since the host begins enumerating hub port 0 (and thus USBDC0) as soon
+// as the hub connects upstream.
+void usb_hub_connect(void);
+
+
 #endif // USB_DRV_H
+
+// File contains AI-generated response based on internal company sources
