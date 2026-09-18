@@ -1,0 +1,60 @@
+// Copyright lowRISC contributors (OpenTitan project).
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+// SPDX-License-Identifier: Apache-2.0
+
+class spi_host_report_catcher extends uvm_report_catcher;
+  `uvm_object_utils(spi_host_report_catcher)
+  function new(string name = "");
+    super.new(name);
+  endfunction
+  virtual function action_e catch();
+    if (get_severity() == UVM_WARNING && (get_id() == "RegModel" || get_id() == "UVM/FLD/SET/BSY")) begin
+      set_severity(UVM_INFO);
+    end
+    if (get_severity() == UVM_ERROR && get_id() == "SEQREQZMB") begin
+      set_severity(UVM_INFO);
+    end
+    if (get_id() == "CALIPTRA_ASSERT FAILED" && get_message() == "AssertConnected_A") begin
+      return CAUGHT;
+    end
+    return THROW;
+  endfunction
+endclass
+
+class spi_host_base_test extends dv_base_test #(
+    .CFG_T(spi_host_env_cfg),
+    .ENV_T(spi_host_env)
+  );
+
+  `uvm_component_utils(spi_host_base_test)
+  `uvm_component_new
+
+  // the base class dv_base_test creates the following instances:
+  // spi_host_env_cfg: cfg
+  // spi_host_env:     env
+
+  // the base class also looks up UVM_TEST_SEQ plusarg to create and run that seq in
+  // the run_phase; as such, nothing more needs to be done
+
+  virtual function void build_phase(uvm_phase phase);
+    spi_host_report_catcher catcher = spi_host_report_catcher::type_id::create("catcher");
+    super.build_phase(phase);
+    uvm_report_cb::add(null, catcher);
+  endfunction : build_phase
+
+  virtual function void end_of_elaboration_phase(uvm_phase phase);
+    super.end_of_elaboration_phase(phase);
+    if (uvm_top.get_report_verbosity_level() > UVM_LOW) begin
+      uvm_top.print_topology();
+    end
+  endfunction // end_of_elaboration
+
+  virtual task run_phase(uvm_phase phase);
+    fork
+      super.run_phase(phase);
+      if (cfg.is_active) begin
+        env.run_layered_register_vseq();
+      end
+    join
+  endtask
+endclass : spi_host_base_test
