@@ -104,6 +104,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/asserts
 +incdir+${CALIPTRA_SS_ROOT}/src/axi_mem/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb
++incdir+${CALIPTRA_SS_ROOT}/src/spi_host/model
 +incdir+${UVM_HOME_2020}/src
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest/sverilog/include
@@ -902,8 +903,6 @@ ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_shift_register.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_window.sv
-${CALIPTRA_SS_ROOT}/src/spi_host/model/spi_device_pkg.sv
-${CALIPTRA_SS_ROOT}/src/spi_host/model/spiflash.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_core.sv
 ${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_top.sv
@@ -964,6 +963,8 @@ ${CALIPTRA_SS_ROOT}/src/integration/asserts/caliptra_ss_top_sva.sv
 ${CALIPTRA_SS_ROOT}/src/axi_mem/testbench/rom.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/tb/icache_macros.svh
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/i3c_defines.svh
+${CALIPTRA_SS_ROOT}/src/spi_host/model/spi_device_pkg.sv
+${CALIPTRA_SS_ROOT}/src/spi_host/model/spiflash.sv
 ${UVM_HOME_2020}/src/uvm_pkg.sv
 ${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest/sverilog/include/svt_usb.uvm.pkg
 ${DESIGNWARE_HOME_USB}/vip/svt/mphy_svt/latest/sverilog/include/svt_mphy.uvm.pkg
