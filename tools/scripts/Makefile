@@ -170,13 +170,13 @@ endif
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 #-- AXI interconnect selection. Default = Avery interconnect VIP;
-#-- PULP_AXI=1 selects the PULP axi_xbar interconnect. This default must be
-#-- set BEFORE the TBFILES eval below, which expands PULP_AXI immediately to
-#-- pick the matching AXI filelist fragment.
+#-- PULP_AXI=1 selects the PULP axi_xbar compile provider while DUT remains
+#-- the caliptra_ss_top_tb SystemVerilog top in both configurations.
 PULP_AXI ?= 0
+TB_CONFIG ?= $(if $(filter 1,$(PULP_AXI)),caliptra_ss_top_tb_pulp,$(DUT))
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf $(TBDIR)/../config/caliptra_ss_top_tb_axi_$(if $(filter 1,$(PULP_AXI)),pulp,avery).vf | grep -v -e '+incdir+' -e '+define+' -e '^//' -e '^-f '))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(TB_CONFIG).vf $(TBDIR)/../config/$(TB_CONFIG).vhdl.vf | grep -v -e '+incdir+' -e '+define+' -e '^//' -e '^-f '))
 
 SYNOPSYS_SIM_SETUP = $(CALIPTRA_SS_ROOT)/third_party/usb2/tools/scripts/synopsys_sim.setup
 
@@ -294,14 +294,11 @@ VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
 VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
 VCS_COMP_OPTS += +define+AVERY_VCS
 VCS_COMP_OPTS += +define+AVERY_CLOCK=5
-#-- AXI interconnect selection
-#-- CSS_AXI_FLIST (exported, expanded by VCS in the `-f ${CSS_AXI_FLIST}` line
-#-- of caliptra_ss_top_tb.vf) picks the matching AXI source fragment.  In PULP
-#-- mode NO Avery AXI VIP sources are compiled
+#-- AXI interconnect selection. The matching sources come from TB_CONFIG;
+#-- these defines select the corresponding implementation in the shared top.
 ifeq ($(PULP_AXI),1)
 VCS_COMP_OPTS += +define+TB_PULP_AXI
 VCS_COMP_OPTS += +define+TB_PULP_AXI4PC
-CSS_AXI_FLIST := $(TBDIR)/../config/caliptra_ss_top_tb_axi_pulp.vf
 else
 VCS_COMP_OPTS += +define+FOUR_OUTSTANDING
 VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
@@ -313,9 +310,7 @@ VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=13
-CSS_AXI_FLIST := $(TBDIR)/../config/caliptra_ss_top_tb_axi_avery.vf
 endif
-export CSS_AXI_FLIST
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
@@ -378,7 +373,7 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 		--timing \
 	  $(includes) \
 	  $(suppress) \
-	  -f $(TBDIR)/../config/$(DUT).vf --top-module $(DUT) \
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vf --top-module $(DUT) \
 	  -f $(TBDIR)/../config/$(DUT).vlt \
 	  -exe test_$(DUT).cpp --autoflush $(VERILATOR_DEBUG) \
 	  $(TB_DEFS)
@@ -392,12 +387,12 @@ vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
 	vhdlan           -full64                -kdb=common_elab \
 	  -work rtl \
 	  -l vcs_vhdl_compile.log \
-	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vhdl.vf
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
 	  -work rtl \
 	  -l vcs_sv_compile.log \
-	  -f $(TBDIR)/../config/$(DUT).vf
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vf
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
