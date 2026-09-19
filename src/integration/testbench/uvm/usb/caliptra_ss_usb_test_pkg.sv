@@ -38,8 +38,8 @@ package caliptra_ss_usb_test_pkg;
   // FS testcases (pre-existing)
   `include "caliptra_ss_usb_fs_clock_sequence.svh"
   `include "caliptra_ss_usb_fs_clock_test.svh"
-  // Legacy DUT-host tests are retired: compound USB has no host controller.
-  // Their source files remain archived, but are not registered in this package.
+  `include "caliptra_ss_usb_fs_host_traffic_sequence.svh"
+  `include "caliptra_ss_usb_fs_host_traffic_test.svh"
 
   // HS testcases
   `include "caliptra_ss_usb_hs_conn_sequence.svh"
@@ -62,8 +62,14 @@ package caliptra_ss_usb_test_pkg;
 //  `include "caliptra_ss_usb_hs_dev_sof_test.svh"
   `include "caliptra_ss_usb_hs_dev_iso_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_iso_out_test.svh"
+  `include "caliptra_ss_usb_hs_host_bulk_out_sequence.svh"
+  `include "caliptra_ss_usb_hs_host_bulk_out_test.svh"
+  `include "caliptra_ss_usb_hs_host_iso_out_sequence.svh"
+  `include "caliptra_ss_usb_hs_host_iso_out_test.svh"
 //  `include "caliptra_ss_usb_hs_host_powerdown_sequence.svh"
 //  `include "caliptra_ss_usb_hs_host_powerdown_test.svh"
+  `include "caliptra_ss_usb_hs_host_remotewakeup_sequence.svh"
+  `include "caliptra_ss_usb_hs_host_remotewakeup_test.svh"
 //  `include "caliptra_ss_usb_hs_host_resume_sequence.svh"
 //  `include "caliptra_ss_usb_hs_host_resume_test.svh"
 

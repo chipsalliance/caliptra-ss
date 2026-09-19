@@ -115,7 +115,7 @@
 #ifndef DEV0_CSR_EPSKIP
 #define DEV0_CSR_EPSKIP                                                                             (0x14)
 #define DEV0_CSR_EPSKIP_SKIP_LOW                                                                    (0)
-#define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (0xffff)
+#define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (0x3fffffff)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_EPINUSE                                                              (0x20000018)
 #ifndef DEV0_CSR_EPINUSE
@@ -123,13 +123,13 @@
 #define DEV0_CSR_EPINUSE_EP0_BUF_LOW                                                                (0)
 #define DEV0_CSR_EPINUSE_EP0_BUF_MASK                                                               (0x3)
 #define DEV0_CSR_EPINUSE_BUF_LOW                                                                    (2)
-#define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (0xfffc)
+#define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (0x3ffffffc)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_EPBUFCFG                                                             (0x2000001c)
 #ifndef DEV0_CSR_EPBUFCFG
 #define DEV0_CSR_EPBUFCFG                                                                           (0x1c)
 #define DEV0_CSR_EPBUFCFG_BUF_SB_LOW                                                                (2)
-#define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (0xfffc)
+#define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (0x3ffffffc)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_INTSTAT                                                              (0x20000020)
 #ifndef DEV0_CSR_INTSTAT
@@ -159,7 +159,7 @@
 #define DEV0_CSR_INTSTAT_EP5IN_LOW                                                                  (11)
 #define DEV0_CSR_INTSTAT_EP5IN_MASK                                                                 (0x800)
 #define DEV0_CSR_INTSTAT_EP_UPPER_LOW                                                               (12)
-#define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (0xf000)
+#define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (0x3ffff000)
 #define DEV0_CSR_INTSTAT_FRAME_INT_LOW                                                              (30)
 #define DEV0_CSR_INTSTAT_FRAME_INT_MASK                                                             (0x40000000)
 #define DEV0_CSR_INTSTAT_DEV_INT_LOW                                                                (31)
@@ -169,7 +169,7 @@
 #ifndef DEV0_CSR_INTEN
 #define DEV0_CSR_INTEN                                                                              (0x24)
 #define DEV0_CSR_INTEN_EP_INT_EN_LOW                                                                (0)
-#define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (0xffff)
+#define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (0x3fffffff)
 #define DEV0_CSR_INTEN_FRAME_INT_EN_LOW                                                             (30)
 #define DEV0_CSR_INTEN_FRAME_INT_EN_MASK                                                            (0x40000000)
 #define DEV0_CSR_INTEN_DEV_INT_EN_LOW                                                               (31)
@@ -203,7 +203,7 @@
 #define DEV0_CSR_INTSETSTAT_EP5IN_LOW                                                               (11)
 #define DEV0_CSR_INTSETSTAT_EP5IN_MASK                                                              (0x800)
 #define DEV0_CSR_INTSETSTAT_EP_UPPER_LOW                                                            (12)
-#define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (0xf000)
+#define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (0x3ffff000)
 #define DEV0_CSR_INTSETSTAT_FRAME_INT_LOW                                                           (30)
 #define DEV0_CSR_INTSETSTAT_FRAME_INT_MASK                                                          (0x40000000)
 #define DEV0_CSR_INTSETSTAT_DEV_INT_LOW                                                             (31)
@@ -213,7 +213,7 @@
 #ifndef DEV0_CSR_INTROUTE
 #define DEV0_CSR_INTROUTE                                                                           (0x2c)
 #define DEV0_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                          (0)
-#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (0xffff)
+#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (0x3fffffff)
 #define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                       (30)
 #define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                      (0x40000000)
 #define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                         (31)
@@ -241,7 +241,7 @@
 #ifndef DEV0_CSR_EPTOGGLE
 #define DEV0_CSR_EPTOGGLE                                                                           (0x34)
 #define DEV0_CSR_EPTOGGLE_TOGGLE_LOW                                                                (0)
-#define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (0xffff)
+#define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (0x3fffffff)
 #endif
 #define SOC_USB_COMBO_DEV0_CSR_CLKCTRL                                                              (0x20000038)
 #ifndef DEV0_CSR_CLKCTRL
@@ -682,7 +682,7 @@
 #ifndef USB_DEV1_CSR_EPSKIP
 #define USB_DEV1_CSR_EPSKIP                                                                         (0x14)
 #define USB_DEV1_CSR_EPSKIP_SKIP_LOW                                                                (0)
-#define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (0xffff)
+#define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (0x3fffffff)
 #endif
 #define SOC_USB_DEV1_CSR_EPINUSE                                                                    (0x20002018)
 #ifndef USB_DEV1_CSR_EPINUSE
@@ -690,13 +690,13 @@
 #define USB_DEV1_CSR_EPINUSE_EP0_BUF_LOW                                                            (0)
 #define USB_DEV1_CSR_EPINUSE_EP0_BUF_MASK                                                           (0x3)
 #define USB_DEV1_CSR_EPINUSE_BUF_LOW                                                                (2)
-#define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (0xfffc)
+#define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (0x3ffffffc)
 #endif
 #define SOC_USB_DEV1_CSR_EPBUFCFG                                                                   (0x2000201c)
 #ifndef USB_DEV1_CSR_EPBUFCFG
 #define USB_DEV1_CSR_EPBUFCFG                                                                       (0x1c)
 #define USB_DEV1_CSR_EPBUFCFG_BUF_SB_LOW                                                            (2)
-#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (0xfffc)
+#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (0x3ffffffc)
 #endif
 #define SOC_USB_DEV1_CSR_INTSTAT                                                                    (0x20002020)
 #ifndef USB_DEV1_CSR_INTSTAT
@@ -726,7 +726,7 @@
 #define USB_DEV1_CSR_INTSTAT_EP5IN_LOW                                                              (11)
 #define USB_DEV1_CSR_INTSTAT_EP5IN_MASK                                                             (0x800)
 #define USB_DEV1_CSR_INTSTAT_EP_UPPER_LOW                                                           (12)
-#define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (0xf000)
+#define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (0x3ffff000)
 #define USB_DEV1_CSR_INTSTAT_FRAME_INT_LOW                                                          (30)
 #define USB_DEV1_CSR_INTSTAT_FRAME_INT_MASK                                                         (0x40000000)
 #define USB_DEV1_CSR_INTSTAT_DEV_INT_LOW                                                            (31)
@@ -736,7 +736,7 @@
 #ifndef USB_DEV1_CSR_INTEN
 #define USB_DEV1_CSR_INTEN                                                                          (0x24)
 #define USB_DEV1_CSR_INTEN_EP_INT_EN_LOW                                                            (0)
-#define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (0xffff)
+#define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (0x3fffffff)
 #define USB_DEV1_CSR_INTEN_FRAME_INT_EN_LOW                                                         (30)
 #define USB_DEV1_CSR_INTEN_FRAME_INT_EN_MASK                                                        (0x40000000)
 #define USB_DEV1_CSR_INTEN_DEV_INT_EN_LOW                                                           (31)
@@ -770,7 +770,7 @@
 #define USB_DEV1_CSR_INTSETSTAT_EP5IN_LOW                                                           (11)
 #define USB_DEV1_CSR_INTSETSTAT_EP5IN_MASK                                                          (0x800)
 #define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_LOW                                                        (12)
-#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (0xf000)
+#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (0x3ffff000)
 #define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_LOW                                                       (30)
 #define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_MASK                                                      (0x40000000)
 #define USB_DEV1_CSR_INTSETSTAT_DEV_INT_LOW                                                         (31)
@@ -780,7 +780,7 @@
 #ifndef USB_DEV1_CSR_INTROUTE
 #define USB_DEV1_CSR_INTROUTE                                                                       (0x2c)
 #define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                      (0)
-#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (0xffff)
+#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (0x3fffffff)
 #define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                   (30)
 #define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                  (0x40000000)
 #define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                     (31)
@@ -808,7 +808,7 @@
 #ifndef USB_DEV1_CSR_EPTOGGLE
 #define USB_DEV1_CSR_EPTOGGLE                                                                       (0x34)
 #define USB_DEV1_CSR_EPTOGGLE_TOGGLE_LOW                                                            (0)
-#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (0xffff)
+#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (0x3fffffff)
 #endif
 #define SOC_USB_DEV1_CSR_CLKCTRL                                                                    (0x20002038)
 #ifndef USB_DEV1_CSR_CLKCTRL
@@ -10362,9 +10362,9 @@
 #define SOC_MCI_TOP_MCU_SRAM_BASE_ADDR                                                              (0x21c00000)
 #define SOC_MCI_TOP_MCU_SRAM_END_ADDR                                                               (0x21dfffff)
 #define SOC_USB_DEV0_MEM_BASE_ADDR                                                                  (0x30000000)
-#define SOC_USB_DEV0_MEM_END_ADDR                                                                   (0x30000fff)
-#define SOC_USB_DEV1_MEM_BASE_ADDR                                                                  (0x30001000)
-#define SOC_USB_DEV1_MEM_END_ADDR                                                                   (0x30001fff)
+#define SOC_USB_DEV0_MEM_END_ADDR                                                                   (0x3000ffff)
+#define SOC_USB_DEV1_MEM_BASE_ADDR                                                                  (0x30010000)
+#define SOC_USB_DEV1_MEM_END_ADDR                                                                   (0x3001ffff)
 #define SOC_OTP_CTRL_BASE_ADDR                                                                      (0x70000000)
 #define SOC_OTP_CTRL_INTERRUPT_STATE                                                                (0x70000000)
 #ifndef OTP_CTRL_INTERRUPT_STATE
@@ -11490,6 +11490,165 @@
 #define SPI_HOST_EVENT_ENABLE_READY_MASK                                                            (0x10)
 #define SPI_HOST_EVENT_ENABLE_IDLE_LOW                                                              (5)
 #define SPI_HOST_EVENT_ENABLE_IDLE_MASK                                                             (0x20)
+#endif
+#define SOC_UART_BASE_ADDR                                                                          (0x70000c00)
+#define SOC_UART_INTR_STATE                                                                         (0x70000c00)
+#ifndef UART_INTR_STATE
+#define UART_INTR_STATE                                                                             (0x0)
+#define UART_INTR_STATE_TX_WATERMARK_LOW                                                            (0)
+#define UART_INTR_STATE_TX_WATERMARK_MASK                                                           (0x1)
+#define UART_INTR_STATE_RX_WATERMARK_LOW                                                            (1)
+#define UART_INTR_STATE_RX_WATERMARK_MASK                                                           (0x2)
+#define UART_INTR_STATE_TX_DONE_LOW                                                                 (2)
+#define UART_INTR_STATE_TX_DONE_MASK                                                                (0x4)
+#define UART_INTR_STATE_RX_OVERFLOW_LOW                                                             (3)
+#define UART_INTR_STATE_RX_OVERFLOW_MASK                                                            (0x8)
+#define UART_INTR_STATE_RX_FRAME_ERR_LOW                                                            (4)
+#define UART_INTR_STATE_RX_FRAME_ERR_MASK                                                           (0x10)
+#define UART_INTR_STATE_RX_BREAK_ERR_LOW                                                            (5)
+#define UART_INTR_STATE_RX_BREAK_ERR_MASK                                                           (0x20)
+#define UART_INTR_STATE_RX_TIMEOUT_LOW                                                              (6)
+#define UART_INTR_STATE_RX_TIMEOUT_MASK                                                             (0x40)
+#define UART_INTR_STATE_RX_PARITY_ERR_LOW                                                           (7)
+#define UART_INTR_STATE_RX_PARITY_ERR_MASK                                                          (0x80)
+#define UART_INTR_STATE_TX_EMPTY_LOW                                                                (8)
+#define UART_INTR_STATE_TX_EMPTY_MASK                                                               (0x100)
+#endif
+#define SOC_UART_INTR_ENABLE                                                                        (0x70000c04)
+#ifndef UART_INTR_ENABLE
+#define UART_INTR_ENABLE                                                                            (0x4)
+#define UART_INTR_ENABLE_TX_WATERMARK_LOW                                                           (0)
+#define UART_INTR_ENABLE_TX_WATERMARK_MASK                                                          (0x1)
+#define UART_INTR_ENABLE_RX_WATERMARK_LOW                                                           (1)
+#define UART_INTR_ENABLE_RX_WATERMARK_MASK                                                          (0x2)
+#define UART_INTR_ENABLE_TX_DONE_LOW                                                                (2)
+#define UART_INTR_ENABLE_TX_DONE_MASK                                                               (0x4)
+#define UART_INTR_ENABLE_RX_OVERFLOW_LOW                                                            (3)
+#define UART_INTR_ENABLE_RX_OVERFLOW_MASK                                                           (0x8)
+#define UART_INTR_ENABLE_RX_FRAME_ERR_LOW                                                           (4)
+#define UART_INTR_ENABLE_RX_FRAME_ERR_MASK                                                          (0x10)
+#define UART_INTR_ENABLE_RX_BREAK_ERR_LOW                                                           (5)
+#define UART_INTR_ENABLE_RX_BREAK_ERR_MASK                                                          (0x20)
+#define UART_INTR_ENABLE_RX_TIMEOUT_LOW                                                             (6)
+#define UART_INTR_ENABLE_RX_TIMEOUT_MASK                                                            (0x40)
+#define UART_INTR_ENABLE_RX_PARITY_ERR_LOW                                                          (7)
+#define UART_INTR_ENABLE_RX_PARITY_ERR_MASK                                                         (0x80)
+#define UART_INTR_ENABLE_TX_EMPTY_LOW                                                               (8)
+#define UART_INTR_ENABLE_TX_EMPTY_MASK                                                              (0x100)
+#endif
+#define SOC_UART_INTR_TEST                                                                          (0x70000c08)
+#ifndef UART_INTR_TEST
+#define UART_INTR_TEST                                                                              (0x8)
+#define UART_INTR_TEST_TX_WATERMARK_LOW                                                             (0)
+#define UART_INTR_TEST_TX_WATERMARK_MASK                                                            (0x1)
+#define UART_INTR_TEST_RX_WATERMARK_LOW                                                             (1)
+#define UART_INTR_TEST_RX_WATERMARK_MASK                                                            (0x2)
+#define UART_INTR_TEST_TX_DONE_LOW                                                                  (2)
+#define UART_INTR_TEST_TX_DONE_MASK                                                                 (0x4)
+#define UART_INTR_TEST_RX_OVERFLOW_LOW                                                              (3)
+#define UART_INTR_TEST_RX_OVERFLOW_MASK                                                             (0x8)
+#define UART_INTR_TEST_RX_FRAME_ERR_LOW                                                             (4)
+#define UART_INTR_TEST_RX_FRAME_ERR_MASK                                                            (0x10)
+#define UART_INTR_TEST_RX_BREAK_ERR_LOW                                                             (5)
+#define UART_INTR_TEST_RX_BREAK_ERR_MASK                                                            (0x20)
+#define UART_INTR_TEST_RX_TIMEOUT_LOW                                                               (6)
+#define UART_INTR_TEST_RX_TIMEOUT_MASK                                                              (0x40)
+#define UART_INTR_TEST_RX_PARITY_ERR_LOW                                                            (7)
+#define UART_INTR_TEST_RX_PARITY_ERR_MASK                                                           (0x80)
+#define UART_INTR_TEST_TX_EMPTY_LOW                                                                 (8)
+#define UART_INTR_TEST_TX_EMPTY_MASK                                                                (0x100)
+#endif
+#define SOC_UART_CTRL                                                                               (0x70000c0c)
+#ifndef UART_CTRL
+#define UART_CTRL                                                                                   (0xc)
+#define UART_CTRL_TX_LOW                                                                            (0)
+#define UART_CTRL_TX_MASK                                                                           (0x1)
+#define UART_CTRL_RX_LOW                                                                            (1)
+#define UART_CTRL_RX_MASK                                                                           (0x2)
+#define UART_CTRL_NF_LOW                                                                            (2)
+#define UART_CTRL_NF_MASK                                                                           (0x4)
+#define UART_CTRL_SLPBK_LOW                                                                         (4)
+#define UART_CTRL_SLPBK_MASK                                                                        (0x10)
+#define UART_CTRL_LLPBK_LOW                                                                         (5)
+#define UART_CTRL_LLPBK_MASK                                                                        (0x20)
+#define UART_CTRL_PARITY_EN_LOW                                                                     (6)
+#define UART_CTRL_PARITY_EN_MASK                                                                    (0x40)
+#define UART_CTRL_PARITY_ODD_LOW                                                                    (7)
+#define UART_CTRL_PARITY_ODD_MASK                                                                   (0x80)
+#define UART_CTRL_RXBLVL_LOW                                                                        (8)
+#define UART_CTRL_RXBLVL_MASK                                                                       (0x300)
+#define UART_CTRL_NCO_LOW                                                                           (16)
+#define UART_CTRL_NCO_MASK                                                                          (0xffff0000)
+#endif
+#define SOC_UART_STATUS                                                                             (0x70000c10)
+#ifndef UART_STATUS
+#define UART_STATUS                                                                                 (0x10)
+#define UART_STATUS_TXFULL_LOW                                                                      (0)
+#define UART_STATUS_TXFULL_MASK                                                                     (0x1)
+#define UART_STATUS_RXFULL_LOW                                                                      (1)
+#define UART_STATUS_RXFULL_MASK                                                                     (0x2)
+#define UART_STATUS_TXEMPTY_LOW                                                                     (2)
+#define UART_STATUS_TXEMPTY_MASK                                                                    (0x4)
+#define UART_STATUS_TXIDLE_LOW                                                                      (3)
+#define UART_STATUS_TXIDLE_MASK                                                                     (0x8)
+#define UART_STATUS_RXIDLE_LOW                                                                      (4)
+#define UART_STATUS_RXIDLE_MASK                                                                     (0x10)
+#define UART_STATUS_RXEMPTY_LOW                                                                     (5)
+#define UART_STATUS_RXEMPTY_MASK                                                                    (0x20)
+#endif
+#define SOC_UART_RDATA                                                                              (0x70000c14)
+#ifndef UART_RDATA
+#define UART_RDATA                                                                                  (0x14)
+#define UART_RDATA_RDATA_LOW                                                                        (0)
+#define UART_RDATA_RDATA_MASK                                                                       (0xff)
+#endif
+#define SOC_UART_WDATA                                                                              (0x70000c18)
+#ifndef UART_WDATA
+#define UART_WDATA                                                                                  (0x18)
+#define UART_WDATA_WDATA_LOW                                                                        (0)
+#define UART_WDATA_WDATA_MASK                                                                       (0xff)
+#endif
+#define SOC_UART_FIFO_CTRL                                                                          (0x70000c1c)
+#ifndef UART_FIFO_CTRL
+#define UART_FIFO_CTRL                                                                              (0x1c)
+#define UART_FIFO_CTRL_RXRST_LOW                                                                    (0)
+#define UART_FIFO_CTRL_RXRST_MASK                                                                   (0x1)
+#define UART_FIFO_CTRL_TXRST_LOW                                                                    (1)
+#define UART_FIFO_CTRL_TXRST_MASK                                                                   (0x2)
+#define UART_FIFO_CTRL_RXILVL_LOW                                                                   (2)
+#define UART_FIFO_CTRL_RXILVL_MASK                                                                  (0x1c)
+#define UART_FIFO_CTRL_TXILVL_LOW                                                                   (5)
+#define UART_FIFO_CTRL_TXILVL_MASK                                                                  (0xe0)
+#endif
+#define SOC_UART_FIFO_STATUS                                                                        (0x70000c20)
+#ifndef UART_FIFO_STATUS
+#define UART_FIFO_STATUS                                                                            (0x20)
+#define UART_FIFO_STATUS_TXLVL_LOW                                                                  (0)
+#define UART_FIFO_STATUS_TXLVL_MASK                                                                 (0xff)
+#define UART_FIFO_STATUS_RXLVL_LOW                                                                  (16)
+#define UART_FIFO_STATUS_RXLVL_MASK                                                                 (0xff0000)
+#endif
+#define SOC_UART_OVRD                                                                               (0x70000c24)
+#ifndef UART_OVRD
+#define UART_OVRD                                                                                   (0x24)
+#define UART_OVRD_TXEN_LOW                                                                          (0)
+#define UART_OVRD_TXEN_MASK                                                                         (0x1)
+#define UART_OVRD_TXVAL_LOW                                                                         (1)
+#define UART_OVRD_TXVAL_MASK                                                                        (0x2)
+#endif
+#define SOC_UART_VAL                                                                                (0x70000c28)
+#ifndef UART_VAL
+#define UART_VAL                                                                                    (0x28)
+#define UART_VAL_RX_LOW                                                                             (0)
+#define UART_VAL_RX_MASK                                                                            (0xffff)
+#endif
+#define SOC_UART_TIMEOUT_CTRL                                                                       (0x70000c2c)
+#ifndef UART_TIMEOUT_CTRL
+#define UART_TIMEOUT_CTRL                                                                           (0x2c)
+#define UART_TIMEOUT_CTRL_VAL_LOW                                                                   (0)
+#define UART_TIMEOUT_CTRL_VAL_MASK                                                                  (0xffffff)
+#define UART_TIMEOUT_CTRL_EN_LOW                                                                    (31)
+#define UART_TIMEOUT_CTRL_EN_MASK                                                                   (0x80000000)
 #endif
 #define SOC_MBOX_CSR_BASE_ADDR                                                                      (0xa0020000)
 #define SOC_MBOX_CSR_MBOX_LOCK                                                                      (0xa0020000)

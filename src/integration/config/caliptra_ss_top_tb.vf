@@ -81,6 +81,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/sha3/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_combiner/rtl
 +incdir+${CALIPTRA_SS_ROOT}/src/spi_host/rtl
++incdir+${CALIPTRA_SS_ROOT}/src/uart/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts
 +incdir+${CALIPTRA_AXI4PC_DIR}
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/tb
@@ -666,6 +667,7 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_state_decode.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl_state_transition.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/rtl/lc_ctrl.sv
 ${CALIPTRA_SS_ROOT}/src/mcu/rtl/mcu_top.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_compound_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/generated/usb_ocp_recovery_reg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
@@ -673,9 +675,9 @@ ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_r
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_rb_adapter.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_cms_fifo.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_top.sv
-${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/axilite_to_ahb.sv
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/axi_to_ahb.sv
-${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/ip_xxx_3516_hs_mem_wrapper.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/usb_compound_ahb_decoder.sv
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/integration/rtl/ip_xxx_3511_hs_mem_compound_wrapper.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_generic_ram_1p.sv
 ${CALIPTRA_SS_ROOT}/src/i3c_core/../../third_party/i3c-core/src/libs/mem/prim_ram_1p_adv.sv
@@ -908,6 +910,14 @@ ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_fsm.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_reg_top.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_shift_register.sv
 ${CALIPTRA_SS_ROOT}/src/spi_host/rtl/spi_host_window.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_pkg.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_core.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_reg_top.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_rx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_tx.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi.sv
+${CALIPTRA_SS_ROOT}/src/uart/rtl/uart_axi_synth.sv
 ${CALIPTRA_SS_ROOT}/src/integration/rtl/caliptra_ss_top.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/caliptra_top_sva.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/asserts/kv_boot_flow_sva.sv

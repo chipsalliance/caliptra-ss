@@ -19,5 +19,5 @@ package usb_ral_config_pkg;
     localparam logic [63:0] COMBO_BASE_ADDRESS = 64'h0000000020100000;
     localparam logic [63:0] DEV0_MEM_BASE_ADDRESS = 64'h0000000030100000;
     localparam logic [63:0] DEV1_CSR_BASE_ADDRESS = 64'h0000000020102000;
-    localparam logic [63:0] DEV1_MEM_BASE_ADDRESS = 64'h0000000030101000;
+    localparam logic [63:0] DEV1_MEM_BASE_ADDRESS = 64'h0000000030110000;
 endpackage: usb_ral_config_pkg

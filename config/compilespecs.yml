@@ -6,6 +6,7 @@ files:
   - src/i3c_core/config/compile.yml
   - src/usb/config/compile.yml
   - src/spi_host/config/compile.yml
+  - src/uart/config/compile.yml
   - src/ast/config/compile.yml
   - src/pwrmgr/config/compile.yml
   - src/tlul/config/compile.yml

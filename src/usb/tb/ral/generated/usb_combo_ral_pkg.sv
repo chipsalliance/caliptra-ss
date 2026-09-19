@@ -194,7 +194,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.SKIP = new("SKIP");
-            this.SKIP.configure(this, 16, 0, "RW", 1, 'h0, 1, 1, 0);
+            this.SKIP.configure(this, 30, 0, "RW", 1, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__dev0_csr__EPSKIP
 
@@ -211,7 +211,7 @@ package usb_combo_ral_pkg;
             this.EP0_BUF = new("EP0_BUF");
             this.EP0_BUF.configure(this, 2, 0, "RO", 0, 'h0, 1, 1, 0);
             this.BUF = new("BUF");
-            this.BUF.configure(this, 14, 2, "RW", 1, 'h0, 1, 1, 0);
+            this.BUF.configure(this, 28, 2, "RW", 1, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__dev0_csr__EPINUSE
 
@@ -225,7 +225,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.BUF_SB = new("BUF_SB");
-            this.BUF_SB.configure(this, 14, 2, "RW", 0, 'h0, 1, 1, 0);
+            this.BUF_SB.configure(this, 28, 2, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__dev0_csr__EPBUFCFG
 
@@ -277,7 +277,7 @@ package usb_combo_ral_pkg;
             this.EP5IN = new("EP5IN");
             this.EP5IN.configure(this, 1, 11, "W1C", 1, 'h0, 1, 1, 0);
             this.EP_UPPER = new("EP_UPPER");
-            this.EP_UPPER.configure(this, 4, 12, "W1C", 1, 'h0, 1, 1, 0);
+            this.EP_UPPER.configure(this, 18, 12, "W1C", 1, 'h0, 1, 1, 0);
             this.FRAME_INT = new("FRAME_INT");
             this.FRAME_INT.configure(this, 1, 30, "W1C", 1, 'h0, 1, 1, 0);
             this.DEV_INT = new("DEV_INT");
@@ -297,7 +297,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.EP_INT_EN = new("EP_INT_EN");
-            this.EP_INT_EN.configure(this, 16, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.EP_INT_EN.configure(this, 30, 0, "RW", 0, 'h0, 1, 1, 0);
             this.FRAME_INT_EN = new("FRAME_INT_EN");
             this.FRAME_INT_EN.configure(this, 1, 30, "RW", 0, 'h0, 1, 1, 0);
             this.DEV_INT_EN = new("DEV_INT_EN");
@@ -353,7 +353,7 @@ package usb_combo_ral_pkg;
             this.EP5IN = new("EP5IN");
             this.EP5IN.configure(this, 1, 11, "W1S", 1, 'h0, 1, 1, 0);
             this.EP_UPPER = new("EP_UPPER");
-            this.EP_UPPER.configure(this, 4, 12, "W1S", 1, 'h0, 1, 1, 0);
+            this.EP_UPPER.configure(this, 18, 12, "W1S", 1, 'h0, 1, 1, 0);
             this.FRAME_INT = new("FRAME_INT");
             this.FRAME_INT.configure(this, 1, 30, "W1S", 1, 'h0, 1, 1, 0);
             this.DEV_INT = new("DEV_INT");
@@ -373,7 +373,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.EP_INT_ROUTE = new("EP_INT_ROUTE");
-            this.EP_INT_ROUTE.configure(this, 16, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.EP_INT_ROUTE.configure(this, 30, 0, "RW", 0, 'h0, 1, 1, 0);
             this.FRAME_INT_ROUTE = new("FRAME_INT_ROUTE");
             this.FRAME_INT_ROUTE.configure(this, 1, 30, "RW", 0, 'h0, 1, 1, 0);
             this.DEV_INT_ROUTE = new("DEV_INT_ROUTE");
@@ -397,7 +397,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.NBPHYSEP = new("NBPHYSEP");
-            this.NBPHYSEP.configure(this, 5, 0, "RO", 0, 'he, 1, 1, 0);
+            this.NBPHYSEP.configure(this, 5, 0, "RO", 0, 'h1c, 1, 1, 0);
             this.SINGLE_BUFFER = new("SINGLE_BUFFER");
             this.SINGLE_BUFFER.configure(this, 1, 5, "RO", 0, 'h1, 1, 1, 0);
             this.DOUBLE_BUFFER = new("DOUBLE_BUFFER");
@@ -423,7 +423,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.TOGGLE = new("TOGGLE");
-            this.TOGGLE.configure(this, 16, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.TOGGLE.configure(this, 30, 0, "RO", 1, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__dev0_csr__EPTOGGLE
 

@@ -37,10 +37,10 @@
 module caliptra_ss_top_tb
 #(
     `include "css_mcu0_el2_param.vh"
-    ,parameter int unsigned USB_C_DEV0_RAM_ADDRWIDTH_TB = 9
-    ,parameter int unsigned USB_C_DEV1_RAM_ADDRWIDTH_TB = 9
-    ,parameter int unsigned USB_C_DEV0_NBPHYSEP_TB = 14
-    ,parameter int unsigned USB_C_DEV1_NBPHYSEP_TB = 14
+    ,parameter int unsigned USB_C_DEV0_RAM_ADDRWIDTH_TB = 13
+    ,parameter int unsigned USB_C_DEV1_RAM_ADDRWIDTH_TB = 13
+    ,parameter int unsigned USB_C_DEV0_NBPHYSEP_TB = 28
+    ,parameter int unsigned USB_C_DEV1_NBPHYSEP_TB = 28
 );
 
     import tb_top_pkg::*;
@@ -409,6 +409,14 @@ module caliptra_ss_top_tb
         .UW(`CALIPTRA_AXI_USER_WIDTH)
     ) cptra_ss_spi_host_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
 
+    // UART AXI Interface
+    axi_if #(
+        .AW(32),
+        .DW(32),
+        .IW(`CALIPTRA_AXI_ID_WIDTH),
+        .UW(`CALIPTRA_AXI_USER_WIDTH)
+    ) cptra_ss_uart_s_axi_if (.clk(core_clk), .rst_n(cptra_ss_rst_b_i));
+
     axi_struct_pkg::axi_wr_req_t cptra_ss_lc_axi_wr_req_i;
     axi_struct_pkg::axi_wr_rsp_t cptra_ss_lc_axi_wr_rsp_o;
     axi_struct_pkg::axi_rd_req_t cptra_ss_lc_axi_rd_req_i;
@@ -436,11 +444,12 @@ module caliptra_ss_top_tb
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_FC_IDX           ; // CSS_INTC_SINTF_FC_IDX            5
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SOC_SRAM_IDX     ; // CSS_INTC_SINTF_SOC_SRAM_IDX      6 
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_LCC_IDX          ; // CSS_INTC_SINTF_LCC_IDX           7
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_COMBO_IDX    ; // CSS_INTC_SINTF_USB_COMB_IDX      8
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_COMBO_IDX    ; // CSS_INTC_SINTF_USB_COMBO_IDX     8
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV0_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV0_MEM_IDX  9
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_CSR_IDX ; // CSS_INTC_SINTF_USB_DEV1_CSR_IDX  10
-        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV1_MEM_IDX  12
         logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_SPI_IDX          ; // CSS_INTC_SINTF_SPI_IDX           11
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_USB_DEV1_MEM_IDX ; // CSS_INTC_SINTF_USB_DEV1_MEM_IDX  12
+        logic [$clog2(AAXI_INTC_SLAVE_CNT)-1:0] SINTF_UART_IDX         ; // CSS_INTC_SINTF_UART_IDX          13
     } debug_axi_intf_indices = '{
         MCU_LSU_IDX            : `CSS_INTC_MINTF_MCU_LSU_IDX,
         MCU_IFU_IDX            : `CSS_INTC_MINTF_MCU_IFU_IDX,
@@ -459,8 +468,9 @@ module caliptra_ss_top_tb
         SINTF_USB_COMBO_IDX    : `CSS_INTC_SINTF_USB_COMBO_IDX,
         SINTF_USB_DEV0_MEM_IDX : `CSS_INTC_SINTF_USB_DEV0_MEM_IDX,
         SINTF_USB_DEV1_CSR_IDX : `CSS_INTC_SINTF_USB_DEV1_CSR_IDX,
+        SINTF_SPI_IDX          : `CSS_INTC_SINTF_SPI_IDX,
         SINTF_USB_DEV1_MEM_IDX : `CSS_INTC_SINTF_USB_DEV1_MEM_IDX,
-        SINTF_SPI_IDX          : `CSS_INTC_SINTF_SPI_IDX
+        SINTF_UART_IDX         : `CSS_INTC_SINTF_UART_IDX
     };
 
     // AXI Interconnect upper address tie to 0
@@ -1299,6 +1309,52 @@ module caliptra_ss_top_tb
     assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RLAST   = cptra_ss_spi_host_s_axi_if.rlast;
     assign cptra_ss_spi_host_s_axi_if.rready                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_SPI_IDX].RREADY;
 
+    //Interconnect - UART
+    assign cptra_ss_uart_s_axi_if.awvalid               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWVALID;
+    assign cptra_ss_uart_s_axi_if.awaddr                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWADDR[31:0];
+    assign cptra_ss_uart_s_axi_if.awid                  = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWID;
+    assign cptra_ss_uart_s_axi_if.awlen                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWLEN;
+    assign cptra_ss_uart_s_axi_if.awsize                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWSIZE;
+    assign cptra_ss_uart_s_axi_if.awburst               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWBURST;
+    assign cptra_ss_uart_s_axi_if.awlock                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWLOCK;
+    assign cptra_ss_uart_s_axi_if.awuser                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWUSER;
+    assign cptra_ss_uart_s_axi_if.awcache               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWCACHE;
+    assign cptra_ss_uart_s_axi_if.awprot                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWPROT;
+    assign cptra_ss_uart_s_axi_if.awqos                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWQOS;
+    assign cptra_ss_uart_s_axi_if.awregion              = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWREGION;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].AWREADY = cptra_ss_uart_s_axi_if.awready;
+    assign cptra_ss_uart_s_axi_if.wvalid                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WVALID;
+    assign cptra_ss_uart_s_axi_if.wdata                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WDATA;
+    assign cptra_ss_uart_s_axi_if.wstrb                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WSTRB;
+    assign cptra_ss_uart_s_axi_if.wlast                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WLAST;
+    assign cptra_ss_uart_s_axi_if.wuser                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WUSER;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].WREADY  = cptra_ss_uart_s_axi_if.wready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].BVALID  = cptra_ss_uart_s_axi_if.bvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].BRESP   = cptra_ss_uart_s_axi_if.bresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].BUSER   = cptra_ss_uart_s_axi_if.buser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].BID     = cptra_ss_uart_s_axi_if.bid;
+    assign cptra_ss_uart_s_axi_if.bready                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].BREADY;
+    assign cptra_ss_uart_s_axi_if.arvalid               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARVALID;
+    assign cptra_ss_uart_s_axi_if.araddr                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARADDR[31:0];
+    assign cptra_ss_uart_s_axi_if.arid                  = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARID;
+    assign cptra_ss_uart_s_axi_if.arlen                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARLEN;
+    assign cptra_ss_uart_s_axi_if.arsize                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARSIZE;
+    assign cptra_ss_uart_s_axi_if.arburst               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARBURST;
+    assign cptra_ss_uart_s_axi_if.arlock                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARLOCK;
+    assign cptra_ss_uart_s_axi_if.aruser                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARUSER;
+    assign cptra_ss_uart_s_axi_if.arcache               = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARCACHE;
+    assign cptra_ss_uart_s_axi_if.arprot                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARPROT;
+    assign cptra_ss_uart_s_axi_if.arqos                 = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARQOS;
+    assign cptra_ss_uart_s_axi_if.arregion              = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARREGION;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].ARREADY = cptra_ss_uart_s_axi_if.arready;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RVALID  = cptra_ss_uart_s_axi_if.rvalid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RDATA   = 64'(cptra_ss_uart_s_axi_if.rdata);
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RRESP   = cptra_ss_uart_s_axi_if.rresp;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RUSER   = cptra_ss_uart_s_axi_if.ruser;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RID     = cptra_ss_uart_s_axi_if.rid;
+    assign axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RLAST   = cptra_ss_uart_s_axi_if.rlast;
+    assign cptra_ss_uart_s_axi_if.rready                = axi_interconnect.sintf_arr[`CSS_INTC_SINTF_UART_IDX].RREADY;
+
     mci_mcu_sram_if #(
         .ADDR_WIDTH(MCU_SRAM_ADDR_WIDTH)
     ) cptra_ss_mci_mcu_sram_req_if (
@@ -1862,7 +1918,6 @@ module caliptra_ss_top_tb
     logic [31:0]  usb_legacy_ep0_mcu_command; //FIXME
     logic         usb_legacy_ep0_mcu_command_active; //FIXME
     logic [63:0]  cptra_ss_mci_generic_output_wires_o; //FIXME
-    bit           usb_utmi_clk; //FIXME
 
     caliptra_ss_usb_legacy_ep0_observer_if
         usb_legacy_ep0_observer_if_inst (
@@ -1937,6 +1992,7 @@ module caliptra_ss_top_tb
     // 60 MHz UTMI clock for USB 2.0 HS mode (period = 16667 ps)
     parameter realtime USB_UTMI_CLK_PERIOD = 16667ps;
 
+    bit usb_utmi_clk;
     initial begin
         usb_utmi_clk = 0;
         #(USB_UTMI_CLK_PERIOD/2); // No clock edge at T=0
@@ -2080,6 +2136,13 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_sd_i              = '0;
 
+    // --- UART interface ---
+    logic cptra_ss_uart_rx_i;
+    logic cptra_ss_uart_tx_o;
+    logic cptra_ss_uart_tx_en_o;
+
+    assign cptra_ss_uart_rx_i = cptra_ss_uart_tx_o;
+
 
     //instantiate caliptra ss top module
     logic [124:0] cptra_ss_cptra_generic_fw_exec_ctrl_o;
@@ -2194,7 +2257,8 @@ module caliptra_ss_top_tb
         .USB_G_SIM_CHIRP_TIMERS(1),
         .SPI_HOST_ENA(SPI_HOST_ENA_TB),
         .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS_TB),
-        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH_TB)
+        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH_TB),
+        .UART_ENA(UART_ENA_TB)
     )
     caliptra_ss_dut (
 
@@ -2256,6 +2320,10 @@ module caliptra_ss_top_tb
     // SPI AXI interface
         .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
         .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
+
+    // UART AXI interface
+        .cptra_ss_uart_s_axi_if_w_sub(cptra_ss_uart_s_axi_if.w_sub),
+        .cptra_ss_uart_s_axi_if_r_sub(cptra_ss_uart_s_axi_if.r_sub),
 
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
@@ -2479,6 +2547,10 @@ module caliptra_ss_top_tb
         .cptra_ss_sd_en_o,
         .cptra_ss_sd_i,
 
+        .cptra_ss_uart_rx_i,
+        .cptra_ss_uart_tx_o,
+        .cptra_ss_uart_tx_en_o,
+
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,
@@ -2547,6 +2619,10 @@ module caliptra_ss_top_tb
 
     if (SPI_HOST_ENA_TB) begin : gen_spi_host_onehot_assert
         `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(SpiHostRegWeOnehotCheck_A, caliptra_ss_dut.gen_spi_host_axi.spi_host_axi_i.u_caliptra_ss_spi_host.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
+    end
+
+    if (UART_ENA_TB) begin : gen_uart_onehot_assert
+        `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(UartRegWeOnehotCheck_A, caliptra_ss_dut.gen_uart_axi.uart_axi_i.u_caliptra_ss_uart.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
     end
 
 

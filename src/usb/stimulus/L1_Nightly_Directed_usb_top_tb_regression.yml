@@ -1,0 +1,16 @@
+document:
+  schema: 1.0
+
+contents:
+  - generator:
+      tags: ["L1", "usb_top_tb", "Directed", "Nightly"]
+      path: ""
+      mode: round-robin
+      weight: 100
+      generations: 3
+      formats:
+        generate: "reseed {template}.yml -seed {seed}"
+        path: "{template_basename}__{seed}.yml"
+      templates:
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_init: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_endpoint_rw: { weight: 100 }
