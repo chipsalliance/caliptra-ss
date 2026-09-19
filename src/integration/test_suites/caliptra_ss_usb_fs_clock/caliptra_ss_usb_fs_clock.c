@@ -83,12 +83,12 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Caliptra core ready, USB clock active. Idling for checker.\n");
 
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
     // SPEED is read-only status; log the negotiated speed for diagnostic use.
     VPRINTF(LOW, "MCU: USB negotiated SPEED field = 0x%x\n",
-            (reg_data & USBHSD_DEVCMDSTAT_SPEED_MASK) >> USBHSD_DEVCMDSTAT_SPEED_LOW);
-    reg_data = lsu_read_32(SOC_USBHSD_INFO);
+            (reg_data & DEV0_CSR_DEVCMDSTAT_SPEED_MASK) >> DEV0_CSR_DEVCMDSTAT_SPEED_LOW);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INFO);
     VPRINTF(LOW, "MCU: USB INFO = 0x%x\n", reg_data);
 
     // Idle loop: keep the device enabled while the TB frequency checker
@@ -98,7 +98,7 @@ void main (void) {
         usb_handle_bus_reset();
     }
 
-    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     VPRINTF(LOW, "MCU: USB FS clock test - halting\n");
     csr_write_mpmc_halt();

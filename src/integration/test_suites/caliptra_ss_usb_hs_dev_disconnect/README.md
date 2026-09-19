@@ -31,13 +31,13 @@ The test proceeds in 5 phases:
 
 | Register field | Caliptra SS macro |
 |---|---|
-| VBUS debounced | `USBHSD_DEVCMDSTAT_VBUS_DEBOUNCED_MASK` |
-| Connect change | `USBHSD_DEVCMDSTAT_DCON_C_MASK` |
-| Connect control | `USBHSD_DEVCMDSTAT_DCON_MASK` |
-| Bus reset change | `USBHSD_DEVCMDSTAT_DRES_C_MASK` |
-| SOF interrupt (INTSTAT) | `USBHSD_INTSTAT_FRAME_INT_MASK` |
-| SOF interrupt enable (INTEN) | `USBHSD_INTEN_FRAME_INT_EN_MASK` |
-| Device status interrupt | `USBHSD_INTSTAT_DEV_INT_MASK` |
+| VBUS debounced | `DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK` |
+| Connect change | `DEV0_CSR_DEVCMDSTAT_DCON_C_MASK` |
+| Connect control | `DEV0_CSR_DEVCMDSTAT_DCON_MASK` |
+| Bus reset change | `DEV0_CSR_DEVCMDSTAT_DRES_C_MASK` |
+| SOF interrupt (INTSTAT) | `DEV0_CSR_INTSTAT_FRAME_INT_MASK` |
+| SOF interrupt enable (INTEN) | `DEV0_CSR_INTEN_FRAME_INT_EN_MASK` |
+| Device status interrupt | `DEV0_CSR_INTSTAT_DEV_INT_MASK` |
 
 ## Test Components
 

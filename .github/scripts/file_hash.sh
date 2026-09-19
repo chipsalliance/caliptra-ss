@@ -58,7 +58,11 @@ done
 
 # Calculate the hash (only if no files were missing)
 if [ "$missing_files" -eq 0 ]; then
-	hash=$(cat "${expected_file_list[@]}" | sha384sum | tr -d "\n *-")
+	# Stream the file names through xargs so that the file list can grow without
+	# exceeding the execve argument limit. xargs splits the names into bounded
+	# cat invocations whose output is concatenated into a single hash, so the
+	# resulting digest is identical to hashing every file in one cat call.
+	hash=$(printf '%s\0' "${expected_file_list[@]}" | xargs -0 -r cat -- | sha384sum | tr -d "\n *-")
 	echo "$hash"
 else
 	echo "Failed to generate code hash"

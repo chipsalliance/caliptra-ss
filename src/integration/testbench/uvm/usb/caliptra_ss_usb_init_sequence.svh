@@ -302,7 +302,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         );
         wait_xfer_done(host_agent_h, "SET_ADDRESS_1");
 
-        // USB 2.0 §9.4.6: the device can take up to 2 ms after the status
+        // USB 2.0 section 9.4.6: the device can take up to 2 ms after the status
         // stage of SET_ADDRESS before it begins responding to its new address
         // ("SetAddress() recovery interval"). Add a settling delay before
         // issuing the first request to the new address so the DUT firmware
@@ -312,7 +312,7 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         // Update the agent's configuration with the new remote device address
         // and call svt_usb_agent::reconfigure() so the contained components
         // (protocol service, packet sequencer) re-snapshot the cfg. Per
-        // class ref, p_sequencer.get_cfg() returns a *reference* — mutating
+        // class ref, p_sequencer.get_cfg() returns a *reference* - mutating
         // the runtime cfg object alone is necessary but not sufficient
         // because the protocol service holds its own cached snapshot.
         usb_cfg.remote_device_cfg[0].device_address = 7'd1;
@@ -356,8 +356,8 @@ class caliptra_ss_usb_init_sequence extends uvm_sequence;
         // ---------------- SET_CONFIGURATION(1) at addr=1 ----------------
         // HOST_TO_DEVICE no-data control: status stage is a ZLP IN from device.
         // Selects configuration 1 (the device descriptor declares
-        // bNumConfigurations=1). Transitions device from Address → Configured
-        // state per USB 2.0 §9.1.1.5.
+        // bNumConfigurations=1). Transitions device from Address to Configured
+        // state per USB 2.0 section 9.1.1.5.
         do_control_xfer(
             .bm_request_type_dir   (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type  (svt_usb_types::STANDARD),
