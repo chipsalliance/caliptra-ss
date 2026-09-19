@@ -48,6 +48,8 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
 
     // Virtual interface handle obtained from config_db.
     protected virtual caliptra_ss_usb_ocp_access_semantics_if sem_vif;
+    protected caliptra_ss_usb_ocp_arbiter_checker checker;
+    protected logic [15:0] packet_window_generation;
 
     // Polling configuration for firmware state waits.
     // max_polls * poll_period bounds the worst-case wall time.
@@ -60,10 +62,11 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     function new(string name =
         "caliptra_ss_usb_ocp_device_status_access_semantics_sequence");
         super.new(name);
+        packet_window_generation = 16'h0001;
     endfunction
 
     // -------------------------------------------------------------------------
-    // get_sem_vif: obtain the observation interface from config_db.
+    // get_sem_vif: obtain the observation handles from config_db.
     // -------------------------------------------------------------------------
     protected virtual function bit get_sem_vif();
         if (!uvm_config_db#(
@@ -72,6 +75,13 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
                     "ocp_access_semantics_if", sem_vif)) begin
             `uvm_fatal("DS_SEM_SEQ",
                 "ocp_access_semantics_if not found in config_db under uvm_test_top.env")
+            return 1'b0;
+        end
+        if (!uvm_config_db#(
+                caliptra_ss_usb_ocp_arbiter_checker)::get(
+                    null, "", "ocp_arbiter_checker", checker)) begin
+            `uvm_fatal("DS_SEM_SEQ",
+                "ocp_arbiter_checker not found in config_db")
             return 1'b0;
         end
         return 1'b1;
@@ -119,16 +129,31 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     protected virtual task trigger_protocol_error(input string label);
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
+        int unsigned stall_count;
 
         payload = '{8'h00};
+        checker.packet_callback.start_window(packet_window_generation);
+        packet_window_generation++;
         ocp_try_write(OCP_CMD_PROT_CAP, payload, result, label);
-        if (result == OCP_XFER_ABORTED) begin
+        checker.packet_callback.stop_window();
+        stall_count = checker.packet_callback.count_pid(
+            svt_usb_packet::STALL,
+            caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX);
+        if (stall_count == 0) begin
             `uvm_fatal("DS_SEM_SEQ",
-                $sformatf("%s: negative write to PROT_CAP aborted.", label))
+                $sformatf("%s: negative write to PROT_CAP did not receive STALL.",
+                          label))
+        end
+        if (result != OCP_XFER_ABORTED) begin
+            `uvm_fatal("DS_SEM_SEQ",
+                $sformatf({"%s: negative write to PROT_CAP received STALL, ",
+                           "but VIP result was %s instead of ABORTED."},
+                          label, result.name()))
         end
         `uvm_info("DS_SEM_SEQ",
-            $sformatf("%s: negative write to PROT_CAP completed (%s)",
-                      label, result.name()),
+            $sformatf({"%s: negative write to PROT_CAP received %0d STALL ",
+                       "packet(s); VIP result %s is expected."},
+                      label, stall_count, result.name()),
             UVM_MEDIUM)
     endtask
 
