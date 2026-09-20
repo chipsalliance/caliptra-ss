@@ -80,6 +80,7 @@ module caliptra_ss_top_tb
     localparam int unsigned USB_DEV1_RAM_DEPTH = USB_DEV1_RAM_BYTES / (USB_PACKET_RAM_DATA_WIDTH / 8);
     localparam int unsigned USB_HUB_FIFO_WORDS = (`SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR - `SOC_USB_COMBO_HUB_BASE_ADDR + 1) / 4;
 
+    bit usb_utmi_clk;
     logic [USB_PACKET_RAM_DATA_WIDTH-1:0] cptra_ss_usb_dev0_mem_q_i, cptra_ss_usb_dev0_mem_d_o, cptra_ss_usb_dev0_mem_bsel_o;
     logic cptra_ss_usb_dev0_mem_cs_o, cptra_ss_usb_dev0_mem_web_out_o;
     logic [USB_C_DEV0_RAM_ADDRWIDTH_TB-1:0] cptra_ss_usb_dev0_mem_a_o;
@@ -99,8 +100,14 @@ module caliptra_ss_top_tb
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
     logic [7:0] cptra_ss_usb_ulpi_rxdata_i, cptra_ss_usb_ulpi_txdata_o;
+
+    // USB Testbench
     logic cptra_ss_usb_recovery_payload_available_o, cptra_ss_usb_recovery_image_activated_o;
     logic cptra_usb_axi_user_id_filtering_enable_i;
+    logic [63:0]  usb_legacy_ep0_host_ack; //FIXME
+    logic [31:0]  usb_legacy_ep0_mcu_command; //FIXME
+    logic         usb_legacy_ep0_mcu_command_active; //FIXME
+    logic [63:0]  cptra_ss_mci_generic_output_wires_o; //FIXME
 
 `ifndef VERILATOR
     // Time formatting for %t in display tasks
@@ -1914,10 +1921,6 @@ module caliptra_ss_top_tb
         .rdata_o(cptra_ss_usb_dev1_mem_q_i),
         .cfg_i('0)
     );
-    logic [63:0]  usb_legacy_ep0_host_ack; //FIXME
-    logic [31:0]  usb_legacy_ep0_mcu_command; //FIXME
-    logic         usb_legacy_ep0_mcu_command_active; //FIXME
-    logic [63:0]  cptra_ss_mci_generic_output_wires_o; //FIXME
 
     caliptra_ss_usb_legacy_ep0_observer_if
         usb_legacy_ep0_observer_if_inst (
@@ -1992,7 +1995,6 @@ module caliptra_ss_top_tb
     // 60 MHz UTMI clock for USB 2.0 HS mode (period = 16667 ps)
     parameter realtime USB_UTMI_CLK_PERIOD = 16667ps;
 
-    bit usb_utmi_clk;
     initial begin
         usb_utmi_clk = 0;
         #(USB_UTMI_CLK_PERIOD/2); // No clock edge at T=0
