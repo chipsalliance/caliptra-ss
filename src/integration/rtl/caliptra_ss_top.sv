@@ -1102,7 +1102,7 @@ module caliptra_ss_top
         .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
 
         // ---- OTG / Session Signals ----
-        .avalid           (1'b1),                    /* TODO: OTG session */
+        .avalid           (1'b1),                   /* TODO: OTG session */
         .sessend          (cptra_ss_usb_sessend_i), /* TODO: OTG session */
 
         // ---- UTMI PHY Interface ----

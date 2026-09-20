@@ -514,8 +514,12 @@
 `define HUB_CONTROL_RESERVED_LOW_MASK                                                               (32'hfffe)
 `define HUB_CONTROL_DCON_LOW                                                                        (16)
 `define HUB_CONTROL_DCON_MASK                                                                       (32'h10000)
-`define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (17)
-`define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (32'hfffe0000)
+`define HUB_CONTROL_RESERVED_17_LOW                                                                 (17)
+`define HUB_CONTROL_RESERVED_17_MASK                                                                (32'h20000)
+`define HUB_CONTROL_SELF_POWERED_LOW                                                                (18)
+`define HUB_CONTROL_SELF_POWERED_MASK                                                               (32'h40000)
+`define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (19)
+`define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (32'hfff80000)
 `endif
 `ifndef USB_DEV1_CSR_DEVCMDSTAT
 `define USB_DEV1_CSR_DEVCMDSTAT                                                                     (32'h0)
