@@ -16,7 +16,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 280;
+  localparam int USB_PKG_VERSION = 291;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -98,6 +98,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_disconnect_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_sequence.svh"
+  `include "caliptra_ss_usb_ocp_flow_random_image_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
@@ -121,6 +122,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_usb_nak_test.svh"
+  `include "caliptra_ss_usb_ocp_flow_random_image_test.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_test.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_test.svh"
   `include "caliptra_ss_usb_ocp_device_fifo_clear_test.svh"

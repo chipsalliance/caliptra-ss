@@ -36,7 +36,9 @@
 //     c. USB read DEVICE_STATUS; require PROT_ERROR=0x01 (first/clearing read).
 //     d. Wait firmware STRESS_CLEAR_SEEN.
 //     e. USB read DEVICE_STATUS; require PROT_ERROR=0x00.
-//  8. Publish transfer count and summary.
+//  8. Verify a rejected PROT_CAP write leaves AGENT_CAPS unchanged.
+//  9. Verify a one-byte host write to INDIRECT_FIFO_STATUS is rejected.
+// 10. Publish transfer count and summary.
 // =============================================================================
 
 class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
@@ -47,8 +49,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
     // Virtual interface handle obtained from config_db.
-    protected virtual caliptra_ss_usb_ocp_access_semantics_if sem_vif;
-    protected caliptra_ss_usb_ocp_arbiter_checker checker;
+    protected caliptra_ss_usb_ocp_arbiter_checker arb_checker;
     protected logic [15:0] packet_window_generation;
 
     // Polling configuration for firmware state waits.
@@ -66,20 +67,12 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     endfunction
 
     // -------------------------------------------------------------------------
-    // get_sem_vif: obtain the observation handles from config_db.
+    // get_arb_chk: obtain the observation handles from config_db.
     // -------------------------------------------------------------------------
-    protected virtual function bit get_sem_vif();
-        if (!uvm_config_db#(
-                virtual caliptra_ss_usb_ocp_access_semantics_if)::get(
-                    null, "uvm_test_top.env",
-                    "ocp_access_semantics_if", sem_vif)) begin
-            `uvm_fatal("DS_SEM_SEQ",
-                "ocp_access_semantics_if not found in config_db under uvm_test_top.env")
-            return 1'b0;
-        end
+    protected virtual function bit get_arb_chk();
         if (!uvm_config_db#(
                 caliptra_ss_usb_ocp_arbiter_checker)::get(
-                    null, "", "ocp_arbiter_checker", checker)) begin
+                    null, "", "ocp_arbiter_checker", arb_checker)) begin
             `uvm_fatal("DS_SEM_SEQ",
                 "ocp_arbiter_checker not found in config_db")
             return 1'b0;
@@ -132,11 +125,11 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         int unsigned stall_count;
 
         payload = '{8'h00};
-        checker.packet_callback.start_window(packet_window_generation);
+        arb_checker.packet_callback.start_window(packet_window_generation);
         packet_window_generation++;
         ocp_try_write(OCP_CMD_PROT_CAP, payload, result, label);
-        checker.packet_callback.stop_window();
-        stall_count = checker.packet_callback.count_pid(
+        arb_checker.packet_callback.stop_window();
+        stall_count = arb_checker.packet_callback.count_pid(
             svt_usb_packet::STALL,
             caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX);
         if (stall_count == 0) begin
@@ -185,14 +178,18 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         logic [7:0] prot_error_code;
         logic [7:0] observed_error;
         logic [7:0] observed_error2;
+        bit [15:0] initial_agent_caps;
 
         if (!get_sem_vif()) return;
+        if (!get_arb_chk()) return;
 
         initialize_ocp_transport();
 
         // Step 1: Wait for firmware READY.
         wait_fw_state(DS_SEM_STATE_READY, "DS_SEM_READY");
         `uvm_info("DS_SEM_SEQ", "Firmware READY observed.", UVM_NONE)
+        read_check_recovery_capabilities(
+            "DS_SEM_PROT_CAP_BASELINE", initial_agent_caps);
 
         // Step 2: Trigger PROTOCOL_ERROR.
         trigger_protocol_error("DS_SEM_NEGATIVE_CMD");
@@ -280,11 +277,18 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
             end
         end
 
+        check_rejected_prot_cap_write(
+            initial_agent_caps, "DS_SEM_RO", "DS_SEM_SEQ");
+        check_rejected_fifo_status_write(
+            "DS_SEM_RO", "DS_SEM_SEQ", 1'b1, 1'b1);
+
         wait_mcu_axi_idle_before_finish("DEVICE_STATUS_SEMANTICS");
         publish_transfer_count();
 
         `uvm_info("DS_SEM_SEQ",
-            $sformatf("OCP_SEM_001 complete: %0d stress iterations passed; source-qualified clear semantics verified.",
+            $sformatf({"OCP_SEM_001/OCP_NEG_002 complete: %0d stress ",
+                       "iterations passed; source-qualified clear and ",
+                       "read-only command semantics verified."},
                       STRESS_ITERATIONS),
             UVM_NONE)
 

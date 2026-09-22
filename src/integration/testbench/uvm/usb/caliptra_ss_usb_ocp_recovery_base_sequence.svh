@@ -24,6 +24,18 @@ typedef enum bit [1:0] {
 class caliptra_ss_usb_ocp_recovery_base_sequence
     extends caliptra_ss_usb_base_sequence;
 
+    typedef bit [7:0] byte_queue_t[$];
+
+    typedef struct {
+        bit          empty;
+        bit          full;
+        bit [7:0]    region_type;
+        bit [31:0]   write_index;
+        bit [31:0]   read_index;
+        bit [31:0]   fifo_size;
+        bit [31:0]   max_transfer_dwords;
+    } fifo_status_s;
+
     `uvm_object_utils(caliptra_ss_usb_ocp_recovery_base_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
@@ -39,6 +51,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
     protected caliptra_ss_usb_ping_retry_callback ping_retry_callback;
     protected bit ping_retry_callback_registered;
 
+    protected virtual caliptra_ss_usb_ocp_access_semantics_if sem_vif;
+
     function new(string name = "caliptra_ss_usb_ocp_recovery_base_sequence");
         super.new(name);
         wMaxRdTransferSize = OCP_USB_MIN_TRANSFER_SIZE;
@@ -47,6 +61,18 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         dev_addr_v         = 1;
         transfers_issued   = 0;
         ping_retry_callback_registered = 1'b0;
+    endfunction
+
+    protected virtual function bit get_sem_vif();
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_ocp_access_semantics_if)::get(
+                    null, "uvm_test_top.env",
+                    "ocp_access_semantics_if", sem_vif)) begin
+            `uvm_fatal("OCP_BASE",
+                "ocp_access_semantics_if not found in config_db")
+            return 1'b0;
+        end
+        return 1'b1;
     endfunction
 
     protected virtual function int get_iface_num();
@@ -113,6 +139,43 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         ref bit [7:0] bytes[$], input int offset);
         return {bytes[offset + 3], bytes[offset + 2],
                 bytes[offset + 1], bytes[offset]};
+    endfunction
+
+    protected virtual function int unsigned bytes_to_dwords(
+        input int unsigned byte_count);
+        return (byte_count + 3) / 4;
+    endfunction
+
+    protected virtual function int unsigned dwords_to_bytes(
+        input int unsigned dword_count);
+        return dword_count * 4;
+    endfunction
+
+    protected virtual function int unsigned legal_max_chunk_dwords(
+        input fifo_status_s status);
+        int unsigned usb_limit_dwords;
+
+        usb_limit_dwords = wMaxWrTransferSize / 4;
+        if (status.max_transfer_dwords < usb_limit_dwords)
+            return status.max_transfer_dwords;
+        return usb_limit_dwords;
+    endfunction
+
+    protected virtual function automatic void slice_image_payload(
+        ref byte_queue_t source_bytes,
+        input int unsigned start_dword,
+        input int unsigned dword_count,
+        ref bit [7:0] payload[$]);
+        int unsigned byte_index;
+
+        payload.delete();
+        for (int unsigned i = 0;
+             (i < dwords_to_bytes(dword_count)) &&
+             ((dwords_to_bytes(start_dword) + i) < source_bytes.size());
+             i++) begin
+            byte_index = dwords_to_bytes(start_dword) + i;
+            payload.push_back(source_bytes[byte_index]);
+        end
     endfunction
 
     protected virtual task ocp_class_xfer_result(
@@ -328,6 +391,19 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         ocp_write(OCP_CMD_INDIRECT_FIFO_CTRL, payload, label);
     endtask
 
+    protected virtual task prepare_fifo_image(
+        input bit [7:0] cms,
+        input bit [7:0] image_selection,
+        input bit [31:0] image_size_dwords,
+        input string recovery_ctrl_label,
+        input string fifo_ctrl_label);
+
+        recovery_ctrl_write(
+            cms, image_selection, 1'b0, recovery_ctrl_label);
+        indirect_fifo_ctrl_write(
+            cms, 1'b1, image_size_dwords, fifo_ctrl_label);
+    endtask
+
     protected virtual task indirect_fifo_data_try_write(
         ref bit [7:0] payload[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
@@ -391,6 +467,17 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         fifo_size = get_le32(response, OCP_OFF_IFS_FIFO_SIZE_B0);
         max_transfer_dwords =
             get_le32(response, OCP_OFF_IFS_MAX_TRANSFER_B0);
+    endtask
+
+    protected virtual task read_fifo_status(
+        output fifo_status_s status,
+        input string label);
+        bit [7:0] response[$];
+
+        indirect_fifo_status_read(
+            response, status.empty, status.full, status.region_type,
+            status.write_index, status.read_index, status.fifo_size,
+            status.max_transfer_dwords, label);
     endtask
 
     protected virtual task poll_device_status(
@@ -578,6 +665,830 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         init_seq = caliptra_ss_usb_init_sequence::type_id::create("init_seq");
         init_seq.start(p_sequencer, this);
         discover_functional_descriptor();
+    endtask
+
+    protected virtual task prepare_usb_route_validation();
+        sem_vif.clear_i3c_recovery_seen();
+        if (sem_vif.i3c_recovery_payload_available !== 1'b0) begin
+            `uvm_fatal("OCP_PAYLOAD_ROUTE",
+                "I3C payload-available source is not quiescent for USB route validation.")
+        end
+        if (sem_vif.recovery_payload_available !== 1'b0) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "USB recovery payload_available was high before the image transfer.")
+        end
+        sem_vif.clear_recovery_payload_available_seen();
+    endtask
+
+    protected virtual task read_check_recovery_capabilities(
+        input string label,
+        output bit [15:0] initial_agent_caps);
+
+        bit [7:0] empty_q[$];
+        bit [7:0] prot_cap[$];
+
+        initial_agent_caps = '0;
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(prot_cap),
+                       .label(label));
+        if (prot_cap.size() < 8) begin
+            `uvm_error("OCPREC",
+                $sformatf("PROT_CAP returned only %0d bytes; expected >= 8 for magic string.",
+                          prot_cap.size()))
+        end else begin
+            for (int j = 0; j < 8; j++) begin
+                if (prot_cap[j] !== OCP_SPEC_PROT_CAP_MAGIC[j]) begin
+                    `uvm_error("OCPREC",
+                        $sformatf("PROT_CAP magic byte %0d mismatch: exp=0x%02h got=0x%02h",
+                                  j, OCP_SPEC_PROT_CAP_MAGIC[j], prot_cap[j]))
+                end
+            end
+        end
+
+        if (prot_cap.size() < 12) begin
+            `uvm_error("OCPREC",
+                $sformatf("PROT_CAP returned only %0d bytes; expected >= 12 for version (8-9) and AGENT_CAPS (10-11).",
+                          prot_cap.size()))
+        end else begin
+            logic [15:0] agent_caps;
+            logic [15:0] prot_version;
+            prot_version = {prot_cap[9], prot_cap[8]};
+            if ((prot_cap[OCP_OFF_PC_VERSION_MAJOR] !==
+                    OCP_SPEC_VERSION_MAJOR) ||
+                (prot_cap[OCP_OFF_PC_VERSION_MINOR] !==
+                    OCP_SPEC_VERSION_MINOR)) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP version mismatch: got=0x%04h expected 1.1.",
+                              prot_version))
+            end
+            agent_caps = {prot_cap[11], prot_cap[10]};
+            initial_agent_caps = agent_caps;
+            if ((agent_caps & OCP_CAP_RESERVED_MASK) != '0) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP reserved capability bits are nonzero: 0x%04h.",
+                              agent_caps & OCP_CAP_RESERVED_MASK))
+            end
+            if (!agent_caps[OCP_CAP_IDENTIFICATION] ||
+                !agent_caps[OCP_CAP_DEVICE_STATUS] ||
+                !(agent_caps[OCP_CAP_LOCAL_C_IMAGE] ||
+                  agent_caps[OCP_CAP_PUSH_C_IMAGE])) begin
+                `uvm_error("OCPREC",
+                    $sformatf("PROT_CAP mandatory capabilities are missing: 0x%04h.",
+                              agent_caps))
+            end
+        end
+    endtask
+
+    protected virtual task read_log_device_id(input string label);
+        bit [7:0] empty_q[$];
+        bit [7:0] dev_id[$];
+
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_ID),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(dev_id),
+                       .label(label));
+        `uvm_info("OCPREC",
+            $sformatf("DEVICE_ID returned %0d bytes; first 4: 0x%02h 0x%02h 0x%02h 0x%02h",
+                      dev_id.size(),
+                      dev_id.size() > 0 ? dev_id[0] : 8'h00,
+                      dev_id.size() > 1 ? dev_id[1] : 8'h00,
+                      dev_id.size() > 2 ? dev_id[2] : 8'h00,
+                      dev_id.size() > 3 ? dev_id[3] : 8'h00),
+            UVM_NONE)
+    endtask
+
+    protected virtual task wait_firmware_ready_status();
+        bit [7:0] device_status[$];
+        bit [7:0] recovery_status[$];
+        bit       reached;
+
+        reached = 1'b0;
+        for (int unsigned poll = 0; poll < 20; poll++) begin
+            ocp_read(
+                OCP_REC_CMD_DEVICE_STATUS,
+                device_status,
+                $sformatf("OCP_FW_DEVICE_STATUS_READY_%0d", poll));
+            ocp_read(
+                OCP_REC_CMD_RECOVERY_STATUS,
+                recovery_status,
+                $sformatf("OCP_FW_RECOVERY_STATUS_READY_%0d", poll));
+
+            if ((device_status.size() > OCP_OFF_DS_VENDOR_LEN) &&
+                (recovery_status.size() >= OCP_SPEC_LEN_RECOVERY_STATUS) &&
+                (device_status[OCP_OFF_DS_STATUS] ===
+                    OCP_DEVICE_STATUS_RECOVERY_MODE) &&
+                (device_status[OCP_OFF_DS_PROT_ERROR] ===
+                    OCP_PROTOCOL_ERROR_NONE) &&
+                (recovery_status[
+                    OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] ===
+                    OCP_RECOVERY_STATUS_AWAITING_IMAGE) &&
+                (recovery_status[
+                    OCP_OFF_RS_STATUS_IMAGE_INDEX][7:4] === 4'h0) &&
+                (recovery_status[OCP_OFF_RS_VENDOR_STATUS] === 8'h00)) begin
+                reached = 1'b1;
+                break;
+            end
+            #5us;
+        end
+
+        if (!reached) begin
+            `uvm_error("OCP_FW_STATUS",
+                "Firmware did not publish Recovery Mode/Awaiting Image status within the bounded interval.")
+        end else begin
+            `uvm_info("OCP_FW_STATUS",
+                "Firmware-published Recovery Mode/Awaiting Image status observed through USB.",
+                UVM_NONE)
+        end
+    endtask
+
+    protected virtual task check_unsupported_indirect_ctrl_protocol_error(
+        input string label_prefix = "OCPREC",
+        input string report_id = "OCPREC");
+        bit [7:0] empty_q[$];
+        bit [7:0] unsup_resp[$];
+        bit [7:0] ds_proto[$];
+        bit [7:0] ds_proto_clr[$];
+
+        empty_q.delete();
+        unsup_resp.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_CTRL),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(unsup_resp),
+                       .label({label_prefix, "_UNSUPPORTED_INDIRECT_CTRL"}));
+
+        empty_q.delete();
+        ds_proto.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto),
+                       .label({label_prefix, "_DEVICE_STATUS_PROTOERR"}));
+        if (ds_proto.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS after unsupported command returned %0d bytes; need >= 2 to read PROTOCOL_ERROR (byte 1).",
+                          ds_proto.size()))
+        end else if (ds_proto[1] !== 8'h01) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR not set after unsupported command 0x29: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 / Sec 9.2).",
+                          ds_proto[1]))
+        end else begin
+            `uvm_info(report_id,
+                "V2: PROTOCOL_ERROR=0x01 correctly set after unsupported command 0x29 (OCP Recovery v1.1 Sec 9.1).",
+                UVM_NONE)
+        end
+
+        empty_q.delete();
+        ds_proto_clr.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto_clr),
+                       .label({label_prefix, "_DEVICE_STATUS_PROTOERR_CLR"}));
+        if (ds_proto_clr.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS (clear check) returned %0d bytes; need >= 2.",
+                          ds_proto_clr.size()))
+        end else if (ds_proto_clr[1] !== 8'h00) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR did not clear on read: DEVICE_STATUS[1]=0x%02h, expected 0x00 (OCP Recovery v1.1 Sec 9.1 clear-on-read).",
+                          ds_proto_clr[1]))
+        end else begin
+            `uvm_info(report_id,
+                "Unsupported-command check: PROTOCOL_ERROR cleared to 0x00 on DEVICE_STATUS read (clear-on-read).",
+                UVM_NONE)
+        end
+    endtask
+
+    protected virtual task check_rejected_prot_cap_write(
+        input bit [15:0] initial_agent_caps,
+        input string label_prefix = "OCPREC",
+        input string report_id = "OCPREC");
+
+        bit [7:0] empty_q[$];
+        bit [7:0] resp_q[$];
+        bit [7:0] prot_cap_wr_payload[$];
+        bit [7:0] ds_proto_r7[$];
+        bit [7:0] ds_proto_r7_clr[$];
+        bit [7:0] prot_cap_after[$];
+
+        prot_cap_wr_payload = '{8'hFF, 8'hFF, 8'hFF, 8'hFF,
+                                 8'hFF, 8'hFF, 8'hFF, 8'hFF,
+                                 8'hFF, 8'hFF, 8'hFF, 8'hFF};
+        resp_q.delete();
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .wlength(16'(prot_cap_wr_payload.size())),
+                       .payload_bytes(prot_cap_wr_payload),
+                       .resp_bytes(resp_q),
+                       .label({label_prefix,
+                               "_PROT_CAP_HOST_WRITE_REJECTED"}));
+
+        empty_q.delete();
+        ds_proto_r7.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto_r7),
+                       .label({label_prefix,
+                               "_DEVICE_STATUS_PROTOERR_R7_PROTCAP"}));
+        if (ds_proto_r7.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS after PROT_CAP host write returned %0d bytes; need >= 2 to read PROTOCOL_ERROR (byte 1).",
+                          ds_proto_r7.size()))
+        end else if (ds_proto_r7[1] !== 8'h01) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR not set after USB-host write to PROT_CAP: DEVICE_STATUS[1]=0x%02h, expected 0x01 (OCP Recovery v1.1 Sec 9.1 write-to-RO, R7).",
+                          ds_proto_r7[1]))
+        end else begin
+            `uvm_info(report_id,
+                "PROTOCOL_ERROR=0x01 correctly set after USB-host write to PROT_CAP (OCP Recovery v1.1 Sec 9.1).",
+                UVM_NONE)
+        end
+
+        empty_q.delete();
+        ds_proto_r7_clr.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto_r7_clr),
+                       .label({label_prefix,
+                               "_DEVICE_STATUS_PROTOERR_R7_PROTCAP_CLR"}));
+        if (ds_proto_r7_clr.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS (PROT_CAP write-reject clear check) returned %0d bytes; need >= 2.",
+                          ds_proto_r7_clr.size()))
+        end else if (ds_proto_r7_clr[1] !== 8'h00) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR did not clear on read after PROT_CAP host-write check: DEVICE_STATUS[1]=0x%02h, expected 0x00.",
+                          ds_proto_r7_clr[1]))
+        end
+
+        empty_q.delete();
+        prot_cap_after.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(prot_cap_after),
+                       .label({label_prefix,
+                               "_PROT_CAP_UNCHANGED_AFTER_HOST_WRITE"}));
+        if (prot_cap_after.size() < 12) begin
+            `uvm_error(report_id,
+                $sformatf("PROT_CAP (post host-write check) returned %0d bytes; need >= 12.",
+                          prot_cap_after.size()))
+        end else begin
+            logic [15:0] agent_caps_after;
+            agent_caps_after = {prot_cap_after[11], prot_cap_after[10]};
+            if (agent_caps_after !== initial_agent_caps) begin
+                `uvm_error(report_id,
+                    $sformatf("PROT_CAP AGENT_CAPS changed after rejected USB-host write: before=0x%04h after=0x%04h.",
+                              initial_agent_caps, agent_caps_after))
+            end else begin
+                `uvm_info(report_id,
+                    "PROT_CAP AGENT_CAPS unchanged after rejected USB-host write, as expected.",
+                    UVM_NONE)
+            end
+        end
+    endtask
+
+    protected virtual task check_rejected_fifo_status_write(
+        input string label_prefix = "OCPREC",
+        input string report_id = "OCPREC",
+        input bit send_payload = 1'b0,
+        input bit verify_unchanged = 1'b0);
+        bit [7:0] empty_q[$];
+        bit [7:0] write_payload[$];
+        bit [7:0] resp_q[$];
+        bit [7:0] ds_proto_r7[$];
+        bit [7:0] ds_proto_r7_clr[$];
+        bit [7:0] fifo_status_before[$];
+        bit [7:0] fifo_status_after[$];
+        bit status_unchanged;
+
+        empty_q.delete();
+        write_payload.delete();
+        if (send_payload)
+            write_payload.push_back(8'hFF);
+        if (verify_unchanged) begin
+            ocp_read(
+                OCP_REC_CMD_INDIRECT_FIFO_STATUS,
+                fifo_status_before,
+                {label_prefix, "_INDIRECT_FIFO_STATUS_BEFORE"});
+        end
+        resp_q.delete();
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .wlength(16'd1),
+                       .payload_bytes(write_payload),
+                       .resp_bytes(resp_q),
+                       .label({label_prefix,
+                               "_INDIRECT_FIFO_STATUS_HOST_WRITE_REJECTED"}));
+
+        empty_q.delete();
+        ds_proto_r7.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto_r7),
+                       .label({label_prefix,
+                               "_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS"}));
+        if (ds_proto_r7.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS after INDIRECT_FIFO_STATUS host write returned %0d bytes; need >= 2.",
+                          ds_proto_r7.size()))
+        end else if (ds_proto_r7[1] !== 8'h01) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR not set after USB-host write to INDIRECT_FIFO_STATUS: DEVICE_STATUS[1]=0x%02h, expected 0x01 (Sec 9.1/9.2, R7).",
+                          ds_proto_r7[1]))
+        end else begin
+            `uvm_info(report_id,
+                "PROTOCOL_ERROR=0x01 correctly set after USB-host write to INDIRECT_FIFO_STATUS (OCP Recovery v1.1 Sec 9.1/9.2).",
+                UVM_NONE)
+        end
+
+        empty_q.delete();
+        ds_proto_r7_clr.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(ds_proto_r7_clr),
+                       .label({label_prefix,
+                               "_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS_CLR"}));
+        if (ds_proto_r7_clr.size() < 2) begin
+            `uvm_error(report_id,
+                $sformatf("DEVICE_STATUS (INDIRECT_FIFO_STATUS write-reject clear check) returned %0d bytes; need >= 2.",
+                          ds_proto_r7_clr.size()))
+        end else if (ds_proto_r7_clr[1] !== 8'h00) begin
+            `uvm_error(report_id,
+                $sformatf("PROTOCOL_ERROR did not clear on read after INDIRECT_FIFO_STATUS host-write check: DEVICE_STATUS[1]=0x%02h, expected 0x00.",
+                          ds_proto_r7_clr[1]))
+        end
+
+        if (verify_unchanged) begin
+            ocp_read(
+                OCP_REC_CMD_INDIRECT_FIFO_STATUS,
+                fifo_status_after,
+                {label_prefix, "_INDIRECT_FIFO_STATUS_AFTER"});
+            status_unchanged =
+                fifo_status_after.size() == fifo_status_before.size();
+            if (status_unchanged) begin
+                foreach (fifo_status_before[i]) begin
+                    if (fifo_status_after[i] !== fifo_status_before[i])
+                        status_unchanged = 1'b0;
+                end
+            end
+            if (!status_unchanged) begin
+                `uvm_error(report_id,
+                    $sformatf({"INDIRECT_FIFO_STATUS changed after rejected ",
+                               "host write: before=%p after=%p."},
+                              fifo_status_before, fifo_status_after))
+            end else begin
+                `uvm_info(report_id,
+                    "INDIRECT_FIFO_STATUS unchanged after rejected host write.",
+                    UVM_NONE)
+            end
+        end
+    endtask
+
+    protected virtual task initiate_recovery(
+        input bit [7:0] cms,
+        input bit [7:0] image_selection,
+        input string label);
+
+        bit [7:0] payload[$];
+        bit [7:0] response[$];
+
+        payload = '{cms, image_selection, 8'h00};
+        `uvm_info("OCPREC",
+            $sformatf({"RECOVERY_CTRL (cmd 0x26) OUT: CMS=%0d, ",
+                       "ImgSel=%0d, Activate=0 (sec 9.2)."},
+                      cms, image_selection),
+            UVM_NONE)
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                       .wlength(16'(payload.size())),
+                       .payload_bytes(payload),
+                       .resp_bytes(response),
+                       .label(label));
+    endtask
+
+    protected virtual task prepare_fifo_control(
+        input bit [7:0] cms,
+        input int unsigned image_size_dwords,
+        input string label);
+
+        bit [7:0] payload[$];
+        bit [7:0] response[$];
+
+        payload = '{cms, 8'h01,
+                    image_size_dwords[7:0],
+                    image_size_dwords[15:8],
+                    image_size_dwords[23:16],
+                    image_size_dwords[31:24]};
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
+                       .wlength(16'(payload.size())),
+                       .payload_bytes(payload),
+                       .resp_bytes(response),
+                       .label(label));
+    endtask
+
+    protected virtual task check_fifo_control_readback(
+        input bit [7:0] expected_cms,
+        input int unsigned expected_image_size_dwords,
+        input string label);
+
+        bit [7:0] empty_q[$];
+        bit [7:0] response[$];
+
+        response.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(response),
+                       .label(label));
+        if (response.size() >= OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) begin
+            int unsigned img_sz_rb;
+            img_sz_rb = {response[OCP_OFF_IFC_IMG_SIZE_B3],
+                         response[OCP_OFF_IFC_IMG_SIZE_B3-1],
+                         response[OCP_OFF_IFC_IMG_SIZE_B0+1],
+                         response[OCP_OFF_IFC_IMG_SIZE_B0]};
+            `uvm_info("OCPREC",
+                $sformatf({"INDIRECT_FIFO_CTRL read-back: CMS=0x%02h ",
+                           "IMAGE_SIZE=%0d (4B units; expected CMS=0x%02h, ",
+                           "IMAGE_SIZE=%0d)"},
+                          response[0], img_sz_rb, expected_cms,
+                          expected_image_size_dwords), UVM_NONE)
+            if (response[0] != expected_cms)
+                `uvm_error("OCPREC",
+                    $sformatf({"INDIRECT_FIFO_CTRL.CMS read-back=0x%02h, ",
+                               "expected 0x%02h (regblock read routing)."},
+                              response[0], expected_cms))
+            if (img_sz_rb != expected_image_size_dwords)
+                `uvm_error("OCPREC",
+                    $sformatf({"INDIRECT_FIFO_CTRL.IMAGE_SIZE read-back=%0d, ",
+                               "expected %0d DWORDs (regblock read routing / ",
+                               "cms_fifo hw=w drive)."},
+                              img_sz_rb, expected_image_size_dwords))
+        end else begin
+            `uvm_error("OCPREC",
+                $sformatf("INDIRECT_FIFO_CTRL read-back returned %0d bytes; need %0d.",
+                          response.size(), OCP_SPEC_LEN_INDIRECT_FIFO_CTRL))
+        end
+    endtask
+
+    protected virtual task automatic build_le_dword_image(
+        ref bit [31:0] pattern_dwords[$],
+        output bit [7:0] image_bytes[$]);
+
+        image_bytes.delete();
+        foreach (pattern_dwords[j]) begin
+            image_bytes.push_back(pattern_dwords[j][ 7: 0]);
+            image_bytes.push_back(pattern_dwords[j][15: 8]);
+            image_bytes.push_back(pattern_dwords[j][23:16]);
+            image_bytes.push_back(pattern_dwords[j][31:24]);
+        end
+    endtask
+
+    protected virtual task automatic build_default_recovery_image(
+        input int unsigned image_size_dwords,
+        output bit [7:0] image_bytes[$]);
+
+        bit [31:0] pattern_dwords[$];
+
+        pattern_dwords.push_back(32'hDEADBEEF);
+        pattern_dwords.push_back(32'hCAFEBABE);
+        pattern_dwords.push_back(32'h12345678);
+        pattern_dwords.push_back(32'h9ABCDEF0);
+        for (int j = pattern_dwords.size(); j < image_size_dwords; j++)
+            pattern_dwords.push_back(32'h00000010 + j);
+        build_le_dword_image(pattern_dwords, image_bytes);
+    endtask
+
+    protected virtual task automatic stream_fifo_image(
+        ref bit [7:0] image_bytes[$],
+        input string label);
+
+        bit [7:0] response[$];
+
+        if (image_bytes.size() > wMaxWrTransferSize) begin
+            `uvm_error("OCPREC",
+                $sformatf("Image chunk size %0d > wMaxWrTransferSize %0d (sec 8.5.1).",
+                          image_bytes.size(), wMaxWrTransferSize))
+        end
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
+                       .wlength(16'(image_bytes.size())),
+                       .payload_bytes(image_bytes),
+                       .resp_bytes(response),
+                       .label(label));
+    endtask
+
+    protected virtual task check_fifo_status(
+        input int unsigned expected_write_index,
+        input string label);
+
+        bit [7:0] empty_q[$];
+        bit [7:0] fifo_status[$];
+
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(fifo_status),
+                       .label(label));
+        if (fifo_status.size() >= 8) begin
+            int unsigned wr_idx;
+            wr_idx = {fifo_status[7], fifo_status[6],
+                      fifo_status[5], fifo_status[4]};
+            `uvm_info("OCPREC",
+                $sformatf("INDIRECT_FIFO_STATUS: EMPTY=%0d FULL=%0d WRITE_INDEX=%0d (4B units; expected %0d)",
+                          fifo_status[0], fifo_status[1], wr_idx,
+                          expected_write_index),
+                UVM_NONE)
+            if (wr_idx != expected_write_index) begin
+                `uvm_error("OCPREC",
+                    $sformatf("INDIRECT_FIFO_STATUS.WRITE_INDEX=%0d, expected %0d after pushing %0d dwords (sec 9.2).",
+                              wr_idx, expected_write_index,
+                              expected_write_index))
+            end
+        end else begin
+            `uvm_error("OCPREC",
+                $sformatf("INDIRECT_FIFO_STATUS returned %0d bytes; need >= 8 to extract WRITE_INDEX (sec 9.2).",
+                          fifo_status.size()))
+        end
+    endtask
+
+    protected virtual task wait_for_recovery_pending(
+        output bit recovery_pending_seen);
+
+        bit [7:0] empty_q[$];
+        bit [7:0] dev_status[$];
+        int poll_iter;
+
+        poll_iter = 0;
+        recovery_pending_seen = 1'b0;
+        forever begin
+            empty_q.delete();
+            ocp_class_xfer(.dir_in(1'b1),
+                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .wlength(16'(wMaxRdTransferSize)),
+                           .payload_bytes(empty_q),
+                           .resp_bytes(dev_status),
+                           .label($sformatf("OCPREC_DEVICE_STATUS_poll%0d",
+                                            poll_iter)));
+            if (dev_status.size() < 1) begin
+                `uvm_error("OCPREC",
+                    "DEVICE_STATUS poll returned 0 bytes.")
+                break;
+            end
+            `uvm_info("OCPREC",
+                $sformatf("Polling DEVICE_STATUS[0]=0x%02h iter=%0d (sec 9.2).",
+                          dev_status[0], poll_iter),
+                UVM_NONE)
+            if (dev_status[0] == OCP_DEVICE_STATUS_RECOVERY_PENDING) begin
+                recovery_pending_seen = 1'b1;
+                break;
+            end
+            poll_iter++;
+            if (poll_iter > 16) begin
+                `uvm_error("OCPREC",
+                    $sformatf("DEVICE_STATUS did not reach 0x04 RECOVERY_PENDING within 16 polls. last dev_status[0]=0x%02h time=%0t",
+                              dev_status.size() > 0 ? dev_status[0] : 8'h00,
+                              $time))
+                break;
+            end
+            #50us;
+        end
+    endtask
+
+    protected virtual task check_usb_route_at_recovery_pending();
+        bit firmware_pending_seen;
+        bit [7:0] empty_q[$];
+        bit [7:0] rec_status[$];
+
+        sem_vif.wait_for_fw_state_bounded(
+            OCP_FW_STATE_RECOVERY_PENDING,
+            200,
+            1us,
+            firmware_pending_seen);
+        if (!firmware_pending_seen) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "Firmware Recovery Pending publication was not observed.")
+        end else if (!sem_vif.recovery_payload_available_seen) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "Firmware published Recovery Pending without a USB payload_available assertion.")
+        end else if (sem_vif.recovery_payload_observed_at == 0.0) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "Firmware payload-observed publication timestamp was not captured.")
+        end else if (sem_vif.recovery_payload_available_asserted_at >
+                     sem_vif.recovery_payload_observed_at) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                $sformatf("USB payload_available asserted at %0t after firmware observed the combined status at %0t.",
+                          sem_vif.recovery_payload_available_asserted_at,
+                          sem_vif.recovery_payload_observed_at))
+        end else if (sem_vif.i3c_recovery_payload_available_seen) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "I3C payload-available source asserted during USB route validation.")
+        end else begin
+            `uvm_info("OCP_PAYLOAD_ROUTE",
+                "USB payload_available asserted before firmware published Recovery Pending.",
+                UVM_NONE)
+        end
+
+        empty_q.delete();
+        ocp_class_xfer(.dir_in(1'b1),
+                       .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
+                       .wlength(16'(wMaxRdTransferSize)),
+                       .payload_bytes(empty_q),
+                       .resp_bytes(rec_status),
+                       .label("OCP_FW_RECOVERY_STATUS_PENDING"));
+        if ((rec_status.size() < OCP_SPEC_LEN_RECOVERY_STATUS) ||
+            (rec_status[OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] !==
+                OCP_RECOVERY_STATUS_AWAITING_IMAGE)) begin
+            `uvm_error("OCP_FW_STATUS",
+                "Firmware Recovery Pending milestone did not preserve RECOVERY_STATUS Awaiting Image.")
+        end
+    endtask
+
+    protected virtual task activate_recovery(
+        input bit [7:0] cms,
+        input bit [7:0] image_selection,
+        input string label);
+
+        bit [7:0] payload[$];
+        bit [7:0] response[$];
+
+        payload = '{cms, image_selection, OCP_RC_ACTIVATE_CODE};
+        `uvm_info("OCPREC",
+            $sformatf({"RECOVERY_CTRL (cmd 0x26) OUT: CMS=%0d, ",
+                       "ImgSel=%0d, Activate=0x%02h."},
+                      cms, image_selection, OCP_RC_ACTIVATE_CODE),
+            UVM_NONE)
+        ocp_class_xfer(.dir_in(1'b0),
+                       .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                       .wlength(16'(payload.size())),
+                       .payload_bytes(payload),
+                       .resp_bytes(response),
+                       .label(label));
+    endtask
+
+    protected virtual task check_i3c_route_quiescent();
+        if (sem_vif.i3c_recovery_payload_available_seen) begin
+            `uvm_error("OCP_PAYLOAD_ROUTE",
+                "I3C payload-available source was not quiescent across the recovery flow.")
+        end
+    endtask
+
+    protected virtual task legacy_completion_wait(
+        input bit recovery_pending_seen);
+
+        if (recovery_pending_seen) begin
+            `uvm_info("OCPREC",
+                "DEVICE_STATUS=0x04 RECOVERY_PENDING observed. Holding the main_phase objection so the MCU can complete streaming-boot and report TB_CMD_END_SIM_WITH_SUCCESS (which $finishes the sim). Bounded fail-safe wait engaged.",
+                UVM_NONE)
+            #200us;
+            `uvm_error("OCPREC",
+                "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
+        end
+    endtask
+
+    protected virtual task wait_fw_state_generation_bounded(
+        input logic [7:0] state,
+        input logic [15:0] generation,
+        input time timeout,
+        input string label,
+        input string report_id);
+
+        bit found;
+
+        sem_vif.wait_for_fw_state_generation_bounded(
+            state, generation, timeout, found);
+        if (!found) begin
+            `uvm_fatal(report_id,
+                $sformatf("%s firmware state 0x%02h generation %0d timed out.",
+                          label, state, generation))
+        end
+    endtask
+
+    protected virtual task issue_fw_command_and_wait(
+        input logic [7:0] command,
+        input logic [15:0] generation,
+        input logic [7:0] expected_state,
+        input time timeout,
+        input string label,
+        input string report_id);
+
+        sem_vif.issue_fw_command(command, generation);
+        wait_fw_state_generation_bounded(
+            expected_state, generation, timeout, label, report_id);
+        sem_vif.clear_fw_command();
+    endtask
+
+    protected virtual task require_recovery_status_pair(
+        input ocp_device_status_e expected_device_status,
+        input ocp_recovery_status_e expected_recovery_status,
+        input bit [3:0] expected_image_index,
+        input bit [7:0] expected_vendor_status,
+        input ocp_protocol_error_e expected_protocol_error,
+        input int unsigned max_polls,
+        input time poll_delay,
+        input string label,
+        input string report_id);
+
+        bit reached;
+        bit [7:0] response[$];
+        bit [7:0] observed_device_status;
+        bit [7:0] observed_protocol_error;
+        bit [3:0] observed_recovery_status;
+        bit [3:0] observed_image_index;
+        bit [7:0] observed_vendor_status;
+
+        poll_device_status(
+            expected_device_status, max_polls, poll_delay, reached, response,
+            {label, "_DEVICE"});
+        observed_device_status =
+            (response.size() > OCP_OFF_DS_STATUS) ?
+                response[OCP_OFF_DS_STATUS] : 8'hFF;
+        observed_protocol_error =
+            (response.size() > OCP_OFF_DS_PROT_ERROR) ?
+                response[OCP_OFF_DS_PROT_ERROR] : 8'hFF;
+        if (!reached ||
+            (response.size() < OCP_SPEC_MIN_LEN_DEVICE_STATUS) ||
+            (observed_protocol_error != expected_protocol_error)) begin
+            `uvm_fatal(report_id,
+                $sformatf({"%s DEVICE_STATUS failed: reached=%0b ",
+                           "status=0x%02h protocol_error=0x%02h length=%0d."},
+                          label, reached, observed_device_status,
+                          observed_protocol_error, response.size()))
+        end
+
+        poll_recovery_status(
+            expected_recovery_status, max_polls, poll_delay, reached, response,
+            {label, "_RECOVERY"});
+        observed_recovery_status =
+            (response.size() > OCP_OFF_RS_STATUS_IMAGE_INDEX) ?
+                response[OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] : 4'hF;
+        observed_image_index =
+            (response.size() > OCP_OFF_RS_STATUS_IMAGE_INDEX) ?
+                response[OCP_OFF_RS_STATUS_IMAGE_INDEX][7:4] : 4'hF;
+        observed_vendor_status =
+            (response.size() > OCP_OFF_RS_VENDOR_STATUS) ?
+                response[OCP_OFF_RS_VENDOR_STATUS] : 8'hFF;
+        if (!reached ||
+            (response.size() != OCP_SPEC_LEN_RECOVERY_STATUS) ||
+            (observed_image_index != expected_image_index) ||
+            (observed_vendor_status != expected_vendor_status)) begin
+            `uvm_fatal(report_id,
+                $sformatf({"%s RECOVERY_STATUS failed: reached=%0b ",
+                           "status=0x%01h image_index=%0d vendor=0x%02h ",
+                           "length=%0d."},
+                          label, reached, observed_recovery_status,
+                          observed_image_index, observed_vendor_status,
+                          response.size()))
+        end
+    endtask
+
+    protected virtual task wait_for_recovery_activation_observed(
+        input time timeout,
+        input time poll_delay,
+        input string label,
+        input string report_id);
+
+        bit activated;
+        int unsigned max_polls;
+
+        activated = 1'b0;
+        max_polls = timeout / poll_delay;
+        for (int unsigned poll = 0; poll < max_polls; poll++) begin
+            if ((sem_vif.recovery_image_activated === 1'b1) ||
+                sem_vif.recovery_image_activated_seen) begin
+                activated = 1'b1;
+                break;
+            end
+            #(poll_delay);
+        end
+        if (!activated) begin
+            `uvm_fatal(report_id,
+                $sformatf("%s recovery activation was not observed.", label))
+        end
     endtask
 
     protected virtual function bit legal_device_id_type(bit [7:0] value);

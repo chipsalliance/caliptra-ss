@@ -51,11 +51,16 @@ interface caliptra_ss_usb_ocp_access_semantics_if;
     localparam logic [31:0] FW_COMMAND_MAGIC = 32'h4F43_5041;
     localparam logic [7:0] FW_COMMAND_SET_PATH_DISABLE = 8'h01;
     localparam logic [7:0] FW_COMMAND_CLEAR_PATH_DISABLE = 8'h02;
+    localparam logic [7:0] FW_COMMAND_FLOW_ADVANCE = 8'h03;
+    localparam logic [7:0] FW_COMMAND_FLOW_COMPLETE = 8'h04;
     localparam logic [7:0] FW_STATE_COMMAND_BUSY = 8'h1F;
     localparam logic [7:0] FW_STATE_PATH_READY = 8'h20;
     localparam logic [7:0] FW_STATE_PATH_DISABLED = 8'h21;
     localparam logic [7:0] FW_STATE_PATH_ENABLED = 8'h22;
     localparam logic [7:0] FW_STATE_COMMAND_ERROR = 8'h2F;
+    localparam logic [7:0] FW_STATE_FLOW_BOOTING_READY = 8'h32;
+    localparam logic [7:0] FW_STATE_FLOW_SUCCESS_READY = 8'h33;
+    localparam logic [7:0] FW_STATE_FLOW_COMPLETE = 8'h34;
 
     // Architectural top-level observations, driven by assign in the TB.
     logic [124:0] fw_exec_ctrl;

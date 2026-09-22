@@ -196,6 +196,9 @@ localparam int OCP_OFF_RC_CMS           = 0;
 localparam int OCP_OFF_RC_IMG_SEL       = 1;
 localparam int OCP_OFF_RC_ACTIVATE      = 2;
 localparam logic [7:0] OCP_RC_ACTIVATE_CODE = 8'h0F;
+localparam logic [7:0] OCP_RC_IMAGE_SEL_NONE = 8'h00;
+localparam logic [7:0] OCP_RC_IMAGE_SEL_CMS  = 8'h01;
+localparam logic [7:0] OCP_RC_IMAGE_SEL_LOCAL = 8'h02;
 
 // INDIRECT_CTRL and INDIRECT_FIFO_CTRL, OCP Recovery v1.1 Section 9.2.
 localparam int OCP_OFF_IC_CMS           = 0;

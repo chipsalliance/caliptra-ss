@@ -44,8 +44,6 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
-    protected virtual caliptra_ss_usb_ocp_access_semantics_if sem_vif;
-
     localparam int unsigned SEM_MAX_POLLS    = 2000;
     localparam time         SEM_POLL_PERIOD  = 1us;
 
@@ -62,18 +60,6 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     function new(string name =
         "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence");
         super.new(name);
-    endfunction
-
-    protected virtual function bit get_sem_vif();
-        if (!uvm_config_db#(
-                virtual caliptra_ss_usb_ocp_access_semantics_if)::get(
-                    null, "uvm_test_top.env",
-                    "ocp_access_semantics_if", sem_vif)) begin
-            `uvm_fatal("RA_SEM_SEQ",
-                "ocp_access_semantics_if not found in config_db")
-            return 1'b0;
-        end
-        return 1'b1;
     endfunction
 
     protected virtual task wait_fw_state(

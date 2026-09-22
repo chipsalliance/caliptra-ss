@@ -21,6 +21,7 @@ class caliptra_ss_usb_nak_monitor_callback
     `uvm_object_utils(caliptra_ss_usb_nak_monitor_callback)
 
     protected static int unsigned nak_count;
+    protected static int unsigned ping_count;
 
     function new(string name = "caliptra_ss_usb_nak_monitor_callback");
         super.new(name);
@@ -34,6 +35,14 @@ class caliptra_ss_usb_nak_monitor_callback
         nak_count = 0;
     endfunction
 
+    static function int unsigned get_ping_count();
+        return ping_count;
+    endfunction
+
+    static function void reset_ping_count();
+        ping_count = 0;
+    endfunction
+
     virtual function void usb_20_rx_packet_ended(
         svt_usb_link_monitor link_mon,
         svt_usb_packet pkt);
@@ -42,6 +51,16 @@ class caliptra_ss_usb_nak_monitor_callback
             (pkt.pid_type == svt_usb_packet::HANDSHAKE) &&
             (pkt.pid_name == svt_usb_packet::NAK)) begin
             nak_count++;
+        end
+    endfunction
+
+    virtual function void usb_20_tx_packet_ended(
+        svt_usb_link_monitor link_mon,
+        svt_usb_packet pkt);
+
+        if ((pkt != null) &&
+            (pkt.pid_name == svt_usb_packet::PING)) begin
+            ping_count++;
         end
     endfunction
 
