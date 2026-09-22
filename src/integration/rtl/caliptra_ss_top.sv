@@ -641,9 +641,9 @@ module caliptra_ss_top
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
 
         .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i
-                             | cptra_ss_usb_recovery_payload_available_i),
+                             | cptra_ss_usb_recovery_payload_available_i), //FIXME
         .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i
-                                 | cptra_ss_usb_recovery_image_activated_i),
+                                 | cptra_ss_usb_recovery_image_activated_i), // FIXME
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
