@@ -8,6 +8,11 @@ requires:
   - tlul
   - caliptra_ss_lc_ctrl_pkg
 targets:
+  tb:
+    directories: [$COMPILE_ROOT/model]
+    files:
+      - $COMPILE_ROOT/model/spi_device_pkg.sv
+      - $COMPILE_ROOT/model/spiflash.sv
   rtl:
     directories: [$COMPILE_ROOT/rtl]
     files:  
