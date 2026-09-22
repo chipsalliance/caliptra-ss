@@ -1186,11 +1186,29 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input string label);
 
         bit [7:0] response[$];
+        fifo_status_s status;
+        int unsigned image_dwords;
 
-        if (image_bytes.size() > wMaxWrTransferSize) begin
-            `uvm_error("OCPREC",
-                $sformatf("Image chunk size %0d > wMaxWrTransferSize %0d (sec 8.5.1).",
-                          image_bytes.size(), wMaxWrTransferSize))
+        read_fifo_status(status, {label, "_SINGLE_BATCH_STATUS"});
+        image_dwords = bytes_to_dwords(image_bytes.size());
+        if ((status.fifo_size == 0) ||
+            (status.max_transfer_dwords == 0)) begin
+            `uvm_fatal("OCPREC",
+                $sformatf({"%s cannot validate single-batch limits: ",
+                           "FIFO_SIZE=%0d MAX_TRANSFER_SIZE=%0d."},
+                          label, status.fifo_size,
+                          status.max_transfer_dwords))
+        end
+        if ((image_bytes.size() > wMaxWrTransferSize) ||
+            (image_dwords > status.max_transfer_dwords) ||
+            (image_dwords > status.fifo_size)) begin
+            `uvm_fatal("OCPREC",
+                $sformatf({"%s image does not fit one FIFO transfer/batch: ",
+                           "bytes=%0d dwords=%0d wMaxWrTransferSize=%0d ",
+                           "MAX_TRANSFER_SIZE=%0d FIFO_SIZE=%0d."},
+                          label, image_bytes.size(), image_dwords,
+                          wMaxWrTransferSize, status.max_transfer_dwords,
+                          status.fifo_size))
         end
         ocp_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
