@@ -7654,6 +7654,10 @@
 #define SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES                                                         (0x21000000)
 #ifndef MCI_REG_HW_CAPABILITIES
 #define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (0x3)
+#define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
+#define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (0xfffffffc)
 #endif
 #define SOC_MCI_TOP_MCI_REG_FW_CAPABILITIES                                                         (0x21000004)
 #ifndef MCI_REG_FW_CAPABILITIES

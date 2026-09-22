@@ -2195,7 +2195,8 @@ module caliptra_ss_top_tb
     logic         cptra_ss_mcu_jtag_tdoEn_o;
     logic [63:0]  cptra_ss_strap_caliptra_base_addr_i;
     logic [63:0]  cptra_ss_strap_mci_base_addr_i;
-    logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i;
+    logic [63:0]  cptra_ss_strap_usb_recovery_ifc_base_addr_i;
+    logic [63:0]  cptra_ss_strap_i3c_recovery_ifc_base_addr_i;
     logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i; 
     logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i;
     logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i;
@@ -2211,7 +2212,8 @@ module caliptra_ss_top_tb
 
     assign cptra_ss_strap_caliptra_base_addr_i  = 64'(`SOC_SOC_IFC_REG_BASE_ADDR - (`SOC_SOC_IFC_REG_BASE_ADDR & ((1<<SOC_IFC_ADDR_W)-1)));
     assign cptra_ss_strap_mci_base_addr_i       = 64'(`SOC_MCI_TOP_BASE_ADDR);
-    assign cptra_ss_strap_recovery_ifc_base_addr_i = {32'h0, `SOC_USB_COMBO_RECOVERY_BASE_ADDR};
+    assign cptra_ss_strap_usb_recovery_ifc_base_addr_i = {32'h0, `SOC_USB_COMBO_RECOVERY_BASE_ADDR};
+    assign cptra_ss_strap_i3c_recovery_ifc_base_addr_i = {32'b0, `SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_START};
     assign cptra_ss_strap_otp_fc_base_addr_i    = 64'h0000_0000_7000_0000;
     assign cptra_ss_strap_uds_seed_base_addr_i  = 64'h0000_0000_0000_0048;
     assign cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = 32'h0;
@@ -2436,7 +2438,8 @@ module caliptra_ss_top_tb
     //Strap
         .cptra_ss_strap_caliptra_base_addr_i,
         .cptra_ss_strap_mci_base_addr_i,
-        .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_usb_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_i3c_recovery_ifc_base_addr_i,
         .cptra_ss_strap_external_staging_area_base_addr_i,
         .cptra_ss_strap_otp_fc_base_addr_i,
         .cptra_ss_strap_key_release_key_size_i,

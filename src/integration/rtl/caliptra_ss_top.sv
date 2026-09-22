@@ -28,6 +28,7 @@
 module caliptra_ss_top
     import axi_pkg::*;
     import soc_ifc_pkg::*;
+    import mci_reg_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
     ,parameter CPTRA_SS_ROM_SIZE_KB = 256
@@ -235,7 +236,8 @@ module caliptra_ss_top
 
     input logic [63:0]  cptra_ss_strap_caliptra_base_addr_i,
     input logic [63:0]  cptra_ss_strap_mci_base_addr_i,
-    input logic [63:0]  cptra_ss_strap_recovery_ifc_base_addr_i,
+    input logic [63:0]  cptra_ss_strap_usb_recovery_ifc_base_addr_i,
+    input logic [63:0]  cptra_ss_strap_i3c_recovery_ifc_base_addr_i,
     input logic [63:0]  cptra_ss_strap_external_staging_area_base_addr_i,
     input logic [63:0]  cptra_ss_strap_otp_fc_base_addr_i,
     input logic [63:0]  cptra_ss_strap_uds_seed_base_addr_i,
@@ -356,10 +358,10 @@ module caliptra_ss_top
     input  logic                           cptra_ss_usb_sessend_i,
     input  logic                           cptra_ss_usb_async_disable_i,
 
-    output logic cptra_ss_usb_recovery_payload_available_o, // TODO: drive from usb_core_i when recovery is supported
+    output logic cptra_ss_usb_recovery_payload_available_o,
     input  logic cptra_ss_usb_recovery_payload_available_i,
 
-    output logic cptra_ss_usb_recovery_image_activated_o, // TODO: drive from usb_core_i when recovery is supported
+    output logic cptra_ss_usb_recovery_image_activated_o,
     input  logic cptra_ss_usb_recovery_image_activated_i,
 
     input  logic cptra_usb_axi_user_id_filtering_enable_i, // TODO: reserved for future USB AXI user-based access control
@@ -504,6 +506,12 @@ module caliptra_ss_top
     logic [`CLP_OBF_FE_DWORDS-1 : 0][31:0] cptra_obf_field_entropy;
     // --------------------------------------------------------------------
 
+    //----------------------- Streaming Boot ------------------------------
+    mci_reg__HW_CAPABILITIES__streaming_boot_select_e_e mci_streaming_boot_select;
+    logic [63:0] recovery_ifc_base_addr;
+    logic        recovery_data_avail;
+    logic        recovery_image_activated;
+
     //---------------------------I3C---------------------------------------
     logic                       disable_id_filtering_i;
     logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
@@ -583,6 +591,21 @@ module caliptra_ss_top
         {cptra_obf_field_entropy[5], cptra_obf_field_entropy[4]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_2_data.cptra_core_field_entropy_2;
         {cptra_obf_field_entropy[7], cptra_obf_field_entropy[6]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_3_data.cptra_core_field_entropy_3;
      end
+
+
+    always_comb begin
+        // USB is the fail-safe for reserved and unknown select values
+        recovery_ifc_base_addr   = cptra_ss_strap_usb_recovery_ifc_base_addr_i;
+        recovery_data_avail      = cptra_ss_usb_recovery_payload_available_i;
+        recovery_image_activated = cptra_ss_usb_recovery_image_activated_i;
+
+        if (mci_streaming_boot_select == mci_reg__HW_CAPABILITIES__streaming_boot_select_e__I3C) begin
+            recovery_ifc_base_addr   = cptra_ss_strap_i3c_recovery_ifc_base_addr_i;
+            recovery_data_avail      = cptra_ss_i3c_recovery_payload_available_i;
+            recovery_image_activated = cptra_ss_i3c_recovery_image_activated_i;
+        end
+    end
+
     //=========================================================================-
     // Caliptra DUT instance
     //=========================================================================-
@@ -640,10 +663,8 @@ module caliptra_ss_top
         .mailbox_flow_done(),
         .BootFSM_BrkPoint(cptra_ss_cptra_core_bootfsm_bp_i),
 
-        .recovery_data_avail(cptra_ss_i3c_recovery_payload_available_i
-                             | cptra_ss_usb_recovery_payload_available_i), //FIXME
-        .recovery_image_activated(cptra_ss_i3c_recovery_image_activated_i
-                                 | cptra_ss_usb_recovery_image_activated_i), // FIXME
+        .recovery_data_avail(recovery_data_avail),
+        .recovery_image_activated(recovery_image_activated),
 
         //SoC Interrupts
         .cptra_error_fatal    (cptra_error_fatal    ),
@@ -678,7 +699,7 @@ module caliptra_ss_top
         // Subsystem mode straps
         .strap_ss_caliptra_base_addr                            ( cptra_ss_strap_caliptra_base_addr_i ),
         .strap_ss_mci_base_addr                                 ( cptra_ss_strap_mci_base_addr_i ),
-        .strap_ss_recovery_ifc_base_addr                        ( cptra_ss_strap_recovery_ifc_base_addr_i ),
+        .strap_ss_recovery_ifc_base_addr                        ( recovery_ifc_base_addr ),
         .strap_ss_external_staging_area_base_addr               ( cptra_ss_strap_external_staging_area_base_addr_i ),
         .strap_ss_otp_fc_base_addr                              ( cptra_ss_strap_otp_fc_base_addr_i ),
         .strap_ss_uds_seed_base_addr                            ( cptra_ss_strap_uds_seed_base_addr_i ),
@@ -1275,6 +1296,7 @@ module caliptra_ss_top
 
         .mci_generic_input_wires(cptra_ss_mci_generic_input_wires_i),
         .mci_generic_output_wires(cptra_ss_mci_generic_output_wires_o),
+        .streaming_boot_select(mci_streaming_boot_select),
 
         .mcu_timer_int(mci_mcu_timer_int),
         .mci_intr(mci_intr),
