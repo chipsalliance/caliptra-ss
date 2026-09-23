@@ -284,7 +284,8 @@ module caliptra_ss_top_w_stub #(
 
     logic [63:0] cptra_ss_strap_caliptra_base_addr_i;
     logic [63:0] cptra_ss_strap_mci_base_addr_i;
-    logic [63:0] cptra_ss_strap_recovery_ifc_base_addr_i;
+    logic [63:0] cptra_ss_strap_usb_recovery_ifc_base_addr_i;
+    logic [63:0] cptra_ss_strap_i3c_recovery_ifc_base_addr_i;
     logic [63:0] cptra_ss_strap_otp_fc_base_addr_i;
     logic [63:0] cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0] cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
@@ -442,7 +443,8 @@ module caliptra_ss_top_w_stub #(
         cptra_ss_mcu_jtag_trst_n_i = '0;
         cptra_ss_strap_caliptra_base_addr_i = '0;
         cptra_ss_strap_mci_base_addr_i = '0;
-        cptra_ss_strap_recovery_ifc_base_addr_i = '0;
+        cptra_ss_strap_usb_recovery_ifc_base_addr_i = '0;
+        cptra_ss_strap_i3c_recovery_ifc_base_addr_i = '0;
         cptra_ss_strap_otp_fc_base_addr_i = '0;
         cptra_ss_strap_uds_seed_base_addr_i = '0;
         cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = '0;
@@ -569,6 +571,14 @@ module caliptra_ss_top_w_stub #(
         .cptra_ss_usb_dev1_mem_s_axi_if_r_sub(cptra_ss_usb_dev1_mem_s_axi_if.r_sub),
         .cptra_ss_usb_dev1_mem_s_axi_if_w_sub(cptra_ss_usb_dev1_mem_s_axi_if.w_sub),
 
+    // SPI AXI interface
+        .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
+        .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
+
+    // UART AXI interface
+        .cptra_ss_uart_s_axi_if_w_sub(cptra_ss_uart_s_axi_if.w_sub),
+        .cptra_ss_uart_s_axi_if_r_sub(cptra_ss_uart_s_axi_if.r_sub),
+
     
         .cptra_ss_lc_axi_wr_req_i,
         .cptra_ss_lc_axi_wr_rsp_o,
@@ -581,14 +591,6 @@ module caliptra_ss_top_w_stub #(
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
         .cptra_ss_otp_core_axi_rd_rsp_o,
-
-    // SPI AXI interface
-        .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
-        .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
-
-    // UART AXI interface
-        .cptra_ss_uart_s_axi_if_w_sub(cptra_ss_uart_s_axi_if.w_sub),
-        .cptra_ss_uart_s_axi_if_r_sub(cptra_ss_uart_s_axi_if.r_sub),
 
     //--------------------
     //caliptra core signals
@@ -679,7 +681,8 @@ module caliptra_ss_top_w_stub #(
     //Strap
         .cptra_ss_strap_caliptra_base_addr_i,
         .cptra_ss_strap_mci_base_addr_i,
-        .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_usb_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_i3c_recovery_ifc_base_addr_i,
         .cptra_ss_strap_external_staging_area_base_addr_i('0),
         .cptra_ss_strap_otp_fc_base_addr_i,
         .cptra_ss_strap_uds_seed_base_addr_i,
