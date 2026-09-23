@@ -15,7 +15,6 @@
 #include "soc_address_map.h"
 #include "caliptra_defines.h"
 #include "caliptra_isr.h"
-#include "caliptra_ss_lib.h"
 #include "riscv-csr.h"
 #include "veer-csr.h"
 #include "riscv_hw_if.h"
@@ -24,7 +23,6 @@
 #include <stdint.h>
 #include "printf.h"
 #include "soc_ifc.h"
-#include "soc_ifc_ss.h"
 #include "caliptra_reg.h"
 
 volatile char* stdout = (char *)STDOUT;
