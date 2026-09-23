@@ -30,19 +30,40 @@
 #include "usb.h"
 #include "stdint.h"
 #include "veer-csr.h"
+// Including mcu_isr.h is what makes the build system compile and link
+// mcu_isr.o for this test (see tools/scripts/Makefile).
+#include "mcu_isr.h"
 
-#define USB_POLL_TIMEOUT              4000
+// Poll loop ceiling. Must outlast the host-side enumeration start: with the
+// interrupt-driven loop each iteration is only a few DCCM accesses, so 4000
+// iterations expired at ~505 us while the host does not issue its first SETUP
+// until ~690 us. The loop then never saw a SETUP, NAK'd the host and reported
+// TIMEOUT. Sized to match the ISO test (100000) so the ceiling is only reached
+// when the DUT genuinely never completes the transfer.
+#define USB_POLL_TIMEOUT              100000
+
 // EP1 OUT buffer placed after EP0 buffers in USB SRAM (EP0 uses 0x000-0x1FF).
 #define USB_SRAM_EP1_OUT_BUF_OFFSET   0x200u
-// 2048 bytes = 512 x 4-byte words (HS bulk, 4 x 512-byte packets).
-// Capped at 2048 B so the EP1 OUT buffer (at SRAM offset 0x200) fits
-// within the 4096-byte USB SRAM (0x200..0x9FF).
-#define USB_FS_BULK_TRANSFER_BYTES    2048u
+// 1024 bytes = 256 x 4-byte words (FS bulk, 16 x 64-byte packets).
+// Must match USB_FS_DEV_BULK_WORDS in
+// testbench/uvm/usb/caliptra_ss_usb_fs_dev_bulk_out_sequence.svh. The size is
+// set by the host side: the VIP constraint
+// reasonable_fixed_transfer_size_non_isoc_intr bounds a fixed transfer to
+// (max_packet_size << 4), and at full speed EP1 bulk has a 64-byte max packet
+// size, giving a 1024-byte ceiling. The earlier 2048 made the host sequence
+// randomize() unsolvable. 1024 B also fits the USB SRAM window at offset 0x200.
+#define USB_FS_BULK_TRANSFER_BYTES    1024u
+
 #define USB_EP_LIST_EP1_OUT_OFFSET    0x010u
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
+// Storage for the symbols the ISR library declares extern.
+volatile uint32_t intr_count;
+volatile mcu_intr_received_s mcu_intr_rcv = {0};
+
 #ifdef CPT_VERBOSITY
+
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
 #else
     enum printf_verbosity verbosity_g = LOW;
@@ -59,7 +80,15 @@ static void usb_ep1_out_arm(void) {
                      | USB_EP_ENTRY_NBYTES(USB_FS_BULK_TRANSFER_BYTES)
                      | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP1_OUT_BUF_OFFSET);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
+
+    // Enable the EP1 OUT interrupt. boot_usb_core_fs() only enables DEV_INT,
+    // EP0OUT and EP0IN, and service_usb_intr() masks INTSTAT with INTEN, so
+    // without this the EP1 OUT completion would never reach the mailbox.
+    lsu_write_32(USB_DEV_INTEN,
+                 lsu_read_32(USB_DEV_INTEN) | USBHSD_INTSTAT_EP1OUT_MASK);
+
     VPRINTF(LOW, "MCU: EP1 OUT armed for %d bytes\n", USB_FS_BULK_TRANSFER_BYTES);
+
 }
 
 static uint32_t usb_ep1_out_read(void) {
@@ -67,9 +96,10 @@ static uint32_t usb_ep1_out_read(void) {
 }
 
 void main(void) {
-    uint32_t reg_data;
     uint32_t poll_count;
+    uint32_t usb_events;
     uint32_t transfers_handled = 0;
+
     bool     ep1_armed         = false;
     bool     bulk_done         = false;
 
@@ -77,7 +107,18 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_fs();
+
+    // Enable the USB interrupt (PIC vector 3) now that boot_usb_core_fs() has
+    // programmed INTEN and cleared any stale INTSTAT bits. Deliberately not
+    // init_interrupts(): that routine also writes the MCI and I3C interrupt
+    // registers, and this early the I3C write does not complete, stalling the
+    // LSU pipeline before mstatus.MIE is set. init_usb_interrupts() touches
+    // only vector 3.
+    intr_count = 0;
+    init_usb_interrupts();
+
     // usb_hub_init_and_connect() (called inside boot_usb_core_fs()) has already
+
     // programmed the HUB RAM and set HUB_EN. USBDC0's own EP list/DEVCMDSTAT/
     // DCON are also now fully programmed (end of boot_usb_core_fs()), so it is
     // safe to connect the hub upstream: usb_hub_connect() sets HUB_CONNECT,
@@ -96,9 +137,16 @@ void main(void) {
 
 
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(USB_DEV_INTSTAT);
 
-        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
+        // Drain the ISR mailbox. service_usb_intr() already read and
+        // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
+        // itself. Snapshot then clear by complement so bits the ISR sets while
+        // we are handling this batch are not lost.
+        usb_events = mcu_intr_rcv.usb;
+        mcu_intr_rcv.usb &= ~usb_events;
+
+        if (usb_events & USBHSD_INTSTAT_DEV_INT_MASK) {
+
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
@@ -107,12 +155,12 @@ void main(void) {
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+        if (usb_events & USBHSD_INTSTAT_EP0OUT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 // SETUP packet received - decode and respond.
                 usb_handle_control_transfer();
@@ -130,9 +178,8 @@ void main(void) {
             }
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
-        }
+        // EP0 IN completion needs no action: the ISR already acknowledged it.
+
 
         // EP1 OUT completion: use INTSTAT EP1OUT bit rather than polling the
         // EP list ACTIVE bit directly. The EP1OUT interrupt is set by hardware
@@ -140,8 +187,8 @@ void main(void) {
         // packet handshake is complete. Polling ACTIVE alone can race against
         // the final DMA write, causing a single-byte corruption on the last
         // 512-byte packet when the VIP performs a retry.
-        if (ep1_armed && (reg_data & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+        if (ep1_armed && (usb_events & USBHSD_INTSTAT_EP1OUT_MASK)) {
+
 
             uint32_t ep1_entry = usb_ep1_out_read();
             uint32_t residual  = (ep1_entry >> 11) & 0x7FFFu;
@@ -176,12 +223,13 @@ void main(void) {
                     " never-exiting service_irq() loop)\n");
         }
 
-        if (poll_count % 2000 == 0 && poll_count > 0) {
-            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x ep1_armed=%d\n",
+        if (poll_count % 10000 == 0 && poll_count > 0) {
+            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x ep1_armed=%d intr_cnt=%d\n",
                     poll_count,
                     lsu_read_32(USB_DEV_DEVCMDSTAT),
                     lsu_read_32(USB_DEV_INTSTAT),
-                    (int)ep1_armed);
+                    (int)ep1_armed,
+                    intr_count);
 
         }
     }
@@ -192,3 +240,5 @@ void main(void) {
     VPRINTF(LOW, "MCU: USB HS device bulk OUT test - halting\n");
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources

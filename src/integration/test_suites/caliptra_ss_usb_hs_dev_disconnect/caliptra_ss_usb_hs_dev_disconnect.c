@@ -170,8 +170,8 @@ void main(void) {
         // Read DEVCMDSTAT before the W1C write - the W1C on DEV_INT also
         // clears the change-detect bits (DRES_C, DSUS_C, DCON_C) in
         // DEVCMDSTAT, so reg_data must be sampled first.
-        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
             lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
@@ -500,8 +500,8 @@ void main(void) {
     //         VPRINTF(LOW, "MCU: SOF event %d (post-reconnect)\n", sof_count);
     //     }
 
-    //     if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-    //         if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+    //     if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+    //         if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
     //             usb_handle_bus_reset();
     //         }
     //         lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);

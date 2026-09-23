@@ -12,3 +12,27 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test'
+  # Enables caliptra_ss_usb_suspend_resume_checker, which owns CHK_SUSPEND_SEEN
+  # and CHK_RESUME_SEEN on the DUT UTMI SuspendM output. Global L2 suspend does
+  # actuate on this IP (unlike hub downstream PORT_SUSPEND), so both edges are
+  # expected here and the checker is a real verdict rather than a formality.
+  #
+  # The "=1" form is required: run_caliptra_test.py only forwards plusargs
+  # matching +NAME=VALUE, and $test$plusargs() matches on prefix.
+  - '+usb_suspend_resume_check=1'
+  # Enables caliptra_ss_usb_device_wakeup_checker, which owns CHK_DEVICE_WAKEUP_K
+  # on the DUT UTMI outputs (TXValid high with linestate=K). This is the check
+  # this test exists for: it is the only observable that can distinguish a DUT
+  # that woke the bus by itself from one whose remote wakeup is dead. It is a
+  # separate plusarg from +usb_suspend_resume_check on purpose, because the
+  # global-suspend tests, where the HOST ends the suspend and the device never
+  # signals wakeup, must not inherit a check they are guaranteed to fail.
+  #
+  # The host-side VIP field svt_usb_status::device_remote_wakeup_in_progress is
+  # deliberately NOT used as the verdict; it was measured staying 0 through a
+  # full 3.089 ms device K. See docs/usb_remote_wakeup_selfclear_race_report.md
+  # sections 2A.4 and 7.4.
+  - '+usb_device_wakeup_check=1'
+
+
+# File contains AI-generated response based on internal company sources

@@ -109,7 +109,7 @@ void main (void) {
 
     VPRINTF(LOW, "MCU: Caliptra core ready, entering USB event loop\n");
 
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
 
     // --- Main USB event loop ---
@@ -122,12 +122,12 @@ void main (void) {
         usb_handle_bus_reset();
 
         // Read interrupt status.
-        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        reg_data = lsu_read_32(SOC_USBHSD_INTSTAT);
 
         // DEV_INT: bus-level events (reset, connect change).
-        if (reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
+            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 // Clear EP1 arm state on bus reset.
                 if (ep1_armed) {
@@ -135,15 +135,15 @@ void main (void) {
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT interrupt: SETUP or status-phase OUT.
         // Original: USBINT + ENDPTSTAT polling replaced by SETUP interrupt.
-        if (reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
-            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            uint32_t cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 transfers_handled++;
 
@@ -158,8 +158,8 @@ void main (void) {
         }
 
         // EP0 IN interrupt: clear it.
-        if (reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
         }
 
         // Poll EP1 OUT for completion (Active=0).
@@ -206,8 +206,8 @@ void main (void) {
 
         // Periodic diagnostic dump every 2000 iterations.
         if (poll_count % 2000 == 0 && poll_count > 0) {
-            uint32_t diag_cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            uint32_t diag_int = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+            uint32_t diag_cmd = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+            uint32_t diag_int = lsu_read_32(SOC_USBHSD_INTSTAT);
             VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x transfers=%d ep1_armed=%d\n",
                     poll_count, diag_cmd, diag_int, transfers_handled, (int)ep1_armed);
         }
@@ -217,7 +217,7 @@ void main (void) {
         VPRINTF(LOW, "MCU: USB FS host traffic - TIMEOUT waiting for bulk data\n");
     }
 
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     VPRINTF(LOW, "MCU: USB FS host traffic test - halting\n");
     csr_write_mpmc_halt();

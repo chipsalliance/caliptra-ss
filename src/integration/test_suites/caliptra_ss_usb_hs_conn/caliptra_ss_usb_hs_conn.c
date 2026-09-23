@@ -76,7 +76,7 @@ void main(void) {
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
         // DCON bit indicates device is connected (pullup enabled / VBUS present).
-        if (reg_data & DEV0_CSR_DEVCMDSTAT_DCON_MASK) {
+        if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {
             connected = true;
             VPRINTF(LOW, "MCU: USB device connected - DEVCMDSTAT=0x%x\n", reg_data);
         }

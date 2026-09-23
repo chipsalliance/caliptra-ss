@@ -31,16 +31,26 @@
 // staged address regardless of call order.
 static uint8_t usb_dev_addr_shadow = 0;
 
-// Shadow of the currently-selected configuration value (USB 2.0 section 9.4.7).
+// Shadow of the currently-selected configuration value (USB 2.0 §9.4.7).
 // Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on
-// bus reset (device returns to Default state per USB 2.0 section 9.1.1.3).
+// bus reset (device returns to Default state per USB 2.0 §9.1.1.3).
 static uint8_t usb_current_config = 0;
+
+// Tracks the DEVICE_REMOTE_WAKEUP feature state for the standard device.
+// SET_FEATURE(DEVICE_REMOTE_WAKEUP) sets it, CLEAR_FEATURE clears it, and
+// GET_STATUS reports it in bit[1] of the 2-byte device status word. Reset
+// to false on bus reset so enumeration always starts from the default
+// (remote wakeup disabled) state.
+static bool usb_remote_wakeup_enabled = false;
+
 
 static void usb_devcmdstat_write(uint32_t val) {
     val = (val & ~USBHSD_DEVCMDSTAT_DEV_ADDR_MASK)
         | (usb_dev_addr_shadow & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK);
+    val |= USBHSD_DEVCMDSTAT_LPM_SUP_MASK;
     lsu_write_32(USB_DEV_DEVCMDSTAT, val);
 }
+
 
 // Fixed USB 2.0 device descriptors for the two embedded controllers.
 // DEV0 and DEV1 carry distinct idProduct/bcdDevice values so a scoreboard
@@ -49,33 +59,33 @@ const usb_device_descriptor_t usb_dev0_device_descriptor = {
     .bLength            = 18,
     .bDescriptorType    = USB_DESC_DEVICE,
     .bcdUSB             = 0x0200,   // USB 2.0
-    .bDeviceClass       = 0,
-    .bDeviceSubClass    = 0,
-    .bDeviceProtocol    = 0,
+    .bDeviceClass       = 0xFF,     // DEV0: vendor-specific class
+    .bDeviceSubClass    = 0x01,     // DEV0
+    .bDeviceProtocol    = 0x01,
     .bMaxPacketSize0    = 64,
-    .idVendor           = 0x1234,
+    .idVendor           = 0x1234,   // DEV0
     .idProduct          = 0x0001,   // DEV0
-    .bcdDevice          = 0x0100,
-    .iManufacturer      = 0,
-    .iProduct           = 0,
-    .iSerialNumber      = 0,
+    .bcdDevice          = 0x0100,   // DEV0
+    .iManufacturer      = 0x01,
+    .iProduct           = 0x02,
+    .iSerialNumber      = 0x03,
     .bNumConfigurations = 1
 };
 
 const usb_device_descriptor_t usb_dev1_device_descriptor = {
     .bLength            = 18,
     .bDescriptorType    = USB_DESC_DEVICE,
-    .bcdUSB             = 0x0200,   // USB 2.0
-    .bDeviceClass       = 0,
-    .bDeviceSubClass    = 0,
-    .bDeviceProtocol    = 0,
+    .bcdUSB             = 0x0210,   // DEV1: USB 2.1
+    .bDeviceClass       = 0xEF,     // DEV1: miscellaneous class
+    .bDeviceSubClass    = 0x02,     // DEV1
+    .bDeviceProtocol    = 0x01,
     .bMaxPacketSize0    = 64,
-    .idVendor           = 0x1234,
+    .idVendor           = 0x5678,   // DEV1
     .idProduct          = 0x0002,   // DEV1
-    .bcdDevice          = 0x0200,
-    .iManufacturer      = 0,
-    .iProduct           = 0,
-    .iSerialNumber      = 0,
+    .bcdDevice          = 0x0200,   // DEV1
+    .iManufacturer      = 0x01,
+    .iProduct           = 0x02,
+    .iSerialNumber      = 0x03,
     .bNumConfigurations = 1
 };
 
@@ -102,6 +112,18 @@ const usb_device_descriptor_t usb_dev1_device_descriptor = {
 // descriptor images, the SETUP-match table entries and the RAM write /
 // readback helpers have therefore been removed. The function name is kept
 // so existing test firmware and the two-phase call sequence are unchanged.
+//
+// The array is still writable through the hub_axi aperture while the
+// write-lock is deasserted, so this function DOES apply a small, targeted
+// override of the hub DEVICE descriptor (idProduct, bcdDevice,
+// iManufacturer, iProduct, iSerialNumber) to non-default values, to prove
+// out the descriptor-override path and let the scoreboard confirm the
+// firmware write took effect. The override MUST happen before HUB_CONNECT:
+// hub_write_lock <= ep0_mem(15)(0) and ep0_mem(15)(16), i.e. the whole
+// descriptor array freezes only once HUB_EN AND HUB_CONNECT are both set.
+// HUB_EN alone (set below) does not lock the array, so writing the
+// descriptor here - before the separate usb_hub_connect() call - is safe.
+// See claude_md/19_hub_descriptor_write_map.md for the full address map.
 // -------------------------------------------------------------------------
 void usb_hub_init_and_connect(void) {
     VPRINTF(LOW, "MCU: usb_hub_init_and_connect - enabling hub entity\n");
@@ -109,6 +131,68 @@ void usb_hub_init_and_connect(void) {
     // Clear HUB_CONNECT and HUB_EN first, so the enable is a clean edge
     // even if a previous run left the register set.
     lsu_write_32(USB_HUB_CTRL, 0x00000000u);
+
+    // Override the hub DEVICE descriptor (DataPhase_Buffer_0) BEFORE
+    // HUB_CONNECT, while the descriptor flip-flop array is still unlocked.
+    // word2 @ 0x08 (idVendor | idProduct<<16) and word3 @ 0x0C
+    // (bcdDevice | iManufacturer<<16 | iProduct<<24) are clean full words, so
+    // they are written whole. iSerialNumber is byte 0 of word4 @ 0x10, packed
+    // with bNumConfigurations and trailing buffer bytes, so it is updated with
+    // a read-modify-write of only the low byte to preserve those neighbors.
+    lsu_write_32(USB_HUB_DESC_DEV_WORD2, USB_HUB_DESC_DEV_WORD2_VAL);
+    lsu_write_32(USB_HUB_DESC_DEV_WORD3, USB_HUB_DESC_DEV_WORD3_VAL);
+    uint32_t hub_desc_w4 = lsu_read_32(USB_HUB_DESC_DEV_WORD4);
+    hub_desc_w4 = (hub_desc_w4 & 0xFFFFFF00u) | USB_HUB_DESC_DEV_ISERIAL_VAL;
+    lsu_write_32(USB_HUB_DESC_DEV_WORD4, hub_desc_w4);
+    VPRINTF(LOW, "MCU: hub device-descriptor override readback"
+            " w2=0x%x w3=0x%x w4=0x%x\n",
+            lsu_read_32(USB_HUB_DESC_DEV_WORD2),
+            lsu_read_32(USB_HUB_DESC_DEV_WORD3),
+            lsu_read_32(USB_HUB_DESC_DEV_WORD4));
+
+    // Override the hub DEVICE QUALIFIER descriptor (DataPhase_Buffer_3, base
+    // 0xC0) BEFORE HUB_CONNECT, while the same flip-flop array is unlocked.
+    // qw1 @ 0xC4 (bDeviceClass | bDeviceSubClass<<8 | bDeviceProtocol<<16 |
+    // bMaxPacketSize0<<24) is a clean full word - all four bytes are qualifier
+    // fields - so it is written whole. This sets bDeviceSubClass 0x02,
+    // bDeviceProtocol 0x01 and bMaxPacketSize0 0x08 while keeping
+    // bDeviceClass 0x00.
+    lsu_write_32(USB_HUB_DESC_QUAL_WORD1, USB_HUB_DESC_QUAL_WORD1_VAL);
+    VPRINTF(LOW, "MCU: hub device-qualifier override readback qw1=0x%x\n",
+            lsu_read_32(USB_HUB_DESC_QUAL_WORD1));
+
+    // Override iConfiguration in the CONFIGURATION descriptor (base 0x40) and
+    // the OTHER_SPEED_CONFIGURATION descriptor (base 0x100) BEFORE HUB_CONNECT,
+    // while the descriptor flip-flop array is still unlocked. iConfiguration is
+    // byte 2 of word1 (bNumInterfaces | bConfigurationValue<<8 |
+    // iConfiguration<<16 | bmAttributes<<24), so it is updated with a
+    // read-modify-write of only that byte to preserve bmAttributes and the
+    // other fields. bMaxPower is deliberately NOT touched (kept at RTL
+    // default). USB 2.0 section 9.6.4 requires the OTHER_SPEED_CONFIGURATION
+    // fields to mirror the CONFIGURATION descriptor, so both get the same
+    // iConfiguration value.
+    uint32_t hub_cfg_w1 = lsu_read_32(USB_HUB_DESC_CFG_WORD1);
+    hub_cfg_w1 = (hub_cfg_w1 & 0xFF00FFFFu) | ((uint32_t)USB_HUB_DESC_ICONFIG_VAL << 16);
+    lsu_write_32(USB_HUB_DESC_CFG_WORD1, hub_cfg_w1);
+    uint32_t hub_osc_w1 = lsu_read_32(USB_HUB_DESC_OSC_WORD1);
+    hub_osc_w1 = (hub_osc_w1 & 0xFF00FFFFu) | ((uint32_t)USB_HUB_DESC_ICONFIG_VAL << 16);
+    lsu_write_32(USB_HUB_DESC_OSC_WORD1, hub_osc_w1);
+    VPRINTF(LOW, "MCU: hub config/other-speed iConfiguration override readback"
+            " cfg_w1=0x%x osc_w1=0x%x\n",
+            lsu_read_32(USB_HUB_DESC_CFG_WORD1),
+            lsu_read_32(USB_HUB_DESC_OSC_WORD1));
+
+    // Override the hub CLASS descriptor (DataPhase_Buffer_2, base 0x080) BEFORE
+    // HUB_CONNECT, while the same flip-flop array is unlocked. word1 @ 0x84 packs
+    // wHubCharacteristics.hi | bPwrOn2PwrGood<<8 | bHubContrCurrent<<16 |
+    // DeviceRemovable<<24 - all four bytes are hub-descriptor fields, so it is a
+    // clean full-word write (no clobber of bDescLength/bDescriptorType/bNbrPorts
+    // or wHubCharacteristics.lo, which live in word0 @ 0x80). This sets
+    // bPwrOn2PwrGood 0x32 (100 ms), bHubContrCurrent 0x64 (100 mA) and
+    // DeviceRemovable 0x0A while keeping wHubCharacteristics.hi 0x00.
+    lsu_write_32(USB_HUB_DESC_HUB_WORD1, USB_HUB_DESC_HUB_WORD1_VAL);
+    VPRINTF(LOW, "MCU: hub class-descriptor override readback hw1=0x%x\n",
+            lsu_read_32(USB_HUB_DESC_HUB_WORD1));
 
     // Enable the hub entity. HUB_CONNECT is set later by usb_hub_connect().
     lsu_write_32(USB_HUB_CTRL, USBHUB_CTRL_HUB_EN_MASK);
@@ -118,6 +202,7 @@ void usb_hub_init_and_connect(void) {
     VPRINTF(LOW, "MCU: usb_hub_init_and_connect - HUB_EN set"
             " (HUB_CONNECT deferred to usb_hub_connect())\n");
 }
+
 
 // -------------------------------------------------------------------------
 // usb_hub_connect
@@ -261,12 +346,18 @@ void boot_usb_core(void) {
     // HS link-up: do NOT set FORCE_FULLSPEED. The device controller will
     // perform HS chirp at the next bus reset.
 
+    // Composed from literal masks rather than from a read, because at this
+    // point DEVCMDSTAT has never been written and reads back X on this IP (see
+    // Step 0b). It therefore MUST go through usb_devcmdstat_write(), which is
+    // what re-adds LPM_SUP: writing this value raw would drive bit 11 to 0 and
+    // permanently disable LPM for the rest of the run.
     reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
              | USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK
              | USBHSD_DEVCMDSTAT_FORCE_NEEDCLK_MASK
              | USBHSD_DEVCMDSTAT_DCON_MASK;
-    lsu_write_32(USB_DEV_DEVCMDSTAT, reg_data);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
+    usb_devcmdstat_write(reg_data);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n",
+            reg_data | USBHSD_DEVCMDSTAT_LPM_SUP_MASK);
 
 
     // Read back to confirm - safe: DEVCMDSTAT was just written above, so
@@ -381,13 +472,16 @@ void boot_usb_core_fs(void) {
     // would wait ~2.2ms for a J-chirp reply that a FS-only host never sends,
     // delaying the first SETUP ACK beyond the VIP tend_to_end_delay_fs window.
 
+    // Same reason as in boot_usb_core(): literal-composed, so it must go
+    // through usb_devcmdstat_write() or it clears LPM_SUP on the way past.
     reg_data = USBHSD_DEVCMDSTAT_DEV_EN_MASK
              | USBHSD_DEVCMDSTAT_FORCE_VBUS_MASK
              | USBHSD_DEVCMDSTAT_FORCE_NEEDCLK_MASK
              | USBHSD_DEVCMDSTAT_DCON_MASK
              | USBHSD_DEVCMDSTAT_PFSC_MASK;
-    lsu_write_32(USB_DEV_DEVCMDSTAT, reg_data);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
+    usb_devcmdstat_write(reg_data);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n",
+            reg_data | USBHSD_DEVCMDSTAT_LPM_SUP_MASK);
 
     // Read back to confirm
     reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
@@ -432,12 +526,12 @@ void usb_handle_bus_reset(void) {
     // Bus reset returns device address to 0 per USB spec; update shadow so all
     // subsequent DEVCMDSTAT RMW writes carry the reset address.
     usb_dev_addr_shadow = 0;
-    // USB 2.0 section 9.1.1.3: reset returns the device to the Default state with
+    // USB 2.0 §9.1.1.3: reset returns the device to the Default state with
     // no configuration selected. Mirror that in the firmware shadow so a
     // subsequent GET_CONFIGURATION reports 0 until SET_CONFIGURATION runs.
     usb_current_config = 0;
     // Clear DRES_C (W1C)
-    usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
+    usb_devcmdstat_write(cmd | USBHSD_DEVCMDSTAT_DRES_C_MASK);
     usb_ep0_reinit();
     // Reset device address to 0 per USB spec
     cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
@@ -558,6 +652,115 @@ void usb_allow_clock_stop(void) {
 }
 
 // -------------------------------------------------------------------------
+// usb_request_remote_wakeup
+//
+// Drives a device-initiated remote wakeup (resume K upstream).
+//
+// The trigger is not a "set a bit" operation, which is why the obvious
+// read-modify-write does not work. From usb_reg_if.m.vhdl:
+//
+//   if reg_wdata(17) = '0' and reg_dev_suspend = '1' then
+//     usbreg_remotewakeup <= '1';
+//   end if;
+//
+// So the command is: perform any write to DEVCMDSTAT in which bit 17 (DSUS)
+// is driven to 0, while the controller currently reports itself suspended.
+// usb_pie.m.vhdl then consumes usbreg_remotewakeup and runs its
+// BUS_EVENT_SW_WAKEUP state sequence, which drives K on the upstream port.
+// The request is self-clearing: usb_reg_if resets usbreg_remotewakeup as
+// soon as reg_dev_suspend returns to 0.
+//
+// A plain read-modify-write that ORs bits in reads DSUS back as 1 while
+// suspended and therefore writes bit 17 as 1, so the condition above is
+// never met and no wakeup is ever driven. Bit 17 must be masked off.
+//
+// The same write also acknowledges the suspend-change event by setting
+// DSUS_C (W1C, handled independently at wdata(25) in the RTL). DRES_C is
+// deliberately left at 0 so the resume-change indicator the caller is about
+// to poll for is not cleared by this write. SETUP and DCON_C are likewise
+// masked off so an unrelated pending event is not silently discarded.
+//
+// Returns true if the wakeup was driven, false if the controller was not
+// suspended (in which case the hardware would ignore the request anyway).
+// -------------------------------------------------------------------------
+bool usb_request_remote_wakeup(void) {
+    uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+
+    if ((cmd & USBHSD_DEVCMDSTAT_DSUS_MASK) == 0u) {
+        VPRINTF(LOW, "MCU: remote wakeup skipped, controller not suspended (DEVCMDSTAT=0x%x)\n",
+                cmd);
+        return false;
+    }
+
+    // Do not disturb write-1-clear events that the caller still needs.
+    cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK
+             | USBHSD_DEVCMDSTAT_DCON_C_MASK
+             | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+
+    // The wakeup command itself: DSUS driven to 0 while suspended.
+    cmd &= ~USBHSD_DEVCMDSTAT_DSUS_MASK;
+
+    // Acknowledge the suspend-change event in the same write.
+    cmd |= USBHSD_DEVCMDSTAT_DSUS_C_MASK;
+
+    usb_devcmdstat_write(cmd);
+    VPRINTF(LOW, "MCU: remote wakeup requested (wrote DEVCMDSTAT=0x%x, reads back 0x%x)\n",
+            cmd, lsu_read_32(USB_DEV_DEVCMDSTAT));
+    return true;
+}
+
+// -------------------------------------------------------------------------
+// usb_request_lpm_remote_wakeup
+//
+// Device-initiated exit from L1 (LPM Sleep), the L1 analogue of
+// usb_request_remote_wakeup().
+//
+// RTL contract (ip_xxx_3511 usb_reg_if.m.vhdl): usbreg_lpmremotewakeup is
+// asserted when a DEVCMDSTAT write presents bit 19 (LPM_SUS) as 0 while the
+// live reg_dev_lpm_suspend AND reg_dev_lpm_remote_wake are both 1. The second
+// term is the bRemoteWake bit that arrived in the LPM token, so the host must
+// have granted remote wake for this to do anything - hence both bits are
+// checked here before the write.
+//
+// The request self-clears when reg_dev_lpm_suspend falls, exactly the same
+// shape as the L2 path documented in docs/usb_remote_wakeup_selfclear_race_report.md,
+// so callers must sample DEVCMDSTAT promptly after this returns.
+// -------------------------------------------------------------------------
+bool usb_request_lpm_remote_wakeup(void) {
+    uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+
+    if ((cmd & USBHSD_DEVCMDSTAT_LPM_SUS_MASK) == 0u) {
+        VPRINTF(LOW, "MCU: L1 wakeup skipped, controller not in L1 (DEVCMDSTAT=0x%x)\n",
+                cmd);
+        return false;
+    }
+    if ((cmd & USBHSD_DEVCMDSTAT_LPM_REWP_MASK) == 0u) {
+        VPRINTF(LOW, "MCU: L1 wakeup skipped, host did not grant bRemoteWake (DEVCMDSTAT=0x%x)\n",
+                cmd);
+        return false;
+    }
+
+    // Do not disturb write-1-clear events that the caller still needs.
+    cmd &= ~(USBHSD_DEVCMDSTAT_SETUP_MASK
+             | USBHSD_DEVCMDSTAT_DCON_C_MASK
+             | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+
+    // The wakeup command itself: LPM_SUS driven to 0 while in L1.
+    cmd &= ~USBHSD_DEVCMDSTAT_LPM_SUS_MASK;
+
+    // Acknowledge the suspend-change event in the same write. DSUS_C is shared
+    // between the L2 and L1 state changes in this IP.
+    cmd |= USBHSD_DEVCMDSTAT_DSUS_C_MASK;
+
+    usb_devcmdstat_write(cmd);
+    VPRINTF(LOW, "MCU: L1 remote wakeup requested (wrote DEVCMDSTAT=0x%x, reads back 0x%x)\n",
+            cmd, lsu_read_32(USB_DEV_DEVCMDSTAT));
+    return true;
+}
+
+
+
+// -------------------------------------------------------------------------
 // usb_handle_control_transfer
 //
 // Reads the current SETUP packet from SRAM and dispatches it by decoding
@@ -612,23 +815,56 @@ bool usb_handle_control_transfer(void) {
                 }
                 case USB_REQ_GET_STATUS: {
                     // Standard device GET_STATUS: 2-byte status word.
-                    // bit[0]=Self-Powered, bit[1]=Remote Wakeup, both 0.
-                    static const uint32_t status_buf = 0x00000000u;
+                    // bit[0]=Self-Powered (1, self-powered), bit[1]=Remote
+                    // Wakeup. Bit[0] is always set because these embedded
+                    // controllers report themselves as self-powered. Bit[1]
+                    // reflects the DEVICE_REMOTE_WAKEUP feature last programmed
+                    // by SET_FEATURE/CLEAR_FEATURE, so the response is 0x0003
+                    // once remote wakeup has been enabled and 0x0001 otherwise.
+                    uint32_t status_buf =
+                        0x00000001u
+                        | (usb_remote_wakeup_enabled ? 0x00000002u : 0x00000000u);
                     usb_ep0_send_data(&status_buf, 2);
                     usb_ep0_arm_out();
                     handled = true;
                     break;
                 }
                 case USB_REQ_CLEAR_FEATURE:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Device CLEAR_FEATURE"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                    // Standard device CLEAR_FEATURE(DEVICE_REMOTE_WAKEUP):
+                    // clear the remote-wakeup shadow and ACK with a ZLP status
+                    // phase. Any other feature selector is unsupported here.
+                    if (pkt.wValue == USB_FEATURE_DEVICE_REMOTE_WAKEUP) {
+                        usb_remote_wakeup_enabled = false;
+                        usb_ep0_send_zlp();
+                        usb_ep0_arm_out();
+                        handled = true;
+                        VPRINTF(LOW, "MCU: USB CLEAR_FEATURE(DEVICE_REMOTE_WAKEUP)"
+                                " - remote wakeup disabled\n");
+                    } else {
+                        VPRINTF(LOW, "MCU: USB Unhandled Standard/Device CLEAR_FEATURE"
+                                " wValue=0x%04x - stalling\n", pkt.wValue);
+                        usb_ep0_stall();
+                    }
                     break;
                 case USB_REQ_SET_FEATURE:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Device SET_FEATURE"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                    // Standard device SET_FEATURE(DEVICE_REMOTE_WAKEUP): set
+                    // the remote-wakeup shadow and ACK with a ZLP status
+                    // phase. A subsequent GET_STATUS then returns bit[1]=1
+                    // (0x0002). Any other feature selector is unsupported.
+                    if (pkt.wValue == USB_FEATURE_DEVICE_REMOTE_WAKEUP) {
+                        usb_remote_wakeup_enabled = true;
+                        usb_ep0_send_zlp();
+                        usb_ep0_arm_out();
+                        handled = true;
+                        VPRINTF(LOW, "MCU: USB SET_FEATURE(DEVICE_REMOTE_WAKEUP)"
+                                " - remote wakeup enabled\n");
+                    } else {
+                        VPRINTF(LOW, "MCU: USB Unhandled Standard/Device SET_FEATURE"
+                                " wValue=0x%04x - stalling\n", pkt.wValue);
+                        usb_ep0_stall();
+                    }
                     break;
+
                 case USB_REQ_SET_DESCRIPTOR:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Device SET_DESCRIPTOR"
                             " - stalling\n");
@@ -648,7 +884,7 @@ bool usb_handle_control_transfer(void) {
                     // Standard device SET_CONFIGURATION: wValue low byte is
                     // the configuration value. The device descriptor declares
                     // bNumConfigurations=1, so accept 0 (unconfigure) or 1
-                    // and stall any other value per USB 2.0 section 9.4.7.
+                    // and stall any other value per USB 2.0 §9.4.7.
                     uint8_t new_cfg = (uint8_t)(pkt.wValue & 0xFFu);
                     if (new_cfg <= 1u) {
                         usb_current_config = new_cfg;

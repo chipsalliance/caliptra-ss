@@ -201,6 +201,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         svt_usb_transfer req;
         req = svt_usb_transfer::type_id::create({label, "_req"});
         start_item(req, -1, p_sequencer.xfer_sequencer);
+        `uvm_info("USB_BASE_SEQ",
+            $sformatf("CONTROL %s started (addr=%0d)", label, device_addr), UVM_LOW)
         if (usb_cfg != null)
             req.cfg = usb_cfg;
         // fix_anchors(dev_idx, ep_idx, upstream_idx): dev_idx is the array
@@ -367,12 +369,14 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .brequest_val         (8'h06),
             .wvalue               (16'h0100),
             .windex               (16'h0000),
-            .wlength              (16'h0008),
+            .wlength              (16'h0012),
             .device_addr          (0),
             .label                ({"GET_DESC_DEV_addr0_hub", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr0_hub", suffix}));
+        usb_data_check_api.check_device_descriptor(.usb_item(last_ctrl_seq_item), 
+                                                   .device_name("hub"));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
@@ -405,6 +409,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr1_hub", suffix}));
+        usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
+                                                .device_name("hub"), .expected_address(1));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -497,13 +503,19 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GetPortStatus", p, suffix}));
+        // At this point the device has just connected to the hub downstream
+        // port and the port is powered, but no port feature has been cleared
+        // yet. wPortStatus therefore has PORT_CONNECTION(bit0) and
+        // PORT_POWER(bit8) set, and wPortChange has C_PORT_CONNECTION(bit0) set.
 
         do_control_xfer(
+
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type (svt_usb_types::CLASS),
             .bm_request_type_recip(svt_usb_types::BMREQ_OTHER),
             .brequest_val         (8'h01),
             .wvalue               (16'h0010),
+
             .windex               (16'(port_num)),
             .wlength              (16'h0000),
             .device_addr          (1),
@@ -576,8 +588,6 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr0", suffix}));
-        usb_data_check_api.check_device_descriptor(.usb_item(last_ctrl_seq_item), 
-                                                   .device_idx(device_idx));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -624,6 +634,9 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr2", suffix}));
+        usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
+                                                .device_name($sformatf("dev%0d", device_idx)), 
+                                                .expected_address(2));
 
         if (with_get_config_readback) begin
             do_control_xfer(

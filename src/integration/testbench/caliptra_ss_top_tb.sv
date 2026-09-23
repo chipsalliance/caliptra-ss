@@ -1477,7 +1477,7 @@ module caliptra_ss_top_tb
     // USB tests, which end through UVM objections instead, so gating them
     // off removes a large per-clock simulation cost.
     caliptra_top_tb_services #(
-        .UVM_TB(0)
+        .UVM_TB(1)
     ) tb_services_i (
         .clk(core_clk),
 

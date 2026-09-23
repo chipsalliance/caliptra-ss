@@ -39,16 +39,25 @@
 //      traffic to USBDC0. Skipping this left USBDC0 completely unreachable
 //      -> host_agent.prot device_response_timeout on every subsequent
 //      transfer nominally addressed to "device 1".
-//   5. Send 2048 bytes of bulk OUT data to EP1 via HS (device address 2,
-//      i.e. USBDC0 post hub-bring-up).
-//      Pattern: 32-bit words 0x00000000, 0x00000001, ..., 0x000001FF
-//      (512 words x 4 bytes = 2048 bytes, 4 x 512-byte HS bulk packets).
-//      Capped at 2048 B so the EP1 buffer (SRAM offset 0x200..0x9FF) fits
-//      within the 4096-byte USB SRAM (addr bus is only 9 bits wide).
+//   5. Send 1024 bytes of bulk OUT data to EP1 (device address 2, i.e. USBDC0
+//      post hub-bring-up).
+//      Pattern: 32-bit words 0x00000000, 0x00000001, ..., 0x000000FF
+//      (256 words x 4 bytes = 1024 bytes, 16 x 64-byte FS bulk packets).
+//
+//      SIZE LIMIT: the VIP constraint reasonable_fixed_transfer_size_non_isoc_intr
+//      in svt_usb_transfer bounds payload_intended_byte_count to
+//      (ep_anchor.max_packet_size << 4). At full speed the EP1 bulk max packet
+//      size is 64 B, so the largest legal fixed transfer is 64 * 16 = 1024 B.
+//      Requesting 2048 B here made the constraint set unsatisfiable and the
+//      randomize() in do_data_xfer() aborted with a UVM_FATAL. Keep this value
+//      and USB_FS_BULK_TRANSFER_BYTES in the firmware in lock step; note the
+//      HS variant of this test may use a larger value because its max packet
+//      size is 512 B.
 //   6. Allow MCU firmware time to verify the data.
 // =============================================================================
 
-`define USB_FS_DEV_BULK_WORDS 512
+`define USB_FS_DEV_BULK_WORDS 256
+
 
 class caliptra_ss_usb_fs_dev_bulk_out_sequence extends caliptra_ss_usb_base_sequence;
 
@@ -86,9 +95,10 @@ class caliptra_ss_usb_fs_dev_bulk_out_sequence extends caliptra_ss_usb_base_sequ
         `uvm_info("USB_FS_DEV_BULK_SEQ", "HS enumeration complete.", UVM_LOW)
         #10us;
 
-        // Step 5: Send 2048 bytes bulk OUT via EP1 (HS, 512-byte packets x 4)
+        // Step 5: Send 1024 bytes bulk OUT via EP1 (FS, 64-byte packets x 16)
         // to USBDC0 at address 2.
-        // Data pattern: word[i] = i for i = 0..511 (COUNT format from original).
+        // Data pattern: word[i] = i for i = 0..255 (COUNT format from original).
+
         bulk_data = new[`USB_FS_DEV_BULK_WORDS * 4];
         for (int unsigned w = 0; w < `USB_FS_DEV_BULK_WORDS; w++) begin
             word_val = w;

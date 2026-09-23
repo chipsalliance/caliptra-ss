@@ -159,6 +159,116 @@
 #define USBHUB_CTRL_HUB_EN_MASK      ((1u << 0) | (1u << 7))
 #define USBHUB_CTRL_HUB_CONNECT_MASK (1u << 16)
 
+// -------------------------------------------------------------------------
+// Hub DEVICE descriptor override (DataPhase_Buffer_0 of the hub_axi aperture).
+//
+// The hub descriptor store is an internal flip-flop array that self-inits
+// from a ROM constant at reset (see docs/usb_hub_ram_to_flipflop_migration.md
+// and claude_md/19_hub_descriptor_write_map.md). It is still writable through
+// the hub_axi aperture as long as the write-lock is not yet asserted. The
+// lock (hub_write_lock <= ep0_mem(15)(0) and ep0_mem(15)(16)) engages only
+// once BOTH HUB_EN (bit 0) AND HUB_CONNECT (bit 16) are set, so any descriptor
+// override MUST be written before usb_hub_connect() - HUB_EN alone does not
+// lock the array.
+//
+// The 18-byte device descriptor is packed 32-bit LSB-first in
+// DataPhase_Buffer_0 (base 0x2000_0000):
+//   word2 @ 0x08 = idVendor  | idProduct<<16
+//   word3 @ 0x0C = bcdDevice | iManufacturer<<16 | iProduct<<24
+//   word4 @ 0x10 = iSerialNumber(byte0) | bNumConfigurations(byte1)<<8 | ...
+// word2 and word3 are clean full-word fields (no neighbor clobber). word4
+// shares its low byte (iSerialNumber) with bNumConfigurations and trailing
+// buffer bytes, so iSerialNumber must be changed with a read-modify-write of
+// only the low byte.
+//
+// These override the ROM defaults (idProduct 0xBE00, bcdDevice 0x0100,
+// iManufacturer 0x00, iProduct 0x00, iSerialNumber 0x00) to non-default
+// values so a scoreboard can confirm the firmware override took effect.
+// idVendor is kept at 0x1FC9 and bNumConfigurations at 0x01.
+// -------------------------------------------------------------------------
+#define USB_HUB_DESC_DEVICE_BASE     (USB_HUB_REG_BASE_ADDR + 0x000u)
+#define USB_HUB_DESC_DEV_WORD2       (USB_HUB_DESC_DEVICE_BASE + 0x08u)
+#define USB_HUB_DESC_DEV_WORD3       (USB_HUB_DESC_DEVICE_BASE + 0x0Cu)
+#define USB_HUB_DESC_DEV_WORD4       (USB_HUB_DESC_DEVICE_BASE + 0x10u)
+#define USB_HUB_DESC_DEV_WORD2_VAL   0xBE011FC9u
+#define USB_HUB_DESC_DEV_WORD3_VAL   0x02010200u
+#define USB_HUB_DESC_DEV_ISERIAL_VAL 0x03u
+
+// -------------------------------------------------------------------------
+// Hub DEVICE QUALIFIER descriptor override (DataPhase_Buffer_3 of the
+// hub_axi aperture, base 0x2000_00C0).
+//
+// Same write-lock rule as the DEVICE descriptor above: the qualifier lives
+// in the same flip-flop array, so any override MUST be written before
+// usb_hub_connect() while the array is still unlocked.
+//
+// The 10-byte device qualifier is packed 32-bit LSB-first in
+// DataPhase_Buffer_3 (base 0x2000_00C0):
+//   qw0 @ 0xC0 = bLength(0x0A) | bDescriptorType(0x06)<<8 | bcdUSB<<16
+//   qw1 @ 0xC4 = bDeviceClass | bDeviceSubClass<<8 | bDeviceProtocol<<16
+//                | bMaxPacketSize0<<24
+//   qw2 @ 0xC8 = bNumConfigurations | bReserved<<8 | ...
+// qw1 is a clean full word (all four of its bytes are qualifier fields), so
+// it is written whole with no neighbor clobber. qw0 and qw2 share bytes with
+// bLength/type/bcdUSB and bNumConfigurations/reserved, so they are left at
+// the ROM defaults.
+//
+// This overrides the ROM defaults bDeviceSubClass 0x00 -> 0x02,
+// bDeviceProtocol 0x00 -> 0x01, and bMaxPacketSize0 0x40 -> 0x08, keeping
+// bDeviceClass at 0x00. bMaxPacketSize0 here reports the EP0 max packet size
+// for the OTHER operating speed (USB 2.0 section 9.6.2), not the live control
+// endpoint, so changing it does not disturb the negotiated EP0 size from the
+// DEVICE descriptor; 0x08 is a spec-legal EP0 size. The override lets the
+// scoreboard confirm the firmware write took effect.
+// -------------------------------------------------------------------------
+#define USB_HUB_DESC_QUAL_BASE       (USB_HUB_REG_BASE_ADDR + 0x0C0u)
+#define USB_HUB_DESC_QUAL_WORD1      (USB_HUB_DESC_QUAL_BASE + 0x04u)
+#define USB_HUB_DESC_QUAL_WORD1_VAL  0x08010200u
+
+// -------------------------------------------------------------------------
+// Hub CONFIGURATION and OTHER_SPEED_CONFIGURATION descriptor override.
+//
+// The CONFIGURATION descriptor is DataPhase_Buffer_1 (base 0x2000_0040) and
+// the OTHER_SPEED_CONFIGURATION descriptor is at base 0x2000_0100. Both live
+// in the same flip-flop array as the DEVICE descriptor, so the same write-lock
+// rule applies: any override MUST be written before usb_hub_connect() while
+// the array is still unlocked. All 172 hub descriptor words are reachable on
+// the hub_axi port (the AHB slave address width is log2(172)=8 bits, i.e.
+// haddr[9:2]); the 0x100 aperture cap documented for USBDC0/USBDC1 does NOT
+// apply to the hub port.
+//
+// Both descriptors share the identical 9-byte header layout (USB 2.0 sections
+// 9.6.3 / 9.6.4), packed 32-bit LSB-first from their base:
+//   word0 @ +0x00 = bLength(0x09) | bDescriptorType<<8 | wTotalLength<<16
+//   word1 @ +0x04 = bNumInterfaces | bConfigurationValue<<8 | iConfiguration<<16
+//                   | bmAttributes<<24
+//   word2 @ +0x08 = bMaxPower | interface-descriptor bytes...
+// The only informational, safely-overridable header field is iConfiguration,
+// which is byte 2 of word1. word1 also holds bmAttributes (byte 3, whose
+// runtime self-powered bit must be preserved), so iConfiguration is changed
+// with a read-modify-write of only that byte. bMaxPower is deliberately left
+// at the RTL default (0xFA in the current ROM). Per USB 2.0 section 9.6.4 the
+// OTHER_SPEED_CONFIGURATION fields mirror the CONFIGURATION descriptor, so the
+// same iConfiguration value is written to both.
+// -------------------------------------------------------------------------
+#define USB_HUB_DESC_CFG_BASE        (USB_HUB_REG_BASE_ADDR + 0x040u)
+#define USB_HUB_DESC_CFG_WORD1       (USB_HUB_DESC_CFG_BASE + 0x04u)
+#define USB_HUB_DESC_OSC_BASE        (USB_HUB_REG_BASE_ADDR + 0x100u)
+#define USB_HUB_DESC_OSC_WORD1       (USB_HUB_DESC_OSC_BASE + 0x04u)
+#define USB_HUB_DESC_ICONFIG_VAL     0x04u
+
+// Hub CLASS descriptor override (DataPhase_Buffer_2, base 0x080). Word1 @ 0x84
+// packs wHubCharacteristics.hi | bPwrOn2PwrGood<<8 | bHubContrCurrent<<16 |
+// DeviceRemovable<<24 - all four bytes are hub-descriptor fields, so it is a
+// clean full-word override (no structural bLength/bDescriptorType/bNbrPorts or
+// wHubCharacteristics.lo clobber, those live in word0 @ 0x80). Override values:
+// wHubCharacteristics.hi 0x00 (kept), bPwrOn2PwrGood 0x00 -> 0x32 (100 ms),
+// bHubContrCurrent 0x00 -> 0x64 (100 mA), DeviceRemovable 0x06 -> 0x0A.
+#define USB_HUB_DESC_HUB_BASE        (USB_HUB_REG_BASE_ADDR + 0x080u)
+#define USB_HUB_DESC_HUB_WORD1       (USB_HUB_DESC_HUB_BASE + 0x04u)
+#define USB_HUB_DESC_HUB_WORD1_VAL   0x0A643200u
+
+
 // NOTE: the former USB_HUB_RAM_* layout offsets, the SETUP-match table
 // dword-address / descriptor-slot-base helpers, and the SETUP-match entry
 // field byte offsets used to live here. They all described the external
@@ -235,7 +345,7 @@
 // EP command/status list entry bit fields (from RTL usb_dma.m.vhdl line 420:
 //   "epinfo_nbytes <= dma_rdata(25 downto 11);" and line 421:
 //   "epinfo_addr_offset <= dma_rdata(C_DALB-7 downto 0);" with C_DALB=17
-//   in our integration -> addr_offset at bits [10:0]).
+//   in our integration → addr_offset at bits [10:0]).
 //   [31]    = Active
 //   [29]    = Stall
 //   [25:11] = NBytes (15-bit transfer length)
@@ -292,8 +402,16 @@
 #define USB_REQ_SYNCH_FRAME         0x0Cu
 
 // -------------------------------------------------------------------------
+// USB 2.0 standard feature selectors (wValue for SET/CLEAR_FEATURE)
+// -------------------------------------------------------------------------
+#define USB_FEATURE_ENDPOINT_HALT        0x00u
+#define USB_FEATURE_DEVICE_REMOTE_WAKEUP 0x01u
+#define USB_FEATURE_TEST_MODE            0x02u
+
+// -------------------------------------------------------------------------
 // USB descriptor types (wValue high byte for GET/SET_DESCRIPTOR)
 // -------------------------------------------------------------------------
+
 #define USB_DESC_DEVICE                    0x01u
 #define USB_DESC_CONFIGURATION             0x02u
 #define USB_DESC_STRING                    0x03u
@@ -447,6 +565,36 @@ void usb_set_device_address(uint8_t addr);
 // armed. Suspend-oriented tests only; leave FORCE_NEEDCLK set elsewhere.
 // FORCE_VBUS is not modified.
 void usb_allow_clock_stop(void);
+
+// Drive a device-initiated remote wakeup: resume K signalling on the
+// upstream port, requested by firmware rather than by the host.
+//
+// On this SoC the device controllers are AXI slaves and this firmware IS
+// the device function, so firmware is the only possible initiator of a
+// remote wakeup. The hardware trigger is NOT a set-a-bit operation: per
+// usb_reg_if.m.vhdl, usbreg_remotewakeup is raised when a DEVCMDSTAT write
+// presents bit 17 (DSUS) as 0 while the controller is currently suspended.
+// A read-modify-write that only ORs bits in therefore never triggers it,
+// because DSUS reads back as 1 while suspended. This helper masks bit 17
+// off explicitly.
+//
+// Call only from a suspended state, typically on the DSUS_C event. Returns
+// false and does nothing if the controller is not suspended. Acknowledges
+// DSUS_C in the same write; leaves DRES_C, SETUP and DCON_C untouched so a
+// caller polling for resume still sees its event.
+//
+// Note: the hub does not enforce the host's SetFeature(DEVICE_REMOTE_WAKEUP)
+// permission grant (ep0_remote_wake_enabled is left unconnected in the IP
+// structure), so this succeeds whether or not the host enabled the feature.
+// See docs/usb_hub_port_suspend_not_wired_report.md.
+bool usb_request_remote_wakeup(void);
+
+// Device-initiated exit from L1 (LPM Sleep). Requires the controller to be in
+// L1 (DEVCMDSTAT.LPM_SUS) with host-granted remote wake (DEVCMDSTAT.LPM_REWP);
+// returns false and does nothing otherwise.
+bool usb_request_lpm_remote_wakeup(void);
+
+
 
 // Program the HUB RAM (descriptors + SETUP-match table), validate via
 // readback, then set HUB_EN in the HUB Control register. HUB_CONNECT is

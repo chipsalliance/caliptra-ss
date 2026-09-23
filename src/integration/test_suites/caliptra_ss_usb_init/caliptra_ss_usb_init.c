@@ -27,10 +27,18 @@
 #include "usb.h"
 #include "stdint.h"
 #include "veer-csr.h"
+// Including mcu_isr.h is what makes the build system compile and link
+// mcu_isr.o for this test (see tools/scripts/Makefile).
+#include "mcu_isr.h"
 
 #define USB_POLL_TIMEOUT 20000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
+
+// Storage for the symbols the ISR library declares extern.
+volatile uint32_t intr_count;
+volatile mcu_intr_received_s mcu_intr_rcv = {0};
+
 
 #ifdef CPT_VERBOSITY
     enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -44,6 +52,8 @@ void main (void) {
     uint32_t reg_data;
     uint32_t poll_count;
     uint32_t transfers_handled = 0;
+    uint32_t usb_events;
+
 
     VPRINTF(LOW, "=================\nMCU: USB init test\n=================\n\n");
 
@@ -57,7 +67,17 @@ void main (void) {
     // is deliberately deferred - see the usb_hub_connect() call below).
     boot_usb_core();
 
+    // Enable the USB interrupt (PIC vector 3) now that boot_usb_core() has
+    // programmed INTEN and cleared any stale INTSTAT bits.
+    // Deliberately not init_interrupts(): that routine also writes the MCI
+    // and I3C interrupt registers, and this early its I3C write to
+    // 0x200040a8 does not complete, stalling the LSU pipeline before
+    // mstatus.MIE is set. init_usb_interrupts() touches only vector 3.
+    intr_count = 0;
+    init_usb_interrupts();
+
     // Caliptra core bringup
+
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -85,24 +105,28 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
+        // Drain the ISR mailbox. service_usb_intr() already read and
+        // acknowledged INTSTAT, so the foreground loop must not touch
+        // INTSTAT itself. Snapshot then clear by complement so bits the
+        // ISR sets while we are handling this batch are not lost.
+        usb_events = mcu_intr_rcv.usb;
+        mcu_intr_rcv.usb &= ~usb_events;
+
         // Check for device-level interrupts (bus reset, connect change)
-        reg_data = lsu_read_32(USB_DEV_INTSTAT);
-        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (usb_events & USBHSD_INTSTAT_DEV_INT_MASK) {
+
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
             if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
-            // Clear DEV_INT
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
         // Check for EP0 OUT interrupt (SETUP or data)
-        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            // Clear the EP0OUT interrupt
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-
+        if (usb_events & USBHSD_INTSTAT_EP0OUT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+
             if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
                 // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
                 // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
@@ -131,14 +155,14 @@ void main (void) {
             uint32_t ep0_out      = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
             uint32_t ep0_in_diag  = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
 
-            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
-                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled);
+            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d intr_cnt=%d\n",
+                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
-        // between consecutive polls, which exceeds the host VIP IN-retry
-        // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
-        // 1 us of the EP0OUT interrupt.
+        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
+        // loop stays tight and USB events are picked up within ~1us of the
+        // interrupt being taken.
+
     }
 
     // Report final state
@@ -152,3 +176,5 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB init test - halting\n");
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources

@@ -193,8 +193,8 @@ void main(void) {
 
 
         // DEV_INT: bus-level events (reset, connect change).
-        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
                     ep1_armed = false;
