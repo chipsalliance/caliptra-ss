@@ -60,6 +60,8 @@ class caliptra_ss_usb_base_test extends uvm_test;
     caliptra_ss_usb_env        env;
     caliptra_ss_usb_shared_cfg cfg;
 
+    caliptra_ss_usb_data_check_api usb_data_check_api;
+
     function new(string name = "caliptra_ss_usb_base_test", uvm_component parent = null);
         super.new(name, parent);
     endfunction
@@ -137,6 +139,19 @@ function void caliptra_ss_usb_base_test::build_phase(uvm_phase phase);
         `uvm_fatal("build_phase",
             "Failed to get bfm_services_if from uvm_config_db. Ensure the TB top sets it.")
 
+    begin:build_usb_data_check_api
+        uvm_factory factory = uvm_factory::get();
+        uvm_component tmp_component;
+
+        tmp_component = factory.create_component_by_name(.requested_type_name("caliptra_ss_usb_data_check_api_impl"), 
+                                                         .name("tmp_component"),
+                                                         .parent(this));
+
+        if($cast(usb_data_check_api, tmp_component) != 1 || tmp_component == null) begin
+            `uvm_fatal(get_name(), "impossible to cast item to usb_data_check_api or null item")
+        end
+
+    end:build_usb_data_check_api
     `uvm_info("build_phase", "Exiting...", UVM_LOW)
 endfunction
 

@@ -332,12 +332,36 @@ VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
 VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
+# CLP_BUS_LOGS_OPT is empty by default: the AHB bus trace logs
+# (ifu_master_ahb_trace.log, lsu_master_ahb_trace.log, slave<N>_ahb_trace.log)
+# are debug-only and account for ~355 MB of $fwrite traffic on a typical USB
+# regression run (see docs/SIM_RUNTIME_OPTIMIZATION.md section P1). Pass
+# CLP_BUS_LOGS=1 on the make command line (or via run_caliptra_test.py
+# -extra_opts +CLP_BUS_LOGS=1, which lands in VCS_SIM_EXTRA_OPTS and is
+# honoured the same way since it is a runtime plusarg) to re-enable them for
+# a one-off debug run.
+ifdef CLP_BUS_LOGS
+CLP_BUS_LOGS_OPT = +CLP_BUS_LOGS=$(CLP_BUS_LOGS)
+endif
 VCS_SIM_OPTS  += +vpi -lpthread
-VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
-VCS_SIM_OPTS  += +svt_debug_opts
+VCS_SIM_OPTS  += $(CLP_BUS_LOGS_OPT)
+VCS_COMP_OPTS  += +define+SVT_DISABLE_MSG  #disable usb VIP messages
+#VCS_SIM_OPTS  += +svt_debug_opts  #enable usb VIP message and put them in svt_debug.transcript
+
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
+VCS_SIM_OPTS  += +UVM_MAX_QUIT_COUNT=150
+VCS_SIM_OPTS  += +UVM_VERBOSITY=UVM_LOW
 ############# VCS Simulation Override Options #############
 VCS_SIM_EXTRA_OPTS ?= 
+
+#####SETUP TO DUMP SVT TRANSACTION AND ENABLE CLASS DEBUG###
+VCS_ELAB_OPTS += -debug_access+all
+#VCS_SIM_OPTS  += -mx_force
+#VCS_COMP_OPTS += -ntb_opts uvm-ieee-2020
+#VCS_SIM_OPTS  += +svt_enable_pa=fsdb
+#VCS_COMP_OPTS += -lca +define+SVT_FSDB_ENABLE
+#VCS_SIM_OPTS  += +UVM_CONFIG_TRACE +UVM_PHASE_TRACE +UVM_OBJECTION_TRACE +UVM_RESOURCE_DB_TRACE +UVM_LOG_RECORD +UVM_TR_RECORD +UVM_VERDI_TRACE=UVM_AWARE
+
 
 # Targets
 all: clean verilator

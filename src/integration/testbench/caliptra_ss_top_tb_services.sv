@@ -161,6 +161,13 @@ import tb_top_pkg::*;
 
     integer fd, tp, el;
 
+    // MCU instruction trace dumping (mcu_trace_port.csv / mcu_exec.log) is a
+    // per-retired-instruction / per-clock-cycle logging source that dominates
+    // sim runtime on poll-loop-heavy tests. It is OFF by default and can be
+    // re-enabled for debug with the +MCU_TRACE runtime plusarg.
+    bit mcu_trace_en = 1'b0;
+    initial mcu_trace_en = $test$plusargs("MCU_TRACE");
+
     always @(negedge clk or negedge rst_l) begin
         if(!rst_l) begin
             prev_mailbox_data <= 'hA; // Initialize with newline character so timestamp is printed to console for the first line
@@ -210,6 +217,24 @@ import tb_top_pkg::*;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
     // Add buffer for console output only
     string console_buffer = "";
+
+    // ---------------------------------------------------------------------
+    // MCU console FAIL checker.
+    //
+    // The console monitor below only prints and logs the DEBUG_OUT character
+    // stream, so a firmware line such as "MCU: FAIL - enumeration timeout"
+    // was read by no checker and the UVM verdict still came out as
+    // TESTCASE PASSED. This checker consumes the same decoded stream and
+    // turns any console line containing FAIL into a UVM_ERROR, which is what
+    // caliptra_ss_usb_base_test::final_phase counts. Inert unless
+    // +mcu_console_fail_check is on the simv command line. See
+    // caliptra_ss_mcu_console_fail_checker.sv for the full rationale.
+    // ---------------------------------------------------------------------
+    caliptra_ss_mcu_console_fail_checker i_caliptra_ss_mcu_console_fail_checker (
+        .clk        (clk),
+        .char_valid (mailbox_data_val & mailbox_write),
+        .char_data  (mailbox_data[7:0])
+    );
 
     always @(negedge clk) begin
         // Modified console Monitor
@@ -753,7 +778,9 @@ end
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
+        if (mcu_trace_en) begin
         if (`MCU_PATH.trace_rv_i_valid_ip) begin
+
            $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_PATH.trace_rv_i_valid_ip, 0, `MCU_PATH.trace_rv_i_address_ip,
                   0, `MCU_PATH.trace_rv_i_insn_ip,`MCU_PATH.trace_rv_i_exception_ip,`MCU_PATH.trace_rv_i_ecause_ip,
                   `MCU_PATH.trace_rv_i_tval_ip,`MCU_PATH.trace_rv_i_interrupt_ip);
@@ -775,11 +802,13 @@ end
             $fwrite (el, "%10d : %32s=%h                ; nbD\n", cycleCnt, abi_reg[`MCU_DEC.div_waddr_wb], `MCU_DEC.exu_div_result);
             `CPTRA_SS_TB_TOP_NAME.u_caliptra_ss_top_tb_services.gpr[0][`MCU_DEC.div_waddr_wb] = `MCU_DEC.exu_div_result;
         end
+        end // if (mcu_trace_en)
     end
 
 
     initial begin
         abi_reg[0] = "zero";
+
         abi_reg[1] = "ra";
         abi_reg[2] = "sp";
         abi_reg[3] = "gp";
@@ -819,10 +848,15 @@ end
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
-        tp = $fopen("mcu_trace_port.csv","w");
-        el = $fopen("mcu_exec.log","w");
-        $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
+        // Only open the MCU instruction trace files when the trace is enabled;
+        // otherwise these files are never written (see +MCU_TRACE gate above).
+        if (mcu_trace_en) begin
+            tp = $fopen("mcu_trace_port.csv","w");
+            el = $fopen("mcu_exec.log","w");
+            $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
+        end
         fd = $fopen("mcu_console.log","w");
+
         commit_count = 0;
 
         css_mcu0_dummy_dccm_preloader.ram = '{default:8'h0};

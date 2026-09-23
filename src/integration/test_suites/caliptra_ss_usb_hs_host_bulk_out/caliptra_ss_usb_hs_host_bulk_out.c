@@ -128,7 +128,7 @@
 // ---------------------------------------------------------------------------
 // USB SRAM layout (PTD at base, data at base+0x400)
 //
-//   SOC_USB_DEV0_MEM_BASE_ADDR: USB SRAM start
+//   USB_DMA_BASE_ADDR (0x20010000): USB SRAM start
 //   +0x000 .. +0x3FF (1024 B): ATL PTD area (32 slots x 16 bytes)
 //   +0x400 .. +0x1BFF (6144 B): 7KB data payload (7168 bytes, 1792 words)
 //
@@ -136,7 +136,7 @@
 // DATAPLBASEADDR = USB_DMA_BASE_ADDR, data starts at offset 0x400 = 1024 bytes.
 // DataStartAddress field = 0x400 (stored directly; golden PTD W2 = 0x04009C00 confirms).
 // ---------------------------------------------------------------------------
-#define USB_DMA_BASE            SOC_USB_DEV0_MEM_BASE_ADDR
+#define USB_DMA_BASE            0x20010000u
 #define USB_ATL_PTD_BASE        (USB_DMA_BASE)              // PTD slot 0 at base+0
 #define USB_DATA_BASE           (USB_DMA_BASE + 0x400u)     // data at base+1KB
 #define USB_HS_BULK_BYTES       256u                         // 256 bytes = 0x100 (one HS bulk packet, for fast simulation)

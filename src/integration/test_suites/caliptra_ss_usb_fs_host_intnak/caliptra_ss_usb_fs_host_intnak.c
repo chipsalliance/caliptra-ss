@@ -43,29 +43,29 @@ void main(void) {
     mcu_cptra_poll_mb_ready();
 
     /* Enable NAK interrupt on OUT NAK (INTONNAK_AO bit) */
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-    reg_data |= DEV0_CSR_DEVCMDSTAT_INTONNAK_AO_MASK;
-    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, reg_data);
+    reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+    reg_data |= USBHSD_DEVCMDSTAT_INTONNAK_AO_MASK;
+    lsu_write_32(SOC_USBHSD_DEVCMDSTAT, reg_data);
 
     /* Do NOT arm EP1 OUT - device will NAK host OUT tokens */
     nak_seen = 0;
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
 
-        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
         /* EP1 OUT NAK interrupt fires when host attempts OUT to unarmed EP */
-        if (!nak_seen && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
+        if (!nak_seen && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
             VPRINTF(LOW, "USB FS host intnak: NAK interrupt received PASSED\r\n");
             nak_seen = 1;
             break;

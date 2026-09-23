@@ -51,19 +51,19 @@ void main(void) {
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
 
-        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
 
-        if (!bulk_done && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
+        if (!bulk_done && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
             VPRINTF(LOW, "USB FS root2: bulk OUT received PASSED\r\n");
             bulk_done = 1;
             break;
