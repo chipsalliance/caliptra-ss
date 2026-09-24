@@ -2598,7 +2598,7 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 **IMPORTANT**:
 - **Static Configuration**: The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface. This selection is mutually exclusive and cannot be changed dynamically.
-- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, a second I3C core must be instantiated outside of Caliptra SS.
+- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, a second I3C core must be instantiated outside of Caliptra SS and configured to operate in AXI Recovery mode.
 
 ## Integration Considerations
 
@@ -2684,8 +2684,8 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
   1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
   2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets.
   3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses. **Note**, this is not required if I3C Host device is using the CCC `ENTDAA` for initializing the dynamic address to both targets.
-  4. If no external I3C connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
-  5. If no external I3C connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
+  4. If there is no additional Recovery block, connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C block (configured in AXI Recovery mode) `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SoC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
+  5. If there is no additional Recovery block, connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C block (configured in AXI Recovery mode) `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SoC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
 
 ## Programming Sequence
 
