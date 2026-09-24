@@ -13,6 +13,7 @@ ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep_config_handler.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_app_hw_hub.m.vhdl
+${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/RTL/usb_ocp_recovery_post_sync_arb.m.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/INTERFACE/ip_xxx_3511_hs_mem_compound.e.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure.a.vhdl
 ${CALIPTRA_SS_ROOT}/src/usb/../../third_party/usb2/src/usb_hub_composite_device/RTL/STRUCTURE/ip_xxx_3511_hs_mem_compound_structure_cfg.c.vhdl
