@@ -244,6 +244,10 @@ targets:
       - $COMPILE_ROOT/testbench/sv_tests/common
       - $COMPILE_ROOT/testbench/uvm/usb
     files:
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_common_pkg.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
       - $COMPILE_ROOT/testbench/axi_slv.sv
@@ -295,6 +299,7 @@ global:
         - '-sverilog -full64'
         - '-debug_access+all'
         - +define+CLP_ASSERT_ON
+        - +define+ABR_ASSERT_ON
         - +define+AVERY_ASSERT_ON
         - +define+AVERY_MONITOR_ON
         - +define+FOUR_OUTSTANDING
@@ -376,6 +381,8 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
+        ## Enable force/release on VHDL targets (needed for USB dev_enable)
+        #- '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
         # Enable SVT debug automation: activates protocol and link trace log
         # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
@@ -495,6 +502,8 @@ global:
         # Command line arg to spcify the I3C test Runtime
         # this is useful for production ROM test
         # - '+i3c_run_time=500us'
+        ## Enable force/release on VHDL targets (needed for USB dev_enable)
+        #- '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
         # Enable SVT debug automation: activates protocol and link trace log
         # files (svt_debug.transcript, svt_debug.out) on every USB sim run.

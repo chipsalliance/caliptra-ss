@@ -19,7 +19,6 @@ TEST_CFLAGS = -g -O3 -DMY_RANDOM_SEED=$(PLAYBOOK_RANDOM_SEED) $(BUILD_CFLAGS)
 VERILATOR = verilator
 GCC_PREFIX = riscv64-unknown-elf
 BUILD_DIR = $(CURDIR)
-export USB_COMPILE_DIR := $(BUILD_DIR)
 
 ifndef CALIPTRA_SS_CLK_FREQ
 CALIPTRA_SS_CLK_FREQ := $(word $(shell echo $$(( ($(PLAYBOOK_RANDOM_SEED) & 1)+1 )) ), 333 400)
@@ -123,6 +122,9 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+ifeq (0,$(shell grep -e '\#include "usb_ocp_recovery.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += usb_ocp_recovery.o
+endif
 endif
 
 # Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
@@ -279,6 +281,7 @@ CFLAGS += $(TB_DPI_INCS)
 ############# VCS Compile options #############
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
+VCS_COMP_OPTS += +define+ABR_ASSERT_ON
 # Pass USB_HOST_PHY_TEST=1 on the make command line to enable this define
 # without disturbing VCS_COMP_OPTS variable expansion order.
 ifdef USB_HOST_PHY_TEST
@@ -347,6 +350,7 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
+#VCS_SIM_OPTS  += -mx_force
 VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
 ############# VCS Simulation Override Options #############
@@ -389,11 +393,13 @@ vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
 	  -work rtl \
 	  -l vcs_vhdl_compile.log \
 	  -f $(TBDIR)/../config/$(TB_CONFIG).vhdl.vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
 	  -work rtl \
 	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(TB_CONFIG).vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
@@ -435,7 +441,7 @@ CALIPTRA_TEST_DIR=$(TEST_DIR)
 endif
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile \
-	     CALIPTRA_INTERNAL_TRNG=0 \
+	     CALIPTRA_INTERNAL_TRNG=1 \
 	     TEST_DIR=$(CALIPTRA_TEST_DIR) \
 	     AUX_HEADER_FILES="$(CALIPTRA_AUX_HEADER_FILES)" \
 	     AUX_OFILES="$(CALIPTRA_AUX_OFILES)" \

@@ -248,6 +248,264 @@
 `define DEV0_CSR_ULPIDEBUG_PHY_MODE_LOW                                                             (31)
 `define DEV0_CSR_ULPIDEBUG_PHY_MODE_MASK                                                            (32'h80000000)
 `endif
+`ifndef RECOVERY_PROT_CAP_0
+`define RECOVERY_PROT_CAP_0                                                                         (32'h0)
+`endif
+`ifndef RECOVERY_PROT_CAP_1
+`define RECOVERY_PROT_CAP_1                                                                         (32'h4)
+`endif
+`ifndef RECOVERY_PROT_CAP_2
+`define RECOVERY_PROT_CAP_2                                                                         (32'h8)
+`define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_LOW                                                    (0)
+`define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_MASK                                                   (32'hffff)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_LOW                                           (16)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK                                          (32'h10000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_LOW                                          (17)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK                                         (32'h20000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_LOW                                               (18)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK                                              (32'h40000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_LOW                                             (19)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK                                            (32'h80000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_LOW                                            (20)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_MASK                                           (32'h100000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_LOW                                      (21)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_MASK                                     (32'h200000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_LOW                                            (22)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_MASK                                           (32'h400000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_LOW                                             (23)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_MASK                                            (32'h800000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_LOW                                      (24)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK                                     (32'h1000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_LOW                                          (25)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_MASK                                         (32'h2000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_LOW                                           (26)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK                                          (32'h4000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_LOW                                           (27)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK                                          (32'h8000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_LOW                                         (28)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK                                        (32'h10000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_LOW                                                 (29)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_MASK                                                (32'he0000000)
+`endif
+`ifndef RECOVERY_PROT_CAP_3
+`define RECOVERY_PROT_CAP_3                                                                         (32'hc)
+`define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_LOW                                                  (0)
+`define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_MASK                                                 (32'hff)
+`define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_LOW                                                       (8)
+`define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_MASK                                                      (32'hff00)
+`define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_LOW                                                    (16)
+`define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_MASK                                                   (32'hff0000)
+`define RECOVERY_PROT_CAP_3_RESERVED_31_24_LOW                                                      (24)
+`define RECOVERY_PROT_CAP_3_RESERVED_31_24_MASK                                                     (32'hff000000)
+`endif
+`ifndef RECOVERY_DEVICE_ID_0
+`define RECOVERY_DEVICE_ID_0                                                                        (32'h10)
+`define RECOVERY_DEVICE_ID_0_DESC_TYPE_LOW                                                          (0)
+`define RECOVERY_DEVICE_ID_0_DESC_TYPE_MASK                                                         (32'hff)
+`define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_LOW                                         (8)
+`define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_MASK                                        (32'hff00)
+`define RECOVERY_DEVICE_ID_0_DATA_3_2_LOW                                                           (16)
+`define RECOVERY_DEVICE_ID_0_DATA_3_2_MASK                                                          (32'hffff0000)
+`endif
+`ifndef RECOVERY_DEVICE_ID_1
+`define RECOVERY_DEVICE_ID_1                                                                        (32'h14)
+`endif
+`ifndef RECOVERY_DEVICE_ID_2
+`define RECOVERY_DEVICE_ID_2                                                                        (32'h18)
+`endif
+`ifndef RECOVERY_DEVICE_ID_3
+`define RECOVERY_DEVICE_ID_3                                                                        (32'h1c)
+`endif
+`ifndef RECOVERY_DEVICE_ID_4
+`define RECOVERY_DEVICE_ID_4                                                                        (32'h20)
+`endif
+`ifndef RECOVERY_DEVICE_ID_5
+`define RECOVERY_DEVICE_ID_5                                                                        (32'h24)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_0
+`define RECOVERY_DEVICE_STATUS_0                                                                    (32'h28)
+`define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_LOW                                                     (0)
+`define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_MASK                                                    (32'hff)
+`define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_LOW                                                     (8)
+`define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_MASK                                                    (32'hff00)
+`define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_LOW                                                (16)
+`define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_MASK                                               (32'hffff0000)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_1
+`define RECOVERY_DEVICE_STATUS_1                                                                    (32'h2c)
+`define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_LOW                                                      (0)
+`define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_MASK                                                     (32'hffff)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_LOW                                           (16)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_MASK                                          (32'hff0000)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_LOW                                                (24)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_MASK                                               (32'hff000000)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_2
+`define RECOVERY_DEVICE_STATUS_2                                                                    (32'h30)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_3
+`define RECOVERY_DEVICE_STATUS_3                                                                    (32'h34)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_4
+`define RECOVERY_DEVICE_STATUS_4                                                                    (32'h38)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_5
+`define RECOVERY_DEVICE_STATUS_5                                                                    (32'h3c)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_6
+`define RECOVERY_DEVICE_STATUS_6                                                                    (32'h40)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_7
+`define RECOVERY_DEVICE_STATUS_7                                                                    (32'h44)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_8
+`define RECOVERY_DEVICE_STATUS_8                                                                    (32'h48)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_9
+`define RECOVERY_DEVICE_STATUS_9                                                                    (32'h4c)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_10
+`define RECOVERY_DEVICE_STATUS_10                                                                   (32'h50)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_11
+`define RECOVERY_DEVICE_STATUS_11                                                                   (32'h54)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_12
+`define RECOVERY_DEVICE_STATUS_12                                                                   (32'h58)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_13
+`define RECOVERY_DEVICE_STATUS_13                                                                   (32'h5c)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_14
+`define RECOVERY_DEVICE_STATUS_14                                                                   (32'h60)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_15
+`define RECOVERY_DEVICE_STATUS_15                                                                   (32'h64)
+`endif
+`ifndef RECOVERY_DEVICE_RESET
+`define RECOVERY_DEVICE_RESET                                                                       (32'h68)
+`define RECOVERY_DEVICE_RESET_RESET_CTRL_LOW                                                        (0)
+`define RECOVERY_DEVICE_RESET_RESET_CTRL_MASK                                                       (32'hff)
+`define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_LOW                                                   (8)
+`define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_MASK                                                  (32'hff00)
+`define RECOVERY_DEVICE_RESET_IF_CTRL_LOW                                                           (16)
+`define RECOVERY_DEVICE_RESET_IF_CTRL_MASK                                                          (32'hff0000)
+`define RECOVERY_DEVICE_RESET_RESERVED_31_24_LOW                                                    (24)
+`define RECOVERY_DEVICE_RESET_RESERVED_31_24_MASK                                                   (32'hff000000)
+`endif
+`ifndef RECOVERY_RECOVERY_CTRL
+`define RECOVERY_RECOVERY_CTRL                                                                      (32'h6c)
+`define RECOVERY_RECOVERY_CTRL_CMS_LOW                                                              (0)
+`define RECOVERY_RECOVERY_CTRL_CMS_MASK                                                             (32'hff)
+`define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_LOW                                                      (8)
+`define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_MASK                                                     (32'hff00)
+`define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW                                                 (16)
+`define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK                                                (32'hff0000)
+`define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_LOW                                                   (24)
+`define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_MASK                                                  (32'hff000000)
+`endif
+`ifndef RECOVERY_RECOVERY_STATUS
+`define RECOVERY_RECOVERY_STATUS                                                                    (32'h70)
+`define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_LOW                                                 (0)
+`define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_MASK                                                (32'hf)
+`define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_LOW                                                  (4)
+`define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_MASK                                                 (32'hf0)
+`define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_LOW                                         (8)
+`define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_MASK                                        (32'hff00)
+`define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_LOW                                                 (16)
+`define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_MASK                                                (32'hffff0000)
+`endif
+`ifndef RECOVERY_HW_STATUS
+`define RECOVERY_HW_STATUS                                                                          (32'h74)
+`define RECOVERY_HW_STATUS_TEMP_CRITICAL_LOW                                                        (0)
+`define RECOVERY_HW_STATUS_TEMP_CRITICAL_MASK                                                       (32'h1)
+`define RECOVERY_HW_STATUS_SOFT_ERR_LOW                                                             (1)
+`define RECOVERY_HW_STATUS_SOFT_ERR_MASK                                                            (32'h2)
+`define RECOVERY_HW_STATUS_FATAL_ERR_LOW                                                            (2)
+`define RECOVERY_HW_STATUS_FATAL_ERR_MASK                                                           (32'h4)
+`define RECOVERY_HW_STATUS_RESERVED_7_3_LOW                                                         (3)
+`define RECOVERY_HW_STATUS_RESERVED_7_3_MASK                                                        (32'hf8)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LOW                                                     (8)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_MASK                                                    (32'hff00)
+`define RECOVERY_HW_STATUS_CTEMP_LOW                                                                (16)
+`define RECOVERY_HW_STATUS_CTEMP_MASK                                                               (32'hff0000)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                                                 (24)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                                                (32'hff000000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_CTRL_0
+`define RECOVERY_INDIRECT_FIFO_CTRL_0                                                               (32'h184)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_LOW                                                       (0)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_MASK                                                      (32'hff)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_LOW                                                     (8)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_MASK                                                    (32'hff00)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                            (16)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                                           (32'hffff0000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_CTRL_1
+`define RECOVERY_INDIRECT_FIFO_CTRL_1                                                               (32'h188)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_0
+`define RECOVERY_INDIRECT_FIFO_STATUS_0                                                             (32'h18c)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_LOW                                                   (0)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK                                                  (32'h1)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_LOW                                                    (1)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_MASK                                                   (32'h2)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_LOW                                            (2)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_MASK                                           (32'hfc)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_LOW                                             (8)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_MASK                                            (32'hff00)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_LOW                                          (16)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_MASK                                         (32'hffff0000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_1
+`define RECOVERY_INDIRECT_FIFO_STATUS_1                                                             (32'h190)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_2
+`define RECOVERY_INDIRECT_FIFO_STATUS_2                                                             (32'h194)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_3
+`define RECOVERY_INDIRECT_FIFO_STATUS_3                                                             (32'h198)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_4
+`define RECOVERY_INDIRECT_FIFO_STATUS_4                                                             (32'h19c)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_DATA
+`define RECOVERY_INDIRECT_FIFO_DATA                                                                 (32'h1a0)
+`endif
+`ifndef RECOVERY_VENDOR
+`define RECOVERY_VENDOR                                                                             (32'h1a4)
+`define RECOVERY_VENDOR_VENDOR_DATA_LOW                                                             (0)
+`define RECOVERY_VENDOR_VENDOR_DATA_MASK                                                            (32'hff)
+`define RECOVERY_VENDOR_RESERVED_31_8_LOW                                                           (8)
+`define RECOVERY_VENDOR_RESERVED_31_8_MASK                                                          (32'hffffff00)
+`endif
+`ifndef RECOVERY_CALIPTRA_CTRL
+`define RECOVERY_CALIPTRA_CTRL                                                                      (32'h200)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_LOW                                                 (0)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK                                                (32'h1)
+`define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_LOW                                                  (1)
+`define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK                                                 (32'h2)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_LOW                                       (2)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK                                      (32'h4)
+`define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_LOW                                                    (3)
+`define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_MASK                                                   (32'hfffffff8)
+`endif
+`ifndef RECOVERY_CALIPTRA_STATUS
+`define RECOVERY_CALIPTRA_STATUS                                                                    (32'h204)
+`define RECOVERY_CALIPTRA_STATUS_REGION_RESET_LOW                                                   (0)
+`define RECOVERY_CALIPTRA_STATUS_REGION_RESET_MASK                                                  (32'h1)
+`define RECOVERY_CALIPTRA_STATUS_OVERFLOW_LOW                                                       (1)
+`define RECOVERY_CALIPTRA_STATUS_OVERFLOW_MASK                                                      (32'h2)
+`define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_LOW                                                     (2)
+`define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (32'h4)
+`define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
+`define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (32'h8)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (32'hfffffff0)
+`endif
+`ifndef RECOVERY_WINDOW_PAD
+`define RECOVERY_WINDOW_PAD                                                                         (32'h7fc)
+`endif
 `ifndef HUB_CONTROL
 `define HUB_CONTROL                                                                                 (32'h3c)
 `define HUB_CONTROL_ENABLE_LOW                                                                      (0)
@@ -256,8 +514,12 @@
 `define HUB_CONTROL_RESERVED_LOW_MASK                                                               (32'hfffe)
 `define HUB_CONTROL_DCON_LOW                                                                        (16)
 `define HUB_CONTROL_DCON_MASK                                                                       (32'h10000)
-`define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (17)
-`define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (32'hfffe0000)
+`define HUB_CONTROL_RESERVED_17_LOW                                                                 (17)
+`define HUB_CONTROL_RESERVED_17_MASK                                                                (32'h20000)
+`define HUB_CONTROL_SELF_POWERED_LOW                                                                (18)
+`define HUB_CONTROL_SELF_POWERED_MASK                                                               (32'h40000)
+`define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (19)
+`define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (32'hfff80000)
 `endif
 `ifndef USB_DEV1_CSR_DEVCMDSTAT
 `define USB_DEV1_CSR_DEVCMDSTAT                                                                     (32'h0)
@@ -6891,6 +7153,10 @@
 `endif
 `ifndef MCI_REG_HW_CAPABILITIES
 `define MCI_REG_HW_CAPABILITIES                                                                     (32'h0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (32'h3)
+`define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
+`define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (32'hfffffffc)
 `endif
 `ifndef MCI_REG_FW_CAPABILITIES
 `define MCI_REG_FW_CAPABILITIES                                                                     (32'h4)

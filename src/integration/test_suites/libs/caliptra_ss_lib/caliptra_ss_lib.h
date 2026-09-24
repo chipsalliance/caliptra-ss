@@ -20,6 +20,7 @@
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
+#include "usb.h"
 #include "stdint.h"
 #include <stdbool.h>
 
@@ -123,6 +124,9 @@
 #define MCU_MBOX_MAX_SIZE_KB            2048
 #define MCU_MBOX_MAX_NUM                2
 
+// Caliptra mailbox command ID defined by caliptra-sw CommandId::RI_DOWNLOAD_FIRMWARE ("RIFD").
+#define CALIPTRA_MBOX_CMD_RI_DOWNLOAD_FIRMWARE 0x52494644u
+
 extern uint32_t state;
 
 typedef struct {
@@ -155,6 +159,14 @@ typedef struct {
 
     // WDT
     bool cfg_cptra_wdt;
+    uint16_t cptra_timer_cfg;
+    uint16_t cptra_wdt_cfg_1;
+    uint16_t cptra_wdt_cfg_0;
+
+    // USB
+    bool cfg_boot_usb_core;
+    usb_config_descriptor_provider_t usb_config_desc_fn;
+    usb_class_request_handler_t usb_class_req_fn;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -178,8 +190,15 @@ typedef struct {
     .cfg_boot_i3c_core          = false, \
     /* Trigger Prod ROM */                    \
     .cfg_trigger_prod_rom            = false, \
-    /* WDT */                                \
-    .cfg_cptra_wdt                   = false
+    /* WDT */                                 \
+    .cfg_cptra_wdt                   = false,  \
+    .cptra_timer_cfg                 = 1000u,  \
+    .cptra_wdt_cfg_1                 = 250u,   \
+    .cptra_wdt_cfg_0                 = 0u,     \
+    /* USB */                                 \
+    .cfg_boot_usb_core               = false,  \
+    .usb_config_desc_fn              = 0,      \
+    .usb_class_req_fn                = 0
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
@@ -244,6 +263,7 @@ void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
+uint32_t mcu_cptra_mb_ready_nb();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();
 void boot_i3c_core(void);
@@ -276,6 +296,7 @@ void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
 void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, uint16_t cptra_wdt_cfg_0);
 void update_cptra_fuse_cfg(void);
 void update_pqc_key_type(void);
+void caliptra_mailbox_send_ri_download_firmware(void);
 void cptra_prod_rom_boot_go(void);
 bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
 bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);

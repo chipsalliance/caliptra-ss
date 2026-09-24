@@ -1062,15 +1062,15 @@ Certain registers within the CSR bank have write access restrictions based off o
 1. AXI User
 2. Lock bits (SS_CONFIG_DONE, CAP_LOCK, etc.)
 
-The privilaged users for the MCI CSRs are:
+The privileged users for the MCI CSRs are:
 
 1. MCU
 2. MCI SOC Config User (MSCU)
 3. MCU SRAM Config User (MSRCU)
 
-All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality.
+All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionality like timers that are needed by the SOC but are critical for MCU functionality.
 
-The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege.
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege.
 The MCRCU populates the MCU FW update in MCU SRAM. There are a few registers within the MCI register bank it has special access to for facilitating the FW update.
 The registers can be split up into a few different categories:
 
@@ -1083,8 +1083,8 @@ The registers can be split up into a few different categories:
 | Sticky MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each cold reset |
 | Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
 | Locked by SS_CONFIG_DONE        | Configuration once per warm reset. |
-| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
-| MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
+| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilities then locked until next warm reset |
+| MBOX_USER_LOCK       |  Mailbox-specific configuration locked by its own LOCK bit. Configured afer each warm reset.       |
 
 ### MCI Straps
 

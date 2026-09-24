@@ -76,7 +76,36 @@ addrmap mci_reg {
         name = "Manufacturer Control Interface HW Capabilities";
         desc = "MCU HW Capabilities. Initialized with reset values, rewritable by MCU FW.
                 [br]Read-only once locked.";
-        field {sw=rw; swwe=axi_mcu_req_or_mci_soc_config_req__cap_unlock; resetsignal=mci_rst_b;} cap[32]=32'h0;
+        enum streaming_boot_select_e {
+            USB = 2'b00 {
+                desc = "Select USB streaming boot.";
+            };
+            I3C = 2'b01 {
+                desc = "Select I3C streaming boot.";
+            };
+            AXI = 2'b10 {
+                desc = "Select AXI streaming boot. AXI streaming boot is not currently implemented.";
+            };
+            RESERVED = 2'b11 {
+                desc = "Reserved. Hardware defaults to USB streaming boot.";
+            };
+        };
+        field {
+            name = "Streaming Boot Select";
+            desc = "Selects the streaming boot interface and recovery signal routing.
+                    [br]Unsupported or illegal values default to USB streaming boot.";
+            sw=rw;
+            hw=r;
+            swwe=axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+            resetsignal=mci_rst_b;
+            encode=streaming_boot_select_e;
+        } STREAMING_BOOT_SELECT[2]=2'b00;
+        field {
+            desc = "Remaining hardware capability bits.";
+            sw=rw;
+            swwe=axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+            resetsignal=mci_rst_b;
+        } cap[30]=30'h0;
     } HW_CAPABILITIES;
     reg {
         name = "Manufacturer Control Interface FW Capabilities";

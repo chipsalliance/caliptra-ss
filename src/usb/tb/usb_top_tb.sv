@@ -213,6 +213,7 @@ module usb_top_tb;
   // Keep the DUT connected to the SVT UTMI interface in both scenarios;
   // register-only tests use the same wiring, not a separate idle-PHY fallback.
   ip_xxx_3511_hs_mem_compound_wrapper #(
+    .C_HUB_FIFO_SIZE(USB_HUB_FIFO_SIZE),
     .C_DEV0_RAM_ADDRWIDTH($clog2(USB_DEV0_RAM_DEPTH)),
     .C_DEV1_RAM_ADDRWIDTH($clog2(USB_DEV1_RAM_DEPTH)),
     .C_DEV0_NBPHYSEP(USB_DEV0_NBPHYSEP),
@@ -225,8 +226,8 @@ module usb_top_tb;
     .C_TOGGLE_REG_READABLE(USB_TOGGLE_REG_READABLE),
     .C_EPFIFO_PAGE(USB_EPFIFO_PAGE),
     .C_DATAFIFO_PAGE(USB_DATAFIFO_PAGE),
-    .C_HUB_FIFO_SIZE(USB_HUB_FIFO_SIZE),
-    .G_SIM_CHIRP_TIMERS(1)
+    .G_SIM_CHIRP_TIMERS(1),
+    .C_DEVICE_ID_DEFAULT(0)
   ) dut (
     .usb_axi_aclk(bus_clk),
     .usb_axi_aresetn(bus_reset_n),
@@ -255,6 +256,8 @@ module usb_top_tb;
     .dev1_usb_irq(),
     .dev1_usb_fiq(),
     .usb_frametoggle(),
+    .payload_available     (),
+    .ocp_firmware_activated(),
     // Device-mode VBus/session indications come from SVT.
     .USB_VBus(usb_20_mac_if.utmi_dut_mac_if.VbusValid),
     .vbuscomp_on(),
