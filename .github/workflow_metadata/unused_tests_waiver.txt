@@ -76,11 +76,3 @@ cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
 
 caliptra_ss_usb_ocp_w1dc_access_semantics # WIP testcase
 cptra_usb_ocp_w1dc_access_semantics # WIP testcase
-
-
-# These were flagged in the workflow but should match transitive dependencies
-#cptra_usb_ocp_cmd_handling
-#cptra_usb_ocp_device_status_access_semantics
-#cptra_usb_ocp_fifo_flow_control
-#cptra_usb_ocp_firmware_protocol_error
-#cptra_usb_ocp_recovery # Should be used by ocp_recovery_init
