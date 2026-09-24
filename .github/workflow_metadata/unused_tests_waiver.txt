@@ -70,7 +70,6 @@ caliptra_ss_usb_ocp_firmware_status_ownership # WIP testcase
 cptra_usb_ocp_firmware_status_ownership # WIP testcase
 
 caliptra_ss_usb_ocp_post_sync_arbiter # WIP testcase
-cptra_usb_ocp_post_sync_arbiter # WIP testcase
 
 caliptra_ss_usb_ocp_recovery_activation_access_semantics # WIP testcase
 cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
