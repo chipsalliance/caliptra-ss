@@ -62,7 +62,7 @@
   - [Parameters \& Defines](#parameters--defines-2)
   - [Interface](#interface)
   - [Fuse Macro Memory Map and Fuse Controller CSR Address Map](#fuse-macro-memory-map-and-fuse-controller-csr-address-map)
-    - [**SoC\_SPECIFIC\_IDEVID\_CERTIFICATE Usage**](#soc_specific_idevid_certificate-usage)
+    - [**SOC\_SPECIFIC\_IDEVID\_CERTIFICATE Usage**](#soc_specific_idevid_certificate-usage)
   - [FC Integration Requirements](#fc-integration-requirements)
   - [Direct Access Interface](#direct-access-interface)
   - [Initialization](#initialization)
@@ -318,7 +318,7 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | External | input     | 64     | `cptra_ss_strap_uds_seed_base_addr_i`     | UDS seed base address strap input        |
 | External | input     | 32     | `cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i` | Prod debug unlock auth PK hash reg bank offset input |
 | External | input     | 32     | `cptra_ss_strap_num_of_prod_debug_unlock_auth_pk_hashes_i` | Number of prod debug unlock auth PK hashes input |
-| External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SoC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SoC_OTP_CTRL_STATUS within the SoC_IFC_REG space, relative to SoC_OTP_CTRL_BASE_ADDR.|
+| External | input     | 32     | `cptra_ss_strap_generic_0_i`              | Provides the Caliptra ROM with a 32-bit pointer that encodes the location of the fuse controller's status register and the bit position of the idle indicator. Upper 16 bits: Bit index of the IDLE_BIT_STATUS within SOC_OTP_CTRL_STATUS. Lower 16 bits: Offset address of SOC_OTP_CTRL_STATUS within the SOC_IFC_REG space, relative to SOC_OTP_CTRL_BASE_ADDR.|
 | External | input     | 32     | `cptra_ss_strap_generic_1_i`              | Provides the Caliptra ROM with a 32-bit pointer to the fuse controller’s command register (CMD), enabling ROM-level control or triggering of fuse operations. |
 | External | input     | 32     | `cptra_ss_strap_generic_2_i`              | Generic strap input 2                    |
 | External | input     | 32     | `cptra_ss_strap_generic_3_i`              | Generic strap input 3                    |
@@ -1051,7 +1051,7 @@ The current fuse memory map consists of **three main architectural segments**: *
 This structure enables separation of responsibilities and flexibility in SoC integration. While the **Caliptra-Core fuse items** are mandatory and must adhere to the [Caliptra Fuse Map Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#fuse-map), **Caliptra-Subsystem** fuses are required only when Caliptra is instantiated with Caliptra Subsystem. These Caliptra Subsystem fuses can also be configured based on SoC requirements. The **SoC/Vendor-specific** items can be customized based on integrator needs and product requirements. Therefore, the fields under SoC-specific categories can be resized or eliminated if unused.
 
 
-### **SoC_SPECIFIC_IDEVID_CERTIFICATE Usage**
+### **SOC_SPECIFIC_IDEVID_CERTIFICATE Usage**
 This field defaults to 4 bytes but can be extended to accommodate storage of a full IDevID hybrid certificate (e.g., ML-DSA + ECC) if desired. Integrators must adjust its size in the YAML config used by the generation script.
 
 
@@ -1365,7 +1365,7 @@ To support flexible integration across varying fuse partition generations, Calip
 
 #### Why These Straps Are Needed
 
-Each fuse partition generation introduces new error bits into the status register. This causes the **idle bit** to shift leftward, changing its position within the `SoC_OTP_CTRL_STATUS` register. Similarly, the **CMD register** may shift downward in memory if new fuse partition definitions introduce additional registers like `ADDR`, `WDATA0`, `RDATA0`, etc.
+Each fuse partition generation introduces new error bits into the status register. This causes the **idle bit** to shift leftward, changing its position within the `SOC_OTP_CTRL_STATUS` register. Similarly, the **CMD register** may shift downward in memory if new fuse partition definitions introduce additional registers like `ADDR`, `WDATA0`, `RDATA0`, etc.
 
 Because of these dynamic shifts:
 - The **idle bit location** cannot be hardcoded.
@@ -1374,8 +1374,8 @@ Because of these dynamic shifts:
 #### Strap Definitions
 - **`cptra_ss_strap_generic_0_i`**
   A 32-bit input strap that encodes:
-  - **Upper 16 bits**: Bit index of the idle status bit (`IDLE_BIT_STATUS`) within `SoC_OTP_CTRL_STATUS`.
-  - **Lower 16 bits**: Offset address of `SoC_OTP_CTRL_STATUS` within the `SoC_IFC_REG` space, relative to `SoC_OTP_CTRL_BASE_ADDR`.
+  - **Upper 16 bits**: Bit index of the idle status bit (`IDLE_BIT_STATUS`) within `SOC_OTP_CTRL_STATUS`.
+  - **Lower 16 bits**: Offset address of `SOC_OTP_CTRL_STATUS` within the `SOC_IFC_REG` space, relative to `SOC_OTP_CTRL_BASE_ADDR`.
 
   This allows the ROM to accurately monitor the fuse controller's idle state regardless of partition-induced shifts.
 
@@ -1626,9 +1626,9 @@ TOKEN_write(LC_CTRL_TRANSITION_TOKEN_3_OFFSET, 0x318372c8)
    - Test scenarios where invalid tokens, Fuse errors, or missing RMA straps are injected to validate error handling and system recovery mechanisms.
 
 5. **MCI Masking Registers for LCC Decoding Signals**:
-   - The MCI provides a set of masking registers that allow the SoC integrator to explicitly masks Caliptra Core–debug level, SoC_DFT_EN and SoC_HW_DEBUG_EN. Caliptra Core expresses its debug grant through the `ss_soc_dbg_unlock_level_i` vector, where each bit represents a distinct debug unlock level. These requests are not acted upon directly; instead, they are first AND-masked with SoC-programmed MCI registers to ensure that only integrator-approved debug levels can be enabled.
-   - For production debug unlock, the integrator must program `MCI_REG_SoC_PROD_DEBUG_STATE_0` and `MCI_REG_SoC_PROD_DEBUG_STATE_1` MCI registers. Together, these registers form a 64-bit mask that gates `ss_soc_dbg_unlock_level_i`. A debug level is considered enabled only if the corresponding bit is set both in Caliptra Core’s unlock request vector and in the SoC-programmed mask. For example, if Caliptra Core asserts the fifth debug level by setting `ss_soc_dbg_unlock_level_i[4]`, the integrator must also set bit of `MCI_REG_SoC_PROD_DEBUG_STATE[1:0][4]` for that level to take effect.
-   - The same masking mechanism applies to SoC_DFT_EN enable and SoC_HW_DEBUG_EN. For these, MCI offers `MCI_REG_SoC_DFT_EN_0`, `MCI_REG_SoC_DFT_EN_1` and `MCI_REG_SoC_HW_DEBUG_EN_0`, `MCI_REG_SoC_HW_DEBUG_EN_1` mask registers. These are also masked with `ss_soc_dbg_unlock_level_i`. If this masking (AND operation) results in a value that has `1` in it. The corresponding enable signal is set to high.
+   - The MCI provides a set of masking registers that allow the SoC integrator to explicitly masks Caliptra Core–debug level, SOC_DFT_EN and SOC_HW_DEBUG_EN. Caliptra Core expresses its debug grant through the `ss_soc_dbg_unlock_level_i` vector, where each bit represents a distinct debug unlock level. These requests are not acted upon directly; instead, they are first AND-masked with SoC-programmed MCI registers to ensure that only integrator-approved debug levels can be enabled.
+   - For production debug unlock, the integrator must program `MCI_REG_SOC_PROD_DEBUG_STATE_0` and `MCI_REG_SOC_PROD_DEBUG_STATE_1` MCI registers. Together, these registers form a 64-bit mask that gates `ss_soc_dbg_unlock_level_i`. A debug level is considered enabled only if the corresponding bit is set both in Caliptra Core’s unlock request vector and in the SoC-programmed mask. For example, if Caliptra Core asserts the fifth debug level by setting `ss_soc_dbg_unlock_level_i[4]`, the integrator must also set bit of `MCI_REG_SOC_PROD_DEBUG_STATE[1:0][4]` for that level to take effect.
+   - The same masking mechanism applies to SOC_DFT_EN enable and SOC_HW_DEBUG_EN. For these, MCI offers `MCI_REG_SOC_DFT_EN_0`, `MCI_REG_SOC_DFT_EN_1` and `MCI_REG_SOC_HW_DEBUG_EN_0`, `MCI_REG_SOC_HW_DEBUG_EN_1` mask registers. These are also masked with `ss_soc_dbg_unlock_level_i`. If this masking (AND operation) results in a value that has `1` in it. The corresponding enable signal is set to high.
 
 ## How to Test: Smoke & More
 
@@ -1899,8 +1899,8 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | Input  | Struct | `from_otp_to_lcc_program_i`             | These ports comes from fuse partitions and show LCC's non-volatile state   |
 | Internal | Input  | 1      | `ss_dbg_manuf_enable_i`                 | Caliptra Core enables manuf debug with this  |
 | Internal | Input  | 64     | `ss_soc_dbg_unlock_level_i`             | Caliptra Core enables prod debug with this. Since there are multiple debug levels, the debug level is one-hot encoded to this port  |
-| External | Output | 1      | `SoC_DFT_EN`                            | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** Use to gate entry into scan mode only; see [DFT Reset Control](#mci-integration-requirements) for details.    |
-| External | Output | 1      | `SoC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** See [DFT Reset Control](#mci-integration-requirements) for details.  |
+| External | Output | 1      | `SOC_DFT_EN`                            | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** Use to gate entry into scan mode only; see [DFT Reset Control](#mci-integration-requirements) for details.    |
+| External | Output | 1      | `SOC_HW_DEBUG_EN`                       | Masked LCC decoding signal, see LCC section. **Not guaranteed to be stable during scan mode.** See [DFT Reset Control](#mci-integration-requirements) for details.  |
 | Internal | Output | Struct | `security_state_o`                      | Caliptra Core's security state  |
 | External | Input  | 1      | `FIPS_ZEROIZATION_PPD_i`                | Physical pin to trigger zeroization   |
 | Internal | Output | 1      | `FIPS_ZEROIZATION_CMD_o`                | Masked zeroization command signal   |
@@ -1988,9 +1988,9 @@ The two regions have different access protection. The size of the regions is dyn
 
     Similar to Caliptra core - When `scan_mode` is set the MCI generated resets will be directly controlled by `mci_rst_b`. This gives DFT complete control of these resets within Caliptra SS.
 
-    **Important: Scan mode is a destructive operation.** Once `scan_mode` is asserted and Caliptra assets are flushed, no guarantees can be made about the state of any signals coming out of the Caliptra Subsystem, including `SoC_DFT_EN` and `SoC_HW_DEBUG_EN`. These output signals are **not** guaranteed to remain stable during scan mode because scan data shifted into scannable flops can cause internal state (such as the LCC state translator outputs) to change unpredictably.
+    **Important: Scan mode is a destructive operation.** Once `scan_mode` is asserted and Caliptra assets are flushed, no guarantees can be made about the state of any signals coming out of the Caliptra Subsystem, including `SOC_DFT_EN` and `SOC_HW_DEBUG_EN`. These output signals are **not** guaranteed to remain stable during scan mode because scan data shifted into scannable flops can cause internal state (such as the LCC state translator outputs) to change unpredictably.
 
-    The integrator should use `SoC_DFT_EN` to gate entry into scan mode (e.g., to enable scan chain access), but must **not** rely on `SoC_DFT_EN` or any other Caliptra Subsystem output remaining stable once scan mode is active. The SoC's DFT architecture is responsible for ensuring that its DFT control signals are driven in a stable manner during scan. For example, if `SoC_DFT_EN` is used to gate IJTAG or other DFT access, the SoC should latch or otherwise stabilize the signal before entering scan mode.
+    The integrator should use `SOC_DFT_EN` to gate entry into scan mode (e.g., to enable scan chain access), but must **not** rely on `SOC_DFT_EN` or any other Caliptra Subsystem output remaining stable once scan mode is active. The SoC's DFT architecture is responsible for ensuring that its DFT control signals are driven in a stable manner during scan. For example, if `SOC_DFT_EN` is used to gate IJTAG or other DFT access, the SoC should latch or otherwise stabilize the signal before entering scan mode.
 
     Additionally, the MCI reset mux logic that selects between normal and scan-mode reset paths uses standard RTL assign statements (similar logic exists in VeeR core too). Depending on the synthesis tool and target technology, these may not synthesize into glitch-free mux cells, potentially causing glitches on reset lines during `scan_mode` transitions, as reported in [GitHub issue 1037](https://github.com/chipsalliance/caliptra-ss/issues/1037). Integrators should analyze their gate-level netlist to confirm logic safety against glitches when entering scan_mode. Integrators are responsible for tooling adjustments to produce glitch-free mux behavior on these reset paths.
 
@@ -2703,14 +2703,14 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
     uint32_t i3c_reg_data;
     i3c_reg_data = 0x00000000;
 
-    i3c_reg_data = lsu_read_32(SoC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL);
+    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL);
     i3c_reg_data = (2 << I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL_STBY_CR_ENABLE_INIT_LOW) | i3c_reg_data;
     i3c_reg_data = (1 << I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL_TARGET_XACT_ENABLE_LOW) | i3c_reg_data;
-    lsu_write_32(SoC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL, i3c_reg_data);
+    lsu_write_32(SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_CONTROL, i3c_reg_data);
 
-    i3c_reg_data = lsu_read_32(SoC_I3CCSR_I3CBASE_HC_CONTROL);
+    i3c_reg_data = lsu_read_32(SOC_I3CCSR_I3CBASE_HC_CONTROL);
     i3c_reg_data = (1 << I3CCSR_I3CBASE_HC_CONTROL_BUS_ENABLE_LOW) | i3c_reg_data;
-    lsu_write_32(SoC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
+    lsu_write_32(SOC_I3CCSR_I3CBASE_HC_CONTROL, i3c_reg_data);
     ```
 
 
@@ -2728,13 +2728,13 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 90 << 0  | i3c_reg_data;
     i3c_reg_data = 1  << 15 | i3c_reg_data;
-    lsu_write_32( SoC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
+    lsu_write_32( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_DEVICE_ADDR, i3c_reg_data);
 
     //setting virtual device address to 0x5B
     i3c_reg_data = 0x00000000;
     i3c_reg_data = 91 << 0  | i3c_reg_data; //0x5B
     i3c_reg_data = 1  << 15 | i3c_reg_data;
-    lsu_write_32 ( SoC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
+    lsu_write_32 ( SOC_I3CCSR_I3C_EC_STDBYCTRLMODE_STBY_CR_VIRT_DEVICE_ADDR, i3c_reg_data);
     ```
 
 ### Programming Sequence from GPIO Side
@@ -3021,9 +3021,9 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_MCI_3         | MCI                   | `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o` must be looped back to `cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_i` unless the SoC controls MCU firmware updates. An integrator that does not use the loopback must satisfy all applicable requirements in [FW Execution Control Connections](#fw-execution-control-connections), [MCI Caliptra Core Connectivity Requirements](#mci-caliptra-core-connectivity-requirements), and [MCU FW Update Flows](#mcu-fw-update-flows). The integrator must follow applicable recommendations in those sections unless it documents a technically sound rationale that demonstrates the alternative provides equivalent or better functionality and security. | Functionality |
 | CSS_MCI_4         | MCI                   | `cptra_ss_mci_cptra_rst_b_o` must be looped back to `cptra_ss_mci_cptra_rst_b_i` unless the SoC modifies Caliptra reset control. An integrator that does not use the loopback must satisfy all applicable requirements in [Caliptra Core Reset Control](#caliptra-core-reset-control), [MCI Integration Requirements](#mci-integration-requirements), and [Reset Ordering](#reset-ordering). The integrator must follow applicable recommendations in those sections unless it documents a technically sound rationale that demonstrates the alternative provides equivalent or better functionality and security. | Functionality |
 | CSS_MCI_5         | MCI                   | SoC integrators must analyze RDC and CDC effects of any modification to Caliptra or MCU reset control to ensure safety of the logic against metastability.                                                                                                                                                                                                                                                                                                                                | Timing |
-| CSS_MCI_6         | MCI                   | `SoC_DFT_EN` and `SoC_HW_DEBUG_EN` outputs are not guaranteed stable during scan mode. Integrators must not rely on their stability once scan mode is active and must independently stabilize any downstream DFT/debug control signals derived from them, per [DFT Reset Control](#mci-integration-requirements).                                                                                                                                                                         | Threat Model |
-| CSS_I3C_1         | I3C                   | Connect `cptra_ss_i3c_recovery_payload_available_o` to `cptra_ss_i3c_recovery_payload_available_i`.                                                                                                                                                                                                                                                                          | Functionality |
-| CSS_I3C_2         | I3C                   | Connect `cptra_ss_i3c_recovery_image_activated_o` to `cptra_ss_i3c_recovery_image_activated_i` .                                                                                                                                                                                                                                                                              | Functionality |
+| CSS_MCI_6         | MCI                   | `SOC_DFT_EN` and `SOC_HW_DEBUG_EN` outputs are not guaranteed stable during scan mode. Integrators must not rely on their stability once scan mode is active and must independently stabilize any downstream DFT/debug control signals derived from them, per [DFT Reset Control](#mci-integration-requirements).                                                                                                                                                                         | Threat Model |
+| CSS_I3C_1         | I3C                   | Connect `cptra_ss_i3c_recovery_payload_available_o` to `cptra_ss_i3c_recovery_payload_available_i`.                                                                                                                                                                                                                                                                                                                                                                                       | Functionality |
+| CSS_I3C_2         | I3C                   | Connect `cptra_ss_i3c_recovery_image_activated_o` to `cptra_ss_i3c_recovery_image_activated_i` .                                                                                                                                                                                                                                                                                                                                                                                          | Functionality |
 | CSS_I3C_3         | I3C                   | I3C targets must be programmed with STATIC address and a unique set of PID/BCR/DCR CSRs via AXI                                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
 | CSS_I3C_4         | I3C                   | The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface; this selection is mutually exclusive and cannot be changed dynamically after boot.                                                                                                                                                                                                                                                                              | Functionality |
 | CSS_I3C_5         | I3C                   | If the SoC requires both AXI Recovery and standard I3C Target functionality, SoC can choose to reuse the Caliptra I3C core and configure it in "AXI Streaming boot" mode and it must be instantiated outside of Caliptra SS. To emphasize, this is NOT an I3C block when configured to AXI streaming boot mode. The internal I3C Target must be used for I3C Streaming Boot, while the "AXI streaming boot" block can be used to enable AXI streaming boot, for example, from a flash controller.                                                                                                                   | Functionality |
