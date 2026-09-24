@@ -1,0 +1,178 @@
+diff --git a/caliptra_ss_tb_common_cells_registers.svh b/caliptra_ss_tb_common_cells_registers.svh
+index 8ebb39c..5445fcc 100644
+--- a/caliptra_ss_tb_common_cells_registers.svh
++++ b/caliptra_ss_tb_common_cells_registers.svh
+@@ -1,3 +1,17 @@
++// SPDX-License-Identifier: Apache-2.0
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++// http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++
+ // Copyright 2018, 2021 ETH Zurich and University of Bologna.
+ //
+ // Copyright and related rights are licensed under the Solderpad Hardware
+@@ -13,8 +27,8 @@
+ // Author: Stefan Mach <smach@iis.ee.ethz.ch>
+ // Description: Common register defines for RTL designs
+ 
+-`ifndef COMMON_CELLS_REGISTERS_SVH_
+-`define COMMON_CELLS_REGISTERS_SVH_
++`ifndef CALIPTRA_SS_TB_COMMON_CELLS_REGISTERS_SVH_
++`define CALIPTRA_SS_TB_COMMON_CELLS_REGISTERS_SVH_
+ 
+ // Abridged Summary of available FF macros:
+ // `FF:      asynchronous active-low reset
+@@ -32,11 +46,11 @@
+ // `FFLNR:   load-enable without reset
+ 
+ `ifdef VERILATOR
+-`define NO_SYNOPSYS_FF 1
++`define CALIPTRA_SS_TB_NO_SYNOPSYS_FF 1
+ `endif
+ 
+-`define REG_DFLT_CLK clk_i
+-`define REG_DFLT_RST rst_ni
++`define CALIPTRA_SS_TB_REG_DFLT_CLK clk_i
++`define CALIPTRA_SS_TB_REG_DFLT_RST rst_ni
+ 
+ // Flip-Flop with asynchronous active-low reset
+ // __q: Q output of FF
+@@ -44,7 +58,7 @@
+ // __reset_value: value assigned upon reset
+ // (__clk: clock input)
+ // (__arst_n: asynchronous reset, active-low)
+-`define FF(__q, __d, __reset_value, __clk = `REG_DFLT_CLK, __arst_n = `REG_DFLT_RST) \
++`define CALIPTRA_SS_TB_FF(__q, __d, __reset_value, __clk = `CALIPTRA_SS_TB_REG_DFLT_CLK, __arst_n = `CALIPTRA_SS_TB_REG_DFLT_RST) \
+   always_ff @(posedge (__clk) or negedge (__arst_n)) begin                           \
+     if (!__arst_n) begin                                                             \
+       __q <= (__reset_value);                                                        \
+@@ -59,7 +73,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst: asynchronous reset, active-high
+-`define FFAR(__q, __d, __reset_value, __clk, __arst)     \
++`define CALIPTRA_SS_TB_FFAR(__q, __d, __reset_value, __clk, __arst)     \
+   always_ff @(posedge (__clk) or posedge (__arst)) begin \
+     if (__arst) begin                                    \
+       __q <= (__reset_value);                            \
+@@ -75,8 +89,8 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst_n: asynchronous reset, active-low
+-`define FFARN(__q, __d, __reset_value, __clk, __arst_n) \
+-  `FF(__q, __d, __reset_value, __clk, __arst_n)
++`define CALIPTRA_SS_TB_FFARN(__q, __d, __reset_value, __clk, __arst_n) \
++  `CALIPTRA_SS_TB_FF(__q, __d, __reset_value, __clk, __arst_n)
+ 
+ // Flip-Flop with synchronous active-high reset
+ // __q: Q output of FF
+@@ -84,7 +98,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __reset_clk: reset input, active-high
+-`define FFSR(__q, __d, __reset_value, __clk, __reset_clk) \
++`define CALIPTRA_SS_TB_FFSR(__q, __d, __reset_value, __clk, __reset_clk) \
+   `ifndef NO_SYNOPSYS_FF                                  \
+   /``* synopsys sync_set_reset `"__reset_clk`" *``/       \
+   `endif                                                  \
+@@ -98,7 +112,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __reset_n_clk: reset input, active-low
+-`define FFSRN(__q, __d, __reset_value, __clk, __reset_n_clk) \
++`define CALIPTRA_SS_TB_FFSRN(__q, __d, __reset_value, __clk, __reset_n_clk) \
+   `ifndef NO_SYNOPSYS_FF                                     \
+   /``* synopsys sync_set_reset `"__reset_n_clk`" *``/        \
+   `endif                                                     \
+@@ -110,7 +124,7 @@
+ // __q: Q output of FF
+ // __d: D input of FF
+ // __clk: clock input
+-`define FFNR(__q, __d, __clk)        \
++`define CALIPTRA_SS_TB_FFNR(__q, __d, __clk)        \
+   always_ff @(posedge (__clk)) begin \
+     __q <= (__d);                    \
+   end
+@@ -122,7 +136,7 @@
+ // __reset_value: value assigned upon reset
+ // (__clk: clock input)
+ // (__arst_n: asynchronous reset, active-low)
+-`define FFL(__q, __d, __load, __reset_value, __clk = `REG_DFLT_CLK, __arst_n = `REG_DFLT_RST) \
++`define CALIPTRA_SS_TB_FFL(__q, __d, __load, __reset_value, __clk = `CALIPTRA_SS_TB_REG_DFLT_CLK, __arst_n = `CALIPTRA_SS_TB_REG_DFLT_RST) \
+   always_ff @(posedge (__clk) or negedge (__arst_n)) begin                                    \
+     if (!__arst_n) begin                                                                      \
+       __q <= (__reset_value);                                                                 \
+@@ -140,7 +154,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst: asynchronous reset, active-high
+-`define FFLAR(__q, __d, __load, __reset_value, __clk, __arst) \
++`define CALIPTRA_SS_TB_FFLAR(__q, __d, __load, __reset_value, __clk, __arst) \
+   always_ff @(posedge (__clk) or posedge (__arst)) begin      \
+     if (__arst) begin                                         \
+       __q <= (__reset_value);                                 \
+@@ -159,8 +173,8 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst_n: asynchronous reset, active-low
+-`define FFLARN(__q, __d, __load, __reset_value, __clk, __arst_n) \
+-  `FFL(__q, __d, __load, __reset_value, __clk, __arst_n)
++`define CALIPTRA_SS_TB_FFLARN(__q, __d, __load, __reset_value, __clk, __arst_n) \
++  `CALIPTRA_SS_TB_FFL(__q, __d, __load, __reset_value, __clk, __arst_n)
+ 
+ // Flip-Flop with load-enable and synchronous active-high reset
+ // __q: Q output of FF
+@@ -169,7 +183,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __reset_clk: reset input, active-high
+-`define FFLSR(__q, __d, __load, __reset_value, __clk, __reset_clk) \
++`define CALIPTRA_SS_TB_FFLSR(__q, __d, __load, __reset_value, __clk, __reset_clk) \
+   `ifndef NO_SYNOPSYS_FF                                           \
+   /``* synopsys sync_set_reset `"__reset_clk`" *``/                \
+   `endif                                                           \
+@@ -188,7 +202,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __reset_n_clk: reset input, active-low
+-`define FFLSRN(__q, __d, __load, __reset_value, __clk, __reset_n_clk) \
++`define CALIPTRA_SS_TB_FFLSRN(__q, __d, __load, __reset_value, __clk, __reset_n_clk) \
+   `ifndef NO_SYNOPSYS_FF                                              \
+   /``* synopsys sync_set_reset `"__reset_n_clk`" *``/                 \
+   `endif                                                              \
+@@ -208,7 +222,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst_n: asynchronous reset, active-low
+-`define FFLARNC(__q, __d, __load, __clear, __reset_value, __clk, __arst_n) \
++`define CALIPTRA_SS_TB_FFLARNC(__q, __d, __load, __clear, __reset_value, __clk, __arst_n) \
+     `ifndef NO_SYNOPSYS_FF                                                 \
+   /``* synopsys sync_set_reset `"__clear`" *``/                            \
+     `endif                                                                 \
+@@ -231,7 +245,7 @@
+ // __reset_value: value assigned upon reset
+ // __clk: clock input
+ // __arst_n: asynchronous reset, active-low
+-`define FFARNC(__q, __d, __clear, __reset_value, __clk, __arst_n) \
++`define CALIPTRA_SS_TB_FFARNC(__q, __d, __clear, __reset_value, __clk, __arst_n) \
+     `ifndef NO_SYNOPSYS_FF                                        \
+   /``* synopsys sync_set_reset `"__clear`" *``/                   \
+     `endif                                                        \
+@@ -252,7 +266,7 @@
+ // __d: D input of FF
+ // __load: load d value into FF
+ // __clk: clock input
+-`define FFLNR(__q, __d, __load, __clk) \
++`define CALIPTRA_SS_TB_FFLNR(__q, __d, __load, __clk) \
+   always_ff @(posedge (__clk)) begin   \
+     if (__load) begin                  \
+       __q <= (__d);                    \

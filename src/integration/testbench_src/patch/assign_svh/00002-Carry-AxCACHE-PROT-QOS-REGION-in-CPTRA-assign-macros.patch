@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Carry AxCACHE/AxPROT/AxQOS/AxREGION in the CPTRA AW/AR assign macros.
+# Without these the macros wire a subordinate interface almost completely and
+# leave the four sideband signals per address channel floating at X, which
+# trips the $isunknown checks in caliptra-rtl's axi_sub_{rd,wr} as soon as the
+# port is addressed.
+#
+diff --git a/caliptra_ss_tb_axi_assign.svh b/caliptra_ss_tb_axi_assign.svh
+--- a/caliptra_ss_tb_axi_assign.svh
++++ b/caliptra_ss_tb_axi_assign.svh
+@@ -868,6 +868,10 @@
+   assign cptra.awsize   = req.aw.size;                                \
+   assign cptra.awburst  = req.aw.burst;                               \
+   assign cptra.awlock   = req.aw.lock;                                \
++  assign cptra.awcache  = req.aw.cache;                               \
++  assign cptra.awprot   = req.aw.prot;                                \
++  assign cptra.awqos    = req.aw.qos;                                 \
++  assign cptra.awregion = req.aw.region;                              \
+   assign cptra.awuser   = req.aw.user;                                \
+   assign cptra.awvalid  = req.aw_valid;                               \
+   assign rsp.aw_ready   = cptra.awready;
+@@ -891,6 +895,10 @@
+   assign cptra.arsize   = req.ar.size;                                \
+   assign cptra.arburst  = req.ar.burst;                               \
+   assign cptra.arlock   = req.ar.lock;                                \
++  assign cptra.arcache  = req.ar.cache;                               \
++  assign cptra.arprot   = req.ar.prot;                                \
++  assign cptra.arqos    = req.ar.qos;                                 \
++  assign cptra.arregion = req.ar.region;                              \
+   assign cptra.aruser   = req.ar.user;                                \
+   assign cptra.arvalid  = req.ar_valid;                               \
+   assign rsp.ar_ready   = cptra.arready;

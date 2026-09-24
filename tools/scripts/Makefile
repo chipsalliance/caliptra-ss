@@ -172,8 +172,14 @@ endif
 
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
+#-- AXI interconnect selection. Default = Avery interconnect VIP;
+#-- PULP_AXI=1 selects the PULP axi_xbar compile provider while DUT remains
+#-- the caliptra_ss_top_tb SystemVerilog top in both configurations.
+PULP_AXI ?= 0
+TB_CONFIG ?= $(if $(filter 1,$(PULP_AXI)),caliptra_ss_top_tb_pulp,$(DUT))
+
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf | grep -v '+incdir+\|+define+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(TB_CONFIG).vf $(TBDIR)/../config/$(TB_CONFIG).vhdl.vf | grep -v -e '+incdir+' -e '+define+' -e '^//' -e '^-f '))
 
 SYNOPSYS_SIM_SETUP = $(CALIPTRA_SS_ROOT)/third_party/usb2/tools/scripts/synopsys_sim.setup
 
@@ -292,6 +298,12 @@ VCS_COMP_OPTS += +define+MCU_RV_BUILD_AXI4
 VCS_COMP_OPTS += +define+MCU_RV_OPENSOURCE
 VCS_COMP_OPTS += +define+AVERY_VCS
 VCS_COMP_OPTS += +define+AVERY_CLOCK=5
+#-- AXI interconnect selection. The matching sources come from TB_CONFIG;
+#-- these defines select the corresponding implementation in the shared top.
+ifeq ($(PULP_AXI),1)
+VCS_COMP_OPTS += +define+TB_PULP_AXI
+VCS_COMP_OPTS += +define+TB_PULP_AXI4PC
+else
 VCS_COMP_OPTS += +define+FOUR_OUTSTANDING
 VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
@@ -300,10 +312,11 @@ VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
 VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=8
 VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
+VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=14
+endif
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
-VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=13
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -365,7 +378,7 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 		--timing \
 	  $(includes) \
 	  $(suppress) \
-	  -f $(TBDIR)/../config/$(DUT).vf --top-module $(DUT) \
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vf --top-module $(DUT) \
 	  -f $(TBDIR)/../config/$(DUT).vlt \
 	  -exe test_$(DUT).cpp --autoflush $(VERILATOR_DEBUG) \
 	  $(TB_DEFS)
@@ -379,13 +392,13 @@ vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
 	vhdlan           -full64                -kdb=common_elab \
 	  -work rtl \
 	  -l vcs_vhdl_compile.log \
-	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vhdl.vf
 	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
 	  -work rtl \
 	  -l vcs_sv_compile.log \
-	  -f $(TBDIR)/../config/$(DUT).vf
+	  -f $(TBDIR)/../config/$(TB_CONFIG).vf
 	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
