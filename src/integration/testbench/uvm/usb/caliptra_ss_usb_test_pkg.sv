@@ -16,17 +16,22 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 128;
+  localparam int USB_PKG_VERSION = 292;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   import svt_uvm_pkg::*;
   import svt_usb_uvm_pkg::*;
+  import caliptra_ss_usb_common_pkg::*;
+  import caliptra_ss_usb_ocp_recovery_tb_pkg::*;
  
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
+  `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
+  `include "caliptra_ss_usb_nak_monitor_callback.svh"
+
   `include "caliptra_ss_usb_base_test.svh"
   `include "caliptra_ss_usb_basic_utmi_test.svh"
 
@@ -85,5 +90,48 @@ package caliptra_ss_usb_test_pkg;
   // USBD testcases
   `include "caliptra_ss_usb_usbd_conn_sequence.svh"
   `include "caliptra_ss_usb_usbd_conn_test.svh"
+
+  // OCP Recovery sequences
+  `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
+  `include "caliptra_ss_usb_ocp_arbiter_packet_callback.svh"
+  `include "caliptra_ss_usb_ocp_arbiter_checker.svh"
+  `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
+  `include "caliptra_ss_usb_ocp_disconnect_sequence.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_control_sequence.svh"
+  `include "caliptra_ss_usb_ocp_flow_random_image_sequence.svh"
+  `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
+  `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
+  `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
+  `include "caliptra_ss_usb_ocp_device_status_access_semantics_sequence.svh"
+  `include "caliptra_ss_usb_ocp_w1dc_access_semantics_sequence.svh"
+  `include "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence.svh"
+  `include "caliptra_ss_usb_ocp_firmware_status_ownership_sequence.svh"
+  `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
+  `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
+
+  `include "caliptra_ss_usb_ocp_scoreboard.svh"
+  `include "caliptra_ss_usb_ocp_recovery_env.svh"
+
+  // OCP Recovery tests
+  `include "caliptra_ss_usb_base_test.svh"
+  `include "caliptra_ss_usb_basic_utmi_test.svh"
+  `include "caliptra_ss_usb_ocp_recovery_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_ring_test.svh"
+  `include "caliptra_ss_usb_ocp_cmd_handling_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_control_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_flow_usb_nak_test.svh"
+  `include "caliptra_ss_usb_ocp_flow_random_image_test.svh"
+  `include "caliptra_ss_usb_ocp_device_status_access_semantics_test.svh"
+  `include "caliptra_ss_usb_ocp_w1dc_access_semantics_test.svh"
+  `include "caliptra_ss_usb_ocp_device_fifo_clear_test.svh"
+  `include "caliptra_ss_usb_ocp_recovery_activation_access_semantics_test.svh"
+  `include "caliptra_ss_usb_ocp_firmware_status_ownership_test.svh"
+  `include "caliptra_ss_usb_ocp_arbiter_test.svh"
+  `include "caliptra_ss_usb_ocp_disconnect_test.svh"
+  `include "caliptra_ss_usb_ocp_dcon_disconnect_test.svh"
+  `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
+  `include "caliptra_ss_usb_ocp_firmware_protocol_error_test.svh"
 
 endpackage

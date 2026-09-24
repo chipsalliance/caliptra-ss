@@ -267,6 +267,307 @@
 #define DEV0_CSR_ULPIDEBUG_PHY_MODE_LOW                                                             (31)
 #define DEV0_CSR_ULPIDEBUG_PHY_MODE_MASK                                                            (0x80000000)
 #endif
+#define SOC_USB_COMBO_RECOVERY_BASE_ADDR                                                            (0x20000800)
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_0                                                           (0x20000800)
+#ifndef RECOVERY_PROT_CAP_0
+#define RECOVERY_PROT_CAP_0                                                                         (0x0)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_1                                                           (0x20000804)
+#ifndef RECOVERY_PROT_CAP_1
+#define RECOVERY_PROT_CAP_1                                                                         (0x4)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_2                                                           (0x20000808)
+#ifndef RECOVERY_PROT_CAP_2
+#define RECOVERY_PROT_CAP_2                                                                         (0x8)
+#define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_LOW                                                    (0)
+#define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_MASK                                                   (0xffff)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_LOW                                           (16)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK                                          (0x10000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_LOW                                          (17)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK                                         (0x20000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_LOW                                               (18)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK                                              (0x40000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_LOW                                             (19)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK                                            (0x80000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_LOW                                            (20)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_MASK                                           (0x100000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_LOW                                      (21)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_MASK                                     (0x200000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_LOW                                            (22)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_MASK                                           (0x400000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_LOW                                             (23)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_MASK                                            (0x800000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_LOW                                      (24)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK                                     (0x1000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_LOW                                          (25)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_MASK                                         (0x2000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_LOW                                           (26)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK                                          (0x4000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_LOW                                           (27)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK                                          (0x8000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_LOW                                         (28)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK                                        (0x10000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_LOW                                                 (29)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_MASK                                                (0xe0000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_3                                                           (0x2000080c)
+#ifndef RECOVERY_PROT_CAP_3
+#define RECOVERY_PROT_CAP_3                                                                         (0xc)
+#define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_LOW                                                  (0)
+#define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_MASK                                                 (0xff)
+#define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_LOW                                                       (8)
+#define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_MASK                                                      (0xff00)
+#define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_LOW                                                    (16)
+#define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_MASK                                                   (0xff0000)
+#define RECOVERY_PROT_CAP_3_RESERVED_31_24_LOW                                                      (24)
+#define RECOVERY_PROT_CAP_3_RESERVED_31_24_MASK                                                     (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_0                                                          (0x20000810)
+#ifndef RECOVERY_DEVICE_ID_0
+#define RECOVERY_DEVICE_ID_0                                                                        (0x10)
+#define RECOVERY_DEVICE_ID_0_DESC_TYPE_LOW                                                          (0)
+#define RECOVERY_DEVICE_ID_0_DESC_TYPE_MASK                                                         (0xff)
+#define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_LOW                                         (8)
+#define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_MASK                                        (0xff00)
+#define RECOVERY_DEVICE_ID_0_DATA_3_2_LOW                                                           (16)
+#define RECOVERY_DEVICE_ID_0_DATA_3_2_MASK                                                          (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_1                                                          (0x20000814)
+#ifndef RECOVERY_DEVICE_ID_1
+#define RECOVERY_DEVICE_ID_1                                                                        (0x14)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_2                                                          (0x20000818)
+#ifndef RECOVERY_DEVICE_ID_2
+#define RECOVERY_DEVICE_ID_2                                                                        (0x18)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_3                                                          (0x2000081c)
+#ifndef RECOVERY_DEVICE_ID_3
+#define RECOVERY_DEVICE_ID_3                                                                        (0x1c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_4                                                          (0x20000820)
+#ifndef RECOVERY_DEVICE_ID_4
+#define RECOVERY_DEVICE_ID_4                                                                        (0x20)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_5                                                          (0x20000824)
+#ifndef RECOVERY_DEVICE_ID_5
+#define RECOVERY_DEVICE_ID_5                                                                        (0x24)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_0                                                      (0x20000828)
+#ifndef RECOVERY_DEVICE_STATUS_0
+#define RECOVERY_DEVICE_STATUS_0                                                                    (0x28)
+#define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_LOW                                                     (0)
+#define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_MASK                                                    (0xff)
+#define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_LOW                                                     (8)
+#define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_MASK                                                    (0xff00)
+#define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_LOW                                                (16)
+#define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_MASK                                               (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_1                                                      (0x2000082c)
+#ifndef RECOVERY_DEVICE_STATUS_1
+#define RECOVERY_DEVICE_STATUS_1                                                                    (0x2c)
+#define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_LOW                                                      (0)
+#define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_MASK                                                     (0xffff)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_LOW                                           (16)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_MASK                                          (0xff0000)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_LOW                                                (24)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_MASK                                               (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_2                                                      (0x20000830)
+#ifndef RECOVERY_DEVICE_STATUS_2
+#define RECOVERY_DEVICE_STATUS_2                                                                    (0x30)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_3                                                      (0x20000834)
+#ifndef RECOVERY_DEVICE_STATUS_3
+#define RECOVERY_DEVICE_STATUS_3                                                                    (0x34)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_4                                                      (0x20000838)
+#ifndef RECOVERY_DEVICE_STATUS_4
+#define RECOVERY_DEVICE_STATUS_4                                                                    (0x38)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_5                                                      (0x2000083c)
+#ifndef RECOVERY_DEVICE_STATUS_5
+#define RECOVERY_DEVICE_STATUS_5                                                                    (0x3c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_6                                                      (0x20000840)
+#ifndef RECOVERY_DEVICE_STATUS_6
+#define RECOVERY_DEVICE_STATUS_6                                                                    (0x40)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_7                                                      (0x20000844)
+#ifndef RECOVERY_DEVICE_STATUS_7
+#define RECOVERY_DEVICE_STATUS_7                                                                    (0x44)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_8                                                      (0x20000848)
+#ifndef RECOVERY_DEVICE_STATUS_8
+#define RECOVERY_DEVICE_STATUS_8                                                                    (0x48)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_9                                                      (0x2000084c)
+#ifndef RECOVERY_DEVICE_STATUS_9
+#define RECOVERY_DEVICE_STATUS_9                                                                    (0x4c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_10                                                     (0x20000850)
+#ifndef RECOVERY_DEVICE_STATUS_10
+#define RECOVERY_DEVICE_STATUS_10                                                                   (0x50)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_11                                                     (0x20000854)
+#ifndef RECOVERY_DEVICE_STATUS_11
+#define RECOVERY_DEVICE_STATUS_11                                                                   (0x54)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_12                                                     (0x20000858)
+#ifndef RECOVERY_DEVICE_STATUS_12
+#define RECOVERY_DEVICE_STATUS_12                                                                   (0x58)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_13                                                     (0x2000085c)
+#ifndef RECOVERY_DEVICE_STATUS_13
+#define RECOVERY_DEVICE_STATUS_13                                                                   (0x5c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_14                                                     (0x20000860)
+#ifndef RECOVERY_DEVICE_STATUS_14
+#define RECOVERY_DEVICE_STATUS_14                                                                   (0x60)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_15                                                     (0x20000864)
+#ifndef RECOVERY_DEVICE_STATUS_15
+#define RECOVERY_DEVICE_STATUS_15                                                                   (0x64)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_RESET                                                         (0x20000868)
+#ifndef RECOVERY_DEVICE_RESET
+#define RECOVERY_DEVICE_RESET                                                                       (0x68)
+#define RECOVERY_DEVICE_RESET_RESET_CTRL_LOW                                                        (0)
+#define RECOVERY_DEVICE_RESET_RESET_CTRL_MASK                                                       (0xff)
+#define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_LOW                                                   (8)
+#define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_MASK                                                  (0xff00)
+#define RECOVERY_DEVICE_RESET_IF_CTRL_LOW                                                           (16)
+#define RECOVERY_DEVICE_RESET_IF_CTRL_MASK                                                          (0xff0000)
+#define RECOVERY_DEVICE_RESET_RESERVED_31_24_LOW                                                    (24)
+#define RECOVERY_DEVICE_RESET_RESERVED_31_24_MASK                                                   (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_RECOVERY_CTRL                                                        (0x2000086c)
+#ifndef RECOVERY_RECOVERY_CTRL
+#define RECOVERY_RECOVERY_CTRL                                                                      (0x6c)
+#define RECOVERY_RECOVERY_CTRL_CMS_LOW                                                              (0)
+#define RECOVERY_RECOVERY_CTRL_CMS_MASK                                                             (0xff)
+#define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_LOW                                                      (8)
+#define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_MASK                                                     (0xff00)
+#define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW                                                 (16)
+#define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK                                                (0xff0000)
+#define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_LOW                                                   (24)
+#define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_MASK                                                  (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_RECOVERY_STATUS                                                      (0x20000870)
+#ifndef RECOVERY_RECOVERY_STATUS
+#define RECOVERY_RECOVERY_STATUS                                                                    (0x70)
+#define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_LOW                                                 (0)
+#define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_MASK                                                (0xf)
+#define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_LOW                                                  (4)
+#define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_MASK                                                 (0xf0)
+#define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_LOW                                         (8)
+#define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_MASK                                        (0xff00)
+#define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_LOW                                                 (16)
+#define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_MASK                                                (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_HW_STATUS                                                            (0x20000874)
+#ifndef RECOVERY_HW_STATUS
+#define RECOVERY_HW_STATUS                                                                          (0x74)
+#define RECOVERY_HW_STATUS_TEMP_CRITICAL_LOW                                                        (0)
+#define RECOVERY_HW_STATUS_TEMP_CRITICAL_MASK                                                       (0x1)
+#define RECOVERY_HW_STATUS_SOFT_ERR_LOW                                                             (1)
+#define RECOVERY_HW_STATUS_SOFT_ERR_MASK                                                            (0x2)
+#define RECOVERY_HW_STATUS_FATAL_ERR_LOW                                                            (2)
+#define RECOVERY_HW_STATUS_FATAL_ERR_MASK                                                           (0x4)
+#define RECOVERY_HW_STATUS_RESERVED_7_3_LOW                                                         (3)
+#define RECOVERY_HW_STATUS_RESERVED_7_3_MASK                                                        (0xf8)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LOW                                                     (8)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_MASK                                                    (0xff00)
+#define RECOVERY_HW_STATUS_CTEMP_LOW                                                                (16)
+#define RECOVERY_HW_STATUS_CTEMP_MASK                                                               (0xff0000)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                                                 (24)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                                                (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_0                                                 (0x20000984)
+#ifndef RECOVERY_INDIRECT_FIFO_CTRL_0
+#define RECOVERY_INDIRECT_FIFO_CTRL_0                                                               (0x184)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_LOW                                                       (0)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_MASK                                                      (0xff)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_LOW                                                     (8)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_MASK                                                    (0xff00)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                            (16)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                                           (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_1                                                 (0x20000988)
+#ifndef RECOVERY_INDIRECT_FIFO_CTRL_1
+#define RECOVERY_INDIRECT_FIFO_CTRL_1                                                               (0x188)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0                                               (0x2000098c)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_0
+#define RECOVERY_INDIRECT_FIFO_STATUS_0                                                             (0x18c)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_LOW                                                   (0)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK                                                  (0x1)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_LOW                                                    (1)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_MASK                                                   (0x2)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_LOW                                            (2)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_MASK                                           (0xfc)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_LOW                                             (8)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_MASK                                            (0xff00)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_LOW                                          (16)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_MASK                                         (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_1                                               (0x20000990)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_1
+#define RECOVERY_INDIRECT_FIFO_STATUS_1                                                             (0x190)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_2                                               (0x20000994)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_2
+#define RECOVERY_INDIRECT_FIFO_STATUS_2                                                             (0x194)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_3                                               (0x20000998)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_3
+#define RECOVERY_INDIRECT_FIFO_STATUS_3                                                             (0x198)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_4                                               (0x2000099c)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_4
+#define RECOVERY_INDIRECT_FIFO_STATUS_4                                                             (0x19c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA                                                   (0x200009a0)
+#ifndef RECOVERY_INDIRECT_FIFO_DATA
+#define RECOVERY_INDIRECT_FIFO_DATA                                                                 (0x1a0)
+#endif
+#define SOC_USB_COMBO_RECOVERY_VENDOR                                                               (0x200009a4)
+#ifndef RECOVERY_VENDOR
+#define RECOVERY_VENDOR                                                                             (0x1a4)
+#define RECOVERY_VENDOR_VENDOR_DATA_LOW                                                             (0)
+#define RECOVERY_VENDOR_VENDOR_DATA_MASK                                                            (0xff)
+#define RECOVERY_VENDOR_RESERVED_31_8_LOW                                                           (8)
+#define RECOVERY_VENDOR_RESERVED_31_8_MASK                                                          (0xffffff00)
+#endif
+#define SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL                                                        (0x20000a00)
+#ifndef RECOVERY_CALIPTRA_CTRL
+#define RECOVERY_CALIPTRA_CTRL                                                                      (0x200)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_LOW                                                 (0)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK                                                (0x1)
+#define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_LOW                                                  (1)
+#define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK                                                 (0x2)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_LOW                                       (2)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK                                      (0x4)
+#define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_LOW                                                    (3)
+#define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_MASK                                                   (0xfffffff8)
+#endif
+#define SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS                                                      (0x20000a04)
+#ifndef RECOVERY_CALIPTRA_STATUS
+#define RECOVERY_CALIPTRA_STATUS                                                                    (0x204)
+#define RECOVERY_CALIPTRA_STATUS_REGION_RESET_LOW                                                   (0)
+#define RECOVERY_CALIPTRA_STATUS_REGION_RESET_MASK                                                  (0x1)
+#define RECOVERY_CALIPTRA_STATUS_OVERFLOW_LOW                                                       (1)
+#define RECOVERY_CALIPTRA_STATUS_OVERFLOW_MASK                                                      (0x2)
+#define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_LOW                                                     (2)
+#define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (0x4)
+#define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
+#define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (0x8)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (0xfffffff0)
+#endif
+#define SOC_USB_COMBO_RECOVERY_WINDOW_PAD                                                           (0x20000ffc)
+#ifndef RECOVERY_WINDOW_PAD
+#define RECOVERY_WINDOW_PAD                                                                         (0x7fc)
+#endif
 #define SOC_USB_COMBO_HUB_BASE_ADDR                                                                 (0x20001000)
 #define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR                                                  (0x20001000)
 #define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_END_ADDR                                                   (0x2000103b)
@@ -279,8 +580,12 @@
 #define HUB_CONTROL_RESERVED_LOW_MASK                                                               (0xfffe)
 #define HUB_CONTROL_DCON_LOW                                                                        (16)
 #define HUB_CONTROL_DCON_MASK                                                                       (0x10000)
-#define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (17)
-#define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (0xfffe0000)
+#define HUB_CONTROL_RESERVED_17_LOW                                                                 (17)
+#define HUB_CONTROL_RESERVED_17_MASK                                                                (0x20000)
+#define HUB_CONTROL_SELF_POWERED_LOW                                                                (18)
+#define HUB_CONTROL_SELF_POWERED_MASK                                                               (0x40000)
+#define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (19)
+#define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (0xfff80000)
 #endif
 #define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_BASE_ADDR                                                 (0x20001040)
 #define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (0x200012af)
@@ -7349,6 +7654,10 @@
 #define SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES                                                         (0x21000000)
 #ifndef MCI_REG_HW_CAPABILITIES
 #define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (0x3)
+#define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
+#define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (0xfffffffc)
 #endif
 #define SOC_MCI_TOP_MCI_REG_FW_CAPABILITIES                                                         (0x21000004)
 #ifndef MCI_REG_FW_CAPABILITIES

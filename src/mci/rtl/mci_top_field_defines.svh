@@ -18,6 +18,10 @@
 
 `ifndef MCI_REG_HW_CAPABILITIES
 `define MCI_REG_HW_CAPABILITIES                                                                     (32'h0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (32'h3)
+`define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
+`define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (32'hfffffffc)
 `endif
 `ifndef MCI_REG_FW_CAPABILITIES
 `define MCI_REG_FW_CAPABILITIES                                                                     (32'h4)

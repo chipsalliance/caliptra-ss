@@ -53,3 +53,26 @@ caliptra_ss_usb_fs_root2 # Host is not supported; retained as a reference test f
 caliptra_ss_usb_hs_host_powerdown # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_hs_host_resume # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_hs_dev_powerdown # FIXME: Device test is yet to be enabled
+
+# USB OCP Recovery
+caliptra_ss_usb_ocp_arb_004 # WIP testcase
+caliptra_ss_usb_ocp_arb_006 # WIP testcase
+caliptra_ss_usb_ocp_dcon_disconnect # WIP testcase
+caliptra_ss_usb_ocp_device_fifo_clear # WIP testcase
+caliptra_ss_usb_ocp_disconnect # WIP testcase
+caliptra_ss_usb_ocp_fifo_flow_indices # WIP testcase
+caliptra_ss_usb_ocp_fifo_flow_status_flags # WIP testcase
+
+caliptra_ss_usb_ocp_fifo_ring # WIP testcase
+cptra_usb_ocp_fifo_ring # WIP testcase
+
+caliptra_ss_usb_ocp_firmware_status_ownership # WIP testcase
+cptra_usb_ocp_firmware_status_ownership # WIP testcase
+
+caliptra_ss_usb_ocp_post_sync_arbiter # WIP testcase
+
+caliptra_ss_usb_ocp_recovery_activation_access_semantics # WIP testcase
+cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
+
+caliptra_ss_usb_ocp_w1dc_access_semantics # WIP testcase
+cptra_usb_ocp_w1dc_access_semantics # WIP testcase

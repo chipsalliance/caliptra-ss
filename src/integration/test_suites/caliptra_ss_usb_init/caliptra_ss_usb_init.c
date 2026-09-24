@@ -53,91 +53,29 @@ void main (void) {
 
     VPRINTF(LOW, "=================\nMCU: USB init test\n=================\n\n");
 
-    // Standard MCU boot sequence
-    boot_mcu();
+    // Initialize USB before releasing Caliptra's boot breakpoint so the PHY and
+    // pull-up can settle while Caliptra completes boot. Null hooks select the
+    // built-in USB descriptors and standard-request handling.
+    mcu_cptra_init_d(
+        .cfg_cptra_fuse=true,
+        .cfg_cptra_wdt=true,
+        .cptra_wdt_cfg_0=1u,
+        .cfg_boot_usb_core=true);
 
-    // Initialize USB device controller BEFORE Caliptra bringup.
-    // USB PHY and pull-up need time to settle while Caliptra boots.
-    boot_usb_core();
-
-    // Caliptra core bringup
-    mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
     VPRINTF(LOW, "MCU: Caliptra core ready, entering USB event loop\n");
 
-    // Read initial USB state
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
-    VPRINTF(LOW, "MCU: USB INTSTAT = 0x%x\n", reg_data);
+    usb_dump_state("initial");
 
     // --- Main USB event loop: poll for SETUP packets ---
-    for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
-
-        // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
-        usb_handle_bus_reset();
-
-        // Check for device-level interrupts (bus reset, connect change)
-        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
-        if (reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
-            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
-            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
-                usb_handle_bus_reset();
-            }
-            // Clear DEV_INT
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
-        }
-
-        // Check for EP0 OUT interrupt (SETUP or data)
-        if (reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            // Clear the EP0OUT interrupt
-            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
-
-            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
-                // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
-                // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
-                // polling ~5us after the SETUP ACK. Logging is done inside
-                // the handler AFTER the SETUP bit is cleared.
-                usb_handle_control_transfer();
-                transfers_handled++;
-
-                // Once all CONTROL transfers issued by the UVM init sequence
-                // have been serviced, stop polling immediately. The sequence
-                // drops its uvm_phase objection right after the last transfer
-                // completes on the bus. This firmware should immediately
-                // report its pass/fail result to the testbench.
-                if (transfers_handled >= USB_EXPECTED_TRANSFERS) {
-                    break;
-                }
-            }
-        }
-
-        // Periodic diagnostic dump
-        if (poll_count % 1000 == 0 && poll_count > 0) {
-            uint32_t diag_cmd     = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-            uint32_t diag_int     = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
-            uint32_t ep0_out      = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
-            uint32_t ep0_in_diag  = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
-            VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
-                    poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled);
-        }
-
-        // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
-        // between consecutive polls, which exceeds the host VIP IN-retry
-        // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
-        // 1 us of the EP0OUT interrupt.
-    }
+    transfers_handled = usb_event_loop(USB_POLL_TIMEOUT, USB_EXPECTED_TRANSFERS);
 
     // Report final state
-    reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
+    usb_dump_state("final");
     reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INFO);
     VPRINTF(LOW, "MCU: USB INFO final = 0x%x\n", reg_data);
-    VPRINTF(LOW, "MCU: USB init test - transfers handled: %d\n", transfers_handled);
 
     // Signal test completion to the testbench
     if (transfers_handled >= USB_EXPECTED_TRANSFERS) {

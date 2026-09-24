@@ -22,6 +22,12 @@ else
     SCRIPT_PATH="$1"
 fi
 
+# Argument to clobber the generated docs folder (for just rebuilding header files)
+clobber_docs=0;
+if [[ -n "${2:+empty}" && "$2" == "--no-docs" ]]; then
+    clobber_docs=1;
+fi
+
 # Check if CALIPTRA_SS_ROOT is set if no argument is provided
 if [ -z "$SCRIPT_PATH" ]; then
     echo "Error, must set CALIPTRA_SS_ROOT or provide a path as an argument"
@@ -31,3 +37,8 @@ fi
 # Run the Python script with the appropriate paths
 python3 ${SCRIPT_PATH}/third_party/caliptra-rtl/tools/scripts/reg_doc_gen.py \
 ${SCRIPT_PATH}/src/integration/rtl/soc_address_map.rdl
+
+if [[ $clobber_docs -eq 1 ]]; then
+    echo "Clobber generated 'docs'"
+    rm -r ${SCRIPT_PATH}/src/integration/docs
+fi

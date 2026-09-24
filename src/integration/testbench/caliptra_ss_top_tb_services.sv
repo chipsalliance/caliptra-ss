@@ -1015,6 +1015,7 @@ end
        .we_i    (cptra_ss_mci_mcu_sram_req_if.req.we),
        .addr_i  (cptra_ss_mci_mcu_sram_req_if.req.addr),
        .wdata_i (cptra_ss_mci_mcu_sram_req_if.req.wdata ^ mcu_sram_wdata_bitflip),
+       .wmask_i ('1),
        .rdata_o (cptra_ss_mci_mcu_sram_req_if.resp.rdata)
    );
 

@@ -1,0 +1,14 @@
+seed: 1
+testname: caliptra_ss_usb_ocp_w1dc_access_semantics
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_ocp_w1dc_access_semantics"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_ocp_recovery_init \
+       CALIPTRA_TESTNAME=cptra_usb_ocp_w1dc_access_semantics \
+       CALIPTRA_AUX=usb_ocp_recovery_cptra \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_ocp_w1dc_access_semantics_test'

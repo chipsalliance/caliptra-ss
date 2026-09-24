@@ -87,6 +87,9 @@ module mci_top
     // Generic in/out
     input  logic [63:0] mci_generic_input_wires,
     output logic [63:0] mci_generic_output_wires,
+
+    // Streaming boot
+    output mci_reg__HW_CAPABILITIES__streaming_boot_select_e_e streaming_boot_select,
     
     // MCU interrupts
     output logic mcu_timer_int,
@@ -193,6 +196,10 @@ module mci_top
 
     
     mci_reg__out_t mci_reg_hwif_out;
+
+    assign streaming_boot_select =
+        mci_reg__HW_CAPABILITIES__streaming_boot_select_e_e'(
+            mci_reg_hwif_out.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value);
 
     // MCU SRAM signals
     logic        mcu_sram_single_ecc_error;

@@ -628,7 +628,11 @@ module mci_reg (
     typedef struct packed{
         struct packed{
             struct packed{
-                logic [31:0] next;
+                logic [1:0] next;
+                logic load_next;
+            } STREAMING_BOOT_SELECT;
+            struct packed{
+                logic [29:0] next;
                 logic load_next;
             } cap;
         } HW_CAPABILITIES;
@@ -3968,7 +3972,10 @@ module mci_reg (
     typedef struct packed{
         struct packed{
             struct packed{
-                logic [31:0] value;
+                logic [1:0] value;
+            } STREAMING_BOOT_SELECT;
+            struct packed{
+                logic [29:0] value;
             } cap;
         } HW_CAPABILITIES;
         struct packed{
@@ -6336,14 +6343,35 @@ module mci_reg (
     } field_storage_t;
     field_storage_t field_storage;
 
+    // Field: mci_reg.HW_CAPABILITIES.STREAMING_BOOT_SELECT
+    always_comb begin
+        automatic logic [1:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
+            next_c = (field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value & ~decoded_wr_biten[1:0]) | (decoded_wr_data[1:0] & decoded_wr_biten[1:0]);
+            load_next_c = '1;
+        end
+        field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.next = next_c;
+        field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value <= 2'h0;
+        end else if(field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.load_next) begin
+            field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value <= field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.next;
+        end
+    end
+    assign hwif_out.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value = field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value;
     // Field: mci_reg.HW_CAPABILITIES.cap
     always_comb begin
-        automatic logic [31:0] next_c;
+        automatic logic [29:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.HW_CAPABILITIES.cap.value;
         load_next_c = '0;
         if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
-            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:2]) | (decoded_wr_data[31:2] & decoded_wr_biten[31:2]);
             load_next_c = '1;
         end
         field_combo.HW_CAPABILITIES.cap.next = next_c;
@@ -6351,7 +6379,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.HW_CAPABILITIES.cap.value <= 32'h0;
+            field_storage.HW_CAPABILITIES.cap.value <= 30'h0;
         end else if(field_combo.HW_CAPABILITIES.cap.load_next) begin
             field_storage.HW_CAPABILITIES.cap.value <= field_combo.HW_CAPABILITIES.cap.next;
         end
@@ -22331,7 +22359,8 @@ module mci_reg (
 
     // Assign readback values to a flattened array
     logic [380-1:0][31:0] readback_array;
-    assign readback_array[0][31:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
+    assign readback_array[0][1:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value : '0;
+    assign readback_array[0][31:2] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
     assign readback_array[2][31:1] = '0;

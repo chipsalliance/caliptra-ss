@@ -35,11 +35,46 @@ static uint8_t usb_dev_addr_shadow = 0;
 // Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on
 // bus reset (device returns to Default state per USB 2.0 section 9.1.1.3).
 static uint8_t usb_current_config = 0;
+static uint32_t usb_transfers_handled = 0;
+static uint32_t usb_bus_reset_count = 0;
+static uint32_t usb_ep0_irq_count = 0;
+static uint32_t usb_ep0_out_irq_count = 0;
+static uint32_t usb_ep0_in_irq_count = 0;
+static uint32_t usb_setup_dispatch_count = 0;
+static uint32_t usb_snapshot_publish_sequence = 0;
+static uint8_t usb_ep0_in_pending_latched = 0;
+static uint8_t usb_baseline_ready_pending = 0;
+static uint16_t usb_baseline_ready_generation = 0;
+
+const uint8_t *(*usb_config_descriptor_override)(uint16_t *len) = 0;
+bool (*usb_class_request_override)(const usb_setup_pkt_t *setup) = 0;
 
 static void usb_devcmdstat_write(uint32_t val) {
     val = (val & ~DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK)
         | (usb_dev_addr_shadow & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK);
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT, val);
+}
+
+__attribute__((weak))
+const uint8_t *usb_get_config_descriptor(uint16_t *len) {
+    if (usb_config_descriptor_override != 0) {
+        return usb_config_descriptor_override(len);
+    }
+
+    if (len != 0) {
+        *len = 0;
+    }
+
+    return 0;
+}
+
+__attribute__((weak))
+bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
+    if (usb_class_request_override != 0) {
+        return usb_class_request_override(setup);
+    }
+
+    return false;
 }
 
 // Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM writes)
@@ -65,8 +100,17 @@ const uint32_t usb_default_device_descriptor[5] = {
 //   0x140-0x17F: EP0 OUT data buffer (64 bytes)
 //   0x180-0x1BF: EP0 IN data buffer (64 bytes)
 // -------------------------------------------------------------------------
-void boot_usb_core(void) {
+void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
+                   usb_class_request_handler_t class_req_fn) {
     uint32_t reg_data;
+
+    // Install the application's USB config-descriptor and class-request hooks
+    // BEFORE any host enumeration can begin (GET_DESCRIPTOR(CONFIG) and class
+    // requests must already see them). Passing 0 selects the built-in defaults:
+    // usb_get_config_descriptor / usb_handle_class_request guard on these
+    // pointers (0 -> no config descriptor / STALL class requests).
+    usb_config_descriptor_override = config_desc_fn;
+    usb_class_request_override     = class_req_fn;
 
     VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller\n");
 
@@ -238,6 +282,8 @@ void usb_handle_bus_reset(void) {
         return;
     }
     VPRINTF(LOW, "MCU: USB bus reset detected\n");
+    usb_bus_reset_count++;
+    usb_ep0_in_pending_latched = 0u;
     // Bus reset returns device address to 0 per USB spec; update shadow so all
     // subsequent DEVCMDSTAT RMW writes carry the reset address.
     usb_dev_addr_shadow = 0;
@@ -268,10 +314,22 @@ void usb_read_setup_packet(usb_setup_pkt_t *pkt) {
 }
 
 void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes) {
+    const uint8_t *byte_data = (const uint8_t *)data;
     uint32_t nwords = (nbytes + 3) / 4;
+
     for (uint32_t i = 0; i < nwords; i++) {
-        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET + (i * 4), data[i]);
+        uint32_t word = 0;
+        uint32_t base = i * 4;
+
+        for (uint32_t byte = 0; byte < 4; byte++) {
+            uint32_t idx = base + byte;
+            uint8_t val = (idx < nbytes) ? byte_data[idx] : 0u;
+            word |= ((uint32_t)val) << (byte * 8);
+        }
+
+        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET + (i * 4), word);
     }
+
     uint32_t ep0_in = USB_EP_ENTRY_ACTIVE
                     | USB_EP_ENTRY_NBYTES(nbytes)
                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
@@ -307,10 +365,337 @@ void usb_clear_setup_bit(void) {
     usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_SETUP_MASK);
 }
 
+uint8_t usb_is_configured(void) {
+    // USB 2.0 sec 9.4.7 / 9.1.1.5: the device is in the Configured state once a
+    // SET_CONFIGURATION with a non-zero configuration value has been accepted.
+    // usb_current_config tracks that value (cleared on bus reset).
+    return (usb_current_config != 0u) ? 1u : 0u;
+}
+
+void usb_legacy_ep0_capture_snapshot(
+    usb_legacy_ep0_snapshot_t *snapshot)
+{
+    if (snapshot == 0) {
+        return;
+    }
+
+    snapshot->publish_sequence = ++usb_snapshot_publish_sequence;
+    snapshot->setup_word0 = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET);
+    snapshot->setup_word1 = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET + 4u);
+    snapshot->ep0_out_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000u);
+    snapshot->ep0_setup_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x004u);
+    snapshot->ep0_in_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008u);
+    snapshot->ep0_reserved_descriptor = lsu_read_32(
+        USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00Cu);
+    snapshot->devcmdstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    snapshot->intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+    snapshot->inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
+    snapshot->configuration = (uint32_t)usb_current_config;
+    snapshot->transfers_handled = usb_transfers_handled;
+    snapshot->bus_reset_count = usb_bus_reset_count;
+    snapshot->ep0_irq_count = usb_ep0_irq_count;
+    snapshot->ep0_out_irq_count = usb_ep0_out_irq_count;
+    snapshot->ep0_in_irq_count = usb_ep0_in_irq_count;
+    snapshot->setup_dispatch_count = usb_setup_dispatch_count;
+    snapshot->snapshot_version = USB_LEGACY_EP0_SNAPSHOT_VERSION;
+}
+
+static uint32_t usb_legacy_ep0_snapshot_header(
+    uint8_t magic,
+    usb_legacy_ep0_snapshot_state_t state,
+    uint8_t field_index,
+    uint16_t generation)
+{
+    return
+        ((uint32_t)magic << 24) |
+        (((uint32_t)state & 0x3u) << 22) |
+        (((uint32_t)field_index & 0x1Fu) << 17) |
+        (uint32_t)generation;
+}
+
+static void usb_legacy_ep0_publish_field(
+    usb_legacy_ep0_snapshot_state_t state,
+    uint8_t field_index,
+    uint16_t generation,
+    uint32_t value)
+{
+    uint32_t header = usb_legacy_ep0_snapshot_header(
+        USB_LEGACY_EP0_DATA_MAGIC,
+        state,
+        field_index,
+        generation);
+    uint32_t expected_ack = usb_legacy_ep0_snapshot_header(
+        USB_LEGACY_EP0_ACK_MAGIC,
+        state,
+        field_index,
+        generation);
+
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+        value);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        header);
+    while (lsu_read_32(
+            SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0) !=
+            expected_ack) {
+    }
+
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        0u);
+    while (lsu_read_32(
+            SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_0) != 0u) {
+    }
+}
+
+static void usb_legacy_ep0_publish_snapshot(
+    const usb_legacy_ep0_snapshot_t *snapshot,
+    uint16_t generation,
+    usb_legacy_ep0_snapshot_state_t state)
+{
+    if (snapshot == 0) {
+        return;
+    }
+
+    usb_legacy_ep0_publish_field(
+        state, 0u, generation,
+        snapshot->publish_sequence);
+    usb_legacy_ep0_publish_field(
+        state, 1u, generation,
+        snapshot->setup_word0);
+    usb_legacy_ep0_publish_field(
+        state, 2u, generation,
+        snapshot->setup_word1);
+    usb_legacy_ep0_publish_field(
+        state, 3u, generation,
+        snapshot->ep0_out_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 4u, generation,
+        snapshot->ep0_setup_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 5u, generation,
+        snapshot->ep0_in_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 6u, generation,
+        snapshot->ep0_reserved_descriptor);
+    usb_legacy_ep0_publish_field(
+        state, 7u, generation,
+        snapshot->devcmdstat);
+    usb_legacy_ep0_publish_field(
+        state, 8u, generation,
+        snapshot->intstat);
+    usb_legacy_ep0_publish_field(
+        state, 9u, generation,
+        snapshot->inten);
+    usb_legacy_ep0_publish_field(
+        state, 10u, generation,
+        snapshot->configuration);
+    usb_legacy_ep0_publish_field(
+        state, 11u, generation,
+        snapshot->transfers_handled);
+    usb_legacy_ep0_publish_field(
+        state, 12u, generation,
+        snapshot->bus_reset_count);
+    usb_legacy_ep0_publish_field(
+        state, 13u, generation,
+        snapshot->ep0_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 14u, generation,
+        snapshot->ep0_out_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 15u, generation,
+        snapshot->ep0_in_irq_count);
+    usb_legacy_ep0_publish_field(
+        state, 16u, generation,
+        snapshot->setup_dispatch_count);
+    usb_legacy_ep0_publish_field(
+        state, 17u, generation,
+        snapshot->snapshot_version);
+}
+
+void usb_legacy_ep0_publish_baseline(uint16_t generation)
+{
+    usb_legacy_ep0_snapshot_t snapshot;
+
+    // Baseline publication is observational only. The successful marker
+    // transfer has already completed normal legacy servicing and armed EP0 for
+    // the next request; changing controller state here would alter the path
+    // being verified.
+    usb_legacy_ep0_capture_snapshot(&snapshot);
+    usb_legacy_ep0_publish_snapshot(
+        &snapshot,
+        generation,
+        USB_LEGACY_EP0_SNAPSHOT_BASELINE);
+    VPRINTF(LOW,
+            "MCU: EP0 observer baseline gen=%u EP0OUT=0x%08x EP0IN=0x%08x DEVCMDSTAT=0x%08x INTSTAT=0x%08x\n",
+            generation,
+            snapshot.ep0_out_descriptor,
+            snapshot.ep0_in_descriptor,
+            snapshot.devcmdstat,
+            snapshot.intstat);
+    usb_baseline_ready_generation = generation;
+    usb_baseline_ready_pending = 1u;
+}
+
+void usb_legacy_ep0_publish_post_snapshot(uint16_t generation)
+{
+    usb_legacy_ep0_snapshot_t snapshot;
+
+    usb_legacy_ep0_capture_snapshot(&snapshot);
+    usb_legacy_ep0_publish_snapshot(
+        &snapshot,
+        generation,
+        USB_LEGACY_EP0_SNAPSHOT_POST);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+        snapshot.publish_sequence);
+    lsu_write_32(
+        SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+        usb_legacy_ep0_snapshot_header(
+            USB_LEGACY_EP0_READY_MAGIC,
+            USB_LEGACY_EP0_SNAPSHOT_POST,
+            USB_LEGACY_EP0_READY_FIELD,
+            generation));
+}
+
+uint32_t usb_legacy_ep0_get_setup_dispatch_count(void)
+{
+    return usb_setup_dispatch_count;
+}
+
+uint32_t usb_legacy_ep0_get_bus_reset_count(void)
+{
+    return usb_bus_reset_count;
+}
+
 void usb_set_device_address(uint8_t addr) {
     usb_dev_addr_shadow = (uint8_t)(addr & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK);
     uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     usb_devcmdstat_write(cmd);
+}
+
+void usb_set_device_connect(uint8_t connected) {
+    uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+
+    cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
+             DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
+             DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
+             DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
+    if (connected != 0u) {
+        while ((lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) &
+                DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
+        }
+        cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
+                 DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
+        cmd |= DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK |
+               DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+    } else {
+        cmd &= ~DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+    }
+    usb_devcmdstat_write(cmd);
+}
+
+void usb_dump_state(const char *tag) {
+    const char *label = (tag != 0) ? tag : "state";
+    uint32_t reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+    uint32_t intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+    uint32_t ep0_out = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000);
+    uint32_t ep0_in = lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008);
+
+    VPRINTF(LOW,
+            "MCU: USB %s DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
+            label, reg_data, intstat, ep0_out, ep0_in, (int)usb_transfers_handled);
+}
+
+uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
+    for (uint32_t poll_count = 0; (max_iters == 0u) || (poll_count < max_iters); poll_count++) {
+        uint32_t reg_data;
+
+        usb_handle_bus_reset();
+
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+        if ((reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) != 0u) {
+            if (usb_ep0_in_pending_latched == 0u) {
+                usb_ep0_in_irq_count++;
+                usb_ep0_irq_count++;
+            }
+            usb_ep0_in_pending_latched = 1u;
+        } else {
+            usb_ep0_in_pending_latched = 0u;
+        }
+
+        if ((reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) != 0u) {
+            uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+            VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
+            if ((cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) != 0u) {
+                usb_handle_bus_reset();
+            }
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT,
+                         DEV0_CSR_INTSTAT_DEV_INT_MASK);
+        }
+
+        if ((reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) != 0u) {
+            usb_ep0_out_irq_count++;
+            usb_ep0_irq_count++;
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT,
+                         DEV0_CSR_INTSTAT_EP0OUT_MASK);
+
+            if ((lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT) &
+                 DEV0_CSR_DEVCMDSTAT_SETUP_MASK) != 0u) {
+                (void)usb_handle_control_transfer();
+                usb_transfers_handled++;
+
+                if ((expected_transfers != 0) && (usb_transfers_handled >= expected_transfers)) {
+                    break;
+                }
+            }
+        }
+
+        if ((USB_EVENT_LOOP_DIAG_PERIOD != 0u)
+            && (poll_count > 0u)
+            && ((poll_count % USB_EVENT_LOOP_DIAG_PERIOD) == 0u)) {
+            VPRINTF(LOW,
+                    "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP0OUT=0x%x EP0IN=0x%x transfers=%d\n",
+                    (int)poll_count,
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT),
+                    lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT),
+                    lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x000),
+                    lsu_read_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x008),
+                    (int)usb_transfers_handled);
+        }
+
+        if (usb_baseline_ready_pending != 0u) {
+            // Publish readiness after a complete poll iteration. Firmware then
+            // immediately enters the next iteration, minimizing the interval
+            // between the semantic ready indication and EP0 service.
+            lsu_write_32(
+                SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_0,
+                usb_snapshot_publish_sequence);
+            lsu_write_32(
+                SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+                usb_legacy_ep0_snapshot_header(
+                    USB_LEGACY_EP0_READY_MAGIC,
+                    USB_LEGACY_EP0_SNAPSHOT_BASELINE,
+                    USB_LEGACY_EP0_READY_FIELD,
+                    usb_baseline_ready_generation));
+            usb_baseline_ready_pending = 0u;
+        }
+
+        // mcu_sleep removed from poll loop: at 25ns/iter it costs ~3-4us
+        // between consecutive polls, which exceeds the host VIP IN-retry
+        // budget after a SETUP ACK. Busy-poll keeps SETUP detection within
+        // 1 us of the EP0OUT interrupt.
+    }
+    return usb_transfers_handled;
 }
 
 // -------------------------------------------------------------------------
@@ -327,23 +712,50 @@ void usb_set_device_address(uint8_t addr) {
 bool usb_handle_control_transfer(void) {
     usb_setup_pkt_t pkt;
     bool handled = false;
+    uint32_t intstat;
 
+    usb_setup_dispatch_count++;
     usb_read_setup_packet(&pkt);
 
     uint8_t req_type  = USB_BMREQTYPE_TYPE(pkt.bmRequestType);
     uint8_t recipient = USB_BMREQTYPE_RECIPIENT(pkt.bmRequestType);
 
-    // Clear EP0 IN interrupt before programming response
+    // Clear EP0 IN interrupt before programming the response. Reset the edge
+    // latch at the same operation so a subsequent completion can increment the
+    // sticky counter even if no polling iteration observed the low interval.
+    intstat = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+    if (((intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) != 0u) &&
+        (usb_ep0_in_pending_latched == 0u)) {
+        usb_ep0_in_irq_count++;
+        usb_ep0_irq_count++;
+    }
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+    usb_ep0_in_pending_latched = 0u;
 
     if (req_type == USB_TYPE_STANDARD) {
         if (recipient == USB_RECIP_DEVICE) {
             switch (pkt.bRequest) {
                 case USB_REQ_GET_DESCRIPTOR: {
                     uint8_t desc_type = (uint8_t)((pkt.wValue >> 8) & 0xFF);
+                    const uint8_t *config_desc = 0;
+                    uint16_t config_len = 0;
+                    uint32_t nbytes = 0;
+                    bool have_descriptor = false;
+
                     if (desc_type == USB_DESC_DEVICE) {
-                        uint32_t nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
+                        nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
                         usb_ep0_send_data(usb_default_device_descriptor, nbytes);
+                        have_descriptor = true;
+                    } else if (desc_type == USB_DESC_CONFIGURATION) {
+                        config_desc = usb_get_config_descriptor(&config_len);
+                        if ((config_desc != 0) && (config_len != 0u)) {
+                            nbytes = (pkt.wLength < config_len) ? pkt.wLength : config_len;
+                            usb_ep0_send_data((const uint32_t *)config_desc, nbytes);
+                            have_descriptor = true;
+                        }
+                    }
+
+                    if (have_descriptor) {
                         usb_ep0_arm_out();
                         // Enable IntOnNAK_CO for status-phase detection
                         uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
@@ -461,9 +873,13 @@ bool usb_handle_control_transfer(void) {
             usb_ep0_stall();
         }
     } else if (req_type == USB_TYPE_CLASS) {
-        VPRINTF(LOW, "MCU: USB Unhandled Class request recipient=%d bRequest=0x%02x"
-                " - stalling\n", recipient, pkt.bRequest);
-        usb_ep0_stall();
+        if (usb_handle_class_request(&pkt)) {
+            handled = true;
+        } else {
+            VPRINTF(LOW, "MCU: USB Unhandled Class request recipient=%d bRequest=0x%02x"
+                    " - stalling\n", recipient, pkt.bRequest);
+            usb_ep0_stall();
+        }
     } else if (req_type == USB_TYPE_VENDOR) {
         VPRINTF(LOW, "MCU: USB Unhandled Vendor request recipient=%d bRequest=0x%02x"
                 " - stalling\n", recipient, pkt.bRequest);

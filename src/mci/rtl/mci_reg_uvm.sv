@@ -10,8 +10,10 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__HW_CAPABILITIES_bit_cg cap_bit_cg[32];
+        mci_reg__HW_CAPABILITIES_bit_cg STREAMING_BOOT_SELECT_bit_cg[2];
+        mci_reg__HW_CAPABILITIES_bit_cg cap_bit_cg[30];
         mci_reg__HW_CAPABILITIES_fld_cg fld_cg;
+        rand uvm_reg_field STREAMING_BOOT_SELECT;
         rand uvm_reg_field cap;
 
         function new(string name = "mci_reg__HW_CAPABILITIES");
@@ -24,9 +26,12 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
+            this.STREAMING_BOOT_SELECT = new("STREAMING_BOOT_SELECT");
+            this.STREAMING_BOOT_SELECT.configure(this, 2, 0, "RW", 0, 'h0, 1, 1, 0);
             this.cap = new("cap");
-            this.cap.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.cap.configure(this, 30, 2, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(STREAMING_BOOT_SELECT_bit_cg[bt]) STREAMING_BOOT_SELECT_bit_cg[bt] = new();
                 foreach(cap_bit_cg[bt]) cap_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))

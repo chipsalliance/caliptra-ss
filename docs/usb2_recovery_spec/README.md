@@ -1,54 +1,66 @@
 # USB2 OCP Recovery Enhancements - Microarchitecture Specification
 
-Status: design nearly-complete (OCP Recovery arbiter architecture).
+Status: implemented (OCP Recovery mirrored-SETUP architecture).
 
 Scope: the OCP Secure Firmware Recovery enhancements added to the Caliptra
 Subsystem USB 2.0 device block (`third_party/usb2`). This document describes
 *definitively how the hardware is implemented in RTL* and how *production*
 firmware is expected to interact with it.
 
-> Register reference note: Section 7 below inlines the full register/field
-> layout as a temporary measure. Once the generated register-reference HTML
-> page is published, this inline table will be replaced with a link to it.
+> Register reference note: the USB register reference is generated from
+> SystemRDL and published at
+> [Caliptra Subsystem Register Reference](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=).
+> The source register definition is
+> `third_party/usb2/systemrdl/usb_ocp_recovery_reg.rdl`.
 
 ---
 
 ## 1. Overview and use model
 
 The USB2 block is a USB 2.0 device controller (PIE / DMA / register-interface
-SIE) that Caliptra Subsystem uses for both standard USB scenarios and for OCP Recovery.
-The OCP Recovery enhancement adds a recovery interface on EP0 so that a USB **Recovery
-Agent (host)** can push a firmware image into the device and have **Caliptra**
-consume it. OCP "streaming boot" is the firmware-download use case of the
-recovery specification.
+SIE) that Caliptra Subsystem uses for both standard USB scenarios and for OCP
+Recovery. The OCP Recovery enhancement adds a recovery interface on EP0 so
+that a USB **Recovery Agent (host)** can push a firmware image into the device
+and have **Caliptra** consume it. OCP "streaming boot" is the
+firmware-download use case of the recovery specification.
 
 Two use models share the same device and EP0:
 
-- **Legacy USB.** Standard enumeration and any non-recovery control transfer are
-  handled exactly as the unmodified IP would, serviced by device firmware through
-  the legacy register-interface endpoint interrupt path.
-- **OCP Recovery.** Recovery-class EP0 control transfers are claimed by dedicated
-  hardware (`usb_ocp_recovery_top`) and serviced without per-command firmware
-  intervention. Image DWORDs land in an on-chip FIFO that Caliptra drains over AXI;
-  Caliptra firmware owns recovery progress and the Recovery Agent-visible status.
+- **Legacy USB.** Standard enumeration and any non-recovery control transfer
+  are handled by the legacy USB DMA/register-interface path and serviced by
+  device firmware.
+- **OCP Recovery.** Recovery-class EP0 control transfers are claimed by
+  dedicated hardware (`usb_ocp_recovery_top`) and serviced without
+  per-command MCU firmware intervention. Image DWORDs land in an on-chip FIFO
+  that Caliptra drains over AXI; Caliptra firmware owns recovery progress and
+  the Recovery Agent-visible status.
 
-Both models are simultaneously available once the device is enumerated; the OCP
-path can be globally disabled by a safety fallback bit (Section 4).
+In the compound Hub design, Recovery is available only on Device 0. The
+compound selector values are Hub `0`, Device 0 `1`, and Device 1 `2`. Hub,
+Device 1, and non-EP0 traffic continue through the legacy path while Device 0
+retains an OCP EP0 claim.
+
+Both use models are simultaneously available once the device is enumerated.
+The OCP path can be globally disabled by a safety fallback bit (Section 4).
 
 The device presents a recovery interface with `bInterfaceClass=0xEF`,
 `bInterfaceSubClass=0x08`, `bInterfaceProtocol=0x01`, and an OCP Recovery
-functional descriptor (type `0x24`, subtype `0x01`, `bcdOCPRecVersion=0x0110`)
-advertising `wMaxWrTransferSize` and `wMaxRdTransferSize`. Each OCP command maps
-to exactly one EP0 control transfer, classified from the SETUP encoding:
+functional descriptor (type `0x24`, subtype `0x01`,
+`bcdOCPRecVersion=0x0110`) advertising `wMaxWrTransferSize` and
+`wMaxRdTransferSize`. The OCP v1.1 descriptor is 10 bytes in this field order:
+length, type, subtype, reserved byte, maximum write size, maximum read size,
+and BCD version. Each OCP command maps to exactly one EP0 control transfer,
+classified from the SETUP encoding:
 `bmRequestType[6:5]=01` (Class), `[4:0]=00001` (Interface), `bRequest=0x00`
-(`OCP_RECOVERY_TRANSFER`), `wValue[7:0]` = OCP command ID, `wIndex[7:0]` =
-recovery interface number.
+(`OCP_RECOVERY_TRANSFER`), `wValue[7:0]` = OCP command ID, and
+`wIndex[7:0]` = recovery interface number.
 
 ---
 
 ## 2. High-level recovery flow
 
-> Refer to companion document: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
+> Refer to companion document:
+> [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
 > for the command-level, actor-oriented protocol flow.
 
 ```mermaid
@@ -60,35 +72,41 @@ sequenceDiagram
     participant CP as Caliptra core
 
     Note over FW,HW: A. Core bring-up
-    FW->>HW: init device mode, EP0, advertise recovery interface
+    FW->>HW: install descriptors and capability policy
+    FW->>HW: init Device 0 mode and EP0, then connect
     Note over RA,HW: B. USB enumeration (legacy path)
     RA->>HW: bus reset + standard enumeration
-    HW->>FW: EP0 SETUP interrupt (legacy path)
+    HW->>FW: standard EP0 SETUP notification
     FW->>HW: service SET_ADDRESS / SET_CONFIGURATION
     Note over RA,HW: C. Recovery + image push (autonomous OCP HW)
-    RA->>HW: poll DEVICE_STATUS
-    CP->>HW: set PROT_CAP, DEVICE_ID, DEVICE_STATUS, RECOVERY_STATUS
-    RA->>HW: send recovery image
-    CP->>HW: publish DEVICE_STATUS = Recovery Pending (0x4)
-    Note over HW,CP: D. Consume + boot (Caliptra)
-    CP->>HW: drain image and load to memory
+    CP->>HW: publish DEVICE_STATUS / RECOVERY_STATUS
+    RA->>HW: read capabilities and poll status
+    RA->>HW: write INDIRECT_FIFO_CTRL (CMS, IMAGE_SIZE)
+    RA->>HW: stream INDIRECT_FIFO_DATA
+    HW-->>CP: payload_available
+    Note over HW,CP: D. Consume, verify, and activate (Caliptra firmware)
+    RA->>HW: write ACTIVATE_REC_IMG = 0x0F
+    CP->>HW: drain INDIRECT_FIFO_DATA over AXI
     CP->>CP: authenticate image
-    CP->>HW: publish recovery result
+    CP->>CP: perform platform activation or restart
+    CP->>HW: publish result and clear ACTIVATE_REC_IMG
+    RA->>HW: poll DEVICE_STATUS / RECOVERY_STATUS
 ```
 
-1. **A - Core bring-up.** Device firmware initializes the USB controller in device
-   mode and advertises the recovery interface (Section 5).
-2. **B - Enumeration (legacy path).** The host resets and enumerates. Standard EP0
-   SETUPs raise the legacy endpoint interrupt and are serviced by device firmware
+1. **A - Core bring-up.** Device firmware installs the Recovery descriptor and
+   platform capability policy, initializes Device 0 and EP0, and connects the
+   device (Section 5).
+2. **B - Enumeration (legacy path).** The host resets and enumerates. Standard
+   EP0 SETUPs use the legacy endpoint path and are serviced by device firmware
    until the device is configured.
-3. **C - Recovery + image push (autonomous).** The host reads recovery
-   capabilities/status and streams the image into the CMS FIFO via
-   `INDIRECT_FIFO_DATA`. These OCP-class transfers are claimed and serviced
-   entirely by `usb_ocp_recovery_top`; firmware is not involved per command.
-4. **D - Consume + boot (Caliptra).** Caliptra waits for `payload_available`,
-   publishes the corresponding `DEVICE_STATUS` transition, drains
-   `INDIRECT_FIFO_DATA` over AXI, authenticates the image, publishes the result,
-   and clears `RECOVERY_CTRL.ACTIVATE_REC_IMG` after consumption.
+3. **C - Recovery + image push (autonomous).** The host reads Recovery
+   capabilities/status and streams the image into the CMS FIFO through
+   `INDIRECT_FIFO_DATA`. These OCP-class transfers are claimed and serviced by
+   hardware; MCU firmware is not involved per command.
+4. **D - Consume, verify, and activate (Caliptra).** Caliptra waits for
+   `payload_available`, drains `INDIRECT_FIFO_DATA` over AXI, authenticates the
+   image, handles the activation request, performs any platform restart, and
+   publishes the result.
 
 ---
 
@@ -102,37 +120,43 @@ flowchart TB
         direction TB
         phy["USB PHY / UTMI (utmi_clk)"]
 
-        subgraph core["USB Core"]
+        subgraph core["Compound USB Core"]
             direction TB
-            pie["usb_pie<br/>PIE EP0 engine (utmi_clk)"]
+            pie["usb_pie<br/>PIE endpoint engine (utmi_clk)"]
             sync["usb_synchronizer<br/>SIE CDC (utmi to hclk)"]
-            arb["usb_ocp_recovery_post_sync_arb<br/>SETUP trap, OCP classify (hclk)"]
+            select["compound selector<br/>Hub=0, Device0=1, Device1=2"]
+            arb["usb_ocp_recovery_post_sync_arb<br/>Device0 SETUP mirror + classify (hclk)"]
 
             subgraph legacy["Legacy / DMA path"]
                 direction TB
-                dma["usb_dma<br/>EP-table DMA"]
-                regif["usb_reg_if<br/>EP0 IRQ / status"]
+                dma["shared usb_dma<br/>physical SETUP + legacy endpoint DMA"]
+                regif["usb_reg_if<br/>legacy endpoint IRQ / status"]
                 legacy_ahb["legacy usbhsd AHB target<br/>offset 0x000-0x7ff"]
                 dma --> regif --> legacy_ahb
             end
 
-            subgraph recovery["OCP recovery trap path"]
+            subgraph recovery["Device0 OCP recovery path"]
                 direction TB
-                a2["A2 ctrl_decode<br/>SETUP to reg-bus"]
-                a0["A0 reg-bus arbiter<br/>USB vs EXT"]
-                a3["A3 rb_adapter +<br/>register block"]
+                a2["A2 ctrl_decode<br/>command legality + word stream"]
+                hw_ep["USB hardware endpoint<br/>non-FIFO commands"]
                 a4["A4 cms_fifo<br/>sync, 64 DWORD"]
-                rec_ahb["recovery AHB transaction FSM<br/>offset 0x800-0xfff"]
-                a2 --> a0 --> a3 --> a4
-                a0 <-->|"raw EXT aperture offset"| rec_ahb
+                regblock["generated Recovery register block"]
+                a3["A3 rb_adapter<br/>EXT/AHB only"]
+                rec_ahb["ahb_slv_sif<br/>Recovery AHB target<br/>offset 0x800-0xfff"]
+
+                a2 --> hw_ep
+                a2 --> a4
+                hw_ep <--> regblock
+                a4 <--> regblock
+                regblock <--> a3 <--> rec_ahb
             end
 
-            arb -->|legacy| dma
-            arb -->|"OCP (rec_*)"| a2
+            split["USB local-aperture split"]
+            ahb["device AXI-to-AHB bridge"]
 
-            split["USB local-aperture split<br/>package-defined recovery offset"]
-            ahb["dev AXI-to-AHB bridge"]
-
+            select --> arb
+            arb -->|"physical SETUP and legacy traffic"| dma
+            arb -->|"claimed SETUP mirror + DATA / STATUS / PING"| a2
             legacy_ahb <--> split
             rec_ahb <--> split
             split <--> ahb
@@ -143,107 +167,142 @@ flowchart TB
     end
 
     bus --> phy --> pie
-    pie --> sync --> arb
+    pie --> sync --> select
 ```
 
-Blocks A0/A2-A4 are internal to `usb_ocp_recovery_top` (clock domains are listed in
-Section 3.1). The SoC reaches both the legacy controller and recovery aperture
-through the same device AXI-to-AHB bridge (bottom). The split and the recovery
-AHB transaction FSM live in the integration wrapper. USB-sourced traffic enters
-each path from the top (through the arbiter); firmware/Caliptra AXI traffic
-enters the same two paths from the bottom (through the bridge), which is why
-`regif` and `a0` each have a bidirectional link to their respective AHB-side
-block. The wrapper performs only package-defined coarse aperture ownership
-selection; it does not translate an AHB access into an OCP command.
+The arbiter is inserted after `usb_synchronizer` and before the shared legacy
+DMA. Every real Device 0 EP0 SETUP remains on the physical DMA path and is
+mirrored into the OCP classifier. Claimed later DATA/STATUS/PING stages use
+the Recovery path. USB Recovery Agent commands use direct hardware-interface
+or FIFO paths and do not pass through the firmware CPU interface.
+
+The SoC reaches both the legacy controller and Recovery aperture through the
+same device AXI-to-AHB bridge. The integration wrapper performs the coarse
+`0x000-0x7ff` legacy versus `0x800-0xfff` Recovery selection. The Recovery
+AHB slave interface is implemented inside `usb_ocp_recovery_top`.
 
 ### 3.1 Clock domains
 
 | Domain | Frequency (MHz) | Blocks |
 |---|---|---|
-| `utmi_clk` (PHY/PIE) | 60 | USB PHY/UTMI, `usb_pie` EP0 protocol engine |
-| `hclk == dev_axi_aclk` (SoC) | Min: 60Mhz Max: Integration-specific | `usb_synchronizer` (hclk side), `usb_ocp_recovery_post_sync_arb`, `usb_dma`, `usb_reg_if`, all of `usb_ocp_recovery_top`, the EXT/AXI bridge |
+| `utmi_clk` (PHY/PIE) | 60 | USB PHY/UTMI, `usb_pie` protocol engine |
+| `hclk == dev_axi_aclk` (SoC) | Min: 60 MHz; max: integration-specific | `usb_synchronizer` hclk side, `usb_ocp_recovery_post_sync_arb`, shared `usb_dma`, `usb_reg_if`, all of `usb_ocp_recovery_top`, and the EXT/AXI bridge |
 
-`usb_synchronizer` is the single USB clock-domain crossing (utmi to hclk). All OCP
-recovery logic runs on the SoC clock, so the recovery register and FIFO surfaces
-are single-domain and require no specific CDC.
+`usb_synchronizer` is the single USB clock-domain crossing (utmi to hclk). All
+OCP Recovery logic runs on the SoC clock, so the active Recovery register and
+FIFO surfaces are single-domain and require no additional data-path CDC.
 
 ### 3.2 Reset architecture
 
-The recovery stack receives the USB device subordinate reset directly as
+The Recovery stack receives the USB device subordinate reset as
 `dev_axi_aresetn` and uses active-low reset naming throughout.
 
-- **Handwritten recovery logic.** `usb_ocp_recovery_top`, A2, A3, and the handwritten
-  A4 control logic use synchronous `rst_ni` logic in the `dev_axi_aclk`
-  domain. A4's synchronous FIFO storage primitive receives the same
-  active-low reset asynchronously. Its separate synchronous `clr_i` is the
-  mechanism for a FIFO flush or transfer abort, so a batch reset does not rely on
-  a reset assertion/release sequence.
-- **Generated register block.** The register definitions declare `rst_ni` as an
-  active-low, asynchronous reset signal and make it the default reset signal.
-  Generated field storage therefore resets on the falling edge of `rst_ni`.
-  `usb_ocp_recovery_top` drives the register block's `rst_ni` input from its own
-  `rst_ni` input. The generated module retains a legacy active-high `rst`
-  compatibility input, tied to the inverse of `rst_ni` at integration; field
-  storage reset polarity is controlled by the generated active-low reset signal.
-- **Assertions.** Handwritten assertion blocks are enabled only when `rst_ni` is
-  high, and their temporal properties are disabled while it is low.
+- **Handwritten Recovery logic.** `usb_ocp_recovery_top`, A2, A3, A4, and the
+  post-sync arbiter operate in the `dev_axi_aclk`/hclk domain. A4's FIFO
+  storage uses the same reset and has a separate synchronous clear for FIFO
+  region reset and batch teardown.
+- **Generated register block.** The SystemRDL definition declares `rst_ni` as
+  its active-low reset. `usb_ocp_recovery_top` drives the generated block from
+  its own `rst_ni`.
+- **USB and Device 0 local reset.** USB bus reset, Device 0 port reset, or
+  Device 0 disconnect clears retained claim, packet staging, reservations,
+  response snapshots, and SETUP success-mask tracking. This local cleanup
+  does not reset the shared compound DMA.
+- **Assertions.** Handwritten assertion blocks are disabled while their
+  active-low reset is asserted.
 
 ### 3.3 Post-synchronizer arbiter
 
 `usb_ocp_recovery_post_sync_arb` splices into the hclk side of
-`usb_synchronizer`, between the synchronizer and its two legacy consumers
+`usb_synchronizer`, between the synchronizer and the shared legacy consumers
 (`usb_dma`, `usb_reg_if`). It:
 
-- **Traps every EP0 SETUP** in hclk, captures the 8 payload bytes, and classifies
-  it as OCP-recovery class or not using the SETUP encoding described in Section 1.
-- **Claims** a recovery-class transfer: the SETUP and all downstream side effects
-  are withheld from `usb_dma`/`usb_reg_if`, so the legacy path produces no SRAM
-  write, descriptor update, endpoint interrupt, data-toggle change, or NAK-status
-  effect. The claimed SETUP/DATA/STATUS is serviced on the `rec_*` surface into
-  `usb_ocp_recovery_top`.
-- **Replays** everything else bit-identically to `usb_dma`/`usb_reg_if`: any
-  non-OCP EP0 SETUP, any non-EP0 transaction, and every DATA/handshake beat of an
-  unclaimed transfer (transparent legacy pass-through).
-
-Because the device must ACK the SETUP stage, a claimed SETUP is trapped and
-answered with a fabricated bit-accurate response; unclaimed SETUPs are replayed
-to the legacy DMA so standard enumeration is unaffected.
+- **Forwards and mirrors every Device 0 EP0 SETUP.** The real SETUP request,
+  eight data bytes, completion, and notification remain on the physical DMA
+  path. The same bytes are captured for OCP classification.
+- **Classifies only a successfully completed eight-byte SETUP.** A valid OCP
+  envelope retains Device 0 EP0 ownership for later DATA/STATUS/PING. A valid
+  non-OCP SETUP remains legacy-owned.
+- **Masks only claimed SETUP success publication.** The matching physical DMA
+  transaction still receives the real SETUP and performs normal SETUP SRAM,
+  `setup_received`, address-update, and toggle effects. Its successful
+  completion is withheld from legacy endpoint interrupt/dispatch publication.
+- **Routes each later transaction by identity.** Claimed Device 0 EP0
+  DATA/STATUS/PING uses the Recovery stack. Hub, Device 1, and non-EP0
+  transactions remain legacy-owned even while Device 0 retains a claim.
+- **Snapshots response metadata.** Endpoint validity, active/disabled/STALL
+  state, toggle, byte count, maximum-packet value, and isochronous/rate
+  feedback attributes are captured for the active transaction and held stable
+  through wire completion.
 
 #### Arbiter transfer state machine
 
 ```mermaid
 stateDiagram-v2
     [*] --> T_IDLE
-    T_IDLE --> T_TRAP: EP0 SETUP
-    T_TRAP --> T_DATA: claimed OCP SETUP, wLength != 0
-    T_TRAP --> T_STATUS: claimed OCP SETUP, wLength = 0
-    T_TRAP --> T_REPLAY_REQ: unclaimed SETUP
-    T_REPLAY_REQ --> T_REPLAY_ALIGN: legacy DMA response valid
-    T_REPLAY_ALIGN --> T_REPLAY_DATA
-    T_REPLAY_DATA --> T_REPLAY_END
-    T_REPLAY_END --> T_IDLE: replay complete
-    T_REPLAY_END --> T_TRAP: pending EP0 SETUP
-    T_REPLAY_END --> T_PASS: pending non-EP0 request
-    T_PASS --> T_IDLE
-    T_DATA --> T_STATUS: claimed data stage complete
-    T_STATUS --> T_IDLE: claimed status and RX drain complete
-    T_DATA --> T_TRAP: replacement EP0 SETUP
-    T_STATUS --> T_TRAP: replacement EP0 SETUP
+
+    T_IDLE --> T_MIRROR: Device0 EP0 SETUP request
+    T_MIRROR --> T_MIRROR: newer Device0 EP0 SETUP request
+    T_META_WAIT --> T_MIRROR: replacement Device0 EP0 SETUP
+    T_DATA --> T_MIRROR: replacement Device0 EP0 SETUP
+    T_STATUS --> T_MIRROR: replacement Device0 EP0 SETUP
+    T_PROT_STALL --> T_MIRROR: replacement Device0 EP0 SETUP
+
+    T_MIRROR --> T_META_WAIT: valid completed OCP SETUP
+    T_MIRROR --> T_IDLE: valid completed non-OCP SETUP
+    T_MIRROR --> T_IDLE: unsuccessful SETUP, no prior stall
+    T_MIRROR --> T_PROT_STALL: unsuccessful replacement SETUP while stalled
+
+    T_META_WAIT --> T_PROT_STALL: decode or SETUP length error
+    T_META_WAIT --> T_STATUS: accepted command, wLength = 0
+    T_META_WAIT --> T_DATA: accepted command, wLength != 0
+
+    T_DATA --> T_DATA: OUT packet validated and draining
+    T_DATA --> T_DATA: IN terminating ZLP still owed
+    T_DATA --> T_STATUS: OUT drain complete or IN data complete
+    T_DATA --> T_PROT_STALL: protocol or final byte-count error
+
+    T_STATUS --> T_IDLE: successful status stage
+    T_STATUS --> T_PROT_STALL: protocol error
+    T_PROT_STALL --> T_PROT_STALL: non-SETUP Device0 EP0 request
+
+    note right of T_MIRROR
+        SETUP is physical-DMA-owned.
+        Recovery mirrors and classifies
+        only after successful completion.
+    end note
+
+    note right of T_PROT_STALL
+        A corrupted or unsuccessful
+        replacement SETUP does not
+        release the prior stall.
+    end note
 
     note right of T_IDLE
-        From any state, hardware reset,
-        USB bus reset, or device disconnect
-        discards transfer-local state
-        and returns to T_IDLE.
+        From every state, hardware reset,
+        USB bus reset, Device0 local reset,
+        or firmware OCP_CLAIM_ABORT
+        returns to T_IDLE.
     end note
 ```
 
-`T_TRAP` always owns the SETUP response long enough to capture and classify it.
-Only `T_DATA` and `T_STATUS` own a claimed recovery transfer; those states suppress
-legacy DMA/register delivery and use the recovery stack's RX/TX staging. A new EP0
-SETUP abandons a claimed transfer and becomes the next trapped request. Hardware
-reset, USB bus reset, or synchronized `usbreg_dev_connect` deassertion discards all
-transfer-local state and returns the arbiter to `T_IDLE`.
+The transition priority in RTL is:
+
+1. hardware reset, USB bus reset, Device 0 local reset, or firmware claim
+   abort returns to `T_IDLE`;
+2. a Device 0 EP0 SETUP request enters `T_MIRROR` from any current state;
+3. an accepted firmware general-error request enters `T_PROT_STALL` while a
+   claim is active;
+4. otherwise the current-state transition above applies.
+
+`T_MIRROR` captures the physical SETUP while the shared DMA services it. On
+successful completion, a claimed OCP request advances to `T_META_WAIT`; a
+normal request returns to `T_IDLE`. `T_META_WAIT` waits for command response
+metadata and FIFO admission before exposing DATA-stage behavior. `T_DATA`
+owns claimed data transfer, complete-packet validation, and FIFO drain.
+`T_STATUS` owns the claimed status stage. `T_PROT_STALL` persistently returns
+protocol STALL until a successful replacement SETUP or explicit reset/abort
+release.
 
 ### 3.4 `usb_ocp_recovery_top` (OCP service stack)
 
@@ -251,10 +310,43 @@ Clocked by `dev_axi_aclk`:
 
 | Block | Role |
 |---|---|
-| **A2** ctrl_decode | Decodes the claimed EP0 SETUP/DATA into a word-wide register-bus (`rb_*`) access stream. |
-| **A0** reg-bus arbiter | Arbitrates the internal register bus between the USB command side and raw EXT aperture accesses; USB has priority, EXT proceeds when USB is idle. |
-| **A3** USB hardware endpoint, rb_adapter + register block | The top-level USB hardware endpoint maps USB commands to generated register-block base offsets and keeps USB traffic outside firmware CPUif. EXT accesses bypass command mapping and use their raw aperture offset directly at the generated CPU interface. |
-| **A4** cms_fifo | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus `WRITE_INDEX`/`READ_INDEX`/full/empty status and batch notification. |
+| **A2** ctrl_decode | Validates the claimed SETUP command, direction, and length and converts DATA into a word-wide command stream. |
+| **USB hardware endpoint** | Services non-FIFO Recovery Agent commands directly from generated register storage/hardware interfaces. Host writes to read-only commands are rejected here as defense in depth. |
+| **A3** rb_adapter + register block | A3 converts held EXT/AHB requests into one generated CPU-interface request. It is not used by USB command traffic. |
+| **A4** cms_fifo | Owns `INDIRECT_FIFO_*`; a 64-DWORD synchronous FIFO backing store for the image payload, plus indices, full/empty status, and batch notification. |
+
+#### Command legality and protocol STALL
+
+The SETUP transaction itself is ACKed by the USB controller. A claimed command
+with an unsupported command, illegal direction, invalid transfer envelope, or
+capability-disabled `DEVICE_RESET` enters persistent protocol STALL before
+any command side effect.
+
+Fixed-size writes require their exact OCP-defined length.
+`INDIRECT_FIFO_DATA` writes accept one through 64 bytes. Fixed-size reads
+accept a request from the command's required minimum length through the
+advertised 64-byte read envelope and return up to the command-defined response
+length, clipped to the host's `wLength`. Invalid OUT/write length uses protocol
+error `0x03`; invalid IN framing or length uses `0xFF`.
+
+Protocol-error encodings are:
+
+| Value | Meaning |
+|---|---|
+| `0x00` | No error |
+| `0x01` | Unsupported command or host write to a read-only command |
+| `0x02` | Unsupported parameter; defined with no current USB RTL producer |
+| `0x03` | OUT/write length or accepted OUT final byte-count error |
+| `0x04` | CRC error; defined with no current USB RTL producer |
+| `0xFF` | Invalid IN framing/length or firmware general error |
+
+Current USB RTL producers drive `0x01`, `0x03`, and `0xFF`. Link CRC, PID,
+bit-stuff, and PHY failures discard uncommitted packet staging and use normal
+USB retry behavior instead of setting `0x04`.
+
+The first error wins. Only a completed Recovery Agent `DEVICE_STATUS` read
+clears `PROT_ERROR`; firmware/EXT reads are non-destructive. The clear has
+priority over a new error in the same cycle.
 
 ### 3.5 CMS image FIFO
 
@@ -262,384 +354,375 @@ The image data path is exposed through `INDIRECT_FIFO_*` and backed by a
 synchronous 64-DWORD FIFO. `FIFO_SIZE` and `MAX_TRANSFER_SIZE` both report 64
 DWORDs. `WRITE_INDEX` and `READ_INDEX` wrap modulo 64 and are debug fields:
 they may be equal at both empty and full, so `FULL` and `EMPTY` are the
-authoritative occupancy indicators.
+authoritative occupancy indicators. All 64 physical entries are usable.
 
-The host supplies normal 64-B OUT transfers while the FIFO is available.
-`payload_available` asserts when the FIFO reaches 64 DWORDs, or when a nonempty
-terminal image batch completes, and remains asserted until the FIFO is empty.
-Caliptra waits for this level before reading `INDIRECT_FIFO_DATA`; while it is
-asserted, later FIFO DATA OUT transfers receive USB NAK until the batch drains.
-The final DWORD of a non-4-byte-aligned transfer is zero-padded at the FIFO
-write boundary. Caliptra uses the image byte length to ignore padding.
+The host supplies normal one-to-64-byte OUT transfers. Before accepting a FIFO
+DATA packet, the arbiter reserves capacity for the complete packet.
+Reservation persists across PING and retry behavior. Insufficient capacity
+produces pre-acceptance NAK flow control; at high speed, a successfully
+accepted packet that consumes the final reserved capacity may complete with
+NYET. Capacity pressure is not an OCP protocol error.
+
+Claimed OUT data is staged in a complete 64-byte packet buffer. The staged
+bytes are invisible to the FIFO until the packet:
+
+- completes successfully;
+- has the exact expected final byte count; and
+- passes link-level validation.
+
+A byte-count mismatch discovered after EOP ACKs the DATA transaction, commits
+no FIFO data, sets error `0x03`, and STALLs the following STATUS stage. A
+CRC-failed or otherwise link-invalid packet is discarded and may be retried
+without modifying the FIFO or setting an OCP protocol error.
+
+A validated 64-byte packet drains as 16 consecutive DWORD transfers. STATUS
+remains NAK while validation/drain is incomplete. A partial final DWORD uses
+byte enables and zero padding. `INDIRECT_FIFO_CTRL.IMAGE_SIZE` is programmed
+and reported in DWORD units; byte-exact final image length, if required, comes
+from the image format or a higher-level firmware contract.
+
+`payload_available` asserts when the FIFO reaches 64 DWORDs, or when a
+nonempty terminal image batch completes, and remains asserted until the FIFO
+is empty. Caliptra waits for this level before reading
+`INDIRECT_FIFO_DATA`; each accepted EXT read pops exactly one DWORD.
+
+The published-batch contract requires every later `INDIRECT_FIFO_DATA` OUT
+request to receive NAK while `payload_available` remains asserted, including
+after Caliptra has partially drained the batch and physical FIFO space has
+reopened. Caliptra drains each published batch completely, up to 256 bytes,
+and host software waits for FIFO empty and `payload_available` deassertion
+before submitting the next batch. The post-sync arbiter input
+`fifo_payload_available_i` is the dedicated admission interlock for this
+policy. FIFO free-space admission and packet reservation are both gated by
+this published-batch interlock, so partial drain cannot reopen host admission.
 
 This design advertises the minimum single-packet transfer size,
-`wMaxRdTransferSize = wMaxWrTransferSize = 64`. Because a read requests exactly
-64 B and the device returns <= 64 B, every OCP DATA stage fits in a single HS
-MaxPacket (64 B); large payloads are streamed as many <= 64-B
-`INDIRECT_FIFO_DATA` chunks, never one large transfer.
+`wMaxRdTransferSize = wMaxWrTransferSize = 64`. Each OCP DATA stage fits in
+one 64-byte MaxPacket; large images are streamed as many
+`INDIRECT_FIFO_DATA` transfers.
 
 ### 3.6 EXT / AXI register + drain path
 
-Caliptra reaches the OCP register aperture as an AXI master: SoC AXI fabric to the
-device AXI-to-AHB bridge and then the package-defined recovery portion of the
-local USB device aperture. For the current 4 KiB local USB window:
+Caliptra reaches the OCP register aperture as an AXI master: SoC AXI fabric to
+the device AXI-to-AHB bridge and then the package-defined Recovery portion of
+the local USB device aperture. For the current 4 KiB local USB window:
 
 - `0x000-0x7ff` remains the legacy `usbhsd` register aperture.
-- `0x800-0xfff` is the recovery aperture. The wrapper range-checks the
-  package-defined offset and end, subtracts the package-defined base,
-  DWORD-aligns the resulting raw offset, and captures it with the AHB
-  transaction metadata.
+- `0x800-0xfff` is the Recovery aperture. The integration wrapper
+  range-checks the address and subtracts the Recovery base.
 
-The captured offset is passed as `ext_aperture_offset` into the A0/A3 path.
-For EXT accesses, A3 drives that raw offset directly onto the generated CPUif
-address; the generated register block performs the per-register address
-decode. USB traffic remains command-based, as required by the OCP USB
-transport, and A3 maps only that USB path from command plus word offset to the
-generated register aperture.
+`usb_ocp_recovery_top` contains `ahb_slv_sif`, which validates aligned
+32-bit accesses and holds the AHB transaction until the selected internal
+owner responds. A3 (`usb_ocp_recovery_rb_adapter`) converts a held EXT request
+into one generated CPU-interface request so software side effects occur
+exactly once. USB Recovery Agent commands do not use A3.
 
-The wrapper holds a raw EXT request through the AHB completion handshake and
-captures the returned data/error in the completion cycle. All OCP register
-reads/writes and the image drain (`INDIRECT_FIFO_DATA` reads) use this path; there
-is no separate sideband drain port. EXT FIFO-data reads are held until
-`payload_available` is asserted, and EXT FIFO accesses are deferred while a claimed
-USB FIFO transfer owns the resource.
+USB non-FIFO commands use the direct hardware endpoint. USB FIFO commands use
+A4 directly. New EXT requests are admitted when no USB command is requesting
+the resource. Once an EXT transfer is admitted, it remains in flight until
+acknowledgement.
+
+Every EXT FIFO control, status, and data access is deferred while a claimed
+USB FIFO command or packet reservation owns the FIFO aperture. EXT
+`INDIRECT_FIFO_DATA` reads additionally wait for `payload_available`. There is
+no active sideband FIFO drain path; firmware uses the generated register
+aperture.
 
 ### 3.7 Firmware-owned recovery procedure
 
-The hardware does not implement an OCP recovery lifecycle state machine. Caliptra
-firmware owns `DEVICE_STATUS.DEV_STATUS`, `DEVICE_STATUS.REC_REASON_CODE`, all
-`RECOVERY_STATUS` fields, and `HW_STATUS.FATAL_ERR` through the EXT CPU interface.
-The USB Recovery Agent reads those same stored values but cannot write them. Firmware
-uses the OCP-defined state and reason encodings to report recovery entry, pending
-images, execution outcomes, and fatal conditions.
+The hardware does not implement an OCP recovery lifecycle or platform
+boot-request/acknowledgement state machine. Caliptra firmware owns
+`DEVICE_STATUS.DEV_STATUS`, `DEVICE_STATUS.REC_REASON_CODE`,
+`RECOVERY_STATUS`, and firmware-programmable hardware status through the EXT
+CPU interface. The USB Recovery Agent reads those stored values but cannot
+write host-read-only fields.
 
-`RECOVERY_CTRL.ACTIVATE_REC_IMG` is a request field: the Recovery Agent sets it and
-firmware clears it after it has consumed and verified the requested image.
-`recovery_image_activated` is the required Caliptra streaming-boot level indication
-and asserts whenever the stored `RECOVERY_CTRL.ACTIVATE_REC_IMG` value is
-`0x0F`, regardless of the write source. Firmware performs any platform
-boot or reset action under its own recovery procedure.
+`RECOVERY_CTRL.ACTIVATE_REC_IMG` is a request field. The Recovery Agent writes
+`0x0F`; `recovery_image_activated` reflects that stored value. Caliptra
+firmware drains and verifies the image, performs any platform activation or
+restart, publishes the result, and clears the request.
 
-The only control-plane state in `usb_ocp_recovery_top` is the
-`DEVICE_STATUS.PROT_ERROR` sticky latch. USB-only unsupported-command and host-write-
-to-read-only-command decodes set it to the OCP-defined unsupported-command value.
-Only a completed Recovery Agent `DEVICE_STATUS` read clears it; firmware reads are
+`DEVICE_STATUS.PROT_ERROR` is a sticky hardware latch. A completed Recovery
+Agent `DEVICE_STATUS` read returns and clears it; firmware reads are
 non-destructive.
 
-`DEVICE_RESET` remains stored until firmware consumes and clears it. In contrast,
-`INDIRECT_FIFO_CTRL.RESET` atomically clears A4 FIFO state and self-clears for
-subsequent readback, while `CALIPTRA_STATUS.REGION_RESET` retains the firmware-visible
-sticky reset history.
+If an incomplete FIFO DATA batch is interrupted by replacement SETUP, bus
+reset, Device 0 disconnect/reset, or firmware claim abort, hardware clears
+packet staging/reservation, flushes the incomplete batch, and sets
+`CALIPTRA_STATUS.BATCH_ABORTED`. Firmware may then request
+`OCP_PROTOCOL_ERROR_GENERAL` (`0xFF`). That request is accepted only while
+`BATCH_ABORTED` is asserted and self-clears. It records
+`DEVICE_STATUS.PROT_ERROR=0xFF`; it also enters persistent protocol STALL only
+if a Device 0 OCP claim remains active.
+
+`INDIRECT_FIFO_CTRL.RESET` atomically clears FIFO state and self-clears for
+subsequent readback. `CALIPTRA_CTRL.OCP_CLAIM_ABORT` is a firmware-only
+write-one request that releases the retained claim, protocol STALL, staging,
+and reservation and then self-clears.
 
 ---
 
 ## 4. Path enablement - legacy and OCP coexisting
 
-Both paths are always structurally present; the arbiter routes per transfer:
+Both paths are always structurally present; the arbiter routes per
+transaction:
 
-- **Legacy path is never removed.** Standard enumeration and every non-recovery
-  EP0 transfer are replayed to `usb_dma`/`usb_reg_if` and serviced by device
-  firmware, exactly as the unmodified IP. This is what lets normal USB operation
-  and OCP recovery share one device and EP0.
-- **OCP path is active by default.** Once the recovery interface is advertised and
-  the device is enumerated, recovery-class SETUPs are claimed automatically. There
-  is no firmware "enable recovery" step; it is active whenever the device is
-  configured.
-- **Global override (chicken bit).** `CALIPTRA_CTRL.OCP_PATH_DISABLE` (a
-  Caliptra-specific control field outside the OCP command aperture, EXT/firmware
-  write-only) forces the arbiter to never claim an OCP-class SETUP, so every EP0
-  transfer falls through to the legacy SIE path bit-identically to the
-  un-arbitered IP. Reset default `0` (OCP recovery path active).
+- **Legacy path is never removed.** Standard enumeration and every
+  non-recovery EP0 transfer use the physical legacy DMA/register path.
+- **Physical SETUP delivery is always retained.** Every real Device 0 EP0
+  SETUP reaches the shared DMA. Recovery mirrors the bytes for classification.
+  If claimed, only the matching successful SETUP interrupt/dispatch
+  publication is masked.
+- **OCP path is active by default.** Once the Recovery interface is advertised
+  and the device is enumerated, valid Recovery-class SETUPs are claimed
+  automatically. There is no per-transfer firmware enable step.
+- **Compound isolation.** Only Device 0 is claimable. Hub, Device 1, and
+  non-EP0 transactions remain legacy-owned during Device 0 claim, drain,
+  STATUS wait, or protocol STALL.
+- **Global override (chicken bit).** `CALIPTRA_CTRL.OCP_PATH_DISABLE` is an
+  EXT/firmware-only field that prevents new OCP claims. With it set, Device 0
+  EP0 traffic remains on the legacy path. Reset default `0` means Recovery
+  classification is active.
 
 ---
 
 ## 5. Required initialization before OCP recovery
 
-OCP recovery is only serviceable after the USB device controller is initialized and
-the device is enumerated and configured. This device-controller bring-up and
-enumeration is MCU firmware's responsibility, following the general USB2 device
-programming flow in the
-[USB2 Programmer's Guide](https://github.com/chipsalliance/usb2/blob/main/docs/USB2_Programmers_Guide.md)
-(cold-boot sequencing, device-mode/EP0 initialization, and standard enumeration).
-That guide is the authoritative source for the generic controller bring-up steps;
-this document only calls out the one OCP-recovery-specific requirement layered on
-top of it:
+OCP Recovery is serviceable only after the USB device controller is initialized
+and Device 0 is enumerated and configured. Device-controller bring-up and
+enumeration are MCU firmware responsibilities, following the general USB2
+device programming flow in the
+[USB2 Programmer's Guide](https://github.com/chipsalliance/usb2/blob/main/docs/USB2_Programmers_Guide.md).
+That guide is authoritative for generic controller bring-up; this document
+calls out the Recovery-specific requirements:
 
-- **Advertise the recovery interface** by presenting the OCP recovery
-  configuration/interface/functional descriptors (Section 1) before connecting to
-  the host, so the host discovers the recovery interface during enumeration.
+- **Advertise the Recovery interface.** Install the OCP Recovery
+  configuration/interface/functional descriptors before connecting Device 0,
+  so the host discovers the interface during enumeration. Validation OCP v1.1
+  firmware enumeration uses the descriptor returned by
+  `usb_ocp_recovery_get_v1p1_config_descriptor()`; the
+  `usb_ocp_recovery_get_config_descriptor()` helper retains the compatibility
+  field order.
+- **Apply platform capability policy before connection.** The current platform
+  clears Forced Recovery, Management Reset, Device Reset, Interface Isolation,
+  and Flashless Boot. The resulting runtime `AGENT_CAPS` value is `0x1691`.
+- **Do not service claimed OCP commands through the MCU class hook.** Hardware
+  owns claimed DATA/STATUS/PING stages. The legacy class hook returns false for
+  the OCP envelope and logs a warning if such a request unexpectedly reaches
+  MCU dispatch.
 
-MCU firmware also programs the pre-Caliptra placeholder contents of `PROT_CAP`,
-`DEVICE_ID`, and `DEVICE_STATUS` so the interface is enumerable before Caliptra
-comes online; Caliptra firmware finalizes those registers once it boots (Section 6).
+`DEVICE_RESET` command support follows the live reset-related capability
+fields. With all five unsupported platform capabilities cleared, the command
+is rejected as unsupported. If firmware later advertises any of those
+capabilities, the implemented command accepts reads requesting 3 through
+64 bytes and exact 3-byte writes.
 
-Only after the device is configured are recovery-class control transfers claimed
-and serviced. The OCP path itself needs no separate enable and remains active while
-`OCP_PATH_DISABLE` is clear.
-
-> Timing note: the SETUP handler and endpoint arming for a claimed transfer must
-> complete inside the USB host / link-layer retry windows; production firmware must
-> not stall the critical arm-and-clear sequence with slow operations.
+Only after Device 0 is configured are Recovery-class control transfers
+serviceable. The OCP path itself needs no separate enable and remains active
+while `OCP_PATH_DISABLE` is clear.
 
 ---
 
 ## 6. Caliptra interaction (production)
 
-Caliptra is the recovery image consumer (the OCP "Device Firmware" role). As an AXI
-master it interacts with the OCP recovery register aperture:
+Caliptra is the recovery image consumer (the OCP "Device Firmware" role). As
+an AXI master it interacts with the OCP Recovery register aperture:
 
-1. **Finalize configuration.** Once Caliptra comes online, finalize the
-   `PROT_CAP` capability bitmap and `DEVICE_ID` left as MCU-programmed
-   placeholders, then set `DEVICE_STATUS` to a real value. This is what enables
-   the recovery interface for meaningful discovery/connection by the host: until
-   this point `DEVICE_STATUS` reads back the pending value MCU set, and the host
-   is expected to keep polling.
-2. **Detect recovery.** Set `RECOVERY_STATUS` to `0x1` (awaiting recovery image), then
-   monitor `RECOVERY_CTRL` for a command from the host.
-3. **Wait for a batch.** Wait for `cptra_ss_usb_recovery_payload_available_o`;
-   then read the image length from `INDIRECT_FIFO_CTRL` and inspect
+1. **Publish status.** Program the firmware-owned `DEVICE_STATUS`,
+   `RECOVERY_STATUS`, and hardware-status fields used by the Recovery Agent.
+2. **Detect a batch.** Wait for
+   `cptra_ss_usb_recovery_payload_available_o`; then read
+   `INDIRECT_FIFO_CTRL.IMAGE_SIZE` in DWORD units and inspect
    `INDIRECT_FIFO_STATUS`.
-4. **Drain.** Burst data from `INDIRECT_FIFO_DATA` repeatedly until the
-   notified batch is empty. Each read in the burst pops one DWORD from the CMS FIFO.
-5. **Authenticate.** Verify the image through Caliptra's normal secure-boot /
+3. **Drain.** Read `INDIRECT_FIFO_DATA` repeatedly until the notified batch is
+   empty. Each accepted read pops one DWORD from the CMS FIFO.
+4. **Authenticate.** Verify the image through Caliptra's normal secure-boot or
    authentication path.
-6. **Activate / report.** On success, drive image selection and activation via
-   `RECOVERY_CTRL` and boot the image; on failure, report via `RECOVERY_STATUS`.
+5. **Handle activation.** Observe `ACTIVATE_REC_IMG == 0x0F`, perform the
+   platform activation/restart required by firmware policy, publish success or
+   failure, and clear the request.
+6. **Handle interrupted batches.** If `BATCH_ABORTED` is set, discard any
+   partial image state and, when appropriate, request firmware-originated
+   general protocol error `0xFF`.
 
-OCP commands used on this path: `DEVICE_STATUS`, `INDIRECT_FIFO_CTRL`,
-`INDIRECT_FIFO_STATUS`, `INDIRECT_FIFO_DATA`, `RECOVERY_CTRL`, `RECOVERY_STATUS`.
+OCP commands used on this path include `DEVICE_STATUS`,
+`INDIRECT_FIFO_CTRL`, `INDIRECT_FIFO_STATUS`, `INDIRECT_FIFO_DATA`,
+`RECOVERY_CTRL`, and `RECOVERY_STATUS`.
 
-> Register bit-behavior scope: the per-command bit behavior defined by OCP
-> (clear-on-read, RW, RO) is the contract between the Recovery Agent (USB host) and
-> the device. It is not a contract for internal firmware (EXT/AXI) accesses; for
-> example, `DEVICE_STATUS` Protocol-Error clear-on-read applies to host reads, not
-> to Caliptra reads. Caliptra is able to write to spec-defined RO fields (such as
-> RECOVERY_REASON).
+> Register bit-behavior scope: the per-command behavior defined by OCP
+> (clear-on-read, RW, RO) is the contract between the Recovery Agent and the
+> device. It is not necessarily the contract for internal firmware EXT/AXI
+> accesses. For example, `DEVICE_STATUS.PROT_ERROR` clear-on-read applies to a
+> completed Recovery Agent read, not a Caliptra read.
 
 ---
 
 ## 7. Register aperture
 
-The recovery register aperture is placed at offset `0x800` within the USB
-register space (legacy `usbhsd` registers occupy `0x000`). Commands in the
-aperture: `PROT_CAP`, `DEVICE_ID`, `DEVICE_STATUS`, `DEVICE_RESET`,
-`RECOVERY_CTRL`, `RECOVERY_STATUS`, `HW_STATUS`, `INDIRECT_FIFO_CTRL`,
-`INDIRECT_FIFO_STATUS`, `INDIRECT_FIFO_DATA`, plus the Caliptra-specific
-`CALIPTRA_CTRL` (`OCP_PATH_DISABLE`) and `CALIPTRA_STATUS`
-(`REGION_RESET`, `OVERFLOW`, `IMAGE_DONE`, `BATCH_ABORTED`).
+The Recovery register aperture is placed at offset `0x800` within the local USB
+register space; legacy `usbhsd` registers occupy `0x000-0x7ff`, and Recovery
+occupies `0x800-0xfff`.
 
-The tables below give the byte offset, bit range, access type, reset value, and
-description for every field in the aperture.
+The generated field descriptions, offsets, access types, and reset values are
+published in the
+[Caliptra Subsystem Register Reference](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=).
+The maintained source is:
 
-#### Recovery Protocol Capabilities (`PROT_CAP`) - offset 0x800
+`third_party/usb2/systemrdl/usb_ocp_recovery_reg.rdl`
 
-Advertises recovery-protocol capabilities. Host-read-only: a host write is rejected and sets DEVICE_STATUS.PROT_ERROR. Firmware configures the advertised capability bits at boot.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x800 | [31:0] | REC_MAGIC_STRING_0 | RO | 0x2050434F | ASCII bytes 0-3 of the "OCP RECV" recovery-protocol magic string. |
-| 0x804 | [31:0] | REC_MAGIC_STRING_1 | RO | 0x56434552 | ASCII bytes 4-7 of the "OCP RECV" recovery-protocol magic string. |
-| 0x808 | [15:0] | REC_PROT_VERSION | RO | 0x0101 | Recovery protocol version: major=1, minor=1. |
-| 0x808 | [16] | AGENT_CAPS_IDENTIFICATION | RW | 0x1 | Capability bit: DEVICE_ID supported. |
-| 0x808 | [17] | AGENT_CAPS_FORCED_RECOVERY | RW | 0x1 | Capability bit: forced-recovery-from-reset supported. |
-| 0x808 | [18] | AGENT_CAPS_MGMT_RESET | RW | 0x0 | Capability bit: management reset. Not supported. |
-| 0x808 | [19] | AGENT_CAPS_DEVICE_RESET | RW | 0x1 | Capability bit: DEVICE_RESET command supported. |
-| 0x808 | [20] | AGENT_CAPS_DEVICE_STATUS | RW | 0x1 | Capability bit: DEVICE_STATUS command supported. |
-| 0x808 | [21] | AGENT_CAPS_RECOVERY_MEM_ACCESS | RW | 0x0 | Capability bit: direct CMS-memory window. Not implemented (this agent is FIFO-only). |
-| 0x808 | [22] | AGENT_CAPS_LOCAL_C_IMAGE | RW | 0x0 | Capability bit: local C-image support. Not supported. |
-| 0x808 | [23] | AGENT_CAPS_PUSH_C_IMAGE | RW | 0x1 | Capability bit: push C-image (FIFO streaming boot) supported. |
-| 0x808 | [24] | AGENT_CAPS_INTERFACE_ISOLATION | RW | 0x0 | Capability bit: interface isolation. Not supported. |
-| 0x808 | [25] | AGENT_CAPS_HARDWARE_STATUS | RW | 0x1 | Capability bit: HW_STATUS command supported. |
-| 0x808 | [26] | AGENT_CAPS_VENDOR_COMMAND | RW | 0x1 | Capability bit: VENDOR command supported. |
-| 0x808 | [27] | AGENT_CAPS_FLASHLESS_BOOT | RW | 0x1 | Capability bit: flashless boot supported (enter via DEVICE_RESET.FORCED_RECOVERY=0xE). |
-| 0x808 | [28] | AGENT_CAPS_FIFO_CMS_SUPPORT | RW | 0x1 | Capability bit: Indirect FIFO CMS transport supported. |
-| 0x808 | [31:29] | AGENT_CAPS_RESERVED | RO | 0x0 | Reserved. |
-| 0x80C | [7:0] | NUM_OF_CMS_REGIONS | RW | 0x01 | Number of component memory spaces advertised. One FIFO-backed CMS region. |
-| 0x80C | [15:8] | MAX_RESP_TIME | RW | 0x00 | Maximum command response time, in 2^N microseconds. |
-| 0x80C | [23:16] | HEARTBEAT_PERIOD | RW | 0x00 | Heartbeat period, in 2^N microseconds. 0 = not supported. |
-| 0x80C | [31:24] | RESERVED_31_24 | RO | 0x00 | Reserved. |
-
-#### Device Identification (`DEVICE_ID`) - offset 0x810
-
-Reports device identification data. Read-only to both host and firmware; every field is driven by a fixed hardware parameter (no runtime hardware or firmware write path).
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x810 | [7:0] | DESC_TYPE | RO | 0x00 | Selects the DEVICE_ID descriptor encoding (PCI, IANA, UUID, PnP, ACPI, NVMe-MI, etc). Driven by a fixed hardware parameter. |
-| 0x810 | [15:8] | VENDOR_SPECIFIC_STR_LENGTH | RO | 0x00 | Length of the optional vendor-specific descriptor string. Driven by a fixed hardware parameter. |
-| 0x810 | [31:16] | DATA_3_2 | RO | 0x0000 | First descriptor-specific payload bytes for the selected DEVICE_ID type. Driven by a fixed hardware parameter. |
-| 0x814 | [31:0] | DATA_7_4 | RO | 0x00000000 | Descriptor-specific DEVICE_ID payload bytes 4-7. Driven by a fixed hardware parameter. |
-| 0x818 | [31:0] | DATA_11_8 | RO | 0x00000000 | Descriptor-specific DEVICE_ID payload bytes 8-11. Driven by a fixed hardware parameter. |
-| 0x81C | [31:0] | DATA_15_12 | RO | 0x00000000 | Descriptor-specific DEVICE_ID payload bytes 12-15. Driven by a fixed hardware parameter. |
-| 0x820 | [31:0] | DATA_19_16 | RO | 0x00000000 | Descriptor-specific DEVICE_ID payload bytes 16-19. Driven by a fixed hardware parameter. |
-| 0x824 | [31:0] | DATA_23_20 | RO | 0x00000000 | Descriptor-specific DEVICE_ID payload bytes 20-23. Driven by a fixed hardware parameter. |
-
-#### Device Status (`DEVICE_STATUS`) - offset 0x828
-
-Reports device health and recovery progress. DEV_STATUS and REC_REASON_CODE are firmware-owned via cpuif (Caliptra publishes recovery-state transitions here). PROT_ERROR, HEARTBEAT, and the VENDOR_STATUS payload bytes are driven directly by hardware; firmware and the Recovery Agent only read them (PROT_ERROR is additionally sticky and host-read-clearing).
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x828 | [7:0] | DEV_STATUS | RW | 0x01 | Device health / recovery state. Firmware-owned via cpuif; the Recovery Agent reads the same stored value. |
-| 0x828 | [15:8] | PROT_ERROR | RO | 0x00 | Protocol-error code, set by hardware on an unsupported/invalid USB command. Sticky until a completed Recovery Agent read clears it; firmware reads are non-destructive. |
-| 0x828 | [31:16] | REC_REASON_CODE | RW | 0x0000 | 16-bit recovery reason code. Firmware-owned via cpuif; the Recovery Agent reads the same stored value. |
-| 0x82C | [15:0] | HEARTBEAT | RO | 0x0000 | Heartbeat counter. Driven by hardware. |
-| 0x82C | [23:16] | VENDOR_STATUS_LENGTH | RO | 0x00 | Length of the vendor-status payload. Driven by hardware. |
-| 0x82C | [31:24] | VENDOR_STATUS_0 | RO | 0x00 | Vendor-status payload byte 0. Driven by hardware. |
-| 0x830 | [31:0] | VENDOR_STATUS_4_1 | RO | 0x00000000 | Vendor-status payload bytes 1-4. Driven by hardware. |
-| 0x834 | [31:0] | VENDOR_STATUS_8_5 | RO | 0x00000000 | Vendor-status payload bytes 5-8. Driven by hardware. |
-| 0x838 | [31:0] | VENDOR_STATUS_12_9 | RO | 0x00000000 | Vendor-status payload bytes 9-12. Driven by hardware. |
-| 0x83C | [31:0] | VENDOR_STATUS_16_13 | RO | 0x00000000 | Vendor-status payload bytes 13-16. Driven by hardware. |
-| 0x840 | [31:0] | VENDOR_STATUS_20_17 | RO | 0x00000000 | Vendor-status payload bytes 17-20. Driven by hardware. |
-| 0x844 | [31:0] | VENDOR_STATUS_24_21 | RO | 0x00000000 | Vendor-status payload bytes 21-24. Driven by hardware. |
-| 0x848 | [31:0] | VENDOR_STATUS_28_25 | RO | 0x00000000 | Vendor-status payload bytes 25-28. Driven by hardware. |
-| 0x84C | [31:0] | VENDOR_STATUS_32_29 | RO | 0x00000000 | Vendor-status payload bytes 29-32. Driven by hardware. |
-| 0x850 | [31:0] | VENDOR_STATUS_36_33 | RO | 0x00000000 | Vendor-status payload bytes 33-36. Driven by hardware. |
-| 0x854 | [31:0] | VENDOR_STATUS_40_37 | RO | 0x00000000 | Vendor-status payload bytes 37-40. Driven by hardware. |
-| 0x858 | [31:0] | VENDOR_STATUS_44_41 | RO | 0x00000000 | Vendor-status payload bytes 41-44. Driven by hardware. |
-| 0x85C | [31:0] | VENDOR_STATUS_48_45 | RO | 0x00000000 | Vendor-status payload bytes 45-48. Driven by hardware. |
-| 0x860 | [31:0] | VENDOR_STATUS_52_49 | RO | 0x00000000 | Vendor-status payload bytes 49-52. Driven by hardware. |
-| 0x864 | [31:0] | VENDOR_STATUS_56_53 | RO | 0x00000000 | Vendor-status payload bytes 53-56. Driven by hardware. |
-
-#### Device Reset (`DEVICE_RESET`) - offset 0x868
-
-Requests a device or management reset, and controls forced-recovery / flashless-boot entry on the next platform reset. Written by the Recovery Agent via the hardware command path; firmware can read or clear the stored request over the EXT interface.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x868 | [7:0] | RESET_CTRL | RW | 0x00 | Requests a device reset or management reset. Written by the Recovery Agent; firmware can read or clear the request. |
-| 0x868 | [15:8] | FORCED_RECOVERY | RW | 0x00 | Controls forced recovery / flashless boot on the next platform reset (0xE = flashless boot, 0xF = recovery mode). |
-| 0x868 | [23:16] | IF_CTRL | RW | 0x00 | Interface-mastering enable control. |
-| 0x868 | [31:24] | RESERVED_31_24 | RO | 0x00 | Reserved padding (not part of the 3-byte command payload). |
-
-#### Recovery Control (`RECOVERY_CTRL`) - offset 0x86C
-
-Selects and activates a recovery image. ACTIVATE_REC_IMG is a request field: the Recovery Agent sets it (0x0F) and firmware clears it once the image is consumed and verified.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x86C | [7:0] | CMS | RW | 0x00 | Selects the component memory space containing the recovery image. |
-| 0x86C | [15:8] | REC_IMG_SEL | RW | 0x00 | Selects memory-window vs. device-stored recovery image source. |
-| 0x86C | [23:16] | ACTIVATE_REC_IMG | RW | 0x00 | Requests activation of the selected recovery image. Recovery Agent writes 0x0F; firmware clears the stored request after consuming it. |
-| 0x86C | [31:24] | RESERVED_31_24 | RO | 0x00 | Reserved padding (not part of the 3-byte command payload). |
-
-#### Recovery Status (`RECOVERY_STATUS`) - offset 0x870
-
-Reports recovery outcome. Firmware-owned; the Recovery Agent reads the same stored value.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x870 | [3:0] | DEV_REC_STATUS | RW | 0x0 | Recovery status code. Firmware-owned; the Recovery Agent reads the same stored value. |
-| 0x870 | [7:4] | REC_IMG_INDEX | RW | 0x0 | Index of the recovery image being reported on. |
-| 0x870 | [15:8] | VENDOR_SPECIFIC_STATUS | RW | 0x00 | Vendor-specific recovery status. |
-| 0x870 | [31:16] | RESERVED_31_16 | RO | 0x0000 | Reserved padding. |
-
-#### Hardware Status (`HW_STATUS`) - offset 0x874
-
-Reports hardware health. Firmware-owned; the Recovery Agent reads the same stored value.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x874 | [0] | TEMP_CRITICAL | RW | 0x0 | Temperature-critical indication. |
-| 0x874 | [1] | SOFT_ERR | RW | 0x0 | Hardware soft-error indication. |
-| 0x874 | [2] | FATAL_ERR | RW | 0x0 | Hardware fatal-error indication. Firmware-owned. |
-| 0x874 | [7:3] | RESERVED_7_3 | RW | 0x00 | Reserved. |
-| 0x874 | [15:8] | VENDOR_HW_STATUS | RW | 0x00 | Vendor-defined hardware status bitmap. |
-| 0x874 | [23:16] | CTEMP | RW | 0x00 | Composite temperature reading. |
-| 0x874 | [31:24] | VENDOR_HW_STATUS_LEN | RW | 0x00 | Length of the vendor hardware-status payload. |
-
-#### Indirect FIFO Control (`INDIRECT_FIFO_CTRL`) - offset 0x984
-
-Selects the FIFO-backed CMS region, resets the FIFO indices, and programs the expected image size (in DWORDs).
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x984 | [7:0] | CMS | RW | 0x00 | Selects the FIFO-backed component memory space. |
-| 0x984 | [15:8] | RESET | RW | 0x00 | Write 1 to reset the FIFO read/write indices; self-clears after the reset is applied. |
-| 0x984 | [31:16] | RESERVED_31_16 | RO | 0x0000 | Reserved. |
-| 0x988 | [31:0] | IMAGE_SIZE | RW | 0x00000000 | Image size to load, in 4-byte (DWORD) units. |
-
-#### Indirect FIFO Status (`INDIRECT_FIFO_STATUS`) - offset 0x98C
-
-Reports image FIFO occupancy and capabilities. EMPTY/FULL are authoritative; WRITE_INDEX/READ_INDEX are debug fields that wrap modulo the FIFO depth and may be equal at both empty and full.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x98C | [0] | EMPTY | RO | 0x1 | FIFO-empty indicator. Authoritative occupancy flag (preferred over comparing indices). |
-| 0x98C | [1] | FULL | RO | 0x0 | FIFO-full indicator. Authoritative occupancy flag (preferred over comparing indices). |
-| 0x98C | [7:2] | RESERVED_7_2 | RO | 0x0 | Reserved. |
-| 0x98C | [15:8] | REGION_TYPE | RO | 0x00 | Selected FIFO region type. Returns 0x00 (code space) in this implementation. |
-| 0x98C | [31:16] | RESERVED_31_16 | RO | 0x0000 | Reserved. |
-| 0x990 | [31:0] | WRITE_INDEX | RO | 0x00000000 | FIFO write index, in 4-byte units. Debug field; wraps modulo the FIFO depth (use EMPTY/FULL for occupancy). |
-| 0x994 | [31:0] | READ_INDEX | RO | 0x00000000 | FIFO read index, in 4-byte units. Debug field; wraps modulo the FIFO depth (use EMPTY/FULL for occupancy). |
-| 0x998 | [31:0] | FIFO_SIZE | RO | 0x00000000 | Total FIFO depth, in 4-byte units (64 DWORDs backing store). |
-| 0x99C | [31:0] | MAX_TRANSFER_SIZE | RO | 0x00000000 | Maximum single-transfer size, in 4-byte units (64 DWORDs). |
-
-#### Indirect FIFO Data (`INDIRECT_FIFO_DATA`) - offset 0x9A0
-
-Image data FIFO. The Recovery Agent writes DWORDs over USB; Caliptra reads (and pops) DWORDs over the EXT/AXI path.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x9A0 | [31:0] | DATA | RO | 0x00000000 | FIFO head DWORD. Each firmware read pops exactly one entry from the image FIFO. |
-
-#### Vendor (`VENDOR`) - offset 0x9A4
-
-Reserved placeholder for a future vendor-defined command.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0x9A4 | [7:0] | VENDOR_DATA | RW | 0x00 | Placeholder byte for the vendor-defined command space (reserved for future use). |
-| 0x9A4 | [31:8] | RESERVED_31_8 | RO | 0x000000 | Reserved padding. |
-
-#### Caliptra-specific Control (`CALIPTRA_CTRL`) - offset 0xA00
-
-Caliptra-specific control bits outside the OCP command aperture. Firmware/EXT write-only; not reachable by the USB host command decode.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0xA00 | [0] | OCP_PATH_DISABLE | RW | 0x0 | Emergency fallback: when set, forces every EP0 transfer through the legacy path and disables OCP recovery classification. Firmware/EXT write-only; a USB-host write is ignored. Reset default 0 (recovery path active). |
-| 0xA00 | [31:1] | RESERVED_31_1 | RO | 0x0 | Reserved for future Caliptra-specific control bits. |
-
-#### Caliptra-specific Status (`CALIPTRA_STATUS`) - offset 0xA04
-
-Caliptra-specific sticky FIFO status bits outside the OCP command aperture.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0xA04 | [0] | REGION_RESET | RO | 0x0 | Sticky: set when an INDIRECT_FIFO_CTRL region reset occurs; cleared on the next region reset. |
-| 0xA04 | [1] | OVERFLOW | RO | 0x0 | Sticky: set on a genuine FIFO-full overflow drop while the image is still incomplete. |
-| 0xA04 | [2] | IMAGE_DONE | RO | 0x0 | Sticky: set when the pushed DWORD count reaches the programmed image size. |
-| 0xA04 | [3] | BATCH_ABORTED | RO | 0x0 | Sticky: set when a new EP0 SETUP aborts a claimed FIFO OUT transfer, flushing the unconsumed batch. Cleared by an INDIRECT_FIFO_CTRL reset. |
-| 0xA04 | [31:4] | RESERVED_31_4 | RO | 0x0 | Reserved for future Caliptra-specific status bits. |
-
-#### Window Size Padding (`WINDOW_PAD`) - offset 0xFFC
-
-Padding-only register forcing the recovery aperture to occupy a natural 2 KiB address window.
-
-| Byte offset | Bits | Field | Access | Reset | Description |
-|---|---|---|---|---|---|
-| 0xFFC | [31:0] | DATA | RO | 0x00000000 | Padding only, forces the register block to occupy a natural 2 KiB window. Not part of the OCP Recovery register set. |
+The aperture includes the OCP commands `PROT_CAP`, `DEVICE_ID`,
+`DEVICE_STATUS`, `DEVICE_RESET`, `RECOVERY_CTRL`, `RECOVERY_STATUS`,
+`HW_STATUS`, `INDIRECT_FIFO_CTRL`, `INDIRECT_FIFO_STATUS`,
+`INDIRECT_FIFO_DATA`, and `VENDOR`, plus Caliptra-specific
+`CALIPTRA_CTRL` and `CALIPTRA_STATUS`.
 
 ---
 
 ## 8. Key invariants
 
-- **Single-packet OCP DATA.** Advertised `wMaxRd/WrTransferSize = 64`, so each OCP
-  read/write DATA stage is at most one HS MaxPacket (64 B). Enforced by an arbiter
-  assertion on IN response bytes and OUT byte count.
-- **Legacy transparency.** A claimed transfer produces zero legacy side effects; an
-  unclaimed transfer is replayed bit-identically. Standard enumeration is
-  unaffected whether or not `OCP_PATH_DISABLE` is set.
-- **Batch integrity.** A superseding SETUP or bus reset during a claimed FIFO OUT
-  transfer clears A2/A4 state, flushes the unconsumed batch, and sets
-  `CALIPTRA_STATUS.BATCH_ABORTED`. A host CRC error or lost-ACK retry does not
-  create a duplicate FIFO write.
-- **SETUP handshake.** The device always ACKs the SETUP stage; claimed SETUPs are
-  trapped and answered, never NAK/STALLed at the SETUP stage.
+- **Single-packet OCP DATA.** Advertised
+  `wMaxRdTransferSize = wMaxWrTransferSize = 64`, so each OCP DATA stage is at
+  most one 64-byte MaxPacket.
+- **Physical SETUP preservation.** Every real Device 0 EP0 SETUP reaches the
+  shared physical DMA. Recovery classification never fabricates or replays a
+  SETUP.
+- **Selective success masking.** A claimed SETUP retains physical SETUP side
+  effects but suppresses only the matching legacy successful-completion
+  interrupt/dispatch publication.
+- **Compound transparency.** Hub, Device 1, and non-EP0 traffic remain
+  independently serviceable during all retained Device 0 OCP states.
+- **Transaction-stable responses.** Response metadata is snapped for the
+  active transaction and cannot change before wire completion.
+- **Persistent protocol STALL.** A protocol error remains stalled until a
+  successfully completed replacement SETUP, bus reset, Device 0 local reset,
+  or firmware claim abort. A corrupt replacement SETUP does not release it.
+- **Packet and batch integrity.** A USB OUT packet is committed only after
+  complete-packet validation. A superseding SETUP or teardown during an
+  incomplete FIFO write flushes the incomplete batch and sets
+  `BATCH_ABORTED`; a CRC retry does neither.
+- **FIFO occupancy.** All 64 entries are usable. Equal indices are legal at
+  empty and full; `EMPTY` and `FULL` are authoritative.
+- **Reservation before acceptance.** PING/DATA acceptance implies capacity is
+  reserved for the whole packet. Capacity pressure NAK/NYET is flow control,
+  not protocol error.
+- **Published-batch isolation.** While `payload_available` is asserted, every
+  new FIFO DATA request receives NAK until the FIFO becomes empty and
+  `payload_available` deasserts. Partial firmware drain does not reopen host
+  admission.
+- **Bounded drain.** A valid 64-byte packet drains as 16 consecutive accepted
+  DWORDs while STATUS remains NAK.
+- **Local teardown.** Device 0 disconnect/reset clears Recovery-local state
+  without resetting the shared compound DMA.
 
 ---
 
 ## 9. Companion documentation
 
-- Protocol-flow companion: [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
+- Protocol-flow companion:
+  [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
+- Generated register reference:
+  [Caliptra Subsystem Register Reference](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)
+
+---
+
+## 10. Implemented mirrored-SETUP firmware contract
+
+**Status: implemented.** The former trap/replay architecture has been replaced
+by post-synchronizer mirrored SETUP. The legacy firmware register interface is
+unchanged.
+
+The implementation forwards every real Device 0 EP0 SETUP request/data/
+completion to the shared legacy DMA while observing the same eight-byte
+payload for OCP classification. A claimed SETUP may overwrite the legacy
+SETUP SRAM and produces the normal valid `setup_received` effects. Hardware
+suppresses only the claimed SETUP's matching successful DMA interrupt/
+dispatch publication. Subsequent DATA/STATUS/PING transactions remain
+OCP-owned; Hub, Device 1, and non-EP0 transactions remain legacy-owned.
+
+### 10.1 Supersession and firmware responsibility
+
+A replacement SETUP supersedes the preceding EP0 operation (USB 2.0 Section
+5.5.5). Obsolete requests are not queued for later firmware execution. The
+architecture does not add a hardware authorization/session mechanism that can
+cancel CPU instructions or prevent a stale firmware write already in flight.
+
+Production MCU firmware must:
+
+1. Retain its legacy responsibility to handle a new SETUP superseding an
+   unfinished legacy EP0 request, including discarding the obsolete request.
+2. Recognize the OCP request envelope and active Recovery interface. Leave
+   claimed requests to hardware: do not execute them, arm a legacy response,
+   or issue a legacy STALL merely because they are class requests.
+3. Consume or clear legacy SETUP-pending bookkeeping using the existing
+   interface and SETUP-buffer coherence rules. Clearing the software flag does
+   not clear hardware OCP ownership.
+4. Not require a legacy SETUP interrupt to service OCP Recovery. Hardware
+   services claimed control transfers; Caliptra firmware uses Recovery
+   registers and `payload_available`.
+5. Apply existing shared-SETUP-buffer supersession discipline. A newer SETUP
+   payload may overwrite an earlier payload while firmware is active.
+
+The MCU legacy dispatcher and Caliptra Recovery library are separate flows.
+Suppressing a claimed SETUP's successful legacy interrupt does not prevent
+Recovery service. Any legacy flag cleanup is bookkeeping, not a new
+per-OCP-command firmware dispatch requirement.
+
+`DEVCMDSTAT.SETUP` is a sticky pending bit, not a counter or generation
+number. If it is already one, another SETUP leaves it one. Forwarding
+`setup_received` does not by itself detect every replacement, make two SRAM
+word reads atomic, or cancel an already-executing handler. No atomic hardware
+cancellation guarantee is implied.
+
+### 10.2 Hardware boundaries and timing obligations
+
+The implemented hardware boundaries are:
+
+- OCP captures and validates its own SETUP copy, maintains its own control
+  toggles, and isolates claimed DATA/STATUS/PING and NAK reporting from legacy
+  DMA.
+- Forwarding valid `setup_received` preserves the existing software flag,
+  address update, SETUP SRAM, and legacy toggle effects. The local DMA success
+  mask does not change the real PIE result.
+- The success mask is qualified by the Device 0 SETUP transaction owner and
+  retained until the matching DMA valid lifecycle retires. A raw next
+  `epinfo_req` is not treated as proof of DMA retirement.
+- USB bus reset and Device 0 local reset clear mask/tracking unconditionally,
+  without requiring normal DMA retirement.
+- Non-EP0, Hub, and Device 1 responses, success, and interrupts are selected
+  by current transaction identity and are not suppressed by retained Device 0
+  EP0 claim or stall state.
+- Late preparation of an obsolete legacy response cannot drive the wire while
+  Recovery owns Device 0 EP0. Firmware remains responsible for not exposing
+  stale prepared state when a later legacy SETUP returns ownership.
+- Response metadata remains transaction-stable. Late register or error changes
+  affect a later request, not the transaction already on the wire.
+- FIFO packet capacity is reserved before ACK/PING acceptance, and an accepted
+  FIFO packet cannot later fail because firmware consumed or changed capacity.
+
+### 10.3 Relationship to Caliptra firmware and error recovery
+
+The legacy SETUP observation/ignore requirement concerns MCU device firmware,
+not per-command service of OCP Recovery. Caliptra's FIFO drain and
+firmware-owned Recovery status obligations in Sections 3.7 and 6 remain.
+
+For an active, incomplete `INDIRECT_FIFO_DATA` write, a replacement SETUP,
+USB bus reset, Device 0 disconnect/reset, or firmware `OCP_CLAIM_ABORT` aborts
+the operation whether RX is still arriving, fully staged, partly draining, or
+waiting for STATUS. The batch-abort indication describes the interrupted FIFO
+operation, not merely a cycle on which a FIFO push occurred. Other OCP
+commands, a successfully completed transfer, and a CRC retry alone do not set
+`BATCH_ABORTED`.
+
+After observing `BATCH_ABORTED`, firmware may request general error `0xFF`.
+Hardware accepts that request only while the batch-aborted condition is
+present, self-clears the request bit, and records `PROT_ERROR=0xFF`. If a
+Device 0 OCP claim remains active, the arbiter also holds Device 0 EP0 in
+persistent protocol STALL. A completed Recovery Agent `DEVICE_STATUS` read
+returns and clears the error.
+
+**Reconnect assumption:** a USB bus reset occurs after Device 0 reconnection
+and before new endpoint traffic. Existing shared DMA state may remain valid if
+disconnect suppressed its natural `endtransfer`; reconnect reset flushes that
+state. Recovery-local claim, staging, reservation, success-mask, and response
+tracking do not wait for shared DMA retirement. Reset is teardown, not a
+successful transfer completion.
