@@ -1,3 +1,5 @@
++define+AVERY_AXI_UVM+AVERY_UVM
++define+AVERY_AXI_INTERCONNECT
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl
