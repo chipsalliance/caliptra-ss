@@ -46,6 +46,11 @@
      RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK | \
      RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK)
 
+#define USB_OCP_RECOVERY_VENDOR_DEFAULT_DATA 0x5Au
+#define USB_OCP_RECOVERY_IDENTIFICATION_ENABLE_TOKEN 0xA3u
+#define USB_OCP_RECOVERY_IDENTIFICATION_DISABLE_TOKEN 0xA4u
+#define USB_OCP_RECOVERY_VENDOR_DISABLE_TOKEN 0xA5u
+
 // USB 2.0 Section 9.6.3 Table 9-10: a configuration descriptor is 9 bytes long.
 #define USB_STD_CONFIGURATION_DESCRIPTOR_LENGTH 0x09u
 
@@ -99,6 +104,14 @@ const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len);
 // Unsupported reset, recovery-mode, flashless-boot, and interface-mastering
 // features are removed from the firmware-programmable PROT_CAP bitmap.
 bool usb_ocp_recovery_apply_capability_policy(void);
+
+// Program and verify the firmware-owned 24-byte DEVICE_ID register storage.
+// Call this before usb_ocp_recovery_apply_capability_policy() advertises it.
+bool usb_ocp_recovery_program_device_id(void);
+
+// Apply runtime policy requests conveyed through firmware-owned Recovery
+// storage. Returns true when a capability policy was updated.
+bool usb_ocp_recovery_service_capability_policy(void);
 
 // Class-request hook for OCP Recovery EP0 traffic.  The VHDL PIE arbiter
 // classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed requests to the

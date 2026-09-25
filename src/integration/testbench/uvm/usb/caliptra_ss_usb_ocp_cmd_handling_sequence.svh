@@ -21,6 +21,14 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
     `uvm_object_utils(caliptra_ss_usb_ocp_cmd_handling_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
+    localparam bit [7:0] VENDOR_DEFAULT_DATA = 8'h5A;
+    localparam bit [7:0] IDENTIFICATION_ENABLE_TOKEN = 8'hA3;
+    localparam bit [7:0] IDENTIFICATION_DISABLE_TOKEN = 8'hA4;
+    localparam bit [7:0] VENDOR_DISABLE_TOKEN = 8'hA5;
+    localparam bit [OCP_SPEC_MIN_LEN_DEVICE_ID*8-1:0]
+        EXPECTED_DEVICE_ID =
+            192'h0000000000001F1E1D1C1B1A191817161514131211100002;
+
     protected int unsigned checks_executed[string];
 
     function new(string name = "caliptra_ss_usb_ocp_cmd_handling_sequence");
@@ -124,7 +132,15 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         input bit [15:0] agent_caps);
 
         bit [7:0] response[$];
+        bit [7:0] prot_cap_response[$];
         bit [7:0] empty_payload[$];
+        bit [7:0] payload[$];
+        bit [15:0] updated_agent_caps;
+        bit [7:0] unused_cms_count;
+        bit [7:0] unused_heartbeat_period;
+        bit identification_disabled;
+        bit identification_enabled;
+        bit vendor_disabled;
         if (agent_caps[OCP_CAP_VENDOR]) begin
             ocp_read(OCP_CMD_VENDOR, response,
                      "OCP_CMD_009_VENDOR_ADVERTISED");
@@ -134,8 +150,116 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                     $sformatf("Advertised VENDOR response length=%0d is outside 1..%0d.",
                               response.size(), wMaxRdTransferSize))
             end
+            if ((response.size() == 1) &&
+                (response[0] != VENDOR_DEFAULT_DATA)) begin
+                `uvm_error("OCP_CMD",
+                    $sformatf("Advertised VENDOR data=0x%02h, expected firmware-programmed 0x%02h.",
+                              response[0], VENDOR_DEFAULT_DATA))
+            end
             mark_check("OCP_CMD_009",
                 "advertised VENDOR transport accepted; payload is vendor-defined");
+
+            // Firmware owns Identification advertisement. Disable it while
+            // VENDOR remains available as the directed policy request channel.
+            payload = '{IDENTIFICATION_DISABLE_TOKEN};
+            ocp_write(
+                OCP_CMD_VENDOR, payload,
+                "OCP_CMD_002_DEVICE_ID_DISABLE");
+            identification_disabled = 1'b0;
+            repeat (100) begin
+                ocp_read(
+                    OCP_CMD_PROT_CAP, prot_cap_response,
+                    "OCP_CMD_002_DEVICE_ID_DISABLE_POLL");
+                if (prot_cap_response.size() >
+                        OCP_OFF_PC_AGENT_CAPS_HI) begin
+                    updated_agent_caps = {
+                        prot_cap_response[OCP_OFF_PC_AGENT_CAPS_HI],
+                        prot_cap_response[OCP_OFF_PC_AGENT_CAPS_LO]};
+                    if (!updated_agent_caps[OCP_CAP_IDENTIFICATION]) begin
+                        identification_disabled = 1'b1;
+                        break;
+                    end
+                end
+                #1us;
+            end
+            if (!identification_disabled) begin
+                `uvm_error("OCP_CMD",
+                    "Firmware did not clear Identification capability after the disable token.")
+            end
+            empty_payload.delete();
+            ocp_expect_protocol_error(
+                1'b1, OCP_CMD_DEVICE_ID, empty_payload,
+                OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+                "OCP_CMD_002_DEVICE_ID_DISABLED_IN", 1'b1);
+            mark_check("OCP_CMD_002",
+                "firmware-disabled DEVICE_ID rejected");
+
+            payload = '{IDENTIFICATION_ENABLE_TOKEN};
+            ocp_write(
+                OCP_CMD_VENDOR, payload,
+                "OCP_CMD_002_DEVICE_ID_ENABLE");
+            identification_enabled = 1'b0;
+            repeat (100) begin
+                ocp_read(
+                    OCP_CMD_PROT_CAP, prot_cap_response,
+                    "OCP_CMD_002_DEVICE_ID_ENABLE_POLL");
+                if (prot_cap_response.size() >
+                        OCP_OFF_PC_AGENT_CAPS_HI) begin
+                    updated_agent_caps = {
+                        prot_cap_response[OCP_OFF_PC_AGENT_CAPS_HI],
+                        prot_cap_response[OCP_OFF_PC_AGENT_CAPS_LO]};
+                    if (updated_agent_caps[OCP_CAP_IDENTIFICATION]) begin
+                        identification_enabled = 1'b1;
+                        break;
+                    end
+                end
+                #1us;
+            end
+            if (!identification_enabled) begin
+                `uvm_error("OCP_CMD",
+                    "Firmware did not restore Identification capability after the enable token.")
+            end
+
+            // Restore the firmware-owned VENDOR payload before independently
+            // disabling VENDOR command support.
+            payload = '{VENDOR_DEFAULT_DATA};
+            ocp_write(
+                OCP_CMD_VENDOR, payload,
+                "OCP_CMD_009_VENDOR_DATA_RESTORE");
+
+            // This directed firmware contract proves that capability
+            // advertisement controls both VENDOR directions at runtime.
+            payload = '{VENDOR_DISABLE_TOKEN};
+            ocp_write(OCP_CMD_VENDOR, payload, "OCP_CMD_009_VENDOR_DISABLE");
+            vendor_disabled = 1'b0;
+            repeat (100) begin
+                prot_cap_read_and_check(
+                    updated_agent_caps,
+                    unused_cms_count,
+                    unused_heartbeat_period);
+                if (!updated_agent_caps[OCP_CAP_VENDOR]) begin
+                    vendor_disabled = 1'b1;
+                    break;
+                end
+                #1us;
+            end
+            if (!vendor_disabled) begin
+                `uvm_error("OCP_CMD",
+                    "Firmware did not clear VENDOR capability after the disable token.")
+            end
+
+            empty_payload.delete();
+            ocp_expect_protocol_error(
+                1'b1, OCP_CMD_VENDOR, empty_payload,
+                OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+                "OCP_CMD_009_VENDOR_DISABLED_IN", 1'b1);
+            payload = '{VENDOR_DEFAULT_DATA};
+            ocp_expect_protocol_error(
+                1'b0, OCP_CMD_VENDOR, payload,
+                OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+                "OCP_CMD_009_VENDOR_DISABLED_OUT", 1'b1);
+            mark_check("OCP_CMD_009",
+                "firmware-disabled VENDOR rejected in both directions");
         end else begin
             empty_payload.delete();
             ocp_expect_protocol_error(
@@ -276,9 +400,14 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             $sformatf("PROT_CAP spec invariants checked caps=0x%04h cms_count=%0d",
                       agent_caps, cms_count));
 
-        device_id_read_and_check();
+        device_id_read_and_check(EXPECTED_DEVICE_ID);
         mark_check("OCP_CMD_002",
-            "DEVICE_ID length, descriptor type, and vendor string length checked");
+            "firmware-programmed DEVICE_ID readback and host-RO policy checked");
+        rejected_write = '{8'h00};
+        ocp_expect_protocol_error(
+            1'b0, OCP_CMD_DEVICE_ID, rejected_write,
+            OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+            "OCP_CMD_002_DEVICE_ID_HOST_WRITE", 1'b1);
 
         device_status_read_and_check(
             device_status, "OCP_CMD_011_DEVICE_STATUS");
@@ -307,6 +436,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         recovery_status_read_and_check();
         check_optional_indirect_commands(agent_caps);
 
+        wait_mcu_axi_idle_before_finish("OCP_CMD_HANDLING_FINISH");
         publish_transfer_count();
         report_executed_checks();
         #1us;

@@ -226,8 +226,7 @@ module usb_top_tb;
     .C_TOGGLE_REG_READABLE(USB_TOGGLE_REG_READABLE),
     .C_EPFIFO_PAGE(USB_EPFIFO_PAGE),
     .C_DATAFIFO_PAGE(USB_DATAFIFO_PAGE),
-    .G_SIM_CHIRP_TIMERS(1),
-    .C_DEVICE_ID_DEFAULT(0)
+    .G_SIM_CHIRP_TIMERS(1)
   ) dut (
     .usb_axi_aclk(bus_clk),
     .usb_axi_aresetn(bus_reset_n),
