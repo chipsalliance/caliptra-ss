@@ -101,11 +101,25 @@ addrmap mci_reg {
             encode=streaming_boot_select_e;
         } STREAMING_BOOT_SELECT[2]=2'b00;
         field {
+            name = "Caliptra Core DCLS Corruption Detection Disable";
+            desc = "Caliptra core dual-core lockstep (DCLS) corruption detection is ENABLED
+                    by default (reset 0). Setting this bit to 1 DISABLES DCLS corruption
+                    detection (drives ss_dcls_en=0 to the Caliptra core). This disable is
+                    intended only as a break-glass control for a late DCLS bug or for debug,
+                    and MCU ROM should set it solely based on a permanent indication such as
+                    a fuse. Lock via CAP_LOCK after configuration to make the selection
+                    immutable until warm reset.";
+            sw=rw;
+            hw=r;
+            swwe=axi_mcu_req_or_mci_soc_config_req__cap_unlock;
+            resetsignal=mci_rst_b;
+        } CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE[1]=1'b0;
+        field {
             desc = "Remaining hardware capability bits.";
             sw=rw;
             swwe=axi_mcu_req_or_mci_soc_config_req__cap_unlock;
             resetsignal=mci_rst_b;
-        } cap[30]=30'h0;
+        } cap[29]=29'h0;
     } HW_CAPABILITIES;
     reg {
         name = "Manufacturer Control Interface FW Capabilities";

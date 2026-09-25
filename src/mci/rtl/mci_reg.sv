@@ -632,7 +632,11 @@ module mci_reg (
                 logic load_next;
             } STREAMING_BOOT_SELECT;
             struct packed{
-                logic [29:0] next;
+                logic next;
+                logic load_next;
+            } CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
+            struct packed{
+                logic [28:0] next;
                 logic load_next;
             } cap;
         } HW_CAPABILITIES;
@@ -3975,7 +3979,10 @@ module mci_reg (
                 logic [1:0] value;
             } STREAMING_BOOT_SELECT;
             struct packed{
-                logic [29:0] value;
+                logic value;
+            } CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
+            struct packed{
+                logic [28:0] value;
             } cap;
         } HW_CAPABILITIES;
         struct packed{
@@ -6364,14 +6371,35 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value = field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value;
+    // Field: mci_reg.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
+            next_c = (field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end
+        field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.next = next_c;
+        field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value <= 1'h0;
+        end else if(field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.load_next) begin
+            field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value <= field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.next;
+        end
+    end
+    assign hwif_out.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value = field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
     // Field: mci_reg.HW_CAPABILITIES.cap
     always_comb begin
-        automatic logic [29:0] next_c;
+        automatic logic [28:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.HW_CAPABILITIES.cap.value;
         load_next_c = '0;
         if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
-            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:2]) | (decoded_wr_data[31:2] & decoded_wr_biten[31:2]);
+            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:3]) | (decoded_wr_data[31:3] & decoded_wr_biten[31:3]);
             load_next_c = '1;
         end
         field_combo.HW_CAPABILITIES.cap.next = next_c;
@@ -6379,7 +6407,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.HW_CAPABILITIES.cap.value <= 30'h0;
+            field_storage.HW_CAPABILITIES.cap.value <= 29'h0;
         end else if(field_combo.HW_CAPABILITIES.cap.load_next) begin
             field_storage.HW_CAPABILITIES.cap.value <= field_combo.HW_CAPABILITIES.cap.next;
         end
@@ -22360,7 +22388,8 @@ module mci_reg (
     // Assign readback values to a flattened array
     logic [380-1:0][31:0] readback_array;
     assign readback_array[0][1:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value : '0;
-    assign readback_array[0][31:2] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
+    assign readback_array[0][2:2] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value : '0;
+    assign readback_array[0][31:3] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
     assign readback_array[2][31:1] = '0;

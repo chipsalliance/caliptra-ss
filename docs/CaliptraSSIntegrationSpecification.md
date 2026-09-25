@@ -47,6 +47,7 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+    - [Caliptra Core DCLS Corruption-Detection Control](#caliptra-core-dcls-corruption-detection-control)
   - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
   - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
   - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
@@ -902,6 +903,25 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+### Caliptra Core DCLS Corruption-Detection Control
+
+The Caliptra core is instantiated in a dual-core lockstep (DCLS) configuration whose corruption-detection comparison is gated by the core's `ss_dcls_en` input. Within the subsystem this input is driven by MCI from bit [0] of the MCI `HW_CAPABILITIES` register:
+
+```
+ss_dcls_en = ~HW_CAPABILITIES.cap[0]
+```
+
+**DCLS corruption detection is ENABLED by default.** `HW_CAPABILITIES` resets to 0, so `ss_dcls_en` is asserted (detection active) out of reset with no firmware action required. Bit [0] is a **break-glass DISABLE**: writing it to 1 deasserts `ss_dcls_en` and turns corruption detection off.
+
+Integration guidance:
+
+- **Leave DCLS enabled in normal operation.** The disable exists only as a mitigation for a late-discovered DCLS bug, or to support debug; it must not be set as part of a normal boot.
+- **Gate the disable on a permanent indication.** MCU ROM shall decide whether to set the disable bit based on a permanent, attestable source such as a **fuse** (not a volatile/rewritable input and not an unconditional code path). This prevents runtime actors from disabling the feature and prevents a device from silently shipping with detection off.
+- **Set during configuration, then lock.** MCU ROM should write the disable decision during early configuration and then set `CAP_LOCK` so `HW_CAPABILITIES` becomes read-only until the next warm reset, making the DCLS selection immutable for the boot.
+- **Passive (non-subsystem) mode.** DCLS corruption detection is always disabled in the Caliptra core's passive mode regardless of this control; this bit is only meaningful in subsystem mode.
+
+The effective DCLS state is observable (read-only) inside the Caliptra core via `CPTRA_HW_CONFIG.DCLS_en`.
 
 ## MCU Core Configuration Customization
 
@@ -1818,6 +1838,14 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | input | 5 | `mcu_trace_rv_i_ecause_ip   ` | MCU trace exception cause|
 | Internal | input | 1 | `mcu_trace_rv_i_interrupt_ip` | MCU trace interrupt|
 | Internal | input | 32 | `mcu_trace_rv_i_tval_ip     ` | MCU trace exception trap value |
+| Internal | input | 32 | `cptra_trace_rv_i_insn_ip     ` | Caliptra core trace instruction (muxed with MCU trace) |
+| Internal | input | 32 | `cptra_trace_rv_i_address_ip  ` | Caliptra core trace address |
+| Internal | input | 1 | `cptra_trace_rv_i_valid_ip    ` | Caliptra core trace valid |
+| Internal | input | 1 | `cptra_trace_rv_i_exception_ip` | Caliptra core trace exception|
+| Internal | input | 5 | `cptra_trace_rv_i_ecause_ip   ` | Caliptra core trace exception cause|
+| Internal | input | 1 | `cptra_trace_rv_i_interrupt_ip` | Caliptra core trace interrupt|
+| Internal | input | 32 | `cptra_trace_rv_i_tval_ip     ` | Caliptra core trace exception trap value |
+| Internal | output | 1 | `ss_dcls_en` | Caliptra core DCLS corruption-detection enable. Driven from MCI `HW_CAPABILITIES` (see [Caliptra Core DCLS Corruption-Detection Control](#caliptra-core-dcls-corruption-detection-control)); connects to the Caliptra core `ss_dcls_en` input. |
 
 **Table: MCI Errors and Interrupts Interface**
 

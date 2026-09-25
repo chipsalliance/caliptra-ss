@@ -31,6 +31,9 @@ module css_mcu0_dmi_wrapper(
   output             tdo,                 // Test Data Output           
   output             tdoEnable,           // Test Data Output enable             
 
+  // JTAG IDCODE tie-off (upper 31 bits; bit 0 is the constant 1)
+  input [31:1]       jtag_id,
+
   // Processor Signals
   input              core_rst_n,          // Core reset                  
   input              core_clk,            // Core clock                  
@@ -60,6 +63,7 @@ module css_mcu0_dmi_wrapper(
    .tdi(tdi),                          // dedicated JTAG TDI pad signal
    .tdo(tdo),                          // dedicated JTAG TDO pad signal
    .tdoEnable(tdoEnable),              // enable for TDO pad
+   .jtag_id(jtag_id),                  // JTAG IDCODE (upper 31 bits)
    .wr_data(reg_wr_data),              // 32 bit Write data
    .wr_addr(reg_wr_addr),              // 7 bit Write address
    .rd_en(rd_en),                      // 1 bit  read enable

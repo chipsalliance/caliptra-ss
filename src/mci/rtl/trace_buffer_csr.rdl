@@ -57,4 +57,10 @@ addrmap trace_buffer_csr {
         field {sw=rw; hw=rw; we;} ptr[32]=0;
     } READ_PTR;
 
+    reg {
+        name="Trace Control";
+        desc="Programmable control for the MCU trace buffer.";
+        field {desc="Trace source select for the trace buffer capture path: 0 = MCU (VeeR) core instruction trace (default), 1 = Caliptra core instruction trace. Selects which core's trace_rv_i_* stream is captured into the trace buffer, analogous to the Caliptra core's internal main/shadow trace mux.";sw=rw; hw=r;} cptra_core_sel=0;
+    } CTRL;
+
 };

@@ -159,6 +159,36 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__READ_PTR
 
+    // Reg - trace_buffer_csr::CTRL
+    class trace_buffer_csr__CTRL extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        trace_buffer_csr__CTRL_bit_cg cptra_core_sel_bit_cg[1];
+        trace_buffer_csr__CTRL_fld_cg fld_cg;
+        rand uvm_reg_field cptra_core_sel;
+
+        function new(string name = "trace_buffer_csr__CTRL");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.cptra_core_sel = new("cptra_core_sel");
+            this.cptra_core_sel.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(cptra_core_sel_bit_cg[bt]) cptra_core_sel_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : trace_buffer_csr__CTRL
+
     // Addrmap - trace_buffer_csr
     class trace_buffer_csr extends uvm_reg_block;
         rand trace_buffer_csr__STATUS STATUS;
@@ -166,6 +196,7 @@ package trace_buffer_csr_uvm;
         rand trace_buffer_csr__DATA DATA;
         rand trace_buffer_csr__WRITE_PTR WRITE_PTR;
         rand trace_buffer_csr__READ_PTR READ_PTR;
+        rand trace_buffer_csr__CTRL CTRL;
 
         function new(string name = "trace_buffer_csr");
             super.new(name);
@@ -198,6 +229,11 @@ package trace_buffer_csr_uvm;
 
             this.READ_PTR.build();
             this.default_map.add_reg(this.READ_PTR, 'h10);
+            this.CTRL = new("CTRL");
+            this.CTRL.configure(this);
+
+            this.CTRL.build();
+            this.default_map.add_reg(this.CTRL, 'h14);
         endfunction : build
     endclass : trace_buffer_csr
 

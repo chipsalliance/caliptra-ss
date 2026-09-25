@@ -24,15 +24,26 @@ task mcu_trace_buffer_mon();
             trace_buffer_rd_ptr_f <= '0;
             trace_buffer_wr_ptr_f <= '0;
         end else begin
-            if(`CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
+            // Capture follows the trace-buffer source select (CTRL.cptra_core_sel):
+            // 0 = MCU (VeeR) core trace, 1 = Caliptra core trace. Matches the DUT mux.
+            if (`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                    `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_valid_ip :
+                    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
                 mcu_trace_buffer_valid  <= 1;
                 mcu_trace_buffer_wr_ptr <= (mcu_trace_buffer_wr_ptr + 4) % 256;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <=    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_insn_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_address_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_tval_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 3]   <= {
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_insn_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_insn_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_address_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_address_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_tval_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_tval_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 3]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ? {
                                             21'h0,
-                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_interrupt_ip, 
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_interrupt_ip,
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_ecause_ip,
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_exception_ip} : {
+                                            21'h0,
+                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_interrupt_ip,
                                             `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_ecause_ip,
                                             `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_exception_ip};
 
