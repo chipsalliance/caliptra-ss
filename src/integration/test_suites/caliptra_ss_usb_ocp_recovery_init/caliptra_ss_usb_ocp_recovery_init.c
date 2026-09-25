@@ -53,6 +53,9 @@ uint8_t main(void) {
     VPRINTF(LOW, "MCU: USB OCP recovery init test\n");
     VPRINTF(LOW, "===============================\n\n");
 
+    if (!usb_ocp_recovery_program_device_id()) {
+        handle_error("MCU: Failed to program USB Recovery DEVICE_ID\n");
+    }
     if (!usb_ocp_recovery_apply_capability_policy()) {
         handle_error("MCU: Failed to apply USB Recovery capability policy\n");
     }

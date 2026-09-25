@@ -36,6 +36,9 @@ uint8_t main(void)
 {
     VPRINTF(LOW, "MCU: USB OCP command-handling test\n");
 
+    if (!usb_ocp_recovery_program_device_id()) {
+        handle_error("MCU: Failed to program USB Recovery DEVICE_ID\n");
+    }
     if (!usb_ocp_recovery_apply_capability_policy()) {
         handle_error("MCU: Failed to apply USB Recovery capability policy\n");
     }
@@ -60,5 +63,6 @@ uint8_t main(void)
     // it cannot race the RA clear-on-read checks from OCP Recovery v1.1 Sec 9.1.
     while (1) {
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
+        usb_ocp_recovery_service_capability_policy();
     }
 }
