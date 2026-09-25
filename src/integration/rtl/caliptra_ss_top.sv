@@ -51,6 +51,12 @@ module caliptra_ss_top
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
     ,parameter UART_ENA = 1
+    // JTAG IDCODE tie-offs (integrator-overridable). Full 32-bit IDCODE; bit 0
+    // must be 1 per IEEE 1149.1. The VeeR-based cores (Caliptra core, MCU) take
+    // the upper 31 bits and force bit 0 to 1 in hardware.
+    ,parameter logic [31:0] CPTRA_CORE_JTAG_IDCODE = 32'h0000_0001
+    ,parameter logic [31:0] MCU_JTAG_IDCODE        = 32'h0000_0001
+    ,parameter logic [31:0] LCC_JTAG_IDCODE        = 32'h0000_0001
 ) (
     input logic cptra_ss_clk_i,
     output logic cptra_ss_rdc_clk_cg_o,
@@ -453,6 +459,20 @@ module caliptra_ss_top
     logic [ 4:0] mcu_trace_rv_i_ecause_ip;
     logic        mcu_trace_rv_i_interrupt_ip;
     logic [31:0] mcu_trace_rv_i_tval_ip;
+
+    // -------------- Caliptra core Trace within Subsystem ----------------
+    // Retire trace exported by the Caliptra core; muxed with the MCU trace
+    // into the MCI trace buffer (selected by trace_buffer_csr.CTRL.cptra_core_sel).
+    logic [31:0] cptra_trace_rv_i_insn_ip;
+    logic [31:0] cptra_trace_rv_i_address_ip;
+    logic        cptra_trace_rv_i_valid_ip;
+    logic        cptra_trace_rv_i_exception_ip;
+    logic [ 4:0] cptra_trace_rv_i_ecause_ip;
+    logic        cptra_trace_rv_i_interrupt_ip;
+    logic [31:0] cptra_trace_rv_i_tval_ip;
+
+    // Caliptra core DCLS corruption-detection enable (from MCI HW_CAPABILITIES).
+    logic        cptra_ss_dcls_en;
     
     
 
@@ -615,7 +635,9 @@ module caliptra_ss_top
     assign cptra_ss_cptra_generic_fw_exec_ctrl_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[127:3];
     assign cptra_ss_cptra_generic_fw_exec_ctrl_2_mcu_o = cptra_ss_cptra_generic_fw_exec_ctrl_internal[2];
 
-    caliptra_top caliptra_top_dut (
+    caliptra_top #(
+        .JTAG_IDCODE (CPTRA_CORE_JTAG_IDCODE[31:1])
+    ) caliptra_top_dut (
         .clk                        (cptra_ss_clk_i),
         .cptra_pwrgood              (cptra_ss_pwrgood_i),
         .cptra_rst_b                (cptra_ss_mci_cptra_rst_b_i),
@@ -727,13 +749,17 @@ module caliptra_ss_top
         .generic_output_wires(cptra_ss_cptra_core_generic_output_wires_o),
 
         // RISC-V Trace Ports
-        .trace_rv_i_insn_ip     (), //
-        .trace_rv_i_address_ip  (), //
-        .trace_rv_i_valid_ip    (), // Unconnected as these are not
-        .trace_rv_i_exception_ip(), // used in Subsystem
-        .trace_rv_i_ecause_ip   (), //
-        .trace_rv_i_interrupt_ip(), //
-        .trace_rv_i_tval_ip     (), //
+        // Exported to the MCI trace buffer (muxed with MCU trace).
+        .trace_rv_i_insn_ip     (cptra_trace_rv_i_insn_ip     ),
+        .trace_rv_i_address_ip  (cptra_trace_rv_i_address_ip  ),
+        .trace_rv_i_valid_ip    (cptra_trace_rv_i_valid_ip    ),
+        .trace_rv_i_exception_ip(cptra_trace_rv_i_exception_ip),
+        .trace_rv_i_ecause_ip   (cptra_trace_rv_i_ecause_ip   ),
+        .trace_rv_i_interrupt_ip(cptra_trace_rv_i_interrupt_ip),
+        .trace_rv_i_tval_ip     (cptra_trace_rv_i_tval_ip     ),
+
+        // DCLS corruption-detection enable, driven by MCI HW_CAPABILITIES (MCU-provisioned)
+        .ss_dcls_en             (cptra_ss_dcls_en),
 
         .security_state(mci_cptra_security_state),
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
@@ -985,6 +1011,7 @@ module caliptra_ss_top
         .jtag_trst_n            ( cptra_ss_mcu_jtag_trst_n_i ),
         .jtag_tdo               ( cptra_ss_mcu_jtag_tdo_o ),
         .jtag_tdoEn             ( cptra_ss_mcu_jtag_tdoEn_o ),
+        .jtag_id                ( MCU_JTAG_IDCODE[31:1] ),
 
         .mpc_debug_halt_ack     ( mpc_debug_halt_ack),
         .mpc_debug_halt_req     ( 1'b0),
@@ -1352,6 +1379,18 @@ module caliptra_ss_top
         .mcu_trace_rv_i_interrupt_ip,
         .mcu_trace_rv_i_tval_ip     ,
 
+        // Caliptra core Trace
+        .cptra_trace_rv_i_insn_ip     ,
+        .cptra_trace_rv_i_address_ip  ,
+        .cptra_trace_rv_i_valid_ip    ,
+        .cptra_trace_rv_i_exception_ip,
+        .cptra_trace_rv_i_ecause_ip   ,
+        .cptra_trace_rv_i_interrupt_ip,
+        .cptra_trace_rv_i_tval_ip     ,
+
+        // Caliptra core DCLS enable (from MCI HW_CAPABILITIES) -> caliptra_top.ss_dcls_en
+        .ss_dcls_en                 (cptra_ss_dcls_en),
+
 
         .mci_boot_seq_brkpoint(cptra_ss_mci_boot_seq_brkpoint_i),
 
@@ -1491,7 +1530,9 @@ module caliptra_ss_top
     assign lcc_to_mci_lc_done = pwrmgr_pkg::pwr_lc_rsp_t'(u_lc_ctrl_pwr_lc_o.lc_done);
     assign lcc_init_req.lc_init = mci_to_lcc_init_req; 
 
-    lc_ctrl u_lc_ctrl (
+    lc_ctrl #(
+        .IdcodeValue(LCC_JTAG_IDCODE)
+    ) u_lc_ctrl (
             .clk_i(cptra_ss_clk_i),
             .rst_ni(cptra_ss_rst_b_o),
             .lc_sec_volatile_raw_unlock_en_i(cptra_ss_lc_sec_volatile_raw_unlock_en_i),

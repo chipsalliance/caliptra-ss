@@ -1575,9 +1575,15 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. It can hold up to 64 trace packets from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
+MCI hosts the MCU trace buffer. It can hold up to 64 trace packets, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
 
-MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces.
+Note: trace is **collected continuously** whenever the selected trace source is valid, independent of the security state; the debug-unlock gate applies only to *read access* (AXI/DMI), not to collection.
+
+##### Trace Source Select (MCU vs Caliptra core)
+
+The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace).
+
+MCU RISC-V processor can enable/disable its own tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces; only the read-access debug gating and the source select above apply.
 
 The trace buffer is a circular buffer where the oldest data is overwritten by new traces when the buffer is full. When a trace packet is stored the write pointer increments by [MCU Trace Buffer Packet Size](#mcu-trace-buffer-packet)/DWORD
 

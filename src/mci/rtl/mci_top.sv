@@ -128,6 +128,19 @@ module mci_top
     input logic        mcu_trace_rv_i_interrupt_ip,
     input logic [31:0] mcu_trace_rv_i_tval_ip,
 
+    // Caliptra core Trace (muxed with MCU trace into the trace buffer)
+    input logic [31:0] cptra_trace_rv_i_insn_ip,
+    input logic [31:0] cptra_trace_rv_i_address_ip,
+    input logic        cptra_trace_rv_i_valid_ip,
+    input logic        cptra_trace_rv_i_exception_ip,
+    input logic [ 4:0] cptra_trace_rv_i_ecause_ip,
+    input logic        cptra_trace_rv_i_interrupt_ip,
+    input logic [31:0] cptra_trace_rv_i_tval_ip,
+
+    // Caliptra core DCLS corruption-detection enable (MCU-provisioned via
+    // HW_CAPABILITIES); drives the Caliptra core ss_dcls_en input.
+    output logic        ss_dcls_en,
+
     // Caliptra MBOX
     input logic cptra_mbox_data_avail,
 
@@ -473,7 +486,16 @@ mci_mcu_trace_buffer #(
     .mcu_trace_rv_i_ecause_ip,
     .mcu_trace_rv_i_interrupt_ip,
     .mcu_trace_rv_i_tval_ip,
-    
+
+    // Caliptra core Trace (muxed via trace_buffer_csr.CTRL.cptra_core_sel)
+    .cptra_trace_rv_i_insn_ip,
+    .cptra_trace_rv_i_address_ip,
+    .cptra_trace_rv_i_valid_ip,
+    .cptra_trace_rv_i_exception_ip,
+    .cptra_trace_rv_i_ecause_ip,
+    .cptra_trace_rv_i_interrupt_ip,
+    .cptra_trace_rv_i_tval_ip,
+
     // Caliptra internal fabric response interface
     .cif_resp_if (mcu_trace_buffer_req_if.response)
 
@@ -530,6 +552,9 @@ mci_mcu_sram_ctrl #(
 
 
 // MCI WDT
+
+// Caliptra core DCLS corruption-detection enable. DCLS is ENABLED by default;
+assign ss_dcls_en = ~mci_reg_hwif_out.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
 
 assign timer1_en = mci_reg_hwif_out.WDT_TIMER1_EN.timer1_en.value;
 assign timer2_en = mci_reg_hwif_out.WDT_TIMER2_EN.timer2_en.value;

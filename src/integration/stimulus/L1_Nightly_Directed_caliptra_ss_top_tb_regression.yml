@@ -69,6 +69,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_64: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer/smoke_test_mcu_trace_buffer_63: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer_no_debug/smoke_test_mcu_trace_buffer_no_debug: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_trace_buffer_cptra_core/smoke_test_mcu_trace_buffer_cptra_core: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox0_valid_user: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_valid_user/smoke_test_mcu_mbox1_valid_user: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_mbox_write_user_lock/smoke_test_mcu_mbox0_write_user_lock: { weight: 100 }

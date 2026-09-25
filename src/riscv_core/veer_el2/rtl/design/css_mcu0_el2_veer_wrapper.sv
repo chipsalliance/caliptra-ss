@@ -403,6 +403,9 @@ import css_mcu0_el2_pkg::*;
    input logic                             jtag_trst_n, // JTAG Reset
    output logic                            jtag_tdo,    // JTAG TDO
    output logic                            jtag_tdoEn,  // JTAG Test Data Output enable
+   // jtag_id is supposed to be tied to a constant at the top level; it forms the
+   // upper 31 bits of the JTAG IDCODE (bit 0 is the mandatory constant 1).
+   input logic [31:1]                      jtag_id,     // JTAG IDCODE
 
    /*pragma coverage off*/
    input logic [31:4] core_id,
@@ -894,6 +897,7 @@ import css_mcu0_el2_pkg::*;
     .tdi         (jtag_tdi),        // Test Data Input
     .tdo         (jtag_tdo),        // Test Data Output
     .tdoEnable   (jtag_tdoEn),      // Test Data Output enable
+    .jtag_id     (jtag_id),         // JTAG IDCODE (upper 31 bits)
     // Processor Signals
     .core_rst_n  (dbg_rst_l),       // Debug reset, active low
     .core_clk    (clk),             // Core clock

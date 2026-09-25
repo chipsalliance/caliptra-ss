@@ -24,6 +24,10 @@ input               tdi,
 output   reg        tdo,
 output              tdoEnable,
 
+// jtag_id is supposed to be tied to a constant at the top level; it forms the
+// upper 31 bits of the JTAG IDCODE register (bit 0 is the mandatory constant 1).
+input   [31:1]      jtag_id,
+
 output [31:0]       wr_data,
 output [AWIDTH-1:0] wr_addr,
 output              wr_en,
@@ -64,6 +68,7 @@ wire pause_ir ;
 wire update_ir ;
 wire capture_ir;
 wire[1:0] dr_en;
+wire      devid_sel;
 wire [5:0] abits;
 
 assign abits = AWIDTH[5:0];
@@ -139,6 +144,7 @@ always @ (negedge tck or negedge trst) begin
 end
 
 
+assign devid_sel  = ir == 5'b00001;
 assign dr_en[0]   = ir == 5'b10000;
 assign dr_en[1]   = ir == 5'b10001;
 
@@ -161,7 +167,8 @@ always_comb begin
     shift_dr:   begin
                     case(1)
                     dr_en[1]:   nsr = {tdi, sr[USER_DR_LENGTH-1:1]};
-                    dr_en[0]:   nsr = {{USER_DR_LENGTH-32{1'b0}},tdi, sr[31:1]};
+                    dr_en[0],
+                    devid_sel:  nsr = {{USER_DR_LENGTH-32{1'b0}},tdi, sr[31:1]};
                     default:    nsr = {{USER_DR_LENGTH-1{1'b0}},tdi}; // bypass
                     endcase
                 end
@@ -170,6 +177,7 @@ always_comb begin
                     case(1)
                     dr_en[0]:   nsr = {{USER_DR_LENGTH-15{1'b0}}, idle, dmi_stat, abits, version};
                     dr_en[1]:   nsr = {{AWIDTH{1'b0}}, rd_data, rd_status};
+                    devid_sel:  nsr = {{USER_DR_LENGTH-32{1'b0}}, jtag_id, 1'b1};
                     endcase
                 end
     shift_ir:   nsr = {{USER_DR_LENGTH-5{1'b0}},tdi, sr[4:1]};

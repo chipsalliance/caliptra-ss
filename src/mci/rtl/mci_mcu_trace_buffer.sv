@@ -50,7 +50,16 @@ module mci_mcu_trace_buffer
     input logic        mcu_trace_rv_i_exception_ip,
     input logic [ 4:0] mcu_trace_rv_i_ecause_ip,
     input logic        mcu_trace_rv_i_interrupt_ip,
-    input logic [31:0] mcu_trace_rv_i_tval_ip
+    input logic [31:0] mcu_trace_rv_i_tval_ip,
+
+    // Caliptra core Trace (selectable via CTRL.cptra_core_sel)
+    input logic [31:0] cptra_trace_rv_i_insn_ip,
+    input logic [31:0] cptra_trace_rv_i_address_ip,
+    input logic        cptra_trace_rv_i_valid_ip,
+    input logic        cptra_trace_rv_i_exception_ip,
+    input logic [ 4:0] cptra_trace_rv_i_ecause_ip,
+    input logic        cptra_trace_rv_i_interrupt_ip,
+    input logic [31:0] cptra_trace_rv_i_tval_ip
 
 );
 trace_buffer_csr__in_t trace_buffer_hwif_in;
@@ -85,15 +94,44 @@ logic dmi_wr_en_qual;
 ////////////////////////
 assign trace_buffer_hwif_in.rst_b = rst_b;
 
-assign write_trace_buffer =  mcu_trace_rv_i_valid_ip;
+// Trace source mux
+logic        sel_trace_rv_i_valid_ip;
+logic [31:0] sel_trace_rv_i_insn_ip;
+logic [31:0] sel_trace_rv_i_address_ip;
+logic        sel_trace_rv_i_exception_ip;
+logic [ 4:0] sel_trace_rv_i_ecause_ip;
+logic        sel_trace_rv_i_interrupt_ip;
+logic [31:0] sel_trace_rv_i_tval_ip;
+
+always_comb begin
+    if (trace_buffer_hwif_out.CTRL.cptra_core_sel.value) begin
+        sel_trace_rv_i_valid_ip     = cptra_trace_rv_i_valid_ip;
+        sel_trace_rv_i_insn_ip      = cptra_trace_rv_i_insn_ip;
+        sel_trace_rv_i_address_ip   = cptra_trace_rv_i_address_ip;
+        sel_trace_rv_i_exception_ip = cptra_trace_rv_i_exception_ip;
+        sel_trace_rv_i_ecause_ip    = cptra_trace_rv_i_ecause_ip;
+        sel_trace_rv_i_interrupt_ip = cptra_trace_rv_i_interrupt_ip;
+        sel_trace_rv_i_tval_ip      = cptra_trace_rv_i_tval_ip;
+    end else begin
+        sel_trace_rv_i_valid_ip     = mcu_trace_rv_i_valid_ip;
+        sel_trace_rv_i_insn_ip      = mcu_trace_rv_i_insn_ip;
+        sel_trace_rv_i_address_ip   = mcu_trace_rv_i_address_ip;
+        sel_trace_rv_i_exception_ip = mcu_trace_rv_i_exception_ip;
+        sel_trace_rv_i_ecause_ip    = mcu_trace_rv_i_ecause_ip;
+        sel_trace_rv_i_interrupt_ip = mcu_trace_rv_i_interrupt_ip;
+        sel_trace_rv_i_tval_ip      = mcu_trace_rv_i_tval_ip;
+    end
+end
+
+assign write_trace_buffer =  sel_trace_rv_i_valid_ip;
 
 assign write_trace_data_packet.reserved                  = '0; 
-assign write_trace_data_packet.trace_rv_i_interrupt_ip   = mcu_trace_rv_i_interrupt_ip;
-assign write_trace_data_packet.trace_rv_i_ecause_ip      = mcu_trace_rv_i_ecause_ip;
-assign write_trace_data_packet.trace_rv_i_exception_ip   = mcu_trace_rv_i_exception_ip;
-assign write_trace_data_packet.trace_rv_i_tval_ip        = mcu_trace_rv_i_tval_ip;
-assign write_trace_data_packet.trace_rv_i_address_ip     = mcu_trace_rv_i_address_ip;
-assign write_trace_data_packet.trace_rv_i_insn_ip        = mcu_trace_rv_i_insn_ip;
+assign write_trace_data_packet.trace_rv_i_interrupt_ip   = sel_trace_rv_i_interrupt_ip;
+assign write_trace_data_packet.trace_rv_i_ecause_ip      = sel_trace_rv_i_ecause_ip;
+assign write_trace_data_packet.trace_rv_i_exception_ip   = sel_trace_rv_i_exception_ip;
+assign write_trace_data_packet.trace_rv_i_tval_ip        = sel_trace_rv_i_tval_ip;
+assign write_trace_data_packet.trace_rv_i_address_ip     = sel_trace_rv_i_address_ip;
+assign write_trace_data_packet.trace_rv_i_insn_ip        = sel_trace_rv_i_insn_ip;
 
 assign trace_buffer_hwif_in.CONFIG.trace_buffer_depth.next = TRACE_BUFFER_DWORD_DEPTH;
 

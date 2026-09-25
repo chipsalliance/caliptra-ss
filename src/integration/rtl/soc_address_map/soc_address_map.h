@@ -7656,8 +7656,10 @@
 #define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
 #define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
 #define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (0x3)
-#define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
-#define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (0xfffffffc)
+#define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_LOW                    (2)
+#define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_MASK                   (0x4)
+#define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (3)
+#define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (0xfffffff8)
 #endif
 #define SOC_MCI_TOP_MCI_REG_FW_CAPABILITIES                                                         (0x21000004)
 #ifndef MCI_REG_FW_CAPABILITIES
@@ -10249,6 +10251,12 @@
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
 #endif
+#define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CTRL                                                       (0x21010014)
+#ifndef MCU_TRACE_BUFFER_CSR_CTRL
+#define MCU_TRACE_BUFFER_CSR_CTRL                                                                   (0x14)
+#define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                (0)
+#define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                               (0x1)
+#endif
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                (0x215fffff)
@@ -11979,8 +11987,12 @@
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_MASK                                    (0x20)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_LOW                                              (6)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_MASK                                             (0x40)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (7)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xffffff80)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_LOW                                            (7)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_MASK                                           (0x80)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_LOW                                   (8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_MASK                                  (0x100)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (9)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xfffffe00)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL                                                    (0xa0030004)
 #ifndef SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL
@@ -12283,6 +12295,8 @@
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (0x40)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_LOW                                               (7)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_MASK                                              (0x80)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_LOW                                                     (8)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_MASK                                                    (0x100)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                         (0xa00300e4)
 #ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN

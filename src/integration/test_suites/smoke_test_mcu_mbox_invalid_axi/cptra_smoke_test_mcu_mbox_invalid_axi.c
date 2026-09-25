@@ -37,19 +37,33 @@ volatile uint32_t intr_count       = 0;
 
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
 
+// Attempt a DWORD write/read as an invalid AXI user; every access must return an
+// AXI error. Kept noinline with a single shared message so the ~20 checks below do
+// not duplicate code/strings (this Caliptra-core image is ROM-size constrained).
+void __attribute__((noinline)) expect_axi_wr_err(uint64_t addr) {
+    if (!cptra_axi_dword_write_with_status(addr, xorshift32())) {
+        VPRINTF(FATAL, "Caliptra: Expected AXI Error on write @0x%x as invalid user\n", (uint32_t)addr);
+        SEND_STDOUT_CTRL(0x1);
+        while (1);
+    }
+}
+
+void __attribute__((noinline)) expect_axi_rd_err(uint64_t addr) {
+    uint32_t payload[1];
+    if (!cptra_axi_dword_read_with_status(addr, payload)) {
+        VPRINTF(FATAL, "Caliptra: Expected AXI Error on read @0x%x as invalid user\n", (uint32_t)addr);
+        SEND_STDOUT_CTRL(0x1);
+        while (1);
+    }
+}
+
 // Test (in conjuction with Caliptra uC C code) exercises invalid AXI and invalid SRAM address access 
 // 1. MCU will configure Caliptra uC to be an invalid AXI
 // 2. Caliptra uC will attempt CSR and SRAM read writes.  These are expected to return AXI errors
 
 void main(void) {
-    int argc=0;
-    char *argv[1];
-    uint32_t reg;
-    uint32_t payload[1] = {0};
-    uint32_t data_length;
     uint32_t data;
     uint32_t addr;
-    uint32_t status;
 
     uint32_t mbox_num = decode_single_valid_mbox();
 
@@ -59,165 +73,36 @@ void main(void) {
     // Writing and read to CSRs
     VPRINTF(LOW, "Caliptra: CSR Writes and Read as Invalid AXI\n");
 
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 1);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR EXECUTE as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR EXECUTE as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR CMD as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR CMD as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR CMD_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR CMD_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR MBOX_USER as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading to CSR MBOX_USER as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR TARGET_USER as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR TARGET_USER as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 1);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing CSR TARGET_USER_VALID as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR TARGET_USER_VALID as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing CSR TARGET_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR TARGET_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR MBOX_DLEN as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading to CSR MBOX_DLEN as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR LOCK as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR LOCK as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR HW_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
-
-    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-    if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR HW_STATUS as invalid user\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
+    // Every mailbox CSR must reject an invalid-AXI-user access with an AXI error.
+    // The written data is immaterial (the access is rejected regardless), so a
+    // table-driven loop replaces the per-register unrolled blocks.
+    static const uint32_t mbox_csr_offsets[] = {
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS,
+    };
+    for (uint32_t i = 0; i < sizeof(mbox_csr_offsets) / sizeof(mbox_csr_offsets[0]); i++) {
+        uint64_t csr_addr = mbox_csr_offsets[i] + MCU_MBOX_NUM_STRIDE * mbox_num;
+        expect_axi_wr_err(csr_addr);
+        expect_axi_rd_err(csr_addr);
     }
 
     for(uint32_t i=0; i<8; i++) {
         data = xorshift32();
         addr = (xorshift32() % 131072)/4;  // Using 128KB
         VPRINTF(LOW, "Caliptra: Write to SRAM[%d]: 0x%x\n", addr, data);
-        status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + (4*addr) + MCU_MBOX_NUM_STRIDE * mbox_num, data);
-        if(!status) {
-            VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to Mbox%x SRAM as invalid user\n", mbox_num);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
+        expect_axi_wr_err(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + (4*addr) + MCU_MBOX_NUM_STRIDE * mbox_num);
 
         addr = (xorshift32() % 131072)/4;
         VPRINTF(LOW, "Caliptra: Read from SRAM[%d]\n", addr);
-        status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + (4*addr) + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
-        if(!status) {
-            VPRINTF(FATAL,"Caliptra: Expected AXI Error reading Mbox%x SRAM as invalid user\n", mbox_num);
-            SEND_STDOUT_CTRL(0x1);
-            while(1);
-        }
+        expect_axi_rd_err(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + (4*addr) + MCU_MBOX_NUM_STRIDE * mbox_num);
     }
 
     VPRINTF(LOW, "CALIPTRA: Sequence complete\n");
