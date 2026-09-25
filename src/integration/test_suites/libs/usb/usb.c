@@ -79,11 +79,11 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
 
 // Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM writes)
 const uint32_t usb_default_device_descriptor[5] = {
-    0x00020112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
+    0x02000112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
     0x40000000,  // bDevClass=0, bDevSubClass=0, bDevProto=0, bMaxPktSz0=64
     0x00000000,  // idVendor=0x0000, idProduct=0x0000
     0x00000100,  // bcdDevice=0x0100, iManufacturer=0
-    0x01000000   // iProduct=0, iSerialNumber=0, bNumConfigurations=1
+    0x00000100   // iProduct=0, iSerialNumber=0, bNumConfigurations=1
 };
 
 // -------------------------------------------------------------------------
