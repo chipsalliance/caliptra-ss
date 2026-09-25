@@ -22,7 +22,7 @@ typedef enum bit [1:0] {
 } caliptra_ss_usb_ocp_xfer_result_e;
 
 class caliptra_ss_usb_ocp_recovery_base_sequence
-    extends caliptra_ss_usb_base_sequence;
+    extends caliptra_ss_usb_ctrl_base_sequence;
 
     typedef bit [7:0] byte_queue_t[$];
 

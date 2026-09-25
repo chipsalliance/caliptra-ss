@@ -28,7 +28,7 @@ package caliptra_ss_usb_test_pkg;
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_base_sequence.svh"
+  `include "caliptra_ss_usb_ctrl_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
   `include "caliptra_ss_usb_nak_monitor_callback.svh"
 
