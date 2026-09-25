@@ -1581,7 +1581,7 @@ Note: trace is **collected continuously** whenever the selected trace source is 
 
 ##### Trace Source Select (MCU vs Caliptra core)
 
-The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace). This subsystem-level mux is analogous to the Caliptra core's internal main/shadow-core trace mux: it only re-sources which core's trace stream is captured and does not change either core's functional behavior. Read access to the captured trace remains debug-gated as described above.
+The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace).
 
 MCU RISC-V processor can enable/disable its own tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces; only the read-access debug gating and the source select above apply.
 

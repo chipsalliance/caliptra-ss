@@ -554,10 +554,6 @@ mci_mcu_sram_ctrl #(
 // MCI WDT
 
 // Caliptra core DCLS corruption-detection enable. DCLS is ENABLED by default;
-// HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE (register bit 2) is a
-// break-glass DISABLE that MCU firmware may set during configuration (based on a
-// permanent indication such as a fuse) to turn the feature off. Reset value 0 =>
-// ss_dcls_en=1 (enabled); setting the bit => ss_dcls_en=0 (disabled).
 assign ss_dcls_en = ~mci_reg_hwif_out.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
 
 assign timer1_en = mci_reg_hwif_out.WDT_TIMER1_EN.timer1_en.value;

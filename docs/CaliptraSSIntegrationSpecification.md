@@ -906,20 +906,19 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 ### Caliptra Core DCLS Corruption-Detection Control
 
-The Caliptra core is instantiated in a dual-core lockstep (DCLS) configuration whose corruption-detection comparison is gated by the core's `ss_dcls_en` input. Within the subsystem this input is driven by MCI from bit [0] of the MCI `HW_CAPABILITIES` register:
+The Caliptra core is instantiated in a dual-core lockstep (DCLS) configuration whose corruption-detection comparison is gated by the core's `ss_dcls_en` input. Within the subsystem this input is driven by MCI from bit [2] of the MCI `HW_CAPABILITIES` register (the `CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE` field; bits [1:0] are `STREAMING_BOOT_SELECT`):
 
 ```
-ss_dcls_en = ~HW_CAPABILITIES.cap[0]
+ss_dcls_en = ~HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE   // register bit [2]
 ```
 
-**DCLS corruption detection is ENABLED by default.** `HW_CAPABILITIES` resets to 0, so `ss_dcls_en` is asserted (detection active) out of reset with no firmware action required. Bit [0] is a **break-glass DISABLE**: writing it to 1 deasserts `ss_dcls_en` and turns corruption detection off.
+**DCLS corruption detection is ENABLED by default.** `HW_CAPABILITIES` resets to 0, so `ss_dcls_en` is asserted (detection active) out of reset with no firmware action required. Bit [2] is a **break-glass DISABLE**: writing it to 1 deasserts `ss_dcls_en` and turns corruption detection off.
 
 Integration guidance:
 
 - **Leave DCLS enabled in normal operation.** The disable exists only as a mitigation for a late-discovered DCLS bug, or to support debug; it must not be set as part of a normal boot.
 - **Gate the disable on a permanent indication.** MCU ROM shall decide whether to set the disable bit based on a permanent, attestable source such as a **fuse** (not a volatile/rewritable input and not an unconditional code path). This prevents runtime actors from disabling the feature and prevents a device from silently shipping with detection off.
 - **Set during configuration, then lock.** MCU ROM should write the disable decision during early configuration and then set `CAP_LOCK` so `HW_CAPABILITIES` becomes read-only until the next warm reset, making the DCLS selection immutable for the boot.
-- **Passive (non-subsystem) mode.** DCLS corruption detection is always disabled in the Caliptra core's passive mode regardless of this control; this bit is only meaningful in subsystem mode.
 
 The effective DCLS state is observable (read-only) inside the Caliptra core via `CPTRA_HW_CONFIG.DCLS_en`.
 
