@@ -868,7 +868,12 @@ package mci_reg_pkg;
     } mci_reg__HW_CAPABILITIES__STREAMING_BOOT_SELECT__out_t;
 
     typedef struct packed{
+        logic value;
+    } mci_reg__HW_CAPABILITIES__CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE__out_t;
+
+    typedef struct packed{
         mci_reg__HW_CAPABILITIES__STREAMING_BOOT_SELECT__out_t STREAMING_BOOT_SELECT;
+        mci_reg__HW_CAPABILITIES__CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE__out_t CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
     } mci_reg__HW_CAPABILITIES__out_t;
 
     typedef struct packed{

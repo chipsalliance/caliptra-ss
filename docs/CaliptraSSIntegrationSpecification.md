@@ -47,6 +47,7 @@
   - [Overview](#overview-2)
     - [Parameters \& Defines](#parameters--defines-1)
   - [MCU Integration Requirements](#mcu-integration-requirements)
+    - [Caliptra Core DCLS Corruption-Detection Control](#caliptra-core-dcls-corruption-detection-control)
   - [MCU Core Configuration Customization](#mcu-core-configuration-customization)
   - [MCU DCCM SRAM Sizing](#mcu-dccm-sram-sizing)
   - [MCU SRAM MRAC Considerations](#mcu-sram-mrac-considerations)
@@ -290,6 +291,9 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | `USB_C_DEV0_NBPHYSEP` | `28` | Number of physical endpoints for the MCU-facing DEV0 controller (excluding EP0); forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_DEV1_NBPHYSEP` | `28` | Number of physical endpoints for the SoC-facing DEV1 controller (excluding EP0); forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
+| `CPTRA_CORE_JTAG_IDCODE` | `1` | JTAG IDCODE for Caliptra Core RISC-V. Integrators must override using product-specific value. |
+| `MCU_JTAG_IDCODE`        | `1` | JTAG IDCODE for MCU RISC-V. Integrators must override using product-specific value. |
+| `LCC_JTAG_IDCODE`        | `1` | JTAG IDCODE for Lifecycle Controller. Integrators must override using product-specific value. |
 
 ## Interfaces & Signals
 
@@ -902,6 +906,24 @@ src/riscv_core/veer_el2/rtl/defines/defines.h
 
 - **Enabling Programming interface.**
   - Please refer to section [MCU Programming Interface](#MCU-Programming-interface) for details on reference linker file for the MCU bringup.
+
+### Caliptra Core DCLS Corruption-Detection Control
+
+The Caliptra core is instantiated in a dual-core lockstep (DCLS) configuration whose corruption-detection comparison is gated by the core's `ss_dcls_en` input. Within the subsystem this input is driven by MCI from bit [2] of the MCI `HW_CAPABILITIES` register (the `CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE` field; bits [1:0] are `STREAMING_BOOT_SELECT`):
+
+```
+ss_dcls_en = ~HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE   // register bit [2]
+```
+
+**DCLS corruption detection is ENABLED by default.** `HW_CAPABILITIES` resets to 0, so `ss_dcls_en` is asserted (detection active) out of reset with no firmware action required. Bit [2] is a **break-glass DISABLE**: writing it to 1 deasserts `ss_dcls_en` and turns corruption detection off.
+
+Integration guidance:
+
+- **Leave DCLS enabled in normal operation.** The disable exists only as a mitigation for a late-discovered DCLS bug, or to support debug; it must not be set as part of a normal boot.
+- **Gate the disable on a permanent indication.** MCU ROM shall decide whether to set the disable bit based on a permanent, attestable source such as a **fuse** (not a volatile/rewritable input and not an unconditional code path). This prevents runtime actors from disabling the feature and prevents a device from silently shipping with detection off.
+- **Set during configuration, then lock.** MCU ROM should write the disable decision during early configuration and then set `CAP_LOCK` so `HW_CAPABILITIES` becomes read-only until the next warm reset, making the DCLS selection immutable for the boot.
+
+The effective DCLS state is observable (read-only) inside the Caliptra core via `CPTRA_HW_CONFIG.DCLS_en`.
 
 ## MCU Core Configuration Customization
 
@@ -1818,6 +1840,14 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | Internal | input | 5 | `mcu_trace_rv_i_ecause_ip   ` | MCU trace exception cause|
 | Internal | input | 1 | `mcu_trace_rv_i_interrupt_ip` | MCU trace interrupt|
 | Internal | input | 32 | `mcu_trace_rv_i_tval_ip     ` | MCU trace exception trap value |
+| Internal | input | 32 | `cptra_trace_rv_i_insn_ip     ` | Caliptra core trace instruction (muxed with MCU trace) |
+| Internal | input | 32 | `cptra_trace_rv_i_address_ip  ` | Caliptra core trace address |
+| Internal | input | 1 | `cptra_trace_rv_i_valid_ip    ` | Caliptra core trace valid |
+| Internal | input | 1 | `cptra_trace_rv_i_exception_ip` | Caliptra core trace exception|
+| Internal | input | 5 | `cptra_trace_rv_i_ecause_ip   ` | Caliptra core trace exception cause|
+| Internal | input | 1 | `cptra_trace_rv_i_interrupt_ip` | Caliptra core trace interrupt|
+| Internal | input | 32 | `cptra_trace_rv_i_tval_ip     ` | Caliptra core trace exception trap value |
+| Internal | output | 1 | `ss_dcls_en` | Caliptra core DCLS corruption-detection enable. Driven from MCI `HW_CAPABILITIES` (see [Caliptra Core DCLS Corruption-Detection Control](#caliptra-core-dcls-corruption-detection-control)); connects to the Caliptra core `ss_dcls_en` input. |
 
 **Table: MCI Errors and Interrupts Interface**
 
@@ -3007,6 +3037,7 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_Cfg_2         | Caliptra Subsystem    | Build processes must define the Verilog macro `CALIPTRA_INTERNAL_TRNG`. Integrations of Caliptra Subsystem shall not use an external TRNG. The TRNG self-test threshold registers (`CPTRA_iTRNG_ENTROPY_CONFIG0` and `CPTRA_iTRNG_ENTROPY_CONFIG1`) MUST be set to non-zero values to enable entropy self-testing. These requirements supplement but do not replace any Caliptra Core Integration Requirements pertaining to Internal TRNG.                                               | Functionality |
 | CSS_Cfg_3         | MCU                   | Integrators are permitted to reconfigure the MCU for their own needs per [MCU Core Configuration Customization](#MCU-Core-Configuration-Customization), but integrators shall not replace the MCU with any alternative microprocessor core.                                                                                                                                                                                                                                               | Functionality |
 | CSS_Cfg_4         | I3C                   | The Verilog macro `DISABLE_INPUT_FF` must NOT be defined. Defining it removes the synchronizer flip-flop on the I3C SCL input signal, creating a CDC violation.                                                                                                                                                                                                                                                                                                                           | Functionality |
+| CSS_Cfg_5         | Caliptra Subsystem    | Integrators must override the three JTAG IDCODE parameters `CPTRA_CORE_JTAG_IDCODE`, `MCU_JTAG_IDCODE`, and `LCC_JTAG_IDCODE` using unique, product-specific values.                                                                                                                                                                                                                                                                                                                      | Functionality |
 | CSS_Core_1        | Caliptra Core         | In addition to all requirements listed in this table, integrators must adhere to all integration requirements defined in the Caliptra Core Integration Specification. Caliptra Subsystem Integration Requirements supplement but do not replace any Caliptra Core Integration Requirements.                                                                                                                                                                                               | Trademark Compliance |
 
 # Terminology

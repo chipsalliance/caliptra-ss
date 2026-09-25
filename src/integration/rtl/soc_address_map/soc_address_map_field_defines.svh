@@ -7155,8 +7155,10 @@
 `define MCI_REG_HW_CAPABILITIES                                                                     (32'h0)
 `define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
 `define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (32'h3)
-`define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (2)
-`define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (32'hfffffffc)
+`define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_LOW                    (2)
+`define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_MASK                   (32'h4)
+`define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (3)
+`define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (32'hfffffff8)
 `endif
 `ifndef MCI_REG_FW_CAPABILITIES
 `define MCI_REG_FW_CAPABILITIES                                                                     (32'h4)
@@ -9362,6 +9364,11 @@
 `ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 `define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (32'h10)
 `endif
+`ifndef MCU_TRACE_BUFFER_CSR_CTRL
+`define MCU_TRACE_BUFFER_CSR_CTRL                                                                   (32'h14)
+`define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                (0)
+`define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                               (32'h1)
+`endif
 `ifndef MCU_MBOX0_CSR_MBOX_LOCK
 `define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (32'h200000)
 `define MCU_MBOX0_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
@@ -10796,8 +10803,12 @@
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_MASK                                    (32'h20)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_LOW                                              (6)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_MASK                                             (32'h40)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (7)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (32'hffffff80)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_LOW                                            (7)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_MASK                                           (32'h80)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_LOW                                   (8)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_MASK                                  (32'h100)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (9)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (32'hfffffe00)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL
 `define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL                                                        (32'h4)
@@ -11044,6 +11055,8 @@
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (32'h40)
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_LOW                                               (7)
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_MASK                                              (32'h80)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_LOW                                                     (8)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_MASK                                                    (32'h100)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN
 `define SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                             (32'he4)
