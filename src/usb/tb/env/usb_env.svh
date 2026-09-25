@@ -213,6 +213,7 @@ class usb_env extends uvm_env;
 
     if (virtual_sequencer == null ||
         reg_model == null ||
+        cfg == null ||
         combo_manager == null ||
         combo_manager.sequencer == null ||
         dev0_memory_manager == null ||
@@ -226,6 +227,7 @@ class usb_env extends uvm_env;
       `uvm_fatal("USB_ENV", "Virtual sequencer dependencies are not fully constructed")
     end
     virtual_sequencer.reg_model = reg_model;
+    virtual_sequencer.cfg = cfg;
     virtual_sequencer.combo_sequencer = combo_manager.sequencer;
     virtual_sequencer.dev0_memory_sequencer = dev0_memory_manager.sequencer;
     virtual_sequencer.dev1_csr_sequencer = dev1_csr_manager.sequencer;

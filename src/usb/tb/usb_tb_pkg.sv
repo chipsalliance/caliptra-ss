@@ -77,6 +77,12 @@ package usb_tb_pkg;
   localparam time USB_TRANSFER_TIMEOUT = 10us;
   localparam time USB_TEST_TIMEOUT = 1ms;
   localparam time USB_INIT_TEST_TIMEOUT = 2ms;
+  localparam time USB_DEV_SKIP_TEST_TIMEOUT = 3ms;
+
+  // Shared between the endpoint-skip device and host sequences so both agree
+  // on the recovery transfer's size and payload without cross-references.
+  localparam int unsigned USB_DEV_SKIP_RECOVERY_BYTES = 16;
+  localparam logic [7:0] USB_DEV_SKIP_PAYLOAD_BASE = 8'ha0;
 
   typedef enum int {
     USB_HUB,
@@ -106,14 +112,19 @@ package usb_tb_pkg;
   `include "ral/usb_reg_model.svh"
   `include "ral/usb_axi_user_override.svh"
   `include "ral/usb_axi_reg_adapter.svh"
+  `include "env/usb_endpoint_profile.svh"
   `include "env/usb_env_cfg.svh"
   `include "env/usb_virtual_sequencer.svh"
   `include "env/usb_env.svh"
   `include "sequences/usb_base_seq.svh"
   `include "sequences/usb_endpoint_rw_seq.svh"
+  `include "sequences/usb_host_base_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
+  `include "sequences/usb_dev_skip_host_seq.svh"
+  `include "sequences/usb_dev_skip_seq.svh"
   `include "tests/usb_base_test.svh"
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
+  `include "tests/usb_dev_skip_test.svh"
 endpackage

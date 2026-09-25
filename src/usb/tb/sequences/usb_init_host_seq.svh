@@ -29,21 +29,22 @@
 // returned payload all match the request intent. Run this sequence on the SVT
 // host agent's virtual sequencer; usb_init_seq supplies the concurrent DUT-side
 // EP0 service needed to answer these requests.
-class usb_init_host_seq extends uvm_sequence;
+class usb_init_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_init_host_seq)
-  `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
   // Bound link bring-up separately from each individual control transfer.
   localparam time USB_LINK_TIMEOUT = 750us;
   localparam time USB_CONTROL_TRANSFER_TIMEOUT = 100us;
 
-  // usb_init_seq consumes completed; the count guards against partial flows.
-  bit completed;
   int unsigned validated_transfer_count;
 
   // Constructs the host sequence; body() performs the enumeration.
   function new(string name = "usb_init_host_seq");
     super.new(name);
+  endfunction
+
+  virtual function string report_id();
+    return "USB_INIT_HOST";
   endfunction
 
   // Derives the SVT success mask expected for the two zero-length host writes.
@@ -58,29 +59,6 @@ class usb_init_host_seq extends uvm_sequence;
       derive_expected_results_status[5] = 1'b1;
     end
   endfunction
-
-  // Waits for USB 2.0 link enablement before SOF or EP0 traffic can begin.
-  task wait_for_link_enabled(svt_usb_status shared_status);
-    bit link_enabled;
-
-    link_enabled = 1'b0;
-    `uvm_info("USB_INIT_HOST", "Waiting for the SVT USB 2.0 host link to reach ENABLED", UVM_LOW)
-    fork
-      begin
-        wait (shared_status.link_usb_20_state === svt_usb_types::ENABLED);
-        link_enabled = 1'b1;
-      end
-      begin
-        #(USB_LINK_TIMEOUT);
-      end
-    join_any
-    disable fork;
-
-    if (!link_enabled) begin
-      `uvm_fatal("USB_INIT_HOST", $sformatf("USB link did not reach ENABLED within %0t; state=%p", USB_LINK_TIMEOUT, shared_status.link_usb_20_state))
-    end
-    `uvm_info("USB_INIT_HOST", "SVT USB host link is ENABLED", UVM_LOW)
-  endtask
 
   // Validates one ended-event object against immutable request intent.
   // Returns one only for a successful, matching completion and provides a
@@ -103,18 +81,8 @@ class usb_init_host_seq extends uvm_sequence;
     int observed_payload_count;
     string transfer_context;
 
-    failure_reason = "";
     // Reject invalid event data before reading any transfer fields.
-    if (completed_object === null) begin
-      failure_reason = "completion object is null";
-      return 1'b0;
-    end
-    if (!$cast(transfer, completed_object)) begin
-      failure_reason = $sformatf("completion object type %s is not svt_usb_transfer", completed_object.get_type_name());
-      return 1'b0;
-    end
-    if (transfer === null) begin
-      failure_reason = "checked completion cast returned a null transfer";
+    if (!cast_completed_transfer(completed_object, transfer, failure_reason)) begin
       return 1'b0;
     end
 
@@ -275,12 +243,10 @@ class usb_init_host_seq extends uvm_sequence;
     `uvm_info("USB_INIT_HOST", $sformatf("Step %0d/7 %s validated: payload_bytes=%0d validated_count=%0d/7", step_number, label, expected_payload.size(), validated_transfer_count), UVM_LOW)
   endtask
 
-  // Submits one control request and validates the first ended event against
-  // its intent. The event wait runs concurrently with request submission so
-  // both a fast completion and a bounded timeout are handled.
+  // Submits one control request and validates the resulting completion against
+  // its intent. The shared observer is armed before submission so a fast
+  // completion cannot be missed, and its timeout bounds the request.
   task run_control_transfer(
-    svt_usb_agent host_agent,
-    svt_usb_configuration usb_cfg,
     svt_usb_types::setup_data_bmrequesttype_dir_enum direction,
     svt_usb_types::setup_data_brequest_enum request,
     bit [15:0] value,
@@ -293,16 +259,15 @@ class usb_init_host_seq extends uvm_sequence;
   );
     svt_usb_transfer request_transfer;
     uvm_object completed_object;
-    bit transfer_ended;
+    string transfer_label;
 
-    transfer_ended = 1'b0;
+    transfer_label = $sformatf("Step %0d/7 %s", step_number, label);
     request_transfer = svt_usb_transfer::type_id::create({label, "_request"});
     `uvm_info(
       "USB_INIT_HOST",
       $sformatf(
-        "Submitting step %0d/7 %s: addr=%0d request=0x%02h value=0x%04h length=%0d",
-        step_number,
-        label,
+        "Submitting %s: addr=%0d request=0x%02h value=0x%04h length=%0d",
+        transfer_label,
         device_address,
         request,
         value,
@@ -311,47 +276,29 @@ class usb_init_host_seq extends uvm_sequence;
       UVM_LOW
     )
 
-    // One branch captures the first ended event or times out while the other
-    // drives the request through the transfer sequencer.
-    fork
-      begin
-        fork
-          begin
-            host_agent.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger_data(completed_object);
-            transfer_ended = 1'b1;
-          end
-          begin
-            #(USB_CONTROL_TRANSFER_TIMEOUT);
-          end
-        join_any
-        disable fork;
-      end
-      begin
-        start_item(request_transfer, -1, p_sequencer.xfer_sequencer);
-        request_transfer.cfg = usb_cfg;
-        // Pin the device, endpoint, and ustream configuration indices to zero.
-        // SVT disables their randomization so the request keeps these selections.
-        request_transfer.fix_anchors(0, 0, 0);
-        if (!request_transfer.randomize() with {
-              xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
-              device_address == local::device_address;
-              setup_data_bmrequesttype_dir == direction;
-              setup_data_bmrequesttype_type == svt_usb_types::STANDARD;
-              setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
-              setup_data_brequest == request;
-              setup_data_w_value == value;
-              setup_data_w_index == index;
-              setup_data_w_length == length;
-            }) begin
-          `uvm_fatal("USB_INIT_HOST", $sformatf("Unable to randomize step %0d/7 %s", step_number, label))
-        end
-        finish_item(request_transfer);
-      end
-    join
-
-    if (!transfer_ended) begin
-      `uvm_fatal("USB_INIT_HOST", $sformatf("Step %0d/7 %s did not complete within %0t", step_number, label, USB_CONTROL_TRANSFER_TIMEOUT))
+    begin_transfer_watch();
+    start_item(request_transfer, -1, p_sequencer.xfer_sequencer);
+    request_transfer.cfg = usb_cfg;
+    // Pin the device, endpoint, and ustream configuration indices to zero.
+    // SVT disables their randomization so the request keeps these selections.
+    request_transfer.fix_anchors(0, 0, 0);
+    if (!request_transfer.randomize() with {
+          xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
+          device_address == local::device_address;
+          setup_data_bmrequesttype_dir == direction;
+          setup_data_bmrequesttype_type == svt_usb_types::STANDARD;
+          setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
+          setup_data_brequest == request;
+          setup_data_w_value == value;
+          setup_data_w_index == index;
+          setup_data_w_length == length;
+        }) begin
+      `uvm_fatal("USB_INIT_HOST", $sformatf("Unable to randomize %s", transfer_label))
     end
+    finish_item(request_transfer);
+    end_transfer_watch(transfer_label, USB_CONTROL_TRANSFER_TIMEOUT, completed_object);
+    check_transfer_correlation(transfer_label, request_transfer, completed_object);
+
     check_completed_transfer(
       step_number,
       label,
@@ -371,10 +318,6 @@ class usb_init_host_seq extends uvm_sequence;
   // Runs the fixed seven-request USB INIT flow and gates completion on all
   // seven transfer validations.
   virtual task body();
-    svt_usb_agent host_agent;
-    svt_usb_status shared_status;
-    svt_configuration base_cfg;
-    svt_usb_configuration usb_cfg;
     byte unsigned no_payload[$];
     byte unsigned descriptor_payload[$];
     byte unsigned status_payload[$];
@@ -395,23 +338,14 @@ class usb_init_host_seq extends uvm_sequence;
     unconfigured_payload = '{8'h00};
     configured_payload = '{8'h01};
 
-    // Resolve the host agent and shared VIP objects supplied by usb_env.
-    if (p_sequencer === null || !$cast(host_agent, p_sequencer.get_parent())) begin
-      `uvm_fatal("USB_INIT_HOST", "Sequence must run on the SVT host_agent virtual sequencer")
-    end
-    shared_status = p_sequencer.get_shared_status(this);
-    if (shared_status === null) begin
-      `uvm_fatal("USB_INIT_HOST", "SVT shared status is unavailable")
-    end
-    p_sequencer.get_cfg(base_cfg);
-    if (!$cast(usb_cfg, base_cfg)) begin
-      `uvm_fatal("USB_INIT_HOST", "SVT USB configuration is unavailable")
-    end
+    // Resolve the host agent, configuration, and shared status supplied by
+    // usb_env; the shared status is required for the link wait below.
+    resolve_host_context(1'b1);
 
     `uvm_info("USB_INIT_HOST", "Starting seven-step USB INIT host enumeration from address 0 to configuration 1", UVM_LOW)
 
     // Bring up periodic USB framing before issuing the first EP0 request.
-    wait_for_link_enabled(shared_status);
+    wait_for_link_enabled(USB_LINK_TIMEOUT);
     begin
       svt_usb_protocol_service_20_sof_on_sequence sof_sequence;
       sof_sequence = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_sequence");
@@ -425,8 +359,6 @@ class usb_init_host_seq extends uvm_sequence;
     // Steps 1-3 discover the default-address device, inspect its status, and
     // request the transition from address 0 to address 1.
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_DESCRIPTOR,
       16'h0100,
@@ -438,8 +370,6 @@ class usb_init_host_seq extends uvm_sequence;
       descriptor_payload
     );
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_STATUS,
       16'h0000,
@@ -451,8 +381,6 @@ class usb_init_host_seq extends uvm_sequence;
       status_payload
     );
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::HOST_TO_DEVICE,
       svt_usb_types::SET_ADDRESS,
       16'h0001,
@@ -474,8 +402,6 @@ class usb_init_host_seq extends uvm_sequence;
     // Steps 4-7 prove communication at the assigned address, observe the
     // initial configuration value, select configuration 1, and read it back.
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_DESCRIPTOR,
       16'h0100,
@@ -487,8 +413,6 @@ class usb_init_host_seq extends uvm_sequence;
       descriptor_payload
     );
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_CONFIGURATION,
       16'h0000,
@@ -500,8 +424,6 @@ class usb_init_host_seq extends uvm_sequence;
       unconfigured_payload
     );
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::HOST_TO_DEVICE,
       svt_usb_types::SET_CONFIGURATION,
       16'h0001,
@@ -513,8 +435,6 @@ class usb_init_host_seq extends uvm_sequence;
       no_payload
     );
     run_control_transfer(
-      host_agent,
-      usb_cfg,
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_CONFIGURATION,
       16'h0000,

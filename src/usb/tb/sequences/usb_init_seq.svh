@@ -25,16 +25,15 @@
 //   5. Require both host-side transfer validation and the final DUT state of
 //      address 1, configuration 1, and exactly seven serviced SETUP packets.
 //
-// usb_base_seq provides CSR RAL and native DEV0 packet-SRAM accesses.
+// usb_base_seq provides CSR RAL, native DEV0 packet-SRAM accesses, and the
+// generic endpoint-list and per-endpoint interrupt mechanics. Other scenarios
+// that need an enumerated device start this sequence as a child.
 // Scenario waits and native accesses are bounded, and each
 // unsupported or malformed request fails rather than receiving a fallback
 // response.
 class usb_init_seq extends usb_base_seq;
   `uvm_object_utils(usb_init_seq)
 
-  localparam logic [31:0] EP_ENTRY_ACTIVE = 32'h8000_0000;
-  localparam logic [31:0] EP_ENTRY_STALL = 32'h2000_0000;
-  localparam logic [31:0] EP_LIST_OFFSET = 32'h0000_0000;
   localparam logic [31:0] SETUP_BUFFER_OFFSET = 32'h0000_0100;
   localparam logic [31:0] EP0_OUT_BUFFER_OFFSET = 32'h0000_0140;
   localparam logic [31:0] EP0_IN_BUFFER_OFFSET = 32'h0000_0180;
@@ -51,38 +50,6 @@ class usb_init_seq extends usb_base_seq;
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
     super.new(name);
-  endfunction
-
-  // Derive register geometry from generated RAL instead of duplicating masks.
-  protected function logic [31:0] ral_field_mask(uvm_reg_field field_handle);
-    uvm_reg_data_t mask;
-
-    if (field_handle == null) begin
-      `uvm_fatal("USB_INIT_RAL", "Cannot derive a mask from a null RAL field")
-    end
-    mask = '1;
-    mask >>= $bits(mask) - field_handle.get_n_bits();
-    mask <<= field_handle.get_lsb_pos();
-    return mask[31:0];
-  endfunction
-
-  protected function logic [31:0] ral_field_value(uvm_reg_field field_handle, uvm_reg_data_t value);
-    uvm_reg_data_t encoded_value;
-    logic [31:0] field_mask;
-
-    field_mask = ral_field_mask(field_handle);
-    encoded_value = (value << field_handle.get_lsb_pos()) & field_mask;
-    return encoded_value[31:0];
-  endfunction
-
-  // Encode one DEV0 endpoint-list word from ownership, stall, byte-count, and
-  // 64-byte-aligned packet-buffer fields.
-  function logic [31:0] endpoint_entry(bit active, bit stall, int unsigned byte_count, logic [31:0] buffer_offset);
-    return
-      (active ? EP_ENTRY_ACTIVE : 32'h0) |
-      (stall ? EP_ENTRY_STALL : 32'h0) |
-      ((byte_count & 32'h7fff) << 11) |
-      ((buffer_offset >> 6) & 32'h7ff);
   endfunction
 
   // Preserve the protocol-owned address shadow whenever DEVCMDSTAT is written.

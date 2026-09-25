@@ -12,8 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Shared access layer for USB environment-level sequences: native 32-bit AXI
-// transfers, COMBO register accesses through RAL, and 64-bit packet-memory rows.
+// Shared base for every device-side USB sequence. It provides the generic
+// mechanics so a scenario sequence expresses only what it is proving:
+//
+//   - Access: native 32-bit AXI transfers, COMBO register accesses through
+//     RAL, and 64-bit packet-memory rows.
+//   - DEV0 endpoints: endpoint-list entry encode/decode, profile-driven entry
+//     addressing, per-endpoint INTEN/INTSTAT/EPSKIP control, and bounded CSR
+//     polling with progress reporting.
+//
+// Scenarios extend this class directly. A scenario that needs another one as a
+// precondition (for example enumeration) starts it as a child sequence rather
+// than inheriting from it.
+//
 // Native addresses are byte offsets within the selected target's root map;
 // HUB offsets include HUB_BASE_ADDR within COMBO. RAL memory indices are rows,
 // not byte offsets. Access helpers use the supplied USER override or resolve a
@@ -451,5 +462,292 @@ class usb_base_seq extends uvm_sequence;
     end
     data = read_data[63:0];
     ral_memory_reads[target]++;
+  endtask
+
+  // ===========================================================================
+  // DEV0 endpoint utilities
+  //
+  // Every routine addresses an endpoint through a usb_endpoint_profile resolved
+  // from the environment, never a literal index, so the endpoint layout can be
+  // reordered or extended in usb_env_cfg without editing any sequence.
+  //
+  // DEV0 endpoint-list entry encoding:
+  //
+  //   bit  31     Active - hardware owns the entry
+  //   bit  29     Stall
+  //   bits 25:11  NBytes - byte count, updated by hardware as a residual
+  //   bits 10:0   Buffer address, in 64-byte units
+  // ===========================================================================
+
+  localparam logic [31:0] EP_ENTRY_ACTIVE = 32'h8000_0000;
+  localparam logic [31:0] EP_ENTRY_STALL = 32'h2000_0000;
+  localparam logic [31:0] EP_LIST_OFFSET = 32'h0000_0000;
+  localparam int unsigned EP_ENTRY_NBYTES_LSB = 11;
+  localparam logic [31:0] EP_ENTRY_NBYTES_MASK = 32'h7fff;
+  localparam logic [31:0] EP_ENTRY_BUFFER_MASK = 32'h7ff;
+
+  // Default pacing for the bounded CSR polls below. A caller that needs a
+  // different bound passes its own values rather than changing these.
+  localparam time EP_POLL_INTERVAL = 100ns;
+  localparam time EP_PROGRESS_REPORT_INTERVAL = 20us;
+
+  // -----------------------------------------------------------------------------
+  // Generated RAL geometry
+  // -----------------------------------------------------------------------------
+
+  // Derive register geometry from generated RAL instead of duplicating masks.
+  protected function logic [31:0] ral_field_mask(uvm_reg_field field_handle);
+    uvm_reg_data_t mask;
+
+    if (field_handle == null) begin
+      `uvm_fatal("USB_EP", "Cannot derive a mask from a null RAL field")
+    end
+    mask = '1;
+    mask >>= $bits(mask) - field_handle.get_n_bits();
+    mask <<= field_handle.get_lsb_pos();
+    return mask[31:0];
+  endfunction
+
+  protected function logic [31:0] ral_field_value(uvm_reg_field field_handle, uvm_reg_data_t value);
+    uvm_reg_data_t encoded_value;
+    logic [31:0] field_mask;
+
+    field_mask = ral_field_mask(field_handle);
+    encoded_value = (value << field_handle.get_lsb_pos()) & field_mask;
+    return encoded_value[31:0];
+  endfunction
+
+  // -----------------------------------------------------------------------------
+  // Endpoint-list entry encoding and decoding
+  // -----------------------------------------------------------------------------
+
+  // Encode one DEV0 endpoint-list word from ownership, stall, byte-count, and
+  // 64-byte-aligned packet-buffer fields.
+  function logic [31:0] endpoint_entry(bit active, bit stall, int unsigned byte_count, logic [31:0] buffer_offset);
+    return
+      (active ? EP_ENTRY_ACTIVE : 32'h0) |
+      (stall ? EP_ENTRY_STALL : 32'h0) |
+      ((byte_count & EP_ENTRY_NBYTES_MASK) << EP_ENTRY_NBYTES_LSB) |
+      ((buffer_offset >> 6) & EP_ENTRY_BUFFER_MASK);
+  endfunction
+
+  // Hardware-updated residual byte count remaining in an entry.
+  function int unsigned entry_residual_bytes(logic [31:0] entry);
+    return (entry >> EP_ENTRY_NBYTES_LSB) & EP_ENTRY_NBYTES_MASK;
+  endfunction
+
+  function logic [31:0] entry_buffer_offset(logic [31:0] entry);
+    return (entry & EP_ENTRY_BUFFER_MASK) << 6;
+  endfunction
+
+  function bit entry_is_active(logic [31:0] entry);
+    return |(entry & EP_ENTRY_ACTIVE);
+  endfunction
+
+  // -----------------------------------------------------------------------------
+  // Endpoint resolution
+  // -----------------------------------------------------------------------------
+
+  // Resolve an endpoint by protocol identity through the environment profile.
+  // A sequence never names an anchor or physical index directly.
+  function usb_endpoint_profile get_endpoint(int unsigned ep_number, usb_ep_dir_e direction);
+    if (p_sequencer == null || p_sequencer.cfg == null) begin
+      `uvm_fatal("USB_EP", "The USB environment configuration is unavailable, so endpoints cannot be resolved")
+    end
+    return p_sequencer.cfg.get_endpoint(ep_number, direction);
+  endfunction
+
+  // -----------------------------------------------------------------------------
+  // Endpoint-list access
+  // -----------------------------------------------------------------------------
+
+  function logic [31:0] endpoint_entry_address(usb_endpoint_profile endpoint, int unsigned buffer_select = 0);
+    return EP_LIST_OFFSET + endpoint.entry_offset(buffer_select);
+  endfunction
+
+  task write_endpoint_entry(usb_endpoint_profile endpoint, logic [31:0] entry, int unsigned buffer_select = 0);
+    write32(USB_DEV0_SRAM, endpoint_entry_address(endpoint, buffer_select), entry);
+  endtask
+
+  task read_endpoint_entry(usb_endpoint_profile endpoint, output logic [31:0] entry, input int unsigned buffer_select = 0);
+    read32(USB_DEV0_SRAM, endpoint_entry_address(endpoint, buffer_select), entry);
+  endtask
+
+  // Hand the endpoint to hardware over the given buffer and byte count, and
+  // return the entry that was written so a caller can compare against it.
+  task arm_endpoint(usb_endpoint_profile endpoint, int unsigned byte_count, logic [31:0] buffer_offset, output logic [31:0] entry, input int unsigned buffer_select = 0);
+    entry = endpoint_entry(1'b1, 1'b0, byte_count, buffer_offset);
+    write_endpoint_entry(endpoint, entry, buffer_select);
+    `uvm_info("USB_EP", $sformatf("Armed %s over buffer 0x%03h for %0d bytes: entry=0x%08h", endpoint.describe(), buffer_offset, byte_count, entry), UVM_LOW)
+  endtask
+
+  // Fill a packet-memory buffer with a repeating sentinel so a later comparison
+  // can prove every byte was overwritten by real traffic.
+  task fill_endpoint_buffer(logic [31:0] buffer_offset, int unsigned byte_count, logic [31:0] fill_word);
+    for (int unsigned offset = 0; offset < byte_count; offset += 4) begin
+      write32(USB_DEV0_SRAM, buffer_offset + offset, fill_word);
+    end
+    `uvm_info("USB_EP", $sformatf("Filled %0d bytes at buffer 0x%03h with 0x%08h", byte_count, buffer_offset, fill_word), UVM_HIGH)
+  endtask
+
+  // -----------------------------------------------------------------------------
+  // Per-endpoint interrupt and skip control
+  // -----------------------------------------------------------------------------
+
+  // INTSTAT places endpoint status at the physical index for every endpoint,
+  // but the generated RAL names fields only through EP5IN, so the bit is taken
+  // from the profile rather than looked up by field name.
+  function logic [31:0] endpoint_intstat_mask(usb_endpoint_profile endpoint);
+    return endpoint.csr_bit_mask();
+  endfunction
+
+  // Add an endpoint to the enabled interrupt set without disturbing the
+  // enables an earlier stage established.
+  task enable_endpoint_interrupt(usb_endpoint_profile endpoint);
+    logic [31:0] interrupt_enable_value;
+    logic [31:0] endpoint_enable_bit;
+
+    endpoint_enable_bit = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN, endpoint.csr_bit_mask());
+    ral_read32("INTEN", p_sequencer.reg_model.combo.dev0_csr.INTEN, interrupt_enable_value);
+    interrupt_enable_value |= endpoint_enable_bit;
+    ral_write32("INTEN", p_sequencer.reg_model.combo.dev0_csr.INTEN, interrupt_enable_value);
+    `uvm_info("USB_EP", $sformatf("Enabled the interrupt for %s: INTEN=0x%08h", endpoint.describe(), interrupt_enable_value), UVM_LOW)
+  endtask
+
+  // Clear only this endpoint's write-one-to-clear status bit.
+  task clear_endpoint_interrupt(usb_endpoint_profile endpoint);
+    ral_write32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, endpoint_intstat_mask(endpoint));
+  endtask
+
+  // Ask the DMA to abandon the endpoint's current entry. Hardware owns the
+  // request until its writeback completes, so the bit is not expected to read
+  // back as written.
+  task request_endpoint_skip(usb_endpoint_profile endpoint);
+    logic [31:0] skip_mask;
+
+    skip_mask = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.EPSKIP.SKIP, endpoint.csr_bit_mask());
+    ral_write32("EPSKIP", p_sequencer.reg_model.combo.dev0_csr.EPSKIP, skip_mask);
+    `uvm_info("USB_EP", $sformatf("Requested a skip for %s: EPSKIP=0x%08h", endpoint.describe(), skip_mask), UVM_LOW)
+  endtask
+
+  // -----------------------------------------------------------------------------
+  // Bounded CSR polling
+  // -----------------------------------------------------------------------------
+
+  // Poll one DEV0 CSR until the masked bits reach want_set, reporting progress
+  // so a stalled wait is visible in the log long before it times out. A timeout
+  // is fatal and reports the last value read, so the failure identifies the
+  // condition that was never met rather than a downstream symptom.
+  task poll_csr_bits(
+    string label,
+    uvm_reg register_handle,
+    logic [31:0] mask,
+    bit want_set,
+    time timeout,
+    output logic [31:0] final_value,
+    input time poll_interval = EP_POLL_INTERVAL,
+    input time progress_interval = EP_PROGRESS_REPORT_INTERVAL
+  );
+    time poll_deadline;
+    time next_progress_report;
+    bit satisfied;
+
+    satisfied = 1'b0;
+    final_value = 32'h0;
+    poll_deadline = $time + timeout;
+    next_progress_report = $time + progress_interval;
+    `uvm_info("USB_EP", $sformatf("Waiting up to %0t for %s (mask=0x%08h expected=%0b)", timeout, label, mask, want_set), UVM_LOW)
+
+    while (!satisfied && ($time < poll_deadline)) begin
+      ral_read32(label, register_handle, final_value);
+      if ((|(final_value & mask)) === want_set) begin
+        satisfied = 1'b1;
+      end else begin
+        if ($time >= next_progress_report) begin
+          `uvm_info("USB_EP", $sformatf("Still waiting for %s: value=0x%08h elapsed=%0t", label, final_value, timeout - (poll_deadline - $time)), UVM_LOW)
+          next_progress_report = $time + progress_interval;
+        end
+        #(poll_interval);
+      end
+    end
+
+    if (!satisfied) begin
+      `uvm_fatal("USB_EP", $sformatf("%s was not satisfied within %0t; mask=0x%08h expected=%0b last value=0x%08h", label, timeout, mask, want_set, final_value))
+    end
+  endtask
+
+  // Wait for hardware to retire a skip request by self-clearing the bit.
+  task wait_for_endpoint_skip_clear(
+    usb_endpoint_profile endpoint,
+    time timeout,
+    input time poll_interval = EP_POLL_INTERVAL,
+    input time progress_interval = EP_PROGRESS_REPORT_INTERVAL
+  );
+    logic [31:0] skip_mask;
+    logic [31:0] skip_status;
+
+    skip_mask = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.EPSKIP.SKIP, endpoint.csr_bit_mask());
+    poll_csr_bits(
+      $sformatf("EPSKIP self-clear for %s", endpoint.describe()),
+      p_sequencer.reg_model.combo.dev0_csr.EPSKIP,
+      skip_mask,
+      1'b0,
+      timeout,
+      skip_status,
+      poll_interval,
+      progress_interval
+    );
+  endtask
+
+  // Wait for an endpoint to report activity, then clear its status so a later
+  // wait observes only the next event.
+  task wait_for_endpoint_interrupt(
+    usb_endpoint_profile endpoint,
+    time timeout,
+    input time poll_interval = EP_POLL_INTERVAL,
+    input time progress_interval = EP_PROGRESS_REPORT_INTERVAL
+  );
+    logic [31:0] interrupt_status;
+
+    poll_csr_bits(
+      $sformatf("INTSTAT.%s for %s", endpoint.short_name(), endpoint.describe()),
+      p_sequencer.reg_model.combo.dev0_csr.INTSTAT,
+      endpoint_intstat_mask(endpoint),
+      1'b1,
+      timeout,
+      interrupt_status,
+      poll_interval,
+      progress_interval
+    );
+    clear_endpoint_interrupt(endpoint);
+  endtask
+
+  // Require the endpoint's entry to match an expected word exactly, reporting
+  // the decoded fields so a mismatch does not need manual bit extraction.
+  task check_endpoint_entry_writeback(
+    usb_endpoint_profile endpoint,
+    logic [31:0] expected_entry,
+    string check_label,
+    input int unsigned buffer_select = 0
+  );
+    logic [31:0] observed_entry;
+
+    read_endpoint_entry(endpoint, observed_entry, buffer_select);
+    if (observed_entry !== expected_entry) begin
+      `uvm_fatal("USB_EP", $sformatf(
+        {"%s for %s: entry=0x%08h expected=0x%08h ",
+         "(observed active=%0b nbytes=%0d buffer=0x%03h; expected active=%0b nbytes=%0d buffer=0x%03h)"},
+        check_label,
+        endpoint.describe(),
+        observed_entry,
+        expected_entry,
+        entry_is_active(observed_entry),
+        entry_residual_bytes(observed_entry),
+        entry_buffer_offset(observed_entry),
+        entry_is_active(expected_entry),
+        entry_residual_bytes(expected_entry),
+        entry_buffer_offset(expected_entry)
+      ))
+    end
   endtask
 endclass

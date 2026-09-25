@@ -16,7 +16,8 @@
 // Included by usb_tb_pkg.sv and owned by usb_env, this object prepares a USB 2.0
 // high-speed host plus the remote UTMI device-PHY configuration used for INIT.
 
-// Centralize the paired VIP settings, endpoint template, and simulation timers.
+// Centralize the paired VIP settings, declarative endpoint profile, and
+// simulation timers.
 class usb_env_cfg extends uvm_object;
   `uvm_object_utils(usb_env_cfg)
 
@@ -28,8 +29,16 @@ class usb_env_cfg extends uvm_object;
   localparam real USB_TIMER_150US_PS = 150000000.0;
   localparam real USB_TIMER_300US_PS = 300000000.0;
 
-  // The template below requires EP0 and EP1; extra entries need configuration.
-  int unsigned endpoint_count = 2;
+  // Declarative device endpoint layout. This queue is the single source of
+  // truth for which endpoints the bench advertises, in what order they occupy
+  // the SVT endpoint_cfg[] anchor array, and how each maps onto a DEV0
+  // physical endpoint. Sequences resolve endpoints through get_endpoint()
+  // rather than embedding literal anchor or physical indices, so the layout
+  // can be reordered or extended without touching any sequence.
+  //
+  // A test that needs a different layout overrides build_endpoint_profile()
+  // or edits endpoint_profile before usb_env calls configure_usb_vip().
+  usb_endpoint_profile endpoint_profile[$];
 
   // usb_env installs host_cfg and clones device_phy_cfg as the remote PHY.
   svt_usb_agent_configuration host_cfg;
@@ -39,8 +48,201 @@ class usb_env_cfg extends uvm_object;
     super.new(name);
   endfunction
 
-  // Create the paired USB 2.0 HS configurations, EP0 control/EP1 bulk-IN
-  // template, scaled timers, and tracing. Call before validate_usb_vip().
+  // -----------------------------------------------------------------------------
+  // Endpoint profile construction and lookup
+  // -----------------------------------------------------------------------------
+
+  function int unsigned endpoint_count();
+    return endpoint_profile.size();
+  endfunction
+
+  // Append one endpoint and hand back the profile so a caller can adjust any
+  // remaining field before the profile is applied.
+  function usb_endpoint_profile add_endpoint(usb_endpoint_profile endpoint);
+    if (endpoint == null) begin
+      `uvm_fatal("USB_CFG", "Cannot add a null endpoint profile")
+    end
+    endpoint_profile.push_back(endpoint);
+    return endpoint;
+  endfunction
+
+  // The bench's default device: an EP0 control endpoint for enumeration plus a
+  // bulk IN/OUT pair on EP1. Overriding this function is the supported way to
+  // advertise a different device without editing any sequence.
+  virtual function void build_endpoint_profile();
+    endpoint_profile.delete();
+
+    void'(add_endpoint(usb_endpoint_profile::create_endpoint(
+      "ep0_control",
+      0,
+      USB_EP_DIR_OUT,
+      USB_EP_KIND_CONTROL,
+      `SVT_USB_HS_CONTROL_MAX_PACKET_SIZE,
+      1,
+      1'b0,
+      0
+    )));
+    void'(add_endpoint(usb_endpoint_profile::create_endpoint(
+      "ep1_bulk_in",
+      1,
+      USB_EP_DIR_IN,
+      USB_EP_KIND_BULK,
+      `SVT_USB_HS_BULK_MAX_PACKET_SIZE
+    )));
+    // The device does not require a terminating zero-length packet after a
+    // max-packet-aligned bulk OUT transfer; without this the VIP forces one.
+    void'(add_endpoint(usb_endpoint_profile::create_endpoint(
+      "ep1_bulk_out",
+      1,
+      USB_EP_DIR_OUT,
+      USB_EP_KIND_BULK,
+      `SVT_USB_HS_BULK_MAX_PACKET_SIZE,
+      1,
+      1'b1
+    )));
+  endfunction
+
+  // Reject layouts that cannot be represented before any of them reaches the
+  // VIP or a sequence, so a profile mistake fails with its own diagnostic
+  // rather than as an obscure VIP or CSR symptom.
+  function void validate_endpoint_profile();
+    bit physical_index_used[int unsigned];
+    bit control_endpoint_present;
+
+    if (endpoint_profile.size() == 0) begin
+      `uvm_fatal("USB_CFG", "The endpoint profile is empty; at least a control endpoint is required")
+    end
+
+    foreach (endpoint_profile[index]) begin
+      usb_endpoint_profile endpoint;
+      int unsigned physical_index;
+
+      endpoint = endpoint_profile[index];
+      if (endpoint == null) begin
+        `uvm_fatal("USB_CFG", $sformatf("Endpoint profile entry %0d is null", index))
+      end
+      physical_index = endpoint.physical_index();
+
+      // NBPHYSEP counts only non-EP0 directions; the controller adds the two
+      // EP0 halves, giving physical indices 0..NBPHYSEP+1.
+      if (physical_index >= USB_DEV0_NBPHYSEP + 2) begin
+        `uvm_fatal("USB_CFG", $sformatf("%s exceeds the DEV0 physical endpoint count of %0d (NBPHYSEP=%0d plus EP0 OUT/IN)", endpoint.describe(), USB_DEV0_NBPHYSEP + 2, USB_DEV0_NBPHYSEP))
+      end
+      if (physical_index_used.exists(physical_index)) begin
+        `uvm_fatal("USB_CFG", $sformatf("%s duplicates an endpoint already claiming physical index %0d", endpoint.describe(), physical_index))
+      end
+      physical_index_used[physical_index] = 1'b1;
+
+      if (endpoint.max_packet_size == 0) begin
+        `uvm_fatal("USB_CFG", $sformatf("%s has a zero maximum packet size", endpoint.describe()))
+      end
+      if (endpoint.ep_kind == USB_EP_KIND_CONTROL) begin
+        if (endpoint.ep_number != 0) begin
+          `uvm_fatal("USB_CFG", $sformatf("%s is a control endpoint on a non-zero endpoint number", endpoint.describe()))
+        end
+        control_endpoint_present = 1'b1;
+      end
+    end
+
+    if (!control_endpoint_present) begin
+      `uvm_fatal("USB_CFG", "The endpoint profile has no control endpoint, so enumeration cannot run")
+    end
+  endfunction
+
+  // Return the endpoint matching a protocol identity, or null when the bench is
+  // not advertising it. A control endpoint matches either direction because one
+  // profile entry covers both halves of EP0; the result is bound to the
+  // requested direction so every derived DUT address and bit follows it.
+  function usb_endpoint_profile find_endpoint(int unsigned ep_number, usb_ep_dir_e direction);
+    foreach (endpoint_profile[index]) begin
+      usb_endpoint_profile endpoint;
+
+      endpoint = endpoint_profile[index];
+      if (endpoint.ep_number != ep_number) begin
+        continue;
+      end
+      if (endpoint.ep_kind == USB_EP_KIND_CONTROL) begin
+        return endpoint.view_for_direction(direction);
+      end
+      if (endpoint.direction == direction) begin
+        return endpoint;
+      end
+    end
+    return null;
+  endfunction
+
+  // Checked lookup for sequences. Failing here names the requested endpoint and
+  // lists what the profile does advertise, so a mismatch is diagnosable without
+  // reading the configuration source.
+  function usb_endpoint_profile get_endpoint(int unsigned ep_number, usb_ep_dir_e direction);
+    usb_endpoint_profile endpoint;
+
+    endpoint = find_endpoint(ep_number, direction);
+    if (endpoint == null) begin
+      `uvm_fatal("USB_CFG", $sformatf("EP%0d %s is not in the endpoint profile. Advertised endpoints: %s", ep_number, (direction == USB_EP_DIR_IN) ? "IN" : "OUT", describe_endpoint_profile()))
+    end
+    return endpoint;
+  endfunction
+
+  function usb_endpoint_profile get_endpoint_by_anchor(int unsigned anchor_index);
+    if (anchor_index >= endpoint_profile.size()) begin
+      `uvm_fatal("USB_CFG", $sformatf("Anchor index %0d is outside the %0d-endpoint profile", anchor_index, endpoint_profile.size()))
+    end
+    return endpoint_profile[anchor_index];
+  endfunction
+
+  function string describe_endpoint_profile();
+    string description;
+
+    foreach (endpoint_profile[index]) begin
+      description = {description, (index == 0) ? "" : ", ", endpoint_profile[index].describe()};
+    end
+    return description;
+  endfunction
+
+  // Translate the profile into the VIP's endpoint configuration array. This is
+  // the only function that names svt_usb_types endpoint values, and it assigns
+  // each profile's anchor index as a side effect so the assignment and the
+  // recorded index cannot disagree.
+  function void apply_endpoint_profile();
+    validate_endpoint_profile();
+
+    device_phy_cfg.local_device_cfg[0].num_endpoints = endpoint_count();
+
+    foreach (endpoint_profile[anchor]) begin
+      usb_endpoint_profile endpoint;
+
+      endpoint = endpoint_profile[anchor];
+      endpoint.anchor_index = anchor;
+      endpoint.anchor_index_valid = 1'b1;
+
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor] = new();
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].ep_number = endpoint.ep_number;
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].direction =
+          endpoint.svt_direction_is_in() ? svt_usb_types::IN : svt_usb_types::OUT;
+      // Only the transfer types this bench has exercised are mapped. Adding a
+      // type is a single case arm here plus the matching usb_ep_kind_e member.
+      case (endpoint.ep_kind)
+        USB_EP_KIND_CONTROL: device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].ep_type = svt_usb_types::CONTROL;
+        USB_EP_KIND_BULK:    device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].ep_type = svt_usb_types::BULK;
+        default: `uvm_fatal("USB_CFG", $sformatf("%s uses a transfer type with no SVT mapping in apply_endpoint_profile()", endpoint.describe()))
+      endcase
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].interval = endpoint.interval;
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].max_packet_size = endpoint.max_packet_size;
+      device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].speed = svt_usb_types::HS;
+      if (endpoint.max_burst_size_valid) begin
+        device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].max_burst_size = endpoint.max_burst_size;
+      end
+      if (endpoint.allow_aligned_transfer_without_zero_length) begin
+        device_phy_cfg.local_device_cfg[0].endpoint_cfg[anchor].allow_aligned_transfer_without_zero_length = 1;
+      end
+    end
+
+    `uvm_info("USB_CFG", $sformatf("Applied a %0d-endpoint device profile: %s", endpoint_count(), describe_endpoint_profile()), UVM_LOW)
+  endfunction
+
+  // Create the paired USB 2.0 HS configurations, apply the declarative endpoint
+  // profile, and set scaled timers and tracing. Call before validate_usb_vip().
   function void configure_usb_vip();
     host_cfg = new();
     device_phy_cfg = new();
@@ -89,28 +291,14 @@ class usb_env_cfg extends uvm_object;
     device_phy_cfg.local_device_cfg[0].functionality_support = svt_usb_types::HS;
     device_phy_cfg.local_device_cfg[0].device_address = 0;
     device_phy_cfg.local_device_cfg[0].connected_hub_device_address = 0;
-    device_phy_cfg.local_device_cfg[0].num_endpoints = endpoint_count;
     device_phy_cfg.local_device_cfg[0].device_timeout = USB_TIMER_50US_PS;
 
-    for (int unsigned endpoint = 0; endpoint < endpoint_count; endpoint++) begin
-      device_phy_cfg.local_device_cfg[0].endpoint_cfg[endpoint] = new();
+    // Build the layout only when a test has not already supplied one, then
+    // translate it into the VIP's endpoint array.
+    if (endpoint_profile.size() == 0) begin
+      build_endpoint_profile();
     end
-    // EP0 describes the control endpoint used for enumeration requests.
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].ep_number = 0;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].direction = svt_usb_types::IN;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].ep_type = svt_usb_types::CONTROL;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].interval = 1;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].max_burst_size = 0;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].max_packet_size = `SVT_USB_HS_CONTROL_MAX_PACKET_SIZE;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[0].speed = svt_usb_types::HS;
-
-    // EP1 supplies the bulk-IN endpoint in the bench's device template.
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].ep_number = 1;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].direction = svt_usb_types::IN;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].ep_type = svt_usb_types::BULK;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].interval = 1;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].max_packet_size = `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
-    device_phy_cfg.local_device_cfg[0].endpoint_cfg[1].speed = svt_usb_types::HS;
+    apply_endpoint_profile();
 
     // Apply the vendor's scaled timer set first, then the bench-specific
     // attach/reset/handshake/inactivity values symmetrically on both sides.
