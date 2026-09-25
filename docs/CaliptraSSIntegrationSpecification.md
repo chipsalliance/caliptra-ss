@@ -2598,7 +2598,7 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 **IMPORTANT**:
 - **Static Configuration**: The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface. This selection is mutually exclusive and cannot be changed dynamically.
-- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, SoC can choose to reuse the Caliptra I3C core and configure it in "AXI Streaming boot" mode and it must be instantiated outside of Caliptra SS. To emphasize, this is NOT an I3C block  when configured to AXI streaming boot mode.
+- **Dual-Functionality**: If the SoC requires both AXI Recovery and standard I3C Target functionality, SoC can choose to reuse the Caliptra I3C core and configure it in "AXI Streaming boot" mode and it must be instantiated outside of Caliptra SS. To emphasize, this is NOT an I3C block when configured to AXI streaming boot mode.
 
 ## Integration Considerations
 
