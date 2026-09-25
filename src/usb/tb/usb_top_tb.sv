@@ -311,7 +311,7 @@ module usb_top_tb;
     .sys_dev_wakeup_n(1'b1), // FIXME: DV add functionality
     .sys_utmi_clkin_lock(phy_clock_locked),
     .USB_EnableHub(1'b0), // FIXME: DV add functionality
-    .USB_self_powered(1'b0), // FIXME: DV add functionality
+    .USB_self_powered(1'b1), // FIXME: DV add functionality
     .testmode(1'b0),
     .async_disable(1'b0)
   );
@@ -411,17 +411,19 @@ module usb_top_tb;
 `ifndef AVERY_ASSERT_ON
     `uvm_fatal("USB_CONFIG", "AVERY_ASSERT_ON is required for continuous AXI protocol checking")
 `endif
-    // Publish the four independent AXI managers, USB PHY, and filter policy control to UVM.
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "combo_vif", combo_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev0_memory_vif", dev0_memory_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_csr_vif", dev1_csr_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_memory_vif", dev1_memory_manager_vif);
-    uvm_config_db#(virtual svt_usb_if)::set(null, "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
+    // Publish the four independent AXI managers, USB PHY, and filter policy
+    // control to any env instance named "env", so the environment can be reused
+    // under a different parent.
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "combo_vif", combo_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev0_memory_vif", dev0_memory_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_csr_vif", dev1_csr_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_memory_vif", dev1_memory_manager_vif);
+    uvm_config_db#(virtual svt_usb_if)::set(null, "*.env", "usb_20_mac_if", usb_20_mac_if);
     uvm_config_db#(virtual usb_tb_ctrl_if #(
       .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
       .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
       .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-    ))::set(null, "uvm_test_top.env", "usb_ctrl_vif", usb_ctrl_if);
+    ))::set(null, "*.env", "usb_ctrl_vif", usb_ctrl_if);
     run_test();
   end
 endmodule
