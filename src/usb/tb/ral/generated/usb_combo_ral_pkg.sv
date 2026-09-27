@@ -635,7 +635,7 @@ package usb_combo_ral_pkg;
             this.REC_PROT_VERSION = new("REC_PROT_VERSION");
             this.REC_PROT_VERSION.configure(this, 16, 0, "RO", 0, 'h101, 1, 1, 0);
             this.AGENT_CAPS_IDENTIFICATION = new("AGENT_CAPS_IDENTIFICATION");
-            this.AGENT_CAPS_IDENTIFICATION.configure(this, 1, 16, "RW", 0, 'h1, 1, 1, 0);
+            this.AGENT_CAPS_IDENTIFICATION.configure(this, 1, 16, "RW", 0, 'h0, 1, 1, 0);
             this.AGENT_CAPS_FORCED_RECOVERY = new("AGENT_CAPS_FORCED_RECOVERY");
             this.AGENT_CAPS_FORCED_RECOVERY.configure(this, 1, 17, "RW", 0, 'h1, 1, 1, 0);
             this.AGENT_CAPS_MGMT_RESET = new("AGENT_CAPS_MGMT_RESET");
@@ -655,7 +655,7 @@ package usb_combo_ral_pkg;
             this.AGENT_CAPS_HARDWARE_STATUS = new("AGENT_CAPS_HARDWARE_STATUS");
             this.AGENT_CAPS_HARDWARE_STATUS.configure(this, 1, 25, "RW", 0, 'h1, 1, 1, 0);
             this.AGENT_CAPS_VENDOR_COMMAND = new("AGENT_CAPS_VENDOR_COMMAND");
-            this.AGENT_CAPS_VENDOR_COMMAND.configure(this, 1, 26, "RW", 0, 'h1, 1, 1, 0);
+            this.AGENT_CAPS_VENDOR_COMMAND.configure(this, 1, 26, "RW", 0, 'h0, 1, 1, 0);
             this.AGENT_CAPS_FLASHLESS_BOOT = new("AGENT_CAPS_FLASHLESS_BOOT");
             this.AGENT_CAPS_FLASHLESS_BOOT.configure(this, 1, 27, "RW", 0, 'h1, 1, 1, 0);
             this.AGENT_CAPS_FIFO_CMS_SUPPORT = new("AGENT_CAPS_FIFO_CMS_SUPPORT");
@@ -700,11 +700,11 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DESC_TYPE = new("DESC_TYPE");
-            this.DESC_TYPE.configure(this, 8, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DESC_TYPE.configure(this, 8, 0, "RW", 0, 'h0, 1, 1, 0);
             this.VENDOR_SPECIFIC_STR_LENGTH = new("VENDOR_SPECIFIC_STR_LENGTH");
-            this.VENDOR_SPECIFIC_STR_LENGTH.configure(this, 8, 8, "RO", 1, 'h0, 1, 1, 0);
+            this.VENDOR_SPECIFIC_STR_LENGTH.configure(this, 8, 8, "RW", 0, 'h0, 1, 1, 0);
             this.DATA_3_2 = new("DATA_3_2");
-            this.DATA_3_2.configure(this, 16, 16, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_3_2.configure(this, 16, 16, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_0
 
@@ -718,7 +718,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DATA_7_4 = new("DATA_7_4");
-            this.DATA_7_4.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_7_4.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_1
 
@@ -732,7 +732,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DATA_11_8 = new("DATA_11_8");
-            this.DATA_11_8.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_11_8.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_2
 
@@ -746,7 +746,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DATA_15_12 = new("DATA_15_12");
-            this.DATA_15_12.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_15_12.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_3
 
@@ -760,7 +760,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DATA_19_16 = new("DATA_19_16");
-            this.DATA_19_16.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_19_16.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_4
 
@@ -774,7 +774,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.DATA_23_20 = new("DATA_23_20");
-            this.DATA_23_20.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.DATA_23_20.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_ID_5
 
