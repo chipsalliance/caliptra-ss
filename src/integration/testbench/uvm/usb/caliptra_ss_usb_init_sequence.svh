@@ -87,17 +87,17 @@ endclass
 // -----------------------------------------------------------------------------
 // Top-level init sequence (started on env.host_agent.virt_sequencer).
 //
-// Extends caliptra_ss_usb_base_sequence which provides:
+// Extends caliptra_ss_usb_ctrl_base_sequence which provides:
 //   * pre_start/post_start objection plumbing
 //   * resolve_xfer_handles()
 //   * do_control_xfer() / wait_xfer_done()
 //
 // The body() is decomposed into four protected virtual subtasks so future
 // sequences (e.g. caliptra_ss_usb_ocp_recovery_sequence) that extend
-// caliptra_ss_usb_base_sequence directly can call them via a wrapper or
+// caliptra_ss_usb_ctrl_base_sequence directly can call them via a wrapper or
 // duplicate just the choreography they need.
 // -----------------------------------------------------------------------------
-class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_base_sequence;
+class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_ctrl_base_sequence;
 
     `uvm_object_utils(caliptra_ss_usb_init_sequence)
 

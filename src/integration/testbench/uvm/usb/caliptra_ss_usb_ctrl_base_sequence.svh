@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CALIPTRA_SS_USB_BASE_SEQUENCE_SV
-`define CALIPTRA_SS_USB_BASE_SEQUENCE_SV
+`ifndef CALIPTRA_SS_USB_CTRL_BASE_SEQUENCE_SV
+`define CALIPTRA_SS_USB_CTRL_BASE_SEQUENCE_SV
 
 // =============================================================================
-// caliptra_ss_usb_base_sequence
+// caliptra_ss_usb_ctrl_base_sequence
 //
 // Common base for USB host-side sequences that talk to the DUT through the
 // VIP svt_usb_virtual_sequencer (xfer_sequencer + link/protocol service
@@ -36,12 +36,12 @@
 // CONTROL-xfer choreography stays in one place and message tags ("USB_INIT")
 // remain consistent for log scraping.
 // =============================================================================
-class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
+class caliptra_ss_usb_ctrl_base_sequence extends uvm_sequence #(svt_usb_transfer);
 
-    `uvm_object_utils(caliptra_ss_usb_base_sequence)
+    `uvm_object_utils(caliptra_ss_usb_ctrl_base_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
-    function new(string name = "caliptra_ss_usb_base_sequence");
+    function new(string name = "caliptra_ss_usb_ctrl_base_sequence");
         super.new(name);
     endfunction
 
@@ -134,4 +134,4 @@ class caliptra_ss_usb_base_sequence extends uvm_sequence #(svt_usb_transfer);
 
 endclass
 
-`endif // CALIPTRA_SS_USB_BASE_SEQUENCE_SV
+`endif // CALIPTRA_SS_USB_CTRL_BASE_SEQUENCE_SV

@@ -40,6 +40,16 @@ class caliptra_ss_usb_ocp_cmd_handling_test
             caliptra_ss_usb_ocp_cmd_handling_sequence::type_id::get());
     endfunction
 
+    virtual task mcu_halt_monitor_task(uvm_phase phase);
+        // This test keeps MCU firmware in the USB service loop after the
+        // Recovery Agent sequence completes, so MCU halt is not an end condition.
+        `uvm_info("phase_ready_to_end",
+            "OCP command-handling sequence complete; skipping MCU halt wait.",
+            UVM_LOW)
+        phase.drop_objection(
+            this, "OCP command-handling firmware remains in service loop");
+    endtask
+
 endclass
 
 `endif // CALIPTRA_SS_USB_OCP_CMD_HANDLING_TEST_SV

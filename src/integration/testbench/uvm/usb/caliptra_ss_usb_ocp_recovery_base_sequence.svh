@@ -22,7 +22,7 @@ typedef enum bit [1:0] {
 } caliptra_ss_usb_ocp_xfer_result_e;
 
 class caliptra_ss_usb_ocp_recovery_base_sequence
-    extends caliptra_ss_usb_base_sequence;
+    extends caliptra_ss_usb_ctrl_base_sequence;
 
     typedef bit [7:0] byte_queue_t[$];
 
@@ -1626,7 +1626,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task device_id_read_and_check();
+    protected virtual task device_id_read_and_check(
+        input bit [OCP_SPEC_MIN_LEN_DEVICE_ID*8-1:0] expected_device_id = '0);
         bit [7:0] response[$];
         int unsigned vendor_length;
 
@@ -1649,6 +1650,16 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             `uvm_error("OCP_BASE",
                 $sformatf("DEVICE_ID length=%0d is inconsistent with Vendor Specific String Length=%0d.",
                           response.size(), vendor_length))
+        end
+        if (response.size() == OCP_SPEC_MIN_LEN_DEVICE_ID) begin
+            foreach (response[i]) begin
+                if (response[i] != expected_device_id[i*8 +: 8]) begin
+                    `uvm_error("OCP_BASE",
+                        $sformatf("DEVICE_ID byte %0d=0x%02h, expected 0x%02h.",
+                                  i, response[i],
+                                  expected_device_id[i*8 +: 8]))
+                end
+            end
         end
     endtask
 
