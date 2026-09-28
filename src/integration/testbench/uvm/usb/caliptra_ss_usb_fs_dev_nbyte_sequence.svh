@@ -1,0 +1,170 @@
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+`ifndef CALIPTRA_SS_USB_FS_DEV_NBYTE_SEQUENCE_SV
+`define CALIPTRA_SS_USB_FS_DEV_NBYTE_SEQUENCE_SV
+
+// =============================================================================
+// USB HS device NBytes residual test sequence for the Caliptra SS SVT UVM VIP
+// environment.
+//
+// Sequence flow:
+//   1. Wait for HS link ENABLED, start SOF.
+//   2. Enumerate the device (GET_DESCRIPTOR, SET_ADDRESS, SET_CONFIGURATION).
+//   3. Send 5 successive short bulk OUT packets to EP1 with lengths 1..5 bytes.
+//      Payload pattern: byte[j] = j+1 for j = 0..len-1.
+//   4. Between packets wait for the MCU to re-arm EP1 (toggle-reset cycle).
+//
+// The MCU firmware (caliptra_ss_usb_fs_dev_nbyte.c) verifies:
+//   - NBytes residual == 32 - i  after each transfer
+//   - Buffer address offset advanced by one 64-byte chunk
+//   - Received byte pattern matches j+1
+//   - FRAME_INT co-asserted with EP1OUT
+// =============================================================================
+
+// Number of short-packet iterations (must match USB_NBYTE_ITERATIONS in .c).
+`define USB_FS_NBYTE_ITERATIONS 5
+
+// NBytes budget the firmware arms; all packets are shorter than this.
+`define USB_FS_NBYTE_BUDGET 32
+
+class caliptra_ss_usb_fs_dev_nbyte_sequence extends caliptra_ss_usb_base_sequence;
+
+    `uvm_object_utils(caliptra_ss_usb_fs_dev_nbyte_sequence)
+
+    function new(string name = "caliptra_ss_usb_fs_dev_nbyte_sequence");
+        super.new(name);
+    endfunction
+
+    // Send a single short bulk OUT transfer to EP1 with 'nbytes' bytes of
+    // payload.  Payload pattern: data[j] = j+1 for j=0..nbytes-1.
+    task send_short_bulk_out(
+        svt_usb_agent        agent_h,
+        svt_usb_configuration usb_cfg,
+        int unsigned         nbytes,
+        int                  iter
+    );
+        svt_usb_transfer  bulk_req;
+        string            label;
+        bit [7:0]         payload[];
+
+        label = $sformatf("NBYTE_BULK_OUT_ITER%0d", iter);
+
+        // Fill payload: byte[j] = j+1 (1-indexed).
+        // Firmware checks: ep1out_byte_buf[j] == j+1.
+        payload = new[nbytes];
+        for (int unsigned j = 0; j < nbytes; j++)
+            payload[j] = 8'(j + 1);
+
+        `uvm_info("USB_FS_NBYTE_SEQ",
+                  $sformatf("Sending short bulk OUT iter %0d: %0d bytes, pattern 0x01..0x%02x",
+                            iter, nbytes, nbytes),
+                  UVM_LOW)
+
+        // fork_wait is 0 here to keep the original sequential
+        // finish_item + wait ordering of this test.
+        do_data_xfer(
+            .agent_h       (agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_OUT_TRANSFER),
+            .device_addr   (2),
+            .ep_num        (1),
+            .byte_count    (nbytes),
+            .ep_anchor_idx (1),
+            .label         (label),
+            .req           (bulk_req),
+            .obj_name      (label),
+            .payload_data  (payload),
+            .fork_wait     (0));
+
+    endtask
+
+    virtual task body();
+        svt_usb_agent         host_agent_h;
+        svt_usb_configuration usb_cfg;
+        svt_usb_status        shared_status;
+
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
+        usb_cfg       = resolve_usb_cfg();
+
+        // Wait for HS link ENABLED.
+        wait_for_link_enabled(shared_status, "HS host link");
+
+        `uvm_info("USB_FS_NBYTE_SEQ",
+            "[DBG] body() begin - hub-composite HS nbyte sequence starting.", UVM_NONE)
+
+        start_sof_generation();
+        `uvm_info("USB_FS_NBYTE_SEQ", "[DBG] SOF started; settling 20us.", UVM_NONE)
+        #20us;
+
+        // Hub-aware enumeration (hub-composite IP). USBDC0 sits BEHIND an
+        // on-chip 2-port hub, so the host enumerates the HUB at addr 1 (step A),
+        // brings up its downstream port 1 (step B), then enumerates USBDC0 at
+        // addr 2 (step C). No GET_CONFIGURATION read-back is issued here.
+        // See claude_md/09_usb_hub_composite_migration.md section E.
+        enumerate_hub_and_usbdc0(host_agent_h, usb_cfg, "", 0);
+
+        `uvm_info("USB_FS_NBYTE_SEQ","Enumeration done.",UVM_LOW)
+        `uvm_info("USB_FS_NBYTE_SEQ",
+            "[DBG] Hub-aware enumeration complete; USBDC0 addressed at 2.",
+            UVM_NONE)
+        #10us;
+
+
+        // --- Short-packet bulk OUT iterations ---
+        // Send 5 successive short packets of 1..5 bytes to EP1.  Between each
+        // packet wait long enough for the MCU firmware to process the EP1OUT
+        // interrupt, verify the data, and re-arm EP1 with toggle-reset.
+        // This mirrors the 5-iteration loop in usb_fs_dev_nbyte.cpp.
+        `uvm_info("USB_FS_NBYTE_SEQ",
+            "[DBG] Starting short-packet bulk OUT iteration loop.", UVM_NONE)
+        for (int unsigned iter = 1; iter <= `USB_FS_NBYTE_ITERATIONS; iter++) begin
+            `uvm_info("USB_FS_NBYTE_SEQ",
+                $sformatf("[DBG] Iteration %0d: waiting 130us then sending %0d-byte OUT.",
+                          iter, iter), UVM_NONE)
+            // Allow time for EP1 to be armed / re-armed by the MCU before
+            // submitting the next OUT token.  130 us is required to satisfy
+            // three constraints simultaneously:
+            //   1. MCU polling latency: MCU takes ~22.5 us to detect Active=0
+            //      and re-arm; 130 us >> 22.5 us prevents residual mismatch.
+            //   2. FRAME_INT window: HS SOF fires every 125 us; 130 us
+            //      guarantees at least one SOF per iteration window so
+            //      frame_int_seen is set before the next EP1OUT detection.
+            //   3. Host/MCU synchronization: keeps all 5 iterations in lockstep
+            //      so the MCU processes each one before the next packet arrives.
+            #130us;
+
+            send_short_bulk_out(host_agent_h, usb_cfg, iter, int'(iter));
+
+            `uvm_info("USB_FS_NBYTE_SEQ",
+                      $sformatf("Iteration %0d/%0d complete (%0d-byte short packet sent)",
+                                iter, `USB_FS_NBYTE_ITERATIONS, iter),
+                      UVM_LOW)
+        end
+
+        // Allow the MCU to finish all pending verification passes before the
+        // test drops its objection. With 5 iterations each taking ~14 us to
+        // process and the MCU lagging up to 2 behind the host, 100 us covers
+        // the full drain after the last packet is sent.
+        #100us;
+
+        `uvm_info("USB_FS_NBYTE_SEQ",
+            "[DBG] body() end - all iterations sent and drain complete.", UVM_NONE)
+        `uvm_info("USB_FS_NBYTE_SEQ","HS dev nbyte sequence complete.",UVM_LOW)
+    endtask
+
+endclass
+
+`undef USB_FS_NBYTE_ITERATIONS
+`undef USB_FS_NBYTE_BUDGET
+
+`endif // CALIPTRA_SS_USB_FS_DEV_NBYTE_SEQUENCE_SV
