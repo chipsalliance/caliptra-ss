@@ -20,9 +20,9 @@
 //
 //  Both register banks are directly reachable from the MCU LSU AXI master with
 //  no RTL change:
-//    USBDC0 registers at USB_DEV0_REG_BASE_ADDR (0x2000_1000)
-//    USBDC1 registers at USB_DEV1_REG_BASE_ADDR (0x2001_0000)
-//  This test therefore uses the ABSOLUTE USB_DEV0_*/USB_DEV1_* macros directly
+//    USBDC0 registers at SOC_USB_COMBO_DEV0_CSR_BASE_ADDR (0x2000_0000)
+//    USBDC1 registers at SOC_USB_DEV1_CSR_BASE_ADDR       (0x2000_2000)
+//  This test therefore uses the ABSOLUTE upstream CSR base macros directly
 //  (not the compile-time USB_DEV_SEL selection) and walks a single shared
 //  register-disposition table over both banks.
 //
@@ -360,8 +360,8 @@ void main(void) {
     boot_mcu();
 
     // Exercise both embedded device controllers with the shared table.
-    error_count += check_reg_bank(USB_DEV0_REG_BASE_ADDR, "DEV0");
-    error_count += check_reg_bank(USB_DEV1_REG_BASE_ADDR, "DEV1");
+    error_count += check_reg_bank(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0");
+    error_count += check_reg_bank(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1");
 
     VPRINTF(LOW, "\nMCU: USB register RW test complete, error_count = %d\n",
             error_count);

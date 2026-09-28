@@ -42,7 +42,7 @@ void main(void) {
     int      loopback_done;
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
@@ -78,7 +78,7 @@ void main(void) {
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         uint32_t prev_dres = lsu_read_32(USB_DEV_DEVCMDSTAT)
-                             & USBHSD_DEVCMDSTAT_DRES_C_MASK;
+                             & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
         /* Re-arm EP1 OUT after bus reset (hardware clears Active on all EPs) */
         if (prev_dres) {
@@ -90,16 +90,16 @@ void main(void) {
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
 
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
-        if (!loopback_done && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+        if (!loopback_done && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
             /* Copy received data from EP1 OUT buffer to EP1 IN buffer */
             for (i = 0; i < 64; i += 4) {
                 rx_word = lsu_read_32(dma_base + 0x200 + i);

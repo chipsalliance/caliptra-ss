@@ -100,7 +100,7 @@ void main (void) {
     // Bring the USB device controller up in full-speed mode.
     // The VIP host configuration sets high_speed_capable=0 so no HS chirp
     // is issued, replicating the original PORTSC1_PFSC (force FS) behavior.
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // Caliptra core bringup.
     mcu_cptra_advance_brkpoint();

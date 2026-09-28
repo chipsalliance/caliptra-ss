@@ -36,7 +36,7 @@ void main(void) {
     uint32_t intstat;
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();

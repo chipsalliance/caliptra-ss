@@ -77,13 +77,13 @@ void main (void) {
 
     // Initialize USB device controller BEFORE Caliptra bringup.
     // USB PHY and pull-up need time to settle while Caliptra boots.
-    // boot_usb_core() calls usb_hub_init_and_connect() internally, which
+    // boot_usb_core_hub() calls usb_hub_init_and_connect() internally, which
     // programs the HUB RAM descriptors and sets HUB_EN only (HUB_CONNECT
     // is deliberately deferred - see the usb_hub_connect() call below).
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // USBDC1's own EP list/DEVCMDSTAT/DCON are now fully programmed (end
-    // of boot_usb_core()), so it is safe to connect the hub upstream:
+    // of boot_usb_core_hub()), so it is safe to connect the hub upstream:
     // usb_hub_connect() sets HUB_CONNECT, per the reference
     // janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this call
     // will the host see the hub on the bus and begin enumerating its
@@ -110,7 +110,7 @@ void main (void) {
     // Canonical Category-B pure-polling loop (see
     // claude_md/17_usb_polling_intstat_clearing.md): read INTSTAT each
     // iteration and write-1-to-clear each serviced bit (DEV_INT, EP0OUT,
-    // EP0IN). boot_usb_core() enables DEV_INT|EP0OUT|EP0IN in INTEN, and
+    // EP0IN). boot_usb_core_hub() enables DEV_INT|EP0OUT|EP0IN in INTEN, and
     // usb.c only clears EP0IN, so gating solely on DEVCMDSTAT.SETUP (the old
     // loop) left EP0OUT/DEV_INT permanently asserting dev1_usb_irq.
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
@@ -123,11 +123,11 @@ void main (void) {
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
 
         // Device-level interrupt (bus reset / connect change). W1C DEV_INT.
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT interrupt (SETUP or status-stage OUT). W1C EP0OUT first,
@@ -136,9 +136,9 @@ void main (void) {
         // ~1-2us and the host VIP gives up on IN polling ~5us after the
         // SETUP ACK. Logging happens inside the handler after the SETUP bit
         // is cleared.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 transfers_handled++;
             } else {
@@ -150,8 +150,8 @@ void main (void) {
         }
 
         // EP0 IN interrupt (control-read data / status stage). W1C EP0IN.
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
         // Periodic diagnostic dump

@@ -106,22 +106,22 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_INTSTAT);
 
-        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
                     ep1_armed = false;
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+        if (reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 // SETUP packet received - decode and respond.
                 usb_handle_control_transfer();
                 transfers_handled++;
@@ -138,8 +138,8 @@ void main(void) {
             }
         }
 
-        if (reg_data & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
         // EP1 OUT completion: use INTSTAT EP1OUT bit rather than polling the
@@ -148,8 +148,8 @@ void main(void) {
         // packet handshake is complete. Polling ACTIVE alone can race against
         // the final DMA write, causing a single-byte corruption on the last
         // 512-byte packet when the VIP performs a retry.
-        if (ep1_armed && (reg_data & USBHSD_INTSTAT_EP1OUT_MASK)) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+        if (ep1_armed && (reg_data & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
             uint32_t ep1_entry = usb_ep1_out_read();
             uint32_t residual  = (ep1_entry >> 11) & 0x7FFFu;

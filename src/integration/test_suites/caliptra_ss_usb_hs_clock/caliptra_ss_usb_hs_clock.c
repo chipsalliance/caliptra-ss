@@ -42,7 +42,7 @@
 //  be written to force FS. FS is selected on two sides:
 //    - The UVM test sets high_speed_capable=0 in the host cfg, so the VIP
 //      never offers HS chirp.
-//    - Firmware calls boot_usb_core(), which sets DEVCMDSTAT.PFSC (Port
+//    - Firmware calls boot_usb_core_hub(), which sets DEVCMDSTAT.PFSC (Port
 //      Force High Speed Connect) so the device controller does not emit
 //      K-chirp and does not stall ~2.2 ms waiting for a J-chirp reply that
 //      an FS-only host never sends.
@@ -84,13 +84,13 @@ void main (void) {
     // Standard MCU boot sequence.
     boot_mcu();
 
-    // Bring the USB device controller up in FS-only mode. boot_usb_core()
+    // Bring the USB device controller up in FS-only mode. boot_usb_core_hub()
     // sets DEVCMDSTAT.PFSC to suppress the device-side K-chirp, and performs
     // hub bring-up phase 1 (HUB RAM programming + HUB_EN) before programming
-    // USBDC0. Do not use boot_usb_core() here: it leaves the device HS-capable
+    // USBDC0. Do not use boot_usb_core_hub() here: it leaves the device HS-capable
     // and the chirp FSM would stall waiting for a J-chirp reply that the
     // FS-only host VIP never drives.
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // Hub bring-up phase 2: assert HUB_CONNECT now that USBDC0 is fully
     // programmed, so the upstream host can see the hub and enumerate the
@@ -108,7 +108,7 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT = 0x%x\n", reg_data);
     // SPEED is read-only status; log the negotiated speed for diagnostic use.
     VPRINTF(LOW, "MCU: USB negotiated SPEED field = 0x%x\n",
-            (reg_data & USBHSD_DEVCMDSTAT_SPEED_MASK) >> USBHSD_DEVCMDSTAT_SPEED_LOW);
+            (reg_data & DEV0_CSR_DEVCMDSTAT_SPEED_MASK) >> DEV0_CSR_DEVCMDSTAT_SPEED_LOW);
     reg_data = lsu_read_32(USB_DEV_INFO);
     VPRINTF(LOW, "MCU: USB INFO = 0x%x\n", reg_data);
 

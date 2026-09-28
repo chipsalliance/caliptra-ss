@@ -131,21 +131,21 @@ void main (void) {
         mcu_intr_rcv.usb &= ~usb_events;
 
         // Check for device-level interrupts (bus reset, connect change)
-        if (usb_events & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
 
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
-            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
             // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
         // Check for EP0 OUT interrupt (SETUP or data)
-        if (usb_events & USBHSD_INTSTAT_EP0OUT_MASK) {
+        if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
                 // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
                 // polling ~5us after the SETUP ACK. Logging is done inside

@@ -307,7 +307,7 @@ static void usb_ep2_out_arm(uint32_t round, uint32_t token) {
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP2_OUT_OFFSET, ep2_out);
 
     uint32_t inten = lsu_read_32(USB_DEV_INTEN);
-    lsu_write_32(USB_DEV_INTEN, inten | USBHSD_INTSTAT_EP2OUT_MASK);
+    lsu_write_32(USB_DEV_INTEN, inten | DEV0_CSR_INTSTAT_EP2OUT_MASK);
     VPRINTF(LOW, "MCU: EP2 OUT (ISO) armed for round %d token %d (offset=0x%x)\n",
             round, token, buf_offset);
 }
@@ -437,9 +437,9 @@ void main(void) {
 
 
         // DEV_INT: bus reset change.
-        if (usb_events & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep2_out_armed) {
                     ep2_out_armed = false;
@@ -450,9 +450,9 @@ void main(void) {
         }
 
         // EP0 OUT: handle control transfers / enumeration.
-        if (usb_events & USBHSD_INTSTAT_EP0OUT_MASK) {
+        if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 // Arm EP2 OUT for round 0 on first SETUP after enumeration.
                 if (!ep2_out_armed && out_round == 0 && rounds_out_done == 0) {
@@ -476,7 +476,7 @@ void main(void) {
 
         // EP2 OUT ISO completion: hardware fires INTSTAT EP2OUT after receive.
         // This is the primary state-advance signal for all rounds.
-        if (ep2_out_armed && (usb_events & USBHSD_INTSTAT_EP2OUT_MASK)) {
+        if (ep2_out_armed && (usb_events & DEV0_CSR_INTSTAT_EP2OUT_MASK)) {
             uint32_t ep2_entry = usb_ep2_out_read();
             uint32_t residual  = (ep2_entry >> 11) & 0x7FFFu;
             uint32_t received  = USB_FS_ISO_OUT_BUF_BYTES - residual;
@@ -624,12 +624,12 @@ void main(void) {
 
         // Drop any stale FRAME_INT record from the mailbox. INTSTAT itself is
         // owned by service_usb_intr() and must not be written here.
-        (void)usb_mailbox_take_bit(USBHSD_INTSTAT_FRAME_INT_MASK);
+        (void)usb_mailbox_take_bit(DEV0_CSR_INTSTAT_FRAME_INT_MASK);
 
 
         // Enable FRAME_INT interrupt generation.
         inten_val = lsu_read_32(USB_DEV_INTEN);
-        lsu_write_32(USB_DEV_INTEN, inten_val | USBHSD_INTEN_FRAME_INT_EN_MASK);
+        lsu_write_32(USB_DEV_INTEN, inten_val | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
         VPRINTF(LOW, "MCU: FRAME_INT_EN enabled (INTEN=0x%x)\n",
                 lsu_read_32(USB_DEV_INTEN));
     }
@@ -643,7 +643,7 @@ void main(void) {
             // Each SOF takes the USB interrupt; the ISR acknowledges INTSTAT
             // and records FRAME_INT in the mailbox. Consume the record here so
             // the next SOF is counted as a separate event.
-            if (usb_mailbox_take_bit(USBHSD_INTSTAT_FRAME_INT_MASK))
+            if (usb_mailbox_take_bit(DEV0_CSR_INTSTAT_FRAME_INT_MASK))
                 frame_int_count++;
 
         }
@@ -675,14 +675,14 @@ void main(void) {
 
         inten_val = lsu_read_32(USB_DEV_INTEN);
         lsu_write_32(USB_DEV_INTEN,
-                     inten_val & ~USBHSD_INTEN_FRAME_INT_EN_MASK);
+                     inten_val & ~DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
 
         // Small spin to let the write propagate, then read back INTEN.
         for (uint32_t k = 0; k < 10u; k++)
             (void)lsu_read_32(USB_DEV_INTEN);
 
         inten_after = lsu_read_32(USB_DEV_INTEN);
-        if (inten_after & USBHSD_INTEN_FRAME_INT_EN_MASK)
+        if (inten_after & DEV0_CSR_INTEN_FRAME_INT_EN_MASK)
             VPRINTF(LOW,
                 "MCU: FRAME_INT_EN disable check FAILED - FRAME_INT_EN still set (INTEN=0x%x)\n",
                 inten_after);

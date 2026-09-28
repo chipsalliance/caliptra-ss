@@ -60,10 +60,10 @@ void main (void) {
 
     // Initialize USB device controller BEFORE Caliptra bringup.
     // USB PHY and pull-up need time to settle while Caliptra boots.
-    // boot_usb_core() calls usb_hub_init_and_connect() internally, which
+    // boot_usb_core_hub() calls usb_hub_init_and_connect() internally, which
     // programs the HUB RAM descriptors and sets HUB_EN only (HUB_CONNECT
     // is deliberately deferred - see the usb_hub_connect() call below).
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // Caliptra core bringup
     mcu_cptra_advance_brkpoint();
@@ -71,7 +71,7 @@ void main (void) {
     mcu_cptra_poll_mb_ready();
 
     // USBDC1's own EP list/DEVCMDSTAT/DCON are now fully programmed (end
-    // of boot_usb_core()), so it is safe to connect the hub upstream:
+    // of boot_usb_core_hub()), so it is safe to connect the hub upstream:
     // usb_hub_connect() sets HUB_CONNECT, per the reference
     // janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this call
     // will the host see the hub on the bus and begin enumerating its
@@ -95,23 +95,23 @@ void main (void) {
 
         // Check for device-level interrupts (bus reset, connect change)
         reg_data = lsu_read_32(USB_DEV_INTSTAT);
-        if (reg_data & USBHSD_INTSTAT_DEV_INT_MASK) {
+        if (reg_data & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             VPRINTF(LOW, "MCU: DEV_INT - DEVCMDSTAT = 0x%x\n", cmd);
-            if (cmd & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
             // Clear DEV_INT
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // Check for EP0 OUT interrupt (SETUP or data)
-        if (reg_data & USBHSD_INTSTAT_EP0OUT_MASK) {
+        if (reg_data & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             // Clear the EP0OUT interrupt
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
 
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-            if (cmd & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
                 // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
                 // polling ~5us after the SETUP ACK. Logging is done inside

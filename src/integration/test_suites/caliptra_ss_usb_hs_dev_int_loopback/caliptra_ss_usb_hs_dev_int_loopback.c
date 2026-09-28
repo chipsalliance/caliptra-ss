@@ -234,7 +234,7 @@ void main(void) {
     VPRINTF(LOW, "MCU: randomized interrupt endpoint = EP%d\n", int_ep);
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
@@ -250,7 +250,7 @@ void main(void) {
         // usb_handle_bus_reset() only restores EP0, so the interrupt endpoint
         // must be re-armed explicitly whenever DRES_C was observed.
         uint32_t prev_dres = lsu_read_32(USB_DEV_DEVCMDSTAT)
-                             & USBHSD_DEVCMDSTAT_DRES_C_MASK;
+                             & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
         if (prev_dres && out_armed && !loopback_done) {
             VPRINTF(LOW, "MCU: Bus reset - re-arming EP%d OUT\n", int_ep);
@@ -261,9 +261,9 @@ void main(void) {
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
 
         // EP0 OUT: enumeration / control transfers.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
             }
         }
@@ -280,15 +280,15 @@ void main(void) {
         // after SET_ADDRESS has been serviced, which is exactly the safe point.
         if (!out_armed
             && (lsu_read_32(USB_DEV_DEVCMDSTAT)
-                & USBHSD_DEVCMDSTAT_DEV_ADDR_MASK) != 0u) {
+                & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK) != 0u) {
             usb_int_ep_out_arm(int_ep);
             out_armed = true;
         }
 
 
         // EP0 IN: status-phase completion.
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
         // Interrupt OUT completion: verify the payload, then loop it back.
         //

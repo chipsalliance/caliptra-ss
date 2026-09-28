@@ -96,9 +96,9 @@ void main(void) {
     boot_mcu();
 
     // Brings up USBDC0 in HS mode and, on the hub-composite IP, sets HUB_EN.
-    boot_usb_core();
+    boot_usb_core_hub();
 
-    // Two-phase hub bring-up: HUB_EN inside boot_usb_core(), HUB_CONNECT here
+    // Two-phase hub bring-up: HUB_EN inside boot_usb_core_hub(), HUB_CONNECT here
     // once USBDC0's EP list / DEVCMDSTAT / DCON are fully programmed. Only
     // after this does the host see the hub, chirp HS, and enumerate USBDC0.
     usb_hub_connect();
@@ -118,7 +118,7 @@ void main(void) {
     // here means either the wrong base address or that something cleared it
     // during bring-up - both fatal to the rest of the test.
     reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
-    if (reg_data & USBHSD_DEVCMDSTAT_LPM_SUP_MASK) {
+    if (reg_data & DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK) {
         VPRINTF(LOW, "MCU: LPM_SUP set, controller accepts LPM tokens (DEVCMDSTAT=0x%x)\n",
                 reg_data);
     } else {
@@ -131,22 +131,22 @@ void main(void) {
     lpm_reg = lsu_read_32(USB_DEV_LPM);
     VPRINTF(LOW, "MCU: LPM reg at start = 0x%x (HIRD_HW=%d DATA_PENDING=%d)\n",
             lpm_reg,
-            (int)(lpm_reg & USBHSD_LPM_HIRD_HW_MASK),
-            (int)((lpm_reg & USBHSD_LPM_DATA_PENDING_MASK) ? 1 : 0));
+            (int)(lpm_reg & DEV0_CSR_LPM_HIRD_HW_MASK),
+            (int)((lpm_reg & DEV0_CSR_LPM_DATA_PENDING_MASK) ? 1 : 0));
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
-        if (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK) {
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK) {
             // DSUS_C is shared between the L2 and L1 state changes in this IP
             // (usb_reg_if.m.vhdl asserts it when either sync_suspend or
             // sync_lpm_suspend changes), so classify the event from the live
@@ -154,14 +154,14 @@ void main(void) {
             lpm_reg = lsu_read_32(USB_DEV_LPM);
             lpm_events++;
 
-            if (reg_data & USBHSD_DEVCMDSTAT_LPM_SUS_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_LPM_SUS_MASK) {
                 l1_entry_seen = 1;
-                rewp_at_entry = (reg_data & USBHSD_DEVCMDSTAT_LPM_REWP_MASK) ? 1u : 0u;
-                hird_hw_at_entry = lpm_reg & USBHSD_LPM_HIRD_HW_MASK;
+                rewp_at_entry = (reg_data & DEV0_CSR_DEVCMDSTAT_LPM_REWP_MASK) ? 1u : 0u;
+                hird_hw_at_entry = lpm_reg & DEV0_CSR_LPM_HIRD_HW_MASK;
                 VPRINTF(LOW, "MCU: L1 ENTRY event %d DEVCMDSTAT=0x%x LPM=0x%x HIRD_HW=%d REWP=%d\n",
                         lpm_events, reg_data, lpm_reg,
                         (int)hird_hw_at_entry, (int)rewp_at_entry);
-            } else if (reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK) {
+            } else if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK) {
                 // L2, not L1. Not the stimulus this test is for, but worth
                 // logging: it usually means SOFs stopped instead of an LPM
                 // token being sent.
@@ -191,7 +191,7 @@ void main(void) {
             // DSUS_C is write-1-to-clear. Read-modify-write the LIVE value so
             // no status bit that changed in the meantime is clobbered.
             lsu_write_32(USB_DEV_DEVCMDSTAT,
-                lsu_read_32(USB_DEV_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
+                lsu_read_32(USB_DEV_DEVCMDSTAT) | DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK);
 
             // Both halves of the L1 cycle observed: stop polling. The
             // run_phase objection in caliptra_ss_usb_base_test is only

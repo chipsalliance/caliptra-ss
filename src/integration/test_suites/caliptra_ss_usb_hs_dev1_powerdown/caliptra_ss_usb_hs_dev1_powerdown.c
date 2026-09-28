@@ -42,7 +42,7 @@
 //   4. Host re-enumerates USBDC1 at address 2.
 //
 // USBDC1 stays VBUS-powered throughout (FORCE_VBUS=1 kept set, as programmed
-// by boot_usb_core()); the power-down is the controller-enable degate, and
+// by boot_usb_core_hub()); the power-down is the controller-enable degate, and
 // recovery is proven by the recovery bus reset (DRES_C) that USBDC1 sees when
 // PORT_RESET re-enables the port. The firmware must faithfully service EP0
 // control transfers AND bus resets across both enumeration rounds, and Phase
@@ -107,25 +107,25 @@ static uint32_t usb_service_ep0_once(void) {
     uint32_t intstat  = lsu_read_32(USB_DEV_INTSTAT);
     uint32_t handled  = 0;
 
-    if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-        if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+    if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
             usb_handle_bus_reset();
             usb_bus_reset_count++;
         }
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
     }
 
-    if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-        if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+    if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
             if (usb_handle_control_transfer()) {
                 handled = 1;
             }
         }
     }
 
-    if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
     }
 
     return handled;
@@ -140,8 +140,8 @@ void main(void) {
     VPRINTF(LOW, "=================\nMCU: USB HS device powerdown test\n=================\n\n");
 
     boot_mcu();
-    boot_usb_core();
-    // Hub-enabled mode: boot_usb_core() calls usb_hub_init_and_connect()
+    boot_usb_core_hub();
+    // Hub-enabled mode: boot_usb_core_hub() calls usb_hub_init_and_connect()
     // internally (programs HUB RAM, sets HUB_EN). USBDC1's own EP list /
     // DEVCMDSTAT / DCON are also fully programmed at this point, so assert
     // HUB_CONNECT here to present the hub upstream. Only after this call
@@ -153,7 +153,7 @@ void main(void) {
     // embedded downstream device; the sequence's VBUS_OFF/VBUS_ON acts on
     // the host<->HUB upstream link, which USBDC1 does not observe on its own
     // VBUS_DEBOUNCED bit. Keeping FORCE_VBUS=1 (as programmed by
-    // boot_usb_core()) keeps USBDC1 alive across the upstream power-cycle so
+    // boot_usb_core_hub()) keeps USBDC1 alive across the upstream power-cycle so
     // it re-enumerates cleanly when the hub re-resets its downstream port.
 
     mcu_cptra_advance_brkpoint();

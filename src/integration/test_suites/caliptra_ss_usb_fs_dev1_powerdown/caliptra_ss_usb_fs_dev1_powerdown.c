@@ -107,25 +107,25 @@ static uint32_t usb_service_ep0_once(void) {
     uint32_t intstat  = lsu_read_32(USB_DEV_INTSTAT);
     uint32_t handled  = 0;
 
-    if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-        if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+    if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
             usb_handle_bus_reset();
             usb_bus_reset_count++;
         }
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
     }
 
-    if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-        if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+    if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
             if (usb_handle_control_transfer()) {
                 handled = 1;
             }
         }
     }
 
-    if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-        lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+    if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+        lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
     }
 
     return handled;

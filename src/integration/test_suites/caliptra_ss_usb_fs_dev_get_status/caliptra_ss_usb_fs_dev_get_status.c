@@ -124,11 +124,11 @@ void main(void) {
 
         // Device-level interrupt (bus reset / connect change). W1C DEV_INT so
         // it does not remain asserted on the hardware IRQ line.
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
             }
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT interrupt (SETUP or status-stage OUT). W1C EP0OUT first,
@@ -137,9 +137,9 @@ void main(void) {
         // ~1-2us and the host VIP gives up on IN polling ~5us after the
         // SETUP ACK. Logging happens inside the handler after the SETUP bit
         // is cleared.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 transfers_handled++;
             } else {
@@ -151,8 +151,8 @@ void main(void) {
         }
 
         // EP0 IN interrupt (control-read data / status stage). W1C EP0IN.
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
         // Periodic diagnostic dump

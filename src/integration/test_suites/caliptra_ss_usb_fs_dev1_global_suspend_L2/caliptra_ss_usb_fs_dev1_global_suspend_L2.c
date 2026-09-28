@@ -23,7 +23,7 @@
 //
 // Hub-composite IP: USBDC1 is an embedded downstream device of the on-chip
 // 2-port hub, so its registers live at USB_DEV_* (base 0x20001000), not at the
-// legacy SOC_USBHSD_* base, and the hub must be connected upstream by firmware
+// legacy USB_DEV_* base, and the hub must be connected upstream by firmware
 // before the host can see anything.
 
 
@@ -117,19 +117,19 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
-        if (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK) {
             // DSUS_C is write-1-to-clear. Read-modify-write of the live value
             // rather than reg_data so that no other status bit that changed in
             // the meantime is clobbered.
             lsu_write_32(USB_DEV_DEVCMDSTAT,
-                lsu_read_32(USB_DEV_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
+                lsu_read_32(USB_DEV_DEVCMDSTAT) | DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK);
 
             suspend_seen++;
             VPRINTF(LOW, "MCU: Suspend change event %d DEVCMDSTAT=0x%x\n", suspend_seen, reg_data);

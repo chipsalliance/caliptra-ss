@@ -23,7 +23,7 @@
 //
 // Hub-composite IP: USBDC0 is an embedded downstream device of the on-chip
 // 2-port hub, so its registers live at USB_DEV_* (base 0x20001000), not at the
-// legacy SOC_USBHSD_* base, and the hub must be connected upstream by firmware
+// legacy USB_DEV_* base, and the hub must be connected upstream by firmware
 // before the host can see anything.
 
 
@@ -74,13 +74,13 @@ void main(void) {
     VPRINTF(LOW, "MCU: hs_dev_global_suspend_L2 test\n");
     boot_mcu();
 
-    // boot_usb_core() brings up USBDC0 in HS mode. On the hub-composite IP it
+    // boot_usb_core_hub() brings up USBDC0 in HS mode. On the hub-composite IP it
     // also programs and validates the HUB descriptor RAM and sets HUB_EN (via
     // usb_hub_init_and_connect()); USBDC0 is an embedded downstream device of
     // the on-chip hub, not a device directly on the bus.
-    boot_usb_core();
+    boot_usb_core_hub();
 
-    // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core(); now that
+    // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core_hub(); now that
     // USBDC0's EP list / DEVCMDSTAT / DCON are fully programmed it is safe to
     // connect the hub upstream. usb_hub_connect() sets HUB_CONNECT, per the
     // reference janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this
@@ -95,7 +95,7 @@ void main(void) {
     mcu_cptra_poll_mb_ready();
 
     // Release the unconditional UTMI clock request before the host-side
-    // suspend stimulus is armed. boot_usb_core() sets FORCE_NEEDCLK, which
+    // suspend stimulus is armed. boot_usb_core_hub() sets FORCE_NEEDCLK, which
     // holds usbreg_pll_on (and therefore the compound-structure clock_on
     // term) high; while clock_on is high, clk_off_counter is reloaded to
     // CLOCKOFF_CYCLE every pie_clk edge instead of counting down, so
@@ -109,19 +109,19 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
         intstat  = lsu_read_32(USB_DEV_INTSTAT);
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
-        if (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK) {
             // DSUS_C is write-1-to-clear. Read-modify-write of the live value
             // rather than reg_data so that no other status bit that changed in
             // the meantime is clobbered.
             lsu_write_32(USB_DEV_DEVCMDSTAT,
-                lsu_read_32(USB_DEV_DEVCMDSTAT) | USBHSD_DEVCMDSTAT_DSUS_C_MASK);
+                lsu_read_32(USB_DEV_DEVCMDSTAT) | DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK);
 
             suspend_seen++;
             VPRINTF(LOW, "MCU: Suspend change event %d DEVCMDSTAT=0x%x\n", suspend_seen, reg_data);

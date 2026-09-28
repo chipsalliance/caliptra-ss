@@ -192,7 +192,7 @@ void main(void) {
         // Handle bus reset (clears device address, re-arms EP0).
         usb_handle_bus_reset();
 
-        // Register access retargeted from the legacy single-device SOC_USBHSD_*
+        // Register access retargeted from the legacy single-device USB_DEV_*
         // bank to the hub-composite USBDC1 register bank (USB_DEV_*). Base
         // moved 0x2000_0000 -> 0x2000_1000; the *_MASK bitfield macros are
         // offset-independent and stay valid (migration checklist item 1).
@@ -201,21 +201,21 @@ void main(void) {
 
 
         // DEV_INT: bus-level events (reset, connect change).
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            if (reg_data & USBHSD_DEVCMDSTAT_DRES_C_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
                     ep1_armed = false;
                     VPRINTF(LOW, "MCU: Bus reset - EP1 arm cleared\n");
                 }
             }
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
         }
 
         // EP0 OUT interrupt: SETUP or status-phase OUT.
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
                 // Arm EP1 OUT after the first SETUP response (after
                 // SET_CONFIGURATION), equivalent to the INTEN |= EP1OUT and
@@ -238,8 +238,8 @@ void main(void) {
         }
 
         // EP0 IN interrupt: clear it.
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK) {
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
 
@@ -248,9 +248,9 @@ void main(void) {
         // coincide with an EP1OUT event in the same INTSTAT read, so we
         // accumulate it across poll iterations and check the flag once per
         // EP1OUT completion instead of re-reading INTSTAT at that moment.
-        if (intstat & USBHSD_INTSTAT_FRAME_INT_MASK) {
+        if (intstat & DEV0_CSR_INTSTAT_FRAME_INT_MASK) {
             frame_int_seen = true;
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_FRAME_INT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
 
         }
 
@@ -272,7 +272,7 @@ void main(void) {
         // completes - before any TR processing. With the host waiting
         // 130 us between packets the MCU has ample time (>110 us) to read
         // the entry and re-arm EP1 before the next OUT token arrives.
-        if (ep1_armed && (intstat & USBHSD_INTSTAT_EP1OUT_MASK)) {
+        if (ep1_armed && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
             entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET);
 
             VPRINTF(LOW, "MCU: EP1OUT transfer complete (iteration %d)\n", iter);
@@ -292,7 +292,7 @@ void main(void) {
 
             // Clear EP1OUT status bit (W1C). FRAME_INT was already cleared
             // above when it was first observed in the poll loop.
-            lsu_write_32(USB_DEV_INTSTAT, USBHSD_INTSTAT_EP1OUT_MASK);
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
 
             // entry was already latched above while Active=0.

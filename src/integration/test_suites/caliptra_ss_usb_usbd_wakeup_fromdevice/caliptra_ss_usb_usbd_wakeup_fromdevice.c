@@ -38,7 +38,7 @@ void main(void) {
     uint32_t dsus_seen;
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -47,26 +47,26 @@ void main(void) {
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
         usb_handle_bus_reset();
-        reg_data = lsu_read_32(SOC_USBHSD_DEVCMDSTAT);
-        intstat  = lsu_read_32(SOC_USBHSD_INTSTAT);
+        reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
+        intstat  = lsu_read_32(USB_DEV_INTSTAT);
 
-        if (intstat & USBHSD_INTSTAT_EP0OUT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0OUT_MASK);
-            if (reg_data & USBHSD_DEVCMDSTAT_SETUP_MASK)
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
-        if (intstat & USBHSD_INTSTAT_EP0IN_MASK)
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_EP0IN_MASK);
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
-        if (intstat & USBHSD_INTSTAT_DEV_INT_MASK) {
-            lsu_write_32(SOC_USBHSD_INTSTAT, USBHSD_INTSTAT_DEV_INT_MASK);
-            if (!dsus_seen && (reg_data & USBHSD_DEVCMDSTAT_DSUS_C_MASK)) {
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
+            if (!dsus_seen && (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK)) {
                 /* Bus suspended - device asserts remote wakeup (K) via DRES_C */
-                lsu_write_32(SOC_USBHSD_DEVCMDSTAT,
-                    lsu_read_32(SOC_USBHSD_DEVCMDSTAT) |
-                    USBHSD_DEVCMDSTAT_DSUS_C_MASK | USBHSD_DEVCMDSTAT_DRES_C_MASK);
+                lsu_write_32(USB_DEV_DEVCMDSTAT,
+                    lsu_read_32(USB_DEV_DEVCMDSTAT) |
+                    DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK | DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
                 dsus_seen = 1;
-            } else if (dsus_seen && !(reg_data & USBHSD_DEVCMDSTAT_DSUS_MASK)) {
+            } else if (dsus_seen && !(reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK)) {
                 VPRINTF(LOW, "USB USBD wakeup fromdevice PASSED\r\n");
                 break;
             }

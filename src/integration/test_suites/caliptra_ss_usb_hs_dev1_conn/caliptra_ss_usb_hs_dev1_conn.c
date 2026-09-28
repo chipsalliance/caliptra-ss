@@ -17,7 +17,7 @@
 //
 //
 // This firmware:
-//   - Boots the MCU and USB core in HS device mode via boot_usb_core()
+//   - Boots the MCU and USB core in HS device mode via boot_usb_core_hub()
 //   - Polls DEVCMDSTAT until the HS connection is established (CON=1)
 //   - Reports connection speed and halts
 
@@ -57,13 +57,13 @@ void main(void) {
 
     boot_mcu();
 
-    // boot_usb_core() brings up the USB device controller in HS mode. On the
+    // boot_usb_core_hub() brings up the USB device controller in HS mode. On the
     // new hub-composite IP it also programs+validates the HUB RAM and sets
     // HUB_EN (via usb_hub_init_and_connect()); USBDC1 is an embedded downstream
     // device of the on-chip hub, not a device directly on the bus.
-    boot_usb_core();
+    boot_usb_core_hub();
 
-    // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core(); now that
+    // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core_hub(); now that
     // USBDC1's EP list / DEVCMDSTAT / DCON are fully programmed it is safe to
     // connect the hub upstream. usb_hub_connect() sets HUB_CONNECT, per the
     // reference janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this
@@ -84,7 +84,7 @@ void main(void) {
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
         // DCON bit indicates device is connected (pullup enabled / VBUS present).
-        if (reg_data & USBHSD_DEVCMDSTAT_DCON_MASK) {
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DCON_MASK) {
             connected = true;
             VPRINTF(LOW, "MCU: USB device connected - DEVCMDSTAT=0x%x\n", reg_data);
         }
