@@ -42,6 +42,11 @@ class usb_env extends uvm_env;
 
   usb_env_cfg cfg;
   usb_vif_t usb_20_mac_if;
+  virtual usb_tb_ctrl_if #(
+    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
+    .DEV0_NUM_USERS(usb_tb_pkg::USB_DEV0_NUM_PRIV_AXI_USERS),
+    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+  ) ctrl_vif;
   svt_usb_agent host_agent;
   svt_sequence_item_report usb_sequence_item_report;
   usb_virtual_sequencer virtual_sequencer;
@@ -142,6 +147,18 @@ class usb_env extends uvm_env;
     dev1_csr_manager    = create_manager_agent("dev1_csr_manager", dev1_csr_config);
     dev1_memory_manager = create_manager_agent("dev1_memory_manager", dev1_memory_config);
 
+    // Filter policy control defaults to known-low bypass; tests opt in to filtering.
+    if (!uvm_config_db#(virtual usb_tb_ctrl_if #(
+      .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
+      .DEV0_NUM_USERS(usb_tb_pkg::USB_DEV0_NUM_PRIV_AXI_USERS),
+      .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+    ))::get(this, "", "usb_ctrl_vif", ctrl_vif)) begin
+      `uvm_fatal("USB_ENV", "Missing usb_ctrl_vif for AXI USER filter policy control")
+    end
+    if (ctrl_vif == null) begin
+      `uvm_fatal("USB_ENV", "Null usb_ctrl_vif for AXI USER filter policy control")
+    end
+
     // ---------------------------------------------------------------------------
     // RAL model and adapter setup
     // ---------------------------------------------------------------------------
@@ -213,6 +230,7 @@ class usb_env extends uvm_env;
 
     if (virtual_sequencer == null ||
         reg_model == null ||
+        ctrl_vif == null ||
         combo_manager == null ||
         combo_manager.sequencer == null ||
         dev0_memory_manager == null ||
@@ -231,6 +249,7 @@ class usb_env extends uvm_env;
     virtual_sequencer.dev1_csr_sequencer = dev1_csr_manager.sequencer;
     virtual_sequencer.dev1_memory_sequencer = dev1_memory_manager.sequencer;
     virtual_sequencer.host_sequencer = host_agent.virt_sequencer;
+    virtual_sequencer.ctrl_vif = ctrl_vif;
 
     // ---------------------------------------------------------------------------
     // Adapter-to-sequencer wiring

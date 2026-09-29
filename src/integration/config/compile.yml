@@ -175,6 +175,7 @@ targets:
       - $COMPILE_ROOT/testbench
       - $COMPILE_ROOT/testbench/sv_tests/ai3c
       - $COMPILE_ROOT/testbench/sv_tests/mci
+      - $COMPILE_ROOT/testbench/sv_tests/usb
       - $COMPILE_ROOT/testbench/sv_tests/common
       - $COMPILE_ROOT/testbench/uvm/usb
     files:

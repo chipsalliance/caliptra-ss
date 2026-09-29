@@ -71,6 +71,9 @@ package usb_tb_pkg;
 
   localparam int USB_TARGET_COUNT = 5;
   localparam int USB_TB_AXI_USER_WIDTH = AAXI_AWUSER_WIDTH;
+  // AXI USER allowlist depth per device policy; shared by the wrapper and TB control interface.
+  localparam int unsigned USB_DEV0_NUM_PRIV_AXI_USERS = 4;
+  localparam int unsigned USB_DEV1_NUM_PRIV_AXI_USERS = 4;
   // Avery's unparameterized interface includes its default ID padding.
   localparam int USB_TB_AXI_ID_WIDTH = AAXI_INTC_ID_WIDTH;
   localparam time USB_RESET_TIMEOUT = 5us;
@@ -110,10 +113,12 @@ package usb_tb_pkg;
   `include "env/usb_virtual_sequencer.svh"
   `include "env/usb_env.svh"
   `include "sequences/usb_base_seq.svh"
+  `include "sequences/usb_axi_filter_seq.svh"
   `include "sequences/usb_endpoint_rw_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
   `include "tests/usb_base_test.svh"
+  `include "tests/usb_axi_filter_test.svh"
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
 endpackage

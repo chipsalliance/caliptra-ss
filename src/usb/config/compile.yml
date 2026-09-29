@@ -99,6 +99,7 @@ targets:
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
+      - $COMPILE_ROOT/tb/usb_tb_ctrl_if.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv
@@ -115,6 +116,7 @@ global:
         - '-suppress=SV-LCM-PPWI'
         - +define+SIMULATION
         - +define+UVM
+        - +define+CLP_ASSERT_ON
         - +define+AVERY_VCS
         - +define+AVERY_ASSERT_ON
         - +define+AVERY_MONITOR_ON

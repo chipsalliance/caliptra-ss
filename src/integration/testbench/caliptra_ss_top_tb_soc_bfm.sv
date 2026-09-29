@@ -29,6 +29,8 @@ import trace_buffer_csr_pkg::*;
 import css_mcu0_el2_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512,
+    parameter int unsigned USB_DEV0_NUM_PRIV_AXI_USERS = 2,
+    parameter int unsigned USB_DEV1_NUM_PRIV_AXI_USERS = 2,
     `include "css_mcu0_el2_param.vh"
 ) 
 (
@@ -43,6 +45,12 @@ import css_mcu0_el2_pkg::*;
     output logic [31:0] cptra_ss_strap_mcu_sram_config_axi_user_i,
     output logic [31:0] cptra_ss_strap_mci_soc_config_axi_user_i,
     output logic [31:0] cptra_ss_strap_caliptra_dma_axi_user_i,
+
+    // USB AXI USER filtering policy (see USB AXI USER FILTERING POLICY below)
+    output logic        cptra_ss_usb_dev0_enable_axi_user_filtering_i,
+    output logic [31:0] cptra_ss_usb_dev0_priv_axi_users_i [USB_DEV0_NUM_PRIV_AXI_USERS],
+    output logic        cptra_ss_usb_dev1_enable_axi_user_filtering_i,
+    output logic [31:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS],
 
     output logic         cptra_ss_mci_boot_seq_brkpoint_i,
     output logic         cptra_ss_mcu_no_rom_config_i,
@@ -107,6 +115,7 @@ logic cptra_ss_mcu_halt_ack_i_soc_ctrl;
 //////////////////////////////////
 `include "common_test_includes.svh"
 `include "mci_test_includes.svh"
+`include "usb_test_includes.svh"
 
 
 
@@ -175,6 +184,9 @@ initial begin
         end
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_NO_ROM_CONFIG_BRKPOINT") begin
             smoke_test_mcu_no_rom_config_brkpoint();
+        end
+        else if(cptra_ss_test_name == "SMOKE_TEST_USB_AXI_FILTER") begin
+            smoke_test_usb_axi_filter();
         end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
@@ -383,6 +395,11 @@ end
 ///////////////////////////////////
 // AXI USER VALUES         
 //////////////////////////////////
+// Set once the MCU LSU and Caliptra DMA straps are resolved; the USB AXI USER
+// policy waits on these so its defaults never depend on initial-block ordering.
+bit mcu_lsu_axi_user_resolved;
+bit caliptra_dma_axi_user_resolved;
+
 initial begin
     // MCU LSU
     if ($value$plusargs("MCU_LSU_AXI_USER=%h", cptra_ss_strap_mcu_lsu_axi_user_i)) begin
@@ -393,6 +410,7 @@ initial begin
         cptra_ss_strap_mcu_lsu_axi_user_i = $urandom();
         $display("Randomized MCU LSU AXI USER Value: %h", cptra_ss_strap_mcu_lsu_axi_user_i);
     end
+    mcu_lsu_axi_user_resolved = 1'b1;
 end
 initial begin
     // MCU IFU
@@ -415,6 +433,7 @@ initial begin
         cptra_ss_strap_caliptra_dma_axi_user_i = $urandom();
         $display("Randomized Caliptra DMA AXI USER Value: %h", cptra_ss_strap_caliptra_dma_axi_user_i);
     end
+    caliptra_dma_axi_user_resolved = 1'b1;
 end
 initial begin
     // MCU SRAM CONFIG
@@ -445,6 +464,142 @@ initial begin
         cptra_ss_strap_mci_soc_config_axi_user_i = cptra_ss_strap_mcu_lsu_axi_user_i; 
         $display("MCI SOC CONFIG AXI USER Value Default to MCU LSU: %h", cptra_ss_strap_mci_soc_config_axi_user_i);
     end
+end
+
+
+///////////////////////////////////
+// USB AXI USER FILTERING POLICY
+//////////////////////////////////
+// TB-only policy for the USB AXI USER filters. It is driven once at time zero,
+// before reset release, and is not changed afterward. Defaults follow the
+// resolved straps:
+//   DEV0 slot 0 = MCU LSU, slot 1 = Caliptra DMA (keeps OCP recovery access)
+//   DEV1 slot 0 = MCU LSU, slot 1 = random USER distinct from MCU LSU
+// Overrides: +USB_DEV<d>_PRIV_AXI_USER_<s>=<hex> per slot and
+//            +USB_DEV<d>_ENABLE_AXI_USER_FILTERING=<0|1> per device.
+string usb_dev0_priv_axi_user_src [USB_DEV0_NUM_PRIV_AXI_USERS];
+string usb_dev1_priv_axi_user_src [USB_DEV1_NUM_PRIV_AXI_USERS];
+string usb_dev0_enable_axi_user_filtering_src;
+string usb_dev1_enable_axi_user_filtering_src;
+bit    usb_axi_user_policy_ready;
+
+// Returns 1 and the value if +<name>=<hex> is present. The text is validated
+// before conversion because $value$plusargs silently truncates oversized values
+// and stores 'bx for illegal digits.
+function automatic bit usb_axi_user_policy_get_user_plusarg(input string name, output logic [31:0] value);
+    string fmt;
+    string str;
+    int unsigned num_digits;
+
+    value = '0;
+    fmt = {name, "=%s"};
+    if (!$value$plusargs(fmt, str))
+        return 1'b0;
+    num_digits = 0;
+    for (int i = 0; i < str.len(); i++) begin
+        byte unsigned c;
+        c = str.getc(i);
+        if (c == "_")
+            continue;
+        if (!((c >= "0" && c <= "9") || (c >= "a" && c <= "f") || (c >= "A" && c <= "F")))
+            $fatal(1, "[%t] USB AXI USER POLICY: +%s=%s contains illegal hex character '%c'", $time, name, str, c);
+        num_digits++;
+    end
+    if ((num_digits == 0) || (num_digits > 8))
+        $fatal(1, "[%t] USB AXI USER POLICY: +%s=%s must contain 1 to 8 hex digits", $time, name, str);
+    value = str.atohex();
+    return 1'b1;
+endfunction
+
+// Returns 1 and the value if +<name>=<0|1> is present; any other value is fatal.
+function automatic bit usb_axi_user_policy_get_enable_plusarg(input string name, output logic value);
+    string fmt;
+    string str;
+
+    value = 1'b1;
+    fmt = {name, "=%s"};
+    if (!$value$plusargs(fmt, str))
+        return 1'b0;
+    if (str == "0")
+        value = 1'b0;
+    else if (str != "1")
+        $fatal(1, "[%t] USB AXI USER POLICY: +%s=%s must be 0 or 1", $time, name, str);
+    return 1'b1;
+endfunction
+
+function automatic bit usb_axi_user_policy_is_ready();
+    return usb_axi_user_policy_ready;
+endfunction
+
+function automatic void usb_axi_user_policy_print();
+    $display("[%t] USB AXI USER POLICY: DEV0 filtering %s (%s), %0d allowlist entries", $time,
+             cptra_ss_usb_dev0_enable_axi_user_filtering_i ? "ENABLED" : "DISABLED", usb_dev0_enable_axi_user_filtering_src, USB_DEV0_NUM_PRIV_AXI_USERS);
+    for (int s = 0; s < USB_DEV0_NUM_PRIV_AXI_USERS; s++)
+        $display("[%t] USB AXI USER POLICY:   DEV0 slot %0d USER 0x%08h (%s)", $time, s, cptra_ss_usb_dev0_priv_axi_users_i[s], usb_dev0_priv_axi_user_src[s]);
+    $display("[%t] USB AXI USER POLICY: DEV1 filtering %s (%s), %0d allowlist entries", $time,
+             cptra_ss_usb_dev1_enable_axi_user_filtering_i ? "ENABLED" : "DISABLED", usb_dev1_enable_axi_user_filtering_src, USB_DEV1_NUM_PRIV_AXI_USERS);
+    for (int s = 0; s < USB_DEV1_NUM_PRIV_AXI_USERS; s++)
+        $display("[%t] USB AXI USER POLICY:   DEV1 slot %0d USER 0x%08h (%s)", $time, s, cptra_ss_usb_dev1_priv_axi_users_i[s], usb_dev1_priv_axi_user_src[s]);
+endfunction
+
+initial begin : usb_axi_user_policy_init
+    bit   [31:0] dev1_rand_user;
+    logic [31:0] user;
+    logic        enable;
+
+    // The default table below defines exactly two slots per device.
+    if ((USB_DEV0_NUM_PRIV_AXI_USERS != 2) || (USB_DEV1_NUM_PRIV_AXI_USERS != 2))
+        $fatal(1, "[%t] USB AXI USER POLICY: TB defaults require 2 allowlist entries per device (DEV0=%0d DEV1=%0d)",
+               $time, USB_DEV0_NUM_PRIV_AXI_USERS, USB_DEV1_NUM_PRIV_AXI_USERS);
+
+    wait (mcu_lsu_axi_user_resolved && caliptra_dma_axi_user_resolved);
+    if ($isunknown(cptra_ss_strap_mcu_lsu_axi_user_i) || $isunknown(cptra_ss_strap_caliptra_dma_axi_user_i))
+        $fatal(1, "[%t] USB AXI USER POLICY: default sources are unknown (MCU LSU 0x%08h, Caliptra DMA 0x%08h); check +MCU_LSU_AXI_USER and +CALIPTRA_DMA_AXI_USER",
+               $time, cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_caliptra_dma_axi_user_i);
+
+    // Defaults. The DEV1 slot 1 random USER is generated once here and only has to
+    // differ from the MCU LSU USER.
+    if (!std::randomize(dev1_rand_user) with { dev1_rand_user != cptra_ss_strap_mcu_lsu_axi_user_i; })
+        $fatal(1, "[%t] USB AXI USER POLICY: failed to randomize the DEV1 slot 1 default USER", $time);
+    cptra_ss_usb_dev0_priv_axi_users_i[0] = cptra_ss_strap_mcu_lsu_axi_user_i;
+    usb_dev0_priv_axi_user_src[0]         = "default: MCU LSU strap";
+    cptra_ss_usb_dev0_priv_axi_users_i[1] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    usb_dev0_priv_axi_user_src[1]         = "default: Caliptra DMA strap";
+    cptra_ss_usb_dev1_priv_axi_users_i[0] = cptra_ss_strap_mcu_lsu_axi_user_i;
+    usb_dev1_priv_axi_user_src[0]         = "default: MCU LSU strap";
+    cptra_ss_usb_dev1_priv_axi_users_i[1] = dev1_rand_user;
+    usb_dev1_priv_axi_user_src[1]         = "default: random, not MCU LSU";
+
+    // Slot overrides are applied as given; they may duplicate another slot or
+    // drop the MCU LSU and Caliptra DMA identities.
+    for (int s = 0; s < USB_DEV0_NUM_PRIV_AXI_USERS; s++) begin
+        if (usb_axi_user_policy_get_user_plusarg($sformatf("USB_DEV0_PRIV_AXI_USER_%0d", s), user)) begin
+            cptra_ss_usb_dev0_priv_axi_users_i[s] = user;
+            usb_dev0_priv_axi_user_src[s]         = "plusarg override";
+        end
+    end
+    for (int s = 0; s < USB_DEV1_NUM_PRIV_AXI_USERS; s++) begin
+        if (usb_axi_user_policy_get_user_plusarg($sformatf("USB_DEV1_PRIV_AXI_USER_%0d", s), user)) begin
+            cptra_ss_usb_dev1_priv_axi_users_i[s] = user;
+            usb_dev1_priv_axi_user_src[s]         = "plusarg override";
+        end
+    end
+
+    cptra_ss_usb_dev0_enable_axi_user_filtering_i = 1'b1;
+    usb_dev0_enable_axi_user_filtering_src        = "default";
+    if (usb_axi_user_policy_get_enable_plusarg("USB_DEV0_ENABLE_AXI_USER_FILTERING", enable)) begin
+        cptra_ss_usb_dev0_enable_axi_user_filtering_i = enable;
+        usb_dev0_enable_axi_user_filtering_src        = "plusarg override";
+    end
+    cptra_ss_usb_dev1_enable_axi_user_filtering_i = 1'b1;
+    usb_dev1_enable_axi_user_filtering_src        = "default";
+    if (usb_axi_user_policy_get_enable_plusarg("USB_DEV1_ENABLE_AXI_USER_FILTERING", enable)) begin
+        cptra_ss_usb_dev1_enable_axi_user_filtering_i = enable;
+        usb_dev1_enable_axi_user_filtering_src        = "plusarg override";
+    end
+
+    usb_axi_user_policy_ready = 1'b1;
+    usb_axi_user_policy_print();
 end
 
 

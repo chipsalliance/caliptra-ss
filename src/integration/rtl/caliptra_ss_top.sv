@@ -47,6 +47,8 @@ module caliptra_ss_top
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
     ,parameter USB_C_HUB_FIFO_SIZE = 172
+    ,parameter USB_DEV0_NUM_PRIV_AXI_USERS = 4
+    ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter SPI_HOST_ENA = 1
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
@@ -370,7 +372,14 @@ module caliptra_ss_top
     output logic cptra_ss_usb_recovery_image_activated_o,
     input  logic cptra_ss_usb_recovery_image_activated_i,
 
-    input  logic cptra_usb_axi_user_id_filtering_enable_i, // TODO: reserved for future USB AXI user-based access control
+// USB AXI USER filtering policy
+// DEV0 policy covers the Combo (DEV0 CSR, Hub, Recovery) and DEV0 memory interfaces;
+// DEV1 policy covers the DEV1 CSR and DEV1 memory interfaces. Every allowlist entry
+// participates, including zero.
+    input  logic cptra_ss_usb_dev0_enable_axi_user_filtering_i,
+    input  logic [$bits(cptra_ss_usb_combo_s_axi_if_w_sub.awuser)-1:0] cptra_ss_usb_dev0_priv_axi_users_i [USB_DEV0_NUM_PRIV_AXI_USERS],
+    input  logic cptra_ss_usb_dev1_enable_axi_user_filtering_i,
+    input  logic [$bits(cptra_ss_usb_dev1_csr_s_axi_if_w_sub.awuser)-1:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS],
 
     input  logic [63:0] cptra_ss_cptra_core_generic_input_wires_i,
     output logic [63:0] cptra_ss_cptra_core_generic_output_wires_o,
@@ -1104,6 +1113,8 @@ module caliptra_ss_top
         .C_DEV0_NBPHYSEP(USB_C_DEV0_NBPHYSEP),
         .C_DEV1_NBPHYSEP(USB_C_DEV1_NBPHYSEP),
         .C_HUB_FIFO_SIZE     (USB_C_HUB_FIFO_SIZE),
+        .DEV0_NUM_PRIV_AXI_USERS(USB_DEV0_NUM_PRIV_AXI_USERS),
+        .DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
         .G_SIM_CHIRP_TIMERS  (USB_G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
         // ---- Clock / Reset ----
@@ -1119,6 +1130,12 @@ module caliptra_ss_top
         .dev1_csr_axi_if_r_sub(cptra_ss_usb_dev1_csr_s_axi_if_r_sub),
         .dev1_mem_axi_if_w_sub(cptra_ss_usb_dev1_mem_s_axi_if_w_sub),
         .dev1_mem_axi_if_r_sub(cptra_ss_usb_dev1_mem_s_axi_if_r_sub),
+
+        // ---- AXI USER Filtering Policy ----
+        .dev0_enable_axi_user_filtering_i(cptra_ss_usb_dev0_enable_axi_user_filtering_i),
+        .dev0_priv_axi_users_i           (cptra_ss_usb_dev0_priv_axi_users_i),
+        .dev1_enable_axi_user_filtering_i(cptra_ss_usb_dev1_enable_axi_user_filtering_i),
+        .dev1_priv_axi_users_i           (cptra_ss_usb_dev1_priv_axi_users_i),
 
         // ---- SRAM Interfaces ----
         .dev0_mem_q      (cptra_ss_usb_dev0_mem_q_i),

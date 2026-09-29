@@ -22,6 +22,12 @@ class usb_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
   aaxi_sequencer dev1_csr_sequencer;
   aaxi_sequencer dev1_memory_sequencer;
   svt_usb_virtual_sequencer host_sequencer;
+  // AXI USER filter policy control shared by all four manager paths.
+  virtual usb_tb_ctrl_if #(
+    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
+    .DEV0_NUM_USERS(usb_tb_pkg::USB_DEV0_NUM_PRIV_AXI_USERS),
+    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+  ) ctrl_vif;
 
   function new(string name = "usb_virtual_sequencer", uvm_component parent = null);
     super.new(name, parent);
