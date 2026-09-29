@@ -1,0 +1,90 @@
+CAPI=2:
+# Copyright 2026 Google LLC (chipsalliance project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:ip:uart:0.1"
+description: "UART RTL"
+filesets:
+  files_rtl:
+    files:
+      - ../../third_party/caliptra-rtl/src/integration/rtl: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/libs/rtl: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/axi/rtl: {is_include_file: true}
+      - ../tlul/rtl: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/libs/rtl/caliptra_sva.svh: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_util_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert.sv: {is_include_file: true}
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_alert_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_alert_sender.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_sec_anchor_buf.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_sec_anchor_flop.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_diff_decode.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_mubi_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_pkg.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
+      - ../tlul/rtl/tlul_pkg.sv
+      - ../lc_ctrl/rtl/top_pkg.sv
+      - ../../third_party/caliptra-rtl/src/libs/rtl/ahb_defines_pkg.sv
+      - rtl/uart_reg_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_2sync.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_cdc_rand_delay.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_39_32_enc.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_64_57_enc.sv
+      - ../../third_party/caliptra-rtl/src/libs/rtl/ahb_slv_sif.sv
+      - ../../third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_ext.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_arb.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_reg_we_check.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_packer_fifo.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_sync.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_sync_cnt.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_en.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_buf.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_onehot_check.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_intr_hw.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_64_57_dec.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_39_32_dec.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
+      - ../tlul/rtl/tlul_cmd_intg_chk.sv
+      - ../tlul/rtl/tlul_rsp_intg_gen.sv
+      - ../tlul/rtl/tlul_socket_1n.sv
+      - ../tlul/rtl/tlul_adapter_reg.sv
+      - ../tlul/rtl/tlul_adapter_sram.sv
+      - ../tlul/rtl/tlul_sram_byte.sv
+      - ../tlul/rtl/tlul_data_integ_dec.sv
+      - ../tlul/rtl/tlul_data_integ_enc.sv
+      - ../tlul/rtl/tlul_fifo_sync.sv
+      - ../tlul/rtl/tlul_err_resp.sv
+      - ../tlul/rtl/tlul_err.sv
+      - ../tlul/rtl/tlul_assert.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
+      - ../../third_party/caliptra-rtl/src/libs/rtl/skidbuffer.v
+      - ../axi2tlul/rtl/axi2tlul.sv
+      - ../axi2tlul/rtl/axi2tlul_cmd_intg_gen.sv
+      - ../axi2tlul/rtl/sub2tlul.sv
+      - rtl/uart_reg_top.sv
+      - rtl/uart_core.sv
+      - rtl/uart_rx.sv
+      - rtl/uart_tx.sv
+      - rtl/uart.sv
+      - rtl/uart_axi.sv
+    file_type: systemVerilogSource
+
+targets:
+  default: &default_target
+    filesets:
+      - files_rtl
