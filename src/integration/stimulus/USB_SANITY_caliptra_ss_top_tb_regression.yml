@@ -1,0 +1,50 @@
+# USB SANITY regression list for Caliptra-SS.
+#
+# Purpose: fast gate for validating RTL changes in the USB subsystem. It is
+# NOT a coverage-closure list - it is the smallest mix of scenarios that
+# still exercises both embedded device controllers (USBDC0 and USBDC1) at
+# both link speeds (High Speed and Full Speed) plus the basic bring-up.
+#
+# Selection rules used:
+#   - only tests that are currently PASSING (no known-failing entries, so any
+#     failure in this list is a regression introduced by the change);
+#   - the fastest scenario families (init/conn, bulk_loopback, nbyte,
+#     iso_out) - the long ones (disconnect, resume, powerdown,
+#     global_suspend_L2) are left to the full USB regression;
+#   - exactly 10 tests, which matches the maximum useful parallelism
+#     (-parallel 10), so the whole list runs in a single wave.
+#
+# Coverage of this list:
+#   dev0 HS : init, conn, bulk_loopback, nbyte
+#   dev0 FS : conn, bulk_loopback, nbyte
+#   dev1 HS : bulk_loopback, nbyte, iso_out
+#   dev1 FS : none - device0 owns the shared link speed and defaults to High
+#             Speed, so a dev1-only Full Speed bring-up is not a supported
+#             configuration. See claude_md/15_usb_dev1_replication.md.
+#
+# Run with:
+#   python3 ./caliptra-ss/tools/run_usb_regression.py \
+#       -regr_dir ./usb_regr_sanity \
+#       -testlist ./caliptra-ss/src/integration/stimulus/USB_SANITY_caliptra_ss_top_tb_regression.yml \
+#       -parallel 10
+#
+# NOTE: keep the entries below as bare names (no trailing comments on the
+# same line). The regression driver has a non-PyYAML fallback parser that
+# stops collecting at the first list item it cannot match.
+  - tests:
+      # Basic bring-up / enumeration
+      - caliptra_ss_usb_init
+      - caliptra_ss_usb_hs_conn
+      - caliptra_ss_usb_fs_conn
+      # USBDC0 data path, HS
+      - caliptra_ss_usb_hs_dev_bulk_loopback
+      - caliptra_ss_usb_hs_dev_nbyte
+      # USBDC0 data path, FS
+      - caliptra_ss_usb_fs_dev_bulk_loopback
+      - caliptra_ss_usb_fs_dev_nbyte
+      # USBDC1 data path, HS
+      - caliptra_ss_usb_hs_dev1_bulk_loopback
+      - caliptra_ss_usb_hs_dev1_nbyte
+      - caliptra_ss_usb_hs_dev1_iso_out
+
+# File contains AI-generated response based on internal company sources

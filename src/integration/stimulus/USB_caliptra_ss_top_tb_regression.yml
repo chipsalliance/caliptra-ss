@@ -1,0 +1,103 @@
+# This file is the current list of USB test cases in Caliptra-SS.
+  - tests:
+      # Standalone register read/write access test that exercises BOTH
+      # embedded device controllers (USBDC0 and USBDC1) register banks in a
+      # single run (masked RW read-back + RO immutability). No link bring-up.
+      - caliptra_ss_usb_dev_reg_rw
+
+      # HS (high-speed) test cases
+      - caliptra_ss_usb_hs_clock  #ported with acc
+      - caliptra_ss_usb_hs_conn
+      - caliptra_ss_usb_hs_dev_bulk_loopback  #ported with acc
+      - caliptra_ss_usb_hs_dev_bulk_out
+      - caliptra_ss_usb_hs_dev_disconnect
+      - caliptra_ss_usb_hs_dev_iso_out
+      # Interrupt (periodic, RF=1) endpoint IN/OUT loopback. Stage 1 uses a
+      # fixed EP2; later stages randomize the endpoint number in firmware.
+      - caliptra_ss_usb_hs_dev_int_loopback
+      - caliptra_ss_usb_hs_dev_nbyte
+      - caliptra_ss_usb_hs_dev_powerdown
+      - caliptra_ss_usb_hs_dev_global_suspend_L2
+      - caliptra_ss_usb_hs_dev_lpm_l1
+      - caliptra_ss_usb_hs_dev_resume
+      - caliptra_ss_usb_init
+      - caliptra_ss_usb_usbd_conn
+      # Hub downstream port suspend is status-only on this IP by design; this
+      # test checks the port status ladder plus post-resume traffic, not
+      # suspend actuation. See docs/usb_hub_port_suspend_not_wired_report.md.
+      - caliptra_ss_usb_hs_dev_hub_port_suspend
+      - caliptra_ss_usb_hs_dev_get_status
+      - caliptra_ss_usb_hs_dev_hub_qualifier
+      - caliptra_ss_usb_hs_dev_get_hub_status
+      - caliptra_ss_usb_hs_dev_get_hub_descriptor
+      - caliptra_ss_usb_hs_dev_hub_config_descriptor
+      - caliptra_ss_usb_hs_dev_get_device_descriptor
+
+
+      # FS (full-speed) test cases
+      - caliptra_ss_usb_fs_clock
+      - caliptra_ss_usb_fs_conn  #ported with acc
+      - caliptra_ss_usb_fs_dev_bulk_loopback
+      - caliptra_ss_usb_fs_dev_bulk_out  #ported with acc
+      - caliptra_ss_usb_fs_dev_disconnect  #ported with acc
+      - caliptra_ss_usb_fs_dev_iso_out  #ported with acc
+      - caliptra_ss_usb_fs_dev_nbyte  #ported with acc
+      - caliptra_ss_usb_fs_dev_powerdown  #ported with acc
+      - caliptra_ss_usb_fs_dev_global_suspend_L2  #ported with acc
+      - caliptra_ss_usb_fs_dev_resume  #ported with acc
+      # Only test that verifies device-initiated remote wakeup: the device
+      # drives resume K on the bus and the host observes it. All other
+      # suspend/resume tests are host-initiated.
+      - caliptra_ss_usb_fs_host_remotewakeup_fromdevice
+      - caliptra_ss_usb_fs_dev_get_status
+      - caliptra_ss_usb_fs_dev_hub_qualifier
+      - caliptra_ss_usb_fs_dev_get_hub_status
+      - caliptra_ss_usb_fs_dev_get_hub_descriptor
+      - caliptra_ss_usb_fs_dev_hub_config_descriptor
+      - caliptra_ss_usb_fs_dev_get_device_descriptor
+      
+      # USBDC1 (device1) test cases. Same scenarios as the dev (USBDC0)
+      # entries above, retargeted to the second embedded device controller:
+      # the host brings up hub downstream port 2 and the firmware is built
+      # with -DUSB_DEV_SEL=1. See claude_md/15_usb_dev1_replication.md.
+      - caliptra_ss_usb_hs_dev1_bulk_out  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_nbyte  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_iso_out  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_bulk_loopback  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_disconnect  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_powerdown  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_global_suspend_L2  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_resume  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_get_status  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_hub_qualifier  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_get_hub_status  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_get_device_descriptor  #replicated with acc
+
+      # USBDC1 bring-up / link-observation test cases. These are the dev1
+      # counterparts of caliptra_ss_usb_init, caliptra_ss_usb_hs_clock,
+      # caliptra_ss_usb_hs_conn and caliptra_ss_usb_usbd_conn.
+      - caliptra_ss_usb_dev1_init  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_clock  #replicated with acc
+      - caliptra_ss_usb_hs_dev1_conn  #replicated with acc
+      - caliptra_ss_usb_usbd1_conn  #replicated with acc
+
+      # FS (full-speed) USBDC1 test cases are intentionally NOT part of this
+      # list. The compound instantiates a single shared link engine
+      # (usb_pie_1) and device0 owns the link speed selection, defaulting to
+      # High Speed. A dev1-only Full Speed bring-up is therefore not a
+      # supported configuration and the stimulus below is invalid rather
+      # than failing. The tests are kept in the tree (and in
+      # USB_DEV1_caliptra_ss_top_tb_regression.yml, commented out) in case
+      # the designers decide to add per-device speed control later.
+      # See claude_md/15_usb_dev1_replication.md section 8.
+      #discarded - caliptra_ss_usb_fs_dev1_bulk_loopback
+      #discarded - caliptra_ss_usb_fs_dev1_bulk_out
+      #discarded - caliptra_ss_usb_fs_dev1_disconnect
+      #discarded - caliptra_ss_usb_fs_dev1_iso_out
+      #discarded - caliptra_ss_usb_fs_dev1_nbyte
+      #discarded - discarded caliptra_ss_usb_fs_dev1_powerdown
+      #discarded - caliptra_ss_usb_fs_dev1_global_suspend_L2
+      #discarded - caliptra_ss_usb_fs_dev1_resume
+
+
+# File contains AI-generated response based on internal company sources

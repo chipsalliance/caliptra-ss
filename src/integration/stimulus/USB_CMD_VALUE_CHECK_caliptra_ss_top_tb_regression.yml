@@ -1,0 +1,41 @@
+# USB command-value-check regression list.
+#
+# Collects the USB control-transfer test families that verify the exact
+# command/response byte values returned for standard and hub-class requests
+# after a full hub + USBDC0 enumeration:
+#   - get_status            (SetFeature/ClearFeature(DEVICE_REMOTE_WAKEUP) + GET_STATUS for hub and dev0)
+#   - hub_qualifier         (GetDeviceQualifier for the hub)
+#   - get_hub_status        (hub-class GetHubStatus for the hub)
+#   - get_device_descriptor (GET_DESCRIPTOR(DEVICE) for the hub and dev0)
+# Each family has an HS and an FS variant.
+  - tests:
+      # HS (high-speed) command-value-check test cases
+      - caliptra_ss_usb_hs_dev_get_status
+      - caliptra_ss_usb_hs_dev_hub_qualifier
+      - caliptra_ss_usb_hs_dev_get_hub_status
+      - caliptra_ss_usb_hs_dev_get_hub_descriptor
+      - caliptra_ss_usb_hs_dev_get_device_descriptor
+      - caliptra_ss_usb_hs_dev_hub_config_descriptor
+
+
+      # FS (full-speed) command-value-check test cases
+      - caliptra_ss_usb_fs_dev_get_status
+      - caliptra_ss_usb_fs_dev_hub_qualifier
+      - caliptra_ss_usb_fs_dev_get_hub_status
+      - caliptra_ss_usb_fs_dev_get_hub_descriptor
+      - caliptra_ss_usb_fs_dev_get_device_descriptor
+      - caliptra_ss_usb_fs_dev_hub_config_descriptor
+
+      # HS (high-speed) USBDC1 (device1) command-value-check test cases.
+      # Same scenarios as the HS entries above, retargeted to the second
+      # embedded device controller: the host brings up hub downstream port 2
+      # and the firmware is built with -DUSB_DEV_SEL=1. Only HS dev1 variants
+      # exist (the compound shares a single link engine defaulting to High
+      # Speed). See claude_md/15_usb_dev1_replication.md.
+      - caliptra_ss_usb_hs_dev1_get_status
+      - caliptra_ss_usb_hs_dev1_hub_qualifier
+      - caliptra_ss_usb_hs_dev1_get_hub_status
+      - caliptra_ss_usb_hs_dev1_get_device_descriptor
+
+
+# File contains AI-generated response based on internal company sources
