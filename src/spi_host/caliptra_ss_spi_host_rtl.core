@@ -1,0 +1,79 @@
+CAPI=2:
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "caliptra:rtl:spi_host_subsystem:1.0"
+description: "Caliptra-SS SPI Host Subsystem RTL (from spi_host.vf)"
+
+filesets:
+  files_rtl:
+    files:
+      - ../../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_util_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_assert.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_mubi_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_pkg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_pkg.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
+      - ../../src/tlul/rtl/tlul_pkg.sv
+      - ../../src/lc_ctrl/rtl/top_pkg.sv
+      - ../../src/spi_host/rtl/spi_device_pkg.sv
+      - ../../src/spi_host/rtl/spi_host_reg_pkg.sv
+      - ../../src/spi_host/rtl/spi_host_cmd_pkg.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
+      - ../../third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
+      - ../../third_party/caliptra-rtl/src/libs/rtl/skidbuffer.v
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_ext.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_arb.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_reg_we_check.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_packer_fifo.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_sync.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_fifo_sync_cnt.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_flop_en.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_buf.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_onehot_check.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_intr_hw.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_64_57_dec.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_64_57_enc.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_39_32_dec.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_secded_inv_39_32_enc.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
+      - ../../third_party/caliptra-rtl/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
+      - ../../src/tlul/rtl/tlul_assert.sv
+      - ../../src/tlul/rtl/tlul_cmd_intg_chk.sv
+      - ../../src/tlul/rtl/tlul_rsp_intg_gen.sv
+      - ../../src/tlul/rtl/tlul_socket_1n.sv
+      - ../../src/tlul/rtl/tlul_adapter_reg.sv
+      - ../../src/tlul/rtl/tlul_adapter_sram.sv
+      - ../../src/tlul/rtl/tlul_sram_byte.sv
+      - ../../src/tlul/rtl/tlul_data_integ_dec.sv
+      - ../../src/tlul/rtl/tlul_data_integ_enc.sv
+      - ../../src/tlul/rtl/tlul_fifo_sync.sv
+      - ../../src/tlul/rtl/tlul_err_resp.sv
+      - ../../src/tlul/rtl/tlul_err.sv
+      - ../../src/axi2tlul/rtl/axi2tlul.sv
+      - ../../src/axi2tlul/rtl/axi2tlul_cmd_intg_gen.sv
+      - ../../src/axi2tlul/rtl/sub2tlul.sv
+      - ../../src/spi_host/rtl/spi_host_byte_merge.sv
+      - ../../src/spi_host/rtl/spi_host_byte_select.sv
+      - ../../src/spi_host/rtl/spi_host_command_queue.sv
+      - ../../src/spi_host/rtl/spi_host_core.sv
+      - ../../src/spi_host/rtl/spi_host_data_fifos.sv
+      - ../../src/spi_host/rtl/spi_host_fsm.sv
+      - ../../src/spi_host/rtl/spi_host_reg_top.sv
+      - ../../src/spi_host/rtl/spi_host_shift_register.sv
+      - ../../src/spi_host/rtl/spi_host_window.sv
+      - ../../src/spi_host/rtl/spi_host.sv
+      - ../../src/spi_host/rtl/spi_host_axi.sv
+      - ../../src/spi_host/rtl/spi_host_axi_synth.sv
+    file_type: systemVerilogSource
+
+targets:
+  default:
+    filesets:
+      - files_rtl
