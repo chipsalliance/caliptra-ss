@@ -729,7 +729,7 @@ Integrator must connect following list of manager and subordinates to axi interc
 
 Use the [parameters](#parameters--defines) and [port table](#caliptra-subsystem-top-interface--signals) for wiring. Filter behavior is defined in the hardware specification's [AXI USER filtering](CaliptraSSHardwareSpecification.md#axi-user-filtering) section.
 
-The SoC must route and authorize agents according to [USB ownership and access](CaliptraSSHardwareSpecification.md#ownership-and-access):
+Input signals to restrict access to the USB device: 
 
 - Combo allowlist: include `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i`.
 - DEV1 allowlist: include the designated SoC firmware owner's identity, and `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access.
