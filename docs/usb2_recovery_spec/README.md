@@ -404,13 +404,8 @@ one 64-byte MaxPacket; large images are streamed as many
 ### 3.6 EXT / AXI register + drain path
 
 Caliptra reaches the OCP register aperture as an AXI master: SoC AXI fabric to
-the Combo AXI-to-AHB bridge and then the package-defined Recovery portion of
-the local USB device aperture. The shared Combo AXI USER policy must authorize
-both MCU LSU and Caliptra DMA; it does not distinguish their permissions
-within the Recovery register aperture. All accesses must be aligned 32-bit
-DWORD transfers, with full write strobes; WSTRB masking is not supported.
-See [USB AXI Access Requirements](../CaliptraSSIntegrationSpecification.md#usb-axi-access-requirements).
-For the current 4 KiB local USB window:
+the device AXI-to-AHB bridge and then the package-defined Recovery portion of
+the local USB device aperture. For the current 4 KiB local USB window:
 
 - `0x000-0x7ff` remains the legacy `usbhsd` register aperture.
 - `0x800-0xfff` is the Recovery aperture. The integration wrapper
@@ -501,11 +496,6 @@ device programming flow in the
 That guide is authoritative for generic controller bring-up; this document
 calls out the Recovery-specific requirements:
 
-- **Establish and protect USB access policy.** Prefer static straps/tie-offs.
-  If programmable, MCU ROM may configure the SoC-owned policy registers, but
-  the SoC must lock the enables and allowlists before non-ROM firmware runs,
-  preferably before Caliptra starts. The Combo policy must authorize MCU LSU
-  and Caliptra DMA. See [USB AXI filtering configuration and locking](../CaliptraSSIntegrationSpecification.md#usb-axi-filtering-configuration-and-locking).
 - **Advertise the Recovery interface.** Install the OCP Recovery
   configuration/interface/functional descriptors before connecting Device 0,
   so the host discovers the interface during enumeration. Validation OCP v1.1

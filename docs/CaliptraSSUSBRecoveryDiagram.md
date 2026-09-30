@@ -28,12 +28,6 @@ uses these actors:
   consumption, and activation. See the general USB2 device programming flow in
   the [USB2 Programmer's Guide](https://github.com/chipsalliance/usb2/blob/main/docs/USB2_Programmers_Guide.md)
   for the MCU-owned controller bring-up and enumeration steps referenced below.
-- Before these flows access USB, establish the Combo AXI USER policy for MCU
-  LSU (DEV0/Hub owner) and Caliptra DMA (Recovery access). Prefer static
-  straps/tie-offs; any programmable policy must be SoC-locked before non-ROM
-  firmware executes, preferably before Caliptra starts. **All SoC-side USB
-  AXI accesses must be aligned 32-bit DWORD transfers; WSTRB masking is not
-  supported.** See [USB AXI Access Requirements](CaliptraSSIntegrationSpecification.md#usb-axi-access-requirements).
 - One OCP Recovery command maps to exactly one USB EP0 control transfer.
   Reads use a Class/Interface Control IN transfer and writes use a
   Class/Interface Control OUT transfer. `bRequest=0x00`, `wValue[7:0]` contains
