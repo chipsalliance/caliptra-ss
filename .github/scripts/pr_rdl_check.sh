@@ -44,6 +44,12 @@ bash "${CALIPTRA_SS_ROOT}/tools/scripts/reg_gen.sh"
 bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
 rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
 
+# Verify the independent USB interface RAL packages, including the Combo AXI
+# register model generated from third_party/usb2/systemrdl/usb_combo.rdl.
+python3 "${CALIPTRA_SS_ROOT}/tools/scripts/gen_ral.py" \
+  --recipe "${CALIPTRA_SS_ROOT}/src/usb/rdl/ral_exports.yml" \
+  --check
+
 # Check for any file changes
 if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then
   echo "Regenerating reg RDL outputs produced some file changes:";
