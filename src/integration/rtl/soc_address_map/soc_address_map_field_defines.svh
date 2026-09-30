@@ -7246,6 +7246,8 @@
 `define MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK                                                         (32'h2)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (32'h4)
+`define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
+`define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (32'h8)
 `endif
 `ifndef MCI_REG_AGG_ERROR_FATAL
 `define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h54)
@@ -7432,6 +7434,8 @@
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_MASK                                      (32'h2)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (32'h4)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (32'h8)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h94)

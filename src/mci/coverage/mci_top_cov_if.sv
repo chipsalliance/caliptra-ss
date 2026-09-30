@@ -187,7 +187,7 @@ interface mci_top_cov_if
 
         // Each state entered
         boot_states: coverpoint i_boot_seqr.boot_fsm {
-            illegal_bins bin_unknown = {BOOT_UNKNOWN};
+            illegal_bins bin_error = {BOOT_ERROR};
         }
         // Explicitly cover transitions where boot_fsm could take several branches
         boot_state_transition: coverpoint i_boot_seqr.boot_fsm {

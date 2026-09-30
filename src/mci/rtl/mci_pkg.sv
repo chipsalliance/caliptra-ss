@@ -32,21 +32,53 @@ package mci_pkg;
     parameter  MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS = 2;
     localparam MCI_WDT_TIMEOUT_PERIOD_W = MCI_WDT_TIMEOUT_PERIOD_NUM_DWORDS * 32;
 
-    typedef enum logic [3:0] {
-        BOOT_IDLE               = 4'h0,
-        BOOT_OTP_FC             = 4'h1,
-        BOOT_LCC                = 4'h2,
-        BOOT_BREAKPOINT_CHECK   = 4'h3,
-        BOOT_BREAKPOINT         = 4'h4,
-        BOOT_MCU                = 4'h5,
-        BOOT_WAIT_CPTRA_GO      = 4'h6,
-        BOOT_CPTRA              = 4'h7,
-        BOOT_WAIT_MCU_RST_REQ   = 4'h8,
-        BOOT_HALT_MCU           = 4'h9,
-        BOOT_WAIT_MCU_HALTED    = 4'ha,
-        BOOT_RST_MCU            = 4'hb,
-        BOOT_UNKNOWN            = 4'hf
+    //BOOT FSM
+    // Encoding generated with
+    // $ python3 sparse_fsm_encode.py -d 5 -m 13 -n 12 -s 14142135
+    //
+    // Minimum Hamming distance: 5
+    // Maximum Hamming distance: 10
+    //
+    localparam int MCI_BOOT_FSM_STATE_WIDTH = 12;
+    typedef enum logic [MCI_BOOT_FSM_STATE_WIDTH-1:0] {
+        BOOT_IDLE               = 12'b100011001101,
+        BOOT_OTP_FC             = 12'b110101101110,
+        BOOT_LCC                = 12'b110110010110,
+        BOOT_BREAKPOINT_CHECK   = 12'b101100011011,
+        BOOT_BREAKPOINT         = 12'b100111110011,
+        BOOT_MCU                = 12'b000110100101,
+        BOOT_WAIT_CPTRA_GO      = 12'b011001101101,
+        BOOT_CPTRA              = 12'b111011000011,
+        BOOT_WAIT_MCU_RST_REQ   = 12'b111000110000,
+        BOOT_HALT_MCU           = 12'b001111111100,
+        BOOT_WAIT_MCU_HALTED    = 12'b100010101010,
+        BOOT_RST_MCU            = 12'b010110001011,
+        BOOT_ERROR              = 12'b001001010111
     } mci_boot_fsm_state_e;
+
+    // Sequential, backwards-compatible 4-bit encoding of the sparse mci_boot_fsm_state_e
+    // that is exposed to software via HW_FLOW_STATUS.boot_fsm. This is the single
+    // source of truth shared by the RTL (mci_boot_seqr.boot_fsm_encoded) and the
+    // verification environment, so the sparse encoding can change without touching either.
+    // BOOT_ERROR and any invalid encoding report 4'hF.
+    function automatic logic [3:0] mci_boot_fsm_state_encode(mci_boot_fsm_state_e state);
+        unique case (state)
+            BOOT_IDLE:             mci_boot_fsm_state_encode = 4'h0;
+            BOOT_OTP_FC:           mci_boot_fsm_state_encode = 4'h1;
+            BOOT_LCC:              mci_boot_fsm_state_encode = 4'h2;
+            BOOT_BREAKPOINT_CHECK: mci_boot_fsm_state_encode = 4'h3;
+            BOOT_BREAKPOINT:       mci_boot_fsm_state_encode = 4'h4;
+            BOOT_MCU:              mci_boot_fsm_state_encode = 4'h5;
+            BOOT_WAIT_CPTRA_GO:    mci_boot_fsm_state_encode = 4'h6;
+            BOOT_CPTRA:            mci_boot_fsm_state_encode = 4'h7;
+            BOOT_WAIT_MCU_RST_REQ: mci_boot_fsm_state_encode = 4'h8;
+            BOOT_HALT_MCU:         mci_boot_fsm_state_encode = 4'h9;
+            BOOT_WAIT_MCU_HALTED:  mci_boot_fsm_state_encode = 4'ha;
+            BOOT_RST_MCU:          mci_boot_fsm_state_encode = 4'hb;
+            BOOT_ERROR:            mci_boot_fsm_state_encode = 4'hf;
+            default:               mci_boot_fsm_state_encode = 4'hf;
+        endcase
+    endfunction
 
     typedef enum logic [2:0] {
         TRANSLATOR_RESET            = 3'd0,

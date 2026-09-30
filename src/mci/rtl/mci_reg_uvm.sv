@@ -538,10 +538,12 @@ package mci_reg_uvm;
         mci_reg__HW_ERROR_FATAL_bit_cg mcu_sram_ecc_unc_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_bit_cg nmi_pin_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_bit_cg mcu_sram_dmi_axi_collision_bit_cg[1];
+        mci_reg__HW_ERROR_FATAL_bit_cg fsm_error_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_fld_cg fld_cg;
         rand uvm_reg_field mcu_sram_ecc_unc;
         rand uvm_reg_field nmi_pin;
         rand uvm_reg_field mcu_sram_dmi_axi_collision;
+        rand uvm_reg_field fsm_error;
 
         function new(string name = "mci_reg__HW_ERROR_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -559,10 +561,13 @@ package mci_reg_uvm;
             this.nmi_pin.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
             this.mcu_sram_dmi_axi_collision = new("mcu_sram_dmi_axi_collision");
             this.mcu_sram_dmi_axi_collision.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.fsm_error = new("fsm_error");
+            this.fsm_error.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(mcu_sram_ecc_unc_bit_cg[bt]) mcu_sram_ecc_unc_bit_cg[bt] = new();
                 foreach(nmi_pin_bit_cg[bt]) nmi_pin_bit_cg[bt] = new();
                 foreach(mcu_sram_dmi_axi_collision_bit_cg[bt]) mcu_sram_dmi_axi_collision_bit_cg[bt] = new();
+                foreach(fsm_error_bit_cg[bt]) fsm_error_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -1133,10 +1138,12 @@ package mci_reg_uvm;
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_mcu_sram_ecc_unc_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_nmi_pin_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_mcu_sram_dmi_axi_collision_bit_cg[1];
+        mci_reg__internal_hw_error_fatal_mask_bit_cg mask_fsm_error_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_fld_cg fld_cg;
         rand uvm_reg_field mask_mcu_sram_ecc_unc;
         rand uvm_reg_field mask_nmi_pin;
         rand uvm_reg_field mask_mcu_sram_dmi_axi_collision;
+        rand uvm_reg_field mask_fsm_error;
 
         function new(string name = "mci_reg__internal_hw_error_fatal_mask");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -1154,10 +1161,13 @@ package mci_reg_uvm;
             this.mask_nmi_pin.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.mask_mcu_sram_dmi_axi_collision = new("mask_mcu_sram_dmi_axi_collision");
             this.mask_mcu_sram_dmi_axi_collision.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_fsm_error = new("mask_fsm_error");
+            this.mask_fsm_error.configure(this, 1, 3, "RO", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(mask_mcu_sram_ecc_unc_bit_cg[bt]) mask_mcu_sram_ecc_unc_bit_cg[bt] = new();
                 foreach(mask_nmi_pin_bit_cg[bt]) mask_nmi_pin_bit_cg[bt] = new();
                 foreach(mask_mcu_sram_dmi_axi_collision_bit_cg[bt]) mask_mcu_sram_dmi_axi_collision_bit_cg[bt] = new();
+                foreach(mask_fsm_error_bit_cg[bt]) mask_fsm_error_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();

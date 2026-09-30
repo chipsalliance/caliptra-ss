@@ -206,7 +206,20 @@ addrmap mci_reg {
         name = "Flow Status";
         desc = "Reports the status of HW FSMs and other flows.
                 [br]TAP Access [with debug intent set]: RO";
-        field {desc="MCI Boot FSM State";                                            sw=r;                  hw=rw ; /* no storage, no reset */} boot_fsm[4];
+        field {desc="MCI Boot FSM State. Encoded value of the internal sparse boot FSM state:
+                     [br]0x0: BOOT_IDLE
+                     [br]0x1: BOOT_OTP_FC
+                     [br]0x2: BOOT_LCC
+                     [br]0x3: BOOT_BREAKPOINT_CHECK
+                     [br]0x4: BOOT_BREAKPOINT
+                     [br]0x5: BOOT_MCU
+                     [br]0x6: BOOT_WAIT_CPTRA_GO
+                     [br]0x7: BOOT_CPTRA
+                     [br]0x8: BOOT_WAIT_MCU_RST_REQ
+                     [br]0x9: BOOT_HALT_MCU
+                     [br]0xA: BOOT_WAIT_MCU_HALTED
+                     [br]0xB: BOOT_RST_MCU
+                     [br]0xF: BOOT_ERROR or invalid state encoding (see HW_ERROR_FATAL.fsm_error)"; sw=r;                  hw=rw ; /* no storage, no reset */} boot_fsm[4];
     } HW_FLOW_STATUS;
 
 
@@ -262,11 +275,14 @@ addrmap mci_reg {
                 mask register. After the output interrupt is asserted, clearing
                 the bit in this register will not cause the interrupt to deassert.
                 Only an MCI reset will clear the fatal error interrupt.
+                [br]fsm_error can not be masked. While the boot FSM remains in
+                the error state, fsm_error is set again after a clear.
                 [br]AXI Access:      RW1C
                 [br]TAP Access [with debug intent set]: RO";
         rw_rw_sticky_hw mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
+        rw_rw_sticky_hw fsm_error=1'b0;         /* MCI boot FSM entered BOOT_ERROR or an invalid state encoding. Not maskable */
     } HW_ERROR_FATAL @0x50;
     reg {
         name = "Aggregate Error Fatal";
@@ -474,6 +490,7 @@ addrmap mci_reg {
         rw_ro_ro_sticky_hw mask_mcu_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU SRAM */
         rw_ro_ro_sticky_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_ro_ro_sticky_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
+        field {sw=r; hw=na;} mask_fsm_error=1'b0;  /* Reserved, read-only 0 - fsm_error is not maskable */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";

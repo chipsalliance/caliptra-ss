@@ -176,6 +176,9 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_MCU_NO_ROM_CONFIG_BRKPOINT") begin
             smoke_test_mcu_no_rom_config_brkpoint();
         end
+        else if(cptra_ss_test_name == "MCI_BOOT_FSM_GLITCH") begin
+            mci_boot_fsm_glitch();
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;

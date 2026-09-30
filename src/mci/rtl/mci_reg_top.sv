@@ -159,7 +159,8 @@ module mci_reg_top
 
     // Boot status
     input  logic mcu_reset_once,
-    input  mci_boot_fsm_state_e boot_fsm, 
+    input  logic [3:0] boot_fsm, 
+    input  logic boot_fsm_error,
 
     
     // Caliptra internal fabric response interface
@@ -493,7 +494,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   &  32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                                   mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   &  32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value)     )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                                                                                                                  mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
@@ -539,7 +541,8 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & 32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                            mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   & 32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value         ))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                                                                                                           mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   & mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
@@ -854,15 +857,18 @@ assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  = boot_fsm_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next  = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
                                             (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next)  ||
-                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next);
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next) ||
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next); // Not maskable
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL
