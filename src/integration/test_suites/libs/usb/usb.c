@@ -369,9 +369,13 @@ void boot_usb_core_hub(void) {
 
     // --- Step 0: Initialize SRAM via DMA port ---
 
-    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP). USB_EP_ENTRY_ABS_ADDR of
-    // (USB_DMA_BASE_ADDR + offset) reduces to the offset-relative form on this
-    // RTL (MEM base 0x3000_0000 contributes 0 to bits[16:6]).
+    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP). USB_EP_ENTRY_ABS_ADDR
+    // subtracts the controller's MEM base before the >>6 shift, so the
+    // AddrOffset field is offset-relative for BOTH DEV0 (base 0x3000_0000) and
+    // DEV1 (base 0x3001_0000). This must match the offset-relative form used by
+    // usb_ep0_reinit() after a bus reset; otherwise DEV1 bit16 of the absolute
+    // address would leak into AddrOffset bit10 and point the buffers outside the
+    // DEV1 SRAM window (see USB_EP_ENTRY_ABS_ADDR in usb.h).
     uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
                            | USB_EP_ENTRY_NBYTES(8)
                            | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP0_OUT_BUF_OFFSET);
@@ -397,6 +401,7 @@ void boot_usb_core_hub(void) {
     // On this RTL the SRAM is a dedicated dense memory (USB_DMA_BASE_ADDR) and
     // EPLISTSTART is relative to it, so it is 0.
     lsu_write_32(USB_DEV_EPLISTSTART, 0x00000000);
+
 
     // --- Step 2: Set data buffer page address ---
     lsu_write_32(USB_DEV_DATABUFSTART, 0x00000000);
@@ -1308,3 +1313,5 @@ bool usb_handle_control_transfer(void) {
 
     return handled;
 }
+
+// File contains AI-generated response based on internal company sources

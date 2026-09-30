@@ -282,12 +282,22 @@ typedef struct {
 #define USB_EP_ENTRY_ADDR(off)    (((uint32_t)(off) >> 6) & 0x7FFu)
 // USB_EP_ENTRY_ABS_ADDR(abs_addr) - AddrOffset field [10:0] from an ABSOLUTE
 // AXI byte address of the data buffer. Retained for the many device tests that
-// pass (USB_DMA_BASE_ADDR + SRAM_offset). On this RTL the MEM base is
-// 0x3000_0000 (bits[16:6] of 0x3000_0000 are all zero), so this reduces
-// exactly to the offset-relative form:
-//   (0x3000_0000 + off) >> 6 & 0x7FF == (off >> 6) & 0x7FF
-// i.e. USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + off) == USB_EP_ENTRY_ADDR(off).
-#define USB_EP_ENTRY_ABS_ADDR(abs_addr) (((uint32_t)(abs_addr) >> 6) & 0x7FFu)
+// pass (USB_DMA_BASE_ADDR + SRAM_offset). The AddrOffset field the DMA engine
+// programs is RELATIVE to the controller's own MEM base (EPLISTSTART/
+// DATABUFSTART are 0), so the MEM base MUST be subtracted before the >>6 shift.
+//
+// DEV0 MEM base is 0x3000_0000 (bit16=0), so for DEV0 the subtraction is a
+// no-op and this matches the historical behaviour byte-for-byte. DEV1 MEM base
+// is 0x3001_0000 (bit16=1); WITHOUT the subtraction, bit16 of the absolute
+// address leaks into AddrOffset bit10 (adds 0x400) and the EP buffers point
+// outside the DEV1 SRAM window, so the host times out on every DEV1 EP0 control
+// transfer. Subtracting USB_DEV_MEM_BASE_ADDR makes both controllers correct
+// and makes this macro identical to USB_EP_ENTRY_ADDR(off) for any
+// off = abs_addr - USB_DEV_MEM_BASE_ADDR:
+//   USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + off) == USB_EP_ENTRY_ADDR(off).
+#define USB_EP_ENTRY_ABS_ADDR(abs_addr) \
+    ((((uint32_t)(abs_addr) - (uint32_t)USB_DEV_MEM_BASE_ADDR) >> 6) & 0x7FFu)
+
 
 #define USB_DEV0_ENDPOINT_INTERRUPT_MASK \
     (DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK | \
