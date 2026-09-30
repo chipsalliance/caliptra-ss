@@ -234,9 +234,10 @@ class usb_base_seq extends uvm_sequence;
   endfunction
 
   // Submit a prepared native request and wait for Avery completion, failing if
-  // USB_TRANSFER_TIMEOUT expires. The supplied bus address and direction label
-  // timeout diagnostics; response validation and statistics belong to access().
-  protected task execute_transaction(usb_target_e target, logic [31:0] address, bit is_write, aaxi_master_tr transaction);
+  // the timeout (default USB_TRANSFER_TIMEOUT) expires. The supplied bus address
+  // and direction label timeout diagnostics; response validation and statistics
+  // belong to access().
+  protected task execute_transaction(usb_target_e target, logic [31:0] address, bit is_write, aaxi_master_tr transaction, time timeout = USB_TRANSFER_TIMEOUT);
     aaxi_sequencer target_sequencer;
 
     target_sequencer = sequencer_for(target);
@@ -250,8 +251,8 @@ class usb_base_seq extends uvm_sequence;
             transaction.wait_done();
           end
           begin
-            #(USB_TRANSFER_TIMEOUT);
-            `uvm_fatal("USB_ACCESS_TIMEOUT", $sformatf("%s %s addr=0x%08h did not complete", usb_target_name(target), is_write ? "write" : "read", address))
+            #(timeout);
+            `uvm_fatal("USB_ACCESS_TIMEOUT", $sformatf("%s %s addr=0x%08h did not complete within %0t", usb_target_name(target), is_write ? "write" : "read", address, timeout))
           end
         join_any
         disable fork;
@@ -453,5 +454,27 @@ class usb_base_seq extends uvm_sequence;
     end
     data = read_data[63:0];
     ral_memory_reads[target]++;
+  endtask
+endclass
+
+// Run one prepared native request. Each concurrent request uses its own child
+// sequence, so Avery's per-item completion waits stay independent. timeout
+// bounds this request only; the default matches the blocking access helpers.
+class usb_axi_single_request_seq extends usb_base_seq;
+  `uvm_object_utils(usb_axi_single_request_seq)
+
+  usb_target_e target;
+  aaxi_master_tr transaction;
+  time timeout = USB_TRANSFER_TIMEOUT;
+
+  function new(string name = "usb_axi_single_request_seq");
+    super.new(name);
+  endfunction
+
+  task body();
+    if (transaction == null) begin
+      `uvm_fatal("USB_SEQ", "Child sequence started without a request")
+    end
+    execute_transaction(target, 32'(transaction.addr), transaction.kind == AAXI_WRITE, transaction, timeout);
   endtask
 endclass

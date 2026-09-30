@@ -12,4 +12,4 @@ contents:
         generate: "reseed {template}.yml -seed {seed}"
         path: "{template_basename}__{seed}.yml"
       templates:
-        $CALIPTRA_SS_ROOT/src/usb/tests/usb_init: { weight: 100 } # Placeholder remove when we have real random tests to add
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_stress: { weight: 100 }

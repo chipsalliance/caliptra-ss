@@ -152,6 +152,7 @@ package usb_tb_pkg;
   `include "sequences/usb_axi_read_backpressure_seq.svh"
   `include "sequences/usb_axi_write_backpressure_seq.svh"
   `include "sequences/usb_axi_filter_seq.svh"
+  `include "sequences/usb_axi_stress_seq.svh"
   `include "sequences/usb_endpoint_rw_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
@@ -159,6 +160,7 @@ package usb_tb_pkg;
   `include "tests/usb_axi_read_backpressure_test.svh"
   `include "tests/usb_axi_write_backpressure_test.svh"
   `include "tests/usb_axi_filter_test.svh"
+  `include "tests/usb_axi_stress_test.svh"
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
 endpackage

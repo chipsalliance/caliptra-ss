@@ -113,6 +113,7 @@
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
     - [MCU Trace Buffer](#mcu-trace-buffer)
+        - [Trace Source Select (MCU vs Caliptra core)](#trace-source-select-mcu-vs-caliptra-core)
       - [MCU Trace Buffer SW Interface](#mcu-trace-buffer-sw-interface)
       - [MCU Trace Buffer Packet](#mcu-trace-buffer-packet)
       - [MCU Trace Buffer Extraction](#mcu-trace-buffer-extraction)
@@ -131,6 +132,7 @@
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
 - [Caliptra SS USB2](#caliptra-ss-usb2)
+  - [Combo AXI memory map](#combo-axi-memory-map)
   - [Ownership and access](#ownership-and-access)
   - [AXI USER filtering](#axi-user-filtering)
   - [DWORD-only accesses](#dword-only-accesses)
@@ -1809,6 +1811,29 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
     - USB device programming
     - OCP streaming boot microarchitecture implemented in USB device 0
     - Multi-Device support microarchitecture
+
+## Combo AXI memory map
+
+The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 172` words. Offsets are byte offsets from the SoC-assigned Combo base address.
+
+| Internal block | Start offset | End offset |
+|:---------------|:-------------|:-----------|
+| DEV0 CSRs | `0x0000` | `0x003F` |
+| Unmapped (fixed) | `0x0040` | `0x07FF` |
+| OCP Recovery interface | `0x0800` | `0x0FFF` |
+| Hub control and descriptor store (parameter-dependent end) | `0x1000` | `0x13FF` |
+| Unmapped after Hub (parameter-dependent) | `0x1400` | `0x1FFF` |
+
+**`USB_C_HUB_FIFO_SIZE` changes the Hub end offset and the trailing unmapped range; the earlier ranges stay fixed.** Calculate the boundaries as follows (`ceil` rounds up):
+
+```text
+N = USB_C_HUB_FIFO_SIZE      (172 to 4096 DWORDs inclusive; default 172)
+H = 4 * 2^ceil(log2(N))      (Hub aperture in bytes)
+U = 0x1000 + H               (first byte offset after Hub)
+C = 2^ceil(log2(U))          (Combo window size in bytes)
+```
+
+The Hub ends at `U - 1`. The trailing unmapped range is `U` through `C - 1`; if `U == C`, no trailing unmapped region exists. 
 
 ## Ownership and access
 

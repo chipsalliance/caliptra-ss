@@ -12,26 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Run one prepared native request. Each concurrent request uses its own child
-// sequence, so Avery's per-item completion waits stay independent.
-class usb_axi_single_request_seq extends usb_base_seq;
-  `uvm_object_utils(usb_axi_single_request_seq)
-
-  usb_target_e target;
-  aaxi_master_tr transaction;
-
-  function new(string name = "usb_axi_single_request_seq");
-    super.new(name);
-  endfunction
-
-  task body();
-    if (transaction == null) begin
-      `uvm_fatal("USB_WRITE_BACKPRESSURE", "Child sequence started without a request")
-    end
-    execute_transaction(target, 32'(transaction.addr), transaction.kind == AAXI_WRITE, transaction);
-  endtask
-endclass
-
 // Fill each bridge's two-entry B FIFO while a third write is pending, then
 // check responses and data. A 4-beat stalled read of a COMBO decode hole covers
 // the read path's two-cycle ERROR capture under R backpressure.

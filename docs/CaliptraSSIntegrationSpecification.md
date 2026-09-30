@@ -27,6 +27,7 @@
     - [Power Good Signal](#power-good-signal)
     - [Connecting AXI Interconnect](#connecting-axi-interconnect)
     - [USB AXI Access Requirements](#usb-axi-access-requirements)
+      - [AXI base-address alignment](#axi-base-address-alignment)
       - [USB AXI filtering configuration and locking](#usb-axi-filtering-configuration-and-locking)
       - [DWORD-only accesses](#dword-only-accesses)
     - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
@@ -289,8 +290,8 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | Parameter | Default | Description |
 |:----------|:--------|:------------|
 | `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option to reduce runtime of USB high-speed startup. Leave at `0` for synthesis or GLS. |
-| `USB_C_DEV0_RAM_ADDRWIDTH` | `13` | Address width of DEV0 packet SRAM. Provide `2**USB_C_DEV0_RAM_ADDRWIDTH` 64-bit words; the default is 8192 words (64 KiB). |
-| `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Address width of DEV1 packet SRAM. Provide `2**USB_C_DEV1_RAM_ADDRWIDTH` 64-bit words; the default is 8192 words (64 KiB). |
+| `USB_C_DEV0_RAM_ADDRWIDTH` | `13` | Width of the exported DEV0 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [AXI base-address alignment](#axi-base-address-alignment). |
+| `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Width of the exported DEV1 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [AXI base-address alignment](#axi-base-address-alignment). |
 | `USB_C_DEV0_NBPHYSEP` | `28` | Number of physical endpoints for the MCU-facing DEV0 controller (excluding EP0); forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_DEV1_NBPHYSEP` | `28` | Number of physical endpoints for the SoC-facing DEV1 controller (excluding EP0); forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
@@ -732,6 +733,19 @@ The SoC must route and authorize agents according to [USB ownership and access](
 
 - Combo allowlist: include `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i`.
 - DEV1 allowlist: include the designated SoC firmware owner's identity, and `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access.
+
+#### AXI base-address alignment
+
+**The base address must be a multiple of the alignment shown below.** For example, `0x40` alignment means the lowest six address bits must be zero. Use the same base address for an interface's read and write ports.
+
+| AXI interface prefix (both `_r_sub` and `_w_sub`) | Required base-address alignment |
+|:------------------------------------------------|:--------------------------------|
+| `cptra_ss_usb_combo_s_axi_if` | `0x2000` (8 KiB) for the default `USB_C_HUB_FIFO_SIZE = 172`. For other values, use the Combo window size from the [HW address map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map). |
+| `cptra_ss_usb_dev0_mem_s_axi_if` | `DEV0_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
+| `cptra_ss_usb_dev1_csr_s_axi_if` | `0x40` (64 bytes), fixed. |
+| `cptra_ss_usb_dev1_mem_s_axi_if` | `DEV1_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
+
+`DEV0_RAM_SIZE` and `DEV1_RAM_SIZE` are the implemented RAM capacities in bytes, not address-bus widths or RTL parameter names.
 
 #### USB AXI filtering configuration and locking
 

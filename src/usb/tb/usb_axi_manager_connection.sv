@@ -98,6 +98,18 @@ module usb_axi_manager_connection #(
     manager_vif
   );
 
+  // Each bridge serializes all requests, so with many outstanding requests
+  // ARREADY/AWREADY/WREADY legitimately stay low while earlier bursts drain.
+  // Tests that intend this set +usb_axi_disable_ready_max_wait_recs to turn
+  // off only these three advisory Axi4PC recommendations; all protocol error
+  // rules stay enabled.
+  initial begin
+    if ($test$plusargs("usb_axi_disable_ready_max_wait_recs")) begin
+      $assertoff(0, protocol_monitor.checker0.axi4_recs_arready_max_wait, protocol_monitor.checker0.axi4_recs_awready_max_wait, protocol_monitor.checker0.axi4_recs_wready_max_wait);
+      `uvm_info("USB_AXI_MONITOR", $sformatf("%s: Axi4PC ARREADY/AWREADY/WREADY MAX_WAIT recommendations disabled", MANAGER_NAME), UVM_LOW)
+    end
+  end
+
   // Detect invalid subordinate responses before they can be masked by a test.
   read_response_known: assert property (@(posedge clk) disable iff (!rst_n)
     manager_vif.RVALID |->
