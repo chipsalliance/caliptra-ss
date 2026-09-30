@@ -303,12 +303,6 @@ VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-# Slave port count must cover the highest CSS_INTC_SINTF_*_IDX referenced by
-# caliptra_ss_top_tb.sv. caliptra_ss_top_tb_intc_includes.svh defines
-# CSS_INTC_SINTF_UART_IDX = 13 (CSS_INTC_SLAVE_CNT = 14), so the Avery
-# interconnect sintf_arr needs 14 entries. With 13 the UART slave taps
-# elaborate as "Error-[IIXMR] Invalid index in cross-module reference" on
-# axi_interconnect.sintf_arr[13].
 VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=14
 
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
