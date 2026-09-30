@@ -171,7 +171,8 @@ jobs:
               peakrdl-ipxact==3.4.3 \
               peakrdl-html==2.10.1 \
               peakrdl-cheader==1.0.0 \
-              peakrdl==1.1.0
+              peakrdl==1.1.0 \
+              PyYAML==6.0.2
 
       - name: Run Script
         env:
