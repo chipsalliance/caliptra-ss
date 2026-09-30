@@ -14,3 +14,6 @@ contents:
       templates:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_init: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_endpoint_rw: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_filter: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_read_backpressure: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_write_backpressure: { weight: 100 }

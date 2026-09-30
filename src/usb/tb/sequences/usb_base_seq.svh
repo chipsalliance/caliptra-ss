@@ -194,6 +194,7 @@ class usb_base_seq extends uvm_sequence;
   // configuration, fixed target ID, and root-map base plus the local byte offset.
   // Apply one resolved USER value to the request fields; writes pack the least
   // significant byte first and enable all byte lanes. The caller validates address.
+  // The environment's AXI delay policy sets the request's VALID gaps.
   protected function aaxi_master_tr create_transaction(usb_target_e target, logic [31:0] address, bit is_write, logic [31:0] write_data, input usb_axi_user_override user_override = null);
     aaxi_master_tr transaction;
     usb_axi_user_override effective_user;
@@ -222,6 +223,7 @@ class usb_base_seq extends uvm_sequence;
     transaction.wuser_A = new[1];
     transaction.wuser_A[0] = effective_user.value;
     transaction.uvm_tr_ctrl = AAXI_TRCTRL_BLOCKING;
+    usb_axi_apply_delay_policy(transaction, p_sequencer.axi_delay_random);
     if (is_write) begin
       for (int unsigned byte_index = 0; byte_index < USB_AXI_DATA_WIDTH / 8; byte_index++) begin
         transaction.data.push_back(write_data[byte_index * 8 +: 8]);

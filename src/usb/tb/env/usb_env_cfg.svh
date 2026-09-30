@@ -31,6 +31,11 @@ class usb_env_cfg extends uvm_object;
   // The template below requires EP0 and EP1; extra entries need configuration.
   int unsigned endpoint_count = 2;
 
+  // AXI manager delay randomization. A test may set its own default through
+  // config_db; +usb_axi_delay_random=0|1 overrides it. usb_env resolves both
+  // before building the managers.
+  bit axi_delay_random = 1'b1;
+
   // usb_env installs host_cfg and clones device_phy_cfg as the remote PHY.
   svt_usb_agent_configuration host_cfg;
   svt_usb_agent_configuration device_phy_cfg;

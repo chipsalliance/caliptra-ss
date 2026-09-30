@@ -29,7 +29,7 @@ module caliptra_ss_top_w_stub #(
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
     ,parameter USB_C_HUB_FIFO_SIZE = 172
-    ,parameter USB_DEV0_NUM_PRIV_AXI_USERS = 4
+    ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter UART_ENA = 1
 )(
@@ -385,8 +385,8 @@ module caliptra_ss_top_w_stub #(
 
     logic cptra_ss_usb_recovery_payload_available_o;
     logic cptra_ss_usb_recovery_image_activated_o;
-    logic cptra_ss_usb_dev0_enable_axi_user_filtering_i;
-    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] cptra_ss_usb_dev0_priv_axi_users_i [USB_DEV0_NUM_PRIV_AXI_USERS];
+    logic cptra_ss_usb_combo_enable_axi_user_filtering_i;
+    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] cptra_ss_usb_combo_priv_axi_users_i [USB_COMBO_NUM_PRIV_AXI_USERS];
     logic cptra_ss_usb_dev1_enable_axi_user_filtering_i;
     logic [`CALIPTRA_AXI_USER_WIDTH-1:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS];
 
@@ -497,8 +497,8 @@ module caliptra_ss_top_w_stub #(
 
         // USB AXI USER filtering enabled; the all-zero allowlists authorize the
         // MCU LSU and Caliptra DMA straps, which are tied to zero above.
-        cptra_ss_usb_dev0_enable_axi_user_filtering_i = 1'b1;
-        cptra_ss_usb_dev0_priv_axi_users_i = '{default: '0};
+        cptra_ss_usb_combo_enable_axi_user_filtering_i = 1'b1;
+        cptra_ss_usb_combo_priv_axi_users_i = '{default: '0};
         cptra_ss_usb_dev1_enable_axi_user_filtering_i = 1'b1;
         cptra_ss_usb_dev1_priv_axi_users_i = '{default: '0};
         cptra_ss_sd_i = '0;
@@ -515,7 +515,7 @@ module caliptra_ss_top_w_stub #(
         .USB_C_DEV0_NBPHYSEP(USB_C_DEV0_NBPHYSEP),
         .USB_C_DEV1_NBPHYSEP(USB_C_DEV1_NBPHYSEP),
         .USB_C_HUB_FIFO_SIZE(USB_C_HUB_FIFO_SIZE),
-        .USB_DEV0_NUM_PRIV_AXI_USERS(USB_DEV0_NUM_PRIV_AXI_USERS),
+        .USB_COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS),
         .USB_DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
         .UART_ENA(UART_ENA)
     )
@@ -805,8 +805,8 @@ module caliptra_ss_top_w_stub #(
         .cptra_ss_usb_recovery_image_activated_o,
         .cptra_ss_usb_recovery_image_activated_i(cptra_ss_usb_recovery_image_activated_o),
 
-        .cptra_ss_usb_dev0_enable_axi_user_filtering_i,
-        .cptra_ss_usb_dev0_priv_axi_users_i,
+        .cptra_ss_usb_combo_enable_axi_user_filtering_i,
+        .cptra_ss_usb_combo_priv_axi_users_i,
         .cptra_ss_usb_dev1_enable_axi_user_filtering_i,
         .cptra_ss_usb_dev1_priv_axi_users_i,
 

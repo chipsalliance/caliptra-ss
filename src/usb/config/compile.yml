@@ -125,7 +125,7 @@ global:
         - +define+AVERY_AXI_USER
         - +define+AVERY_NAMED_CONSTRUCTOR
         - +define+AAXI_MAX_DATA_WIDTH=32
-        - +define+AAXI_MAX_ADDR_WIDTH=32
+        - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
         - +define+AAXI_MAX_ARUSER_WIDTH=32
         - +define+AAXI_MAX_AWUSER_WIDTH=32

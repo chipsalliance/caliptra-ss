@@ -21,22 +21,22 @@
 // sequencing. Kept independent of usb_tb_pkg to avoid a compile cycle.
 interface usb_tb_ctrl_if #(
   parameter int unsigned UW = 32,
-  parameter int unsigned DEV0_NUM_USERS = 4,
+  parameter int unsigned COMBO_NUM_USERS = 4,
   parameter int unsigned DEV1_NUM_USERS = 4
 ) (
   input logic clk,
   input logic rst_n
 );
-  logic dev0_enable_axi_user_filtering;
-  logic [UW-1:0] dev0_priv_axi_users [DEV0_NUM_USERS];
+  logic combo_enable_axi_user_filtering;
+  logic [UW-1:0] combo_priv_axi_users [COMBO_NUM_USERS];
   logic dev1_enable_axi_user_filtering;
   logic [UW-1:0] dev1_priv_axi_users [DEV1_NUM_USERS];
 
   initial begin
-    dev0_enable_axi_user_filtering = 1'b0;
+    combo_enable_axi_user_filtering = 1'b0;
     dev1_enable_axi_user_filtering = 1'b0;
-    foreach (dev0_priv_axi_users[user_index]) begin
-      dev0_priv_axi_users[user_index] = '0;
+    foreach (combo_priv_axi_users[user_index]) begin
+      combo_priv_axi_users[user_index] = '0;
     end
     foreach (dev1_priv_axi_users[user_index]) begin
       dev1_priv_axi_users[user_index] = '0;

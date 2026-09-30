@@ -131,6 +131,9 @@
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
 - [Caliptra SS USB2](#caliptra-ss-usb2)
+  - [Ownership and access](#ownership-and-access)
+  - [AXI USER filtering](#axi-user-filtering)
+  - [DWORD-only accesses](#dword-only-accesses)
 
 # Scope
 
@@ -174,7 +177,7 @@ Caliptra owns the recovery interface (peripheral independent) and Caliptra is TH
 
 6. Fuse controller for provisioning Caliptra fuses -> IFP (In-field programmable) fusing is performed by MCU RT; SW partition fuses in fuse controller are managed by MCU (ROM or RT); Caliptra HW is responsible for reading the secret fuses (Caliptra ROM, MCU ROM or any other SOC ROM or any RT FW should NOT have access to read the secret fuses in production).
 7. Recovery stack must be implemented. Please refer to I3C and USB recovery section for more details and references.
-OCP Recovery registers implemented in I3C and USB must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
+I3C OCP Recovery registers must follow the security filtering requirements in the I3C recovery implementation, including restrictions on the subset accessible to MCU. For USB, see [Ownership and access](#ownership-and-access).
 8. Supports silicon t0 boot to load and run required FW across chiplets.
 9. OCP recovery stack is implemented in Caliptra for Caliptra-subsystem-mode
 10. MCU SRAM (or part of the SRAM that is mapped for Code/Data execution) should be readable/writeable ONLY by Caliptra until Caliptra gives permission to MCU to use it.
@@ -306,6 +309,7 @@ Stretch Goal (Met in 2.0/2.1): DMA data payload back to destination (Caliptra)
 
 1. USB2 integration with streaming boot support
 2. USB2 shall implement two devices - one for Caliptra subsystem usage and one for SOC usage
+3. USB2 access must follow the [ownership and AXI USER filtering policy](#ownership-and-access) and [DWORD-only access requirement](#dword-only-accesses).
 
 #### SPI
 
@@ -1138,6 +1142,8 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
 
+   b. USB AXI filtering configuration must follow the [configuration and locking requirements](CaliptraSSIntegrationSpecification.md#usb-axi-filtering-configuration-and-locking).
+
 6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register (CPTRA_BOOT_GO)
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
 
@@ -1803,3 +1809,28 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
     - USB device programming
     - OCP streaming boot microarchitecture implemented in USB device 0
     - Multi-Device support microarchitecture
+
+## Ownership and access
+
+| Policy group | Protected resources | Ownership / usage |
+|:-------------|:--------------------|:------------------|
+| Combo | Combo AXI interface: DEV0 CSRs, Hub control/descriptor storage, and Recovery registers; DEV0 memory AXI interface | MCU owns DEV0 and Hub; Caliptra DMA accesses Recovery registers and drains the recovery FIFO |
+| DEV1 | DEV1 CSR and DEV1 memory AXI interfaces | A designated SoC firmware agent owns DEV1; MCU access is optional |
+
+All identities in an allowlist receive the same filter-level read/write authorization across that group. The [integration requirements](CaliptraSSIntegrationSpecification.md#usb-axi-access-requirements) specify which identities the SoC must authorize.
+
+## AXI USER filtering
+
+The Combo and DEV1 policies have independent allowlists and active-high filtering enables. With filtering enabled, a read's `ARUSER` or a write's `AWUSER` must exactly match an entry in the corresponding allowlist. Disabling a filter permits all identities through that filter.
+
+The decision is captured when the read or write address is accepted and retained for the entire request. Later policy changes do not revoke already accepted requests. A denied request never accesses the target: a denied read returns zero data and `SLVERR` on every requested beat; a denied write discards all requested data beats and returns one `SLVERR` response.
+
+Every allowlist entry participates; there are no per-entry enable bits. 
+
+Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [USB AXI filtering configuration and locking](CaliptraSSIntegrationSpecification.md#usb-axi-filtering-configuration-and-locking).
+
+## DWORD-only accesses
+
+All four USB AXI interfaces support only aligned 32-bit DWORD accesses, including Hub descriptor, packet SRAM, and Recovery register/FIFO accesses. USB does not honor `WSTRB` masking, so deasserted strobes do not suppress writes.
+
+These are AXI-bus restrictions, not USB packet-length restrictions. The [DWORD-only integration contract](CaliptraSSIntegrationSpecification.md#dword-only-accesses) specifies the required transfer format and software restrictions.

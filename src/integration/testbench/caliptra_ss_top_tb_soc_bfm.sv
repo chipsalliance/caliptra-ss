@@ -29,7 +29,7 @@ import trace_buffer_csr_pkg::*;
 import css_mcu0_el2_pkg::*;
 #(
     parameter MCU_SRAM_SIZE_KB = 512,
-    parameter int unsigned USB_DEV0_NUM_PRIV_AXI_USERS = 2,
+    parameter int unsigned USB_COMBO_NUM_PRIV_AXI_USERS = 2,
     parameter int unsigned USB_DEV1_NUM_PRIV_AXI_USERS = 2,
     `include "css_mcu0_el2_param.vh"
 ) 
@@ -47,8 +47,8 @@ import css_mcu0_el2_pkg::*;
     output logic [31:0] cptra_ss_strap_caliptra_dma_axi_user_i,
 
     // USB AXI USER filtering policy (see USB AXI USER FILTERING POLICY below)
-    output logic        cptra_ss_usb_dev0_enable_axi_user_filtering_i,
-    output logic [31:0] cptra_ss_usb_dev0_priv_axi_users_i [USB_DEV0_NUM_PRIV_AXI_USERS],
+    output logic        cptra_ss_usb_combo_enable_axi_user_filtering_i,
+    output logic [31:0] cptra_ss_usb_combo_priv_axi_users_i [USB_COMBO_NUM_PRIV_AXI_USERS],
     output logic        cptra_ss_usb_dev1_enable_axi_user_filtering_i,
     output logic [31:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS],
 
@@ -473,13 +473,13 @@ end
 // TB-only policy for the USB AXI USER filters. It is driven once at time zero,
 // before reset release, and is not changed afterward. Defaults follow the
 // resolved straps:
-//   DEV0 slot 0 = MCU LSU, slot 1 = Caliptra DMA (keeps OCP recovery access)
+//   Combo slot 0 = MCU LSU, slot 1 = Caliptra DMA (keeps OCP recovery access)
 //   DEV1 slot 0 = MCU LSU, slot 1 = random USER distinct from MCU LSU
-// Overrides: +USB_DEV<d>_PRIV_AXI_USER_<s>=<hex> per slot and
-//            +USB_DEV<d>_ENABLE_AXI_USER_FILTERING=<0|1> per device.
-string usb_dev0_priv_axi_user_src [USB_DEV0_NUM_PRIV_AXI_USERS];
+// Overrides: +USB_<COMBO|DEV1>_PRIV_AXI_USER_<s>=<hex> per slot and
+//            +USB_<COMBO|DEV1>_ENABLE_AXI_USER_FILTERING=<0|1> per policy.
+string usb_combo_priv_axi_user_src [USB_COMBO_NUM_PRIV_AXI_USERS];
 string usb_dev1_priv_axi_user_src [USB_DEV1_NUM_PRIV_AXI_USERS];
-string usb_dev0_enable_axi_user_filtering_src;
+string usb_combo_enable_axi_user_filtering_src;
 string usb_dev1_enable_axi_user_filtering_src;
 bit    usb_axi_user_policy_ready;
 
@@ -531,13 +531,24 @@ function automatic bit usb_axi_user_policy_is_ready();
     return usb_axi_user_policy_ready;
 endfunction
 
+function automatic string usb_axi_user_policy_enable_str(input logic enable);
+    string str;
+    if (enable === 1'b1)
+        str = "ENABLED";
+    else if (enable === 1'b0)
+        str = "DISABLED";
+    else
+        str = "UNKNOWN";
+    return str;
+endfunction
+
 function automatic void usb_axi_user_policy_print();
-    $display("[%t] USB AXI USER POLICY: DEV0 filtering %s (%s), %0d allowlist entries", $time,
-             cptra_ss_usb_dev0_enable_axi_user_filtering_i ? "ENABLED" : "DISABLED", usb_dev0_enable_axi_user_filtering_src, USB_DEV0_NUM_PRIV_AXI_USERS);
-    for (int s = 0; s < USB_DEV0_NUM_PRIV_AXI_USERS; s++)
-        $display("[%t] USB AXI USER POLICY:   DEV0 slot %0d USER 0x%08h (%s)", $time, s, cptra_ss_usb_dev0_priv_axi_users_i[s], usb_dev0_priv_axi_user_src[s]);
+    $display("[%t] USB AXI USER POLICY: Combo filtering %s (%s), %0d allowlist entries", $time,
+             usb_axi_user_policy_enable_str(cptra_ss_usb_combo_enable_axi_user_filtering_i), usb_combo_enable_axi_user_filtering_src, USB_COMBO_NUM_PRIV_AXI_USERS);
+    for (int s = 0; s < USB_COMBO_NUM_PRIV_AXI_USERS; s++)
+        $display("[%t] USB AXI USER POLICY:   Combo slot %0d USER 0x%08h (%s)", $time, s, cptra_ss_usb_combo_priv_axi_users_i[s], usb_combo_priv_axi_user_src[s]);
     $display("[%t] USB AXI USER POLICY: DEV1 filtering %s (%s), %0d allowlist entries", $time,
-             cptra_ss_usb_dev1_enable_axi_user_filtering_i ? "ENABLED" : "DISABLED", usb_dev1_enable_axi_user_filtering_src, USB_DEV1_NUM_PRIV_AXI_USERS);
+             usb_axi_user_policy_enable_str(cptra_ss_usb_dev1_enable_axi_user_filtering_i), usb_dev1_enable_axi_user_filtering_src, USB_DEV1_NUM_PRIV_AXI_USERS);
     for (int s = 0; s < USB_DEV1_NUM_PRIV_AXI_USERS; s++)
         $display("[%t] USB AXI USER POLICY:   DEV1 slot %0d USER 0x%08h (%s)", $time, s, cptra_ss_usb_dev1_priv_axi_users_i[s], usb_dev1_priv_axi_user_src[s]);
 endfunction
@@ -547,10 +558,10 @@ initial begin : usb_axi_user_policy_init
     logic [31:0] user;
     logic        enable;
 
-    // The default table below defines exactly two slots per device.
-    if ((USB_DEV0_NUM_PRIV_AXI_USERS != 2) || (USB_DEV1_NUM_PRIV_AXI_USERS != 2))
-        $fatal(1, "[%t] USB AXI USER POLICY: TB defaults require 2 allowlist entries per device (DEV0=%0d DEV1=%0d)",
-               $time, USB_DEV0_NUM_PRIV_AXI_USERS, USB_DEV1_NUM_PRIV_AXI_USERS);
+    // The default table below defines exactly two slots per policy.
+    if ((USB_COMBO_NUM_PRIV_AXI_USERS != 2) || (USB_DEV1_NUM_PRIV_AXI_USERS != 2))
+        $fatal(1, "[%t] USB AXI USER POLICY: TB defaults require 2 allowlist entries per policy (Combo=%0d DEV1=%0d)",
+               $time, USB_COMBO_NUM_PRIV_AXI_USERS, USB_DEV1_NUM_PRIV_AXI_USERS);
 
     wait (mcu_lsu_axi_user_resolved && caliptra_dma_axi_user_resolved);
     if ($isunknown(cptra_ss_strap_mcu_lsu_axi_user_i) || $isunknown(cptra_ss_strap_caliptra_dma_axi_user_i))
@@ -561,10 +572,10 @@ initial begin : usb_axi_user_policy_init
     // differ from the MCU LSU USER.
     if (!std::randomize(dev1_rand_user) with { dev1_rand_user != cptra_ss_strap_mcu_lsu_axi_user_i; })
         $fatal(1, "[%t] USB AXI USER POLICY: failed to randomize the DEV1 slot 1 default USER", $time);
-    cptra_ss_usb_dev0_priv_axi_users_i[0] = cptra_ss_strap_mcu_lsu_axi_user_i;
-    usb_dev0_priv_axi_user_src[0]         = "default: MCU LSU strap";
-    cptra_ss_usb_dev0_priv_axi_users_i[1] = cptra_ss_strap_caliptra_dma_axi_user_i;
-    usb_dev0_priv_axi_user_src[1]         = "default: Caliptra DMA strap";
+    cptra_ss_usb_combo_priv_axi_users_i[0] = cptra_ss_strap_mcu_lsu_axi_user_i;
+    usb_combo_priv_axi_user_src[0]         = "default: MCU LSU strap";
+    cptra_ss_usb_combo_priv_axi_users_i[1] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    usb_combo_priv_axi_user_src[1]         = "default: Caliptra DMA strap";
     cptra_ss_usb_dev1_priv_axi_users_i[0] = cptra_ss_strap_mcu_lsu_axi_user_i;
     usb_dev1_priv_axi_user_src[0]         = "default: MCU LSU strap";
     cptra_ss_usb_dev1_priv_axi_users_i[1] = dev1_rand_user;
@@ -572,10 +583,10 @@ initial begin : usb_axi_user_policy_init
 
     // Slot overrides are applied as given; they may duplicate another slot or
     // drop the MCU LSU and Caliptra DMA identities.
-    for (int s = 0; s < USB_DEV0_NUM_PRIV_AXI_USERS; s++) begin
-        if (usb_axi_user_policy_get_user_plusarg($sformatf("USB_DEV0_PRIV_AXI_USER_%0d", s), user)) begin
-            cptra_ss_usb_dev0_priv_axi_users_i[s] = user;
-            usb_dev0_priv_axi_user_src[s]         = "plusarg override";
+    for (int s = 0; s < USB_COMBO_NUM_PRIV_AXI_USERS; s++) begin
+        if (usb_axi_user_policy_get_user_plusarg($sformatf("USB_COMBO_PRIV_AXI_USER_%0d", s), user)) begin
+            cptra_ss_usb_combo_priv_axi_users_i[s] = user;
+            usb_combo_priv_axi_user_src[s]         = "plusarg override";
         end
     end
     for (int s = 0; s < USB_DEV1_NUM_PRIV_AXI_USERS; s++) begin
@@ -585,11 +596,11 @@ initial begin : usb_axi_user_policy_init
         end
     end
 
-    cptra_ss_usb_dev0_enable_axi_user_filtering_i = 1'b1;
-    usb_dev0_enable_axi_user_filtering_src        = "default";
-    if (usb_axi_user_policy_get_enable_plusarg("USB_DEV0_ENABLE_AXI_USER_FILTERING", enable)) begin
-        cptra_ss_usb_dev0_enable_axi_user_filtering_i = enable;
-        usb_dev0_enable_axi_user_filtering_src        = "plusarg override";
+    cptra_ss_usb_combo_enable_axi_user_filtering_i = 1'b1;
+    usb_combo_enable_axi_user_filtering_src        = "default";
+    if (usb_axi_user_policy_get_enable_plusarg("USB_COMBO_ENABLE_AXI_USER_FILTERING", enable)) begin
+        cptra_ss_usb_combo_enable_axi_user_filtering_i = enable;
+        usb_combo_enable_axi_user_filtering_src        = "plusarg override";
     end
     cptra_ss_usb_dev1_enable_axi_user_filtering_i = 1'b1;
     usb_dev1_enable_axi_user_filtering_src        = "default";

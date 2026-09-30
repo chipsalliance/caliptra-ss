@@ -44,7 +44,7 @@ class usb_env extends uvm_env;
   usb_vif_t usb_20_mac_if;
   virtual usb_tb_ctrl_if #(
     .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .DEV0_NUM_USERS(usb_tb_pkg::USB_DEV0_NUM_PRIV_AXI_USERS),
+    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
     .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
   ) ctrl_vif;
   svt_usb_agent host_agent;
@@ -102,12 +102,62 @@ class usb_env extends uvm_env;
     manager_config.set_config_int("data_bus_bytes", USB_AXI_DATA_WIDTH / 8);
     manager_config.set_config_int("id_width", AAXI_ID_WIDTH);
     manager_config.set_config_int("addr_width", AAXI_ADDR_WIDTH);
-    // Keep each manager single-outstanding; sequences provide data comparisons.
-    manager_config.set_config_int("total_outstanding_depth", 1);
-    manager_config.set_config_int("id_outstanding_depth", 1);
+    manager_config.set_config_int("total_outstanding_depth", USB_AXI_MAX_OUTSTANDING);
+    manager_config.set_config_int("id_outstanding_depth", USB_AXI_MAX_OUTSTANDING);
     manager_config.set_config_int("enable_scoreboard", 0);
     configure_user_channels(manager_config);
+    configure_ready_policy(manager_config);
     return manager_config;
+  endfunction
+
+  // Resolve the AXI delay policy before any manager is configured: default
+  // on, then a test's config_db setting, then +usb_axi_delay_random=0|1, so a
+  // user can override any test's choice from the command line.
+  function void resolve_axi_delay_policy();
+    string plusarg_value;
+    string policy_state;
+    bit test_setting;
+
+    if (uvm_config_db#(bit)::get(this, "", "axi_delay_random", test_setting)) begin
+      cfg.axi_delay_random = test_setting;
+    end
+    if ($value$plusargs("usb_axi_delay_random=%s", plusarg_value)) begin
+      if (plusarg_value == "0") begin
+        cfg.axi_delay_random = 1'b0;
+      end else if (plusarg_value == "1") begin
+        cfg.axi_delay_random = 1'b1;
+      end else begin
+        `uvm_fatal("USB_ENV", $sformatf("+usb_axi_delay_random must be 0 or 1, not '%s'", plusarg_value))
+      end
+    end
+    policy_state = "disabled";
+    if (cfg.axi_delay_random) begin
+      policy_state = "enabled";
+    end
+    `uvm_info("USB_ENV", $sformatf("AXI manager delay randomization %s: READY low %0d..%0d, high %0d..%0d, VALID gap 0..%0d clocks", policy_state, USB_AXI_READY_LOW_MIN, USB_AXI_READY_LOW_MAX, USB_AXI_READY_HIGH_MIN, USB_AXI_READY_HIGH_MAX, USB_AXI_VALID_GAP_MAX), UVM_LOW)
+  endfunction
+
+  // Randomize RREADY/BREADY stalls when enabled; otherwise leave the VIP's
+  // default ready behavior untouched. Avery's period delays need the default
+  // rready/bready_default=0 and *_asserted_valid=0, which this bench keeps.
+  function void configure_ready_policy(aaxi_vip_config manager_config);
+    if (!cfg.axi_delay_random) begin
+      return;
+    end
+    manager_config.set_config_int("enable_period_rready_delay", 1);
+    manager_config.set_config_int("random_period_r_l_delay", 1);
+    manager_config.set_config_int("min_period_r_l_delay", USB_AXI_READY_LOW_MIN);
+    manager_config.set_config_int("max_period_r_l_delay", USB_AXI_READY_LOW_MAX);
+    manager_config.set_config_int("random_period_r_h_delay", 1);
+    manager_config.set_config_int("min_period_r_h_delay", USB_AXI_READY_HIGH_MIN);
+    manager_config.set_config_int("max_period_r_h_delay", USB_AXI_READY_HIGH_MAX);
+    manager_config.set_config_int("enable_period_bready_delay", 1);
+    manager_config.set_config_int("random_period_b_l_delay", 1);
+    manager_config.set_config_int("min_period_b_l_delay", USB_AXI_READY_LOW_MIN);
+    manager_config.set_config_int("max_period_b_l_delay", USB_AXI_READY_LOW_MAX);
+    manager_config.set_config_int("random_period_b_h_delay", 1);
+    manager_config.set_config_int("min_period_b_h_delay", USB_AXI_READY_HIGH_MIN);
+    manager_config.set_config_int("max_period_b_h_delay", USB_AXI_READY_HIGH_MAX);
   endfunction
 
   // Create a native Avery child agent and install its prepared port settings.
@@ -116,7 +166,7 @@ class usb_env extends uvm_env;
 
     manager_agent = aaxi_agent::type_id::create(instance_name, this);
     manager_agent.set_config(manager_config);
-    `uvm_info("USB_ENV", $sformatf("%s configured: AXI4 data=32 ID=%0d USER=%0d outstanding=1", instance_name, AAXI_ID_WIDTH, USB_TB_AXI_USER_WIDTH), UVM_LOW)
+    `uvm_info("USB_ENV", $sformatf("%s configured: AXI4 data=32 ID=%0d USER=%0d outstanding=%0d delay_random=%0b", instance_name, AAXI_ID_WIDTH, USB_TB_AXI_USER_WIDTH, manager_config.get_config_int("total_outstanding_depth"), cfg.axi_delay_random), UVM_LOW)
     return manager_agent;
   endfunction
 
@@ -137,6 +187,7 @@ class usb_env extends uvm_env;
 
     virtual_sequencer  = usb_virtual_sequencer::type_id::create("virtual_sequencer", this);
     cfg                = usb_env_cfg::type_id::create("cfg");
+    resolve_axi_delay_policy();
     combo_config       = create_manager_config("combo", "combo_vif");
     dev0_memory_config = create_manager_config("dev0_memory", "dev0_memory_vif");
     dev1_csr_config    = create_manager_config("dev1_csr", "dev1_csr_vif");
@@ -150,7 +201,7 @@ class usb_env extends uvm_env;
     // Filter policy control defaults to known-low bypass; tests opt in to filtering.
     if (!uvm_config_db#(virtual usb_tb_ctrl_if #(
       .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-      .DEV0_NUM_USERS(usb_tb_pkg::USB_DEV0_NUM_PRIV_AXI_USERS),
+      .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
       .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
     ))::get(this, "", "usb_ctrl_vif", ctrl_vif)) begin
       `uvm_fatal("USB_ENV", "Missing usb_ctrl_vif for AXI USER filter policy control")
@@ -182,6 +233,12 @@ class usb_env extends uvm_env;
     dev0_memory_adapter.transaction_id = aaxi_id_t'(2);
     dev1_csr_adapter.transaction_id    = aaxi_id_t'(3);
     dev1_memory_adapter.transaction_id = aaxi_id_t'(4);
+
+    // RAL requests follow the same resolved AXI delay policy as native ones.
+    combo_adapter.axi_delay_random       = cfg.axi_delay_random;
+    dev0_memory_adapter.axi_delay_random = cfg.axi_delay_random;
+    dev1_csr_adapter.axi_delay_random    = cfg.axi_delay_random;
+    dev1_memory_adapter.axi_delay_random = cfg.axi_delay_random;
 
     // ---------------------------------------------------------------------------
     // USB VIP setup
@@ -250,6 +307,7 @@ class usb_env extends uvm_env;
     virtual_sequencer.dev1_memory_sequencer = dev1_memory_manager.sequencer;
     virtual_sequencer.host_sequencer = host_agent.virt_sequencer;
     virtual_sequencer.ctrl_vif = ctrl_vif;
+    virtual_sequencer.axi_delay_random = cfg.axi_delay_random;
 
     // ---------------------------------------------------------------------------
     // Adapter-to-sequencer wiring
