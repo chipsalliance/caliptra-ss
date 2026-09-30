@@ -1144,7 +1144,7 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
 
-   b. USB AXI filtering configuration must follow the [configuration and locking requirements](CaliptraSSIntegrationSpecification.md#usb-axi-filtering-configuration-and-locking).
+   b. USB AXI filtering configuration must follow the [configuration and locking requirements](CaliptraSSIntegrationSpecification.md#axi-user-filtering).
 
 6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register (CPTRA_BOOT_GO)
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
@@ -1842,7 +1842,7 @@ The Hub ends at `U - 1`. The trailing unmapped range is `U` through `C - 1`; if 
 | Combo | Combo AXI interface: DEV0 CSRs, Hub control/descriptor storage, and Recovery registers; DEV0 memory AXI interface | MCU owns DEV0 and Hub; Caliptra DMA accesses Recovery registers and drains the recovery FIFO |
 | DEV1 | DEV1 CSR and DEV1 memory AXI interfaces | A designated SoC firmware agent owns DEV1; MCU access is optional |
 
-All identities in an allowlist receive the same filter-level read/write authorization across that group. The [integration requirements](CaliptraSSIntegrationSpecification.md#usb-axi-access-requirements) specify which identities the SoC must authorize.
+All identities in an allowlist receive the same filter-level read/write authorization across that group. The [integration requirements](CaliptraSSIntegrationSpecification.md#axi-user-filtering) specify which identities the SoC must authorize.
 
 ## AXI USER filtering
 
@@ -1852,10 +1852,10 @@ The decision is captured when the read or write address is accepted and retained
 
 Every allowlist entry participates; there are no per-entry enable bits. 
 
-Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [USB AXI filtering configuration and locking](CaliptraSSIntegrationSpecification.md#usb-axi-filtering-configuration-and-locking).
+Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [AXI USER Filtering](CaliptraSSIntegrationSpecification.md#axi-user-filtering).
 
 ## DWORD-only accesses
 
 All four USB AXI interfaces support only aligned 32-bit DWORD accesses, including Hub descriptor, packet SRAM, and Recovery register/FIFO accesses. USB does not honor `WSTRB` masking, so deasserted strobes do not suppress writes.
 
-These are AXI-bus restrictions, not USB packet-length restrictions. The [DWORD-only integration contract](CaliptraSSIntegrationSpecification.md#dword-only-accesses) specifies the required transfer format and software restrictions.
+These are AXI-bus restrictions, not USB packet-length restrictions. The [DWORD-only integration contract](CaliptraSSIntegrationSpecification.md#axi-data_width-limitation) specifies the required transfer format and software restrictions.

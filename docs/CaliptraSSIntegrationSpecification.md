@@ -26,10 +26,6 @@
     - [Reset](#reset)
     - [Power Good Signal](#power-good-signal)
     - [Connecting AXI Interconnect](#connecting-axi-interconnect)
-    - [USB AXI Access Requirements](#usb-axi-access-requirements)
-      - [AXI base-address alignment](#axi-base-address-alignment)
-      - [USB AXI filtering configuration and locking](#usb-axi-filtering-configuration-and-locking)
-      - [DWORD-only accesses](#dword-only-accesses)
     - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
     - [FW Execution Control Connections](#fw-execution-control-connections)
     - [Caliptra Core Reset Control](#caliptra-core-reset-control)
@@ -151,6 +147,13 @@
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
   - [How to test : Smoke \& more](#how-to-test--smoke--more-1)
+- [USB2](#usb2)
+  - [Overview](#overview-8)
+  - [Memory Map / Address map](#memory-map--address-map)
+  - [USB Integration Requirements](#usb-integration-requirements)
+    - [USB Base Address Requirement](#usb-base-address-requirement)
+    - [AXI DATA_WIDTH Limitation](#axi-data_width-limitation)
+    - [AXI USER Filtering](#axi-user-filtering)
 - [CDC analysis and constraints](#cdc-analysis-and-constraints)
     - [Known Issues](#known-issues)
   - [Analysis of missing synchronizers](#analysis-of-missing-synchronizers)
@@ -290,13 +293,13 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | Parameter | Default | Description |
 |:----------|:--------|:------------|
 | `USB_G_SIM_CHIRP_TIMERS` | `0` | Simulation timing option to reduce runtime of USB high-speed startup. Leave at `0` for synthesis or GLS. |
-| `USB_C_DEV0_RAM_ADDRWIDTH` | `13` | Width of the exported DEV0 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [AXI base-address alignment](#axi-base-address-alignment). |
-| `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Width of the exported DEV1 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [AXI base-address alignment](#axi-base-address-alignment). |
+| `USB_C_DEV0_RAM_ADDRWIDTH` | `13` | Width of the exported DEV0 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [USB Base Address Requirement](#usb-base-address-requirement). |
+| `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Width of the exported DEV1 SRAM word address; must cover the implemented RAM depth. Physical capacity is specified separately; see [USB Base Address Requirement](#usb-base-address-requirement). |
 | `USB_C_DEV0_NBPHYSEP` | `28` | Number of physical endpoints for the MCU-facing DEV0 controller (excluding EP0); forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_DEV1_NBPHYSEP` | `28` | Number of physical endpoints for the SoC-facing DEV1 controller (excluding EP0); forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
-| `USB_COMBO_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_combo_priv_axi_users_i` entries; must be at least 1. See [USB AXI filtering configuration](#usb-axi-filtering-configuration-and-locking). |
-| `USB_DEV1_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_dev1_priv_axi_users_i` entries; must be at least 1. See [USB AXI filtering configuration](#usb-axi-filtering-configuration-and-locking). |
+| `USB_COMBO_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_combo_priv_axi_users_i` entries; must be at least 1. See [AXI USER Filtering](#axi-user-filtering). |
+| `USB_DEV1_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_dev1_priv_axi_users_i` entries; must be at least 1. See [AXI USER Filtering](#axi-user-filtering). |
 | `CPTRA_CORE_JTAG_IDCODE` | `1` | JTAG IDCODE for Caliptra Core RISC-V. Integrators must override using product-specific value. |
 | `MCU_JTAG_IDCODE`        | `1` | JTAG IDCODE for MCU RISC-V. Integrators must override using product-specific value. |
 | `LCC_JTAG_IDCODE`        | `1` | JTAG IDCODE for Lifecycle Controller. Integrators must override using product-specific value. |
@@ -429,14 +432,14 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | axi_if    | na    | `cptra_ss_mcu_sb_m_axi_if_r_mgr`           | Caliptra Subsystem MCU System Bus AXI read manager interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_w_sub`              | Caliptra Subsystem I3C AXI write sub-interface |
 | External | axi_if    | na    | `cptra_ss_i3c_s_axi_if_r_sub`              | Caliptra Subsystem I3C AXI read sub-interface |
-| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_w_sub`    | Write access to DEV0 CSRs, Recovery registers, and Hub control/descriptor storage. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_r_sub`    | Read access to DEV0 CSRs, Recovery registers, and Hub control/descriptor storage. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_w_sub` | Write access to DEV0 packet SRAM. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_r_sub` | Read access to DEV0 packet SRAM. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_w_sub` | Write access to DEV1 control and status registers. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_r_sub` | Read access to DEV1 control and status registers. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_w_sub` | Write access to DEV1 packet SRAM. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
-| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_r_sub` | Read access to DEV1 packet SRAM. [USB AXI access requirements](#usb-axi-access-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_w_sub`    | Write access to DEV0 CSRs, Recovery registers, and Hub control/descriptor storage. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_combo_s_axi_if_r_sub`    | Read access to DEV0 CSRs, Recovery registers, and Hub control/descriptor storage. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_w_sub` | Write access to DEV0 packet SRAM. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev0_mem_s_axi_if_r_sub` | Read access to DEV0 packet SRAM. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_w_sub` | Write access to DEV1 control and status registers. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_csr_s_axi_if_r_sub` | Read access to DEV1 control and status registers. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_w_sub` | Write access to DEV1 packet SRAM. [USB Integration Requirements](#usb-integration-requirements) apply. |
+| External | axi_if    | na    | `cptra_ss_usb_dev1_mem_s_axi_if_r_sub` | Read access to DEV1 packet SRAM. [USB Integration Requirements](#usb-integration-requirements) apply. |
 | External | input     | 1     | `cptra_ss_usb_combo_enable_axi_user_filtering_i` | Active-high AXI USER filter enable for the Combo and DEV0 memory interfaces; see [hardware filter behavior](CaliptraSSHardwareSpecification.md#axi-user-filtering). |
 | External | input     | 32 bits per entry; `USB_COMBO_NUM_PRIV_AXI_USERS` entries | `cptra_ss_usb_combo_priv_axi_users_i` | AXI USER values allowed on the Combo and DEV0 memory interfaces; see [hardware matching semantics](CaliptraSSHardwareSpecification.md#axi-user-filtering). |
 | External | input     | 1     | `cptra_ss_usb_dev1_enable_axi_user_filtering_i` | Active-high AXI USER filter enable for the DEV1 CSR and DEV1 memory interfaces; see [hardware filter behavior](CaliptraSSHardwareSpecification.md#axi-user-filtering). |
@@ -725,44 +728,7 @@ Integrator must connect following list of manager and subordinates to axi interc
   - [soc_address_map.h](../src/integration/rtl/soc_address_map.h)
   - [soc_address_map_defines.svh](../src/integration/rtl/soc_address_map_defines.svh)
 
-### USB AXI Access Requirements
-
-Use the [parameters](#parameters--defines) and [port table](#caliptra-subsystem-top-interface--signals) for wiring. Filter behavior is defined in the hardware specification's [AXI USER filtering](CaliptraSSHardwareSpecification.md#axi-user-filtering) section.
-
-Input signals to restrict access to the USB device: 
-
-- Combo allowlist: include `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i`.
-- DEV1 allowlist: include the designated SoC firmware owner's identity, and `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access.
-
-#### AXI base-address alignment
-
-**The base address must be a multiple of the alignment shown below.** For example, `0x40` alignment means the lowest six address bits must be zero. Use the same base address for an interface's read and write ports.
-
-| AXI interface prefix (both `_r_sub` and `_w_sub`) | Required base-address alignment |
-|:------------------------------------------------|:--------------------------------|
-| `cptra_ss_usb_combo_s_axi_if` | `0x2000` (8 KiB) for the default `USB_C_HUB_FIFO_SIZE = 172`. For other values, use the Combo window size from the [HW address map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map). |
-| `cptra_ss_usb_dev0_mem_s_axi_if` | `DEV0_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
-| `cptra_ss_usb_dev1_csr_s_axi_if` | `0x40` (64 bytes), fixed. |
-| `cptra_ss_usb_dev1_mem_s_axi_if` | `DEV1_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
-
-`DEV0_RAM_SIZE` and `DEV1_RAM_SIZE` are the implemented RAM capacities in bytes, not address-bus widths or RTL parameter names.
-
-#### USB AXI filtering configuration and locking
-
-The USB AXI filtering configuration is four inputs: the filter enables `cptra_ss_usb_combo_enable_axi_user_filtering_i` and `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, and the allowlists `cptra_ss_usb_combo_priv_axi_users_i` and `cptra_ss_usb_dev1_priv_axi_users_i`.
-
-**Prefer static straps/tie-offs for both filter enables and allowlists.**
-
-If the configuration is programmable, MCU ROM shall program and lock the SoC registers that drive these inputs before any other FW executes. The configuration shall be retained and locked across warm reset.
-
-Fill every allowlist slot with an intended authorized identity, repeating an entry for spare slots rather than zero-filling them. See [entry matching semantics](CaliptraSSHardwareSpecification.md#axi-user-filtering).
-
-#### DWORD-only accesses
-
-Apply the [hardware DWORD-only access restriction](CaliptraSSHardwareSpecification.md#dword-only-accesses) to every beat on all four USB AXI interfaces:
-
-- Use 4-byte-aligned addresses and `ARSIZE`/`AWSIZE = 3'b010` (4 bytes per beat).
-- Supply a complete DWORD and `WSTRB = 4'b1111` on every write beat.
+For USB-specific base alignment, transfer restrictions, and filtering, see [USB Integration Requirements](#usb-integration-requirements).
 
 ### Caliptra Subsystem Reference Register Map
 
@@ -2811,6 +2777,53 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
     - MCTP Test send random 68 bytes of data and PEC to RX queue
     - MCU reads and compares the data with expected data
 
+# USB2
+
+## Overview
+
+See the [USB2 hardware specification](CaliptraSSHardwareSpecification.md#caliptra-ss-usb2) for architecture and ownership. Use the subsystem [parameters](#parameters--defines) and [port table](#caliptra-subsystem-top-interface--signals) for wiring.
+
+## Memory Map / Address map
+
+The [Combo AXI memory map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map) defines DEV0 CSR, Hub, and Recovery offsets and window sizing. DEV0 packet RAM, DEV1 CSRs, and DEV1 packet RAM use separate AXI interfaces.
+
+## USB Integration Requirements
+
+### USB Base Address Requirement
+
+**The base address must be a multiple of the alignment shown below.** For example, `0x40` alignment means the lowest six address bits must be zero. Use the same base address for an interface's read and write ports.
+
+| AXI interface prefix (both `_r_sub` and `_w_sub`) | Required base-address alignment |
+|:------------------------------------------------|:--------------------------------|
+| `cptra_ss_usb_combo_s_axi_if` | `0x2000` (8 KiB) for the default `USB_C_HUB_FIFO_SIZE = 172`. For other values, use the Combo window size from the [HW address map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map). |
+| `cptra_ss_usb_dev0_mem_s_axi_if` | `DEV0_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
+| `cptra_ss_usb_dev1_csr_s_axi_if` | `0x40` (64 bytes), fixed. |
+| `cptra_ss_usb_dev1_mem_s_axi_if` | `DEV1_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
+
+`DEV0_RAM_SIZE` and `DEV1_RAM_SIZE` are the implemented RAM capacities in bytes, not address-bus widths or RTL parameter names.
+
+### AXI DATA_WIDTH Limitation
+
+Apply the [hardware DWORD-only access restriction](CaliptraSSHardwareSpecification.md#dword-only-accesses) to all four USB AXI interfaces:
+
+- Use 4-byte-aligned addresses and `ARSIZE`/`AWSIZE = 3'b010` (4 bytes per beat).
+- Supply a complete DWORD and `WSTRB = 4'b1111` on every write beat.
+
+### AXI USER Filtering
+
+Filter behavior is defined in the hardware specification's [AXI USER filtering](CaliptraSSHardwareSpecification.md#axi-user-filtering) section. Configure the allowlists as follows:
+
+- Combo allowlist: include `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i`.
+- DEV1 allowlist: include the designated SoC firmware owner's identity, and `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access.
+
+The USB AXI filtering configuration is four inputs: the filter enables `cptra_ss_usb_combo_enable_axi_user_filtering_i` and `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, and the allowlists `cptra_ss_usb_combo_priv_axi_users_i` and `cptra_ss_usb_dev1_priv_axi_users_i`.
+
+**Prefer static straps/tie-offs for both filter enables and allowlists.**
+
+If the configuration is programmable, MCU ROM shall program and lock the SoC registers that drive these inputs before any other FW executes. The configuration shall be retained and locked across warm reset.
+
+Fill every allowlist slot with an intended authorized identity, repeating an entry for spare slots rather than zero-filling them.
+
 # CDC analysis and constraints
 
 Clock Domain Crossing (CDC) analysis is performed on Caliptra Subsystem. The following are the results and recommended constraints for integrators using standard CDC analysis EDA tools.
@@ -3027,9 +3040,9 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_Axi_9         | MCI                   | For each instantiated MCI mailbox, integrators must define the subset of trusted AXI users permitted to access it. Before any SoC agent uses the mailbox, integrators must either configure the trusted-user list at integration time with `SET_MCU_MBOX{0,1}_AXI_USER_INTEG` and `MCU_MBOX{0,1}_VALID_AXI_USER`, or program and lock `MBOX*_VALID_AXI_USER` with `MBOX*_AXI_USER_LOCK`. All identities outside the defined trusted-user subset must remain unauthorized. See [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users).                                                                                          | Threat Model |
 | CSS_Axi_10        | Caliptra Subsystem    | The SoC must drive a defined 32-bit ARUSER or AWUSER identity on every AXI request that can reach an AXI_USER-filtering Caliptra Subsystem block: MCI (including MCU SRAM and MCI mailboxes), Fuse Controller, I3C, or USB. The AXI_USER identity must identify the originating AXI agent and must not be replaced with other transaction metadata. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements. See [Connecting AXI Interconnect](#connecting-axi-interconnect). | Threat Model |
 | CSS_Axi_11        | Caliptra Subsystem    | AXI_USER identities configured as authorized users for MCI, Fuse Controller, I3C, or USB must uniquely identify a single AXI agent or trust domain. The SoC must prevent an agent from generating an ARUSER or AWUSER value assigned to another agent, and must ensure that every possible AXI_USER value generated by an unauthorized agent cannot match a configured authorized identity. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements.    | Threat Model |
-| CSS_USB_1         | USB                   | All USB AXI filtering inputs (`cptra_ss_usb_combo_enable_axi_user_filtering_i`, `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, `cptra_ss_usb_combo_priv_axi_users_i`, `cptra_ss_usb_dev1_priv_axi_users_i`) shall follow the requirements in [USB AXI filtering configuration and locking](#usb-axi-filtering-configuration-and-locking). | Threat Model: prevent later firmware from changing USB AXI authorization |
-| CSS_USB_2         | USB                   | MCU LSU and Caliptra DMA shall be authorized Combo accessors. The designated SoC firmware owner shall be a DEV1 accessor; MCU LSU is an optional DEV1 accessor. See [USB AXI Access Requirements](#usb-axi-access-requirements) for complete guidance. | Functionality: preserve controller ownership and recovery access |
-| CSS_USB_3         | USB                   | Enforce [DWORD-only access contract](#dword-only-accesses) on all four USB AXI interfaces. | Functionality: [hardware access limitations](CaliptraSSHardwareSpecification.md#dword-only-accesses) |
+| CSS_USB_1         | USB                   | All USB AXI filtering inputs (`cptra_ss_usb_combo_enable_axi_user_filtering_i`, `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, `cptra_ss_usb_combo_priv_axi_users_i`, `cptra_ss_usb_dev1_priv_axi_users_i`) shall follow the requirements in [AXI USER Filtering](#axi-user-filtering). | Threat Model: prevent later firmware from changing USB AXI authorization |
+| CSS_USB_2         | USB                   | MCU LSU and Caliptra DMA shall be authorized Combo accessors. The designated SoC firmware owner shall be a DEV1 accessor; MCU LSU is an optional DEV1 accessor. See [AXI USER Filtering](#axi-user-filtering) for complete guidance. | Functionality: preserve controller ownership and recovery access |
+| CSS_USB_3         | USB                   | Enforce the [AXI DATA_WIDTH limitation](#axi-data_width-limitation) on all four USB AXI interfaces. | Functionality: [hardware access limitations](CaliptraSSHardwareSpecification.md#dword-only-accesses) |
 | CSS_Mem_1         | Caliptra Subsystem    | SRAMs must be instantiated outside of the Caliptra Subsystem boundary and connected via memory export interfaces.                                                                                                                                                                                                                                                                                                                                                                         | Functionality |
 | CSS_Mem_2         | Caliptra Subsystem    | All entries in SRAM must be initialized to 0 value prior to deasserting `cptra_ss_rst_b_i` during cold reset.                                                                                                                                                                                                                                                                                                                                                                             | Functionality |
 | CSS_Mem_3         | MCI                   | MCU SRAM size must be a minimum of 4KB and maximum of 2MB, configured via `MCU_SRAM_SIZE_KB` parameter.                                                                                                                                                                                                                                                                                                                                                                                   | Functionality |
