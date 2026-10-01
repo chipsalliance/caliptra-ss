@@ -279,6 +279,7 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 | **MCU0**          | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                | Read/Write      | Shared memory between MCI and MCU for data storage.                                                                                      |
 | **MAILBOX**       | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX0 communication.                                                                                                          |
 | **MAILBOX**       | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX1 communication.                                                                                                          |
+| **MCU0**          | MCU ROM Patch SRAM    | `cptra_ss_mcu_rom_patch_sram_req_if` | SoC Specific (`MCU_ROM_PATCH_SRAM_SIZE_KB`) | Read/Write | Dedicated SRAM that MCU ROM loads a ROM patch into and fetches from. Accessible only in TEST_LOCKED/TEST_UNLOCKED/DEV before Caliptra core boots and before UDS is provisioned. See [MCU ROM Patch SRAM](#mcu-rom-patch-sram). |
 | **Caliptra Core** | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core.                                                 |
 | **Caliptra Core** | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read-Only       | Interface for Caliptra ROM.                                                                                                              |
 | **Caliptra Core** | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for Caliptra mailbox memory.                                                                                                   |
@@ -493,6 +494,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
 | External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |har
+| External | interface | na    | `cptra_ss_mcu_rom_patch_sram_req_if` | MCI MCU ROM patch SRAM request interface |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox0_data_avail`  | MCU Mailbox0 data available output            |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox1_data_avail`  | MCU Mailbox1 data available output            |
 | External | interface | na    | `cptra_ss_mcu0_el2_mem_export`       | MCU0 EL2 memory export interface         |
@@ -1791,6 +1793,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External    | `MCU_SET_MBOX1_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
 | External    | `MCU_MBOX1_VALID_AXI_USER`   | mci_top  | MBOX1 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
 | External | `MCU_MBOX1_SIZE_KB`         | external | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max: 2048 (2MB) |
+| External | `MCU_ROM_PATCH_SRAM_SIZE_KB` | external | Size of the MCU ROM patch SRAM. Min: 1 Max: 2048 (2MB). Default: 4 |
 
 **Table: MCI Integration Definitions**
 
@@ -1939,6 +1942,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | interface | `mci_mcu_sram_req_if`     | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.     | MCU SRAM memory interface.                                                        |
 | External | interface | `mci_mbox0_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.    | MBOX0 SRAM memory interface.                                                      |
 | External | interface | `mci_mbox1_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.    | MBOX1 SRAM memory interface.                                                      |
+| External | interface | `mci_mcu_rom_patch_sram_req_if` | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM. | MCU ROM patch SRAM memory interface.                                     |
 
 **Table: MCI LCC Gasket Interface**
 
@@ -1964,6 +1968,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | :---- | :---- | :---- |
 | CSRs | 0x0 | 0x1FFF |
 | MCU Trace Buffer | 0x10000 | 0x1001F |
+| MCU ROM Patch SRAM | 0x200000 | MCU ROM PATCH SRAM BASE + MCU_ROM_PATCH_SRAM_SIZE |
 | Mailbox 0 | 0x400000| 0x7FFFFF |
 | Mailbox 1 | 0x800000| 0xBFFFFF |
 | MCU SRAM | 0xC00000 | MCU SRAM BASE + MCU_SRAM_SIZE |
@@ -1988,6 +1993,20 @@ The two regions have different access protection. The size of the regions is dyn
 *NOTE: FW\_SRAM\_EXEC\_REGION\_SIZE is base 0 meaning the minimum size for the Updatable Execution Region is 4KB.*
 
 *NOTE: If FW\_SRAM\_EXEC\_REGION\_SIZE is the size of the SRAM, there is no protected Region.*
+
+### MCU ROM Patch SRAM
+
+A dedicated SRAM (`MCU_ROM_PATCH_SRAM_SIZE_KB`, offset 0x200000) that lets integrators patch a bug in MCU ROM on pre-production parts. MCU ROM copies a patch (for example from the vendor non-secret fuse partition) into this SRAM and fetches patch instructions from it. Hardware enforces the following so that a patched boot can never provision device identity or run in production:
+
+| Rule | Enforcement |
+| :---- | :---- |
+| Write | MCU LSU only, full 32-bit words only. Allowed only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no LC fatal error), UDS is **not** provisioned (SECRET_MANUF_PARTITION digest is 0), and Caliptra core is still held in reset by the MCI boot sequencer. |
+| Patch flag | Set by the first accepted write. Cleared only by cold reset (`cptra_ss_pwrgood_i`). Stable before Caliptra core boots. |
+| Read / fetch | MCU LSU/IFU only, only while the patch flag is set and the LC/UDS write conditions (except Caliptra reset) still hold. This prevents a patch from running after a DEV->PROD transition followed by a warm reset. |
+| UDS/FE lock | While the patch flag is set, the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses. |
+| Errors | Any other access returns an AXI error. Single-bit ECC errors are corrected. Double-bit ECC errors return an AXI error and set `HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc`. |
+
+*NOTE: MCU ROM must only write this SRAM when a valid patch is present. Any write sets the patch flag and blocks UDS/FE provisioning until the next cold reset.*
 
 ## MCI Integration Requirements
 

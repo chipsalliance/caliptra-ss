@@ -28,6 +28,8 @@ module mci_top
     parameter AXI_ID_WIDTH   = 8,
 
     parameter MCU_SRAM_SIZE_KB = 512, 
+
+    parameter MCU_ROM_PATCH_SRAM_SIZE_KB = 4, // Dedicated MCU ROM patch SRAM
                                       
 
     parameter MIN_MCU_RST_COUNTER_WIDTH = 4 // Size of MCU reset counter that overflows before allowing MCU
@@ -167,6 +169,10 @@ module mci_top
     input  logic  FIPS_ZEROIZATION_PPD_i,
     output logic  FIPS_ZEROIZATION_CMD_o,
 
+    // MCU ROM patch: UDS provisioned (from FC) / patch SRAM populated (to FC filter)
+    input  logic  uds_provisioned_i,
+    output logic  mcu_rom_patch_active_o,
+
     input logic intr_otp_operation_done,
 
 
@@ -178,6 +184,9 @@ module mci_top
 
     // Mbox1 SRAM Interface
     mci_mcu_sram_if.request mcu_mbox1_sram_req_if,
+
+    // MCU ROM Patch SRAM Interface
+    mci_mcu_sram_if.request mci_mcu_rom_patch_sram_req_if,
 
 
     //=============== LCC GASKET PORTS ========================
@@ -221,6 +230,7 @@ module mci_top
     logic        mcu_sram_fw_exec_region_lock_internal;
     logic        mcu_sram_fw_exec_region_lock_dmi_override;
     logic        mcu_sram_dmi_axi_collision_error;
+    logic        mcu_rom_patch_sram_double_ecc_error;
     logic        mcu_sram_dmi_uncore_en;
     logic        mcu_sram_dmi_uncore_wr_en;
     logic [ 6:0] mcu_sram_dmi_uncore_addr;
@@ -363,6 +373,16 @@ cif_if #(
     .clk(cptra_ss_rdc_clk_cg), 
     .rst_b(cptra_ss_rst_b_o));
 
+// Caliptra internal fabric interface for the MCU ROM patch SRAM
+cif_if #(
+    .ADDR_WIDTH(AXI_ADDR_WIDTH)
+    ,.DATA_WIDTH(AXI_DATA_WIDTH)
+    ,.ID_WIDTH(AXI_ID_WIDTH)
+    ,.USER_WIDTH(AXI_USER_WIDTH)
+) mcu_rom_patch_req_if(
+    .clk(cptra_ss_rdc_clk_cg), 
+    .rst_b(cptra_ss_rst_b_o));
+
 //AXI Interface
 //This module contains the logic for interfacing with the SoC over the AXI Interface
 //The SoC sends read and write requests using AXI Protocol
@@ -373,7 +393,8 @@ mci_axi_sub_top #(
     .AXI_DATA_WIDTH(AXI_DATA_WIDTH), 
     .AXI_ID_WIDTH(AXI_ID_WIDTH),
     .AXI_USER_WIDTH(AXI_USER_WIDTH),
-    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
+    .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+    .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB)
 ) i_mci_axi_sub_top (
     // MCI clk
     .clk  (cptra_ss_rdc_clk_cg), 
@@ -399,6 +420,9 @@ mci_axi_sub_top #(
 
     // MCI Mbox1 Interface
     .mcu_mbox1_req_if ( mcu_mbox1_req_if.request ),
+
+    // MCU ROM Patch SRAM Interface
+    .mcu_rom_patch_req_if ( mcu_rom_patch_req_if.request ),
 
     // Privileged requests 
     .axi_mci_soc_config_req,
@@ -550,6 +574,39 @@ mci_mcu_sram_ctrl #(
 
     // Interface with SRAM
     .mci_mcu_sram_req_if(mci_mcu_sram_req_if)
+);
+
+// MCU ROM Patch SRAM
+// Loaded by MCU ROM before Caliptra core boots (TEST_LOCKED/TEST_UNLOCKED/DEV only, UDS not
+// provisioned). A populated patch SRAM blocks UDS/FE provisioning in the FC filter.
+mci_mcu_rom_patch_ctrl #(
+    .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB)
+) i_mci_mcu_rom_patch_ctrl (
+    .clk (cptra_ss_rdc_clk_cg),
+
+    .rst_b       (cptra_ss_rst_b_o),
+    .mci_pwrgood (mci_pwrgood),
+
+    .cptra_rst_b,
+
+    .otp_static_state_i     (otp_static_state_o),
+    .otp_state_valid_i      (otp_state_valid_o),
+    .lc_fatal_state_error_i (lc_fatal_state_error_i),
+    .uds_provisioned_i      (uds_provisioned_i),
+
+    .axi_mcu_lsu_req,
+    .axi_mcu_ifu_req,
+
+    .mcu_rom_patch_active_o,
+
+    // Single-bit errors are corrected in the datapath and not reported.
+    // Double-bit errors return an AXI error and set HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.
+    .sram_single_ecc_error (),
+    .sram_double_ecc_error (mcu_rom_patch_sram_double_ecc_error),
+
+    .cif_resp_if (mcu_rom_patch_req_if.response),
+
+    .mci_mcu_rom_patch_sram_req_if(mci_mcu_rom_patch_sram_req_if)
 );
 
 
@@ -715,6 +772,7 @@ mci_reg_top #(
     .mcu_sram_single_ecc_error,
     .mcu_sram_double_ecc_error,
     .mcu_sram_dmi_axi_collision_error,
+    .mcu_rom_patch_sram_double_ecc_error,
     .mcu_sram_dmi_uncore_en,
     .mcu_sram_dmi_uncore_wr_en,
     .mcu_sram_dmi_uncore_addr,
@@ -862,7 +920,7 @@ mci_lcc_st_trans LCC_state_translator (
 // Assertions
 ///////////////////////////////////////
 
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv}, clk, !cptra_ss_rst_b_o)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {mci_reg_req_if.dv, mcu_sram_req_if.dv, mcu_trace_buffer_req_if.dv, mcu_mbox0_req_if.dv, mcu_mbox1_req_if.dv, mcu_rom_patch_req_if.dv}, clk, !cptra_ss_rst_b_o)
 
 // Today we don't support anything other than 32 bits
 `CALIPTRA_ASSERT_INIT(ERR_AXI_DATA_WIDTH, AXI_DATA_WIDTH == 32)
