@@ -36,7 +36,7 @@
 // USER filtering is enabled on both policies for the whole stress phase.
 // Denied requests use a nonmember or the other policy's USER.
 //
-// Checking, without a monitor or scoreboard:
+// Sequence-local response/data checking and Avery-reported bus concurrency:
 //   * Every write response and every read beat response is checked.
 //   * A sequence-local expected-data array models every CSR allowlist word
 //     and every SRAM word. SRAMs are filled with random data first.
@@ -46,11 +46,51 @@
 //   * Accepted reads compare every beat; denied reads require zero data.
 //   * Both SRAMs are fully swept and CSRs rechecked after the stress phase.
 //   * Every launched request must complete, every scheduled and mandatory
-//     operation must finish, and each port must have had multiple reads,
-//     multiple writes, and reads with writes launched concurrently.
-// Launch counts measure requests handed to Avery, not DUT acceptance; the
-// Avery trackers record the resulting bus-level overlap. FIXED writes are
-// checked through their final beat only.
+//     operation must finish, and each port must have had multiple accepted
+//     reads, multiple accepted writes, and accepted reads with writes
+//     outstanding concurrently. All four ports must overlap on the bus.
+// Launch counts include requests queued in Avery; concurrency counts only
+// AR/AW handshakes through RLAST/B handshakes. FIXED writes are checked
+// through their final beat only.
+
+// One passive counter per Avery manager, registered only during stress.
+// The address-done callbacks report acceptance, not scheduling or VALID assertion.
+class usb_axi_stress_callbacks extends aaxi_callbacks;
+  `uvm_object_utils(usb_axi_stress_callbacks)
+
+  int unsigned reads;
+  int unsigned writes;
+  int unsigned requests_accepted;
+
+  function new(string name = "usb_axi_stress_callbacks");
+    super.new(name);
+  endfunction
+
+  virtual task master_read_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
+    reads++;
+    requests_accepted++;
+  endtask
+
+  virtual task master_write_addr_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
+    writes++;
+    requests_accepted++;
+  endtask
+
+  virtual task read_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
+    if (reads == 0) begin
+      `uvm_fatal("USB_STRESS_ACCOUNTING", $sformatf("%s completed a read without an accepted AR", get_name()))
+    end
+    reads--;
+  endtask
+
+  virtual task write_done(aaxi_device_class bfm, ref aaxi_master_tr tn);
+    if (writes == 0) begin
+      `uvm_fatal("USB_STRESS_ACCOUNTING", $sformatf("%s completed a write without an accepted AW", get_name()))
+    end
+    writes--;
+  endtask
+endclass
+
 class usb_axi_stress_seq extends usb_base_seq;
   `uvm_object_utils(usb_axi_stress_seq)
 
@@ -151,6 +191,10 @@ class usb_axi_stress_seq extends usb_base_seq;
   protected int unsigned requests_completed[PORT_COUNT];
   protected int unsigned inflight_reads[PORT_COUNT];
   protected int unsigned inflight_writes[PORT_COUNT];
+  protected int unsigned bus_reads[PORT_COUNT];
+  protected int unsigned bus_writes[PORT_COUNT];
+  protected int unsigned bus_requests_accepted[PORT_COUNT];
+  protected usb_axi_stress_callbacks bus_trackers[PORT_COUNT];
   protected int unsigned max_inflight_reads[PORT_COUNT];
   protected int unsigned max_inflight_writes[PORT_COUNT];
   protected int unsigned max_inflight_total[PORT_COUNT];
@@ -645,22 +689,49 @@ class usb_axi_stress_seq extends usb_base_seq;
     return request;
   endfunction
 
-  // Record high-water marks after a launch: per-port reads, writes, and total
-  // in flight, whether reads and writes overlapped, and how many ports were
-  // active together. check_accounting() uses these to prove concurrency.
-  protected function void update_concurrency_marks(int unsigned port);
+  // Sample all ports before recording overlap, so a completion on one port
+  // and acceptance on another at the same edge cannot create false overlap.
+  protected function void update_concurrency_marks();
     int unsigned active_ports;
 
-    if (inflight_reads[port] > max_inflight_reads[port]) max_inflight_reads[port] = inflight_reads[port];
-    if (inflight_writes[port] > max_inflight_writes[port]) max_inflight_writes[port] = inflight_writes[port];
-    if (inflight_reads[port] + inflight_writes[port] > max_inflight_total[port]) max_inflight_total[port] = inflight_reads[port] + inflight_writes[port];
-    if (inflight_reads[port] > 0 && inflight_writes[port] > 0) read_write_overlap[port] = 1'b1;
     active_ports = 0;
-    for (int unsigned index = 0; index < PORT_COUNT; index++) begin
-      if (inflight_reads[index] + inflight_writes[index] > 0) active_ports++;
+    for (int unsigned port = 0; port < PORT_COUNT; port++) begin
+      if (bus_reads[port] > max_inflight_reads[port]) max_inflight_reads[port] = bus_reads[port];
+      if (bus_writes[port] > max_inflight_writes[port]) max_inflight_writes[port] = bus_writes[port];
+      if (bus_reads[port] + bus_writes[port] > max_inflight_total[port]) max_inflight_total[port] = bus_reads[port] + bus_writes[port];
+      if (bus_reads[port] > 0 && bus_writes[port] > 0) read_write_overlap[port] = 1'b1;
+      if (bus_reads[port] + bus_writes[port] > 0) active_ports++;
     end
     if (active_ports > max_active_ports) max_active_ports = active_ports;
   endfunction
+
+ 
+  // Passively count accepted but unfinished AXI requests on all four USB ports.
+  // Avery's address-done callbacks add reads/writes; its transaction-done
+  // callbacks remove them. Requests still queued in the testbench do not count.
+  // Sample those counters at the falling edge, after all rising-edge callbacks
+  // have finished. This avoids counting same-edge replacement as overlap.
+  // The peaks and overlap flags let check_accounting() verify that USB accepted
+  // multiple requests before earlier ones finished, rather than one at a time.
+  //
+  // Reset makes tracking unreliable and is fatal here. The callbacks also
+  // stop on a completion with no counted request, indicating a DUT or monitor
+  // problem. Existing AXI protocol checkers still check the bus signals.
+  // Insufficient overlap is checked separately by check_accounting().
+  protected task monitor_bus_concurrency();
+    while (tracking_concurrency) begin
+      @(negedge ctrl_vif.clk);
+      if (ctrl_vif.rst_n !== 1'b1) begin
+        `uvm_fatal("USB_STRESS_ACCOUNTING", "Reset is not deasserted during stress monitoring")
+      end
+      for (int unsigned port = 0; port < PORT_COUNT; port++) begin
+        bus_reads[port] = bus_trackers[port].reads;
+        bus_writes[port] = bus_trackers[port].writes;
+        bus_requests_accepted[port] = bus_trackers[port].requests_accepted;
+      end
+      update_concurrency_marks();
+    end
+  endtask
 
   // Launch one request as its own child sequence and wait for its completion.
   // Other chains keep launching meanwhile; timeout is per request.
@@ -679,7 +750,6 @@ class usb_axi_stress_seq extends usb_base_seq;
     requests_launched[port]++;
     if (is_write) inflight_writes[port]++;
     else inflight_reads[port]++;
-    if (tracking_concurrency) update_concurrency_marks(port);
     child.start(p_sequencer, this);
     if (is_write) inflight_writes[port]--;
     else inflight_reads[port]--;
@@ -870,6 +940,9 @@ class usb_axi_stress_seq extends usb_base_seq;
       requests_completed[port] = 0;
       inflight_reads[port] = 0;
       inflight_writes[port] = 0;
+      bus_reads[port] = 0;
+      bus_writes[port] = 0;
+      bus_requests_accepted[port] = 0;
       max_inflight_reads[port] = 0;
       max_inflight_writes[port] = 0;
       max_inflight_total[port] = 0;
@@ -975,20 +1048,50 @@ class usb_axi_stress_seq extends usb_base_seq;
     stress_op_t dev0_ops[$];
     stress_op_t dev1_csr_ops[$];
     stress_op_t dev1_ops[$];
+    int unsigned requests_before_stress[PORT_COUNT];
+    aaxi_agent managers[PORT_COUNT];
+    aaxi_sequencer manager_sequencer;
 
     build_stress_schedule(PORT_COMBO, combo_ops);
     build_stress_schedule(PORT_DEV0_SRAM, dev0_ops);
     build_stress_schedule(PORT_DEV1_CSR, dev1_csr_ops);
     build_stress_schedule(PORT_DEV1_SRAM, dev1_ops);
     `uvm_info("USB_STRESS", $sformatf("Stress: %0d chains per port, up to %0d live per port, 0..%0d clock launch gaps", primary_requests, max_live, max_launch_gap), UVM_LOW)
+    // Start between sampling edges after initialization traffic has drained.
+    @(negedge ctrl_vif.clk);
+    requests_before_stress = requests_launched;
+    for (int unsigned port = 0; port < PORT_COUNT; port++) begin
+      manager_sequencer = sequencer_for(port_target(port));
+      managers[port] = manager_sequencer.cfg.agent;
+      if (managers[port] == null) begin
+        `uvm_fatal("USB_STRESS", $sformatf("%s Avery manager is missing", port_name(port)))
+      end
+      if (managers[port].driver == null || managers[port].bfm == null) begin
+        `uvm_fatal("USB_STRESS", $sformatf("%s Avery manager BFM is missing", port_name(port)))
+      end
+      bus_trackers[port] = usb_axi_stress_callbacks::type_id::create({port_name(port), "_bus_tracker"});
+      managers[port].add_callback(bus_trackers[port]);
+    end
     tracking_concurrency = 1'b1;
     fork
-      run_port(PORT_COMBO, combo_ops);
-      run_port(PORT_DEV0_SRAM, dev0_ops);
-      run_port(PORT_DEV1_CSR, dev1_csr_ops);
-      run_port(PORT_DEV1_SRAM, dev1_ops);
+      monitor_bus_concurrency();
+      begin
+        fork
+          run_port(PORT_COMBO, combo_ops);
+          run_port(PORT_DEV0_SRAM, dev0_ops);
+          run_port(PORT_DEV1_CSR, dev1_csr_ops);
+          run_port(PORT_DEV1_SRAM, dev1_ops);
+        join
+        @(negedge ctrl_vif.clk);
+        tracking_concurrency = 1'b0;
+      end
     join
-    tracking_concurrency = 1'b0;
+    for (int unsigned port = 0; port < PORT_COUNT; port++) begin
+      managers[port].delete_callback(bus_trackers[port]);
+      if (bus_requests_accepted[port] != requests_launched[port] - requests_before_stress[port] || bus_reads[port] != 0 || bus_writes[port] != 0) begin
+        `uvm_fatal("USB_STRESS_ACCOUNTING", $sformatf("%s stress bus accepted=%0d launched=%0d outstanding reads=%0d writes=%0d", port_name(port), bus_requests_accepted[port], requests_launched[port] - requests_before_stress[port], bus_reads[port], bus_writes[port]))
+      end
+    end
   endtask
 
   // Recheck every modeled CSR word through an allowed USER.
@@ -1022,7 +1125,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // Final accounting: nothing left in flight, every request completed, every
   // scheduled and mandatory chain finished, and each port overlapped reads
-  // and writes with more than one of each launched at once.
+  // and writes with more than one of each accepted and outstanding at once.
   protected function void check_accounting();
     for (int unsigned port = 0; port < PORT_COUNT; port++) begin
       if (live_chains[port] != 0 || inflight_reads[port] != 0 || inflight_writes[port] != 0) begin
@@ -1035,7 +1138,7 @@ class usb_axi_stress_seq extends usb_base_seq;
         `uvm_fatal("USB_STRESS_ACCOUNTING", $sformatf("%s completed %0d/%0d chains and %0d/%0d mandatory chains", port_name(port), primary_completed[port], primary_requests, mandatory_completed[port], mandatory_scheduled[port]))
       end
       if (max_inflight_reads[port] < 2 || max_inflight_writes[port] < 2 || !read_write_overlap[port]) begin
-        `uvm_fatal("USB_STRESS_CONCURRENCY", $sformatf("%s concurrency too low: max reads=%0d writes=%0d read/write overlap=%0b", port_name(port), max_inflight_reads[port], max_inflight_writes[port], read_write_overlap[port]))
+        `uvm_fatal("USB_STRESS_CONCURRENCY", $sformatf("%s bus concurrency too low: max accepted reads=%0d writes=%0d read/write overlap=%0b", port_name(port), max_inflight_reads[port], max_inflight_writes[port], read_write_overlap[port]))
       end
     end
     for (int hole = 0; hole < HOLE_COUNT; hole++) begin
@@ -1044,7 +1147,7 @@ class usb_axi_stress_seq extends usb_base_seq;
       end
     end
     if (max_active_ports != PORT_COUNT) begin
-      `uvm_fatal("USB_STRESS_CONCURRENCY", $sformatf("At most %0d of %0d ports had requests in flight together", max_active_ports, PORT_COUNT))
+      `uvm_fatal("USB_STRESS_CONCURRENCY", $sformatf("At most %0d of %0d ports had accepted requests outstanding together", max_active_ports, PORT_COUNT))
     end
   endfunction
 
@@ -1060,9 +1163,9 @@ class usb_axi_stress_seq extends usb_base_seq;
         kind_value = op_kind_e'(kind);
         kinds = {kinds, $sformatf(" %s=%0d", kind_value.name(), kind_completed[port][kind])};
       end
-      `uvm_info("USB_STRESS_SUMMARY", $sformatf("%s: requests=%0d/%0d chains=%0d mandatory=%0d/%0d beats_checked=%0d max_live_chains=%0d max_in_flight reads=%0d writes=%0d total=%0d read/write_overlap=%0b;%s", port_name(port), requests_completed[port], requests_launched[port], primary_completed[port], mandatory_completed[port], mandatory_scheduled[port], beats_checked[port], max_live_chains[port], max_inflight_reads[port], max_inflight_writes[port], max_inflight_total[port], read_write_overlap[port], kinds), UVM_LOW)
+      `uvm_info("USB_STRESS_SUMMARY", $sformatf("%s: requests=%0d/%0d chains=%0d mandatory=%0d/%0d beats_checked=%0d max_live_chains=%0d stress_bus_accepted=%0d max_bus_outstanding reads=%0d writes=%0d total=%0d read/write_overlap=%0b;%s", port_name(port), requests_completed[port], requests_launched[port], primary_completed[port], mandatory_completed[port], mandatory_scheduled[port], beats_checked[port], max_live_chains[port], bus_requests_accepted[port], max_inflight_reads[port], max_inflight_writes[port], max_inflight_total[port], read_write_overlap[port], kinds), UVM_LOW)
     end
-    `uvm_info("USB_STRESS_SUMMARY", $sformatf("Max ports with requests in flight together: %0d/%0d", max_active_ports, PORT_COUNT), UVM_LOW)
+    `uvm_info("USB_STRESS_SUMMARY", $sformatf("Max ports with accepted requests outstanding together: %0d/%0d", max_active_ports, PORT_COUNT), UVM_LOW)
     for (int hole = 0; hole < HOLE_COUNT; hole++) begin
       `uvm_info("USB_STRESS_SUMMARY", $sformatf("COMBO decode hole %0d 0x%08h..0x%08h: writes=%0d reads=%0d", hole, HOLE_BASE[hole], HOLE_LIMIT[hole] - 1, hole_completed[hole][0], hole_completed[hole][1]), UVM_LOW)
     end

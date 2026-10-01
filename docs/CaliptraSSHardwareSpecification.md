@@ -1858,4 +1858,4 @@ Enables and allowlists are live inputs, not internally sampled straps. The USB b
 
 All four USB AXI interfaces support only aligned 32-bit DWORD accesses, including Hub descriptor, packet SRAM, and Recovery register/FIFO accesses. USB does not honor `WSTRB` masking, so deasserted strobes do not suppress writes.
 
-These are AXI-bus restrictions, not USB packet-length restrictions. The [DWORD-only integration contract](CaliptraSSIntegrationSpecification.md#axi-data_width-limitation) specifies the required transfer format and software restrictions.
+These are AXI-bus restrictions, not USB packet-length restrictions. The [AXI Access Restrictions](CaliptraSSIntegrationSpecification.md#axi-access-restrictions) specify the required transfer format and software restrictions.
