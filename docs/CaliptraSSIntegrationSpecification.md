@@ -29,6 +29,7 @@
     - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
     - [FW Execution Control Connections](#fw-execution-control-connections)
     - [Caliptra Core Reset Control](#caliptra-core-reset-control)
+    - [Boot FSM Error Reset Behavior](#boot-fsm-error-reset-behavior)
     - [MCU Reset Control](#mcu-reset-control)
   - [SRAM implementation](#sram-implementation)
     - [Overview](#overview-1)
@@ -76,16 +77,17 @@
   - [Generating the Fuse Partitions](#generating-the-fuse-partitions)
 - [Fuse Controller Macro](#fuse-controller-macro)
   - [Overview](#overview-4)
-  - [Parameters \& Defines](#parameters--defines)
+  - [Parameters \& Defines](#parameters--defines-3)
   - [FC Macro Integration Requirements](#fc-macro-integration-requirements)
     - [Generic Strap Port Usage for FC Register Locations](#generic-strap-port-usage-for-fc-register-locations)
       - [Why These Straps Are Needed](#why-these-straps-are-needed)
       - [Strap Definitions](#strap-definitions)
   - [FC Macro Test Interface](#fc-macro-test-interface)
+    - [`cptra_ss_otp_dft_en_o` — fuse macro wrapper DFT enable](#cptra_ss_otp_dft_en_o--fuse-macro-wrapper-dft-enable)
   - [Life Cycle OTP Programming Behavior and Integrator Responsibilities](#life-cycle-otp-programming-behavior-and-integrator-responsibilities)
 - [Life Cycle Controller](#life-cycle-controller)
   - [Overview](#overview-5)
-  - [Parameters \& Defines](#parameters--defines-3)
+  - [Parameters \& Defines](#parameters--defines-4)
   - [Interface](#interface-1)
   - [Fuse Macro Memory Map / Fuse Controller CSR Address Map](#fuse-macro-memory-map--fuse-controller-csr-address-map)
   - [LC Integration Requirements](#lc-integration-requirements)
@@ -97,7 +99,7 @@
     - [Advanced Tests](#advanced-tests)
 - [MCI](#mci)
   - [Overview](#overview-6)
-  - [Parameters \& Defines](#parameters--defines-4)
+  - [Parameters \& Defines](#parameters--defines-5)
   - [Interface](#interface-2)
   - [Memory Map	/ Address map](#memory-map-address-map)
     - [Top Level Memory Map](#top-level-memory-map)
@@ -753,6 +755,21 @@ If an SOC wants to keep Caliptra in reset they can tie off `cptra_ss_mci_cptra_r
 If an SOC wants to modify Caliptra reset they can do so by adding additional logic to the above signals.
 
 **NOTE**: Caliptra SS RDC and CDC are only evaluated when the MCI control is looped back to Caliptra. Any modification to this reset control requires a full RDC and CDC analysis done by the SOC integration team.
+
+### Boot FSM Error Reset Behavior
+
+The boot FSM's [glitch protection](CaliptraSSHardwareSpecification.md#css-bootfsm-glitch-protection) treats an invalid state encoding as a fatal error. In normal operation (`scan_mode == 0`):
+
+1. The FSM enters BOOT\_ERROR and asserts `cptra_ss_mcu_rst_b_o` and `cptra_ss_mci_cptra_rst_b_o` low, holding MCU and Caliptra in reset without the MCU halt handshake.
+2. `cptra_ss_rst_b_o` is deasserted, keeping MCI registers accessible to the SOC.
+3. HW\_ERROR\_FATAL.fsm\_error is set and `cptra_ss_all_error_fatal_o` is asserted. The error cannot be masked.
+
+**SOC recovery**
+
+1. Apply warm reset through `cptra_ss_rst_b_i`, or cycle `cptra_ss_pwrgood_i`, to return the FSM to idle and clear the fatal output. 
+2. After warm reset, clear HW\_ERROR\_FATAL.fsm\_error with a W1C write. Power-good reset clears this status bit automatically.
+
+Clearing the status register alone does not recover the FSM or clear the fatal output, and the bit can be set again while BOOT\_ERROR remains active. 
 
 ### MCU Reset Control
 
@@ -2407,7 +2424,89 @@ If there is a need to use debug state the recommended flow to avoid missing a de
 
 ### MCI Boot Sequencer
 
-![](images/Caliptra-SS-BootFSM.png)
+The diagram below shows the MCI boot FSM in normal functional operation (`scan_mode == 0`). Circles name the encoded states; state actions are listed below. Edge labels name signals unless marked with `*`, which identifies a descriptive label or condition rather than a signal. The small unlabeled dots combine and route the ROM-selection branches without adding states or clock cycles. The reset and detached error-entry arrows are annotations, not additional states.
+
+```mermaid
+---
+config:
+  theme: base
+  themeCSS: ".edgeLabel { font-family: Arial, sans-serif; } .flowchart-link { stroke-width: 2.5px; }"
+  themeVariables:
+    fontFamily: Arial, sans-serif
+    fontSize: 20px
+    lineColor: "#17647f"
+    edgeLabelBackground: "#ffffff"
+  block:
+    padding: 16
+---
+block-beta
+    columns 9
+    %% Fixed-size labels keep every encoded-state circle the same size.
+    space:3 RESET_EVENT((" ")) space:5
+    space:3 BOOT_IDLE(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_IDLE</div>")) space:5
+    space BOOT_RST_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>RST_MCU</div>")) space:3 BOOT_OTP_FC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_OTP_FC</div>")) space:3
+    BOOT_WAIT_MCU_HALTED(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_HALTED</div>")) space:5 BOOT_LCC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_LCC</div>")) space:2
+    BOOT_HALT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>HALT_MCU</div>")) space:2 SPACING["<div style='width:236px;height:196px'></div>"] space:2 BOOT_BREAKPOINT_CHECK(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT_<br/>CHECK</div>")) space:2
+    BOOT_WAIT_MCU_RST_REQ(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_RST_REQ</div>")) space:5 BOOT_BREAKPOINT(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT</div>")) space ROM_SELECT((" "))
+    space BOOT_CPTRA(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_CPTRA</div>")) space:3 BOOT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_MCU</div>")) space:3
+    space:3 BOOT_WAIT_CPTRA_GO(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>CPTRA_GO</div>")) space:4 NO_ROM_CORNER((" "))
+    space:2 BAD_VALUE((" ")) space BOOT_ERROR(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_ERROR</div>")) space:4
+
+    RESET_EVENT -- "Warm / power-good reset*" --> BOOT_IDLE
+    BOOT_IDLE -- "!warm_reset" --> BOOT_OTP_FC
+    BOOT_OTP_FC -- "fc_opt_done" --> BOOT_LCC
+    BOOT_LCC -- "lc_done" --> BOOT_BREAKPOINT_CHECK
+    BOOT_BREAKPOINT_CHECK -- "mci_boot_seq_brkpoint" --> BOOT_BREAKPOINT
+    BOOT_BREAKPOINT_CHECK -- "!mci_boot_seq_brkpoint" --> ROM_SELECT
+    BOOT_BREAKPOINT -- "mci_bootfsm_go" --> ROM_SELECT
+    ROM_SELECT -- "!mcu_no_rom_config" --> BOOT_MCU
+    ROM_SELECT -- "mcu_no_rom_config" --- NO_ROM_CORNER
+    NO_ROM_CORNER --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "!from_mcu_reset*" --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "from_mcu_reset*" --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_CPTRA_GO -- "caliptra_boot_go" --> BOOT_CPTRA
+    BOOT_CPTRA --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_MCU_RST_REQ -- "mcu_rst_req" --> BOOT_HALT_MCU
+    BOOT_HALT_MCU -- "mcu_cpu_halt_ack_i" --> BOOT_WAIT_MCU_HALTED
+    BOOT_WAIT_MCU_HALTED -- "mcu_cpu_halt_status_i" --> BOOT_RST_MCU
+    BOOT_RST_MCU -- "reset_ready*" --> BOOT_MCU
+    BAD_VALUE -- "Bad FSM register value*" --> BOOT_ERROR
+
+    classDef normal fill:#17647f,stroke:#17647f,color:#fff,font-family:Arial
+    classDef error fill:#8b3030,stroke:#642222,color:#fff,font-family:Arial
+    classDef entry fill:none,stroke:none
+    classDef junction fill:#17647f,stroke:#17647f
+    class BOOT_IDLE,BOOT_OTP_FC,BOOT_LCC,BOOT_BREAKPOINT_CHECK,BOOT_BREAKPOINT,BOOT_MCU,BOOT_WAIT_CPTRA_GO,BOOT_CPTRA,BOOT_WAIT_MCU_RST_REQ,BOOT_HALT_MCU,BOOT_WAIT_MCU_HALTED,BOOT_RST_MCU normal
+    class BOOT_ERROR error
+    class RESET_EVENT,BAD_VALUE,SPACING entry
+    class ROM_SELECT,NO_ROM_CORNER junction
+```
+
+The reset-entry arrow applies to every state, including BOOT\_ERROR. `mci_pwrgood = 0` asynchronously resets the FSM to BOOT\_IDLE; `warm_reset` returns it to BOOT\_IDLE on a clock edge.
+
+| State | Output actions |
+| --- | --- |
+| `BOOT_IDLE` | `cptra_ss_rst_b_o = 0`, `mcu_rst_b = 0`, `cptra_rst_b = 0` |
+| `BOOT_OTP_FC` | `fc_opt_init = 1`, `cptra_ss_rst_b_o = 1` |
+| `BOOT_LCC` | `lc_init = 1` |
+| `BOOT_BREAKPOINT_CHECK` | None |
+| `BOOT_BREAKPOINT` | None |
+| `BOOT_MCU` | `mcu_rst_b = 1` |
+| `BOOT_WAIT_CPTRA_GO` | None |
+| `BOOT_CPTRA` | `cptra_rst_b = 1` |
+| `BOOT_WAIT_MCU_RST_REQ` | None |
+| `BOOT_HALT_MCU` | `mcu_cpu_halt_req_o = 1` |
+| `BOOT_WAIT_MCU_HALTED` | None |
+| `BOOT_RST_MCU` | `mcu_rst_b = 0`, `mcu_reset_once = 1` |
+| `BOOT_ERROR` | `mcu_rst_b = 0`, `cptra_rst_b = 0`, `cptra_ss_rst_b_o = 1`, `fsm_error = 1` |
+
+| Diagram label or reset signal | Meaning |
+| --- | --- |
+| `reset_ready*` | `min_mcu_rst_count_elapsed && mcu_sram_fw_exec_region_lock` |
+| `from_mcu_reset*` | `boot_fsm_prev == BOOT_RST_MCU`; `!from_mcu_reset*` means the comparison is false |
+| `Warm / power-good reset*` | Global reset entry: internal `warm_reset` forces idle on a clock edge, or `mci_pwrgood = 0` asynchronously resets the FSM |
+| `Bad FSM register value*` | The state register contains an unused encoding; selects BOOT\_ERROR unless overridden by reset |
+| `warm_reset` | Active-high, synchronized and delayed indication of active-low `cptra_ss_rst_b_i` (`mci_rst_b` inside MCI) |
 
 The MCI is responsible for bringing up the Caliptra SS. This is done via the MCI Boot Sequencer. The primary job of this FSM is to:
 
@@ -2568,6 +2667,8 @@ Setup assumes all interrupts to MCU and all\_error\_fatal are enabled via MCI CS
 4. At this point all interrupt registers within MCI register bank are cleared but all\_error\_fatal is still asserted.
 5. Reset MCI via mci\_rst\_b
    1. Clears the all\_error\_fatal output port
+
+**Boot-FSM exception:** HW\_ERROR\_FATAL.fsm\_error cannot be masked and must be handled by the SOC. Follow the reset-then-clear recovery in [Boot FSM Error Reset Behavior](#boot-fsm-error-reset-behavior), rather than the clear-then-reset order in the generic flow above.
 
 - **Example all\_error\_non\_fatal Flow**
 
@@ -2930,7 +3031,7 @@ The Below table illustrates various reset domains that we have in the design. We
 |-|-|-|-|-|
 | CPTRA_SS_PWRGD | Primary reset input corresponding to SOC Powergood |  cptra_ss_pwrgood_i || CPTRA_SS_PWRGD -> all |
 | CPTRA_SS_PRIM_RST | Primary reset input corresponding to SOC Warm Reset | cptra_ss_rst_b_i | caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q  -> LOW | CPTRA_SS_PRIM_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_RST <br> CPTRA_SS_PRIM_RST -> CPTRA_SS_MCU_RST |
-| CPTRA_SS_RST | Caliptra SS MCI Boot Sequencer generated reset used by various other SS level logic blocks and Caliptra Core | cptra_ss_mci_cptra_rst_b_i <br> mci_top_i.i_boot_seqr.cptra_ss_rst_b_o | mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH <br> mci_top_i.i_boot_seqr.early_warm_reset_warn -> HIGH <br> mci_top_i.i_boot_seqr.boot_fsm[3:0] = BOOT_IDLE <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q -> LOW <br> caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH | CPTRA_SS_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_SS_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_RST -> CPTRA_SS_MCU_RST <br> CPTRA_SS_RST -> CPTRA_DMI_NON_CORE_RST |
+| CPTRA_SS_RST | Caliptra SS MCI Boot Sequencer generated reset used by various other SS level logic blocks and Caliptra Core | cptra_ss_mci_cptra_rst_b_i <br> mci_top_i.i_boot_seqr.cptra_ss_rst_b_o | mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH <br> mci_top_i.i_boot_seqr.early_warm_reset_warn -> HIGH <br> mci_top_i.i_boot_seqr.boot_fsm = BOOT_IDLE <br> i3c.i3c.xrecovery_handler.xrecovery_executor.image_activated_o -> LOW <br> i3c.i3c.xrecovery_handler.xrecovery_executor.payload_available_q -> LOW <br> caliptra_top_dut.soc_ifc_top1.soc_ifc_reg_hwif_out.CPTRA_FUSE_WR_DONE.done.value -> HIGH | CPTRA_SS_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_SS_RST -> CPTRA_CORE_NON_CORE_RST <br> CPTRA_SS_RST -> CPTRA_CORE_UC_RST <br> CPTRA_SS_RST -> CPTRA_SS_MCU_RST <br> CPTRA_SS_RST -> CPTRA_DMI_NON_CORE_RST |
 | CPTRA_CORE_NON_CORE_RST | Caliptra Core Boot FSM generated reset used by various other Caliptra Core logics | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_noncore_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.rdc_clk_dis -> HIGH <br> caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.arc_IDLE -> HIGH <br> mci_top_i.i_boot_seqr.rdc_clk_dis -> HIGH | CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_PRIM_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_CORE_UC_RST <br> CPTRA_CORE_NON_CORE_RST -> CPTRA_SS_MCU_RST |
 | CPTRA_CORE_UC_RST | Caliptra Core Boot FSM generated microcontroller reset for Caliptra Core RISCV | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.cptra_uc_rst_b | caliptra_top_dut.soc_ifc_top1.i_soc_ifc_boot_fsm.fw_update_rst_window -> HIGH <br> caliptra_top_dut.aes_inst.aes_inst.u_aes_core.u_aes_control.gen_fsm[0].gen_fsm_p.u_aes_control_fsm_i.u_aes_control_fsm.aes_ctrl_cs[5:0] -> 6'b001001 <br> caliptra_top_dut.sha3.hsel_i -> LOW <br> caliptra_top_dut.aes_inst.aes_cif_req_dv -> LOW | |
 | CPTRA_SS_MCU_RST | Caliptra SS MCI Boot Sequencer generated microcontroller reset for Caliptra SS RISCV | mci_top_i.i_boot_seqr.mcu_rst_b | mci_top_i.i_boot_seqr.fw_update_rst_window -> HIGH <br> mci_top_i.i_mci_mcu_trace_buffer.mcu_trace_rv_i_valid_ip -> LOW | |

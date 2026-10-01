@@ -121,6 +121,7 @@ package mci_reg_pkg;
         mci_reg__rw_rw_sticky_hw__in_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__in_t nmi_pin;
         mci_reg__rw_rw_sticky_hw__in_t mcu_sram_dmi_axi_collision;
+        mci_reg__rw_rw_sticky_hw__in_t fsm_error;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
@@ -939,6 +940,7 @@ package mci_reg_pkg;
         mci_reg__rw_rw_sticky_hw__out_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__out_t nmi_pin;
         mci_reg__rw_rw_sticky_hw__out_t mcu_sram_dmi_axi_collision;
+        mci_reg__rw_rw_sticky_hw__out_t fsm_error;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{

@@ -188,6 +188,9 @@ initial begin
         else if(cptra_ss_test_name == "SMOKE_TEST_USB_AXI_FILTER") begin
             smoke_test_usb_axi_filter();
         end
+        else if(cptra_ss_test_name == "MCI_BOOT_FSM_GLITCH") begin
+            mci_boot_fsm_glitch();
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;

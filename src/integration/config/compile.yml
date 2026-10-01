@@ -203,6 +203,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
+      - $COMPILE_ROOT/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
     tops: [caliptra_ss_top_tb, ai3c_tests_bench]
   sim:
     pre_exec: 'echo "[PRE-EXEC] Copying ECC vector generator to ${pwd}" && cp $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/src/ecc/tb/ecc_secp384r1.exe . 

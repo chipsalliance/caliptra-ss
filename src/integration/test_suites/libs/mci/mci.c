@@ -1677,7 +1677,8 @@ void init_mask_dict(void) {
     add_mask_entry(SOC_MCI_TOP_MCI_REG_HW_ERROR_FATAL,
                    MCI_REG_HW_ERROR_FATAL_MCU_SRAM_ECC_UNC_MASK |
                    MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK |
-                   MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK);               
+                   MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK |
+                   MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK);
 
     // AGG_ERROR_FATAL
     add_mask_entry(SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL,

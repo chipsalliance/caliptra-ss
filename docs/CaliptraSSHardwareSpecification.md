@@ -92,6 +92,7 @@
       - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
     - [MCI Straps](#mci-straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
+      - [CSS-BootFSM Glitch Protection](#css-bootfsm-glitch-protection)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
@@ -1169,7 +1170,108 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset after the MCU reports that it has successfully halted.
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
-![](images/Caliptra-SS-BootFSM.png)
+The diagram below shows the MCI boot FSM in normal functional operation (`scan_mode == 0`). Circles name the encoded states; state actions are listed below. Edge labels name signals unless marked with `*`, which identifies a descriptive label or condition rather than a signal. 
+
+```mermaid
+---
+config:
+  theme: base
+  themeCSS: ".edgeLabel { font-family: Arial, sans-serif; } .flowchart-link { stroke-width: 2.5px; }"
+  themeVariables:
+    fontFamily: Arial, sans-serif
+    fontSize: 20px
+    lineColor: "#17647f"
+    edgeLabelBackground: "#ffffff"
+  block:
+    padding: 16
+---
+block-beta
+    columns 9
+    %% Fixed-size labels keep every encoded-state circle the same size.
+    space:3 RESET_EVENT((" ")) space:5
+    space:3 BOOT_IDLE(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_IDLE</div>")) space:5
+    space BOOT_RST_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>RST_MCU</div>")) space:3 BOOT_OTP_FC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_OTP_FC</div>")) space:3
+    BOOT_WAIT_MCU_HALTED(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_HALTED</div>")) space:5 BOOT_LCC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_LCC</div>")) space:2
+    BOOT_HALT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>HALT_MCU</div>")) space:2 SPACING["<div style='width:236px;height:196px'></div>"] space:2 BOOT_BREAKPOINT_CHECK(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT_<br/>CHECK</div>")) space:2
+    BOOT_WAIT_MCU_RST_REQ(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_RST_REQ</div>")) space:5 BOOT_BREAKPOINT(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT</div>")) space ROM_SELECT((" "))
+    space BOOT_CPTRA(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_CPTRA</div>")) space:3 BOOT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_MCU</div>")) space:3
+    space:3 BOOT_WAIT_CPTRA_GO(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>CPTRA_GO</div>")) space:4 NO_ROM_CORNER((" "))
+    space:2 BAD_VALUE((" ")) space BOOT_ERROR(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_ERROR</div>")) space:4
+
+    RESET_EVENT -- "Warm / power-good reset*" --> BOOT_IDLE
+    BOOT_IDLE -- "!warm_reset" --> BOOT_OTP_FC
+    BOOT_OTP_FC -- "fc_opt_done" --> BOOT_LCC
+    BOOT_LCC -- "lc_done" --> BOOT_BREAKPOINT_CHECK
+    BOOT_BREAKPOINT_CHECK -- "mci_boot_seq_brkpoint" --> BOOT_BREAKPOINT
+    BOOT_BREAKPOINT_CHECK -- "!mci_boot_seq_brkpoint" --> ROM_SELECT
+    BOOT_BREAKPOINT -- "mci_bootfsm_go" --> ROM_SELECT
+    ROM_SELECT -- "!mcu_no_rom_config" --> BOOT_MCU
+    ROM_SELECT -- "mcu_no_rom_config" --- NO_ROM_CORNER
+    NO_ROM_CORNER --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "!from_mcu_reset*" --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "from_mcu_reset*" --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_CPTRA_GO -- "caliptra_boot_go" --> BOOT_CPTRA
+    BOOT_CPTRA --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_MCU_RST_REQ -- "mcu_rst_req" --> BOOT_HALT_MCU
+    BOOT_HALT_MCU -- "mcu_cpu_halt_ack_i" --> BOOT_WAIT_MCU_HALTED
+    BOOT_WAIT_MCU_HALTED -- "mcu_cpu_halt_status_i" --> BOOT_RST_MCU
+    BOOT_RST_MCU -- "reset_ready*" --> BOOT_MCU
+    BAD_VALUE -- "Bad FSM register value*" --> BOOT_ERROR
+
+    classDef normal fill:#17647f,stroke:#17647f,color:#fff,font-family:Arial
+    classDef error fill:#8b3030,stroke:#642222,color:#fff,font-family:Arial
+    classDef entry fill:none,stroke:none
+    classDef junction fill:#17647f,stroke:#17647f
+    class BOOT_IDLE,BOOT_OTP_FC,BOOT_LCC,BOOT_BREAKPOINT_CHECK,BOOT_BREAKPOINT,BOOT_MCU,BOOT_WAIT_CPTRA_GO,BOOT_CPTRA,BOOT_WAIT_MCU_RST_REQ,BOOT_HALT_MCU,BOOT_WAIT_MCU_HALTED,BOOT_RST_MCU normal
+    class BOOT_ERROR error
+    class RESET_EVENT,BAD_VALUE,SPACING entry
+    class ROM_SELECT,NO_ROM_CORNER junction
+```
+
+The reset-entry arrow applies to every state, including BOOT\_ERROR. `mci_pwrgood = 0` asynchronously resets the FSM to BOOT\_IDLE; `warm_reset` returns it to BOOT\_IDLE on a clock edge.
+
+| State | Output actions |
+| --- | --- |
+| `BOOT_IDLE` | `cptra_ss_rst_b_o = 0`, `mcu_rst_b = 0`, `cptra_rst_b = 0` |
+| `BOOT_OTP_FC` | `fc_opt_init = 1`, `cptra_ss_rst_b_o = 1` |
+| `BOOT_LCC` | `lc_init = 1` |
+| `BOOT_BREAKPOINT_CHECK` | None |
+| `BOOT_BREAKPOINT` | None |
+| `BOOT_MCU` | `mcu_rst_b = 1` |
+| `BOOT_WAIT_CPTRA_GO` | None |
+| `BOOT_CPTRA` | `cptra_rst_b = 1` |
+| `BOOT_WAIT_MCU_RST_REQ` | None |
+| `BOOT_HALT_MCU` | `mcu_cpu_halt_req_o = 1` |
+| `BOOT_WAIT_MCU_HALTED` | None |
+| `BOOT_RST_MCU` | `mcu_rst_b = 0`, `mcu_reset_once = 1` |
+| `BOOT_ERROR` | `mcu_rst_b = 0`, `cptra_rst_b = 0`, `cptra_ss_rst_b_o = 1`, `fsm_error = 1` |
+
+
+| Diagram label or reset signal | Meaning |
+| --- | --- |
+| `reset_ready*` | `min_mcu_rst_count_elapsed && mcu_sram_fw_exec_region_lock` |
+| `from_mcu_reset*` | `boot_fsm_prev == BOOT_RST_MCU`; `!from_mcu_reset*` means the comparison is false |
+| `Warm / power-good reset*` | Global reset entry: `warm_reset` forces idle on a clock edge, or `mci_pwrgood = 0` asynchronously resets the FSM |
+| `Bad FSM register value*` | The state register contains an unused encoding; selects BOOT\_ERROR unless overridden by reset |
+| `warm_reset` | Active-high, synchronized and delayed indication of active-low `cptra_ss_rst_b_i` (`mci_rst_b` inside MCI) |
+
+#### CSS-BootFSM Glitch Protection
+
+The CSS-BootFSM uses state encodings with a minimum Hamming distance of 5 to detect state-register corruption. This protection detects invalid state encodings; it does not detect corruption that changes one valid encoding into another.
+
+In normal operation (`scan_mode == 0`), detection of an invalid state encoding causes the following:
+
+1. The FSM enters BOOT\_ERROR and holds MCU and Caliptra in reset, without the MCU halt handshake.
+2. Subsystem reset (`cptra_ss_rst_b_o`) is deasserted so the SOC can access MCI registers.
+3. HW\_ERROR\_FATAL.fsm\_error is set and `all_error_fatal` is asserted. This error cannot be masked.
+4. HW\_FLOW\_STATUS.boot\_fsm reports 0xF. Normal-state values remain 0x0 through 0xB; the CSR and DMI addresses are unchanged.
+
+**Recovery**
+
+1. Apply warm reset or cycle power-good to return the FSM to BOOT\_IDLE and clear `all_error_fatal`. 
+2. After warm reset, clear the retained HW\_ERROR\_FATAL.fsm\_error bit using write-one-to-clear (W1C). Power-good reset clears this bit automatically.
+
+A software clear alone does not exit BOOT\_ERROR or clear the fatal output. The status bit can be set again while the FSM remains in BOOT\_ERROR. 
 
 ### Watchdog Timer
 
@@ -1551,6 +1653,10 @@ MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any
 
 ![](images/MCI-error-agg.png)
 
+MCI internal hardware fatal errors are reported in HW\_ERROR\_FATAL and can be masked through internal\_hw\_error\_fatal\_mask, except for fsm\_error (bit 3). Its mask field, mask\_fsm\_error, is read-only 0. This boot-FSM error does not generate an MCU interrupt; the SOC handles it while MCU and Caliptra are held in reset.
+
+Clearing a fatal status bit does not deassert `all_error_fatal`; reset is required. For fsm\_error, follow the reset-then-W1C steps in [CSS-BootFSM Glitch Protection](#css-bootfsm-glitch-protection).
+
 Aggregate error register assignments are documented in the register specification: **TODO:** Add a link to rdl -> html file
 
 Regions of 6 bits in the aggregate error registers are reserved for each component.
@@ -1570,6 +1676,8 @@ Masks are used to set the severity of each error for these components. These can
 MCI also generates error signals for its own internal blocks, specifically for MCU SRAM & mailboxes double bit ECC and WDT.
 
 ![](images/MCI-internal-error.png)
+
+**Masking exception:** HW\_ERROR\_FATAL.fsm\_error bypasses the programmable hardware-fatal masking shown in this diagram and cannot be masked.
 
 ### MCI Fuse Storage Support
 
