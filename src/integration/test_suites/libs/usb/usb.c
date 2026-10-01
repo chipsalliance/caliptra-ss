@@ -98,7 +98,7 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
 // Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM
 // writes). Used by the hook-based (OCP/host) enumeration path.
 const uint32_t usb_default_device_descriptor[5] = {
-    0x00020112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
+    0x02000112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
     0x40000000,  // bDevClass=0, bDevSubClass=0, bDevProto=0, bMaxPktSz0=64
     0x00000000,  // idVendor=0x0000, idProduct=0x0000
     0x00000100,  // bcdDevice=0x0100, iManufacturer=0
@@ -412,7 +412,7 @@ void boot_usb_core_hub(void) {
     // from literal masks and written through usb_devcmdstat_write() so LPM_SUP
     // is (re-)forced rather than cleared.
     reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
-             | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
+    //         | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
              | DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK
              | DEV0_CSR_DEVCMDSTAT_DCON_MASK;
     usb_devcmdstat_write(reg_data);
