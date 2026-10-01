@@ -30,3 +30,4 @@
 `include "smoke_test_mci_brkpoint_axi.svh"
 `include "smoke_test_mcu_no_rom_config.svh"
 `include "smoke_test_mcu_no_rom_config_brkpoint.svh"
+`include "mci_boot_fsm_glitch.svh"
