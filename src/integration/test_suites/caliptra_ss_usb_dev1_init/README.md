@@ -45,7 +45,7 @@ next SETUP is not silently dropped.
 | File | Description |
 |------|-------------|
 | `caliptra_ss_usb_dev1_init_sequence.svh` | Hub-aware SVT VIP enumeration sequence |
-| `caliptra_ss_usb_basic_utmi_test.svh` | UVM test class (selects this sequence as default_sequence; note the naming quirk - firmware runs under `+UVM_TESTNAME=caliptra_ss_usb_basic_utmi_test`, not a name-matched test) |
+| `caliptra_ss_usb_dev1_init_test.svh` | UVM test class selecting the dev1 sequence as `default_sequence` |
 | `caliptra_ss_usb_dev1_init.c` | MCU firmware: hub bring-up + EP0 event loop |
 | `caliptra_ss_usb_dev1_init.yml` | Simulation run config |
 
