@@ -402,7 +402,7 @@ This feature allows streaming data or firmware by MCU over the AXI bus of the I3
 The AXI Streaming Boot flow reuses the logic already present in the I3C core used in the Caliptra-SS design, with a runtime option essentially bypassing most of the I3C core communication logic (including the I3C recovery flow logic).
 The loopback functionality is configurable via the [REC_INTF_CFG](https://chipsalliance.github.io/i3c-core/registers.html#rec-intf-cfg-register) CSR which is set to I3C mode by default.
 Streaming boot CSRs are accessible over AXI.
-The transactions to the I3C core may be filtered using the AXI ID field.
+In both I3C and AXI streaming boot modes, I3C AXI access must comply with [I3C AXI USER Filtering](CaliptraSSIntegrationSpecification.md#i3c-axi-user-filtering).
 The logic is implemented so that the streaming boot implementation in the Caliptra core (HW & ROM) can operate without any changes.
 In order to enable setting W1C streaming boot registers, AXI streaming mode introduces an additional register - `REC_INTF_REG_W1C_ACCESS`.
 
@@ -1954,13 +1954,13 @@ All identities in an allowlist receive the same filter-level read/write authoriz
 
 ## AXI USER filtering
 
-The Combo and DEV1 policies have independent allowlists and active-high filtering enables. With filtering enabled, a read's `ARUSER` or a write's `AWUSER` must exactly match an entry in the corresponding allowlist. Disabling a filter permits all identities through that filter.
+The Combo and DEV1 policies have independent allowlists and active-high filtering enables. With filtering enabled, a read's `ARUSER` or a write's `AWUSER` must exactly match an entry in the corresponding allowlist. Disabling a filter permits all identities through that filter; see [USB and I3C AXI Access Control](CaliptraSSIntegrationSpecification.md#usb-and-i3c-axi-access-control).
 
 The decision is captured when the read or write address is accepted and retained for the entire request. Later policy changes do not revoke already accepted requests. A denied request never accesses the target: a denied read returns zero data and `SLVERR` on every requested beat; a denied write discards all requested data beats and returns one `SLVERR` response.
 
 Every allowlist entry participates; there are no per-entry enable bits. 
 
-Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [AXI USER Filtering](CaliptraSSIntegrationSpecification.md#axi-user-filtering).
+Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [USB and I3C AXI Access Control](CaliptraSSIntegrationSpecification.md#usb-and-i3c-axi-access-control).
 
 ## DWORD-only accesses
 

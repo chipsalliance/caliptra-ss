@@ -26,6 +26,7 @@
     - [Reset](#reset)
     - [Power Good Signal](#power-good-signal)
     - [Connecting AXI Interconnect](#connecting-axi-interconnect)
+      - [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control)
     - [Caliptra Subsystem Reference Register Map](#caliptra-subsystem-reference-register-map)
     - [FW Execution Control Connections](#fw-execution-control-connections)
     - [Caliptra Core Reset Control](#caliptra-core-reset-control)
@@ -145,6 +146,7 @@
   - [Parameters and defines](#parameters-and-defines)
   - [Interface](#interface-3)
   - [I3C Integration Requirements](#i3c-integration-requirements)
+    - [I3C AXI USER Filtering](#i3c-axi-user-filtering)
   - [Programming Sequence](#programming-sequence)
     - [Programming Sequence from AXI Side](#programming-sequence-from-axi-side)
     - [Programming Sequence from GPIO Side](#programming-sequence-from-gpio-side)
@@ -681,7 +683,7 @@ Integrator must connect following list of manager and subordinates to axi interc
   - AxREGION
   - AxQOS
 
-- AXI USER width is 32-bits for all AXI interfaces in the Caliptra Subsystem. Only the Address User signals are used (ARUSER and AWUSER) for secure access filtering. Other USER signals are either tied to 0 or not used (WUSER, RUSER, BUSER). ARUSER and AWUSER must be passed unmodified through the AXI interconnect to all AXI subordinates in the Subsystem. Each logic block inside the Subsystem is responsible for performing its own AXI User filtering based on access privileges. AXI interconnect is only responsible for passing the unmodified signals along with the transaction requests, not for performing any access filtering.
+- AXI USER width is 32-bits for all AXI interfaces in the Caliptra Subsystem. Only the Address User signals are used (ARUSER and AWUSER) for secure access filtering. Other USER signals are either tied to 0 or not used (WUSER, RUSER, BUSER). ARUSER and AWUSER must be passed unmodified through the AXI interconnect to all AXI subordinates in the Subsystem. Each logical block enforces its own AXI USER access restrictions. The AXI interconnect must additionally block untrusted AXI managers from reaching Caliptra Subsystem subordinates.
 
 - AXI ID width at each MCU manager interface must not be modified from the configured values. ID width for each of the MCU AXI Manager interfaces is defined by the <IF_NAME>_BUS_TAG parameter from this file: [css_mcu0_el2_param.vh](../src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_param.vh). Port connections may be seen in [mcu_top.sv](../src/mcu/rtl/mcu_top.sv). ID Width of the Caliptra DMA AXI Manager interface is defined in [soc_ifc_pkg.sv](https://github.com/chipsalliance/caliptra-rtl/blob/main/src/soc_ifc/rtl/soc_ifc_pkg.sv).
   * IFU_BUS_TAG: 3. Interconnect should support ID values 0-7.
@@ -731,6 +733,12 @@ Integrator must connect following list of manager and subordinates to axi interc
   - [soc_address_map_defines.svh](../src/integration/rtl/soc_address_map_defines.svh)
 
 For USB-specific base alignment, transfer restrictions, and filtering, see [USB Integration Requirements](#usb-integration-requirements).
+
+#### USB and I3C AXI Access Control
+
+Production parts must enforce an irrevocable access policy for USB and I3C. Integrators must enable the supplied AXI USER filters unless the SoC AXI interconnect mapping/connectivity removes all access paths from unauthorized accessors to those interfaces. This applies to all USB and I3C AXI interfaces.
+
+Authorized accessors are defined in [USB AXI USER Filtering](#axi-user-filtering) and [I3C AXI USER Filtering](#i3c-axi-user-filtering).
 
 ### Caliptra Subsystem Reference Register Map
 
@@ -2797,11 +2805,15 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 ## I3C Integration Requirements
 
-  1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect.
+  1. Connect the `cptra_ss_i3c_s_axi_if` with AXI interconnect and comply with [I3C AXI USER Filtering](#i3c-axi-user-filtering).
   2. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#1** to initialize the I3C targets.
   3. Follow the programming sequence described in [Programming Sequence from AXI Side](#programming-sequence-from-axi-side) **Point#2** to set both I3C target device with static addresses. **Note**, this is not required if I3C Host device is using the CCC `ENTDAA` for initializing the dynamic address to both targets.
   4. If no external I3C connect `cptra_ss_i3c_recovery_image_activated_o` directly to `cptra_ss_i3c_recovery_image_activated_i`. If there is an external I3C `cptra_ss_i3c_recovery_image_activated_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_image_activated_i`.
   5. If no external I3C connect `cptra_ss_i3c_recovery_payload_available_o` directly to `cptra_ss_i3c_recovery_payload_available_i`. If there is an external I3C `cptra_ss_i3c_recovery_payload_available_o` can be combined with or completely replaced with SOC logic and connected to `cptra_ss_i3c_recovery_payload_available_i`.
+
+### I3C AXI USER Filtering
+
+I3C AXI access must comply with [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control). `cptra_i3c_axi_user_id_filtering_enable_i` enables the filter. The allowlist is fixed: `cptra_ss_strap_caliptra_dma_axi_user_i` The SoC must prevent unauthorized agents from issuing AXI USER `0` to I3C.
 
 ## Programming Sequence
 
@@ -2914,18 +2926,14 @@ Byte, halfword, unaligned, and partial- or zero-strobe writes are not permitted;
 
 ### AXI USER Filtering
 
-Filter behavior is defined in the hardware specification's [AXI USER filtering](CaliptraSSHardwareSpecification.md#axi-user-filtering) section. Configure the allowlists as follows:
+USB AXI access must comply with [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control). Policy groups and filter behavior are defined in the hardware specification's [Ownership and access](CaliptraSSHardwareSpecification.md#ownership-and-access) and [AXI USER filtering](CaliptraSSHardwareSpecification.md#axi-user-filtering) sections.
 
-- Combo allowlist: include `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i`.
-- DEV1 allowlist: include the designated SoC firmware owner's identity, and `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access.
+| Policy | Filter enable | Allowlist | Authorized identities |
+|:-------|:--------------|:----------|:----------------------|
+| Combo | `cptra_ss_usb_combo_enable_axi_user_filtering_i` | `cptra_ss_usb_combo_priv_axi_users_i` | `cptra_ss_strap_mcu_lsu_axi_user_i` and `cptra_ss_strap_caliptra_dma_axi_user_i` |
+| DEV1 | `cptra_ss_usb_dev1_enable_axi_user_filtering_i` | `cptra_ss_usb_dev1_priv_axi_users_i` | Designated SoC firmware owner, plus `cptra_ss_strap_mcu_lsu_axi_user_i` only if MCU needs DEV1 access |
 
-The USB AXI filtering configuration is four inputs: the filter enables `cptra_ss_usb_combo_enable_axi_user_filtering_i` and `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, and the allowlists `cptra_ss_usb_combo_priv_axi_users_i` and `cptra_ss_usb_dev1_priv_axi_users_i`.
-
-**Prefer static straps/tie-offs for both filter enables and allowlists.**
-
-If the configuration is programmable, MCU ROM shall program and lock the SoC registers that drive these inputs before any other FW executes. The configuration shall be retained and locked across warm reset.
-
-Fill every allowlist slot with an intended authorized identity, repeating an entry for spare slots rather than zero-filling them.
+Fill every allowlist slot with an authorized identity, repeating an entry for spare slots rather than leaving them zero.
 
 # CDC analysis and constraints
 
@@ -3143,6 +3151,7 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_Axi_9         | MCI                   | For each instantiated MCI mailbox, integrators must define the subset of trusted AXI users permitted to access it. Before any SoC agent uses the mailbox, integrators must either configure the trusted-user list at integration time with `SET_MCU_MBOX{0,1}_AXI_USER_INTEG` and `MCU_MBOX{0,1}_VALID_AXI_USER`, or program and lock `MBOX*_VALID_AXI_USER` with `MBOX*_AXI_USER_LOCK`. All identities outside the defined trusted-user subset must remain unauthorized. See [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users).                                                                                          | Threat Model |
 | CSS_Axi_10        | Caliptra Subsystem    | The SoC must drive a defined 32-bit ARUSER or AWUSER identity on every AXI request that can reach an AXI_USER-filtering Caliptra Subsystem block: MCI (including MCU SRAM and MCI mailboxes), Fuse Controller, I3C, or USB. The AXI_USER identity must identify the originating AXI agent and must not be replaced with other transaction metadata. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements. See [Connecting AXI Interconnect](#connecting-axi-interconnect). | Threat Model |
 | CSS_Axi_11        | Caliptra Subsystem    | AXI_USER identities configured as authorized users for MCI, Fuse Controller, I3C, or USB must uniquely identify a single AXI agent or trust domain. The SoC must prevent an agent from generating an ARUSER or AWUSER value assigned to another agent, and must ensure that every possible AXI_USER value generated by an unauthorized agent cannot match a configured authorized identity. This requirement is additive to, and does not replace, the Caliptra Core AXI_USER requirements.    | Threat Model |
+| CSS_Axi_12        | USB, I3C              | Production parts must enforce an irrevocable AXI access policy using the supplied AXI USER filters and/or SoC AXI interconnect mapping/connectivity that removes all access paths from unauthorized accessors. See [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control). | Threat Model |
 | CSS_USB_1         | USB                   | All USB AXI filtering inputs (`cptra_ss_usb_combo_enable_axi_user_filtering_i`, `cptra_ss_usb_dev1_enable_axi_user_filtering_i`, `cptra_ss_usb_combo_priv_axi_users_i`, `cptra_ss_usb_dev1_priv_axi_users_i`) shall follow the requirements in [AXI USER Filtering](#axi-user-filtering). | Threat Model: prevent later firmware from changing USB AXI authorization |
 | CSS_USB_2         | USB                   | MCU LSU and Caliptra DMA shall be authorized Combo accessors. The designated SoC firmware owner shall be a DEV1 accessor; MCU LSU is an optional DEV1 accessor. See [AXI USER Filtering](#axi-user-filtering) for complete guidance. | Functionality: preserve controller ownership and recovery access |
 | CSS_USB_3         | USB                   | [AXI Access Restrictions](#axi-access-restrictions) must be enforced on all four USB AXI interfaces. | Threat Model |
@@ -3195,6 +3204,7 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_I3C_3         | I3C                   | I3C targets must be programmed with STATIC address and a unique set of PID/BCR/DCR CSRs via AXI                                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
 | CSS_I3C_4         | I3C                   | The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface; this selection is mutually exclusive and cannot be changed dynamically after boot.                                                                                                                                                                                                                                                                              | Functionality |
 | CSS_I3C_5         | I3C                   | If the SoC requires both AXI Recovery and standard I3C Target functionality simultaneously, a second I3C core must be instantiated outside of Caliptra SS.                                                                                                                                                                                                                                                                                                                                | Functionality |
+| CSS_I3C_6         | I3C                   | I3C AXI access shall follow [I3C AXI USER Filtering](#i3c-axi-user-filtering), including the restriction on AXI USER `0`. | Threat Model |
 | CSS_Tech_1        | MCU                   | `css_mcu0_dmi_jtag_to_core_sync.v` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves reset behavior. The replacement must generate exactly one `clk`-cycle `reg_en` and `reg_wr_en` pulse for each synchronized JTAG read or write request. See CSS_Tech_6 for validation requirements.                                                                                                                            | Timing |
 | CSS_Tech_2        | MCU                   | Technology-specific clock gaters must replace `css_mcu0_rvclkhdr`/`css_mcu0_rvoclkhdr` in `css_mcu0_beh_lib.sv` or set TECH_SPECIFIC_EC_RV_ICG.                                                                                                                                                                                                                                                                                                                                           | Timing |
 | CSS_Tech_3        | MCU                   | `css_mcu0_rvsyncss` in `css_mcu0_beh_lib.sv` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves width, reset polarity, and reset values. See CSS_Tech_6 for validation requirements.                                                                                                                                                                                                                                | Timing |
