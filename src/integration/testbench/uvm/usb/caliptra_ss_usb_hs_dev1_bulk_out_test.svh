@@ -16,7 +16,7 @@
 // USB High-Speed device bulk OUT test.
 // DUT is the USB device controller operating as an HS device.
 // VIP host (high_speed_capable=1, default) performs HS chirp then sends
-// 4096 bytes of bulk OUT data on EP1. MCU firmware verifies word[i]==i.
+// 2048 bytes of bulk OUT data on EP1. MCU firmware verifies word[i]==i.
 // Usage:
 //   +UVM_TESTNAME=caliptra_ss_usb_hs_dev1_bulk_out_test
 // =============================================================================
