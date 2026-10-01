@@ -250,6 +250,11 @@ module caliptra_ss_top_w_stub #(
         .rst_b(cptra_ss_rst_b_i)
     );
     assign cptra_ss_mcu_mbox1_sram_req_if.resp.rdata = '0;
+    mci_mcu_sram_if cptra_ss_mcu_rom_patch_sram_req_if(
+        .clk(cptra_ss_clk_i),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+    assign cptra_ss_mcu_rom_patch_sram_req_if.resp.rdata = '0;
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export();
     assign cptra_ss_mcu0_el2_mem_export.wb_packeddout_pre = '0;
     assign cptra_ss_mcu0_el2_mem_export.wb_dout_pre_up = '0;
@@ -687,6 +692,7 @@ module caliptra_ss_top_w_stub #(
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_soc_mcu_mbox0_data_avail,
         .cptra_ss_soc_mcu_mbox1_data_avail,

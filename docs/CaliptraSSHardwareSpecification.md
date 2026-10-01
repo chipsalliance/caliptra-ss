@@ -1602,6 +1602,19 @@ MCI tracks three different ```RESET_REASON``` in its register bank:
 
 ```FW_EXEC_CTLR[2]``` is an input signal to the MCI and is sent as an interrupt (```notif_cptra_mcu_reset_req_sts```) to the MCU. This interrupt should be cleared by the MCU before it requests a reset with ```RESET_REQUEST.req```. After a warm reset, setting ```FW_EXEC_CTRL[2]``` will trigger an interrupt to the MCU, indicating that the MCU should reset itself with ```RESET_REQUEST.req```. After the first MCU reset request, when this input signal is cleared, it triggers the interrupt. The MCU is held in reset until ```FW_EXEC_CTRL[2]``` is set, with a minimum reset time determined by the ```MIN_MCU_RST_COUNTER``` MCI parameter.
 
+### MCU ROM Patch SRAM
+
+MCI hosts a dedicated MCU ROM patch SRAM so integrators can fix MCU ROM bugs on pre-production parts. MCU ROM loads the patch (for example from the vendor non-secret fuse partition) and fetches patch instructions from it.
+
+A patched device must never run in production or provision device identity, so hardware enforces:
+
+- **Write window:** MCU LSU only, and only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV, UDS is not provisioned, and Caliptra core is still in reset. The window closes when the MCI boot sequencer releases Caliptra core.
+- **Patch flag:** the first accepted write sets a flag that is only cleared by cold reset. The flag is stable before Caliptra core boots.
+- **Fetch:** MCU IFU/LSU reads are allowed only while the flag is set and the LC/UDS conditions still hold, so a stale patch cannot run after an LC transition to PROD.
+- **Identity:** while the flag is set, the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
+
+See the Integration Specification for the address map and interface details.
+
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI.

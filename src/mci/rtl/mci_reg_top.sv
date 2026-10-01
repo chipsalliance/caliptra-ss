@@ -151,6 +151,8 @@ module mci_reg_top
     input  logic        mcu_sram_single_ecc_error,
     input  logic        mcu_sram_double_ecc_error,
     input  logic        mcu_sram_dmi_axi_collision_error,
+    // MCU ROM patch SRAM specific signals
+    input  logic        mcu_rom_patch_sram_double_ecc_error,
     output logic        mcu_sram_dmi_uncore_en,
     output logic        mcu_sram_dmi_uncore_wr_en,
     output logic [ 6:0] mcu_sram_dmi_uncore_addr,
@@ -494,7 +496,8 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   &  32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                                   mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   &  32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value)     )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value,
+                                                                                                                                  mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
@@ -541,7 +544,8 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & 32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                            mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   & 32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value         ))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value,
+                                                                                                                           mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
@@ -858,17 +862,20 @@ always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_doubl
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  = boot_fsm_error;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we  = mcu_rom_patch_sram_double_ecc_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next  = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next  = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
                                             (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next)  ||
                                             (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next) ||
-                                            (mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next); // Not maskable
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next) || // Not maskable
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next);
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL

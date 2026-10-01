@@ -48,6 +48,9 @@ module mci_top_tb
   // Mbox0 SRAM Interface
   mci_mcu_sram_if#(.ADDR_WIDTH(MCI_TB_MBOX1_ADDR_W)) mcu_mbox1_sram_req_if(.clk('0), .rst_b('0)); 
 
+  // MCU ROM Patch SRAM Interface
+  mci_mcu_sram_if mci_mcu_rom_patch_sram_req_if(.clk('0), .rst_b('0));
+
   mci_top
   #(
     .MCU_SRAM_SIZE_KB(MCI_TB_MCU_SRAM_SIZE_KB), 
@@ -119,6 +122,9 @@ module mci_top_tb
     .fc_opt_done('0),
     .fc_opt_init(),
 
+    // MCU ROM patch
+    .uds_provisioned_i('0),
+    .mcu_rom_patch_active_o(),
 
     // MCU SRAM Interface
     .mci_mcu_sram_req_if,
@@ -127,7 +133,10 @@ module mci_top_tb
     .mcu_mbox0_sram_req_if,
 
     // Mbox1 SRAM Interface
-    .mcu_mbox1_sram_req_if 
+    .mcu_mbox1_sram_req_if,
+
+    // MCU ROM Patch SRAM Interface
+    .mci_mcu_rom_patch_sram_req_if
 
   );
 
