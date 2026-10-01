@@ -28,6 +28,9 @@
 module caliptra_ss_top_tb_services
 import css_mcu0_el2_pkg::*;
 import tb_top_pkg::*; 
+`ifndef VERILATOR
+import uvm_pkg::*;
+`endif
 #(
   parameter UVM_TB = 0,
   `include "css_mcu0_el2_param.vh"
@@ -190,6 +193,20 @@ import tb_top_pkg::*;
             cptra_ss_mci_generic_input_wires_o <= {$urandom(), $urandom()};
             @(negedge clk);
             cptra_ss_mci_generic_input_wires_o <= 'h0;
+        end
+    end
+
+    // USB interrupt endpoint number published by firmware over DEBUG_OUT.
+    // Payload is packed as { ep_num[15:8], TB_CMD_USB_INT_EP[7:0] }. The
+    // opcode 0xf3 lies outside the printable console window (0x06..0x7e), so
+    // it will not corrupt the VPRINTF log. The value is broadcast into the
+    // uvm_config_db under "usb_int_ep_num" for the host sequence to read.
+    int usb_int_ep_num;
+    always @(negedge clk) begin
+        if (rst_l && mailbox_write && (mailbox_data[7:0] == TB_CMD_USB_INT_EP)) begin
+            usb_int_ep_num = mailbox_data[15:8];
+            uvm_config_db#(int)::set(null, "*", "usb_int_ep_num", usb_int_ep_num);
+            $display("USB interrupt endpoint randomized by firmware to EP%0d", usb_int_ep_num);
         end
     end
 
