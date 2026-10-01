@@ -812,7 +812,7 @@ class usb_axi_filter_seq extends usb_base_seq;
       end
       if (target_stats[target].writes != exp_writes || target_stats[target].reads != exp_reads ||
           target_stats[target].comparisons != exp_comparisons || denied_writes[target] != exp_denied || denied_reads[target] != exp_denied) begin
-        `uvm_fatal("USB_FILTER_COUNTS", $sformatf("%s totals ok w/r/c=%0d/%0d/%0d denied w/r=%0d/%0d, expected %0d/%0d/%0d and %0d/%0d", usb_target_name(target), target_stats[target].writes, target_stats[target].reads, target_stats[target].comparisons, denied_writes[target], denied_reads[target], exp_writes, exp_reads, exp_comparisons, exp_denied, exp_denied))
+        `uvm_fatal("USB_FILTER_COUNTS", $sformatf("%s totals mismatch: accepted w/r/c=%0d/%0d/%0d denied w/r=%0d/%0d, expected %0d/%0d/%0d and %0d/%0d", usb_target_name(target), target_stats[target].writes, target_stats[target].reads, target_stats[target].comparisons, denied_writes[target], denied_reads[target], exp_writes, exp_reads, exp_comparisons, exp_denied, exp_denied))
       end
       `uvm_info("USB_FILTER_TARGET_DONE", $sformatf("%s ok w/r/c=%0d/%0d/%0d denied w/r=%0d/%0d", usb_target_name(target), target_stats[target].writes, target_stats[target].reads, target_stats[target].comparisons, denied_writes[target], denied_reads[target]), UVM_LOW)
     end
