@@ -14,8 +14,8 @@
 //
 // Runs the standalone USB endpoint-skip scenario against the real compound USB
 // DUT, driving the USB DMA through its READ_EPINFO_SKIP and
-// WAIT_ON_GNT_FOR_SKIP_UPDATE states. The bulk OUT transfer targets the EP1
-// OUT entry (endpoint_cfg[2]) of the shared usb_env_cfg device template.
+// WAIT_ON_GNT_FOR_SKIP_UPDATE states. The target endpoint (EP1 OUT) is resolved
+// by protocol identity from the default usb_env_cfg endpoint configuration.
 //
 // Starts usb_dev_skip_seq on the environment virtual sequencer and reports
 // success only after the skip writeback and the post-skip recovery transfer
@@ -25,17 +25,14 @@ class usb_dev_skip_test extends usb_base_test;
 
   function new(string name = "usb_dev_skip_test", uvm_component parent = null);
     super.new(name, parent);
-  endfunction
-
-  virtual function time selected_test_timeout();
-    return USB_DEV_SKIP_TEST_TIMEOUT;
+    test_timeout = 3ms;
   endfunction
 
   task run_phase(uvm_phase phase);
     usb_dev_skip_seq skip_sequence;
 
     phase.raise_objection(this);
-    `uvm_info("USB_SKIP_TEST", $sformatf("Starting real-traffic USB endpoint-skip test; timeout=%0t", selected_test_timeout()), UVM_LOW)
+    `uvm_info("USB_SKIP_TEST", $sformatf("Starting real-traffic USB endpoint-skip test; timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
     if (env.host_agent == null || env.host_agent.virt_sequencer == null) begin
       `uvm_fatal("USB_SKIP_TEST", "The endpoint-skip scenario requires an active SVT host agent")

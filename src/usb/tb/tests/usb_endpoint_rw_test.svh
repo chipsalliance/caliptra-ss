@@ -26,7 +26,7 @@ class usb_endpoint_rw_test extends usb_base_test;
   task run_phase(uvm_phase phase);
     usb_endpoint_rw_seq seq;
     phase.raise_objection(this);
-    `uvm_info("USB_TEST", $sformatf("Starting endpoint read/write test; whole-test timeout=%0t", USB_TEST_TIMEOUT), UVM_LOW)
+    `uvm_info("USB_TEST", $sformatf("Starting endpoint read/write test; whole-test timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
     seq = usb_endpoint_rw_seq::type_id::create("endpoint_rw_sequence");
     seq.start(env.virtual_sequencer);

@@ -26,13 +26,14 @@
 // utility task:
 //
 //   resolve_host_context();
-//   begin_transfer_watch();
+//   begin_transfer_watch("label", timeout);
 //   start_item(...); ... randomize ... ; finish_item(...);
-//   end_transfer_watch("label", timeout, completed_object);
+//   end_transfer_watch(completed_object);
 //
 // begin_transfer_watch() returns only after its observer is blocked on the
-// event, so a completion that arrives immediately after finish_item() cannot be
-// missed.
+// event, so a completion that arrives immediately after finish_item() cannot
+// be missed. The watchdog remains active through submission and completion;
+// events and finish_item returning do not restart the budget.
 //
 // Event correlation: the SVT protocol layer reports transfer completions as a
 // stream, and the ended event does not identify which submitted item it
@@ -65,6 +66,12 @@ class usb_host_base_seq extends uvm_sequence;
   protected uvm_object observed_completion;
   protected bit observed_transfer_ended;
   protected process observer_process;
+  protected process watchdog_process;
+  protected bit watch_active;
+  protected bit watch_expired;
+  protected string watch_label;
+  protected time watch_timeout;
+  protected realtime watch_deadline;
 
   function new(string name = "usb_host_base_seq");
     super.new(name);
@@ -76,8 +83,9 @@ class usb_host_base_seq extends uvm_sequence;
     return "USB_HOST";
   endfunction
 
-  // Resolve the SVT objects usb_env published for the host agent. Every failure
-  // is fatal here rather than producing a null dereference deeper in a scenario.
+  // Resolve the SVT objects usb_env published for the host agent. Every
+  // failure is fatal here rather than producing a null dereference deeper in
+  // a scenario.
   task resolve_host_context(bit require_shared_status = 1'b0);
     svt_configuration base_cfg;
 
@@ -123,56 +131,73 @@ class usb_host_base_seq extends uvm_sequence;
     `uvm_info(report_id(), "SVT USB host link is ENABLED", UVM_LOW)
   endtask
 
-  // Arm the completion observer. Returns only once the observer is blocked on
-  // NOTIFY_USB_TRANSFER_ENDED, so the caller may submit immediately afterwards.
-  task begin_transfer_watch();
+  // Arm observation and the watchdog before submission can block. One budget
+  // covers arbitration, driver acceptance, and the bus completion event.
+  task begin_transfer_watch(string label, time timeout);
     if (host_agent == null) begin
       `uvm_fatal(report_id(), "begin_transfer_watch() requires the host agent; call resolve_host_context() first")
+      return;
     end
+    if (watch_active || timeout == 0) begin
+      `uvm_fatal(report_id(), "Transfer watch requires no active watch and a nonzero timeout")
+      return;
+    end
+    watch_active = 1'b1;
+    watch_expired = 1'b0;
+    watch_label = label;
+    watch_timeout = timeout;
+    watch_deadline = $realtime + timeout;
     observed_transfer_ended = 1'b0;
     observed_completion = null;
     observer_process = null;
+    watchdog_process = null;
+    `uvm_info(report_id(), $sformatf("Watching %s submission and completion; timeout=%0t", label, timeout), UVM_LOW)
     fork
       begin
         observer_process = process::self();
         host_agent.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger_data(observed_completion);
         observed_transfer_ended = 1'b1;
       end
+      begin
+        watchdog_process = process::self();
+        #(timeout);
+        watch_expired = 1'b1;
+        `uvm_fatal(report_id(), $sformatf("%s submission/completion did not finish before %0t", watch_label, watch_timeout))
+      end
     join_none
     // Let the observer reach its blocking wait before the caller submits.
     #0;
   endtask
 
-  // Wait for the armed observer to report a completion, bounded by timeout.
-  // A timeout is fatal and names the transfer, so an unanswered transfer is
-  // never reported as a late or unrelated failure.
-  task end_transfer_watch(string label, time timeout, output uvm_object completed_object);
-    // The nested fork/join confines "disable fork" to the wait and timeout
-    // branches, leaving any process the SVT layer started during submission
-    // untouched.
-    fork
-      begin
-        fork
-          begin
-            wait (observed_transfer_ended == 1'b1);
-          end
-          begin
-            #(timeout);
-          end
-        join_any
-        disable fork;
-      end
-    join
+  // Complete the watch after submission returns. Retire only our processes,
+  // leaving SVT activity untouched. Completion at the deadline is too late.
+  task end_transfer_watch(output uvm_object completed_object);
+    completed_object = null;
+    if (!watch_active) begin
+      `uvm_fatal(report_id(), "end_transfer_watch() requires an active watch")
+      return;
+    end
+    wait (observed_transfer_ended || watch_expired);
 
     if (observer_process != null && observer_process.status() != process::FINISHED) begin
       observer_process.kill();
     end
+    if (watchdog_process != null && watchdog_process.status() != process::FINISHED) begin
+      watchdog_process.kill();
+    end
     observer_process = null;
+    watchdog_process = null;
+    watch_active = 1'b0;
 
-    if (!observed_transfer_ended) begin
-      `uvm_fatal(report_id(), $sformatf("%s did not complete within %0t", label, timeout))
+    // If a report catcher suppresses the watchdog fatal, never return its
+    // completion as a success or issue the same timeout diagnostic twice.
+    if (watch_expired) return;
+    if (usb_time_ps($realtime) >= usb_time_ps(watch_deadline)) begin
+      `uvm_fatal(report_id(), $sformatf("%s submission/completion did not finish before %0t", watch_label, watch_timeout))
+      return;
     end
     completed_object = observed_completion;
+    `uvm_info(report_id(), $sformatf("%s submission and completion finished within %0t", watch_label, watch_timeout), UVM_LOW)
   endtask
 
   // Convert an ended-event object into a transfer, rejecting null or foreign

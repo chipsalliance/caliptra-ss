@@ -23,24 +23,34 @@
 //      SET_ADDRESS, GET_DESCRIPTOR, GET_CONFIGURATION, SET_CONFIGURATION, and
 //      GET_CONFIGURATION.
 //   5. Require both host-side transfer validation and the final DUT state of
-//      address 1, configuration 1, and exactly seven serviced SETUP packets.
+//      the configured device address, configuration 1, and exactly seven
+//      serviced SETUP packets.
 //
 // usb_base_seq provides CSR RAL, native DEV0 packet-SRAM accesses, and the
 // generic endpoint-list and per-endpoint interrupt mechanics. Other scenarios
-// that need an enumerated device start this sequence as a child.
-// Scenario waits and native accesses are bounded, and each
-// unsupported or malformed request fails rather than receiving a fallback
-// response.
+// that need an enumerated device start this sequence as a child. Scenario
+// waits and native accesses are bounded, and each unsupported or malformed
+// request fails rather than receiving a fallback response.
 class usb_init_seq extends usb_base_seq;
   `uvm_object_utils(usb_init_seq)
 
-  localparam logic [31:0] SETUP_BUFFER_OFFSET = 32'h0000_0100;
-  localparam logic [31:0] EP0_OUT_BUFFER_OFFSET = 32'h0000_0140;
-  localparam logic [31:0] EP0_IN_BUFFER_OFFSET = 32'h0000_0180;
-  localparam time VBUS_TIMEOUT = 500us;
+  // On EP0 OUT, the second entry word is the SETUP buffer descriptor.
+  localparam int unsigned SETUP_ENTRY_SELECT = 1;
+
+  // EP0 packet-memory buffers, as byte offsets from DATABUFSTART (0). A
+  // parent scenario may move them before start; they must stay clear of the
+  // endpoint list and of any buffer the parent uses itself.
+  logic [31:0] setup_buffer_offset = 32'h0000_0100;
+  logic [31:0] ep0_out_buffer_offset = 32'h0000_0140;
+  logic [31:0] ep0_in_buffer_offset = 32'h0000_0180;
 
   // The USB virtual sequencer supplies the RAL, memory, and SVT access paths.
   bit completed;
+
+  // Both halves of the control endpoint, resolved from the environment
+  // configuration at the start of body().
+  usb_endpoint_cfg ep0_out_endpoint;
+  usb_endpoint_cfg ep0_in_endpoint;
 
   // Track protocol state independently from the underlying DEV0 CSR fields.
   byte unsigned device_address_shadow;
@@ -66,9 +76,9 @@ class usb_init_seq extends usb_base_seq;
   // Arm EP0 OUT for the next SETUP packet and clear both control-transfer
   // descriptor words used for OUT status and IN data stages.
   task initialize_ep0_entries();
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h000, endpoint_entry(1'b1, 1'b0, 8, EP0_OUT_BUFFER_OFFSET));
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h004, endpoint_entry(1'b0, 1'b0, 0, SETUP_BUFFER_OFFSET));
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h008, endpoint_entry(1'b0, 1'b0, 0, EP0_IN_BUFFER_OFFSET));
+    write_endpoint_entry(ep0_out_endpoint, endpoint_entry(1'b1, 1'b0, 8, ep0_out_buffer_offset));
+    write_endpoint_entry(ep0_out_endpoint, endpoint_entry(1'b0, 1'b0, 0, setup_buffer_offset), SETUP_ENTRY_SELECT);
+    write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b0, 1'b0, 0, ep0_in_buffer_offset));
   endtask
 
   // Prepare packet memory and DEV0 CSRs, wait for VBUS, then enable/connect the
@@ -82,19 +92,20 @@ class usb_init_seq extends usb_base_seq;
 
     enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
                            ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
-    interrupt_enable_value = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN, 16'h0003) |
+    interrupt_enable_value = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN, ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()) |
                              ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTEN.DEV_INT_EN);
     vbus_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.VBUS_DEBOUNCED);
     `uvm_info("USB_INIT_SEQ", "Initializing DEV0 endpoint list and control registers", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
     initialize_ep0_entries();
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h00c, 0);
-    for (logic [31:0] offset = 32'h010; offset < SETUP_BUFFER_OFFSET; offset += 4) begin
-      write32(USB_DEV0_SRAM, EP_LIST_OFFSET + offset, 0);
+    // Clear every non-EP0 entry so no endpoint starts active.
+    write32(USB_DEV0_SRAM, endpoint_list_base() + 32'h00c, 0);
+    for (logic [31:0] offset = 32'h010; offset < p_sequencer.cfg.endpoint_list_bytes(); offset += 4) begin
+      write32(USB_DEV0_SRAM, endpoint_list_base() + offset, 0);
     end
 
-    ral_write32("EPLISTSTART", p_sequencer.reg_model.combo.dev0_csr.EPLISTSTART, 0);
+    ral_write32("EPLISTSTART", p_sequencer.reg_model.combo.dev0_csr.EPLISTSTART, endpoint_list_base());
     ral_write32("DATABUFSTART", p_sequencer.reg_model.combo.dev0_csr.DATABUFSTART, 0);
 
     vbus_detected = 1'b0;
@@ -110,12 +121,12 @@ class usb_init_seq extends usb_base_seq;
         vbus_detected = 1'b1;
       end
       begin
-        #(VBUS_TIMEOUT);
+        #(p_sequencer.cfg.vbus_timeout);
       end
     join_any
     disable fork;
     if (!vbus_detected) begin
-      `uvm_fatal("USB_INIT_SEQ", $sformatf("VBUS was not detected within %0t", VBUS_TIMEOUT))
+      `uvm_fatal("USB_INIT_SEQ", $sformatf("VBUS was not detected within %0t", p_sequencer.cfg.vbus_timeout))
     end
 
     `uvm_info("USB_INIT_SEQ", "VBUS detected; allowing the remote PHY to settle before DEV_EN/DCON", UVM_LOW)
@@ -157,8 +168,8 @@ class usb_init_seq extends usb_base_seq;
     logic [31:0] word0;
     logic [31:0] word1;
 
-    read32(USB_DEV0_SRAM, SETUP_BUFFER_OFFSET, word0);
-    read32(USB_DEV0_SRAM, SETUP_BUFFER_OFFSET + 4, word1);
+    read32(USB_DEV0_SRAM, setup_buffer_offset, word0);
+    read32(USB_DEV0_SRAM, setup_buffer_offset + 4, word1);
     request_type = word0[7:0];
     request = word0[15:8];
     value = word0[31:16];
@@ -173,20 +184,20 @@ class usb_init_seq extends usb_base_seq;
 
     word_count = (byte_count + 3) / 4;
     for (int unsigned word_index = 0; word_index < word_count; word_index++) begin
-      write32(USB_DEV0_SRAM, EP0_IN_BUFFER_OFFSET + word_index * 4, data_words[word_index]);
+      write32(USB_DEV0_SRAM, ep0_in_buffer_offset + word_index * 4, data_words[word_index]);
     end
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h008, endpoint_entry(1'b1, 1'b0, byte_count, EP0_IN_BUFFER_OFFSET));
+    write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b1, 1'b0, byte_count, ep0_in_buffer_offset));
   endtask
 
   // Arm a zero-length EP0 IN packet for a no-data request, without waiting for
   // USB completion; the host sequence validates that completion separately.
   task send_ep0_zlp();
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h008, endpoint_entry(1'b1, 1'b0, 0, EP0_IN_BUFFER_OFFSET));
+    write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b1, 1'b0, 0, ep0_in_buffer_offset));
   endtask
 
   // Return EP0 OUT ownership to hardware for the next status or SETUP packet.
   task arm_ep0_out();
-    write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h000, endpoint_entry(1'b1, 1'b0, 0, EP0_OUT_BUFFER_OFFSET));
+    write_endpoint_entry(ep0_out_endpoint, endpoint_entry(1'b1, 1'b0, 0, ep0_out_buffer_offset));
   endtask
 
   // Acknowledge the SETUP latch while preserving the shadowed device address.
@@ -245,7 +256,8 @@ class usb_init_seq extends usb_base_seq;
         write_devcmdstat(command);
       end
       8'h00: begin
-        // Report the two-byte, all-zero device status expected by this scenario.
+        // Report the two-byte, all-zero device status expected by
+        // this scenario.
         if (request_type != 8'h80 || length != 2) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_STATUS request")
         end
@@ -287,8 +299,8 @@ class usb_init_seq extends usb_base_seq;
       end
       default: begin
         // Stall both directions before rejecting an unsupported request.
-        write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h008, endpoint_entry(1'b0, 1'b1, 0, EP0_IN_BUFFER_OFFSET));
-        write32(USB_DEV0_SRAM, EP_LIST_OFFSET + 32'h000, endpoint_entry(1'b0, 1'b1, 0, EP0_OUT_BUFFER_OFFSET));
+        write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b0, 1'b1, 0, ep0_in_buffer_offset));
+        write_endpoint_entry(ep0_out_endpoint, endpoint_entry(1'b0, 1'b1, 0, ep0_out_buffer_offset));
         `uvm_fatal("USB_INIT_SEQ", $sformatf("Unsupported control request 0x%02h", request))
       end
     endcase
@@ -362,8 +374,18 @@ class usb_init_seq extends usb_base_seq;
     end
 
     `uvm_info("USB_INIT_SEQ", "Starting standalone USB INIT scenario", UVM_LOW)
+    ep0_out_endpoint = get_endpoint(0, USB_DIRECTION_OUT);
+    ep0_in_endpoint = get_endpoint(0, USB_DIRECTION_IN);
+    `uvm_info("USB_INIT_SEQ", $sformatf("Control endpoint resolved: %s / %s", ep0_out_endpoint.convert2string(), ep0_in_endpoint.convert2string()), UVM_LOW)
+    check_buffer_clear_of_endpoint_list("EP0 SETUP", setup_buffer_offset, 8);
+    check_buffer_clear_of_endpoint_list("EP0 OUT", ep0_out_buffer_offset, ep0_out_endpoint.max_packet_size);
+    check_buffer_clear_of_endpoint_list("EP0 IN", ep0_in_buffer_offset, ep0_in_endpoint.max_packet_size);
     initialize_controller();
     host_sequence = usb_init_host_seq::type_id::create("host_sequence");
+    host_sequence.control_endpoint = ep0_out_endpoint;
+    host_sequence.device_address = p_sequencer.cfg.device_address;
+    host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
+    host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
 
     // The host blocks on real bus completions while service_ep0 supplies each
     // response through the DUT's CSRs and packet memory.
@@ -379,9 +401,9 @@ class usb_init_seq extends usb_base_seq;
       end
     join
 
-    completed = host_sequence.completed && serviced_request_count == 7 && current_configuration == 1 && device_address_shadow == 1;
+    completed = host_sequence.completed && serviced_request_count == 7 && current_configuration == 1 && device_address_shadow == p_sequencer.cfg.device_address;
     if (!completed) begin
-      `uvm_fatal("USB_INIT_SEQ", $sformatf("INIT final state invalid: host=%0b serviced=%0d address=%0d configuration=%0d", host_sequence.completed, serviced_request_count, device_address_shadow, current_configuration))
+      `uvm_fatal("USB_INIT_SEQ", $sformatf("INIT final state invalid: host=%0b serviced=%0d address=%0d (expected %0d) configuration=%0d", host_sequence.completed, serviced_request_count, device_address_shadow, p_sequencer.cfg.device_address, current_configuration))
     end
     `uvm_info("USB_INIT_SEQ", "Standalone USB INIT completed with seven real USB transfers", UVM_LOW)
   endtask

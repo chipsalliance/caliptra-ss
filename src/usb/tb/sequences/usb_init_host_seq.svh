@@ -18,8 +18,8 @@
 //
 //   1. GET_DESCRIPTOR at the default address 0.
 //   2. GET_STATUS at address 0.
-//   3. SET_ADDRESS to assign address 1.
-//   4. GET_DESCRIPTOR again at the assigned address 1.
+//   3. SET_ADDRESS to assign device_address.
+//   4. GET_DESCRIPTOR again at the assigned device_address.
 //   5. GET_CONFIGURATION and confirm the device is unconfigured (value 0).
 //   6. SET_CONFIGURATION to select configuration 1.
 //   7. GET_CONFIGURATION and confirm configuration 1 is active.
@@ -32,11 +32,16 @@
 class usb_init_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_init_host_seq)
 
-  // Bound link bring-up separately from each individual control transfer.
-  localparam time USB_LINK_TIMEOUT = 750us;
-  localparam time USB_CONTROL_TRANSFER_TIMEOUT = 100us;
-
   int unsigned validated_transfer_count;
+
+  // Scenario inputs. This sequence runs on the SVT sequencer, which has no
+  // usb_env_cfg handle, so the parent scenario copies these from
+  // usb_env_cfg before start. Link bring-up is bounded separately from each
+  // individual control transfer.
+  usb_endpoint_cfg control_endpoint;
+  bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
+  time link_timeout = USB_DEFAULT_LINK_TIMEOUT;
+  time control_transfer_timeout = USB_DEFAULT_CONTROL_TRANSFER_TIMEOUT;
 
   // Constructs the host sequence; body() performs the enumeration.
   function new(string name = "usb_init_host_seq");
@@ -207,7 +212,8 @@ class usb_init_host_seq extends usb_host_base_seq;
     return 1'b1;
   endfunction
 
-  // Applies the production validator and counts only fully accepted completions.
+  // Applies the production validator and counts only fully
+  // accepted completions.
   task check_completed_transfer(
     int unsigned step_number,
     string label,
@@ -276,12 +282,12 @@ class usb_init_host_seq extends usb_host_base_seq;
       UVM_LOW
     )
 
-    begin_transfer_watch();
+    begin_transfer_watch(transfer_label, control_transfer_timeout);
     start_item(request_transfer, -1, p_sequencer.xfer_sequencer);
     request_transfer.cfg = usb_cfg;
-    // Pin the device, endpoint, and ustream configuration indices to zero.
+    // Pin the device, control endpoint, and ustream configuration indices.
     // SVT disables their randomization so the request keeps these selections.
-    request_transfer.fix_anchors(0, 0, 0);
+    request_transfer.fix_anchors(0, control_endpoint.anchor_index, 0);
     if (!request_transfer.randomize() with {
           xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
           device_address == local::device_address;
@@ -296,7 +302,7 @@ class usb_init_host_seq extends usb_host_base_seq;
       `uvm_fatal("USB_INIT_HOST", $sformatf("Unable to randomize %s", transfer_label))
     end
     finish_item(request_transfer);
-    end_transfer_watch(transfer_label, USB_CONTROL_TRANSFER_TIMEOUT, completed_object);
+    end_transfer_watch(completed_object);
     check_transfer_correlation(transfer_label, request_transfer, completed_object);
 
     check_completed_transfer(
@@ -326,6 +332,9 @@ class usb_init_host_seq extends usb_host_base_seq;
 
     completed = 1'b0;
     validated_transfer_count = 0;
+    if (control_endpoint == null || !control_endpoint.anchor_index_valid) begin
+      `uvm_fatal("USB_INIT_HOST", "control_endpoint must be set to an applied EP0 configuration before start")
+    end
 
     // These are the exact data-stage bytes expected from the DUT-side EP0
     // service for discovery, status, and configuration-state requests.
@@ -342,10 +351,13 @@ class usb_init_host_seq extends usb_host_base_seq;
     // usb_env; the shared status is required for the link wait below.
     resolve_host_context(1'b1);
 
-    `uvm_info("USB_INIT_HOST", "Starting seven-step USB INIT host enumeration from address 0 to configuration 1", UVM_LOW)
+    if (device_address == 0) begin
+      `uvm_fatal("USB_INIT_HOST", "device_address must be 1-127")
+    end
+    `uvm_info("USB_INIT_HOST", $sformatf("Starting seven-step USB INIT host enumeration from address 0 to address %0d and configuration 1", device_address), UVM_LOW)
 
     // Bring up periodic USB framing before issuing the first EP0 request.
-    wait_for_link_enabled(USB_LINK_TIMEOUT);
+    wait_for_link_enabled(link_timeout);
     begin
       svt_usb_protocol_service_20_sof_on_sequence sof_sequence;
       sof_sequence = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_sequence");
@@ -357,7 +369,7 @@ class usb_init_host_seq extends usb_host_base_seq;
     #20us;
 
     // Steps 1-3 discover the default-address device, inspect its status, and
-    // request the transition from address 0 to address 1.
+    // request the transition from address 0 to device_address.
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_DESCRIPTOR,
@@ -383,21 +395,32 @@ class usb_init_host_seq extends usb_host_base_seq;
     run_control_transfer(
       svt_usb_types::HOST_TO_DEVICE,
       svt_usb_types::SET_ADDRESS,
-      16'h0001,
+      16'(device_address),
       16'h0000,
       16'h0000,
       0,
       3,
-      "SET_ADDRESS_1",
+      $sformatf("SET_ADDRESS_%0d", device_address),
       no_payload
     );
 
-    // Allow a fixed interval after SET_ADDRESS validation before updating the
-    // host model for address 1; this delay does not poll DUT address activation.
+    // Allow a fixed interval after SET_ADDRESS validation before
+    // updating the host model for the new address; this delay does not poll
+    // DUT address activation.
     #5us;
-    usb_cfg.remote_device_cfg[0].device_address = 7'd1;
-    host_agent.reconfigure(usb_cfg);
-    `uvm_info("USB_INIT_HOST", "Reconfigured the SVT host for device address 1", UVM_LOW)
+    begin
+      svt_usb_configuration addressed_cfg;
+
+      // Reconfigure from a copy so the configuration the agent was built
+      // with is never edited in place.
+      if (!$cast(addressed_cfg, usb_cfg.clone())) begin
+        `uvm_fatal("USB_INIT_HOST", "Unable to clone the SVT host configuration")
+      end
+      addressed_cfg.remote_device_cfg[0].device_address = device_address;
+      host_agent.reconfigure(addressed_cfg);
+      usb_cfg = addressed_cfg;
+    end
+    `uvm_info("USB_INIT_HOST", $sformatf("Reconfigured the SVT host for device address %0d", device_address), UVM_LOW)
 
     // Steps 4-7 prove communication at the assigned address, observe the
     // initial configuration value, select configuration 1, and read it back.
@@ -407,9 +430,9 @@ class usb_init_host_seq extends usb_host_base_seq;
       16'h0100,
       16'h0000,
       16'h0012,
-      1,
+      device_address,
       4,
-      "GET_DESCRIPTOR_address_1",
+      $sformatf("GET_DESCRIPTOR_address_%0d", device_address),
       descriptor_payload
     );
     run_control_transfer(
@@ -418,7 +441,7 @@ class usb_init_host_seq extends usb_host_base_seq;
       16'h0000,
       16'h0000,
       16'h0001,
-      1,
+      device_address,
       5,
       "GET_CONFIGURATION_before_set",
       unconfigured_payload
@@ -429,7 +452,7 @@ class usb_init_host_seq extends usb_host_base_seq;
       16'h0001,
       16'h0000,
       16'h0000,
-      1,
+      device_address,
       6,
       "SET_CONFIGURATION_1",
       no_payload
@@ -440,20 +463,21 @@ class usb_init_host_seq extends usb_host_base_seq;
       16'h0000,
       16'h0000,
       16'h0001,
-      1,
+      device_address,
       7,
       "GET_CONFIGURATION_after_set",
       configured_payload
     );
 
-    // Preserve a fixed post-enumeration observation window; this sequence adds
-    // no active checks during the delay. Then gate completion on exactly seven
-    // validated transfers, rather than treating elapsed time as proof of success.
+    // Preserve a fixed post-enumeration observation window; this sequence
+    // adds no active checks during the delay. Then gate completion on exactly
+    // seven validated transfers, rather than treating elapsed time as proof
+    // of success.
     #50us;
     if (validated_transfer_count !== 7) begin
       `uvm_fatal("USB_INIT_HOST", $sformatf("USB INIT validated %0d control transfers instead of exactly 7", validated_transfer_count))
     end
     completed = 1'b1;
-    `uvm_info("USB_INIT_HOST", $sformatf("USB INIT host enumeration complete: validated_count=%0d/7 address=1 configuration=1", validated_transfer_count), UVM_LOW)
+    `uvm_info("USB_INIT_HOST", $sformatf("USB INIT host enumeration complete: validated_count=%0d/7 address=%0d configuration=1", validated_transfer_count, device_address), UVM_LOW)
   endtask
 endclass

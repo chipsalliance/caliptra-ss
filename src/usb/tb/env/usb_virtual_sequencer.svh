@@ -17,8 +17,8 @@ class usb_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
   `uvm_component_utils(usb_virtual_sequencer)
 
   usb_reg_model reg_model;
-  // Supplies the endpoint profile so sequences resolve endpoints by protocol
-  // identity instead of embedding anchor or physical indices.
+  // Supplies the endpoint configurations so sequences resolve endpoints by
+  // protocol identity instead of embedding anchor or physical indices.
   usb_env_cfg cfg;
   aaxi_sequencer combo_sequencer;
   aaxi_sequencer dev0_memory_sequencer;

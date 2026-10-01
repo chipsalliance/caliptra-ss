@@ -15,3 +15,4 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_init: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_endpoint_rw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_dev_skip: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }
