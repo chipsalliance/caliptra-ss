@@ -720,17 +720,21 @@ Integrator must connect following list of manager and subordinates to axi interc
     | Start Address    | End Address      | Address Width | Subordinate | Name              | Description               |
     |------------------|------------------|---------------|-------------|-------------------|---------------------------|
     | 64'h1000_0000    | 64'h1FFF_FFFF    | -             | 0           | n/a               | Reserved    |
+    | 64'h2000_0000    | 64'h2000_1FFF    | 13            | 7           | USB Combo         | USB DEV0 CSRs, OCP Recovery, and Hub; see [Combo AXI memory map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map) |
+    | 64'h2000_2000    | 64'h2000_203F    | 6             | 9           | USB DEV1 CSR      | USB Device 1 CSRs         |
     | 64'h2000_4000    | 64'h2000_4FFF    | 12            | 1           | I3c               | I3C Core                  |
+    | 64'h2100_0000    | 64'h21DF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
+    | 64'h3000_0000    | 64'h3000_FFFF    | 16            | 8           | USB DEV0 Mem      | USB Device 0 packet RAM (64 KiB) |
+    | 64'h3001_0000    | 64'h3001_FFFF    | 16            | 10          | USB DEV1 Mem      | USB Device 1 packet RAM (64 KiB) |
     | 64'h8000_0000    | 64'h80FF_FFFF    | 24            | 2           | MCU ROM           | MCU ROM                  |
     | 64'hA002_0000    | 64'hA003_FFFF    | 17            | 3           | SoC IFC           | Caliptra Core AXI subordinate interface |
-    | 64'h2100_0000    | 64'h21DF_FFFF    | 24            | 4           | MCI               | Manufacturer Control Interface (for MCU) |
     | 64'h7000_0000    | 64'h7000_01FF    | 9             | 5           | Fuse Ctrl         | Fuse Controller           |
     | 64'h7000_0400    | 64'h7000_05FF    | 9             | 6           | Life Cycle Ctrl   | Life Cycle Controller     |
 
-- Following are the header files path for the below suggested address map. These files would be useful in defining the address map using the given RDL Files.
+- Following are the header files path for the above suggested address map. These files would be useful in defining the address map using the given RDL Files.
 
-  - [soc_address_map.h](../src/integration/rtl/soc_address_map.h)
-  - [soc_address_map_defines.svh](../src/integration/rtl/soc_address_map_defines.svh)
+  - [soc_address_map.h](../src/integration/rtl/soc_address_map/soc_address_map.h)
+  - [soc_address_map_defines.svh](../src/integration/rtl/soc_address_map/soc_address_map_defines.svh)
 
 For USB-specific base alignment, transfer restrictions, and filtering, see [USB Integration Requirements](#usb-integration-requirements).
 
@@ -2813,7 +2817,7 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 ### I3C AXI USER Filtering
 
-I3C AXI access must comply with [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control). `cptra_i3c_axi_user_id_filtering_enable_i` enables the filter. The allowlist is fixed: `cptra_ss_strap_caliptra_dma_axi_user_i` The SoC must prevent unauthorized agents from issuing AXI USER `0` to I3C.
+I3C AXI access must comply with [USB and I3C AXI Access Control](#usb-and-i3c-axi-access-control). `cptra_i3c_axi_user_id_filtering_enable_i` enables the filter. The allowlist is fixed to the MCU (`cptra_ss_strap_mcu_lsu_axi_user_i`) and Caliptra DMA (`cptra_ss_strap_caliptra_dma_axi_user_i`) identities.
 
 ## Programming Sequence
 
@@ -3204,7 +3208,7 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_I3C_3         | I3C                   | I3C targets must be programmed with STATIC address and a unique set of PID/BCR/DCR CSRs via AXI                                                                                                                                                                                                                                                                                                                                                                                           | Functionality |
 | CSS_I3C_4         | I3C                   | The I3C core must be statically configured during the MCU boot flow as either an I3C Target or an AXI Recovery Interface; this selection is mutually exclusive and cannot be changed dynamically after boot.                                                                                                                                                                                                                                                                              | Functionality |
 | CSS_I3C_5         | I3C                   | If the SoC requires both AXI Recovery and standard I3C Target functionality simultaneously, a second I3C core must be instantiated outside of Caliptra SS.                                                                                                                                                                                                                                                                                                                                | Functionality |
-| CSS_I3C_6         | I3C                   | I3C AXI access shall follow [I3C AXI USER Filtering](#i3c-axi-user-filtering), including the restriction on AXI USER `0`. | Threat Model |
+| CSS_I3C_6         | I3C                   | I3C AXI access shall follow [I3C AXI USER Filtering](#i3c-axi-user-filtering). | Threat Model |
 | CSS_Tech_1        | MCU                   | `css_mcu0_dmi_jtag_to_core_sync.v` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves reset behavior. The replacement must generate exactly one `clk`-cycle `reg_en` and `reg_wr_en` pulse for each synchronized JTAG read or write request. See CSS_Tech_6 for validation requirements.                                                                                                                            | Timing |
 | CSS_Tech_2        | MCU                   | Technology-specific clock gaters must replace `css_mcu0_rvclkhdr`/`css_mcu0_rvoclkhdr` in `css_mcu0_beh_lib.sv` or set TECH_SPECIFIC_EC_RV_ICG.                                                                                                                                                                                                                                                                                                                                           | Timing |
 | CSS_Tech_3        | MCU                   | `css_mcu0_rvsyncss` in `css_mcu0_beh_lib.sv` must be replaced with a technology-specific synchronizer that provides at least two synchronization stages and preserves width, reset polarity, and reset values. See CSS_Tech_6 for validation requirements.                                                                                                                                                                                                                                | Timing |

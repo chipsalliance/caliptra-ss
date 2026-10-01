@@ -1223,8 +1223,9 @@ module caliptra_ss_top
     
 
     
-    assign priv_ids[0] = 32'd0;
-    assign priv_ids[1] = 32'd0;
+    // Spare slots repeat authorized users; a zero entry would authorize AXI USER 0
+    assign priv_ids[0] = cptra_ss_strap_caliptra_dma_axi_user_i;
+    assign priv_ids[1] = cptra_ss_strap_mcu_lsu_axi_user_i;
     assign priv_ids[2] = cptra_ss_strap_caliptra_dma_axi_user_i;
     assign priv_ids[3] = cptra_ss_strap_mcu_lsu_axi_user_i;
 
