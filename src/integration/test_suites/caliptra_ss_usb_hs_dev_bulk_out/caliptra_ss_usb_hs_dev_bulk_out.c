@@ -70,7 +70,7 @@ void main(void) {
     VPRINTF(LOW, "=================\nMCU: USB HS device bulk OUT test\n=================\n\n");
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
