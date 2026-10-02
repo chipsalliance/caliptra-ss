@@ -180,7 +180,7 @@ Caliptra owns the recovery interface (peripheral independent) and Caliptra is TH
 
 6. Fuse controller for provisioning Caliptra fuses -> IFP (In-field programmable) fusing is performed by MCU RT; SW partition fuses in fuse controller are managed by MCU (ROM or RT); Caliptra HW is responsible for reading the secret fuses (Caliptra ROM, MCU ROM or any other SOC ROM or any RT FW should NOT have access to read the secret fuses in production).
 7. Recovery stack must be implemented. Please refer to I3C and USB recovery section for more details and references.
-I3C OCP Recovery registers must follow the security filtering requirements in the I3C recovery implementation, including restrictions on the subset accessible to MCU. For USB, see [Ownership and access](#ownership-and-access).
+OCP Recovery registers implemented in I3C and USB must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
 8. Supports silicon t0 boot to load and run required FW across chiplets.
 9. OCP recovery stack is implemented in Caliptra for Caliptra-subsystem-mode
 10. MCU SRAM (or part of the SRAM that is mapped for Code/Data execution) should be readable/writeable ONLY by Caliptra until Caliptra gives permission to MCU to use it.
