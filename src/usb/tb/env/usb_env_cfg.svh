@@ -36,6 +36,11 @@ class usb_env_cfg extends uvm_object;
   // before building the managers.
   bit axi_delay_random = 1'b1;
 
+  // AXI bus clock and reset shared by all four managers and both filter
+  // policies. usb_env points it at the combo manager VIF; sequences wait on
+  // the bus through the helpers below instead of a virtual interface.
+  virtual aaxi_intf bus_vif;
+
   // usb_env installs host_cfg and clones device_phy_cfg as the remote PHY.
   svt_usb_agent_configuration host_cfg;
   svt_usb_agent_configuration device_phy_cfg;
@@ -153,5 +158,20 @@ class usb_env_cfg extends uvm_object;
     if (!host_cfg.is_valid() || !device_phy_cfg.is_valid()) begin
       `uvm_fatal("USB_CFG", "USB VIP configuration validation failed")
     end
+  endfunction
+
+  // Wait for count AXI bus clock rising edges; a count of zero returns at once.
+  task wait_bus_posedge(int unsigned count = 1);
+    repeat (count) @(posedge bus_vif.ACLK);
+  endtask
+
+  // Wait for the next AXI bus clock falling edge.
+  task wait_bus_negedge();
+    @(negedge bus_vif.ACLK);
+  endtask
+
+  // Return 1 unless the AXI bus reset is known deasserted.
+  function bit bus_in_reset();
+    return bus_vif.ARESETn !== 1'b1;
   endfunction
 endclass

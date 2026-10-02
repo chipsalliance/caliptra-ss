@@ -24,12 +24,12 @@ class usb_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
   svt_usb_virtual_sequencer host_sequencer;
   // Resolved AXI delay policy that native sequences apply to each request.
   bit axi_delay_random;
-  // AXI USER filter policy control shared by all four manager paths.
-  virtual usb_tb_ctrl_if #(
-    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-  ) ctrl_vif;
+  // AXI USER filter policy agents: Combo guards COMBO and DEV0 SRAM, DEV1
+  // guards DEV1 CSR and DEV1 SRAM.
+  usb_combo_filter_sequencer_t combo_filter_sequencer;
+  usb_dev1_filter_sequencer_t dev1_filter_sequencer;
+  // Environment configuration; provides the AXI bus clock and reset helpers.
+  usb_env_cfg cfg;
 
   function new(string name = "usb_virtual_sequencer", uvm_component parent = null);
     super.new(name, parent);
