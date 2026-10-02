@@ -160,6 +160,7 @@ ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_combo_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_ctrl_if.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_axi_manager_connection.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_top_tb.sv

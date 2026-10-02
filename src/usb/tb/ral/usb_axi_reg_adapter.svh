@@ -39,9 +39,11 @@ endclass
 class usb_axi_reg_adapter extends aaxi_uvm_mem_adapter;
   `uvm_object_utils(usb_axi_reg_adapter)
 
-  // usb_env binds the port's sequencer and assigns its fixed transaction ID.
+  // usb_env binds the port's sequencer, assigns its fixed transaction ID,
+  // and copies its resolved AXI delay policy.
   aaxi_sequencer manager_sequencer;
   aaxi_id_t transaction_id;
+  bit axi_delay_random;
 
   // Select full-word, in-place-response operation and the RAL completion hook.
   function new(string name = "usb_axi_reg_adapter");
@@ -97,6 +99,7 @@ class usb_axi_reg_adapter extends aaxi_uvm_mem_adapter;
     transaction.wuser_A = new[1];
     transaction.wuser_A[0] = user_override.value;
     transaction.uvm_tr_ctrl = AAXI_TRCTRL_BLOCKING;
+    usb_axi_apply_delay_policy(transaction, axi_delay_random);
 
     if (is_write) begin
       // Avery stores data by byte; pack low byte first and enable every lane.

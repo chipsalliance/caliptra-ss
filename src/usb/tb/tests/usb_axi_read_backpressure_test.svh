@@ -2,7 +2,7 @@
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
-// you may obtain a copy of the License at
+// You may obtain a copy of the License at
 //
 // http://www.apache.org/licenses/LICENSE-2.0
 //
@@ -11,34 +11,30 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-// Runs the standalone five-target AXI smoke without USB protocol traffic.
-// The test starts usb_endpoint_rw_seq on the environment virtual sequencer and
-// reports success only after every response, data, preservation, isolation,
-// restoration, and completion-count check has passed.
-class usb_endpoint_rw_test extends usb_base_test;
-  `uvm_component_utils(usb_endpoint_rw_test)
 
-  function new(string name = "usb_endpoint_rw_test", uvm_component parent = null);
+// B-1 prosecutor: the same immutable register must survive a full R FIFO.
+// usb_axi_read_backpressure_seq issues the reads and checks every beat.
+class usb_axi_read_backpressure_test extends usb_base_test;
+  `uvm_component_utils(usb_axi_read_backpressure_test)
+
+  function new(string name = "usb_axi_read_backpressure_test", uvm_component parent = null);
     super.new(name, parent);
   endfunction
 
-  // Keep the basic read/write smoke at full AXI speed; other USB tests use
-  // the central AXI delay randomization.
+  // Default to exact stimulus; +usb_axi_delay_random can still override it.
   function void build_phase(uvm_phase phase);
     uvm_config_db#(bit)::set(this, "env", "axi_delay_random", 1'b0);
     super.build_phase(phase);
   endfunction
 
   task run_phase(uvm_phase phase);
-    usb_endpoint_rw_seq seq;
+    usb_axi_read_backpressure_seq seq;
+
     phase.raise_objection(this);
-    `uvm_info("USB_TEST", $sformatf("Starting endpoint read/write test; whole-test timeout=%0t", USB_TEST_TIMEOUT), UVM_LOW)
     env.wait_for_reset();
-    seq = usb_endpoint_rw_seq::type_id::create("endpoint_rw_sequence");
+    seq = usb_axi_read_backpressure_seq::type_id::create("read_backpressure_sequence");
     seq.start(env.virtual_sequencer);
     scenario_completed = seq.completed;
-    `uvm_info("USB_TEST", "Endpoint sequence returned; entering UVM final checks", UVM_LOW)
     phase.drop_objection(this);
   endtask
 endclass

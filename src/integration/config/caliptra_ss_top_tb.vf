@@ -135,6 +135,7 @@
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/ai3c
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/mci
++incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/usb
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/common
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/config_defines.svh

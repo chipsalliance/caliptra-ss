@@ -70,6 +70,15 @@ module usb_top_tb;
   // --------------------------------------------------------------------------
   svt_usb_if usb_20_mac_if();
 
+  usb_tb_ctrl_if #(
+    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
+    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
+    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+  ) usb_ctrl_if (
+    .clk(bus_clk),
+    .rst_n(bus_reset_n)
+  );
+
   // Low-power AXI handshaking is outside this focused TB, so each manager
   // permanently requests an active interface and leaves status outputs open.
   aaxi_intf combo_manager_vif (
@@ -214,6 +223,8 @@ module usb_top_tb;
   // register-only tests use the same wiring, not a separate idle-PHY fallback.
   ip_xxx_3511_hs_mem_compound_wrapper #(
     .C_HUB_FIFO_SIZE(USB_HUB_FIFO_SIZE),
+    .COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS),
+    .DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
     .C_DEV0_RAM_ADDRWIDTH($clog2(USB_DEV0_RAM_DEPTH)),
     .C_DEV1_RAM_ADDRWIDTH($clog2(USB_DEV1_RAM_DEPTH)),
     .C_DEV0_NBPHYSEP(USB_DEV0_NBPHYSEP),
@@ -230,6 +241,10 @@ module usb_top_tb;
   ) dut (
     .usb_axi_aclk(bus_clk),
     .usb_axi_aresetn(bus_reset_n),
+    .combo_enable_axi_user_filtering_i(usb_ctrl_if.combo_enable_axi_user_filtering),
+    .combo_priv_axi_users_i(usb_ctrl_if.combo_priv_axi_users),
+    .dev1_enable_axi_user_filtering_i(usb_ctrl_if.dev1_enable_axi_user_filtering),
+    .dev1_priv_axi_users_i(usb_ctrl_if.dev1_priv_axi_users),
     .combo_axi_if_w_sub(combo_axi_bus),
     .combo_axi_if_r_sub(combo_axi_bus),
     .dev0_mem_axi_if_w_sub(dev0_memory_axi_bus),
@@ -385,6 +400,8 @@ module usb_top_tb;
     // parameterized AXI interfaces connected to the DUT.
     if (AAXI_DATA_WIDTH != USB_AXI_DATA_WIDTH ||
         AAXI_ADDR_WIDTH != USB_AXI_ADDR_WIDTH ||
+        AAXI_INTC_ID_WIDTH != USB_TB_AXI_ID_WIDTH ||
+        AAXI_AWUSER_WIDTH != USB_TB_AXI_USER_WIDTH ||
         AAXI_ARUSER_WIDTH != USB_TB_AXI_USER_WIDTH ||
         AAXI_WUSER_WIDTH != USB_TB_AXI_USER_WIDTH ||
         AAXI_BUSER_WIDTH != USB_TB_AXI_USER_WIDTH ||
@@ -394,12 +411,17 @@ module usb_top_tb;
 `ifndef AVERY_ASSERT_ON
     `uvm_fatal("USB_CONFIG", "AVERY_ASSERT_ON is required for continuous AXI protocol checking")
 `endif
-    // Publish the four independent AXI managers and USB PHY to UVM.
+    // Publish the four independent AXI managers, USB PHY, and filter policy control to UVM.
     uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "combo_vif", combo_manager_vif);
     uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev0_memory_vif", dev0_memory_manager_vif);
     uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_csr_vif", dev1_csr_manager_vif);
     uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_memory_vif", dev1_memory_manager_vif);
     uvm_config_db#(virtual svt_usb_if)::set(null, "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
+    uvm_config_db#(virtual usb_tb_ctrl_if #(
+      .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
+      .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
+      .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+    ))::set(null, "uvm_test_top.env", "usb_ctrl_vif", usb_ctrl_if);
     run_test();
   end
 endmodule

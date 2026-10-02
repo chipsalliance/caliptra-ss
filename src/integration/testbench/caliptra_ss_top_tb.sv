@@ -41,6 +41,9 @@ module caliptra_ss_top_tb
     ,parameter int unsigned USB_C_DEV1_RAM_ADDRWIDTH_TB = 13
     ,parameter int unsigned USB_C_DEV0_NBPHYSEP_TB = 28
     ,parameter int unsigned USB_C_DEV1_NBPHYSEP_TB = 28
+    // Two-entry USB AXI USER allowlists per policy; values are set by the SoC BFM
+    ,parameter int unsigned USB_COMBO_NUM_PRIV_AXI_USERS_TB = 2
+    ,parameter int unsigned USB_DEV1_NUM_PRIV_AXI_USERS_TB = 2
 );
 
     import tb_top_pkg::*;
@@ -103,7 +106,10 @@ module caliptra_ss_top_tb
 
     // USB Testbench
     logic cptra_ss_usb_recovery_payload_available_o, cptra_ss_usb_recovery_image_activated_o;
-    logic cptra_usb_axi_user_id_filtering_enable_i;
+    logic cptra_ss_usb_combo_enable_axi_user_filtering_i;
+    logic [31:0] cptra_ss_usb_combo_priv_axi_users_i [USB_COMBO_NUM_PRIV_AXI_USERS_TB];
+    logic cptra_ss_usb_dev1_enable_axi_user_filtering_i;
+    logic [31:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS_TB];
     logic [63:0]  usb_legacy_ep0_host_ack; //FIXME
     logic [31:0]  usb_legacy_ep0_mcu_command; //FIXME
     logic         usb_legacy_ep0_mcu_command_active; //FIXME
@@ -2197,8 +2203,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_ulpi_nxt_i     = '0;       // TODO: connect to USB VIP
     assign cptra_ss_usb_ulpi_ddr_sel_i = '0;       // TODO: connect to USB VIP
 
-    // USB AXI user filtering
-    assign cptra_usb_axi_user_id_filtering_enable_i = 1'b1; // TODO: make configurable
+    // USB AXI USER filtering policy is driven by caliptra_ss_top_tb_soc_bfm
     assign cptra_ss_usb_async_disable_i = 1'b0;
 
 
@@ -2332,6 +2337,8 @@ module caliptra_ss_top_tb
         .USB_C_DEV0_NBPHYSEP(USB_C_DEV0_NBPHYSEP_TB),
         .USB_C_DEV1_NBPHYSEP(USB_C_DEV1_NBPHYSEP_TB),
         .USB_C_HUB_FIFO_SIZE(USB_HUB_FIFO_WORDS),
+        .USB_COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS_TB),
+        .USB_DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS_TB),
         .USB_G_SIM_CHIRP_TIMERS(1),
         .SPI_HOST_ENA(SPI_HOST_ENA_TB),
         .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS_TB),
@@ -2617,7 +2624,10 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_recovery_image_activated_o    (cptra_ss_usb_recovery_image_activated_o),
         .cptra_ss_usb_recovery_image_activated_i    (cptra_ss_usb_recovery_image_activated_o),
 
-        .cptra_usb_axi_user_id_filtering_enable_i   (cptra_usb_axi_user_id_filtering_enable_i),
+        .cptra_ss_usb_combo_enable_axi_user_filtering_i,
+        .cptra_ss_usb_combo_priv_axi_users_i,
+        .cptra_ss_usb_dev1_enable_axi_user_filtering_i,
+        .cptra_ss_usb_dev1_priv_axi_users_i,
         .cptra_ss_sck_o,
         .cptra_ss_sck_en_o,
         .cptra_ss_csb_o,
@@ -2639,7 +2649,9 @@ module caliptra_ss_top_tb
 
     // Instantiate caliptra_ss_top_tb_soc_bfm
     caliptra_ss_top_tb_soc_bfm #(
-        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB)
+        .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+        .USB_COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS_TB),
+        .USB_DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS_TB)
     )u_caliptra_ss_top_tb_soc_bfm (
         .core_clk,
         .cptra_pwrgood (cptra_ss_pwrgood_i),
@@ -2651,6 +2663,11 @@ module caliptra_ss_top_tb
         .cptra_ss_strap_mcu_sram_config_axi_user_i,
         .cptra_ss_strap_mci_soc_config_axi_user_i,
         .cptra_ss_strap_caliptra_dma_axi_user_i,
+
+        .cptra_ss_usb_combo_enable_axi_user_filtering_i,
+        .cptra_ss_usb_combo_priv_axi_users_i,
+        .cptra_ss_usb_dev1_enable_axi_user_filtering_i,
+        .cptra_ss_usb_dev1_priv_axi_users_i,
 
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,

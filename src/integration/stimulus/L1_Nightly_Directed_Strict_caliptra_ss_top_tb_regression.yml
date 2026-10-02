@@ -123,6 +123,7 @@ contents:
         - ../test_suites/smoke_test_fc_digest_read_debug_intent_mcu/smoke_test_fc_digest_read_debug_intent_mcu.yml
         - ../test_suites/caliptra_ss_usb_init/caliptra_ss_usb_init.yml
         - ../test_suites/caliptra_ss_usb_ocp_recovery_init/caliptra_ss_usb_ocp_recovery_init.yml
+        - ../test_suites/smoke_test_usb_axi_filter/smoke_test_usb_axi_filter.yml
         - ../test_suites/caliptra_ss_usb_ocp_cmd_handling/caliptra_ss_usb_ocp_cmd_handling.yml
         - ../test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix.yml
