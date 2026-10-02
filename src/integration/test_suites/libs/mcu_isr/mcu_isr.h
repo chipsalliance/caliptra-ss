@@ -34,6 +34,12 @@
 #include "veer-csr.h"
 #include <stdint.h>
 #include "printf.h"
+// usb.h supplies the USB_DEV_* register aliases used by service_usb_intr().
+// Those aliases resolve to USBDC0 or USBDC1 according to the compile time
+// USB_DEV_SEL switch, so the handler follows whichever device the test builds
+// for. usb is a COMP_LIB, so this header is always present in the build dir.
+#include "usb.h"
+
 
 /* --------------- symbols/typedefs --------------- */
 typedef struct {
@@ -42,6 +48,7 @@ typedef struct {
     uint32_t mci_notif0;
     uint32_t mci_notif1;
     uint32_t i3c; // FIXME sub-banks of vectors
+    uint32_t usb; // Sticky OR of the USB device INTSTAT bits observed by the ISR
     uint32_t bfm0;
     uint32_t bfm1;
     uint32_t bfm2;
@@ -59,6 +66,12 @@ extern volatile mcu_intr_received_s mcu_intr_rcv;
 
 // Performs all the CSR setup to configure and enable vectored external interrupts
 void init_interrupts(void);
+
+// Minimal variant for USB only tests. Configures the core CSRs and the PIC and
+// enables PIC vector 3 (USB) alone. Unlike init_interrupts() it does not write
+// any MCI or I3C register, so it is safe in a testbench where those blocks are
+// held in reset or are otherwise unreachable on the bus.
+void init_usb_interrupts(void);
 
 // These inline functions are used to insert event-specific functionality into the
 // otherwise generic ISR that gets laid down by the parameterized macro "nonstd_veer_isr"
@@ -149,6 +162,42 @@ inline void service_i3c_intr() {
         VPRINTF(ERROR,"bad i3c_intr sts:%x\n", sts);
         SEND_STDOUT_CTRL(0x1);
         while(1);
+    }
+}
+
+inline void service_usb_intr() {
+    // USB device controller interrupt, PIC vector 3.
+    //
+    // INTSTAT and INTEN share the same bit positions: EP0OUT is bit 0, EP0IN
+    // bit 1, EP1OUT..EP5IN bits 2..11, FRAME_INT bit 30, DEV_INT bit 31. The
+    // hardware IRQ line asserts only where status and enable are both set, so
+    // "act" is exactly the set of bits currently driving the interrupt.
+    //
+    // USB_DEV_INTSTAT / USB_DEV_INTEN are the USB_DEV_SEL selected aliases, so
+    // this handler tracks whichever device controller the test was built for.
+    // Note that only USBDC0's IRQ is wired to ext_int[3] in caliptra_ss_top.sv
+    // today; dev1_usb_irq is still unconnected, so a USB_DEV_SEL=1 build will
+    // configure the vector but never receive one.
+    uint32_t sts = lsu_read_32(USB_DEV_INTSTAT);
+    uint32_t en  = lsu_read_32(USB_DEV_INTEN);
+    uint32_t act = sts & en;
+
+    // Publish to the foreground loop before acknowledging, so a re-entry
+    // cannot observe a cleared source with the flag not yet set.
+    mcu_intr_rcv.usb |= act;
+
+    // Write 1 to Clear only the bits being acknowledged. Masked-but-pending
+    // bits are left alone for firmware that polls them directly. The PIC
+    // gateway for this vector is active-high level, so the source must be
+    // cleared here or the interrupt refires immediately on return.
+    lsu_write_32(USB_DEV_INTSTAT, act);
+
+    // No enabled source pending means the vector fired spuriously, which
+    // points at the PIC wiring or the gateway configuration rather than USB.
+    if (act == 0) {
+        VPRINTF(ERROR, "bad usb_intr sts:%x en:%x\n", sts, en);
+        SEND_STDOUT_CTRL(0x1);
+        while (1);
     }
 }
 

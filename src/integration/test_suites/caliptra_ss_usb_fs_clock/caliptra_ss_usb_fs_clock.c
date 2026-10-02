@@ -20,7 +20,7 @@
 //  the USB device controller is brought up. The USB reference clock is
 //  generated inside the AST (src/ast/rtl/usb_clk.sv, usb_osc.sv ->
 //  clk_src_usb_o) and feeds the USB controller's utmi_clk. Firmware brings
-//  the USB device controller up via the standard boot_usb_core() and idles
+//  the USB device controller up via the standard boot_usb_core_hub() and idles
 //  so that the clock path stays active; frequency checking is done by a
 //  TB-bound SystemVerilog checker (caliptra_ss_usb_fs_clock_checker.sv)
 //  bound to the AST clk_src_usb_o net.
@@ -74,7 +74,7 @@ void main (void) {
     // Bring the USB device controller up using the standard shared bring-up
     // function. Full-speed operation is selected by the PHY/VIP configuration,
     // not by a firmware register write (DEVCMDSTAT.SPEED is read-only status).
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // Caliptra core bringup.
     mcu_cptra_advance_brkpoint();

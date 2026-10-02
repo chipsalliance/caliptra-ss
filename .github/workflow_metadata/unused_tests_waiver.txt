@@ -46,13 +46,16 @@ caliptra_ss_usb_hs_host_remotewakeup # Host is not supported; retained as a refe
 caliptra_ss_usb_hs_host_iso_out # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_fs_host_intnak # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_fs_host_remotewakeup # Host is not supported; retained as a reference test for future host capabilities
-caliptra_ss_usb_fs_host_remotewakeup_fromdevice # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_fs_host_traffic # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_fs_idau_sec_level # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_fs_root2 # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_hs_host_powerdown # Host is not supported; retained as a reference test for future host capabilities
 caliptra_ss_usb_hs_host_resume # Host is not supported; retained as a reference test for future host capabilities
-caliptra_ss_usb_hs_dev_powerdown # FIXME: Device test is yet to be enabled
+
+# WIP: wakeup sequence/test includes are commented out in caliptra_ss_usb_test_pkg.sv pending rework; not yet in any regression
+caliptra_ss_usb_usbd_wakeup # WIP: includes commented out in caliptra_ss_usb_test_pkg.sv; not yet enabled in any regression
+caliptra_ss_usb_usbd_wakeup_fromdevice # WIP: includes commented out in caliptra_ss_usb_test_pkg.sv; not yet enabled in any regression
+
 
 # USB OCP Recovery
 caliptra_ss_usb_ocp_arb_004 # WIP testcase

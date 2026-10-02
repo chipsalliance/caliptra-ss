@@ -46,6 +46,12 @@ class caliptra_ss_usb_env extends uvm_env;
     // System virtual sequencer handle used to connect to lower level agent virtual sequencer.
     svt_usb_system_virtual_sequencer sys_virt_sequencer;
 
+    // Backward-compatible alias. Several migrated tests (fs_root2, fs_idau_sec_level,
+    // fs_host_remotewakeup[_fromdevice], fs_host_intnak, usbd_wakeup[_fromdevice])
+    // start their top-level sequence on env.vseqr. Point vseqr at the same system
+    // virtual sequencer instance so those tests need no per-file edit.
+    svt_usb_system_virtual_sequencer vseqr;
+
     function new(string name = "caliptra_ss_usb_env", uvm_component parent = null);
         super.new(name, parent);
     endfunction
@@ -171,6 +177,9 @@ function void caliptra_ss_usb_env::build_phase(uvm_phase phase);
      * Create the system virtual sequencer.
      */
     this.sys_virt_sequencer = svt_usb_system_virtual_sequencer::type_id::create("sys_virt_sequencer", this);
+
+    // Alias for migrated tests that start their top-level sequence on env.vseqr.
+    this.vseqr = this.sys_virt_sequencer;
 
     `uvm_info("build_phase", "Exiting...", UVM_LOW)
 endfunction

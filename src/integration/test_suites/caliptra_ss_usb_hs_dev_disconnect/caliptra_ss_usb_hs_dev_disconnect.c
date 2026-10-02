@@ -68,10 +68,10 @@ void main(void) {
     VPRINTF(LOW, "=================\nMCU: USB HS device disconnect test\n=================\n\n");
 
     boot_mcu();
-    boot_usb_core();
+    boot_usb_core_hub();
 
     // Clear FORCE_VBUS so the controller monitors the real VBus pin.
-    // boot_usb_core() sets FORCE_VBUS=1 for normal enumeration tests.
+    // boot_usb_core_hub() sets FORCE_VBUS=1 for normal enumeration tests.
     // With FORCE_VBUS=1 the DUT ignores VBus removal; DCON_C never fires
     // and disconnect detection is impossible.
     {

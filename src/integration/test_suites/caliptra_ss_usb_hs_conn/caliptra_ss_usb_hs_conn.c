@@ -17,7 +17,7 @@
 //
 //
 // This firmware:
-//   - Boots the MCU and USB core in HS device mode via boot_usb_core()
+//   - Boots the MCU and USB core in HS device mode via boot_usb_core_hub()
 //   - Polls DEVCMDSTAT until the HS connection is established (CON=1)
 //   - Reports connection speed and halts
 
@@ -49,9 +49,9 @@ void main(void) {
 
     boot_mcu();
 
-    // boot_usb_core() brings up the USB device controller in HS mode.
+    // boot_usb_core_hub() brings up the USB device controller in HS mode.
     // The VIP host (high_speed_capable=1) will perform HS chirp negotiation.
-    boot_usb_core();
+    boot_usb_core_hub();
 
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();

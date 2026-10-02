@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+// http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+`ifndef CALIPTRA_SS_USB_FS_CONN_SEQUENCE_SV
+`define CALIPTRA_SS_USB_FS_CONN_SEQUENCE_SV
+
+// =============================================================================
+// USB Full-Speed connection sequence (hub-composite IP).
+//
+// On the new hub-composite IP (ip_xxx_3511_fs_mem_compound_wrapper) the DUT is
+// an on-chip 2-port USB hub with an embedded downstream device controller
+// (USBDC0). The HS link only comes up on the upstream port after the MCU
+// firmware performs the two-phase hub bring-up: boot_usb_core_fs() sets HUB_EN,
+// then usb_hub_connect() sets HUB_CONNECT. Only after HUB_CONNECT does the hub
+// present itself on the bus, so the host sees connect / reset / HS chirp and
+// the link reaches ENABLED.
+//
+// This sequence is a passive link-up observer (no device enumeration); it is
+// unchanged in intent from the legacy flow because it only watches the upstream
+// link state, which is still valid once the hub connects upstream.
+//
+// Sequence flow:
+//   1. Wait for host link to reach ENABLED (HS link-up after the hub connects
+//      upstream and completes reset/chirp).
+//   2. Start SOF generation to keep the HS link alive.
+//   3. Hold an observation window so the link state can be inspected.
+// MCU firmware (caliptra_ss_usb_fs_conn.c) boots the USB device controller
+// in HS mode, connects the hub upstream, and loops polling DEVCMDSTAT
+// (USB_DEV0_DEVCMDSTAT) to confirm the connection.
+// =============================================================================
+// Extends caliptra_ss_usb_base_sequence (see caliptra_ss_usb_base_sequence.svh)
+// for pre_start()/post_start(). This sequence issues no control transfers, so
+// do_control_xfer()/wait_xfer_done() are unused here.
+class caliptra_ss_usb_fs_conn_sequence extends caliptra_ss_usb_base_sequence;
+
+    `uvm_object_utils(caliptra_ss_usb_fs_conn_sequence)
+
+    int unsigned obs_window_us = 100;
+
+    function new(string name = "caliptra_ss_usb_fs_conn_sequence");
+        super.new(name);
+    endfunction
+
+    virtual task body();
+        svt_usb_status shared_status;
+
+        // Resolves via the base class instead of re-implementing the cast/
+        // null-check inline (see caliptra_ss_usb_base_sequence.svh).
+        shared_status = resolve_shared_status();
+
+        wait_for_link_enabled(shared_status, "HS host link");
+
+        start_sof_generation();
+
+        `uvm_info("USB_FS_CONN_SEQ",
+            $sformatf("Holding HS connection observation window for %0d us.", obs_window_us),
+            UVM_LOW)
+        #(obs_window_us * 1us);
+
+        `uvm_info("USB_FS_CONN_SEQ",
+            "USB HS connection test complete - link reached ENABLED in HS mode.", UVM_LOW)
+    endtask
+
+endclass
+
+`endif // CALIPTRA_SS_USB_FS_CONN_SEQUENCE_SV

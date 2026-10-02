@@ -28,6 +28,9 @@
 module caliptra_ss_top_tb_services
 import css_mcu0_el2_pkg::*;
 import tb_top_pkg::*; 
+`ifndef VERILATOR
+import uvm_pkg::*;
+`endif
 #(
   parameter UVM_TB = 0,
   `include "css_mcu0_el2_param.vh"
@@ -161,9 +164,17 @@ import tb_top_pkg::*;
 
     integer fd, tp, el;
 
+    // MCU instruction trace dumping (mcu_trace_port.csv / mcu_exec.log) is a
+    // per-retired-instruction / per-clock-cycle logging source that dominates
+    // sim runtime on poll-loop-heavy tests. It is OFF by default and can be
+    // re-enabled for debug with the +MCU_TRACE runtime plusarg.
+    bit mcu_trace_en = 1'b0;
+    initial mcu_trace_en = $test$plusargs("MCU_TRACE");
+
     always @(negedge clk or negedge rst_l) begin
         if(!rst_l) begin
             prev_mailbox_data <= 'hA; // Initialize with newline character so timestamp is printed to console for the first line
+
         end
         else begin
             if( mailbox_data_val & mailbox_write) begin
@@ -182,6 +193,20 @@ import tb_top_pkg::*;
             cptra_ss_mci_generic_input_wires_o <= {$urandom(), $urandom()};
             @(negedge clk);
             cptra_ss_mci_generic_input_wires_o <= 'h0;
+        end
+    end
+
+    // USB interrupt endpoint number published by firmware over DEBUG_OUT.
+    // Payload is packed as { ep_num[15:8], TB_CMD_USB_INT_EP[7:0] }. The
+    // opcode 0xf3 lies outside the printable console window (0x06..0x7e), so
+    // it will not corrupt the VPRINTF log. The value is broadcast into the
+    // uvm_config_db under "usb_int_ep_num" for the host sequence to read.
+    int usb_int_ep_num;
+    always @(negedge clk) begin
+        if (rst_l && mailbox_write && (mailbox_data[7:0] == TB_CMD_USB_INT_EP)) begin
+            usb_int_ep_num = mailbox_data[15:8];
+            uvm_config_db#(int)::set(null, "*", "usb_int_ep_num", usb_int_ep_num);
+            $display("USB interrupt endpoint randomized by firmware to EP%0d", usb_int_ep_num);
         end
     end
 
@@ -753,7 +778,13 @@ end
         wb_csr_valid  <= `MCU_DEC.dec_csr_wen_r;
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
+        // The MCU instruction trace $fwrite traffic below is gated by
+        // +MCU_TRACE (see mcu_trace_en above); the wb_* nonblocking
+        // assignments still run every cycle since gpr[] mirroring relies on
+        // them. Only the file writes (tp / el) are conditional.
+        if (mcu_trace_en) begin
         if (`MCU_PATH.trace_rv_i_valid_ip) begin
+
            $fwrite(tp,"%b,%h,%h,%0h,%0h,3,%b,%h,%h,%b\n", `MCU_PATH.trace_rv_i_valid_ip, 0, `MCU_PATH.trace_rv_i_address_ip,
                   0, `MCU_PATH.trace_rv_i_insn_ip,`MCU_PATH.trace_rv_i_exception_ip,`MCU_PATH.trace_rv_i_ecause_ip,
                   `MCU_PATH.trace_rv_i_tval_ip,`MCU_PATH.trace_rv_i_interrupt_ip);
@@ -775,11 +806,13 @@ end
             $fwrite (el, "%10d : %32s=%h                ; nbD\n", cycleCnt, abi_reg[`MCU_DEC.div_waddr_wb], `MCU_DEC.exu_div_result);
             `CPTRA_SS_TB_TOP_NAME.u_caliptra_ss_top_tb_services.gpr[0][`MCU_DEC.div_waddr_wb] = `MCU_DEC.exu_div_result;
         end
+        end // if (mcu_trace_en)
     end
 
 
     initial begin
         abi_reg[0] = "zero";
+
         abi_reg[1] = "ra";
         abi_reg[2] = "sp";
         abi_reg[3] = "gp";
@@ -819,10 +852,15 @@ end
         imem.ram = '{default:8'h0};
         $readmemh("mcu_program.hex",  imem.ram);
 
-        tp = $fopen("mcu_trace_port.csv","w");
-        el = $fopen("mcu_exec.log","w");
-        $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
+        // Only open the MCU instruction trace files when the trace is enabled;
+        // otherwise these files are never written (see +MCU_TRACE gate above).
+        if (mcu_trace_en) begin
+            tp = $fopen("mcu_trace_port.csv","w");
+            el = $fopen("mcu_exec.log","w");
+            $fwrite (el, "//   Cycle : #inst    0    pc    opcode    reg=value    csr=value     ; mnemonic\n");
+        end
         fd = $fopen("mcu_console.log","w");
+
         commit_count = 0;
 
         css_mcu0_dummy_dccm_preloader.ram = '{default:8'h0};
@@ -1255,3 +1293,5 @@ endtask
 
 
 endmodule
+
+// File contains AI-generated response based on internal company sources

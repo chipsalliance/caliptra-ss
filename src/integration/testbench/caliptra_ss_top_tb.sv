@@ -2081,6 +2081,54 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.utmi_dut_mac_if.DmPulldown  = 1'b0;
 
 
+    // --- USB suspend / resume checker ---
+    // Gives caliptra_ss_usb_hs_dev_global_suspend_L2 a DUT-side pass/fail
+    // condition by watching the UTMI+ SuspendM output of the device
+    // controller, instead of trusting the host-side VIP link state alone.
+    // Inert unless +usb_suspend_resume_check is passed on the simv command
+    // line. It also publishes uvm_events that let the stimulus sequence stop
+    // dwelling as soon as the DUT reacts. See
+    // caliptra_ss_usb_suspend_resume_checker.sv for the full rationale.
+    caliptra_ss_usb_suspend_resume_checker i_caliptra_ss_usb_suspend_resume_checker (
+        .utmi_clk (cptra_ss_usb_utmi_clk_i),
+        .suspendm (cptra_ss_usb_utmi_suspendm_o)
+    );
+
+    // --- USB device-initiated remote wakeup checker ---
+    // Owns the verdict for device-initiated remote wakeup, by watching the DUT
+    // drive resume K upstream (TXValid asserted with linestate = K) rather than
+    // trusting the host VIP status bit, which was measured staying 0 through a
+    // full correct device K. TXValid is a DUT output, so this check cannot be
+    // satisfied by a host-driven resume. Inert unless +usb_device_wakeup_check
+    // is passed on the simv command line, and it shares the arm and
+    // observation-window events with the suspend/resume checker above. See
+    // caliptra_ss_usb_device_wakeup_checker.sv for the full rationale.
+    caliptra_ss_usb_device_wakeup_checker i_caliptra_ss_usb_device_wakeup_checker (
+        .utmi_clk  (cptra_ss_usb_utmi_clk_i),
+        .txvalid   (cptra_ss_usb_utmi_txvalid_o),
+        .linestate (cptra_ss_usb_utmi_linestate_i)
+    );
+
+    // --- USB Full Speed link-speed checker ---
+    // Observes the UTMI+ interface and proves that the link is running at
+    // Full Speed (12 Mbit/s) rather than High Speed, by checking the PHY
+    // speed-select pins and by measuring the RXValid byte spacing. Entirely
+    // inert unless +usb_fs_speed_check is passed on the simv command line, so
+    // it has no effect on tests that do not ask for it. See
+    // caliptra_ss_usb_fs_speed_checker.sv for the rationale on why the link
+    // speed cannot be inferred from any clock frequency in this testbench.
+    caliptra_ss_usb_fs_speed_checker i_caliptra_ss_usb_fs_speed_checker (
+        .utmi_clk   (cptra_ss_usb_utmi_clk_i),
+        .utmi_reset (cptra_ss_usb_utmi_reset_o),
+        .rxactive   (cptra_ss_usb_utmi_rxactive_i),
+        .rxvalid    (cptra_ss_usb_utmi_rxvalid_i),
+        .rxdata     (cptra_ss_usb_utmi_rxdata_i),
+        .xcvrselect (cptra_ss_usb_utmi_xcvrselect_o),
+        .termselect (cptra_ss_usb_utmi_termselect_o),
+        .opmode     (cptra_ss_usb_utmi_opmode_o),
+        .linestate  (cptra_ss_usb_utmi_linestate_i)
+    );
+
     // --- UTMI+ termination encoding -> legacy UTMI FsPullup / LsPullup ---
     //
     // DUT=DEVICE (TermSelect=1): TB drives FsPullup=1 so the VIP HOST sees DP+
@@ -2116,9 +2164,36 @@ module caliptra_ss_top_tb
     assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
 
     // USB power / VBus interface
-    // Feed the PHY model's session state back to the compound device inputs.
-    assign cptra_ss_usb_USB_VBus_i = usb_20_mac_if.utmi_dut_mac_if.VbusValid;
-    assign cptra_ss_usb_sessend_i  = usb_20_mac_if.utmi_dut_mac_if.SessEnd;
+    //
+    // caliptra_ss_usb_vbus_driver samples the VIP UTMI VbusValid / SessEnd
+    // outputs and forwards the resolved value to the two DUT power pins, so a
+    // single svt_usb_physical_service_vbus_off_sequence moves both the VIP
+    // link state machine and the DUT power pin without the two desynchronising.
+    // This is also the physically correct model: a device never sources the
+    // 5 V rail, it only senses what the host supplies through the cable.
+    //
+    // The driver never forwards X/Z to a DUT power input. If the VIP is not
+    // driving, it holds the last known-good value (default VBus=1 / SessEnd=0,
+    // bit-identical to the old tie-off) and reports once at UVM_LOW. Stimulus
+    // can wait for the pin via the global uvm_events usb_vbus_off_req /
+    // usb_vbus_on_req and the matching done events. See
+    // caliptra_ss_usb_vbus_driver.sv and docs/usb_vip_vbus_ownership.md.
+    //
+    // The ifndef guard is load bearing. Host-DUT tests put the VIP in DEVICE
+    // mode on USB_20_SERIAL_IF through nvs_usb_phy, where device_b_sm reads
+    // VbusValid instead of driving it and nvs_usb_phy drives these two pins
+    // directly. This driver must stay out of that build - do not remove the
+    // guard.
+    `ifndef CALIPTRA_USB_HOST_PHY_TEST
+
+    caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
+        .vbus           (cptra_ss_usb_USB_VBus_i),
+        .sessend        (cptra_ss_usb_sessend_i),
+        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
+        .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
+    );
+
+    `endif
 
     // USB ULPI PHY interface
     // These tests exercise UTMI only, so all ULPI inputs remain inactive.
