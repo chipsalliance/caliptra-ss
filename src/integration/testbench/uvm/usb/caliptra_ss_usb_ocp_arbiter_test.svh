@@ -32,6 +32,16 @@ class caliptra_ss_usb_ocp_arbiter_test_base
         super.build_phase(phase);
     endfunction
 
+    virtual task mcu_halt_monitor_task(uvm_phase phase);
+        // Arbiter-test firmware remains in its command service loop after the
+        // sequence drains outstanding MCU AXI activity.
+        `uvm_info("phase_ready_to_end",
+            "OCP arbiter sequence complete; skipping MCU halt wait.",
+            UVM_LOW)
+        phase.drop_objection(
+            this, "OCP arbiter firmware remains in service loop");
+    endtask
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_001_test
@@ -108,6 +118,7 @@ class caliptra_ss_usb_ocp_arb_004_test
             "default_sequence",
             caliptra_ss_usb_ocp_arb_004_sequence::type_id::get());
     endfunction
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_005_test
@@ -134,6 +145,8 @@ class caliptra_ss_usb_ocp_arb_006_test
 
     `uvm_component_utils(caliptra_ss_usb_ocp_arb_006_test)
 
+    svt_err_check_stats reset_abort_routing_chk;
+
     function new(string name = "caliptra_ss_usb_ocp_arb_006_test",
                  uvm_component parent = null);
         super.new(name, parent);
@@ -146,6 +159,19 @@ class caliptra_ss_usb_ocp_arb_006_test
             "default_sequence",
             caliptra_ss_usb_ocp_arb_006_sequence::type_id::get());
     endfunction
+
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+        reset_abort_routing_chk =
+            env.host_agent.prot.chk_cov_mgr.find("rx_packet_routed_check");
+        if (reset_abort_routing_chk == null) begin
+            `uvm_fatal("end_of_elaboration_phase",
+                "Protocol chk_cov_mgr could not find rx_packet_routed_check")
+        end
+        reset_abort_routing_chk.set_default_fail_effect(
+            svt_err_check_stats::EXPECTED);
+    endfunction
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_007_test

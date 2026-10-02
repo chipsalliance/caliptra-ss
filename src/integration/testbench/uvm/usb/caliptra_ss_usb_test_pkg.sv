@@ -24,8 +24,8 @@
 
 package caliptra_ss_usb_test_pkg;
 
-
-  localparam int USB_PKG_VERSION = 293;
+  // Force VCS recompile when USB UVM package contents change.
+  localparam int USB_PKG_VERSION = 307;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
