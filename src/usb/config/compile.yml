@@ -89,6 +89,7 @@ targets:
   tb:
     directories:
       - $COMPILE_ROOT/tb
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter
       - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest/sverilog/include
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
@@ -99,7 +100,8 @@ targets:
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
-      - $COMPILE_ROOT/tb/usb_tb_ctrl_if.sv
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv

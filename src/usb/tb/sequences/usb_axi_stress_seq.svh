@@ -170,11 +170,6 @@ class usb_axi_stress_seq extends usb_base_seq;
   int unsigned max_launch_gap = DEFAULT_MAX_LAUNCH_GAP;
   bit completed;
 
-  protected virtual usb_tb_ctrl_if #(
-    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-  ) ctrl_vif;
   protected axi_user_t combo_users[USB_COMBO_NUM_PRIV_AXI_USERS];
   protected axi_user_t dev1_users[USB_DEV1_NUM_PRIV_AXI_USERS];
   protected axi_user_t nonmember_user;
@@ -217,17 +212,13 @@ class usb_axi_stress_seq extends usb_base_seq;
     super.new(name);
   endfunction
 
-  // Require the filter control VIF and the known-low bypass default.
+  // Require the bus clock helpers and the filter policies' known-low bypass default.
   virtual task pre_start();
     super.pre_start();
-    ctrl_vif = p_sequencer.ctrl_vif;
-    if (ctrl_vif == null) begin
-      `uvm_fatal("USB_STRESS", "USB virtual sequencer is missing the AXI USER filter control VIF")
+    if (p_sequencer.cfg == null || p_sequencer.cfg.bus_vif == null) begin
+      `uvm_fatal("USB_STRESS", "USB virtual sequencer is missing the environment bus clock configuration")
     end
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_STRESS", $sformatf("Filter enables are not known-low at start: combo=%b dev1=%b", ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering))
-    end
+    require_filter_bypass("USB_STRESS");
   endtask
 
   // ---------------------------------------------------------------------------
@@ -720,8 +711,8 @@ class usb_axi_stress_seq extends usb_base_seq;
   // Insufficient overlap is checked separately by check_accounting().
   protected task monitor_bus_concurrency();
     while (tracking_concurrency) begin
-      @(negedge ctrl_vif.clk);
-      if (ctrl_vif.rst_n !== 1'b1) begin
+      p_sequencer.cfg.wait_bus_negedge();
+      if (p_sequencer.cfg.bus_in_reset()) begin
         `uvm_fatal("USB_STRESS_ACCOUNTING", "Reset is not deasserted during stress monitoring")
       end
       for (int unsigned port = 0; port < PORT_COUNT; port++) begin
@@ -890,7 +881,7 @@ class usb_axi_stress_seq extends usb_base_seq;
           release_count[port]++;
         end
       join_none
-      repeat ($urandom_range(max_launch_gap)) @(posedge ctrl_vif.clk);
+      p_sequencer.cfg.wait_bus_posedge($urandom_range(max_launch_gap));
     end
     wait fork;
   endtask
@@ -986,7 +977,8 @@ class usb_axi_stress_seq extends usb_base_seq;
     end
   endtask
 
-  // Randomize unique allowlists and nonmember, then enable both policies.
+  // Randomize unique allowlists and nonmember, then enable both policies with
+  // their lists on one edge through the filter agents, which check read-back.
   // Policy signals change only at a clock edge while no request is in flight.
   protected task enable_filtering();
     if (!std::randomize(combo_users, dev1_users, nonmember_user) with {
@@ -994,38 +986,14 @@ class usb_axi_stress_seq extends usb_base_seq;
         }) begin
       `uvm_fatal("USB_STRESS", "Unable to randomize the AXI USER allowlists")
     end
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) ctrl_vif.combo_priv_axi_users[index] <= combo_users[index];
-    foreach (dev1_users[index]) ctrl_vif.dev1_priv_axi_users[index] <= dev1_users[index];
-    ctrl_vif.combo_enable_axi_user_filtering <= 1'b1;
-    ctrl_vif.dev1_enable_axi_user_filtering <= 1'b1;
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) begin
-      if (ctrl_vif.combo_priv_axi_users[index] !== combo_users[index]) begin
-        `uvm_fatal("USB_STRESS", $sformatf("Combo allowlist entry %0d did not update", index))
-      end
-    end
-    foreach (dev1_users[index]) begin
-      if (ctrl_vif.dev1_priv_axi_users[index] !== dev1_users[index]) begin
-        `uvm_fatal("USB_STRESS", $sformatf("DEV1 allowlist entry %0d did not update", index))
-      end
-    end
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b1 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b1) begin
-      `uvm_fatal("USB_STRESS", "Filter enables did not assert")
-    end
+    set_filter_policies(1'b1, combo_users, 1'b1, dev1_users);
     `uvm_info("USB_STRESS", $sformatf("Filtering enabled: Combo=%p DEV1=%p nonmember=0x%08h", combo_users, dev1_users, nonmember_user), UVM_LOW)
   endtask
 
   // Return both policies to bypass after all stress traffic has drained, so
   // restore_csr_state() can use ordinary random-USER accesses.
   protected task disable_filtering();
-    @(posedge ctrl_vif.clk);
-    ctrl_vif.combo_enable_axi_user_filtering <= 1'b0;
-    ctrl_vif.dev1_enable_axi_user_filtering <= 1'b0;
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_STRESS", "Filter enables did not deassert")
-    end
+    set_filter_enables(1'b0, 1'b0);
   endtask
 
   // Fill (OP_FILL) or sweep (OP_READ) both SRAMs, each with overlapping bursts.
@@ -1058,7 +1026,7 @@ class usb_axi_stress_seq extends usb_base_seq;
     build_stress_schedule(PORT_DEV1_SRAM, dev1_ops);
     `uvm_info("USB_STRESS", $sformatf("Stress: %0d chains per port, up to %0d live per port, 0..%0d clock launch gaps", primary_requests, max_live, max_launch_gap), UVM_LOW)
     // Start between sampling edges after initialization traffic has drained.
-    @(negedge ctrl_vif.clk);
+    p_sequencer.cfg.wait_bus_negedge();
     requests_before_stress = requests_launched;
     for (int unsigned port = 0; port < PORT_COUNT; port++) begin
       manager_sequencer = sequencer_for(port_target(port));
@@ -1082,7 +1050,7 @@ class usb_axi_stress_seq extends usb_base_seq;
           run_port(PORT_DEV1_CSR, dev1_csr_ops);
           run_port(PORT_DEV1_SRAM, dev1_ops);
         join
-        @(negedge ctrl_vif.clk);
+        p_sequencer.cfg.wait_bus_negedge();
         tracking_concurrency = 1'b0;
       end
     join

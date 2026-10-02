@@ -455,6 +455,93 @@ class usb_base_seq extends uvm_sequence;
     data = read_data[63:0];
     ral_memory_reads[target]++;
   endtask
+
+  // Run one operation on each AXI USER filter policy agent. Both start
+  // together, so SET_* operations land on the same clock edge, and both
+  // return the policy the DUT sees one edge later. The API sequence makes a
+  // SET_* read-back mismatch fatal. Change a policy only while no filtered
+  // transfer is in flight. Preserve the caller's RNG so policy operations
+  // do not perturb subsequent stimulus.
+  protected task run_filter_ops(usb_axi_user_filter_op_e combo_op, bit combo_enable, usb_combo_filter_users_t combo_users,
+                                usb_axi_user_filter_op_e dev1_op, bit dev1_enable, usb_dev1_filter_users_t dev1_users,
+                                output logic combo_observed_enable, output usb_combo_filter_observed_users_t combo_observed_users,
+                                output logic dev1_observed_enable, output usb_dev1_filter_observed_users_t dev1_observed_users);
+    usb_combo_filter_api_seq_t combo_seq;
+    usb_dev1_filter_api_seq_t dev1_seq;
+    process caller;
+    string caller_randstate;
+
+    if (p_sequencer.combo_filter_sequencer == null || p_sequencer.dev1_filter_sequencer == null) begin
+      `uvm_fatal("USB_SEQ", "USB virtual sequencer is missing an AXI USER filter policy sequencer")
+    end
+    caller = process::self();
+    caller_randstate = caller.get_randstate();
+    combo_seq = usb_combo_filter_api_seq_t::type_id::create("combo_filter_api_seq");
+    dev1_seq = usb_dev1_filter_api_seq_t::type_id::create("dev1_filter_api_seq");
+    combo_seq.op = combo_op;
+    combo_seq.enable = combo_enable;
+    combo_seq.priv_axi_users = combo_users;
+    dev1_seq.op = dev1_op;
+    dev1_seq.enable = dev1_enable;
+    dev1_seq.priv_axi_users = dev1_users;
+    fork
+      combo_seq.start(p_sequencer.combo_filter_sequencer, this);
+      dev1_seq.start(p_sequencer.dev1_filter_sequencer, this);
+    join
+    caller.set_randstate(caller_randstate);
+    combo_observed_enable = combo_seq.observed_enable;
+    combo_observed_users = combo_seq.observed_priv_axi_users;
+    dev1_observed_enable = dev1_seq.observed_enable;
+    dev1_observed_users = dev1_seq.observed_priv_axi_users;
+  endtask
+
+  // Sample both policies at a rising edge and require both enables to still
+  // hold the interface's known-low bypass default. id tags the fatal message.
+  protected task require_filter_bypass(string id);
+    usb_combo_filter_users_t combo_users;
+    usb_dev1_filter_users_t dev1_users;
+    logic combo_enable;
+    logic dev1_enable;
+    usb_combo_filter_observed_users_t combo_observed;
+    usb_dev1_filter_observed_users_t dev1_observed;
+
+    run_filter_ops(USB_AXI_USER_FILTER_SAMPLE, 1'b0, combo_users, USB_AXI_USER_FILTER_SAMPLE, 1'b0, dev1_users, combo_enable, combo_observed, dev1_enable, dev1_observed);
+    if (combo_enable !== 1'b0 || dev1_enable !== 1'b0) begin
+      `uvm_fatal(id, $sformatf("Filter enables are not known-low at start: combo=%b dev1=%b", combo_enable, dev1_enable))
+    end
+  endtask
+
+  // Drive both filter enables on one edge; the allowlists are unchanged.
+  protected task set_filter_enables(bit combo_enable, bit dev1_enable);
+    usb_combo_filter_users_t combo_users;
+    usb_dev1_filter_users_t dev1_users;
+    logic combo_observed_enable;
+    logic dev1_observed_enable;
+    usb_combo_filter_observed_users_t combo_observed;
+    usb_dev1_filter_observed_users_t dev1_observed;
+
+    run_filter_ops(USB_AXI_USER_FILTER_SET_ENABLE, combo_enable, combo_users, USB_AXI_USER_FILTER_SET_ENABLE, dev1_enable, dev1_users, combo_observed_enable, combo_observed, dev1_observed_enable, dev1_observed);
+  endtask
+
+  // Drive both allowlists on one edge, leaving the enables unchanged, and
+  // return the lists the DUT sees.
+  protected task set_filter_users(usb_combo_filter_users_t combo_users, usb_dev1_filter_users_t dev1_users,
+                                  output usb_combo_filter_observed_users_t combo_observed, output usb_dev1_filter_observed_users_t dev1_observed);
+    logic combo_observed_enable;
+    logic dev1_observed_enable;
+
+    run_filter_ops(USB_AXI_USER_FILTER_SET_USERS, 1'b0, combo_users, USB_AXI_USER_FILTER_SET_USERS, 1'b0, dev1_users, combo_observed_enable, combo_observed, dev1_observed_enable, dev1_observed);
+  endtask
+
+  // Drive both enables and both allowlists on one edge.
+  protected task set_filter_policies(bit combo_enable, usb_combo_filter_users_t combo_users, bit dev1_enable, usb_dev1_filter_users_t dev1_users);
+    logic combo_observed_enable;
+    logic dev1_observed_enable;
+    usb_combo_filter_observed_users_t combo_observed;
+    usb_dev1_filter_observed_users_t dev1_observed;
+
+    run_filter_ops(USB_AXI_USER_FILTER_SET_POLICY, combo_enable, combo_users, USB_AXI_USER_FILTER_SET_POLICY, dev1_enable, dev1_users, combo_observed_enable, combo_observed, dev1_observed_enable, dev1_observed);
+  endtask
 endclass
 
 // Run one prepared native request. Each concurrent request uses its own child

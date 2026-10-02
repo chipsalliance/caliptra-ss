@@ -37,6 +37,7 @@ package usb_tb_pkg;
   import usb_dev1_mem_ral_pkg::*;
   import usb_ral_config_pkg::*;
   import usb_compound_pkg::*;
+  import usb_axi_user_filter_pkg::*;
   `include "uvm_macros.svh"
 
   // AXI interface widths match the USB axi_if instances in caliptra_ss_top_tb.
@@ -75,9 +76,25 @@ package usb_tb_pkg;
   localparam int USB_TARGET_COUNT = 5;
   localparam int USB_TB_AXI_USER_WIDTH = `CALIPTRA_AXI_USER_WIDTH;
   // AXI USER allowlist depth per policy; matches caliptra_ss_top_tb
-  // USB_*_NUM_PRIV_AXI_USERS_TB and is shared by the wrapper and TB control interface.
+  // USB_*_NUM_PRIV_AXI_USERS_TB and is shared by the wrapper and the filter agents.
   localparam int unsigned USB_COMBO_NUM_PRIV_AXI_USERS = 2;
   localparam int unsigned USB_DEV1_NUM_PRIV_AXI_USERS = 2;
+
+  // AXI USER filter policy agent specializations for the Combo and DEV1 policies.
+  typedef virtual usb_axi_user_filter_if #(.UW(USB_TB_AXI_USER_WIDTH), .NUM_USERS(USB_COMBO_NUM_PRIV_AXI_USERS)) usb_combo_filter_vif_t;
+  typedef virtual usb_axi_user_filter_if #(.UW(USB_TB_AXI_USER_WIDTH), .NUM_USERS(USB_DEV1_NUM_PRIV_AXI_USERS)) usb_dev1_filter_vif_t;
+  typedef usb_axi_user_filter_agent_cfg #(USB_TB_AXI_USER_WIDTH, USB_COMBO_NUM_PRIV_AXI_USERS) usb_combo_filter_cfg_t;
+  typedef usb_axi_user_filter_agent_cfg #(USB_TB_AXI_USER_WIDTH, USB_DEV1_NUM_PRIV_AXI_USERS) usb_dev1_filter_cfg_t;
+  typedef usb_axi_user_filter_agent #(USB_TB_AXI_USER_WIDTH, USB_COMBO_NUM_PRIV_AXI_USERS) usb_combo_filter_agent_t;
+  typedef usb_axi_user_filter_agent #(USB_TB_AXI_USER_WIDTH, USB_DEV1_NUM_PRIV_AXI_USERS) usb_dev1_filter_agent_t;
+  typedef usb_axi_user_filter_sequencer #(USB_TB_AXI_USER_WIDTH, USB_COMBO_NUM_PRIV_AXI_USERS) usb_combo_filter_sequencer_t;
+  typedef usb_axi_user_filter_sequencer #(USB_TB_AXI_USER_WIDTH, USB_DEV1_NUM_PRIV_AXI_USERS) usb_dev1_filter_sequencer_t;
+  typedef usb_axi_user_filter_api_seq #(USB_TB_AXI_USER_WIDTH, USB_COMBO_NUM_PRIV_AXI_USERS) usb_combo_filter_api_seq_t;
+  typedef usb_axi_user_filter_api_seq #(USB_TB_AXI_USER_WIDTH, USB_DEV1_NUM_PRIV_AXI_USERS) usb_dev1_filter_api_seq_t;
+  typedef bit [USB_TB_AXI_USER_WIDTH-1:0] usb_combo_filter_users_t [USB_COMBO_NUM_PRIV_AXI_USERS];
+  typedef bit [USB_TB_AXI_USER_WIDTH-1:0] usb_dev1_filter_users_t [USB_DEV1_NUM_PRIV_AXI_USERS];
+  typedef logic [USB_TB_AXI_USER_WIDTH-1:0] usb_combo_filter_observed_users_t [USB_COMBO_NUM_PRIV_AXI_USERS];
+  typedef logic [USB_TB_AXI_USER_WIDTH-1:0] usb_dev1_filter_observed_users_t [USB_DEV1_NUM_PRIV_AXI_USERS];
   // usb_top_tb checks this against the Avery interface ID width, which
   // includes its default interconnect ID padding.
   localparam int USB_TB_AXI_ID_WIDTH = `CALIPTRA_AXI_ID_WIDTH;

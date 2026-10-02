@@ -39,10 +39,10 @@
 //       then set completed.
 //
 // shadow[] holds the last value accepted on each path; every preservation
-// check compares against it. Allowlist USERs are random and are not stored in
-// the sequence: they are read back from the control VIF when needed. Policy
-// signals change only with nonblocking assignments at a clk rising edge, and
-// only between blocking transfers.
+// check compares against it. Allowlist USERs are random; the sequence keeps
+// only the lists the filter agents read back from the policy interfaces,
+// i.e. what the DUT sees. The agents change policy signals only at a clk
+// rising edge, and this sequence changes them only between blocking transfers.
 class usb_axi_filter_seq extends usb_base_seq;
   `uvm_object_utils(usb_axi_filter_seq)
 
@@ -103,7 +103,7 @@ class usb_axi_filter_seq extends usb_base_seq;
     '{target: USB_DEV1_CSR,  combo_policy: 1'b0, is_csr: 1'b1, offset: DEVICE_ROUTE_ADDR, mask: USB_DEV1_ROUTE_MASK},
     '{target: USB_DEV1_SRAM, combo_policy: 1'b0, is_csr: 1'b0, offset: SRAM_WORD_ADDR,    mask: 32'hffff_ffff}
   };
-  // Random USER in neither allowlist; the only USER not observable on the control VIF.
+  // Random USER in neither allowlist; the only USER not read back from a filter agent.
   axi_user_t nonmember_user;
   logic [31:0] shadow[USB_TARGET_COUNT];
   int unsigned denied_writes[USB_TARGET_COUNT];
@@ -126,30 +126,20 @@ class usb_axi_filter_seq extends usb_base_seq;
   time p8_max_256_write[USB_TARGET_COUNT];
   time p8_max_256_read[USB_TARGET_COUNT];
   string phase_name;
-  protected virtual usb_tb_ctrl_if #(
-    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-  ) ctrl_vif;
+  // Allowlists read back by the filter agents in P0; unchanged afterwards.
+  protected usb_combo_filter_observed_users_t combo_observed_users;
+  protected usb_dev1_filter_observed_users_t dev1_observed_users;
 
   // Create the sequence. Counters and shadow values are cleared in body().
   function new(string name = "usb_axi_filter_seq");
     super.new(name);
   endfunction
 
-  // Extend the base handle check: require the filter control VIF, then at a
-  // rising edge require both enables to still hold the interface's known-low
-  // bypass default.
+  // Extend the base handle check: at a rising edge, require both filter
+  // enables to still hold the interface's known-low bypass default.
   virtual task pre_start();
     super.pre_start();
-    ctrl_vif = p_sequencer.ctrl_vif;
-    if (ctrl_vif == null) begin
-      `uvm_fatal("USB_FILTER_SEQ", "USB virtual sequencer is missing the AXI USER filter control VIF")
-    end
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_FILTER_SEQ", $sformatf("Filter enables are not known-low at start: combo=%b dev1=%b", ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering))
-    end
+    require_filter_bypass("USB_FILTER_SEQ");
   endtask
 
   // ---------------------------------------------------------------------------
@@ -157,27 +147,21 @@ class usb_axi_filter_seq extends usb_base_seq;
   // ---------------------------------------------------------------------------
 
   // Begin a scenario phase: record its label for failure messages, log the
-  // checkpoint, and drive both filter enables with nonblocking assignments at
-  // a rising edge. Returns after the next rising edge, once the enables read
+  // checkpoint, and drive both filter enables on one rising edge through the
+  // filter agents. Returns after the next rising edge, once the enables read
   // back as requested. The caller must have no transfer in flight (every
   // access task here is blocking).
   protected task start_phase(string name, string description, bit combo_enable, bit dev1_enable);
     phase_name = name;
     `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Starting with combo_enable=%0b dev1_enable=%0b: %s", phase_name, combo_enable, dev1_enable, description), UVM_LOW)
-    @(posedge ctrl_vif.clk);
-    ctrl_vif.combo_enable_axi_user_filtering <= combo_enable;
-    ctrl_vif.dev1_enable_axi_user_filtering <= dev1_enable;
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== combo_enable || ctrl_vif.dev1_enable_axi_user_filtering !== dev1_enable) begin
-      `uvm_fatal("USB_FILTER_SEQ", $sformatf("[%s] Enables read back combo=%b dev1=%b, expected %0b/%0b", phase_name, ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering, combo_enable, dev1_enable))
-    end
+    set_filter_enables(combo_enable, dev1_enable);
   endtask
 
   // Randomize every entry of both allowlists and nonmember_user, then drive the
-  // lists with nonblocking assignments at a rising edge. All values are unique
+  // lists on one rising edge through the filter agents. All values are unique
   // across both lists and the nonmember, and no entry's MSB-flipped value is in
-  // its own list. Returns after the next rising edge and logs the lists as
-  // read back from the VIF.
+  // its own list. Returns after the next rising edge, keeps the lists as read
+  // back by the agents, and logs them.
   protected task program_allowlists();
     axi_user_t combo_users[USB_COMBO_NUM_PRIV_AXI_USERS];
     axi_user_t dev1_users[USB_DEV1_NUM_PRIV_AXI_USERS];
@@ -191,20 +175,17 @@ class usb_axi_filter_seq extends usb_base_seq;
         }) begin
       `uvm_fatal("USB_FILTER_SEQ", "Unable to randomize the AXI USER allowlists")
     end
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) ctrl_vif.combo_priv_axi_users[index] <= combo_users[index];
-    foreach (dev1_users[index]) ctrl_vif.dev1_priv_axi_users[index] <= dev1_users[index];
-    @(posedge ctrl_vif.clk);
+    set_filter_users(combo_users, dev1_users, combo_observed_users, dev1_observed_users);
     for (int unsigned index = 0; index < USB_COMBO_NUM_PRIV_AXI_USERS; index++) begin
-      combo_text = {combo_text, $sformatf(" 0x%08h", ctrl_vif.combo_priv_axi_users[index])};
+      combo_text = {combo_text, $sformatf(" 0x%08h", combo_observed_users[index])};
     end
     for (int unsigned index = 0; index < USB_DEV1_NUM_PRIV_AXI_USERS; index++) begin
-      dev1_text = {dev1_text, $sformatf(" 0x%08h", ctrl_vif.dev1_priv_axi_users[index])};
+      dev1_text = {dev1_text, $sformatf(" 0x%08h", dev1_observed_users[index])};
     end
     `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Allowlists programmed: Combo =%s; DEV1 =%s; nonmember=0x%08h", phase_name, combo_text, dev1_text, nonmember_user), UVM_LOW)
   endtask
 
-  // Return a USER read from the allowlist signals on the control VIF: from the
+  // Return a USER from the allowlists read back by the filter agents: from the
   // path's own list (OWN_LIST) or the other device's list (OTHER_LIST), at the
   // path's position (entry 0 for CSR paths, last entry for SRAM paths).
   protected function axi_user_t path_user(filter_path_t path, bit own_list);
@@ -212,21 +193,21 @@ class usb_axi_filter_seq extends usb_base_seq;
 
     combo_list = own_list ? path.combo_policy : !path.combo_policy;
     if (combo_list) begin
-      return ctrl_vif.combo_priv_axi_users[path.is_csr ? 0 : USB_COMBO_NUM_PRIV_AXI_USERS - 1];
+      return combo_observed_users[path.is_csr ? 0 : USB_COMBO_NUM_PRIV_AXI_USERS - 1];
     end
-    return ctrl_vif.dev1_priv_axi_users[path.is_csr ? 0 : USB_DEV1_NUM_PRIV_AXI_USERS - 1];
+    return dev1_observed_users[path.is_csr ? 0 : USB_DEV1_NUM_PRIV_AXI_USERS - 1];
   endfunction
 
   // Return 1 if user matches any entry of the Combo (combo_list=1) or DEV1
-  // allowlist currently on the control VIF, i.e. what the DUT sees.
+  // allowlist read back by the filter agents, i.e. what the DUT sees.
   protected function bit in_driven_list(bit combo_list, axi_user_t user);
     if (combo_list) begin
       for (int unsigned index = 0; index < USB_COMBO_NUM_PRIV_AXI_USERS; index++) begin
-        if (ctrl_vif.combo_priv_axi_users[index] === user) return 1'b1;
+        if (combo_observed_users[index] === user) return 1'b1;
       end
     end else begin
       for (int unsigned index = 0; index < USB_DEV1_NUM_PRIV_AXI_USERS; index++) begin
-        if (ctrl_vif.dev1_priv_axi_users[index] === user) return 1'b1;
+        if (dev1_observed_users[index] === user) return 1'b1;
       end
     end
     return 1'b0;

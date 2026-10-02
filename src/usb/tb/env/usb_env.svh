@@ -18,8 +18,8 @@
 // Creates the Synopsys USB host and remote UTMI PHY configuration for live USB
 // stimulus. Virtual interfaces come from usb_top_tb.
 
-// Own the manager ports, RAL routing, USB agent, shared sequence context, and
-// reset-access gate.
+// Own the manager ports, AXI USER filter policy agents, RAL routing, USB
+// agent, shared sequence context, and reset-access gate.
 class usb_env extends uvm_env;
   `uvm_component_utils(usb_env)
 
@@ -42,14 +42,16 @@ class usb_env extends uvm_env;
 
   usb_env_cfg cfg;
   usb_vif_t usb_20_mac_if;
-  virtual usb_tb_ctrl_if #(
-    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-  ) ctrl_vif;
   svt_usb_agent host_agent;
   svt_sequence_item_report usb_sequence_item_report;
   usb_virtual_sequencer virtual_sequencer;
+
+  // AXI USER filter policy agents for the Combo (DEV0 CSR/HUB, DEV0 SRAM) and
+  // DEV1 (CSR, SRAM) policies.
+  usb_combo_filter_cfg_t combo_filter_cfg;
+  usb_dev1_filter_cfg_t dev1_filter_cfg;
+  usb_combo_filter_agent_t combo_filter_agent;
+  usb_dev1_filter_agent_t dev1_filter_agent;
 
   // Each root RAL map has its own adapter; identical local addresses are legal.
   usb_reg_model reg_model;
@@ -198,17 +200,26 @@ class usb_env extends uvm_env;
     dev1_csr_manager    = create_manager_agent("dev1_csr_manager", dev1_csr_config);
     dev1_memory_manager = create_manager_agent("dev1_memory_manager", dev1_memory_config);
 
-    // Filter policy control defaults to known-low bypass; tests opt in to filtering.
-    if (!uvm_config_db#(virtual usb_tb_ctrl_if #(
-      .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-      .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-      .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-    ))::get(this, "", "usb_ctrl_vif", ctrl_vif)) begin
-      `uvm_fatal("USB_ENV", "Missing usb_ctrl_vif for AXI USER filter policy control")
+    // All managers share one bus clock and reset; the combo port is the reference.
+    cfg.bus_vif = combo_config.vif;
+
+    // ---------------------------------------------------------------------------
+    // AXI USER filter policy agents
+    // ---------------------------------------------------------------------------
+
+    // Each policy defaults to known-low bypass in its interface; tests opt in to filtering.
+    combo_filter_cfg = usb_combo_filter_cfg_t::type_id::create("combo_filter_cfg");
+    dev1_filter_cfg  = usb_dev1_filter_cfg_t::type_id::create("dev1_filter_cfg");
+    if (!uvm_config_db#(usb_combo_filter_vif_t)::get(this, "", "combo_filter_vif", combo_filter_cfg.vif) || combo_filter_cfg.vif == null) begin
+      `uvm_fatal("USB_ENV", "Missing combo_filter_vif for the Combo AXI USER filter policy")
     end
-    if (ctrl_vif == null) begin
-      `uvm_fatal("USB_ENV", "Null usb_ctrl_vif for AXI USER filter policy control")
+    if (!uvm_config_db#(usb_dev1_filter_vif_t)::get(this, "", "dev1_filter_vif", dev1_filter_cfg.vif) || dev1_filter_cfg.vif == null) begin
+      `uvm_fatal("USB_ENV", "Missing dev1_filter_vif for the DEV1 AXI USER filter policy")
     end
+    uvm_config_db#(usb_combo_filter_cfg_t)::set(this, "combo_filter_agent", "cfg", combo_filter_cfg);
+    uvm_config_db#(usb_dev1_filter_cfg_t)::set(this, "dev1_filter_agent", "cfg", dev1_filter_cfg);
+    combo_filter_agent = usb_combo_filter_agent_t::type_id::create("combo_filter_agent", this);
+    dev1_filter_agent  = usb_dev1_filter_agent_t::type_id::create("dev1_filter_agent", this);
 
     // ---------------------------------------------------------------------------
     // RAL model and adapter setup
@@ -287,7 +298,10 @@ class usb_env extends uvm_env;
 
     if (virtual_sequencer == null ||
         reg_model == null ||
-        ctrl_vif == null ||
+        combo_filter_agent == null ||
+        combo_filter_agent.sequencer == null ||
+        dev1_filter_agent == null ||
+        dev1_filter_agent.sequencer == null ||
         combo_manager == null ||
         combo_manager.sequencer == null ||
         dev0_memory_manager == null ||
@@ -306,7 +320,9 @@ class usb_env extends uvm_env;
     virtual_sequencer.dev1_csr_sequencer = dev1_csr_manager.sequencer;
     virtual_sequencer.dev1_memory_sequencer = dev1_memory_manager.sequencer;
     virtual_sequencer.host_sequencer = host_agent.virt_sequencer;
-    virtual_sequencer.ctrl_vif = ctrl_vif;
+    virtual_sequencer.combo_filter_sequencer = combo_filter_agent.sequencer;
+    virtual_sequencer.dev1_filter_sequencer = dev1_filter_agent.sequencer;
+    virtual_sequencer.cfg = cfg;
     virtual_sequencer.axi_delay_random = cfg.axi_delay_random;
 
     // ---------------------------------------------------------------------------
