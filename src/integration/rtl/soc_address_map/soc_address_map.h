@@ -7764,6 +7764,8 @@
 #define MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK                                                         (0x2)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (0x4)
+#define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
+#define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (0x8)
 #endif
 #define SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                         (0x21000054)
 #ifndef MCI_REG_AGG_ERROR_FATAL
@@ -7966,6 +7968,8 @@
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_MASK                                      (0x2)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (0x4)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (0x8)
 #endif
 #define SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                        (0x21000094)
 #ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK

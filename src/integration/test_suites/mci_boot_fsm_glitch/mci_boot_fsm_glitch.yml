@@ -1,0 +1,15 @@
+---
+seed: ${PLAYBOOK_RANDOM_SEED}
+testname: mci_boot_fsm_glitch
+# MCI boot FSM glitch test. The SV test in
+# src/integration/testbench/sv_tests/mci/mci_boot_fsm_glitch.svh does all
+# stimulus and checking. The MCU is held halted by the TB and the Caliptra CPU
+# never runs, so the breakpoint smoke test's images are reused unchanged.
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [mci_boot_fsm_glitch]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mci_brkpoint_axi CALIPTRA_TESTNAME=cptra_smoke_test_mci_brkpoint_axi CALIPTRA_AUX=soc_ifc_ss mcu_program.hex cptra_program.hex
+plusargs:
+    - '+cptra_ss_sv_test=MCI_BOOT_FSM_GLITCH'
+    - '+MCI_BOOT_FSM_BRKPOINT_SET'
+    - '+CLP_MAX_CYCLES=20000000'

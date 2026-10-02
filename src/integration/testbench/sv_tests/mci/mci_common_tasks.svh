@@ -379,21 +379,25 @@ endtask
 
 task wait_mci_boot_fsm_in_state(input mci_boot_fsm_state_e target_state, input int timeout=100000);
     logic [31:0] reg_data;
+    logic [3:0] target_encoded;
     int i;
 
-    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x...", $time, target_state);
+    // HW_FLOW_STATUS reports the compact 4-bit encoding of the sparse boot FSM state
+    target_encoded = mci_boot_fsm_state_encode(target_state);
+
+    $display("[%0t] Waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x (%s)...", $time, target_encoded, target_state.name());
     for (i = 0; i < timeout; i++) begin
         bfm_axi_read_single_invalid_user(`SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS, reg_data);
-        if ((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) == target_state) begin
-            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x detected.", $time, target_state);
+        if (((reg_data & `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK) >> `MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW) == target_encoded) begin
+            $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x (%s) detected.", $time, target_encoded, target_state.name());
             break;
         end
     end
     if (i == timeout) begin
-        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x", $time, target_state);
+        $fatal(1, "[%0t] FATAL: Timeout waiting for HW_FLOW_STATUS_BOOT_FSM == 0x%x (%s)", $time, target_encoded, target_state.name());
     end
 
-    $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x detected.", $time, target_state);
+    $display("[%0t] HW_FLOW_STATUS_BOOT_FSM == 0x%x (%s) detected.", $time, target_encoded, target_state.name());
 
 endtask
 

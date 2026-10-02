@@ -258,7 +258,8 @@ module mci_top
 
     // Boot Sequencer
     logic mcu_reset_once;
-    mci_boot_fsm_state_e boot_fsm;
+    logic [3:0] boot_fsm_encoded;
+    logic boot_fsm_error;
 
     // MBOX
     logic mbox0_sram_single_ecc_error;
@@ -444,7 +445,8 @@ mci_boot_seqr #(
     .mci_bootfsm_go(mci_reg_hwif_out.MCI_BOOTFSM_GO.go),
     .mcu_rst_req(mci_reg_hwif_out.RESET_REQUEST.mcu_req),
     .mcu_reset_once,
-    .boot_fsm,
+    .boot_fsm_encoded,
+    .fsm_error(boot_fsm_error),
 
     // SoC signals
     .mci_boot_seq_brkpoint,
@@ -721,7 +723,8 @@ mci_reg_top #(
 
     // Boot status
     .mcu_reset_once,
-    .boot_fsm,
+    .boot_fsm(boot_fsm_encoded),
+    .boot_fsm_error,
     
     // Caliptra internal fabric response interface
     .cif_resp_if (mci_reg_req_if.response)
