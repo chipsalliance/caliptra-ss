@@ -161,9 +161,15 @@ class usb_dev_skip_seq extends usb_base_seq;
     end
 
     for (int unsigned offset = 0; offset < recovery_bytes; offset += 4) begin
+      logic [31:0] comparison_mask;
+
+      comparison_mask = '0;
+      for (int unsigned lane = 0; lane < 4 && offset + lane < recovery_bytes; lane++) begin
+        comparison_mask[8*lane +: 8] = 8'hff;
+      end
       expected_word = expected_payload_word(offset);
       read32(USB_DEV0_SRAM, skip_buffer_offset + offset, observed_word);
-      if (observed_word !== expected_word) begin
+      if ((observed_word & comparison_mask) !== (expected_word & comparison_mask)) begin
         `uvm_fatal("USB_SKIP_SEQ", $sformatf("Post-skip payload mismatch at buffer offset 0x%03h: data=0x%08h expected=0x%08h", offset, observed_word, expected_word))
       end
     end
