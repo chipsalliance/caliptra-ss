@@ -34,8 +34,6 @@ class usb_endpoint_rw_seq extends usb_base_seq;
 
   // Fixed locations cover the first words, adjacent halves, and final SRAM row.
   localparam int unsigned SRAM_LOCATION_COUNT = 5;
-  localparam logic [31:0] HUB_CONTROL_ADDR = HUB_BASE_ADDR + 32'h3c;
-  localparam logic [31:0] DEVICE_ROUTE_ADDR = 32'h2c;
   localparam logic [31:0] DEV0_ROUTE_MASK = USB_DEV0_ROUTE_MASK;
   localparam logic [31:0] DEV1_ROUTE_MASK = USB_DEV1_ROUTE_MASK;
   localparam int unsigned RAL_MEMORY_LOCATION_COUNT = 4;
@@ -88,6 +86,20 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   // No DUT traffic runs here; body() resets run accounting and executes the test.
   function new(string name = "usb_endpoint_rw_seq");
     super.new(name);
+  endfunction
+
+  // Native offsets of the registers and HUB descriptor words this test
+  // exercises, derived from the RAL so no CSR address is restated here.
+  function logic [31:0] device_route_addr(usb_target_e target);
+    return csr_offset(target, "INTROUTE");
+  endfunction
+
+  function logic [31:0] hub_control_addr();
+    return reg_offset(USB_HUB, p_sequencer.reg_model.combo.hub.CONTROL);
+  endfunction
+
+  function logic [31:0] hub_descriptor_addr(int unsigned word_index);
+    return mem_word_offset(USB_HUB, p_sequencer.reg_model.combo.hub.DESCRIPTOR_LOW.m_mem, word_index);
   endfunction
 
   // Translate a native-test slot (0..4) to a target-local byte offset: the first
@@ -219,15 +231,16 @@ class usb_endpoint_rw_seq extends usb_base_seq;
     )
   endfunction
 
-  // Check masked reset/disabled-state bits at CSR offsets 0x00 and 0x24 and the
-  // configured endpoint count at 0x30, then save the route word for restoration.
-  // route_mask selects the bits checked at 0x24. This verifies initial state;
-  // it does not reset or disable the controller, and all accesses count natively.
+  // Check masked reset/disabled-state bits in DEVCMDSTAT and INTEN and the
+  // configured endpoint count in CONFIG, then save the route word for
+  // restoration. route_mask selects the bits checked in INTEN. This verifies
+  // initial state; it does not reset or disable the controller, and all
+  // accesses count natively.
   task check_device_reset_state(usb_target_e target, logic [31:0] route_mask, logic [4:0] endpoint_count, output logic [31:0] saved_route);
-    expect32(target, 32'h00, '0, 32'h0001_0080);
-    expect32(target, 32'h24, '0, route_mask);
-    expect32(target, 32'h30, endpoint_count, 32'h1f);
-    read32(target, DEVICE_ROUTE_ADDR, saved_route);
+    expect32(target, csr_offset(target, "DEVCMDSTAT"), '0, 32'h0001_0080);
+    expect32(target, csr_offset(target, "INTEN"), '0, route_mask);
+    expect32(target, csr_offset(target, "CONFIG"), endpoint_count, 32'h1f);
+    read32(target, device_route_addr(target), saved_route);
   endtask
 
   // Enforce the disabled-state precondition for both devices and the HUB, using
@@ -237,9 +250,9 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   task capture_initial_state(output logic [31:0] saved_dev0_route, output logic [31:0] saved_dev1_route, output logic [31:0] saved_hub_word2, output logic [31:0] saved_hub_word3);
     check_device_reset_state(USB_DEV0_CSR, DEV0_ROUTE_MASK, 5'(USB_DEV0_NBPHYSEP), saved_dev0_route);
     check_device_reset_state(USB_DEV1_CSR, DEV1_ROUTE_MASK, 5'(USB_DEV1_NBPHYSEP), saved_dev1_route);
-    expect32(USB_HUB, HUB_CONTROL_ADDR, '0, 32'h0001_0001);
-    read32(USB_HUB, HUB_BASE_ADDR + 32'h08, saved_hub_word2);
-    read32(USB_HUB, HUB_BASE_ADDR + 32'h0c, saved_hub_word3);
+    expect32(USB_HUB, hub_control_addr(), '0, 32'h0001_0001);
+    read32(USB_HUB, hub_descriptor_addr(2), saved_hub_word2);
+    read32(USB_HUB, hub_descriptor_addr(3), saved_hub_word3);
     `uvm_info("USB_SEQ", "Disabled device and HUB state confirmed", UVM_LOW)
   endtask
 
@@ -247,10 +260,10 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   // write/readback patterns, comparing only DEV0_ROUTE_MASK bits. Leave the
   // second pattern installed for the later cross-target isolation check.
   task exercise_dev0_csr();
-    write32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, 32'h4000_a55a);
-    expect32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, 32'h4000_a55a, DEV0_ROUTE_MASK);
-    write32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, 32'h8000_5aa5);
-    expect32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, 32'h8000_5aa5, DEV0_ROUTE_MASK);
+    write32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), 32'h4000_a55a);
+    expect32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), 32'h4000_a55a, DEV0_ROUTE_MASK);
+    write32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), 32'h8000_5aa5);
+    expect32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), 32'h8000_5aa5, DEV0_ROUTE_MASK);
   endtask
 
   // Verify that HUB descriptor words 2 and 3 independently retain native writes:
@@ -259,23 +272,23 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   // this task does not modify control bits or restore the descriptor words.
   task exercise_hub_storage();
     `uvm_info("USB_HUB", "Testing descriptor words 2 and 3 while HUB enable and DCON are clear", UVM_LOW)
-    write32(USB_HUB, HUB_BASE_ADDR + 32'h08, 32'h96a5_3cc3);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h08, 32'h96a5_3cc3);
-    write32(USB_HUB, HUB_BASE_ADDR + 32'h0c, 32'h5ac3_6996);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h0c, 32'h5ac3_6996);
-    write32(USB_HUB, HUB_BASE_ADDR + 32'h08, 32'hc35a_a569);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h08, 32'hc35a_a569);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h0c, 32'h5ac3_6996);
+    write32(USB_HUB, hub_descriptor_addr(2), 32'h96a5_3cc3);
+    expect32(USB_HUB, hub_descriptor_addr(2), 32'h96a5_3cc3);
+    write32(USB_HUB, hub_descriptor_addr(3), 32'h5ac3_6996);
+    expect32(USB_HUB, hub_descriptor_addr(3), 32'h5ac3_6996);
+    write32(USB_HUB, hub_descriptor_addr(2), 32'hc35a_a569);
+    expect32(USB_HUB, hub_descriptor_addr(2), 32'hc35a_a569);
+    expect32(USB_HUB, hub_descriptor_addr(3), 32'h5ac3_6996);
   endtask
 
   // Exercise DEV1 routing through its dedicated manager using two native
   // write/readback patterns, comparing only DEV1_ROUTE_MASK bits. Leave the
   // second pattern installed for the later cross-target isolation check.
   task exercise_dev1_csr();
-    write32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, 32'h8000_2569);
-    expect32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, 32'h8000_2569, DEV1_ROUTE_MASK);
-    write32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, 32'h4000_1a96);
-    expect32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, 32'h4000_1a96, DEV1_ROUTE_MASK);
+    write32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), 32'h8000_2569);
+    expect32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), 32'h8000_2569, DEV1_ROUTE_MASK);
+    write32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), 32'h4000_1a96);
+    expect32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), 32'h4000_1a96, DEV1_ROUTE_MASK);
   endtask
 
   // Check native word addressing at the first three words and both halves of
@@ -313,10 +326,10 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   // targets or locations. Requires the exercise tasks' final patterns, including
   // their updated SRAM expectation arrays; run before restoration or RAL writes.
   task check_cross_target_independence();
-    expect32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, 32'h8000_5aa5, DEV0_ROUTE_MASK);
-    expect32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, 32'h4000_1a96, DEV1_ROUTE_MASK);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h08, 32'hc35a_a569);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h0c, 32'h5ac3_6996);
+    expect32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), 32'h8000_5aa5, DEV0_ROUTE_MASK);
+    expect32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), 32'h4000_1a96, DEV1_ROUTE_MASK);
+    expect32(USB_HUB, hub_descriptor_addr(2), 32'hc35a_a569);
+    expect32(USB_HUB, hub_descriptor_addr(3), 32'h5ac3_6996);
 
     for (int unsigned location_index = 0; location_index < SRAM_LOCATION_COUNT; location_index++) begin
       expect32(USB_DEV0_SRAM, sram_offset(USB_DEV0_SRAM, location_index), dev0_sram_data[location_index]);
@@ -329,14 +342,14 @@ class usb_endpoint_rw_seq extends usb_base_seq;
   // clear bits outside the mask and comparisons ignore them. SRAM patterns are
   // left intact; restoration accesses contribute to native completion totals.
   task restore_initial_state(logic [31:0] saved_dev0_route, logic [31:0] saved_dev1_route, logic [31:0] saved_hub_word2, logic [31:0] saved_hub_word3);
-    write32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, saved_dev0_route & DEV0_ROUTE_MASK);
-    expect32(USB_DEV0_CSR, DEVICE_ROUTE_ADDR, saved_dev0_route, DEV0_ROUTE_MASK);
-    write32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, saved_dev1_route & DEV1_ROUTE_MASK);
-    expect32(USB_DEV1_CSR, DEVICE_ROUTE_ADDR, saved_dev1_route, DEV1_ROUTE_MASK);
-    write32(USB_HUB, HUB_BASE_ADDR + 32'h08, saved_hub_word2);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h08, saved_hub_word2);
-    write32(USB_HUB, HUB_BASE_ADDR + 32'h0c, saved_hub_word3);
-    expect32(USB_HUB, HUB_BASE_ADDR + 32'h0c, saved_hub_word3);
+    write32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), saved_dev0_route & DEV0_ROUTE_MASK);
+    expect32(USB_DEV0_CSR, device_route_addr(USB_DEV0_CSR), saved_dev0_route, DEV0_ROUTE_MASK);
+    write32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), saved_dev1_route & DEV1_ROUTE_MASK);
+    expect32(USB_DEV1_CSR, device_route_addr(USB_DEV1_CSR), saved_dev1_route, DEV1_ROUTE_MASK);
+    write32(USB_HUB, hub_descriptor_addr(2), saved_hub_word2);
+    expect32(USB_HUB, hub_descriptor_addr(2), saved_hub_word2);
+    write32(USB_HUB, hub_descriptor_addr(3), saved_hub_word3);
+    expect32(USB_HUB, hub_descriptor_addr(3), saved_hub_word3);
   endtask
 
   // Require a target's accumulated native writes, reads, and passing comparisons
