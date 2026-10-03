@@ -818,202 +818,6 @@ package usb_combo_ral_pkg;
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_STATUS_1
 
-    // Reg - usb_combo.recovery.DEVICE_STATUS_2
-    class usb_combo__recovery__DEVICE_STATUS_2 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_4_1;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_2");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_4_1 = new("VENDOR_STATUS_4_1");
-            this.VENDOR_STATUS_4_1.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_2
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_3
-    class usb_combo__recovery__DEVICE_STATUS_3 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_8_5;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_3");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_8_5 = new("VENDOR_STATUS_8_5");
-            this.VENDOR_STATUS_8_5.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_3
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_4
-    class usb_combo__recovery__DEVICE_STATUS_4 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_12_9;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_4");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_12_9 = new("VENDOR_STATUS_12_9");
-            this.VENDOR_STATUS_12_9.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_4
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_5
-    class usb_combo__recovery__DEVICE_STATUS_5 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_16_13;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_5");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_16_13 = new("VENDOR_STATUS_16_13");
-            this.VENDOR_STATUS_16_13.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_5
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_6
-    class usb_combo__recovery__DEVICE_STATUS_6 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_20_17;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_6");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_20_17 = new("VENDOR_STATUS_20_17");
-            this.VENDOR_STATUS_20_17.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_6
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_7
-    class usb_combo__recovery__DEVICE_STATUS_7 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_24_21;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_7");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_24_21 = new("VENDOR_STATUS_24_21");
-            this.VENDOR_STATUS_24_21.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_7
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_8
-    class usb_combo__recovery__DEVICE_STATUS_8 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_28_25;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_8");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_28_25 = new("VENDOR_STATUS_28_25");
-            this.VENDOR_STATUS_28_25.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_8
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_9
-    class usb_combo__recovery__DEVICE_STATUS_9 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_32_29;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_9");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_32_29 = new("VENDOR_STATUS_32_29");
-            this.VENDOR_STATUS_32_29.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_9
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_10
-    class usb_combo__recovery__DEVICE_STATUS_10 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_36_33;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_10");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_36_33 = new("VENDOR_STATUS_36_33");
-            this.VENDOR_STATUS_36_33.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_10
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_11
-    class usb_combo__recovery__DEVICE_STATUS_11 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_40_37;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_11");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_40_37 = new("VENDOR_STATUS_40_37");
-            this.VENDOR_STATUS_40_37.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_11
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_12
-    class usb_combo__recovery__DEVICE_STATUS_12 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_44_41;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_12");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_44_41 = new("VENDOR_STATUS_44_41");
-            this.VENDOR_STATUS_44_41.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_12
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_13
-    class usb_combo__recovery__DEVICE_STATUS_13 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_48_45;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_13");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_48_45 = new("VENDOR_STATUS_48_45");
-            this.VENDOR_STATUS_48_45.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_13
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_14
-    class usb_combo__recovery__DEVICE_STATUS_14 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_52_49;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_14");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_52_49 = new("VENDOR_STATUS_52_49");
-            this.VENDOR_STATUS_52_49.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_14
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_15
-    class usb_combo__recovery__DEVICE_STATUS_15 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_56_53;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_15");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_56_53 = new("VENDOR_STATUS_56_53");
-            this.VENDOR_STATUS_56_53.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_15
-
     // Reg - usb_combo.recovery.DEVICE_RESET
     class usb_combo__recovery__DEVICE_RESET extends uvm_reg;
         rand uvm_reg_field RESET_CTRL;
@@ -1339,20 +1143,6 @@ package usb_combo_ral_pkg;
         rand usb_combo__recovery__DEVICE_ID_5 DEVICE_ID_5;
         rand usb_combo__recovery__DEVICE_STATUS_0 DEVICE_STATUS_0;
         rand usb_combo__recovery__DEVICE_STATUS_1 DEVICE_STATUS_1;
-        rand usb_combo__recovery__DEVICE_STATUS_2 DEVICE_STATUS_2;
-        rand usb_combo__recovery__DEVICE_STATUS_3 DEVICE_STATUS_3;
-        rand usb_combo__recovery__DEVICE_STATUS_4 DEVICE_STATUS_4;
-        rand usb_combo__recovery__DEVICE_STATUS_5 DEVICE_STATUS_5;
-        rand usb_combo__recovery__DEVICE_STATUS_6 DEVICE_STATUS_6;
-        rand usb_combo__recovery__DEVICE_STATUS_7 DEVICE_STATUS_7;
-        rand usb_combo__recovery__DEVICE_STATUS_8 DEVICE_STATUS_8;
-        rand usb_combo__recovery__DEVICE_STATUS_9 DEVICE_STATUS_9;
-        rand usb_combo__recovery__DEVICE_STATUS_10 DEVICE_STATUS_10;
-        rand usb_combo__recovery__DEVICE_STATUS_11 DEVICE_STATUS_11;
-        rand usb_combo__recovery__DEVICE_STATUS_12 DEVICE_STATUS_12;
-        rand usb_combo__recovery__DEVICE_STATUS_13 DEVICE_STATUS_13;
-        rand usb_combo__recovery__DEVICE_STATUS_14 DEVICE_STATUS_14;
-        rand usb_combo__recovery__DEVICE_STATUS_15 DEVICE_STATUS_15;
         rand usb_combo__recovery__DEVICE_RESET DEVICE_RESET;
         rand usb_combo__recovery__RECOVERY_CTRL RECOVERY_CTRL;
         rand usb_combo__recovery__RECOVERY_STATUS RECOVERY_STATUS;
@@ -1380,197 +1170,127 @@ package usb_combo_ral_pkg;
             this.PROT_CAP_0.configure(this);
 
             this.PROT_CAP_0.build();
-            this.default_map.add_reg(this.PROT_CAP_0, 'h0);
+            this.default_map.add_reg(this.PROT_CAP_0, 'h4);
             this.PROT_CAP_1 = new("PROT_CAP_1");
             this.PROT_CAP_1.configure(this);
 
             this.PROT_CAP_1.build();
-            this.default_map.add_reg(this.PROT_CAP_1, 'h4);
+            this.default_map.add_reg(this.PROT_CAP_1, 'h8);
             this.PROT_CAP_2 = new("PROT_CAP_2");
             this.PROT_CAP_2.configure(this);
 
             this.PROT_CAP_2.build();
-            this.default_map.add_reg(this.PROT_CAP_2, 'h8);
+            this.default_map.add_reg(this.PROT_CAP_2, 'hc);
             this.PROT_CAP_3 = new("PROT_CAP_3");
             this.PROT_CAP_3.configure(this);
 
             this.PROT_CAP_3.build();
-            this.default_map.add_reg(this.PROT_CAP_3, 'hc);
+            this.default_map.add_reg(this.PROT_CAP_3, 'h10);
             this.DEVICE_ID_0 = new("DEVICE_ID_0");
             this.DEVICE_ID_0.configure(this);
 
             this.DEVICE_ID_0.build();
-            this.default_map.add_reg(this.DEVICE_ID_0, 'h10);
+            this.default_map.add_reg(this.DEVICE_ID_0, 'h14);
             this.DEVICE_ID_1 = new("DEVICE_ID_1");
             this.DEVICE_ID_1.configure(this);
 
             this.DEVICE_ID_1.build();
-            this.default_map.add_reg(this.DEVICE_ID_1, 'h14);
+            this.default_map.add_reg(this.DEVICE_ID_1, 'h18);
             this.DEVICE_ID_2 = new("DEVICE_ID_2");
             this.DEVICE_ID_2.configure(this);
 
             this.DEVICE_ID_2.build();
-            this.default_map.add_reg(this.DEVICE_ID_2, 'h18);
+            this.default_map.add_reg(this.DEVICE_ID_2, 'h1c);
             this.DEVICE_ID_3 = new("DEVICE_ID_3");
             this.DEVICE_ID_3.configure(this);
 
             this.DEVICE_ID_3.build();
-            this.default_map.add_reg(this.DEVICE_ID_3, 'h1c);
+            this.default_map.add_reg(this.DEVICE_ID_3, 'h20);
             this.DEVICE_ID_4 = new("DEVICE_ID_4");
             this.DEVICE_ID_4.configure(this);
 
             this.DEVICE_ID_4.build();
-            this.default_map.add_reg(this.DEVICE_ID_4, 'h20);
+            this.default_map.add_reg(this.DEVICE_ID_4, 'h24);
             this.DEVICE_ID_5 = new("DEVICE_ID_5");
             this.DEVICE_ID_5.configure(this);
 
             this.DEVICE_ID_5.build();
-            this.default_map.add_reg(this.DEVICE_ID_5, 'h24);
+            this.default_map.add_reg(this.DEVICE_ID_5, 'h28);
             this.DEVICE_STATUS_0 = new("DEVICE_STATUS_0");
             this.DEVICE_STATUS_0.configure(this);
 
             this.DEVICE_STATUS_0.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_0, 'h28);
+            this.default_map.add_reg(this.DEVICE_STATUS_0, 'h30);
             this.DEVICE_STATUS_1 = new("DEVICE_STATUS_1");
             this.DEVICE_STATUS_1.configure(this);
 
             this.DEVICE_STATUS_1.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_1, 'h2c);
-            this.DEVICE_STATUS_2 = new("DEVICE_STATUS_2");
-            this.DEVICE_STATUS_2.configure(this);
-
-            this.DEVICE_STATUS_2.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_2, 'h30);
-            this.DEVICE_STATUS_3 = new("DEVICE_STATUS_3");
-            this.DEVICE_STATUS_3.configure(this);
-
-            this.DEVICE_STATUS_3.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_3, 'h34);
-            this.DEVICE_STATUS_4 = new("DEVICE_STATUS_4");
-            this.DEVICE_STATUS_4.configure(this);
-
-            this.DEVICE_STATUS_4.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_4, 'h38);
-            this.DEVICE_STATUS_5 = new("DEVICE_STATUS_5");
-            this.DEVICE_STATUS_5.configure(this);
-
-            this.DEVICE_STATUS_5.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_5, 'h3c);
-            this.DEVICE_STATUS_6 = new("DEVICE_STATUS_6");
-            this.DEVICE_STATUS_6.configure(this);
-
-            this.DEVICE_STATUS_6.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_6, 'h40);
-            this.DEVICE_STATUS_7 = new("DEVICE_STATUS_7");
-            this.DEVICE_STATUS_7.configure(this);
-
-            this.DEVICE_STATUS_7.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_7, 'h44);
-            this.DEVICE_STATUS_8 = new("DEVICE_STATUS_8");
-            this.DEVICE_STATUS_8.configure(this);
-
-            this.DEVICE_STATUS_8.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_8, 'h48);
-            this.DEVICE_STATUS_9 = new("DEVICE_STATUS_9");
-            this.DEVICE_STATUS_9.configure(this);
-
-            this.DEVICE_STATUS_9.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_9, 'h4c);
-            this.DEVICE_STATUS_10 = new("DEVICE_STATUS_10");
-            this.DEVICE_STATUS_10.configure(this);
-
-            this.DEVICE_STATUS_10.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_10, 'h50);
-            this.DEVICE_STATUS_11 = new("DEVICE_STATUS_11");
-            this.DEVICE_STATUS_11.configure(this);
-
-            this.DEVICE_STATUS_11.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_11, 'h54);
-            this.DEVICE_STATUS_12 = new("DEVICE_STATUS_12");
-            this.DEVICE_STATUS_12.configure(this);
-
-            this.DEVICE_STATUS_12.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_12, 'h58);
-            this.DEVICE_STATUS_13 = new("DEVICE_STATUS_13");
-            this.DEVICE_STATUS_13.configure(this);
-
-            this.DEVICE_STATUS_13.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_13, 'h5c);
-            this.DEVICE_STATUS_14 = new("DEVICE_STATUS_14");
-            this.DEVICE_STATUS_14.configure(this);
-
-            this.DEVICE_STATUS_14.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_14, 'h60);
-            this.DEVICE_STATUS_15 = new("DEVICE_STATUS_15");
-            this.DEVICE_STATUS_15.configure(this);
-
-            this.DEVICE_STATUS_15.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_15, 'h64);
+            this.default_map.add_reg(this.DEVICE_STATUS_1, 'h34);
             this.DEVICE_RESET = new("DEVICE_RESET");
             this.DEVICE_RESET.configure(this);
 
             this.DEVICE_RESET.build();
-            this.default_map.add_reg(this.DEVICE_RESET, 'h68);
+            this.default_map.add_reg(this.DEVICE_RESET, 'h38);
             this.RECOVERY_CTRL = new("RECOVERY_CTRL");
             this.RECOVERY_CTRL.configure(this);
 
             this.RECOVERY_CTRL.build();
-            this.default_map.add_reg(this.RECOVERY_CTRL, 'h6c);
+            this.default_map.add_reg(this.RECOVERY_CTRL, 'h3c);
             this.RECOVERY_STATUS = new("RECOVERY_STATUS");
             this.RECOVERY_STATUS.configure(this);
 
             this.RECOVERY_STATUS.build();
-            this.default_map.add_reg(this.RECOVERY_STATUS, 'h70);
+            this.default_map.add_reg(this.RECOVERY_STATUS, 'h40);
             this.HW_STATUS = new("HW_STATUS");
             this.HW_STATUS.configure(this);
 
             this.HW_STATUS.build();
-            this.default_map.add_reg(this.HW_STATUS, 'h74);
+            this.default_map.add_reg(this.HW_STATUS, 'h44);
             this.INDIRECT_FIFO_CTRL_0 = new("INDIRECT_FIFO_CTRL_0");
             this.INDIRECT_FIFO_CTRL_0.configure(this);
 
             this.INDIRECT_FIFO_CTRL_0.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_0, 'h184);
+            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_0, 'h48);
             this.INDIRECT_FIFO_CTRL_1 = new("INDIRECT_FIFO_CTRL_1");
             this.INDIRECT_FIFO_CTRL_1.configure(this);
 
             this.INDIRECT_FIFO_CTRL_1.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_1, 'h188);
+            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_1, 'h4c);
             this.INDIRECT_FIFO_STATUS_0 = new("INDIRECT_FIFO_STATUS_0");
             this.INDIRECT_FIFO_STATUS_0.configure(this);
 
             this.INDIRECT_FIFO_STATUS_0.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_0, 'h18c);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_0, 'h50);
             this.INDIRECT_FIFO_STATUS_1 = new("INDIRECT_FIFO_STATUS_1");
             this.INDIRECT_FIFO_STATUS_1.configure(this);
 
             this.INDIRECT_FIFO_STATUS_1.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_1, 'h190);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_1, 'h54);
             this.INDIRECT_FIFO_STATUS_2 = new("INDIRECT_FIFO_STATUS_2");
             this.INDIRECT_FIFO_STATUS_2.configure(this);
 
             this.INDIRECT_FIFO_STATUS_2.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_2, 'h194);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_2, 'h58);
             this.INDIRECT_FIFO_STATUS_3 = new("INDIRECT_FIFO_STATUS_3");
             this.INDIRECT_FIFO_STATUS_3.configure(this);
 
             this.INDIRECT_FIFO_STATUS_3.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_3, 'h198);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_3, 'h5c);
             this.INDIRECT_FIFO_STATUS_4 = new("INDIRECT_FIFO_STATUS_4");
             this.INDIRECT_FIFO_STATUS_4.configure(this);
 
             this.INDIRECT_FIFO_STATUS_4.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_4, 'h19c);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_4, 'h60);
             this.INDIRECT_FIFO_DATA = new("INDIRECT_FIFO_DATA");
             this.INDIRECT_FIFO_DATA.configure(this);
 
             this.INDIRECT_FIFO_DATA.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_DATA, 'h1a0);
+            this.default_map.add_reg(this.INDIRECT_FIFO_DATA, 'h68);
             this.VENDOR = new("VENDOR");
             this.VENDOR.configure(this);
 
             this.VENDOR.build();
-            this.default_map.add_reg(this.VENDOR, 'h1a4);
+            this.default_map.add_reg(this.VENDOR, 'h100);
             this.CALIPTRA_CTRL = new("CALIPTRA_CTRL");
             this.CALIPTRA_CTRL.configure(this);
 
