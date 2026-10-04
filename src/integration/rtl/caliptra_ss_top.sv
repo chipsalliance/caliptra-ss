@@ -363,8 +363,19 @@ module caliptra_ss_top
     output logic                           cptra_ss_usb_vbuscomp_on_o,
     output logic                           cptra_ss_usb_chrgvbus_o,
     output logic                           cptra_ss_usb_dischrgvbus_o,
+    input  logic                           cptra_ss_usb_avalid_i,
     input  logic                           cptra_ss_usb_sessend_i,
     input  logic                           cptra_ss_usb_async_disable_i,
+
+// USB core frame timing, PHY clock request and wakeup interface
+    output logic                           cptra_ss_usb_frametoggle_o,
+    output logic                           cptra_ss_usb_needclk_o,
+    input  logic                           cptra_ss_usb_donotwakeup_n_i,
+    input  logic                           cptra_ss_usb_dev_wakeup_n_i,
+
+// USB core hub control interface
+    input  logic                           cptra_ss_usb_enable_hub_i,
+    input  logic                           cptra_ss_usb_self_powered_i,
 
     output logic cptra_ss_usb_recovery_payload_available_o,
     input  logic cptra_ss_usb_recovery_payload_available_i,
@@ -1115,6 +1126,8 @@ module caliptra_ss_top
         .C_HUB_FIFO_SIZE     (USB_C_HUB_FIFO_SIZE),
         .COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS),
         .DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
+        .C_ULPI_SUPPORT     (1), // Always have ULPI support
+        .C_UTMI_SUPPORT     (1), // Always have UTMI support
         .G_SIM_CHIRP_TIMERS  (USB_G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
         // ---- Clock / Reset ----
@@ -1155,10 +1168,11 @@ module caliptra_ss_top
         .dev0_usb_irq    (usb_dev_irq),
         .dev1_usb_irq    (cptra_ss_usb_dev1_irq_o),
         .dev1_usb_fiq    (cptra_ss_usb_dev1_fiq_o),
-        // DEV0 FIQ and diagnostic outputs are not routed in this integration.
-        .dev0_usb_fiq    (),// FIXME: review if these signals should be connected or routed to SOC
-        .usb_frametoggle (),// FIXME: review if these signals should be connected or routed to SOC
-        .usb_needclk     (),// FIXME: review if these signals should be connected or routed to SOC
+        // Unused since RISC-V does not have the same FIQ as ARM. Every DEV0 interrupt
+        // source can be routed to IRQ (INTROUTE resets to IRQ), so FIQ is not connected to the MCU.
+        .dev0_usb_fiq    (),
+        .usb_frametoggle (cptra_ss_usb_frametoggle_o),
+        .usb_needclk     (cptra_ss_usb_needclk_o),
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
@@ -1167,8 +1181,8 @@ module caliptra_ss_top
         .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
 
         // ---- OTG / Session Signals ----
-        .avalid           (1'b1),                   /* TODO: OTG session */
-        .sessend          (cptra_ss_usb_sessend_i), /* TODO: OTG session */
+        .avalid           (cptra_ss_usb_avalid_i),
+        .sessend          (cptra_ss_usb_sessend_i),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
@@ -1199,13 +1213,12 @@ module caliptra_ss_top
         .ulpi_nxt         (cptra_ss_usb_ulpi_nxt_i),
         .ulpi_ddr_sel     (cptra_ss_usb_ulpi_ddr_sel_i),
 
-        // ---- Misc Tied-off Signals ----
-        // FIXME: Tie-offs to review.
-        .sys_donotwakeup_n   (1'b1),                          /* FIXME */
-        .sys_dev_wakeup_n    (1'b1),                          /* FIXME */
-        .sys_utmi_clkin_lock (cptra_ss_usb_utmi_clk_lock_i), /* FIXME */
-        .USB_EnableHub       (1'b0),                          /* FIXME */
-        .USB_self_powered    (1'b1),                          /* FIXME */
+        // ---- System / Wakeup / Hub Control ----
+        .sys_donotwakeup_n   (cptra_ss_usb_donotwakeup_n_i),
+        .sys_dev_wakeup_n    (cptra_ss_usb_dev_wakeup_n_i),
+        .sys_utmi_clkin_lock (cptra_ss_usb_utmi_clk_lock_i),
+        .USB_EnableHub       (cptra_ss_usb_enable_hub_i),
+        .USB_self_powered    (cptra_ss_usb_self_powered_i),
         .testmode            (cptra_ss_cptra_core_scan_mode_i),
         .async_disable       (cptra_ss_usb_async_disable_i),
 
