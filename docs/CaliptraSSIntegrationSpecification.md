@@ -308,8 +308,6 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | `MCU_JTAG_IDCODE`        | `1` | JTAG IDCODE for MCU RISC-V. Integrators must override using product-specific value. |
 | `LCC_JTAG_IDCODE`        | `1` | JTAG IDCODE for Lifecycle Controller. Integrators must override using product-specific value. |
 
-`caliptra_ss_top` explicitly sets the USB wrapper's `C_ULPI_SUPPORT` and `C_UTMI_SUPPORT` parameters to `1`. Both PHY interfaces remain supported; these settings are not exposed as subsystem parameters.
-
 ## Interfaces & Signals
 
 **IMPORTANT NOTE**: Unless stated otherwise, signals are assumed to be synchronous to `cptra_ss_clk_i`.
