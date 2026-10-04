@@ -411,11 +411,20 @@ the local USB device aperture. For the current 4 KiB local USB window:
 - `0x800-0xfff` is the Recovery aperture. The integration wrapper
   range-checks the address and subtracts the Recovery base.
 
-`usb_ocp_recovery_top` contains `ahb_slv_sif`, which validates aligned
-32-bit accesses and holds the AHB transaction until the selected internal
-owner responds. A3 (`usb_ocp_recovery_rb_adapter`) converts a held EXT request
-into one generated CPU-interface request so software side effects occur
-exactly once. USB Recovery Agent commands do not use A3.
+Firmware must access the Recovery aperture with aligned 32-bit transactions.
+The device AXI-to-AHB bridge forwards AXI address and transfer size without
+adding alignment enforcement. `usb_ocp_recovery_top` contains `ahb_slv_sif`,
+which captures the selected AHB transaction and holds it until the internal
+owner responds. A3 (`usb_ocp_recovery_rb_adapter`) converts that held EXT
+request into one generated CPU-interface request, forces CPUif address bits
+`[1:0]` to zero, and asserts that the captured AHB client address was already
+word-aligned. Software side effects therefore occur exactly once, but the
+address normalization is not a substitute for the firmware requirement. USB
+Recovery Agent commands do not use A3.
+
+Sub-word EXT writes are unsupported. `ahb_slv_sif` can present byte or
+halfword data, but the Recovery adapter intentionally drives all CPUif write
+bit-enables because the register aperture contract is 32-bit word access only.
 
 USB non-FIFO commands use the direct hardware endpoint. USB FIFO commands use
 A4 directly. New EXT requests are admitted when no USB command is requesting
@@ -424,9 +433,7 @@ acknowledgement.
 
 Every EXT FIFO control, status, and data access is deferred while a claimed
 USB FIFO command or packet reservation owns the FIFO aperture. EXT
-`INDIRECT_FIFO_DATA` reads additionally wait for `payload_available`. There is
-no active sideband FIFO drain path; firmware uses the generated register
-aperture.
+`INDIRECT_FIFO_DATA` reads additionally wait for `payload_available`.
 
 ### 3.7 Firmware-owned recovery procedure
 

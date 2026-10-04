@@ -58,11 +58,21 @@ uint8_t main(void)
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
     }
 
-    // The UVM Recovery Agent owns test completion. Firmware remains quiescent
-    // except for servicing USB SETUP traffic and never reads DEVICE_STATUS, so
-    // it cannot race the RA clear-on-read checks from OCP Recovery v1.1 Sec 9.1.
+    // The UVM Recovery Agent owns test completion. Stop register polling after
+    // the directed VENDOR-disable request has been consumed; all subsequent
+    // checks use the hardware-owned OCP path and do not require MCU service.
     while (1) {
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
-        usb_ocp_recovery_service_capability_policy();
+        if (usb_ocp_recovery_service_capability_policy()) {
+            const uint32_t prot_cap_2 =
+                lsu_read_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2);
+            if ((prot_cap_2 &
+                 RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK) == 0u) {
+                break;
+            }
+        }
     }
+
+    VPRINTF(LOW, "MCU: USB OCP command-handling register traffic quiesced\n");
+    while (1);
 }
