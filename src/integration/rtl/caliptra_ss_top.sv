@@ -1126,8 +1126,6 @@ module caliptra_ss_top
         .C_HUB_FIFO_SIZE     (USB_C_HUB_FIFO_SIZE),
         .COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS),
         .DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
-        .C_ULPI_SUPPORT     (1), // Always have ULPI support
-        .C_UTMI_SUPPORT     (1), // Always have UTMI support
         .G_SIM_CHIRP_TIMERS  (USB_G_SIM_CHIRP_TIMERS)
     ) usb_core_i (
         // ---- Clock / Reset ----
