@@ -79,3 +79,7 @@ cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
 
 caliptra_ss_usb_ocp_w1dc_access_semantics # WIP testcase
 cptra_usb_ocp_w1dc_access_semantics # WIP testcase
+
+# SPI Host / UART
+smoke_test_spi_host_tx_rx # SPI Host is disabled by default (SPI_HOST_ENA=0); requires a DUT built with +define+SPI_HOST_ENA_TB=1
+smoke_test_mcu_uart_loopback # UART is disabled by default (UART_ENA=0); requires a DUT built with +define+UART_ENA_TB=1

@@ -20,7 +20,7 @@
 `include "caliptra_macros.svh"
 
 module caliptra_ss_top_w_stub #(
-     parameter SPI_HOST_ENA = 1
+     parameter SPI_HOST_ENA = 0
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
     ,parameter USB_G_SIM_CHIRP_TIMERS = 0
@@ -31,7 +31,7 @@ module caliptra_ss_top_w_stub #(
     ,parameter USB_C_HUB_FIFO_SIZE = 172
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
-    ,parameter UART_ENA = 1
+    ,parameter UART_ENA = 0
 )(
     input logic cptra_ss_clk_i,
     input logic cptra_ss_cptra_core_jtag_tck_i,
