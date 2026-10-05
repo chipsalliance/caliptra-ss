@@ -54,11 +54,11 @@ caliptra_ss_usb_hs_host_resume # Host is not supported; retained as a reference 
 caliptra_ss_usb_fs_dev1_bulk_loopback # DEV1 cannot entere FS mode when DEV0 is not connected
 caliptra_ss_usb_fs_dev1_bulk_out # DEV1 cannot entere FS mode when DEV0 is not connected
 caliptra_ss_usb_fs_dev1_disconnect # DEV1 cannot entere FS mode when DEV0 is not connected
-caliptra_ss_usb_fs_dev1_global_suspend_L # DEV1 cannot entere FS mode when DEV0 is not connected2
-caliptra_ss_usb_fs_dev1_iso_out # DEV1 cannot entere FS mode when DEV0 is not connectedt
+caliptra_ss_usb_fs_dev1_global_suspend_L2 # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_iso_out # DEV1 cannot entere FS mode when DEV0 is not connected
 caliptra_ss_usb_fs_dev1_nbyte # DEV1 cannot entere FS mode when DEV0 is not connected
-caliptra_ss_usb_fs_dev1_powerdow # DEV1 cannot entere FS mode when DEV0 is not connectedn
-caliptra_ss_usb_fs_dev1_resum # DEV1 cannot entere FS mode when DEV0 is not connectede
+caliptra_ss_usb_fs_dev1_powerdown # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_resume # DEV1 cannot entere FS mode when DEV0 is not connected
 
 
 # WIP: wakeup sequence/test includes are commented out in caliptra_ss_usb_test_pkg.sv pending rework; not yet in any regression
