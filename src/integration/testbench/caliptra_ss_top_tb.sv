@@ -1564,7 +1564,7 @@ module caliptra_ss_top_tb
     // Services for SRAM exports, STDOUT, etc
     //=========================================================================-
     caliptra_top_tb_services #(
-        .UVM_TB(0)
+        .UVM_TB(1)
     ) tb_services_i (
         .clk(core_clk),
 
