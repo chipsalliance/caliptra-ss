@@ -1616,6 +1616,8 @@ module caliptra_ss_top_tb
 
     caliptra_top_sva sva();
     caliptra_ss_top_sva ss_sva();
+    // USB specific integration-level assertions (self-powered tie-off, ...)
+    caliptra_ss_usb_sva ss_usb_sva();
 
     //=========================================================================-
     // AXI MEM instance : IMEM
@@ -2752,6 +2754,12 @@ module caliptra_ss_top_tb
         `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(UartRegWeOnehotCheck_A, caliptra_ss_dut.gen_uart_axi.uart_axi_i.u_caliptra_ss_uart.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
     end
 
+
+    // Bridges the compound hub's committed USB device-address registers
+    // (VHDL internal signals, not PLI-visible) into PLI-visible SystemVerilog
+    // signals so the UVM checker can read them with uvm_hdl_read. See
+    // usb_dev_addr_probe.sv for details.
+    usb_dev_addr_probe u_usb_dev_addr_probe();
 
 endmodule
 
