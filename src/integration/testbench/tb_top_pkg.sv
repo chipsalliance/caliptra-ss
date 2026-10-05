@@ -77,9 +77,9 @@ package tb_top_pkg;
     localparam MCU_ROM_PATCH_SRAM_DEPTH = (MCU_ROM_PATCH_SRAM_SIZE_KB * 1024 * 8) / MCU_ROM_PATCH_SRAM_DATA_W;
     localparam MCU_ROM_PATCH_SRAM_ADDR_W = $clog2(MCU_ROM_PATCH_SRAM_DEPTH);
 
-    // SPI Host
+    // SPI Host (disabled by default; +define+SPI_HOST_ENA_TB=1 enables it)
     `ifndef SPI_HOST_ENA_TB
-        parameter SPI_HOST_ENA_TB       = 1;
+        parameter SPI_HOST_ENA_TB       = 0;
     `else
         parameter SPI_HOST_ENA_TB       = `SPI_HOST_ENA_TB;
     `endif
@@ -94,9 +94,9 @@ package tb_top_pkg;
         parameter SPI_HOST_CMD_DEPTH_TB = `SPI_HOST_CMD_DEPTH_TB;
     `endif
 
-    // UART
+    // UART (disabled by default; +define+UART_ENA_TB=1 enables it)
     `ifndef UART_ENA_TB
-        parameter UART_ENA_TB           = 1;
+        parameter UART_ENA_TB           = 0;
     `else
         parameter UART_ENA_TB           = `UART_ENA_TB;
     `endif
