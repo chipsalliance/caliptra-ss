@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// USB specific assertions for the caliptra-ss integration level.
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Scope: integration-level (tie-off / connectivity) checks on the USB
-// compound core instance usb_core_i in caliptra_ss_top.sv. Protocol level
-// and descriptor content checking is done by the UVM USB checkers, see
-// src/integration/testbench/uvm/usb/caliptra_ss_usb_data_check_api_impl.svh.
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 `include "caliptra_ss_top_tb_path_defines.svh"
 
