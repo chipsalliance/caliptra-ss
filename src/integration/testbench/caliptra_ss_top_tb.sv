@@ -2265,8 +2265,27 @@ module caliptra_ss_top_tb
     logic [15:0]  cptra_ss_strap_key_release_key_size_i;
     logic [63:0]  cptra_ss_strap_key_release_base_addr_i;
     logic         cptra_ss_strap_ocp_lock_en_i; 
+`ifdef USB_HUB_COMPOUND_DEV1_IRQ
+    // Dual USB device (usb_hib_compound) external interrupt loopback.
+    // The SoC BFM drives the shadow copy cptra_ss_mcu_ext_int_bfm; the DUT sees
+    // the shadow value with the USB device1 IRQ output looped back onto the
+    // first configurable external interrupt pin (VEER_INTR_VEC_USB_DEV1). This
+    // mirrors how USB device0 (dev0_usb_irq) is routed internally to
+    // VEER_INTR_VEC_USB, so the MCU firmware can service device1 interrupts in
+    // a dual-device test.
     logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int_bfm;
+    always_comb begin
+        cptra_ss_mcu_ext_int = cptra_ss_mcu_ext_int_bfm;
+        cptra_ss_mcu_ext_int[`VEER_INTR_VEC_USB_DEV1] =
+            cptra_ss_mcu_ext_int_bfm[`VEER_INTR_VEC_USB_DEV1] | cptra_ss_usb_dev1_irq_o;
+    end
+`else
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
+`endif
     logic         cptra_ss_mcu_jtag_tck_i;
+
+
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
     logic         cptra_ss_mcu_jtag_trst_n_i;
@@ -2680,8 +2699,15 @@ module caliptra_ss_top_tb
         .cptra_ss_cptra_core_etrng1_req_o,
         .second_RNG_triggered,
 
+`ifdef USB_HUB_COMPOUND_DEV1_IRQ
+        // Dual USB device loopback: the SoC BFM drives the shadow net; the TB
+        // ORs the USB device1 IRQ onto bit VEER_INTR_VEC_USB_DEV1 to produce
+        // the DUT-facing cptra_ss_mcu_ext_int. See the shadow-net block above.
+        .cptra_ss_mcu_ext_int(cptra_ss_mcu_ext_int_bfm),
+`else
         .cptra_ss_mcu_ext_int,
-        
+`endif
+
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
         .cptra_ss_mcu_halt_req_o,
@@ -2740,3 +2766,5 @@ endmodule
 // This is the top level module for the Avery I3C test case bench.
 // it triggers i3c test cases.
 `include "ai3c_tests_bench.sv"
+
+// File contains AI-generated response based on internal company sources
