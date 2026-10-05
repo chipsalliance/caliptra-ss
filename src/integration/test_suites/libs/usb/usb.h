@@ -452,6 +452,21 @@ void usb_select_device(int dev);
 // Returns the currently selected active device (0 = USBDC0, 1 = USBDC1).
 int usb_get_active_device(void);
 
+// Runtime base-address accessors for the currently selected active device.
+//
+// usb.c re-defines the device-neutral USB_DEV_* register macros and
+// USB_DMA_BASE_ADDR to resolve against usb_select_device()'s runtime choice,
+// but that #undef/#define retargeting is scoped to usb.c's translation unit.
+// A test that includes usb.h and accesses USB_DEV_* directly in its OWN
+// functions still gets the compile-time USB_DEV_SEL-fixed base and cannot
+// follow usb_select_device(). These accessors expose usb.c's selection logic so
+// such a test can build its own runtime-selected addresses (see the dual-device
+// test's USB_DEV_* re-definition). usb_active_dev_csr_base() returns the active
+// controller's CSR bank base; usb_active_dev_mem_base() its packet SRAM base.
+uint32_t usb_active_dev_csr_base(void);
+uint32_t usb_active_dev_mem_base(void);
+
+
 
 
 // Initialize the USB device controller (STANDALONE DEV0, no hub bring-up):

@@ -67,9 +67,37 @@
 // and makes init_usb_interrupts() enable PIC vector 6 for USBDC1.
 #include "mcu_isr.h"
 
+// -----------------------------------------------------------------------------
+// Runtime device retargeting for THIS translation unit.
+//
+// usb.h resolves the device-neutral USB_DEV_* register macros and
+// USB_DMA_BASE_ADDR / USB_DEV_DMA_BASE_ADDR against the COMPILE-TIME base
+// selected by USB_DEV_SEL (default 0 = USBDC0). usb.c re-points those same
+// macros at usb_select_device()'s RUNTIME choice, but that #undef/#define is
+// scoped to usb.c's translation unit only. The functions in THIS file
+// (usb_ep1_out_arm, usb_ep1_loopback_arm_in, usb_ep1_in_complete and the SETUP
+// decode in usb_service_device) access USB_DEV_* directly, so without the same
+// retargeting here they would always hit USBDC0's aperture even while servicing
+// USBDC1 - which is why USBDC1 (dev1) never had its EP0 SETUP decoded, NAK'd its
+// first SETUP and timed out.
+//
+// Re-apply usb.c's exact trick: re-define the two base macros in terms of the
+// runtime accessors usb_active_dev_csr_base() / usb_active_dev_mem_base()
+// (exported from usb.c). Every derived macro in usb.h (USB_DEV_DEVCMDSTAT,
+// USB_DEV_INTEN, USB_DEV_INTSTAT, USB_DMA_BASE_ADDR, USB_DEV_DMA_BASE_ADDR,
+// USB_EP_ENTRY_ABS_ADDR, ...) is expanded at its USE site, so re-pointing the
+// bases makes all of them follow usb_select_device() in this file too. For a
+// single-device build (no usb_select_device() call) the accessors return the
+// USB_DEV_SEL base, so behaviour is unchanged.
+#undef USB_DEV_CSR_BASE_ADDR
+#undef USB_DEV_MEM_BASE_ADDR
+#define USB_DEV_CSR_BASE_ADDR  usb_active_dev_csr_base()
+#define USB_DEV_MEM_BASE_ADDR  usb_active_dev_mem_base()
+
 // Poll loop ceiling. Sized to comfortably outlast dual enumeration + two bulk
 // loopbacks. Each iteration is only a few DCCM/CSR accesses.
 #define USB_POLL_TIMEOUT              200000
+
 
 // EP1 OUT / IN data buffers in each controller's packet SRAM. EP0 uses
 // 0x000-0x1FF, so EP1 buffers are placed after it. Both controllers use the

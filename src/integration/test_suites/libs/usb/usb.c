@@ -66,6 +66,17 @@ static inline uint32_t usb_active_mem_base(void) {
 void usb_select_device(int dev) { usb_active_dev = (dev == 1) ? 1 : 0; }
 int  usb_get_active_device(void) { return usb_active_dev; }
 
+// Exported runtime base accessors (declared in usb.h). These let OTHER
+// translation units (e.g. the dual-device test) retarget their own copies of
+// the device-neutral USB_DEV_* macros at the runtime-active controller, reusing
+// the exact same selection logic used inside this file. Without this, a caller
+// that includes usb.h gets the compile-time USB_DEV_SEL-fixed base and cannot
+// follow usb_select_device(), because the #undef/#define retargeting below is
+// scoped to this translation unit only.
+uint32_t usb_active_dev_csr_base(void) { return usb_active_csr_base(); }
+uint32_t usb_active_dev_mem_base(void) { return usb_active_mem_base(); }
+
+
 // Re-point the device-neutral base macros at the runtime active controller for
 // this translation unit only. The derived register macros (USB_DEV_DEVCMDSTAT,
 // USB_DEV_INTSTAT, ...), USB_DMA_BASE_ADDR / USB_DEV_DMA_BASE_ADDR, and
