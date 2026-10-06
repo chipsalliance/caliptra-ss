@@ -579,7 +579,8 @@ mci_mcu_sram_ctrl #(
 // MCU ROM Patch SRAM
 // Loaded by MCU ROM before Caliptra core boots (TEST_LOCKED/TEST_UNLOCKED/DEV only).
 // A populated patch SRAM blocks UDS/FE provisioning in the FC filter and zeroizes
-// the UDS/FE delivered to Caliptra core.
+// the UDS/FE delivered to Caliptra core. Without a patch, the SRAM is released as
+// data memory to any AXI user once MCU RT FW is running.
 mci_mcu_rom_patch_ctrl #(
     .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB)
 ) i_mci_mcu_rom_patch_ctrl (
@@ -590,6 +591,9 @@ mci_mcu_rom_patch_ctrl #(
 
     .cptra_rst_b,
     .cptra_core_rst_b_i,
+
+    .mcu_rst_b,
+    .mcu_sram_fw_exec_region_lock(mcu_sram_fw_exec_region_lock_internal),
 
     .otp_static_state_i     (otp_static_state_o),
     .otp_state_valid_i      (otp_state_valid_o),

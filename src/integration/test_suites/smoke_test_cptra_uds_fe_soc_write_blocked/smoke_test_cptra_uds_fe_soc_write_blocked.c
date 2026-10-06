@@ -13,9 +13,9 @@
 // limitations under the License.
 
 // In subsystem mode, Caliptra core takes UDS/FE only from the fuse controller
-// ports. The fuses are blank (ports are zero), the MCU writes non-zero UDS/FE
-// over the bus before CPTRA_FUSE_WR_DONE, and the TB checks that Caliptra core
-// still holds zeros.
+// ports. The MCU writes a known pattern to the UDS/FE registers over the bus
+// before CPTRA_FUSE_WR_DONE, and the TB checks that Caliptra core still holds
+// the value captured from the fuse ports.
 
 #include <stdint.h>
 
@@ -44,7 +44,7 @@ void main(void) {
         lsu_write_32(SOC_SOC_IFC_REG_FUSE_FIELD_ENTROPY_0 + 4 * dw, 0x5A5A0000 | dw);
     }
 
-    SEND_STDOUT_CTRL(CMD_EXPECT_CPTRA_UDS_FE_ZERO);
+    SEND_STDOUT_CTRL(CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES);
     mcu_sleep(100);
 
     mcu_cptra_set_fuse_done();

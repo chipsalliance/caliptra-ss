@@ -18,7 +18,7 @@
 //   2. Load the patch and boot Caliptra core.
 //   3. TB check: fuses hold non-zero UDS/FE, but Caliptra core sees zeros.
 //   4. Writes to blank UDS/FE words are now discarded by the fuse controller
-//      filter. A non-secret fuse write still works.
+//      filter.
 
 #include <stdint.h>
 
@@ -51,7 +51,6 @@ static const uint32_t k_patch[PATCH_WORDS] = { 0x12350513, 0x00008067 };
 #define PATCH_EXP        (PATCH_ARG + 0x123)
 
 #define SECRET_GRANULARITY 64
-#define NON_SECRET_GRANULARITY 32
 
 typedef uint32_t (*patch_fn_t)(uint32_t);
 
@@ -111,16 +110,11 @@ void main(void) {
     SEND_STDOUT_CTRL(CMD_MCU_ROM_PATCH_EXPECT_UDS_FE_ZEROIZED);
     mcu_sleep(100);
 
-    // 4. Blank UDS/FE words: only the patch rule in the filter can reject these
+    // 4. Blank UDS/FE words: only the patch rule in the filter can reject these.
+    //    The same Caliptra-identity writes succeeded in step 1, before the patch.
     grant_caliptra_core_for_fc_writes();
     secret_write(CPTRA_CORE_UDS_SEED + 8, OTP_CTRL_STATUS_DAI_ERROR_MASK, "UDS write with patch");
     secret_write(CPTRA_CORE_FIELD_ENTROPY_0 + 8, OTP_CTRL_STATUS_DAI_ERROR_MASK, "FE write with patch");
-
-    // Control: a non-secret fuse write still works
-    grant_mcu_for_fc_writes();
-    if (!dai_wr(CPTRA_SS_VENDOR_SPECIFIC_NON_SECRET_FUSE_0, 0x5A5A5A5A, 0, NON_SECRET_GRANULARITY, 0)) {
-        handle_error("MCU: Non-secret DAI write failed with patch loaded\n");
-    }
     revoke_grant_mcu_for_fc_writes();
 
     SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);

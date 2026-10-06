@@ -7766,6 +7766,8 @@
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (0x4)
 #define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
 #define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (0x8)
+#define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                                       (4)
+#define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                                      (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                         (0x21000054)
 #ifndef MCI_REG_AGG_ERROR_FATAL
@@ -7970,6 +7972,8 @@
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (0x4)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (0x8)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                    (4)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                   (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                        (0x21000094)
 #ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
@@ -10261,6 +10265,8 @@
 #define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                (0)
 #define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                               (0x1)
 #endif
+#define SOC_MCI_TOP_MCU_ROM_PATCH_SRAM_BASE_ADDR                                                    (0x21200000)
+#define SOC_MCI_TOP_MCU_ROM_PATCH_SRAM_END_ADDR                                                     (0x213fffff)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                (0x215fffff)
@@ -13095,6 +13101,866 @@
 #define SOC_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3                                                   (0xa00305dc)
 #ifndef SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3
 #define SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3                                                       (0x5dc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_0                                                      (0xa0030c00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_0
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_0                                                          (0xc00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_1                                                      (0xa0030c04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_1
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_1                                                          (0xc04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_2                                                      (0xa0030c08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_2
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_2                                                          (0xc08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_3                                                      (0xa0030c0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_3
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_3                                                          (0xc0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_4                                                      (0xa0030c10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_4
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_4                                                          (0xc10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_5                                                      (0xa0030c14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_5
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_5                                                          (0xc14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_6                                                      (0xa0030c18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_6
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_6                                                          (0xc18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_7                                                      (0xa0030c1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_7
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_7                                                          (0xc1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_8                                                      (0xa0030c20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_8
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_8                                                          (0xc20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_9                                                      (0xa0030c24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_9
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_9                                                          (0xc24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_10                                                     (0xa0030c28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_10
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_10                                                         (0xc28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_11                                                     (0xa0030c2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_11
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_11                                                         (0xc2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_12                                                     (0xa0030c30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_12
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_12                                                         (0xc30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_13                                                     (0xa0030c34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_13
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_13                                                         (0xc34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_14                                                     (0xa0030c38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_14
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_14                                                         (0xc38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_15                                                     (0xa0030c3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_15
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_15                                                         (0xc3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_16                                                     (0xa0030c40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_16
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_16                                                         (0xc40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_17                                                     (0xa0030c44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_17
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_17                                                         (0xc44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_18                                                     (0xa0030c48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_18
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_18                                                         (0xc48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_19                                                     (0xa0030c4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_19
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_19                                                         (0xc4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_20                                                     (0xa0030c50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_20
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_20                                                         (0xc50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_21                                                     (0xa0030c54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_21
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_21                                                         (0xc54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_22                                                     (0xa0030c58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_22
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_22                                                         (0xc58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_23                                                     (0xa0030c5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_23
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_23                                                         (0xc5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_24                                                     (0xa0030c60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_24
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_24                                                         (0xc60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_25                                                     (0xa0030c64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_25
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_25                                                         (0xc64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_26                                                     (0xa0030c68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_26
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_26                                                         (0xc68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_27                                                     (0xa0030c6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_27
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_27                                                         (0xc6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_28                                                     (0xa0030c70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_28
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_28                                                         (0xc70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_29                                                     (0xa0030c74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_29
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_29                                                         (0xc74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_30                                                     (0xa0030c78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_30
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_30                                                         (0xc78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_31                                                     (0xa0030c7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_31
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_31                                                         (0xc7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_32                                                     (0xa0030c80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_32
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_32                                                         (0xc80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_33                                                     (0xa0030c84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_33
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_33                                                         (0xc84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_34                                                     (0xa0030c88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_34
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_34                                                         (0xc88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_35                                                     (0xa0030c8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_35
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_35                                                         (0xc8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_36                                                     (0xa0030c90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_36
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_36                                                         (0xc90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_37                                                     (0xa0030c94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_37
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_37                                                         (0xc94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_38                                                     (0xa0030c98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_38
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_38                                                         (0xc98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_39                                                     (0xa0030c9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_39
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_39                                                         (0xc9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_40                                                     (0xa0030ca0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_40
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_40                                                         (0xca0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_41                                                     (0xa0030ca4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_41
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_41                                                         (0xca4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_42                                                     (0xa0030ca8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_42
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_42                                                         (0xca8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_43                                                     (0xa0030cac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_43
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_43                                                         (0xcac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_44                                                     (0xa0030cb0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_44
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_44                                                         (0xcb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_45                                                     (0xa0030cb4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_45
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_45                                                         (0xcb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_46                                                     (0xa0030cb8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_46
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_46                                                         (0xcb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_47                                                     (0xa0030cbc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_47
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_47                                                         (0xcbc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_48                                                     (0xa0030cc0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_48
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_48                                                         (0xcc0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_49                                                     (0xa0030cc4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_49
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_49                                                         (0xcc4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_50                                                     (0xa0030cc8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_50
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_50                                                         (0xcc8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_51                                                     (0xa0030ccc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_51
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_51                                                         (0xccc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_52                                                     (0xa0030cd0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_52
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_52                                                         (0xcd0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_53                                                     (0xa0030cd4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_53
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_53                                                         (0xcd4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_54                                                     (0xa0030cd8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_54
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_54                                                         (0xcd8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_55                                                     (0xa0030cdc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_55
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_55                                                         (0xcdc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_56                                                     (0xa0030ce0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_56
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_56                                                         (0xce0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_57                                                     (0xa0030ce4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_57
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_57                                                         (0xce4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_58                                                     (0xa0030ce8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_58
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_58                                                         (0xce8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_59                                                     (0xa0030cec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_59
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_59                                                         (0xcec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_60                                                     (0xa0030cf0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_60
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_60                                                         (0xcf0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_61                                                     (0xa0030cf4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_61
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_61                                                         (0xcf4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_62                                                     (0xa0030cf8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_62
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_62                                                         (0xcf8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_63                                                     (0xa0030cfc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_63
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_63                                                         (0xcfc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_64                                                     (0xa0030d00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_64
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_64                                                         (0xd00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_65                                                     (0xa0030d04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_65
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_65                                                         (0xd04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_66                                                     (0xa0030d08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_66
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_66                                                         (0xd08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_67                                                     (0xa0030d0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_67
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_67                                                         (0xd0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_68                                                     (0xa0030d10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_68
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_68                                                         (0xd10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_69                                                     (0xa0030d14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_69
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_69                                                         (0xd14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_70                                                     (0xa0030d18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_70
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_70                                                         (0xd18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_71                                                     (0xa0030d1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_71
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_71                                                         (0xd1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_72                                                     (0xa0030d20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_72
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_72                                                         (0xd20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_73                                                     (0xa0030d24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_73
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_73                                                         (0xd24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_74                                                     (0xa0030d28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_74
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_74                                                         (0xd28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_75                                                     (0xa0030d2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_75
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_75                                                         (0xd2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_76                                                     (0xa0030d30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_76
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_76                                                         (0xd30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_77                                                     (0xa0030d34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_77
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_77                                                         (0xd34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_78                                                     (0xa0030d38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_78
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_78                                                         (0xd38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_79                                                     (0xa0030d3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_79
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_79                                                         (0xd3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_80                                                     (0xa0030d40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_80
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_80                                                         (0xd40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_81                                                     (0xa0030d44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_81
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_81                                                         (0xd44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_82                                                     (0xa0030d48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_82
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_82                                                         (0xd48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_83                                                     (0xa0030d4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_83
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_83                                                         (0xd4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_84                                                     (0xa0030d50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_84
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_84                                                         (0xd50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_85                                                     (0xa0030d54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_85
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_85                                                         (0xd54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_86                                                     (0xa0030d58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_86
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_86                                                         (0xd58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_87                                                     (0xa0030d5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_87
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_87                                                         (0xd5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_88                                                     (0xa0030d60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_88
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_88                                                         (0xd60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_89                                                     (0xa0030d64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_89
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_89                                                         (0xd64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_90                                                     (0xa0030d68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_90
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_90                                                         (0xd68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_91                                                     (0xa0030d6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_91
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_91                                                         (0xd6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_92                                                     (0xa0030d70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_92
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_92                                                         (0xd70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_93                                                     (0xa0030d74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_93
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_93                                                         (0xd74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_94                                                     (0xa0030d78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_94
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_94                                                         (0xd78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_95                                                     (0xa0030d7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_95
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_95                                                         (0xd7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_96                                                     (0xa0030d80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_96
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_96                                                         (0xd80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_97                                                     (0xa0030d84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_97
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_97                                                         (0xd84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_98                                                     (0xa0030d88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_98
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_98                                                         (0xd88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_99                                                     (0xa0030d8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_99
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_99                                                         (0xd8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_100                                                    (0xa0030d90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_100
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_100                                                        (0xd90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_101                                                    (0xa0030d94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_101
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_101                                                        (0xd94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_102                                                    (0xa0030d98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_102
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_102                                                        (0xd98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_103                                                    (0xa0030d9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_103
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_103                                                        (0xd9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_104                                                    (0xa0030da0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_104
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_104                                                        (0xda0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_105                                                    (0xa0030da4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_105
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_105                                                        (0xda4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_106                                                    (0xa0030da8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_106
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_106                                                        (0xda8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_107                                                    (0xa0030dac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_107
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_107                                                        (0xdac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_108                                                    (0xa0030db0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_108
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_108                                                        (0xdb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_109                                                    (0xa0030db4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_109
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_109                                                        (0xdb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_110                                                    (0xa0030db8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_110
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_110                                                        (0xdb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_111                                                    (0xa0030dbc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_111
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_111                                                        (0xdbc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_112                                                    (0xa0030dc0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_112
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_112                                                        (0xdc0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_113                                                    (0xa0030dc4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_113
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_113                                                        (0xdc4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_114                                                    (0xa0030dc8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_114
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_114                                                        (0xdc8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_115                                                    (0xa0030dcc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_115
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_115                                                        (0xdcc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_116                                                    (0xa0030dd0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_116
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_116                                                        (0xdd0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_117                                                    (0xa0030dd4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_117
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_117                                                        (0xdd4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_118                                                    (0xa0030dd8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_118
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_118                                                        (0xdd8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_119                                                    (0xa0030ddc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_119
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_119                                                        (0xddc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_120                                                    (0xa0030de0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_120
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_120                                                        (0xde0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_121                                                    (0xa0030de4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_121
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_121                                                        (0xde4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_122                                                    (0xa0030de8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_122
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_122                                                        (0xde8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_123                                                    (0xa0030dec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_123
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_123                                                        (0xdec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_124                                                    (0xa0030df0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_124
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_124                                                        (0xdf0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_125                                                    (0xa0030df4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_125
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_125                                                        (0xdf4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_126                                                    (0xa0030df8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_126
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_126                                                        (0xdf8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_127                                                    (0xa0030dfc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_127
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_127                                                        (0xdfc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_128                                                    (0xa0030e00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_128
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_128                                                        (0xe00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_129                                                    (0xa0030e04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_129
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_129                                                        (0xe04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_130                                                    (0xa0030e08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_130
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_130                                                        (0xe08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_131                                                    (0xa0030e0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_131
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_131                                                        (0xe0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_132                                                    (0xa0030e10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_132
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_132                                                        (0xe10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_133                                                    (0xa0030e14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_133
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_133                                                        (0xe14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_134                                                    (0xa0030e18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_134
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_134                                                        (0xe18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_135                                                    (0xa0030e1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_135
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_135                                                        (0xe1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_136                                                    (0xa0030e20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_136
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_136                                                        (0xe20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_137                                                    (0xa0030e24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_137
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_137                                                        (0xe24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_138                                                    (0xa0030e28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_138
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_138                                                        (0xe28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_139                                                    (0xa0030e2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_139
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_139                                                        (0xe2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_140                                                    (0xa0030e30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_140
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_140                                                        (0xe30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_141                                                    (0xa0030e34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_141
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_141                                                        (0xe34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_142                                                    (0xa0030e38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_142
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_142                                                        (0xe38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_143                                                    (0xa0030e3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_143
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_143                                                        (0xe3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_144                                                    (0xa0030e40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_144
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_144                                                        (0xe40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_145                                                    (0xa0030e44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_145
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_145                                                        (0xe44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_146                                                    (0xa0030e48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_146
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_146                                                        (0xe48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_147                                                    (0xa0030e4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_147
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_147                                                        (0xe4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_148                                                    (0xa0030e50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_148
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_148                                                        (0xe50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_149                                                    (0xa0030e54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_149
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_149                                                        (0xe54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_150                                                    (0xa0030e58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_150
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_150                                                        (0xe58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_151                                                    (0xa0030e5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_151
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_151                                                        (0xe5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_152                                                    (0xa0030e60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_152
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_152                                                        (0xe60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_153                                                    (0xa0030e64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_153
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_153                                                        (0xe64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_154                                                    (0xa0030e68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_154
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_154                                                        (0xe68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_155                                                    (0xa0030e6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_155
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_155                                                        (0xe6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_156                                                    (0xa0030e70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_156
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_156                                                        (0xe70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_157                                                    (0xa0030e74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_157
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_157                                                        (0xe74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_158                                                    (0xa0030e78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_158
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_158                                                        (0xe78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_159                                                    (0xa0030e7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_159
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_159                                                        (0xe7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_160                                                    (0xa0030e80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_160
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_160                                                        (0xe80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_161                                                    (0xa0030e84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_161
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_161                                                        (0xe84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_162                                                    (0xa0030e88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_162
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_162                                                        (0xe88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_163                                                    (0xa0030e8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_163
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_163                                                        (0xe8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_164                                                    (0xa0030e90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_164
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_164                                                        (0xe90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_165                                                    (0xa0030e94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_165
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_165                                                        (0xe94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_166                                                    (0xa0030e98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_166
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_166                                                        (0xe98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_167                                                    (0xa0030e9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_167
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_167                                                        (0xe9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_168                                                    (0xa0030ea0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_168
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_168                                                        (0xea0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_169                                                    (0xa0030ea4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_169
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_169                                                        (0xea4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_170                                                    (0xa0030ea8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_170
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_170                                                        (0xea8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_171                                                    (0xa0030eac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_171
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_171                                                        (0xeac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_172                                                    (0xa0030eb0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_172
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_172                                                        (0xeb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_173                                                    (0xa0030eb4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_173
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_173                                                        (0xeb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_174                                                    (0xa0030eb8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_174
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_174                                                        (0xeb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_175                                                    (0xa0030ebc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_175
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_175                                                        (0xebc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_176                                                    (0xa0030ec0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_176
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_176                                                        (0xec0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_177                                                    (0xa0030ec4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_177
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_177                                                        (0xec4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_178                                                    (0xa0030ec8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_178
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_178                                                        (0xec8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_179                                                    (0xa0030ecc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_179
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_179                                                        (0xecc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_180                                                    (0xa0030ed0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_180
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_180                                                        (0xed0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_181                                                    (0xa0030ed4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_181
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_181                                                        (0xed4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_182                                                    (0xa0030ed8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_182
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_182                                                        (0xed8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_183                                                    (0xa0030edc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_183
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_183                                                        (0xedc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_184                                                    (0xa0030ee0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_184
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_184                                                        (0xee0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_185                                                    (0xa0030ee4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_185
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_185                                                        (0xee4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_186                                                    (0xa0030ee8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_186
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_186                                                        (0xee8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_187                                                    (0xa0030eec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_187
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_187                                                        (0xeec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_188                                                    (0xa0030ef0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_188
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_188                                                        (0xef0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_189                                                    (0xa0030ef4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_189
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_189                                                        (0xef4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_190                                                    (0xa0030ef8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_190
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_190                                                        (0xef8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_191                                                    (0xa0030efc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_191
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_191                                                        (0xefc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_192                                                    (0xa0030f00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_192
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_192                                                        (0xf00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_193                                                    (0xa0030f04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_193
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_193                                                        (0xf04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_194                                                    (0xa0030f08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_194
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_194                                                        (0xf08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_195                                                    (0xa0030f0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_195
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_195                                                        (0xf0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_196                                                    (0xa0030f10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_196
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_196                                                        (0xf10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_197                                                    (0xa0030f14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_197
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_197                                                        (0xf14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_198                                                    (0xa0030f18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_198
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_198                                                        (0xf18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_199                                                    (0xa0030f1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_199
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_199                                                        (0xf1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_200                                                    (0xa0030f20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_200
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_200                                                        (0xf20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_201                                                    (0xa0030f24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_201
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_201                                                        (0xf24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_202                                                    (0xa0030f28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_202
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_202                                                        (0xf28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_203                                                    (0xa0030f2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_203
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_203                                                        (0xf2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_204                                                    (0xa0030f30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_204
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_204                                                        (0xf30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_205                                                    (0xa0030f34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_205
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_205                                                        (0xf34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_206                                                    (0xa0030f38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_206
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_206                                                        (0xf38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_207                                                    (0xa0030f3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_207
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_207                                                        (0xf3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SOC_LOCK                                                         (0xa0030f40)
+#ifndef SOC_IFC_REG_STASH_BANK_SOC_LOCK
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK                                                             (0xf40)
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_LOW                                                    (0)
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_MASK                                                   (0xff)
+#endif
+#define SOC_SOC_IFC_REG_STASH_END_STASH                                                             (0xa0030f44)
+#ifndef SOC_IFC_REG_STASH_END_STASH
+#define SOC_IFC_REG_STASH_END_STASH                                                                 (0xf44)
+#define SOC_IFC_REG_STASH_END_STASH_END_STASH_LOW                                                   (0)
+#define SOC_IFC_REG_STASH_END_STASH_END_STASH_MASK                                                  (0x1)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_CPTRA_LOCK                                                       (0xa0030f48)
+#ifndef SOC_IFC_REG_STASH_BANK_CPTRA_LOCK
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK                                                           (0xf48)
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_LOW                                            (0)
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_MASK                                           (0x1)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_STATUS                                                           (0xa0030f4c)
+#ifndef SOC_IFC_REG_STASH_BANK_STATUS
+#define SOC_IFC_REG_STASH_BANK_STATUS                                                               (0xf4c)
+#define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_LOW                                               (0)
+#define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_MASK                                              (0xff)
+#define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_LOW                                                 (8)
+#define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_MASK                                                (0x100)
+#define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_LOW                                                (9)
+#define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_MASK                                               (0x200)
 #endif
 
 

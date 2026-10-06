@@ -138,3 +138,15 @@ contents:
         - ../test_suites/caliptra_ss_lcc_volatile_unlock_with_state_error/caliptra_ss_lcc_volatile_unlock_with_state_error.yml
         - ../test_suites/smoke_test_otp_dft_en/smoke_test_otp_dft_en.yml
         - ../test_suites/smoke_test_spi_host_tx_rx/smoke_test_spi_host_tx_rx.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram/smoke_test_mcu_rom_patch_sram.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_test_locked1/smoke_test_mcu_rom_patch_sram_test_locked1.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_dev/smoke_test_mcu_rom_patch_sram_dev.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_lc_negative/smoke_test_mcu_rom_patch_sram_lc_negative.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_lc_negative_raw/smoke_test_mcu_rom_patch_sram_lc_negative_raw.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_lc_negative_rma/smoke_test_mcu_rom_patch_sram_lc_negative_rma.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_axi_user/smoke_test_mcu_rom_patch_sram_axi_user.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_uds_lock/smoke_test_mcu_rom_patch_sram_uds_lock.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_out_of_order/smoke_test_mcu_rom_patch_sram_out_of_order.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_fetch_limit/smoke_test_mcu_rom_patch_sram_fetch_limit.yml
+        - ../test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release.yml
+        - ../test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked.yml
