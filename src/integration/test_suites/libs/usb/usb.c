@@ -124,6 +124,14 @@ static void usb_devcmdstat_write(uint32_t val) {
     lsu_write_32(USB_DEV_DEVCMDSTAT, val);
 }
 
+// Block until the controller reports a debounced VBUS. Required before
+// asserting DCON when the device connects directly upstream.
+static void usb_wait_vbus_debounced(void) {
+    while ((lsu_read_32(USB_DEV_DEVCMDSTAT) &
+            DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
+    }
+}
+
 // Default (weak) application hooks. An application library such as
 // usb_ocp_recovery.c overrides these by defining strong symbols of the same
 // name; it is only linked into tests that include its header.
@@ -350,7 +358,7 @@ void boot_usb_core(bool fs_en, bool hub_en) {
     // FIXME does fs_en need to wait for VBUS_DEBOUNCED?
     if (!hub_en && !fs_en) {
         VPRINTF(LOW, "MCU: Wait VBUS\n");
-        while (!(lsu_read_32(USB_DEV_DEVCMDSTAT) & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK));
+        usb_wait_vbus_debounced();
     }
     // HS link-up: do NOT set FORCE_FULLSPEED unless fs_en. FORCE_NEEDCLK keeps
     // the UTMI clock running during bring-up (suspend tests clear it later).
@@ -735,9 +743,7 @@ void usb_set_device_connect(uint8_t connected) {
              DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
              DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
     if (connected != 0u) {
-        while ((lsu_read_32(USB_DEV_DEVCMDSTAT) &
-                DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
-        }
+        usb_wait_vbus_debounced();
         cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
         cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
                  DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
