@@ -177,7 +177,7 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
             .usb_cfg        (usb_cfg),
             .device_addr    (HUB_ADDR),
             .dev_name       ("hub"),
-            .expected_status(16'h0002));
+            .expected_status(16'h0003));
 
         // Step 6: SetFeature(DEVICE_REMOTE_WAKEUP) + GET_STATUS for dev0.
         // USBDC0 firmware reports Self-Powered (bit0) always set and honors
