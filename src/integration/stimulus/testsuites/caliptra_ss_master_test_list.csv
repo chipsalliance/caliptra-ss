@@ -232,3 +232,5 @@ $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev1_nbyte/cali
 $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev1_powerdown/caliptra_ss_usb_fs_dev1_powerdown                       , Random         , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev1_global_suspend_L2/caliptra_ss_usb_fs_dev1_global_suspend_L2       , Random         , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
 $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev1_resume/caliptra_ss_usb_fs_dev1_resume                             , Random         , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
+$CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback , Directed       , Nightly       , None, L1  , caliptra_ss_top_tb, None           , None     , 100
+
