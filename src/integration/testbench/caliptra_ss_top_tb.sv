@@ -99,6 +99,9 @@ module caliptra_ss_top_tb
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
     logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_sessend_i, cptra_ss_usb_async_disable_i;
+    logic cptra_ss_usb_avalid_i;
+    logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
+    logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
     logic cptra_ss_usb_vbuscomp_on_o, cptra_ss_usb_chrgvbus_o, cptra_ss_usb_dischrgvbus_o;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
@@ -2062,6 +2065,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP
+    assign cptra_ss_usb_avalid_i              = usb_20_mac_if.utmi_dut_mac_if.AValid;
 
     // --- DUT device MAC outputs -> VIP modeled PHY inputs ---
     assign usb_20_mac_if.utmi_dut_mac_if.DataIn      = cptra_ss_usb_utmi_txdata_o;
@@ -2205,6 +2209,13 @@ module caliptra_ss_top_tb
 
     // USB AXI USER filtering policy is driven by caliptra_ss_top_tb_soc_bfm
     assign cptra_ss_usb_async_disable_i = 1'b0;
+
+    // USB PHY clock request, wakeup and hub control inputs.
+    // Tie-offs reproduce the values previously hard-coded in caliptra_ss_top.
+    assign cptra_ss_usb_donotwakeup_n_i = 1'b1; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_dev_wakeup_n_i  = 1'b1; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_enable_hub_i    = 1'b0; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_self_powered_i  = 1'b1; // FIXME: NXP DV add functionality
 
 
     // --- SPI host env and interface ---
@@ -2643,8 +2654,16 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_vbuscomp_on_o     (cptra_ss_usb_vbuscomp_on_o),
         .cptra_ss_usb_chrgvbus_o        (cptra_ss_usb_chrgvbus_o),
         .cptra_ss_usb_dischrgvbus_o     (cptra_ss_usb_dischrgvbus_o),
+        .cptra_ss_usb_avalid_i          (cptra_ss_usb_avalid_i),
         .cptra_ss_usb_sessend_i         (cptra_ss_usb_sessend_i),
         .cptra_ss_usb_async_disable_i   (cptra_ss_usb_async_disable_i),
+
+        .cptra_ss_usb_frametoggle_o     (), // FIXME: NXP DV add functionality
+        .cptra_ss_usb_needclk_o         (), // FIXME: NXP DV add functionality
+        .cptra_ss_usb_donotwakeup_n_i   (cptra_ss_usb_donotwakeup_n_i),
+        .cptra_ss_usb_dev_wakeup_n_i    (cptra_ss_usb_dev_wakeup_n_i),
+        .cptra_ss_usb_enable_hub_i      (cptra_ss_usb_enable_hub_i),
+        .cptra_ss_usb_self_powered_i    (cptra_ss_usb_self_powered_i),
 
         .cptra_ss_usb_recovery_payload_available_o  (cptra_ss_usb_recovery_payload_available_o),
         .cptra_ss_usb_recovery_payload_available_i  (cptra_ss_usb_recovery_payload_available_o),
