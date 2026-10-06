@@ -104,6 +104,8 @@ module mci_mcu_rom_patch_ctrl
 // Signal declarations
 //////////////////////////////////////
 
+localparam MCU_ROM_PATCH_SRAM_IF_ADDR_W = $bits(mci_mcu_rom_patch_sram_req_if.req.addr);
+
 logic otp_state_valid_q;
 logic cptra_released_q;
 logic lc_patch_allowed;
@@ -156,30 +158,23 @@ end
 
 // Positive decode: patching is only permitted in TEST_LOCKED, TEST_UNLOCKED and MANUF (DEV).
 // RAW, PROD, PROD_END, RMA, SCRAP and invalid encodings are closed.
-always_comb begin
-    lc_patch_allowed = 1'b0;
-    if (otp_state_valid_q && !lc_fatal_state_error_i) begin
-        case (otp_static_state_i)
-            lc_ctrl_state_pkg::LcStTestLocked0,
-            lc_ctrl_state_pkg::LcStTestLocked1,
-            lc_ctrl_state_pkg::LcStTestLocked2,
-            lc_ctrl_state_pkg::LcStTestLocked3,
-            lc_ctrl_state_pkg::LcStTestLocked4,
-            lc_ctrl_state_pkg::LcStTestLocked5,
-            lc_ctrl_state_pkg::LcStTestLocked6,
-            lc_ctrl_state_pkg::LcStTestUnlocked0,
-            lc_ctrl_state_pkg::LcStTestUnlocked1,
-            lc_ctrl_state_pkg::LcStTestUnlocked2,
-            lc_ctrl_state_pkg::LcStTestUnlocked3,
-            lc_ctrl_state_pkg::LcStTestUnlocked4,
-            lc_ctrl_state_pkg::LcStTestUnlocked5,
-            lc_ctrl_state_pkg::LcStTestUnlocked6,
-            lc_ctrl_state_pkg::LcStTestUnlocked7,
-            lc_ctrl_state_pkg::LcStDev: lc_patch_allowed = 1'b1;
-            default:                    lc_patch_allowed = 1'b0;
-        endcase
-    end
-end
+assign lc_patch_allowed = otp_state_valid_q && !lc_fatal_state_error_i &&
+                          ((otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked0) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked1) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked2) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked3) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked4) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked5) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestLocked6) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked0) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked1) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked2) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked3) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked4) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked5) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked6) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStTestUnlocked7) ||
+                           (otp_static_state_i == lc_ctrl_state_pkg::LcStDev));
 
 ///////////////////////////////////////////////
 // Patch window
@@ -290,7 +285,15 @@ endgenerate
 
 assign mci_mcu_rom_patch_sram_req_if.req.cs   = sram_write_req | sram_read_req;
 assign mci_mcu_rom_patch_sram_req_if.req.we   = sram_write_req;
-assign mci_mcu_rom_patch_sram_req_if.req.addr = (sram_write_req | sram_read_req) ? req_word_addr : '0;
+assign mci_mcu_rom_patch_sram_req_if.req.addr[MCU_ROM_PATCH_SRAM_ADDR_W-1:0] = (sram_write_req | sram_read_req) ? req_word_addr : '0;
+
+generate
+    if (MCU_ROM_PATCH_SRAM_IF_ADDR_W > MCU_ROM_PATCH_SRAM_ADDR_W) begin : gen_addr_tie_off
+        // Upper address bits are 0 since the SRAM is smaller than the addressable space
+        assign mci_mcu_rom_patch_sram_req_if.req.addr[MCU_ROM_PATCH_SRAM_IF_ADDR_W-1:MCU_ROM_PATCH_SRAM_ADDR_W] = '0;
+    end
+endgenerate
+
 assign mci_mcu_rom_patch_sram_req_if.req.wdata.data = ~sram_write_req ? '0             :
                                                       rmw_req         ? sram_rmw_wdata :
                                                                         cif_resp_if.req_data.wdata;
