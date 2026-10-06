@@ -1615,6 +1615,8 @@ A patched device must never run in production or provision device identity, so h
 - **Identity:** while the flag is set, the UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
 - **Release:** if no patch was loaded, the SRAM is released as data memory to any AXI user once MCU RT FW is running (MCU released from reset with the FW exec region locked). It is never fetchable while released, and a warm reset closes it again until MCU RT FW is running. A loaded patch is never released, because MCU ROM needs it again after a warm reset.
 
+The patch SRAM is optional: setting `MCU_ROM_PATCH_SRAM_SIZE_KB` to 0 removes it, leaving its address window unmapped.
+
 See the Integration Specification for the address map and interface details.
 
 ### MCI AXI Subordinate

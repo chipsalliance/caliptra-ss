@@ -133,7 +133,7 @@ always_comb soc_mcu_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI
 
 // SoC request to MCI Mbox1
 always_comb soc_mcu_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
-always_comb soc_mcu_rom_patch_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_ROM_PATCH_SRAM_START_ADDR:MCU_ROM_PATCH_SRAM_END_ADDR]}));
+always_comb soc_mcu_rom_patch_gnt = (MCU_ROM_PATCH_SRAM_SIZE_KB != 0) & (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_ROM_PATCH_SRAM_START_ADDR:MCU_ROM_PATCH_SRAM_END_ADDR]}));
 
 ///////////////////////////////////////////////////////////
 // Add qualifiers to grant before sending to IPs

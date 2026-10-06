@@ -581,6 +581,19 @@ mci_mcu_sram_ctrl #(
 // A populated patch SRAM blocks UDS/FE provisioning in the FC filter and zeroizes
 // the UDS/FE delivered to Caliptra core. Without a patch, the SRAM is released as
 // data memory to any AXI user once MCU RT FW is running.
+// MCU_ROM_PATCH_SRAM_SIZE_KB == 0 removes the patch SRAM: the window is unmapped and
+// no patch can be loaded, so UDS/FE are never zeroized.
+generate
+if (MCU_ROM_PATCH_SRAM_SIZE_KB == 0) begin : no_mcu_rom_patch_sram
+    always_comb begin
+        mcu_rom_patch_req_if.req_hold       = 1'b0;
+        mcu_rom_patch_req_if.rdata          = '0;
+        mcu_rom_patch_req_if.error          = 1'b1;
+        mci_mcu_rom_patch_sram_req_if.req   = '0;
+        mcu_rom_patch_active_o              = 1'b0;
+        mcu_rom_patch_sram_double_ecc_error = 1'b0;
+    end
+end else begin : mcu_rom_patch_sram
 mci_mcu_rom_patch_ctrl #(
     .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB)
 ) i_mci_mcu_rom_patch_ctrl (
@@ -613,6 +626,8 @@ mci_mcu_rom_patch_ctrl #(
 
     .mci_mcu_rom_patch_sram_req_if(mci_mcu_rom_patch_sram_req_if)
 );
+end
+endgenerate
 
 
 // MCI WDT
@@ -942,6 +957,10 @@ mci_lcc_st_trans LCC_state_translator (
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MIN_SIZE, MCU_MBOX1_SIZE_KB >= 0)
 // Verify max size of MBOX1
 `CALIPTRA_ASSERT_INIT(ERR_MCU_MBOX1_MAX_SIZE, MCU_MBOX1_SIZE_KB <= 2048)
+// Verify min size of MCU ROM patch SRAM (0 removes it)
+`CALIPTRA_ASSERT_INIT(ERR_MCU_ROM_PATCH_SRAM_MIN_SIZE, MCU_ROM_PATCH_SRAM_SIZE_KB >= 0)
+// Verify max size of MCU ROM patch SRAM
+`CALIPTRA_ASSERT_INIT(ERR_MCU_ROM_PATCH_SRAM_MAX_SIZE, MCU_ROM_PATCH_SRAM_SIZE_KB <= 2048)
 
 // AXI SUB W - Verify AXI addr width matches
 `CALIPTRA_ASSERT_INIT(ERR_MCI_AXI_SUB_W_ADDR_SIZE_MATCH,  AXI_ADDR_WIDTH == s_axi_w_if.AW)
