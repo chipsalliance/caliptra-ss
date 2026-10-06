@@ -615,7 +615,7 @@ endfunction:check_device_qualifier
 //                                     Self-Powered. bit6 mirrors
 //                                     usb_self_powered = USB_self_powered pin
 //                                     OR HUB_CS[18]; the pin is tied to 1'b1 in
-//                                     caliptra_ss_top.sv, so 1 is expected. See
+//                                     caliptra_ss_top_tb.sv, so 1 is expected. See
 //                                     usb_ep0_hub_descr.m.vhdl C_ADDR_SP1 /
 //                                     C_ADDR_SP2 ROM patch. The tie-off itself
 //                                     is checked by caliptra_ss_usb_sva.sv)
@@ -659,7 +659,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   //          C_ADDR_SP1 (and C_ADDR_SP2 for the other-speed descriptor) is
   //          patched to 0xC0 when usb_self_powered is high and 0x80 when it is
   //          low, where usb_self_powered = usb_self_powered_pin OR HUB_CS[18].
-  //          caliptra_ss_top.sv ties USB_self_powered to 1'b1, and no test
+  //          caliptra_ss_top_tb.sv ties cptra_ss_usb_self_powered_i to 1'b1, and no test
   //          writes HUB_CS[18], so the expected value is 1. The tie-off itself
   //          is verified independently by caliptra_ss_usb_sva.sv.
   //   bits[5:0] other than bit6 are reserved and zero (bit5 Remote Wakeup is
@@ -773,7 +773,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
                                   device_name, descr_label, act_iConfiguration))
   // bmAttributes is now checked in full, including bit6 (Self-Powered). A
   // failure here with actual 0x80 means the self-powered indication was lost:
-  // either the USB_self_powered tie-off in caliptra_ss_top.sv changed, or
+  // either the USB_self_powered tie-off in caliptra_ss_top_tb.sv changed, or
   // HUB_CS[18] was written to 0 after the descriptor ROM was patched.
   CHK_CFG_BMATTRIBUTES: assert(act_bmAttributes == EXP_BMATTRIBUTES) else
     `uvm_error(msg_tag, $sformatf("%s %s bmAttributes mismatch: expected 0x%02h got 0x%02h (bit6 Self-Powered = %0b, expected 1)", 
