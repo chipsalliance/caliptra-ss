@@ -70,6 +70,14 @@ void main(void) {
     boot_mcu();
     boot_usb_core_hub();
 
+    // Phase 2 of hub bring-up: now that the device controller is programmed,
+    // assert HUB_CONNECT so the host sees the hub upstream, performs HS chirp,
+    // and enumerates downstream port 0 (USBDC0). Without this the HS link never
+    // reaches ENABLED and the test times out as DISCONNECTED. Done BEFORE the
+    // FORCE_VBUS clear below so the hub bring-up write to HUB_CTRL completes
+    // first.
+    usb_hub_connect();
+
     // Clear FORCE_VBUS so the controller monitors the real VBus pin.
     // boot_usb_core_hub() sets FORCE_VBUS=1 for normal enumeration tests.
     // With FORCE_VBUS=1 the DUT ignores VBus removal; DCON_C never fires
@@ -403,3 +411,5 @@ void main(void) {
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources

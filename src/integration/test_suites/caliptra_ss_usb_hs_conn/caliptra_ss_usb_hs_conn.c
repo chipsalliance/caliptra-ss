@@ -53,6 +53,12 @@ void main(void) {
     // The VIP host (high_speed_capable=1) will perform HS chirp negotiation.
     boot_usb_core_hub();
 
+    // Phase 2 of hub bring-up: now that the device controller is programmed,
+    // assert HUB_CONNECT so the host sees the hub upstream, performs HS chirp,
+    // and enumerates downstream port 0 (USBDC0). Without this the HS link never
+    // reaches ENABLED and the test times out as DISCONNECTED.
+    usb_hub_connect();
+
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -83,3 +89,5 @@ void main(void) {
 
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources
