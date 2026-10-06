@@ -169,8 +169,8 @@ module mci_top
     input  logic  FIPS_ZEROIZATION_PPD_i,
     output logic  FIPS_ZEROIZATION_CMD_o,
 
-    // MCU ROM patch: UDS provisioned (from FC) / patch SRAM populated (to FC filter)
-    input  logic  uds_provisioned_i,
+    // MCU ROM patch: Caliptra core reset input (as seen by Caliptra) / patch SRAM populated (to FC filter)
+    input  logic  cptra_core_rst_b_i,
     output logic  mcu_rom_patch_active_o,
 
     input logic intr_otp_operation_done,
@@ -577,8 +577,9 @@ mci_mcu_sram_ctrl #(
 );
 
 // MCU ROM Patch SRAM
-// Loaded by MCU ROM before Caliptra core boots (TEST_LOCKED/TEST_UNLOCKED/DEV only, UDS not
-// provisioned). A populated patch SRAM blocks UDS/FE provisioning in the FC filter.
+// Loaded by MCU ROM before Caliptra core boots (TEST_LOCKED/TEST_UNLOCKED/DEV only).
+// A populated patch SRAM blocks UDS/FE provisioning in the FC filter and zeroizes
+// the UDS/FE delivered to Caliptra core.
 mci_mcu_rom_patch_ctrl #(
     .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB)
 ) i_mci_mcu_rom_patch_ctrl (
@@ -588,11 +589,11 @@ mci_mcu_rom_patch_ctrl #(
     .mci_pwrgood (mci_pwrgood),
 
     .cptra_rst_b,
+    .cptra_core_rst_b_i,
 
     .otp_static_state_i     (otp_static_state_o),
     .otp_state_valid_i      (otp_state_valid_o),
     .lc_fatal_state_error_i (lc_fatal_state_error_i),
-    .uds_provisioned_i      (uds_provisioned_i),
 
     .axi_mcu_lsu_req,
     .axi_mcu_ifu_req,

@@ -20,16 +20,17 @@
 //      Security rules (all enforced in HW):
 //      Write : MCU LSU only, full-word only, and only while
 //                - LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no fatal LC error)
-//                - UDS is not provisioned
-//                - Caliptra core is still held in reset
+//                - Caliptra core has not left reset yet in this power cycle, both
+//                  at the MCI boot sequencer and at the Caliptra core reset input
 //      Read  : MCU LSU/IFU only, and only while the patch flag is set and the
-//              LC/UDS conditions above still hold. The LC re-check blocks a
+//              LC condition above still holds. The LC re-check blocks a
 //              stale patch from running after a DEV->PROD transition plus a
 //              warm reset (the flag and SRAM contents survive a warm reset).
 //      Flag  : mcu_rom_patch_active_o is set by the first accepted write and is
 //              cleared only by a cold reset (mci_pwrgood). It is stable before
-//              Caliptra core leaves reset and blocks UDS/FE provisioning in the
-//              fuse controller filter.
+//              Caliptra core leaves reset. It blocks UDS/FE provisioning in the
+//              fuse controller filter and zeroizes the UDS/FE delivered to
+//              Caliptra core.
 //
 //      Any other access returns an error on the first cycle of cif_resp_if.
 //      ECC errors are returned on the read data phase (second cycle).
@@ -59,14 +60,15 @@ module mci_mcu_rom_patch_ctrl
     input logic rst_b,
     input logic mci_pwrgood,
 
-    // Caliptra core reset from the MCI boot sequencer (0 = held in reset)
+    // Caliptra core reset from the MCI boot sequencer, and as seen at the
+    // Caliptra core reset input (the SoC may not loop the MCI output back)
     input logic cptra_rst_b,
+    input logic cptra_core_rst_b_i,
 
-    // LC state (static, sampled from OTP at boot) and UDS status
+    // LC state (static, sampled from OTP at boot)
     input lc_ctrl_state_pkg::lc_state_e otp_static_state_i,
     input logic                         otp_state_valid_i,
     input logic                         lc_fatal_state_error_i,
-    input logic                         uds_provisioned_i,
 
     // Privileged requests
     input logic axi_mcu_lsu_req,
@@ -90,6 +92,7 @@ module mci_mcu_rom_patch_ctrl
 //////////////////////////////////////
 
 logic otp_state_valid_q;
+logic cptra_released_q;
 logic lc_patch_allowed;
 logic patch_wr_open;
 logic patch_rd_open;
@@ -150,12 +153,25 @@ always_comb begin
     end
 end
 
-// Writes close permanently (until the next Caliptra reset) once Caliptra core is
-// released, so the patch flag is stable for the whole Caliptra boot.
-assign patch_wr_open = lc_patch_allowed & ~uds_provisioned_i & ~cptra_rst_b;
+// Caliptra core captures UDS/FE only on its first reset release of a power cycle
+// (CPTRA_FUSE_WR_DONE is cleared by pwrgood only). Writes are only allowed before
+// that release, so a patch can never be loaded after Caliptra core captured the
+// real UDS/FE (e.g. after a warm reset).
+always_ff @(posedge clk or negedge mci_pwrgood) begin
+    if (!mci_pwrgood) begin
+        cptra_released_q <= 1'b0;
+    end
+    else if (cptra_rst_b || cptra_core_rst_b_i) begin
+        cptra_released_q <= 1'b1;
+    end
+end
+
+// Writes close permanently (until the next cold reset) once Caliptra core is
+// released, so the patch flag is stable before Caliptra core samples UDS/FE.
+assign patch_wr_open = lc_patch_allowed & ~cptra_rst_b & ~cptra_core_rst_b_i & ~cptra_released_q;
 
 // Reads (IFU fetch / LSU readback) only when this power cycle's patch is present.
-assign patch_rd_open = lc_patch_allowed & ~uds_provisioned_i & mcu_rom_patch_active_o;
+assign patch_rd_open = lc_patch_allowed & mcu_rom_patch_active_o;
 
 // Full-word writes only: no RMW path is needed to load a patch.
 assign wr_filter_success = cif_resp_if.dv &  cif_resp_if.req_data.write & axi_mcu_lsu_req &
@@ -238,8 +254,8 @@ assign cif_resp_if.error    = filter_error | sram_double_ecc_error;
 `CALIPTRA_ASSERT_MUTEX(ERR_MCU_ROM_PATCH_SRAM_MULTI_REQ, {sram_write_req, sram_read_req}, clk, !rst_b)
 
 // Patch can only be loaded while Caliptra core is in reset and patching is permitted
-`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, sram_write_req |-> !cptra_rst_b, clk, !rst_b)
-`CALIPTRA_ASSERT(McuRomPatchWrOnlyLcAllowed_A, sram_write_req |-> (lc_patch_allowed && !uds_provisioned_i), clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, sram_write_req |-> (!cptra_rst_b && !cptra_core_rst_b_i && !cptra_released_q), clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchWrOnlyLcAllowed_A, sram_write_req |-> lc_patch_allowed, clk, !rst_b)
 
 // Patch can only be fetched/read after it was loaded this power cycle
 `CALIPTRA_ASSERT(McuRomPatchRdOnlyWhenActive_A, sram_read_req |-> mcu_rom_patch_active_o, clk, !rst_b)

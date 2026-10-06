@@ -33,8 +33,6 @@ module otp_ctrl
   input                                              cptra_ss_debug_intent_i,
   // MCU ROM patch SRAM populated this power cycle (from MCI). Blocks UDS/FE provisioning.
   input                                              mcu_rom_patch_active_i,
-  // UDS (SECRET_MANUF_PARTITION) has been provisioned and digest-locked (to MCI).
-  output logic                                       uds_provisioned_o,
   input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
   input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
@@ -1426,11 +1424,6 @@ end
                             lc_ctrl_pkg::On : lc_ctrl_pkg::Off;
   // The device is personalized if the root key has been provisioned and locked.
   assign secrets_valid = lc_ctrl_pkg::Off;
-
-  // UDS has been provisioned and locked. Same digest-based check as the token-valid
-  // logic above. MCI uses this to keep the MCU ROM patch SRAM closed on provisioned
-  // devices, so no IDevID CSR can ever come from a patched boot.
-  assign uds_provisioned_o = (part_digest[SecretManufPartitionIdx] != '0);
 
   // Buffer these constants in order to ensure that synthesis does not try to optimize the encoding.
   // SEC_CM: TOKEN_VALID.CTRL.MUBI

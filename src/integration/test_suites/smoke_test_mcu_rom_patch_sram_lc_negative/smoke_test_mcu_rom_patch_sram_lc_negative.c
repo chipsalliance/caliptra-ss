@@ -13,8 +13,8 @@
 // limitations under the License.
 
 // MCU ROM patch SRAM negative test: LC state that does not allow patching
-// (RAW, PROD or RMA, selected by the yml). Caliptra core is still in reset and
-// UDS is not provisioned, so the LC gate is the only reason the write can fail.
+// (RAW, PROD or RMA, selected by the yml). Caliptra core is still in reset, so
+// the LC gate is the only reason the write can fail.
 // The rejected store returns an AXI error, reported by the MCU as a store bus
 // error NMI. The test passes from the NMI handler.
 

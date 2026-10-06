@@ -123,7 +123,7 @@ module mci_top_tb
     .fc_opt_init(),
 
     // MCU ROM patch
-    .uds_provisioned_i('0),
+    .cptra_core_rst_b_i('0),
     .mcu_rom_patch_active_o(),
 
     // MCU SRAM Interface

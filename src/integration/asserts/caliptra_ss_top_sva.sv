@@ -671,4 +671,27 @@ module caliptra_ss_top_sva
     (`FC_PATH.intr_otp_error_o)
   )
 
+  ////////////////////////////////////////////////////
+  // MCU ROM patch
+  ////////////////////////////////////////////////////
+
+  // While a MCU ROM patch is loaded, Caliptra core must only ever see zero UDS/FE,
+  // both at its fuse input ports and in its captured (obfuscated) fuse registers.
+  `CALIPTRA_ASSERT(McuRomPatchUdsFePortsZero_A,
+    `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active |->
+    ((`CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed == '0) &&
+     (`CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy == '0))
+  )
+
+  `CALIPTRA_ASSERT(McuRomPatchCptraUdsFeZero_A,
+    `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active |->
+    ((`CPTRA_CORE_TOP_PATH.obf_uds_seed == '0) &&
+     (`CPTRA_CORE_TOP_PATH.obf_field_entropy == '0))
+  )
+
+  // The fuse controller filter sees the same patch flag as MCI.
+  `CALIPTRA_ASSERT(McuRomPatchFlagToFcFilter_A,
+    `FC_PATH.u_fuse_ctrl_filter.mcu_rom_patch_active_i == `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active
+  )
+
 endmodule

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// MCU ROM patch SRAM positive test (LC state TEST_UNLOCKED1, TEST_LOCKED1 or DEV,
-// selected by the yml).
-// Mimics MCU ROM: load a patch while Caliptra core is still in reset, read it
-// back and execute it, then boot Caliptra and check the patch is still
-// executable but no longer writable.
+// MCU ROM patch SRAM AXI user test (TEST_UNLOCKED1), MCU side.
+// MCU loads the patch and boots Caliptra core. Caliptra core then tries to read
+// and write the patch SRAM through its AXI DMA (cptra_*.c) and expects AXI
+// errors. Reads are still open for the MCU at that point, so a rejected
+// Caliptra read proves the AXI user check. The MCU finally checks the patch is
+// unchanged and still executable.
 
 #include <stdint.h>
 
@@ -45,30 +46,11 @@ static const uint32_t k_patch[PATCH_WORDS] = { 0x12350513, 0x00008067 };
 #define PATCH_FILL_WORDS 8
 #define PATCH_ARG        0x1000
 #define PATCH_EXP        (PATCH_ARG + 0x123)
-#define LOCK_TEST_DATA   0xDEADBEEF
-
-// VeeR EL2 NMI cause for an imprecise store bus error
-#define MCAUSE_NMI_STORE_BUS_ERR 0xF0000000
 
 typedef uint32_t (*patch_fn_t)(uint32_t);
 
-static volatile uint32_t expect_lock_nmi = 0;
-
 void nmi_handler(void) {
-    uint32_t mcause = csr_read_mcause();
-
-    if (!expect_lock_nmi) {
-        handle_error("MCU: Unexpected NMI, mcause 0x%x\n", mcause);
-    }
-    if (mcause != MCAUSE_NMI_STORE_BUS_ERR) {
-        handle_error("MCU: Expected store bus error NMI, got mcause 0x%x\n", mcause);
-    }
-    if (lsu_read_32(PATCH_BASE) != k_patch[0]) {
-        handle_error("MCU: Locked patch SRAM was modified\n");
-    }
-    VPRINTF(LOW, "MCU: Patch SRAM write after Caliptra boot was rejected\n");
-    SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
-    while (1);
+    handle_error("MCU: Unexpected NMI, mcause 0x%x\n", csr_read_mcause());
 }
 
 static void load_patch(void) {
@@ -91,7 +73,6 @@ static void run_patch(const char *tag) {
     patch_fn_t fn = (patch_fn_t)PATCH_BASE;
     uint32_t   rv;
 
-    // Make sure the patch stores are complete before fetching from the SRAM
     __asm__ volatile ("fence\n\tfence.i" ::: "memory");
     rv = fn(PATCH_ARG);
     if (rv != PATCH_EXP) {
@@ -101,7 +82,11 @@ static void run_patch(const char *tag) {
 }
 
 void main(void) {
-    VPRINTF(LOW, "=================\nMCU: MCU ROM patch SRAM test\n=================\n");
+    uint32_t axi_select = xorshift32() % 5;
+    uint32_t axi_user_id[] = { xorshift32(), xorshift32(), xorshift32(), xorshift32(), xorshift32() };
+    uint32_t caliptra_dma_axi_user = axi_user_id[axi_select];
+
+    VPRINTF(LOW, "=================\nMCU: MCU ROM patch SRAM AXI user test\n=================\n");
 
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR, (uint32_t)nmi_handler);
 
@@ -110,18 +95,25 @@ void main(void) {
     check_patch("before Caliptra boot");
     run_patch("before Caliptra boot");
 
-    // 2. Boot Caliptra: the patch stays readable/executable
-    mcu_cptra_init_d();
-    check_patch("after Caliptra boot");
-    run_patch("after Caliptra boot");
+    // 2. Boot Caliptra core with a DMA AXI user that can use MCU mailbox 0
+    VPRINTF(LOW, "MCU: Caliptra DMA AXI USER 0x%x\n", caliptra_dma_axi_user);
+    mcu_mbox_clear_lock_out_of_reset(0);
+    mcu_mbox_configure_valid_axi(0, axi_user_id);
+    mcu_cptra_init_d(.cfg_cptra_dma_axi_user=true, .cptra_dma_axi_user=caliptra_dma_axi_user);
 
-    // 3. Write lock: the write is rejected with an AXI error (store bus error NMI)
-    expect_lock_nmi = 1;
-    lsu_write_32(PATCH_BASE, LOCK_TEST_DATA);
-    for (uint32_t i = 0; i < 100; i++) {
-        if (lsu_read_32(PATCH_BASE) != k_patch[0]) {
-            handle_error("MCU: Patch SRAM was writable after Caliptra boot\n");
-        }
+    // 3. Caliptra core reports its DMA checks through mailbox 0
+    VPRINTF(LOW, "MCU: Waiting on Caliptra to finish\n");
+    if (!mcu_mbox_wait_for_user_execute(0, 1, 10000)) {
+        handle_error("MCU: Mbox0 Caliptra did not set execute\n");
     }
-    handle_error("MCU: Write to locked patch SRAM did not fault\n");
+    mcu_mbox_update_status(0, MCU_MBOX_CMD_COMPLETE);
+    if (!mcu_mbox_wait_for_user_execute(0, 0, 10000)) {
+        handle_error("MCU: Mbox0 Caliptra did not clear execute\n");
+    }
+
+    // 4. The patch is unchanged and still executable by the MCU
+    check_patch("after Caliptra DMA");
+    run_patch("after Caliptra DMA");
+
+    SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
 }
