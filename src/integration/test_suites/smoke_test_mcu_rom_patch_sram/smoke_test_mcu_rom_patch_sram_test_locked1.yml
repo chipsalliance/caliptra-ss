@@ -12,17 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# MCU ROM patch SRAM positive test. Boots in TEST_UNLOCKED1 (--lc-state 3,
-# RAW->TU0->TL0->TU1 = 3 transitions).
+# MCU ROM patch SRAM positive test. Boots in TEST_LOCKED1 (--lc-state 4,
+# RAW->TU0->TL0->TU1->TL1 = 4 transitions).
 ---
 seed: 1
 testname: smoke_test_mcu_rom_patch_sram
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram]" &&
+  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram] in TEST_LOCKED1" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
-      --lc-state 3 \
-      --lc-cnt 3 \
+      --lc-state 4 \
+      --lc-cnt 4 \
       --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson \
       --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson \
       -o otp-img.2048.vmem &&

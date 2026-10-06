@@ -279,7 +279,7 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 | **MCU0**          | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                | Read/Write      | Shared memory between MCI and MCU for data storage.                                                                                      |
 | **MAILBOX**       | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX0 communication.                                                                                                          |
 | **MAILBOX**       | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX1 communication.                                                                                                          |
-| **MCU0**          | MCU ROM Patch SRAM    | `cptra_ss_mcu_rom_patch_sram_req_if` | SoC Specific (`MCU_ROM_PATCH_SRAM_SIZE_KB`) | Read/Write | Dedicated SRAM that MCU ROM loads a ROM patch into and fetches from. Accessible only in TEST_LOCKED/TEST_UNLOCKED/DEV before Caliptra core boots and before UDS is provisioned. See [MCU ROM Patch SRAM](#mcu-rom-patch-sram). |
+| **MCU0**          | MCU ROM Patch SRAM    | `cptra_ss_mcu_rom_patch_sram_req_if` | SoC Specific (`MCU_ROM_PATCH_SRAM_SIZE_KB`) | Read/Write | Dedicated SRAM that MCU ROM loads a ROM patch into and fetches from. Accessible only in TEST_LOCKED/TEST_UNLOCKED/DEV before Caliptra core first leaves reset. See [MCU ROM Patch SRAM](#mcu-rom-patch-sram). |
 | **Caliptra Core** | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core.                                                 |
 | **Caliptra Core** | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read-Only       | Interface for Caliptra ROM.                                                                                                              |
 | **Caliptra Core** | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for Caliptra mailbox memory.                                                                                                   |
@@ -2000,13 +2000,15 @@ A dedicated SRAM (`MCU_ROM_PATCH_SRAM_SIZE_KB`, offset 0x200000) that lets integ
 
 | Rule | Enforcement |
 | :---- | :---- |
-| Write | MCU LSU only, full 32-bit words only. Allowed only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no LC fatal error), UDS is **not** provisioned (SECRET_MANUF_PARTITION digest is 0), and Caliptra core is still held in reset by the MCI boot sequencer. |
+| Write | MCU LSU only, full 32-bit words only. Allowed only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no LC fatal error) and Caliptra core has not yet left reset in the current power cycle. Both the MCI boot sequencer reset output and the Caliptra core reset input (`cptra_ss_mci_cptra_rst_b_i`) are checked. |
 | Patch flag | Set by the first accepted write. Cleared only by cold reset (`cptra_ss_pwrgood_i`). Stable before Caliptra core boots. |
-| Read / fetch | MCU LSU/IFU only, only while the patch flag is set and the LC/UDS write conditions (except Caliptra reset) still hold. This prevents a patch from running after a DEV->PROD transition followed by a warm reset. |
-| UDS/FE lock | While the patch flag is set, the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses. |
+| Read / fetch | MCU LSU/IFU only, only while the patch flag is set and the LC condition still holds. This prevents a patch from running after a DEV->PROD transition followed by a warm reset. |
+| UDS/FE | While the patch flag is set, the obfuscated UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses. |
 | Errors | Any other access returns an AXI error. Single-bit ECC errors are corrected. Double-bit ECC errors return an AXI error and set `HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc`. |
 
-*NOTE: MCU ROM must only write this SRAM when a valid patch is present. Any write sets the patch flag and blocks UDS/FE provisioning until the next cold reset.*
+*NOTE: MCU ROM must only write this SRAM when a valid patch is present. Any write sets the patch flag, zeroizes the UDS/FE delivered to Caliptra core, and blocks UDS/FE provisioning until the next cold reset.*
+
+*NOTE: MCU ROM must load the patch before writing `CPTRA_BOOT_GO`. Once Caliptra core leaves reset, the patch SRAM cannot be written until the next cold reset.*
 
 ## MCI Integration Requirements
 

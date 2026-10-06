@@ -12,19 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# MCU ROM patch SRAM positive test. Boots in TEST_UNLOCKED1 (--lc-state 3,
-# RAW->TU0->TL0->TU1 = 3 transitions).
+# Caliptra core UDS/FE SoC bus write blocked test in DEV (--lc-state 16) with
+# blank UDS/FE fuses.
 ---
 seed: 1
-testname: smoke_test_mcu_rom_patch_sram
+testname: smoke_test_cptra_uds_fe_soc_write_blocked
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram]" &&
+  echo "Running pre_exec for [smoke_test_cptra_uds_fe_soc_write_blocked]" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
-      --lc-state 3 \
-      --lc-cnt 3 \
+      --lc-state 16 \
+      --lc-cnt 5 \
       --lc-state-def $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/lc_ctrl_state.hjson \
       --mmap-def $CALIPTRA_SS_ROOT/src/fuse_ctrl/data/otp_ctrl_mmap.hjson \
       -o otp-img.2048.vmem &&
   CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TESTNAME=smoke_test_mbox program.hex &&
-  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mcu_rom_patch_sram mcu_program.hex
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_cptra_uds_fe_soc_write_blocked mcu_program.hex

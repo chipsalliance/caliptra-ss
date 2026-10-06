@@ -30,7 +30,7 @@ addrmap mci_top {
     trace_buffer_csr mcu_trace_buffer_csr @ 0x0001_0000;
 
     mem {name="MCU ROM Patch SRAM";
-         desc="Dedicated SRAM holding an MCU ROM patch. Writable by MCU LSU only while the LC state is TEST_LOCKED, TEST_UNLOCKED or DEV, UDS is not provisioned and Caliptra core is in reset. Readable/executable by MCU LSU/IFU only after a patch was loaded this power cycle. Max size is 2MB but is configurable by integration team (MCU_ROM_PATCH_SRAM_SIZE_KB).
+         desc="Dedicated SRAM holding an MCU ROM patch. Writable by MCU LSU only while the LC state is TEST_LOCKED, TEST_UNLOCKED or DEV and Caliptra core has not yet left reset in the current power cycle. Readable/executable by MCU LSU/IFU only after a patch was loaded this power cycle. Max size is 2MB but is configurable by integration team (MCU_ROM_PATCH_SRAM_SIZE_KB).
                [br]Caliptra Access: -
                [br]MCU      Access: RW*
                [br]SOC Access:      -";

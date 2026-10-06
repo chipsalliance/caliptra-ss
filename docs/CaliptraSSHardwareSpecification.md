@@ -1608,10 +1608,10 @@ MCI hosts a dedicated MCU ROM patch SRAM so integrators can fix MCU ROM bugs on 
 
 A patched device must never run in production or provision device identity, so hardware enforces:
 
-- **Write window:** MCU LSU only, and only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV, UDS is not provisioned, and Caliptra core is still in reset. The window closes when the MCI boot sequencer releases Caliptra core.
+- **Write window:** MCU LSU only, and only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV, and Caliptra core has not yet left reset in the current power cycle (checked both at the MCI boot sequencer and at the Caliptra core reset input). The window closes when Caliptra core is first released and stays closed until the next cold reset.
 - **Patch flag:** the first accepted write sets a flag that is only cleared by cold reset. The flag is stable before Caliptra core boots.
-- **Fetch:** MCU IFU/LSU reads are allowed only while the flag is set and the LC/UDS conditions still hold, so a stale patch cannot run after an LC transition to PROD.
-- **Identity:** while the flag is set, the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
+- **Fetch:** MCU IFU/LSU reads are allowed only while the flag is set and the LC condition still holds, so a stale patch cannot run after an LC transition to PROD.
+- **Identity:** while the flag is set, the UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
 
 See the Integration Specification for the address map and interface details.
 

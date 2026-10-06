@@ -512,7 +512,6 @@ module caliptra_ss_top
     logic [otp_ctrl_reg_pkg::NumAlerts-1:0] fc_alerts;
     logic fc_intr_otp_error;
     logic FIPS_ZEROIZATION_CMD;
-    logic fc_uds_provisioned;      // FC -> MCI: UDS provisioned and locked
     logic mci_mcu_rom_patch_active; // MCI -> FC: ROM patch SRAM populated this power cycle
 
     // ----------------- MCI OTP Connections -----------------------------------
@@ -635,6 +634,11 @@ module caliptra_ss_top
         {cptra_obf_field_entropy[3], cptra_obf_field_entropy[2]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_1_data.cptra_core_field_entropy_1;
         {cptra_obf_field_entropy[5], cptra_obf_field_entropy[4]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_2_data.cptra_core_field_entropy_2;
         {cptra_obf_field_entropy[7], cptra_obf_field_entropy[6]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_3_data.cptra_core_field_entropy_3;
+        // A patched MCU ROM boot must never expose the device secrets to Caliptra core
+        if (mci_mcu_rom_patch_active) begin
+            cptra_obf_uds_seed      = '0;
+            cptra_obf_field_entropy = '0;
+        end
      end
 
 
@@ -1439,7 +1443,7 @@ module caliptra_ss_top
         .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
         .FIPS_ZEROIZATION_PPD_i(cptra_ss_FIPS_ZEROIZATION_PPD_i),
         .FIPS_ZEROIZATION_CMD_o(FIPS_ZEROIZATION_CMD),
-        .uds_provisioned_i(fc_uds_provisioned),
+        .cptra_core_rst_b_i(cptra_ss_mci_cptra_rst_b_i),
         .mcu_rom_patch_active_o(mci_mcu_rom_patch_active),
         // .fc_intr_otp_error(1'b0),
 
@@ -1638,7 +1642,6 @@ module caliptra_ss_top
         .cptra_in_debug_mode_i      (cptra_in_debug_mode),
         .cptra_ss_debug_intent_i    (mci_ss_debug_intent),
         .mcu_rom_patch_active_i     (mci_mcu_rom_patch_active),
-        .uds_provisioned_o          (fc_uds_provisioned),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
