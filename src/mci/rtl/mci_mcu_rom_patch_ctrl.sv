@@ -29,10 +29,15 @@
 //      Patch read  : MCU LSU/IFU only, only below the write pointer (words
 //                    written by MCU ROM in this power cycle), and only while the
 //                    LC condition above still holds. Stale or preloaded SRAM
-//                    content is never fetchable.
-//      Patch flag  : mcu_rom_patch_active_o = (write pointer != 0). Cleared only
-//                    by a cold reset (mci_pwrgood). Stable before Caliptra core
-//                    leaves reset. Blocks UDS/FE provisioning in the fuse
+//                    content is never fetchable. Allowed for both MCU ROM and
+//                    MCU RT FW, and across warm resets, so MCU ROM does not
+//                    reload the patch after a warm reset and MCU RT FW can call
+//                    patched ROM functions.
+//      Patch flag  : mcu_rom_patch_active_o = (write pointer != 0). The write
+//                    pointer and flag are cleared only by a cold reset
+//                    (mci_pwrgood), not by warm reset. Readable in
+//                    HW_FLOW_STATUS.mcu_rom_patch_active. Stable before Caliptra
+//                    core leaves reset. Blocks UDS/FE provisioning in the fuse
 //                    controller filter and zeroizes the UDS/FE delivered to
 //                    Caliptra core.
 //      Release     : If no patch was loaded in this power cycle, once MCU RT FW

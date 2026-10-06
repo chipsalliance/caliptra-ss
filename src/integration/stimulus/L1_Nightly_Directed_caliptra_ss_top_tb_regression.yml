@@ -155,4 +155,5 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_out_of_order/smoke_test_mcu_rom_patch_sram_out_of_order: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_fetch_limit/smoke_test_mcu_rom_patch_sram_fetch_limit: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_reuse/smoke_test_mcu_rom_patch_sram_reuse: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked: { weight: 100 }

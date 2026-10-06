@@ -1609,9 +1609,9 @@ MCI hosts a dedicated MCU ROM patch SRAM so integrators can fix MCU ROM bugs on 
 A patched device must never run in production or provision device identity, so hardware enforces:
 
 - **Write window:** MCU LSU only, and only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV, and Caliptra core has not yet left reset in the current power cycle (checked both at the MCI boot sequencer and at the Caliptra core reset input). The window closes when Caliptra core is first released and stays closed until the next cold reset.
-- **Patch flag:** the first accepted write sets a flag that is only cleared by cold reset. The flag is stable before Caliptra core boots.
+- **Patch flag:** the first accepted write sets a flag that is only cleared by cold reset. The flag is stable before Caliptra core boots and is readable in `HW_FLOW_STATUS.mcu_rom_patch_active`.
 - **Sequential load:** patch words must be written in order from offset 0. A hardware write pointer counts them and is only cleared by cold reset.
-- **Fetch:** MCU IFU/LSU reads are allowed only below the write pointer and while the LC condition still holds. Only words MCU ROM wrote in the current power cycle can execute, so stale or preloaded SRAM content can never be fetched, and a stale patch cannot run after an LC transition to PROD.
+- **Fetch:** MCU IFU/LSU reads (MCU ROM and MCU RT FW) are allowed only below the write pointer and while the LC condition still holds. The patch survives warm resets, so MCU ROM does not reload it and MCU RT FW can call patched ROM functions. Only words MCU ROM wrote in the current power cycle can execute, so stale or preloaded SRAM content can never be fetched, and a stale patch cannot run after an LC transition to PROD.
 - **Identity:** while the flag is set, the UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
 - **Release:** if no patch was loaded, the SRAM is released as data memory to any AXI user once MCU RT FW is running (MCU released from reset with the FW exec region locked). It is never fetchable while released, and a warm reset closes it again until MCU RT FW is running. A loaded patch is never released, because MCU ROM needs it again after a warm reset.
 
