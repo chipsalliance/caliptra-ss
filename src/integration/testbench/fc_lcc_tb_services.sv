@@ -226,16 +226,19 @@ module fc_lcc_tb_services (
             end
             $display("fc_lcc_tb_services: UDS/FE in fuses are non-zero and Caliptra core sees zeros, as expected");
           end
-          CMD_EXPECT_CPTRA_UDS_FE_ZERO: begin
-            if ((`CPTRA_CORE_TOP_PATH.obf_uds_seed !== '0) ||
-                (`CPTRA_CORE_TOP_PATH.obf_field_entropy !== '0)) begin
-              $display("ERROR: fc_lcc_tb_services: Caliptra core UDS/FE fuse registers are not zero: uds=0x%0h fe=0x%0h",
+          CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES: begin
+            // SoC bus writes must not land: Caliptra core keeps what it captured from the fuse ports
+            if ((`CPTRA_CORE_TOP_PATH.obf_uds_seed !== `CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed) ||
+                (`CPTRA_CORE_TOP_PATH.obf_field_entropy !== `CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy)) begin
+              $display("ERROR: fc_lcc_tb_services: Caliptra core UDS/FE fuse registers differ from the fuse ports: uds_reg=0x%0h uds_port=0x%0h fe_reg=0x%0h fe_port=0x%0h",
                        `CPTRA_CORE_TOP_PATH.obf_uds_seed,
-                       `CPTRA_CORE_TOP_PATH.obf_field_entropy);
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed,
+                       `CPTRA_CORE_TOP_PATH.obf_field_entropy,
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy);
               $display("* TESTCASE FAILED");
               $finish;
             end
-            $display("fc_lcc_tb_services: Caliptra core UDS/FE fuse registers are zero, as expected");
+            $display("fc_lcc_tb_services: Caliptra core UDS/FE fuse registers match the fuse ports, as expected");
           end
           default: begin
             // No action for unrecognized commands.

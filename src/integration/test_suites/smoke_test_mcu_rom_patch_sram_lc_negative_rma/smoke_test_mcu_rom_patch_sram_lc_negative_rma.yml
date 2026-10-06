@@ -15,9 +15,9 @@
 # MCU ROM patch SRAM LC negative test in RMA (--lc-state 19).
 ---
 seed: 1
-testname: smoke_test_mcu_rom_patch_sram_lc_negative
+testname: smoke_test_mcu_rom_patch_sram_lc_negative_rma
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram_lc_negative] in RMA" &&
+  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram_lc_negative_rma] in RMA" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
       --lc-state 19 \

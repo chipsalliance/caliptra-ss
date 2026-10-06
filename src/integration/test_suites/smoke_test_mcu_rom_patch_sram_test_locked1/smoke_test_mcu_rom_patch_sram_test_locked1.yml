@@ -16,9 +16,9 @@
 # RAW->TU0->TL0->TU1->TL1 = 4 transitions).
 ---
 seed: 1
-testname: smoke_test_mcu_rom_patch_sram
+testname: smoke_test_mcu_rom_patch_sram_test_locked1
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram] in TEST_LOCKED1" &&
+  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram_test_locked1] in TEST_LOCKED1" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
       --lc-state 4 \

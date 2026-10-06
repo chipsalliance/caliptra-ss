@@ -15,22 +15,31 @@
 // Description:
 //      Controller for the dedicated MCU ROM patch SRAM. MCU ROM copies a patch
 //      (typically from the vendor non-secret fuse partition) into this SRAM and
-//      fetches patch instructions from it.
+//      fetches patch instructions from it. On devices that did not load a patch,
+//      the SRAM becomes general purpose data memory once MCU RT FW is running.
 //
 //      Security rules (all enforced in HW):
-//      Write : MCU LSU only, full-word only, and only while
-//                - LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no fatal LC error)
-//                - Caliptra core has not left reset yet in this power cycle, both
-//                  at the MCI boot sequencer and at the Caliptra core reset input
-//      Read  : MCU LSU/IFU only, and only while the patch flag is set and the
-//              LC condition above still holds. The LC re-check blocks a
-//              stale patch from running after a DEV->PROD transition plus a
-//              warm reset (the flag and SRAM contents survive a warm reset).
-//      Flag  : mcu_rom_patch_active_o is set by the first accepted write and is
-//              cleared only by a cold reset (mci_pwrgood). It is stable before
-//              Caliptra core leaves reset. It blocks UDS/FE provisioning in the
-//              fuse controller filter and zeroizes the UDS/FE delivered to
-//              Caliptra core.
+//      Patch write : MCU LSU only, full-word only, strictly sequential from the
+//                    SRAM base (write pointer), and only while
+//                      - LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV
+//                        (valid, no fatal LC error)
+//                      - Caliptra core has not left reset yet in this power
+//                        cycle, both at the MCI boot sequencer and at the
+//                        Caliptra core reset input
+//      Patch read  : MCU LSU/IFU only, only below the write pointer (words
+//                    written by MCU ROM in this power cycle), and only while the
+//                    LC condition above still holds. Stale or preloaded SRAM
+//                    content is never fetchable.
+//      Patch flag  : mcu_rom_patch_active_o = (write pointer != 0). Cleared only
+//                    by a cold reset (mci_pwrgood). Stable before Caliptra core
+//                    leaves reset. Blocks UDS/FE provisioning in the fuse
+//                    controller filter and zeroizes the UDS/FE delivered to
+//                    Caliptra core.
+//      Release     : If no patch was loaded in this power cycle, once MCU RT FW
+//                    is running (MCU released from reset with the FW exec region
+//                    locked) any AXI user may read/write the SRAM as data. Never
+//                    fetchable while released. Cleared by warm reset, so every
+//                    MCU ROM run starts with the SRAM closed.
 //
 //      Any other access returns an error on the first cycle of cif_resp_if.
 //      ECC errors are returned on the read data phase (second cycle).
@@ -70,6 +79,10 @@ module mci_mcu_rom_patch_ctrl
     input logic                         otp_state_valid_i,
     input logic                         lc_fatal_state_error_i,
 
+    // MCU reset and FW exec region lock, to detect MCU RT FW
+    input logic mcu_rst_b,
+    input logic mcu_sram_fw_exec_region_lock,
+
     // Privileged requests
     input logic axi_mcu_lsu_req,
     input logic axi_mcu_ifu_req,
@@ -97,8 +110,22 @@ logic lc_patch_allowed;
 logic patch_wr_open;
 logic patch_rd_open;
 
-logic wr_filter_success;
+logic [MCU_ROM_PATCH_SRAM_ADDR_W:0]   write_ptr;
+logic [MCU_ROM_PATCH_SRAM_ADDR_W-1:0] req_word_addr;
+logic                                 req_full_word;
+logic                                 req_in_order;
+logic                                 req_in_patch;
+
+logic mcu_rst_b_q;
+logic mcu_rt_running;
+logic released;
+
+logic patch_wr_success;
+logic patch_rd_success;
+logic rel_wr_success;
+logic rel_rd_success;
 logic rd_filter_success;
+logic rmw_req;
 logic filter_error;
 
 logic sram_req_second_cycle;
@@ -108,10 +135,11 @@ logic sram_read_data_avail;
 
 logic [MCU_ROM_PATCH_SRAM_DATA_W-1:0]     sram_rdata;
 logic [MCU_ROM_PATCH_SRAM_DATA_W-1:0]     sram_rdata_cor;
+logic [MCU_ROM_PATCH_SRAM_DATA_W-1:0]     sram_rmw_wdata;
 logic [MCU_ROM_PATCH_SRAM_ECC_DATA_W-1:0] sram_rdata_ecc;
 
 ///////////////////////////////////////////////
-// Access policy
+// LC gate
 ///////////////////////////////////////////////
 
 // otp_state_valid_i is combinational from the fuse controller, but
@@ -153,6 +181,10 @@ always_comb begin
     end
 end
 
+///////////////////////////////////////////////
+// Patch window
+///////////////////////////////////////////////
+
 // Caliptra core captures UDS/FE only on its first reset release of a power cycle
 // (CPTRA_FUSE_WR_DONE is cleared by pwrgood only). Writes are only allowed before
 // that release, so a patch can never be loaded after Caliptra core captured the
@@ -166,57 +198,102 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
     end
 end
 
-// Writes close permanently (until the next cold reset) once Caliptra core is
-// released, so the patch flag is stable before Caliptra core samples UDS/FE.
-assign patch_wr_open = lc_patch_allowed & ~cptra_rst_b & ~cptra_core_rst_b_i & ~cptra_released_q;
-
-// Reads (IFU fetch / LSU readback) only when this power cycle's patch is present.
+// Closed once MCU RT FW runs, so a released data write never counts as a patch write.
+assign patch_wr_open = lc_patch_allowed & ~cptra_rst_b & ~cptra_core_rst_b_i & ~cptra_released_q & ~mcu_rt_running;
 assign patch_rd_open = lc_patch_allowed & mcu_rom_patch_active_o;
 
-// Full-word writes only: no RMW path is needed to load a patch.
-assign wr_filter_success = cif_resp_if.dv &  cif_resp_if.req_data.write & axi_mcu_lsu_req &
-                           (&cif_resp_if.req_data.wstrb) & patch_wr_open;
-assign rd_filter_success = cif_resp_if.dv & ~cif_resp_if.req_data.write &
-                           (axi_mcu_lsu_req | axi_mcu_ifu_req) & patch_rd_open;
-
-assign filter_error = cif_resp_if.dv & ~(wr_filter_success | rd_filter_success);
-
-///////////////////////////////////////////////
-// Sticky patch flag (cold reset only)
-///////////////////////////////////////////////
+// Patch words must be written in order from the SRAM base. Only words written
+// by MCU ROM in this power cycle (below the write pointer) can be read/fetched.
+assign req_word_addr = cif_resp_if.req_data.addr[MCU_ROM_PATCH_SRAM_CIF_ADDR_W-1:2];
+assign req_full_word = &cif_resp_if.req_data.wstrb;
+assign req_in_order  = ({1'b0, req_word_addr} == write_ptr);
+assign req_in_patch  = ({1'b0, req_word_addr} <  write_ptr);
 
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (!mci_pwrgood) begin
-        mcu_rom_patch_active_o <= 1'b0;
+        write_ptr <= '0;
     end
-    else if (sram_write_req) begin
-        mcu_rom_patch_active_o <= 1'b1;
+    else if (patch_wr_success) begin
+        write_ptr <= write_ptr + 1'b1;
     end
 end
+
+assign mcu_rom_patch_active_o = |write_ptr;
+
+///////////////////////////////////////////////
+// Release to SoC once MCU RT FW is running
+///////////////////////////////////////////////
+
+// MCU is released from reset with the FW exec region locked only after Caliptra
+// core loaded MCU RT FW, i.e. MCU ROM is done. Warm reset clears it.
+always_ff @(posedge clk or negedge rst_b) begin
+    if (!rst_b) begin
+        mcu_rst_b_q    <= 1'b0;
+        mcu_rt_running <= 1'b0;
+    end
+    else begin
+        mcu_rst_b_q <= mcu_rst_b;
+        if (mcu_rst_b && !mcu_rst_b_q && mcu_sram_fw_exec_region_lock) begin
+            mcu_rt_running <= 1'b1;
+        end
+    end
+end
+
+// A loaded patch must survive warm resets for MCU ROM, so it is never released.
+assign released = mcu_rt_running & ~mcu_rom_patch_active_o;
+
+///////////////////////////////////////////////
+// Access filter
+///////////////////////////////////////////////
+
+assign patch_wr_success = cif_resp_if.dv &  cif_resp_if.req_data.write & axi_mcu_lsu_req &
+                          req_full_word & req_in_order & patch_wr_open;
+assign patch_rd_success = cif_resp_if.dv & ~cif_resp_if.req_data.write &
+                          (axi_mcu_lsu_req | axi_mcu_ifu_req) & req_in_patch & patch_rd_open;
+
+// Released: any AXI user, data only (no instruction fetch).
+assign rel_wr_success = cif_resp_if.dv &  cif_resp_if.req_data.write & released;
+assign rel_rd_success = cif_resp_if.dv & ~cif_resp_if.req_data.write & released & ~axi_mcu_ifu_req;
+
+assign rd_filter_success = patch_rd_success | rel_rd_success;
+assign rmw_req           = rel_wr_success & ~req_full_word;
+
+assign filter_error = cif_resp_if.dv & ~(patch_wr_success | patch_rd_success | rel_wr_success | rel_rd_success);
 
 ///////////////////////////////////////////////
 // SRAM request
 ///////////////////////////////////////////////
 
-// Reads take 2 clock cycles (1 cycle SRAM latency). Writes take 1.
+// Reads and partial writes (RMW) take 2 clock cycles (1 cycle SRAM latency).
+// Full-word writes take 1.
 always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
         sram_req_second_cycle <= 1'b0;
     end
     else begin
-        sram_req_second_cycle <= rd_filter_success & ~sram_req_second_cycle;
+        sram_req_second_cycle <= (rd_filter_success | rmw_req) & ~sram_req_second_cycle;
     end
 end
 
-assign sram_write_req       = wr_filter_success;
-assign sram_read_req        = rd_filter_success & ~sram_req_second_cycle;
+assign sram_read_req        = (rd_filter_success | rmw_req) & ~sram_req_second_cycle;
+assign sram_write_req       = patch_wr_success | (rel_wr_success & req_full_word) |
+                              (rmw_req & sram_req_second_cycle & ~sram_double_ecc_error);
 assign sram_read_data_avail = sram_req_second_cycle;
+
+genvar i;
+generate
+    for (i = 0; i < MCU_ROM_PATCH_SRAM_DATA_W_BYTES; i = i + 1) begin : gen_rmw_data
+        assign sram_rmw_wdata[i*8 +: 8] = cif_resp_if.req_data.wstrb[i] ? cif_resp_if.req_data.wdata[i*8 +: 8] :
+                                                                          sram_rdata_cor[i*8 +: 8];
+    end
+endgenerate
 
 assign mci_mcu_rom_patch_sram_req_if.req.cs   = sram_write_req | sram_read_req;
 assign mci_mcu_rom_patch_sram_req_if.req.we   = sram_write_req;
-assign mci_mcu_rom_patch_sram_req_if.req.addr = (sram_write_req | sram_read_req) ?
-                                                cif_resp_if.req_data.addr[MCU_ROM_PATCH_SRAM_CIF_ADDR_W-1:2] : '0;
-assign mci_mcu_rom_patch_sram_req_if.req.wdata.data = sram_write_req ? cif_resp_if.req_data.wdata : '0;
+assign mci_mcu_rom_patch_sram_req_if.req.addr = (sram_write_req | sram_read_req) ? req_word_addr : '0;
+assign mci_mcu_rom_patch_sram_req_if.req.wdata.data = ~sram_write_req ? '0             :
+                                                      rmw_req         ? sram_rmw_wdata :
+                                                                        cif_resp_if.req_data.wdata;
 
 // From RISC-V core beh_lib.sv (32-bit data, 7-bit ECC)
 rvecc_encode ecc_encode (
@@ -242,7 +319,7 @@ rvecc_decode ecc_decode (
     .double_ecc_error(sram_double_ecc_error)
 );
 
-assign cif_resp_if.rdata    = sram_read_data_avail ? sram_rdata_cor : '0;
+assign cif_resp_if.rdata    = (sram_read_data_avail & ~cif_resp_if.req_data.write) ? sram_rdata_cor : '0;
 assign cif_resp_if.req_hold = sram_read_req;
 assign cif_resp_if.error    = filter_error | sram_double_ecc_error;
 
@@ -253,12 +330,17 @@ assign cif_resp_if.error    = filter_error | sram_double_ecc_error;
 // Single-port SRAM
 `CALIPTRA_ASSERT_MUTEX(ERR_MCU_ROM_PATCH_SRAM_MULTI_REQ, {sram_write_req, sram_read_req}, clk, !rst_b)
 
-// Patch can only be loaded while Caliptra core is in reset and patching is permitted
-`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, sram_write_req |-> (!cptra_rst_b && !cptra_core_rst_b_i && !cptra_released_q), clk, !rst_b)
-`CALIPTRA_ASSERT(McuRomPatchWrOnlyLcAllowed_A, sram_write_req |-> lc_patch_allowed, clk, !rst_b)
+// Patch can only be loaded in order, while Caliptra core is in reset and patching is permitted
+`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, patch_wr_success |-> (!cptra_rst_b && !cptra_core_rst_b_i && !cptra_released_q), clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchWrOnlyLcAllowed_A, patch_wr_success |-> lc_patch_allowed, clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchWrInOrder_A, patch_wr_success |-> req_in_order, clk, !rst_b)
 
-// Patch can only be fetched/read after it was loaded this power cycle
-`CALIPTRA_ASSERT(McuRomPatchRdOnlyWhenActive_A, sram_read_req |-> mcu_rom_patch_active_o, clk, !rst_b)
+// Instruction fetch only from words loaded by MCU ROM this power cycle
+`CALIPTRA_ASSERT(McuRomPatchFetchOnlyPatch_A, (sram_read_req && axi_mcu_ifu_req && !cif_resp_if.req_data.write) |-> (patch_rd_open && req_in_patch), clk, !rst_b)
+
+// Never released while a patch is loaded, and the patch window is closed while released
+`CALIPTRA_ASSERT(McuRomPatchNoReleaseWhenPatched_A, released |-> !mcu_rom_patch_active_o, clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchNoPatchWrWhenReleased_A, released |-> !patch_wr_open, clk, !rst_b)
 
 // Patch flag is sticky until cold reset
 `CALIPTRA_ASSERT(McuRomPatchActiveSticky_A, mcu_rom_patch_active_o |=> mcu_rom_patch_active_o, clk, !mci_pwrgood)

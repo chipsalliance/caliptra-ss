@@ -192,6 +192,7 @@ ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_top.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_decode.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_axi_sub_top.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_sram_ctrl.sv
+${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_rom_patch_ctrl.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_mcu_sram_if.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/cif_if.sv
 ${CALIPTRA_SS_ROOT}/src/mci/rtl/mci_wdt_top.sv

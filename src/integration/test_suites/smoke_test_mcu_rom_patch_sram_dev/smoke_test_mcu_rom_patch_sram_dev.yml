@@ -16,9 +16,9 @@
 # lc-cnt 5).
 ---
 seed: 1
-testname: smoke_test_mcu_rom_patch_sram
+testname: smoke_test_mcu_rom_patch_sram_dev
 pre-exec: |
-  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram] in DEV" &&
+  echo "Running pre_exec for [smoke_test_mcu_rom_patch_sram_dev] in DEV" &&
   rm -rf otp-img.2048.vmem &&
   $CALIPTRA_SS_ROOT/tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py \
       --lc-state 16 \
