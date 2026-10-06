@@ -29,7 +29,7 @@
 
 // Documentation-only alias for the first configurable external interrupt pin.
 // Bits [PIC_TOTAL_INT:VEER_INTR_EXT_LSB] of cptra_ss_mcu_ext_int are integrator
-// provided external interrupt inputs. In the dual USB device (usb_hib_compound)
+// provided external interrupt inputs. In the dual USB device (usb_hub_compound)
 // scenario the testbench loops the USB device1 IRQ output (cptra_ss_usb_dev1_irq_o)
 // back onto this bit so that device1 can interrupt the MCU, mirroring how
 // device0 (dev0_usb_irq) is routed internally to VEER_INTR_VEC_USB.
