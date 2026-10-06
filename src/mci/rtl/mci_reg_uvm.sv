@@ -391,8 +391,10 @@ package mci_reg_uvm;
         protected bit            m_is_read;
 
         mci_reg__HW_FLOW_STATUS_bit_cg boot_fsm_bit_cg[4];
+        mci_reg__HW_FLOW_STATUS_bit_cg mcu_rom_patch_active_bit_cg[1];
         mci_reg__HW_FLOW_STATUS_fld_cg fld_cg;
         rand uvm_reg_field boot_fsm;
+        rand uvm_reg_field mcu_rom_patch_active;
 
         function new(string name = "mci_reg__HW_FLOW_STATUS");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -406,8 +408,11 @@ package mci_reg_uvm;
         virtual function void build();
             this.boot_fsm = new("boot_fsm");
             this.boot_fsm.configure(this, 4, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.mcu_rom_patch_active = new("mcu_rom_patch_active");
+            this.mcu_rom_patch_active.configure(this, 1, 4, "RO", 1, 'h0, 0, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(boot_fsm_bit_cg[bt]) boot_fsm_bit_cg[bt] = new();
+                foreach(mcu_rom_patch_active_bit_cg[bt]) mcu_rom_patch_active_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();

@@ -7726,6 +7726,8 @@
 #define MCI_REG_HW_FLOW_STATUS                                                                      (0x34)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (0xf)
+#define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_LOW                                             (4)
+#define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK                                            (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_RESET_REASON                                                            (0x21000038)
 #ifndef MCI_REG_RESET_REASON

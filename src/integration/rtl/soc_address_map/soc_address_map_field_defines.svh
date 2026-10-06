@@ -7212,6 +7212,8 @@
 `define MCI_REG_HW_FLOW_STATUS                                                                      (32'h34)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (32'hf)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_LOW                                             (4)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK                                            (32'h10)
 `endif
 `ifndef MCI_REG_RESET_REASON
 `define MCI_REG_RESET_REASON                                                                        (32'h38)

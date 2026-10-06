@@ -69,7 +69,12 @@ package mci_reg_pkg;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
     typedef struct packed{
+        logic next;
+    } mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__in_t;
+
+    typedef struct packed{
         mci_reg__HW_FLOW_STATUS__boot_fsm__in_t boot_fsm;
+        mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__in_t mcu_rom_patch_active;
     } mci_reg__HW_FLOW_STATUS__in_t;
 
     typedef struct packed{
@@ -899,7 +904,12 @@ package mci_reg_pkg;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__out_t;
 
     typedef struct packed{
+        logic value;
+    } mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__out_t;
+
+    typedef struct packed{
         mci_reg__HW_FLOW_STATUS__boot_fsm__out_t boot_fsm;
+        mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__out_t mcu_rom_patch_active;
     } mci_reg__HW_FLOW_STATUS__out_t;
 
     typedef struct packed{

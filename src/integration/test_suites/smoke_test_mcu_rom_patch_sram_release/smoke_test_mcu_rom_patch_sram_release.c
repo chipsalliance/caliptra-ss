@@ -96,6 +96,10 @@ static void mcu_rt(void) {
     lsu_write_32(SOC_MCI_TOP_MCI_REG_MCU_NMI_VECTOR, (uint32_t)nmi_handler);
     csr_write_mtvec((uint32_t)trap_handler);
 
+    if (lsu_read_32(SOC_MCI_TOP_MCI_REG_HW_FLOW_STATUS) & MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK) {
+        handle_error("MCU: HW_FLOW_STATUS.mcu_rom_patch_active set without a patch\n");
+    }
+
     // Word writes, not sequential (no write pointer once released)
     wr_rd_32(LAST_OFFSET,      0x0FFC0FFC);
     wr_rd_32(MCU_WORD0_OFFSET, MCU_WORD0_DATA);

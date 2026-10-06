@@ -669,6 +669,10 @@ module mci_reg (
                 logic [3:0] next;
                 logic load_next;
             } boot_fsm;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -4021,6 +4025,9 @@ module mci_reg (
             struct packed{
                 logic [3:0] value;
             } boot_fsm;
+            struct packed{
+                logic value;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -6537,6 +6544,26 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_FLOW_STATUS.boot_fsm.value = field_storage.HW_FLOW_STATUS.boot_fsm.value;
+    // Field: mci_reg.HW_FLOW_STATUS.mcu_rom_patch_active
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        load_next_c = '1;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next = next_c;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next = load_next_c;
+    end
+
+    always_ff @(posedge clk) begin
+        if(field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next) begin
+            field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value <= field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        end
+    end
+    assign hwif_out.HW_FLOW_STATUS.mcu_rom_patch_active.value = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
     // Field: mci_reg.RESET_REASON.FW_HITLESS_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c;
@@ -22500,7 +22527,8 @@ module mci_reg (
     assign readback_array[11][31:0] = (decoded_reg_strb.MCI_SOC_CONFIG_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next : '0;
     assign readback_array[12][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
     assign readback_array[13][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.boot_fsm.value : '0;
-    assign readback_array[13][31:4] = '0;
+    assign readback_array[13][4:4] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value : '0;
+    assign readback_array[13][31:5] = '0;
     assign readback_array[14][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
     assign readback_array[14][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
     assign readback_array[14][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;

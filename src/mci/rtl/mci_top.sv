@@ -793,6 +793,7 @@ mci_reg_top #(
     .mcu_sram_double_ecc_error,
     .mcu_sram_dmi_axi_collision_error,
     .mcu_rom_patch_sram_double_ecc_error,
+    .mcu_rom_patch_active (mcu_rom_patch_active_o),
     .mcu_sram_dmi_uncore_en,
     .mcu_sram_dmi_uncore_wr_en,
     .mcu_sram_dmi_uncore_addr,
