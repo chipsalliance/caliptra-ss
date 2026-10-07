@@ -73,6 +73,11 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // instead of duplicating their own timeout fork.
     bit link_wait_timed_out = 1'b0;
 
+    // Hub Self-Powered state from bmAttributes D6 of its CONFIGURATION
+    // descriptor, captured during hub enumeration. GET_STATUS(DEVICE) D0
+    // must report the same state (USB 2.0 Sec 9.4.5, Sec 9.6.3).
+    bit hub_self_powered = 1'b0;
+
     function new(string name = "caliptra_ss_usb_base_sequence");
         super.new(name);
     endfunction
@@ -458,6 +463,18 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_CFG25_addr1_hub", suffix}));
+        // NOTE: Expected to fail for (usb_cfg.speed != svt_usb_types::HS)
+	//       unless MCU validation firmware overrides the descriptor
+        usb_data_check_api.check_configuration_descriptor(.usb_item   (last_ctrl_seq_item),
+                                                          .device_name("hub"));
+        // Extract after the descriptor has been read in full and validated.
+        // bmAttributes is byte 7 of the CONFIGURATION descriptor; D6 is Self-powered.
+        if (last_ctrl_seq_item.payload_byte_count() > 7)
+            hub_self_powered = last_ctrl_seq_item.payload.data[7][6];
+        else
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("hub CONFIGURATION descriptor too short (%0d bytes)",
+                          last_ctrl_seq_item.payload_byte_count()))
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),

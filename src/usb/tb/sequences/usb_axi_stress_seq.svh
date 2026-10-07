@@ -94,7 +94,6 @@ endclass
 class usb_axi_stress_seq extends usb_base_seq;
   `uvm_object_utils(usb_axi_stress_seq)
 
-  typedef bit [USB_TB_AXI_USER_WIDTH-1:0] axi_user_t;
 
   typedef enum int unsigned {
     PORT_COMBO,
@@ -145,14 +144,10 @@ class usb_axi_stress_seq extends usb_base_seq;
   localparam int unsigned INCR_MAX_BEATS = 256;
   localparam int unsigned WORDS_PER_4KB = 1024;
   localparam int unsigned CSR_WORD_COUNT = 16;
-  localparam int unsigned CSR_ENABLE_WORD = 9;      // 0x24 interrupt enable
-  localparam int unsigned CSR_ROUTE_WORD = 11;      // 0x2c interrupt route
-  localparam int unsigned CSR_CAPABILITY_WORD = 12; // 0x30 static capability
-  localparam int unsigned CSR_INCR_READ_BEATS = 2;  // 0x2c..0x30
-  localparam logic [31:0] DEVICE_CONTROL_ADDR = 32'h00;
-  // Device enable (bit 7) and connect (bit 16) must stay clear.
+  // CSR INCR reads cover INTROUTE and the CONFIG word that follows it.
+  localparam int unsigned CSR_INCR_READ_BEATS = 2;
+  // DEVCMDSTAT device enable (bit 7) and connect (bit 16) must stay clear.
   localparam logic [31:0] DEVICE_ACTIVE_MASK = 32'h0001_0080;
-  localparam logic [31:0] HUB_CONTROL_ADDR = HUB_BASE_ADDR + 32'h3c;
   localparam logic [31:0] HUB_ACTIVE_MASK = 32'h0001_0001;
   // COMBO local offsets the AHB decoder maps to no endpoint, so it returns
   // ERROR (usb_compound_ahb_decoder). Hole 0 lies between DEV0 CSR and
@@ -175,14 +170,19 @@ class usb_axi_stress_seq extends usb_base_seq;
     .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
     .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
   ) ctrl_vif;
-  protected axi_user_t combo_users[USB_COMBO_NUM_PRIV_AXI_USERS];
-  protected axi_user_t dev1_users[USB_DEV1_NUM_PRIV_AXI_USERS];
-  protected axi_user_t nonmember_user;
+  protected usb_combo_allowlist_t combo_users;
+  protected usb_dev1_allowlist_t dev1_users;
+  protected usb_axi_user_t nonmember_user;
 
   // Expected data and exclusive reservations, indexed by port-local word.
   protected logic [31:0] model[PORT_COUNT][];
   protected bit reserved[PORT_COUNT][];
   protected logic [31:0] saved_csr[PORT_COUNT][CSR_WORD_COUNT];
+  // Modeled CSR word indices (INTEN, INTROUTE, CONFIG), resolved from the RAL
+  // in pre_start(). Both device CSR blocks share the layout.
+  protected int unsigned csr_enable_word;
+  protected int unsigned csr_route_word;
+  protected int unsigned csr_capability_word;
 
   // Scheduling and accounting.
   protected int unsigned live_chains[PORT_COUNT];
@@ -217,18 +217,32 @@ class usb_axi_stress_seq extends usb_base_seq;
     super.new(name);
   endfunction
 
-  // Require the filter control VIF and the known-low bypass default.
+  // Require both filter policies at their known-low bypass default, keep the
+  // control VIF for clocking, and resolve the modeled CSR words.
   virtual task pre_start();
     super.pre_start();
+    check_axi_user_filters_bypassed();
     ctrl_vif = p_sequencer.ctrl_vif;
-    if (ctrl_vif == null) begin
-      `uvm_fatal("USB_STRESS", "USB virtual sequencer is missing the AXI USER filter control VIF")
-    end
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_STRESS", $sformatf("Filter enables are not known-low at start: combo=%b dev1=%b", ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering))
-    end
+    resolve_csr_words();
   endtask
+
+  // Take the modeled CSR word indices from the RAL and require the layout this
+  // sequence relies on: identical on both device CSR blocks, within the
+  // modeled window, and CONFIG directly after INTROUTE for CSR INCR reads.
+  protected function void resolve_csr_words();
+    csr_enable_word = csr_offset(USB_DEV0_CSR, "INTEN") / 4;
+    csr_route_word = csr_offset(USB_DEV0_CSR, "INTROUTE") / 4;
+    csr_capability_word = csr_offset(USB_DEV0_CSR, "CONFIG") / 4;
+    if (csr_offset(USB_DEV1_CSR, "INTEN") / 4 != csr_enable_word ||
+        csr_offset(USB_DEV1_CSR, "INTROUTE") / 4 != csr_route_word ||
+        csr_offset(USB_DEV1_CSR, "CONFIG") / 4 != csr_capability_word) begin
+      `uvm_fatal("USB_STRESS", "DEV0 and DEV1 CSR blocks place INTEN, INTROUTE, or CONFIG differently")
+    end
+    if (csr_capability_word >= CSR_WORD_COUNT ||
+        csr_capability_word != csr_route_word + CSR_INCR_READ_BEATS - 1) begin
+      `uvm_fatal("USB_STRESS", $sformatf("CSR INCR reads need CONFIG (word %0d) directly after INTROUTE (word %0d) within %0d words", csr_capability_word, csr_route_word, CSR_WORD_COUNT))
+    end
+  endfunction
 
   // ---------------------------------------------------------------------------
   // Port properties
@@ -279,7 +293,7 @@ class usb_axi_stress_seq extends usb_base_seq;
   // Implemented bits of a modeled word; interrupt enable and route share the
   // endpoint/frame/device layout captured by the device's route mask.
   protected function logic [31:0] word_mask(int unsigned port, int unsigned word);
-    if (!port_is_sram(port) && (word == CSR_ENABLE_WORD || word == CSR_ROUTE_WORD)) begin
+    if (!port_is_sram(port) && (word == csr_enable_word || word == csr_route_word)) begin
       return port == PORT_COMBO ? USB_DEV0_ROUTE_MASK : USB_DEV1_ROUTE_MASK;
     end
     return 32'hffff_ffff;
@@ -287,7 +301,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // The capability word never changes, so concurrent readers share it.
   protected function bit is_static_word(int unsigned port, int unsigned word);
-    return !port_is_sram(port) && word == CSR_CAPABILITY_WORD;
+    return !port_is_sram(port) && word == csr_capability_word;
   endfunction
 
   // Kinds whose checks depend on the stored words staying unchanged by other
@@ -306,7 +320,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // A random entry from the port's own allowlist, so the request is accepted
   // while filtering is enabled. Varying the entry exercises every match slot.
-  protected function axi_user_t own_user(int unsigned port);
+  protected function usb_axi_user_t own_user(int unsigned port);
     if (port_uses_combo_policy(port)) begin
       return combo_users[$urandom_range(USB_COMBO_NUM_PRIV_AXI_USERS - 1)];
     end
@@ -315,8 +329,8 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // A USER the port's policy must deny: the nonmember, or a member of the
   // other policy's allowlist, which checks that the two policies stay isolated.
-  protected function axi_user_t denied_user(int unsigned port);
-    axi_user_t user;
+  protected function usb_axi_user_t denied_user(int unsigned port);
+    usb_axi_user_t user;
 
     user = nonmember_user;
     if ($urandom_range(1) == 1) begin
@@ -587,14 +601,14 @@ class usb_axi_stress_seq extends usb_base_seq;
         first_word = (first_word / WORDS_PER_4KB) * WORDS_PER_4KB + WORDS_PER_4KB - words;
       end
     end else if (!op.is_fixed && op.beats > 1) begin
-      first_word = CSR_ROUTE_WORD;
+      first_word = csr_route_word;
     end else if (op.kind inside {OP_WRITE, OP_DENIED_WRITE}) begin
-      first_word = $urandom_range(1) ? CSR_ROUTE_WORD : CSR_ENABLE_WORD;
+      first_word = $urandom_range(1) ? csr_route_word : csr_enable_word;
     end else begin
       randcase
-        1: first_word = CSR_ENABLE_WORD;
-        1: first_word = CSR_ROUTE_WORD;
-        1: first_word = CSR_CAPABILITY_WORD;
+        1: first_word = csr_enable_word;
+        1: first_word = csr_route_word;
+        1: first_word = csr_capability_word;
       endcase
     end
     offset = 32'(first_word * 4);
@@ -663,7 +677,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // Build a full-strobe 32-bit request of any legal FIXED/INCR shape. Hole
   // offsets are formed directly from the COMBO map base like any other offset.
-  protected function aaxi_master_tr build_request(int unsigned port, logic [31:0] offset, bit is_write, bit is_fixed, int unsigned beats, axi_user_t user, logic [31:0] write_data[$]);
+  protected function aaxi_master_tr build_request(int unsigned port, logic [31:0] offset, bit is_write, bit is_fixed, int unsigned beats, usb_axi_user_t user, logic [31:0] write_data[$]);
     aaxi_master_tr request;
 
     request = create_transaction(port_target(port), offset, is_write, '0, usb_axi_user_override::with_value(user));
@@ -960,16 +974,16 @@ class usb_axi_stress_seq extends usb_base_seq;
   // Both device controllers must be disabled and disconnected and the HUB
   // disabled, so AXI traffic cannot start USB activity. Uses the caller's USER.
   protected task check_usb_idle(string when, input usb_axi_user_override combo_user = null, input usb_axi_user_override dev1_user = null);
-    expect32(USB_DEV0_CSR, DEVICE_CONTROL_ADDR, '0, DEVICE_ACTIVE_MASK, combo_user);
-    expect32(USB_DEV1_CSR, DEVICE_CONTROL_ADDR, '0, DEVICE_ACTIVE_MASK, dev1_user);
-    expect32(USB_HUB, HUB_CONTROL_ADDR, '0, HUB_ACTIVE_MASK, combo_user);
+    expect32(USB_DEV0_CSR, csr_offset(USB_DEV0_CSR, "DEVCMDSTAT"), '0, DEVICE_ACTIVE_MASK, combo_user);
+    expect32(USB_DEV1_CSR, csr_offset(USB_DEV1_CSR, "DEVCMDSTAT"), '0, DEVICE_ACTIVE_MASK, dev1_user);
+    expect32(USB_HUB, reg_offset(USB_HUB, p_sequencer.reg_model.combo.hub.CONTROL), '0, HUB_ACTIVE_MASK, combo_user);
     `uvm_info("USB_STRESS", $sformatf("%s: both devices disabled/disconnected and HUB disabled", when), UVM_LOW)
   endtask
 
   // Save the CSR allowlist words for restoration and seed the model. The
   // capability word is static, so its first value becomes the expected value.
   protected task capture_csr_state();
-    int unsigned words[3] = '{CSR_ENABLE_WORD, CSR_ROUTE_WORD, CSR_CAPABILITY_WORD};
+    int unsigned words[3] = '{csr_enable_word, csr_route_word, csr_capability_word};
     int unsigned ports[2] = '{PORT_COMBO, PORT_DEV1_CSR};
     logic [31:0] data;
 
@@ -982,7 +996,7 @@ class usb_axi_stress_seq extends usb_base_seq;
       if (data[4:0] !== 5'(ports[port_index] == PORT_COMBO ? USB_DEV0_NBPHYSEP : USB_DEV1_NBPHYSEP)) begin
         `uvm_fatal("USB_STRESS", $sformatf("%s capability 0x%08h does not report the configured endpoint count", port_name(ports[port_index]), data))
       end
-      `uvm_info("USB_STRESS", $sformatf("%s CSR start: enable=0x%08h route=0x%08h capability=0x%08h", port_name(ports[port_index]), saved_csr[ports[port_index]][CSR_ENABLE_WORD], saved_csr[ports[port_index]][CSR_ROUTE_WORD], saved_csr[ports[port_index]][CSR_CAPABILITY_WORD]), UVM_LOW)
+      `uvm_info("USB_STRESS", $sformatf("%s CSR start: enable=0x%08h route=0x%08h capability=0x%08h", port_name(ports[port_index]), saved_csr[ports[port_index]][csr_enable_word], saved_csr[ports[port_index]][csr_route_word], saved_csr[ports[port_index]][csr_capability_word]), UVM_LOW)
     end
   endtask
 
@@ -994,38 +1008,15 @@ class usb_axi_stress_seq extends usb_base_seq;
         }) begin
       `uvm_fatal("USB_STRESS", "Unable to randomize the AXI USER allowlists")
     end
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) ctrl_vif.combo_priv_axi_users[index] <= combo_users[index];
-    foreach (dev1_users[index]) ctrl_vif.dev1_priv_axi_users[index] <= dev1_users[index];
-    ctrl_vif.combo_enable_axi_user_filtering <= 1'b1;
-    ctrl_vif.dev1_enable_axi_user_filtering <= 1'b1;
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) begin
-      if (ctrl_vif.combo_priv_axi_users[index] !== combo_users[index]) begin
-        `uvm_fatal("USB_STRESS", $sformatf("Combo allowlist entry %0d did not update", index))
-      end
-    end
-    foreach (dev1_users[index]) begin
-      if (ctrl_vif.dev1_priv_axi_users[index] !== dev1_users[index]) begin
-        `uvm_fatal("USB_STRESS", $sformatf("DEV1 allowlist entry %0d did not update", index))
-      end
-    end
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b1 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b1) begin
-      `uvm_fatal("USB_STRESS", "Filter enables did not assert")
-    end
+    set_axi_user_allowlists(combo_users, dev1_users);
+    set_axi_user_filter_enables(1'b1, 1'b1);
     `uvm_info("USB_STRESS", $sformatf("Filtering enabled: Combo=%p DEV1=%p nonmember=0x%08h", combo_users, dev1_users, nonmember_user), UVM_LOW)
   endtask
 
   // Return both policies to bypass after all stress traffic has drained, so
   // restore_csr_state() can use ordinary random-USER accesses.
   protected task disable_filtering();
-    @(posedge ctrl_vif.clk);
-    ctrl_vif.combo_enable_axi_user_filtering <= 1'b0;
-    ctrl_vif.dev1_enable_axi_user_filtering <= 1'b0;
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_STRESS", "Filter enables did not deassert")
-    end
+    set_axi_user_filter_enables(1'b0, 1'b0);
   endtask
 
   // Fill (OP_FILL) or sweep (OP_READ) both SRAMs, each with overlapping bursts.
@@ -1096,7 +1087,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // Recheck every modeled CSR word through an allowed USER.
   protected task check_final_csr_state();
-    int unsigned words[3] = '{CSR_ENABLE_WORD, CSR_ROUTE_WORD, CSR_CAPABILITY_WORD};
+    int unsigned words[3] = '{csr_enable_word, csr_route_word, csr_capability_word};
     int unsigned ports[2] = '{PORT_COMBO, PORT_DEV1_CSR};
 
     foreach (ports[port_index]) begin
@@ -1108,7 +1099,7 @@ class usb_axi_stress_seq extends usb_base_seq;
 
   // With filtering bypassed, restore the writable CSR words to their start values.
   protected task restore_csr_state();
-    int unsigned words[2] = '{CSR_ENABLE_WORD, CSR_ROUTE_WORD};
+    int unsigned words[2] = '{csr_enable_word, csr_route_word};
     int unsigned ports[2] = '{PORT_COMBO, PORT_DEV1_CSR};
     int unsigned port;
     int unsigned word;
