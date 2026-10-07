@@ -62,7 +62,7 @@
 //  phase-control writes below and is otherwise skipped by the sweep.
 //
 //  This test drives no USB traffic, so the descriptor array is free to be
-//  perturbed. The companion UVM sequence (caliptra_ss_usb_hub_ram_rw_sequence)
+//  perturbed. The companion UVM sequence (caliptra_ss_usb_mem_rw_sequence)
 //  simply holds the run phase open long enough for this firmware to finish and
 //  report its verdict via the DEBUG_OUT control byte.
 

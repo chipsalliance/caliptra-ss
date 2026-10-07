@@ -51,7 +51,7 @@
 //  This is a standalone RAM-access test: it drives no USB traffic, brings up no
 //  hub and no USB core, and runs no DMA, so the whole RAM window is free scratch
 //  space and can be randomized without disturbing any live endpoint. The
-//  companion UVM sequence (caliptra_ss_usb_dev_ram_rw_sequence) simply holds the
+//  companion UVM sequence (caliptra_ss_usb_mem_rw_sequence) simply holds the
 //  run phase open long enough for this firmware to finish and report its
 //  verdict via the DEBUG_OUT control byte.
 

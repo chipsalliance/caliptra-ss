@@ -25,7 +25,7 @@
 //
 // This test does NOT bring up the USB link and drives no USB traffic. It leaves
 // the base-test host cfg untouched (no high_speed_capable override) and simply
-// installs caliptra_ss_usb_dev1_ram_rw_sequence as the main_phase default
+// installs caliptra_ss_usb_mem_rw_sequence as the main_phase default
 // sequence. That sequence just holds the phase objection open long enough for
 // the firmware to finish and report its verdict.
 //
@@ -46,16 +46,27 @@ class caliptra_ss_usb_dev1_ram_rw_test extends caliptra_ss_usb_base_test;
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
+        caliptra_ss_usb_mem_rw_sequence mem_rw_seq;
+
         `uvm_info("build_phase", "Entered...", UVM_LOW)
         super.build_phase(phase);
 
-        // Install the standalone dev1 RAM-RW sequence as the default on the host
-        // virtual sequencer so it runs automatically during main_phase. No host
-        // cfg override: the link is intentionally left un-brought-up.
-        uvm_config_db#(uvm_object_wrapper)::set(this,
+        // Install the shared standalone access sequence as the default on the
+        // host virtual sequencer so it runs automatically during main_phase. No
+        // host cfg override: the link is intentionally left un-brought-up.
+        // Window sizing: MCU boot plus the RAM sweep (960 words, ~2k AXI
+        // accesses) plus 5 random-walk loops of 256 accesses each (~2.5k more);
+        // 5000 us gives generous margin before the coarse MCU-halt timeout
+        // closes the run. The sequence OBJECT is registered rather than its
+        // type wrapper so this per-test window can be set as a field.
+        mem_rw_seq = caliptra_ss_usb_mem_rw_sequence::type_id::create("mem_rw_seq");
+        mem_rw_seq.run_window_us = 5000;
+        mem_rw_seq.window_desc   = "the dev1 RAM sweep and random walks";
+
+        uvm_config_db#(uvm_sequence_base)::set(this,
             "env.host_agent.virt_sequencer.main_phase",
             "default_sequence",
-            caliptra_ss_usb_dev1_ram_rw_sequence::type_id::get());
+            mem_rw_seq);
 
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction

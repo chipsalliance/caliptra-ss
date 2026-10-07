@@ -59,7 +59,7 @@
 //  up the USB core, does not connect the hub, and drives no USB traffic, so it
 //  can freely randomize configuration registers on both controllers without
 //  disturbing a live link or the DMA engine. The companion UVM sequence
-//  (caliptra_ss_usb_dev_reg_rw_sequence) simply holds the run phase open long
+//  (caliptra_ss_usb_mem_rw_sequence) simply holds the run phase open long
 //  enough for this firmware to finish and report its verdict.
 
 #include "soc_address_map.h"

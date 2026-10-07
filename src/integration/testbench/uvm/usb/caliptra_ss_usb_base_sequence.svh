@@ -18,9 +18,10 @@
 // Centralizes the protocol-level boilerplate that was copy-pasted, near-
 // identically, across every per-test sequence file:
 //
-//   - pre_start()/post_start(): raise/drop the starting phase's objection
-//     when this sequence has no parent sequence (i.e. it was start()'d
-//     directly as a top-level sequence rather than nested inside another).
+//   - pre_start()/post_start(): resolve the shared usb_data_check_api handle
+//     from the config_db, and raise/drop the starting phase's objection when
+//     this sequence has no parent sequence (i.e. it was start()'d directly
+//     as a top-level sequence rather than nested inside another).
 //   - resolve_host_agent(): cast p_sequencer's parent component to
 //     svt_usb_agent (every sequence needs this to reach agent_h.prot for
 //     wait_xfer_done() and agent_h.reconfigure() after a SET_ADDRESS).
@@ -74,25 +75,43 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
 
     function new(string name = "caliptra_ss_usb_base_sequence");
         super.new(name);
-
-        if(uvm_config_db#(caliptra_ss_usb_data_check_api)::get(null, "uvm_test_top", 
-                                                              "usb_data_check_api", 
-                                                              usb_data_check_api) != 1) begin
-            `uvm_fatal("USB_BASE_SEQ", "impossible to get usb_data_check_api")
-        end
     endfunction
 
     // -------------------------------------------------------------------
     // pre_start / post_start
     //
-    // Raise/drop the starting phase's objection, but only when this
-    // sequence has no parent sequence - i.e. it was start()'d directly as
-    // a top-level sequence from a test, rather than nested inside another
-    // sequence (which would already be holding its own objection).
+    // pre_start() does two things:
+    //
+    //  1. Resolves the shared usb_data_check_api handle from the config_db.
+    //     This is deliberately NOT done in new(): the handle is published by
+    //     caliptra_ss_usb_data_check_api_impl::build_phase(), which UVM runs
+    //     only after the enclosing test's own build_phase has returned. A
+    //     get() in the constructor would therefore make it illegal for a
+    //     test to create its sequence object inside build_phase - which is
+    //     exactly what a test must do when it needs to set fields on the
+    //     sequence instance before installing it as default_sequence.
+    //     pre_start() runs when the sequence is actually started, by which
+    //     point the handle always exists.
+    //
+    //     NOTE: any subclass that overrides pre_start() must call
+    //     super.pre_start(), or usb_data_check_api will be left null.
+    //
+    //  2. Raises the starting phase's objection, but only when this sequence
+    //     has no parent sequence - i.e. it was start()'d directly as a
+    //     top-level sequence from a test, rather than nested inside another
+    //     sequence (which would already be holding its own objection).
+    //     post_start() drops it symmetrically.
     // -------------------------------------------------------------------
     virtual task pre_start();
         uvm_phase phase;
         super.pre_start();
+
+        if (uvm_config_db#(caliptra_ss_usb_data_check_api)::get(null, "uvm_test_top",
+                                                               "usb_data_check_api",
+                                                               usb_data_check_api) != 1) begin
+            `uvm_fatal("USB_BASE_SEQ", "impossible to get usb_data_check_api")
+        end
+
         phase = get_starting_phase();
         if (get_parent_sequence() == null && phase != null)
             phase.raise_objection(this);

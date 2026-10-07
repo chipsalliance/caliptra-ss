@@ -65,28 +65,28 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_clock_sequence.svh"
   `include "caliptra_ss_usb_fs_clock_test.svh"
 
+  // Shared observation-window sequence for the standalone register / RAM access
+  // tests below. Those tests drive no USB traffic; the sequence only holds the
+  // main_phase objection open for a per-test run_window_us while the MCU
+  // firmware does the checking. Must precede the tests that use it.
+  `include "caliptra_ss_usb_mem_rw_sequence.svh"
+
   // Standalone dev0/dev1 register read/write access test (no link bring-up).
-  // Sequence must precede the test.
-  `include "caliptra_ss_usb_dev_reg_rw_sequence.svh"
   `include "caliptra_ss_usb_dev_reg_rw_test.svh"
 
   // Standalone dev RAM (DMA/SRAM window) random read/write access test (no link
-  // bring-up). Sequence must precede the test.
-  `include "caliptra_ss_usb_dev_ram_rw_sequence.svh"
+  // bring-up).
   `include "caliptra_ss_usb_dev_ram_rw_test.svh"
 
   // USBDC1 (device1) variant of the standalone RAM (DMA/SRAM window) random
   // read/write access test. Same firmware, built with -DUSB_DEV_SEL=1 to target
-  // the USBDC1 aperture (0x2001_0100); no link bring-up. Sequence must precede
-  // the test.
-  `include "caliptra_ss_usb_dev1_ram_rw_sequence.svh"
+  // the USBDC1 aperture (0x2001_0100); no link bring-up.
   `include "caliptra_ss_usb_dev1_ram_rw_test.svh"
 
   // Standalone HUB descriptor-array (ep0_mem) RW / write-lock test (no link
   // bring-up). Verifies the 172-word hub descriptor array is writable when
   // unlocked (HUB_EN only) and frozen when locked (HUB_EN and HUB_CONNECT both
-  // set). Sequence must precede the test.
-  `include "caliptra_ss_usb_hub_ram_rw_sequence.svh"
+  // set).
   `include "caliptra_ss_usb_hub_ram_rw_test.svh"
   `include "caliptra_ss_usb_fs_host_traffic_sequence.svh"
 

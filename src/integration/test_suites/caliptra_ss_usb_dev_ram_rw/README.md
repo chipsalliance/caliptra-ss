@@ -37,7 +37,7 @@ concern here because every read is preceded by a write to the same word.
 ## SV side
 
 `caliptra_ss_usb_dev_ram_rw_test` extends `caliptra_ss_usb_base_test` and sets
-`caliptra_ss_usb_dev_ram_rw_sequence` as the `main_phase` default sequence on the
+`caliptra_ss_usb_mem_rw_sequence` as the `main_phase` default sequence on the
 host virtual sequencer. The sequence does NOT bring up the USB link or drive any
 USB traffic; it simply holds the run-phase objection open long enough for the
 firmware to finish and halt. The verdict is produced by two judges:
