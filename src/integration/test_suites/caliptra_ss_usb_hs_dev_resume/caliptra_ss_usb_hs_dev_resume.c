@@ -45,15 +45,22 @@ void main(void) {
     VPRINTF(LOW, "MCU: hs_dev_resume test\n");
     boot_mcu();
     boot_usb_core_hub();
-    // Phase 2 of hub bring-up: now that the device controller is programmed,
-    // assert HUB_CONNECT so the host sees the hub upstream, performs HS chirp,
-    // and enumerates downstream port 0 (USBDC0). Without this the HS link never
-    // reaches ENABLED and the test times out as DISCONNECTED.
+    // usb_hub_init_and_connect() (called inside boot_usb_core_hub()) has already
+    // programmed the HUB RAM and set HUB_EN, and USBDC0's own EP list /
+    // DEVCMDSTAT / DCON are now fully programmed. usb_hub_connect() sets
+    // HUB_CONNECT so the host sees the hub on the bus and begins enumerating
+    // its downstream port 0 (USBDC0), per the two-phase janus_hub_ctrl_bfm.sv
+    // sequencing (hub-composite IP migration checklist item 7).
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
+    // Register access retargeted from the legacy single-device SOC_USBHSD_*
+    // bank to the hub-composite USBDC0 register bank (USB_DEV_*). The base
+    // address moved (0x2000_0000 hub bank -> 0x2000_1000 USBDC0 bank); the
+    // *_MASK bitfield macros from soc_address_map.h are offset-independent and
+    // remain valid (migration checklist item 1 and section B).
     // lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN, lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | 0xFFFFFFFF);
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
     lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
@@ -65,8 +72,18 @@ void main(void) {
         intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
         if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
                 usb_handle_control_transfer();
+            } else {
+                // Status-stage ZLP OUT for a control-read completed. HW cleared
+                // ACTIVE on the EP0 OUT descriptor; re-arm it so the next SETUP
+                // is received instead of NAK'd. Hub-mode enumeration issues many
+                // more control transfers (hub enum + port bring-up + USBDC0
+                // enum), so EP0 OUT must be re-armed on every status ZLP
+                // (migration checklist item 9; matches janus_ahb_fw_bfm.sv
+                // dma_write32(EP0_OUT_DESC, 0xa0000000)).
+                usb_ep0_arm_out();
+            }
         }
         if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
@@ -107,5 +124,3 @@ void main(void) {
     VPRINTF(LOW, "MCU: hs_dev_resume test complete\n");
     csr_write_mpmc_halt();
 }
-
-// File contains AI-generated response based on internal company sources

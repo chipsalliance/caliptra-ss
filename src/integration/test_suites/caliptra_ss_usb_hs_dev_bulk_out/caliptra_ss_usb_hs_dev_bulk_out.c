@@ -71,10 +71,6 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_hub();
-    // Phase 2 of hub bring-up: now that the device controller is programmed,
-    // assert HUB_CONNECT so the host sees the hub upstream, performs HS chirp,
-    // and enumerates downstream port 0 (USBDC0). Without this the HS link never
-    // reaches ENABLED and the test times out as DISCONNECTED.
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
@@ -103,14 +99,25 @@ void main(void) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
             uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
             if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+                // SETUP packet received - decode and respond.
                 usb_handle_control_transfer();
                 transfers_handled++;
                 if (!ep1_armed) {
                     usb_ep1_out_arm();
                     ep1_armed = true;
                 }
+            } else {
+                // Status-stage ZLP OUT for a control-read completed.
+                // HW cleared ACTIVE on the EP0 OUT descriptor; re-arm it
+                // so the next SETUP packet is received instead of NAK'd.
+                // Matches reference janus_ahb_fw_bfm.sv behavior
+                // (dma_write32(EP0_OUT_DESC, 0xa0000000)). Without this
+                // re-arm, enumeration stalls after the first control-read
+                // status stage and EP1 OUT is never armed.
+                usb_ep0_arm_out();
             }
         }
+
 
         if (reg_data & DEV0_CSR_INTSTAT_EP0IN_MASK) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
