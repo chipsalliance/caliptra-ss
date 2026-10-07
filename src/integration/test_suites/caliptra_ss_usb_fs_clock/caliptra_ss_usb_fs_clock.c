@@ -49,9 +49,10 @@
 #include "stdint.h"
 #include "veer-csr.h"
 
-// Number of idle poll iterations to keep the USB clock toggling so the TB
-// frequency checker has a stable observation window.
-#define USB_FS_IDLE_ITERS 20000
+// Number of idle poll iterations to keep the link up so the TB speed checker
+// has a stable observation window. The checker only needs a handful of
+// received bytes, so this is kept short to save simulation time.
+#define USB_FS_IDLE_ITERS 4000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -71,10 +72,18 @@ void main (void) {
     // Standard MCU boot sequence.
     boot_mcu();
 
-    // Bring the USB device controller up using the standard shared bring-up
-    // function. Full-speed operation is selected by the PHY/VIP configuration,
-    // not by a firmware register write (DEVCMDSTAT.SPEED is read-only status).
-    boot_usb_core_hub();
+    // Bring the USB device controller up in FS-only mode. boot_usb_core_fs()
+    // sets DEVCMDSTAT.PFSC to suppress the device-side K-chirp, and performs
+    // hub bring-up phase 1 (HUB RAM programming + HUB_EN) before programming
+    // USBDC0. Do not use boot_usb_core() here: it leaves the device HS-capable
+    // and the chirp FSM would stall waiting for a J-chirp reply that the
+    // FS-only host VIP never drives.
+    boot_usb_core_fs();
+
+    // Hub bring-up phase 2: assert HUB_CONNECT now that USBDC0 is fully
+    // programmed, so the upstream host can see the hub and enumerate the
+    // embedded device. Without this the host never sees anything on the bus.
+    usb_hub_connect();
 
     // Caliptra core bringup.
     mcu_cptra_advance_brkpoint();
