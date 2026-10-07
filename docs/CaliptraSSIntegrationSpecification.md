@@ -540,7 +540,14 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 1 | `cptra_ss_usb_vbuscomp_on_o` | Enables the external VBus comparator. |
 | External | output    | 1 | `cptra_ss_usb_chrgvbus_o` | Requests charging VBus through external PHY/power circuitry. |
 | External | output    | 1 | `cptra_ss_usb_dischrgvbus_o` | Requests discharging VBus through external PHY/power circuitry. |
+| External | input     | 1 | `cptra_ss_usb_avalid_i` | UTMI+ extension (AValid). Indicates whether the session for an A-peripheral is valid. 1 = VBUS above 2 V. 0 = VBUS below 0.8 V. Detector threshold: 0.8 V < Vth < 2 V. Tie low if unused. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_sessend_i` | Indicates that VBus has fallen below the session-end threshold. |
+| External | output    | 1 | `cptra_ss_usb_frametoggle_o` | USB frame/microframe timing toggle. Toggles every 1 ms at full speed or 125 us at high speed. If SOF is not seen, a timer will force the signal to toggle. **Clock:** `cptra_ss_usb_utmi_clk_i` (`cptra_ss_usb_ulpi_clk_i` in ULPI mode). |
+| External | output    | 1 | `cptra_ss_usb_needclk_o` | USB PHY clock request. 1 = PHY clock requested. 0 = PHY clock not required; permits PHY clock stop. **Clock:** Asynchronous; combinational from `cptra_ss_clk_i`, PHY-clock, and asynchronous logic. |
+| External | input     | 1 | `cptra_ss_usb_donotwakeup_n_i` | Silicon-test control. Prevents USB from waking up during low-power operation. Forces usb_needclk = 0 and UTMI SuspendM low, and suppresses the ULPI wake request. 1 = Normal USB operation. 0 = Do not wake. **Clock:** Asynchronous; not synchronized internally. Combinationally overrides the PHY clock-request, suspend, and wake outputs, and is sampled by `cptra_ss_usb_ulpi_clk_i` logic in ULPI mode. |
+| External | input     | 1 | `cptra_ss_usb_dev_wakeup_n_i` | Active-low request to force the USB PHY clock on. When asserted, usb_needclk and UTMI SuspendM are asserted. 1 = Normal USB operation. 0 = Force clock on. **Clock:** Asynchronous; not synchronized internally. Drives combinational and asynchronous set/reset wake logic, and is sampled by `cptra_ss_usb_utmi_clk_i` logic in UTMI mode. |
+| External | input     | 1 | `cptra_ss_usb_enable_hub_i` | HW control of the hub's ENABLE and CONNECT (DCON). 1 = Force the hub's ENABLE and DCON to 1. 0 = FW controls the hub's ENABLE and DCON. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_self_powered_i` | Hardware reporting of the USB HUB's self-powered status. ORed with the hub's FW SELF_POWERED CSR bit. When the OR of the HW input and FW SELF_POWERED bit changes, the HUB updates its GET_STATUS self-powered bit and configuration-descriptor power attributes. 1 = Report self-powered. 0 = Report bus-powered only when FW SELF_POWERED is also 0. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
@@ -576,7 +583,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | input     | 1     | `cptra_ss_i3c_recovery_image_activated_i`                | I3C indication to Caliptra Core that the recovery image is activated.                   |
 | External | input     | 64    | `cptra_ss_cptra_core_generic_input_wires_i` | Generic input wires for Caliptra core |
 | External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core and USB scan mode input     |
-| External | input     | 1     | `cptra_ss_usb_async_disable_i`       | USB asynchronous logic disable input. Drive low for functional operation. |
+| External | input     | 1     | `cptra_ss_usb_async_disable_i`       | DFT USB asynchronous logic disable input. Turns off USB's internally generated async reset so scan/ATPG tool can control flops directly. Drive low for functional operation. |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
 | External | output    | 1     | `cptra_error_non_fatal`              | Non-fatal error output                   |
 | External | output    | 1     | `cptra_ss_mcu_halt_status_o`         | MCU halt status                          |

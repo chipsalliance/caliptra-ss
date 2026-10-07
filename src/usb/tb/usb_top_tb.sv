@@ -269,7 +269,7 @@ module usb_top_tb;
     .dev0_usb_fiq(),
     .dev1_usb_irq(),
     .dev1_usb_fiq(),
-    .usb_frametoggle(),
+    .usb_frametoggle(), // FIXME: DV add functionality
     .payload_available     (),
     .ocp_firmware_activated(),
     // Device-mode VBus/session indications come from SVT.
@@ -277,7 +277,7 @@ module usb_top_tb;
     .vbuscomp_on(),
     .chrg_vbus(),
     .dischrg_vbus(),
-    .avalid(1'b0),
+    .avalid(usb_20_mac_if.utmi_dut_mac_if.AValid),
     .sessend(usb_20_mac_if.utmi_dut_mac_if.SessEnd),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
     .utmi_rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
@@ -305,13 +305,13 @@ module usb_top_tb;
     .ulpi_stp(),
     .ulpi_nxt(1'b0),
     .ulpi_ddr_sel(1'b0),
-    .usb_needclk(),
+    .usb_needclk(), // FIXME: DV add functionality
     // System wake/test policy is not modeled by this standalone harness.
-    .sys_donotwakeup_n(1'b1),
-    .sys_dev_wakeup_n(1'b1),
+    .sys_donotwakeup_n(1'b1), // FIXME: DV add functionality
+    .sys_dev_wakeup_n(1'b1), // FIXME: DV add functionality
     .sys_utmi_clkin_lock(phy_clock_locked),
-    .USB_EnableHub(1'b0),
-    .USB_self_powered(1'b0),
+    .USB_EnableHub(1'b0), // FIXME: DV add functionality
+    .USB_self_powered(1'b0), // FIXME: DV add functionality
     .testmode(1'b0),
     .async_disable(1'b0)
   );
