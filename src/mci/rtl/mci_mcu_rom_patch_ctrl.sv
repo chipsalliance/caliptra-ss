@@ -113,6 +113,7 @@ localparam MCU_ROM_PATCH_SRAM_IF_ADDR_W = $bits(mci_mcu_rom_patch_sram_req_if.re
 
 logic otp_state_valid_q;
 logic cptra_released_q;
+logic cptra_core_rst_b_sync;
 logic lc_patch_allowed;
 logic patch_wr_open;
 logic patch_rd_open;
@@ -189,17 +190,28 @@ assign lc_patch_allowed = otp_state_valid_q && !lc_fatal_state_error_i &&
 // (CPTRA_FUSE_WR_DONE is cleared by pwrgood only). Writes are only allowed before
 // that release, so a patch can never be loaded after Caliptra core captured the
 // real UDS/FE (e.g. after a warm reset).
+// cptra_rst_b is the MCI boot sequencer flop (same clock/pwrgood domain).
+// cptra_core_rst_b_i is SoC driven, so it is synchronized and used as data only.
+// The 2-cycle sync still closes the window before Caliptra core captures UDS/FE
+// (several cycles after reset release, see McuRomPatchClosedBeforeUdsFeCapture_A).
+caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d0)) i_cptra_core_rst_b_sync (
+    .clk   (clk),
+    .rst_b (mci_pwrgood),
+    .din   (cptra_core_rst_b_i),
+    .dout  (cptra_core_rst_b_sync)
+);
+
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if (!mci_pwrgood) begin
         cptra_released_q <= 1'b0;
     end
-    else if (cptra_rst_b || cptra_core_rst_b_i) begin
+    else if (cptra_rst_b || cptra_core_rst_b_sync) begin
         cptra_released_q <= 1'b1;
     end
 end
 
 // Closed once MCU RT FW runs, so a released data write never counts as a patch write.
-assign patch_wr_open = lc_patch_allowed & ~cptra_rst_b & ~cptra_core_rst_b_i & ~cptra_released_q & ~mcu_rt_running;
+assign patch_wr_open = lc_patch_allowed & ~cptra_rst_b & ~cptra_core_rst_b_sync & ~cptra_released_q & ~mcu_rt_running;
 assign patch_rd_open = lc_patch_allowed & mcu_rom_patch_active_o;
 
 // Patch words must be written in order from the SRAM base. Only words written
@@ -339,7 +351,7 @@ assign cif_resp_if.error    = filter_error | sram_double_ecc_error;
 `CALIPTRA_ASSERT_MUTEX(ERR_MCU_ROM_PATCH_SRAM_MULTI_REQ, {sram_write_req, sram_read_req}, clk, !rst_b)
 
 // Patch can only be loaded in order, while Caliptra core is in reset and patching is permitted
-`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, patch_wr_success |-> (!cptra_rst_b && !cptra_core_rst_b_i && !cptra_released_q), clk, !rst_b)
+`CALIPTRA_ASSERT(McuRomPatchWrOnlyCptraInReset_A, patch_wr_success |-> (!cptra_rst_b && !cptra_core_rst_b_sync && !cptra_released_q), clk, !rst_b)
 `CALIPTRA_ASSERT(McuRomPatchWrOnlyLcAllowed_A, patch_wr_success |-> lc_patch_allowed, clk, !rst_b)
 `CALIPTRA_ASSERT(McuRomPatchWrInOrder_A, patch_wr_success |-> req_in_order, clk, !rst_b)
 
