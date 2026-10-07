@@ -28,6 +28,7 @@ module caliptra_ss_usb_sva ();
 
   always begin
     if(waive_chk_at_sim_begin == 0) begin
+      $display("[caliptra_ss_usb_sva] checking USB_self_powered input of usb_core_i");
       CHK_SELF_POWERED_WRAPPER: assert (usb_self_powered_pin === 1'b1)
         else $error("[caliptra_ss_usb_sva] USB_self_powered input of usb_core_i is %0b, expected 1'b1 (see the .USB_self_powered tie-off in caliptra_ss_top.sv). Descriptor bmAttributes would report bus-powered (0x80) and GET_STATUS(Device) bit0 would be 0.",
                     usb_self_powered_pin);
@@ -37,6 +38,7 @@ module caliptra_ss_usb_sva ();
 
   always begin
     if(waive_chk_at_sim_begin == 0) begin
+      $display("[caliptra_ss_usb_sva] checking USB_self_powered input of usb_core_i.u_hub_compound");
       CHK_SELF_POWERED_COMPOUND: assert (usb_self_powered_compound === 1'b1)
         else $error("[caliptra_ss_usb_sva] USB_self_powered at usb_core_i.u_hub_compound is %0b, expected 1'b1 (see the .USB_self_powered tie-off in caliptra_ss_top.sv). Descriptor bmAttributes would report bus-powered (0x80) and GET_STATUS(Device) bit0 would be 0.",
                     usb_self_powered_compound);
