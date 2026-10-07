@@ -124,11 +124,11 @@ class usb_vip_cfg_builder extends uvm_object;
     vip_endpoint = new();
     vip_endpoint.ep_number = endpoint.ep_number;
     vip_endpoint.direction = (endpoint.direction == USB_DIRECTION_IN) ? svt_usb_types::IN : svt_usb_types::OUT;
-    // Only the transfer types this bench has exercised are mapped. Adding a
-    // type is one case arm here plus the matching usb_transfer_type_e member.
     case (endpoint.transfer_type)
-      USB_TRANSFER_TYPE_CONTROL: vip_endpoint.ep_type = svt_usb_types::CONTROL;
-      USB_TRANSFER_TYPE_BULK:    vip_endpoint.ep_type = svt_usb_types::BULK;
+      USB_TRANSFER_TYPE_CONTROL:     vip_endpoint.ep_type = svt_usb_types::CONTROL;
+      USB_TRANSFER_TYPE_BULK:        vip_endpoint.ep_type = svt_usb_types::BULK;
+      USB_TRANSFER_TYPE_INTERRUPT:   vip_endpoint.ep_type = svt_usb_types::INTERRUPT;
+      USB_TRANSFER_TYPE_ISOCHRONOUS: vip_endpoint.ep_type = svt_usb_types::ISOCHRONOUS;
       default: `uvm_fatal("USB_CFG", $sformatf("%s uses a transfer type with no SVT mapping in configure_vip_endpoint()", endpoint.convert2string()))
     endcase
     vip_endpoint.interval = endpoint.interval;
@@ -136,6 +136,15 @@ class usb_vip_cfg_builder extends uvm_object;
     vip_endpoint.speed = svt_usb_types::HS;
     if (endpoint.max_burst_size_valid) begin
       vip_endpoint.max_burst_size = endpoint.max_burst_size;
+    end
+    if (endpoint.isoc_mult_valid) begin
+      case (endpoint.isoc_mult)
+        0: vip_endpoint.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_ZERO;
+        1: vip_endpoint.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_ONE;
+        2: vip_endpoint.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_TWO;
+        default: `uvm_fatal("USB_CFG", $sformatf("%s has invalid isoc_mult=%0d", endpoint.convert2string(), endpoint.isoc_mult))
+      endcase
+      vip_endpoint.usb_20_isoc_without_first_last_transaction = 1;
     end
     if (endpoint.allow_aligned_transfer_without_zero_length) begin
       vip_endpoint.allow_aligned_transfer_without_zero_length = 1;
