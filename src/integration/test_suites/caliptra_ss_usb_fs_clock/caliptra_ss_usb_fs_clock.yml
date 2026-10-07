@@ -12,3 +12,7 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_fs_clock_test'
+  # Enables caliptra_ss_usb_fs_speed_checker.sv. The "=1" form is required:
+  # run_caliptra_test.py only forwards plusargs matching +NAME=VALUE, and
+  # $test$plusargs() matches on prefix so the value itself is ignored.
+  - '+usb_fs_speed_check=1'
