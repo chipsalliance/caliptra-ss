@@ -56,10 +56,16 @@ class usb_init_seq extends usb_base_seq;
   byte unsigned device_address_shadow;
   byte unsigned current_configuration;
   int unsigned serviced_request_count;
+  bit host_scenario_completed;
 
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
     super.new(name);
+  endfunction
+
+  // Number of SETUP requests the selected enumeration scenario services.
+  virtual function int unsigned expected_setup_request_count();
+    return 7;
   endfunction
 
   // Preserve the protocol-owned address shadow whenever DEVCMDSTAT is written.
@@ -92,7 +98,10 @@ class usb_init_seq extends usb_base_seq;
 
     enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
                            ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
-    interrupt_enable_value = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN, ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()) |
+    interrupt_enable_value = ral_field_value(
+                               p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN,
+                               ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()
+                             ) |
                              ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTEN.DEV_INT_EN);
     vbus_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.VBUS_DEBOUNCED);
     `uvm_info("USB_INIT_SEQ", "Initializing DEV0 endpoint list and control registers", UVM_LOW)
@@ -164,7 +173,13 @@ class usb_init_seq extends usb_base_seq;
 
   // Decode the two little-endian words written by hardware into the EP0 SETUP
   // buffer into the standard eight-byte request fields.
-  task read_setup_packet(output byte unsigned request_type, output byte unsigned request, output logic [15:0] value, output logic [15:0] index, output logic [15:0] length);
+  task read_setup_packet(
+    output byte unsigned request_type,
+    output byte unsigned request,
+    output logic [15:0] value,
+    output logic [15:0] index,
+    output logic [15:0] length
+  );
     logic [31:0] word0;
     logic [31:0] word1;
 
@@ -213,7 +228,7 @@ class usb_init_seq extends usb_base_seq;
   // Validate and service one latched standard device request. Each supported
   // request prepares its data/status stage, rearms EP0 as needed, updates the
   // protocol shadow state, and contributes exactly one completion count.
-  task service_setup_request();
+  virtual task service_setup_request();
     byte unsigned request_type;
     byte unsigned request;
     logic [15:0] value;
@@ -310,8 +325,9 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info(
       "USB_INIT_SEQ",
       $sformatf(
-        "Serviced SETUP %0d/7: type=0x%02h request=0x%02h value=0x%04h index=0x%04h length=%0d",
+        "Serviced SETUP %0d/%0d: type=0x%02h request=0x%02h value=0x%04h index=0x%04h length=%0d",
         serviced_request_count,
+        expected_setup_request_count(),
         request_type,
         request,
         value,
@@ -336,7 +352,7 @@ class usb_init_seq extends usb_base_seq;
     ep0out_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTSTAT.EP0OUT);
     setup_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.SETUP);
     `uvm_info("USB_INIT_SEQ", "Starting concurrent bus-reset and EP0 SETUP service", UVM_LOW)
-    while (serviced_request_count < 7) begin
+    while (serviced_request_count < expected_setup_request_count()) begin
       ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
       handle_bus_reset(command);
       ral_read32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, interrupt_status);
@@ -358,16 +374,36 @@ class usb_init_seq extends usb_base_seq;
         #50ns;
       end
     end
-    `uvm_info("USB_INIT_SEQ", "All seven EP0 SETUP requests were serviced", UVM_LOW)
+    `uvm_info(
+      "USB_INIT_SEQ",
+      $sformatf("All %0d EP0 SETUP requests were serviced", expected_setup_request_count()),
+      UVM_LOW
+    )
+  endtask
+
+  // Run the host side of the base seven-request enumeration flow.
+  virtual task run_host_scenario();
+    usb_init_host_seq host_sequence;
+
+    host_scenario_completed = 1'b0;
+    host_sequence = usb_init_host_seq::type_id::create("host_sequence");
+    host_sequence.control_endpoint = ep0_out_endpoint;
+    host_sequence.device_address = p_sequencer.cfg.device_address;
+    host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
+    host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
+    host_sequence.start(p_sequencer.host_sequencer);
+    if (!host_sequence.completed) begin
+      `uvm_fatal("USB_INIT_SEQ", "Host sequence returned incomplete")
+    end
+    host_scenario_completed = 1'b1;
   endtask
 
   // Initialize the controller, then run the host's seven transfers and DUT EP0
   // service concurrently. Publish completion only when both sides and the
   // address/configuration shadows agree on the final enumerated state.
   virtual task body();
-    usb_init_host_seq host_sequence;
-
     completed = 1'b0;
+    host_scenario_completed = 1'b0;
     serviced_request_count = 0;
     if (p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_INIT_SEQ", "INIT requires the SVT host virtual sequencer")
@@ -381,30 +417,36 @@ class usb_init_seq extends usb_base_seq;
     check_buffer_clear_of_endpoint_list("EP0 OUT", ep0_out_buffer_offset, ep0_out_endpoint.max_packet_size);
     check_buffer_clear_of_endpoint_list("EP0 IN", ep0_in_buffer_offset, ep0_in_endpoint.max_packet_size);
     initialize_controller();
-    host_sequence = usb_init_host_seq::type_id::create("host_sequence");
-    host_sequence.control_endpoint = ep0_out_endpoint;
-    host_sequence.device_address = p_sequencer.cfg.device_address;
-    host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
-    host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
 
     // The host blocks on real bus completions while service_ep0 supplies each
     // response through the DUT's CSRs and packet memory.
     fork
       begin
-        host_sequence.start(p_sequencer.host_sequencer);
-        if (!host_sequence.completed) begin
-          `uvm_fatal("USB_INIT_SEQ", "Host sequence returned incomplete")
-        end
+        run_host_scenario();
       end
       begin
         service_ep0();
       end
     join
 
-    completed = host_sequence.completed && serviced_request_count == 7 && current_configuration == 1 && device_address_shadow == p_sequencer.cfg.device_address;
+    completed = host_scenario_completed &&
+                serviced_request_count == expected_setup_request_count() &&
+                current_configuration == 1 &&
+                device_address_shadow == p_sequencer.cfg.device_address;
     if (!completed) begin
-      `uvm_fatal("USB_INIT_SEQ", $sformatf("INIT final state invalid: host=%0b serviced=%0d address=%0d (expected %0d) configuration=%0d", host_sequence.completed, serviced_request_count, device_address_shadow, p_sequencer.cfg.device_address, current_configuration))
+      `uvm_fatal(
+        "USB_INIT_SEQ",
+        $sformatf(
+          "INIT final state invalid: host=%0b serviced=%0d expected=%0d address=%0d (expected %0d) configuration=%0d",
+          host_scenario_completed,
+          serviced_request_count,
+          expected_setup_request_count(),
+          device_address_shadow,
+          p_sequencer.cfg.device_address,
+          current_configuration
+        )
+      )
     end
-    `uvm_info("USB_INIT_SEQ", "Standalone USB INIT completed with seven real USB transfers", UVM_LOW)
+    `uvm_info("USB_INIT_SEQ", $sformatf("USB control scenario completed with %0d real transfers", expected_setup_request_count()), UVM_LOW)
   endtask
 endclass
