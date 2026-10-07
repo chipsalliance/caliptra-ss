@@ -25,6 +25,7 @@ class usb_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
   aaxi_sequencer dev1_csr_sequencer;
   aaxi_sequencer dev1_memory_sequencer;
   svt_usb_virtual_sequencer host_sequencer;
+  usb_packet_monitor_callback packet_monitor;
   // AXI USER filter policy control shared by all four manager paths.
   virtual usb_tb_ctrl_if #(
     .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
