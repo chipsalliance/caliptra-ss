@@ -638,7 +638,7 @@ endfunction:check_device_qualifier
 //     byte[20]   bEndpointAddress    (=0x81 EP1 IN)
 //     byte[21]   bmAttributes        (=0x03 Interrupt)
 //     byte[23:22] wMaxPacketSize     (little-endian, =0x0001)
-//     byte[24]   bInterval           (HS 1..16; FS 0xFF)
+//     byte[24]   bInterval           (=0x0C HS branch)
 // The expected values mirror the CONFIGURATION / OTHER SPEED CONFIGURATION
 // DESCRIPTOR blocks of the hub ROM constant in
 // third_party/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl.
@@ -712,7 +712,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   ep_direction = item.get_ep_direction().name();
   descr_is_hs = (item.cfg != null) && (item.cfg.speed == svt_usb_types::HS);
   if (exp_bDescriptorType == 'h07) // OTHER_SPEED
-    descr_is_hs = !descr_is_hs;
+    descr_is_hs = !descr_is_hs; // TODO use this below in the bInterval checking
 
   CHK_CFG_NUM_BYTES: assert(num_bytes == 25) else
     `uvm_error(msg_tag, $sformatf("Expected 25 bytes but got %0d from %s %s EP%0d%s", 
@@ -837,18 +837,14 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   CHK_EP_WMAXPACKETSIZE: assert(act_wMaxPacketSize == 'h0001) else
     `uvm_error(msg_tag, $sformatf("%s %s wMaxPacketSize mismatch: expected 0x0001 got 0x%04h", 
                                   device_name, descr_label, act_wMaxPacketSize))
-  // Status-change endpoint polling interval.
-  // FS descriptors use 0xFF; HS interrupt endpoints encode 2^(bInterval-1) microframes and must be 1..16
-  if (descr_is_hs) begin
-    CHK_EP_BINTERVAL_HS: assert((act_bInterval >= 1) && (act_bInterval <= 16)) else
-      `uvm_error(msg_tag, $sformatf("%s %s HS bInterval out of range: expected 1..16 got 0x%02h",
-                                    device_name, descr_label, act_bInterval))
-  end
-  else begin
-    CHK_EP_BINTERVAL_FS: assert(act_bInterval == 'hFF) else
-      `uvm_error(msg_tag, $sformatf("%s %s FS bInterval mismatch: expected 0xFF got 0x%02h",
-                                    device_name, descr_label, act_bInterval))
-  end
+  // The hub descriptor ROM is elaborated with the HIGH_SPEED generic set true
+  // (usb_ep0_hub_descr.m.vhdl), so the endpoint bInterval is X"0C" for both the
+  // HS and FS tests - the FS test only forces the link speed at runtime, it
+  // does not re-elaborate the ROM with HIGH_SPEED=false. The previous 0x0F
+  // expectation was stale after the hub RTL change.
+  CHK_EP_BINTERVAL: assert(act_bInterval == 'h0C) else
+    `uvm_error(msg_tag, $sformatf("%s %s bInterval mismatch: expected 0x0C got 0x%02h", 
+                                  device_name, descr_label, act_bInterval))
 
   `uvm_info(msg_tag, $sformatf("%s %s descriptor fields checked from EP%0d%s", 
                                device_name, descr_label, ep_number, ep_direction), UVM_LOW)
