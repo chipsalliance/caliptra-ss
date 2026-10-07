@@ -22,19 +22,38 @@
 interface usb_tb_ctrl_if #(
   parameter int unsigned UW = 32,
   parameter int unsigned COMBO_NUM_USERS = 4,
-  parameter int unsigned DEV1_NUM_USERS = 4
+  parameter int unsigned DEV1_NUM_USERS = 4,
+  parameter int unsigned DEV0_MEMORY_AW = 13
 ) (
   input logic clk,
-  input logic rst_n
+  input logic rst_n,
+  input logic utmi_clk
 );
   logic combo_enable_axi_user_filtering;
   logic [UW-1:0] combo_priv_axi_users [COMBO_NUM_USERS];
   logic dev1_enable_axi_user_filtering;
   logic [UW-1:0] dev1_priv_axi_users [DEV1_NUM_USERS];
+  logic raw_utmi_inject_enable;
+  logic [7:0] raw_utmi_rxdata;
+  logic raw_utmi_rxvalid;
+  logic raw_utmi_rxactive;
+  logic raw_utmi_rxerror;
+  logic raw_utmi_host_mode;
+  logic raw_utmi_txready;
+  logic dev0_memory_request;
+  logic dev0_memory_write;
+  logic [DEV0_MEMORY_AW-1:0] dev0_memory_address;
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
     dev1_enable_axi_user_filtering = 1'b0;
+    raw_utmi_inject_enable = 1'b0;
+    raw_utmi_rxdata = 8'h00;
+    raw_utmi_rxvalid = 1'b0;
+    raw_utmi_rxactive = 1'b0;
+    raw_utmi_rxerror = 1'b0;
+    raw_utmi_host_mode = 1'b0;
+    raw_utmi_txready = 1'b0;
     foreach (combo_priv_axi_users[user_index]) begin
       combo_priv_axi_users[user_index] = '0;
     end
