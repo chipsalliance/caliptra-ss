@@ -21,4 +21,5 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_dev_skip_during_rx: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_unsupported_request: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_host_resume: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }
