@@ -102,6 +102,7 @@ targets:
       - $COMPILE_ROOT/tb/usb_tb_ctrl_if.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
+      - $COMPILE_ROOT/tb/usb_utmi_packet_monitor.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv
     tops: [usb_top_tb]
 global:

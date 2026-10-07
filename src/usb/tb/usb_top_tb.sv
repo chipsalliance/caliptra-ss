@@ -216,6 +216,14 @@ module usb_top_tb;
     .cfg_i('0)
   );
 
+  usb_utmi_packet_monitor utmi_packet_monitor (
+    .clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
+    .reset_n(bus_reset_n),
+    .rxactive(usb_20_mac_if.utmi_dut_mac_if.RXActive),
+    .rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
+    .rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0])
+  );
+
   // --------------------------------------------------------------------------
   // Device under test
   // --------------------------------------------------------------------------
