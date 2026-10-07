@@ -17,15 +17,10 @@
 class usb_axi_stress_test extends usb_base_test;
   `uvm_component_utils(usb_axi_stress_test)
 
-  // Full 64 KiB fill and sweep of both SRAMs plus the stress phase.
-  localparam time STRESS_TEST_TIMEOUT = 5ms;
-
+  // Budget the full 64 KiB fill and sweep of both SRAMs plus the stress phase.
   function new(string name = "usb_axi_stress_test", uvm_component parent = null);
     super.new(name, parent);
-  endfunction
-
-  virtual function time selected_test_timeout();
-    return STRESS_TEST_TIMEOUT;
+    test_timeout = 5ms;
   endfunction
 
   task run_phase(uvm_phase phase);
