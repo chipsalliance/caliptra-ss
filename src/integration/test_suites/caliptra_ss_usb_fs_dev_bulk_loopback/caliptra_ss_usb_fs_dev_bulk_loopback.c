@@ -43,6 +43,7 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_fs();
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
@@ -66,6 +67,10 @@ void main(void) {
      * restores EP0 entries (usb_ep0_reinit). EP1 OUT must be explicitly
      * re-armed after the bus reset so the device can ACK the bulk OUT packet
      * the host sends after enumeration.
+     *
+     * Use USB_EP_ENTRY_ABS_ADDR so the DMA engine reconstructs the correct
+     * absolute AXI buffer address. DATABUFSTART only contributes bits[31:22];
+     * addr_offset must equal bits[16:6] of the absolute AXI address.
      */
     ep1out_entry = USB_EP_ENTRY_ACTIVE | USB_EP_ENTRY_NBYTES(64) | USB_EP_ENTRY_ADDR(0x200);
     lsu_write_32(dma_base + 0x010, ep1out_entry);
