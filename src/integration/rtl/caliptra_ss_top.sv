@@ -49,10 +49,10 @@ module caliptra_ss_top
     ,parameter USB_C_HUB_FIFO_SIZE = 172
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
-    ,parameter SPI_HOST_ENA = 1
+    ,parameter SPI_HOST_ENA = 0
     ,parameter SPI_HOST_NUM_CS = 2
     ,parameter SPI_HOST_CMD_DEPTH = 8
-    ,parameter UART_ENA = 1
+    ,parameter UART_ENA = 0
     // JTAG IDCODE tie-offs (integrator-overridable). Full 32-bit IDCODE; bit 0
     // must be 1 per IEEE 1149.1. The VeeR-based cores (Caliptra core, MCU) take
     // the upper 31 bits and force bit 0 to 1 in hardware.
