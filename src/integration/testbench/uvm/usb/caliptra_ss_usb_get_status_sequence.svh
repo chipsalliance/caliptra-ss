@@ -205,7 +205,7 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
             .usb_cfg             (usb_cfg),
             .device_addr         (HUB_ADDR),
             .dev_name            ("hub"),
-            .expected_status     (16'h0000),
+            .expected_status     (16'h0001),
             .remote_wakeup_enable(1'b0));
 
         `uvm_info("USB_GET_STATUS",
