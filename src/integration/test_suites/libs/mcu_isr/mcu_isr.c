@@ -65,6 +65,10 @@ static void nonstd_veer_isr_mci  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_i3c  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_usb  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_bfm  (void) __attribute__ ((interrupt ("machine")));
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+static void nonstd_veer_isr_usb_dev1 (void) __attribute__ ((interrupt ("machine")));
+#endif
+
 
 // Could be much more fancy with C preprocessing to pair up the ISR with Vector
 // numbers as defined in caliptra_defines.h.... TODO
@@ -74,7 +78,20 @@ static void (* const nonstd_veer_isr_2 ) (void) = nonstd_veer_isr_i3c;    // par
 static void (* const nonstd_veer_isr_3 ) (void) = nonstd_veer_isr_usb;    // USB device controller
 static void (* const nonstd_veer_isr_4 ) (void) = std_rv_nop_machine; // -------.
 static void (* const nonstd_veer_isr_5 ) (void) = std_rv_nop_machine; //        |
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+// usb_hib_compound dual USB device test. PIC vector 6 (VEER_INTR_EXT_LSB) is
+// the first configurable external interrupt pin. In this build the testbench
+// loops the USB device1 IRQ output (cptra_ss_usb_dev1_irq_o) back onto this
+// pin, so vector 6 must route to a real handler instead of the nop. Device0
+// keeps vector 3; this dedicated device1 handler reads USBDC1's own aperture
+// (SOC_USB_DEV1_CSR_BASE_ADDR) directly, independent of the USB_DEV_SEL compile
+// switch, so a single dual device image can service both controllers.
+static void (* const nonstd_veer_isr_6 ) (void) = nonstd_veer_isr_usb_dev1; // USBDC1 looped IRQ
+#else
 static void (* const nonstd_veer_isr_6 ) (void) = std_rv_nop_machine; //        |
+#endif
+
+
 static void (* const nonstd_veer_isr_7 ) (void) = std_rv_nop_machine; //        |
 static void (* const nonstd_veer_isr_8 ) (void) = std_rv_nop_machine; //        |
 static void (* const nonstd_veer_isr_9 ) (void) = std_rv_nop_machine; //        |
@@ -495,13 +512,27 @@ void init_usb_interrupts(void) {
         meigwclrs[vec] = 0; __asm__ volatile ("fence");
     }
 
-    // Enable USB (vector 3) only
+    // Enable USB device0 (vector 3)
     meipls[CSS_MCU0_VEER_INTR_VEC_USB]     = CSS_MCU0_VEER_INTR_PRIO_USB;    __asm__ volatile ("fence");
     meigwctrls[CSS_MCU0_VEER_INTR_VEC_USB] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL; __asm__ volatile ("fence");
     meigwclrs[CSS_MCU0_VEER_INTR_VEC_USB]  = 0;                              __asm__ volatile ("fence");
     meies[CSS_MCU0_VEER_INTR_VEC_USB]      = 1;                              __asm__ volatile ("fence");
 
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+    // usb_hib_compound: also enable USB device1 (vector 6). The testbench loops
+    // cptra_ss_usb_dev1_irq_o onto cptra_ss_mcu_ext_int[6], so this vector must
+    // route to its real handler (nonstd_veer_isr_usb_dev1). device1 is given
+    // the same priority as device0 so the two USB vectors serialize instead of
+    // preempting one another. Active-high level gateway, same as device0, so
+    // the handler must W1C USBDC1 INTSTAT to deassert the line.
+    meipls[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]     = CSS_MCU0_VEER_INTR_PRIO_USB_DEV1; __asm__ volatile ("fence");
+    meigwctrls[CSS_MCU0_VEER_INTR_VEC_USB_DEV1] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL;   __asm__ volatile ("fence");
+    meigwclrs[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]  = 0;                                __asm__ volatile ("fence");
+    meies[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]      = 1;                                __asm__ volatile ("fence");
+#endif
+
     // MIE - external interrupts only. The timer interrupt is left disabled so
+
     // that MTIMECMP does not need to be programmed, and the correctable error
     // interrupt is left disabled because its thresholds are not set here.
     csr_set_bits_mie(MIE_MEI_BIT_MASK);
@@ -859,5 +890,13 @@ nonstd_veer_isr(mci)
 nonstd_veer_isr(i3c)
 // Non-Standard Vectored Interrupt Handler (USB Interrupt = vector 3)
 nonstd_veer_isr(usb)
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+// Non-Standard Vectored Interrupt Handler (USBDC1/device1 looped IRQ = vector 6)
+// Expands to nonstd_veer_isr_usb_dev1, calling service_usb_dev1_intr().
+nonstd_veer_isr(usb_dev1)
+#endif
 // Non-Standard Vectored Interrupt Handler (Default/BFM-driven Interrupt = vector 32:255)
 nonstd_veer_isr(bfm)
+
+
+// File contains AI-generated response based on internal company sources

@@ -2257,8 +2257,35 @@ module caliptra_ss_top_tb
     logic [15:0]  cptra_ss_strap_key_release_key_size_i;
     logic [63:0]  cptra_ss_strap_key_release_base_addr_i;
     logic         cptra_ss_strap_ocp_lock_en_i; 
+    
+    // Dual USB device (usb_hub_compound) external interrupt loopback.
+    // The SoC BFM drives the shadow copy cptra_ss_mcu_ext_int_bfm; the DUT sees
+    // the shadow value with the USB device1 IRQ output (cptra_ss_usb_dev1_irq_o)
+    // looped back onto the first configurable external interrupt pin
+    // (VEER_INTR_VEC_USB_DEV1). This mirrors how USB device0 (dev0_usb_irq) is
+    // routed internally to VEER_INTR_VEC_USB, so the MCU firmware can service
+    // device1 interrupts in a dual-device test.
+    //
+    // The loopback is always compiled in and is enabled at RUNTIME by the
+    // +USB_HUB_COMPOUND_DEV1_IRQ plusarg (NAME=VALUE form, e.g.
+    // +USB_HUB_COMPOUND_DEV1_IRQ=1), so a single simv image is reusable for all
+    // tests. When the plusarg is absent the DUT-facing net is a transparent
+    // copy of the BFM-driven shadow net.
     logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int;
+    logic [pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] cptra_ss_mcu_ext_int_bfm;
+    logic                                       usb_hub_compound_dev1_irq_en;
+    
+    initial usb_hub_compound_dev1_irq_en = $test$plusargs("USB_HUB_COMPOUND_DEV1_IRQ");
+    always_comb begin
+        cptra_ss_mcu_ext_int = cptra_ss_mcu_ext_int_bfm;
+        if (usb_hub_compound_dev1_irq_en)
+            cptra_ss_mcu_ext_int[`VEER_INTR_VEC_USB_DEV1] =
+                cptra_ss_mcu_ext_int_bfm[`VEER_INTR_VEC_USB_DEV1] | cptra_ss_usb_dev1_irq_o;
+    end
+
     logic         cptra_ss_mcu_jtag_tck_i;
+
+
     logic         cptra_ss_mcu_jtag_tms_i;
     logic         cptra_ss_mcu_jtag_tdi_i;
     logic         cptra_ss_mcu_jtag_trst_n_i;
@@ -2698,8 +2725,10 @@ module caliptra_ss_top_tb
         .cptra_ss_cptra_core_etrng1_req_o,
         .second_RNG_triggered,
 
-        .cptra_ss_mcu_ext_int,
-        
+
+        .cptra_ss_mcu_ext_int(cptra_ss_mcu_ext_int_bfm),
+
+
         .cptra_ss_mcu_halt_status_o,
         .cptra_ss_mcu_halt_status_i,
         .cptra_ss_mcu_halt_req_o,
@@ -2765,3 +2794,4 @@ endmodule
 // This is the top level module for the Avery I3C test case bench.
 // it triggers i3c test cases.
 `include "ai3c_tests_bench.sv"
+
