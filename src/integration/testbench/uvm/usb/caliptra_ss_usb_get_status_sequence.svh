@@ -22,18 +22,15 @@
 // (DEVICE_REMOTE_WAKEUP) + GET_STATUS on both the hub (address 1) and dev0
 // (address 2):
 //
-//   1. hub  SetFeature(DEVICE_REMOTE_WAKEUP)   + GET_STATUS, expect 0x0002.
+//   1. hub  SetFeature(DEVICE_REMOTE_WAKEUP)   + GET_STATUS, expect 0x0002|SP.
 //   2. dev0 SetFeature(DEVICE_REMOTE_WAKEUP)   + GET_STATUS, expect 0x0003.
 //   3. dev0 ClearFeature(DEVICE_REMOTE_WAKEUP) + GET_STATUS, expect 0x0001.
+//   4. hub  ClearFeature(DEVICE_REMOTE_WAKEUP) + GET_STATUS, expect 0x0000|SP.
 //
 // dev0 reports Self-Powered (bit0=1) in its firmware GET_STATUS response, so
-// its expected values carry the extra 0x0001. The hub is separate RTL and
-// keeps its fixed 0x0002 / 0x0000 (bus-powered) responses.
-//
-// NOTE (hardware caveat): the hub is separate RTL
-// (third_party/usb_hub_composite_device), not MCU firmware. The hub
-// GET_STATUS response is fixed by the hub RTL; it is checked here against the
-// value the hub RTL returns.
+// its expected values carry the extra 0x0001. The hub Self-Powered bit (SP)
+// is taken from bmAttributes D6 of its CONFIGURATION descriptor read during
+// enumeration (USB 2.0 Sec 9.4.5, Sec 9.6.3).
 //
 // Address map after enumeration (see caliptra_ss_usb_base_sequence.svh):
 //   hub  -> device address 1
@@ -177,7 +174,7 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
             .usb_cfg        (usb_cfg),
             .device_addr    (HUB_ADDR),
             .dev_name       ("hub"),
-            .expected_status(16'h0002));
+            .expected_status({14'h0, 1'b1, hub_self_powered}));
 
         // Step 6: SetFeature(DEVICE_REMOTE_WAKEUP) + GET_STATUS for dev0.
         // USBDC0 firmware reports Self-Powered (bit0) always set and honors
@@ -205,7 +202,7 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
             .usb_cfg             (usb_cfg),
             .device_addr         (HUB_ADDR),
             .dev_name            ("hub"),
-            .expected_status     (16'h0000),
+            .expected_status     ({15'h0, hub_self_powered}),
             .remote_wakeup_enable(1'b0));
 
         `uvm_info("USB_GET_STATUS",

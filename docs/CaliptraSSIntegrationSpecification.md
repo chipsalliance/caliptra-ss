@@ -279,6 +279,7 @@ Integrators must instantiate SRAM components outside of the Caliptra Subsystem b
 | **MCU0**          | Shared Memory (SRAM)  | `cptra_ss_mci_mcu_sram_req_if`       | SoC Specific                | Read/Write      | Shared memory between MCI and MCU for data storage.                                                                                      |
 | **MAILBOX**       | MBOX0 Memory          | `cptra_ss_mci_mbox0_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX0 communication.                                                                                                          |
 | **MAILBOX**       | MBOX1 Memory          | `cptra_ss_mci_mbox1_sram_req_if`     | SoC Specific                | Read/Write      | Memory for MBOX1 communication.                                                                                                          |
+| **MCU0**          | MCU ROM Patch SRAM    | `cptra_ss_mcu_rom_patch_sram_req_if` | SoC Specific (`MCU_ROM_PATCH_SRAM_SIZE_KB`, optional) | Read/Write | Dedicated SRAM that MCU ROM loads a ROM patch into and fetches from. Not needed if `MCU_ROM_PATCH_SRAM_SIZE_KB` is 0. Writable only in TEST_LOCKED/TEST_UNLOCKED/DEV before Caliptra core first leaves reset. Without a patch, released as data memory once MCU RT FW is running. See [MCU ROM Patch SRAM](#mcu-rom-patch-sram). |
 | **Caliptra Core** | ICCM, DCCM            | `cptra_ss_cptra_core_el2_mem_export` | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for the Instruction and Data Closely Coupled Memory (ICCM, DCCM) of the core.                                                 |
 | **Caliptra Core** | Caliptra ROM          | `cptra_ss_cptra_core_imem`           | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read-Only       | Interface for Caliptra ROM.                                                                                                              |
 | **Caliptra Core** | Caliptra Mailbox SRAM | `cptra_ss_cptra_core_mbox_sram`      | Refer to [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md) | Read/Write      | Interface for Caliptra mailbox memory.                                                                                                   |
@@ -493,6 +494,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | interface | na    | `cptra_ss_mci_mcu_sram_req_if`       | MCI MCU SRAM request interface           |
 | External | interface | na    | `cptra_ss_mci_mbox0_sram_req_if`     | MCI mailbox 0 SRAM request interface     |
 | External | interface | na    | `cptra_ss_mci_mbox1_sram_req_if`     | MCI mailbox 1 SRAM request interface     |har
+| External | interface | na    | `cptra_ss_mcu_rom_patch_sram_req_if` | MCI MCU ROM patch SRAM request interface |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox0_data_avail`  | MCU Mailbox0 data available output            |
 | External | output    | 1     | `cptra_ss_soc_mcu_mbox1_data_avail`  | MCU Mailbox1 data available output            |
 | External | interface | na    | `cptra_ss_mcu0_el2_mem_export`       | MCU0 EL2 memory export interface         |
@@ -540,7 +542,14 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 1 | `cptra_ss_usb_vbuscomp_on_o` | Enables the external VBus comparator. |
 | External | output    | 1 | `cptra_ss_usb_chrgvbus_o` | Requests charging VBus through external PHY/power circuitry. |
 | External | output    | 1 | `cptra_ss_usb_dischrgvbus_o` | Requests discharging VBus through external PHY/power circuitry. |
+| External | input     | 1 | `cptra_ss_usb_avalid_i` | UTMI+ extension (AValid). Indicates whether the session for an A-peripheral is valid. 1 = VBUS above 2 V. 0 = VBUS below 0.8 V. Detector threshold: 0.8 V < Vth < 2 V. Tie low if unused. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_sessend_i` | Indicates that VBus has fallen below the session-end threshold. |
+| External | output    | 1 | `cptra_ss_usb_frametoggle_o` | USB frame/microframe timing toggle. Toggles every 1 ms at full speed or 125 us at high speed. If SOF is not seen, a timer will force the signal to toggle. **Clock:** `cptra_ss_usb_utmi_clk_i` (`cptra_ss_usb_ulpi_clk_i` in ULPI mode). |
+| External | output    | 1 | `cptra_ss_usb_needclk_o` | USB PHY clock request. 1 = PHY clock requested. 0 = PHY clock not required; permits PHY clock stop. **Clock:** Asynchronous; combinational from `cptra_ss_clk_i`, PHY-clock, and asynchronous logic. |
+| External | input     | 1 | `cptra_ss_usb_donotwakeup_n_i` | Silicon-test control. Prevents USB from waking up during low-power operation. Forces usb_needclk = 0 and UTMI SuspendM low, and suppresses the ULPI wake request. 1 = Normal USB operation. 0 = Do not wake. **Clock:** Asynchronous; not synchronized internally. Combinationally overrides the PHY clock-request, suspend, and wake outputs, and is sampled by `cptra_ss_usb_ulpi_clk_i` logic in ULPI mode. |
+| External | input     | 1 | `cptra_ss_usb_dev_wakeup_n_i` | Active-low request to force the USB PHY clock on. When asserted, usb_needclk and UTMI SuspendM are asserted. 1 = Normal USB operation. 0 = Force clock on. **Clock:** Asynchronous; not synchronized internally. Drives combinational and asynchronous set/reset wake logic, and is sampled by `cptra_ss_usb_utmi_clk_i` logic in UTMI mode. |
+| External | input     | 1 | `cptra_ss_usb_enable_hub_i` | HW control of the hub's ENABLE and CONNECT (DCON). 1 = Force the hub's ENABLE and DCON to 1. 0 = FW controls the hub's ENABLE and DCON. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_self_powered_i` | Hardware reporting of the USB HUB's self-powered status. ORed with the hub's FW SELF_POWERED CSR bit. When the OR of the HW input and FW SELF_POWERED bit changes, the HUB updates its GET_STATUS self-powered bit and configuration-descriptor power attributes. 1 = Report self-powered. 0 = Report bus-powered only when FW SELF_POWERED is also 0. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
@@ -576,7 +585,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | input     | 1     | `cptra_ss_i3c_recovery_image_activated_i`                | I3C indication to Caliptra Core that the recovery image is activated.                   |
 | External | input     | 64    | `cptra_ss_cptra_core_generic_input_wires_i` | Generic input wires for Caliptra core |
 | External | input     | 1     | `cptra_ss_cptra_core_scan_mode_i`    | Caliptra core and USB scan mode input     |
-| External | input     | 1     | `cptra_ss_usb_async_disable_i`       | USB asynchronous logic disable input. Drive low for functional operation. |
+| External | input     | 1     | `cptra_ss_usb_async_disable_i`       | DFT USB asynchronous logic disable input. Turns off USB's internally generated async reset so scan/ATPG tool can control flops directly. Drive low for functional operation. |
 | External | output    | 1     | `cptra_error_fatal`                  | Fatal error output                       |
 | External | output    | 1     | `cptra_error_non_fatal`              | Non-fatal error output                   |
 | External | output    | 1     | `cptra_ss_mcu_halt_status_o`         | MCU halt status                          |
@@ -1784,6 +1793,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External    | `MCU_SET_MBOX1_AXI_USER_INTEG`   | mci_top  | Determines if VALID_AXI_USER will be used by MCI                                                                   |
 | External    | `MCU_MBOX1_VALID_AXI_USER`   | mci_top  | MBOX1 AXI user list enabled by SET_MBOX0_AXI_USER_INTEG                                                                   |
 | External | `MCU_MBOX1_SIZE_KB`         | external | Size of MBOX1 SRAM. If set to 0 the entire MBOX1 is removed from MCI. Min: 0 Max: 2048 (2MB) |
+| External | `MCU_ROM_PATCH_SRAM_SIZE_KB` | external | Size of the MCU ROM patch SRAM. If set to 0 the patch SRAM is removed from MCI. Min: 0 Max: 2048 (2MB). Default: 4 |
 
 **Table: MCI Integration Definitions**
 
@@ -1932,6 +1942,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | External | interface | `mci_mcu_sram_req_if`     | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.     | MCU SRAM memory interface.                                                        |
 | External | interface | `mci_mbox0_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.    | MBOX0 SRAM memory interface.                                                      |
 | External | interface | `mci_mbox1_sram_req_if`   | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM.    | MBOX1 SRAM memory interface.                                                      |
+| External | interface | `mci_mcu_rom_patch_sram_req_if` | Data width is DATA+ECC. Address width shall be wide enough to address entire SRAM. | MCU ROM patch SRAM memory interface.                                     |
 
 **Table: MCI LCC Gasket Interface**
 
@@ -1957,6 +1968,7 @@ If there is an issue within MCI whether it be the Boot Sequencer or another comp
 | :---- | :---- | :---- |
 | CSRs | 0x0 | 0x1FFF |
 | MCU Trace Buffer | 0x10000 | 0x1001F |
+| MCU ROM Patch SRAM | 0x200000 | MCU ROM PATCH SRAM BASE + MCU_ROM_PATCH_SRAM_SIZE |
 | Mailbox 0 | 0x400000| 0x7FFFFF |
 | Mailbox 1 | 0x800000| 0xBFFFFF |
 | MCU SRAM | 0xC00000 | MCU SRAM BASE + MCU_SRAM_SIZE |
@@ -1981,6 +1993,25 @@ The two regions have different access protection. The size of the regions is dyn
 *NOTE: FW\_SRAM\_EXEC\_REGION\_SIZE is base 0 meaning the minimum size for the Updatable Execution Region is 4KB.*
 
 *NOTE: If FW\_SRAM\_EXEC\_REGION\_SIZE is the size of the SRAM, there is no protected Region.*
+
+### MCU ROM Patch SRAM
+
+A dedicated SRAM (`MCU_ROM_PATCH_SRAM_SIZE_KB`, offset 0x200000) that lets integrators patch a bug in MCU ROM on pre-production parts. MCU ROM copies a patch (for example from the vendor non-secret fuse partition) into this SRAM and fetches patch instructions from it. Hardware enforces the following so that a patched boot can never provision device identity or run in production:
+
+| Rule | Enforcement |
+| :---- | :---- |
+| Write | MCU LSU only, full 32-bit words only, strictly sequential from offset 0 (hardware write pointer). Allowed only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV (valid, no LC fatal error) and Caliptra core has not yet left reset in the current power cycle. Both the MCI boot sequencer reset output and the Caliptra core reset input (`cptra_ss_mci_cptra_rst_b_i`) are checked. |
+| Patch flag | Set by the first accepted write (write pointer != 0). The write pointer and flag are cleared only by cold reset (`cptra_ss_pwrgood_i`), not by warm reset. Stable before Caliptra core boots. Readable in `HW_FLOW_STATUS.mcu_rom_patch_active`. |
+| Read / fetch | MCU LSU/IFU only (MCU ROM and MCU RT FW), only below the write pointer (words written by MCU ROM in the current power cycle) and only while the LC condition still holds. The patch stays usable across warm resets. Stale or preloaded SRAM content is never fetchable, and a patch cannot run after a DEV->PROD transition followed by a warm reset. |
+| Release | If no patch was loaded in the current power cycle, once MCU RT FW is running (MCU released from reset with the FW exec region locked) any AXI user may read and write the SRAM as data memory, including partial writes. Instruction fetch is never allowed while released. A warm reset closes the SRAM again until MCU RT FW is running. A loaded patch is never released. |
+| UDS/FE | While the patch flag is set, the obfuscated UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses. |
+| Errors | Any other access returns an AXI error. Single-bit ECC errors are corrected. Double-bit ECC errors return an AXI error and set `HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc`. The SRAM is not initialized by hardware: software must write a location before reading it. |
+
+*NOTE: MCU ROM must only write this SRAM when a valid patch is present. Any write sets the patch flag, zeroizes the UDS/FE delivered to Caliptra core, and blocks UDS/FE provisioning until the next cold reset.*
+
+*NOTE: MCU ROM must load the patch before writing `CPTRA_BOOT_GO`, one 32-bit word at a time in increasing address order starting at offset 0. Once Caliptra core leaves reset, the patch SRAM cannot be patched until the next cold reset. After a warm reset, MCU ROM must not reload the patch; it checks `HW_FLOW_STATUS.mcu_rom_patch_active` and fetches the patch loaded at cold boot.*
+
+*NOTE: The patch SRAM must only be reachable through `cptra_ss_mcu_rom_patch_sram_req_if`. Integrators must not add any other path (e.g. DFT, BIST or SoC backdoor) that can write the SRAM contents.*
 
 ## MCI Integration Requirements
 
@@ -3164,6 +3195,7 @@ This section defines a table of integration requirements that are mandatory for 
 | CSS_Mem_4         | MCU                   | MCU ROM write-enable (we) and write-data (wdata) signals must be left unconnected as MCU ROM has no write support.                                                                                                                                                                                                                                                                                                                                                                        | Functionality |
 | CSS_Mem_5         | MCI                   | MCU MBOX SRAM sizes are set via `MCU_MBOX0_SIZE_KB` and `MCU_MBOX1_SIZE_KB` parameters and must be configured with a maximum size of 2MB each.                                                                                                                                                                                                                                                                                                                                            | Functionality |
 | CSS_Mem_6         | Caliptra Subsystem    | An SoC-provided external staging area used in place of the MCU MBOX SRAM must implement an equivalent one-way ownership handoff. Once the image is loaded, the SoC must lock the staging area for exclusive Caliptra Core access. The lock must prevent all other agents from reading or writing the staging area and may be released only by Caliptra Core. When Caliptra Core does NOT have the access lock, all Caliptra Core reads shall return 0s or AXI errors. See [Caliptra External Staging Area](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md#external-staging-area). | Threat Model |
+| CSS_Mem_7         | MCI                   | MCU ROM patch SRAM size is set via the `MCU_ROM_PATCH_SRAM_SIZE_KB` parameter and must be configured with a maximum size of 2MB. Setting it to 0 removes the patch SRAM; `cptra_ss_mcu_rom_patch_sram_req_if` must then be left unconnected. If present, the patch SRAM must only be reachable through `cptra_ss_mcu_rom_patch_sram_req_if`.                                                                                                                                                   | Functionality |
 | CSS_FC_1          | Fuse Controller       | Secret fuse fields (UDS and Field-Entropy) and their corresponding flip-flops must be excluded from the scan chain (both scan-in and scan-out paths). See [FC Integration Requirements](#fc-integration-requirements) for the set of signals to exclude. This requirement parallels the Caliptra Core scan exclusion requirement for device keys.                                                                                                                                         | Threat Model |
 | CSS_FC_2          | Fuse Controller       | Buffering flops for SECRET_MANUF_PARTITION, SECRET_PROD_PARTITION_0-3, and SECRET_LC_TRANSITION must be excluded from the scan chain. See [FC Integration Requirements](#fc-integration-requirements) for the set of signals to exclude.                                                                                                                                                                                                                                                  | Threat Model |
 | CSS_FC_3          | Fuse Controller       | OTP broadcast port `otp_broadcast_o`, its propagated signals, and driver signals must not be included in the scan chain. See [FC Integration Requirements](#fc-integration-requirements) for the set of signals to exclude.                                                                                                                                                                                                                                                               | Threat Model |

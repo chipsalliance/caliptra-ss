@@ -99,6 +99,9 @@ module caliptra_ss_top_tb
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
     logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_sessend_i, cptra_ss_usb_async_disable_i;
+    logic cptra_ss_usb_avalid_i;
+    logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
+    logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
     logic cptra_ss_usb_vbuscomp_on_o, cptra_ss_usb_chrgvbus_o, cptra_ss_usb_dischrgvbus_o;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
@@ -1395,6 +1398,16 @@ module caliptra_ss_top_tb
         .rst_b(cptra_ss_rst_b_i)
     );
 
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_ROM_PATCH_SRAM_ADDR_W),
+        .DATA_WIDTH(MCU_ROM_PATCH_SRAM_DATA_W),
+        .ECC_WIDTH(MCU_ROM_PATCH_SRAM_ECC_DATA_W)
+    )
+    cptra_ss_mcu_rom_patch_sram_req_if (
+        .clk(core_clk),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+
     axi_mem_if #(
         .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W_TB),
         .DATA_WIDTH(CPTRA_SS_ROM_DATA_W_TB)
@@ -1613,6 +1626,8 @@ module caliptra_ss_top_tb
 
     caliptra_top_sva sva();
     caliptra_ss_top_sva ss_sva();
+    // USB specific integration-level assertions (self-powered tie-off, ...)
+    caliptra_ss_usb_sva ss_usb_sva();
 
     //=========================================================================-
     // AXI MEM instance : IMEM
@@ -2054,6 +2069,7 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP
+    assign cptra_ss_usb_avalid_i              = usb_20_mac_if.utmi_dut_mac_if.AValid;
 
     // --- DUT device MAC outputs -> VIP modeled PHY inputs ---
     assign usb_20_mac_if.utmi_dut_mac_if.DataIn      = cptra_ss_usb_utmi_txdata_o;
@@ -2198,6 +2214,13 @@ module caliptra_ss_top_tb
     // USB AXI USER filtering policy is driven by caliptra_ss_top_tb_soc_bfm
     assign cptra_ss_usb_async_disable_i = 1'b0;
 
+    // USB PHY clock request, wakeup and hub control inputs.
+    // Tie-offs reproduce the values previously hard-coded in caliptra_ss_top.
+    assign cptra_ss_usb_donotwakeup_n_i = 1'b1; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_dev_wakeup_n_i  = 1'b1; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_enable_hub_i    = 1'b0; // FIXME: NXP DV add functionality
+    assign cptra_ss_usb_self_powered_i  = 1'b1; // FIXME: NXP DV add functionality
+
 
     // --- SPI host env and interface ---
     logic cptra_ss_sck_o;
@@ -2310,6 +2333,7 @@ module caliptra_ss_top_tb
         .CPTRA_SS_ROM_SIZE_KB(CPTRA_SS_ROM_SIZE_KB_TB),
         .CPTRA_SS_ROM_DATA_W(CPTRA_SS_ROM_DATA_W_TB),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+        .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB),
         .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH),
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
@@ -2479,6 +2503,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
@@ -2601,8 +2626,16 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_vbuscomp_on_o     (cptra_ss_usb_vbuscomp_on_o),
         .cptra_ss_usb_chrgvbus_o        (cptra_ss_usb_chrgvbus_o),
         .cptra_ss_usb_dischrgvbus_o     (cptra_ss_usb_dischrgvbus_o),
+        .cptra_ss_usb_avalid_i          (cptra_ss_usb_avalid_i),
         .cptra_ss_usb_sessend_i         (cptra_ss_usb_sessend_i),
         .cptra_ss_usb_async_disable_i   (cptra_ss_usb_async_disable_i),
+
+        .cptra_ss_usb_frametoggle_o     (), // FIXME: NXP DV add functionality
+        .cptra_ss_usb_needclk_o         (), // FIXME: NXP DV add functionality
+        .cptra_ss_usb_donotwakeup_n_i   (cptra_ss_usb_donotwakeup_n_i),
+        .cptra_ss_usb_dev_wakeup_n_i    (cptra_ss_usb_dev_wakeup_n_i),
+        .cptra_ss_usb_enable_hub_i      (cptra_ss_usb_enable_hub_i),
+        .cptra_ss_usb_self_powered_i    (cptra_ss_usb_self_powered_i),
 
         .cptra_ss_usb_recovery_payload_available_o  (cptra_ss_usb_recovery_payload_available_o),
         .cptra_ss_usb_recovery_payload_available_i  (cptra_ss_usb_recovery_payload_available_o),
@@ -2692,6 +2725,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .mcu_rom_mem_export_if
     );
 
@@ -2718,6 +2752,12 @@ module caliptra_ss_top_tb
         `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(UartRegWeOnehotCheck_A, caliptra_ss_dut.gen_uart_axi.uart_axi_i.u_caliptra_ss_uart.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
     end
 
+
+    // Bridges the compound hub's committed USB device-address registers
+    // (VHDL internal signals, not PLI-visible) into PLI-visible SystemVerilog
+    // signals so the UVM checker can read them with uvm_hdl_read. See
+    // usb_dev_addr_probe.sv for details.
+    usb_dev_addr_probe u_usb_dev_addr_probe();
 
 endmodule
 

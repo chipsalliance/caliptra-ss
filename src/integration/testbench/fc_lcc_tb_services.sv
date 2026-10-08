@@ -204,6 +204,42 @@ module fc_lcc_tb_services (
             end
             $display("fc_lcc_tb_services: cptra_ss_otp_dft_en_o is high, as expected");
           end
+          CMD_MCU_ROM_PATCH_EXPECT_UDS_FE_ZEROIZED: begin
+            // Fuses hold a non-zero UDS/FE, but a patched boot must give Caliptra core zeros
+            if ((`CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active !== 1'b1) ||
+                (`CPTRA_SS_TOP_PATH.from_otp_to_clpt_core_broadcast.secret_manuf_partition_data.cptra_core_uds_seed == '0) ||
+                (`CPTRA_SS_TOP_PATH.from_otp_to_clpt_core_broadcast.secret_prod_partition_0_data.cptra_core_field_entropy_0 == '0) ||
+                (`CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed !== '0) ||
+                (`CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy !== '0) ||
+                (`CPTRA_CORE_TOP_PATH.obf_uds_seed !== '0) ||
+                (`CPTRA_CORE_TOP_PATH.obf_field_entropy !== '0)) begin
+              $display("ERROR: fc_lcc_tb_services: MCU ROM patch UDS/FE zeroization check failed: patch_active=%0b fc_uds=0x%0h fc_fe0=0x%0h cptra_uds_port=0x%0h cptra_fe_port=0x%0h cptra_uds_reg=0x%0h cptra_fe_reg=0x%0h",
+                       `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active,
+                       `CPTRA_SS_TOP_PATH.from_otp_to_clpt_core_broadcast.secret_manuf_partition_data.cptra_core_uds_seed,
+                       `CPTRA_SS_TOP_PATH.from_otp_to_clpt_core_broadcast.secret_prod_partition_0_data.cptra_core_field_entropy_0,
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed,
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy,
+                       `CPTRA_CORE_TOP_PATH.obf_uds_seed,
+                       `CPTRA_CORE_TOP_PATH.obf_field_entropy);
+              $display("* TESTCASE FAILED");
+              $finish;
+            end
+            $display("fc_lcc_tb_services: UDS/FE in fuses are non-zero and Caliptra core sees zeros, as expected");
+          end
+          CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES: begin
+            // SoC bus writes must not land: Caliptra core keeps what it captured from the fuse ports
+            if ((`CPTRA_CORE_TOP_PATH.obf_uds_seed !== `CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed) ||
+                (`CPTRA_CORE_TOP_PATH.obf_field_entropy !== `CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy)) begin
+              $display("ERROR: fc_lcc_tb_services: Caliptra core UDS/FE fuse registers differ from the fuse ports: uds_reg=0x%0h uds_port=0x%0h fe_reg=0x%0h fe_port=0x%0h",
+                       `CPTRA_CORE_TOP_PATH.obf_uds_seed,
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed,
+                       `CPTRA_CORE_TOP_PATH.obf_field_entropy,
+                       `CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy);
+              $display("* TESTCASE FAILED");
+              $finish;
+            end
+            $display("fc_lcc_tb_services: Caliptra core UDS/FE fuse registers match the fuse ports, as expected");
+          end
           default: begin
             // No action for unrecognized commands.
           end

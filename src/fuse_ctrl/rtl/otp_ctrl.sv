@@ -31,6 +31,8 @@ module otp_ctrl
   input                                              FIPS_ZEROIZATION_CMD_i,
   input                                              cptra_in_debug_mode_i,
   input                                              cptra_ss_debug_intent_i,
+  // MCU ROM patch SRAM populated this power cycle (from MCI). Blocks UDS/FE provisioning.
+  input                                              mcu_rom_patch_active_i,
   input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
   input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
@@ -1057,6 +1059,7 @@ end
     .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_cptra_axi_user_i),
     .fc_init_done            (pwr_otp_rsp_d),
     .cptra_in_debug_mode_i   (cptra_in_debug_mode_i),
+    .mcu_rom_patch_active_i  (mcu_rom_patch_active_i),
     .core_axi_wr_req         (core_axi_wr_req),
     .core_axi_wr_rsp         (core_axi_wr_rsp),
     .discarded_fuse_write_i  (discarded_fuse_write),
