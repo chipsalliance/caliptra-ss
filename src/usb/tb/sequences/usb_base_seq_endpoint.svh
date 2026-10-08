@@ -107,6 +107,10 @@
     entry = endpoint_entry(1'b1, 1'b0, byte_count, buffer_offset);
     entry.ep_type =
         endpoint.transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS;
+    if (endpoint.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+      entry.ep_type = 1'b1;
+      entry.toggle_value = 1'b1;
+    end
     write_endpoint_entry(endpoint, entry, buffer_select);
     `uvm_info("USB_EP", $sformatf("Armed %s buffer %0d: entry=%s", endpoint.convert2string(), buffer_select, describe_entry(entry)), UVM_LOW)
   endtask
