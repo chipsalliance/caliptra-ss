@@ -186,6 +186,12 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev1_iso_out_test.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_loopback_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_loopback_test.svh"
+  // Dual-device parallel bulk loopback: exercises BOTH embedded controllers
+  // (USBDC0 port 1 @addr2, USBDC1 port 2 @addr3) in one image. The matching
+  // firmware is built with -DUSB_HUB_COMPOUND_DEV1_IRQ (NOT -DUSB_DEV_SEL=1)
+  // and services dev1 on PIC vector 6 via the TB IRQ loopback.
+  `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev1_powerdown_sequence.svh"

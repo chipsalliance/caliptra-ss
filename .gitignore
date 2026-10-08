@@ -3,3 +3,13 @@ __pycache__/
 *.py[cod]
 *$py.class
 .nfs*
+
+# NXP-specific USB regression test lists (driven by the internal
+# run_usb_regression.py wrapper, which is not part of this repo). These are
+# not used by the upstream CI and are intentionally not tracked.
+src/integration/stimulus/USB_caliptra_ss_top_tb_regression.yml
+src/integration/stimulus/USB_DEV0_caliptra_ss_top_tb_regression.yml
+src/integration/stimulus/USB_DEV1_caliptra_ss_top_tb_regression.yml
+src/integration/stimulus/USB_SANITY_caliptra_ss_top_tb_regression.yml
+src/integration/stimulus/USB_CMD_VALUE_CHECK_caliptra_ss_top_tb_regression.yml
+

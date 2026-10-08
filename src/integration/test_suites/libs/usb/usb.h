@@ -433,6 +433,42 @@ extern const uint32_t usb_default_device_descriptor[5];
 // USB driver API
 // -------------------------------------------------------------------------
 
+// Runtime active-device selector for the shared USB library.
+//
+// usb.c normally binds every CSR/MEM access to the controller chosen at
+// compile time by USB_DEV_SEL (default 0 = USBDC0). usb_select_device() lets a
+// single compiled image retarget the shared enumeration / control-transfer
+// helpers to USBDC0 (dev=0) or USBDC1 (dev=1) at run time, which the
+// usb_hib_compound dual-device test uses to bring up BOTH controllers in
+// parallel. Per-device shadow state (device address, current configuration,
+// remote-wakeup, EP0 IN pending) is kept in private arrays inside usb.c so the
+// two controllers do not corrupt each other's enumeration state.
+//
+// The initial value is USB_DEV_SEL, so any test that never calls
+// usb_select_device() behaves byte-for-byte as before. Pass 0 for USBDC0 or 1
+// for USBDC1; any other value is treated as 0.
+void usb_select_device(int dev);
+
+// Returns the currently selected active device (0 = USBDC0, 1 = USBDC1).
+int usb_get_active_device(void);
+
+// Runtime base-address accessors for the currently selected active device.
+//
+// usb.c re-defines the device-neutral USB_DEV_* register macros and
+// USB_DMA_BASE_ADDR to resolve against usb_select_device()'s runtime choice,
+// but that #undef/#define retargeting is scoped to usb.c's translation unit.
+// A test that includes usb.h and accesses USB_DEV_* directly in its OWN
+// functions still gets the compile-time USB_DEV_SEL-fixed base and cannot
+// follow usb_select_device(). These accessors expose usb.c's selection logic so
+// such a test can build its own runtime-selected addresses (see the dual-device
+// test's USB_DEV_* re-definition). usb_active_dev_csr_base() returns the active
+// controller's CSR bank base; usb_active_dev_mem_base() its packet SRAM base.
+uint32_t usb_active_dev_csr_base(void);
+uint32_t usb_active_dev_mem_base(void);
+
+
+
+
 // Initialize the USB device controller (STANDALONE DEV0, no hub bring-up):
 // set up the EP command/status list and SRAM buffers, enable device mode and
 // interrupts. config_desc_fn / class_req_fn install the application's
