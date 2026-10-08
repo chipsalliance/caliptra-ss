@@ -23,6 +23,7 @@ class usb_bulk_in_host_seq extends usb_host_base_seq;
   time bulk_transfer_timeout = 200us;
   string transfer_label = "Bulk IN";
   bit expect_zero_length_termination;
+  bit expect_non_success;
 
   function new(string name = "usb_bulk_in_host_seq");
     super.new(name);
@@ -79,6 +80,27 @@ class usb_bulk_in_host_seq extends usb_host_base_seq;
     check_transfer_correlation(transfer_label, bulk_transfer, completed_object);
     if (!cast_completed_transfer(completed_object, completed_transfer, failure_reason)) begin
       `uvm_fatal(report_id(), $sformatf("%s completion rejected: %s", transfer_label, failure_reason))
+    end
+    if (expect_non_success) begin
+      if (completed_transfer.status === svt_sequence_item::ACCEPT ||
+          completed_transfer.xfer_type !== svt_usb_transfer::BULK_IN_TRANSFER ||
+          completed_transfer.device_address !== device_address ||
+          completed_transfer.endpoint_number !== target_ep_number) begin
+        `uvm_fatal(
+          report_id(),
+          $sformatf(
+            "%s unexpectedly succeeded or changed identity: status=%s type=%s addr=%0d ep=%0d",
+            transfer_label,
+            completed_transfer.status.name(),
+            completed_transfer.xfer_type.name(),
+            completed_transfer.device_address,
+            completed_transfer.endpoint_number
+          )
+        )
+      end
+      completed = 1'b1;
+      `uvm_info(report_id(), $sformatf("%s completed with expected non-success status %s", transfer_label, completed_transfer.status.name()), UVM_LOW)
+      return;
     end
     if (completed_transfer.status !== svt_sequence_item::ACCEPT ||
         completed_transfer.results_status !== expected_results_status ||

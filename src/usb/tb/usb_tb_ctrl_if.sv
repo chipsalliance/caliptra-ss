@@ -45,6 +45,7 @@ interface usb_tb_ctrl_if #(
   logic utmi_xcvrselect;
   logic utmi_termselect;
   logic [1:0] utmi_opmode;
+  logic slow_bus_clock;
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
@@ -54,6 +55,7 @@ interface usb_tb_ctrl_if #(
     raw_utmi_rxvalid = 1'b0;
     raw_utmi_rxactive = 1'b0;
     raw_utmi_rxerror = 1'b0;
+    slow_bus_clock = 1'b0;
     foreach (combo_priv_axi_users[user_index]) begin
       combo_priv_axi_users[user_index] = '0;
     end

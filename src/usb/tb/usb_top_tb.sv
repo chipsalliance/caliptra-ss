@@ -32,6 +32,7 @@ module usb_top_tb;
   // Configuration and internal signals
   // --------------------------------------------------------------------------
   localparam realtime USB_AXI_CLOCK_PERIOD = 2.5ns;
+  localparam realtime USB_AXI_SLOW_CLOCK_PERIOD = 100ns;
 
   // Clock, reset, and global testbench control.
   logic bus_clk = 0;
@@ -336,7 +337,7 @@ module usb_top_tb;
   // --------------------------------------------------------------------------
   // The AXI bus runs at 400 MHz. Keep a free-running reference for the VIP
   // testbench clock; the modeled PHY owns the DUT's suspend-gated UTMI CLK.
-  always #(USB_AXI_CLOCK_PERIOD / 2.0) bus_clk = ~bus_clk;
+  always #((usb_ctrl_if.slow_bus_clock ? USB_AXI_SLOW_CLOCK_PERIOD : USB_AXI_CLOCK_PERIOD) / 2.0) bus_clk = ~bus_clk;
   always #8.333ns phy_clk = ~phy_clk;
 
   // The compound wrapper exposes device-side UTMI controls. Host pull-downs,
