@@ -194,6 +194,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_get_hub_descriptor/caliptra_ss_usb_fs_dev_get_hub_descriptor: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_get_device_descriptor/caliptra_ss_usb_fs_dev_get_device_descriptor: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_hub_config_descriptor/caliptra_ss_usb_fs_dev_hub_config_descriptor: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_status/caliptra_ss_usb_hs_dev1_get_status: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_hub_qualifier/caliptra_ss_usb_hs_dev1_hub_qualifier: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_hub_status/caliptra_ss_usb_hs_dev1_get_hub_status: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_device_descriptor/caliptra_ss_usb_hs_dev1_get_device_descriptor: { weight: 100 }
