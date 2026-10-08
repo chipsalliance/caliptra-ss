@@ -54,7 +54,7 @@ self-clearing registers whose write semantics are not a plain RW or RO compare.
 ## SV side
 
 `caliptra_ss_usb_dev_reg_rw_test` extends `caliptra_ss_usb_base_test` and sets
-`caliptra_ss_usb_dev_reg_rw_sequence` as the `main_phase` default sequence on
+`caliptra_ss_usb_mem_rw_sequence` as the `main_phase` default sequence on
 the host virtual sequencer. This is a standalone register test: the sequence
 does NOT bring up the USB link or drive any USB traffic. It simply holds the
 run-phase objection open long enough for the firmware to check both banks and

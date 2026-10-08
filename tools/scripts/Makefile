@@ -82,6 +82,10 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  usb \
 		  spi_host
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
+
+# Optional per-test makefile fragment for extra objects/libs/headers/plusargs
+-include $(TEST_DIR)/$(TESTNAME).mk
+
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_mmap.h \

@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-`ifndef IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 
+`ifndef IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 `define IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 
 covergroup cp_device(string name) with function sample(int unsigned name_id);
@@ -334,14 +333,55 @@ function void caliptra_ss_usb_data_check_api_impl::check_device_address(uvm_obje
   svt_usb_transfer item;
   int unsigned     act_address;
 
+  // The committed 7-bit USB device address is stored in the reg_dev_addr signal
+  // of each device's usb_reg_if instance (dev0/dev1) inside the compound hub
+  // IP, and in the compound-level reg_dev_addr signal for the hub's own
+  // upstream address. reg_dev_addr holds the address committed after the
+  // SET_ADDRESS status stage (reg_dev_addr_tmp is the pre-commit shadow, which
+  // we deliberately do NOT read). check_device_address() is called after
+  // enumeration completes, so the committed value is valid.
+  //
+  // These reg_dev_addr signals are VHDL internal architecture signals inside
+  // the compound hub IP, which VCS does NOT register in the PLI/ACC namespace
+  // at any debug-access level, so uvm_hdl_read cannot resolve them directly.
+  // The usb_dev_addr_probe module (instanced at TB top as
+  // caliptra_ss_top_tb.u_usb_dev_addr_probe) bridges each VHDL reg_dev_addr
+  // into a PLI-visible SystemVerilog register via a compile-time hierarchical
+  // reference. We read those probe locals here:
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.dev0_dev_addr -> dev0
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.dev1_dev_addr -> dev1
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.hub_dev_addr  -> hub
+  localparam string USB_DEV_ADDR_PROBE_PATH =
+      "caliptra_ss_top_tb.u_usb_dev_addr_probe";
+
+  string    hdl_path;
+  bit [6:0] hdl_val;
+
   // Cast first: all accesses to item below are invalid until the cast succeeds.
   if($cast(item,usb_item) != 1 || usb_item == null) begin
     `uvm_fatal(msg_tag, "impossible to cast usb_item to svt_usb_transfer")
   end
 
-  // get_device_address_val() returns the device address the RTL responded on
-  // for this transfer, which is what we compare against the expected value.
-  act_address = item.get_device_address_val();
+  // Select the HDL path to the committed device address for this device.
+  case (device_name)
+    "dev0":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev0_dev_addr"};
+    "dev1":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev1_dev_addr"};
+    "hub":   hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".hub_dev_addr"};
+    default: begin
+      `uvm_error(msg_tag, $sformatf("Unknown device_name=%s (only dev0, dev1 and hub are defined)",
+                                    device_name))
+      return;
+    end
+  endcase
+
+
+  // Read the committed 7-bit device address directly from the RTL register.
+  if (!uvm_hdl_read(hdl_path, hdl_val)) begin
+    `uvm_error(msg_tag, $sformatf("%s uvm_hdl_read failed for path %s", 
+                                  device_name, hdl_path))
+    return;
+  end
+  act_address = 32'(hdl_val);
 
   CHK_DEV_ADDRESS: assert(act_address == expected_address) else
     `uvm_error(msg_tag, $sformatf("%s device address mismatch: expected %0d got %0d", 

@@ -205,6 +205,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_vbus_driver.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_suspend_resume_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_device_wakeup_checker.sv
+      - $COMPILE_ROOT/testbench/usb_dev_addr_probe.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
       - $COMPILE_ROOT/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
