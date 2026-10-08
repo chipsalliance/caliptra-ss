@@ -33,9 +33,11 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
   protected usb_packet_record_t records[$];
   protected bit window_active;
   protected string window_label;
+  protected uvm_event ping_observed;
 
   function new(string name = "usb_packet_monitor_callback");
     super.new(name);
+    ping_observed = new("ping_observed");
   endfunction
 
   // Start a fresh observation window before scenario stimulus.
@@ -45,9 +47,28 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     end
     records.delete();
     window_label = label;
+    ping_observed.reset();
     window_active = 1'b1;
     `uvm_info("USB_PACKET_MON", $sformatf("Started packet observation window: %s", window_label), UVM_LOW)
   endfunction
+
+  // Wait for a host PING packet during the active observation window.
+  task wait_for_ping(time timeout, output bit observed);
+    observed = 1'b0;
+    if (!window_active) begin
+      `uvm_fatal("USB_PACKET_MON", "PING wait requires an active observation window")
+    end
+    fork
+      begin
+        ping_observed.wait_trigger();
+        observed = 1'b1;
+      end
+      begin
+        #(timeout);
+      end
+    join_any
+    disable fork;
+  endtask
 
   // Close the active window after all relevant packets have drained.
   function void stop_window();
@@ -92,6 +113,9 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     record.data_length = packet.get_payload_byte_count();
     record.observed_at = $realtime;
     records.push_back(record);
+    if (direction == USB_PACKET_TX && packet.pid_name == svt_usb_packet::PING) begin
+      ping_observed.trigger();
+    end
   endfunction
 
   virtual function void usb_20_rx_packet_ended(
