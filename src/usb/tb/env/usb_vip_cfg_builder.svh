@@ -128,6 +128,7 @@ class usb_vip_cfg_builder extends uvm_object;
     case (endpoint.transfer_type)
       USB_TRANSFER_TYPE_CONTROL:     vip_endpoint.ep_type = svt_usb_types::CONTROL;
       USB_TRANSFER_TYPE_BULK:        vip_endpoint.ep_type = svt_usb_types::BULK;
+      USB_TRANSFER_TYPE_INTERRUPT:   vip_endpoint.ep_type = svt_usb_types::INTERRUPT;
       USB_TRANSFER_TYPE_ISOCHRONOUS: vip_endpoint.ep_type = svt_usb_types::ISOCHRONOUS;
       default: `uvm_fatal("USB_CFG", $sformatf("%s uses a transfer type with no SVT mapping in configure_vip_endpoint()", endpoint.convert2string()))
     endcase
