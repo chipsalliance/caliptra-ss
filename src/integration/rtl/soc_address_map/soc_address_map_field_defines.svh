@@ -7170,6 +7170,8 @@
 `define MCI_REG_HW_FLOW_STATUS                                                                      (32'h34)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (32'hf)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_LOW                                             (4)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK                                            (32'h10)
 `endif
 `ifndef MCI_REG_RESET_REASON
 `define MCI_REG_RESET_REASON                                                                        (32'h38)
@@ -7206,6 +7208,8 @@
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (32'h4)
 `define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
 `define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (32'h8)
+`define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                                       (4)
+`define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                                      (32'h10)
 `endif
 `ifndef MCI_REG_AGG_ERROR_FATAL
 `define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h54)
@@ -7394,6 +7398,8 @@
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (32'h4)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (32'h8)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                    (4)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                   (32'h10)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h94)

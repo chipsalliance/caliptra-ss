@@ -201,3 +201,16 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dev_ram_rw/caliptra_ss_usb_dev_ram_rw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dev1_ram_rw/caliptra_ss_usb_dev1_ram_rw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hub_ram_rw/caliptra_ss_usb_hub_ram_rw: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram/smoke_test_mcu_rom_patch_sram: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_test_locked1/smoke_test_mcu_rom_patch_sram_test_locked1: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_dev/smoke_test_mcu_rom_patch_sram_dev: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_lc_negative/smoke_test_mcu_rom_patch_sram_lc_negative: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_lc_negative_raw/smoke_test_mcu_rom_patch_sram_lc_negative_raw: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_lc_negative_rma/smoke_test_mcu_rom_patch_sram_lc_negative_rma: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_axi_user/smoke_test_mcu_rom_patch_sram_axi_user: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_uds_lock/smoke_test_mcu_rom_patch_sram_uds_lock: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_out_of_order/smoke_test_mcu_rom_patch_sram_out_of_order: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_fetch_limit/smoke_test_mcu_rom_patch_sram_fetch_limit: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_reuse/smoke_test_mcu_rom_patch_sram_reuse: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked: { weight: 100 }

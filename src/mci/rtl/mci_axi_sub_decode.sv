@@ -27,6 +27,7 @@ module mci_axi_sub_decode
     #(
     // Configurable memory blocks
     parameter MCU_SRAM_SIZE_KB = 512,
+    parameter MCU_ROM_PATCH_SRAM_SIZE_KB = 4,
 
     ///////////////////////////////////////////////////////////
     // MCI Memory Map
@@ -38,6 +39,8 @@ module mci_axi_sub_decode
     localparam MCU_TRACE_BUFFER_SIZE_BYTES      = 2 ** TRACE_BUFFER_CSR_MIN_ADDR_WIDTH, 
     localparam MCU_TRACE_BUFFER_START_ADDR      = 32'h0001_0000,
     localparam MCU_TRACE_BUFFER_END_ADDR        = MCU_TRACE_BUFFER_START_ADDR + (MCU_TRACE_BUFFER_SIZE_BYTES) - 1,
+    localparam MCU_ROM_PATCH_SRAM_START_ADDR    = 32'h0020_0000,
+    localparam MCU_ROM_PATCH_SRAM_END_ADDR      = MCU_ROM_PATCH_SRAM_START_ADDR + (MCU_ROM_PATCH_SRAM_SIZE_KB * KB) - 1,
     localparam MBOX0_START_ADDR                 = 32'h0040_0000,
     localparam MBOX0_END_ADDR                   = MBOX0_START_ADDR + ((32'h0000_0001 << MCU_MBOX_CSR_ADDR_WIDTH) - 1),
     localparam MBOX1_START_ADDR                 = 32'h0080_0000,
@@ -70,6 +73,7 @@ module mci_axi_sub_decode
 
     // Mbox1 SRAM Interface
     cif_if.request  mcu_mbox1_req_if,
+    cif_if.request  mcu_rom_patch_req_if,
 
     // Privileged requests 
     output logic axi_mcu_lsu_req,
@@ -93,6 +97,7 @@ logic soc_mcu_trace_buffer_gnt;
 logic soc_mci_reg_gnt;
 logic soc_mcu_mbox0_gnt;
 logic soc_mcu_mbox1_gnt;
+logic soc_mcu_rom_patch_gnt;
 
 // REQ signals
 logic soc_mcu_sram_req;
@@ -100,6 +105,7 @@ logic soc_mcu_trace_buffer_req;
 logic soc_mci_reg_req;
 logic soc_mcu_mbox0_req;
 logic soc_mcu_mbox1_req;
+logic soc_mcu_rom_patch_req;
 
 // MISC signals
 logic soc_req_miss;
@@ -127,6 +133,7 @@ always_comb soc_mcu_mbox0_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI
 
 // SoC request to MCI Mbox1
 always_comb soc_mcu_mbox1_gnt = (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MBOX1_START_ADDR:MBOX1_END_ADDR]}));
+always_comb soc_mcu_rom_patch_gnt = (MCU_ROM_PATCH_SRAM_SIZE_KB != 0) & (soc_resp_if.dv & (soc_resp_if.req_data.addr[MCI_INTERNAL_ADDR_WIDTH-1:0] inside {[MCU_ROM_PATCH_SRAM_START_ADDR:MCU_ROM_PATCH_SRAM_END_ADDR]}));
 
 ///////////////////////////////////////////////////////////
 // Add qualifiers to grant before sending to IPs
@@ -146,6 +153,8 @@ always_comb soc_mcu_mbox0_req = soc_mcu_mbox0_gnt;
 
 // MCI Mbox1
 always_comb soc_mcu_mbox1_req = soc_mcu_mbox1_gnt;
+// MCU ROM Patch SRAM
+always_comb soc_mcu_rom_patch_req = soc_mcu_rom_patch_gnt;
 
 
 ///////////////////////////////////////////////////////////
@@ -166,6 +175,8 @@ always_comb mcu_mbox0_req_if.dv = soc_mcu_mbox0_req;
 
 // MCI Mbox1
 always_comb mcu_mbox1_req_if.dv = soc_mcu_mbox1_req;
+// MCU ROM Patch SRAM
+always_comb mcu_rom_patch_req_if.dv = soc_mcu_rom_patch_req;
 
 
 ///////////////////////////////////////////////////////////
@@ -186,6 +197,8 @@ always_comb mcu_mbox0_req_if.req_data = soc_resp_if.req_data;
 
 // MCI MBOX1
 always_comb mcu_mbox1_req_if.req_data = soc_resp_if.req_data;
+// MCU ROM Patch SRAM
+always_comb mcu_rom_patch_req_if.req_data = soc_resp_if.req_data;
 
 
 ///////////////////////////////////////////////////////////
@@ -197,6 +210,7 @@ assign soc_resp_if.rdata =  soc_mcu_sram_req            ? mcu_sram_req_if.rdata 
                             soc_mci_reg_req             ? mci_reg_req_if.rdata  :
                             soc_mcu_mbox0_req           ? mcu_mbox0_req_if.rdata  :
                             soc_mcu_mbox1_req           ? mcu_mbox1_req_if.rdata  :
+                            soc_mcu_rom_patch_req       ? mcu_rom_patch_req_if.rdata  :
                             '0;
 
 
@@ -210,7 +224,8 @@ always_comb soc_resp_if.req_hold =  (soc_mcu_sram_req           & (~soc_mcu_sram
                                     (soc_mcu_trace_buffer_req   & (~soc_mcu_trace_buffer_req | mcu_trace_buffer_req_if.req_hold)) |
                                     (soc_mci_reg_req            & (~soc_mci_reg_req | mci_reg_req_if.req_hold)) |
                                     (soc_mcu_mbox0_req          & (~soc_mcu_mbox0_req | mcu_mbox0_req_if.req_hold)) |
-                                    (soc_mcu_mbox1_req          & (~soc_mcu_mbox1_req | mcu_mbox1_req_if.req_hold)) ;
+                                    (soc_mcu_mbox1_req          & (~soc_mcu_mbox1_req | mcu_mbox1_req_if.req_hold)) |
+                                    (soc_mcu_rom_patch_req      & (~soc_mcu_rom_patch_req | mcu_rom_patch_req_if.req_hold)) ;
 
 
 
@@ -220,14 +235,15 @@ always_comb soc_resp_if.req_hold =  (soc_mcu_sram_req           & (~soc_mcu_sram
 
 // Missed all destinations 
 // Do not respond with error to avoid bringing down the system if a miss occurs.
-always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mcu_trace_buffer_req | soc_mci_reg_req | soc_mcu_mbox0_req | soc_mcu_mbox1_req);
+always_comb soc_req_miss = soc_resp_if.dv & ~(soc_mcu_sram_req | soc_mcu_trace_buffer_req | soc_mci_reg_req | soc_mcu_mbox0_req | soc_mcu_mbox1_req | soc_mcu_rom_patch_req);
 
 // Error for SOC
 always_comb soc_resp_if.error = (soc_mcu_sram_req           & mcu_sram_req_if.error)  |
                                 (soc_mcu_trace_buffer_req   & mcu_trace_buffer_req_if.error)   |
                                 (soc_mci_reg_req            & mci_reg_req_if.error)   |
                                 (soc_mcu_mbox0_req          & mcu_mbox0_req_if.error) |
-                                (soc_mcu_mbox1_req          & mcu_mbox1_req_if.error);
+                                (soc_mcu_mbox1_req          & mcu_mbox1_req_if.error) |
+                                (soc_mcu_rom_patch_req      & mcu_rom_patch_req_if.error);
 
 ///////////////////////////////////////////////
 // Determine if the user matches any of the  
@@ -256,17 +272,18 @@ assign axi_mcu_sram_config_req      = soc_resp_if.dv & ~(|(soc_resp_if.req_data.
 // Assertions 
 ///////////////////////////////////////////////
 // One target per transaction
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt}, clk, !rst_b)
-`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_REQ_MUTEX, {soc_mcu_sram_req, soc_mcu_trace_buffer_req, soc_mci_reg_req, soc_mcu_mbox0_req, soc_mcu_mbox1_req}, clk, !rst_b)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_GRANT_MUTEX, {soc_mcu_sram_gnt, soc_mcu_trace_buffer_gnt, soc_mci_reg_gnt, soc_mcu_mbox0_gnt, soc_mcu_mbox1_gnt, soc_mcu_rom_patch_gnt}, clk, !rst_b)
+`CALIPTRA_ASSERT_MUTEX(ERR_MCI_AXI_AGENT_REQ_MUTEX, {soc_mcu_sram_req, soc_mcu_trace_buffer_req, soc_mci_reg_req, soc_mcu_mbox0_req, soc_mcu_mbox1_req, soc_mcu_rom_patch_req}, clk, !rst_b)
 
 // Verify no overlapping address spaces. Only checking abutting address paces.
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_REG, MCI_REG_END_ADDR < MCU_TRACE_BUFFER_START_ADDR)
-`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_MCU_TRACE_BUFFER, MCU_TRACE_BUFFER_END_ADDR < MBOX0_START_ADDR)
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCI_MCU_TRACE_BUFFER, MCU_TRACE_BUFFER_END_ADDR < MCU_ROM_PATCH_SRAM_START_ADDR)
+`CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCU_ROM_PATCH_SRAM, MCU_ROM_PATCH_SRAM_END_ADDR < MBOX0_START_ADDR)
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCU_MBOX0, MBOX0_END_ADDR < MBOX1_START_ADDR)
 `CALIPTRA_ASSERT_INIT(ERR_AXI_ADDR_CHECK_MCU_MBOX1, MBOX1_END_ADDR < MCU_SRAM_START_ADDR)
 
 `CALIPTRA_ASSERT(MCI_MISS_NO_DV_A, soc_req_miss |-> 
-!mcu_sram_req_if.dv  && !mcu_trace_buffer_req_if.dv  && !mci_reg_req_if.dv  && !mcu_mbox0_req_if.dv  && !mcu_mbox1_req_if.dv  
+!mcu_sram_req_if.dv  && !mcu_trace_buffer_req_if.dv  && !mci_reg_req_if.dv  && !mcu_mbox0_req_if.dv  && !mcu_mbox1_req_if.dv  && !mcu_rom_patch_req_if.dv  
     ,clk, !rst_b)
 
 endmodule
