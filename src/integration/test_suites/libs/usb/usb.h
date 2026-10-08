@@ -422,14 +422,6 @@ extern const usb_device_descriptor_t usb_dev0_device_descriptor;
 extern const usb_device_descriptor_t usb_dev1_device_descriptor;
 
 // -------------------------------------------------------------------------
-// Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
-// Defined in usb.c. Used by the hook-based (OCP/host) enumeration path. Tests
-// that need a custom descriptor may define their own array and pass it to
-// usb_ep0_send_data().
-// -------------------------------------------------------------------------
-extern const uint32_t usb_default_device_descriptor[5];
-
-// -------------------------------------------------------------------------
 // USB driver API
 // -------------------------------------------------------------------------
 
