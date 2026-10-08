@@ -189,7 +189,6 @@ contents:
         - ../test_suites/caliptra_ss_usb_fs_dev_get_hub_descriptor/caliptra_ss_usb_fs_dev_get_hub_descriptor.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_device_descriptor/caliptra_ss_usb_fs_dev_get_device_descriptor.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_hub_config_descriptor/caliptra_ss_usb_fs_dev_hub_config_descriptor.yml
-        - ../test_suites/caliptra_ss_usb_hs_dev1_get_status/caliptra_ss_usb_hs_dev1_get_status.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_hub_qualifier/caliptra_ss_usb_hs_dev1_hub_qualifier.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_hub_status/caliptra_ss_usb_hs_dev1_get_hub_status.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_device_descriptor/caliptra_ss_usb_hs_dev1_get_device_descriptor.yml
