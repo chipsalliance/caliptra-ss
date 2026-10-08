@@ -150,4 +150,8 @@ global:
         - '-P $AVERY_PLI/tb_vcs64.tab'
       sim:
         - '+vpi'
-        - '+svt_debug_opts'
+        # Enable SVT debug automation: activates protocol and link trace log
+        # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+        # config object properties (enable_prot_tracing, enable_link_tracing)
+        # gate which layers are written.
+        #- '+svt_debug_opts'

@@ -343,7 +343,11 @@ VCS_ELAB_OPTS += -ignore unique_checks
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
 #VCS_SIM_OPTS  += -mx_force
-VCS_SIM_OPTS  += +svt_debug_opts
+# Enable SVT debug automation: activates protocol and link trace log
+# files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+# config object properties (enable_prot_tracing, enable_link_tracing)
+# gate which layers are written.
+#VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
 ############# VCS Simulation Override Options #############
 VCS_SIM_EXTRA_OPTS ?= 
