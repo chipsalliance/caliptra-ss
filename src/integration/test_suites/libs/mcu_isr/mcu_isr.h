@@ -48,8 +48,12 @@ typedef struct {
     uint32_t mci_notif0;
     uint32_t mci_notif1;
     uint32_t i3c; // FIXME sub-banks of vectors
-    uint32_t usb; // Sticky OR of the USB device INTSTAT bits observed by the ISR
+    uint32_t usb; // Sticky OR of the USBDC0 (device0) INTSTAT bits observed by the ISR
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+    uint32_t usb_dev1; // Sticky OR of the USBDC1 (device1) INTSTAT bits observed by the ISR
+#endif
     uint32_t bfm0;
+
     uint32_t bfm1;
     uint32_t bfm2;
     uint32_t bfm3;
@@ -201,8 +205,47 @@ inline void service_usb_intr() {
     }
 }
 
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+inline void service_usb_dev1_intr() {
+    // USBDC1 (device1) interrupt, PIC vector 6 (CSS_MCU0_VEER_INTR_VEC_USB_DEV1).
+    //
+    // This is the usb_hib_compound dual device path. dev1_usb_irq is not wired
+    // to the PIC in caliptra_ss_top.sv; the testbench loops the top level
+    // output cptra_ss_usb_dev1_irq_o back onto cptra_ss_mcu_ext_int[6]. Device0
+    // keeps its own vector 3 (service_usb_intr), so the two controllers are
+    // serviced independently.
+    //
+    // Unlike service_usb_intr(), this handler must NOT use the USB_DEV_*
+    // aliases: those resolve to a single controller chosen at compile time by
+    // USB_DEV_SEL. A dual device image addresses BOTH apertures, so device1 is
+    // read at its fixed base SOC_USB_DEV1_CSR_BASE_ADDR regardless of
+    // USB_DEV_SEL. INTSTAT is at offset 0x20 and INTEN at 0x24 for both
+    // controllers (same register map).
+    const uintptr_t dev1_intstat = (uintptr_t)SOC_USB_DEV1_CSR_BASE_ADDR + 0x20u;
+    const uintptr_t dev1_inten   = (uintptr_t)SOC_USB_DEV1_CSR_BASE_ADDR + 0x24u;
+
+    uint32_t sts = lsu_read_32(dev1_intstat);
+    uint32_t en  = lsu_read_32(dev1_inten);
+    uint32_t act = sts & en;
+
+    // Publish before acknowledging, same ordering rationale as device0.
+    mcu_intr_rcv.usb_dev1 |= act;
+
+    // Write 1 to Clear the acknowledged bits. The vector 6 gateway is active
+    // high level, so the source must be cleared here or it refires on return.
+    lsu_write_32(dev1_intstat, act);
+
+    if (act == 0) {
+        VPRINTF(ERROR, "bad usb_dev1_intr sts:%x en:%x\n", sts, en);
+        SEND_STDOUT_CTRL(0x1);
+        while (1);
+    }
+}
+#endif // USB_HUB_COMPOUND_DEV1_IRQ
+
 inline void service_bfm_intr() {
     uint32_t vec;
+
     __asm__ volatile ("csrr    %0, %1"
                       : "=r" (vec)  /* output : register */
                       : "i" (VEER_CSR_MEIHAP) /* input : immediate */
@@ -230,3 +273,5 @@ inline void service_bfm_intr() {
 }
 
 #endif //MCU_ISR_H
+
+// File contains AI-generated response based on internal company sources
