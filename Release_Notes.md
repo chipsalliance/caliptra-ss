@@ -1,5 +1,52 @@
 # **Release Notes** #
 
+## Caliptra Subsystem pre-2.2 Release Notes (Draft)
+_*Status: Draft; not a final 2.2 release.*_
+
+USB streaming boot support, security hardening, and integration spec updates since 2.1.
+
+### 1. Caliptra Core
+- VeeR dual-core lockstep (DCLS), memory address-integrity checks, and DCCM write-readback
+- Shared masked HMAC-SHA-384/512 engine with updated seed and command interface (area/latency optimization)
+- Key Vault boot-policy enforcement, key-length checks, and zeroization fixes; AES key masking enhancements
+- Hardware ICCM SHA-384 measurement
+- Explicit ECC/ML-DSA verification status
+- Dual-iTRNG entropy combiner
+- DMA command limit increased to 2 GiB, with route-specific limits; response-tracking, mailbox ECC, and AXI access fixes
+- Adams Bridge architectural/Keccak masking, local storage/pipeline optimizations, and KV/zeroization fixes
+
+### 2. I3C
+- Updated I3C to v1p6 with recovery FIFO/PEC, CCC, IBI, and reset/error-handling improvements
+- AXI interface updates; existing I3C and AXI streaming boot paths retained
+
+### 3. Life Cycle Controller (LCC)
+- Exposed lifecycle state validity, volatile RAW-unlock success, and escalation/check interfaces
+- Clarified token provisioning and scan exclusions
+
+### 4. Fuse Controller (FC)
+- Hardened debug-intent handling, secret digest access, and UDS/Field Entropy programming restrictions
+- Sticky PK-hash/ratchet-seed locks and lifecycle-qualified fuse-wrapper DFT enable
+- Debug-unlock state fixes and multibit debug-lock controls
+
+### 5. Manufacturer Control Interface (MCI)
+- Hamming-coded boot FSM error detection
+- Default-enabled Caliptra Core DCLS detection control and configuration locking
+- Exclusive MCU mailbox SRAM ownership for image staging
+
+### 6. USB and MCU Peripherals
+- USB 2.0 virtual hub with two downstream devices: MCU-owned DEV0 and SoC-owned DEV1
+- DEV0 OCP Recovery over EP0 with an Indirect FIFO consumed by Caliptra over AXI
+- USB recovery selection, interrupts, packet-memory interfaces, and AXI USER filtering
+
+### Integration spec updates
+- Named integration/trademark requirements and exemption-request guidance
+- Clarified AXI USER isolation, USB access rules, clock/reset timing, CDC/RDC, and memory/fuse integration
+
+### Validation updates
+- Added USB hub/device/recovery/access-control, entropy, and boot-FSM tests
+- Expanded crypto, I3C, fuse/lifecycle, and mailbox checks; fixed false-pass and reset/error handling
+- Updated models, coverage, build flows, and register-generation checks
+
 ## Caliptra Subsystem 2p1 Release notes
 _*Release Date: 2025/10/12*_
 
