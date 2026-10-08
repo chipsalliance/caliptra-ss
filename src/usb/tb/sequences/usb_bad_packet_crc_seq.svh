@@ -30,37 +30,6 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
   pure virtual task remove_injection(svt_usb_agent host_agent);
   pure virtual function int unsigned injected_packet_count();
 
-  // Wait for INFO.ERR_CODE to report the expected SIE status.
-  task wait_for_error_code(logic [3:0] expected_code);
-    uvm_reg_field error_field;
-    logic [31:0] info_value;
-    logic [3:0] observed_code;
-    realtime deadline;
-
-    error_field = p_sequencer.reg_model.combo.dev0_csr.INFO.ERR_CODE;
-    observed_code = 4'h0;
-    deadline = $realtime + error_timeout;
-    `uvm_info("USB_BAD_PACKET_CRC", $sformatf("Waiting up to %0t for INFO.ERR_CODE=0x%0h", error_timeout, expected_code), UVM_LOW)
-    while (observed_code !== expected_code && $realtime < deadline) begin
-      ral_read32("INFO", p_sequencer.reg_model.combo.dev0_csr.INFO, info_value);
-      observed_code = 4'((info_value & ral_field_mask(error_field)) >> error_field.get_lsb_pos());
-      if (observed_code !== expected_code) begin
-        #500ns;
-      end
-    end
-    if (observed_code !== expected_code) begin
-      `uvm_fatal(
-        "USB_BAD_PACKET_CRC",
-        $sformatf("INFO.ERR_CODE did not reach 0x%0h within %0t; last=0x%0h", expected_code, error_timeout, observed_code)
-      )
-    end
-    `uvm_info(
-      "USB_BAD_PACKET_CRC",
-      $sformatf("DUT reported INFO.ERR_CODE=0x%0h for %s", observed_code, scenario_label()),
-      UVM_LOW
-    )
-  endtask
-
   // Verify retry completion and the final received payload.
   task verify_transfer(usb_endpoint_cfg endpoint);
     usb_ep_entry_t entry;
@@ -139,7 +108,7 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
         end
       end
       begin
-        wait_for_error_code(expected_error_code());
+        wait_for_sie_error_code(expected_error_code(), error_timeout, scenario_label());
       end
     join
     remove_injection(host_agent);
