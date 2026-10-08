@@ -53,6 +53,7 @@ interface usb_tb_ctrl_if #(
   logic dev0_memory_request;
   logic dev0_memory_write;
   logic [DEV0_MEMORY_AW-1:0] dev0_memory_address;
+  logic slow_bus_clock;
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
@@ -64,6 +65,7 @@ interface usb_tb_ctrl_if #(
     raw_utmi_rxerror = 1'b0;
     raw_utmi_host_mode = 1'b0;
     raw_utmi_txready = 1'b0;
+    slow_bus_clock = 1'b0;
     foreach (combo_priv_axi_users[user_index]) begin
       combo_priv_axi_users[user_index] = '0;
     end
