@@ -21,10 +21,17 @@ class caliptra_ss_usb_hs_dev_resume_test extends caliptra_ss_usb_base_test;
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
+        `uvm_info("USB_HS_RES_TEST",
+            "[DBG] build_phase: registering hub-composite HS resume default_sequence.",
+            UVM_NONE)
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
             caliptra_ss_usb_hs_dev_resume_sequence::type_id::get());
+        `uvm_info("USB_HS_RES_TEST",
+            "[DBG] build_phase: default_sequence registered on main_phase.",
+            UVM_NONE)
     endfunction
+
 endclass
 
 `endif // CALIPTRA_SS_USB_HS_DEV_RESUME_TEST_SV

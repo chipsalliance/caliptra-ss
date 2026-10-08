@@ -29,6 +29,9 @@ module fuse_ctrl_filter
     input wire fc_init_done,
     input wire FIPS_ZEROIZATION_CMD_i,
     input wire cptra_in_debug_mode_i,
+    // Sticky (cold-reset only) indication from MCI that the MCU ROM patch SRAM
+    // was populated this power cycle. Blocks UDS/FE provisioning.
+    input wire mcu_rom_patch_active_i,
 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
@@ -353,6 +356,12 @@ always_comb begin
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 
             end else if (fuse_cmd == DaiWrite && cptra_in_debug_mode_i && caliptra_secret_access && write_event)begin
+                discard_fuse_write= 1'b1;
+                table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
+
+            // MCU ROM patch loaded this power cycle: no UDS/FE provisioning. Digest is
+            // blocked too so a partially written secret partition cannot be locked.
+            end else if ((fuse_cmd == DaiWrite || fuse_cmd == DaiDigest) && mcu_rom_patch_active_i && caliptra_secret_access && write_event)begin
                 discard_fuse_write= 1'b1;
                 table_fsm_next_st = DISCARD_FUSE_CMD_AXI_WR_ST;
 

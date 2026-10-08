@@ -1,19 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// usb_dev_addr_probe
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Exposes the committed USB device-address register fields of the compound
-// hub IP as plain SystemVerilog signals so the UVM checker can read them with
-// uvm_hdl_read.
+// http://www.apache.org/licenses/LICENSE-2.0
 //
-// Background: uvm_hdl_read performs a runtime PLI/ACC lookup. VCS does not
-// register plain VHDL internal architecture signals in the PLI namespace at
-// any debug-access level, so a direct uvm_hdl_read of the VHDL reg_dev_addr
-// signals fails with HDL_GET "unable to locate hdl path". This probe module
-// bridges the connected register-interface / PIE ports into local
-// SystemVerilog registers using compile-time cross-module hierarchical
-// references, which are resolved at elaboration. The local SV registers ARE
-// PLI-visible, so uvm_hdl_read of the probe locals resolves reliably.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 //
 // The committed device address (address applied after the SET_ADDRESS status
 // stage; the *_tmp shadow is deliberately not probed) is read from the ports

@@ -46,6 +46,7 @@ import uvm_pkg::*;
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox1_sram_req_if,
+  mci_mcu_sram_if                    cptra_ss_mcu_rom_patch_sram_req_if,
   axi_mem_if                         mcu_rom_mem_export_if
 );
 
@@ -1028,6 +1029,23 @@ end
         .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata ^ mbox1_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
+    );
+
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_ROM_PATCH_SRAM_DATA_AND_ECC_W),
+        .DEPTH     (MCU_ROM_PATCH_SRAM_DEPTH         )
+    )
+    mcu_rom_patch_ram
+    (
+        .clk_i(cptra_ss_rdc_clk_cg_o),
+
+        .cs_i(cptra_ss_mcu_rom_patch_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_rom_patch_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_rom_patch_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_rom_patch_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_rom_patch_sram_req_if.resp.rdata)
     );
 
 

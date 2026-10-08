@@ -1398,6 +1398,16 @@ module caliptra_ss_top_tb
         .rst_b(cptra_ss_rst_b_i)
     );
 
+    mci_mcu_sram_if #(
+        .ADDR_WIDTH(MCU_ROM_PATCH_SRAM_ADDR_W),
+        .DATA_WIDTH(MCU_ROM_PATCH_SRAM_DATA_W),
+        .ECC_WIDTH(MCU_ROM_PATCH_SRAM_ECC_DATA_W)
+    )
+    cptra_ss_mcu_rom_patch_sram_req_if (
+        .clk(core_clk),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+
     axi_mem_if #(
         .ADDR_WIDTH(CPTRA_SS_ROM_MEM_ADDR_W_TB),
         .DATA_WIDTH(CPTRA_SS_ROM_DATA_W_TB)
@@ -1616,6 +1626,8 @@ module caliptra_ss_top_tb
 
     caliptra_top_sva sva();
     caliptra_ss_top_sva ss_sva();
+    // USB specific integration-level assertions (self-powered tie-off, ...)
+    caliptra_ss_usb_sva ss_usb_sva();
 
     //=========================================================================-
     // AXI MEM instance : IMEM
@@ -2363,6 +2375,7 @@ module caliptra_ss_top_tb
         .CPTRA_SS_ROM_SIZE_KB(CPTRA_SS_ROM_SIZE_KB_TB),
         .CPTRA_SS_ROM_DATA_W(CPTRA_SS_ROM_DATA_W_TB),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB),
+        .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB),
         .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH),
         .MCU_MBOX0_SIZE_KB(MCU_MBOX0_SIZE_KB),
         .SET_MCU_MBOX0_AXI_USER_INTEG(SET_MCU_MBOX0_AXI_USER_INTEG),
@@ -2532,6 +2545,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_mci_boot_seq_brkpoint_i,
         .cptra_ss_mcu_no_rom_config_i,
@@ -2755,6 +2769,7 @@ module caliptra_ss_top_tb
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .mcu_rom_mem_export_if
     );
 
@@ -2781,6 +2796,12 @@ module caliptra_ss_top_tb
         `CALIPTRA_SS_ASSERT_PRIM_ONEHOT_ERROR_TRIGGER_ALERT(UartRegWeOnehotCheck_A, caliptra_ss_dut.gen_uart_axi.uart_axi_i.u_caliptra_ss_uart.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check, 1'b0)
     end
 
+
+    // Bridges the compound hub's committed USB device-address registers
+    // (VHDL internal signals, not PLI-visible) into PLI-visible SystemVerilog
+    // signals so the UVM checker can read them with uvm_hdl_read. See
+    // usb_dev_addr_probe.sv for details.
+    usb_dev_addr_probe u_usb_dev_addr_probe();
 
 endmodule
 
