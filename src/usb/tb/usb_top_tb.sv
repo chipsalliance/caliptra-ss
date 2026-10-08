@@ -355,6 +355,13 @@ module usb_top_tb;
   assign usb_20_mac_if.utmi_dut_mac_if.XcvrSelect = usb_dut_vip_xcvrselect;
   assign usb_20_mac_if.utmi_dut_mac_if.TermSelect = dut_utmi_termselect;
   assign usb_20_mac_if.utmi_dut_mac_if.OpMode = dut_utmi_opmode;
+  assign usb_ctrl_if.utmi_txdata = dut_utmi_txdata;
+  assign usb_ctrl_if.utmi_txvalid = dut_utmi_txvalid;
+  assign usb_ctrl_if.utmi_txready = usb_20_mac_if.utmi_dut_mac_if.TXReady;
+  assign usb_ctrl_if.utmi_suspendm = dut_utmi_suspendm;
+  assign usb_ctrl_if.utmi_xcvrselect = dut_utmi_xcvrselect;
+  assign usb_ctrl_if.utmi_termselect = dut_utmi_termselect;
+  assign usb_ctrl_if.utmi_opmode = dut_utmi_opmode;
   assign dut_utmi_rxdata = usb_ctrl_if.raw_utmi_inject_enable ?
                            usb_ctrl_if.raw_utmi_rxdata :
                            usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0];
