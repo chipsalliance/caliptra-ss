@@ -155,6 +155,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_int_loopback/caliptra_ss_usb_hs_dev_int_loopback.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_powerdown/caliptra_ss_usb_hs_dev_powerdown.yml
+        - ../test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_fs_conn/caliptra_ss_usb_fs_conn.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_bulk_out/caliptra_ss_usb_fs_dev_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_disconnect/caliptra_ss_usb_fs_dev_disconnect.yml

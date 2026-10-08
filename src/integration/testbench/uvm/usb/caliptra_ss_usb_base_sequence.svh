@@ -600,9 +600,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   GET_DESC(18)@2 -> [GET_CONFIG@2 ->] SET_CONFIG@2 [-> GET_CONFIG@2].
     // USBDC0 responds at address 0 after the step B port reset. On completion
     // the VIP anchor is left at 2 (USBDC0).
+    // assign_address selects the USB device address assigned to this device
+    // by SET_ADDRESS (default 2, matching every pre-existing single-device
+    // caller). A dual-device test enumerating BOTH embedded controllers on the
+    // same bus must give them DISTINCT addresses (e.g. USBDC0=2, USBDC1=3):
+    // two devices cannot share one address on a single USB bus.
     task usbdc0_enum_stepC(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                            string suffix = "", bit with_get_config_readback = 1,
-                           bit no_queue_and_hold = 0, int unsigned device_idx=0);
+                           bit no_queue_and_hold = 0, int unsigned device_idx=0,
+                           bit [6:0] assign_address = 7'd2);
         // Reset VIP anchor to addr=0 before addressing the freshly port-reset
         // USBDC0 - see the constraint note in this block's header comment.
         usb_cfg.remote_device_cfg[0].device_address = 7'd0;
@@ -644,7 +650,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .bm_request_type_type (svt_usb_types::STANDARD),
             .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
             .brequest_val         (8'h05),
-            .wvalue               (16'h0002),
+            .wvalue               (16'(assign_address)),
             .windex               (16'h0000),
             .wlength              (16'h0000),
             .device_addr          (0),
@@ -654,7 +660,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         wait_xfer_done(.agent_h(host_agent_h), .label({"SET_ADDRESS_2", suffix}));
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
+        usb_cfg.remote_device_cfg[0].device_address = assign_address;
         host_agent_h.reconfigure(usb_cfg);
 
         do_control_xfer(
@@ -665,14 +671,14 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .wvalue               (16'h0100),
             .windex               (16'h0000),
             .wlength              (16'h0012),
-            .device_addr          (2),
+            .device_addr          (int'(assign_address)),
             .label                ({"GET_DESC_DEV_addr2", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr2", suffix}));
         usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
                                                 .device_name($sformatf("dev%0d", device_idx)), 
-                                                .expected_address(2));
+                                                .expected_address(int'(assign_address)));
 
         if (with_get_config_readback) begin
             do_control_xfer(
@@ -683,7 +689,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .wvalue               (16'h0000),
                 .windex               (16'h0000),
                 .wlength              (16'h0001),
-                .device_addr          (2),
+                .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_addr2", suffix}),
                 .usb_cfg              (usb_cfg),
                 .no_queue_and_hold    (no_queue_and_hold));
@@ -698,7 +704,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .wvalue               (16'h0001),
             .windex               (16'h0000),
             .wlength              (16'h0000),
-            .device_addr          (2),
+            .device_addr          (int'(assign_address)),
             .label                ({"SET_CONFIG_1", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
@@ -713,7 +719,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .wvalue               (16'h0000),
                 .windex               (16'h0000),
                 .wlength              (16'h0001),
-                .device_addr          (2),
+                .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_verify", suffix}),
                 .usb_cfg              (usb_cfg),
                 .no_queue_and_hold    (no_queue_and_hold));
