@@ -11,9 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-`ifndef IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 
+`ifndef IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 `define IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL
 
 covergroup cp_device(string name) with function sample(int unsigned name_id);
@@ -334,14 +333,55 @@ function void caliptra_ss_usb_data_check_api_impl::check_device_address(uvm_obje
   svt_usb_transfer item;
   int unsigned     act_address;
 
+  // The committed 7-bit USB device address is stored in the reg_dev_addr signal
+  // of each device's usb_reg_if instance (dev0/dev1) inside the compound hub
+  // IP, and in the compound-level reg_dev_addr signal for the hub's own
+  // upstream address. reg_dev_addr holds the address committed after the
+  // SET_ADDRESS status stage (reg_dev_addr_tmp is the pre-commit shadow, which
+  // we deliberately do NOT read). check_device_address() is called after
+  // enumeration completes, so the committed value is valid.
+  //
+  // These reg_dev_addr signals are VHDL internal architecture signals inside
+  // the compound hub IP, which VCS does NOT register in the PLI/ACC namespace
+  // at any debug-access level, so uvm_hdl_read cannot resolve them directly.
+  // The usb_dev_addr_probe module (instanced at TB top as
+  // caliptra_ss_top_tb.u_usb_dev_addr_probe) bridges each VHDL reg_dev_addr
+  // into a PLI-visible SystemVerilog register via a compile-time hierarchical
+  // reference. We read those probe locals here:
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.dev0_dev_addr -> dev0
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.dev1_dev_addr -> dev1
+  //   caliptra_ss_top_tb.u_usb_dev_addr_probe.hub_dev_addr  -> hub
+  localparam string USB_DEV_ADDR_PROBE_PATH =
+      "caliptra_ss_top_tb.u_usb_dev_addr_probe";
+
+  string    hdl_path;
+  bit [6:0] hdl_val;
+
   // Cast first: all accesses to item below are invalid until the cast succeeds.
   if($cast(item,usb_item) != 1 || usb_item == null) begin
     `uvm_fatal(msg_tag, "impossible to cast usb_item to svt_usb_transfer")
   end
 
-  // get_device_address_val() returns the device address the RTL responded on
-  // for this transfer, which is what we compare against the expected value.
-  act_address = item.get_device_address_val();
+  // Select the HDL path to the committed device address for this device.
+  case (device_name)
+    "dev0":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev0_dev_addr"};
+    "dev1":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev1_dev_addr"};
+    "hub":   hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".hub_dev_addr"};
+    default: begin
+      `uvm_error(msg_tag, $sformatf("Unknown device_name=%s (only dev0, dev1 and hub are defined)",
+                                    device_name))
+      return;
+    end
+  endcase
+
+
+  // Read the committed 7-bit device address directly from the RTL register.
+  if (!uvm_hdl_read(hdl_path, hdl_val)) begin
+    `uvm_error(msg_tag, $sformatf("%s uvm_hdl_read failed for path %s", 
+                                  device_name, hdl_path))
+    return;
+  end
+  act_address = 32'(hdl_val);
 
   CHK_DEV_ADDRESS: assert(act_address == expected_address) else
     `uvm_error(msg_tag, $sformatf("%s device address mismatch: expected %0d got %0d", 
@@ -615,7 +655,7 @@ endfunction:check_device_qualifier
 //                                     Self-Powered. bit6 mirrors
 //                                     usb_self_powered = USB_self_powered pin
 //                                     OR HUB_CS[18]; the pin is tied to 1'b1 in
-//                                     caliptra_ss_top.sv, so 1 is expected. See
+//                                     caliptra_ss_top_tb.sv, so 1 is expected. See
 //                                     usb_ep0_hub_descr.m.vhdl C_ADDR_SP1 /
 //                                     C_ADDR_SP2 ROM patch. The tie-off itself
 //                                     is checked by caliptra_ss_usb_sva.sv)
@@ -638,7 +678,7 @@ endfunction:check_device_qualifier
 //     byte[20]   bEndpointAddress    (=0x81 EP1 IN)
 //     byte[21]   bmAttributes        (=0x03 Interrupt)
 //     byte[23:22] wMaxPacketSize     (little-endian, =0x0001)
-//     byte[24]   bInterval           (=0x0F HS branch)
+//     byte[24]   bInterval           (=0x0C HS branch)
 // The expected values mirror the CONFIGURATION / OTHER SPEED CONFIGURATION
 // DESCRIPTOR blocks of the hub ROM constant in
 // third_party/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl.
@@ -652,6 +692,11 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   bit [3:0]        ep_number;
   int unsigned     num_bytes;
   string           ep_direction;
+  // Speed the descriptor describes:
+  //   CONFIGURATION -- operating speed
+  //   OTHER_SPEED_CONFIGURATION -- opposite speed
+  //   (USB 2.0 Sec 9.6.4)
+  bit          descr_is_hs;
 
   // bmAttributes expected value, fully checked (no masking).
   //   bit7 = 1 reserved, always set by the hub ROM
@@ -659,7 +704,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   //          C_ADDR_SP1 (and C_ADDR_SP2 for the other-speed descriptor) is
   //          patched to 0xC0 when usb_self_powered is high and 0x80 when it is
   //          low, where usb_self_powered = usb_self_powered_pin OR HUB_CS[18].
-  //          caliptra_ss_top.sv ties USB_self_powered to 1'b1, and no test
+  //          caliptra_ss_top_tb.sv ties cptra_ss_usb_self_powered_i to 1'b1, and no test
   //          writes HUB_CS[18], so the expected value is 1. The tie-off itself
   //          is verified independently by caliptra_ss_usb_sva.sv.
   //   bits[5:0] other than bit6 are reserved and zero (bit5 Remote Wakeup is
@@ -705,6 +750,9 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   ep_number    = item.get_endpoint_number_val();
   num_bytes    = item.payload_byte_count();
   ep_direction = item.get_ep_direction().name();
+  descr_is_hs = (item.cfg != null) && (item.cfg.speed == svt_usb_types::HS);
+  if (exp_bDescriptorType == 'h07) // OTHER_SPEED
+    descr_is_hs = !descr_is_hs; // TODO use this below in the bInterval checking
 
   CHK_CFG_NUM_BYTES: assert(num_bytes == 25) else
     `uvm_error(msg_tag, $sformatf("Expected 25 bytes but got %0d from %s %s EP%0d%s", 
@@ -773,7 +821,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
                                   device_name, descr_label, act_iConfiguration))
   // bmAttributes is now checked in full, including bit6 (Self-Powered). A
   // failure here with actual 0x80 means the self-powered indication was lost:
-  // either the USB_self_powered tie-off in caliptra_ss_top.sv changed, or
+  // either the USB_self_powered tie-off in caliptra_ss_top_tb.sv changed, or
   // HUB_CS[18] was written to 0 after the descriptor ROM was patched.
   CHK_CFG_BMATTRIBUTES: assert(act_bmAttributes == EXP_BMATTRIBUTES) else
     `uvm_error(msg_tag, $sformatf("%s %s bmAttributes mismatch: expected 0x%02h got 0x%02h (bit6 Self-Powered = %0b, expected 1)", 
@@ -829,8 +877,13 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   CHK_EP_WMAXPACKETSIZE: assert(act_wMaxPacketSize == 'h0001) else
     `uvm_error(msg_tag, $sformatf("%s %s wMaxPacketSize mismatch: expected 0x0001 got 0x%04h", 
                                   device_name, descr_label, act_wMaxPacketSize))
-  CHK_EP_BINTERVAL: assert(act_bInterval == 'h0F) else
-    `uvm_error(msg_tag, $sformatf("%s %s bInterval mismatch: expected 0x0F got 0x%02h", 
+  // The hub descriptor ROM is elaborated with the HIGH_SPEED generic set true
+  // (usb_ep0_hub_descr.m.vhdl), so the endpoint bInterval is X"0C" for both the
+  // HS and FS tests - the FS test only forces the link speed at runtime, it
+  // does not re-elaborate the ROM with HIGH_SPEED=false. The previous 0x0F
+  // expectation was stale after the hub RTL change.
+  CHK_EP_BINTERVAL: assert(act_bInterval == 'h0C) else
+    `uvm_error(msg_tag, $sformatf("%s %s bInterval mismatch: expected 0x0C got 0x%02h", 
                                   device_name, descr_label, act_bInterval))
 
   `uvm_info(msg_tag, $sformatf("%s %s descriptor fields checked from EP%0d%s", 

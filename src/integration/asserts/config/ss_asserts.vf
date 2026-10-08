@@ -512,3 +512,4 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage/caliptra_t
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/coverage/caliptra_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/test_suites/libs/jtagdpi/jtagdpi.sv
 ${CALIPTRA_SS_ROOT}/src/integration/asserts/caliptra_ss_top_sva.sv
+${CALIPTRA_SS_ROOT}/src/integration/asserts/caliptra_ss_usb_sva.sv
