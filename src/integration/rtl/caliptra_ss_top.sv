@@ -40,6 +40,7 @@ module caliptra_ss_top
     ,parameter [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0}
     ,parameter [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000}
     ,parameter MCU_SRAM_SIZE_KB = 512
+    ,parameter MCU_ROM_PATCH_SRAM_SIZE_KB = 4
     ,parameter MIN_MCU_RST_COUNTER_WIDTH = 4
     ,parameter USB_G_SIM_CHIRP_TIMERS = 0
     ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 13
@@ -215,6 +216,8 @@ module caliptra_ss_top
     mci_mcu_sram_if.request cptra_ss_mci_mcu_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox0_sram_req_if,
     mci_mcu_sram_if.request cptra_ss_mcu_mbox1_sram_req_if,
+// Caliptra SS MCI MCU ROM Patch SRAM Interface
+    mci_mcu_sram_if.request cptra_ss_mcu_rom_patch_sram_req_if,
     css_mcu0_el2_mem_if.veer_sram_icache_src cptra_ss_mcu0_el2_mem_export,
 
 //  MCU MBOX signals
@@ -509,6 +512,7 @@ module caliptra_ss_top
     logic [otp_ctrl_reg_pkg::NumAlerts-1:0] fc_alerts;
     logic fc_intr_otp_error;
     logic FIPS_ZEROIZATION_CMD;
+    logic mci_mcu_rom_patch_active; // MCI -> FC: ROM patch SRAM populated this power cycle
 
     // ----------------- MCI OTP Connections -----------------------------------
     logic mci_to_otp_ctrl_init_req;
@@ -630,6 +634,11 @@ module caliptra_ss_top
         {cptra_obf_field_entropy[3], cptra_obf_field_entropy[2]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_1_data.cptra_core_field_entropy_1;
         {cptra_obf_field_entropy[5], cptra_obf_field_entropy[4]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_2_data.cptra_core_field_entropy_2;
         {cptra_obf_field_entropy[7], cptra_obf_field_entropy[6]} = from_otp_to_clpt_core_broadcast.secret_prod_partition_3_data.cptra_core_field_entropy_3;
+        // A patched MCU ROM boot must never expose the device secrets to Caliptra core
+        if (mci_mcu_rom_patch_active) begin
+            cptra_obf_uds_seed      = '0;
+            cptra_obf_field_entropy = '0;
+        end
      end
 
 
@@ -1307,6 +1316,7 @@ module caliptra_ss_top
         .AXI_USER_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.aruser)),
         .AXI_ID_WIDTH    ($bits(cptra_ss_mci_s_axi_if_r_sub.arid)  ),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB                         ),
+        .MCU_ROM_PATCH_SRAM_SIZE_KB(MCU_ROM_PATCH_SRAM_SIZE_KB     ),
 
         .MIN_MCU_RST_COUNTER_WIDTH(MIN_MCU_RST_COUNTER_WIDTH       ),
 
@@ -1433,11 +1443,14 @@ module caliptra_ss_top
         .fc_opt_init(mci_to_otp_ctrl_init_req), //input to otp
         .FIPS_ZEROIZATION_PPD_i(cptra_ss_FIPS_ZEROIZATION_PPD_i),
         .FIPS_ZEROIZATION_CMD_o(FIPS_ZEROIZATION_CMD),
+        .cptra_core_rst_b_i(cptra_ss_mci_cptra_rst_b_i),
+        .mcu_rom_patch_active_o(mci_mcu_rom_patch_active),
         // .fc_intr_otp_error(1'b0),
 
         .mci_mcu_sram_req_if  (cptra_ss_mci_mcu_sram_req_if),
         .mcu_mbox0_sram_req_if(cptra_ss_mcu_mbox0_sram_req_if),
         .mcu_mbox1_sram_req_if(cptra_ss_mcu_mbox1_sram_req_if),
+        .mci_mcu_rom_patch_sram_req_if(cptra_ss_mcu_rom_patch_sram_req_if),
         
 
         .from_lcc_to_otp_program_i(from_lcc_to_otp_program_i),
@@ -1628,6 +1641,7 @@ module caliptra_ss_top
         .FIPS_ZEROIZATION_CMD_i     (FIPS_ZEROIZATION_CMD),
         .cptra_in_debug_mode_i      (cptra_in_debug_mode),
         .cptra_ss_debug_intent_i    (mci_ss_debug_intent),
+        .mcu_rom_patch_active_i     (mci_mcu_rom_patch_active),
 
         .cptra_ss_strap_mcu_lsu_axi_user_i  (cptra_ss_strap_mcu_lsu_axi_user_i),
         .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_caliptra_dma_axi_user_i),
