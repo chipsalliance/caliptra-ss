@@ -35,7 +35,7 @@
 #define CSS_MCU0_VEER_INTR_VEC_UART        5
 // Used to tie-off undefined upper intr bits
 #define CSS_MCU0_VEER_INTR_EXT_LSB         6
-// usb_hib_compound dual USB device test. VEER_INTR_EXT_LSB (vector 6) is the
+// usb_hub_compound dual USB device test. VEER_INTR_EXT_LSB (vector 6) is the
 // first configurable external interrupt pin. The testbench loops the USB
 // device1 IRQ output (cptra_ss_usb_dev1_irq_o) back onto this pin so device1
 // can interrupt the MCU on its own vector, mirroring how device0 is routed to
