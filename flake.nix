@@ -16,6 +16,7 @@
   description = "caliptra-ss Nix Packages and Environments";
 
   inputs = {
+    self.submodules = true;
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
     flake-utils.url = "github:numtide/flake-utils";
 

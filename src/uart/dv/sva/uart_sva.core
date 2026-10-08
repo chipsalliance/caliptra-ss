@@ -1,0 +1,16 @@
+CAPI=2:
+# Copyright 2026 Google LLC (chipsalliance project).
+# Licensed under the Apache License, Version 2.0, see LICENSE for details.
+# SPDX-License-Identifier: Apache-2.0
+name: "lowrisc:dv:uart_sva:0.1"
+description: "UART assertion modules and bind file."
+filesets:
+  files_dv:
+    files:
+      - uart_bind.sv
+    file_type: systemVerilogSource
+
+targets:
+  default:
+    filesets:
+      - files_dv
