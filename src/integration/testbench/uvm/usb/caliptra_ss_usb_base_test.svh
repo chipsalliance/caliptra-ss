@@ -19,6 +19,8 @@
 // Base test for the Caliptra SS USB VIP environment.
 //
 // This test:
+// - Sets the default UVM report verbosity to UVM_LOW. A runtime
+//   +UVM_VERBOSITY=<level> plusarg overrides it.
 // - Creates caliptra_ss_usb_env with one VIP host_agent.
 // - Configures host_cfg for the local HS host stack.
 // - Configures dev_cfg as the template for host_agent.remote_cfg, the modeled
@@ -66,7 +68,16 @@ class caliptra_ss_usb_base_test extends uvm_test;
     caliptra_ss_usb_data_check_api usb_data_check_api;
 
     function new(string name = "caliptra_ss_usb_base_test", uvm_component parent = null);
+        string verb_args[$];
+        uvm_root root;
         super.new(name, parent);
+        // Default verbosity is UVM_LOW unless +UVM_VERBOSITY=<level> is given,
+        // in which case uvm_root has already applied it. Components built later
+        // inherit their parent's verbosity, so this covers the whole env.
+        if (uvm_cmdline_processor::get_inst().get_arg_values("+UVM_VERBOSITY=", verb_args) == 0) begin
+            root = uvm_root::get();
+            root.set_report_verbosity_level_hier(UVM_LOW);
+        end
     endfunction
 
     // Virtual interface handle for the bfm_services_if.

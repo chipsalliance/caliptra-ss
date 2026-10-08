@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
 
-  localparam int USB_PKG_VERSION = 299;
+  localparam int USB_PKG_VERSION = 301;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
