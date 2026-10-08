@@ -56,6 +56,10 @@ class usb_env_cfg extends uvm_object;
   // resolved value back here before building the managers.
   bit axi_delay_random = 1'b1;
 
+  // Use USB 2.0 L2 resume timing while retaining accelerated attach/reset
+  // timing. Timing-focused remote-wake tests enable this explicitly.
+  bit use_spec_l2_resume_timers;
+
   // Address the host assigns with SET_ADDRESS. Every host and device
   // sequence takes the enumerated address from here.
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;

@@ -48,7 +48,7 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg = new();
     configure_topology();
     configure_endpoints(cfg);
-    configure_timers();
+    configure_timers(cfg);
     configure_tracing();
     configure_coverage();
     validate_vip_cfgs();
@@ -155,7 +155,7 @@ class usb_vip_cfg_builder extends uvm_object;
 
   // Apply the vendor's scaled timer set first, then the bench-specific
   // attach/reset/handshake/inactivity values symmetrically on both sides.
-  protected virtual function void configure_timers();
+  protected virtual function void configure_timers(usb_env_cfg cfg);
     void'(host_cfg.set_timer_values(svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
     void'(device_phy_cfg.set_timer_values(svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
     host_cfg.tsigatt = vip_ps(100us);
@@ -168,6 +168,31 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.twths = vip_ps(10us);
     host_cfg.tinactivity = vip_ps(300us);
     device_phy_cfg.tinactivity = vip_ps(300us);
+    if (cfg.use_spec_l2_resume_timers) begin
+      host_cfg.twtrsm_min = vip_ps(5ms);
+      host_cfg.twtrsm = vip_ps(5ms);
+      host_cfg.tdrsmup_min = vip_ps(1ms);
+      host_cfg.tdrsmup_max = vip_ps(15ms);
+      host_cfg.tdrsmup = vip_ps(1ms);
+      host_cfg.tdrsmdn_min = vip_ps(20ms);
+      host_cfg.tdrsmdn_nom = vip_ps(20ms);
+      host_cfg.tdrsmdn = vip_ps(20ms);
+      host_cfg.tursm_max = vip_ps(1ms);
+      device_phy_cfg.twtrsm_min = vip_ps(5ms);
+      device_phy_cfg.twtrsm = vip_ps(5ms);
+      device_phy_cfg.tdrsmup_min = vip_ps(1ms);
+      device_phy_cfg.tdrsmup_max = vip_ps(15ms);
+      device_phy_cfg.tdrsmup = vip_ps(1ms);
+      device_phy_cfg.tdrsmdn_min = vip_ps(20ms);
+      device_phy_cfg.tdrsmdn_nom = vip_ps(20ms);
+      device_phy_cfg.tdrsmdn = vip_ps(20ms);
+      device_phy_cfg.tursm_max = vip_ps(1ms);
+      `uvm_info(
+        "USB_CFG",
+        "Applied USB 2.0 L2 signaling timers: idle=5ms device_K=1-15ms host_K=20ms rebroadcast<=1ms",
+        UVM_LOW
+      )
+    end
   endfunction
 
   // Retain protocol-through-PHY traces on both sides for live USB debug.
