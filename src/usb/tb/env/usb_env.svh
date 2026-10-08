@@ -319,6 +319,7 @@ class usb_env extends uvm_env;
     virtual_sequencer.dev1_csr_sequencer = dev1_csr_manager.sequencer;
     virtual_sequencer.dev1_memory_sequencer = dev1_memory_manager.sequencer;
     virtual_sequencer.host_sequencer = host_agent.virt_sequencer;
+    virtual_sequencer.usb_20_mac_if = usb_20_mac_if;
     virtual_sequencer.packet_monitor = packet_monitor;
     virtual_sequencer.ctrl_vif = ctrl_vif;
     uvm_callbacks#(

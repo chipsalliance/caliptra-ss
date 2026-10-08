@@ -17,6 +17,8 @@
 // tests that never program a policy see deterministic unfiltered traffic.
 // The policy signals are synchronous to clk: after time 0 the testbench
 // changes them only with nonblocking assignments at a clk rising edge.
+// Raw UTMI receive injection is a separate PHY-clocked debug path used only
+// by malformed-packet tests.
 // rst_n is observation-only; this interface does not own reset or PHY lock
 // sequencing. Kept independent of usb_tb_pkg to avoid a compile cycle.
 interface usb_tb_ctrl_if #(
