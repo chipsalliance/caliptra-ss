@@ -24,5 +24,6 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_double_buffer_bulk: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_interrupt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_bulk_ping: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_iso: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }
