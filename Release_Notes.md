@@ -13,7 +13,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - Explicit ECC/ML-DSA verification status
 - Dual-iTRNG entropy combiner
 - DMA command limit increased to 2 GiB, with route-specific limits; response-tracking, mailbox ECC, and AXI access fixes
-- Adams Bridge architectural/Keccak masking, local storage/pipeline optimizations, and KV/zeroization fixes
+- Adams Bridge upgraded to v3.0
 - Fixed security-state propagation after manufacturing/production debug unlock
 
 ### 2. I3C
