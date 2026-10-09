@@ -69,4 +69,5 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_cmd_handling/caliptra_ss_usb_ocp_cmd_handling.yml
         - ../test_suites/smoke_test_dual_itrng/smoke_test_dual_itrng.yml
         - ../test_suites/smoke_test_spi_host_tx_rx/smoke_test_spi_host_tx_rx.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev1_get_status/caliptra_ss_usb_hs_dev1_get_status.yml
         - ../test_suites/smoke_test_mcu_rom_patch_sram/smoke_test_mcu_rom_patch_sram.yml
