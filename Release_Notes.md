@@ -14,6 +14,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - Dual-iTRNG entropy combiner
 - DMA command limit increased to 2 GiB, with route-specific limits; response-tracking, mailbox ECC, and AXI access fixes
 - Adams Bridge architectural/Keccak masking, local storage/pipeline optimizations, and KV/zeroization fixes
+- Fixed security-state propagation after manufacturing/production debug unlock
 
 ### 2. I3C
 - Updated I3C to v1p6 with recovery FIFO/PEC, CCC, IBI, and reset/error-handling improvements
@@ -25,7 +26,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 ### 4. Fuse Controller (FC)
 - Hardened debug-intent handling, secret digest access, and UDS/Field Entropy programming restrictions
 - Sticky PK-hash/ratchet-seed locks and lifecycle-qualified fuse-wrapper DFT enable
-- Debug-unlock state fixes and multibit debug-lock controls
+- Multibit debug-lock controls
 
 ### 5. Manufacturer Control Interface (MCI)
 - Hamming-coded boot FSM error detection
