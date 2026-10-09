@@ -111,6 +111,27 @@ class caliptra_ss_usb_fs_clock_sequence extends caliptra_ss_usb_base_sequence;
                           obs_window_event_name),
                 UVM_LOW)
         end
+
+        // End-of-test register-field checks against the RTL, read through
+        // usb_dev_addr_probe (see
+        // src/integration/testbench/usb_dev_addr_probe.sv). These are TB-side
+        // checks: nothing is requested over USB and the MCU firmware is not
+        // involved, so the verdict does not depend on the DUT checking itself.
+        //
+        // They run after the observation window has closed, by which point the
+        // link has long reached ENABLED and speed negotiation (chirp for HS,
+        // or its absence for FS) has completed, so DEVCMDSTAT.Speed holds its
+        // final value.
+        //
+        // DEVCMDSTAT.Speed is expected to read FULL_SPEED (2'b01) for this test.
+        // A mismatch raises a uvm_error, which makes the test fail.
+        //
+        // CHIP_ID is NOT checked here: VCS rejects a cross-module reference
+        // whose target is a VHDL generic (Error-[VHDLXMRE-NS]), so
+        // C_MAJOR_REV / C_MINOR_REV cannot be probed from SystemVerilog. That
+        // check lives in MCU firmware instead, as usb_check_chip_id() reading
+        // the INFO register (see src/integration/test_suites/libs/usb/usb.c).
+        usb_data_check_api.check_device_speed("dev0", 2'b01);
     endtask
 
 endclass
