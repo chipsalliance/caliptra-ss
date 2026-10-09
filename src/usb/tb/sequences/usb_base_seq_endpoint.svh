@@ -105,6 +105,10 @@
   // return the entry that was written so a caller can compare against it.
   task arm_endpoint(usb_endpoint_cfg endpoint, int unsigned byte_count, logic [31:0] buffer_offset, output usb_ep_entry_t entry, input int unsigned buffer_select = 0);
     entry = endpoint_entry(1'b1, 1'b0, byte_count, buffer_offset);
+    entry.ep_type = endpoint.transfer_type inside {
+      USB_TRANSFER_TYPE_INTERRUPT,
+      USB_TRANSFER_TYPE_ISOCHRONOUS
+    };
     write_endpoint_entry(endpoint, entry, buffer_select);
     `uvm_info("USB_EP", $sformatf("Armed %s buffer %0d: entry=%s", endpoint.convert2string(), buffer_select, describe_entry(entry)), UVM_LOW)
   endtask
