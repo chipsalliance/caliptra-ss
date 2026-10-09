@@ -99,6 +99,11 @@ package usb_tb_pkg;
   // Address the host assigns with SET_ADDRESS during enumeration.
   localparam bit [6:0] USB_DEFAULT_DEVICE_ADDRESS = 7'd1;
 
+  // Global event names published by usb_utmi_packet_monitor. A sequence resets
+  // and waits on the event it needs immediately before starting stimulus.
+  localparam string USB_UTMI_OUT_TOKEN_EVENT = "usb_utmi_out_token_seen";
+  localparam string USB_UTMI_DATA_PACKET_EVENT = "usb_utmi_data_packet_seen";
+
   // Compare deadlines at the package's 1ps precision, without rounding to
   // whole nanoseconds or depending on floating-point equality.
   function automatic time usb_time_ps(realtime value);
@@ -209,10 +214,12 @@ package usb_tb_pkg;
   `include "sequences/usb_axi_stress_seq.svh"
   `include "sequences/usb_endpoint_rw_seq.svh"
   `include "sequences/usb_host_base_seq.svh"
+  `include "sequences/usb_bulk_out_host_seq.svh"
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
+  `include "sequences/usb_dev_skip_during_rx_seq.svh"
   `include "tests/usb_base_test.svh"
   `include "tests/usb_axi_read_backpressure_test.svh"
   `include "tests/usb_axi_write_backpressure_test.svh"
@@ -221,5 +228,6 @@ package usb_tb_pkg;
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
   `include "tests/usb_dev_skip_test.svh"
+  `include "tests/usb_dev_skip_during_rx_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
 endpackage
