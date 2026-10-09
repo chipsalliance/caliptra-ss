@@ -26,6 +26,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_interrupt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_bulk_ping: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_bad_crc5: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_bad_crc16: { weight: 100 }
         # Disabled: usb_high_bandwidth_iso currently fails when SOF interrupts
         # ISO IN because of bug-usb-hb-iso-in-sof-abort-replay.
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }
