@@ -160,6 +160,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_bulk_loopback/caliptra_ss_usb_hs_dev_bulk_loopback: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_int_loopback/caliptra_ss_usb_hs_dev_int_loopback: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_powerdown/caliptra_ss_usb_hs_dev_powerdown: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_conn/caliptra_ss_usb_fs_conn: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_bulk_out/caliptra_ss_usb_fs_dev_bulk_out: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_disconnect/caliptra_ss_usb_fs_dev_disconnect: { weight: 100 }

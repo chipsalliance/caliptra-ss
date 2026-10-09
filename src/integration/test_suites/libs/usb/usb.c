@@ -28,21 +28,80 @@
 // Fix: every RMW write to DEVCMDSTAT goes through usb_devcmdstat_write() which
 // re-substitutes this shadow into bits[6:0] before writeback, preserving the
 // staged address regardless of call order.
-static uint8_t usb_dev_addr_shadow = 0;
 
-// Shadow of the currently-selected configuration value (USB 2.0 section 9.4.7).
-// Updated by SET_CONFIGURATION; returned by GET_CONFIGURATION; cleared on bus
-// reset (device returns to Default state per USB 2.0 section 9.1.1.3).
-static uint8_t usb_current_config = 0;
+// -------------------------------------------------------------------------
+// Runtime active-device context (dual-controller support).
+//
+// usb.h selects a single controller aperture at compile time via USB_DEV_SEL.
+// For single-device tests that is sufficient and nothing here changes their
+// behaviour: usb_active_dev defaults to USB_DEV_SEL and is never touched.
+//
+// The usb_hib_compound dual-device test, however, must drive BOTH embedded
+// controllers from one image. usb_select_device() repoints the whole library
+// at either controller at RUNTIME; the device-neutral USB_DEV_* register
+// macros and USB_DMA_BASE_ADDR are re-defined below (for this translation unit
+// only) to resolve against the active controller's base instead of the fixed
+// compile-time base. usb.h is left untouched, so every other test that uses
+// those macros is unaffected.
+//
+// All enumeration shadow state that affects behaviour (device address,
+// configuration, remote-wakeup feature, EP0-IN pending latch) is kept per
+// device so the two controllers can enumerate in parallel without clobbering
+// each other's state. Pure telemetry counters remain single-instance; they are
+// only read by the single-device legacy EP0 observer tests.
+// -------------------------------------------------------------------------
+static int usb_active_dev = USB_DEV_SEL;
 
-// Tracks the DEVICE_REMOTE_WAKEUP feature state for the standard device.
-// SET_FEATURE(DEVICE_REMOTE_WAKEUP) sets it, CLEAR_FEATURE clears it, and
-// GET_STATUS reports it in bit[1] of the 2-byte device status word. Reset to
-// false on bus reset so enumeration always starts from the default (remote
-// wakeup disabled) state.
-static bool usb_remote_wakeup_enabled = false;
+static inline uint32_t usb_active_csr_base(void) {
+    return (usb_active_dev == 1) ? (uint32_t)SOC_USB_DEV1_CSR_BASE_ADDR
+                                 : (uint32_t)SOC_USB_COMBO_DEV0_CSR_BASE_ADDR;
+}
+static inline uint32_t usb_active_mem_base(void) {
+    return (usb_active_dev == 1) ? (uint32_t)SOC_USB_DEV1_MEM_BASE_ADDR
+                                 : (uint32_t)SOC_USB_DEV0_MEM_BASE_ADDR;
+}
 
-// Legacy EP0 observer telemetry counters (retained from upstream).
+// Public runtime selector (declared in usb.h). dev 0 = USBDC0, dev 1 = USBDC1;
+// any other value is treated as 0.
+void usb_select_device(int dev) { usb_active_dev = (dev == 1) ? 1 : 0; }
+int  usb_get_active_device(void) { return usb_active_dev; }
+
+// Exported runtime base accessors (declared in usb.h). These let OTHER
+// translation units (e.g. the dual-device test) retarget their own copies of
+// the device-neutral USB_DEV_* macros at the runtime-active controller, reusing
+// the exact same selection logic used inside this file. Without this, a caller
+// that includes usb.h gets the compile-time USB_DEV_SEL-fixed base and cannot
+// follow usb_select_device(), because the #undef/#define retargeting below is
+// scoped to this translation unit only.
+uint32_t usb_active_dev_csr_base(void) { return usb_active_csr_base(); }
+uint32_t usb_active_dev_mem_base(void) { return usb_active_mem_base(); }
+
+
+// Re-point the device-neutral base macros at the runtime active controller for
+// this translation unit only. The derived register macros (USB_DEV_DEVCMDSTAT,
+// USB_DEV_INTSTAT, ...), USB_DMA_BASE_ADDR / USB_DEV_DMA_BASE_ADDR, and
+// USB_EP_ENTRY_ABS_ADDR are all defined in usb.h in terms of these two bases,
+// so re-defining the bases here makes the entire library follow usb_active_dev.
+#undef USB_DEV_CSR_BASE_ADDR
+#undef USB_DEV_MEM_BASE_ADDR
+#define USB_DEV_CSR_BASE_ADDR  usb_active_csr_base()
+#define USB_DEV_MEM_BASE_ADDR  usb_active_mem_base()
+
+// Per-device enumeration shadows, indexed by the active controller. The macro
+// aliases keep every existing reference in this file textually unchanged while
+// making it resolve to the active controller's slot.
+static uint8_t usb_dev_addr_shadow_arr[2]        = {0, 0};
+static uint8_t usb_current_config_arr[2]          = {0, 0};
+static bool    usb_remote_wakeup_enabled_arr[2]   = {false, false};
+static uint8_t usb_ep0_in_pending_latched_arr[2]  = {0, 0};
+#define usb_dev_addr_shadow        usb_dev_addr_shadow_arr[usb_active_dev]
+#define usb_current_config         usb_current_config_arr[usb_active_dev]
+#define usb_remote_wakeup_enabled  usb_remote_wakeup_enabled_arr[usb_active_dev]
+#define usb_ep0_in_pending_latched usb_ep0_in_pending_latched_arr[usb_active_dev]
+
+// Legacy EP0 observer telemetry counters (retained from upstream). These do not
+// affect enumeration behaviour and are only consumed by single-device tests, so
+// they remain single-instance.
 static uint32_t usb_transfers_handled = 0;
 static uint32_t usb_bus_reset_count = 0;
 static uint32_t usb_ep0_irq_count = 0;
@@ -50,9 +109,9 @@ static uint32_t usb_ep0_out_irq_count = 0;
 static uint32_t usb_ep0_in_irq_count = 0;
 static uint32_t usb_setup_dispatch_count = 0;
 static uint32_t usb_snapshot_publish_sequence = 0;
-static uint8_t usb_ep0_in_pending_latched = 0;
 static uint8_t usb_baseline_ready_pending = 0;
 static uint16_t usb_baseline_ready_generation = 0;
+
 
 // Application hooks installed by boot_usb_core() (PR #1299 seam). The
 // hook-based (OCP-recovery / host) enumeration path uses these; the legacy
@@ -591,14 +650,14 @@ void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes) {
 }
 
 void usb_ep0_send_device_descriptor(uint32_t nbytes) {
-    // Select the descriptor of the controller this firmware image drives.
-    // USB_DEV_SEL is a compile-time constant (see usb.h), so exactly one of
-    // these branches is compiled in per build.
-#if (USB_DEV_SEL == 1)
-    const usb_device_descriptor_t *desc = &usb_dev1_device_descriptor;
-#else
-    const usb_device_descriptor_t *desc = &usb_dev0_device_descriptor;
-#endif
+    // Select the descriptor of the controller currently being serviced. This
+    // follows the RUNTIME active device so a dual-controller image serves the
+    // correct per-device descriptor; for single-device tests usb_active_dev
+    // stays at its USB_DEV_SEL default, so behaviour is unchanged.
+    const usb_device_descriptor_t *desc = (usb_active_dev == 1)
+                                        ? &usb_dev1_device_descriptor
+                                        : &usb_dev0_device_descriptor;
+
     // The descriptor is 4-byte aligned and its packed wire layout is already
     // little-endian, so it can be copied word-by-word straight into the EP0 IN
     // SRAM buffer via the existing send path.
