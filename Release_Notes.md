@@ -17,7 +17,6 @@ USB streaming boot support, security hardening, and integration spec updates sin
 
 ### 2. I3C
 - Updated I3C to v1p6 with recovery FIFO/PEC, CCC, IBI, and reset/error-handling improvements
-- AXI interface updates; existing I3C and AXI streaming boot paths retained
 
 ### 3. Life Cycle Controller (LCC)
 - Exposed lifecycle state validity, volatile RAW-unlock success, and escalation/check interfaces
