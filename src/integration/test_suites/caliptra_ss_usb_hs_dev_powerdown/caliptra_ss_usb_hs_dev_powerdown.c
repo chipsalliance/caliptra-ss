@@ -113,6 +113,8 @@ static uint32_t usb_service_ep0_once(void) {
             if (usb_handle_control_transfer()) {
                 handled = 1;
             }
+        } else {
+            usb_ep0_arm_out();
         }
     }
 
