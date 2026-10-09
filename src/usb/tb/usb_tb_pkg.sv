@@ -103,6 +103,7 @@ package usb_tb_pkg;
   // and waits on the event it needs immediately before starting stimulus.
   localparam string USB_UTMI_OUT_TOKEN_EVENT = "usb_utmi_out_token_seen";
   localparam string USB_UTMI_DATA_PACKET_EVENT = "usb_utmi_data_packet_seen";
+  localparam string USB_UTMI_TX_PACKET_EVENT = "usb_utmi_tx_packet_seen";
 
   // Compare deadlines at the package's 1ps precision, without rounding to
   // whole nanoseconds or depending on floating-point equality.
@@ -205,6 +206,7 @@ package usb_tb_pkg;
   `include "env/usb_endpoint_cfg.svh"
   `include "env/usb_env_cfg.svh"
   `include "env/usb_vip_cfg_builder.svh"
+  `include "env/usb_utmi_tx_packet.svh"
   `include "env/usb_packet_monitor_callback.svh"
   `include "env/usb_virtual_sequencer.svh"
   `include "env/usb_env.svh"
@@ -236,6 +238,7 @@ package usb_tb_pkg;
   `include "sequences/usb_bad_crc5_seq.svh"
   `include "sequences/usb_bad_crc16_seq.svh"
   `include "sequences/usb_bad_pid_seq.svh"
+  `include "sequences/usb_test_packet_seq.svh"
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "sequences/usb_dev_skip_during_rx_seq.svh"
@@ -256,6 +259,7 @@ package usb_tb_pkg;
   `include "tests/usb_bad_crc5_test.svh"
   `include "tests/usb_bad_crc16_test.svh"
   `include "tests/usb_bad_pid_test.svh"
+  `include "tests/usb_test_packet_test.svh"
   `include "tests/usb_dev_skip_test.svh"
   `include "tests/usb_dev_skip_during_rx_test.svh"
   `include "tests/usb_utility_timeout_test.svh"

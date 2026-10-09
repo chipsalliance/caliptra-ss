@@ -225,7 +225,10 @@ module usb_top_tb;
     .reset_n(bus_reset_n),
     .rxactive(dut_utmi_rxactive),
     .rxvalid(dut_utmi_rxvalid),
-    .rxdata(dut_utmi_rxdata)
+    .rxdata(dut_utmi_rxdata),
+    .txvalid(dut_utmi_txvalid),
+    .txready(usb_20_mac_if.utmi_dut_mac_if.TXReady),
+    .txdata(dut_utmi_txdata)
   );
 
   // --------------------------------------------------------------------------
