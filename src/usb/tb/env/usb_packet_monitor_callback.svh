@@ -34,10 +34,13 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
   protected bit window_active;
   protected string window_label;
   protected uvm_event ping_observed;
+  protected uvm_event sof_observed;
+  protected bit sof_seen_in_window;
 
   function new(string name = "usb_packet_monitor_callback");
     super.new(name);
     ping_observed = new("ping_observed");
+    sof_observed = new("sof_observed");
   endfunction
 
   // Start a fresh observation window before scenario stimulus.
@@ -48,6 +51,8 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     records.delete();
     window_label = label;
     ping_observed.reset();
+    sof_observed.reset();
+    sof_seen_in_window = 1'b0;
     window_active = 1'b1;
     `uvm_info("USB_PACKET_MON", $sformatf("Started packet observation window: %s", window_label), UVM_LOW)
   endfunction
@@ -61,6 +66,25 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     fork
       begin
         ping_observed.wait_trigger();
+        observed = 1'b1;
+      end
+      begin
+        #(timeout);
+      end
+    join_any
+    disable fork;
+  endtask
+
+  // Wait for a host SOF packet during the active observation window.
+  task wait_for_sof(time timeout, output bit observed);
+    observed = sof_seen_in_window;
+    if (!window_active) begin
+      `uvm_fatal("USB_PACKET_MON", "SOF wait requires an active observation window")
+    end
+    if (observed) return;
+    fork
+      begin
+        sof_observed.wait_ptrigger();
         observed = 1'b1;
       end
       begin
@@ -115,6 +139,10 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     records.push_back(record);
     if (direction == USB_PACKET_TX && packet.pid_name == svt_usb_packet::PING) begin
       ping_observed.trigger();
+    end
+    if (direction == USB_PACKET_TX && packet.pid_name == svt_usb_packet::SOF) begin
+      sof_seen_in_window = 1'b1;
+      sof_observed.trigger();
     end
   endfunction
 
