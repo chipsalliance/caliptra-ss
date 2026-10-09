@@ -32,6 +32,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - Hamming-coded boot FSM error detection
 - Default-enabled Caliptra Core DCLS detection control and configuration locking
 - Exclusive MCU mailbox SRAM ownership for image staging
+- Optional MCU ROM patch SRAM: loaded by MCU ROM in TEST/DEV lifecycle states before Caliptra core boots; a loaded patch zeroizes the UDS/Field Entropy delivered to Caliptra; released to SoC as data memory when unused.
 
 ### 6. USB and MCU Peripherals
 - USB 2.0 virtual hub with two downstream devices: MCU-owned DEV0 and SoC-owned DEV1
