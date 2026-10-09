@@ -18,6 +18,8 @@ the link into full-speed:
   except it sets `DEVCMDSTAT.PFSC` (bit 21, `USBHSD_DEVCMDSTAT_PFSC_MASK`) to
   suppress the device-side K-chirp so the link negotiates and stays at
   full-speed for the FS-only host VIP.
+
+  
 - **UVM test:** puts the VIP into FS-only mode
   (`host_cfg.local_host_cfg.high_speed_capable = 0`, `host_cfg.speed = FS`,
   `dev_cfg.speed = FS`, `connected_bus_speed = FS`,
