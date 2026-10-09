@@ -1,0 +1,65 @@
+seed: 1
+testname: caliptra_ss_usb_dual_device_fs_bulk_loopback
+# NOTE: this is a DUAL-DEVICE image. It addresses BOTH USBDC0 (0x2000_0000 /
+# 0x3000_0000) and USBDC1 (0x2000_2000 / 0x3001_0000) apertures and MUST NOT be
+# built with -DUSB_DEV_SEL=1 (that would compile-time pin the shared library to
+# a single controller). Instead it is built with -DUSB_HUB_COMPOUND_DEV1_IRQ,
+# which makes init_usb_interrupts() enable PIC vector 6 and mcu_isr.h compile in
+# service_usb_dev1_intr().
+#
+# IMPORTANT - two independent enable mechanisms:
+#   1. Firmware (C) compile  : BUILD_CFLAGS="-DUSB_HUB_COMPOUND_DEV1_IRQ"
+#      reaches gcc via TEST_CFLAGS (tools/scripts/Makefile). Handled by the
+#      pre-exec below.
+#   2. RTL testbench loopback: the testbench that ORs cptra_ss_usb_dev1_irq_o
+#      onto cptra_ss_mcu_ext_int[6] in caliptra_ss_top_tb.sv is now gated at
+#      RUNTIME by $test$plusargs("USB_HUB_COMPOUND_DEV1_IRQ") rather than by a
+#      compile-time `ifdef. The loopback is always compiled in; it is only
+#      activated when the +USB_HUB_COMPOUND_DEV1_IRQ plusarg (see plusargs
+#      below) is present, so a single simv image is reusable for all tests and
+#      this test's .yml alone enables the loopback. No Makefile / command-line
+#      +define+ is required.
+#      NOTE on the "=1" form: run_caliptra_test.py only forwards plusargs that
+#      match +NAME=VALUE (see parse_yml, the regex +[A-Za-z0-9_]+=[-A-Za-z0-9_.]+),
+#      so a bare +USB_HUB_COMPOUND_DEV1_IRQ would be silently dropped. The
+#      value is irrelevant because $test$plusargs() matches on the NAME prefix,
+#      so we use +USB_HUB_COMPOUND_DEV1_IRQ=1 below.
+#
+# The runtime active-device context (usb_select_device()) retargets the shared
+# USB library per device.
+#
+# FULL-SPEED notes (differences from the HS variant):
+#   - The firmware brings both controllers up with boot_usb_core_fs() instead of
+#     boot_usb_core_hub(), which sets DEVCMDSTAT.FORCE_FULLSPEED so neither
+#     device drives a K-chirp. The host VIP is configured with
+#     high_speed_capable=0, so a chirp would never be answered.
+#   - The UVM test (caliptra_ss_usb_dual_device_fs_bulk_loopback_test) stamps FS
+#     speed / FS max-packet sizes on every endpoint and widens the FS timing
+#     knobs (tddis, tend_to_end_delay_fs, tinactivity, drive_reset_time).
+#   - +usb_fs_speed_check=1 arms caliptra_ss_usb_fs_speed_checker.sv, which
+#     observes the UTMI interface and FAILS the run if the link actually came up
+#     at High Speed. The same plusarg is also added by this test's .mk; both
+#     paths are harmless because $test$plusargs only tests for presence. The
+#     sequence closes the checker's observation window once both loopbacks are
+#     done, which is what lets the checker report unevaluated checks as errors.
+
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_dual_device_fs_bulk_loopback"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_dual_device_fs_bulk_loopback \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       BUILD_CFLAGS="-DUSB_HUB_COMPOUND_DEV1_IRQ" \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_dual_device_fs_bulk_loopback_test'
+  - '+USB_HUB_COMPOUND_DEV1_IRQ=1'
+  # Enables caliptra_ss_usb_fs_speed_checker.sv (FS line-speed verification).
+  # matching +NAME=VALUE, and $test$plusargs matches on prefix so the value
+  # itself is ignored.
+  - '+usb_fs_speed_check=1'
+
+# File contains AI-generated response based on internal company sources

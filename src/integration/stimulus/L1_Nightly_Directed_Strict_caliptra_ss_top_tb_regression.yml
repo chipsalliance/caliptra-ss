@@ -165,6 +165,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_fs_dev_global_suspend_L2/caliptra_ss_usb_fs_dev_global_suspend_L2.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_resume/caliptra_ss_usb_fs_dev_resume.yml
         - ../test_suites/caliptra_ss_usb_fs_host_remotewakeup_fromdevice/caliptra_ss_usb_fs_host_remotewakeup_fromdevice.yml
+        - ../test_suites/caliptra_ss_usb_dual_device_fs_bulk_loopback/caliptra_ss_usb_dual_device_fs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_bulk_out/caliptra_ss_usb_hs_dev1_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_nbyte/caliptra_ss_usb_hs_dev1_nbyte.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_iso_out/caliptra_ss_usb_hs_dev1_iso_out.yml
@@ -210,3 +211,5 @@ contents:
         - ../test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release.yml
         - ../test_suites/smoke_test_mcu_rom_patch_sram_reuse/smoke_test_mcu_rom_patch_sram_reuse.yml
         - ../test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked.yml
+
+# File contains AI-generated response based on internal company sources

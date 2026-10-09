@@ -192,6 +192,14 @@ package caliptra_ss_usb_test_pkg;
   // and services dev1 on PIC vector 6 via the TB IRQ loopback.
   `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_sequence.svh"
   `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_test.svh"
+
+  // Full-speed port of the dual-device bulk loopback pair above. Same dual
+  // aperture firmware topology and same TB dev1 IRQ loopback; the link is
+  // forced to FS (host high_speed_capable=0 plus boot_usb_core_fs() in the
+  // firmware) and the TB FS line-speed checker is armed by the test .mk so the
+  // run fails if the link silently came up at HS.
+  `include "caliptra_ss_usb_dual_device_fs_bulk_loopback_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_fs_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev1_powerdown_sequence.svh"
