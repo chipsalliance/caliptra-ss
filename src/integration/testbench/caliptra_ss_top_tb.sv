@@ -2066,7 +2066,17 @@ module caliptra_ss_top_tb
     end
 
     // --- UTMI clock and lock signals ---
-    assign cptra_ss_usb_utmi_clk_i          = usb_20_mac_if.utmi_dut_mac_if.CLK;
+    `ifdef USE_SVT_USB_UTMI_CLOCK
+     assign cptra_ss_usb_utmi_clk_i = usb_20_mac_if.utmi_dut_mac_if.CLK;
+    `else
+    initial begin
+    	`uvm_info("TB", "disabling the generation of utmi clock from the VIP", UVM_NONE)
+        usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b0;
+    end
+    
+    assign usb_20_mac_if.utmi_dut_mac_if.CLK = usb_utmi_clk;
+    assign cptra_ss_usb_utmi_clk_i      = usb_utmi_clk;//usb_20_mac_if.utmi_dut_mac_if.CLK;
+    `endif
     assign cptra_ss_usb_utmi_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP modeled PHY outputs -> DUT device MAC inputs ---
