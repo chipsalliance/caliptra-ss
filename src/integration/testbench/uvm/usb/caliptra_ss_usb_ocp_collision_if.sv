@@ -34,7 +34,7 @@ interface caliptra_ss_usb_ocp_collision_if (
     input logic [31:0] cpuif_rdata,
     input logic [31:0] recovery_ctrl
 );
-    import usb_ocp_recovery_pkg::*;
+    import caliptra_ss_usb_ocp_recovery_tb_pkg::*;
 
     localparam logic [3:0] MCU_START = 4'h8;
     localparam logic [3:0] MCU_STOP = 4'h9;
