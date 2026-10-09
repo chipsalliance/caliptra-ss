@@ -50,6 +50,7 @@ class usb_env extends uvm_env;
   ) ctrl_vif;
   svt_usb_agent host_agent;
   svt_sequence_item_report usb_sequence_item_report;
+  usb_packet_monitor_callback packet_monitor;
   usb_virtual_sequencer virtual_sequencer;
 
   // Each root RAL map has its own adapter; identical local addresses are legal.
@@ -277,6 +278,7 @@ class usb_env extends uvm_env;
     usb_sequence_item_report = new("usb_sequence_item_report");
     uvm_config_db#(svt_sequence_item_report)::set(this, "host_agent", "sys_seq_item_report", usb_sequence_item_report);
     host_agent = svt_usb_agent::type_id::create("host_agent", this);
+    packet_monitor = usb_packet_monitor_callback::type_id::create("packet_monitor");
   endfunction
 
   // ---------------------------------------------------------------------------
@@ -305,7 +307,9 @@ class usb_env extends uvm_env;
         dev1_memory_manager == null ||
         dev1_memory_manager.sequencer == null ||
         host_agent == null ||
-        host_agent.virt_sequencer == null) begin
+        host_agent.virt_sequencer == null ||
+        host_agent.link_mon == null ||
+        packet_monitor == null) begin
       `uvm_fatal("USB_ENV", "Virtual sequencer dependencies are not fully constructed")
     end
     virtual_sequencer.reg_model = reg_model;
@@ -315,7 +319,13 @@ class usb_env extends uvm_env;
     virtual_sequencer.dev1_csr_sequencer = dev1_csr_manager.sequencer;
     virtual_sequencer.dev1_memory_sequencer = dev1_memory_manager.sequencer;
     virtual_sequencer.host_sequencer = host_agent.virt_sequencer;
+    virtual_sequencer.packet_monitor = packet_monitor;
     virtual_sequencer.ctrl_vif = ctrl_vif;
+    uvm_callbacks#(
+      svt_usb_link_monitor,
+      svt_usb_link_monitor_callback
+    )::add(host_agent.link_mon, packet_monitor);
+    `uvm_info("USB_ENV", "Registered passive USB packet monitor callback", UVM_LOW)
 
     // -------------------------------------------------------------------------
     // Adapter-to-sequencer wiring
