@@ -121,7 +121,7 @@ static void usb_ep2_out_arm(uint32_t round) {
                      | USB_EP_ENTRY_TYPE_PERIODIC
                      | USB_EP_ENTRY_RF_ISO
                      | USB_EP_ENTRY_NBYTES(USB_HS_ISO_TRANSFER_BYTES)
-                     | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_OUT_BUF_OFFSET);
+                     | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP2_OUT_BUF_OFFSET);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_OUT_OFFSET, ep2_out);
 
     uint32_t inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
@@ -154,11 +154,11 @@ static void usb_ep2_in_arm(uint32_t round, uint32_t round_base) {
     // (0=DATA0). Do NOT set USB_EP_ENTRY_TYPE_PERIODIC on IN entries.
     uint32_t ep2_in_buf0 = USB_EP_ENTRY_ACTIVE
                          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
-                         | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_IN_BUF_OFFSET);
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET);
     uint32_t ep2_in_buf1 = USB_EP_ENTRY_ACTIVE
                          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
-                         | USB_EP_ENTRY_ADDR(USB_SRAM_EP2_IN_BUF_OFFSET
-                                             + USB_HS_ISO_IN_BUF_BYTES);
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET
+                                                 + USB_HS_ISO_IN_BUF_BYTES);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF0_OFFSET, ep2_in_buf0);
     lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF1_OFFSET, ep2_in_buf1);
 
@@ -187,6 +187,7 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_hub();
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
