@@ -38,6 +38,13 @@ interface usb_tb_ctrl_if #(
   logic raw_utmi_rxvalid;
   logic raw_utmi_rxactive;
   logic raw_utmi_rxerror;
+  logic [7:0] utmi_txdata;
+  logic utmi_txvalid;
+  logic utmi_txready;
+  logic utmi_suspendm;
+  logic utmi_xcvrselect;
+  logic utmi_termselect;
+  logic [1:0] utmi_opmode;
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
