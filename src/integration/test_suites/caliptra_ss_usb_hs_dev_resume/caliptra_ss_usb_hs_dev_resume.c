@@ -56,11 +56,9 @@ void main(void) {
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
-    // Register access retargeted from the legacy single-device SOC_USBHSD_*
-    // bank to the hub-composite USBDC0 register bank (USB_DEV_*). The base
-    // address moved (0x2000_0000 hub bank -> 0x2000_1000 USBDC0 bank); the
-    // *_MASK bitfield macros from soc_address_map.h are offset-independent and
-    // remain valid (migration checklist item 1 and section B).
+    // Register accesses use the hub-composite USBDC0 CSR bank at 0x2000_0000.
+    // This is distinct from the hub descriptor/control window at 0x2000_1000;
+    // the DEV0_CSR_* bitfield masks remain valid for the USBDC0 registers.
     // lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN, lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | 0xFFFFFFFF);
     lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
     lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN) | DEV0_CSR_INTEN_FRAME_INT_EN_MASK);
