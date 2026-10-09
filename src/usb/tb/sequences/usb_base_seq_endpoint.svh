@@ -271,6 +271,37 @@
     clear_endpoint_interrupt(endpoint);
   endtask
 
+  // Wait for the latest SIE status code in INFO.ERR_CODE.
+  task wait_for_sie_error_code(
+    logic [3:0] expected_code,
+    time timeout,
+    string label
+  );
+    uvm_reg_field error_field;
+    logic [31:0] info_value;
+    logic [3:0] observed_code;
+    realtime deadline;
+
+    error_field = p_sequencer.reg_model.combo.dev0_csr.INFO.ERR_CODE;
+    observed_code = 4'h0;
+    deadline = $realtime + timeout;
+    `uvm_info("USB_SIE_STATUS", $sformatf("Waiting up to %0t for INFO.ERR_CODE=0x%0h (%s)", timeout, expected_code, label), UVM_LOW)
+    while (observed_code !== expected_code && $realtime < deadline) begin
+      ral_read32("INFO", p_sequencer.reg_model.combo.dev0_csr.INFO, info_value);
+      observed_code = 4'((info_value & ral_field_mask(error_field)) >> error_field.get_lsb_pos());
+      if (observed_code !== expected_code) begin
+        #500ns;
+      end
+    end
+    if (observed_code !== expected_code) begin
+      `uvm_fatal(
+        "USB_SIE_STATUS",
+        $sformatf("INFO.ERR_CODE did not reach 0x%0h within %0t for %s; last=0x%0h", expected_code, timeout, label, observed_code)
+      )
+    end
+    `uvm_info("USB_SIE_STATUS", $sformatf("DUT reported INFO.ERR_CODE=0x%0h for %s", observed_code, label), UVM_LOW)
+  endtask
+
   // Require the endpoint's entry to match an expected word exactly, reporting
   // the decoded fields so a mismatch does not need manual bit extraction.
   task check_endpoint_entry_writeback(usb_endpoint_cfg endpoint, usb_ep_entry_t expected_entry, string check_label, input int unsigned buffer_select = 0);
