@@ -2011,6 +2011,18 @@ module caliptra_ss_top_tb
 
     // Single UTMI+ VIP interface used by host_agent and its remote_cfg PHY.
     svt_usb_if usb_20_mac_if();
+    caliptra_ss_usb_utmi_control_if usb_utmi_control_if_inst (
+        .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK)
+    );
+
+    initial begin
+        uvm_config_db#(
+            virtual caliptra_ss_usb_utmi_control_if)::set(
+                uvm_root::get(),
+                "uvm_test_top",
+                "usb_utmi_control_if",
+                usb_utmi_control_if_inst);
+    end
 
 
     // 60 MHz UTMI clock for USB 2.0 HS mode (period = 16667 ps)
@@ -2070,10 +2082,22 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP modeled PHY outputs -> DUT device MAC inputs ---
-    assign cptra_ss_usb_utmi_rxdata_i         = usb_20_mac_if.utmi_dut_mac_if.DataOut;
-    assign cptra_ss_usb_utmi_rxvalid_i        = usb_20_mac_if.utmi_dut_mac_if.RXValid;
-    assign cptra_ss_usb_utmi_rxactive_i       = usb_20_mac_if.utmi_dut_mac_if.RXActive;
-    assign cptra_ss_usb_utmi_rxerror_i        = usb_20_mac_if.utmi_dut_mac_if.RXError;
+    assign cptra_ss_usb_utmi_rxdata_i =
+        usb_utmi_control_if_inst.inject_enable ?
+        usb_utmi_control_if_inst.rxdata :
+        usb_20_mac_if.utmi_dut_mac_if.DataOut;
+    assign cptra_ss_usb_utmi_rxvalid_i =
+        usb_utmi_control_if_inst.inject_enable ?
+        usb_utmi_control_if_inst.rxvalid :
+        usb_20_mac_if.utmi_dut_mac_if.RXValid;
+    assign cptra_ss_usb_utmi_rxactive_i =
+        usb_utmi_control_if_inst.inject_enable ?
+        usb_utmi_control_if_inst.rxactive :
+        usb_20_mac_if.utmi_dut_mac_if.RXActive;
+    assign cptra_ss_usb_utmi_rxerror_i =
+        usb_utmi_control_if_inst.inject_enable ?
+        usb_utmi_control_if_inst.rxerror :
+        usb_20_mac_if.utmi_dut_mac_if.RXError;
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP

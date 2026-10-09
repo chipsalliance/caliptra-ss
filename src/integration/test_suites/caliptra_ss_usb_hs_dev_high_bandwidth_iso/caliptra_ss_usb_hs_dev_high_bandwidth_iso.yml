@@ -1,0 +1,15 @@
+seed: 1
+testname: caliptra_ss_usb_hs_dev_high_bandwidth_iso
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_hs_dev_high_bandwidth_iso"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_hs_dev_high_bandwidth_iso \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_iso_out \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_high_bandwidth_iso_test'
