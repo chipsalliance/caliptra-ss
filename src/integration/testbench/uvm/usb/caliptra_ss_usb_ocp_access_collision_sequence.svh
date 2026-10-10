@@ -51,7 +51,7 @@ class caliptra_ss_usb_ocp_access_collision_sequence
         recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_NONE, 0,
                             "COLLISION_CTRL_BASELINE");
         collision_vif.arm(scenario_id, capability_word, 0);
-        do_command(collision_vif.MCU_START, scenario_id);
+        do_command(observer_vif.MCU_COMMAND_COLLISION_START, scenario_id);
         found = 0;
         attempts = 0;
         fork : bounded_collision_scenario
@@ -89,7 +89,7 @@ class caliptra_ss_usb_ocp_access_collision_sequence
             end
         join_any
         disable bounded_collision_scenario;
-        do_command(collision_vif.MCU_STOP, scenario_id);
+        do_command(observer_vif.MCU_COMMAND_COLLISION_STOP, scenario_id);
         collision_vif.finish();
         if (!found)
             `uvm_fatal("OCP_COLLISION",

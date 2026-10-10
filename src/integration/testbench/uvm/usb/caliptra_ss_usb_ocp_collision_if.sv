@@ -36,8 +36,6 @@ interface caliptra_ss_usb_ocp_collision_if (
 );
     import caliptra_ss_usb_ocp_recovery_tb_pkg::*;
 
-    localparam logic [3:0] MCU_START = 4'h8;
-    localparam logic [3:0] MCU_STOP = 4'h9;
     localparam int unsigned PROT_READ_EXT_READ = 0;
     localparam int unsigned PROT_READ_EXT_WRITE = 1;
     localparam int unsigned CTRL_WRITE_EXT_READ = 2;
