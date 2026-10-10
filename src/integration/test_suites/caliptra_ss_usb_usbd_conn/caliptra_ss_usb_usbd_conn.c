@@ -37,6 +37,7 @@ void main(void) {
 
     boot_mcu();
     boot_usb_core_hub();
+    usb_hub_connect();
     mcu_cptra_advance_brkpoint();
     mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();

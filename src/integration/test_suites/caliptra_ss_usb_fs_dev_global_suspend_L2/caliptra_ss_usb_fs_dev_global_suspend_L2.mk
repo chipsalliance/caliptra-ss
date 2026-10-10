@@ -13,4 +13,4 @@
 # limitations under the License.
 #
 
-VCS_SIM_OPTS += +usb_fs_speed_check=1
+VCS_SIM_OPTS += +usb_suspend_resume_check=1

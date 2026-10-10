@@ -48,6 +48,7 @@ class caliptra_ss_usb_data_check_api_impl extends uvm_component implements calip
   cp_device cg_config_descriptor;
   cp_device cg_other_speed_config;
   cp_device cg_hub_descriptor;
+  cp_device cg_device_speed;
 
 
 
@@ -91,6 +92,21 @@ class caliptra_ss_usb_data_check_api_impl extends uvm_component implements calip
                                                               string       descr_label,
                                                               cp_device    cg_handle);
 
+  extern virtual function void check_device_speed(string device_name,
+                                                 bit [1:0] expected_speed);
+
+
+  // Shared worker for the usb_dev_addr_probe backed checks above. It reads a
+  // single scalar out of the probe module and compares it against an expected
+  // constant, parameterized by the probe signal suffix, the field label, the
+  // expected value and the covergroup handle.
+  extern protected function void check_probe_field(string       device_name,
+                                                   string       probe_suffix,
+                                                   string       field_label,
+                                                   bit [31:0]   expected_value,
+                                                   int unsigned field_width,
+                                                   cp_device    cg_handle);
+
   extern protected function device_name_e name_to_id(string device_name);
 
 
@@ -109,6 +125,7 @@ function caliptra_ss_usb_data_check_api_impl::new(string name="caliptra_ss_usb_d
   cg_config_descriptor = new("check_configuration_descriptor");
   cg_other_speed_config = new("check_other_speed_configuration");
   cg_hub_descriptor    = new("check_hub_descriptor");
+  cg_device_speed      = new("check_device_speed");
 endfunction:new
 
 
@@ -1027,6 +1044,109 @@ function void caliptra_ss_usb_data_check_api_impl::check_hub_descriptor(uvm_obje
   cg_hub_descriptor.sample(cov_device_name);
 endfunction:check_hub_descriptor
 
+
+
+
+// check_probe_field - shared reader/comparator for the usb_dev_addr_probe
+// backed checks.
+//
+// The hub-compound signals of interest are VHDL ports/generics that VCS does
+// not register in the PLI/ACC namespace, so uvm_hdl_read cannot reach them
+// directly. The usb_dev_addr_probe module (instanced at TB top as
+// caliptra_ss_top_tb.u_usb_dev_addr_probe) mirrors them into plain
+// SystemVerilog variables via compile-time hierarchical references. This
+// routine builds the probe path for the requested device, reads the mirrored
+// value and compares it against expected_value.
+//
+// probe_suffix is the probe variable base name without the device prefix, for
+// example "_speed" selects dev0_speed / dev1_speed. field_width is the width
+// of the field in bits; both the probed value and the expectation are masked
+// to it before comparison, so the fixed 32-bit transport of uvm_hdl_read
+// cannot introduce spurious upper bits.
+function void caliptra_ss_usb_data_check_api_impl::check_probe_field(string       device_name,
+                                                                     string       probe_suffix,
+                                                                     string       field_label,
+                                                                     bit [31:0]   expected_value,
+                                                                     int unsigned field_width,
+                                                                     cp_device    cg_handle);
+
+  localparam string USB_DEV_ADDR_PROBE_PATH =
+      "caliptra_ss_top_tb.u_usb_dev_addr_probe";
+
+  string     hdl_path;
+  bit [31:0] hdl_val;
+  bit [31:0] act_value;
+  bit [31:0] field_mask;
+
+  // Only the two device register-interface instances carry these fields. The
+  // hub PIE instance has no DEVCMDSTAT/INFO register of its own, so "hub" is
+  // deliberately not accepted here.
+  case (device_name)
+    "dev0":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev0", probe_suffix};
+    "dev1":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev1", probe_suffix};
+    default: begin
+      `uvm_error(msg_tag, $sformatf("Unknown device_name=%s for %s (only dev0 and dev1 are defined)",
+                                    device_name, field_label))
+      return;
+    end
+  endcase
+
+  if (!uvm_hdl_read(hdl_path, hdl_val)) begin
+    `uvm_error(msg_tag, $sformatf("%s uvm_hdl_read failed for path %s",
+                                  device_name, hdl_path))
+    return;
+  end
+
+  field_mask = (field_width >= 32) ? 32'hFFFF_FFFF : ((32'h1 << field_width) - 32'h1);
+  act_value  = hdl_val & field_mask;
+
+  CHK_PROBE_FIELD: assert(act_value == (expected_value & field_mask)) else
+    `uvm_error(msg_tag, $sformatf("%s %s mismatch: expected 0x%0h got 0x%0h (probe %s)",
+                                  device_name, field_label,
+                                  expected_value & field_mask, act_value, hdl_path))
+
+  `uvm_info(msg_tag, $sformatf("%s %s checked (expected=0x%0h got=0x%0h)",
+                               device_name, field_label,
+                               expected_value & field_mask, act_value), UVM_LOW)
+
+  // Collect functional coverage as the last step of the method.
+  cov_device_name = name_to_id(device_name);
+  cg_handle.sample(cov_device_name);
+endfunction:check_probe_field
+
+
+// check_device_speed - negotiated link speed (DEVCMDSTAT bits [23:22]).
+//
+// Reads the pie_speed port of the device's usb_reg_if instance through the
+// probe. usb_reg_if forwards that port straight into the DEVCMDSTAT readback
+// ("reg_rdata(23 downto 22) <= pie_speed"), so the probed value is exactly
+// what firmware observes in DEVCMDSTAT.Speed.
+//
+// expected_speed uses the IP encoding from usb_subcmp_pkg.p.vhdl:
+//   FULL_SPEED = 2'b01, HIGH_SPEED = 2'b10.
+//
+// Caveat: the compound structure drives one shared sync_pie_speed net into the
+// pie_speed port of both usb_reg_if instances, so dev0 and dev1 always report
+// the same speed. Checking both device names is harmless but adds no
+// independent coverage. See src/integration/testbench/usb_dev_addr_probe.sv.
+function void caliptra_ss_usb_data_check_api_impl::check_device_speed(string device_name,
+                                                                      bit [1:0] expected_speed);
+  check_probe_field(.device_name(device_name),
+                    .probe_suffix("_speed"),
+                    .field_label("DEVCMDSTAT.Speed"),
+                    .expected_value(32'(expected_speed)),
+                    .field_width(2),
+                    .cg_handle(cg_device_speed));
+endfunction:check_device_speed
+
+
+// Note: CHIP_ID (INFO[31:16] = {C_MAJOR_REV, C_MINOR_REV}) has no check here.
+// Both revision fields are VHDL generics of usb_reg_if, and VCS rejects a
+// cross-module reference whose target is a VHDL generic
+// (Error-[VHDLXMRE-NS]), so the value cannot be bridged through
+// usb_dev_addr_probe. CHIP_ID is checked in firmware instead, by reading the
+// INFO register: see usb_check_chip_id() in
+// src/integration/test_suites/libs/usb/usb.c.
 
 
 `endif // IFDEF_GUARD_CALIPTRA_SS_USB_DATA_CHECK_API_IMPL

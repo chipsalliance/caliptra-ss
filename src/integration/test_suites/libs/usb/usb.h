@@ -73,6 +73,16 @@
 // is unchanged.
 #define USB_DEV_DEVCMDSTAT    (USB_DEV_CSR_BASE_ADDR + 0x00u)
 #define USB_DEV_INFO          (USB_DEV_CSR_BASE_ADDR + 0x04u)
+// Expected CHIP_ID = INFO[31:16] = {MAJREV, MINREV} for the delivered IP
+// configuration. The two revision bytes come from the usb_reg_if
+// C_MAJOR_REV / C_MINOR_REV VHDL generics. VCS rejects a cross-module
+// reference whose target is a VHDL generic (Error-[VHDLXMRE-NS]), so the
+// value cannot be probed from the testbench; CHIP_ID is checked here in
+// firmware by reading the INFO register instead, which exercises the same
+// readback path those generics feed. The IP databook section 5.2 shows
+// 0x0100 only as an example: the delivered RTL/RDL is the source of truth.
+#define USB_DEV_INFO_CHIP_ID_EXP  0x0200u
+
 #define USB_DEV_EPLISTSTART   (USB_DEV_CSR_BASE_ADDR + 0x08u)
 #define USB_DEV_DATABUFSTART  (USB_DEV_CSR_BASE_ADDR + 0x0cu)
 #define USB_DEV_LPM           (USB_DEV_CSR_BASE_ADDR + 0x10u)
@@ -596,6 +606,12 @@ bool usb_request_remote_wakeup(void);
 // L1 (DEVCMDSTAT.LPM_SUS) with host-granted remote wake (DEVCMDSTAT.LPM_REWP);
 // returns false and does nothing otherwise.
 bool usb_request_lpm_remote_wakeup(void);
+
+// Strict exact-value check of CHIP_ID = INFO[31:16] = {MAJREV, MINREV}
+// against the delivered IP configuration. Pass USB_DEV_INFO_CHIP_ID_EXP.
+// A mismatch fails the test (VPRINTF(FATAL) + TB_CMD_TEST_FAIL + halt).
+// Targets the active controller, so it is valid for USBDC0 and USBDC1.
+void usb_check_chip_id(uint32_t expected_chip_id);
 
 // Capture the complete legacy baseline and publish it field-by-field over the
 // MCI generic-wire handshake. UVM starts SRAM observation only after firmware
