@@ -422,14 +422,6 @@ extern const usb_device_descriptor_t usb_dev0_device_descriptor;
 extern const usb_device_descriptor_t usb_dev1_device_descriptor;
 
 // -------------------------------------------------------------------------
-// Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
-// Defined in usb.c. Used by the hook-based (OCP/host) enumeration path. Tests
-// that need a custom descriptor may define their own array and pass it to
-// usb_ep0_send_data().
-// -------------------------------------------------------------------------
-extern const uint32_t usb_default_device_descriptor[5];
-
-// -------------------------------------------------------------------------
 // USB driver API
 // -------------------------------------------------------------------------
 
@@ -469,30 +461,25 @@ uint32_t usb_active_dev_mem_base(void);
 
 
 
-// Initialize the USB device controller (STANDALONE DEV0, no hub bring-up):
-// set up the EP command/status list and SRAM buffers, enable device mode and
-// interrupts. config_desc_fn / class_req_fn install the application's
-// config-descriptor and class-request hooks BEFORE enumeration can begin; pass
-// 0 for either to use the built-in default (no config descriptor / STALL class
-// requests). This is the OCP-recovery / host enumeration entry point.
-void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
-                   usb_class_request_handler_t class_req_fn);
 
-// Initialize the USB device controller in HUB+DEVICE (hub-composite) mode:
-// bring the on-chip hub up (usb_hub_init_and_connect(): HUB_EN + descriptor
-// overrides), configure the EP list/SRAM buffers, force LPM_SUP and
-// FORCE_NEEDCLK during bring-up, and enable device mode and interrupts. This
-// is the entry point for the migrated device tests that target the hub-composite
-// configuration. HUB_CONNECT is NOT asserted here - the test calls
-// usb_hub_connect() once the device controller is fully programmed.
+// Initialize the USB device controller: configure the EP list/SRAM buffers,
+// force LPM_SUP and FORCE_NEEDCLK during bring-up, and enable device mode and
+// interrupts.
+//   hub_en: bring the on-chip hub up (usb_hub_init_and_connect(): HUB_EN +
+//           descriptor overrides). HUB_CONNECT is NOT asserted here - the test
+//           calls usb_hub_connect() once the device controller is programmed.
+//           When 0, the hub stays disabled and USBDC0 connects directly
+//           upstream (standalone).
+//   fs_en:  also set FORCE_VBUS and FORCE_FULLSPEED (suppresses device-side
+//           K-chirp) for FS-only host VIPs. Do NOT use when HS is required.
+// Typical calls: boot_usb_core(false, true) for hub-composite HS tests;
+// boot_usb_core(false, false) for standalone USBDC0 (mcu_cptra_init).
+void boot_usb_core(bool fs_en, bool hub_en);
+
+// Legacy HS-only entry point: wrapper for boot_usb_core(false, true).
 void boot_usb_core_hub(void);
 
-// Initialize the USB device controller in HUB+DEVICE FS-only mode: identical
-// to boot_usb_core_hub() but also sets DEVCMDSTAT bit 21 (FORCE_FULLSPEED, the
-// legacy PFSC bit) to suppress device-side K-chirp. Use in tests with a FS-only
-// host VIP (high_speed_capable=0) so the UTMI TX is ready immediately after bus
-// reset instead of waiting ~2.2ms for the chirp timeout. Do NOT use when HS
-// operation is required.
+// Legacy FS-only entry point: wrapper for boot_usb_core(true, true).
 void boot_usb_core_fs(void);
 
 // Program HUB descriptor overrides then set HUB_EN in the HUB control register.
@@ -559,16 +546,19 @@ void usb_dump_state(const char *tag);
 // expected_transfers==0 means loop indefinitely.
 uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers);
 
+// Application hooks. usb.c provides weak defaults; an application library
+// (e.g. usb_ocp_recovery.c) overrides them by defining strong symbols with the
+// same name. Do not mark these prototypes weak: that would also make the
+// overriding definitions weak.
+//
 // Returns the device's full configuration descriptor blob and writes its
-// length in bytes to *len. The default weak implementation returns NULL and
-// sets *len=0 so GET_DESCRIPTOR(CONFIGURATION) falls through to STALL.
-__attribute__((weak))
+// length in bytes to *len. The default implementation returns NULL and sets
+// *len=0 so GET_DESCRIPTOR(CONFIGURATION) falls through to STALL.
 const uint8_t *usb_get_config_descriptor(uint16_t *len);
 
 // Handles a class-typed SETUP packet. Return true once the request has been
 // fully serviced; return false to let the dispatcher STALL the request. The
-// default weak implementation returns false.
-__attribute__((weak))
+// default implementation returns false.
 bool usb_handle_class_request(const usb_setup_pkt_t *setup);
 
 // Update the USB device address field in DEVCMDSTAT.
@@ -584,7 +574,7 @@ void usb_set_device_connect(uint8_t connected);
 uint8_t usb_is_configured(void);
 
 // Clear DEVCMDSTAT.FORCE_NEEDCLK so the device controller stops requesting the
-// UTMI clock unconditionally and can actually enter suspend. boot_usb_core_hub()
+// UTMI clock unconditionally and can actually enter suspend. boot_usb_core()
 // / boot_usb_core_fs() set FORCE_NEEDCLK during bring-up. Call after enumeration
 // completes and before host-side suspend stimulus is armed. Suspend-oriented
 // tests only. FORCE_VBUS is not modified.
