@@ -73,6 +73,11 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
     localparam logic [3:0] MCU_COMMAND_PUBLISH_RESET_POST = 4'h4;
     localparam logic [3:0] MCU_COMMAND_CLEAR_DCON = 4'h5;
     localparam logic [3:0] MCU_COMMAND_SET_DCON = 4'h6;
+    localparam logic [3:0] MCU_COMMAND_STOP = 4'h7;
+    localparam logic [3:0] MCU_COMMAND_COLLISION_START = 4'h8;
+    localparam logic [3:0] MCU_COMMAND_COLLISION_STOP = 4'h9;
+
+    logic [15:0] last_mcu_command_generation = '0;
 
     localparam logic [1:0] SNAPSHOT_STATE_BASELINE = 2'h1;
     localparam logic [1:0] SNAPSHOT_STATE_POST     = 2'h2;
@@ -314,6 +319,9 @@ interface caliptra_ss_usb_legacy_ep0_observer_if (
         join_any
         disable mcu_command_ack_timeout;
 
+        if (acknowledged) begin
+            last_mcu_command_generation = generation;
+        end
         host_mcu_command_active = 1'b0;
         host_mcu_command = '0;
     endtask
