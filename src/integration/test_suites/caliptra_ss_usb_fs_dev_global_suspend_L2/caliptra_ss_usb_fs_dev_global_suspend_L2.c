@@ -118,7 +118,7 @@ void main(void) {
     // Two-phase hub bring-up: HUB_EN was set inside boot_usb_core_fs(); now that
     // USBDC0's EP list / DEVCMDSTAT / DCON are fully programmed it is safe to
     // connect the hub upstream. usb_hub_connect() sets HUB_CONNECT, per the
-    // reference janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this
+    // reference BFM two-phase sequencing. Only after this
     // does the host see the hub, perform HS chirp, and enumerate its
     // downstream port 0 (USBDC0). Without it the upstream link never reaches
     // ENABLED and the host sequence cannot suspend anything.

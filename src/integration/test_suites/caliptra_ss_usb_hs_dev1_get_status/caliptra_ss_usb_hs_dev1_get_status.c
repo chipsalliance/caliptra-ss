@@ -86,7 +86,7 @@ void main (void) {
     // USBDC1's own EP list/DEVCMDSTAT/DCON are now fully programmed (end
     // of boot_usb_core_hub()), so it is safe to connect the hub upstream:
     // usb_hub_connect() sets HUB_CONNECT, per the reference
-    // janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this call
+    // BFM two-phase sequencing. Only after this call
     // will the host see the hub on the bus and begin enumerating its
     // downstream port (where USBDC1 is attached).
     usb_hub_connect();
