@@ -27,7 +27,7 @@
 // =============================================================================
 // USB Full-Speed device bulk OUT sequence (Hub-Enabled mode).
 //
-// Sequence flow (matches reference janus_usb_host_bfm.sv hub-aware host
+// Sequence flow (matches reference BFM hub-aware host
 // behavior):
 //   1. Wait for HS host link ENABLED (after HS chirp).
 //   2. Start SOF generation.
