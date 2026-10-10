@@ -33,13 +33,35 @@ class caliptra_ss_usb_ocp_arbiter_test_base
     endfunction
 
     virtual task mcu_halt_monitor_task(uvm_phase phase);
-        // Arbiter-test firmware remains in its command service loop after the
-        // sequence drains outstanding MCU AXI activity.
+        virtual caliptra_ss_usb_legacy_ep0_observer_if observer_vif;
+        logic [15:0] stop_generation;
+        bit acknowledged;
+        bit idle;
+
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
+                    null, "uvm_test_top.env",
+                    "usb_legacy_ep0_observer_if", observer_vif)) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU observer interface not found")
+        end
+        // DCON commands can follow the last snapshot, and some derived tests
+        // use the command service without snapshot collection.
+        stop_generation = observer_vif.last_mcu_command_generation + 16'd1;
+        observer_vif.issue_mcu_command_bounded(
+            observer_vif.MCU_COMMAND_STOP, stop_generation, 4'h0,
+            100us, acknowledged);
+        if (!acknowledged) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU STOP acknowledgement timed out")
+        end
+        observer_vif.wait_for_mcu_axi_idle(100us, idle);
+        if (!idle) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU AXI did not drain after STOP")
+        end
         `uvm_info("phase_ready_to_end",
-            "OCP arbiter sequence complete; skipping MCU halt wait.",
-            UVM_LOW)
+            $sformatf("OCP arbiter MCU stopped at generation %0d; AXI reads/writes drained.",
+                      stop_generation), UVM_NONE)
         phase.drop_objection(
-            this, "OCP arbiter firmware remains in service loop");
+            this, "OCP arbiter MCU stopped and AXI drained");
     endtask
 
 endclass
