@@ -227,6 +227,7 @@
 #define USB_LEGACY_EP0_COMMAND_PUBLISH_RESET_POST 0x4u
 #define USB_LEGACY_EP0_COMMAND_CLEAR_DCON        0x5u
 #define USB_LEGACY_EP0_COMMAND_SET_DCON          0x6u
+#define USB_LEGACY_EP0_COMMAND_STOP              0x7u
 #define USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT       24u
 #define USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT      20u
 #define USB_LEGACY_EP0_COMMAND_DELTA_SHIFT       16u
@@ -430,14 +431,6 @@ typedef struct __attribute__((packed)) {
 // usb_ep0_send_device_descriptor()).
 extern const usb_device_descriptor_t usb_dev0_device_descriptor;
 extern const usb_device_descriptor_t usb_dev1_device_descriptor;
-
-// -------------------------------------------------------------------------
-// Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
-// Defined in usb.c. Used by the hook-based (OCP/host) enumeration path. Tests
-// that need a custom descriptor may define their own array and pass it to
-// usb_ep0_send_data().
-// -------------------------------------------------------------------------
-extern const uint32_t usb_default_device_descriptor[5];
 
 // -------------------------------------------------------------------------
 // USB driver API

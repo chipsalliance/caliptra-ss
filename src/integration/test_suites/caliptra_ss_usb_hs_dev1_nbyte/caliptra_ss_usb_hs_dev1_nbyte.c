@@ -178,7 +178,7 @@ void main(void) {
     // programmed the HUB RAM and set HUB_EN, and USBDC1's EP list / DEVCMDSTAT
     // / DCON are now fully programmed. usb_hub_connect() sets HUB_CONNECT so
     // the host sees the hub on the bus and begins enumerating its downstream
-    // port 2 (USBDC1), per the two-phase janus_hub_ctrl_bfm.sv sequencing
+    // port 2 (USBDC1), per the two-phase BFM sequencing
     // (hub-composite IP migration checklist item 7).
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();

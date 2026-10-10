@@ -27,8 +27,6 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_test
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
-        uvm_config_db#(bit)::set(
-            null, "", "ocp_arbiter_mirrored_setup_mode", 1'b1);
         super.build_phase(phase);
         uvm_config_db#(uvm_object_wrapper)::set(
             this,
