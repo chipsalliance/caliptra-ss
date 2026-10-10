@@ -49,7 +49,7 @@ void main(void) {
     // programmed the HUB RAM and set HUB_EN, and USBDC0's own EP list /
     // DEVCMDSTAT / DCON are now fully programmed. usb_hub_connect() sets
     // HUB_CONNECT so the host sees the hub on the bus and begins enumerating
-    // its downstream port 0 (USBDC0), per the two-phase janus_hub_ctrl_bfm.sv
+    // its downstream port 0 (USBDC0), per the two-phase BFM
     // sequencing (hub-composite IP migration checklist item 7).
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
@@ -78,7 +78,7 @@ void main(void) {
                 // is received instead of NAK'd. Hub-mode enumeration issues many
                 // more control transfers (hub enum + port bring-up + USBDC0
                 // enum), so EP0 OUT must be re-armed on every status ZLP
-                // (migration checklist item 9; matches janus_ahb_fw_bfm.sv
+                // (migration checklist item 9; matches BFM
                 // dma_write32(EP0_OUT_DESC, 0xa0000000)).
                 usb_ep0_arm_out();
             }
