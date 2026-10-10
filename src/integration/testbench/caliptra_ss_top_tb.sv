@@ -2183,9 +2183,6 @@ module caliptra_ss_top_tb
     // --- VIP UTMI clock generation ---
     // Let the PHY stop CLK on suspend; the DUT must wake it for a pending connect.
     // The separate testbench clock remains free-running while the PHY sleeps.
-    initial begin
-        usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b1;
-    end
     assign usb_20_mac_if.utmi_dut_mac_if.clk = usb_utmi_clk;
     assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
 
