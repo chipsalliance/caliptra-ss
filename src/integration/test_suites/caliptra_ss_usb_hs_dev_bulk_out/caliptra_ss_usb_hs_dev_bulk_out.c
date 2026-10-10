@@ -110,7 +110,7 @@ void main(void) {
                 // Status-stage ZLP OUT for a control-read completed.
                 // HW cleared ACTIVE on the EP0 OUT descriptor; re-arm it
                 // so the next SETUP packet is received instead of NAK'd.
-                // Matches reference janus_ahb_fw_bfm.sv behavior
+                // Matches reference BFM behavior
                 // (dma_write32(EP0_OUT_DESC, 0xa0000000)). Without this
                 // re-arm, enumeration stalls after the first control-read
                 // status stage and EP1 OUT is never armed.
