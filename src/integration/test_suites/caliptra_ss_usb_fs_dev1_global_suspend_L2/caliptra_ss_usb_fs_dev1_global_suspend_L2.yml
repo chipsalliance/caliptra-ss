@@ -13,3 +13,4 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_fs_dev1_global_suspend_L2_test'
+  - '+usb_suspend_resume_check=1'

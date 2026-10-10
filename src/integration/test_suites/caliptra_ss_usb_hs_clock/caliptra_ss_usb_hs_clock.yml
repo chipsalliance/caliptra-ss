@@ -12,3 +12,4 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_hs_clock_test'
+  - '+usb_hs_speed_check=1'
