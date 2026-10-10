@@ -112,14 +112,6 @@ static uint32_t usb_snapshot_publish_sequence = 0;
 static uint8_t usb_baseline_ready_pending = 0;
 static uint16_t usb_baseline_ready_generation = 0;
 
-
-// Application hooks installed by boot_usb_core() (PR #1299 seam). The
-// hook-based (OCP-recovery / host) enumeration path uses these; the legacy
-// device path (boot_usb_core_hub / boot_usb_core_fs) leaves them 0 and the
-// superset handler services standard device requests directly.
-const uint8_t *(*usb_config_descriptor_override)(uint16_t *len) = 0;
-bool (*usb_class_request_override)(const usb_setup_pkt_t *setup) = 0;
-
 // Every RMW write to DEVCMDSTAT goes through here. It re-substitutes the staged
 // device-address shadow into bits[6:0] (see usb_dev_addr_shadow above) and
 // forces LPM_SUP so the controller keeps advertising LPM support for the whole
@@ -132,12 +124,19 @@ static void usb_devcmdstat_write(uint32_t val) {
     lsu_write_32(USB_DEV_DEVCMDSTAT, val);
 }
 
+// Block until the controller reports a debounced VBUS. Required before
+// asserting DCON when the device connects directly upstream.
+static void usb_wait_vbus_debounced(void) {
+    while ((lsu_read_32(USB_DEV_DEVCMDSTAT) &
+            DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
+    }
+}
+
+// Default (weak) application hooks. An application library such as
+// usb_ocp_recovery.c overrides these by defining strong symbols of the same
+// name; it is only linked into tests that include its header.
 __attribute__((weak))
 const uint8_t *usb_get_config_descriptor(uint16_t *len) {
-    if (usb_config_descriptor_override != 0) {
-        return usb_config_descriptor_override(len);
-    }
-
     if (len != 0) {
         *len = 0;
     }
@@ -147,28 +146,15 @@ const uint8_t *usb_get_config_descriptor(uint16_t *len) {
 
 __attribute__((weak))
 bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
-    if (usb_class_request_override != 0) {
-        return usb_class_request_override(setup);
-    }
-
+    (void)setup;
     return false;
 }
-
-// Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM
-// writes). Used by the hook-based (OCP/host) enumeration path.
-const uint32_t usb_default_device_descriptor[5] = {
-    0x02000112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
-    0x40000000,  // bDevClass=0, bDevSubClass=0, bDevProto=0, bMaxPktSz0=64
-    0x00000000,  // idVendor=0x0000, idProduct=0x0000
-    0x00000100,  // bcdDevice=0x0100, iManufacturer=0
-    0x01000000   // iProduct=0, iSerialNumber=0, bNumConfigurations=1
-};
 
 // Fixed USB 2.0 device descriptors for the two embedded controllers. DEV0 and
 // DEV1 carry distinct idProduct/bcdDevice values so a scoreboard can identify
 // which controller answered the host's GET_DESCRIPTOR(DEVICE) request. Served
-// on the legacy device path (boot_usb_core_hub / boot_usb_core_fs) via
-// usb_ep0_send_device_descriptor(), selected at compile time by USB_DEV_SEL.
+// on every boot path via usb_ep0_send_device_descriptor(), selected at compile
+// time by USB_DEV_SEL.
 const usb_device_descriptor_t usb_dev0_device_descriptor = {
     .bLength            = 18,
     .bDescriptorType    = USB_DESC_DEVICE,
@@ -296,7 +282,7 @@ void usb_hub_init_and_connect(void) {
 // HUB_EN, which must already be set by a prior usb_hub_init_and_connect()
 // call). Split out to match the reference two-phase sequencing: HUB_EN must be
 // set and settled BEFORE HUB_CONNECT. Call after the device controller is ready
-// (boot_usb_core_hub()), since the host begins enumerating hub port 0 as soon
+// (boot_usb_core()), since the host begins enumerating hub port 0 as soon
 // as the hub connects upstream.
 // -------------------------------------------------------------------------
 void usb_hub_connect(void) {
@@ -307,15 +293,19 @@ void usb_hub_connect(void) {
 }
 
 // -------------------------------------------------------------------------
-// boot_usb_core - Initialize the USB device controller (STANDALONE DEV0)
+// boot_usb_core - Initialize the USB device controller
 //
-// Hook-based enumeration entry point used by the OCP-recovery and host tests.
-// Installs the application's config-descriptor and class-request hooks, sets up
-// the EP command/status list and data buffers in SRAM, then configures
-// EPLISTSTART, DATABUFSTART, DEVCMDSTAT and interrupt enables so the USB device
-// is ready to respond to host enumeration. No hub bring-up (this path runs DEV0
-// standalone) and no LPM_SUP force (writes DEVCMDSTAT raw to preserve the
-// upstream behaviour byte-for-byte).
+// Common device boot entry point.
+//   hub_en=1: bring the on-chip hub up (usb_hub_init_and_connect at Step -1).
+//             HUB_CONNECT is NOT asserted here - the test calls
+//             usb_hub_connect() once the device controller is programmed.
+//   hub_en=0: leave the hub disabled so USBDC0 connects directly upstream
+//             (standalone topology used by the OCP recovery tests).
+//   fs_en=1:  also set FORCE_VBUS and FORCE_FULLSPEED (suppresses the device
+//             K-chirp) for FS-only host VIPs. Do NOT use when HS is required.
+// FORCE_NEEDCLK is set during bring-up so the UTMI clock keeps running through
+// enumeration; suspend tests clear it later via usb_allow_clock_stop().
+// DEVCMDSTAT is written through usb_devcmdstat_write() so LPM_SUP is forced.
 //
 // SRAM layout:
 //   0x000-0x00F: EP0 command/status list (4 words)
@@ -324,99 +314,11 @@ void usb_hub_connect(void) {
 //   0x140-0x17F: EP0 OUT data buffer (64 bytes)
 //   0x180-0x1BF: EP0 IN data buffer (64 bytes)
 // -------------------------------------------------------------------------
-void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
-                   usb_class_request_handler_t class_req_fn) {
+void boot_usb_core(bool fs_en, bool hub_en) {
     uint32_t reg_data;
 
-    // Install the application's USB config-descriptor and class-request hooks
-    // BEFORE any host enumeration can begin. Passing 0 selects the built-in
-    // defaults (no config descriptor / STALL class requests).
-    usb_config_descriptor_override = config_desc_fn;
-    usb_class_request_override     = class_req_fn;
-
-    VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller\n");
-
-    // Read DEVCMDSTAT to check initial state
-    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT initial = 0x%x\n", reg_data);
-
-    // --- Step 0: Initialize SRAM via DMA port ---
-
-    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP), addr_offset = 0x140>>6 = 5
-    uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
-                           | USB_EP_ENTRY_NBYTES(8)
-                           | USB_EP_ENTRY_ADDR(USB_SRAM_EP0_OUT_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
-    VPRINTF(LOW, "MCU: EP0 OUT entry = 0x%x\n", ep0_out_entry);
-
-    // EP0 SETUP buffer address entry: addr_offset = 0x100>>6 = 4
-    uint32_t ep0_setup_entry = USB_EP_ENTRY_ADDR(USB_SRAM_SETUP_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x004, ep0_setup_entry);
-
-    // EP0 IN entry: Active=0, NBytes=0, addr_offset = 0x180>>6 = 6
-    uint32_t ep0_in_entry = USB_EP_ENTRY_ADDR(USB_SRAM_EP0_IN_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x008, ep0_in_entry);
-
-    // Reserved word
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x00C, 0x00000000);
-
-    // Zero out remaining EP entries (EP1-EP4, 4 words each)
-    for (uint32_t i = 0x010; i < 0x100; i += 4) {
-        lsu_write_32(USB_DMA_BASE_ADDR + i, 0x00000000);
-    }
-    VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
-
-    // --- Step 1: Set EP list base address ---
-    lsu_write_32(USB_DEV_EPLISTSTART, 0x00000000);
-
-    // --- Step 2: Set data buffer page address ---
-    lsu_write_32(USB_DEV_DATABUFSTART, 0x00000000);
-
-    // --- Step 3: Wait for VBUS ---
-    VPRINTF(LOW, "MCU: Wait VBUS\n");
-    while(!(lsu_read_32(USB_DEV_DEVCMDSTAT) & DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK));
-
-    // --- Step 4: Enable device ---
-    // HS link-up: do NOT set FORCE_FULLSPEED. The device controller will
-    // perform HS chirp at the next bus reset.
-    reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
-             | DEV0_CSR_DEVCMDSTAT_DCON_MASK;
-    lsu_write_32(USB_DEV_DEVCMDSTAT, reg_data);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
-
-    // Read back to confirm
-    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
-
-    // --- Step 5: Enable interrupts ---
-    lsu_write_32(USB_DEV_INTEN,
-        DEV0_CSR_INTSTAT_DEV_INT_MASK |
-        DEV0_CSR_INTSTAT_EP0OUT_MASK  |
-        DEV0_CSR_INTSTAT_EP0IN_MASK);
-    VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
-        DEV0_CSR_INTSTAT_DEV_INT_MASK | DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK);
-
-    // --- Step 6: Clear pending interrupts ---
-    lsu_write_32(USB_DEV_INTSTAT, USB_DEV0_IMPLEMENTED_INTERRUPT_MASK);
-
-    VPRINTF(LOW, "MCU: boot_usb_core - done\n");
-}
-
-// -------------------------------------------------------------------------
-// boot_usb_core_hub - Initialize the USB device controller in HUB+DEVICE mode
-//
-// Legacy device entry point. Brings the on-chip hub up (usb_hub_init_and_connect
-// at Step -1), configures the EP list/SRAM buffers, and enables device mode with
-// FORCE_VBUS and FORCE_NEEDCLK set during bring-up (so the UTMI clock keeps
-// running through enumeration; suspend tests clear FORCE_NEEDCLK later via
-// usb_allow_clock_stop()). DEVCMDSTAT is written through usb_devcmdstat_write()
-// so LPM_SUP is forced. HUB_CONNECT is NOT asserted here - the test calls
-// usb_hub_connect() once the device controller is fully programmed.
-// -------------------------------------------------------------------------
-void boot_usb_core_hub(void) {
-    uint32_t reg_data;
-
-    VPRINTF(LOW, "MCU: boot_usb_core_hub - initializing USB device controller (hub+device)\n");
+    VPRINTF(LOW, "MCU: boot_usb_core - initializing USB device controller"
+            " (hub_en=%d fs_en=%d)\n", (int)hub_en, (int)fs_en);
 
     // --- Step -1: bring up the compound hub (phase 1 of 2) ---
     // USB_EnableHub is tied 1'b0 at top level, so the hub entity is brought up
@@ -424,35 +326,20 @@ void boot_usb_core_hub(void) {
     // overrides and sets HUB_EN; it must run before the host can ever see the
     // embedded device controllers. HUB_CONNECT is asserted separately, later,
     // by usb_hub_connect() once the device controller is also ready.
-    usb_hub_init_and_connect();
+    if (hub_en) {
+        usb_hub_init_and_connect();
+    }
 
     // --- Step 0: Initialize SRAM via DMA port ---
-
-    // EP0 OUT entry: Active=1, NBytes=8 (for SETUP). USB_EP_ENTRY_ABS_ADDR
-    // subtracts the controller's MEM base before the >>6 shift, so the
-    // AddrOffset field is offset-relative for BOTH DEV0 (base 0x3000_0000) and
-    // DEV1 (base 0x3001_0000). This must match the offset-relative form used by
-    // usb_ep0_reinit() after a bus reset; otherwise DEV1 bit16 of the absolute
-    // address would leak into AddrOffset bit10 and point the buffers outside the
-    // DEV1 SRAM window (see USB_EP_ENTRY_ABS_ADDR in usb.h).
-    uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
-                           | USB_EP_ENTRY_NBYTES(8)
-                           | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP0_OUT_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
-    VPRINTF(LOW, "MCU: EP0 OUT entry = 0x%x\n", ep0_out_entry);
-
-    uint32_t ep0_setup_entry = USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x004, ep0_setup_entry);
-
-    uint32_t ep0_in_entry = USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x008, ep0_in_entry);
+    // EP0 OUT/SETUP/IN entries use the same programming as after a bus reset.
+    usb_ep0_reinit();
 
     // Reserved word
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x00C, 0x00000000);
+    lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + 0x00C, 0x00000000);
 
     // Zero out remaining EP entries (EP1-EP4, 4 words each)
     for (uint32_t i = 0x010; i < 0x100; i += 4) {
-        lsu_write_32(USB_DMA_BASE_ADDR + i, 0x00000000);
+        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP_LIST_OFFSET + i, 0x00000000);
     }
     VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
 
@@ -461,19 +348,30 @@ void boot_usb_core_hub(void) {
     // EPLISTSTART is relative to it, so it is 0.
     lsu_write_32(USB_DEV_EPLISTSTART, 0x00000000);
 
-
     // --- Step 2: Set data buffer page address ---
     lsu_write_32(USB_DEV_DATABUFSTART, 0x00000000);
 
     // --- Step 3: Enable device ---
-    // HS link-up: do NOT set FORCE_FULLSPEED. FORCE_NEEDCLK keeps the UTMI
-    // clock running during bring-up (suspend tests clear it later). Composed
-    // from literal masks and written through usb_devcmdstat_write() so LPM_SUP
-    // is (re-)forced rather than cleared.
+    // Standalone without FORCE_VBUS, the device connects straight upstream, so
+    // wait for a debounced VBUS before asserting DCON. In hub mode the hub
+    // gates the upstream connect instead.
+    // FIXME does fs_en need to wait for VBUS_DEBOUNCED?
+    if (!hub_en && !fs_en) {
+        VPRINTF(LOW, "MCU: Wait VBUS\n");
+        usb_wait_vbus_debounced();
+    }
+    // HS link-up: do NOT set FORCE_FULLSPEED unless fs_en. FORCE_NEEDCLK keeps
+    // the UTMI clock running during bring-up (suspend tests clear it later).
+    // Composed from literal masks and written through usb_devcmdstat_write() so
+    // LPM_SUP is (re-)forced rather than cleared.
     reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
-    //         | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
              | DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK
              | DEV0_CSR_DEVCMDSTAT_DCON_MASK;
+    if (fs_en) {
+        // FIXME remove the FORCE_VBUS call?
+        reg_data |= DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
+                  | DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK;
+    }
     usb_devcmdstat_write(reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n",
             reg_data | DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK);
@@ -493,84 +391,17 @@ void boot_usb_core_hub(void) {
     // --- Step 5: Clear pending interrupts ---
     lsu_write_32(USB_DEV_INTSTAT, USB_DEV0_IMPLEMENTED_INTERRUPT_MASK);
 
-    VPRINTF(LOW, "MCU: boot_usb_core_hub - done\n");
+    VPRINTF(LOW, "MCU: boot_usb_core - done\n");
 }
 
-// -------------------------------------------------------------------------
-// boot_usb_core_fs - Initialize the USB device controller in HUB+DEVICE FS mode
-//
-// Identical to boot_usb_core_hub() except that DEVCMDSTAT bit 21
-// (FORCE_FULLSPEED - the legacy PFSC bit) is set before connecting, which
-// suppresses the device-side K-chirp so the UTMI TX is ready for FS packet
-// exchange immediately. Use in tests that run with a FS-only host VIP
-// (high_speed_capable=0) where no chirp reply is driven and the ~2.2ms chirp
-// timeout would stall the first SETUP. DO NOT use when HS operation is required.
-// -------------------------------------------------------------------------
+// Legacy HS-only entry point: wrapper for boot_usb_core(false, true).
+void boot_usb_core_hub(void) {
+    boot_usb_core(false, true);
+}
+
+// Legacy FS-only entry point retained for existing tests.
 void boot_usb_core_fs(void) {
-    uint32_t reg_data;
-
-    VPRINTF(LOW, "MCU: boot_usb_core_fs - initializing USB device controller (hub+device, FS-only)\n");
-
-    // --- Step -1: bring up the compound hub (phase 1 of 2) ---
-    usb_hub_init_and_connect();
-
-    // --- Step 0: Initialize SRAM via DMA port ---
-    uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
-                           | USB_EP_ENTRY_NBYTES(8)
-                           | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP0_OUT_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x000, ep0_out_entry);
-    VPRINTF(LOW, "MCU: EP0 OUT entry = 0x%x\n", ep0_out_entry);
-
-    uint32_t ep0_setup_entry = USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_SETUP_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x004, ep0_setup_entry);
-
-    uint32_t ep0_in_entry = USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR + USB_SRAM_EP0_IN_BUF_OFFSET);
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x008, ep0_in_entry);
-
-    // Reserved word
-    lsu_write_32(USB_DMA_BASE_ADDR + 0x00C, 0x00000000);
-
-    // Zero out remaining EP entries (EP1-EP4, 4 words each)
-    for (uint32_t i = 0x010; i < 0x100; i += 4) {
-        lsu_write_32(USB_DMA_BASE_ADDR + i, 0x00000000);
-    }
-    VPRINTF(LOW, "MCU: EP list and SRAM buffers initialized\n");
-
-    // --- Step 1: Set EP list base address ---
-    lsu_write_32(USB_DEV_EPLISTSTART, 0x00000000);
-
-    // --- Step 2: Set data buffer page address ---
-    lsu_write_32(USB_DEV_DATABUFSTART, 0x00000000);
-
-    // --- Step 3: Enable device in FS-only mode ---
-    // FORCE_FULLSPEED (bit 21) suppresses the device-side K-chirp so the UTMI
-    // TX initializes immediately for FS. Written through usb_devcmdstat_write()
-    // so LPM_SUP is (re-)forced.
-    reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
-             | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
-             | DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK
-             | DEV0_CSR_DEVCMDSTAT_DCON_MASK
-             | DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK;
-    usb_devcmdstat_write(reg_data);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n",
-            reg_data | DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK);
-
-    // Read back to confirm
-    reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT readback = 0x%x\n", reg_data);
-
-    // --- Step 4: Enable interrupts ---
-    lsu_write_32(USB_DEV_INTEN,
-        DEV0_CSR_INTSTAT_DEV_INT_MASK |
-        DEV0_CSR_INTSTAT_EP0OUT_MASK  |
-        DEV0_CSR_INTSTAT_EP0IN_MASK);
-    VPRINTF(LOW, "MCU: USB INTEN written = 0x%x\n",
-        DEV0_CSR_INTSTAT_DEV_INT_MASK | DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK);
-
-    // --- Step 5: Clear pending interrupts ---
-    lsu_write_32(USB_DEV_INTSTAT, USB_DEV0_IMPLEMENTED_INTERRUPT_MASK);
-
-    VPRINTF(LOW, "MCU: boot_usb_core_fs - done\n");
+    boot_usb_core(true, true);
 }
 
 void usb_ep0_reinit(void) {
@@ -912,9 +743,7 @@ void usb_set_device_connect(uint8_t connected) {
              DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK |
              DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
     if (connected != 0u) {
-        while ((lsu_read_32(USB_DEV_DEVCMDSTAT) &
-                DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK) == 0u) {
-        }
+        usb_wait_vbus_debounced();
         cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
         cmd &= ~(DEV0_CSR_DEVCMDSTAT_SETUP_MASK |
                  DEV0_CSR_DEVCMDSTAT_DCON_C_MASK |
@@ -932,7 +761,7 @@ void usb_set_device_connect(uint8_t connected) {
 // usb_allow_clock_stop
 //
 // Clear FORCE_NEEDCLK so the device controller can drop its unconditional clock
-// request and actually reach suspend. boot_usb_core_hub() / boot_usb_core_fs()
+// request and actually reach suspend. boot_usb_core() / boot_usb_core_fs()
 // set FORCE_NEEDCLK=1 to keep the UTMI clock running during bring-up, which is
 // what the enumeration-only tests want; while it is set, utmi_suspendm never
 // falls and a suspend/resume checker never sees its edge. Call this after
@@ -1127,8 +956,8 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
 // bmRequestType (type + recipient) and bRequest. This is the unified SUPERSET
 // handler that services BOTH the legacy device family and the upstream OCP/host
 // family on disjoint branches:
-//   - Standard/Device GET_DESCRIPTOR(DEVICE): serves the legacy compile-time
-//     selected dev0/dev1 device descriptor (usb_ep0_send_device_descriptor).
+//   - Standard/Device GET_DESCRIPTOR(DEVICE): serves the compile-time selected
+//     dev0/dev1 device descriptor (usb_ep0_send_device_descriptor).
 //   - Standard/Device GET_DESCRIPTOR(CONFIGURATION): serves the application's
 //     config descriptor via the usb_get_config_descriptor hook (OCP/host path).
 //   - Standard/Device GET_STATUS / SET_FEATURE / CLEAR_FEATURE: legacy
@@ -1171,10 +1000,8 @@ bool usb_handle_control_transfer(void) {
                     bool have_descriptor = false;
 
                     if (desc_type == USB_DESC_DEVICE) {
-                        // Legacy device path: serve the compile-time-selected
-                        // dev0/dev1 device descriptor. The OCP/host family never
-                        // issues GET_DESCRIPTOR(DEVICE), so this branch is
-                        // exclusive to the device tests.
+                        // Serve the compile-time-selected dev0/dev1 device
+                        // descriptor (all test families, including OCP).
                         nbytes = (pkt.wLength < 18u) ? pkt.wLength : 18u;
                         usb_ep0_send_device_descriptor(nbytes);
                         have_descriptor = true;

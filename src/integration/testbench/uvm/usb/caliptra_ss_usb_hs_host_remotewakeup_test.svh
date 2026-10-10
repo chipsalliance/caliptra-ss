@@ -231,6 +231,10 @@ class caliptra_ss_usb_hs_host_remotewakeup_test extends caliptra_ss_usb_base_tes
         dev_agent_cfg.enable_phys_reporting          = 1;
         dev_agent_cfg.enable_runtime_trace_recording = 1;
 
+        // Built-in VIP protocol and link layer functional coverage.
+        dev_agent_cfg.enable_prot_cov                = 1;
+        dev_agent_cfg.enable_link_cov                = 1;
+
         // Install as host_cfg. The env build_phase sees component_type==DEVICE
         // and skips the remote_cfg clone, leaving the single agent as DEVICE.
         cfg.host_cfg = dev_agent_cfg;
