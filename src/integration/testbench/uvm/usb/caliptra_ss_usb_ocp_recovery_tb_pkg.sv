@@ -17,6 +17,7 @@ package caliptra_ss_usb_ocp_recovery_tb_pkg;
 // This package is the verification-side source of OCP Recovery protocol
 // definitions. Values are independently derived from OCP Recovery v1.1 and
 // USB 2.0; the package intentionally has no dependency on DUT/RTL packages.
+// Implementation-specific address metadata is identified separately below.
 
 typedef logic [7:0] ocp_cmd_t;
 
@@ -37,6 +38,11 @@ localparam ocp_cmd_t OCP_CMD_INDIRECT_FIFO_STATUS = 8'h2E;
 localparam ocp_cmd_t OCP_CMD_INDIRECT_FIFO_DATA   = 8'h2F;
 localparam ocp_cmd_t OCP_CMD_MIN                  = OCP_CMD_PROT_CAP;
 localparam ocp_cmd_t OCP_CMD_MAX                  = OCP_CMD_INDIRECT_FIFO_DATA;
+
+// EXT aperture-relative byte offsets for collision observation, matching the
+// integration register map in usb_ocp_recovery_reg.rdl. These select observed
+// registers; they are not protocol response expectations.
+`include "generated/usb_ocp_recovery_reg_addr_defs.svh"
 
 // Compatibility names used by the existing recovery sequence.
 localparam ocp_cmd_t OCP_REC_CMD_PROT_CAP             = OCP_CMD_PROT_CAP;

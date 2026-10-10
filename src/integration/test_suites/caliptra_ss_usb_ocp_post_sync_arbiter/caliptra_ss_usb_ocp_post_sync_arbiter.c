@@ -17,14 +17,18 @@
 #include "caliptra_ss_lib.h"
 #include "mci.h"
 #include "printf.h"
+#include "riscv-csr.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
 #define USB_EVENT_LOOP_DIAG_PERIOD 0u
 #include "usb.h"
 #include "usb_ocp_recovery.h"
+#include "veer-csr.h"
 
 #define COMMAND_COMPLETION_ITERATION_LIMIT 1000000u
 #define RESET_COMPLETION_ITERATION_LIMIT 20000u
+// MPMC[0] requests halt; keep MPMC[1] clear to preserve masked interrupts.
+#define STOP_MPMC_HALT 0x1u
 
 volatile char *stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -162,6 +166,23 @@ uint8_t main(void)
             USB_LEGACY_EP0_COMMAND_NIBBLE_MASK);
         generation = (uint16_t)(command &
             USB_LEGACY_EP0_COMMAND_GENERATION_MASK);
+
+        if (opcode == USB_LEGACY_EP0_COMMAND_STOP) {
+            if ((expected_delta != 0u) || baseline_valid ||
+                !generation_is_newer(generation, last_generation)) {
+                handle_error("MCU: invalid observer STOP command\n");
+            }
+            // STOP acknowledgement is the final I/O. Unlike snapshot ACKs,
+            // it must not be followed by command-release polling or IRQ I/O.
+            csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+            __asm__ volatile ("fence iorw, iorw" ::: "memory");
+            lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+                         make_command_ack(opcode, expected_delta, generation));
+            __asm__ volatile ("fence iorw, iorw" ::: "memory");
+            while (1) {
+                csr_write_mpmc(STOP_MPMC_HALT);
+            }
+        }
 
         if ((opcode == USB_LEGACY_EP0_COMMAND_CLEAR_DCON) ||
             (opcode == USB_LEGACY_EP0_COMMAND_SET_DCON)) {

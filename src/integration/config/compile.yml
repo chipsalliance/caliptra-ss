@@ -183,6 +183,8 @@ targets:
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_common_pkg.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
