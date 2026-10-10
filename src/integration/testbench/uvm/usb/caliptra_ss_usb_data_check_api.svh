@@ -75,6 +75,25 @@ interface class caliptra_ss_usb_data_check_api;
   // third_party/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl.
   pure virtual function void check_hub_descriptor(uvm_object usb_item, string device_name);
 
+  // Negotiated link speed check (DEVCMDSTAT.Speed, bits [23:22]). The value is
+  // read straight out of the RTL through usb_dev_addr_probe, so no USB
+  // transfer is involved and there is no usb_item argument. expected_speed
+  // uses the IP encoding from usb_subcmp_pkg.p.vhdl:
+  //   FULL_SPEED = 2'b01, HIGH_SPEED = 2'b10.
+  // Only "dev0" and "dev1" are defined. Both names resolve to the same
+  // compound-level net (a single upstream link means a single negotiated
+  // speed), so checking both does not add independent coverage. See the header
+  // of src/integration/testbench/usb_dev_addr_probe.sv.
+  pure virtual function void check_device_speed(string device_name,
+                                               bit [1:0] expected_speed);
+
+  // Note: there is no CHIP_ID check in this API. CHIP_ID is INFO[31:16] =
+  // {C_MAJOR_REV, C_MINOR_REV}, both VHDL generics of usb_reg_if, and VCS does
+  // not support a cross-module reference whose target is a VHDL generic
+  // (Error-[VHDLXMRE-NS]), so the value cannot be bridged into the TB. CHIP_ID
+  // is checked in firmware instead, by reading the INFO register: see
+  // usb_check_chip_id() in src/integration/test_suites/libs/usb/usb.c.
+
 
 endclass:caliptra_ss_usb_data_check_api
 

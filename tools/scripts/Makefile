@@ -345,6 +345,7 @@ VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
 #VCS_SIM_OPTS  += -mx_force
 VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
+VCS_SIM_OPTS  += +mcu_console_fail_check=1
 ############# VCS Simulation Override Options #############
 VCS_SIM_EXTRA_OPTS ?= 
 

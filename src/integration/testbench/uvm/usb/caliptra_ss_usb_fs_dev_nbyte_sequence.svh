@@ -13,11 +13,11 @@
 `define CALIPTRA_SS_USB_FS_DEV_NBYTE_SEQUENCE_SV
 
 // =============================================================================
-// USB HS device NBytes residual test sequence for the Caliptra SS SVT UVM VIP
+// USB FS device NBytes residual test sequence for the Caliptra SS SVT UVM VIP
 // environment.
 //
 // Sequence flow:
-//   1. Wait for HS link ENABLED, start SOF.
+//   1. Wait for the link ENABLED, start SOF.
 //   2. Enumerate the device (GET_DESCRIPTOR, SET_ADDRESS, SET_CONFIGURATION).
 //   3. Send 5 successive short bulk OUT packets to EP1 with lengths 1..5 bytes.
 //      Payload pattern: byte[j] = j+1 for j = 0..len-1.
@@ -27,7 +27,9 @@
 //   - NBytes residual == 32 - i  after each transfer
 //   - Buffer address offset advanced by one 64-byte chunk
 //   - Received byte pattern matches j+1
-//   - FRAME_INT co-asserted with EP1OUT
+//   - FRAME_INT seen in the window before each EP1OUT (guaranteed by the
+//     1200 us inter-packet dwell, which exceeds the 1 ms full-speed SOF
+//     period)
 // =============================================================================
 
 // Number of short-packet iterations (must match USB_NBYTE_ITERATIONS in .c).
@@ -96,11 +98,11 @@ class caliptra_ss_usb_fs_dev_nbyte_sequence extends caliptra_ss_usb_base_sequenc
         shared_status = resolve_shared_status();
         usb_cfg       = resolve_usb_cfg();
 
-        // Wait for HS link ENABLED.
-        wait_for_link_enabled(shared_status, "HS host link");
+        // Wait for the host link to reach ENABLED.
+        wait_for_link_enabled(shared_status, "FS host link");
 
         `uvm_info("USB_FS_NBYTE_SEQ",
-            "[DBG] body() begin - hub-composite HS nbyte sequence starting.", UVM_NONE)
+            "[DBG] body() begin - hub-composite FS nbyte sequence starting.", UVM_NONE)
 
         start_sof_generation();
         `uvm_info("USB_FS_NBYTE_SEQ", "[DBG] SOF started; settling 20us.", UVM_NONE)
@@ -129,19 +131,25 @@ class caliptra_ss_usb_fs_dev_nbyte_sequence extends caliptra_ss_usb_base_sequenc
             "[DBG] Starting short-packet bulk OUT iteration loop.", UVM_NONE)
         for (int unsigned iter = 1; iter <= `USB_FS_NBYTE_ITERATIONS; iter++) begin
             `uvm_info("USB_FS_NBYTE_SEQ",
-                $sformatf("[DBG] Iteration %0d: waiting 130us then sending %0d-byte OUT.",
+                $sformatf("[DBG] Iteration %0d: waiting 1200us then sending %0d-byte OUT.",
                           iter, iter), UVM_NONE)
             // Allow time for EP1 to be armed / re-armed by the MCU before
-            // submitting the next OUT token.  130 us is required to satisfy
+            // submitting the next OUT token.  1200 us is required to satisfy
             // three constraints simultaneously:
-            //   1. MCU polling latency: MCU takes ~22.5 us to detect Active=0
-            //      and re-arm; 130 us >> 22.5 us prevents residual mismatch.
-            //   2. FRAME_INT window: HS SOF fires every 125 us; 130 us
-            //      guarantees at least one SOF per iteration window so
-            //      frame_int_seen is set before the next EP1OUT detection.
+            //   1. FRAME_INT window: at full speed SOF fires every 1 ms. A
+            //      1200 us gap is longer than one full SOF period, so at least
+            //      one SOF is guaranteed inside every iteration window no
+            //      matter where in the frame the previous packet landed. This
+            //      makes the firmware per-iteration FRAME_INT check
+            //      satisfiable. The HS variant of this test uses 200 us
+            //      because the HS SOF period is only 125 us.
+            //   2. MCU polling latency: MCU takes ~22.5 us to detect Active=0
+            //      and re-arm; 1200 us >> 22.5 us prevents residual mismatch.
             //   3. Host/MCU synchronization: keeps all 5 iterations in lockstep
             //      so the MCU processes each one before the next packet arrives.
-            #130us;
+            // Cost: 5 iterations x ~1.07 ms of extra simulated time (~5.35 ms).
+            // The firmware USB_POLL_TIMEOUT is sized accordingly.
+            #1200us;
 
             send_short_bulk_out(host_agent_h, usb_cfg, iter, int'(iter));
 
@@ -159,7 +167,7 @@ class caliptra_ss_usb_fs_dev_nbyte_sequence extends caliptra_ss_usb_base_sequenc
 
         `uvm_info("USB_FS_NBYTE_SEQ",
             "[DBG] body() end - all iterations sent and drain complete.", UVM_NONE)
-        `uvm_info("USB_FS_NBYTE_SEQ","HS dev nbyte sequence complete.",UVM_LOW)
+        `uvm_info("USB_FS_NBYTE_SEQ","FS dev nbyte sequence complete.",UVM_LOW)
     endtask
 
 endclass
