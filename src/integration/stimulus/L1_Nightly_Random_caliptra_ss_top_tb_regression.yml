@@ -44,6 +44,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_st_trans_rma_no_ppd_pin/caliptra_ss_lcc_st_trans_rma_no_ppd_pin: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_volatile_unlock_wrong_state/caliptra_ss_lcc_volatile_unlock_wrong_state: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_lcc_otp_prog_error/caliptra_ss_lcc_otp_prog_error: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_access_collision/caliptra_ss_usb_ocp_access_collision: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_flow_random_image/caliptra_ss_usb_ocp_flow_random_image: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_remote_wakeup/caliptra_ss_usb_hs_dev_remote_wakeup: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_init/caliptra_ss_usb_init: { weight: 100 }

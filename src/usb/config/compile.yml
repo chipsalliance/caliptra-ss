@@ -60,6 +60,11 @@ targets:
   rtl_lint:
     waiver_files:
       - $MSFT_REPO_ROOT/src/usb2/config/design_lint/sglint_waivers
+  tb:
+    directories:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
+    files:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl

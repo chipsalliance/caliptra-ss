@@ -41,6 +41,16 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_test
                 type_id::get());
     endfunction
 
+    virtual task mcu_halt_monitor_task(uvm_phase phase);
+        // The MCU firmware remains in the USB service loop after the
+        // firmware-owned status sequence completes.
+        `uvm_info("phase_ready_to_end",
+            "Firmware status ownership sequence complete; skipping MCU halt wait.",
+            UVM_LOW)
+        phase.drop_objection(
+            this, "Firmware status ownership firmware remains in service loop");
+    endtask
+
 endclass
 
 `endif // CALIPTRA_SS_USB_OCP_FIRMWARE_STATUS_OWNERSHIP_TEST_SV

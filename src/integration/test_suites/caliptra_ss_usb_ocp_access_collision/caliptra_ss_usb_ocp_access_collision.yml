@@ -1,0 +1,12 @@
+seed: 1
+testname: caliptra_ss_usb_ocp_access_collision
+pre-exec: |
+  set -eu
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_ocp_access_collision \
+       CALIPTRA_TESTNAME=cptra_usb_ocp_cmd_handling \
+       CALIPTRA_AUX=usb_ocp_recovery_cptra \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_ocp_access_collision_test'
