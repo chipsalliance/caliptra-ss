@@ -128,6 +128,7 @@ module kmac_ss_msgfifo
 
     .flush_i      (process_i),
     .flush_done_o (packer_flush_done),
+    .clr_i        ('0),
 
     .err_o (packer_err)
   );
