@@ -418,7 +418,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                                   OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                                   "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
         mark_check("OCP_CMD_004",
-            "write-to-RO error latched and cleared by consecutive RA reads");
+            "write-to-RO err latched and cleared by consecutive RA reads");
 
         check_optional_hw_status(agent_caps);
         check_optional_vendor(agent_caps);
