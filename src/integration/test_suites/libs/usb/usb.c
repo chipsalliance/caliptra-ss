@@ -15,6 +15,7 @@
 
 #include "usb.h"
 
+
 // Shadow of the staged device-address (DEVCMDSTAT[6:0]).
 //
 // Hardware quirk (IP-XXX-3511): DEVCMDSTAT[6:0] reads return the LIVE
@@ -153,16 +154,6 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
 
     return false;
 }
-
-// Minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t for SRAM
-// writes). Used by the hook-based (OCP/host) enumeration path.
-const uint32_t usb_default_device_descriptor[5] = {
-    0x02000112,  // bLength=18, bDescType=1(DEVICE), bcdUSB=0x0200 (LE)
-    0x40000000,  // bDevClass=0, bDevSubClass=0, bDevProto=0, bMaxPktSz0=64
-    0x00000000,  // idVendor=0x0000, idProduct=0x0000
-    0x00000100,  // bcdDevice=0x0100, iManufacturer=0
-    0x01000000   // iProduct=0, iSerialNumber=0, bNumConfigurations=1
-};
 
 // Fixed USB 2.0 device descriptors for the two embedded controllers. DEV0 and
 // DEV1 carry distinct idProduct/bcdDevice values so a scoreboard can identify
@@ -1371,6 +1362,49 @@ bool usb_handle_control_transfer(void) {
     }
 
     return handled;
+}
+
+// -------------------------------------------------------------------------
+// usb_check_chip_id
+//
+// Strict exact-value check of CHIP_ID = INFO[31:16] = {MAJREV, MINREV} against
+// the delivered IP configuration. The two revision bytes are driven straight
+// from the usb_reg_if C_MAJOR_REV / C_MINOR_REV VHDL generics
+// ("reg_rdata(31 downto 24) <= C_MAJOR_REV",
+//  "reg_rdata(23 downto 16) <= C_MINOR_REV"), so reading INFO exercises the
+// same readback path those generics feed.
+//
+// This check lives in firmware rather than in the testbench because VCS
+// rejects a cross-module reference whose target is a VHDL generic
+// (Error-[VHDLXMRE-NS]), so the value cannot be probed from SystemVerilog
+// through usb_dev_addr_probe. Pass USB_DEV_INFO_CHIP_ID_EXP for the expected
+// value. The read targets the active controller, so the same call is valid for
+// USBDC0 and USBDC1.
+//
+// A mismatch is reported the same way handle_error() in caliptra_ss_lib.h does
+// (VPRINTF(FATAL), then TB_CMD_TEST_FAIL over stdout, then halt), open-coded
+// here so this library keeps its current minimal include set and does not pull
+// in caliptra_ss_lib.h. 0x01 is TB_CMD_TEST_FAIL.
+// -------------------------------------------------------------------------
+void usb_check_chip_id(uint32_t expected_chip_id) {
+    uint32_t info = lsu_read_32(USB_DEV_INFO);
+    uint32_t majrev = (info & DEV0_CSR_INFO_MAJREV_MASK) >> DEV0_CSR_INFO_MAJREV_LOW;
+    uint32_t minrev = (info & DEV0_CSR_INFO_MINREV_MASK) >> DEV0_CSR_INFO_MINREV_LOW;
+    uint32_t chip_id = ((majrev & 0xFFu) << 8) | (minrev & 0xFFu);
+
+    VPRINTF(LOW, "MCU: USB dev%d INFO = 0x%x CHIP_ID = 0x%x (MAJREV=0x%x MINREV=0x%x)\n",
+            usb_get_active_device(), info, chip_id, majrev, minrev);
+
+    if (chip_id != (expected_chip_id & 0xFFFFu)) {
+        VPRINTF(FATAL, "MCU: USB dev%d CHIP_ID mismatch: expected 0x%x got 0x%x (INFO=0x%x)\n",
+                usb_get_active_device(), expected_chip_id & 0xFFFFu, chip_id, info);
+        SEND_STDOUT_CTRL(0x01);
+        while (1);
+    }
+
+
+    VPRINTF(LOW, "MCU: USB dev%d CHIP_ID check passed (0x%x)\n",
+            usb_get_active_device(), chip_id);
 }
 
 // File contains AI-generated response based on internal company sources

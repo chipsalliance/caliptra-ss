@@ -1014,6 +1014,8 @@ ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_common_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/tb_top_pkg.sv
@@ -1031,6 +1033,7 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/fc_lcc_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_services.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_bfm_services_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_mcu_console_fail_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_fs_speed_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_vbus_driver.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_suspend_resume_checker.sv
