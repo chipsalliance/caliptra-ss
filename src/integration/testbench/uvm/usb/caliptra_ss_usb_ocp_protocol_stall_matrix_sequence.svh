@@ -22,10 +22,9 @@
 //
 // The sequence exercises, in a single arbiter-observed run:
 //   1. Normal unclaimed enumeration and one clean claimed PROT_CAP window.
-//      The claimed window is observed by the arbiter_checker configured
-//      for mirrored_setup_mode=1, which now compares the mirrored SETUP
-//      SRAM contents against the host-transmitted 8 SETUP bytes and
-//      requires at least one SETUP-aperture SRAM write.
+//      The arbiter checker compares the mirrored SETUP SRAM contents against
+//      the host-transmitted 8 SETUP bytes and requires at least one
+//      SETUP-aperture SRAM write.
 //   2. Persistent STALL cross-token PROXY: after an unsupported command
 //      error, repeated identical erroneous EP0 CONTROL transfers must
 //      continue to report non-SUCCESS on every iteration (each aggregate
@@ -366,9 +365,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
     endtask
 
     // Arbiter observation: one unclaimed enumeration + one clean claimed
-    // PROT_CAP window under the mirrored-SETUP expectations. The
-    // arbiter_checker itself (mirrored_setup_mode=1) enforces permitted vs
-    // suppressed effects.
+    // PROT_CAP window under the architecture's mirrored-SETUP contract.
     protected virtual task arbiter_window_normal_claim();
         bit [7:0] response[$];
         logic [15:0] gen;

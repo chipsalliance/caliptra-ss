@@ -60,6 +60,11 @@ targets:
   rtl_lint:
     waiver_files:
       - $MSFT_REPO_ROOT/src/usb2/config/design_lint/sglint_waivers
+  tb:
+    directories:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
+    files:
+      - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/usb_ocp_recovery_pkg.sv
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl
@@ -150,4 +155,8 @@ global:
         - '-P $AVERY_PLI/tb_vcs64.tab'
       sim:
         - '+vpi'
-        - '+svt_debug_opts'
+        # Enable SVT debug automation: activates protocol, link, and physical
+        # trace files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+        # Config properties enable_prot_tracing, enable_link_tracing, and
+        # enable_phys_tracing gate which layers are written.
+        #- '+svt_debug_opts'

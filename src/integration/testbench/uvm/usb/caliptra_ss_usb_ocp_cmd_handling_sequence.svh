@@ -394,23 +394,19 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
         initialize_ocp_transport();
 
-        prot_cap_read_and_check(
-            agent_caps, cms_count, heartbeat_period);
+        prot_cap_read_and_check( agent_caps, cms_count, heartbeat_period);
         mark_check("OCP_CMD_001",
-            $sformatf("PROT_CAP spec invariants checked caps=0x%04h cms_count=%0d",
-                      agent_caps, cms_count));
+                   $sformatf("PROT_CAP spec invariants checked caps=0x%04h cms_count=%0d",
+                             agent_caps, cms_count));
 
         device_id_read_and_check(EXPECTED_DEVICE_ID);
-        mark_check("OCP_CMD_002",
-            "firmware-programmed DEVICE_ID readback and host-RO policy checked");
+        mark_check("OCP_CMD_002", "firmware-programmed DEVICE_ID readback and host-RO policy checked");
         rejected_write = '{8'h00};
-        ocp_expect_protocol_error(
-            1'b0, OCP_CMD_DEVICE_ID, rejected_write,
-            OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-            "OCP_CMD_002_DEVICE_ID_HOST_WRITE", 1'b1);
+        ocp_expect_protocol_error(1'b0, OCP_CMD_DEVICE_ID, rejected_write,
+                                  OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+                                  "OCP_CMD_002_DEVICE_ID_HOST_WRITE", 1'b1);
 
-        device_status_read_and_check(
-            device_status, "OCP_CMD_011_DEVICE_STATUS");
+        device_status_read_and_check( device_status, "OCP_CMD_011_DEVICE_STATUS");
         check_heartbeat_behavior(heartbeat_period);
 
         // OCP Recovery v1.1 Sec 9.1 requires a write to a read-only command
@@ -418,10 +414,9 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         // DEVICE_STATUS read observes the error and the second proves the
         // clear-on-read behavior required by Sec 9.1 and Sec 9.2.
         rejected_write = '{8'h00};
-        ocp_expect_protocol_error(
-            1'b0, OCP_CMD_PROT_CAP, rejected_write,
-            OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
-            "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
+        ocp_expect_protocol_error(1'b0, OCP_CMD_PROT_CAP, rejected_write,
+                                  OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
+                                  "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
         mark_check("OCP_CMD_004",
             "write-to-RO error latched and cleared by consecutive RA reads");
 

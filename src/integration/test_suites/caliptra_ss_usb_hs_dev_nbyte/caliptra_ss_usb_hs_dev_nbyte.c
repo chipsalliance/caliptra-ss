@@ -55,7 +55,7 @@
 // Maximum poll iterations before declaring timeout.
 // HS chirp takes ~3 ms sim time; poll loop body takes ~8 ns per iteration,
 // so 500000 iterations = ~4 ms; add margin for 5 bulk-OUT iterations
-// (5 x 130 us = 650 us) and enumeration (~200 us): 2000000 total.
+// (5 x 200 us = 1000 us) and enumeration (~200 us): 2000000 total.
 #define USB_POLL_TIMEOUT             2000000
 
 // EP1 OUT receive buffer placed right after EP0 buffers in the USB SRAM
@@ -116,7 +116,7 @@ static void usb_ep1_out_arm(void) {
 //
 // The TR bit (bit 28) causes the USB HS device controller to delay
 // INTSTAT.EP1OUT until the SOF reload (~125 us after DMA), which coincides
-// with the next host packet (130 us inter-packet gap in the test sequence)
+// with the next host packet (200 us inter-packet gap in the test sequence)
 // and causes the MCU to read the next iteration's NBytes residual instead
 // of the current one.
 //
@@ -144,10 +144,21 @@ void main(void) {
     uint32_t i;
     uint32_t j;
     uint32_t errors;
+    // total_errors accumulates every failing check for the whole test and is
+    // never reset. errors is per-iteration and only drives the per-iteration
+    // PASS print. Without this aggregate the firmware had no way to report a
+    // failure to the testbench and a failing check still ended in
+    // TESTCASE PASSED.
+    uint32_t total_errors   = 0;
     uint8_t  byte_val;
     bool     ep1_armed      = false;
     bool     iter_done      = false;
     bool     frame_int_seen = false; // set whenever FRAME_INT is observed in the poll loop
+    // Sticky "SOF was observed at least once during the test" flag. This is a
+    // belt-and-braces backstop for the per-iteration FRAME_INT check below:
+    // it catches the case where the loop never reaches an EP1OUT completion
+    // at all, in which case the per-iteration check would never run.
+    bool     sof_seen_once  = false;
     uint32_t iter           = 1;   // current short-packet length (1..5)
 
     VPRINTF(LOW, "=================\nMCU: USB HS device nbyte test\n=================\n\n");
@@ -159,7 +170,7 @@ void main(void) {
     // programmed the HUB RAM and set HUB_EN, and USBDC0's EP list / DEVCMDSTAT
     // / DCON are now fully programmed. usb_hub_connect() sets HUB_CONNECT so
     // the host sees the hub on the bus and begins enumerating its downstream
-    // port 0 (USBDC0), per the two-phase janus_hub_ctrl_bfm.sv sequencing
+    // port 0 (USBDC0), per the two-phase BFM sequencing
     // (hub-composite IP migration checklist item 7).
     usb_hub_connect();
     mcu_cptra_advance_brkpoint();
@@ -236,12 +247,13 @@ void main(void) {
 
 
         // Track FRAME_INT: set flag whenever the SOF interrupt is observed.
-        // FRAME_INT fires every 1 ms (SOF period). It is not guaranteed to
+        // FRAME_INT fires every 125 us (HS SOF period). It is not guaranteed to
         // coincide with an EP1OUT event in the same INTSTAT read, so we
         // accumulate it across poll iterations and check the flag once per
         // EP1OUT completion instead of re-reading INTSTAT at that moment.
         if (intstat & DEV0_CSR_INTSTAT_FRAME_INT_MASK) {
             frame_int_seen = true;
+            sof_seen_once  = true;
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_FRAME_INT_MASK);
 
         }
@@ -256,29 +268,34 @@ void main(void) {
         // reset is synchronised to the next SOF boundary. During that
         // ~125 us window, Active stays 1 even though the previous DMA is
         // complete, so the Active=0 poll does not fire until one SOF after
-        // the transfer ends. By then the host (running at #130us per packet)
-        // has sent the next packet, overwriting the entry with the wrong
-        // residual.
+        // the transfer ends. By then the host has sent the next packet,
+        // overwriting the entry with the wrong residual.
         //
         // INTSTAT.EP1OUT fires as soon as the DMA for the current transfer
         // completes - before any TR processing. With the host waiting
-        // 130 us between packets the MCU has ample time (>110 us) to read
-        // the entry and re-arm EP1 before the next OUT token arrives.
+        // 200 us between packets the MCU has ample time to read the entry
+        // and re-arm EP1 before the next OUT token arrives.
         if (ep1_armed && (intstat & DEV0_CSR_INTSTAT_EP1OUT_MASK)) {
             entry = lsu_read_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET);
 
             VPRINTF(LOW, "MCU: EP1OUT transfer complete (iteration %d)\n", iter);
 
-            // Check that FRAME_INT was observed at least once since the last
-            // EP1OUT completion (or since test start for iteration 1).
-            // Uses the accumulated frame_int_seen flag rather than a live
-            // INTSTAT re-read, because FRAME_INT fires every 125 us (SOF)
-            // and is not guaranteed to coincide with the EP1OUT window.
-            if (!frame_int_seen) {
-                VPRINTF(LOW, "MCU: FAIL - FRAME_INT not seen before EP1OUT fired (iter %d)\n",
-                        iter);
+            // Per-iteration error counter. Cleared here, before the first
+            // check of this iteration, so that no later check can wipe an
+            // earlier failure.
+            errors = 0;
+
+            // Per-iteration FRAME_INT check. The host sequence waits 200 us
+            // between packets, which is longer than the 125 us high-speed SOF
+            // period, so at least one SOF must have been observed in the
+            // window that precedes every EP1OUT completion. A missing SOF
+            // means the host stopped framing the bus or FRAME_INT is not
+            // being reported, both of which are real failures.
+            if (frame_int_seen) {
+                VPRINTF(LOW, "MCU: FRAME_INT seen in the window before EP1OUT (iter %d)\n", iter);
             } else {
-                VPRINTF(LOW, "MCU: FRAME_INT confirmed seen before EP1OUT (iter %d)\n", iter);
+                VPRINTF(LOW, "MCU: FAIL - FRAME_INT not seen before EP1OUT fired (iter %d)\n", iter);
+                errors++;
             }
             frame_int_seen = false; // reset for the next iteration window
 
@@ -296,8 +313,6 @@ void main(void) {
 
             VPRINTF(LOW, "MCU: [iter %d] EP1 entry=0x%08x  residual=%d  addr_offset_field=0x%x\n",
                     iter, entry, nbytes_residual, addr_offset_field);
-
-            errors = 0;
 
             // 1. Verify NBytes residual == 32 - i.
             // Host sends 'iter' bytes; NBytes was armed at 32, so residual
@@ -339,6 +354,8 @@ void main(void) {
                         iter, nbytes_residual);
             }
 
+            total_errors += errors;
+
             iter++;
 
             if (iter <= USB_NBYTE_ITERATIONS) {
@@ -361,15 +378,38 @@ void main(void) {
     }
 
     if (iter <= USB_NBYTE_ITERATIONS) {
-        VPRINTF(LOW, "MCU: USB HS nbyte test - TIMEOUT at iteration %d\n", iter);
+        // Not completing all iterations is a failure, not a benign exit.
+        VPRINTF(LOW, "MCU: FAIL - USB HS nbyte test TIMEOUT at iteration %d\n", iter);
+        total_errors++;
     } else {
         VPRINTF(LOW, "MCU: USB HS nbyte test - all %d iterations complete\n",
                 USB_NBYTE_ITERATIONS);
     }
 
+    // Test-level SOF check: at least one FRAME_INT must have been observed
+    // over the whole run. If no SOF was ever seen the host is not framing the
+    // bus and the transfers above are not meaningful.
+    if (!sof_seen_once) {
+        VPRINTF(LOW, "MCU: FAIL - FRAME_INT (SOF) never observed during the test\n");
+        total_errors++;
+    } else {
+        VPRINTF(LOW, "MCU: FRAME_INT (SOF) observed at least once during the test\n");
+    }
+
     reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT final = 0x%x\n", reg_data);
+    VPRINTF(LOW, "MCU: USB HS nbyte test - total_errors = %d\n", total_errors);
+
+    // Only the failing verdict is emitted. TB_CMD_TEST_PASS makes the
+    // testbench print TESTCASE PASSED and $finish before the UVM final_phase
+    // runs, which would mask real UVM_ERRORs from the VIP, so a passing run
+    // is left to the UVM verdict.
+    if (total_errors != 0) {
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    }
 
     VPRINTF(LOW, "MCU: USB HS nbyte test - halting\n");
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources

@@ -22,9 +22,24 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
         caliptra_ss_usb_ocp_firmware_status_ownership_sequence)
     `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
 
+    protected caliptra_ss_usb_ocp_arbiter_checker arb_checker;
+    protected logic [15:0] packet_window_generation;
+
     function new(string name =
         "caliptra_ss_usb_ocp_firmware_status_ownership_sequence");
         super.new(name);
+        packet_window_generation = 16'h0001;
+    endfunction
+
+    protected virtual function bit get_arb_chk();
+        if (!uvm_config_db#(
+                caliptra_ss_usb_ocp_arbiter_checker)::get(
+                    null, "", "ocp_arbiter_checker", arb_checker)) begin
+            `uvm_fatal("OCP_STATUS_OWNERSHIP",
+                "ocp_arbiter_checker not found in config_db")
+            return 1'b0;
+        end
+        return 1'b1;
     endfunction
 
     protected virtual task wait_fw_generation(
@@ -207,18 +222,32 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
 
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
+        int unsigned stall_count;
 
         payload = '{8'hA5};
+        arb_checker.packet_callback.start_window(packet_window_generation);
+        packet_window_generation++;
         ocp_try_write(command, payload, result, label);
-        if (result == OCP_XFER_ABORTED) begin
-            `uvm_error("OCP_STATUS_OWNERSHIP",
-                $sformatf("%s aborted before the current protocol response completed.",
+        arb_checker.packet_callback.stop_window();
+        stall_count = arb_checker.packet_callback.count_pid(
+            svt_usb_packet::STALL,
+            caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX);
+        if (stall_count == 0) begin
+            `uvm_fatal("OCP_STATUS_OWNERSHIP",
+                $sformatf("%s did not receive the required protocol STALL.",
                           label))
+        end
+        if (result != OCP_XFER_ABORTED) begin
+            `uvm_fatal("OCP_STATUS_OWNERSHIP",
+                $sformatf({"%s received STALL, but the VIP result was %s ",
+                           "instead of ABORTED."},
+                          label, result.name()))
         end
     endtask
 
     virtual task body();
         if (!get_sem_vif()) return;
+        if (!get_arb_chk()) return;
         initialize_ocp_transport();
 
         for (int unsigned generation = 1; generation <= 5; generation++) begin
