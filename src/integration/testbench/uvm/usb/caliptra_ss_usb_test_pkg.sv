@@ -39,12 +39,8 @@ package caliptra_ss_usb_test_pkg;
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_ctrl_base_sequence.svh"
-  // Legacy NXP host-side base sequence. Distinct from the upstream
-  // caliptra_ss_usb_ctrl_base_sequence above: upstream PR #1309 renamed its
-  // own base sequence to _ctrl_ precisely to avoid a name clash with this
-  // pre-existing NXP class, so the two coexist. The ~40 NXP device/dev1/hub
-  // sequences below extend this class, so it must be included before them.
+  // Common host-side base sequence. Every device/dev1/hub, init and OCP
+  // recovery sequence below extends this class, so it must be included first.
   `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
 

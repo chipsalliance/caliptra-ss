@@ -27,6 +27,9 @@
 //     wait_xfer_done() and agent_h.reconfigure() after a SET_ADDRESS).
 //   - resolve_shared_status(): fetch the svt_usb_status object the link FSM
 //     writes, via p_sequencer.get_shared_status(this).
+//   - resolve_xfer_handles(): resolve the agent, configuration and shared
+//     status handles in one call (used by the init and OCP recovery
+//     sequences, which cache them as members).
 //   - wait_for_link_enabled(): the fork/disable idiom that blocks until
 //     shared_status.link_usb_20_state reaches ENABLED, with a periodic
 //     status log every 10 us while waiting. Bounded by timeout_us; on
@@ -179,6 +182,22 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             `uvm_fatal("USB_BASE_SEQ", "Unable to cast configuration to svt_usb_configuration")
         return usb_cfg;
     endfunction
+
+    // -------------------------------------------------------------------
+    // resolve_xfer_handles
+    //
+    // Resolve the host agent, configuration and shared status in one call
+    // for sequences that cache all three as members before issuing
+    // transfers.
+    // -------------------------------------------------------------------
+    virtual task resolve_xfer_handles(
+        output svt_usb_agent         host_agent_h,
+        output svt_usb_configuration usb_cfg,
+        output svt_usb_status        shared_status);
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
+        usb_cfg       = resolve_usb_cfg();
+    endtask
 
     // -------------------------------------------------------------------
     // start_sof_generation
