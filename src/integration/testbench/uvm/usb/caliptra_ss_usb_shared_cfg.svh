@@ -230,6 +230,12 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         dev_cfg.enable_phys_tracing             = 1;
         dev_cfg.enable_phys_reporting           = 1;
         dev_cfg.enable_runtime_trace_recording  = 1;
+
+        // Built-in VIP protocol and link layer functional coverage.
+        host_cfg.enable_prot_cov                = 1;
+        host_cfg.enable_link_cov                = 1;
+        dev_cfg.enable_prot_cov                 = 1;
+        dev_cfg.enable_link_cov                 = 1;
     endfunction
 
     /**

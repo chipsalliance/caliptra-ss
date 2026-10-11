@@ -50,6 +50,7 @@ class usb_vip_cfg_builder extends uvm_object;
     configure_endpoints(cfg);
     configure_timers();
     configure_tracing();
+    configure_coverage();
     validate_vip_cfgs();
   endfunction
 
@@ -172,6 +173,14 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.enable_phys_tracing = 1;
     device_phy_cfg.enable_phys_reporting = 1;
     device_phy_cfg.enable_runtime_trace_recording = 1;
+  endfunction
+
+  // Enable the VIP's built-in protocol and link layer functional coverage on both sides.
+  protected virtual function void configure_coverage();
+    host_cfg.enable_prot_cov = 1;
+    host_cfg.enable_link_cov = 1;
+    device_phy_cfg.enable_prot_cov = 1;
+    device_phy_cfg.enable_link_cov = 1;
   endfunction
 
   // Reject vendor-invalid configurations before agent construction.

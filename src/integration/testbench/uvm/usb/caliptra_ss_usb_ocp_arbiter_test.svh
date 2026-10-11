@@ -32,6 +32,38 @@ class caliptra_ss_usb_ocp_arbiter_test_base
         super.build_phase(phase);
     endfunction
 
+    virtual task mcu_halt_monitor_task(uvm_phase phase);
+        virtual caliptra_ss_usb_legacy_ep0_observer_if observer_vif;
+        logic [15:0] stop_generation;
+        bit acknowledged;
+        bit idle;
+
+        if (!uvm_config_db#(
+                virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
+                    null, "uvm_test_top.env",
+                    "usb_legacy_ep0_observer_if", observer_vif)) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU observer interface not found")
+        end
+        // DCON commands can follow the last snapshot, and some derived tests
+        // use the command service without snapshot collection.
+        stop_generation = observer_vif.last_mcu_command_generation + 16'd1;
+        observer_vif.issue_mcu_command_bounded(
+            observer_vif.MCU_COMMAND_STOP, stop_generation, 4'h0,
+            100us, acknowledged);
+        if (!acknowledged) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU STOP acknowledgement timed out")
+        end
+        observer_vif.wait_for_mcu_axi_idle(100us, idle);
+        if (!idle) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU AXI did not drain after STOP")
+        end
+        `uvm_info("phase_ready_to_end",
+            $sformatf("OCP arbiter MCU stopped at generation %0d; AXI reads/writes drained.",
+                      stop_generation), UVM_NONE)
+        phase.drop_objection(
+            this, "OCP arbiter MCU stopped and AXI drained");
+    endtask
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_001_test
@@ -108,6 +140,7 @@ class caliptra_ss_usb_ocp_arb_004_test
             "default_sequence",
             caliptra_ss_usb_ocp_arb_004_sequence::type_id::get());
     endfunction
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_005_test
@@ -134,6 +167,8 @@ class caliptra_ss_usb_ocp_arb_006_test
 
     `uvm_component_utils(caliptra_ss_usb_ocp_arb_006_test)
 
+    svt_err_check_stats reset_abort_routing_chk;
+
     function new(string name = "caliptra_ss_usb_ocp_arb_006_test",
                  uvm_component parent = null);
         super.new(name, parent);
@@ -146,6 +181,19 @@ class caliptra_ss_usb_ocp_arb_006_test
             "default_sequence",
             caliptra_ss_usb_ocp_arb_006_sequence::type_id::get());
     endfunction
+
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+        reset_abort_routing_chk =
+            env.host_agent.prot.chk_cov_mgr.find("rx_packet_routed_check");
+        if (reset_abort_routing_chk == null) begin
+            `uvm_fatal("end_of_elaboration_phase",
+                "Protocol chk_cov_mgr could not find rx_packet_routed_check")
+        end
+        reset_abort_routing_chk.set_default_fail_effect(
+            svt_err_check_stats::EXPECTED);
+    endfunction
+
 endclass
 
 class caliptra_ss_usb_ocp_arb_007_test

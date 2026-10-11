@@ -22,7 +22,7 @@ typedef enum bit [1:0] {
 } caliptra_ss_usb_ocp_xfer_result_e;
 
 class caliptra_ss_usb_ocp_recovery_base_sequence
-    extends caliptra_ss_usb_ctrl_base_sequence;
+    extends caliptra_ss_usb_base_sequence;
 
     typedef bit [7:0] byte_queue_t[$];
 
@@ -166,15 +166,13 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input int unsigned start_dword,
         input int unsigned dword_count,
         ref bit [7:0] payload[$]);
-        int unsigned byte_index;
 
         payload.delete();
-        for (int unsigned i = 0;
-             (i < dwords_to_bytes(dword_count)) &&
-             ((dwords_to_bytes(start_dword) + i) < source_bytes.size());
+        for (int unsigned i = dwords_to_bytes(start_dword);
+             (i < dwords_to_bytes(start_dword + dword_count)) &&
+             (i < source_bytes.size());
              i++) begin
-            byte_index = dwords_to_bytes(start_dword) + i;
-            payload.push_back(source_bytes[byte_index]);
+            payload.push_back(source_bytes[i]);
         end
     endfunction
 

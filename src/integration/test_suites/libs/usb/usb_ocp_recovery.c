@@ -180,23 +180,17 @@ bool usb_ocp_recovery_apply_capability_policy(void) {
 }
 
 bool usb_ocp_recovery_service_capability_policy(void) {
-    const uint32_t vendor_data =
-        lsu_read_32(SOC_USB_COMBO_RECOVERY_VENDOR) &
-        RECOVERY_VENDOR_VENDOR_DATA_MASK;
+    const uint32_t vendor_data = lsu_read_32(SOC_USB_COMBO_RECOVERY_VENDOR) &
+                                 RECOVERY_VENDOR_VENDOR_DATA_MASK;
 
-    uint32_t prot_cap_2 =
-        lsu_read_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2);
+    uint32_t prot_cap_2 = lsu_read_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2);
 
     if (vendor_data == USB_OCP_RECOVERY_IDENTIFICATION_ENABLE_TOKEN) {
-        prot_cap_2 |=
-            RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK;
-    } else if (vendor_data ==
-            USB_OCP_RECOVERY_IDENTIFICATION_DISABLE_TOKEN) {
-        prot_cap_2 &=
-            ~RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK;
+        prot_cap_2 |= RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK;
+    } else if (vendor_data == USB_OCP_RECOVERY_IDENTIFICATION_DISABLE_TOKEN) {
+        prot_cap_2 &= ~RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK;
     } else if (vendor_data == USB_OCP_RECOVERY_VENDOR_DISABLE_TOKEN) {
-        prot_cap_2 &=
-            ~RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK;
+        prot_cap_2 &= ~RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK;
     } else {
         return false;
     }
