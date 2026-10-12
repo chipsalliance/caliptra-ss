@@ -201,6 +201,17 @@ module usb_top_tb;
     .cfg_i('0)
   );
 
+  usb_utmi_packet_monitor utmi_packet_monitor (
+    .clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
+    .reset_n(bus_reset_n),
+    .rxactive(usb_20_mac_if.utmi_dut_mac_if.RXActive),
+    .rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
+    .rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
+    .txvalid(dut_utmi_txvalid),
+    .txready(usb_20_mac_if.utmi_dut_mac_if.TXReady),
+    .txdata(dut_utmi_txdata)
+  );
+
   caliptra_prim_generic_ram_1p #(
     .Width(64),
     .Depth(USB_DEV1_RAM_DEPTH),

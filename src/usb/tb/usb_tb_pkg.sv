@@ -99,6 +99,13 @@ package usb_tb_pkg;
   // Address the host assigns with SET_ADDRESS during enumeration.
   localparam bit [6:0] USB_DEFAULT_DEVICE_ADDRESS = 7'd1;
 
+  // Global events published by the passive UTMI packet monitor.
+  localparam string USB_UTMI_OUT_TOKEN_EVENT = "usb_utmi_out_token_seen";
+  localparam string USB_UTMI_DATA_PACKET_EVENT = "usb_utmi_data_packet_seen";
+  localparam string USB_UTMI_RX_DATA_PACKET_EVENT =
+      "usb_utmi_rx_data_packet_seen";
+  localparam string USB_UTMI_TX_PACKET_EVENT = "usb_utmi_tx_packet_seen";
+
   // Compare deadlines at the package's 1ps precision, without rounding to
   // whole nanoseconds or depending on floating-point equality.
   function automatic time usb_time_ps(realtime value);
@@ -200,6 +207,7 @@ package usb_tb_pkg;
   `include "env/usb_endpoint_cfg.svh"
   `include "env/usb_env_cfg.svh"
   `include "env/usb_vip_cfg_builder.svh"
+  `include "env/usb_utmi_packet.svh"
   `include "env/usb_virtual_sequencer.svh"
   `include "env/usb_env.svh"
   `include "sequences/usb_base_seq.svh"
