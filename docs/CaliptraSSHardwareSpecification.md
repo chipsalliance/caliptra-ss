@@ -325,7 +325,7 @@ SPI shall be supported along with AXI streaming boot block
 ![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/Subsystem.png)
 
 *Figure: Caliptra 2.2 Subsystem Block Diagram*
-![](https://github.com/chipsalliance/caliptra-ss/blob/main/docs/images/CSS2p2.png)
+![](./images/CSS2p2.png)
 *Notes:*
 1. If an integration chooses to use USB for all the SOC/Platform facing flows, then it has an integration option to remove I3C
 2. SOCs will also have a choice of keeping both USB2 and I3C (USB2 shall always be there)
