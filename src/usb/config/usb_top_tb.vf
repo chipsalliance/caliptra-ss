@@ -163,4 +163,5 @@ ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_ctrl_if.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_axi_manager_connection.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/usb_utmi_packet_monitor.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_top_tb.sv
