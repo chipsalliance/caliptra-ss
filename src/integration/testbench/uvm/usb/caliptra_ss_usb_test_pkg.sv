@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 315;
+  localparam int USB_PKG_VERSION = 319;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -51,6 +51,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_hub_config_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_get_hub_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_get_interface_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -250,6 +251,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev_get_hub_descriptor_test.svh"
   `include "caliptra_ss_usb_fs_dev_get_hub_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev0 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev0 in firmware).
+  // The FS sibling reuses the same sequence and only applies the FS VIP
+  // conversion block. The dev1 variant (HS only) lives with the other dev1
+  // command-value-check tests below.
+  `include "caliptra_ss_usb_hs_dev_get_interface_test.svh"
+  `include "caliptra_ss_usb_fs_dev_get_interface_test.svh"
   // HS-only hub CONFIGURATION / OTHER_SPEED_CONFIGURATION descriptor check
   // (OTHER_SPEED_CONFIGURATION is defined only for HS-capable devices).
   `include "caliptra_ss_usb_hs_dev_hub_config_descriptor_test.svh"
@@ -273,10 +281,14 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_get_interface_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev1 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev1 in firmware).
+  `include "caliptra_ss_usb_hs_dev1_get_interface_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"

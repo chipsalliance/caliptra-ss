@@ -29,6 +29,19 @@ interface class caliptra_ss_usb_data_check_api;
   pure virtual function void check_get_status(uvm_object usb_item, string device_name,
                                               bit [15:0] expected);
 
+  // Standard GET_INTERFACE check (USB 2.0 section 9.4.4). A GET_INTERFACE
+  // request (bmRequestType=0x81 IN/STANDARD/INTERFACE, bRequest=0x0A,
+  // wValue=0x0000, wIndex=interface number, wLength=0x0001) returns a single
+  // byte holding the currently selected bAlternateSetting of that interface.
+  // The compound hub EP0 answers this request from its descriptor RAM with a
+  // constant 0x00: the hub exposes one interface with a single alternate
+  // setting (see C_STD_REQ_GET_INTERFACE in
+  // RTL/INTERFACE/usb_ep_config_hub_pkg.p.vhdl). The embedded device
+  // controllers stall GET_INTERFACE in firmware, so only "hub" is a valid
+  // device_name here.
+  pure virtual function void check_get_interface(uvm_object usb_item, string device_name,
+                                                 bit [7:0] expected_alt_setting);
+
   // Hub-class GetHubStatus check. The response is 4 bytes: wHubStatus
   // (bytes[1:0]) + wHubChange (bytes[3:2]), each a 16-bit little-endian word.
   pure virtual function void check_hub_status(uvm_object usb_item, string device_name,

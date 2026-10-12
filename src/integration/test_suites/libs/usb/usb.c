@@ -95,10 +95,14 @@ static uint8_t usb_dev_addr_shadow_arr[2]        = {0, 0};
 static uint8_t usb_current_config_arr[2]          = {0, 0};
 static bool    usb_remote_wakeup_enabled_arr[2]   = {false, false};
 static uint8_t usb_ep0_in_pending_latched_arr[2]  = {0, 0};
+// Selected bAlternateSetting of interface 0, reported by GET_INTERFACE.
+static uint8_t usb_alt_setting_arr[2]             = {0, 0};
 #define usb_dev_addr_shadow        usb_dev_addr_shadow_arr[usb_active_dev]
 #define usb_current_config         usb_current_config_arr[usb_active_dev]
+#define usb_alt_setting            usb_alt_setting_arr[usb_active_dev]
 #define usb_remote_wakeup_enabled  usb_remote_wakeup_enabled_arr[usb_active_dev]
 #define usb_ep0_in_pending_latched usb_ep0_in_pending_latched_arr[usb_active_dev]
+
 
 // Legacy EP0 observer telemetry counters (retained from upstream). These do not
 // affect enumeration behaviour and are only consumed by single-device tests, so
@@ -590,6 +594,7 @@ void usb_handle_bus_reset(void) {
     // USB 2.0 section 9.1.1.3: reset returns the device to the Default state
     // with no configuration selected. Mirror that in the firmware shadows.
     usb_current_config = 0;
+    usb_alt_setting = 0;
     usb_remote_wakeup_enabled = false;
     // Clear DRES_C (W1C)
     usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
@@ -1293,11 +1298,26 @@ bool usb_handle_control_transfer(void) {
             }
         } else if (recipient == USB_RECIP_INTERFACE) {
             switch (pkt.bRequest) {
-                case USB_REQ_GET_INTERFACE:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Interface GET_INTERFACE"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                case USB_REQ_GET_INTERFACE: {
+                    // Standard interface GET_INTERFACE (USB 2.0 section 9.4.4):
+                    // 1-byte currently selected bAlternateSetting of the
+                    // interface named by wIndex. The configuration descriptor
+                    // declares a single interface (number 0) with a single
+                    // alternate setting, so any other wIndex is a request
+                    // error and the device is only required to answer in the
+                    // Configured state.
+                    if ((usb_is_configured() == 0u) || (pkt.wIndex != 0u)) {
+                        VPRINTF(LOW, "MCU: USB GET_INTERFACE invalid state/wIndex=0x%04x"
+                                " - stalling\n", pkt.wIndex);
+                        usb_ep0_stall();
+                    } else {
+                        uint32_t alt_buf = (uint32_t)usb_alt_setting;
+                        usb_ep0_send_data(&alt_buf, 1);
+                        usb_ep0_arm_out();
+                        handled = true;
+                    }
                     break;
+                }
                 case USB_REQ_SET_INTERFACE:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Interface SET_INTERFACE"
                             " - stalling\n");
