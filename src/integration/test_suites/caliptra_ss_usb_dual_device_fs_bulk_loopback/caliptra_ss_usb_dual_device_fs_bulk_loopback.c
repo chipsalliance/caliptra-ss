@@ -501,5 +501,3 @@ void main(void) {
     VPRINTF(LOW, "MCU: USB dual-device FS bulk loopback test - halting\n");
     csr_write_mpmc_halt();
 }
-
-// File contains AI-generated response based on internal company sources

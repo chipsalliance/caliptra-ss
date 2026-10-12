@@ -79,5 +79,3 @@ VCS_SIM_OPTS += +USB_HUB_COMPOUND_DEV1_IRQ=1
 # test does not run long enough to provide. The XcvrSelect and byte-rate checks
 # above already separate FS from HS unambiguously.
 VCS_SIM_OPTS += +usb_fs_speed_check=1
-
-# File contains AI-generated response based on internal company sources
