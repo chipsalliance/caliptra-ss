@@ -1,6 +1,4 @@
-# USB2 OCP Recovery Enhancements - Microarchitecture Specification
-
-Status: implemented (OCP Recovery mirrored-SETUP architecture).
+# USB2 OCP Streaming Boot Enhancements - Microarchitecture Specification
 
 Scope: the OCP Secure Firmware Recovery enhancements added to the Caliptra
 Subsystem USB 2.0 device block (`third_party/usb2`). This document describes
@@ -19,7 +17,7 @@ firmware is expected to interact with it.
 
 The USB2 block is a USB 2.0 device controller (PIE / DMA / register-interface
 SIE) that Caliptra Subsystem uses for both standard USB scenarios and for OCP
-Recovery. The OCP Recovery enhancement adds a recovery interface on EP0 so
+Streaming Boot. The OCP Streaming Boot enhancement adds a recovery interface on EP0 so
 that a USB **Recovery Agent (host)** can push a firmware image into the device
 and have **Caliptra** consume it. OCP "streaming boot" is the
 firmware-download use case of the recovery specification.
@@ -29,13 +27,13 @@ Two use models share the same device and EP0:
 - **Legacy USB.** Standard enumeration and any non-recovery control transfer
   are handled by the legacy USB DMA/register-interface path and serviced by
   device firmware.
-- **OCP Recovery.** Recovery-class EP0 control transfers are claimed by
+- **OCP Streaming Boot.** Recovery-class EP0 control transfers are claimed by
   dedicated hardware (`usb_ocp_recovery_top`) and serviced without
   per-command MCU firmware intervention. Image DWORDs land in an on-chip FIFO
   that Caliptra drains over AXI; Caliptra firmware owns recovery progress and
   the Recovery Agent-visible status.
 
-In the compound Hub design, Recovery is available only on Device 0. The
+In the compound Hub design, Streaming Boot is available only on Device 0. The
 compound selector values are Hub `0`, Device 0 `1`, and Device 1 `2`. Hub,
 Device 1, and non-EP0 traffic continue through the legacy path while Device 0
 retains an OCP EP0 claim.
@@ -57,7 +55,7 @@ classified from the SETUP encoding:
 
 ---
 
-## 2. High-level recovery flow
+## 2. High-level streaming boot flow
 
 > Refer to companion document:
 > [`../CaliptraSSUSBRecoveryDiagram.md`](../CaliptraSSUSBRecoveryDiagram.md)
@@ -67,7 +65,7 @@ classified from the SETUP encoding:
 sequenceDiagram
     autonumber
     participant RA as Recovery Agent (USB host)
-    participant HW as USB core + OCP recovery HW
+    participant HW as USB core + OCP streaming boot HW
     participant FW as Device firmware (MCU)
     participant CP as Caliptra core
 
@@ -439,9 +437,7 @@ USB FIFO command or packet reservation owns the FIFO aperture. EXT
 
 ### 3.7 Firmware-owned recovery procedure
 
-The hardware does not implement an OCP recovery lifecycle or platform
-boot-request/acknowledgement state machine. Caliptra firmware owns
-`DEVICE_STATUS.DEV_STATUS`, `DEVICE_STATUS.REC_REASON_CODE`,
+Caliptra firmware owns `DEVICE_STATUS.DEV_STATUS`, `DEVICE_STATUS.REC_REASON_CODE`,
 `RECOVERY_STATUS`, and firmware-programmable hardware status through the EXT
 CPU interface. The USB Recovery Agent reads those stored values but cannot
 write host-read-only fields.
@@ -495,15 +491,15 @@ transaction:
 
 ---
 
-## 5. Required initialization before OCP recovery
+## 5. Required initialization before OCP Streaming Boot
 
-OCP Recovery is serviceable only after the USB device controller is initialized
+OCP Streaming Boot is serviceable only after the USB device controller is initialized
 and Device 0 is enumerated and configured. Device-controller bring-up and
 enumeration are MCU firmware responsibilities, following the general USB2
 device programming flow in the
 [USB2 Programmer's Guide](https://github.com/chipsalliance/usb2/blob/main/docs/USB2_Programmers_Guide.md).
 That guide is authoritative for generic controller bring-up; this document
-calls out the Recovery-specific requirements:
+calls out the streaming-boot-specific requirements:
 
 - **Advertise the Recovery interface.** Install the OCP Recovery
   configuration/interface/functional descriptors before connecting Device 0,
@@ -534,7 +530,7 @@ while `OCP_PATH_DISABLE` is clear.
 
 ## 6. Caliptra interaction (production)
 
-Caliptra is the recovery image consumer (the OCP "Device Firmware" role). As
+Caliptra is the streaming boot image consumer (the OCP "Device Firmware" role). As
 an AXI master it interacts with the OCP Recovery register aperture:
 
 1. **Publish status.** Program the firmware-owned `DEVICE_STATUS`,
@@ -665,7 +661,7 @@ Production MCU firmware must:
 3. Consume or clear legacy SETUP-pending bookkeeping using the existing
    interface and SETUP-buffer coherence rules. Clearing the software flag does
    not clear hardware OCP ownership.
-4. Not require a legacy SETUP interrupt to service OCP Recovery. Hardware
+4. Not require a legacy SETUP interrupt to service OCP Streaming Boot. Hardware
    services claimed control transfers; Caliptra firmware uses Recovery
    registers and `payload_available`.
 5. Apply existing shared-SETUP-buffer supersession discipline. A newer SETUP
@@ -711,7 +707,7 @@ The implemented hardware boundaries are:
 ### 10.3 Relationship to Caliptra firmware and error recovery
 
 The legacy SETUP observation/ignore requirement concerns MCU device firmware,
-not per-command service of OCP Recovery. Caliptra's FIFO drain and
+not per-command service of OCP Streaming Boot. Caliptra's FIFO drain and
 firmware-owned Recovery status obligations in Sections 3.7 and 6 remain.
 
 For an active, incomplete `INDIRECT_FIFO_DATA` write, a replacement SETUP,
