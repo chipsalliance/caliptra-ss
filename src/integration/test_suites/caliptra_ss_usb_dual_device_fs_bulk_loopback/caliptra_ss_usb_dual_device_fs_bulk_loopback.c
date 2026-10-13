@@ -36,11 +36,12 @@
 //
 // USBDC0's IRQ is wired to cptra_ss_mcu_ext_int[3] in RTL. USBDC1's IRQ is NOT
 // routed to the PIC in caliptra_ss_top.sv; instead the testbench loops the top
-// level output cptra_ss_usb_dev1_irq_o back onto cptra_ss_mcu_ext_int[6], gated
-// by the compile define USB_HUB_COMPOUND_DEV1_IRQ (Option A: no RTL change).
-// That define must be passed BOTH to the RTL compile (for the TB loopback) and
-// to this firmware's BUILD_CFLAGS (so init_usb_interrupts() enables vector 6
-// and mcu_isr.h compiles in service_usb_dev1_intr()).
+// level output cptra_ss_usb_dev1_irq_o back onto cptra_ss_mcu_ext_int[6]. The
+// loopback is always compiled and is enabled at runtime by the
+// +USB_HUB_COMPOUND_DEV1_IRQ plusarg (Option A: no RTL change). The matching
+// USB_HUB_COMPOUND_DEV1_IRQ compile definition is passed only to this
+// firmware's BUILD_CFLAGS so init_usb_interrupts() enables vector 6 and
+// mcu_isr.h compiles in service_usb_dev1_intr().
 //
 // Scenario (interrupt-driven, run in parallel on both controllers):
 //   1. Bring up the hub once, then program BOTH USBDC0 and USBDC1 EP lists.
