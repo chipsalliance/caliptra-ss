@@ -374,4 +374,129 @@ notes in `README.md`.
 | `dev0_cycles` becomes non-zero | **first ever execution of the actual test** - Track D can begin | hotplug FSM / hold-time work is now legitimately debuggable |
 | On a residual failure, first error is early (~685 us) | Track A is doing its job | Track A guard missed a path |
 
+### Round-10 outcome: all four predictions held
+
+The round-10 run confirmed the latency diagnosis. `valid_device_response_check_Dev3_EP0` is gone, and the milestones appeared in order:
+
+| Time (ns) | Milestone |
+|---|---|
+| 564265 | `dev0 enumerated (addr=2)` |
+| 704236 | `Dual-device enumeration complete (USBDC0@2, USBDC1@3)` |
+| 709790 | `dev1 enumerated (addr=3)` |
+| 757748 | `USBDC1_baseline loopback data check PASSED: all 64 bytes match` |
+| 767892 | `DEV0 hotplug cycle 1 - DCON cleared` - **first ever execution of the actual test** |
+
+Track D is now the live work, exactly as the table predicted.
+
+## 8. Round 11 - error census, and the cycle-desynchronisation bug
+
+The round-10 log carried 10 `UVM_ERROR`s. Classifying all of them, rather than
+chasing the first, is what located the real defect.
+
+### 8.1 Four were false positives of my own making
+
+Track A's `check_xfer_status()` treated **any** non-zero `results_status` as a
+failure. Bit 5 (`0x20`) is not a failure: the VIP's `svt_usb_transfer`
+`results_status` table documents it as *"Transfer finished due to 0-length Data
+Packet"*, and the VIP's own sequence library reports
+`status==ACCEPT && results_status=='h20` as *"completed normally (with 0-length
+DP)"*. It is set on every control transfer with no data stage, i.e. on every
+`SET_ADDRESS` and `SET_CONFIGURATION`:
+
+| Time (ns) | Label |
+|---|---|
+| 533624 | `SET_ADDRESS_2_dev0_init` |
+| 552423 | `SET_CONFIG_1_dev0_init` |
+| 679868 | `SET_ADDRESS_2_dev1` |
+| 698367 | `SET_CONFIG_1_dev1` |
+
+Fixed by masking the benign bits in both `caliptra_ss_usb_base_sequence.svh`
+(`USB_RESULTS_STATUS_BENIGN_MASK`) and `caliptra_ss_usb_data_check_api_impl.svh`.
+Every other bit in the table is a genuine failure reason and is still fatal.
+
+Note the asymmetry this exposes: a check that is too strict costs an afternoon,
+whereas a check that is too lax costs rounds 1-9. Relaxing one was still the
+right call only because the VIP source proved the bit's meaning.
+
+### 8.2 Five were one real bug: firmware and host ran different hotplug cycles
+
+| Time (ns) | Error |
+|---|---|
+| 1085421 | `GET_DESC_DEV_addr0_dev0_recon0 FAILED: status=ABORTED` (+ 0 of 18 payload bytes) |
+| 1096570 | `GET_STATUS_addr0_dev0_recon0 FAILED: status=ABORTED` (+ 0 of 2 bytes) |
+| 1103070 | `SET_ADDRESS_2_dev0_recon0 FAILED: status=ABORTED` |
+
+These aborted for a completely legitimate reason: **the device was not on the
+bus**. The firmware had already moved on to hotplug cycle 2 and re-cleared DCON
+94 us before the host began its cycle-1 re-enumeration.
+
+```
+ 971097  MCU   DEV0 hotplug cycle 1 - DCON set (port 1 up)
+ 974480  MCU   DEV0 hotplug cycle 1 complete (re-enumerated)   <-- 3.4 us later,
+                                                                   zero host traffic
+ 984157  MCU   USB bus reset detected
+ 987795  MCU   dev0 bus reset - EP1 state cleared              <-- ep1_armed only
+                                                                   cleared HERE
+ 991492  MCU   DEV0 hotplug cycle 2 - DCON cleared
+1079139  HOST  hub_port_bringup_stepB(_dev0_recon0)            <-- host starts
+                                                                   cycle 1 re-enum
+1083155  MCU   [poll] hp_state=2 dev0_cycles=1 DEVCMDSTAT=0x11804A80 (DCON clear)
+1085421  HOST  usbdc0_enum_stepC(_dev0_recon0) -> ABORTED
+```
+
+**Root cause.** `HP_WAIT_REENUM` exited on `dev0_st->ep1_armed` alone, and that
+flag was **stale**. The chain:
+
+1. `HP_DISCONNECT` clears DCON and clears `ep1_armed`. Correct so far.
+2. But clearing DCON does **not** clear `DEV_ADDR` or the `SET_CONFIGURATION`
+   state, so `usb_is_configured()` stays `true` across the entire detached
+   window.
+3. `usb_service_device()`'s enumeration branch was gated **only** on
+   `!ep1_armed && usb_is_configured()`, so it re-armed EP1 about 2 us later -
+   while the device was physically detached. (`dev0 EP1 OUT armed for 64 bytes`
+   at 770272 ns, 2.4 us after DCON fell at 767892 ns.)
+4. `HP_WAIT_REENUM` was therefore satisfied the instant DCON went high again,
+   with no host packet in between.
+
+This is the same failure *class* as rounds 8 and 9: **a state machine advancing
+on a signal that is not evidence of the event it claims to represent.** Round 8
+trusted a losable interrupt event; round 9 trusted `EP0 OUT Active` as a proxy
+for "SETUP pending"; round 11 trusted `ep1_armed` as a proxy for "the host
+re-enumerated us".
+
+### 8.3 One is still open: dev1 loopback returned 0 of 64 bytes
+
+`809632 ns: USBDC1_dev0_down_cyc0 loopback check FAILED: received 0 of 64 bytes.`
+
+The VIP accepted the BULK OUT to dev1 at 779633 ns, but the next MCU poll (at
+982917 ns) still showed `dev1 loops=1 armed=1 lb_armed=0` - the firmware never
+observed the EP1 OUT completing, so it never armed the loopback IN. This is
+independent of the hotplug desync and is the next target. It was undiagnosable
+from the round-10 log because the MCU printed nothing at all between 770272 ns
+and 982917 ns, which motivated the dump-gate change below.
+
+### 8.4 Implemented (round 11)
+
+| # | Change | Purpose |
+|---|---|---|
+| 1 | `usb_is_connected()` added to the enumeration re-arm gate | EP1 can no longer be re-armed while DEV0 is detached - kills the stale flag at source |
+| 2 | `HP_WAIT_REENUM` now also requires `usb_get_dev0_address() == USBDC0_BUS_ADDR` | a real handshake: only a host `SET_ADDRESS` can restore the address after the reconnect's port reset |
+| 3 | `usb_get_dev0_address()` helper | the FSM runs after `usb_service_device(1, ...)`, so USBDC1 is the selected controller on entry; reading DEV0 requires an explicit select |
+| 4 | `DEV0_DISCONNECT_HOLD_US` 200 -> 300 | the host does ~30 us of work inside the detached window before it starts polling for the reconnect |
+| 5 | `dev0_cycle_count > 0` removed from the progress-dump gate | cycle 1 is the most interesting cycle, and it was the only invisible one |
+| 6 | dump now prints dev0 `lb_armed` and `addr` | distinguishes "not re-addressed" from "not configured" from "OUT completion not observed" |
+
+The `!usb_ep0_setup_pending()` dump gate from round 10 is retained unchanged; it
+is what makes change 5 safe.
+
+### Falsifiable predictions for the next run
+
+| Prediction | If it holds | If it fails |
+|---|---|---|
+| The 4 `results_status=0x20` errors are gone | mask is correct | the mask is in the wrong code path |
+| `DEV0 hotplug cycle 1 complete` appears **after** the host's `usbdc0_enum_stepC(_dev0_recon0)`, not before | the handshake works | some other path still re-arms EP1 while detached; grep for `EP1 OUT armed` with DCON clear in the new dump |
+| No `_dev0_recon*` transfer ends `ABORTED` | host and firmware are now in lockstep | the hold is still mis-sized, not a sync problem |
+| `dev0_cycles` reaches 3 and `test PASSED` prints | hotplug path is complete | read the per-cycle dumps, which now exist for cycle 1 |
+| The dev1 `0 of 64 bytes` failure either persists or disappears | either way the new cycle-1 dumps show `armed`/`lb_armed` through the whole window | - |
+
 <!-- File contains AI-generated response based on internal company sources -->

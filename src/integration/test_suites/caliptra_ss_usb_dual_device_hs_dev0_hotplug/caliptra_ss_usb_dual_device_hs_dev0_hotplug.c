@@ -97,13 +97,14 @@
 //       long enough for the host to sample it. It is a minimum residency ended
 //       by a clock deadline, and nothing external can shorten it.
 //       HP_DISCONNECTED_HOLD is the only such state here: DEV0 must stay
-//       detached for DEV0_DISCONNECT_HOLD_US (200 us) so the host's 20 us hub
-//       port poll cannot step over the disconnect edge and pass vacuously.
+//       detached for DEV0_DISCONNECT_HOLD_US so the host's 20 us hub port poll
+//       cannot step over the disconnect edge and pass vacuously.
 //     - a WAIT is a state the firmware stays in only until an external EVENT is
 //       observed, with no intended duration at all. HP_WAIT_REENUM ends the
-//       moment the host has finished re-enumerating USBDC0 (observed as dev0
-//       EP1 being re-armed); on a healthy run it is as short as the host makes
-//       it, and it carries no timer of its own.
+//       moment the host has finished re-enumerating USBDC0, which the firmware
+//       confirms by seeing DEV0's bus address back at USBDC0_BUS_ADDR with EP1
+//       re-armed; on a healthy run it is as short as the host makes it, and it
+//       carries no timer of its own.
 //   The earlier names (HP_OFF_DWELL / HP_ON_DWELL) suggested both were padding
 //   delays bolted onto the sequence, which only HP_DISCONNECTED_HOLD is.
 //
@@ -182,6 +183,15 @@
 // baseline and the final one driven by the host sequence.
 #define DEV1_TARGET_LOOPS             (DEV0_TARGET_CYCLES + 2u)
 
+// Bus address the host assigns to USBDC0 on every enumeration. MUST match
+// USBDC0_ADDR in caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh.
+//
+// The firmware needs this value because it is the only evidence available to
+// it that the host has actually re-enumerated USBDC0 after a reconnect: a hub
+// port reset clears DEV_ADDR to 0, and only a host SET_ADDRESS can put this
+// value back. See HP_WAIT_REENUM.
+#define USBDC0_BUS_ADDR               2u
+
 // DEV0 disconnected hold, expressed in TIME rather than in main-poll
 // iterations.
 //
@@ -206,10 +216,23 @@
 // "Hub port 1 never reached CONNECT_STATUS=1 within 60 polls" failure: not a
 // missed edge, but a reconnect that the firmware never performed.
 //
-// 200 us is ~10 host poll intervals, so the disconnect is comfortably
-// observable, while leaving most of the ~1356 us reconnect budget for
-// re-enumeration.
-#define DEV0_DISCONNECT_HOLD_US     200u
+// The floor is also higher than just one poll interval, because the host does
+// real WORK inside the detached window before it starts polling for the
+// reconnect. Measured from the failing run: it observed the disconnect at
+// 779633 ns, cleared the port connection change, waited POST_BULK_OUT_SETTLE
+// (20 us), ran the USBDC1 BULK IN and checked the loopback payload, finishing
+// at 809632 ns - about 30 us. Only then did it begin waiting for port 1 to
+// come back. If DCON were re-asserted before that, the host could step
+// straight from "down" to "up" and the reconnect would not be a clean edge.
+//
+// 300 us is ~15 host poll intervals and ~10x the host's in-window work, so
+// the disconnect is unambiguously observable from both directions, while still
+// leaving ~1050 us of the ~1356 us reconnect budget for re-enumeration. The
+// previous 200 us also satisfied both bounds; it is raised here only to widen
+// the margin now that the window's contents are known, and because the
+// re-enumeration handshake in HP_WAIT_REENUM means a longer hold no longer
+// risks the firmware running ahead of the host.
+#define DEV0_DISCONNECT_HOLD_US     300u
 
 // CALIPTRA_SS_CLK_FREQ is in MHz (boot_i3c_socmgmt_if() prints it as "%u MHz"),
 // so it is exactly the number of MCU clock cycles per microsecond.
@@ -218,18 +241,6 @@
     ((uint64_t)DEV0_DISCONNECT_HOLD_US * MCU_CYCLES_PER_US)
 #define USB_TEST_RUN_BUDGET_CYCLES \
     ((uint64_t)USB_TEST_RUN_BUDGET_US * MCU_CYCLES_PER_US)
-
-// Interval between periodic progress dumps, in microseconds.
-//
-// The dump used to be gated on "poll_count % 50000 == 0", which never fired:
-// only a few thousand main-poll iterations actually execute inside the window
-// where anything happens, so the run produced ZERO diagnostic lines and the
-// USBDC1 stall below had to be inferred entirely from host-side transfer
-// timestamps. Timing the dump instead guarantees a steady stream of samples
-// regardless of iteration cost.
-#define USB_PROGRESS_DUMP_US          100u
-#define USB_PROGRESS_DUMP_CYCLES \
-    ((uint64_t)USB_PROGRESS_DUMP_US * MCU_CYCLES_PER_US)
 
 // EP1 OUT / IN data buffers in each controller's packet SRAM. EP0 uses
 // 0x000-0x1FF, so EP1 buffers are placed after it. Both controllers use the
@@ -404,125 +415,18 @@ static bool usb_ep1_out_complete(void) {
             & USB_EP_ENTRY_ACTIVE) == 0u;
 }
 
-// EP0 OUT entry field helpers, used by both usb_ep0_out_unarmed() and
-// usb_ep0_arm_out_sized() below. NBytes is bits [25:11]; a SETUP data phase is
-// 8 bytes. Defined here because the un-armed test below references the mask.
-#define USB_EP0_OUT_NBYTES_FIELD  USB_EP_ENTRY_NBYTES(0x7FFFu)
-#define USB_EP0_OUT_SETUP_NBYTES  8u
-
-// Returns true when the selected device's EP0 OUT entry is NOT armed, i.e.
-// hardware has consumed the arm because an OUT data or status-stage packet
-// landed, and nothing is currently able to receive the next one.
-//
-// IMPORTANT - this is NOT a "a control packet is waiting" test, and it is not
-// equivalent to DEVCMDSTAT.SETUP. A SETUP goes to the controller's dedicated
-// SETUP buffer and does NOT consume the EP0 OUT arm, so this function returns
-// FALSE while a SETUP is pending. Only DEVCMDSTAT.SETUP reports a pending
-// SETUP; see the round-9 note in usb_service_device(), where using this
-// function as the gate for control-transfer servicing deadlocked enumeration
-// on both controllers.
-//
-// Its one legitimate use is the secondary case in usb_service_device(): with no
-// SETUP pending, an un-armed EP0 OUT is precisely the condition under which the
-// controller would NAK the next incoming SETUP, so it must be re-armed.
-
-static bool usb_ep0_out_unarmed(void) {
-    uint32_t entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP0_OUT_OFFSET);
-
-    // Active clear - hardware consumed the arm.
-    if ((entry & USB_EP_ENTRY_ACTIVE) == 0u) {
-        return true;
-    }
-
-    // Active SET but NBytes == 0 counts as un-armed too. See the
-    // EP0_OUT_ARM_ENTRY note below: an entry armed with a zero length cannot
-    // accept the 8 bytes of a SETUP data phase, so the controller NAKs it even
-    // though bit 31 says "armed". Without this term the degraded entry looks
-    // healthy forever and nothing ever re-arms it.
-    return (entry & USB_EP0_OUT_NBYTES_FIELD) == 0u;
-}
-
-// EP0_OUT_ARM_ENTRY - test-local EP0 OUT arming, replacing usb_ep0_arm_out().
-//
-// WHY THIS IS NOT THE SHARED LIBRARY FUNCTION
-//
-// libs/usb/usb.c has two EP0 OUT arming paths that do NOT agree on the entry
-// contents:
-//
-//   usb_ep0_reinit()  -> ACTIVE | NBYTES(8) | ADDR(EP0_OUT_BUF)   == 0x80004005
-//   usb_ep0_arm_out() -> ACTIVE |             ADDR(EP0_OUT_BUF)   == 0x80000005
-//                                 ^^^ NBytes field omitted
-//
-// NBytes is bits [25:11] of the entry, so the second form arms EP0 OUT with a
-// buffer length of ZERO while still setting Active (bit 31). The first SETUP
-// after such a re-arm is NAK'd, which USB 2.0 section 8.5.3 forbids, and the
-// VIP reports it as:
-//
-//   valid_device_response_check_Dev3_EP0 - Received a NAK device response to a
-//   host SETUP packet which is a violation
-//
-// Observed directly in this test's own progress dump, DEV1 column:
-//
-//   567932 ns  ep0out=0x80004005   NBytes=8   (set by usb_ep0_reinit on reset)
-//   684890 ns  ep0out=0x80000005   NBytes=0   (after a usb_ep0_arm_out re-arm)
-//   785352 ns  ep0out=0x80000005   NBytes=0   (stuck, never recovers)
-//
-// This is a pre-existing shared-library defect, not a regression from the
-// DRES_C or SETUP-gate work. It only bites tests that re-arm EP0 REPEATEDLY;
-// the single-shot dual-device loopback tests call usb_ep0_reinit() once and
-// never reach the degraded state, which is why it went unnoticed.
-//
-// It is reproduced locally rather than fixed in libs/usb/usb.c to keep the
-// blast radius of this investigation inside this test. If the library is ever
-// corrected to include NBYTES(8), this helper becomes redundant and should be
-// deleted in favour of usb_ep0_arm_out().
-static void usb_ep0_arm_out_sized(void) {
-    uint32_t entry = USB_EP_ENTRY_ACTIVE
-                   | USB_EP_ENTRY_NBYTES(USB_EP0_OUT_SETUP_NBYTES)
-                   | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
-                                           + USB_SRAM_EP0_OUT_BUF_OFFSET);
-    lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP0_OUT_OFFSET, entry);
-}
-
-// Repair a degraded EP0 OUT entry IN THE SAME poll iteration that degraded it.
-//
-// Why this is needed in addition to usb_ep0_arm_out_sized():
-//
-// usb_handle_control_transfer() lives in the shared library and calls the
-// library's own usb_ep0_arm_out() internally, from roughly seven sites. That
-// function omits the NBytes field, so every control transfer the library
-// completes leaves EP0 OUT as ACTIVE|NBytes=0 - re-degrading the entry that
-// usb_ep0_arm_out_sized() had just repaired. Relying on the next iteration's
-// "else if (usb_ep0_out_unarmed())" branch is too late: the host issues SETUPs
-// back-to-back with no idle gap (GET_CONFIG -> SET_CONFIG -> GET_CONFIG_verify
-// arrive about 1 us apart, while one MCU poll iteration servicing two
-// controllers takes longer than that), so the next SETUP lands on the degraded
-// zero-length entry and is NAK'd before the firmware gets another look. That is
-// exactly the observed signature of ONE valid_device_response_check error PER
-// SETUP rather than a single one.
-//
-// STALL is preserved deliberately. usb_ep0_stall() writes USB_EP_ENTRY_STALL
-// with neither ACTIVE nor NBytes set, as the library's response to an
-// unsupported request; blindly re-arming would silently convert a deliberate
-// protocol STALL into an accept. The ACTIVE-set guard below makes this repair a
-// no-op on a stalled entry.
-static void usb_ep0_repair_out_nbytes(void) {
-    uint32_t entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                 + USB_EP_LIST_EP0_OUT_OFFSET);
-
-    // Leave a STALLed or hardware-consumed entry alone: both have ACTIVE clear.
-    if ((entry & USB_EP_ENTRY_ACTIVE) == 0u) {
-        return;
-    }
-
-    // Already carries a non-zero length - nothing to repair.
-    if ((entry & USB_EP0_OUT_NBYTES_FIELD) != 0u) {
-        return;
-    }
-
-    usb_ep0_arm_out_sized();
-}
-
+// NOTE for anyone tempted to add private EP0 entry manipulation back here:
+// this is where USB_EP0_OUT_NBYTES_FIELD / USB_EP0_OUT_SETUP_NBYTES and the
+// usb_ep0_out_unarmed() / usb_ep0_arm_out_sized() / usb_ep0_repair_out_nbytes()
+// helpers used to live. They were removed in the round-12 convergence. EP0 is
+// now owned entirely by the shared library (usb_handle_control_transfer() and
+// usb_ep0_arm_out()), exactly as in the passing hs_bulk_loopback reference.
+// One fact worth keeping from that experiment: an un-armed EP0 OUT is NOT
+// equivalent to DEVCMDSTAT.SETUP. A SETUP lands in the controller's dedicated
+// SETUP buffer descriptor and does not consume the EP0 OUT arm, so testing the
+// entry's Active bit as a "control packet is waiting" gate deadlocks
+// enumeration on both controllers. Only DEVCMDSTAT.SETUP reports a pending
+// SETUP.
 
 // Returns the device address currently latched in the selected controller's
 // DEVCMDSTAT. Used by the USBDC1 isolation invariant: a port reset on port 2
@@ -533,58 +437,27 @@ static uint32_t usb_get_device_address(void) {
            >> DEV0_CSR_DEVCMDSTAT_DEV_ADDR_LOW;
 }
 
-// Returns true when the given controller has a SETUP packet waiting to be
-// decoded. Used by the progress dump gate in main(): the dump is the single
-// most expensive thing the main loop can do, so it must never run while a
-// control transfer is mid-flight. Selects the controller itself.
-static bool usb_ep0_setup_pending(int dev) {
-    usb_select_device(dev);
+// Returns true when the selected controller is currently attached, i.e. its
+// DCON bit is set. Clearing DCON detaches the device from its hub port but
+// does NOT clear DEV_ADDR or the configured state, so "configured" alone is
+// not sufficient evidence that the device is on the bus.
+static bool usb_is_connected(void) {
     return (lsu_read_32(USB_DEV_DEVCMDSTAT)
-            & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) != 0u;
+            & DEV0_CSR_DEVCMDSTAT_DCON_MASK) != 0u;
 }
 
-// EP0 control-transfer servicing for ONE controller, split out of
-// usb_service_device() so that main() can run an EP0-only pass over BOTH
-// controllers before any other per-device work. The full rationale for the
-// two branches below - why SETUP is checked unconditionally off DEVCMDSTAT
-// rather than off the mailbox EP0OUT event, and why the un-armed test must
-// stay the secondary case - is documented at the call site inside
-// usb_service_device(). Read that comment before touching this function.
+// USBDC0's device address, selecting USBDC0 explicitly first.
 //
-// Round 10 (Track C) motivation: the host spaces enumeration SETUP packets
-// roughly 5 us apart, but one iteration of the old main loop could take far
-// longer than that whenever it hit a VPRINTF-heavy path (the progress dump
-// alone measured ~5.3 us at 400 MHz, serialised one character at a time into
-// MCI DEBUG_OUT). During such an iteration a SETUP could arrive, find EP0 OUT
-// un-armed from the previous control stage, and be NAK'd - which USB 2.0
-// section 8.5.3 forbids and the host VIP flags as
-// valid_device_response_check_Dev<addr>_EP0. Servicing EP0 for both
-// controllers first, as the very first thing in the iteration, decouples
-// control-transfer response latency from the cost of the rest of the loop.
-//
-// This function is idempotent and self-contained: it selects the controller
-// itself, so it is safe to call standalone from main() and again from
-// usb_service_device(). A second call in the same iteration simply finds no
-// SETUP pending and EP0 OUT already armed, and does nothing.
-static void usb_service_ep0(int dev) {
-    usb_select_device(dev);
-
-    uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
-
-    if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
-        // SETUP packet pending - decode and respond. This also re-arms EP0.
-        usb_handle_control_transfer();
-        // ...but it re-arms EP0 OUT through the library's usb_ep0_arm_out(),
-        // which omits NBytes. Repair the entry HERE, in the same iteration,
-        // before returning to the main loop, so the next SETUP cannot land on
-        // an entry that is Active with NBytes == 0.
-        usb_ep0_repair_out_nbytes();
-    } else if (usb_ep0_out_unarmed()) {
-        // No SETUP pending and EP0 OUT is un-armed - a control-read status
-        // stage completed (or its event was lost). Re-arm so the next SETUP is
-        // received instead of NAK'd.
-        usb_ep0_arm_out_sized();
-    }
+// This exists because usb_get_device_address() reads whichever controller
+// usb_select_device() last pointed at, and the hotplug FSM runs from main()
+// AFTER usb_service_device(1, ...), so the active selection on entry is
+// USBDC1, not USBDC0. HP_WAIT_REENUM would otherwise be comparing USBDC1's
+// address (3) against USBDC0's expected address (2) and could never be
+// satisfied. Any new hotplug-FSM state that reads a DEV0 register must either
+// use a helper like this one or call usb_select_device(0) itself.
+static uint32_t usb_get_dev0_address(void) {
+    usb_select_device(0);
+    return usb_get_device_address();
 }
 
 // Drain the ISR mailbox and advance the loopback state machine for one device.
@@ -659,88 +532,63 @@ static void usb_service_device(int dev, uint32_t usb_events,
         }
     }
 
+    // EP0 control-transfer servicing, rebuilt VERBATIM from the passing
+    // caliptra_ss_usb_dual_device_hs_bulk_loopback reference.
+    //
+    // History, so this is not re-complicated a fifth time: rounds 8-11 grew
+    // five private EP0 helpers here (usb_ep0_setup_pending,
+    // usb_service_ep0, usb_ep0_out_unarmed, usb_ep0_repair_out_nbytes,
+    // usb_ep0_arm_out_sized) plus an EP0-only pass over both controllers at
+    // the top of main(). Each was added to compensate for a symptom created
+    // by the previous one, and every round's fix became the next round's
+    // bug. They are all gone. The reference enumerates BOTH controllers and
+    // loops back on both with exactly the two branches below, which proves
+    // the library path (usb_handle_control_transfer / usb_ep0_arm_out) is
+    // sound for two devices. The hotplug test's remaining differences are
+    // the hotplug FSM, the isolation invariants and the loop counting -
+    // nothing about EP0 needs to differ.
+    //
+    // Note the gate: EP0 is touched ONLY when the ISR actually reported an
+    // EP0 OUT event. Polling DEVCMDSTAT unconditionally every iteration, as
+    // the stripped usb_service_ep0() did, costs two extra register reads per
+    // controller per iteration for no benefit - the SETUP bit is sticky and
+    // the ISR always raises EP0OUT alongside it.
+    if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+        uint32_t ep0_cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-    // EP0 control-transfer servicing, driven off HARDWARE TRUTH rather than off
-    // the mailbox EP0OUT event bit.
-    //
-    // This used to be gated on "usb_events & EP0OUT", and that gate is what
-    // stalled DEV1's enumeration. The failure mode is a permanent deadlock, not
-    // a delay, and it is worth stating exactly because it is the same class of
-    // bug as the EP1 Active livelock fixed above:
-    //
-    //   1. The EP0OUT event reaches the foreground only if the ISR actually ran
-    //      and ORed the bit into the mailbox. With two controllers at EQUAL PIC
-    //      priority (vectors 3 and 6), a dev1 EP0OUT can be delivered while the
-    //      MCU is already inside the dev0 handler, and the ISR W1C-acknowledges
-    //      INTSTAT regardless. If the mailbox bit is consumed by the snapshot
-    //      in main() in the same iteration it was set, or the ISR's W1C lands
-    //      between the device's assertion and the mailbox update, that single
-    //      EP0OUT event is simply gone.
-    //   2. The SETUP packet it was reporting is still sitting in the SETUP
-    //      buffer and EP0 OUT is left UN-ARMED, because only
-    //      usb_handle_control_transfer() / usb_ep0_arm_out() re-arm it.
-    //   3. Nothing re-examines EP0 afterwards. The next SETUP therefore finds
-    //      EP0 OUT un-armed and the controller NAKs it - which is exactly the
-    //      valid_device_response_check_Dev3_EP0 "Received a NAK device response
-    //      to a host SETUP packet" error - and since the NAK produces no new
-    //      EP0OUT event either, EP0 can NEVER recover. Control traffic for that
-    //      controller is dead for the rest of the run.
-    //
-    // Measured in the round-8 console log: DEV1 was serviced through
-    // GET_DESCRIPTOR (bReq=0x6), GET_STATUS (bReq=0x0), SET_ADDRESS (bReq=0x5,
-    // addr=3) and a second GET_DESCRIPTOR/GET_CONFIG, and then SET_CONFIGURATION
-    // (bReq=0x9) NEVER arrived - while DEV0, which did get its bReq=0x9 at
-    // 551460 ns, enumerated normally. intr_count froze at 35 from 785 us to the
-    // end of the run, confirming no further USB interrupt of any kind was
-    // serviced. Because SET_CONFIGURATION never ran, usb_is_configured() stayed
-    // false for dev1, EP1 was never armed, loop_count stayed 0, and
-    // HP_WAIT_DEV1_UP never released - so the DEV0 hotplug cycling this test
-    // exists to perform never started at all.
-    //
-    // The hardware-truth signal to use here is DEVCMDSTAT.SETUP, not the EP0 OUT
-    // Active bit. Those are NOT equivalent, and assuming they were produced an
-    // even harder deadlock in round 9:
-    //
-    //   A SETUP packet is written to the controller's DEDICATED SETUP buffer. It
-    //   does NOT consume the EP0 OUT arm, so EP0 OUT's Active bit STAYS SET
-    //   while the SETUP waits to be decoded. Gating on "EP0 OUT is un-armed"
-    //   therefore locks out usb_handle_control_transfer() for exactly as long as
-    //   there is a SETUP to service - i.e. forever, starting from the very first
-    //   SETUP of enumeration.
-    //
-    // Round-9 evidence, from a single progress-dump line at 587900 ns:
-    //
-    //   DEVCMDSTAT=0x10810B80   bit 8 (SETUP, mask 0x100) SET  -> SETUP pending
-    //   ep0out=0x80004005       bit 31 (Active)           SET  -> EP0 OUT armed
-    //
-    // Both devices were stuck in that state for the entire run: addr stayed 0,
-    // intr_cnt moved 6 -> 8 and then froze, no controller ever enumerated, and
-    // the test ran out its full 3000 us budget with dev0_cycles=0/3 dev1_loops=0/5.
-    //
-    // So SETUP is checked UNCONDITIONALLY. This still fixes the round-8 lost-event
-    // deadlock, because DEVCMDSTAT.SETUP is a hardware status bit that stays set
-    // until usb_handle_control_transfer() W1C-clears it - it does not depend on
-    // the EP0OUT interrupt event ever reaching the mailbox. A lost interrupt
-    // costs one extra poll iteration instead of the endpoint.
-    //
-    // The un-armed test survives only as the SECONDARY case: with no SETUP
-    // pending, an un-armed EP0 OUT means a control-read status-stage ZLP OUT
-    // completed (or its event was lost), and re-arming keeps the next SETUP from
-    // being NAK'd.
-    //
-    // Do not reorder these two branches, and do not make the SETUP check
-    // conditional on anything.
-    // Hoisted into usb_service_ep0() so the main loop can run an EP0-only
-    // pass for BOTH controllers before any other work - see that function.
-    usb_service_ep0(dev);
-
-
+        if (ep0_cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+            // SETUP packet - decode and respond. This re-arms EP0.
+            usb_handle_control_transfer();
+        } else {
+            // Status-stage ZLP OUT for a control read completed. Re-arm EP0
+            // OUT so the next SETUP is received instead of NAK'd.
+            usb_ep0_arm_out();
+        }
+    }
 
     // EP0 IN completion needs no action: the ISR already acknowledged it.
 
-    // Arm EP1 OUT once the device is configured (enumeration complete). This
-    // is idempotent and only (re-)arms when not already armed.
-    if (!st->ep1_armed && usb_is_configured()) {
+    // Arm EP1 OUT once the device is configured (enumeration complete) AND
+    // still attached. This is idempotent and only (re-)arms when not already
+    // armed.
+    //
+    // The usb_is_connected() term is essential for this test and was the bug
+    // behind the "host and firmware ran different hotplug cycles" failure.
+    // Clearing DEV0 DCON detaches the device from hub port 1, but it does NOT
+    // clear DEV_ADDR or the SET_CONFIGURATION state, so usb_is_configured()
+    // stays TRUE across the whole detached window. HP_DISCONNECT therefore
+    // cleared ep1_armed, and this branch re-armed it ~2 us later while the
+    // device was physically off the bus. That stale arm then satisfied
+    // HP_WAIT_REENUM immediately after DCON was re-asserted, so the firmware
+    // declared the cycle "re-enumerated" before the host had sent a single
+    // packet, re-cleared DCON, and every host _dev0_recon SETUP correctly
+    // ABORTED into a detached device.
+    //
+    // Gating on DCON means EP1 can only be re-armed once the device is back on
+    // the bus, and - because a reconnect always brings a host port reset which
+    // clears the configured state - only after the host has genuinely
+    // re-enumerated it.
+    if (!st->ep1_armed && usb_is_connected() && usb_is_configured()) {
         usb_ep1_out_arm();
         st->ep1_armed      = true;
         st->loopback_armed = false;
@@ -868,13 +716,39 @@ static void dev0_hotplug_step(usb_dev_loopback_state_t *dev0_st,
         break;
 
     case HP_WAIT_REENUM:
-        // The cycle is complete once the host has re-enumerated USBDC0, which
-        // the firmware observes as the device becoming configured again (the
-        // usb_service_device() enumeration branch re-arms EP1 at that point).
+        // The cycle is complete once the host has re-enumerated USBDC0.
+        //
+        // Both terms below are required, and the address term is the one that
+        // makes this a real handshake with the host rather than a self-check:
+        //
+        //   usb_get_dev0_address() == USBDC0_BUS_ADDR
+        //       DEV_ADDR can only become non-zero because the host completed a
+        //       SET_ADDRESS on this controller. A reconnect brings a hub port
+        //       reset first, which clears DEV_ADDR to 0, so observing the
+        //       expected address again is positive proof that THIS cycle's
+        //       re-enumeration actually ran on the wire.
+        //   dev0_st->ep1_armed
+        //       SET_CONFIGURATION has also completed, so the device is fully
+        //       usable again and not merely addressed.
+        //
+        // This state used to test ep1_armed ALONE, and that was the bug behind
+        // the "host and firmware ran different hotplug cycles" failure. EP1 was
+        // being re-armed by usb_service_device() while DEV0 was still detached
+        // (DCON cleared does not clear the configured state - see the
+        // usb_is_connected() note there), so this condition was already true
+        // the instant DCON went back high. The firmware counted the cycle about
+        // 3 us after HP_CONNECT with ZERO host traffic in between, immediately
+        // re-cleared DCON for the next cycle, and the host's subsequent
+        // re-enumeration SETUPs hit a detached device and aborted. The
+        // usb_is_connected() gate fixes the stale re-arm; requiring the address
+        // as well makes the handshake robust even if some future change
+        // re-opens that window.
+        //
         // There is no timeout here on purpose: the host sequence already fails
         // loudly if port 1 never comes back, and the main loop has its own
         // USB_TEST_RUN_BUDGET_US backstop.
-        if (dev0_st->ep1_armed) {
+        if (dev0_st->ep1_armed
+            && usb_get_dev0_address() == USBDC0_BUS_ADDR) {
             dev0_cycle_count++;
             VPRINTF(LOW, "MCU: DEV0 hotplug cycle %d complete "
                     "(re-enumerated, dev1 loops so far=%d)\n",
@@ -895,7 +769,6 @@ void main(void) {
     usb_dev_loopback_state_t dev_state[2] = {0};
     bool passed = false;
     uint64_t run_deadline;
-    uint64_t next_dump;
 
     VPRINTF(LOW, "=================\nMCU: USB dual-device HS DEV0 hotplug "
             "isolation test\n=================\n\n");
@@ -930,12 +803,16 @@ void main(void) {
 
     VPRINTF(LOW, "MCU: Caliptra ready, entering DEV0 hotplug event loop\n");
 
-    // Both the overall run budget and the progress dump cadence are anchored to
-    // mcycle here, so they are real elapsed-time bounds rather than counts of
-    // variable-cost poll iterations. poll_count is now only a diagnostic
-    // (how much polling was needed), never a termination condition.
+    // The overall run budget is anchored to mcycle, so the worst-case dead
+    // tail on a failing run is a real elapsed-time bound rather than a count
+    // of variable-cost poll iterations. poll_count is only a diagnostic (how
+    // much polling was needed) plus the gate for the rare progress dump below;
+    // it is never a termination condition.
+    //
+    // The progress dump is deliberately NOT anchored to mcycle - see the long
+    // note at its call site for why a wall-clock dump cadence broke
+    // enumeration.
     run_deadline = csr_read_mcycle() + USB_TEST_RUN_BUDGET_CYCLES;
-    next_dump    = csr_read_mcycle() + USB_PROGRESS_DUMP_CYCLES;
 
     for (poll_count = 0; csr_read_mcycle() < run_deadline; poll_count++) {
         uint32_t ev0;
@@ -947,25 +824,6 @@ void main(void) {
         mcu_intr_rcv.usb &= ~ev0;
         ev1 = mcu_intr_rcv.usb_dev1;
         mcu_intr_rcv.usb_dev1 &= ~ev1;
-
-        // EP0 FIRST, FOR BOTH CONTROLLERS, BEFORE ANYTHING ELSE.
-        //
-        // Control-transfer response latency must not depend on how expensive
-        // the rest of this iteration happens to be. Previously EP0 was only
-        // serviced from inside usb_service_device(), which meant a dev1 SETUP
-        // had to wait behind dev0's full DRES_C / EP1 / hotplug work and, far
-        // worse, behind whatever VPRINTFs those paths emitted. The host spaces
-        // enumeration SETUPs about 5 us apart, so any iteration costing more
-        // than that can drop one, and the controller NAKs the next SETUP -
-        // the valid_device_response_check_Dev<addr>_EP0 violation.
-        //
-        // Doing an EP0-only pass here bounds the SETUP service latency to a
-        // handful of register accesses per controller. usb_service_device()
-        // still calls usb_service_ep0(dev) itself; that call is idempotent and
-        // becomes a no-op in the common case where this pass already drained
-        // the SETUP.
-        usb_service_ep0(0);
-        usb_service_ep0(1);
 
         // Service USBDC0 (vector 3) and USBDC1 (vector 6).
         usb_service_device(0, ev0, &dev_state[0]);
@@ -985,70 +843,40 @@ void main(void) {
             break;
         }
 
-        // Periodic progress dump, on a TIME cadence. Also dumps the two EP1
-        // command/status entries for USBDC1: when a loopback stalls, the EP1
-        // OUT/IN Active bits are the only thing that distinguishes "the host
-        // never sent the OUT" from "the OUT landed but the firmware never
-        // noticed the completion", and the host-side log cannot tell those
-        // apart.
+        // Periodic progress dump, COUNT-gated like the reference rather than
+        // wall-clock gated.
         //
-        // THE DUMP IS THE MOST EXPENSIVE THING IN THIS LOOP AND IS GATED
-        // ACCORDINGLY.
+        // This replaces an "every 100 us of mcycle" dump that was the direct
+        // cause of the round-11 regression. VPRINTF serialises ONE CHARACTER
+        // AT A TIME into MCI DEBUG_OUT (~28.6 ns/char at 400 MHz), so the old
+        // ~184-character dump blocked the single-threaded service loop for
+        // ~5.3 us. The host spaces enumeration SETUPs ~5 us apart, so a
+        // 100 us cadence was guaranteed to land inside an enumeration burst
+        // sooner or later, and the "no SETUP pending right now" guard it was
+        // given could not help: a point-in-time gate cannot protect a
+        // critical section LONGER than the gap it is waiting for. The proof
+        // is in the log - the dump that completed at 694645 ns printed
+        // dev1 DEVCMDSTAT=0x10814B83, bit 8 (SETUP) SET, i.e. a SETUP landed
+        // mid-dump and sat unserviced. Four USBDC1 control transfers were
+        // ABORTED in that window, SET_CONFIGURATION never completed, and dev1
+        // stayed unconfigured for the whole 3 ms run.
         //
-        // VPRINTF serialises ONE CHARACTER AT A TIME into
-        // SOC_MCI_TOP_MCI_REG_DEBUG_OUT, measured at about 28.6 ns per
-        // character at CALIPTRA_SS_CLK_FREQ = 400. The two lines below are
-        // roughly 184 characters, i.e. about 5.3 us in which the MCU services
-        // nothing at all. The host issues enumeration SETUPs about 5 us apart,
-        // so a single dump landing inside enumeration is on its own enough to
-        // lose a SETUP and earn a NAK-to-SETUP protocol violation. Because the
-        // cadence is anchored to mcycle in a fully deterministic simulation, it
-        // lands at the same phase on every run - which is exactly why the
-        // failure reproduced identically round after round.
-        //
-        // Two gates, both necessary:
-        //
-        //   1. dev0_cycle_count > 0 - stay completely silent until the first
-        //      DEV0 hotplug cycle has completed. All enumeration (hub, USBDC0,
-        //      USBDC1) is finished by then, so the dump cannot interfere with
-        //      any control transfer that matters. There is nothing to report
-        //      before that point anyway: the interesting state is the hotplug
-        //      cycling itself.
-        //   2. no SETUP pending on either controller - even after enumeration,
-        //      USBDC0 is RE-enumerated after every reconnect, so control
-        //      traffic keeps happening. Deferring whenever a SETUP is in flight
-        //      keeps the dump out of those windows too.
-        //
-        // When deferring, next_dump is NOT re-armed, so the dump fires on the
-        // first subsequent iteration that is clear of control traffic rather
-        // than being pushed out by a whole cadence period.
-        if (csr_read_mcycle() >= next_dump
-            && dev0_cycle_count > 0u
-            && !usb_ep0_setup_pending(0)
-            && !usb_ep0_setup_pending(1)) {
-            next_dump = csr_read_mcycle() + USB_PROGRESS_DUMP_CYCLES;
-
+        // Count-gating makes the dump rare in units of WORK rather than TIME,
+        // which is what the reference does and why the reference survives.
+        // The payload is also trimmed: no EP-list reads, short field names.
+        if (poll_count % 2000 == 0 && poll_count > 0) {
             usb_select_device(0);
-            VPRINTF(LOW, "MCU: [poll %d] hp_state=%d dev0_cycles=%d "
-                    "armed=%d DEVCMDSTAT=0x%x | ",
+            VPRINTF(LOW, "MCU: [poll %d] hp=%d cyc=%d d0 armed=%d lb=%d "
+                    "addr=%d | ",
                     poll_count, (int)dev0_hp_state, dev0_cycle_count,
                     (int)dev_state[0].ep1_armed,
-                    lsu_read_32(USB_DEV_DEVCMDSTAT));
+                    (int)dev_state[0].loopback_armed,
+                    usb_get_device_address());
             usb_select_device(1);
-            VPRINTF(LOW, "dev1 loops=%d armed=%d lb_armed=%d addr=%d "
-                    "DEVCMDSTAT=0x%x ep0out=0x%x ep1out=0x%x ep1in=0x%x "
-                    "intr_cnt=%d\n",
+            VPRINTF(LOW, "d1 loops=%d armed=%d lb=%d addr=%d\n",
                     dev_state[1].loop_count, (int)dev_state[1].ep1_armed,
                     (int)dev_state[1].loopback_armed,
-                    usb_get_device_address(),
-                    lsu_read_32(USB_DEV_DEVCMDSTAT),
-                    lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                + USB_EP_LIST_EP0_OUT_OFFSET),
-                    lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                + USB_EP_LIST_EP1_OUT_OFFSET),
-                    lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                + USB_EP_LIST_EP1_IN_OFFSET),
-                    intr_count);
+                    usb_get_device_address());
         }
     }
 

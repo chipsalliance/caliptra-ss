@@ -388,7 +388,13 @@ function void caliptra_ss_usb_data_check_api_impl::check_device_address(uvm_obje
   // from an earlier, unrelated bring-up - reporting a pass on that basis is
   // how a fully failed enumeration used to look successful. Fail loudly
   // instead so the real failure is visible at the point it occurs.
-  if (item.status != svt_usb_transfer::ACCEPT || item.results_status != 0) begin
+  // results_status bit 5 ("Transfer finished due to 0-length Data Packet")
+  // is a normal end-of-transfer indication, not a failure, so it is masked
+  // out before testing for failure bits. See the results_status bit table in
+  // the SVT VIP svt_usb_transfer source, and the matching mask in
+  // caliptra_ss_usb_base_sequence::USB_RESULTS_STATUS_BENIGN_MASK.
+  if (item.status != svt_usb_transfer::ACCEPT ||
+      (item.results_status & ~128'h20) != 0) begin
     `uvm_error(msg_tag,
       $sformatf({"%s device address check INVALID: the transfer it is based on ",
                  "did not complete (status=%s, results_status=0x%0h). The device ",

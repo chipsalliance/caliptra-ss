@@ -70,6 +70,25 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     protected caliptra_ss_usb_data_check_api usb_data_check_api;
     protected svt_usb_transfer last_ctrl_seq_item;
 
+    // Bits of svt_usb_transfer::results_status that describe a NORMAL end of
+    // transfer rather than a failure, and must therefore be ignored when
+    // deciding whether a transfer succeeded.
+    //
+    //   bit 5 - "Transfer finished due to 0-length Data Packet" (Host).
+    //           Set on every control transfer with no data stage, i.e. on
+    //           SET_ADDRESS and SET_CONFIGURATION, and on any bulk IN that
+    //           ends on a zero-length packet. The VIP's own sequence library
+    //           (svt_usb_20_na_30_ss_transfer_system_virtual_sequence_collection)
+    //           reports status==ACCEPT with results_status==0x20 as
+    //           "completed normally (with 0-length DP)".
+    //
+    // Everything else in the table is a genuine failure reason (bit 1 host
+    // abort command, bit 2 device response timeout, bit 3 injected-error
+    // timeout, bit 4 STALL, bit 6 uframe interval exceeded, bit 7 unexpected
+    // device timeout, ...), so only these benign bits are masked out.
+    localparam bit [127:0] USB_RESULTS_STATUS_BENIGN_MASK = 128'h20;
+
+
     // Set by wait_for_link_enabled() when its timeout expired before the
     // link reached ENABLED. Cleared at every entry to that task. Sequences
     // that must abort the rest of their body on a failed link-up read this
@@ -323,11 +342,24 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                                    mean the VIP gave up on the
     //                                    transfer (device response timeout,
     //                                    STALL, protocol reset, ...).
-    //   svt_usb_transfer::results_status - a bit array where ANY set bit
-    //                                    encodes a specific failure reason
-    //                                    (see svt_usb_transfer documentation
-    //                                    for the per-bit meaning); an all
-    //                                    zero value means success.
+    //   svt_usb_transfer::results_status - a bit array describing how the
+    //                                    transfer ended. Most set bits are
+    //                                    failure reasons (bit 1/2/3 abort or
+    //                                    response timeout, bit 4 STALL, ...),
+    //                                    but NOT all of them: bit 5 means
+    //                                    "transfer finished due to 0-length
+    //                                    Data Packet", which is the normal
+    //                                    and expected outcome for a control
+    //                                    transfer with no data stage
+    //                                    (SET_ADDRESS, SET_CONFIGURATION)
+    //                                    and for a short/zero-length bulk IN.
+    //                                    The VIP's own sequence library
+    //                                    treats status==ACCEPT together with
+    //                                    results_status==0x20 as "completed
+    //                                    normally (with 0-length DP)", so the
+    //                                    benign bits are masked out here via
+    //                                    USB_RESULTS_STATUS_BENIGN_MASK and
+    //                                    only the remaining bits are failures.
     //
     // min_payload_bytes, when non-zero, additionally requires the transfer
     // to have moved at least that many payload bytes. An ABORTED IN control
@@ -344,7 +376,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                            string           label,
                            int unsigned     min_payload_bytes = 0,
                            output bit       fail);
-        int unsigned pld_bytes;
+        int unsigned     pld_bytes;
+        bit [127:0]      rs_failures;
         fail = 1'b0;
 
         if (xfer == null) begin
@@ -362,10 +395,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             fail = 1'b1;
         end
 
-        if (xfer.results_status != 0) begin
+        // Only the non-benign bits count as failures. results_status==0x20
+        // alone means the transfer simply ended on a zero-length data packet,
+        // which is the normal outcome for SET_ADDRESS / SET_CONFIGURATION and
+        // for a bulk IN that terminates short.
+        rs_failures = xfer.results_status & ~USB_RESULTS_STATUS_BENIGN_MASK;
+        if (rs_failures != 0) begin
             `uvm_error("USB_BASE_SEQ",
-                $sformatf("Transfer %s FAILED: results_status=0x%0h is non-zero (status=%s). Each set bit encodes a transfer failure reason - decode it against the svt_usb_transfer results_status bit table.",
-                          label, xfer.results_status, xfer.status.name()))
+                $sformatf("Transfer %s FAILED: results_status=0x%0h carries failure bits 0x%0h (status=%s). Each set bit encodes a transfer failure reason - decode it against the svt_usb_transfer results_status bit table (bit 2 device response timeout, bit 4 STALL, ...).",
+                          label, xfer.results_status, rs_failures, xfer.status.name()))
             fail = 1'b1;
         end
 
@@ -382,8 +420,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
 
         if (!fail)
             `uvm_info("USB_BASE_SEQ",
-                $sformatf("Transfer %s status checked: ACCEPT, results_status=0, payload=%0d bytes.",
-                          label, xfer.payload_byte_count()), UVM_HIGH)
+                $sformatf("Transfer %s status checked: ACCEPT, results_status=0x%0h (no failure bits), payload=%0d bytes.",
+                          label, xfer.results_status, xfer.payload_byte_count()), UVM_HIGH)
     endtask
 
     // -------------------------------------------------------------------
