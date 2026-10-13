@@ -86,10 +86,11 @@ vector 3 (`service_usb_intr`). USBDC1's interrupt
 `caliptra_ss_dut.usb_core_i.dev1_usb_irq`) is NOT routed to the PIC in RTL.
 Instead the **testbench** loops the top-level output back onto
 `cptra_ss_mcu_ext_int[6]` (`VEER_INTR_VEC_USB_DEV1`) and the MCU services it on
-PIC vector 6 (`service_usb_dev1_intr`). Both the TB loopback and the matching
-firmware behaviour are gated by the compile define
-`USB_HUB_COMPOUND_DEV1_IRQ`, which the yml passes to BOTH the RTL compile and
-the firmware `BUILD_CFLAGS`.
+PIC vector 6 (`service_usb_dev1_intr`). The TB loopback is always compiled and
+is enabled at runtime by the `+USB_HUB_COMPOUND_DEV1_IRQ=1` plusarg. The
+matching firmware behavior is enabled separately by passing
+`-DUSB_HUB_COMPOUND_DEV1_IRQ` through `BUILD_CFLAGS`; the yml supplies both
+mechanisms.
 
 The two PIC vectors are configured at EQUAL priority (both 7, see
 `caliptra_ss_defines.h`: `CSS_MCU0_VEER_INTR_PRIO_USB_DEV1 = 7`), so the two
