@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 319;
+  localparam int USB_PKG_VERSION = 321;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -52,6 +52,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_get_hub_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_interface_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -289,6 +291,22 @@ package caliptra_ss_usb_test_pkg;
   // Standard GET_INTERFACE on the hub and on dev1 (both return
   // bAlternateSetting=0; the hub answers in EP0 hardware, dev1 in firmware).
   `include "caliptra_ss_usb_hs_dev1_get_interface_test.svh"
+
+  // HS-only hub SET_FEATURE(DEVICE, TEST_MODE): one random invalid test
+  // selector (6..255, must be stalled) then one random valid selector (1..5,
+  // must be accepted), both observed on the RTL usb_phy_test_mode register
+  // through check_phy_test_mode(). Hub-only enumeration; the accepted request
+  // is the last USB activity because the PIE then enters BUS_EVENT_TEST_MODE
+  // until a power cycle.
+  `include "caliptra_ss_usb_hs_hub_test_mode_test.svh"
+
+  // Full-speed sibling of the hub SET_FEATURE(DEVICE, TEST_MODE) test above.
+  // The EP0 request decode is speed-independent, so the same accept/reject
+  // scenario is run with the FS VIP conversion applied. The accepted request
+  // is still the last USB activity: at FS it also forces the HS electrical
+  // gate and drops the link, which is harmless only because the final check
+  // reads the RTL usb_phy_test_mode probe and not the bus.
+  `include "caliptra_ss_usb_fs_hub_test_mode_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"

@@ -100,6 +100,30 @@ interface class caliptra_ss_usb_data_check_api;
   pure virtual function void check_device_speed(string device_name,
                                                bit [1:0] expected_speed);
 
+  // Hub PHY test-mode check (SET_FEATURE(DEVICE, TEST_MODE) accept/reject).
+  // Like check_device_speed this reads the RTL through usb_dev_addr_probe, so
+  // there is no usb_item argument and no USB transfer is involved.
+  //
+  // SET_FEATURE(TEST_MODE) is wValue=0x0002 with the test selector in
+  // wIndex[15:8]. The hub EP0 handler accepts selectors 1..5 (Test_J, Test_K,
+  // Test_SE0_NAK, Test_Packet, Test_Force_Enable) and stalls anything above 5
+  // (see C_STD_REQ_SET_FEATURE_DEV in usb_ep0_handler.m.vhdl). On acceptance it
+  // loads usb_phy_test_mode with selector[2:0]; on rejection the register is
+  // left untouched. It resets to 3'b000 and no handler path ever clears it, so:
+  //   expected = 3'b000        -> the request must have been rejected
+  //   expected = selector[2:0] -> the request must have been accepted
+  //
+  // Only "hub" is a valid device_name: test mode is implemented for the hub
+  // only (the compound device's downstream ports are neither removable nor
+  // accessible, so the handler restricts the feature to device index 0).
+  //
+  // Caution for sequence authors: once a test mode is accepted, the PIE enters
+  // BUS_EVENT_TEST_MODE and its only documented exit is a power cycle
+  // (usb_pie.m.vhdl). An accepted SET_FEATURE(TEST_MODE) must therefore be the
+  // last USB activity of a test.
+  pure virtual function void check_phy_test_mode(string device_name,
+                                                 bit [2:0] expected_test_mode);
+
   // Note: there is no CHIP_ID check in this API. CHIP_ID is INFO[31:16] =
   // {C_MAJOR_REV, C_MINOR_REV}, both VHDL generics of usb_reg_if, and VCS does
   // not support a cross-module reference whose target is a VHDL generic

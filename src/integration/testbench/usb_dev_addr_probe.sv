@@ -55,6 +55,32 @@
 //     never disagree; both names are kept so a per-device test reads
 //     naturally, but no independent coverage is gained from checking both.
 //
+// Hub PHY test mode (SET_FEATURE(TEST_MODE) accept/reject)
+// -------------------------------------------------------
+//   A SET_FEATURE(DEVICE, TEST_MODE) request carries the test selector in
+//   wIndex(15:8). usb_ep0_handler decides accept vs reject for the hub
+//   (device = 0) in its C_STD_REQ_SET_FEATURE_DEV branch:
+//     - selector > 5           -> ep0_in_stall, usb_phy_test_mode untouched
+//     - selector in 1..5       -> set_usb_phy_test_mode, and
+//                                 usb_phy_test_mode <= setup_bytes(42 downto 40)
+//   usb_phy_test_mode is an OUTPUT PORT of usb_ep0_handler (not an internal
+//   architecture signal), so it is reachable by a cross-module reference. It
+//   resets to "000", and the handler has no path that clears it again, so its
+//   value is a latching record of the last accepted test mode:
+//     000     -> no test mode ever armed (every request so far was stalled)
+//     1..5    -> that selector was accepted and armed
+//   This makes it both a positive and a negative check on the request: an
+//   invalid selector must leave it at 000, a valid one must load it with
+//   selector(2:0).
+//   hub_pie_phy_test_mode is the same value observed one level down, on the
+//   usbreg_phy_test_mode input port of the PIE instance, and corroborates that
+//   the PIE consumed what the handler produced. Note that a non-zero value
+//   drives the PIE into BUS_EVENT_TEST_MODE, whose only documented exit is a
+//   power cycle (usb_pie.m.vhdl), so no USB traffic is possible afterwards.
+//   caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound
+//     .usb_ep0_handler_1.usb_phy_test_mode  -> hub_phy_test_mode
+//     .usb_pie_1.usbreg_phy_test_mode       -> hub_pie_phy_test_mode
+//
 // CHIP_ID (INFO[31:16]) is NOT probed here
 // ----------------------------------------
 //   CHIP_ID is built from the usb_reg_if C_MAJOR_REV / C_MINOR_REV VHDL
@@ -76,12 +102,18 @@ module usb_dev_addr_probe;
   logic [1:0] dev0_speed;
   logic [1:0] dev1_speed;
 
+  logic [2:0] hub_phy_test_mode;
+  logic [2:0] hub_pie_phy_test_mode;
+
   always_comb dev0_dev_addr = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_usbaddress;
   always_comb dev1_dev_addr = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_usbaddress;
   always_comb hub_dev_addr  = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.usbreg_usbaddress[6:0];
 
   always_comb dev0_speed = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.pie_speed;
   always_comb dev1_speed = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.pie_speed;
+
+  always_comb hub_phy_test_mode     = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_ep0_handler_1.usb_phy_test_mode;
+  always_comb hub_pie_phy_test_mode = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.usbreg_phy_test_mode;
 
 endmodule
 
