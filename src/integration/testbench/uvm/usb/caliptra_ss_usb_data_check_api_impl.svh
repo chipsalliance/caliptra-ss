@@ -53,7 +53,6 @@ class caliptra_ss_usb_data_check_api_impl extends uvm_component implements calip
 
 
 
-
   extern function new(string name ="caliptra_ss_usb_data_check_api_impl",
                       uvm_component parent=null);
 
@@ -61,6 +60,7 @@ class caliptra_ss_usb_data_check_api_impl extends uvm_component implements calip
   extern virtual function void build_phase(uvm_phase phase);
 
   extern virtual function void check_device_descriptor(uvm_object usb_item, string device_name);
+
 
   extern virtual function void check_device_address(uvm_object usb_item, string device_name,
                                                     int unsigned expected_address);
@@ -379,7 +379,37 @@ function void caliptra_ss_usb_data_check_api_impl::check_device_address(uvm_obje
     `uvm_fatal(msg_tag, "impossible to cast usb_item to svt_usb_transfer")
   end
 
+  // Reject the check outright when the transfer it is attached to did not
+  // actually complete. This check reads the committed address straight out of
+  // RTL and does not touch the payload, so on its own it cannot tell whether
+  // the enumeration that was supposed to establish that address ever
+  // happened. A transfer the VIP ABORTED ends with status != ACCEPT and a
+  // zero-length payload, and the RTL register may still be holding a value
+  // from an earlier, unrelated bring-up - reporting a pass on that basis is
+  // how a fully failed enumeration used to look successful. Fail loudly
+  // instead so the real failure is visible at the point it occurs.
+  if (item.status != svt_usb_transfer::ACCEPT || item.results_status != 0) begin
+    `uvm_error(msg_tag,
+      $sformatf({"%s device address check INVALID: the transfer it is based on ",
+                 "did not complete (status=%s, results_status=0x%0h). The device ",
+                 "never answered, so the committed address cannot be attributed ",
+                 "to this enumeration."},
+                device_name, item.status.name(), item.results_status))
+    return;
+  end
+
+  if (item.payload_byte_count() == 0) begin
+    `uvm_error(msg_tag,
+      $sformatf({"%s device address check INVALID: the transfer it is based on ",
+                 "moved zero payload bytes. An IN control transfer that returns ",
+                 "no data did not reach the device, so this check has nothing to ",
+                 "confirm the address against."},
+                device_name))
+    return;
+  end
+
   // Select the HDL path to the committed device address for this device.
+
   case (device_name)
     "dev0":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev0_dev_addr"};
     "dev1":  hdl_path = {USB_DEV_ADDR_PROBE_PATH, ".dev1_dev_addr"};

@@ -309,6 +309,105 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     endtask
 
     // -------------------------------------------------------------------
+    // check_xfer_status
+    //
+    // Assert that a transfer the VIP has finished with actually SUCCEEDED.
+    // NOTIFY_USB_TRANSFER_ENDED (and therefore wait_xfer_done()) fires on
+    // ANY terminal outcome, including ABORTED, so a sequence that only
+    // waits for the event cannot tell a good transfer from a dead one and
+    // will happily report "enumeration complete" on a bus where the device
+    // answered nothing at all.
+    //
+    // Two independent VIP fields are inspected:
+    //   svt_usb_transfer::status        - must be ACCEPT. ABORTED/CANCELLED
+    //                                    mean the VIP gave up on the
+    //                                    transfer (device response timeout,
+    //                                    STALL, protocol reset, ...).
+    //   svt_usb_transfer::results_status - a bit array where ANY set bit
+    //                                    encodes a specific failure reason
+    //                                    (see svt_usb_transfer documentation
+    //                                    for the per-bit meaning); an all
+    //                                    zero value means success.
+    //
+    // min_payload_bytes, when non-zero, additionally requires the transfer
+    // to have moved at least that many payload bytes. An ABORTED IN control
+    // transfer typically ends with a zero-length payload, so data checks
+    // run on it would be comparing against nothing and would pass by
+    // accident - callers that read a descriptor or a configuration value
+    // back must set this to the number of bytes they rely on.
+    //
+    // All failures are reported as uvm_error against the caller-supplied
+    // label so the log identifies the exact transfer, and fail is set to 1
+    // so a caller can skip dependent checks instead of cascading noise.
+    // -------------------------------------------------------------------
+    task check_xfer_status(svt_usb_transfer xfer,
+                           string           label,
+                           int unsigned     min_payload_bytes = 0,
+                           output bit       fail);
+        int unsigned pld_bytes;
+        fail = 1'b0;
+
+        if (xfer == null) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s: no transfer handle to check (null) - the transfer was never issued or the handle was lost.",
+                          label))
+            fail = 1'b1;
+            return;
+        end
+
+        if (xfer.status != svt_usb_transfer::ACCEPT) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s FAILED: status=%s (expected ACCEPT), results_status=0x%0h. The VIP terminated this transfer without a complete, accepted exchange - the device did not respond as the protocol requires.",
+                          label, xfer.status.name(), xfer.results_status))
+            fail = 1'b1;
+        end
+
+        if (xfer.results_status != 0) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s FAILED: results_status=0x%0h is non-zero (status=%s). Each set bit encodes a transfer failure reason - decode it against the svt_usb_transfer results_status bit table.",
+                          label, xfer.results_status, xfer.status.name()))
+            fail = 1'b1;
+        end
+
+        if (min_payload_bytes != 0) begin
+            pld_bytes = xfer.payload_byte_count();
+            if (pld_bytes < min_payload_bytes) begin
+                `uvm_error("USB_BASE_SEQ",
+                    $sformatf("Transfer %s FAILED: moved %0d payload bytes, expected at least %0d (status=%s, results_status=0x%0h). Any data check run on this transfer would be inspecting an empty or truncated payload.",
+                              label, pld_bytes, min_payload_bytes,
+                              xfer.status.name(), xfer.results_status))
+                fail = 1'b1;
+            end
+        end
+
+        if (!fail)
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf("Transfer %s status checked: ACCEPT, results_status=0, payload=%0d bytes.",
+                          label, xfer.payload_byte_count()), UVM_HIGH)
+    endtask
+
+    // -------------------------------------------------------------------
+    // wait_and_check_xfer
+    //
+    // wait_xfer_done() followed immediately by check_xfer_status() on the
+    // most recent control transfer (last_ctrl_seq_item, set by
+    // do_control_xfer()). This is the form every control-transfer call site
+    // should use: waiting without checking is what allowed a fully failing
+    // enumeration to be logged as successful.
+    // -------------------------------------------------------------------
+    task wait_and_check_xfer(svt_usb_agent agent_h,
+                             string        label,
+                             int unsigned  min_payload_bytes = 0,
+                             output bit    fail);
+        wait_xfer_done(.agent_h(agent_h), .label(label));
+        check_xfer_status(.xfer             (last_ctrl_seq_item),
+                          .label            (label),
+                          .min_payload_bytes(min_payload_bytes),
+                          .fail             (fail));
+    endtask
+
+
+    // -------------------------------------------------------------------
     // wait_for_link_enabled
     //
     // Block until shared_status.link_usb_20_state reaches ENABLED, logging
@@ -624,12 +723,25 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // caller). A dual-device test enumerating BOTH embedded controllers on the
     // same bus must give them DISTINCT addresses (e.g. USBDC0=2, USBDC1=3):
     // two devices cannot share one address on a single USB bus.
+    //
+    // Every control transfer in this step is status-checked via
+    // wait_and_check_xfer(): an ABORTED transfer here means the device never
+    // answered the SETUP, which leaves it un-addressed or un-configured and
+    // makes every later stage of the test meaningless. Without these checks
+    // a completely dead device still produced a "USBDC0 enumeration complete"
+    // log line and zero errors, because NOTIFY_USB_TRANSFER_ENDED fires on
+    // ABORTED just as it does on success. The IN transfers additionally
+    // require their full expected payload, so a data check can never run
+    // against an empty payload and pass by accident.
     task usbdc0_enum_stepC(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                            string suffix = "", bit with_get_config_readback = 1,
                            bit no_queue_and_hold = 0, int unsigned device_idx=0,
                            bit [6:0] assign_address = 7'd2);
+        bit xfer_fail;
+
         // Reset VIP anchor to addr=0 before addressing the freshly port-reset
         // USBDC0 - see the constraint note in this block's header comment.
+
         usb_cfg.remote_device_cfg[0].device_address = 7'd0;
         host_agent_h.reconfigure(usb_cfg);
         `uvm_info("USB_BASE_SEQ",
@@ -648,7 +760,14 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .label                ({"GET_DESC_DEV_addr0", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr0", suffix}));
+        // 18-byte DEVICE descriptor read at the default address. This is the
+        // very first SETUP the device sees after the port reset; if it aborts,
+        // the device controller is not servicing EP0 at all and nothing after
+        // this point can succeed.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_DESC_DEV_addr0", suffix}),
+                            .min_payload_bytes(18),
+                            .fail             (xfer_fail));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -662,7 +781,11 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .label                ({"GET_STATUS_addr0", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_STATUS_addr0", suffix}));
+        // 2-byte device status word.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_STATUS_addr0", suffix}),
+                            .min_payload_bytes(2),
+                            .fail             (xfer_fail));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
@@ -676,7 +799,14 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .label                ({"SET_ADDRESS_2", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"SET_ADDRESS_2", suffix}));
+        // No data stage, so no payload requirement - but the status stage
+        // must be accepted, otherwise the device never commits the new
+        // address and every transfer below is sent to an address nobody
+        // answers on.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"SET_ADDRESS_2", suffix}),
+                            .min_payload_bytes(0),
+                            .fail             (xfer_fail));
         #5us;
 
         usb_cfg.remote_device_cfg[0].device_address = assign_address;
@@ -694,10 +824,22 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .label                ({"GET_DESC_DEV_addr2", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr2", suffix}));
-        usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
-                                                .device_name($sformatf("dev%0d", device_idx)), 
-                                                .expected_address(int'(assign_address)));
+        // First transfer at the newly assigned address: proves the device
+        // accepted SET_ADDRESS and is answering on the new address with a
+        // full 18-byte descriptor.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_DESC_DEV_addr2", suffix}),
+                            .min_payload_bytes(18),
+                            .fail             (xfer_fail));
+        // Only run the address check when the transfer itself succeeded. The
+        // check reads the committed address out of RTL and would otherwise
+        // report a pass on the strength of a transfer that moved no data at
+        // all, which is how an entirely failed enumeration used to be logged
+        // as successful.
+        if (!xfer_fail)
+            usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item),
+                                                    .device_name($sformatf("dev%0d", device_idx)),
+                                                    .expected_address(int'(assign_address)));
 
         if (with_get_config_readback) begin
             do_control_xfer(
@@ -712,7 +854,11 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .label                ({"GET_CONFIG_addr2", suffix}),
                 .usb_cfg              (usb_cfg),
                 .no_queue_and_hold    (no_queue_and_hold));
-            wait_xfer_done(.agent_h(host_agent_h), .label({"GET_CONFIG_addr2", suffix}));
+            // 1-byte bConfigurationValue readback before SET_CONFIGURATION.
+            wait_and_check_xfer(.agent_h          (host_agent_h),
+                                .label            ({"GET_CONFIG_addr2", suffix}),
+                                .min_payload_bytes(1),
+                                .fail             (xfer_fail));
         end
 
         do_control_xfer(
@@ -727,7 +873,13 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .label                ({"SET_CONFIG_1", suffix}),
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"SET_CONFIG_1", suffix}));
+        // The device only arms its non-control endpoints once it is
+        // configured, so an aborted SET_CONFIGURATION silently disables every
+        // bulk/iso stage of the test that follows.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"SET_CONFIG_1", suffix}),
+                            .min_payload_bytes(0),
+                            .fail             (xfer_fail));
 
         if (with_get_config_readback) begin
             do_control_xfer(
@@ -742,8 +894,14 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .label                ({"GET_CONFIG_verify", suffix}),
                 .usb_cfg              (usb_cfg),
                 .no_queue_and_hold    (no_queue_and_hold));
-            wait_xfer_done(.agent_h(host_agent_h), .label({"GET_CONFIG_verify", suffix}));
+            // 1-byte bConfigurationValue readback confirming the device
+            // really entered the Configured state.
+            wait_and_check_xfer(.agent_h          (host_agent_h),
+                                .label            ({"GET_CONFIG_verify", suffix}),
+                                .min_payload_bytes(1),
+                                .fail             (xfer_fail));
         end
+
 
         `uvm_info("USB_BASE_SEQ", "Step C: USBDC0 enumeration complete (addr 2).", UVM_MEDIUM)
     endtask

@@ -188,6 +188,8 @@ package caliptra_ss_usb_test_pkg;
   // and services dev1 on PIC vector 6 via the TB IRQ loopback.
   `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_sequence.svh"
   `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_test.svh"
+  `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_test.svh"
 
   // Full-speed port of the dual-device bulk loopback pair above. Same dual
   // aperture firmware topology and same TB dev1 IRQ loopback; the link is

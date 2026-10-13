@@ -271,6 +271,20 @@ typedef struct {
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
 #define USB_EP_ENTRY_DISABLED     (1u << 30)
 #define USB_EP_ENTRY_STALL        (1u << 29)
+// TR bit (bit 28) - Toggle Reset. Arming an EP command/status entry with TR=1
+// forces that physical endpoint's data toggle back to DATA0 for the next
+// packet. The RTL latches it straight out of the entry word the DMA engine
+// fetches (usb_ep_config_handler.m.vhdl):
+//   reg_ep_toggle_reset(epconfig_link) <= upd_dma_wdata(28);
+// and the vector is placed back into the per-endpoint info word at bit 28 by
+// usb_ep_config_hub_pkg.p.vhdl. Needed by any test that re-arms the SAME
+// endpoint for more than one transfer while the host side restarts from a
+// DATA0 expectation (for example after a VIP reconfigure/address retarget):
+// without TR the device keeps alternating DATA0/DATA1 and the host flags a
+// data-toggle PID mismatch. Single-transfer tests can leave it clear, since a
+// bus reset already zeroes the toggle (reg_ep_toggle_value is cleared on
+// sync_busreset in usb_reg_if.m.vhdl).
+#define USB_EP_ENTRY_TOGGLE_RESET (1u << 28)
 // T bit (bit 26) - Endpoint Type:
 //   0 = Generic (bulk / rate-feedback interrupt)
 //   1 = Periodic. The RF bit then selects isochronous vs interrupt.
