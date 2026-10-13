@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 321;
+  localparam int USB_PKG_VERSION = 324;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -54,6 +54,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_get_interface_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -307,6 +309,14 @@ package caliptra_ss_usb_test_pkg;
   // gate and drops the link, which is harmless only because the final check
   // reads the RTL usb_phy_test_mode probe and not the bus.
   `include "caliptra_ss_usb_fs_hub_test_mode_test.svh"
+
+  // HS-only hub ENDPOINT_HALT round trip on the one Halt-able hub endpoint
+  // (endpoint 1 IN, wIndex=0x0081): GET_STATUS baseline, SET_FEATURE,
+  // GET_STATUS, CLEAR_FEATURE, GET_STATUS. Control transfers only, hub-only
+  // enumeration; the status bit is read back out of
+  // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"

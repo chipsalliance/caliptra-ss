@@ -213,3 +213,5 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_get_interface/caliptra_ss_usb_hs_dev_get_interface.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_interface/caliptra_ss_usb_fs_dev_get_interface.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface.yml
+        - ../test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt.yml
+        - ../test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt.yml

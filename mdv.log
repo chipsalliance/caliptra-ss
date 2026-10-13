@@ -1,0 +1,2 @@
+[ERROR] 2026-10-13 19:19:59 [com.cadence.mdv.services.ClientLinkToServerImpl] [main] - No XLM Home defined in the server project
+[INFO ] 2026-10-13 19:20:11 [com.cadence.mdv.imc.Main] [main] - Binding debug tools http on port: 45101

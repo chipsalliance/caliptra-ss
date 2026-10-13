@@ -26,6 +26,13 @@ interface class caliptra_ss_usb_data_check_api;
   // Standard device GET_STATUS check. The response is a 2-byte status word;
   // usable for dev0, dev1 and hub (recipient=device). bit[0]=Self-Powered,
   // bit[1]=Remote-Wakeup.
+  //
+  // The same check is equally valid for recipient=endpoint (USB 2.0 section
+  // 9.4.5, bmRequestType=0x82, wIndex=endpoint address). In that case the
+  // returned 2-byte word has bit[0]=ENDPOINT_HALT and all other bits reserved
+  // zero, so pass expected=16'h0001 for a halted endpoint and 16'h0000 for a
+  // running one. On the compound hub the only Halt-able endpoint is EP1 IN
+  // (wIndex=0x0081); see caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh.
   pure virtual function void check_get_status(uvm_object usb_item, string device_name,
                                               bit [15:0] expected);
 
