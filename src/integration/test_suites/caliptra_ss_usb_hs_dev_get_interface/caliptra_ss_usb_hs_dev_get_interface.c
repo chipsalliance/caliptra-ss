@@ -117,8 +117,23 @@ void main (void) {
         // acknowledged INTSTAT, so the foreground loop must not touch
         // INTSTAT itself. Snapshot then clear by complement so bits the
         // ISR sets while we are handling this batch are not lost.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        //usb_events = mcu_intr_rcv.usb;
+        //mcu_intr_rcv.usb &= ~usb_events;
+         {
+             uint32_t saved_mstatus;
+             __asm__ volatile ("csrrc %0, mstatus, %1"
+                               : "=r" (saved_mstatus)
+                               : "r" (MSTATUS_MIE_BIT_MASK)
+                               : "memory");
+             usb_events = mcu_intr_rcv.usb;
+             mcu_intr_rcv.usb &= ~usb_events;
+             if (saved_mstatus & MSTATUS_MIE_BIT_MASK) {
+                 __asm__ volatile ("csrrs zero, mstatus, %0"
+                                   :
+                                   : "r" (MSTATUS_MIE_BIT_MASK)
+                                   : "memory");
+             }
+         }
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
