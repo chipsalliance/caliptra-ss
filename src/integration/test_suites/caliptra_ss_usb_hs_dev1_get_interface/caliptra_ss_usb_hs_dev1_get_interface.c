@@ -30,8 +30,8 @@
 
 // -----------------------------------------------------------------------------
 // USBDC1 (device1) variant of caliptra_ss_usb_hs_dev_get_interface. The shared
-// USB library is retargeted to the USBDC1 aperture (regs 0x2001_0000, DMA
-// 0x2001_0100) purely by -DUSB_DEV_SEL=1, which the yml passes through
+// USB library is retargeted to the USBDC1 aperture (regs 0x2000_2000, DMA
+// 0x3001_0000) purely by -DUSB_DEV_SEL=1, which the yml passes through
 // BUILD_CFLAGS. See the USB_DEV_SEL block in
 // src/integration/test_suites/libs/usb/usb.h and
 // claude_md/15_usb_dev1_replication.md. Like the other dev1 command-value
