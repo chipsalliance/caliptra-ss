@@ -20,9 +20,9 @@
 //
 // Uses the default SVT VIP configuration (high_speed_capable=1) so the VIP
 // host performs HS chirp and the link attaches at HS (480 Mbit/s). Runs
-// caliptra_ss_usb_get_interface_sequence: enumerate hub + USBDC0, then a
-// standard GET_INTERFACE for hub interface 0, checked against
-// bAlternateSetting = 0x00.
+// caliptra_ss_usb_get_interface_sequence: enumerate hub + USBDC0, then
+// standard GET_INTERFACE requests for interface 0 on both targets, with each
+// bAlternateSetting checked against 0x00.
 //
 // Usage:
 //   +UVM_TESTNAME=caliptra_ss_usb_hs_dev_get_interface_test
