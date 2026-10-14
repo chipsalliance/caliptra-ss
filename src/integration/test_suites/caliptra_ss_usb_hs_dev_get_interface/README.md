@@ -30,10 +30,6 @@ data-phase length 1) and `usb_ep0_handler.m.vhdl` drives
 because the hub exposes a single interface with one alternate setting.
 No test-specific MCU firmware logic is required.
 
-Note: the embedded device controllers (USBDC0/USBDC1) stall GET_INTERFACE in
-firmware (`test_suites/libs/usb/usb.c`), so only the hub is a valid target for
-this request.
-
 ## What Is Verified
 
 - USB hub-composite bring-up and enumeration (hub + USBDC0)

@@ -59,13 +59,37 @@
 // RTL register through the usb_dev_addr_probe mirror, not over USB. Do NOT
 // append any transfer after step 7.
 //
-// Accept/reject is not observable from the VIP transfer item, so it is read
-// from the RTL instead: usb_ep0_handler_1.usb_phy_test_mode is mirrored by
-// usb_dev_addr_probe as hub_phy_test_mode and compared by
-// check_phy_test_mode(). The register resets to 3'b000, is loaded with
-// selector[2:0] only when the handler accepts the request, and has no clear
-// path. So 3'b000 after the invalid request proves rejection and
-// selector[2:0] after the valid request proves acceptance.
+// Accept/reject is proven two independent ways.
+//
+// 1. Register level. usb_ep0_handler_1.usb_phy_test_mode is mirrored by
+//    usb_dev_addr_probe as hub_phy_test_mode and compared by
+//    check_phy_test_mode(). The register resets to 3'b000, is loaded with
+//    selector[2:0] only when the handler accepts the request, and has no
+//    clear path. So 3'b000 after the invalid request proves the register was
+//    not loaded and selector[2:0] after the valid request proves it was.
+//
+// 2. Bus level. A control transfer the device terminates with a STALL
+//    handshake is reported by the VIP on the transfer item as
+//    svt_sequence_item::ABORTED, the same classification relied on by
+//    caliptra_ss_usb_ocp_recovery_base_sequence. check_setup_stalled() reads
+//    last_ctrl_seq_item.status after wait_xfer_done() and requires ABORTED
+//    for the invalid selector and a non ABORTED completion for the valid one.
+//    Without this the invalid case would only show that a register stayed at
+//    its reset value, which cannot distinguish a genuine protocol reject from
+//    a request that never reached the handler at all.
+//
+// Why GET_STATUS cannot be used for the reject proof (MEASURED from
+// usb_ep0_handler.m.vhdl): the invalid selector path asserts ep0_in_stall,
+// which is a combinational signal re-driven to '0' on every evaluation and
+// whose only effect is to withhold ep0_in_active for that one status stage,
+// making the MAC answer the IN token with a STALL handshake. Nothing is
+// latched. The C_STD_REQ_SET_FEATURE_DEV branch never asserts ep_set_stall,
+// so epconfig_stall, which is the bit GET_STATUS(ENDPOINT) returns in
+// setup_data(0), stays 0 whether or not the request was stalled. A GET_STATUS
+// check here could therefore never fail. GET_STATUS(DEVICE) has no stall
+// field at all. That is why the endpoint halt sequence legitimately uses
+// GET_STATUS and this sequence must not. This reasoning is speed independent,
+// so it applies unchanged on a full-speed link.
 //
 // The two selectors are drawn with $urandom_range() and printed at UVM_LOW so
 // a failing run can be reproduced from the log; the test is registered in the
@@ -93,6 +117,12 @@ class caliptra_ss_usb_fs_hub_test_mode_sequence extends caliptra_ss_usb_base_seq
     localparam int VALID_SEL_HI   = 5;
     localparam int INVALID_SEL_LO = 6;
     localparam int INVALID_SEL_HI = 255;
+
+    // Expected bus level outcome passed to check_setup_stalled(). A control
+    // transfer terminated by a device STALL handshake is reported by the VIP
+    // as svt_sequence_item::ABORTED.
+    localparam bit XFER_MUST_STALL    = 1'b1;
+    localparam bit XFER_MUST_COMPLETE = 1'b0;
 
     // Settling delay before the first SETUP transfer. The HS sequence uses
     // 20 us; the FS frame period is 1 ms instead of 125 us, so the delay is
@@ -125,6 +155,56 @@ class caliptra_ss_usb_fs_hub_test_mode_sequence extends caliptra_ss_usb_base_seq
             .usb_cfg              (usb_cfg));
         wait_xfer_done(.agent_h(host_agent_h), .label(label));
     endtask
+
+    // -------------------------------------------------------------------------
+    // Bus level accept/reject check for the SET_FEATURE just issued.
+    //
+    // Must be called after wait_xfer_done(), which blocks on
+    // NOTIFY_USB_TRANSFER_ENDED, so the status field on the cached item is
+    // final by the time it is read. last_ctrl_seq_item is populated by
+    // do_control_xfer(); the null guard is a uvm_fatal so a refactor that
+    // drops that cast cannot silently disable this check.
+    //
+    // expect_stalled = XFER_MUST_STALL    -> the transfer must be ABORTED
+    // expect_stalled = XFER_MUST_COMPLETE -> the transfer must not be ABORTED
+    // -------------------------------------------------------------------------
+    function void check_setup_stalled(bit       expect_stalled,
+                                      bit [7:0] test_selector,
+                                      string    label);
+        bit observed_stall;
+
+        if (last_ctrl_seq_item == null)
+            `uvm_fatal("USB_FS_HUB_TEST_MODE",
+                $sformatf({"%s: last_ctrl_seq_item is null, the transfer ",
+                           "status cannot be checked."}, label))
+
+        observed_stall = (last_ctrl_seq_item.status == svt_sequence_item::ABORTED);
+
+        if (expect_stalled && !observed_stall) begin
+            `uvm_error("USB_FS_HUB_TEST_MODE",
+                $sformatf({"%s: invalid test selector %0d (wIndex=0x%04h) was ",
+                           "not STALLed. Transfer status is %p, expected ",
+                           "ABORTED. The hub EP0 handler must withhold ",
+                           "ep0_in_active for a selector greater than 5."},
+                          label, test_selector, {test_selector, 8'h00},
+                          last_ctrl_seq_item.status))
+        end
+        else if (!expect_stalled && observed_stall) begin
+            `uvm_error("USB_FS_HUB_TEST_MODE",
+                $sformatf({"%s: valid test selector %0d (wIndex=0x%04h) was ",
+                           "STALLed. Transfer status is ABORTED. The hub EP0 ",
+                           "handler must accept selectors 1 to 5."},
+                          label, test_selector, {test_selector, 8'h00}))
+        end
+        else begin
+            `uvm_info("USB_FS_HUB_TEST_MODE",
+                $sformatf({"%s: selector %0d bus level outcome as expected ",
+                           "(stalled=%0b, status=%p) at %0t."},
+                          label, test_selector, observed_stall,
+                          last_ctrl_seq_item.status, $time),
+                UVM_LOW)
+        end
+    endfunction
 
     // -------------------------------------------------------------------------
     // Main body
@@ -173,6 +253,11 @@ class caliptra_ss_usb_fs_hub_test_mode_sequence extends caliptra_ss_usb_base_seq
             UVM_LOW)
         set_feature_test_mode(host_agent_h, usb_cfg, invalid_selector,
                               "FS_SET_FEATURE_TEST_MODE_invalid_hub");
+        // Bus level proof of the reject: the hub must have STALLed the
+        // request, so the VIP must report the transfer as ABORTED.
+        check_setup_stalled(XFER_MUST_STALL, invalid_selector,
+                            "FS_SET_FEATURE_TEST_MODE_invalid_hub");
+        // Register level proof of the reject: usb_phy_test_mode untouched.
         usb_data_check_api.check_phy_test_mode(.device_name("hub"),
                                                .expected_test_mode(3'b000));
 
@@ -209,6 +294,12 @@ class caliptra_ss_usb_fs_hub_test_mode_sequence extends caliptra_ss_usb_base_seq
             UVM_LOW)
         set_feature_test_mode(host_agent_h, usb_cfg, valid_selector,
                               "FS_SET_FEATURE_TEST_MODE_valid_hub");
+        // Complementary half of the discrimination: an accepted selector must
+        // not be STALLed. This reads the cached transfer status only and adds
+        // no bus activity, so the "last USB activity" constraint above holds
+        // even though BUS_EVENT_TEST_MODE has already dropped the FS link.
+        check_setup_stalled(XFER_MUST_COMPLETE, valid_selector,
+                            "FS_SET_FEATURE_TEST_MODE_valid_hub");
         usb_data_check_api.check_phy_test_mode(.device_name("hub"),
                                                .expected_test_mode(valid_selector[2:0]));
 
