@@ -641,53 +641,152 @@ class spi_host_base_vseq extends dv_base_vseq #(
   endtask : access_data_fifo
 
 
-  // Stubs for missing cip_base_vseq methods
-  virtual task check_interrupts(bit [31:0] interrupts = 0, bit check_set = 1);
-    // Stub
+  // Check that the selected interrupts have the expected values in both intr_vif and INTR_STATE,
+  // optionally clearing them afterwards.
+  virtual task check_interrupts(bit [31:0] interrupts = 0,
+                                bit        check_set = 1,
+                                bit [31:0] clear = '1);
+    uvm_reg    csr_intr_state, csr_intr_enable;
+    bit [31:0] act_pins;
+    bit [31:0] exp_pins;
+    bit [31:0] exp_intr_state;
+
+    if (cfg.intr_vif == null) begin
+      `uvm_error(get_full_name(), "Can't check interrupts: there is no intr_vif")
+      return;
+    end
+
+    if (cfg.under_reset || interrupts == 0) return;
+
+    // Wait 1 clock cycle for flopped interrupt output in caliptra_prim_intr_hw to update
+    cfg.clk_rst_vif.wait_clks(1);
+
+    act_pins = cfg.intr_vif.sample() & interrupts;
+    if (check_set) begin
+      csr_intr_enable = ral.get_dv_base_reg_by_name("intr_enable");
+      exp_pins = interrupts & csr_intr_enable.get_mirrored_value();
+      exp_intr_state = interrupts;
+    end else begin
+      exp_pins = '0;
+      exp_intr_state = ~interrupts;
+    end
+    `DV_CHECK_EQ(act_pins, exp_pins, "Interrupt pin mismatch against expected state")
+    csr_intr_state = ral.get_dv_base_reg_by_name("intr_state");
+    csr_rd_check(.ptr(csr_intr_state), .compare_value(exp_intr_state), .compare_mask(interrupts));
+
+    if (check_set && |(interrupts & clear)) begin
+      // For status-type interrupt (spi_event), clear intr_test first so test_q deasserts
+      if (interrupts[SpiHostEvent] && clear[SpiHostEvent]) begin
+        csr_wr(.ptr(ral.intr_test), .value(0));
+      end
+      csr_wr(.ptr(csr_intr_state), .value(interrupts & clear));
+    end
+  endtask
+
+  virtual task run_intr_test_vseq(int num_times = 1);
+    `uvm_info(`gfn, "Executing common sequence: Interrupt Test", UVM_LOW)
+
+    for (int trans = 1; trans <= num_times; trans++) begin
+      apply_reset("HARD");
+      spi_host_init();
+      // Ensure event_enable and error_enable are 0 so status/error sources don't mask intr_test
+      csr_wr(.ptr(ral.event_enable), .value(0));
+      csr_wr(.ptr(ral.error_enable), .value(0));
+      csr_wr(.ptr(ral.intr_state),   .value(32'h3));
+
+      // Iterate through all interrupt combinations (enable=0, enable=1, single and multi-bit)
+      for (int en = 0; en <= 1; en++) begin
+        for (int intr_idx = 0; intr_idx < NumSpiHostIntr; intr_idx++) begin
+          bit [31:0] intr_mask = (1 << intr_idx);
+          bit [31:0] en_mask   = (en) ? intr_mask : 0;
+
+          // 1. Program intr_enable
+          csr_wr(.ptr(ral.intr_enable), .value(en_mask));
+
+          // 2. Trigger interrupt via intr_test
+          csr_wr(.ptr(ral.intr_test), .value(intr_mask));
+
+          // 3. Check intr_state and intr_vif.pins, then clear
+          check_interrupts(.interrupts(intr_mask), .check_set(1'b1), .clear(intr_mask));
+          csr_wr(.ptr(ral.intr_test), .value(0));
+
+          // 4. Verify intr_state and intr_vif.pins are cleared
+          check_interrupts(.interrupts(intr_mask), .check_set(1'b0), .clear('0));
+        end
+      end
+
+      // Test both interrupts simultaneously enabled & asserted
+      csr_wr(.ptr(ral.intr_enable), .value(32'h3));
+      csr_wr(.ptr(ral.intr_test),   .value(32'h3));
+      check_interrupts(.interrupts(32'h3), .check_set(1'b1), .clear(32'h3));
+      csr_wr(.ptr(ral.intr_test),   .value(0));
+      check_interrupts(.interrupts(32'h3), .check_set(1'b0), .clear('0));
+    end
+
+    `uvm_info(`gfn, "Interrupt Test completed successfully", UVM_LOW)
+  endtask
+
+  virtual task run_same_csr_outstanding_vseq(int num_times = 1);
+    csr_test_type_e csr_test_type = CsrRwTest;
+    dv_base_reg     csrs[$];
+
+    ral.get_dv_base_regs(csrs);
+    for (int trans = 1; trans <= num_times; trans++) begin
+      `uvm_info(`gfn, $sformatf("Running same CSR outstanding test iteration %0d/%0d",
+                                trans, num_times), UVM_LOW)
+      if (trans != 1 && $urandom_range(0, 1)) dut_init();
+      csrs.shuffle();
+
+      foreach (csrs[i]) begin
+        uvm_reg_data_t rd_mask, wr_data, wr_mask;
+        csr_excl_item  csr_excl = get_excl_item(csrs[i]);
+
+        rd_mask = get_mask_excl_fields(csrs[i], CsrExclWriteCheck, csr_test_type);
+        wr_mask = get_mask_excl_fields(csrs[i], CsrExclWrite, csr_test_type);
+
+        repeat ($urandom_range(2, 8)) begin
+          if ($urandom_range(0, 1) &&
+              !csr_excl.is_excl(csrs[i], CsrExclWriteCheck, csr_test_type)) begin
+            csr_rd_check(.ptr(csrs[i]), .compare_vs_ral(1'b1), .compare_mask(rd_mask),
+                         .blocking(0));
+          end
+          if ($urandom_range(0, 1) &&
+              !csr_excl.is_excl(csrs[i], CsrExclWrite, csr_test_type)) begin
+            `DV_CHECK_STD_RANDOMIZE_FATAL(wr_data)
+            wr_data &= wr_mask;
+            csr_wr(.ptr(csrs[i]), .value(wr_data), .blocking(0), .predict(1));
+          end
+        end
+        csr_utils_pkg::wait_no_outstanding_access();
+      end
+    end
+  endtask
+
+  virtual task run_csr_mem_rw_with_rand_reset_vseq(int num_times = 1);
+    for (int i = 1; i <= num_times; i++) begin
+      `uvm_info(`gfn, $sformatf("Running csr_mem_rw_with_rand_reset iteration %0d/%0d",
+                                i, num_times), UVM_LOW)
+      run_csr_vseq(.csr_test_type("rw"), .num_test_csrs($urandom_range(1, 5)),
+                   .do_rand_wr_and_reset(0));
+      dut_shutdown();
+      apply_resets_concurrently();
+      #1ps;
+      post_apply_reset("HARD");
+      ral.reset("HARD");
+      run_csr_vseq(.csr_test_type("hw_reset"), .do_rand_wr_and_reset(0));
+    end
   endtask
 
   virtual task run_common_vseq_wrapper(int num_trans = 1);
-    uvm_status_e status;
-    bit [31:0] rdata;
+    string common_seq_type;
+    void'($value$plusargs("run_%0s", common_seq_type));
 
-    `uvm_info(`gfn, "Executing common sequence: Interrupt Test", UVM_LOW)
-
-    apply_reset("HARD");
-    spi_host_init();
-
-    // Iterate through all interrupt combinations (enable=0, enable=1, single and multi-bit)
-    for (int en = 0; en <= 1; en++) begin
-      for (int intr_idx = 0; intr_idx < NumSpiHostIntr; intr_idx++) begin
-        bit [31:0] en_mask = (en) ? (1 << intr_idx) : 0;
-        // 1. Program intr_enable
-        ral.intr_enable.write(status, en_mask);
-
-        // 2. Test writing 1 to intr_test
-        ral.intr_test.write(status, (1 << intr_idx));
-
-        // 3. Read back intr_state
-        ral.intr_state.read(status, rdata);
-
-        // 4. Clear intr_state by writing 1 (W1C)
-        ral.intr_state.write(status, (1 << intr_idx));
-
-        // 5. Verify intr_state is cleared
-        ral.intr_state.read(status, rdata);
-
-        // 6. Test writing 0 to intr_test
-        ral.intr_test.write(status, 0);
-      end
-    end
-
-    // Test both interrupts simultaneously enabled & asserted
-    ral.intr_enable.write(status, 32'h3);
-    ral.intr_test.write(status, 32'h3);
-    ral.intr_state.read(status, rdata);
-    ral.intr_state.write(status, 32'h3);
-    ral.intr_state.read(status, rdata);
-    ral.intr_test.write(status, 0);
-
-    `uvm_info(`gfn, "Interrupt Test completed successfully", UVM_LOW)
+    case (common_seq_type)
+      "intr_test":                  run_intr_test_vseq(num_trans);
+      "same_csr_outstanding":       run_same_csr_outstanding_vseq(num_trans);
+      "csr_mem_rw_with_rand_reset": run_csr_mem_rw_with_rand_reset_vseq(num_trans);
+      default:                      run_csr_vseq_wrapper(num_trans);
+    endcase
   endtask
 
 endclass : spi_host_base_vseq

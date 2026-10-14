@@ -28,7 +28,7 @@ module spi_host_bind;
     .cio_csb_o,
     .cio_sd_i,
     .cio_sd_en_o,
-    .configopts(reg2hw.configopts[0]),
+    .configopts(reg2hw.configopts),
     .passthrough_i
   );
 

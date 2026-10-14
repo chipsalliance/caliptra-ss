@@ -59,6 +59,7 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
       gen_trans();
     end
     check_error(ral.error_status.overflow,1);
+    csr_wr(.ptr(ral.error_status.overflow), .value(1'b1)); // W1C clear overflow
   endtask : body
 
   virtual task gen_trans();

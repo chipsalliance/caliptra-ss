@@ -117,6 +117,19 @@ class spi_host_flash_vseq extends spi_host_tx_rx_vseq;
     cfg.clk_rst_vif.wait_clks(500);
 
     // 2. Read Back:
+    run_flash_read_and_check(csid);
+  endtask : run_flash_page_program_and_read
+
+  virtual task run_flash_read_and_check(bit [1:0] csid);
+    spi_host_command_t cmd;
+    uvm_status_e status;
+    bit [31:0] rx_word;
+    int num_words = 16;
+    int num_bytes = (num_words * 4) - 1;
+
+    // Select Chip Select ID
+    csr_wr(.ptr(ral.csid), .value(csid));
+
     // Write Read Opcode Word
     ral.txdata.write(status, 0, {24'h0, QUAD_READ_OPC});
     // Write Flash Address Word
@@ -162,6 +175,6 @@ class spi_host_flash_vseq extends spi_host_tx_rx_vseq;
       ral.rxdata.read(status, 0, rx_word);
       `DV_CHECK_EQ(rx_word, wr_data[i], $sformatf("Flash Read Mismatch at word %0d for CS%0d", i, csid))
     end
-  endtask : run_flash_page_program_and_read
+  endtask : run_flash_read_and_check
 
 endclass : spi_host_flash_vseq

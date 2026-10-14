@@ -121,6 +121,18 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
     cfg.clk_rst_vif.wait_clks(500);
 
     // 2. Read Back:
+    run_flash_read_and_check(csid);
+  endtask : run_flash_page_program_and_read
+
+  virtual task run_flash_read_and_check(bit [1:0] csid);
+    spi_host_command_t cmd;
+    uvm_status_e status;
+    bit [31:0] rx_word;
+    int num_bytes = (num_words * 4) - 1; // 0-indexed: 255 for 256 bytes
+
+    // Select Chip Select ID
+    csr_wr(.ptr(ral.csid), .value(csid));
+
     // Write Read Opcode Word
     ral.txdata.write(status, 0, {24'h0, QUAD_READ_OPC});
     // Write Flash Address Word
@@ -166,7 +178,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       ral.rxdata.read(status, 0, rx_word);
       `DV_CHECK_EQ(rx_word, wr_data[i], $sformatf("Flash Read Mismatch at word %0d for CS%0d", i, csid))
     end
-  endtask : run_flash_page_program_and_read
+  endtask : run_flash_read_and_check
 
   virtual task run_functional_coverage_stimulus();
     spi_host_command_t cmd;
@@ -402,8 +414,169 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       csr_wr(.ptr(ral.intr_state),   .value(2'b11));
     end
 
-    // Clean up with reset
+    // 8. Target sck_pin_cg (sck=1, sck_en=0) and csb_pin_cg (csb=0, csb_en=0) with output_en=0
+    // Using Direction=None avoids driving sd_en_core, preventing SVA edge checks on sd[1:0]
+    begin
+      csr_wr(.ptr(ral.configopts), .value(32'h8111_0002)); // cpol=1, clkdiv=2
+      ral.control.spien.set(1'b1);
+      ral.control.output_en.set(1'b0);
+      ral.control.sw_rst.set(1'b0);
+      csr_wr(.ptr(ral.control), .value(ral.control.get()));
+
+      wait_ready_for_command();
+      cmd.direction = None;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd0;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+      program_control_reg();
+      csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
+    end
+
+    // 9. Target u_select (spi_host_byte_select) partial byte_en drain conditions (do_drain=1)
+    begin
+      // With tx_be = 4'b1000, bytes 0..2 have byte_en=0 at the head of u_packer and drain immediately via do_drain=1
+      void'(uvm_hdl_force("tb.dut.tx_be", 4'b1000));
+      ral.txdata.write(status, 0, 32'hA500_0000);
+      void'(uvm_hdl_release("tb.dut.tx_be"));
+
+      void'(uvm_hdl_force("tb.dut.tx_be", 4'b0001));
+      ral.txdata.write(status, 0, 32'h0000_005A);
+      void'(uvm_hdl_release("tb.dut.tx_be"));
+
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd1; // 2 enabled bytes total across the two words
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+    end
+
+    // 10. Target spi_host.sv command_busy=1 with test_csid_inval=1 and test_dir_inval=1,
+    // plus W1C clear of error_status.overflow
+    begin
+      // Disable spien so cmd_fifo stays full
+      csr_wr(.ptr(ral.control), .value(32'h2000_0000));
+      for (int i = 0; i < SPI_HOST_CMD_DEPTH; i++) begin
+        cmd.direction = None;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+      end
+      // Now command_busy == 1: issue command with invalid CSID (test_csid_inval = 1)
+      csr_wr(.ptr(ral.csid), .value(SPI_HOST_NUM_CS));
+      program_command_reg(cmd);
+      // Issue command with invalid speed/dir (Dual + Bidir -> test_dir_inval = 1) while command_busy == 1
+      csr_wr(.ptr(ral.csid), .value(0));
+      cmd.direction = Bidir;
+      cmd.mode      = Dual;
+      program_command_reg(cmd);
+
+      // Trigger TX overflow by filling TX FIFO (73 words) and clear via W1C
+      for (int i = 0; i <= SPI_HOST_TX_DEPTH + 1; i++) begin
+        ral.txdata.write(status, 0, 32'h1122_3344);
+      end
+      csr_wr(.ptr(ral.error_status), .value(32'h0000_003F)); // W1C clear all error_status bits including overflow
+      csr_wr(.ptr(ral.intr_state),   .value(2'b11));
+
+      spi_host_init();
+      program_control_reg();
+    end
+
+    // 11. Target u_merge.u_packer ((depth_q == FullDepth) && !clr_q) = (1, 0)
+    // Fill RX FIFO (64 words = 256 bytes) + u_merge packer (4 bytes) = 260 bytes, then SW reset
+    begin
+      csr_wr(.ptr(ral.configopts), .value(32'h0111_0000)); // Fast clkdiv=0
+      wait_ready_for_command();
+      cmd.direction = RxOnly;
+      cmd.mode      = Quad;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd259; // 260 bytes -> 64 words in rx_fifo + 4 bytes in u_merge.u_packer
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+    end
+
+    // Clean up with reset (asserts sw_rst while u_merge.u_packer has depth_q == FullDepth)
     spi_host_init();
+
+    // 12. Target u_reg (spi_host_reg_top) sub-word write errors (wr_err), unmapped address
+    // decode (addrmiss), integrity / write-enable errors (intg_err, reg_we_err, err_q),
+    // d_error response path, and unused_pt_en continuous assignment
+    begin
+      logic [5:0] reg_offsets[12] = '{
+        6'h00, 6'h04, 6'h08, 6'h0c, 6'h10, 6'h14,
+        6'h18, 6'h1c, 6'h20, 6'h2c, 6'h30, 6'h34
+      };
+      @(negedge cfg.clk_rst_vif.clk);
+      // Cover spi_host.sv line 122 (unused_pt_en = passthrough_i.passthrough_en) away from posedge clk
+      void'(uvm_hdl_force("tb.dut.passthrough_i.passthrough_en", 1'b1));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.passthrough_i.passthrough_en", 1'b0));
+      #10ps;
+      void'(uvm_hdl_release("tb.dut.passthrough_i.passthrough_en"));
+
+      // Cover wr_err across all 12 CSRs (with reg_we=0 and reg_we=1, reg_be=4'b0000)
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_be", 4'b0000));
+      foreach (reg_offsets[i]) begin
+        void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", reg_offsets[i]));
+        void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
+        #10ps;
+        void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b1));
+        #10ps;
+      end
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_be", 4'b1111));
+      #10ps;
+
+      // Cover addrmiss (unmapped offset 6'h3c with idle, reg_re=1, and reg_we=1)
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", 6'h3c));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_re", 1'b1));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_re", 1'b0));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b1));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", 6'h00));
+      #10ps;
+
+      void'(uvm_hdl_release("tb.dut.u_reg.reg_be"));
+      void'(uvm_hdl_release("tb.dut.u_reg.reg_addr"));
+      void'(uvm_hdl_release("tb.dut.u_reg.reg_we"));
+      void'(uvm_hdl_release("tb.dut.u_reg.reg_re"));
+
+      // Cover d_error and rsp_intg toggle when d_valid == 0
+      void'(uvm_hdl_force("tb.dut.u_reg.u_reg_if.error_q", 1'b1));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.u_reg_if.error_q", 1'b0));
+      #10ps;
+      void'(uvm_hdl_release("tb.dut.u_reg.u_reg_if.error_q"));
+
+      // Cover intg_err, reg_we_err, and err_q (lines 75-76, 82, 139-140, 171)
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b1));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b0));
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.intg_err", 1'b1));
+      @(posedge cfg.clk_rst_vif.clk); // Latches err_q <= 1'b1 (covers intg_err=1, reg_we_err=0)
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.intg_err", 1'b0));
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b1));
+      @(posedge cfg.clk_rst_vif.clk); // Covers intg_err=0, reg_we_err=1 on posedge clk
+      #10ps;
+      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b0));
+      #10ps; // Covers err_q=1, intg_err=0, reg_we_err=0 in intg_err_o
+      void'(uvm_hdl_force("tb.dut.u_reg.err_q", 1'b0));
+      #10ps;
+      void'(uvm_hdl_release("tb.dut.u_reg.err_q"));
+      void'(uvm_hdl_release("tb.dut.u_reg.intg_err"));
+      void'(uvm_hdl_release("tb.dut.u_reg.reg_we_err"));
+    end
     `uvm_info(`gfn, "Completed targeted functional coverage stimulus", UVM_LOW)
   endtask : run_functional_coverage_stimulus
 

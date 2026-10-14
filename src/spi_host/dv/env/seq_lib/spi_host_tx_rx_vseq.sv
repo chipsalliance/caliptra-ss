@@ -124,8 +124,9 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
   endtask
 
   task check_event(uvm_reg_field fld, bit intr_value, bit state_value);
-    spi_host_intr_state_t intr_state;
     uvm_reg_field enable_fld;
+    bit [5:0] event_vec;
+    bit [5:0] event_en;
     if (fld == ral.status.active) begin
       enable_fld = ral.event_enable.get_field_by_name("idle");
     end
@@ -133,24 +134,38 @@ class spi_host_tx_rx_vseq extends spi_host_base_vseq;
       enable_fld = ral.event_enable.get_field_by_name(fld.get_name);
     end
     csr_rd_check(.ptr(fld), .compare_value(state_value));
-    if ((enable_fld != null) && enable_fld.get()) begin
+    event_vec = {
+      ~bit'(`gmv(ral.status.active)),
+      bit'(`gmv(ral.status.ready)),
+      bit'(`gmv(ral.status.txwm)),
+      bit'(`gmv(ral.status.rxwm)),
+      bit'(`gmv(ral.status.txempty)),
+      bit'(`gmv(ral.status.rxfull))
+    };
+    event_en = `gmv(ral.event_enable);
+    if ((enable_fld != null) && `gmv(enable_fld)) begin
       bit enable = `gmv(enable_fld);
-      check_interrupts(1 << intr_state.spi_event, intr_value & enable);
-    end else begin
-      check_interrupts(1 << intr_state.spi_event, 0);
+      if (intr_value && enable && |(event_vec & event_en)) begin
+        check_interrupts(1 << SpiHostEvent, 1'b1, '0);
+      end else if ((event_vec & event_en) == 0) begin
+        check_interrupts(1 << SpiHostEvent, 1'b0, '0);
+      end
+    end else if ((event_vec & event_en) == 0) begin
+      check_interrupts(1 << SpiHostEvent, 1'b0, '0);
     end
   endtask
 
   task check_error(uvm_reg_field fld, bit value);
-    spi_host_intr_state_t intr_state;
     uvm_reg_field enable_fld = ral.error_enable.get_field_by_name(fld.get_name);
+    bit enable = (fld.get_name() == "accessinval") ? 1'b1 :
+                 ((enable_fld != null) ? `gmv(enable_fld) : 1'b0);
     csr_rd_check(.ptr(fld), .compare_value(value));
-      if ((enable_fld != null) && enable_fld.get()) begin
-        bit enable = `gmv(enable_fld);
-        `DV_CHECK(ral.intr_enable.predict(.value(intr_enable.error), .kind(UVM_PREDICT_DIRECT)))
-        check_interrupts(1 << intr_state.error, value & enable);
-      end else begin
-        check_interrupts(1 << intr_state.error, 0);
-      end
+    if (value && enable) begin
+      check_interrupts(1 << SpiHostError, 1'b1, '0);
+    end else if (((ral.error_status.get_mirrored_value() &
+                   (ral.error_enable.get_mirrored_value() | 32'h20)) == 0) &&
+                 (ral.intr_state.error.get_mirrored_value() == 0)) begin
+      check_interrupts(1 << SpiHostError, 1'b0, '0);
+    end
   endtask
 endclass : spi_host_tx_rx_vseq

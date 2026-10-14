@@ -68,6 +68,10 @@ class spi_host_dual_cs_vseq extends spi_host_smoke_vseq;
     foreach (wr_data[i]) wr_data[i] = wr_data_cs1[i];
     run_flash_page_program_and_read(2'd1);
 
+    // 4b. Re-read Flash 0 (CSID = 0) at the SAME flash_addr to verify CS1 write did not corrupt CS0
+    foreach (wr_data[i]) wr_data[i] = wr_data_cs0[i];
+    run_flash_read_and_check(2'd0);
+
     // 5. Test CSAAT=1 active CSID switch (CS0 <-> CS1) from IdleCSBActive and pipelined CPHA=0/1
     // Covers spi_host_fsm.sv lines 214, 221, 223 (command_i.csid != csid_q -> WaitTrail)
     run_csaat_cs_switch_stimulus();

@@ -97,7 +97,7 @@ task axi_mgr_write_fixed_vseq::body();
   w_seq.m_write_data_item.m_data = 1024'b0;
   w_seq.m_write_data_item.m_strb = 128'b0;
   w_seq.m_write_data_item.m_data[31:0] = m_fixed_req.m_write_data_item.m_data[31:0];
-  w_seq.m_write_data_item.m_strb[3:0] = 4'hF;
+  w_seq.m_write_data_item.m_strb[3:0] = m_fixed_req.m_write_data_item.m_strb[3:0];
 
   // Create a sequence to receive a single write response (B). (This might or might not match our
   // ID, but that doesn't matter: the point is that we need to send it as a token)

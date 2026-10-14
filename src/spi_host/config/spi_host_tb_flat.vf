@@ -85,6 +85,7 @@ $CALIPTRA_ROOT/src/caliptra_prim/rtl/caliptra_prim_secded_inv_39_32_enc.sv
 $CALIPTRA_ROOT/src/caliptra_prim_generic/rtl/caliptra_prim_generic_flop_en.sv
 $CALIPTRA_ROOT/src/caliptra_prim_generic/rtl/caliptra_prim_generic_buf.sv
 
+$CALIPTRA_SS_ROOT/src/tlul/rtl/tlul_assert.sv
 $CALIPTRA_SS_ROOT/src/tlul/rtl/tlul_cmd_intg_chk.sv
 $CALIPTRA_SS_ROOT/src/tlul/rtl/tlul_rsp_intg_gen.sv
 $CALIPTRA_SS_ROOT/src/tlul/rtl/tlul_socket_1n.sv
@@ -132,6 +133,7 @@ $CALIPTRA_SS_ROOT/tools/dv-classes/axi_agent/axi_write_response_if.sv
 $CALIPTRA_SS_ROOT/tools/dv-classes/spi_agent/spi_if.sv
 $CALIPTRA_SS_ROOT/src/spi_host/dv/env/spi_passthrough_if.sv
 $CALIPTRA_SS_ROOT/src/spi_host/dv/spi_host_fsm_if.sv
+$CALIPTRA_SS_ROOT/src/spi_host/dv/sva/spi_host_data_stable_sva.sv
 $CALIPTRA_SS_ROOT/src/spi_host/dv/sva/spi_host_bind.sv
 $CALIPTRA_SS_ROOT/src/spi_host/dv/cov/spi_host_cov_if.sv
 $CALIPTRA_SS_ROOT/src/spi_host/dv/cov/spi_host_cov_bind.sv

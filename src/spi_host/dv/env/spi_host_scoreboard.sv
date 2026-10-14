@@ -208,10 +208,17 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       wait (rx_data_q.size() >= 4);
       if (rx_data_q.size == 0)
         `uvm_fatal(`gfn, "'rx_data_q.size' is empty - hence can't compare TXN")
-      for ( int i = 0; i < 4; i++) begin
+      for (int i = 0; i < 4; i++) begin
         read_data = rx_data_q.pop_back();
         `uvm_info(`gfn, $sformatf("RX byte [%0d]: read_data=0x%02h, tl_data=0x%02h", i, read_data, tl_segment.spi_data[i]), UVM_DEBUG)
+        if (read_data != tl_segment.spi_data[i]) begin
+          txt = {txt, $sformatf("\n \t [%d] \t\t\t      %0h  \t\t\t %0h", i, read_data, tl_segment.spi_data[i])};
+          `uvm_error(`gfn, $sformatf("\n\t READ: actual data did not match exp data \n %s", txt))
+        end else begin
+          txt = {txt, $sformatf("\n \t [%d] \t\t\t %0h \t\t\t %0h", i, read_data, tl_segment.spi_data[i])};
+        end
       end
+      checked_rx_seq_cnt += 1;
       `uvm_info(`gfn, $sformatf("\n successfully compared read transaction of %d ", tl_segment.command_reg.len+1), UVM_DEBUG)
     end
   endtask : compare_rx_trans
@@ -405,6 +412,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
           spi_ctrl_reg.output_en    = get_field_val(ral.control.output_en, value);
           spi_ctrl_reg.spien        = get_field_val(ral.control.spien, value);
           spi_ctrl_reg.sw_rst       = get_field_val(ral.control.sw_rst, value);
+          void'(ral.control.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         end
 
         if (cfg.en_cov) begin
@@ -425,7 +433,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         if (spi_ctrl_reg.sw_rst) begin
           `uvm_info(`gfn, "SW reset detected", UVM_LOW)
           ->event_sw_rst;
-          reset();
+          reset("SOFT");
         end
       end
       "configopts": begin
@@ -436,6 +444,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_configopts.csntrail = get_field_val(ral.configopts.csntrail, value);
         spi_configopts.csnidle  = get_field_val(ral.configopts.csnidle, value);
         spi_configopts.clkdiv   = get_field_val(ral.configopts.clkdiv, value);
+        void'(ral.configopts.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         
         if (cfg.en_cov) begin
           cov.config_opts_cg.sample(spi_configopts);
@@ -458,22 +467,13 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         host_wr_segment.command_reg.csaat     = spi_cmd_reg.csaat;
         
         if (cfg.en_scb) begin
-          if (spi_cmd_reg.direction inside {RxOnly, Bidir}) begin
-            // push expected RX segment
-            spi_segment_item rd_segment;
-            `downcast(rd_segment, host_wr_segment.clone());
-            read_segment_q.push_back(rd_segment);
-          end
-
-          begin
-            spi_segment_item wr_segment;
-            `downcast(wr_segment, host_wr_segment.clone());
-            if (cfg.tx_stall_check) commit_exp_txn_at_txfifo_write = 1'b1;
-            else begin
-              write_segment_q.push_back(wr_segment);
-              `uvm_info(`gfn, $sformatf("Pushed wr_segment: \n%s onto 'write_segment_q'", wr_segment.convert2string()), UVM_DEBUG)
-              host_wr_segment = spi_segment_item::type_id::create("host_wr_segment");
-            end
+          spi_segment_item wr_segment;
+          `downcast(wr_segment, host_wr_segment.clone());
+          if (cfg.tx_stall_check) commit_exp_txn_at_txfifo_write = 1'b1;
+          else begin
+            write_segment_q.push_back(wr_segment);
+            `uvm_info(`gfn, $sformatf("Pushed wr_segment: \n%s onto 'write_segment_q'", wr_segment.convert2string()), UVM_DEBUG)
+            host_wr_segment = spi_segment_item::type_id::create("host_wr_segment");
           end
         end
         if (cfg.en_cov) begin
@@ -519,6 +519,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       end
       "csid": begin
         spi_ctrl_reg.csid = value;
+        void'(ral.csid.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         if (cfg.en_cov) cov.csid_cg.sample(spi_ctrl_reg);
       end
       "error_enable": begin
@@ -527,7 +528,11 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_error_enable_reg.underflow = bit'(get_field_val(ral.error_enable.underflow, value));
         spi_error_enable_reg.overflow  = bit'(get_field_val(ral.error_enable.overflow, value));
         spi_error_enable_reg.cmdbusy   = bit'(get_field_val(ral.error_enable.cmdbusy, value));
+        void'(ral.error_enable.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         if (cfg.en_cov) cov.error_en_cg.sample(spi_error_enable_reg);
+      end
+      "error_status": begin
+        void'(ral.error_status.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
       end
       "event_enable": begin
         spi_event_enable_reg.idle      = bit'(get_field_val(ral.event_enable.idle, value));
@@ -536,6 +541,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_event_enable_reg.rxwm      = bit'(get_field_val(ral.event_enable.rxwm, value));
         spi_event_enable_reg.txempty   = bit'(get_field_val(ral.event_enable.txempty, value));
         spi_event_enable_reg.rxfull    = bit'(get_field_val(ral.event_enable.rxfull, value));
+        void'(ral.event_enable.predict(.value(value), .kind(UVM_PREDICT_WRITE)));
         if (cfg.en_cov) cov.event_en_cg.sample(spi_event_enable_reg);
       end
     endcase
@@ -548,6 +554,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
       "intr_state": begin
          spi_intr_state_reg.spi_event  = bit'(get_field_val(ral.intr_state.spi_event, value));
          spi_intr_state_reg.error      = bit'(get_field_val(ral.intr_state.error, value));
+         void'(ral.intr_state.predict(.value(value), .kind(UVM_PREDICT_READ)));
          if (cfg.en_cov) begin
            bit [31:0]               intr_en  = `gmv(ral.intr_enable);
            bit [NumSpiHostIntr-1:0] intr_exp = `gmv(ral.intr_state);
@@ -564,6 +571,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_error_status_reg.underflow   = bit'(get_field_val(ral.error_status.underflow, value));
         spi_error_status_reg.overflow    = bit'(get_field_val(ral.error_status.overflow, value));
         spi_error_status_reg.cmdbusy     = bit'(get_field_val(ral.error_status.cmdbusy, value));
+        void'(ral.error_status.predict(.value(value), .kind(UVM_PREDICT_READ)));
+        if (|(value & (ral.error_enable.get_mirrored_value() | 32'h20))) begin
+          void'(ral.intr_state.error.predict(.value(1'b1), .kind(UVM_PREDICT_DIRECT)));
+        end
         if (cfg.en_cov) cov.error_status_cg.sample(spi_error_status_reg, spi_error_enable_reg);
       end
       "status": begin
@@ -581,6 +592,7 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         spi_status_reg.cmd_qd      = get_field_val(ral.status.cmdqd, value);
         spi_status_reg.rx_qd       = get_field_val(ral.status.rxqd, value);
         spi_status_reg.tx_qd       = get_field_val(ral.status.txqd, value);
+        void'(ral.status.predict(.value(value), .kind(UVM_PREDICT_READ)));
         if (cfg.en_cov) cov.status_cg.sample(spi_status_reg);
       end
     endcase
@@ -640,15 +652,25 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
         cov.rx_fifo_underflow_cg.sample(status);
       end
 
-//      foreach (bytes[i]) begin
-//        rx_data_q.push_back(bytes[i]);
-//        `uvm_info(`gfn, $sformatf("Read from RXFIFO: 0x%0x", bytes[i]), UVM_DEBUG)
-//      end
+      if (cfg.en_scb) begin
+        spi_segment_item rd_segment;
+        host_rd_segment.spi_data.delete();
+        foreach (bytes[i]) begin
+          host_rd_segment.spi_data.push_back(bytes[i]);
+          `uvm_info(`gfn, $sformatf("Read from RXFIFO: 0x%0x", bytes[i]), UVM_DEBUG)
+        end
+        `downcast(rd_segment, host_rd_segment.clone());
+        read_segment_q.push_back(rd_segment);
+        in_rx_seq_cnt += 1;
+      end
     end
   endfunction
 
   virtual function void reset(string kind = "HARD");
-    super.reset(kind);
+    if (kind == "HARD") begin
+      super.reset(kind);
+      void'(ral.intr_state.predict(.value(2'b00), .kind(UVM_PREDICT_DIRECT)));
+    end
     plain_data_fifo.flush();
     write_segment_q.delete();
     read_segment_q.delete();
@@ -659,9 +681,10 @@ class spi_host_scoreboard extends dv_base_scoreboard #(
     if (plain_item != null) plain_item.plain_data_q.delete();
     in_tx_seg_cnt = 0;
     checked_tx_seg_cnt = 0;
+    in_rx_seq_cnt = 0;
+    checked_rx_seq_cnt = 0;
     cur_trans_segments = 0;
     cur_tx_fifo_bytes = 0;
-    void'(ral.intr_state.predict(.value(2'b00), .kind(UVM_PREDICT_DIRECT)));
   endfunction : reset
 
   function void check_phase(uvm_phase phase);

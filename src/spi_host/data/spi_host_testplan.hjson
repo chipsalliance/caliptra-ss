@@ -14,10 +14,12 @@
 
             Stimulus:
               - Enable spi_host ip
-              - Write data in standard mode - and read it back
+              - Write data in standard mode (Page Program 0x02) and read it back in Quad Fast Read (0xEB)
+              - Exercise TL-UL register error paths (wr_err, addrmiss, intg_err, reg_we_err) and passthrough toggle
 
             Checking:
-              - Ensure transactions are transmitted/received correctly
+              - Ensure transactions are transmitted/received correctly against Winbond Flash model
+              - Ensure register error responses and status indicators behave as expected
             '''
       stage: V1
       tests: ["spi_host_smoke"]
@@ -25,15 +27,18 @@
     {
       name: dual_cs
       desc: '''
-            Verify Dual Chip Select (SPI_HOST_NUM_CS = 2) independent configuration and routing.
+            Verify Dual Chip Select (SPI_HOST_NUM_CS = 2) independent configuration, routing, and CSAAT CS switching.
 
             Stimulus:
               - Configure distinct timing parameters in CONFIGOPTS_0 (CS0) and CONFIGOPTS_1 (CS1)
               - Perform Flash Page Program and Quad Fast Read via CSID = 0 and CSID = 1 at the same page address with distinct payloads
+              - Switch active CSID (CS0 <-> CS1) while CSAAT = 1 (both from parked IdleCSBActive and pipelined in-flight across CPOL/CPHA/CSNLEAD/CSNTRAIL variations)
+              - Trigger TX stall while CSID = 1 is active and recover by supplying TXDATA
               - Trigger out-of-range CSID = 2 to verify csidinval error detection and recovery
 
             Checking:
               - Ensure CS0 and CS1 transactions route independently to Flash 0 and Flash 1 without cross-talk
+              - Ensure IdleCSBActive/InternalClk -> WaitTrail -> CSBSwitch FSM transitions occur on CSID switch
               - Ensure csidinval error bit asserts when CSID >= SPI_HOST_NUM_CS
             '''
       stage: V2
@@ -59,19 +64,21 @@
       name: error_event_intr
       desc: '''
             This test includes multi tasks which verify error/event interrupt assertion
-            (except TX OVERFLOW error interrupt is verified in separate test)
+            (including csidinval, cmdinval, cmdbusy, accessinval, overflow, underflow, and watermark/idle events)
+            under both ERROR_ENABLE = 1 and ERROR_ENABLE = 0.
 
             Stimulus:
-              - Program ERROR_ENABLE/EVENT_ENABLE register to enable
+              - Program ERROR_ENABLE/EVENT_ENABLE register to enable or disable
                 corresponding error/event interrupt assertion
-              - Program transaction with proper constraints to assert error/event interrupts
+              - Program transactions to trigger csidinval (CSID >= NumCS), cmdinval (Dual/Quad + Bidir across CSAAT={0,1}),
+                cmdbusy (overflowing CmdDepth=8 command queue), accessinval (invalid byte-enable access),
+                TX overflow, RX underflow, and TX/RX watermark/empty/full/active events
 
             Checking:
               - Ensure transactions are transmitted/received correctly
               - Ensure the matching between the bit-field values of ERROR_STATUS
                 and ERROR_ENABLE respectively once the error interrupt pin is asserted
-              - Ensure the matching between the bit-field values of ERROR_ENABLE
-                once the event interrupt pin is asserted
+              - Ensure W1C clearing of ERROR_STATUS bits and EVENT_ENABLE event interrupt assertion
             '''
       stage: V2
       tests: ["spi_host_overflow_underflow", "spi_host_error_cmd", "spi_host_event"]
@@ -136,16 +143,17 @@
     {
       name: sw_reset
       desc: '''
-            verify software reset behavior
+            verify software reset behavior and FSM state-to-Idle reset transitions
 
             Stimulus:
-              - Reset the spi_host randomly
-                after a random number of data shows up on FIFOs
+              - Reset the spi_host randomly after a random number of SCK edges during active transactions
+              - Target CONTROL.SW_RST inside WaitLead, CSBSwitch, WaitTrail, WaitIdle, and InternalClkHigh states
+              - Exercise InternalClkLow -> WaitTrail transition under CPHA = 1
 
             Checking:
-              - Ensure that reads to RXDATA register yield 0s after the rx_fifo is reset
-              - Ensure that transactions are dropped in both the scoreboard and spi_agent monitor
-                after the tx_fifo or spi_fsm is reset
+              - Ensure that TXEMPTY and RXEMPTY are asserted after software reset recovery
+              - Ensure that all targeted FSM state-to-Idle transitions complete cleanly
+              - Ensure that transactions are dropped cleanly in both the scoreboard and spi_agent monitor
             '''
       stage: V2
       tests: ["spi_host_sw_reset"]
@@ -255,14 +263,14 @@
       name: stall
       desc: '''
             Stimulus:
-              - Ongoing transaction has stalled due to lack of available space in the RX FIFO
-                and continues when RX fifo is cleared
-              - Ongoing transaction has stalled due to lack of data in the TX FIFO
-                and continues when data is provided in TX FIFO
+              - Request 66-word (264-byte) read transfer exceeding the 64-word RX FIFO + 1-word ByteMerge capacity (65 words)
+                to trigger STATUS.RXSTALL, then actively drain RXDATA until the transaction completes
+              - Ongoing transaction stalls due to lack of data in the TX FIFO (STATUS.TXSTALL)
+                and continues when data is written directly to TXDATA
 
             Checking:
-              - Ensure Rxstall occurs and recovers
-              - Ensure Txstall occurs and recovers
+              - Ensure Rxstall asserts at full storage capacity (65 words) and recovers when RXDATA is drained
+              - Ensure Txstall asserts when TX FIFO empties mid-segment and recovers when TXDATA is supplied
             '''
       stage: V2
       tests: ["spi_host_status_stall"]
@@ -271,11 +279,12 @@
       name: Idlecsbactive
       desc: '''
             Stimulus:
-              - Pause next segment availability and idly wait for next command
+              - Assert CSAAT = 1, pause next segment availability, and idly wait in IdleCSBActive for next command
+              - Issue trailing segment with CSAAT = 0 to release CSB cleanly
 
             Checking:
-              - Ensure transactions goes through even with a segment pause and idle wait
-                in the state IdleCsbActive
+              - Ensure transactions go through even with a segment pause and idle wait
+                in the state IdleCSBActive
             '''
       stage: V2
       tests: ["spi_host_idlecsbactive"]
@@ -304,17 +313,31 @@
     {
       name: winbond
       desc: '''
-          Replace SPI agent with the Winbond Flash model
+          Verify SPI Host against the Winbond W25Q128JVxIM Flash model
 
           Stimulus:
-            - constraint the Sequence to create well-formed transactions that the model understands
+            - Execute structured Winbond Flash sequences: Write Enable (0x06), Page Program (0x02),
+              Status Register Poll (0x05), and Quad Output Fast Read (0xEB) with dummy cycles
 
           Checking:
-            - Verify the DUT against the WindBond bfm by making the spi agent passive
-              to verify that we comply with the spi targeted for opentitan
+            - Verify the DUT against the Winbond Flash BFM and check readback payload integrity
             '''
-      stage: V3
-      tests: []
+      stage: V2
+      tests: ["spi_host_flash"]
+    }
+    {
+      name: same_csr_outstanding
+      desc: '''
+            Verify back-to-back pipelined accesses to the same CSR register without pipeline hazards.
+
+            Stimulus:
+              - Issue multiple back-to-back non-blocking reads and writes to the same CSR register
+
+            Checking:
+              - Ensure all outstanding bus responses return in order without dropped tokens or deadlocks
+            '''
+      stage: V1
+      tests: ["spi_host_same_csr_outstanding"]
     }
   ]
   covergroups: [
@@ -439,6 +462,31 @@
             - Cover that passthrough is activated when a normal transaction is in progress.
             - Cover that data on the passthrough interface is ignored while passthrough disabled.
 
+            '''
+    }
+    {
+      name: sck_pin_cg
+      desc: '''
+            Collect coverage on cio_sck_o value, cio_sck_en_o enable, and their cross product.
+            '''
+    }
+    {
+      name: csb_pin_cg
+      desc: '''
+            Collect coverage on cio_csb_o value, cio_csb_en_o enable, and their cross product.
+            '''
+    }
+    {
+      name: sd_en_width_cg
+      desc: '''
+            Collect coverage on cio_sd_en_o output-enable bus widths across disabled (4'b0000),
+            standard (4'b0001), dual (4'b0011), and quad (4'b1111) transfer modes.
+            '''
+    }
+    {
+      name: intr_pins_cg
+      desc: '''
+            Collect coverage on hardware interrupt pins intr_error_o and intr_spi_event_o and their cross product.
             '''
     }
   ]

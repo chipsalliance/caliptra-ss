@@ -88,6 +88,7 @@ module tb;
   bridge_state_e bridge_state, bridge_state_next;
   
   logic awready_int, wready_int, bvalid_int, arready_int, rvalid_int;
+  logic [1:0]  bresp_int, rresp_int;
   logic [31:0] rdata_int;
   logic [31:0] awid_q, arid_q;
 
@@ -106,14 +107,14 @@ module tb;
   assign aw_if.awready = awready_int;
   assign w_if.wready   = wready_int;
   assign b_if.bvalid   = bvalid_int;
-  assign b_if.bresp    = 2'b00;
+  assign b_if.bresp    = bresp_int;
   assign b_if.bid      = awid_q; // Latched ID
   assign b_if.buser    = '0;
   
   assign ar_if.arready = arready_int;
   assign r_if.rvalid   = rvalid_int;
   assign r_if.rdata    = rdata_int;
-  assign r_if.rresp    = 2'b00;
+  assign r_if.rresp    = rresp_int;
   assign r_if.rid      = arid_q; // Latched ID
   assign r_if.rlast    = rvalid_int; // Single beat
   assign r_if.ruser    = '0;
@@ -168,9 +169,11 @@ module tb;
     awready_int = 1'b0;
     wready_int  = 1'b0;
     bvalid_int  = 1'b0;
+    bresp_int   = 2'b00;
     
     arready_int = 1'b0;
     rvalid_int  = 1'b0;
+    rresp_int   = 2'b00;
     rdata_int   = 32'b0;
 
     bridge_state_next = bridge_state;
@@ -195,7 +198,8 @@ module tb;
 
       WRITE_REQ: begin
         tl_h2d.a_valid   = 1'b1;
-        tl_h2d.a_opcode  = tlul_pkg::PutFullData;
+        tl_h2d.a_opcode  = (w_if.wstrb[3:0] == 4'hF) ? tlul_pkg::PutFullData
+                                                     : tlul_pkg::PutPartialData;
         tl_h2d.a_address = aw_if.awaddr;
         tl_h2d.a_data    = w_if.wdata[31:0];
         tl_h2d.a_mask    = w_if.wstrb[3:0];
@@ -211,6 +215,7 @@ module tb;
       WRITE_RESP: begin
         if (tl_d2h.d_valid) begin
           bvalid_int     = 1'b1;
+          bresp_int      = tl_d2h.d_error ? 2'b10 : 2'b00;
           if (b_if.bready) begin
             tl_h2d.d_ready = 1'b1;
             bridge_state_next = WRITE_DRAIN;
@@ -239,6 +244,7 @@ module tb;
         if (tl_d2h.d_valid) begin
           rvalid_int     = 1'b1;
           rdata_int      = tl_d2h.d_data;
+          rresp_int      = tl_d2h.d_error ? 2'b10 : 2'b00;
           if (r_if.rready) begin
             tl_h2d.d_ready = 1'b1;
             bridge_state_next = READ_DRAIN;
@@ -256,13 +262,6 @@ module tb;
       tl_h2d.a_user.instr_type = caliptra_prim_mubi_pkg::MuBi4False;
       tl_h2d.a_user.cmd_intg  = tlul_pkg::get_cmd_intg(tl_h2d);
       tl_h2d.a_user.data_intg = tlul_pkg::get_data_intg(tl_h2d.a_data);
-    end
-  end
-
-  always @(posedge clk) begin
-    if (bridge_state != bridge_state_next) begin
-      $display("[BRIDGE %0t] state: %0d -> %0d (awv=%0b, wv=%0b, arv=%0b, a_rdy=%0b, d_vld=%0b, brdy=%0b, rrdy=%0b)",
-               $time, bridge_state, bridge_state_next, aw_if.awvalid, w_if.wvalid, ar_if.arvalid, tl_d2h.a_ready, tl_d2h.d_valid, b_if.bready, r_if.rready);
     end
   end
 
@@ -339,6 +338,7 @@ module tb;
   // Bind
   bind dut.u_spi_core spi_host_fsm_if fast_prescaler_bound_if();
   spi_host_cov_bind u_spi_host_cov_bind();
+  spi_host_bind     u_spi_host_bind();
 
   defparam dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.EnableAlertTriggerSVA = 0;
 
@@ -363,7 +363,7 @@ module tb;
 
     uvm_config_db#(virtual spi_host_fsm_if)::set(null, "*.env", "fast_prescaler_bound_if",
                                                  dut.u_spi_core.fast_prescaler_bound_if);
-    $assertoff(0, tb.dut.u_reg);
+    $assertoff(0, tb.dut.u_reg.u_prim_reg_we_check.u_caliptra_prim_onehot_check.AssertConnected_A);
     $timeformat(-12, 0, " ps", 12);
     run_test();
   end

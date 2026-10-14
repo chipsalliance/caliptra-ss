@@ -123,13 +123,22 @@ task axi_mgr_register_layer_vseq::send_op_item(axi_reg_op_item item);
   // taking the ceiling), then taking clog2.
   int unsigned axsize = $clog2((item.m_rw.n_bits + 7) / 8);
 
+  // Shift strb_from_size to the lowest enabled byte lane when UVM accesses an upper-lane field
+  int unsigned lsb_byte = 0;
+
   // This is the maximum strb value possible, given axsize. If byte_en is not maximal, the strb
   // value to actually use might not have all of the bits set.
-  bit [127:0] strb_from_size = (128'd1 << (1 << axsize)) - 1;
+  bit [127:0] strb_from_size;
 
   // The strb value to send on W, or the byte mask to use with rdata in an R response. This takes
   // size and byte_en into account.
-  bit [127:0] byte_mask = 128'hFFFFFFFF;
+  bit [127:0] byte_mask;
+
+  while (lsb_byte < 128 && !item.m_rw.byte_en[lsb_byte]) begin
+    lsb_byte++;
+  end
+  strb_from_size = ((128'd1 << (1 << axsize)) - 1) << lsb_byte;
+  byte_mask = strb_from_size & item.m_rw.byte_en;
 
   if (axsize > 7) begin
     `uvm_error(get_full_name(),

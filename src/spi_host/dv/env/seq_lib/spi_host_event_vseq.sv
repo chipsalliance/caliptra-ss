@@ -24,7 +24,7 @@ class spi_host_event_vseq extends spi_host_tx_rx_vseq;
   }
 
   constraint spi_config_regs_clkdiv_c {
-    spi_config_regs.clkdiv inside {[0 : 1]};
+    spi_config_regs.clkdiv inside {[2 : 3]};
   }
 
   constraint spi_host_command_reg_c {
@@ -92,6 +92,8 @@ class spi_host_event_vseq extends spi_host_tx_rx_vseq;
           if (spi_host_ctrl_reg.rx_watermark < SPI_HOST_RX_DEPTH) begin
             spi_send_trans(1);
             csr_spinwait(.ptr(ral.status.txqd), .exp_data(0));
+            csr_spinwait(.ptr(ral.status.rxqd), .exp_data(spi_host_ctrl_reg.rx_watermark + 1));
+            csr_spinwait(.ptr(ral.status.active), .exp_data(0));
           end
           check_event(ral.status.rxwm, 0, 1);
           if (spi_host_ctrl_reg.rx_watermark > 0) read_rx_fifo();

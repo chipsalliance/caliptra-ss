@@ -126,7 +126,7 @@
     }
     {
       name: spi_host_flash
-      uvm_test_seq: spi_host_smoke_vseq
+      uvm_test_seq: spi_host_flash_vseq
     }
     {
       name: spi_host_dual_cs
@@ -145,6 +145,7 @@
       tests: [
         "spi_host_smoke",
         "spi_host_dual_cs",
+        "spi_host_flash",
         "spi_host_speed",
         "spi_host_upper_range_clkdiv",
         "spi_host_performance",

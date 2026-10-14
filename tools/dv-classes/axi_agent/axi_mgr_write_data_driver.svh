@@ -143,7 +143,7 @@ endtask
 
 task axi_mgr_write_data_driver::set_data_from_req();
   req.m_data &= (1024'b1 << m_vif.data_width) - 1;
-  req.m_strb = (128'b1 << ((m_vif.data_width + 7) / 8)) - 1;
+  req.m_strb &= (128'b1 << ((m_vif.data_width + 7) / 8)) - 1;
   req.m_user &= (512'b1 << m_vif.user_data_width) - 1;
 
   // Check that configurable-length item fields actually fit in the interface signals. Note: we can

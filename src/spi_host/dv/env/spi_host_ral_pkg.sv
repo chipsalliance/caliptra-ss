@@ -1335,17 +1335,17 @@ package spi_host_ral_pkg;
       default_map.add_reg(.rg(command),
                           .offset(32'h20));
       command.add_hdl_path_slice(
+          "u_reg.u_command_len.qs",
+          0, 9, 0, "BkdrRegPathRtl");
+      command.add_hdl_path_slice(
           "u_reg.u_command_csaat.qs",
-          0, 1, 0, "BkdrRegPathRtl");
+          9, 1, 0, "BkdrRegPathRtl");
       command.add_hdl_path_slice(
           "u_reg.u_command_speed.qs",
-          1, 2, 0, "BkdrRegPathRtl");
+          10, 2, 0, "BkdrRegPathRtl");
       command.add_hdl_path_slice(
           "u_reg.u_command_direction.qs",
-          3, 2, 0, "BkdrRegPathRtl");
-      command.add_hdl_path_slice(
-          "u_reg.u_command_len.qs",
-          5, 20, 0, "BkdrRegPathRtl");
+          12, 2, 0, "BkdrRegPathRtl");
 
       // create register tags
       csr_excl.add_excl(command.get_full_name(),
