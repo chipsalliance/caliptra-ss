@@ -270,10 +270,17 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         // fix_anchors(dev_idx, ep_idx, upstream_idx): dev_idx is the array
         // index into remote_device_cfg[], always 0 for a single-device setup.
         req.fix_anchors(0, 0, 0);
-        // no_queue_and_hold forces queue_and_hold==0 so the VIP issues the
-        // transfer immediately instead of holding it in the queue. Needed by
-        // tests that pull the cable mid-stream and must not leave a held
-        // transfer behind (see caliptra_ss_usb_hs_dev_disconnect_sequence).
+        // no_queue_and_hold constrains queue_and_hold==0 on the transfer.
+        //
+        // NOTE: this has no effect on VIP behaviour. svt_usb_transfer
+        // documents queue_and_hold as "utilized by the USB Test Suite's DUT
+        // USB Host xHCI Driver for controlling whether or not the xHCI
+        // Doorbell for the endpoint is rung", and states explicitly "THIS
+        // FIELD IS NOT UTILIZED BY ANY OF THE USB SVT TRANSACTORS". It is
+        // kept only because the randomize() default distribution
+        // (QUEUE_AND_HOLD_SET_wt=70 vs CLEAR_wt=30) would otherwise leave the
+        // field randomized; pinning it keeps transfers reproducible. Do not
+        // rely on it to change when a transfer reaches the bus.
         if (no_queue_and_hold) begin
             if (!req.randomize() with {
                     xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
@@ -438,6 +445,78 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                              int unsigned  min_payload_bytes = 0,
                              output bit    fail);
         wait_xfer_done(.agent_h(agent_h), .label(label));
+        check_xfer_status(.xfer             (last_ctrl_seq_item),
+                          .label            (label),
+                          .min_payload_bytes(min_payload_bytes),
+                          .fail             (fail));
+    endtask
+
+
+    // -------------------------------------------------------------------
+    // do_control_xfer_and_wait
+    //
+    // Issue a control transfer and wait for ITS OWN completion, forking the
+    // wait before the transfer is handed to the driver.
+    //
+    // NOTIFY_USB_TRANSFER_ENDED is a protocol-layer-wide event, not a
+    // per-transfer one: the VIP fetches it from the protocol transactor's
+    // event pool, so every transfer on the agent pulses the same event. A
+    // caller that runs do_control_xfer() to completion and only then waits
+    // can therefore consume the pulse belonging to the PREVIOUS transfer and
+    // return while its own transfer is still in flight. check_xfer_status()
+    // then samples last_ctrl_seq_item mid-flight, sees a status that is
+    // neither ACCEPT nor DISABLED, and reports a failure against a transfer
+    // the device goes on to service perfectly a few microseconds later.
+    //
+    // That misreport is identifiable: status=ABORTED with results_status=0x0.
+    // Per svt_usb_transfer the results_status bits are set by whoever aborts
+    // a transfer ("It is the responsibility of the calling process to set any
+    // transfer attributes to correctly capture the reason for the abort"), and
+    // an all-zero vector is defined to mean a successful transfer. ABORTED
+    // with no reason bit set is thus not a device failure at all - it is
+    // set_aborted_status() sweeping a still-active transfer at teardown.
+    //
+    // The hazard only bites when two control transfers are issued back to
+    // back with no delay between them, which is exactly what the
+    // SET_CONFIGURATION + GET_CONFIGURATION read-back pair in
+    // usbdc0_enum_stepC() does. The bulk path has always forked (see the
+    // fork_wait branch of the data-transfer task); the control path did not.
+    // -------------------------------------------------------------------
+    task do_control_xfer_and_wait(
+        input svt_usb_agent agent_h,
+        input bit [7:0]  bm_request_type_dir,
+        input bit [7:0]  bm_request_type_type,
+        input bit [7:0]  bm_request_type_recip,
+        input bit [7:0]  brequest_val,
+        input bit [15:0] wvalue,
+        input bit [15:0] windex,
+        input bit [15:0] wlength,
+        input int        device_addr,
+        input string     label,
+        input svt_usb_configuration usb_cfg = null,
+        input bit        no_queue_and_hold = 0,
+        input int unsigned min_payload_bytes = 0,
+        output bit       fail
+    );
+        fork
+            begin
+                wait_xfer_done(.agent_h(agent_h), .label(label));
+            end
+            begin
+                do_control_xfer(
+                    .bm_request_type_dir  (bm_request_type_dir),
+                    .bm_request_type_type (bm_request_type_type),
+                    .bm_request_type_recip(bm_request_type_recip),
+                    .brequest_val         (brequest_val),
+                    .wvalue               (wvalue),
+                    .windex               (windex),
+                    .wlength              (wlength),
+                    .device_addr          (device_addr),
+                    .label                (label),
+                    .usb_cfg              (usb_cfg),
+                    .no_queue_and_hold    (no_queue_and_hold));
+            end
+        join
         check_xfer_status(.xfer             (last_ctrl_seq_item),
                           .label            (label),
                           .min_payload_bytes(min_payload_bytes),
@@ -899,7 +978,16 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                                 .fail             (xfer_fail));
         end
 
-        do_control_xfer(
+        // The device only arms its non-control endpoints once it is
+        // configured, so an aborted SET_CONFIGURATION silently disables every
+        // bulk/iso stage of the test that follows.
+        //
+        // This and the GET_CONFIG_verify below are issued back to back with
+        // no delay, which is what makes the shared-notification race in
+        // wait_xfer_done() observable. Both therefore use the forked
+        // do_control_xfer_and_wait() form - see its header for the details.
+        do_control_xfer_and_wait(
+            .agent_h              (host_agent_h),
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type (svt_usb_types::STANDARD),
             .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
@@ -910,17 +998,19 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (int'(assign_address)),
             .label                ({"SET_CONFIG_1", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        // The device only arms its non-control endpoints once it is
-        // configured, so an aborted SET_CONFIGURATION silently disables every
-        // bulk/iso stage of the test that follows.
-        wait_and_check_xfer(.agent_h          (host_agent_h),
-                            .label            ({"SET_CONFIG_1", suffix}),
-                            .min_payload_bytes(0),
-                            .fail             (xfer_fail));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .min_payload_bytes    (0),
+            .fail                 (xfer_fail));
 
         if (with_get_config_readback) begin
-            do_control_xfer(
+            // 1-byte bConfigurationValue readback confirming the device
+            // really entered the Configured state. Forked form: this is the
+            // transfer that reported ABORTED/results_status=0x0 on every
+            // controller whose SET_CONFIGURATION was immediately followed by
+            // this read-back, while the firmware log showed the request being
+            // serviced normally ~3.4 us later.
+            do_control_xfer_and_wait(
+                .agent_h              (host_agent_h),
                 .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
                 .bm_request_type_type (svt_usb_types::STANDARD),
                 .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
@@ -931,13 +1021,9 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_verify", suffix}),
                 .usb_cfg              (usb_cfg),
-                .no_queue_and_hold    (no_queue_and_hold));
-            // 1-byte bConfigurationValue readback confirming the device
-            // really entered the Configured state.
-            wait_and_check_xfer(.agent_h          (host_agent_h),
-                                .label            ({"GET_CONFIG_verify", suffix}),
-                                .min_payload_bytes(1),
-                                .fail             (xfer_fail));
+                .no_queue_and_hold    (no_queue_and_hold),
+                .min_payload_bytes    (1),
+                .fail                 (xfer_fail));
         end
 
 

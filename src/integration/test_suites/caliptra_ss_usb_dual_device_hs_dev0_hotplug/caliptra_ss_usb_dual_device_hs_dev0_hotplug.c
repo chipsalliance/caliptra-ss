@@ -169,19 +169,59 @@
 // effectively infinite; the run only ended because the UVM objection timed out.
 //
 // Expressing the budget in TIME makes the worst-case tail bounded and
-// predictable. The host sequence's own worst case is ~2.3 ms, so 3 ms lets the
-// firmware always outlive the sequence and record its verdict, while capping
-// the dead tail on a failing run at well under a millisecond.
-#define USB_TEST_RUN_BUDGET_US        3000u
+// predictable.
+//
+// The budget MUST stay below the testbench's own bound on the run, or it can
+// never expire: main()'s for-loop would never exit, the PASSED/TIMEOUT verdict
+// would never print, csr_write_mpmc_halt() would never be reached, the UVM
+// objection would never drop, and the run would produce NO UVM Report Summary
+// at all - the log just stopping at a bare "exit". A budget that outlives the
+// testbench is the same as having no budget. The relevant ceilings are
+// get_mcu_halt_timeout() = 5 ms and RUN_WATCHDOG = 10 ms in
+// caliptra_ss_usb_dual_device_hs_dev0_hotplug_test.svh.
+//
+// SIZING. The budget must cover a healthy run, and a healthy hotplug cycle is
+// now MUCH more expensive than it used to appear, because HP_WAIT_REENUM waits
+// for real host evidence instead of self-satisfying on stale state. Per cycle:
+//   DEV0_DISCONNECT_HOLD_US ................................. 300 us
+//   host notices the disconnect (one ~20 us port poll, worst
+//     case a full interval after the hold begins) ............ ~25 us
+//   host port reset + full USBDC0 re-enumeration. Measured on
+//     the baseline enumeration in the round-14 log: bus reset
+//     at 418445 ns, "dev0 enumerated (addr=2)" at 565337 ns .. ~147 us
+//   host-side settles around the cycle (POST_PORT_RESET_SETTLE
+//     plus the dev1 loopback the cycle also drives) .......... ~150 us
+// i.e. roughly 600 us per cycle, and cycling only starts once USBDC1 is up and
+// looping (~770 us into the round-14 run). Three cycles therefore need about
+// 770 + 3 * 600 = ~2.6 ms.
+//
+// 1400 us was calibrated against the BROKEN FSM, where a cycle cost ~9 us
+// (DCON set 1074742 ns -> "cycle 1 complete" 1080127 ns -> DCON cleared again
+// 1083887 ns). Keeping it would simply convert the phantom-cycle bug into a
+// guaranteed TIMEOUT. 4000 us covers the ~2.6 ms estimate with ~1.5x margin
+// and still leaves 1 ms under get_mcu_halt_timeout() for the verdict print and
+// the halt handshake.
+#define USB_TEST_RUN_BUDGET_US        4000u
 
 // Number of DEV0 disconnect/reconnect iterations. MUST match
 // DEV0_HOTPLUG_CYCLES in
 // caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh.
 #define DEV0_TARGET_CYCLES            3u
 
-// USBDC1 loopback iterations required to pass: one per DEV0 cycle plus the
-// baseline and the final one driven by the host sequence.
-#define DEV1_TARGET_LOOPS             (DEV0_TARGET_CYCLES + 2u)
+// USBDC1 loopback iterations required to pass.
+//
+// This MUST equal the number of EP1 OUT -> IN loopbacks the host sequence
+// actually drives on USBDC1, which is one baseline loopback plus exactly one
+// inside each DEV0 hotplug cycle:
+//   dev1_loopback() after dual-device enumeration ........ 1
+//   steps 6a/6c of each of the DEV0_TARGET_CYCLES cycles .. DEV0_TARGET_CYCLES
+// The previous value was DEV0_TARGET_CYCLES + 2 = 5 against a host that issues
+// 4 (confirmed by counting the sequence's BULK OUT/IN pairs, and by
+// "grep -c base_sequence.svh(1143)" = 4 in vcs_sim.log). The pass condition
+// was therefore ARITHMETICALLY UNREACHABLE - a flawless run would still have
+// been reported as a TIMEOUT. Derive it from DEV0_TARGET_CYCLES so the two can
+// no longer drift apart.
+#define DEV1_TARGET_LOOPS             (1u + DEV0_TARGET_CYCLES)
 
 // Bus address the host assigns to USBDC0 on every enumeration. MUST match
 // USBDC0_ADDR in caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh.
@@ -284,6 +324,15 @@ typedef struct {
     bool     ep1_armed;      // EP1 OUT armed and EP1OUT interrupt enabled
     bool     loopback_armed; // EP1 OUT data copied to EP1 IN and EP1 IN armed
     bool     enumerated;     // has been seen configured at least once
+    bool     enum_reported;  // the one-shot "enumerated" log line was printed
+    bool     toggle_reset_pending; // next EP1 OUT arm must carry TR=1|TV=0
+    // Set when the firmware deliberately detaches this controller (DCON
+    // cleared) and cleared only when a DRES_C bus reset is actually observed.
+    // While it is true, every piece of "this controller is up" state that
+    // survived the detach - DEV_ADDR, the SET_CONFIGURATION state - is STALE
+    // and must not be believed. See the HP_WAIT_REENUM note for what went
+    // wrong when it was absent.
+    bool     awaiting_reenum;
     uint32_t loop_count;     // completed EP1 OUT -> IN loopbacks
 } usb_dev_loopback_state_t;
 
@@ -299,66 +348,88 @@ static uint64_t             dev0_disconnect_hold_deadline = 0u;
 // headline failure condition of the test.
 static bool dev1_isolation_violation = false;
 
-// Read back an EP command/status entry until its Active bit is observed SET,
-// so the caller knows the arm has landed in the EP list before any completion
-// polling is done against it.
+// NOTE (deliberately absent helper): an earlier revision had a
+// usb_ep1_confirm_armed() helper here that re-read an EP command/status entry
+// after every arm until its Active bit was observed set. It was removed, and
+// must not be reintroduced.
 //
-// The EP-list lives in the controller's packet SRAM and the arming store is
-// posted, so an immediately following load can still return the pre-arm value.
-// Bounding the spin keeps a genuinely unresponsive controller from hanging the
-// whole test; the entry is polled only a handful of times in practice.
-#define USB_EP_ARM_CONFIRM_LIMIT 1000u
-static void usb_ep1_confirm_armed(uint32_t ep_list_offset, const char *what) {
-    uint32_t spins;
+// The passing hs_bulk_loopback reference has no such helper, and the read-back
+// spin is pure added latency inside the single-threaded service loop. That
+// latency is charged against the host's NEXT SETUP, which follows
+// SET_CONFIGURATION by only ~5 us, and it is what made the host's
+// GET_CONFIGURATION abort on both controllers: the arm block runs immediately
+// after SET_CONFIGURATION makes usb_is_configured() true, so the extra work is
+// guaranteed to overlap that SETUP rather than merely risk it.
+//
+// Nothing depends on having observed Active set: both completion checks
+// (usb_ep1_out_complete / usb_ep1_in_complete) are single-phase and only test
+// for Active == 0.
 
-    for (spins = 0; spins < USB_EP_ARM_CONFIRM_LIMIT; spins++) {
-        if (lsu_read_32(USB_DEV_DMA_BASE_ADDR + ep_list_offset)
-            & USB_EP_ENTRY_ACTIVE)
-            return;
-    }
-
-    VPRINTF(LOW, "MCU: WARNING - dev%d %s Active never read back set after "
-            "arming (%d reads)\n",
-            usb_get_active_device(), what, USB_EP_ARM_CONFIRM_LIMIT);
-}
+// =============================================================================
+// EP1 DATA TOGGLE OWNERSHIP - read this before touching either arm helper.
+//
+// TR (bit 28) does not clear the toggle, it LOADS it from TV (bit 27):
+//   "When software sets this bit to one, the HW will set the toggle value
+//    equal to the value indicated in the toggle value (TV) bit. For the
+//    control endpoint 0, this is not needed [...] For the other endpoints, the
+//    toggle can only be reset to 0 when the endpoint is reset."
+// Earlier revisions set TR without ever writing TV, so every TR=1 meant "load
+// 0" only by accident. Both helpers below now state TV explicitly.
+//
+// The two directions need OPPOSITE rules, and that asymmetry is the whole
+// content of this fix:
+//
+//   EP1 OUT - CONDITIONAL TR, driven by st->toggle_reset_pending.
+//     The host carries a running OUT toggle across transfers. Proof from the
+//     round-14 log: the mid-stream re-arm at 765975 ns used TR=0 and the
+//     following BULK OUT was accepted and consumed (EP1 IN armed at
+//     787712 ns). The same re-arm with TR=1 in round 13 killed the endpoint
+//     for the rest of the run. So TR is needed exactly once per stream - the
+//     first arm after a bus reset, and the first arm after SET_CONFIGURATION -
+//     and is a bug on every other arm.
+//
+//     Getting this wrong fails SILENTLY. USB 2.0 requires the device to ACK a
+//     toggle-mismatched data packet and DISCARD it as a presumed
+//     retransmission, so the wire looks healthy, the buffer is never consumed,
+//     hardware never clears Active, and the single-phase
+//     usb_ep1_out_complete() can never become true again. Host retry cannot
+//     rescue this: the toggle IS the retry mechanism (USB 2.0 section 8.6).
+//
+//   EP1 IN - UNCONDITIONAL TR=1 | TV=0 on every arm.
+//     The host VIP builds each bulk IN as an independent svt_usb_transfer with
+//     no cross-transfer toggle state, so it expects DATA0 at the start of
+//     EVERY IN transfer. A device that keeps alternating is right by the
+//     letter of the spec and still fails the VIP's checker. Round 14 made the
+//     IN conditional along with the OUT and produced exactly that:
+//       810432 ns  data_toggle_check_Dev3_EP1_IN: Received Data packet with
+//                  incorrect PID name : DATA1. Expecting DATA0 for DATA stage
+//     after the TR=0 IN arm at 787712 ns. Reloading DATA0 before every IN is
+//     also harmless on a conformant host, because an IN transfer that the host
+//     considers complete leaves no in-flight toggle state to disturb.
+//
+// NOTE ON TIMING: neither helper is in a race with the host. An endpoint that
+// is not yet armed NAKs, and the host simply retries until device_timeout, so
+// a late arm costs latency and nothing else. Any fix that depends on arming
+// inside a fixed time window is a performance mask, not a correctness fix.
+// =============================================================================
 
 // Arm EP1 OUT for the currently selected device and enable its EP1OUT
 // interrupt so the EP1 OUT completion is published to the ISR mailbox.
 // usb_select_device() must already have selected the target device, so the
 // USB_DEV_* aliases resolve to that controller's aperture.
-// USB_EP_ENTRY_TOGGLE_RESET (bit 28) is set on every re-arm. Unlike the
-// single-shot dual-device bulk loopback reference, this test runs EP1 OUT and
-// EP1 IN many times on the SAME endpoint, so the device's data toggle would
-// keep alternating DATA0/DATA1 across iterations. The host side does not track
-// that: every dev1_loopback() retargets the VIP with host_agent_h.reconfigure()
-// and so restarts from a DATA0 expectation, which showed up as
-//   data_toggle_check_Dev3_EP1_IN: Received Data packet with incorrect PID
-//   name : DATA1. Expecting DATA0 for DATA stage
-// Arming with TR=1 forces the endpoint back to DATA0 for the next packet
-// (usb_ep_config_handler.m.vhdl: reg_ep_toggle_reset <= upd_dma_wdata(28)), so
-// each iteration starts from the same toggle state the host expects.
-static void usb_ep1_out_arm(void) {
+static void usb_ep1_out_arm(usb_dev_loopback_state_t *st) {
+    // TR is conditional and TV is always DATA0: the only toggle value the host
+    // ever restarts an OUT stream from is 0 (after a bus reset, and after
+    // SET_CONFIGURATION).
     uint32_t ep1_out = USB_EP_ENTRY_ACTIVE
-                     | USB_EP_ENTRY_TOGGLE_RESET
+                     | (st->toggle_reset_pending
+                            ? (USB_EP_ENTRY_TOGGLE_RESET
+                               | USB_EP_ENTRY_TOGGLE_VALUE_DATA0)
+                            : 0u)
                      | USB_EP_ENTRY_NBYTES(USB_BULK_LOOPBACK_BYTES)
                      | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                              + USB_SRAM_EP1_OUT_BUF_OFFSET);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
-
-    // Confirm the arm is visible to the MCU before returning. The EP-list write
-    // above is posted, so a read performed later in the SAME poll iteration can
-    // still observe Active == 0. The service loop used to cope with that by
-    // requiring Active to be observed SET before accepting a clear as a
-    // completion, but that is a livelock: hardware only ever CLEARS Active, it
-    // never sets it, so if the very first read misses the set state the
-    // "observed set" condition can never be satisfied afterwards and the
-    // endpoint is never recognised as complete. That is exactly what stalled
-    // USBDC1 in hotplug cycle 0 - EP1 OUT was armed at 771610 ns, the host's
-    // OUT completed at 782266 ns, and "dev1 EP1 IN armed (loopback)" never
-    // appeared, so the following BULK IN hit an un-armed endpoint and returned
-    // an empty payload. Confirming the set state here, at arm time, removes the
-    // two-phase observation and the livelock with it.
-    usb_ep1_confirm_armed(USB_EP_LIST_EP1_OUT_OFFSET, "EP1 OUT");
 
     // boot_usb_core_hub() only enables DEV_INT/EP0OUT/EP0IN, and the ISR masks
     // INTSTAT with INTEN, so the EP1 OUT completion would never reach the
@@ -366,13 +437,19 @@ static void usb_ep1_out_arm(void) {
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
-    VPRINTF(LOW, "MCU: dev%d EP1 OUT armed for %d bytes\n",
-            usb_get_active_device(), USB_BULK_LOOPBACK_BYTES);
+    VPRINTF(LOW, "MCU: dev%d EP1 OUT armed for %d bytes (TR=%d)\n",
+            usb_get_active_device(), USB_BULK_LOOPBACK_BYTES,
+            (int)st->toggle_reset_pending);
+
+    // Consumed here, by the OUT direction only. The pending toggle reset is now
+    // purely an EP1 OUT concern - EP1 IN below reloads DATA0 unconditionally -
+    // so this is the one and only place it is cleared.
+    st->toggle_reset_pending = false;
 }
 
 // On an EP1 OUT completion for the selected device, copy the 64 received bytes
 // from the EP1 OUT buffer to the EP1 IN buffer and arm EP1 IN to send them back.
-static void usb_ep1_loopback_arm_in(void) {
+static void usb_ep1_loopback_arm_in(usb_dev_loopback_state_t *st) {
     uint32_t i;
     uint32_t rx_word;
     uint32_t ep1_in;
@@ -384,20 +461,20 @@ static void usb_ep1_loopback_arm_in(void) {
                      + USB_SRAM_EP1_IN_BUF_OFFSET + i, rx_word);
     }
 
-    // TR=1 for the same reason as in usb_ep1_out_arm(): this is a repeated
-    // re-arm of EP1 IN and the host restarts from a DATA0 expectation after
-    // every VIP address retarget.
+    // UNCONDITIONAL TR=1 | TV=0, unlike the OUT direction. The host rebuilds
+    // every bulk IN as an independent transfer and expects DATA0 each time, so
+    // the device must load DATA0 before every IN packet. See the EP1 DATA
+    // TOGGLE OWNERSHIP block above for the evidence.
     ep1_in = USB_EP_ENTRY_ACTIVE
            | USB_EP_ENTRY_TOGGLE_RESET
+           | USB_EP_ENTRY_TOGGLE_VALUE_DATA0
            | USB_EP_ENTRY_NBYTES(USB_BULK_LOOPBACK_BYTES)
            | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                    + USB_SRAM_EP1_IN_BUF_OFFSET);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_IN_OFFSET, ep1_in);
 
-    // Same posted-write confirmation as in usb_ep1_out_arm().
-    usb_ep1_confirm_armed(USB_EP_LIST_EP1_IN_OFFSET, "EP1 IN");
-
-    VPRINTF(LOW, "MCU: dev%d EP1 IN armed (loopback)\n", usb_get_active_device());
+    VPRINTF(LOW, "MCU: dev%d EP1 IN armed (loopback, TR=1 TV=0)\n",
+            usb_get_active_device());
 }
 
 // Returns true once the selected device's EP1 IN transfer has completed, i.e.
@@ -528,6 +605,21 @@ static void usb_service_device(int dev, uint32_t usb_events,
 
             st->ep1_armed      = false;
             st->loopback_armed = false;
+
+            // A bus reset clears the endpoint data toggles in hardware and the
+            // host restarts its own OUT toggle from DATA0, so the next EP1 OUT
+            // arm must carry TR=1 | TV=0 to guarantee both sides agree. (EP1 IN
+            // reloads DATA0 on every arm regardless.)
+            st->toggle_reset_pending = true;
+
+            // THE ONLY PLACE awaiting_reenum IS CLEARED. A DRES_C can only come
+            // from the host driving a port reset, so observing one is positive,
+            // FRESH proof that the host has started re-enumerating this
+            // controller. Everything the detach left behind - DEV_ADDR, the
+            // configured state - has just been invalidated by hardware too, so
+            // from here on this controller's state is trustworthy again.
+            st->awaiting_reenum = false;
+
             VPRINTF(LOW, "MCU: dev%d bus reset - EP1 state cleared\n", dev);
         }
     }
@@ -568,6 +660,23 @@ static void usb_service_device(int dev, uint32_t usb_events,
 
     // EP0 IN completion needs no action: the ISR already acknowledged it.
 
+    // Report the enumeration out-of-line, and deliberately BEFORE the arm
+    // block below rather than after it.
+    //
+    // st->enumerated is set inside the arm block, so evaluating this test
+    // beforehand is guaranteed to be false on the arming iteration itself -
+    // the print is therefore charged to the NEXT poll iteration, after the
+    // host's GET_CONFIGURATION SETUP has been serviced. Placing it after the
+    // arm block would leave the VPRINTF in the same iteration and defeat the
+    // whole point. enum_reported is a separate latch from st->enumerated so
+    // this fires exactly once per device even though st->enumerated is sticky
+    // across hotplug cycles.
+    if (st->enumerated && !st->enum_reported) {
+        st->enum_reported = true;
+        VPRINTF(LOW, "MCU: dev%d enumerated (addr=%d)\n",
+                dev, usb_get_device_address());
+    }
+
     // Arm EP1 OUT once the device is configured (enumeration complete) AND
     // still attached. This is idempotent and only (re-)arms when not already
     // armed.
@@ -588,15 +697,37 @@ static void usb_service_device(int dev, uint32_t usb_events,
     // the bus, and - because a reconnect always brings a host port reset which
     // clears the configured state - only after the host has genuinely
     // re-enumerated it.
-    if (!st->ep1_armed && usb_is_connected() && usb_is_configured()) {
-        usb_ep1_out_arm();
+    //
+    // Nothing else may be added to this block. It runs in the one poll
+    // iteration immediately after SET_CONFIGURATION completes - that is what
+    // makes usb_is_configured() true - so the host's NEXT SETUP
+    // (GET_CONFIGURATION, ~5 us later) is ALWAYS racing whatever work sits
+    // here. The reference does exactly one arm plus one short VPRINTF and
+    // passes; this test additionally carried a bounded EP-list read-back spin
+    // and a 30-character "enumerated" print, together ~1.4-3.5 us, and the
+    // host's GET_CONFIGURATION aborted on BOTH controllers as a result. The
+    // print has been moved below so it is charged to a LATER iteration.
+    // The !st->awaiting_reenum term is what keeps this block from firing on
+    // STALE state. Clearing DCON does not clear DEV_ADDR and does not clear the
+    // SET_CONFIGURATION state, so the instant the hotplug FSM re-asserts DCON
+    // both usb_is_connected() and usb_is_configured() read true again even
+    // though the host has not touched the device yet. This block then armed EP1
+    // and HP_WAIT_REENUM declared the cycle complete 5 us later with zero host
+    // traffic in between (round-14 log: DCON set 1074742 ns, "cycle 1 complete"
+    // 1080127 ns, DCON cleared again 1083887 ns - the port was up for 9.1 us
+    // against a host polling it every ~23 us, i.e. the reconnect was literally
+    // invisible). Requiring awaiting_reenum to have been cleared by a real
+    // DRES_C makes the arm wait for the host's port reset.
+    if (!st->ep1_armed && !st->awaiting_reenum
+        && usb_is_connected() && usb_is_configured()) {
+        // First arm of a newly configured controller: SET_CONFIGURATION resets
+        // the host's OUT toggle expectation to DATA0, so this arm needs
+        // TR=1 | TV=0.
+        st->toggle_reset_pending = true;
+        usb_ep1_out_arm(st);
         st->ep1_armed      = true;
         st->loopback_armed = false;
-        if (!st->enumerated) {
-            st->enumerated = true;
-            VPRINTF(LOW, "MCU: dev%d enumerated (addr=%d)\n",
-                    dev, usb_get_device_address());
-        }
+        st->enumerated     = true;
     }
 
     // ISOLATION INVARIANT: once enumerated, USBDC1 must keep its assigned bus
@@ -624,15 +755,16 @@ static void usb_service_device(int dev, uint32_t usb_events,
     // 64 zero bytes. Polling the Active bit instead guarantees the data is in
     // the buffer before it is copied.
     //
-    // The arm itself is confirmed inside usb_ep1_out_arm() via
-    // usb_ep1_confirm_armed(), so a cleared Active bit here is unambiguously a
-    // completion and this test can be a single-phase check. It must NOT be
-    // turned back into an "observe set, then observe clear" gate: hardware only
-    // ever clears Active, so a single missed read of the set state would make
-    // the set condition permanently unsatisfiable and stall the endpoint
-    // forever.
+    // This is deliberately SINGLE-PHASE: it tests only for Active == 0 and
+    // never requires Active to have been observed SET first. It must NOT be
+    // turned back into an "observe set, then observe clear" gate. Hardware only
+    // ever CLEARS Active - it never sets it - so a single missed read of the
+    // set state would make the set condition permanently unsatisfiable and
+    // stall the endpoint forever. The st->ep1_armed flag is the firmware's own
+    // record that the arm was issued, which is all the first phase ever
+    // established.
     if (st->ep1_armed && !st->loopback_armed && usb_ep1_out_complete()) {
-        usb_ep1_loopback_arm_in();
+        usb_ep1_loopback_arm_in(st);
         st->loopback_armed = true;
     }
 
@@ -641,10 +773,9 @@ static void usb_service_device(int dev, uint32_t usb_events,
     // whole DEV0 hotplug sequence; USBDC0 is re-armed by the enumeration branch
     // above after each reconnect.
     //
-    // Single-phase, for the same reason as the EP1 OUT check above: the arm was
-    // already confirmed visible by usb_ep1_confirm_armed() inside
-    // usb_ep1_loopback_arm_in(), so a cleared Active bit cannot be a stale
-    // pre-arm read.
+    // Single-phase for the same reason as the EP1 OUT check above, and gated by
+    // st->loopback_armed, which is only set after usb_ep1_loopback_arm_in()
+    // has issued the arm.
     if (st->loopback_armed && usb_ep1_in_complete()) {
         st->loop_count++;
         st->loopback_armed = false;
@@ -652,8 +783,10 @@ static void usb_service_device(int dev, uint32_t usb_events,
                 dev, st->loop_count);
 
         if (dev == 1) {
-            // Re-arm for the next USBDC1 iteration.
-            usb_ep1_out_arm();
+            // Re-arm for the next USBDC1 iteration. This is a MID-STREAM
+            // re-arm: toggle_reset_pending is already false, so TR=0 and the
+            // device's toggle keeps alternating in step with the host.
+            usb_ep1_out_arm(st);
         } else {
             // USBDC0 is about to be disconnected again; let the enumeration
             // branch re-arm it after the next reconnect.
@@ -687,6 +820,10 @@ static void dev0_hotplug_step(usb_dev_loopback_state_t *dev0_st,
         usb_set_device_connect(0u);
         dev0_st->ep1_armed      = false;
         dev0_st->loopback_armed = false;
+        // Everything that says "USBDC0 is up" is stale from this moment until a
+        // host-driven bus reset is observed. Set BEFORE the print so no poll
+        // iteration can see the detached controller with the flag still clear.
+        dev0_st->awaiting_reenum = true;
         VPRINTF(LOW, "MCU: DEV0 hotplug cycle %d - DCON cleared (port 1 down, "
                 "reconnecting in %d us)\n",
                 dev0_cycle_count + 1u, DEV0_DISCONNECT_HOLD_US);
@@ -718,36 +855,38 @@ static void dev0_hotplug_step(usb_dev_loopback_state_t *dev0_st,
     case HP_WAIT_REENUM:
         // The cycle is complete once the host has re-enumerated USBDC0.
         //
-        // Both terms below are required, and the address term is the one that
-        // makes this a real handshake with the host rather than a self-check:
+        // ALL THREE terms are required, and every one of them must be FRESH -
+        // i.e. it must be impossible to satisfy with state that survived the
+        // disconnect. That is the entire lesson of this state:
         //
+        //   !dev0_st->awaiting_reenum
+        //       Cleared ONLY by an observed DRES_C, which only the host can
+        //       cause (SetFeature(PORT_RESET) on hub port 1). This is the
+        //       anchor: until the host has reset the port, nothing below is
+        //       allowed to count.
         //   usb_get_dev0_address() == USBDC0_BUS_ADDR
-        //       DEV_ADDR can only become non-zero because the host completed a
-        //       SET_ADDRESS on this controller. A reconnect brings a hub port
-        //       reset first, which clears DEV_ADDR to 0, so observing the
-        //       expected address again is positive proof that THIS cycle's
-        //       re-enumeration actually ran on the wire.
+        //       The bus reset cleared DEV_ADDR to 0, so seeing address 2 again
+        //       can only mean the host completed a fresh SET_ADDRESS.
         //   dev0_st->ep1_armed
-        //       SET_CONFIGURATION has also completed, so the device is fully
-        //       usable again and not merely addressed.
+        //       Also cleared by the bus reset, and re-set only by the config
+        //       arm block, which itself waits for awaiting_reenum - so this now
+        //       means a fresh SET_CONFIGURATION really completed.
         //
-        // This state used to test ep1_armed ALONE, and that was the bug behind
-        // the "host and firmware ran different hotplug cycles" failure. EP1 was
-        // being re-armed by usb_service_device() while DEV0 was still detached
-        // (DCON cleared does not clear the configured state - see the
-        // usb_is_connected() note there), so this condition was already true
-        // the instant DCON went back high. The firmware counted the cycle about
-        // 3 us after HP_CONNECT with ZERO host traffic in between, immediately
-        // re-cleared DCON for the next cycle, and the host's subsequent
-        // re-enumeration SETUPs hit a detached device and aborted. The
-        // usb_is_connected() gate fixes the stale re-arm; requiring the address
-        // as well makes the handshake robust even if some future change
-        // re-opens that window.
+        // HISTORY. This gate was ep1_armed alone, then ep1_armed + address, and
+        // BOTH versions were satisfiable by stale state, because clearing DCON
+        // leaves DEV_ADDR and the configured state untouched. Symptom in the
+        // round-14 log: DCON set at 1074742 ns, EP1 re-armed at 1077162 ns from
+        // the surviving configured state, "cycle 1 complete" at 1080127 ns, and
+        // DCON cleared again at 1083887 ns - 9.1 us of uptime against a ~23 us
+        // host poll interval. The firmware ran three phantom cycles while the
+        // host was still polling for the FIRST reconnect, and the host's
+        // eventual GET_DESCRIPTOR landed on a device that was gone for good.
         //
         // There is no timeout here on purpose: the host sequence already fails
         // loudly if port 1 never comes back, and the main loop has its own
         // USB_TEST_RUN_BUDGET_US backstop.
-        if (dev0_st->ep1_armed
+        if (!dev0_st->awaiting_reenum
+            && dev0_st->ep1_armed
             && usb_get_dev0_address() == USBDC0_BUS_ADDR) {
             dev0_cycle_count++;
             VPRINTF(LOW, "MCU: DEV0 hotplug cycle %d complete "
@@ -867,10 +1006,11 @@ void main(void) {
         if (poll_count % 2000 == 0 && poll_count > 0) {
             usb_select_device(0);
             VPRINTF(LOW, "MCU: [poll %d] hp=%d cyc=%d d0 armed=%d lb=%d "
-                    "addr=%d | ",
+                    "wait=%d addr=%d | ",
                     poll_count, (int)dev0_hp_state, dev0_cycle_count,
                     (int)dev_state[0].ep1_armed,
                     (int)dev_state[0].loopback_armed,
+                    (int)dev_state[0].awaiting_reenum,
                     usb_get_device_address());
             usb_select_device(1);
             VPRINTF(LOW, "d1 loops=%d armed=%d lb=%d addr=%d\n",

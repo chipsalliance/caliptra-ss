@@ -141,36 +141,43 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
 
     // Settle time before each USBDC1 EP1 BULK OUT.
     //
-    // The firmware re-arms EP1 OUT for the next USBDC1 iteration only after it
-    // has observed the previous EP1 IN completing, and it does that from the
-    // same polling loop that also services USBDC0 and runs the DEV0 hotplug
-    // FSM. Without a settle here the host issued the next OUT before that
-    // re-arm had happened, for example in the first hotplug cycle:
+    // THIS IS LATENCY TUNING, NOT A CORRECTNESS REQUIREMENT, and no check in
+    // this sequence may be allowed to depend on it. An endpoint the firmware
+    // has not armed yet NAKs, and the host retries the transaction until
+    // device_timeout, so arming late costs microseconds of NAK and nothing
+    // else. The log proves it twice over:
     //   740416 ns  DATA HS_BULK_OUT_EP1_dev1_cyc0 issued
     //   744325 ns  MCU: dev1 EP1 OUT armed for 64 bytes
     //   795115 ns  Transfer HS_BULK_OUT_EP1_dev1_cyc0 completed
-    // i.e. the OUT sat NAKing for ~55 us, which both lengthens the run and
-    // skews the overlap this test is trying to create between USBDC1 traffic
-    // and USBDC0 hotplug activity. 20 us matches the OUT -> IN settle already
-    // used below and is comfortably longer than the observed re-arm latency.
+    // (~55 us of NAK, then success) and, in the round-14 run, an arm 5.5 us
+    // after the OUT was issued that also completed normally.
+    //
+    // What the wait buys is a cleaner experiment: the firmware re-arms EP1 OUT
+    // only after it has seen the previous EP1 IN complete, from the same
+    // polling loop that services USBDC0 and runs the hotplug FSM, so without a
+    // settle the run is longer and the USBDC1-traffic / USBDC0-hotplug overlap
+    // this test exists to create is skewed by NAK retries. 20 us matches the
+    // OUT -> IN settle below and comfortably exceeds the observed re-arm
+    // latency. Removing it should slow the test down, never fail it - if it
+    // ever does fail it, the bug is in the firmware's arm path, not here.
     localparam time         PRE_BULK_OUT_SETTLE    = 20us;
 
     // Settle time between a USBDC1 EP1 BULK OUT completing and the matching
     // EP1 BULK IN being issued.
     //
-    // The firmware only copies EP1 OUT -> EP1 IN and arms EP1 IN after it has
-    // polled the EP1 OUT entry and seen its Active bit clear, which costs a
-    // few microseconds of polling latency. dev1_loopback() always waited here,
-    // but the hotplug-cycle path originally relied on the hub port-1 poll plus
-    // ClearFeature to provide the gap - and that only covered ~4.8 us:
-    //   782266 ns  Transfer HS_BULK_OUT_EP1_dev1_cyc0 completed
-    //   787080 ns  DATA HS_BULK_IN_EP1_dev1_cyc0 issued
-    //   792882 ns  Transfer HS_BULK_IN_EP1_dev1_cyc0 completed
-    // with no "MCU: dev1 EP1 IN armed (loopback)" in between. The IN was
-    // therefore issued against an un-armed endpoint, got NAKed, and returned an
-    // EMPTY payload - which reads back as 64 zero bytes and looked like data
-    // corruption rather than a handshake race. Both paths now use this
-    // constant explicitly.
+    // LATENCY TUNING ONLY, for the same reason as PRE_BULK_OUT_SETTLE above.
+    // The firmware copies EP1 OUT -> EP1 IN and arms EP1 IN only after polling
+    // the EP1 OUT entry and seeing Active clear, which costs a few microseconds
+    // of polling latency; an IN issued before that is NAKed and retried.
+    //
+    // An earlier version of this comment claimed that an IN against an un-armed
+    // endpoint "returned an EMPTY payload", and that claim sent several rounds
+    // of debug in the wrong direction. It is wrong: the empty payload is read
+    // after wait_xfer_done() has exhausted the whole device_timeout retry
+    // budget, so it means the endpoint never became ready at all - a permanent
+    // stall, typically a data-toggle desync. See check_loopback() for the
+    // correct diagnosis. Both the baseline and hotplug-cycle paths use this
+    // constant simply so the stimulus does not spend its time NAKing.
     localparam time         POST_BULK_OUT_SETTLE   = 20us;
 
     function new(string name = "caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence");
@@ -594,15 +601,32 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             return;
         end
 
+        // A short or empty payload is NOT a race with the firmware's re-arm.
+        // This value is read after do_data_xfer() -> wait_xfer_done() has
+        // already returned, i.e. after the VIP exhausted its entire retry
+        // budget (device_timeout). An endpoint that is merely late to be armed
+        // NAKs and the host retries until it succeeds - that costs latency, not
+        // payload. Reaching here therefore means the endpoint NEVER became
+        // ready, which on this design has two realistic causes:
+        //   1. a data-toggle desync, which is silent on the wire: the device
+        //      ACKs the mismatched packet and discards it, so Active is never
+        //      cleared and the firmware's completion poll never fires again;
+        //   2. the firmware lost or never reached the arm (stale state, wedged
+        //      service loop, controller detached underneath it).
+        // Check the MCU log for the matching "EP1 IN armed" line and for a
+        // data_toggle_check_* error from the VIP - do NOT reach for the settle
+        // constants, which are latency tuning only.
         rx_bytes = in_req.payload_byte_count();
         if (rx_bytes != LOOPBACK_BYTES) begin
             `uvm_error("USB_DEV0_HOTPLUG_SEQ",
                 $sformatf({"%s loopback check FAILED: received %0d of %0d ",
-                           "bytes. A short/empty payload means the BULK IN was ",
-                           "issued before the firmware re-armed EP1 IN (NAKed ",
-                           "IN), not that the data was corrupted - check the ",
-                           "EP1 OUT -> EP1 IN turnaround wait ",
-                           "(POST_BULK_OUT_SETTLE)."},
+                           "bytes after the full device_timeout retry budget. ",
+                           "This is a PERMANENT endpoint stall, not an early ",
+                           "IN: an un-armed endpoint NAKs and the host retries. ",
+                           "Look for a missing \"EP1 IN armed\" line in the MCU ",
+                           "log and for a data_toggle_check_* error (a toggle ",
+                           "mismatch is ACKed and discarded, so the endpoint ",
+                           "goes dead silently)."},
                           dev_name, rx_bytes, LOOPBACK_BYTES))
             return;
         end

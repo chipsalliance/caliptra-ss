@@ -69,7 +69,16 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
         // than the plain dual-device loopback test: this test performs 3 full
         // USBDC0 re-enumerations interleaved with USBDC1 traffic and with hub
         // port-status polling, all against software-polled firmware.
-        cfg.dev_cfg.local_device_cfg[0].device_timeout = 20000us;
+        // device_timeout bounds how long the VIP retries a NAKing transaction
+        // before giving up on it. It must be comfortably larger than the
+        // firmware's worst-case arm latency - the largest NAK window ever
+        // observed on this test is ~55 us - but it is ALSO the per-transfer
+        // cost of a genuinely dead device, and it is paid once per retry. With
+        // 20 ms, a single wedged control transfer cost 4 x 20 ms = 80 ms of
+        // simulation on its own (run killed at 85.73 ms / 17.8 h of CPU, with
+        // the last 84 ms containing nothing but those retries). 2 ms is ~36x
+        // the largest observed NAK window and keeps that pathology bounded.
+        cfg.dev_cfg.local_device_cfg[0].device_timeout = 2000us;
         cfg.host_cfg.tend_to_end_delay_hs              = 400000000.0; // 400 ms in ns
         cfg.host_cfg.speed                             = svt_usb_types::HS;
         cfg.dev_cfg.speed                              = svt_usb_types::HS;
@@ -121,13 +130,72 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
     // 100 ms is therefore the real cost of any firmware hang, and it is what
     // produced the ~6.9 ms run whose last 5.5 ms contained no activity at all.
     //
-    // The firmware now self-limits to USB_TEST_RUN_BUDGET_US = 3 ms of polling
-    // before printing its verdict and halting, and the host sequence's own
-    // worst case is ~2.3 ms. 5 ms leaves clear headroom over both while making
-    // a firmware that never halts cost 5 ms instead of 100 ms.
+    // The firmware self-limits to USB_TEST_RUN_BUDGET_US = 4000 us of polling
+    // before printing its verdict and halting. That budget was resized upwards
+    // (from 1400 us) once the hotplug FSM was made to wait for real host
+    // evidence: a healthy disconnect/reconnect cycle costs ~600 us of wall
+    // clock, so three cycles plus the initial enumeration need ~2.6 ms. The
+    // verdict print itself is a few tens of us (VPRINTF pushes one character
+    // per ~28.6 ns at CALIPTRA_SS_CLK_FREQ = 400 MHz), and the halt handshake
+    // is immediate after it.
+    //
+    // 5 ms therefore still sits ~1 ms above the firmware's own self-limit and
+    // above the host sequence's ~2.3 ms worst case, while making a firmware
+    // that never halts cost 5 ms instead of 100 ms. If USB_TEST_RUN_BUDGET_US
+    // is ever raised again, this bound MUST be raised with it - the firmware
+    // budget has to expire first, because its verdict line is the only thing
+    // that explains WHY the run ended.
+    //
+    // NOTE: this bound is NOT sufficient on its own - see RUN_WATCHDOG below.
+    // phase_ready_to_end() only runs once every other objection on the phase
+    // has dropped, so a host sequence that never returns keeps this timeout
+    // permanently out of reach.
     virtual function time get_mcu_halt_timeout();
         return 5_000_000ns; // 5 ms
     endfunction
+
+    // Absolute wall-clock bound on the whole run.
+    //
+    // WHY A SECOND TIMEOUT IS NEEDED. Every other bound in this test is
+    // conditional on something completing:
+    //   - get_mcu_halt_timeout() is armed from phase_ready_to_end(), which UVM
+    //     calls only after all other objections on the phase have dropped, so a
+    //     host sequence that never returns disarms it entirely;
+    //   - PORT_POLL_MAX_ATTEMPTS bounds the sequence's port polling loops, but
+    //     not the control transfers issued after them;
+    //   - device_timeout bounds one transaction, and is paid per retry.
+    // With all three in place a run still reached 85.73 ms of simulated time
+    // and 17.8 hours of CPU and had to be killed by hand: the MCU halted at
+    // 1.586 ms, and the host then spent 84 ms retrying a GET_DESCRIPTOR against
+    // a device the firmware had disconnected for good. Nothing in the testbench
+    // was watching the clock.
+    //
+    // This watchdog is unconditional by construction - a bare delay in
+    // run_phase, forked before anything else can block - and it reports via
+    // uvm_fatal so the run still produces a UVM report summary instead of a
+    // bare $finish. 10 ms is roughly 2x get_mcu_halt_timeout() and ~7x the
+    // firmware's own budget, so it can only ever fire on a real hang.
+    localparam time RUN_WATCHDOG = 10_000_000ns; // 10 ms
+
+    virtual task run_phase(uvm_phase phase);
+        fork
+            begin : run_watchdog
+                #RUN_WATCHDOG;
+                `uvm_error("USB_DEV0_HOTPLUG_TEST",
+                    $sformatf({"RUN WATCHDOG expired after %0t with the run ",
+                               "still in progress. Neither the MCU halt ",
+                               "handshake nor the host sequence completed. ",
+                               "Check the tail of the log for a transfer being ",
+                               "retried against a disconnected device, and the ",
+                               "MCU log for its last verdict line."},
+                              RUN_WATCHDOG))
+                `uvm_fatal("USB_DEV0_HOTPLUG_TEST",
+                           "RUN WATCHDOG expired - terminating the simulation")
+            end
+        join_none
+
+        super.run_phase(phase);
+    endtask
 
 endclass
 
