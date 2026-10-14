@@ -22,8 +22,7 @@ with both responses checked host-side by `caliptra_ss_usb_data_check_api`.
   (FS-only mode, FS endpoint re-stamp, widened FS link timing), exactly like
   `caliptra_ss_usb_fs_dev_get_status_test`.
 - Firmware: `caliptra_ss_usb_fs_dev_get_interface.c` - pure polling EP0 loop
-  (no ISR, no `mcu_isr.h`), `USB_POLL_TIMEOUT = 20000` (4x the HS variant
-  because an FS frame is 1 ms versus the 125 us HS microframe).
+  (no ISR, no `mcu_isr.h`), with `USB_POLL_TIMEOUT = 8000`.
 
 ## Answer sources
 
