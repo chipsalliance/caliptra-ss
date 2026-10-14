@@ -44,8 +44,8 @@ interface class caliptra_ss_usb_data_check_api;
   // constant 0x00: the hub exposes one interface with a single alternate
   // setting (see C_STD_REQ_GET_INTERFACE in
   // RTL/INTERFACE/usb_ep_config_hub_pkg.p.vhdl). The embedded device
-  // controllers stall GET_INTERFACE in firmware, so only "hub" is a valid
-  // device_name here.
+  // controllers return their per-controller bAlternateSetting shadow in firmware,
+  // so "hub", "dev0", and "dev1" are valid device_name values here.
   pure virtual function void check_get_interface(uvm_object usb_item, string device_name,
                                                  bit [7:0] expected_alt_setting);
 
