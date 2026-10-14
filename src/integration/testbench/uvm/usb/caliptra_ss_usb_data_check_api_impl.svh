@@ -473,8 +473,8 @@ endfunction:check_get_status
 // currently selected bAlternateSetting of the addressed interface (USB 2.0
 // section 9.4.4). The compound hub answers it from its descriptor RAM with a
 // constant 0x00, since it exposes one interface with a single alternate
-// setting. The embedded device controllers stall GET_INTERFACE in firmware,
-// so only "hub" reaches this check.
+// setting. The embedded controllers return their per-controller alternate-
+// setting shadow in firmware, so hub, dev0, and dev1 all reach this check.
 function void caliptra_ss_usb_data_check_api_impl::check_get_interface(uvm_object usb_item,
                                                                        string device_name,
                                                                        bit [7:0] expected_alt_setting);
