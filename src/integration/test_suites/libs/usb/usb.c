@@ -1306,9 +1306,14 @@ bool usb_handle_control_transfer(void) {
                     // alternate setting, so any other wIndex is a request
                     // error and the device is only required to answer in the
                     // Configured state.
-                    if ((usb_is_configured() == 0u) || (pkt.wIndex != 0u)) {
-                        VPRINTF(LOW, "MCU: USB GET_INTERFACE invalid state/wIndex=0x%04x"
-                                " - stalling\n", pkt.wIndex);
+                     if ((usb_is_configured() == 0u) ||
+                         (USB_BMREQTYPE_DIR(pkt.bmRequestType) != USB_DIR_DEVICE_TO_HOST) ||
+                         (pkt.wValue != 0u) || (pkt.wIndex != 0u) ||
+                         (pkt.wLength != 1u)) {
+                         VPRINTF(LOW, "MCU: USB GET_INTERFACE invalid request/state"
+                                 " bmRequestType=0x%02x wValue=0x%04x"
+                                 " wIndex=0x%04x wLength=0x%04x - stalling\n",
+                                 pkt.bmRequestType, pkt.wValue, pkt.wIndex, pkt.wLength);
                         usb_ep0_stall();
                     } else {
                         uint32_t alt_buf = (uint32_t)usb_alt_setting;
