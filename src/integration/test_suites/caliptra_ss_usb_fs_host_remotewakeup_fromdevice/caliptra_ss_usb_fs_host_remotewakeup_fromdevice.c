@@ -13,32 +13,19 @@
 // limitations under the License.
 
 // Description: device-initiated remote wakeup firmware for USBDC0 behind the
-// on-chip compound hub, full speed.
+// on-chip compound hub, FULL SPEED.
 //
-// This is the firmware half of caliptra_ss_usb_fs_host_remotewakeup_fromdevice.
-// Unlike the *_global_suspend_L2 family, where the host drives the resume and
-// this side only observes the suspend-change bit, here the MCU is the agent
-// that ends the suspend: it waits for the controller to report itself
-// suspended, then asks the device controller to drive resume K upstream by
-// calling usb_request_remote_wakeup(). The host VIP is expected to observe that
-// K on the bus and complete the resume; the UVM sequence checks exactly that
-// (svt_usb_status::device_remote_wakeup_in_progress) and deliberately does not
-// drive a host resume of its own, so if this firmware fails to trigger the
-// wakeup the test fails rather than silently passing.
+// The MCU is the agent that ends the suspend here: it waits for the controller
+// to report itself suspended, then calls usb_request_remote_wakeup() so USBDC0
+// drives resume K upstream. The verdict is CHK_DEVICE_WAKEUP_K in
+// caliptra_ss_usb_device_wakeup_checker, not anything this file prints.
 //
-// History: the previous version of this file used boot_usb_core() and the
-// legacy SOC_USBHSD_* register base, never called usb_hub_connect(), and tried
-// to trigger the wakeup with a plain read-modify-write OR of DSUS_C|DRES_C.
-// None of that can work on this IP:
-//   - USBDC0 is an embedded downstream device of the on-chip 2-port hub, so its
-//     registers live at USB_DEV_* (base 0x20001000), and the host cannot see
-//     anything at all until firmware sets HUB_CONNECT.
-//   - the wakeup trigger is a write to DEVCMDSTAT with bit 17 (DSUS) driven to
-//     0 while suspended; an OR read-modify-write writes DSUS back as 1 because
-//     that is how it reads while suspended, so the RTL condition is never met.
-//     usb_request_remote_wakeup() implements the correct masked write.
-// The whole file was rewritten on the caliptra_ss_usb_fs_dev_global_suspend_L2
-// pattern for that reason.
+// Design notes, the pie resume timeline, the register-access conventions and the
+// poll-constant derivations all live in a single note. Read it before changing
+// anything here:
+//   caliptra_ss_nxp_dv_accessories/docs/handover/claude_md/
+//       25_usb_remotewakeup_fromdevice_design_notes.md
+// The HS port of this firmware is note 24 of the same directory.
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -52,74 +39,20 @@
 // mcu_isr.o for this test (see tools/scripts/Makefile).
 #include "mcu_isr.h"
 
-// Ceiling on the DEVCMDSTAT polling loop, not a dwell. The loop exits as soon
-// as the whole suspend -> remote-wakeup -> resume cycle has been observed, so
-// this value is only paid when the DUT never completes it.
-//
-// Sized for full speed, same reasoning as caliptra_ss_usb_fs_dev_global_suspend_L2:
-// the suspend idle interval is shortened for simulation to about 200 us at high
-// speed but is still about 1.1 ms at full speed, and this loop must additionally
-// cover the wakeup arming delay below, the upstream K, and the resume recovery
-// interval before the second DSUS_C edge appears. At the measured ~80 ns per
-// iteration 150000 iterations is roughly 12 ms, which covers all of that with
-// margin while still bounding a DUT that never resumes.
-//
-// It must also be larger than the poll index at which the grace window below
-// expires, or the ceiling would cut the grace window short. Measured: resume is
-// observed at 3.017 ms, poll ~37700, plus USB_POST_RESUME_GRACE_POLLS = 70000
-// puts the normal exit at ~107700, inside this 150000 ceiling. Raise this if the
-// grace window is raised again.
+// Ceiling on the DEVCMDSTAT polling loop, not a dwell: the loop exits as soon as
+// the whole suspend -> wakeup -> resume cycle has been observed. ~12 ms at the
+// measured ~80 ns per iteration, and it must stay above the poll index at which
+// the grace window below expires (~107700). Note 25 section 8.
 #define USB_POLL_TIMEOUT 150000
 
-
-// How long to stay suspended before asking for the wakeup, expressed in poll
-// iterations (~80 ns each, so ~1000 iterations is on the order of 80 us).
-//
-// Two reasons this is not zero. First, USB 2.0 section 7.1.7.7 requires a
-// device to stay idle for at least 5 ms before it may signal remote wakeup;
-// simulation compresses that, but issuing the request in the very same poll
-// iteration that first saw DSUS_C would have the device drive K while the host
-// side is still settling into suspend, which is not the scenario being
-// verified. Second, the checker (usb_suspend_resume_checker) scores
-// CHK_SUSPEND_SEEN on the falling edge of cptra_ss_usb_utmi_suspendm_o; that
-// edge follows the controller reporting DSUS by the compound-structure
-// clk_off_counter countdown, so the wakeup must not pre-empt it or the suspend
-// half of the check never happens and the test would be measuring a resume
-// that had nothing to resume from.
+// How long to stay suspended before asking for the wakeup, in poll iterations
+// (~80 ns each, so ~80 us). Must not pre-empt the SuspendM falling edge the
+// checker scores as CHK_SUSPEND_SEEN. Note 25 section 8.
 #define USB_WAKEUP_ARM_DELAY_POLLS 1000
 
-// Grace window kept running after the resume has been fully observed, so the
-// UVM sequence has room to complete its post-resume control transfer while the
-// MCU is still able to service EP0. The sequence issues one
-// GET_DESCRIPTOR(DEVICE) after the resume to prove the device is functional
-// again; if the MCU halted the instant it saw the resume edge, that transfer
-// would find nobody serving EP0.
-//
-// Sized against the RTL and against the sequence, not chosen empirically.
-// Two facts set the lower bound:
-//
-//   1. This window STARTS EARLY. resume_seen is taken from DEVCMDSTAT DSUS
-//      falling, and DSUS is pie_suspend, which is asserted in exactly one pie
-//      state, BUS_EVENT_SUSPEND (usb_pie.m.vhdl:2112-2116). The wakeup request
-//      leaves that state immediately, so DSUS drops at the START of resume
-//      signalling, not at the end of it. Measured: request and DSUS drop at
-//      3.017 ms.
-//   2. The device then drives resume K for T_3ms = 184320 pie_clk cycles
-//      (usb_pie.m.vhdl:477, 1659-1663). T_3ms has NO _SIM variant, so it is not
-//      compressed for simulation. Measured: pie_clk 16.76 ns, K held 3.089 ms,
-//      ending at 6.106 ms, plus T_TxENDDELAY (30 us) = 6.136 ms.
-//
-// The sequence therefore waits POST_RESUME_SETTLE = 3.5 ms from its own resume
-// observation before issuing GET_DESCRIPTOR(DEVICE), which lands at about
-// 6.52 ms. This window must still be open then. At the measured ~80 ns per poll
-// iteration, 20000 iterations was only 1.6 ms and expired at about 4.6 ms,
-// while the device was still mid-K, so the MCU halted roughly 2 ms before the
-// transfer arrived. 70000 iterations is about 5.6 ms, which covers the 3.5 ms
-// settle plus the control transfer with roughly 2 ms of margin.
-//
-// Do not reduce this below POST_RESUME_SETTLE in
-// caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence.svh, and if that
-// constant is raised, raise this with it.
+// Grace window kept running after the resume so the sequence's post-resume
+// GET_DESCRIPTOR(DEVICE) still finds EP0 served. ~5.6 ms; must stay longer than
+// POST_RESUME_SETTLE (3.5 ms here) in the sequence. Note 25 section 8.
 #define USB_POST_RESUME_GRACE_POLLS 70000
 
 
@@ -149,9 +82,10 @@ void main(void) {
     VPRINTF(LOW, "MCU: fs_host_remotewakeup_fromdevice test\n");
     boot_mcu();
 
-    // boot_usb_core_fs() brings up USBDC0 at full speed. On the hub-composite
-    // IP it also programs and validates the HUB descriptor RAM and sets HUB_EN
-    // (via usb_hub_init_and_connect()).
+    // FS boot entry point: sets DEVCMDSTAT FORCE_FULLSPEED to suppress the
+    // device-side K-chirp, which is correct only against the FS-only VIP this
+    // test configures. It also programs the HUB descriptor RAM and sets HUB_EN.
+    // Note 25 section 8.
     boot_usb_core_fs();
 
     // Enable the USB interrupt (PIC vector 3) now that boot_usb_core_fs() has
@@ -174,11 +108,8 @@ void main(void) {
     mcu_cptra_poll_mb_ready();
 
     // Release the unconditional UTMI clock request before the host stops SOF.
-    // boot_usb_core_fs() sets FORCE_NEEDCLK, which holds usbreg_pll_on high;
-    // while that is high, clk_off_counter is reloaded every pie_clk edge
-    // instead of counting down, so utmi_suspendm can never fall, the
-    // controller never reports DSUS, and there is no suspended state from
-    // which to request a remote wakeup. See docs/usb_remote_wakeup_debug.md.
+    // Load-bearing: with FORCE_NEEDCLK still set, utmi_suspendm never falls and
+    // there is no suspended state to wake from. Note 25 section 8.
     usb_allow_clock_stop();
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
@@ -200,8 +131,7 @@ void main(void) {
         // libs/usb/usb.h: soc_address_map.h only generates the DEV0_CSR_*
         // MASK/SHIFT macros, and those masks are offset-independent within a CSR
         // bank, so they apply verbatim to USBDC0 and USBDC1 alike. USB_DEV_SEL
-        // parametrizes the addresses only. The USBHSD_* mask spelling this file
-        // used previously is not defined anywhere in this tree.
+        // parametrizes the addresses only.
         if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
@@ -249,9 +179,8 @@ void main(void) {
                 VPRINTF(LOW, "MCU: remote wakeup driven at poll %d\n", poll_count);
             } else {
                 // Not suspended any more. Do not retry: retrying would hide a
-                // real ordering problem behind a loop, and the sequence-side
-                // check on device_remote_wakeup_in_progress will report the
-                // missing wakeup.
+                // real ordering problem behind a loop, and the DUT-side
+                // CHK_DEVICE_WAKEUP_K check will report the missing wakeup.
                 wakeup_requested = 1;
                 VPRINTF(LOW, "MCU: remote wakeup request refused at poll %d (not suspended)\n",
                         poll_count);
