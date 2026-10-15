@@ -222,5 +222,3 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt: { weight: 100 }
-
-# File contains AI-generated response based on internal company sources
