@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 315;
+  localparam int USB_PKG_VERSION = 316;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -287,6 +287,42 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_test.svh"
+
+  // USBDC1 (device1) replicas of the two remaining hub-descriptor families.
+  // Both issue hub-class GET_DESCRIPTOR with wIndex=0, which is a hub-global
+  // request carrying no downstream port number, so the transfers themselves
+  // are unchanged from the dev0 source. The only delta is that enumeration
+  // brings up hub downstream port 2 and the firmware targets USBDC1. Both
+  // are interrupt driven, so they are built with -DUSB_HUB_COMPOUND_DEV1_IRQ
+  // and select USBDC1 at RUNTIME via usb_select_device(1) rather than with
+  // -DUSB_DEV_SEL=1; see their .c files for why the compile-time alias is
+  // unsafe when PIC vector 3 is also enabled. Sequences must precede tests.
+
+  `include "caliptra_ss_usb_hs_dev1_get_hub_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_hub_config_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_get_hub_descriptor_test.svh"
+  `include "caliptra_ss_usb_hs_dev1_hub_config_descriptor_test.svh"
+
+  // USBDC1 (device1) replicas of the hub downstream port-suspend and the
+  // INTERRUPT-endpoint loopback families. Unlike the descriptor families
+  // above, port_suspend does steer a specific downstream port, so its port
+  // under test moves from 1 to 2 and bring-up uses
+  // hub_port_bringup_stepB_dev1() / usbdc1_enum_stepC().
+  `include "caliptra_ss_usb_hs_dev1_hub_port_suspend_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_int_loopback_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_hub_port_suspend_test.svh"
+  `include "caliptra_ss_usb_hs_dev1_int_loopback_test.svh"
+
+  // Full-Speed variants of the three device families that previously existed
+  // only at High Speed. The device controller under test is unchanged
+  // (USBDC0); the test puts the VIP into FS-only mode and the firmware poll
+  // budget is scaled for the slower link.
+  `include "caliptra_ss_usb_fs_dev_hub_port_suspend_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_int_loopback_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_lpm_l1_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_hub_port_suspend_test.svh"
+  `include "caliptra_ss_usb_fs_dev_int_loopback_test.svh"
+  `include "caliptra_ss_usb_fs_dev_lpm_l1_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"
