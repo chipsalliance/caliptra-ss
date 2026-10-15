@@ -76,6 +76,12 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // instead of duplicating their own timeout fork.
     bit link_wait_timed_out = 1'b0;
 
+    // Set by wait_xfer_done() when its timeout expired before the VIP reported
+    // NOTIFY_USB_TRANSFER_ENDED. Cleared at every entry to that task. Sequences
+    // that want to abandon a multi-step flow after one transfer went unanswered
+    // read this instead of adding their own fork.
+    bit xfer_wait_timed_out = 1'b0;
+
     // Hub Self-Powered state from bmAttributes D6 of its CONFIGURATION
     // descriptor, captured during hub enumeration. GET_STATUS(DEVICE) D0
     // must report the same state (USB 2.0 Sec 9.4.5, Sec 9.6.3).
@@ -301,9 +307,53 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // which would make a wait AFTER finish_item() miss the pulse and hang
     // indefinitely (see caliptra_ss_usb_hs_dev_bulk_out_sequence.svh for the
     // canonical fork pattern).
+    //
+    // The wait is bounded by timeout_us. Without a bound, a transfer that the
+    // VIP never completes - for example a control transfer queued while the
+    // host link has gone SUSPENDED on its tinactivity timer, which the link
+    // then never grants - blocks this task forever. The run does not fail: the
+    // sequence simply stops making progress, never reaches the checker arm and
+    // observation events, and the simulation ends on the MCU-halt mechanism
+    // with no verdict at all and no UVM_ERROR (the silent-pass mode recorded in
+    // docs/handover/claude_md/16_usb_silent_fail_verdict_gap.md). The only
+    // visible symptom is unrelated-looking VIP chatter such as "SOF processor
+    // was not granted access to the link". On expiry a uvm_error naming the
+    // transfer is issued, xfer_wait_timed_out is set and the task returns, so
+    // the failure is reported where it happened.
+    //
+    // The default ceiling is deliberately generous: it must not fire on a
+    // transfer that is merely slow on this testbench, only on one that is never
+    // going to complete. Callers with a tighter expectation can pass their own.
     // -------------------------------------------------------------------
-    task wait_xfer_done(svt_usb_agent agent_h, string label);
-        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+    task wait_xfer_done(svt_usb_agent agent_h, string label,
+                        int unsigned timeout_us = 2000);
+        xfer_wait_timed_out = 1'b0;
+        fork
+            begin: WAIT_XFER
+                agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+                disable XFER_TIMEOUT;
+            end
+            begin: XFER_TIMEOUT
+                #(timeout_us * 1us);
+                xfer_wait_timed_out = 1'b1;
+                disable WAIT_XFER;
+            end
+        join
+
+        if (xfer_wait_timed_out) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf({"Transfer %s never completed within %0d us ",
+                           "(NOTIFY_USB_TRANSFER_ENDED was never fired). The ",
+                           "transfer was issued but the VIP never reported it ",
+                           "finished, so either the device did not answer or ",
+                           "the host link was not granted to it. Check whether ",
+                           "the link went SUSPENDED - cfg.host_cfg.tinactivity ",
+                           "must stay longer than the largest idle gap in the ",
+                           "active phase of the test."},
+                          label, timeout_us))
+            return;
+        end
+
         `uvm_info("USB_BASE_SEQ",
             $sformatf("Transfer %s completed.", label), UVM_LOW)
     endtask
