@@ -30,7 +30,8 @@ class usb_high_bandwidth_interrupt_test extends usb_base_test;
       USB_TRANSFER_TYPE_INTERRUPT,
       1024,
       1,
-      1'b1
+      1'b1,
+      2
     )));
     void'(cfg.add_endpoint(usb_endpoint_cfg::create_endpoint(
       "ep2_interrupt_in",
@@ -39,7 +40,8 @@ class usb_high_bandwidth_interrupt_test extends usb_base_test;
       USB_TRANSFER_TYPE_INTERRUPT,
       1024,
       1,
-      1'b1
+      1'b1,
+      2
     )));
   endfunction
 

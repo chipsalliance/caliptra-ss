@@ -42,8 +42,8 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
     end
   endtask
 
-  // Check the endpoint writeback after one transaction.
-  task check_progress(
+  // Wait for the endpoint writeback after one transaction.
+  task wait_for_progress(
     usb_endpoint_cfg endpoint,
     int unsigned completed_transactions,
     logic [31:0] initial_buffer,
@@ -51,12 +51,23 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
   );
     usb_ep_entry_t entry;
     int unsigned remaining_bytes;
+    realtime deadline;
+    bit matched;
 
     remaining_bytes = (transaction_count - completed_transactions) * transaction_bytes;
-    read_endpoint_entry(endpoint, entry);
-    if (entry.active !== (remaining_bytes != 0) ||
-        entry.nbytes !== remaining_bytes ||
-        entry_buffer_byte_offset(entry) !== initial_buffer + completed_transactions * transaction_bytes) begin
+    deadline = $realtime + transfer_timeout;
+    matched = 1'b0;
+    while (!matched && $realtime < deadline) begin
+      read_endpoint_entry(endpoint, entry);
+      matched = entry.active === (remaining_bytes != 0) &&
+                entry.nbytes === remaining_bytes &&
+                entry_buffer_byte_offset(entry) ===
+                    initial_buffer + completed_transactions * transaction_bytes;
+      if (!matched) begin
+        #1us;
+      end
+    end
+    if (!matched) begin
       `uvm_fatal(
         "USB_HB_INTERRUPT",
         $sformatf(
@@ -113,6 +124,8 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
     usb_endpoint_cfg out_endpoint;
     usb_endpoint_cfg in_endpoint;
     usb_ep_entry_t entry;
+    uvm_event out_packet_event;
+    uvm_event in_packet_event;
     int unsigned total_bytes;
 
     completed = 1'b0;
@@ -130,41 +143,83 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
     check_buffer_clear_of_endpoint_list("High-bandwidth interrupt IN", in_buffer, total_bytes);
     enable_endpoint_interrupt(out_endpoint);
     enable_endpoint_interrupt(in_endpoint);
+    out_packet_event =
+        uvm_event_pool::get_global(USB_UTMI_RX_DATA_PACKET_EVENT);
+    in_packet_event =
+        uvm_event_pool::get_global(USB_UTMI_TX_PACKET_EVENT);
 
     fill_endpoint_buffer(out_buffer, total_bytes, 32'heeee_eeee);
     arm_endpoint(out_endpoint, total_bytes, out_buffer, entry);
     clear_endpoint_interrupt(out_endpoint);
-    for (int unsigned transaction_index = 0; transaction_index < transaction_count; transaction_index++) begin
-      host_sequence = usb_interrupt_host_seq::type_id::create($sformatf("out_host_sequence_%0d", transaction_index));
-      host_sequence.target_endpoint = out_endpoint;
-      host_sequence.payload_byte_count = transaction_bytes;
-      host_sequence.payload_base = out_payload_base + transaction_index * transaction_bytes + transaction_index;
-      host_sequence.device_address = p_sequencer.cfg.device_address;
-      host_sequence.transfer_label = $sformatf("High-bandwidth interrupt OUT %0d/%0d", transaction_index + 1, transaction_count);
-      host_sequence.start(p_sequencer.host_sequencer);
-      if (!host_sequence.completed) begin
-        `uvm_fatal("USB_HB_INTERRUPT", "Interrupt OUT host sequence returned incomplete")
+    out_packet_event.reset();
+    host_sequence =
+        usb_interrupt_host_seq::type_id::create("out_host_sequence");
+    host_sequence.target_endpoint = out_endpoint;
+    host_sequence.payload_byte_count = total_bytes;
+    host_sequence.payload_base = out_payload_base;
+    host_sequence.payload_packet_bytes = transaction_bytes;
+    host_sequence.payload_packet_stride = 1;
+    host_sequence.device_address = p_sequencer.cfg.device_address;
+    host_sequence.transfer_label =
+        "High-bandwidth interrupt OUT service opportunity";
+    fork
+      begin
+        host_sequence.start(p_sequencer.host_sequencer);
+        if (!host_sequence.completed) begin
+          `uvm_fatal("USB_HB_INTERRUPT", "Interrupt OUT host sequence returned incomplete")
+        end
       end
-      check_progress(out_endpoint, transaction_index + 1, out_buffer, "Interrupt OUT");
-      verify_out_transaction(transaction_index);
-    end
+      begin
+        for (int unsigned transaction_index = 0;
+             transaction_index < transaction_count;
+             transaction_index++) begin
+          out_packet_event.wait_on();
+          out_packet_event.reset();
+          wait_for_progress(
+              out_endpoint,
+              transaction_index + 1,
+              out_buffer,
+              "Interrupt OUT");
+          verify_out_transaction(transaction_index);
+        end
+      end
+    join
 
     fill_in_payload();
     arm_endpoint(in_endpoint, total_bytes, in_buffer, entry);
     clear_endpoint_interrupt(in_endpoint);
-    for (int unsigned transaction_index = 0; transaction_index < transaction_count; transaction_index++) begin
-      host_sequence = usb_interrupt_host_seq::type_id::create($sformatf("in_host_sequence_%0d", transaction_index));
-      host_sequence.target_endpoint = in_endpoint;
-      host_sequence.payload_byte_count = transaction_bytes;
-      host_sequence.payload_base = in_payload_base + transaction_index * transaction_bytes + transaction_index;
-      host_sequence.device_address = p_sequencer.cfg.device_address;
-      host_sequence.transfer_label = $sformatf("High-bandwidth interrupt IN %0d/%0d", transaction_index + 1, transaction_count);
-      host_sequence.start(p_sequencer.host_sequencer);
-      if (!host_sequence.completed) begin
-        `uvm_fatal("USB_HB_INTERRUPT", "Interrupt IN host sequence returned incomplete")
+    in_packet_event.reset();
+    host_sequence =
+        usb_interrupt_host_seq::type_id::create("in_host_sequence");
+    host_sequence.target_endpoint = in_endpoint;
+    host_sequence.payload_byte_count = total_bytes;
+    host_sequence.payload_base = in_payload_base;
+    host_sequence.payload_packet_bytes = transaction_bytes;
+    host_sequence.payload_packet_stride = 1;
+    host_sequence.device_address = p_sequencer.cfg.device_address;
+    host_sequence.transfer_label =
+        "High-bandwidth interrupt IN service opportunity";
+    fork
+      begin
+        host_sequence.start(p_sequencer.host_sequencer);
+        if (!host_sequence.completed) begin
+          `uvm_fatal("USB_HB_INTERRUPT", "Interrupt IN host sequence returned incomplete")
+        end
       end
-      check_progress(in_endpoint, transaction_index + 1, in_buffer, "Interrupt IN");
-    end
+      begin
+        for (int unsigned transaction_index = 0;
+             transaction_index < transaction_count;
+             transaction_index++) begin
+          in_packet_event.wait_on();
+          in_packet_event.reset();
+          wait_for_progress(
+              in_endpoint,
+              transaction_index + 1,
+              in_buffer,
+              "Interrupt IN");
+        end
+      end
+    join
 
     completed = 1'b1;
     `uvm_info("USB_HB_INTERRUPT", "High-bandwidth interrupt OUT and IN scenario completed with all progress checks verified", UVM_LOW)
