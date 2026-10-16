@@ -34,11 +34,11 @@ class usb_bad_crc16_seq extends usb_bad_packet_crc_seq;
   virtual task install_injection(svt_usb_agent host_agent);
     svt_usb_protocol_20_host_tx_packet_crc16_error::packet_count = 0;
     crc16_callback = svt_usb_protocol_20_host_tx_packet_crc16_error::type_id::create("crc16_callback");
-    uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callback)::add(host_agent.prot, crc16_callback);
+    uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::add(host_agent.prot, crc16_callback);
   endtask
 
   virtual task remove_injection(svt_usb_agent host_agent);
-    uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callback)::delete(host_agent.prot, crc16_callback);
+    uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::delete(host_agent.prot, crc16_callback);
   endtask
 
   virtual function int unsigned injected_packet_count();

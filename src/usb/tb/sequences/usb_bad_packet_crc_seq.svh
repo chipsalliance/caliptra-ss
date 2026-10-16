@@ -95,6 +95,9 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
     svt_usb_agent host_agent;
     svt_configuration base_usb_cfg;
     svt_usb_configuration usb_cfg;
+    svt_usb_protocol_service_20_sof_off_sequence sof_off_sequence;
+    svt_usb_protocol_service_20_sof_on_sequence sof_on_sequence;
+    int unsigned out_attempt_count;
 
     completed = 1'b0;
     `uvm_info("USB_BAD_PACKET_CRC", $sformatf("Starting %s scenario; running enumeration first", scenario_label()), UVM_LOW)
@@ -127,6 +130,13 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
     host_sequence.bulk_transfer_timeout = error_timeout;
     host_sequence.transfer_label = {"Bulk OUT with ", scenario_label()};
 
+    sof_off_sequence =
+        svt_usb_protocol_service_20_sof_off_sequence::type_id::create(
+            "sof_off_sequence");
+    sof_off_sequence.start(
+        p_sequencer.host_sequencer.prot_service_sequencer);
+    p_sequencer.packet_monitor.start_window(
+        {"Bulk OUT retry after ", scenario_label()});
     usb_cfg.disable_tend_to_end_delay_check_for_expected_timeout = 1'b1;
     host_agent.reconfigure(usb_cfg);
     install_injection(host_agent);
@@ -145,9 +155,28 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
     remove_injection(host_agent);
     usb_cfg.disable_tend_to_end_delay_check_for_expected_timeout = 1'b0;
     host_agent.reconfigure(usb_cfg);
+    p_sequencer.packet_monitor.stop_window();
+    sof_on_sequence =
+        svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
+            "sof_on_sequence");
+    sof_on_sequence.start(
+        p_sequencer.host_sequencer.prot_service_sequencer);
 
     if (injected_packet_count() == 0) begin
       `uvm_fatal("USB_BAD_PACKET_CRC", $sformatf("The %s injection did not modify a packet", scenario_label()))
+    end
+    if (!p_sequencer.packet_monitor.observed_rejected_out_retry(
+          p_sequencer.cfg.device_address,
+          4'(endpoint.ep_number),
+          out_attempt_count)) begin
+      `uvm_fatal(
+        "USB_BAD_PACKET_CRC",
+        $sformatf(
+          "%s did not produce an unacknowledged target OUT followed by an ACKed retry; attempts=%0d",
+          scenario_label(),
+          out_attempt_count
+        )
+      )
     end
     wait_for_endpoint_interrupt(endpoint, error_timeout);
     verify_transfer(endpoint);
