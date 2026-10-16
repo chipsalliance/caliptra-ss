@@ -2767,28 +2767,37 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 ## Parameters and defines
 
-The subsystem derives the `i3c_wrapper` AXI widths and privileged-ID element width
-from the connected AXI interface using `$bits` in `src/integration/rtl/caliptra_ss_top.sv`.
-The remaining parameters are pinned to the upstream RTL defaults, with the
-privileged-ID count fixed by `I3cNumPrivIds` in `src/integration/rtl/caliptra_ss_top_pkg.sv`.
-No separate I3C configuration parameters are exposed by the subsystem.
+The table lists the fixed values and derivations used by the subsystem's
+`i3c_wrapper` instance in `src/integration/rtl/caliptra_ss_top.sv`, rather than
+the standalone core's default parameter values. These settings are not exposed
+as separate I3C configuration parameters or defines on `caliptra_ss_top`.
+The AXI widths follow the connected `cptra_ss_i3c_s_axi_if_w_sub` interface;
+the width of each privileged-ID entry also follows its `awuser` field.
 
-| Parameter/Define | Integrated Value | Description |
-|------------------|-------------|-------------|
+| Parameter | Subsystem value or derivation | Description |
+|-----------|------------------------------|-------------|
 | `UseAxi` | 1 | Select the AXI frontend |
-| `AhbDataWidth`, `AhbAddrWidth` | 64, 18 | Widths of the unused AHB frontend |
-| `AxiDataWidth` | Interface-derived (32 in testbench) | Width of `wdata` |
-| `AxiAddrWidth` | Interface-derived (32 in testbench) | Width of `awaddr`; CSR address width remains fixed at 12 |
-| `AxiUserWidth` | Interface-derived (32 in testbench) | Width of `awuser` |
-| `AxiIdWidth` | Interface-derived (8 in testbench) | Width of `awid` |
-| `EnableIdFiltering` | 1 | Include AXI USER filtering; the existing runtime enable input is unchanged |
-| `NumPrivIds` | 4 | Privileged-ID slots; spare slots repeat authorized users |
-| `CmdFifoDepth`, `RespFifoDepth`, `RxFifoDepth`, `TxFifoDepth`, `IbiFifoDepth` | 64 each | FIFO depths |
+| `AhbDataWidth` | 64 | Data width of the unused AHB frontend |
+| `AhbAddrWidth` | 18 | Address width of the unused AHB frontend |
+| `AxiDataWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.wdata)` | Derived from the connected interface's data width |
+| `AxiAddrWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awaddr)` | Derived from the connected interface's address width; CSR address width remains fixed at 12 |
+| `AxiUserWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awuser)` | Derived from the connected interface's USER width |
+| `AxiIdWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awid)` | Derived from the connected interface's ID width |
+| `EnableIdFiltering` | 1 | Include AXI USER filtering; runtime control is provided by `cptra_i3c_axi_user_id_filtering_enable_i` |
+| `NumPrivIds` | `caliptra_ss_top_pkg::I3cNumPrivIds` (4) | Fixed package localparam in `src/integration/rtl/caliptra_ss_top_pkg.sv`; spare slots repeat authorized users |
+| `CmdFifoDepth` | 64 | Command FIFO depth |
+| `RespFifoDepth` | 64 | Response FIFO depth |
+| `RxFifoDepth` | 64 | Receive FIFO depth |
+| `TxFifoDepth` | 64 | Transmit FIFO depth |
+| `IbiFifoDepth` | 64 | IBI FIFO depth |
 | `IbiFifoExtSize` | 0 | Disable extended IBI FIFO size |
-| `DatDepth`, `DctDepth` | 128 each | DAT and DCT memory depths |
-| `DisableLoopback` | 0 | Preserve the upstream default loopback setting |
-| `DatAw`, `DctAw` | 7 each | DAT and DCT memory address widths |
-| `CsrAddrWidth`, `CsrDataWidth` | 12, 32 | CSR address and data widths |
+| `DatDepth` | 128 | DAT memory depth |
+| `DctDepth` | 128 | DCT memory depth |
+| `DisableLoopback` | 0 | Loopback-disable setting |
+| `DatAw` | 7 | DAT memory address width |
+| `DctAw` | 7 | DCT memory address width |
+| `CsrAddrWidth` | 12 | CSR address width |
+| `CsrDataWidth` | 32 | CSR data width |
 
 
 ## Interface
