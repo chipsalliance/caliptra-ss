@@ -41,7 +41,12 @@ module usb_top_tb;
 
   // UTMI connections between the DUT and the SVT USB VIP.
   logic [7:0] dut_utmi_txdata;
+  logic [7:0] dut_utmi_rxdata;
+  logic dut_utmi_rxvalid;
+  logic dut_utmi_rxactive;
+  logic dut_utmi_rxerror;
   logic dut_utmi_txvalid;
+  logic dut_utmi_txready;
   logic dut_utmi_reset;
   logic dut_utmi_suspendm;
   logic dut_utmi_xcvrselect;
@@ -73,10 +78,12 @@ module usb_top_tb;
   usb_tb_ctrl_if #(
     .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
     .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
+    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS),
+    .DEV0_MEMORY_AW($clog2(USB_DEV0_RAM_DEPTH))
   ) usb_ctrl_if (
     .clk(bus_clk),
-    .rst_n(bus_reset_n)
+    .rst_n(bus_reset_n),
+    .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK)
   );
 
   // Low-power AXI handshaking is outside this focused TB, so each manager
@@ -204,11 +211,11 @@ module usb_top_tb;
   usb_utmi_packet_monitor utmi_packet_monitor (
     .clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
     .reset_n(bus_reset_n),
-    .rxactive(usb_20_mac_if.utmi_dut_mac_if.RXActive),
-    .rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
-    .rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
+    .rxactive(dut_utmi_rxactive),
+    .rxvalid(dut_utmi_rxvalid),
+    .rxdata(dut_utmi_rxdata),
     .txvalid(dut_utmi_txvalid),
-    .txready(usb_20_mac_if.utmi_dut_mac_if.TXReady),
+    .txready(dut_utmi_txready),
     .txdata(dut_utmi_txdata)
   );
 
@@ -291,13 +298,13 @@ module usb_top_tb;
     .avalid(usb_20_mac_if.utmi_dut_mac_if.AValid),
     .sessend(usb_20_mac_if.utmi_dut_mac_if.SessEnd),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
-    .utmi_rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
-    .utmi_rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
-    .utmi_rxactive(usb_20_mac_if.utmi_dut_mac_if.RXActive),
-    .utmi_rxerror(usb_20_mac_if.utmi_dut_mac_if.RXError),
+    .utmi_rxdata(dut_utmi_rxdata),
+    .utmi_rxvalid(dut_utmi_rxvalid),
+    .utmi_rxactive(dut_utmi_rxactive),
+    .utmi_rxerror(dut_utmi_rxerror),
     .utmi_txdata(dut_utmi_txdata),
     .utmi_txvalid(dut_utmi_txvalid),
-    .utmi_txready(usb_20_mac_if.utmi_dut_mac_if.TXReady),
+    .utmi_txready(dut_utmi_txready),
     .utmi_reset(dut_utmi_reset),
     .utmi_suspendm(dut_utmi_suspendm),
     .utmi_xcvrselect(dut_utmi_xcvrselect),
@@ -338,7 +345,12 @@ module usb_top_tb;
   // The compound wrapper exposes device-side UTMI controls. Host pull-downs,
   // 16-bit UTMI, serial mode, and optional low-power controls are unsupported.
   assign usb_20_mac_if.utmi_dut_mac_if.DataIn = dut_utmi_txdata;
-  assign usb_20_mac_if.utmi_dut_mac_if.TXValid = dut_utmi_txvalid;
+  assign usb_20_mac_if.utmi_dut_mac_if.TXValid =
+      usb_ctrl_if.raw_utmi_host_mode ? 1'b0 : dut_utmi_txvalid;
+  assign dut_utmi_txready =
+      usb_ctrl_if.raw_utmi_host_mode ?
+      usb_ctrl_if.raw_utmi_txready :
+      usb_20_mac_if.utmi_dut_mac_if.TXReady;
   assign usb_20_mac_if.utmi_dut_mac_if.Reset = dut_utmi_reset;
   assign usb_20_mac_if.utmi_dut_mac_if.SuspendM = dut_utmi_suspendm;
   // The wrapper exposes ordinary SuspendM but no USB LPM sleep controls. This
@@ -351,6 +363,22 @@ module usb_top_tb;
   assign usb_20_mac_if.utmi_dut_mac_if.XcvrSelect = usb_dut_vip_xcvrselect;
   assign usb_20_mac_if.utmi_dut_mac_if.TermSelect = dut_utmi_termselect;
   assign usb_20_mac_if.utmi_dut_mac_if.OpMode = dut_utmi_opmode;
+  assign dut_utmi_rxdata = usb_ctrl_if.raw_utmi_inject_enable ?
+                           usb_ctrl_if.raw_utmi_rxdata :
+                           usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0];
+  assign dut_utmi_rxvalid = usb_ctrl_if.raw_utmi_inject_enable ?
+                            usb_ctrl_if.raw_utmi_rxvalid :
+                            usb_20_mac_if.utmi_dut_mac_if.RXValid;
+  assign dut_utmi_rxactive = usb_ctrl_if.raw_utmi_inject_enable ?
+                             usb_ctrl_if.raw_utmi_rxactive :
+                             usb_20_mac_if.utmi_dut_mac_if.RXActive;
+  assign dut_utmi_rxerror = usb_ctrl_if.raw_utmi_inject_enable ?
+                            usb_ctrl_if.raw_utmi_rxerror :
+                            usb_20_mac_if.utmi_dut_mac_if.RXError;
+  assign usb_ctrl_if.dev0_memory_request = dev0_memory_request;
+  assign usb_ctrl_if.dev0_memory_write =
+      dev0_memory_request && !dev0_memory_write_enable_n;
+  assign usb_ctrl_if.dev0_memory_address = dev0_memory_address;
   // The DUT is a fixed peripheral, not a downstream-facing host port. Keep
   // its host pull-down controls disabled; the SVT host owns host termination.
   assign usb_20_mac_if.utmi_dut_mac_if.DpPulldown = 1'b0;

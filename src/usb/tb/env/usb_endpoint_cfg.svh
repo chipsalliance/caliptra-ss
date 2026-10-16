@@ -67,6 +67,8 @@ class usb_endpoint_cfg extends uvm_object;
   // was explicitly requested, so unset entries keep the VIP default.
   int unsigned   max_burst_size;
   bit            max_burst_size_valid;
+  int unsigned   isoc_mult;
+  bit            isoc_mult_valid;
 
   // Suppresses the VIP's otherwise mandatory terminating zero-length packet
   // after a max-packet-aligned transfer.
@@ -93,7 +95,8 @@ class usb_endpoint_cfg extends uvm_object;
     int unsigned max_packet_size,
     int unsigned interval = 1,
     bit allow_aligned_transfer_without_zero_length = 1'b0,
-    int max_burst_size = -1
+    int max_burst_size = -1,
+    int isoc_mult = -1
   );
     usb_endpoint_cfg endpoint;
 
@@ -107,6 +110,10 @@ class usb_endpoint_cfg extends uvm_object;
     if (max_burst_size >= 0) begin
       endpoint.max_burst_size = max_burst_size;
       endpoint.max_burst_size_valid = 1'b1;
+    end
+    if (isoc_mult >= 0) begin
+      endpoint.isoc_mult = isoc_mult;
+      endpoint.isoc_mult_valid = 1'b1;
     end
     return endpoint;
   endfunction
@@ -181,6 +188,8 @@ class usb_endpoint_cfg extends uvm_object;
     interval = rhs_endpoint.interval;
     max_burst_size = rhs_endpoint.max_burst_size;
     max_burst_size_valid = rhs_endpoint.max_burst_size_valid;
+    isoc_mult = rhs_endpoint.isoc_mult;
+    isoc_mult_valid = rhs_endpoint.isoc_mult_valid;
     allow_aligned_transfer_without_zero_length = rhs_endpoint.allow_aligned_transfer_without_zero_length;
     anchor_index = rhs_endpoint.anchor_index;
     anchor_index_valid = rhs_endpoint.anchor_index_valid;
@@ -202,6 +211,8 @@ class usb_endpoint_cfg extends uvm_object;
            interval == rhs_endpoint.interval &&
            max_burst_size_valid == rhs_endpoint.max_burst_size_valid &&
            (!max_burst_size_valid || max_burst_size == rhs_endpoint.max_burst_size) &&
+           isoc_mult_valid == rhs_endpoint.isoc_mult_valid &&
+           (!isoc_mult_valid || isoc_mult == rhs_endpoint.isoc_mult) &&
            allow_aligned_transfer_without_zero_length == rhs_endpoint.allow_aligned_transfer_without_zero_length;
   endfunction
 
@@ -214,6 +225,9 @@ class usb_endpoint_cfg extends uvm_object;
     printer.print_int("interval", interval, 32, UVM_DEC);
     if (max_burst_size_valid) begin
       printer.print_int("max_burst_size", max_burst_size, 32, UVM_DEC);
+    end
+    if (isoc_mult_valid) begin
+      printer.print_int("isoc_mult", isoc_mult, 32, UVM_DEC);
     end
     printer.print_int("allow_aligned_transfer_without_zero_length", allow_aligned_transfer_without_zero_length, 1, UVM_BIN);
     if (anchor_index_valid) begin
