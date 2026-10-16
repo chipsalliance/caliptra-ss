@@ -97,7 +97,8 @@ class usb_init_seq extends usb_base_seq;
     bit vbus_detected;
 
     enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
-                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
+                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON) |
+                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUP);
     interrupt_enable_value = ral_field_value(
                                p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN,
                                ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()
