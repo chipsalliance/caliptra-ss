@@ -256,14 +256,17 @@ class usb_tx_underrun_seq extends usb_base_seq;
     for (int unsigned byte_index = 0;
          byte_index < payload_bytes;
          byte_index++) begin
-      if (packet.bytes[byte_index + 1] !== payload_base + byte_index) begin
+      logic [7:0] expected_byte;
+
+      expected_byte = payload_base + byte_index;
+      if (packet.bytes[byte_index + 1] !== expected_byte) begin
         `uvm_fatal(
           "USB_TX_UNDERRUN",
           $sformatf(
             "Retry byte %0d is 0x%02h, expected 0x%02h",
             byte_index,
             packet.bytes[byte_index + 1],
-            payload_base + byte_index
+            expected_byte
           )
         )
       end
@@ -315,7 +318,10 @@ class usb_tx_underrun_seq extends usb_base_seq;
   endtask
 
   // Slow the DMA clock after exactly 16 transmitted payload bytes.
-  task run_dma_starvation(uvm_event tx_data_progress_event);
+  task run_dma_starvation(
+    uvm_event tx_data_progress_event,
+    uvm_event failed_packet_complete_event
+  );
     tx_data_progress_event.wait_on();
     `uvm_info(
       "USB_TX_UNDERRUN",
@@ -327,6 +333,7 @@ class usb_tx_underrun_seq extends usb_base_seq;
     )
     p_sequencer.ctrl_vif.slow_bus_clock <= 1'b1;
     #(starvation_duration);
+    failed_packet_complete_event.wait_on();
     p_sequencer.ctrl_vif.slow_bus_clock <= 1'b0;
     `uvm_info(
       "USB_TX_UNDERRUN",
@@ -405,6 +412,7 @@ class usb_tx_underrun_seq extends usb_base_seq;
     svt_usb_protocol_service_20_sof_off_sequence sof_off_sequence;
     svt_usb_protocol_service_20_sof_on_sequence sof_on_sequence;
     uvm_event tx_data_progress_event;
+    uvm_event failed_packet_complete_event;
     bit initial_toggle;
     bit retired_toggle;
 
@@ -455,6 +463,8 @@ class usb_tx_underrun_seq extends usb_base_seq;
     tx_data_progress_event =
         uvm_event_pool::get_global(USB_UTMI_TX_DATA_PROGRESS_EVENT);
     tx_data_progress_event.reset();
+    failed_packet_complete_event =
+        new("failed_packet_complete_event");
     fork
       begin
         request_in_packet(
@@ -462,12 +472,15 @@ class usb_tx_underrun_seq extends usb_base_seq;
           "Underrun attempt",
           failed_packet
         );
+        check_corrupted_packet(failed_packet);
+        failed_packet_complete_event.trigger();
       end
       begin
-        run_dma_starvation(tx_data_progress_event);
+        run_dma_starvation(
+            tx_data_progress_event,
+            failed_packet_complete_event);
       end
     join
-    check_corrupted_packet(failed_packet);
     wait_for_error_code(ERROR_TIMEOUT);
     verify_failed_attempt_preserved(
       endpoint,
