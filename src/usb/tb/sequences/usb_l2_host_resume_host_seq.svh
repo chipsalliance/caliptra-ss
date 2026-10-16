@@ -38,7 +38,7 @@ class usb_l2_host_resume_host_seq extends usb_host_base_seq;
     `uvm_info(report_id(), $sformatf("Waiting up to %0t for DUT suspend observation", link_state_timeout), UVM_LOW)
     fork
       begin
-        dut_suspend_observed.wait_trigger();
+        dut_suspend_observed.wait_on();
         observed = 1'b1;
       end
       begin
