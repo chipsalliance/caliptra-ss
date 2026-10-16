@@ -75,7 +75,12 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     usb_bulk_out_host_seq inflight_host_sequence;
     usb_dev_skip_host_seq recovery_host_sequence;
     usb_ep_entry_t initial_entry;
+    uvm_event out_token_event;
     uvm_event data_packet_event;
+    uvm_event rx_data_packet_event;
+    realtime skip_write_accepted_at;
+    realtime rx_packet_completed_at;
+    realtime skip_cleared_at;
 
     completed = 1'b0;
     `uvm_info("USB_SKIP_RX_SEQ", "Starting endpoint skip-during-receive scenario; running enumeration first", UVM_LOW)
@@ -100,9 +105,14 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     inflight_host_sequence.device_address = p_sequencer.cfg.device_address;
     inflight_host_sequence.transfer_label = "In-flight bulk OUT";
 
+    out_token_event = uvm_event_pool::get_global(USB_UTMI_OUT_TOKEN_EVENT);
     data_packet_event = uvm_event_pool::get_global(USB_UTMI_DATA_PACKET_EVENT);
+    rx_data_packet_event =
+        uvm_event_pool::get_global(USB_UTMI_RX_DATA_PACKET_EVENT);
+    out_token_event.reset();
     data_packet_event.reset();
-    `uvm_info("USB_SKIP_RX_SEQ", "Armed DATA-packet observation; starting the bulk transfer", UVM_LOW)
+    rx_data_packet_event.reset();
+    `uvm_info("USB_SKIP_RX_SEQ", "Armed OUT-token and DATA-packet observation; starting the bulk transfer", UVM_LOW)
     fork
       begin
         inflight_host_sequence.start(p_sequencer.host_sequencer);
@@ -111,10 +121,47 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
         end
       end
       begin
+        out_token_event.wait_ptrigger();
         data_packet_event.wait_ptrigger();
-        `uvm_info("USB_SKIP_RX_SEQ", "Observed the target DATA packet; writing EPSKIP while payload reception is active", UVM_LOW)
+        `uvm_info("USB_SKIP_RX_SEQ", "Observed the target OUT token and DATA packet; writing EPSKIP while payload reception is active", UVM_LOW)
         request_endpoint_skip(skip_endpoint);
-        wait_for_endpoint_skip_clear(skip_endpoint, skip_clear_timeout, skip_clear_poll_interval);
+        skip_write_accepted_at = $realtime;
+        if (rx_data_packet_event.is_on()) begin
+          `uvm_fatal("USB_SKIP_RX_SEQ", "EPSKIP write completed after the in-flight DATA packet reception ended")
+        end
+        fork
+          begin
+            rx_data_packet_event.wait_on();
+            rx_packet_completed_at = $realtime;
+          end
+          begin
+            wait_for_endpoint_skip_clear(
+                skip_endpoint,
+                skip_clear_timeout,
+                skip_clear_poll_interval);
+            skip_cleared_at = $realtime;
+          end
+        join
+        if (skip_write_accepted_at >= rx_packet_completed_at) begin
+          `uvm_fatal(
+            "USB_SKIP_RX_SEQ",
+            $sformatf(
+              "EPSKIP write was not accepted during reception: write=%0t receive-end=%0t",
+              skip_write_accepted_at,
+              rx_packet_completed_at
+            )
+          )
+        end
+        if (skip_cleared_at < rx_packet_completed_at) begin
+          `uvm_fatal(
+            "USB_SKIP_RX_SEQ",
+            $sformatf(
+              "EPSKIP retired before reception completed: clear=%0t receive-end=%0t",
+              skip_cleared_at,
+              rx_packet_completed_at
+            )
+          )
+        end
       end
     join
 
