@@ -706,7 +706,7 @@ Integrator must connect following list of manager and subordinates to axi interc
   | cptra_ss_cptra_core_s_axi_if | 8 | [config_defines.svh](../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh) | Default value of 8 is controlled using the macro `CALIPTRA_AXI_ID_WIDTH`. |
   | cptra_ss_mcu_rom_s_axi_if | 8 | [config_defines.svh](../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh) | Default value of 8 is controlled using the macro `CALIPTRA_AXI_ID_WIDTH`. |
   | cptra_ss_mci_s_axi_if | 8 | [caliptra_ss_top.sv](../src/integration/rtl/caliptra_ss_top.sv) | ID_WIDTH value is derived from the width of AxID signals in the connected AXI interface. |
-  | cptra_ss_i3c_s_axi_if | 8 | [i3c_defines.svh](../third_party/i3c-core/src/i3c_defines.svh) | Default value of 8 is controlled using the macro `AXI_ID_WIDTH`. |
+  | cptra_ss_i3c_s_axi_if | 8 | [caliptra_ss_top.sv](../src/integration/rtl/caliptra_ss_top.sv) | ID_WIDTH value is derived from the width of AxID signals in the connected AXI interface. |
   | cptra_ss_lc_axi_wr, cptra_ss_lc_axi_rd | 8 | src/tlul/rtl/tlul_pkg.sv | Default value is derived from the macro `CALIPTRA_AXI_ID_WIDTH`, overrideable using the macro `CALIPTRA_SS_TLUL_AXI_ID_WIDTH`. |
   | cptra_ss_otp_core_axi_wr, cptra_ss_otp_core_axi_rd | 8 | src/tlul/rtl/tlul_pkg.sv | Default value is derived from the macro `CALIPTRA_AXI_ID_WIDTH`, overrideable using the macro `CALIPTRA_SS_TLUL_AXI_ID_WIDTH`. |
 
@@ -2767,17 +2767,37 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 ## Parameters and defines
 
-| Parameter/Define   | Default Value                         | Description                                 |
-|--------------------|---------------------------------------|---------------------------------------------|
-| `AxiDataWidth`     | `AXI_DATA_WIDTH                       | Width (in bits) of the AXI data bus         |
-| `AxiAddrWidth`     | `AXI_ADDR_WIDTH                       | Width (in bits) of the AXI address bus      |
-| `AxiUserWidth`     | `AXI_USER_WIDTH                       | Width (in bits) of the AXI user signals     |
-| `AxiIdWidth`       | `AXI_ID_WIDTH                         | Width (in bits) of the AXI ID signals       |
-| `DatAw`            | i3c_pkg::DatAw                        | Data address width (defined in i3c_pkg)     |
-| `DctAw`            | i3c_pkg::DctAw                        | Device context address width (i3c_pkg)      |
-| `CsrAddrWidth`     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
-| `CsrDataWidth`     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
-| `DISABLE_INPUT_FF` | Not Defined                           | DO NOT DEFINE. NO LONGER VALID CONFIG. If defined will remove synchronizer on SCL input signal causing CDC issue.       |
+The table lists the fixed values and derivations used by the subsystem's
+`i3c_wrapper` instance in `src/integration/rtl/caliptra_ss_top.sv`, rather than
+the standalone core's default parameter values. These settings are not exposed
+as separate I3C configuration parameters or defines on `caliptra_ss_top`.
+The AXI widths follow the connected `cptra_ss_i3c_s_axi_if_w_sub` interface;
+the width of each privileged-ID entry also follows its `awuser` field.
+
+| Parameter | Subsystem value or derivation | Description |
+|-----------|------------------------------|-------------|
+| `UseAxi` | 1 | Select the AXI frontend |
+| `AhbDataWidth` | 64 | Data width of the unused AHB frontend |
+| `AhbAddrWidth` | 18 | Address width of the unused AHB frontend |
+| `AxiDataWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.wdata)` | Derived from the connected interface's data width |
+| `AxiAddrWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awaddr)` | Derived from the connected interface's address width; CSR address width remains fixed at 12 |
+| `AxiUserWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awuser)` | Derived from the connected interface's USER width |
+| `AxiIdWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awid)` | Derived from the connected interface's ID width |
+| `EnableIdFiltering` | 1 | Include AXI USER filtering; runtime control is provided by `cptra_i3c_axi_user_id_filtering_enable_i` |
+| `NumPrivIds` | `caliptra_ss_top_pkg::I3cNumPrivIds` (4) | Fixed package localparam in `src/integration/rtl/caliptra_ss_top_pkg.sv`; spare slots repeat authorized users |
+| `CmdFifoDepth` | 64 | Command FIFO depth |
+| `RespFifoDepth` | 64 | Response FIFO depth |
+| `RxFifoDepth` | 64 | Receive FIFO depth |
+| `TxFifoDepth` | 64 | Transmit FIFO depth |
+| `IbiFifoDepth` | 64 | IBI FIFO depth |
+| `IbiFifoExtSize` | 0 | Disable extended IBI FIFO size |
+| `DatDepth` | 128 | DAT memory depth |
+| `DctDepth` | 128 | DCT memory depth |
+| `DisableLoopback` | 0 | Loopback-disable setting |
+| `DatAw` | 7 | DAT memory address width |
+| `DctAw` | 7 | DCT memory address width |
+| `CsrAddrWidth` | 12 | CSR address width |
+| `CsrDataWidth` | 32 | CSR data width |
 
 
 ## Interface
