@@ -275,12 +275,12 @@ class usb_init_seq extends usb_base_seq;
         write_devcmdstat(command);
       end
       8'h00: begin
-        // Report the two-byte, all-zero device status expected by
-        // this scenario.
+        // Report the current DEVICE_REMOTE_WAKEUP state in device status.
         if (request_type != 8'h80 || length != 2) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_STATUS request")
         end
         response_words = '{default: 0};
+        response_words[0][1] = remote_wakeup_enabled;
         send_ep0_data(response_words, 2);
         arm_ep0_out();
       end

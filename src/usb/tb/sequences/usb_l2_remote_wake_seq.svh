@@ -16,7 +16,7 @@
 class usb_l2_remote_wake_seq extends usb_resume_recovery_seq;
   `uvm_object_utils(usb_l2_remote_wake_seq)
 
-  localparam time HS_RESTORE_LIMIT = 1333333ps;
+  localparam realtime HS_RESTORE_LIMIT = 1333333ps;
 
   time suspend_timeout = 35ms;
   time remote_wake_idle_time = 5ms;
