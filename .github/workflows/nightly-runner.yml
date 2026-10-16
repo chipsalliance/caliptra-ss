@@ -1,0 +1,50 @@
+# Usage guide: docs/CaliptraSSDVSimGuide.md
+name: Nightly Runner
+
+on:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 1 * * *'
+
+jobs:
+
+  dvsim-run:
+    name: DVSIM run
+    runs-on: [caliptra-ss]
+
+    steps:
+      - name: Setup repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      ## UNCOMMENT BELOW TO CHECKOUT A SPECIFIC BRANCH OF A PR 
+      ## - name: Checkout branch (PR ${{ env.PR }})
+      ##   env:
+      ##     PR: 1312
+      ##   run: |
+      ##     git fetch https://github.com/chipsalliance/caliptra-ss.git pull/$PR/head:pr-$PR
+      ##     git checkout pr-$PR
+      ##     git submodule update --init --recursive
+
+      - name: Setup Nix environment
+        run: |
+          nix flake update --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl"
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --quiet \
+            --command true
+
+      - name: Run tests
+        env:
+          ## UPDATE DVSIM COMMAND, like : dvsim src/uart/dv/uart_sim_cfg.hjson -t vcs -i all --cov
+          DVSIM_CMD: dvsim --version
+        run: |
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --command bash -c '
+              export PATH=/usr/bin:/bin:$PATH
+              $DVSIM_CMD
+            '
+
