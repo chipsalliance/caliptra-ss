@@ -19,6 +19,8 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
   usb_endpoint_cfg target_endpoint;
   int unsigned payload_byte_count;
   logic [7:0] payload_base;
+  int unsigned payload_packet_bytes;
+  logic [7:0] payload_packet_stride;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time bulk_transfer_timeout = 200us;
   string transfer_label = "Bulk OUT";
@@ -29,6 +31,15 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
 
   virtual function string report_id();
     return "USB_BULK_OUT_HOST";
+  endfunction
+
+  function logic [7:0] payload_byte(int unsigned byte_index);
+    int unsigned packet_index;
+
+    packet_index = (payload_packet_bytes == 0) ? 0 :
+                   byte_index / payload_packet_bytes;
+    return payload_base + byte_index +
+           packet_index * payload_packet_stride;
   endfunction
 
   // Accept only the requested successful bulk OUT completion.
@@ -145,7 +156,7 @@ class usb_bulk_out_host_seq extends usb_host_base_seq;
       `uvm_fatal(report_id(), $sformatf("Unable to randomize %s", transfer_label))
     end
     for (int unsigned byte_index = 0; byte_index < payload_byte_count; byte_index++) begin
-      bulk_transfer.payload.data[byte_index] = payload_base + byte_index;
+      bulk_transfer.payload.data[byte_index] = payload_byte(byte_index);
     end
     finish_item(bulk_transfer);
 
