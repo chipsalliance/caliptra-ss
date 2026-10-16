@@ -19,6 +19,8 @@ class usb_bulk_in_host_seq extends usb_host_base_seq;
   usb_endpoint_cfg target_endpoint;
   int unsigned payload_byte_count;
   logic [7:0] payload_base;
+  int unsigned payload_packet_bytes;
+  logic [7:0] payload_packet_stride;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time bulk_transfer_timeout = 200us;
   string transfer_label = "Bulk IN";
@@ -30,6 +32,15 @@ class usb_bulk_in_host_seq extends usb_host_base_seq;
 
   virtual function string report_id();
     return "USB_BULK_IN_HOST";
+  endfunction
+
+  function logic [7:0] payload_byte(int unsigned byte_index);
+    int unsigned packet_index;
+
+    packet_index = (payload_packet_bytes == 0) ? 0 :
+                   byte_index / payload_packet_bytes;
+    return payload_base + byte_index +
+           packet_index * payload_packet_stride;
   endfunction
 
   // Submit the transfer and verify every received payload byte.
@@ -107,7 +118,7 @@ class usb_bulk_in_host_seq extends usb_host_base_seq;
       logic [7:0] expected_byte;
 
       observed_byte = completed_transfer.payload.get_byte_val(byte_index);
-      expected_byte = payload_base + byte_index;
+      expected_byte = payload_byte(byte_index);
       if (observed_byte !== expected_byte) begin
         `uvm_fatal(
           report_id(),

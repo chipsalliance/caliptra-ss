@@ -25,11 +25,20 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
   logic [31:0] in_buffer_1 = 32'h0000_0800;
   logic [7:0] out_payload_base = 8'h20;
   logic [7:0] in_payload_base = 8'h80;
+  logic [7:0] packet_tag_stride = 8'h31;
   time transfer_timeout = 500us;
   bit completed;
 
   function new(string name = "usb_double_buffer_bulk_seq");
     super.new(name);
+  endfunction
+
+  function logic [7:0] stream_payload_byte(
+      logic [7:0] payload_base,
+      int unsigned stream_offset
+  );
+    return payload_base + stream_offset +
+           (stream_offset / bytes_per_buffer) * packet_tag_stride;
   endfunction
 
   // Fill one device-to-host buffer with an incrementing byte stream.
@@ -39,27 +48,43 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     for (int unsigned offset = 0; offset < bytes_per_buffer; offset += 4) begin
       data_word = 32'h0;
       for (int unsigned lane = 0; lane < 4; lane++) begin
-        data_word[8*lane +: 8] = in_payload_base + stream_offset + offset + lane;
+        data_word[8*lane +: 8] =
+            stream_payload_byte(
+                in_payload_base,
+                stream_offset + offset + lane);
       end
       write32(USB_DEV0_SRAM, buffer_offset + offset, data_word);
     end
   endtask
 
-  // Require both endpoint-list buffers to be fully retired.
-  task check_both_entries_retired(usb_endpoint_cfg endpoint, string label);
-    usb_ep_entry_t entry_0;
-    usb_ep_entry_t entry_1;
+  // Require both endpoint-list buffers to have exact post-transfer writeback.
+  task check_both_entries_retired(
+      usb_endpoint_cfg endpoint,
+      usb_ep_entry_t armed_entry_0,
+      usb_ep_entry_t armed_entry_1,
+      string label
+  );
+    usb_ep_entry_t expected_entry_0;
+    usb_ep_entry_t expected_entry_1;
 
-    read_endpoint_entry(endpoint, entry_0);
-    read_endpoint_entry(endpoint, entry_1, BUFFER_SELECT_1);
-    if (entry_0.active !== 1'b0 || entry_0.nbytes !== 0 ||
-        entry_1.active !== 1'b0 || entry_1.nbytes !== 0) begin
-      `uvm_fatal(
-        "USB_DOUBLE_BUFFER",
-        $sformatf("%s entries did not both retire: buffer0=%s buffer1=%s", label, describe_entry(entry_0), describe_entry(entry_1))
-      )
-    end
-    `uvm_info("USB_DOUBLE_BUFFER", $sformatf("%s retired both endpoint-list buffers", label), UVM_LOW)
+    expected_entry_0 = armed_entry_0;
+    expected_entry_0.active = 1'b0;
+    expected_entry_0.nbytes = 0;
+    expected_entry_0.buffer_offset += bytes_per_buffer >> 6;
+    expected_entry_1 = armed_entry_1;
+    expected_entry_1.active = 1'b0;
+    expected_entry_1.nbytes = 0;
+    expected_entry_1.buffer_offset += bytes_per_buffer >> 6;
+    check_endpoint_entry_writeback(
+        endpoint,
+        expected_entry_0,
+        {label, " buffer 0 writeback mismatch"});
+    check_endpoint_entry_writeback(
+        endpoint,
+        expected_entry_1,
+        {label, " buffer 1 writeback mismatch"},
+        BUFFER_SELECT_1);
+    `uvm_info("USB_DOUBLE_BUFFER", $sformatf("%s retired both endpoint-list buffers with exact address writeback", label), UVM_LOW)
   endtask
 
   // Wait until hardware has consumed both active buffers.
@@ -103,7 +128,8 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
                       out_buffer_1 + stream_offset - bytes_per_buffer;
       expected_word = 32'h0;
       for (int unsigned lane = 0; lane < 4; lane++) begin
-        expected_word[8*lane +: 8] = out_payload_base + stream_offset + lane;
+        expected_word[8*lane +: 8] =
+            stream_payload_byte(out_payload_base, stream_offset + lane);
       end
       read32(USB_DEV0_SRAM, buffer_offset, observed_word);
       if (observed_word !== expected_word) begin
@@ -123,7 +149,11 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
     usb_bulk_in_host_seq in_host_sequence;
     usb_endpoint_cfg out_endpoint;
     usb_endpoint_cfg in_endpoint;
-    usb_ep_entry_t entry;
+    usb_ep_entry_t out_entry_0;
+    usb_ep_entry_t out_entry_1;
+    usb_ep_entry_t in_entry_0;
+    usb_ep_entry_t in_entry_1;
+    usb_ep_entry_t zlp_entry;
     logic [31:0] double_buffer_mask;
 
     completed = 1'b0;
@@ -153,13 +183,15 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
 
     fill_endpoint_buffer(out_buffer_0, bytes_per_buffer, 32'heeee_eeee);
     fill_endpoint_buffer(out_buffer_1, bytes_per_buffer, 32'heeee_eeee);
-    arm_endpoint(out_endpoint, bytes_per_buffer, out_buffer_0, entry);
-    arm_endpoint(out_endpoint, bytes_per_buffer, out_buffer_1, entry, BUFFER_SELECT_1);
+    arm_endpoint(out_endpoint, bytes_per_buffer, out_buffer_0, out_entry_0);
+    arm_endpoint(out_endpoint, bytes_per_buffer, out_buffer_1, out_entry_1, BUFFER_SELECT_1);
     clear_endpoint_interrupt(out_endpoint);
     out_host_sequence = usb_bulk_out_host_seq::type_id::create("out_host_sequence");
     out_host_sequence.target_endpoint = out_endpoint;
     out_host_sequence.payload_byte_count = 2 * bytes_per_buffer;
     out_host_sequence.payload_base = out_payload_base;
+    out_host_sequence.payload_packet_bytes = bytes_per_buffer;
+    out_host_sequence.payload_packet_stride = packet_tag_stride;
     out_host_sequence.device_address = p_sequencer.cfg.device_address;
     out_host_sequence.transfer_label = "Double-buffer bulk OUT";
     out_host_sequence.start(p_sequencer.host_sequencer);
@@ -167,18 +199,24 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
       `uvm_fatal("USB_DOUBLE_BUFFER", "Double-buffer bulk OUT returned incomplete")
     end
     wait_for_endpoint_interrupt(out_endpoint, transfer_timeout);
-    check_both_entries_retired(out_endpoint, "Bulk OUT");
+    check_both_entries_retired(
+        out_endpoint,
+        out_entry_0,
+        out_entry_1,
+        "Bulk OUT");
     verify_out_payload();
 
     fill_incrementing_buffer(in_buffer_0, 0);
     fill_incrementing_buffer(in_buffer_1, bytes_per_buffer);
-    arm_endpoint(in_endpoint, bytes_per_buffer, in_buffer_0, entry);
-    arm_endpoint(in_endpoint, bytes_per_buffer, in_buffer_1, entry, BUFFER_SELECT_1);
+    arm_endpoint(in_endpoint, bytes_per_buffer, in_buffer_0, in_entry_0);
+    arm_endpoint(in_endpoint, bytes_per_buffer, in_buffer_1, in_entry_1, BUFFER_SELECT_1);
     clear_endpoint_interrupt(in_endpoint);
     in_host_sequence = usb_bulk_in_host_seq::type_id::create("in_host_sequence");
     in_host_sequence.target_endpoint = in_endpoint;
     in_host_sequence.payload_byte_count = 2 * bytes_per_buffer;
     in_host_sequence.payload_base = in_payload_base;
+    in_host_sequence.payload_packet_bytes = bytes_per_buffer;
+    in_host_sequence.payload_packet_stride = packet_tag_stride;
     in_host_sequence.device_address = p_sequencer.cfg.device_address;
     in_host_sequence.transfer_label = "Double-buffer bulk IN";
     in_host_sequence.expect_zero_length_termination = 1'b1;
@@ -193,12 +231,21 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
         // Two full-size packets need a terminating short packet. Once both
         // data buffers retire, reuse buffer 0 for the terminating ZLP.
         wait_for_both_entries_retired(in_endpoint, "Bulk IN data");
-        arm_endpoint(in_endpoint, 0, in_buffer_0, entry);
+        check_both_entries_retired(
+            in_endpoint,
+            in_entry_0,
+            in_entry_1,
+            "Bulk IN data");
+        arm_endpoint(in_endpoint, 0, in_buffer_0, zlp_entry);
+        zlp_entry.active = 1'b0;
         `uvm_info("USB_DOUBLE_BUFFER", "Re-armed IN buffer 0 with a terminating ZLP", UVM_LOW)
       end
     join
     wait_for_endpoint_interrupt(in_endpoint, transfer_timeout);
-    check_both_entries_retired(in_endpoint, "Bulk IN");
+    check_endpoint_entry_writeback(
+        in_endpoint,
+        zlp_entry,
+        "Bulk IN terminating ZLP writeback mismatch");
 
     completed = 1'b1;
     `uvm_info("USB_DOUBLE_BUFFER", "Double-buffer bulk IN and OUT scenario completed with both buffers verified", UVM_LOW)
