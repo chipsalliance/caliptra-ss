@@ -1,0 +1,71 @@
+name: Nightly Runner
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+
+  dvsim-run-1312:
+    name: DVSIM run for PR 1312
+    runs-on: [caliptra-ss]
+
+    steps:
+      - name: Setup repository
+        uses: actions/checkout@v4
+
+      - name: Checkout branch (PR 1312)
+        run: |
+          git fetch https://github.com/chipsalliance/caliptra-ss.git pull/1312/head:pr-1312
+          git checkout pr-1312
+          git submodule update --init --recursive
+
+      - name: Setup Nix environment
+        run: |
+          nix flake update --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl"
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --quiet \
+            --command true
+
+      - name: Run tests
+        run: |
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --command bash -c '
+              export PATH=/usr/bin:/bin:$PATH
+              dvsim src/uart/dv/uart_sim_cfg.hjson -t vcs -i all --cov
+            '
+
+  dvsim-run-1298:
+    name: DVSIM run for PR 1298
+    runs-on: [caliptra-ss]
+
+    steps:
+      - name: Setup repository
+        uses: actions/checkout@v4
+
+      - name: Checkout branch (PR 1298)
+        run: |
+          git fetch https://github.com/chipsalliance/caliptra-ss.git pull/1298/head:pr-1298
+          git checkout pr-1298
+          git submodule update --init --recursive
+
+      - name: Setup Nix environment
+        run: |
+          nix flake update --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl"
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --quiet \
+            --command true
+
+      - name: Run tests
+        run: |
+          nix develop .#caliptra-dvsim \
+            --override-input caliptra-rtl-src "path:$PWD/third_party/caliptra-rtl" \
+            --command bash -c '
+              export PATH=/usr/bin:/bin:$PATH
+              dvsim src/spi_host/dv/spi_host_sim_cfg.hjson -i all --cov --max-parallel 16
+            '
+
+
