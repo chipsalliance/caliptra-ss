@@ -96,6 +96,50 @@ class usb_packet_monitor_callback extends svt_usb_link_monitor_callback;
     return count;
   endfunction
 
+  // Require one rejected target OUT attempt followed by an ACKed retry.
+  function bit observed_rejected_out_retry(
+    bit [6:0] device_address,
+    bit [3:0] endpoint_number,
+    output int unsigned attempt_count
+  );
+    bit data_seen;
+    bit first_attempt_acked;
+    bit retry_acked;
+
+    attempt_count = 0;
+    data_seen = 1'b0;
+    first_attempt_acked = 1'b0;
+    retry_acked = 1'b0;
+    foreach (records[index]) begin
+      if (records[index].direction == USB_PACKET_TX &&
+          records[index].pid_name == svt_usb_packet::OUT &&
+          records[index].device_address == device_address &&
+          records[index].endpoint_number == endpoint_number) begin
+        attempt_count++;
+        data_seen = 1'b0;
+        continue;
+      end
+      if (attempt_count != 0 &&
+          records[index].direction == USB_PACKET_TX &&
+          (records[index].pid_name == svt_usb_packet::DATA0 ||
+           records[index].pid_name == svt_usb_packet::DATA1)) begin
+        data_seen = 1'b1;
+        continue;
+      end
+      if (data_seen &&
+          records[index].direction == USB_PACKET_RX &&
+          records[index].pid_name == svt_usb_packet::ACK) begin
+        if (attempt_count == 1) begin
+          first_attempt_acked = 1'b1;
+        end else begin
+          retry_acked = 1'b1;
+        end
+        data_seen = 1'b0;
+      end
+    end
+    return attempt_count >= 2 && !first_attempt_acked && retry_acked;
+  endfunction
+
   // Capture one packet without driving or modifying link behavior.
   protected function void record_packet(
     usb_packet_direction_e direction,
