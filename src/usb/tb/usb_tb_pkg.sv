@@ -101,10 +101,13 @@ package usb_tb_pkg;
 
   // Global events published by the passive UTMI packet monitor.
   localparam string USB_UTMI_OUT_TOKEN_EVENT = "usb_utmi_out_token_seen";
+  localparam string USB_UTMI_IN_TOKEN_EVENT = "usb_utmi_in_token_seen";
   localparam string USB_UTMI_DATA_PACKET_EVENT = "usb_utmi_data_packet_seen";
   localparam string USB_UTMI_RX_DATA_PACKET_EVENT =
       "usb_utmi_rx_data_packet_seen";
   localparam string USB_UTMI_TX_PACKET_EVENT = "usb_utmi_tx_packet_seen";
+  localparam string USB_UTMI_TX_DATA_PROGRESS_EVENT = "usb_utmi_tx_data_progress_seen";
+  localparam string USB_UTMI_TX_DATA_PACKET_EVENT = "usb_utmi_tx_data_packet_seen";
 
   // Compare deadlines at the package's 1ps precision, without rounding to
   // whole nanoseconds or depending on floating-point equality.
@@ -242,6 +245,7 @@ package usb_tb_pkg;
   `include "sequences/usb_bad_pid_seq.svh"
   `include "sequences/usb_test_packet_seq.svh"
   `include "sequences/usb_test_modes_seq.svh"
+  `include "sequences/usb_tx_underrun_seq.svh"
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "sequences/usb_dev_skip_during_rx_seq.svh"
@@ -265,6 +269,7 @@ package usb_tb_pkg;
   `include "tests/usb_bad_pid_test.svh"
   `include "tests/usb_test_packet_test.svh"
   `include "tests/usb_test_modes_test.svh"
+  `include "tests/usb_tx_underrun_test.svh"
   `include "tests/usb_dev_skip_test.svh"
   `include "tests/usb_dev_skip_during_rx_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
