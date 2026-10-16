@@ -40,6 +40,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
   time inter_transaction_delay = 1us;
   time interval_end_delay = 1us;
   logic [10:0] next_frame_number;
+  logic [2:0] next_microframe_index;
   realtime last_raw_packet_start;
   realtime last_sof_start;
   bit sof_started;
@@ -49,6 +50,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
   function new(string name = "usb_high_bandwidth_iso_seq");
     super.new(name);
     next_frame_number = 0;
+    next_microframe_index = 0;
     last_raw_packet_start = 0;
     last_sof_start = 0;
     sof_started = 1'b0;
@@ -159,6 +161,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
     byte unsigned packet_bytes[$];
     logic [15:0] token_bits;
     logic [10:0] frame_number;
+    logic [2:0] microframe_index;
     realtime next_sof_start;
 
     if (sof_started) begin
@@ -166,6 +169,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
       if ($realtime < next_sof_start) #(next_sof_start - $realtime);
     end
     frame_number = next_frame_number;
+    microframe_index = next_microframe_index;
     token_bits = {usb_crc5(frame_number), frame_number};
     packet_bytes.push_back(8'ha5);
     packet_bytes.push_back(token_bits[7:0]);
@@ -173,12 +177,18 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
     inject_raw_rx_packet(packet_bytes);
     last_sof_start = last_raw_packet_start;
     sof_started = 1'b1;
-    next_frame_number++;
+    if (next_microframe_index == 7) begin
+      next_microframe_index = 0;
+      next_frame_number++;
+    end else begin
+      next_microframe_index++;
+    end
     `uvm_info(
       "USB_HB_ISO",
       $sformatf(
-        "Injected valid SOF frame %0d at %0t",
+        "Injected valid SOF frame %0d microframe %0d at %0t",
         frame_number,
+        microframe_index,
         last_sof_start
       ),
       UVM_LOW
@@ -983,7 +993,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
       run_out_interval(
         out_endpoint,
         "Fresh OUT interval after one-packet loss",
-        8'h70,
+        8'h71,
         3,
         3,
         ERROR_NONE
@@ -1052,7 +1062,7 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
     run_in_interval(
       in_endpoint,
       "Fresh interval after one-packet loss",
-      8'h70,
+      8'h71,
       3
     );
 
