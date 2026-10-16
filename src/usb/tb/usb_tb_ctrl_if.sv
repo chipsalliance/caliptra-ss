@@ -42,6 +42,13 @@ interface usb_tb_ctrl_if #(
   logic raw_utmi_rxerror;
   logic raw_utmi_host_mode;
   logic raw_utmi_txready;
+  logic [7:0] utmi_txdata;
+  logic utmi_txvalid;
+  logic utmi_txready;
+  logic utmi_suspendm;
+  logic utmi_xcvrselect;
+  logic utmi_termselect;
+  logic [1:0] utmi_opmode;
   logic dev0_memory_request;
   logic dev0_memory_write;
   logic [DEV0_MEMORY_AW-1:0] dev0_memory_address;
