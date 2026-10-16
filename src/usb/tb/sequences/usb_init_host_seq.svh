@@ -58,7 +58,9 @@ class usb_init_host_seq extends usb_host_base_seq;
     derive_expected_results_status = '0;
     if ((expected_direction === svt_usb_types::HOST_TO_DEVICE) &&
         ((expected_request === svt_usb_types::SET_ADDRESS) ||
-         (expected_request === svt_usb_types::SET_CONFIGURATION)) &&
+         (expected_request === svt_usb_types::SET_CONFIGURATION) ||
+         (expected_request === svt_usb_types::SET_FEATURE) ||
+         (expected_request === svt_usb_types::CLEAR_FEATURE)) &&
         (expected_length === 16'd0) &&
         (expected_payload.size() === 0)) begin
       derive_expected_results_status[5] = 1'b1;

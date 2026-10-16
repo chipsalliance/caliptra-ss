@@ -57,6 +57,7 @@ class usb_init_seq extends usb_base_seq;
   byte unsigned current_configuration;
   int unsigned serviced_request_count;
   bit host_scenario_completed;
+  bit remote_wakeup_enabled;
 
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
@@ -108,6 +109,7 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info("USB_INIT_SEQ", "Initializing DEV0 endpoint list and control registers", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
+    remote_wakeup_enabled = 1'b0;
     initialize_ep0_entries();
     // Clear every non-EP0 entry so no endpoint starts active.
     write32(USB_DEV0_SRAM, endpoint_list_base() + 32'h00c, 0);
@@ -165,6 +167,7 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info("USB_INIT_SEQ", "Handling USB bus reset", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
+    remote_wakeup_enabled = 1'b0;
     write_devcmdstat(command | reset_change_mask);
     initialize_ep0_entries();
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
@@ -272,12 +275,12 @@ class usb_init_seq extends usb_base_seq;
         write_devcmdstat(command);
       end
       8'h00: begin
-        // Report the two-byte, all-zero device status expected by
-        // this scenario.
+        // Report the current DEVICE_REMOTE_WAKEUP state in device status.
         if (request_type != 8'h80 || length != 2) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_STATUS request")
         end
         response_words = '{default: 0};
+        response_words[0][1] = remote_wakeup_enabled;
         send_ep0_data(response_words, 2);
         arm_ep0_out();
       end
@@ -313,6 +316,34 @@ class usb_init_seq extends usb_base_seq;
         send_ep0_zlp();
         arm_ep0_out();
       end
+      8'h03: begin
+        if (request_type != 8'h00 ||
+            value != 16'h0001 ||
+            index != 0 ||
+            length != 0) begin
+          `uvm_fatal(
+            "USB_INIT_SEQ",
+            "Unexpected SET_FEATURE DEVICE_REMOTE_WAKEUP request"
+          )
+        end
+        remote_wakeup_enabled = 1'b1;
+        send_ep0_zlp();
+        arm_ep0_out();
+      end
+      8'h01: begin
+        if (request_type != 8'h00 ||
+            value != 16'h0001 ||
+            index != 0 ||
+            length != 0) begin
+          `uvm_fatal(
+            "USB_INIT_SEQ",
+            "Unexpected CLEAR_FEATURE DEVICE_REMOTE_WAKEUP request"
+          )
+        end
+        remote_wakeup_enabled = 1'b0;
+        send_ep0_zlp();
+        arm_ep0_out();
+      end
       default: begin
         // Stall both directions before rejecting an unsupported request.
         write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b0, 1'b1, 0, ep0_in_buffer_offset));
@@ -337,6 +368,47 @@ class usb_init_seq extends usb_base_seq;
       ),
       UVM_LOW
     )
+  endtask
+
+  // Service one bounded post-enumeration control request.
+  task service_additional_setup_request(time timeout);
+    logic [31:0] command;
+    logic [31:0] ep0out_mask;
+    logic [31:0] interrupt_status;
+    logic [31:0] setup_mask;
+
+    ep0out_mask =
+        ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTSTAT.EP0OUT);
+    setup_mask =
+        ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.SETUP);
+    poll_csr_bits(
+      "additional EP0 SETUP",
+      p_sequencer.reg_model.combo.dev0_csr.INTSTAT,
+      ep0out_mask,
+      1'b1,
+      timeout,
+      interrupt_status
+    );
+    ral_write32(
+      "INTSTAT.EP0OUT",
+      p_sequencer.reg_model.combo.dev0_csr.INTSTAT,
+      ep0out_mask
+    );
+    ral_read32(
+      "DEVCMDSTAT",
+      p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT,
+      command
+    );
+    if ((command & setup_mask) === 0) begin
+      `uvm_fatal(
+        "USB_INIT_SEQ",
+        $sformatf(
+          "Additional EP0 OUT interrupt did not carry SETUP: DEVCMDSTAT=0x%08h",
+          command
+        )
+      )
+    end
+    service_setup_request();
   endtask
 
   // Poll reset and interrupt state until all seven SETUP packets are serviced.

@@ -56,6 +56,10 @@ class usb_env_cfg extends uvm_object;
   // resolved value back here before building the managers.
   bit axi_delay_random = 1'b1;
 
+  // Use USB 2.0 L2 resume timing while retaining accelerated attach/reset
+  // timing. Timing-focused remote-wake tests enable this explicitly.
+  bit use_spec_l2_resume_timers;
+
   // Address the host assigns with SET_ADDRESS. Every host and device
   // sequence takes the enumerated address from here.
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
@@ -276,6 +280,7 @@ class usb_env_cfg extends uvm_object;
       endpoint_cfgs.push_back(clone_endpoint(rhs_cfg.endpoint_cfgs[index]));
     end
     axi_delay_random = rhs_cfg.axi_delay_random;
+    use_spec_l2_resume_timers = rhs_cfg.use_spec_l2_resume_timers;
     device_address = rhs_cfg.device_address;
     endpoint_list_base = rhs_cfg.endpoint_list_base;
     reset_timeout = rhs_cfg.reset_timeout;
@@ -308,6 +313,7 @@ class usb_env_cfg extends uvm_object;
         !compare_endpoint(ep0_in_cfg, rhs_cfg.ep0_in_cfg, comparer) ||
         endpoint_cfgs.size() != rhs_cfg.endpoint_cfgs.size() ||
         axi_delay_random != rhs_cfg.axi_delay_random ||
+        use_spec_l2_resume_timers != rhs_cfg.use_spec_l2_resume_timers ||
         device_address != rhs_cfg.device_address ||
         endpoint_list_base !== rhs_cfg.endpoint_list_base ||
         reset_timeout != rhs_cfg.reset_timeout ||
@@ -334,8 +340,9 @@ class usb_env_cfg extends uvm_object;
 
   virtual function string convert2string();
     return $sformatf(
-      "axi_delay_random=%0b device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
+      "axi_delay_random=%0b use_spec_l2_resume_timers=%0b device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
       axi_delay_random,
+      use_spec_l2_resume_timers,
       device_address,
       endpoint_list_base,
       reset_timeout,
@@ -350,6 +357,11 @@ class usb_env_cfg extends uvm_object;
   virtual function void do_print(uvm_printer printer);
     super.do_print(printer);
     printer.print_int("axi_delay_random", axi_delay_random, 1, UVM_BIN);
+    printer.print_int(
+        "use_spec_l2_resume_timers",
+        use_spec_l2_resume_timers,
+        1,
+        UVM_BIN);
     printer.print_int("device_address", device_address, $bits(device_address), UVM_DEC);
     printer.print_int("endpoint_list_base", endpoint_list_base, $bits(endpoint_list_base), UVM_HEX);
     printer.print_time("reset_timeout", reset_timeout);

@@ -49,6 +49,7 @@ interface usb_tb_ctrl_if #(
   logic utmi_xcvrselect;
   logic utmi_termselect;
   logic [1:0] utmi_opmode;
+  logic [1:0] utmi_linestate;
   logic dev0_memory_request;
   logic dev0_memory_write;
   logic [DEV0_MEMORY_AW-1:0] dev0_memory_address;
