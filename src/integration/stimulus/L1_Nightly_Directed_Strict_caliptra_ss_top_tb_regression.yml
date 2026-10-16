@@ -78,6 +78,11 @@ contents:
         - ../test_suites/caliptra_ss_usb_dev_ram_rw/caliptra_ss_usb_dev_ram_rw.yml
         - ../test_suites/caliptra_ss_usb_dev1_ram_rw/caliptra_ss_usb_dev1_ram_rw.yml
         - ../test_suites/caliptra_ss_usb_hub_ram_rw/caliptra_ss_usb_hub_ram_rw.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_get_interface/caliptra_ss_usb_hs_dev_get_interface.yml
+        - ../test_suites/caliptra_ss_usb_fs_dev_get_interface/caliptra_ss_usb_fs_dev_get_interface.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface.yml
+        - ../test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt.yml
+        - ../test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt.yml
         - ../test_suites/smoke_test_mcu_rom_patch_sram/smoke_test_mcu_rom_patch_sram.yml
         - ../test_suites/smoke_test_mcu_rom_patch_sram_test_locked1/smoke_test_mcu_rom_patch_sram_test_locked1.yml
         - ../test_suites/smoke_test_mcu_rom_patch_sram_dev/smoke_test_mcu_rom_patch_sram_dev.yml
