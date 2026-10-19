@@ -20,7 +20,6 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
-`include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
 `include "caliptra_ss_includes.svh"
 
@@ -236,6 +235,24 @@ import uvm_pkg::*;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
     // Add buffer for console output only
     string console_buffer = "";
+
+    // ---------------------------------------------------------------------
+    // MCU console FAIL checker.
+    //
+    // The console monitor below only prints and logs the DEBUG_OUT character
+    // stream, so a firmware line such as "MCU: FAIL - enumeration timeout"
+    // was read by no checker and the UVM verdict still came out as
+    // TESTCASE PASSED. This checker consumes the same decoded stream and
+    // turns any console line containing FAIL into a UVM_ERROR, which is what
+    // caliptra_ss_usb_base_test::final_phase counts. Inert unless
+    // +mcu_console_fail_check is on the simv command line. See
+    // caliptra_ss_mcu_console_fail_checker.sv for the full rationale.
+    // ---------------------------------------------------------------------
+    caliptra_ss_mcu_console_fail_checker i_caliptra_ss_mcu_console_fail_checker (
+        .clk        (clk),
+        .char_valid (mailbox_data_val & mailbox_write),
+        .char_data  (mailbox_data[7:0])
+    );
 
     always @(negedge clk) begin
         // Modified console Monitor

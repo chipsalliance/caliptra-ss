@@ -24,8 +24,8 @@
 
 package caliptra_ss_usb_test_pkg;
 
-
-  localparam int USB_PKG_VERSION = 299;
+  // Force VCS recompile when USB UVM package contents change.
+  localparam int USB_PKG_VERSION = 326;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -39,12 +39,8 @@ package caliptra_ss_usb_test_pkg;
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_ctrl_base_sequence.svh"
-  // Legacy NXP host-side base sequence. Distinct from the upstream
-  // caliptra_ss_usb_ctrl_base_sequence above: upstream PR #1309 renamed its
-  // own base sequence to _ctrl_ precisely to avoid a name clash with this
-  // pre-existing NXP class, so the two coexist. The ~40 NXP device/dev1/hub
-  // sequences below extend this class, so it must be included before them.
+  // Common host-side base sequence. Every device/dev1/hub, init and OCP
+  // recovery sequence below extends this class, so it must be included first.
   `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
 
@@ -55,6 +51,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_hub_config_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_get_hub_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_get_interface_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -254,6 +255,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev_get_hub_descriptor_test.svh"
   `include "caliptra_ss_usb_fs_dev_get_hub_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev0 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev0 in firmware).
+  // The FS sibling reuses the same sequence and only applies the FS VIP
+  // conversion block. The dev1 variant (HS only) lives with the other dev1
+  // command-value-check tests below.
+  `include "caliptra_ss_usb_hs_dev_get_interface_test.svh"
+  `include "caliptra_ss_usb_fs_dev_get_interface_test.svh"
   // HS-only hub CONFIGURATION / OTHER_SPEED_CONFIGURATION descriptor check
   // (OTHER_SPEED_CONFIGURATION is defined only for HS-capable devices).
   `include "caliptra_ss_usb_hs_dev_hub_config_descriptor_test.svh"
@@ -277,10 +285,38 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_get_interface_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev1 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev1 in firmware).
+  `include "caliptra_ss_usb_hs_dev1_get_interface_test.svh"
+
+  // HS-only hub SET_FEATURE(DEVICE, TEST_MODE): one random invalid test
+  // selector (6..255, must be stalled) then one random valid selector (1..5,
+  // must be accepted), both observed on the RTL usb_phy_test_mode register
+  // through check_phy_test_mode(). Hub-only enumeration; the accepted request
+  // is the last USB activity because the PIE then enters BUS_EVENT_TEST_MODE
+  // until a power cycle.
+  `include "caliptra_ss_usb_hs_hub_test_mode_test.svh"
+
+  // Full-speed sibling of the hub SET_FEATURE(DEVICE, TEST_MODE) test above.
+  // The EP0 request decode is speed-independent, so the same accept/reject
+  // scenario is run with the FS VIP conversion applied. The accepted request
+  // is still the last USB activity: at FS it also forces the HS electrical
+  // gate and drops the link, which is harmless only because the final check
+  // reads the RTL usb_phy_test_mode probe and not the bus.
+  `include "caliptra_ss_usb_fs_hub_test_mode_test.svh"
+
+  // HS-only hub ENDPOINT_HALT round trip on the one Halt-able hub endpoint
+  // (endpoint 1 IN, wIndex=0x0081): GET_STATUS baseline, SET_FEATURE,
+  // GET_STATUS, CLEAR_FEATURE, GET_STATUS. Control transfers only, hub-only
+  // enumeration; the status bit is read back out of
+  // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"
@@ -299,6 +335,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
+  `include "caliptra_ss_usb_ocp_access_collision_sequence.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence.svh"
@@ -313,6 +350,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_test.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_test.svh"
+  `include "caliptra_ss_usb_ocp_access_collision_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"

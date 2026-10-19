@@ -51,11 +51,15 @@
 #define OCP_FIFO_FLOW_RECOVERY_STATUS_AWAITING_IMAGE 0x01u
 #define OCP_FIFO_FLOW_RECOVERY_STATUS_BOOTING_IMAGE 0x02u
 #define OCP_FIFO_FLOW_RECOVERY_STATUS_SUCCESS 0x03u
-#define OCP_FIFO_FLOW_ACTIVATE_CODE 0x0Fu
+#define OCP_FIFO_FLOW_DMA_BLOCK_SIZE_BYTES 64u
+#define OCP_FIFO_FLOW_MAX_IMAGE_WORDS 192u
+#define OCP_FIFO_FLOW_MCU_SRAM_ALIGNMENT 64u
 
 volatile char *stdout = (char *)STDOUT;
 volatile uint32_t intr_count = 0;
 volatile caliptra_intr_received_s cptra_intr_rcv = {0};
+static uint32_t image_verify_buffer[OCP_FIFO_FLOW_MAX_IMAGE_WORDS]
+    __attribute__((section(".dccm")));
 
 #ifdef CPT_VERBOSITY
 enum printf_verbosity verbosity_g = CPT_VERBOSITY;
@@ -122,25 +126,26 @@ static void wait_for_flow_command_release(void)
     fail_and_halt("CPTRA: timed out waiting for flow command release");
 }
 
-static void wait_for_recovery_activation(void)
+static uint32_t get_image_destination(uint32_t image_size_bytes)
 {
-    uint32_t recovery_ctrl_word = 0u;
+    uint32_t exec_region_pages;
+    uint32_t exec_region_size_bytes;
 
-    for (uint32_t poll = 0u; poll < OCP_FIFO_FLOW_POLL_LIMIT; ++poll) {
-        if (cptra_usb_ocp_recovery_read_recovery_ctrl(
-                &recovery_ctrl_word) != 0u) {
-            fail_and_halt("CPTRA: RECOVERY_CTRL activation read failed");
-        }
-        if (((recovery_ctrl_word &
-              RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK) >>
-             RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW) ==
-                OCP_FIFO_FLOW_ACTIVATE_CODE) {
-            return;
-        }
-        spin_delay(OCP_FIFO_FLOW_POLL_DELAY_CYCLES);
+    if (cptra_usb_ocp_recovery_read_dword_retry(
+            SOC_MCI_TOP_MCI_REG_FW_SRAM_EXEC_REGION_SIZE,
+            &exec_region_pages) != 0u) {
+        fail_and_halt("CPTRA: MCU SRAM execution region discovery failed");
     }
-
-    fail_and_halt("CPTRA: timed out waiting for recovery activation");
+    exec_region_pages =
+        (exec_region_pages & MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_MASK) >>
+        MCI_REG_FW_SRAM_EXEC_REGION_SIZE_SIZE_LOW;
+    exec_region_size_bytes = (exec_region_pages + 1u) * 4096u;
+    if (image_size_bytes > exec_region_size_bytes) {
+        fail_and_halt("CPTRA: image does not fit in MCU SRAM execution region");
+    }
+    return (SOC_MCI_TOP_MCU_SRAM_BASE_ADDR
+        + (OCP_FIFO_FLOW_MCU_SRAM_ALIGNMENT - 1u))
+        & ~(OCP_FIFO_FLOW_MCU_SRAM_ALIGNMENT - 1u);
 }
 #endif
 
@@ -166,6 +171,10 @@ void main(void)
             OCP_FIFO_FLOW_RECOVERY_STATUS_AWAITING_IMAGE, 0u, 0u) != 0u) {
         fail_and_halt("CPTRA: initial recovery status publish failed");
     }
+    if (cptra_usb_ocp_recovery_wait_payload_available(
+            OCP_FIFO_FLOW_POLL_LIMIT) != 0u) {
+        fail_and_halt("CPTRA: timed out waiting for payload_available");
+    }
 #endif
 
     // OCP Recovery v1.1 Sections 8.2.5 and 9.2 define IMAGE_SIZE as
@@ -181,6 +190,44 @@ void main(void)
         fail_and_halt("CPTRA: FIFO flow image size was not programmed");
     }
 
+#if OCP_FIFO_FLOW_COMPLETE_RECOVERY
+    {
+        uint32_t image_size_bytes;
+        uint32_t image_destination;
+
+        if (image_size_words > OCP_FIFO_FLOW_MAX_IMAGE_WORDS) {
+            fail_and_halt("CPTRA: randomized image exceeds verify buffer");
+        }
+        image_size_bytes = image_size_words * sizeof(uint32_t);
+        image_destination = get_image_destination(image_size_bytes);
+        VPRINTF(LOW,
+                "CPTRA: streaming %u bytes from Recovery FIFO to MCU SRAM 0x%08x\n",
+                image_size_bytes, image_destination);
+        if (cptra_usb_ocp_recovery_stream_fifo_to_axi(
+                image_destination,
+                image_size_bytes,
+                OCP_FIFO_FLOW_DMA_BLOCK_SIZE_BYTES) != 0u) {
+            fail_and_halt("CPTRA: Recovery FIFO to MCU SRAM DMA failed");
+        }
+        if (cptra_usb_ocp_recovery_read_axi_payload(
+                image_destination,
+                image_verify_buffer,
+                image_size_bytes) != 0u) {
+            fail_and_halt("CPTRA: MCU SRAM verify DMA failed");
+        }
+        for (uint32_t index = 0u; index < image_size_words; ++index) {
+            uint32_t expected = OCP_FIFO_FLOW_PATTERN_BASE | index;
+
+            if (image_verify_buffer[index] != expected) {
+                VPRINTF(
+                    FATAL,
+                    "CPTRA: MCU SRAM word %u got 0x%08x expected 0x%08x\n",
+                    index, image_verify_buffer[index], expected);
+                fail_and_halt("CPTRA: MCU SRAM image pattern mismatch");
+            }
+        }
+    }
+#else
     spin_delay(OCP_FIFO_FLOW_INITIAL_DELAY_CYCLES);
     VPRINTF(LOW, "CPTRA: draining %u FIFO flow-control words\n",
              image_size_words);
@@ -215,13 +262,13 @@ void main(void)
             spin_delay(OCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES);
         }
     }
+#endif
 
     VPRINTF(LOW, "CPTRA: verified %u FIFO flow-control words\n",
              image_size_words);
 #if OCP_FIFO_FLOW_COMPLETE_RECOVERY
     {
         uint16_t generation;
-        uint32_t recovery_ctrl_word;
 
         if (cptra_usb_ocp_recovery_write_device_status(
                 OCP_FIFO_FLOW_DEVICE_STATUS_RECOVERY_PENDING, 0u) != 0u
@@ -234,7 +281,10 @@ void main(void)
             (uint8_t)image_size_words,
             0u);
 
-        wait_for_recovery_activation();
+        if (cptra_usb_ocp_recovery_wait_image_activated(
+                OCP_FIFO_FLOW_POLL_LIMIT) != 0u) {
+            fail_and_halt("CPTRA: timed out waiting for image_activated");
+        }
         if (cptra_usb_ocp_recovery_write_device_status(
                 OCP_FIFO_FLOW_DEVICE_STATUS_RUNNING_RECOVERY, 0u) != 0u
             || cptra_usb_ocp_recovery_write_recovery_status(
@@ -264,17 +314,6 @@ void main(void)
             (uint8_t)image_size_words,
             generation);
         wait_for_flow_command_release();
-
-        if (cptra_usb_ocp_recovery_read_recovery_ctrl(
-                &recovery_ctrl_word) != 0u) {
-            fail_and_halt("CPTRA: RECOVERY_CTRL read before clear failed");
-        }
-        recovery_ctrl_word &=
-            ~RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK;
-        if (cptra_usb_ocp_recovery_write_recovery_ctrl(
-                recovery_ctrl_word) != 0u) {
-            fail_and_halt("CPTRA: RECOVERY_CTRL activation clear failed");
-        }
     }
 #else
     spin_delay(10000u);

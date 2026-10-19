@@ -15,6 +15,7 @@
 
 #include "usb.h"
 
+
 // Shadow of the staged device-address (DEVCMDSTAT[6:0]).
 //
 // Hardware quirk (IP-XXX-3511): DEVCMDSTAT[6:0] reads return the LIVE
@@ -94,10 +95,14 @@ static uint8_t usb_dev_addr_shadow_arr[2]        = {0, 0};
 static uint8_t usb_current_config_arr[2]          = {0, 0};
 static bool    usb_remote_wakeup_enabled_arr[2]   = {false, false};
 static uint8_t usb_ep0_in_pending_latched_arr[2]  = {0, 0};
+// Selected bAlternateSetting of interface 0, reported by GET_INTERFACE.
+static uint8_t usb_alt_setting_arr[2]             = {0, 0};
 #define usb_dev_addr_shadow        usb_dev_addr_shadow_arr[usb_active_dev]
 #define usb_current_config         usb_current_config_arr[usb_active_dev]
+#define usb_alt_setting            usb_alt_setting_arr[usb_active_dev]
 #define usb_remote_wakeup_enabled  usb_remote_wakeup_enabled_arr[usb_active_dev]
 #define usb_ep0_in_pending_latched usb_ep0_in_pending_latched_arr[usb_active_dev]
+
 
 // Legacy EP0 observer telemetry counters (retained from upstream). These do not
 // affect enumeration behaviour and are only consumed by single-device tests, so
@@ -430,6 +435,7 @@ void usb_handle_bus_reset(void) {
     // USB 2.0 section 9.1.1.3: reset returns the device to the Default state
     // with no configuration selected. Mirror that in the firmware shadows.
     usb_current_config = 0;
+    usb_alt_setting = 0;
     usb_remote_wakeup_enabled = false;
     // Clear DRES_C (W1C)
     usb_devcmdstat_write(cmd | DEV0_CSR_DEVCMDSTAT_DRES_C_MASK);
@@ -1129,11 +1135,31 @@ bool usb_handle_control_transfer(void) {
             }
         } else if (recipient == USB_RECIP_INTERFACE) {
             switch (pkt.bRequest) {
-                case USB_REQ_GET_INTERFACE:
-                    VPRINTF(LOW, "MCU: USB Unhandled Standard/Interface GET_INTERFACE"
-                            " - stalling\n");
-                    usb_ep0_stall();
+                case USB_REQ_GET_INTERFACE: {
+                    // Standard interface GET_INTERFACE (USB 2.0 section 9.4.4):
+                    // 1-byte currently selected bAlternateSetting of the
+                    // interface named by wIndex. The configuration descriptor
+                    // declares a single interface (number 0) with a single
+                    // alternate setting, so any other wIndex is a request
+                    // error and the device is only required to answer in the
+                    // Configured state.
+                     if ((usb_is_configured() == 0u) ||
+                         (USB_BMREQTYPE_DIR(pkt.bmRequestType) != USB_DIR_DEVICE_TO_HOST) ||
+                         (pkt.wValue != 0u) || (pkt.wIndex != 0u) ||
+                         (pkt.wLength != 1u)) {
+                         VPRINTF(LOW, "MCU: USB GET_INTERFACE invalid request/state"
+                                 " bmRequestType=0x%02x wValue=0x%04x"
+                                 " wIndex=0x%04x wLength=0x%04x - stalling\n",
+                                 pkt.bmRequestType, pkt.wValue, pkt.wIndex, pkt.wLength);
+                        usb_ep0_stall();
+                    } else {
+                        uint32_t alt_buf = (uint32_t)usb_alt_setting;
+                        usb_ep0_send_data(&alt_buf, 1);
+                        usb_ep0_arm_out();
+                        handled = true;
+                    }
                     break;
+                }
                 case USB_REQ_SET_INTERFACE:
                     VPRINTF(LOW, "MCU: USB Unhandled Standard/Interface SET_INTERFACE"
                             " - stalling\n");
@@ -1198,6 +1224,49 @@ bool usb_handle_control_transfer(void) {
     }
 
     return handled;
+}
+
+// -------------------------------------------------------------------------
+// usb_check_chip_id
+//
+// Strict exact-value check of CHIP_ID = INFO[31:16] = {MAJREV, MINREV} against
+// the delivered IP configuration. The two revision bytes are driven straight
+// from the usb_reg_if C_MAJOR_REV / C_MINOR_REV VHDL generics
+// ("reg_rdata(31 downto 24) <= C_MAJOR_REV",
+//  "reg_rdata(23 downto 16) <= C_MINOR_REV"), so reading INFO exercises the
+// same readback path those generics feed.
+//
+// This check lives in firmware rather than in the testbench because VCS
+// rejects a cross-module reference whose target is a VHDL generic
+// (Error-[VHDLXMRE-NS]), so the value cannot be probed from SystemVerilog
+// through usb_dev_addr_probe. Pass USB_DEV_INFO_CHIP_ID_EXP for the expected
+// value. The read targets the active controller, so the same call is valid for
+// USBDC0 and USBDC1.
+//
+// A mismatch is reported the same way handle_error() in caliptra_ss_lib.h does
+// (VPRINTF(FATAL), then TB_CMD_TEST_FAIL over stdout, then halt), open-coded
+// here so this library keeps its current minimal include set and does not pull
+// in caliptra_ss_lib.h. 0x01 is TB_CMD_TEST_FAIL.
+// -------------------------------------------------------------------------
+void usb_check_chip_id(uint32_t expected_chip_id) {
+    uint32_t info = lsu_read_32(USB_DEV_INFO);
+    uint32_t majrev = (info & DEV0_CSR_INFO_MAJREV_MASK) >> DEV0_CSR_INFO_MAJREV_LOW;
+    uint32_t minrev = (info & DEV0_CSR_INFO_MINREV_MASK) >> DEV0_CSR_INFO_MINREV_LOW;
+    uint32_t chip_id = ((majrev & 0xFFu) << 8) | (minrev & 0xFFu);
+
+    VPRINTF(LOW, "MCU: USB dev%d INFO = 0x%x CHIP_ID = 0x%x (MAJREV=0x%x MINREV=0x%x)\n",
+            usb_get_active_device(), info, chip_id, majrev, minrev);
+
+    if (chip_id != (expected_chip_id & 0xFFFFu)) {
+        VPRINTF(FATAL, "MCU: USB dev%d CHIP_ID mismatch: expected 0x%x got 0x%x (INFO=0x%x)\n",
+                usb_get_active_device(), expected_chip_id & 0xFFFFu, chip_id, info);
+        SEND_STDOUT_CTRL(0x01);
+        while (1);
+    }
+
+
+    VPRINTF(LOW, "MCU: USB dev%d CHIP_ID check passed (0x%x)\n",
+            usb_get_active_device(), chip_id);
 }
 
 // File contains AI-generated response based on internal company sources
