@@ -140,7 +140,7 @@ void main(void) {
         // bank, so they apply verbatim to USBDC0 and USBDC1 alike. USB_DEV_SEL
         // parametrizes the addresses only.
         if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
+            if (lsu_read_32(USB_DEV_DEVCMDSTAT) & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
         }
         // EP0 IN completion needs no action: the ISR already acknowledged it.
