@@ -85,6 +85,17 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     // default twice. 200 us is many control-transfer durations at either speed.
     localparam int unsigned POST_RESUME_PROBE_TIMEOUT_US = 200;
 
+    // Ceiling and step for the post-resume poll that waits for the VIP host
+    // link to report ENABLED again. Modelled on the passing
+    // caliptra_ss_usb_hs_dev_global_suspend_L2 sequence, which polls the same
+    // way after its SOF restart. Without this poll the sequence can issue
+    // control transfers while the VIP link is still SUSPENDED, and such a
+    // transfer is a silent no-op: the VIP logs started and done at the same
+    // timestamp and never fires NOTIFY_USB_TRANSFER_ENDED, so the only symptom
+    // is a transfer timeout with no traffic on the wire. Note 24 section 10.
+    localparam int unsigned ENABLED_POLL_MAX_US = 50000;
+    localparam realtime     ENABLED_POLL_STEP   = 1us;
+
 
 
     // -------------------------------------------------------------------------
@@ -98,6 +109,13 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
 
     bit       vip_link_suspend_seen;
     realtime  vip_link_suspend_time;
+
+    // The relaxed tinactivity installed by the test class, saved just before the
+    // suspend window tightens it so it can be put back afterwards. A class
+    // property for symmetry with the latches above; the tighten and the restore
+    // are in different steps of body(). Note 24 section 10.
+    real      tinactivity_relaxed_ps;
+
 
     // -------------------------------------------------------------------------
     // Global uvm_event names shared with the testbench-scope checkers. These
@@ -184,11 +202,19 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         // cannot be in force during enumeration. Note that usb_cfg here is the
         // agent's own configuration, on which tinactivity is a direct member -
         // usb_cfg.host_cfg does not compile. Note 25 section 6.
-        usb_cfg.tinactivity = TINACTIVITY_SUSPEND_WINDOW_PS;
+        //
+        // The previous value is saved here and put back at the top of step 7:
+        // it must NOT stay in force past the suspend window, because every idle
+        // gap after the resume (the 3.1 ms DEVICE_K_REMAINDER above all) is
+        // longer than 200 us and would drop the VIP link straight back into
+        // SUSPENDED, making all post-resume traffic a silent no-op.
+        // Note 24 section 10.
+        tinactivity_relaxed_ps = usb_cfg.tinactivity;
+        usb_cfg.tinactivity    = TINACTIVITY_SUSPEND_WINDOW_PS;
         host_agent_h.reconfigure(usb_cfg);
         `uvm_info(MSG_ID,
-            "tinactivity lowered to 200 us for the HS suspend window (enumeration ran with the relaxed value).",
-            UVM_LOW)
+            $sformatf("tinactivity lowered to 200 us for the HS suspend window (enumeration ran with the relaxed value %0.0f ps, which is restored before the post-resume phase).",
+                      tinactivity_relaxed_ps), UVM_LOW)
 
         // Step 4b: stop SOF to put the bus into global L2 suspend. The only
         // stimulus the host contributes; ending the suspend is the device's job.
@@ -277,7 +303,19 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         //          the low-speed EOP the pie is waiting for. It cannot forge the
         //          verdict: CHK_DEVICE_WAKEUP_K needs the DUT's own TXValid;
         //   7b.    SOF restart, or the VIP link falls straight back into suspend
-        //          on its 200 us inactivity timer.
+        //          on its inactivity timer.
+        //
+        // 7-pre also restores the relaxed tinactivity, and it has to happen
+        // BEFORE the wait below: with the 200 us suspend-window value still in
+        // force, the 3.1 ms idle gap is itself enough to put the VIP link back
+        // into SUSPENDED, and nothing in step 7 brings it out again. Note 24
+        // section 10.
+        usb_cfg.tinactivity = tinactivity_relaxed_ps;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info(MSG_ID,
+            $sformatf("tinactivity restored to %0.0f ps before the post-resume phase; the suspend window is over and the remaining idle gaps are longer than the tightened value.",
+                      tinactivity_relaxed_ps), UVM_LOW)
+
         #DEVICE_K_REMAINDER;
         `uvm_info(MSG_ID,
             $sformatf("Waited %0t after the device-wakeup-K event so the device has finished its T_3ms of resume K and has reached BUS_EVENT_SW_WAKEUP_3, where the host EOP is the only exit. Driving the host half now.",
@@ -296,6 +334,14 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
             sof_on2.start(p_sequencer.prot_service_sequencer);
             `uvm_info(MSG_ID, "SOF restarted so the link stays out of suspend.", UVM_LOW)
         end
+
+        // Step 7c: the VIP host link must report ENABLED again before any
+        // transfer is issued. Same poll the passing
+        // caliptra_ss_usb_hs_dev_global_suspend_L2 sequence does after its SOF
+        // restart. A transfer issued on a link the VIP still holds in SUSPENDED
+        // is dropped silently, so without this poll the only symptom is a
+        // transfer timeout with nothing on the wire. Note 24 section 10.
+        wait_for_vip_link_enabled(shared_status);
 
         // Step 8: wait for the DUT to leave suspend. The event is always already
         // on here by construction, because SuspendM rises on the raw wakeup
@@ -401,13 +447,45 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     endtask
 
     // -------------------------------------------------------------------------
+    // Bounded poll for the VIP host link to report ENABLED again after the
+    // resume. A control transfer issued while the VIP still holds the link in
+    // SUSPENDED is dropped without any bus activity, and the VIP still logs it
+    // as started and done, so the failure surfaces one timeout later as an
+    // unexplained transfer timeout with nothing on the wire. Failing here
+    // instead names the real cause. The passing
+    // caliptra_ss_usb_hs_dev_global_suspend_L2 sequence polls the same way
+    // after its SOF restart. Note 24 section 10.
+    // -------------------------------------------------------------------------
+    task wait_for_vip_link_enabled(svt_usb_status shared_status);
+        int unsigned waited_us;
+        waited_us = 0;
+        while ((shared_status.link_usb_20_state != svt_usb_types::ENABLED)
+               && (waited_us < ENABLED_POLL_MAX_US)) begin
+            #ENABLED_POLL_STEP;
+            waited_us++;
+        end
+        if (shared_status.link_usb_20_state != svt_usb_types::ENABLED) begin
+            `uvm_error(MSG_ID,
+                $sformatf("VIP host link is still %0s %0d us after the SOF restart, so it never came back to ENABLED after the device-initiated resume. Any transfer issued from here is dropped silently by the VIP, which is what the post-resume probe timeouts were really reporting.",
+                          shared_status.link_usb_20_state.name(), waited_us))
+        end
+        else begin
+            `uvm_info(MSG_ID,
+                $sformatf("VIP host link is ENABLED again %0d us after the SOF restart; post-resume traffic can be issued.",
+                          waited_us), UVM_LOW)
+        end
+    endtask
+
+    // -------------------------------------------------------------------------
     // Post-resume traffic check. Re-anchors the VIP on USBDC0, issues a standard
     // GetDescriptor(Device) and requires a well-formed 18-byte device descriptor
     // back; both the length and bDescriptorType are checked, because a transfer
     // that ended but returned nothing must not count as the device working.
     //
-    // A hub GetPortStatus probe runs first, while the anchor is still on the hub
-    // at address 1. It exists purely to classify the failure mode when the
+    // A hub GetPortStatus probe runs first, after explicitly re-anchoring the
+    // VIP onto the hub at address 1 (the anchor is left at 2 by
+    // usbdc0_enum_stepC, so the re-anchor is required, not optional - see the
+    // comment at the call below). It exists purely to classify the failure mode when the
     // GetDescriptor below times out, and it answers one question: does the host
     // VIP drive anything at all on the wire after the resume?
     //
@@ -434,7 +512,16 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         int unsigned nbytes;
 
         // Hub-class GetPortStatus on port 1, addressed to the hub at address 1.
-        // Requires the anchor to still be on the hub, which it is on entry here.
+        // do_control_xfer calls fix_anchors(0,0,0), which pins the VIP
+        // dev_anchor to whatever remote_device_cfg[0].device_address currently
+        // holds. It must therefore be set to 1 before this call, or the VIP
+        // constraint (device_address == dev_anchor.device_address) contradicts
+        // the WITH constraint (device_address == device_addr) and the solver
+        // fails with a UVM_FATAL. usbdc0_enum_stepC leaves the anchor at 2
+        // (USBDC0), so this re-anchor is mandatory here. See the constraint
+        // note in caliptra_ss_usb_base_sequence.svh and note 24 section 9.6.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        host_agent_h.reconfigure(usb_cfg);
         `uvm_info(MSG_ID,
             "postWakeup: probing the hub with GetPortStatus(port 1) before the device GetDescriptor, to separate an inert host VIP from a downstream-only fault.",
             UVM_LOW)
