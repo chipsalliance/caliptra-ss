@@ -116,14 +116,21 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
-        // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself. Snapshot then clear by complement so bits the ISR sets while
-        // we are handling this batch are not lost. DEVCMDSTAT is still read
-        // directly above: DSUS/DSUS_C are DEVCMDSTAT bits, not INTSTAT bits,
-        // so they do not travel through the mailbox.
+        // Drain the ISR mailbox with interrupts masked; the ISR has already
+        // acknowledged INTSTAT. DSUS/DSUS_C are polled through DEVCMDSTAT.
+        uint32_t saved_mstatus;
+        __asm__ volatile ("csrrc %0, mstatus, %1"
+                          : "=r" (saved_mstatus)
+                          : "r" (0x8u)
+                          : "memory");
         usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        mcu_intr_rcv.usb = 0u;
+        if (saved_mstatus & 0x8u) {
+            __asm__ volatile ("csrrs zero, mstatus, %0"
+                              :
+                              : "r" (0x8u)
+                              : "memory");
+        }
 
         // Note the prefix split in the two macro families used below: the
         // register ADDRESSES are the device-neutral USB_DEV_* macros, while the
