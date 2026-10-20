@@ -170,6 +170,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_hs_dev_int_loopback_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_int_loopback_test.svh"
+  // Combined INTERRUPT (EP1) + ISOCHRONOUS (EP2) device test. Phases:
+  // INT round 0 on EP1, ISO round on EP2, INT round 1 on EP1, with both
+  // endpoint families armed in the same EP command/status list.
+  `include "caliptra_ss_usb_hs_dev_int_iso_mix_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_int_iso_mix_test.svh"
   `include "caliptra_ss_usb_fs_conn_sequence.svh"
   `include "caliptra_ss_usb_fs_conn_test.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_sequence.svh"
