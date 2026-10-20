@@ -100,6 +100,8 @@ class spi_monitor extends dv_reactive_monitor #(
       end : isolation_thread
     join
 
+    plain_item.mon_item_complete = 1;
+
     // write to host_analysis_port
     case (cfg.spi_func_mode)
       SpiModeFlash: begin

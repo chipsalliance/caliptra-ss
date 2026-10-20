@@ -50,6 +50,11 @@ class spi_host_env extends dv_base_env #(
       `uvm_fatal(get_full_name(), "failed to get intr_vif from uvm_config_db")
     end
 
+    if (!uvm_config_db#(virtual pins_if #(1))::get(this, "", "intg_error_vif",
+                                                   cfg.intg_error_vif)) begin
+      `uvm_fatal(get_full_name(), "failed to get intg_error_vif from uvm_config_db")
+    end
+
     if (!uvm_config_db#(virtual spi_host_fsm_if)::get(this, "", "fast_prescaler_bound_if",
                                                       cfg.force_spi_fsm_vif))
       `uvm_fatal(`gfn, "failed to get fast_prescaler_bound_if from uvm_config_db")

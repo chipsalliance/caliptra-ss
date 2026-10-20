@@ -24,7 +24,6 @@ class spi_host_flash_vseq extends spi_host_tx_rx_vseq;
   }
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     super.pre_start();
   endtask : pre_start
 
@@ -58,6 +57,11 @@ class spi_host_flash_vseq extends spi_host_tx_rx_vseq;
       )
       `DV_CHECK_STD_RANDOMIZE_FATAL(wr_data)
       run_flash_page_program_and_read(target_csid);
+    end
+
+    if (cfg.en_scb) begin
+      `DV_CHECK_GT(cfg.scb_checked_tx_seg_cnt, 0, "Expected scoreboard to check TX segments")
+      `DV_CHECK_GT(cfg.scb_checked_rx_seq_cnt, 0, "Expected scoreboard to check RX reads")
     end
 
     `uvm_info(`gfn, "Finished 'spi_host_flash_vseq' successfully", UVM_LOW)

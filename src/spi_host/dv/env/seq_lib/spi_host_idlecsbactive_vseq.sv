@@ -15,7 +15,6 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
   }
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     cfg.seq_cfg.host_spi_min_len = 4;
     cfg.seq_cfg.host_spi_max_len = 4;
     super.pre_start();

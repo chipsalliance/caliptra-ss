@@ -2,6 +2,27 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
+// Report catcher used only during the negative scoreboard self-check to verify
+// that the scoreboard reports a UVM_ERROR when observed SPI data mismatches expected TX data.
+class spi_host_scb_neg_catcher extends uvm_report_catcher;
+  `uvm_object_utils(spi_host_scb_neg_catcher)
+  int unsigned caught_err_cnt = 0;
+
+  function new(string name = "spi_host_scb_neg_catcher");
+    super.new(name);
+  endfunction
+
+  virtual function action_e catch();
+    if (get_severity() == UVM_ERROR &&
+        uvm_is_match("*WRITE: actual data did not match exp data*", get_message())) begin
+      caught_err_cnt++;
+      set_severity(UVM_INFO);
+      return CAUGHT;
+    end
+    return THROW;
+  endfunction
+endclass
+
 // Smoke test vseq
 class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
   `uvm_object_utils(spi_host_smoke_vseq)
@@ -25,23 +46,26 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
   }
 
   int num_words = FIFO_DEPTH;
+  bit use_preset_configopts = 0;
+  bit run_cov_stimulus      = 1;
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     super.pre_start();
   endtask : pre_start
 
   virtual task body();
     `uvm_info(`gfn, "Starting 'spi_host_smoke_vseq'", UVM_LOW)
 
-    // Set configuration parameters
-    spi_config_regs.cpol = 1'b0;
-    spi_config_regs.cpha = 1'b0;
-    spi_config_regs.clkdiv = 16'd2;
-    spi_config_regs.csnlead = 4'd1;
-    spi_config_regs.csntrail = 4'd1;
-    spi_config_regs.csnidle = 4'd1;
-    spi_config_regs.fullcyc = 1'b0;
+    // Set default configuration parameters unless a derived sequence randomized them
+    if (!use_preset_configopts) begin
+      spi_config_regs.cpol = 1'b0;
+      spi_config_regs.cpha = 1'b0;
+      spi_config_regs.clkdiv = 16'd2;
+      spi_config_regs.csnlead = 4'd1;
+      spi_config_regs.csntrail = 4'd1;
+      spi_config_regs.csnidle = 4'd1;
+      spi_config_regs.fullcyc = 1'b0;
+    end
 
     spi_host_ctrl_reg.tx_watermark = 0;
     spi_host_ctrl_reg.rx_watermark = 0;
@@ -63,7 +87,14 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       run_flash_page_program_and_read(target_csid);
     end
 
-    run_functional_coverage_stimulus();
+    if (run_cov_stimulus) begin
+      run_functional_coverage_stimulus();
+    end
+
+    if (cfg.en_scb) begin
+      `DV_CHECK_GT(cfg.scb_checked_tx_seg_cnt, 0, "Expected scoreboard to check TX segments")
+      `DV_CHECK_GT(cfg.scb_checked_rx_seq_cnt, 0, "Expected scoreboard to check RX reads")
+    end
 
     `uvm_info(`gfn, "Finished 'spi_host_smoke_vseq' successfully", UVM_LOW)
   endtask : body
@@ -218,9 +249,11 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         None, RxOnly, RxOnly, Bidir, Bidir, None, None, Bidir,
         TxOnly, Bidir, RxOnly, TxOnly
       };
-      // Supply write data in TX FIFO for TxOnly and Bidir segments
-      for (int i = 0; i < 20; i++) begin
-        ral.txdata.write(status, 0, 32'h12345678);
+      // Supply write data in TX FIFO for the 10 TxOnly and Bidir segments in dir_seq
+      foreach (dir_seq[i]) begin
+        if (dir_seq[i] inside {TxOnly, Bidir}) begin
+          ral.txdata.write(status, 0, 32'h12345678);
+        end
       end
 
       // Chained segments with CSAAT = 1 (and 0 for the last one)
@@ -284,7 +317,10 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         end
       end
       // Also test Dual + Bidir with csaat=1 and csaat=0 to complete speedXdirectionXcsaat_cp
+      // Since invalid commands are still pushed into u_cmd_queue in RTL while enb_error halts
+      // the core, recover via software reset (spi_host_init) before clearing error_status.
       begin
+        cfg.clk_rst_vif.wait_clks(20);
         wait_ready_for_command();
         cmd.direction = Bidir;
         cmd.mode      = Dual;
@@ -293,7 +329,10 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         program_command_reg(cmd);
         cmd.csaat     = 1'b0;
         program_command_reg(cmd);
-        csr_wr(.ptr(ral.error_status), .value(32'h1f));
+        spi_host_init();
+        csr_wr(.ptr(ral.error_status), .value(32'h3f));
+        program_control_reg();
+        csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
       end
 
       // Quad => Dual speed transition for command_segment_cg and segment_speed_cg
@@ -436,21 +475,43 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
     end
 
     // 9. Target u_select (spi_host_byte_select) partial byte_en drain conditions (do_drain=1)
+    // and back-to-back sub-word FIFO writes via bus-propagated byte enables without FIFO reset.
     begin
-      // With tx_be = 4'b1000, bytes 0..2 have byte_en=0 at the head of u_packer and drain immediately via do_drain=1
-      void'(uvm_hdl_force("tb.dut.tx_be", 4'b1000));
-      ral.txdata.write(status, 0, 32'hA500_0000);
-      void'(uvm_hdl_release("tb.dut.tx_be"));
+      bit [7:0] subword_q[$];
 
-      void'(uvm_hdl_force("tb.dut.tx_be", 4'b0001));
-      ral.txdata.write(status, 0, 32'h0000_005A);
-      void'(uvm_hdl_release("tb.dut.tx_be"));
+      // Write partial words with non-zero bytes in masked lanes via bus byte enables:
+      // Word 0: mask 4'b1000 -> only MSB (8'hA5) enabled; lanes [2:0] (DE, AD, 11) must be drained.
+      // Word 1: mask 4'b0001 -> only LSB (8'h5A) enabled; lanes [3:1] (BE, EF, 00) must be drained.
+      write_txdata(32'hA5DE_AD11, 4'b1000, status);
+      write_txdata(32'hBEEF_005A, 4'b0001, status);
 
       wait_ready_for_command();
       cmd.direction = TxOnly;
       cmd.mode      = Standard;
       cmd.csaat     = 1'b0;
-      cmd.len       = 9'd1; // 2 enabled bytes total across the two words
+      cmd.len       = 9'd1; // 2 enabled bytes total across the two words (8'hA5, 8'h5A)
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+      // Immediately follow (without resetting the FIFO) with a 3-byte transfer and a 9-byte transfer
+      // through access_data_fifo() to verify sub-word byte enables (4'b0011, 4'b0001) and scoreboard checking.
+      subword_q = '{8'h12, 8'h34, 8'h56};
+      access_data_fifo(subword_q, TxFifo);
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd2; // 3 bytes
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+      subword_q = '{8'h9A, 8'hBC, 8'hDE, 8'hF0, 8'h13, 8'h57, 8'h79, 8'hBD, 8'hE1};
+      access_data_fifo(subword_q, TxFifo);
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd8; // 9 bytes
       program_command_reg(cmd);
       csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
     end
@@ -503,79 +564,106 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
     // Clean up with reset (asserts sw_rst while u_merge.u_packer has depth_q == FullDepth)
     spi_host_init();
 
-    // 12. Target u_reg (spi_host_reg_top) sub-word write errors (wr_err), unmapped address
-    // decode (addrmiss), integrity / write-enable errors (intg_err, reg_we_err, err_q),
-    // d_error response path, and unused_pt_en continuous assignment
+    // 12. Verify u_reg (spi_host_reg_top) sub-word CSR write errors (wr_err), unmapped address
+    // decode (addrmiss), and bus-level TL-UL command integrity fault handling via real bus
+    // transactions and output/status checks.
     begin
-      logic [5:0] reg_offsets[12] = '{
-        6'h00, 6'h04, 6'h08, 6'h0c, 6'h10, 6'h14,
-        6'h18, 6'h1c, 6'h20, 6'h2c, 6'h30, 6'h34
-      };
+      dv_base_reg csrs[$];
+      uvm_sequencer_base reg_seqr = ral.default_map.get_sequencer();
+      axi_reg_op_item unmapped_op;
+
+      // Toggle passthrough_en through spi_passthrough_vif away from posedge clk
       @(negedge cfg.clk_rst_vif.clk);
-      // Cover spi_host.sv line 122 (unused_pt_en = passthrough_i.passthrough_en) away from posedge clk
-      void'(uvm_hdl_force("tb.dut.passthrough_i.passthrough_en", 1'b1));
+      cfg.spi_passthrough_vif.passthrough_en = 1'b1;
       #10ps;
-      void'(uvm_hdl_force("tb.dut.passthrough_i.passthrough_en", 1'b0));
+      cfg.spi_passthrough_vif.passthrough_en = 1'b0;
       #10ps;
-      void'(uvm_hdl_release("tb.dut.passthrough_i.passthrough_en"));
 
-      // Cover wr_err across all 12 CSRs (with reg_we=0 and reg_we=1, reg_be=4'b0000)
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_be", 4'b0000));
-      foreach (reg_offsets[i]) begin
-        void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", reg_offsets[i]));
-        void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
-        #10ps;
-        void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b1));
-        #10ps;
+      // 12a. Sub-word CSR writes (byte_en = 4'b0000) across all 12 CSRs must return SLVERR (UVM_NOT_OK)
+      ral.get_dv_base_regs(csrs);
+      foreach (csrs[i]) begin
+        write_csr_with_be(csrs[i], 32'h0, 4'b0000, status);
+        `DV_CHECK_EQ(status, UVM_NOT_OK,
+                     $sformatf("Expected SLVERR on sub-word write to CSR %s", csrs[i].get_name()))
       end
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_be", 4'b1111));
-      #10ps;
 
-      // Cover addrmiss (unmapped offset 6'h3c with idle, reg_re=1, and reg_we=1)
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", 6'h3c));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_re", 1'b1));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_re", 1'b0));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b1));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we", 1'b0));
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_addr", 6'h00));
-      #10ps;
+      // 12b. Unmapped CSR read and write at offset 0x3c must return SLVERR (UVM_NOT_OK)
+      begin
+        uvm_sequence_item rsp_item;
+        axi_reg_op_item   unmapped_rsp;
 
-      void'(uvm_hdl_release("tb.dut.u_reg.reg_be"));
-      void'(uvm_hdl_release("tb.dut.u_reg.reg_addr"));
-      void'(uvm_hdl_release("tb.dut.u_reg.reg_we"));
-      void'(uvm_hdl_release("tb.dut.u_reg.reg_re"));
+        unmapped_op = axi_reg_op_item::type_id::create("unmapped_rd_op");
+        unmapped_op.m_rw.kind    = UVM_READ;
+        unmapped_op.m_rw.addr    = 32'h3c;
+        unmapped_op.m_rw.data    = 32'h0;
+        unmapped_op.m_rw.n_bits  = 32;
+        unmapped_op.m_rw.byte_en = 4'hf;
+        start_item(unmapped_op, .sequencer(reg_seqr));
+        finish_item(unmapped_op);
+        get_response(rsp_item);
+        `downcast(unmapped_rsp, rsp_item)
+        `DV_CHECK_EQ(unmapped_rsp.m_rw.status, UVM_NOT_OK,
+                     "Expected SLVERR on bus read from unmapped address 0x3c")
 
-      // Cover d_error and rsp_intg toggle when d_valid == 0
-      void'(uvm_hdl_force("tb.dut.u_reg.u_reg_if.error_q", 1'b1));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.u_reg_if.error_q", 1'b0));
-      #10ps;
-      void'(uvm_hdl_release("tb.dut.u_reg.u_reg_if.error_q"));
+        unmapped_op = axi_reg_op_item::type_id::create("unmapped_wr_op");
+        unmapped_op.m_rw.kind    = UVM_WRITE;
+        unmapped_op.m_rw.addr    = 32'h3c;
+        unmapped_op.m_rw.data    = 32'hDEAD_BEEF;
+        unmapped_op.m_rw.n_bits  = 32;
+        unmapped_op.m_rw.byte_en = 4'hf;
+        start_item(unmapped_op, .sequencer(reg_seqr));
+        finish_item(unmapped_op);
+        get_response(rsp_item);
+        `downcast(unmapped_rsp, rsp_item)
+        `DV_CHECK_EQ(unmapped_rsp.m_rw.status, UVM_NOT_OK,
+                     "Expected SLVERR on bus write to unmapped address 0x3c")
+      end
 
-      // Cover intg_err, reg_we_err, and err_q (lines 75-76, 82, 139-140, 171)
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b1));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b0));
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.intg_err", 1'b1));
-      @(posedge cfg.clk_rst_vif.clk); // Latches err_q <= 1'b1 (covers intg_err=1, reg_we_err=0)
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.intg_err", 1'b0));
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b1));
-      @(posedge cfg.clk_rst_vif.clk); // Covers intg_err=0, reg_we_err=1 on posedge clk
-      #10ps;
-      void'(uvm_hdl_force("tb.dut.u_reg.reg_we_err", 1'b0));
-      #10ps; // Covers err_q=1, intg_err=0, reg_we_err=0 in intg_err_o
-      void'(uvm_hdl_force("tb.dut.u_reg.err_q", 1'b0));
-      #10ps;
-      void'(uvm_hdl_release("tb.dut.u_reg.err_q"));
-      void'(uvm_hdl_release("tb.dut.u_reg.intg_err"));
-      void'(uvm_hdl_release("tb.dut.u_reg.reg_we_err"));
+      // 12c. Bus-level TL-UL command integrity fault injection on CSR and window accesses
+      `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
+                   "Expected intg_error_o to be 0 before fault injection")
+      cfg.intg_error_vif.set_pullup_en_pin(0, 1'b1);
+      write_csr_with_be(ral.csid, 32'h0, 4'hf, status);
+      `DV_CHECK_EQ(status, UVM_NOT_OK, "Expected SLVERR on corrupted TL-UL CSR write")
+      `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
+                   "Expected intg_error_o to assert on TL-UL cmd_intg fault")
+      write_txdata(32'h1234_5678, 4'hf, status);
+      `DV_CHECK_EQ(status, UVM_NOT_OK, "Expected SLVERR on corrupted TL-UL TXDATA write")
+      cfg.intg_error_vif.set_pullup_en_pin(0, 1'b0);
+      cfg.clk_rst_vif.wait_clks(2);
+      `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b1,
+                   "Expected intg_error_o (err_q) to remain latched until hardware reset")
+
+      // Recover via hardware reset and verify intg_error_o clears and normal operation resumes
+      apply_reset("HARD");
+      `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
+                   "Expected intg_error_o to deassert after HARD reset")
+      spi_host_init();
+      program_spi_host_regs();
+    end
+
+    // 13. Negative scoreboard self-check: verify that a mismatch between expected TX data
+    // and observed SPI bus data is actively caught and reported as a UVM_ERROR by the scoreboard.
+    if (cfg.en_scb) begin
+      spi_host_scb_neg_catcher catcher = spi_host_scb_neg_catcher::type_id::create("scb_neg_catcher");
+      bit orig_bit_dir = cfg.m_spi_agent_cfg.host_bit_dir;
+      uvm_report_cb::add(null, catcher);
+      cfg.m_spi_agent_cfg.host_bit_dir = ~orig_bit_dir;
+
+      write_txdata(32'h0000_00A4, 4'b0001, status); // 8'hA4 != bit-reversed 8'h25
+      wait_ready_for_command();
+      cmd.direction = TxOnly;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd0;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+      cfg.clk_rst_vif.wait_clks(10);
+
+      cfg.m_spi_agent_cfg.host_bit_dir = orig_bit_dir;
+      uvm_report_cb::delete(null, catcher);
+      `DV_CHECK_EQ(catcher.caught_err_cnt, 1,
+                   "Expected scoreboard negative self-check to catch exactly 1 TX data mismatch error")
     end
     `uvm_info(`gfn, "Completed targeted functional coverage stimulus", UVM_LOW)
   endtask : run_functional_coverage_stimulus

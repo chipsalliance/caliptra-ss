@@ -17,6 +17,11 @@ class spi_host_env_cfg extends dv_base_env_cfg #(.RAL_T(spi_host_reg_block));
 
   virtual spi_passthrough_if spi_passthrough_vif;
   intr_vif intr_vif;
+  virtual pins_if #(1) intg_error_vif;
+
+  // Scoreboard check counters exposed for sequence-level verification
+  int unsigned scb_checked_tx_seg_cnt = 0;
+  int unsigned scb_checked_rx_seq_cnt = 0;
 
   // number of dummy cycles in a dummy segment
   rand int    num_dummy;

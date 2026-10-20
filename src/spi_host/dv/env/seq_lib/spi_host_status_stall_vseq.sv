@@ -25,7 +25,6 @@ class spi_host_status_stall_vseq extends spi_host_tx_rx_vseq;
   }
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     super.pre_start();
   endtask : pre_start
 

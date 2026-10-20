@@ -587,6 +587,25 @@ class spi_host_base_vseq extends dv_base_vseq #(
     end
   endtask
 
+  // Helper task to write a 32-bit word to TXDATA with an explicit byte-enable mask
+  virtual task write_txdata(input bit [31:0] data,
+                            input bit [TL_DBW-1:0] mask,
+                            output uvm_status_e status);
+    axi_reg_op_item ext_item = axi_reg_op_item::type_id::create("ext_item");
+    ext_item.m_rw.byte_en = mask;
+    ral.txdata.write(.status(status), .offset(0), .value(data), .extension(ext_item));
+  endtask : write_txdata
+
+  // Helper task to write a CSR with an explicit byte-enable mask
+  virtual task write_csr_with_be(input uvm_reg csr,
+                                 input bit [31:0] data,
+                                 input bit [TL_DBW-1:0] mask,
+                                 output uvm_status_e status);
+    axi_reg_op_item ext_item = axi_reg_op_item::type_id::create("ext_item");
+    ext_item.m_rw.byte_en = mask;
+    csr.write(.status(status), .value(data), .extension(ext_item));
+  endtask : write_csr_with_be
+
   // Create TL access(es) to either TXFIFO/RXFIFO to write/read data.
   // fifo == TxFifo : Write all bits in data_q to the TxFifo
   //      == RxFifo : Read single 32-bit word from RxFifo
@@ -618,7 +637,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
         // hence restricting here
         if ((cnt == 3) || (cnt == 1 && data_q.size == 1)) begin
           uvm_status_e status;
-          ral.txdata.write(status, 0, data);
+          write_txdata(data, mask, status);
           cnt  = 0;
           data = '0;
           mask = '0;
@@ -630,7 +649,7 @@ class spi_host_base_vseq extends dv_base_vseq #(
       // add runts
       if (cnt != 0) begin
         uvm_status_e status;
-        ral.txdata.write(status, 0, data);
+        write_txdata(data, mask, status);
       end
     end else if (rw == READ) begin
       // Read a single 32-bit word

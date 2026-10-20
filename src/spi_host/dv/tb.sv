@@ -257,11 +257,12 @@ module tb;
       end
     endcase
 
-    // Generate valid TLUL Integrity ECC bits
+    // Generate valid TLUL Integrity ECC bits (corrupt cmd_intg when intg_error_if.pins_pu[0] is set)
     if (tl_h2d.a_valid) begin
       tl_h2d.a_user.instr_type = caliptra_prim_mubi_pkg::MuBi4False;
-      tl_h2d.a_user.cmd_intg  = tlul_pkg::get_cmd_intg(tl_h2d);
-      tl_h2d.a_user.data_intg = tlul_pkg::get_data_intg(tl_h2d.a_data);
+      tl_h2d.a_user.cmd_intg   = tlul_pkg::get_cmd_intg(tl_h2d) ^
+                                 (intg_error_if.pins_pu[0] ? 7'h01 : 7'h00);
+      tl_h2d.a_user.data_intg  = tlul_pkg::get_data_intg(tl_h2d.a_data);
     end
   end
 

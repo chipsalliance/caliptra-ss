@@ -70,15 +70,19 @@ class spi_host_error_cmd_vseq extends spi_host_tx_rx_vseq;
     csr_wr(.ptr(ral.control.spien), .value(1'b0));
     csr_wr(.ptr(ral.error_enable), .value(32'h1F));
 
-    // 4. Test Access Invalid error (accessinval)
+    // 4. Test Access Invalid error (accessinval) via real invalid byte-enable masks on TXDATA
     begin
       uvm_status_e status;
-      void'(uvm_hdl_force("tb.dut.access_valid", 1'b0));
-      ral.txdata.write(status, 0, 32'hDEADBEEF);
-      void'(uvm_hdl_release("tb.dut.access_valid"));
+      bit [3:0] invalid_masks[6] = '{4'b0000, 4'b0101, 4'b0111, 4'b1110, 4'b1001, 4'b1010};
+      foreach (invalid_masks[i]) begin
+        write_txdata(32'hDEADBEEF, invalid_masks[i], status);
+        check_error(ral.error_status.accessinval, 1);
+        // Verify rejected write was not enqueued in the TX FIFO
+        csr_rd_check(.ptr(ral.status.txqd), .compare_value(8'h0));
+        csr_wr(.ptr(ral.error_status.accessinval), .value(1'b1)); // W1C
+        check_error(ral.error_status.accessinval, 0);
+      end
     end
-    check_error(ral.error_status.accessinval, 1);
-    csr_wr(.ptr(ral.error_status.accessinval), .value(1'b1)); // W1C
 
     spi_host_init();
     csr_wr(.ptr(ral.control.spien), .value(1'b0));
