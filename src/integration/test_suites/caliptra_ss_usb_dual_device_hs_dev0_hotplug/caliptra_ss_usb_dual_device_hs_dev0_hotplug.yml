@@ -1,0 +1,37 @@
+seed: 1
+testname: caliptra_ss_usb_dual_device_hs_dev0_hotplug
+
+# DEV0 downstream port hotplug isolation test (High Speed).
+#
+# This test builds the dual-device MCU image: a single firmware binary drives
+# BOTH software device controllers (USBDC0 on hub port 1 and USBDC1 on hub
+# port 2) behind the embedded virtual hub. Because the image must reach both
+# controllers at runtime it must NOT be compiled with -DUSB_DEV_SEL=1; the
+# active controller is selected dynamically with usb_select_device().
+#
+# Two independent enable mechanisms are required and both are set below:
+#   1. BUILD_CFLAGS="-DUSB_HUB_COMPOUND_DEV1_IRQ" enables the firmware-side
+#      handling of the DEV1 interrupt that the testbench loops back onto
+#      cptra_ss_mcu_ext_int[6].
+#   2. The +USB_HUB_COMPOUND_DEV1_IRQ=1 plusarg enables the testbench-side
+#      loopback of cptra_ss_usb_dev1_irq_o onto that MCU external interrupt.
+#
+# NOTE: run_caliptra_test.py only forwards plusargs that match the
+# +NAME=VALUE regex, so the trailing "=1" on USB_HUB_COMPOUND_DEV1_IRQ is
+# mandatory even though the RTL/TB only checks for its presence.
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_dual_device_hs_dev0_hotplug"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_dual_device_hs_dev0_hotplug \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       BUILD_CFLAGS="-DUSB_HUB_COMPOUND_DEV1_IRQ" \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_dual_device_hs_dev0_hotplug_test'
+  - '+USB_HUB_COMPOUND_DEV1_IRQ=1'
+
+# File contains AI-generated response based on internal company sources
