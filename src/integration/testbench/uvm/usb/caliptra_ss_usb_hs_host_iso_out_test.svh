@@ -204,6 +204,13 @@ class caliptra_ss_usb_hs_host_iso_out_test extends caliptra_ss_usb_base_test;
         `uvm_info("build_phase",
             "dev_agent_cfg (DEVICE/SERIAL_IF/HS): addr=1, EP1=ISO OUT 1024B, tdrst=50us, attach=10us",
             UVM_LOW)
+        // dev_agent_cfg is built locally here, not by shared_cfg, so its
+        // endpoints still carry the VIP default max_retry_due_to_nak of 10
+        // (1 attempt + 10 retries = 11 NAKs, then the transfer is marked
+        // ABORTED with an all-zero results_status). Apply the shared budget
+        // to this agent explicitly.
+        cfg.apply_nak_retry_budget(dev_agent_cfg);
+
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction
 
