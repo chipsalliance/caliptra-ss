@@ -13,12 +13,13 @@
 `define CALIPTRA_SS_USB_HS_DEV_INT_ISO_MIX_TEST_SV
 
 // =============================================================================
-// USB High-Speed device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) test.
+// USB High-Speed device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) +
+// INTERRUPT (EP3) test.
 //
 // Combines caliptra_ss_usb_hs_dev_int_loopback_test and
-// caliptra_ss_usb_hs_dev_iso_out_test into one simulation: both an INTERRUPT
-// endpoint (EP1) and an ISOCHRONOUS endpoint (EP2) are modeled and armed, and
-// the sequence runs INT(EP1) -> ISO(EP2) -> INT(EP1).
+// caliptra_ss_usb_hs_dev_iso_out_test into one simulation: two INTERRUPT
+// endpoints (EP1, EP3) and one ISOCHRONOUS endpoint (EP2) are modeled and
+// armed, and the sequence accesses them in the order EP1 -> EP2 -> EP3.
 //
 // endpoint_cfg[] is an array INDEX, not the USB endpoint number:
 //   endpoint_cfg[0] ep_number=0 direction=IN  CONTROL      (shared_cfg default)
@@ -26,12 +27,15 @@
 //   endpoint_cfg[2] ep_number=2 direction=OUT ISOCHRONOUS  1024 B
 //   endpoint_cfg[3] ep_number=1 direction=IN  INTERRUPT    64 B
 //   endpoint_cfg[4] ep_number=1 direction=OUT INTERRUPT    64 B
-// (num_endpoints = 5)
+//   endpoint_cfg[5] ep_number=3 direction=IN  INTERRUPT    64 B
+//   endpoint_cfg[6] ep_number=3 direction=OUT INTERRUPT    64 B
+// (num_endpoints = 7)
 //
 // Slots [1]/[2] keep the exact indices the proven ISO test used so the ISO
-// anchor behaviour is unchanged; the INTERRUPT pair is appended at [3]/[4].
-// No mid-simulation reconfigure() is needed: every endpoint number is fixed at
-// build time and matches the firmware (USB_INT_EP=1, USB_ISO_EP=2).
+// anchor behaviour is unchanged; the two INTERRUPT pairs are appended at
+// [3]/[4] (EP1) and [5]/[6] (EP3). No mid-simulation reconfigure() is needed:
+// every endpoint number is fixed at build time and matches the firmware
+// (USB_INT_EP=1, USB_ISO_EP=2, USB_INT_EP2=3).
 //
 // Usage:
 //   +UVM_TESTNAME=caliptra_ss_usb_hs_dev_int_iso_mix_test
@@ -44,6 +48,7 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_test extends caliptra_ss_usb_base_test;
     // the sequence.
     localparam int INT_EP          = 1;
     localparam int ISO_EP          = 2;
+    localparam int INT_EP2         = 3;
     localparam int INT_MAX_PKT     = 64;
     localparam int ISO_IN_MAX_PKT  = 512;
     localparam int ISO_OUT_MAX_PKT = 1024;
@@ -60,11 +65,13 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_test extends caliptra_ss_usb_base_test;
         cfg.host_cfg.speed = svt_usb_types::HS;
         cfg.dev_cfg.speed  = svt_usb_types::HS;
 
-        // Five endpoint entries so indices 2..4 are valid.
-        cfg.dev_cfg.local_device_cfg[0].num_endpoints   = 5;
+        // Seven endpoint entries so indices 2..6 are valid.
+        cfg.dev_cfg.local_device_cfg[0].num_endpoints   = 7;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[2] = new();
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[3] = new();
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[4] = new();
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5] = new();
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6] = new();
 
         // slot [0]: EP0 CONTROL at HS.
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[0].speed           = svt_usb_types::HS;
@@ -106,6 +113,22 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_test extends caliptra_ss_usb_base_test;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[4].speed           = svt_usb_types::HS;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[4].max_packet_size = INT_MAX_PKT;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[4].allow_aligned_transfer_without_zero_length = 1;
+
+        // slot [5]: EP3 INTERRUPT IN (second interrupt endpoint, device -> host).
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5].ep_number       = INT_EP2;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5].direction       = svt_usb_types::IN;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5].ep_type         = svt_usb_types::INTERRUPT;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5].speed           = svt_usb_types::HS;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[5].max_packet_size = INT_MAX_PKT;
+
+        // slot [6]: EP3 INTERRUPT OUT (host -> device). Same
+        // allow_aligned_transfer_without_zero_length rationale as slot [4].
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].ep_number       = INT_EP2;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].direction       = svt_usb_types::OUT;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].ep_type         = svt_usb_types::INTERRUPT;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].speed           = svt_usb_types::HS;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].max_packet_size = INT_MAX_PKT;
+        cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[6].allow_aligned_transfer_without_zero_length = 1;
 
         // Timing thresholds: union of what the two source tests needed. The ISO
         // test needed a 35 ms device_timeout for its long software-polled

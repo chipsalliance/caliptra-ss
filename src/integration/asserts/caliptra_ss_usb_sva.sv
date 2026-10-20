@@ -17,8 +17,20 @@
 module caliptra_ss_usb_sva ();
 
   wire usb_self_powered_pin      = `CPTRA_SS_TOP_PATH.usb_core_i.USB_self_powered;
-  wire usb_self_powered_compound = `CPTRA_SS_TOP_PATH.usb_core_i.u_hub_compound.USB_self_powered;
   logic waive_chk_at_sim_begin   = 1;
+
+  `define TOP_TO_COMPOUND_CONN(top_sig, compound_sig, sig_name) \
+      wire compound_``compound_sig = `CPTRA_SS_TOP_PATH.usb_core_i.u_hub_compound.compound_sig;\
+      \
+      always begin \
+        if(waive_chk_at_sim_begin == 0) begin \
+          $display("[caliptra_ss_usb_sva] checking USB_self_powered input of usb_core_i"); \
+          CHK_``sig_name``_COMPOUND : assert (top_sig === compound_``compound_sig) \
+            else $error($sformatf("[caliptra_ss_usb_sva] %s value mismatch between top(%b) and compound value(%b)", `"sig_name`" , top_sig, compound_``compound_sig)); \
+        end \
+        @(top_sig, compound_``compound_sig, waive_chk_at_sim_begin);\
+      end
+
 
   initial begin
     waive_chk_at_sim_begin = 1;
@@ -36,15 +48,12 @@ module caliptra_ss_usb_sva ();
     @(usb_self_powered_pin, waive_chk_at_sim_begin);
   end
 
-  always begin
-    if(waive_chk_at_sim_begin == 0) begin
-      $display("[caliptra_ss_usb_sva] checking USB_self_powered input of usb_core_i.u_hub_compound");
-      CHK_SELF_POWERED_COMPOUND: assert (usb_self_powered_compound === 1'b1)
-        else $error("[caliptra_ss_usb_sva] USB_self_powered at usb_core_i.u_hub_compound is %0b, expected 1'b1 (see the .USB_self_powered tie-off in caliptra_ss_top.sv). Descriptor bmAttributes would report bus-powered (0x80) and GET_STATUS(Device) bit0 would be 0.",
-                    usb_self_powered_compound);
-    end
-    @(usb_self_powered_compound, waive_chk_at_sim_begin);
-  end
+  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_self_powered_i, USB_self_powered, SELF_POWERED)
 
+  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_donotwakeup_n_i, sys_donotwakeup_n, DONOT_WAKEUP)
+
+  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_dev_wakeup_n_i, sys_dev_wakeup_n, DEV_WAKEUP_N)
+
+  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_enable_hub_i, USB_EnableHub, ENABLE_HUB)
 endmodule
 
