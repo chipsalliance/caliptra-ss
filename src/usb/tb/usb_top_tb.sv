@@ -18,6 +18,8 @@
 
 // Standalone UVM harness for the compound USB subsystem. It supplies four
 // independent AXI managers, two packet SRAMs, and an SVT UTMI PHY.
+// The DUT connects directly to the VIP: all USB stimulus and observation use
+// VIP sequences/callbacks, without a custom UTMI driver, monitor, or packet mux.
 // The DUT remains in device mode; unused host, ULPI, wake, and test controls
 // are tied to their inactive values.
 module usb_top_tb;
@@ -41,7 +43,12 @@ module usb_top_tb;
 
   // UTMI connections between the DUT and the SVT USB VIP.
   logic [7:0] dut_utmi_txdata;
+  logic [7:0] dut_utmi_rxdata;
+  logic dut_utmi_rxvalid;
+  logic dut_utmi_rxactive;
+  logic dut_utmi_rxerror;
   logic dut_utmi_txvalid;
+  logic dut_utmi_txready;
   logic dut_utmi_reset;
   logic dut_utmi_suspendm;
   logic dut_utmi_xcvrselect;
@@ -280,13 +287,13 @@ module usb_top_tb;
     .avalid(usb_20_mac_if.utmi_dut_mac_if.AValid),
     .sessend(usb_20_mac_if.utmi_dut_mac_if.SessEnd),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
-    .utmi_rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
-    .utmi_rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
-    .utmi_rxactive(usb_20_mac_if.utmi_dut_mac_if.RXActive),
-    .utmi_rxerror(usb_20_mac_if.utmi_dut_mac_if.RXError),
+    .utmi_rxdata(dut_utmi_rxdata),
+    .utmi_rxvalid(dut_utmi_rxvalid),
+    .utmi_rxactive(dut_utmi_rxactive),
+    .utmi_rxerror(dut_utmi_rxerror),
     .utmi_txdata(dut_utmi_txdata),
     .utmi_txvalid(dut_utmi_txvalid),
-    .utmi_txready(usb_20_mac_if.utmi_dut_mac_if.TXReady),
+    .utmi_txready(dut_utmi_txready),
     .utmi_reset(dut_utmi_reset),
     .utmi_suspendm(dut_utmi_suspendm),
     .utmi_xcvrselect(dut_utmi_xcvrselect),
@@ -328,6 +335,7 @@ module usb_top_tb;
   // 16-bit UTMI, serial mode, and optional low-power controls are unsupported.
   assign usb_20_mac_if.utmi_dut_mac_if.DataIn = dut_utmi_txdata;
   assign usb_20_mac_if.utmi_dut_mac_if.TXValid = dut_utmi_txvalid;
+  assign dut_utmi_txready = usb_20_mac_if.utmi_dut_mac_if.TXReady;
   assign usb_20_mac_if.utmi_dut_mac_if.Reset = dut_utmi_reset;
   assign usb_20_mac_if.utmi_dut_mac_if.SuspendM = dut_utmi_suspendm;
   // The wrapper exposes ordinary SuspendM but no USB LPM sleep controls. This
@@ -340,6 +348,10 @@ module usb_top_tb;
   assign usb_20_mac_if.utmi_dut_mac_if.XcvrSelect = usb_dut_vip_xcvrselect;
   assign usb_20_mac_if.utmi_dut_mac_if.TermSelect = dut_utmi_termselect;
   assign usb_20_mac_if.utmi_dut_mac_if.OpMode = dut_utmi_opmode;
+  assign dut_utmi_rxdata = usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0];
+  assign dut_utmi_rxvalid = usb_20_mac_if.utmi_dut_mac_if.RXValid;
+  assign dut_utmi_rxactive = usb_20_mac_if.utmi_dut_mac_if.RXActive;
+  assign dut_utmi_rxerror = usb_20_mac_if.utmi_dut_mac_if.RXError;
   // The DUT is a fixed peripheral, not a downstream-facing host port. Keep
   // its host pull-down controls disabled; the SVT host owns host termination.
   assign usb_20_mac_if.utmi_dut_mac_if.DpPulldown = 1'b0;

@@ -1,0 +1,26 @@
+document:
+  schema: 1.0
+
+contents:
+  - tests:
+      tags: ["L1"]
+      paths:
+        - ../tests/usb_axi_filter.yml
+        - ../tests/usb_axi_read_backpressure.yml
+        - ../tests/usb_axi_write_backpressure.yml
+        - ../tests/usb_bad_crc16.yml
+        - ../tests/usb_bad_crc5.yml
+        - ../tests/usb_bad_pid.yml
+        - ../tests/usb_bulk_ping.yml
+        - ../tests/usb_dev_skip.yml
+        - ../tests/usb_dev_skip_during_rx.yml
+        - ../tests/usb_double_buffer_bulk.yml
+        - ../tests/usb_endpoint_rw.yml
+        - ../tests/usb_high_bandwidth_interrupt.yml
+        - ../tests/usb_high_bandwidth_iso.yml
+        - ../tests/usb_init.yml
+        - ../tests/usb_l1_host_resume.yml
+        - ../tests/usb_l2_host_resume.yml
+        - ../tests/usb_test_packet.yml
+        - ../tests/usb_unsupported_request.yml
+        - ../tests/usb_utility_timeout.yml
