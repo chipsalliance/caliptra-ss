@@ -90,7 +90,11 @@ class caliptra_ss_usb_handshake_counter_callback
             svt_usb_packet::ACK   : ack_count++;
             svt_usb_packet::NAK   : nak_count++;
             svt_usb_packet::STALL : stall_count++;
-            default               : /* NYET and friends are not a response */ ;
+            default: begin
+                `uvm_error("USB_UNSUPPORTED_EP_RESPONSE",
+                    $sformatf("Unexpected device handshake PID 0x%0h during the silence window.",
+                              pkt.pid_name))
+            end
         endcase
     endfunction
 
