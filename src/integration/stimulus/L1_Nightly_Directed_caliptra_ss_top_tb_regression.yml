@@ -204,6 +204,11 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dev_ram_rw/caliptra_ss_usb_dev_ram_rw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_dev1_ram_rw/caliptra_ss_usb_dev1_ram_rw: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hub_ram_rw/caliptra_ss_usb_hub_ram_rw: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_get_interface/caliptra_ss_usb_hs_dev_get_interface: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_get_interface/caliptra_ss_usb_fs_dev_get_interface: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram/smoke_test_mcu_rom_patch_sram: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_test_locked1/smoke_test_mcu_rom_patch_sram_test_locked1: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_dev/smoke_test_mcu_rom_patch_sram_dev: { weight: 100 }
@@ -217,8 +222,3 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_reuse/smoke_test_mcu_rom_patch_sram_reuse: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_get_interface/caliptra_ss_usb_hs_dev_get_interface: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_get_interface/caliptra_ss_usb_fs_dev_get_interface: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt: { weight: 100 }
-        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt: { weight: 100 }
