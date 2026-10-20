@@ -69,15 +69,20 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
         // than the plain dual-device loopback test: this test performs 3 full
         // USBDC0 re-enumerations interleaved with USBDC1 traffic and with hub
         // port-status polling, all against software-polled firmware.
-        // device_timeout bounds how long the VIP retries a NAKing transaction
-        // before giving up on it. It must be comfortably larger than the
-        // firmware's worst-case arm latency - the largest NAK window ever
-        // observed on this test is ~55 us - but it is ALSO the per-transfer
-        // cost of a genuinely dead device, and it is paid once per retry. With
-        // 20 ms, a single wedged control transfer cost 4 x 20 ms = 80 ms of
-        // simulation on its own (run killed at 85.73 ms / 17.8 h of CPU, with
-        // the last 84 ms containing nothing but those retries). 2 ms is ~36x
-        // the largest observed NAK window and keeps that pathology bounded.
+        // device_timeout is the whole-transfer abort deadline - per the VIP
+        // source, svt_usb_device_configuration::device_timeout is the time
+        // "after which Host will abort a transfer". It does NOT bound how many
+        // times a NAKed transaction is re-tried; that is a separate,
+        // count-based budget (max_retry_due_to_nak, applied via
+        // USB_EP_MAX_RETRY_DUE_TO_NAK in caliptra_ss_usb_shared_cfg).
+        //
+        // It is kept large here because it is the per-transfer cost of a
+        // genuinely dead device and is paid once per retry: with 20 ms, a
+        // single wedged control transfer cost 4 x 20 ms = 80 ms of simulation
+        // on its own (run killed at 85.73 ms / 17.8 h of CPU, with the last
+        // 84 ms containing nothing but those retries). 2 ms keeps that
+        // pathology bounded while leaving ample room for the slowest response
+        // this software-polled firmware produces.
         cfg.dev_cfg.local_device_cfg[0].device_timeout = 2000us;
         cfg.host_cfg.tend_to_end_delay_hs              = 400000000.0; // 400 ms in ns
         cfg.host_cfg.speed                             = svt_usb_types::HS;
@@ -113,6 +118,11 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[2].max_packet_size =
             `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
         cfg.dev_cfg.local_device_cfg[0].endpoint_cfg[2].allow_aligned_transfer_without_zero_length = 1;
+
+        // endpoint_cfg[2] was allocated above, after shared_cfg had already
+        // run, so it still carries the VIP default max_retry_due_to_nak of 10.
+        // Re-apply the shared budget now that every endpoint object exists.
+        cfg.apply_nak_retry_budget();
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
