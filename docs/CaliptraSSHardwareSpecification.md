@@ -1939,7 +1939,7 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
 
 ## Combo AXI memory map
 
-The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 172` words. Offsets are byte offsets from the SoC-assigned Combo base address.
+The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 176` words. Offsets are byte offsets from the SoC-assigned Combo base address.
 
 | Internal block | Start offset | End offset |
 |:---------------|:-------------|:-----------|
@@ -1952,7 +1952,7 @@ The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers,
 **`USB_C_HUB_FIFO_SIZE` changes the Hub end offset and the trailing unmapped range; the earlier ranges stay fixed.** Calculate the boundaries as follows (`ceil` rounds up):
 
 ```text
-N = USB_C_HUB_FIFO_SIZE      (172 to 4096 DWORDs inclusive; default 172)
+N = USB_C_HUB_FIFO_SIZE      (176 to 4096 DWORDs inclusive; default 176)
 H = 4 * 2^ceil(log2(N))      (Hub aperture in bytes)
 U = 0x1000 + H               (first byte offset after Hub)
 C = 2^ceil(log2(U))          (Combo window size in bytes)

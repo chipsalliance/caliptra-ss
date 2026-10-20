@@ -16,7 +16,7 @@
 // USB HUB descriptor-array (ep0_mem) RW / write-lock test.
 //
 // Standalone read/write and write-lock test for the embedded hub descriptor
-// array (ep0_mem, 172 words at USB_HUB_REG_BASE_ADDR). All checking is
+// array (ep0_mem, 176 words at USB_HUB_REG_BASE_ADDR). All checking is
 // performed by the MCU firmware (caliptra_ss_usb_hub_ram_rw.c), which exercises
 // the array directly over the MCU LSU AXI master in three unlocked/locked
 // loops:
@@ -58,8 +58,8 @@ class caliptra_ss_usb_hub_ram_rw_test extends caliptra_ss_usb_base_test;
         // host virtual sequencer so it runs automatically during main_phase. No
         // host cfg override: the link is intentionally left un-brought-up.
         // Window sizing: MCU boot plus 3 loops of (unlocked write pass + locked
-        // capture/write/read-back pass) over the 172-word array, roughly
-        // 3 x (171 + 3*171) ~= 2k AXI accesses; 5000 us gives generous margin
+        // capture/write/read-back pass) over the 176-word array, roughly
+        // 3 x (175 + 3*175) ~= 2k AXI accesses; 5000 us gives generous margin
         // before the coarse MCU-halt timeout closes the run. The sequence
         // OBJECT is registered rather than its type wrapper so this per-test
         // window can be set as a field.

@@ -9,20 +9,20 @@ firmware does all of the checking directly over the LSU AXI master.
 
 The embedded USB hub keeps its descriptors (device, configuration, hub class,
 device qualifier, other-speed configuration) and its SETUP-match table in an
-internal 172-word (`C_NWORDS` = 172) 32-bit flip-flop array named `ep0_mem`
+internal 176-word (`C_NWORDS` = 176) 32-bit flip-flop array named `ep0_mem`
 inside the compound IP (`usb_ep0_hub_descr.m.vhdl`). The array self-initializes
 from a ROM constant at reset, so firmware has nothing to program. The whole
 array is reachable from the MCU LSU AXI master over the `hub_axi` aperture at
 `USB_HUB_DESC_DEVICE_BASE` (= `SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR`,
 0x2000_1000); word `i` lives at `base + i*4`. The aperture spans
-0x2000_1000 .. 0x2000_12AF (exactly 172 words), and word 15 is
+0x2000_1000 .. 0x2000_12BF (exactly 176 words), and word 15 is
 `SOC_USB_COMBO_HUB_CONTROL` (0x2000_103C) = `C_HUB_CS`, which confirms the base.
 
 ## Write-lock rule (from the RTL)
 
 ```
 hub_write_lock <= ep0_mem(C_HUB_CS)(0) and ep0_mem(C_HUB_CS)(16)
-write allowed only if (hub_write_lock='0' OR waddr=C_HUB_CS) and waddr < 172
+write allowed only if (hub_write_lock='0' OR waddr=C_HUB_CS) and waddr < C_NWORDS
 ```
 
 `C_HUB_CS` is word 15 (byte offset 0x3C), the Hub Control/Status register:
