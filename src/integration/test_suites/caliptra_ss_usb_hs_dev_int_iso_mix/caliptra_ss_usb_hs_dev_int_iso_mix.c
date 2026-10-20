@@ -12,28 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Description: USB HS device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) test
-//              firmware. Merge of caliptra_ss_usb_hs_dev_int_loopback.c and
-//              caliptra_ss_usb_hs_dev_iso_out.c, with the two endpoint types
-//              pinned to distinct logical endpoints so both stay armed at the
-//              same time and share the device DMA / EP command-status list.
+// Description: USB HS device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) +
+//              INTERRUPT (EP3) test firmware. Merge of
+//              caliptra_ss_usb_hs_dev_int_loopback.c and
+//              caliptra_ss_usb_hs_dev_iso_out.c, with the endpoint types
+//              pinned to distinct logical endpoints so all three stay armed at
+//              the same time and share the device DMA / EP command-status list.
 //
-// Host-side phase order driven by caliptra_ss_usb_hs_dev_int_iso_mix_sequence:
-//   phase 0: INTERRUPT round 0 on EP1 (OUT 64 B then IN 64 B loopback)
-//   phase 1: ISOCHRONOUS round 0 on EP2 (OUT 1024 B then 2x IN 512 B)
-//   phase 2: INTERRUPT round 1 on EP1 (new data pattern)
+// Host-side endpoint access order driven by
+// caliptra_ss_usb_hs_dev_int_iso_mix_sequence: EP1 -> EP2 -> EP3
+//   phase 0: EP1 INTERRUPT  (OUT 64 B then IN 64 B loopback), pattern base 0
+//   phase 1: EP2 ISOCHRONOUS (OUT 1024 B then 2x IN 512 B)
+//   phase 2: EP3 INTERRUPT  (OUT 64 B then IN 64 B loopback), pattern base 85
 //
-// The firmware itself is phase-agnostic: it arms EP1 OUT and EP2 OUT once the
-// device address has been programmed and then services whichever endpoint the
-// host decides to drive next.
+// The firmware itself is phase-agnostic: it arms EP1 OUT, EP3 OUT and EP2 OUT
+// once the device address has been programmed and then services whichever
+// endpoint the host decides to drive next.
 //
-// Resource split (no overlap between the INT and ISO sides):
-//   resource               EP1 (INTERRUPT)      EP2 (ISOCHRONOUS)
-//   EP-list OUT word       0x010                0x020
-//   EP-list IN buf0        0x018                0x028
-//   EP-list IN buf1        -                    0x02C
-//   SRAM OUT buffer        0x200 (64 B)         0x600 (1024 B)
-//   SRAM IN  buffer        0x400 (64 B)         0xA00 (1024 B)
+// Resource split (no overlap between the three endpoints):
+//   resource            EP1 (INTERRUPT)  EP2 (ISOCHRONOUS)  EP3 (INTERRUPT)
+//   EP-list OUT word    0x010            0x020              0x030
+//   EP-list IN buf0     0x018            0x028              0x038
+//   EP-list IN buf1     -                0x02C              -
+//   SRAM OUT buffer     0x200 (64 B)     0x600 (1024 B)     0x240 (64 B)
+//   SRAM IN  buffer     0x400 (64 B)     0xA00 (1024 B)     0x440 (64 B)
 // EP0 keeps 0x000-0x1FF of the data region; the EP command/status list itself
 // lives at offset 0 and must stay below the SETUP buffer at 0x100.
 //
@@ -67,18 +69,19 @@
 #include "stdint.h"
 #include "veer-csr.h"
 
-// Logical endpoint assignment. Both are inside the compiled physical-endpoint
+// Logical endpoint assignment. All are inside the compiled physical-endpoint
 // set (phys = 2*epnr + epdir must be <= C_NBPHYSEP+1 = 15 for the default
 // C_NBPHYSEP=14 this DUT instantiates), i.e. logical EP0..EP7 are usable.
 #define USB_INT_EP                    1u
 #define USB_ISO_EP                    2u
+#define USB_INT_EP2                   3u
 
-// INTERRUPT rounds. The host drives round 0, then the ISO phase, then round 1.
-#define N_INT_ROUNDS                  2u
+// Number of INTERRUPT endpoints serviced by the table below.
+#define N_INT_EPS                     2u
 
-// Per-round byte-value offset so each INTERRUPT round carries a distinct
-// pattern: byte[i] = (i + round*INT_ROUND_OFFSET) % 256. Must match
-// INT_ROUND_OFFSET in the UVM sequence.
+// Byte-value offset applied on the second INTERRUPT endpoint so each interrupt
+// endpoint carries a distinct pattern: byte[i] = (i + pattern_base) % 256.
+// Must match INT_ROUND_OFFSET in the UVM sequence.
 #define INT_ROUND_OFFSET              85u
 
 // Interrupt transfer size. 64 bytes is legal for both FS and HS interrupt
@@ -119,9 +122,12 @@
 
 // Data buffers. EP0 owns 0x000-0x1FF. The INTERRUPT side was moved out of the
 // 0x600/0xA00 pair it uses in the standalone int_loopback test so the ISO side
-// can keep its proven offsets unchanged.
+// can keep its proven offsets unchanged. All offsets are 64-byte aligned
+// because the entry AddrOffset field is the byte address >> 6.
 #define USB_SRAM_INT_OUT_BUF_OFFSET   0x200u
 #define USB_SRAM_INT_IN_BUF_OFFSET    0x400u
+#define USB_SRAM_INT2_OUT_BUF_OFFSET  0x240u
+#define USB_SRAM_INT2_IN_BUF_OFFSET   0x440u
 #define USB_SRAM_ISO_OUT_BUF_OFFSET   0x600u
 #define USB_SRAM_ISO_IN_BUF_OFFSET    0xA00u
 
@@ -134,19 +140,40 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 #endif
 
 // -------------------------------------------------------------------------
-// EP1 - INTERRUPT
+// INTERRUPT endpoint table (EP1 and EP3)
 // -------------------------------------------------------------------------
 
-// Arm EP1 OUT as INTERRUPT (T=1, RF=1) and unmask its completion interrupt.
-static void usb_int_ep_out_arm(void) {
+// One entry per INTERRUPT endpoint. Each endpoint owns its own OUT/IN SRAM
+// buffers and its own expected data pattern, so the whole OUT-verify ->
+// copy -> arm-IN -> IN-complete flow is identical for both and is driven from
+// this table instead of being duplicated per endpoint.
+typedef struct {
+    uint32_t ep_num;         // logical endpoint number
+    uint32_t out_buf_offset; // SRAM offset of the OUT (receive) buffer
+    uint32_t in_buf_offset;  // SRAM offset of the IN (loopback) buffer
+    uint32_t pattern_base;   // expected byte[i] = (i + pattern_base) % 256
+    bool     out_armed;      // OUT entry currently armed
+    bool     in_armed;       // IN entry currently armed
+    bool     done;           // OUT+IN loopback completed on this endpoint
+} usb_int_ep_t;
+
+static usb_int_ep_t int_eps[N_INT_EPS] = {
+    { USB_INT_EP,  USB_SRAM_INT_OUT_BUF_OFFSET,  USB_SRAM_INT_IN_BUF_OFFSET,
+      0u,                false, false, false },
+    { USB_INT_EP2, USB_SRAM_INT2_OUT_BUF_OFFSET, USB_SRAM_INT2_IN_BUF_OFFSET,
+      INT_ROUND_OFFSET,  false, false, false }
+};
+
+// Arm an INTERRUPT OUT entry (T=1, RF=1) and unmask its completion interrupt.
+static void usb_int_ep_out_arm(const usb_int_ep_t *ep) {
     uint32_t entry = USB_EP_ENTRY_ACTIVE
                    | USB_EP_ENTRY_TYPE_PERIODIC
                    | USB_EP_ENTRY_RF_INT
                    | USB_EP_ENTRY_NBYTES(USB_INT_TRANSFER_BYTES)
                    | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
-                                           + USB_SRAM_INT_OUT_BUF_OFFSET);
+                                           + ep->out_buf_offset);
     uint32_t slot = USB_DEV_DMA_BASE_ADDR
-                    + USB_EP_LIST_OUT_OFFSET(USB_INT_EP);
+                    + USB_EP_LIST_OUT_OFFSET(ep->ep_num);
     uint32_t inten;
     uint32_t rb;
 
@@ -154,7 +181,7 @@ static void usb_int_ep_out_arm(void) {
 
     // INTSTAT/INTEN bit index for EP(n) OUT is 2*n (EP0 OUT = bit 0).
     inten = lsu_read_32(USB_DEV_INTEN);
-    lsu_write_32(USB_DEV_INTEN, inten | (1u << (2u * USB_INT_EP)));
+    lsu_write_32(USB_DEV_INTEN, inten | (1u << (2u * ep->ep_num)));
 
     // Readback: if the slot address is wrong this reads back 0 instead of the
     // armed entry, which separates an addressing bug from a datapath issue.
@@ -162,22 +189,22 @@ static void usb_int_ep_out_arm(void) {
     VPRINTF(LOW,
         "MCU: EP%d OUT armed as INTERRUPT (T=1,RF=1), %d bytes; "
         "slot=0x%x wrote=0x%x readback=0x%x%s\n",
-        USB_INT_EP, USB_INT_TRANSFER_BYTES, slot, entry, rb,
+        ep->ep_num, USB_INT_TRANSFER_BYTES, slot, entry, rb,
         (rb == entry) ? "" : " <<< MISMATCH");
 }
 
-// Arm EP1 IN. Bit 26 is the data Toggle bit on IN entries, so TYPE_PERIODIC
-// must NOT be set here.
-static void usb_int_ep_in_arm(void) {
+// Arm an INTERRUPT IN entry. Bit 26 is the data Toggle bit on IN entries, so
+// TYPE_PERIODIC must NOT be set here.
+static void usb_int_ep_in_arm(const usb_int_ep_t *ep) {
     uint32_t entry = USB_EP_ENTRY_ACTIVE
                    | USB_EP_ENTRY_NBYTES(USB_INT_TRANSFER_BYTES)
                    | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
-                                           + USB_SRAM_INT_IN_BUF_OFFSET);
+                                           + ep->in_buf_offset);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR
-                 + USB_EP_LIST_IN_BUF0_OFFSET(USB_INT_EP), entry);
+                 + USB_EP_LIST_IN_BUF0_OFFSET(ep->ep_num), entry);
 
     VPRINTF(LOW, "MCU: EP%d IN armed with %d loopback bytes\n",
-            USB_INT_EP, USB_INT_TRANSFER_BYTES);
+            ep->ep_num, USB_INT_TRANSFER_BYTES);
 }
 
 // -------------------------------------------------------------------------
@@ -255,12 +282,10 @@ void main(void) {
     uint32_t intstat;
     uint32_t poll_count;
     uint32_t i;
-    uint32_t int_ep_out_int_mask;
+    uint32_t e;
 
-    // INTERRUPT state.
-    uint32_t int_round        = 0u;   // completed INTERRUPT loopback rounds
-    bool     int_out_armed    = false;
-    bool     int_in_armed     = false;
+    // INTERRUPT state lives in int_eps[] (one entry per interrupt endpoint).
+    uint32_t int_done_cnt     = 0u;   // interrupt endpoints that finished
 
     // ISOCHRONOUS state.
     bool     iso_out_armed    = false;
@@ -272,24 +297,22 @@ void main(void) {
     bool     all_done         = false;
 
     // Boundary guard: the EP command/status list is a contiguous table at
-    // offset 0 indexed by logical endpoint. The highest slot used here (EP2 IN
-    // buf1 at 0x02C) must end at or before the SETUP buffer at 0x100 so the
+    // offset 0 indexed by logical endpoint. The highest slot used here (EP3 IN
+    // buf0 at 0x038) must end at or before the SETUP buffer at 0x100 so the
     // list does not overrun EP0's control/data buffers.
-    if ((USB_EP_LIST_OUT_OFFSET(USB_ISO_EP) + 0x10u)
+    if ((USB_EP_LIST_OUT_OFFSET(USB_INT_EP2) + 0x10u)
         > USB_SRAM_SETUP_BUF_OFFSET) {
         VPRINTF(FATAL,
             "MCU: EP%d list slot 0x%x overruns SETUP buffer 0x%x - aborting\n",
-            USB_ISO_EP, USB_EP_LIST_OUT_OFFSET(USB_ISO_EP),
+            USB_INT_EP2, USB_EP_LIST_OUT_OFFSET(USB_INT_EP2),
             USB_SRAM_SETUP_BUF_OFFSET);
         SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
         while (1);
     }
 
-    int_ep_out_int_mask = (1u << (2u * USB_INT_EP));
-
     VPRINTF(LOW,
-        "=================\nMCU: USB HS device mixed INTERRUPT EP%d + ISO EP%d test\n=================\n\n",
-        USB_INT_EP, USB_ISO_EP);
+        "=================\nMCU: USB HS device mixed INTERRUPT EP%d + ISO EP%d + INTERRUPT EP%d test\n=================\n\n",
+        USB_INT_EP, USB_ISO_EP, USB_INT_EP2);
 
     boot_mcu();
     boot_usb_core_hub();
@@ -305,16 +328,19 @@ void main(void) {
          poll_count++) {
 
         // Any bus reset clears the Active bit on ALL endpoints and
-        // usb_handle_bus_reset() only restores EP0, so both data endpoints must
+        // usb_handle_bus_reset() only restores EP0, so every data endpoint must
         // be re-armed explicitly whenever DRES_C was observed.
         uint32_t prev_dres = lsu_read_32(USB_DEV_DEVCMDSTAT)
                              & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK;
         usb_handle_bus_reset();
         if (prev_dres) {
-            if (int_out_armed && !int_in_armed && int_round < N_INT_ROUNDS) {
-                VPRINTF(LOW, "MCU: Bus reset - re-arming EP%d OUT\n",
-                        USB_INT_EP);
-                usb_int_ep_out_arm();
+            for (e = 0; e < N_INT_EPS; e++) {
+                if (int_eps[e].out_armed && !int_eps[e].in_armed
+                    && !int_eps[e].done) {
+                    VPRINTF(LOW, "MCU: Bus reset - re-arming EP%d OUT\n",
+                            int_eps[e].ep_num);
+                    usb_int_ep_out_arm(&int_eps[e]);
+                }
             }
             if (iso_out_armed && !iso_out_done) {
                 VPRINTF(LOW, "MCU: Bus reset - re-arming EP%d OUT\n",
@@ -342,17 +368,18 @@ void main(void) {
         // device stuck at address 0 and every later addr=2 control transfer
         // times out. DEV_ADDR is nonzero only after SET_ADDRESS has been
         // serviced, which is exactly the safe arming point.
-        if (!int_out_armed
-            && (lsu_read_32(USB_DEV_DEVCMDSTAT)
-                & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK) != 0u) {
-            usb_int_ep_out_arm();
-            int_out_armed = true;
-        }
-        if (!iso_out_armed
-            && (lsu_read_32(USB_DEV_DEVCMDSTAT)
-                & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK) != 0u) {
-            usb_iso_ep_out_arm();
-            iso_out_armed = true;
+        if ((lsu_read_32(USB_DEV_DEVCMDSTAT)
+             & DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK) != 0u) {
+            for (e = 0; e < N_INT_EPS; e++) {
+                if (!int_eps[e].out_armed) {
+                    usb_int_ep_out_arm(&int_eps[e]);
+                    int_eps[e].out_armed = true;
+                }
+            }
+            if (!iso_out_armed) {
+                usb_iso_ep_out_arm();
+                iso_out_armed = true;
+            }
         }
 
         // EP0 IN: status-phase completion.
@@ -360,88 +387,88 @@ void main(void) {
             lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
 
         // ---------------------------------------------------------------
-        // EP1 INTERRUPT state machine.
+        // INTERRUPT state machine, run for every interrupt endpoint in the
+        // table (EP1 and EP3). Both endpoints stay armed for the whole run,
+        // so the host is free to drive them in any order; this firmware
+        // simply reacts to whichever one completes.
         // ---------------------------------------------------------------
+        for (e = 0; e < N_INT_EPS; e++) {
+            usb_int_ep_t *ep       = &int_eps[e];
+            uint32_t      ep_mask  = (1u << (2u * ep->ep_num));
 
-        // INTERRUPT OUT completion: detected by hardware CLEARING the Active
-        // bit of the OUT entry (the INTSTAT bit index is not reliable for an
-        // arbitrary endpoint). The INTSTAT bit is still write-1-cleared
-        // opportunistically so the status register does not latch up.
-        if (int_out_armed && !int_in_armed && int_round < N_INT_ROUNDS) {
-            uint32_t entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                 + USB_EP_LIST_OUT_OFFSET(USB_INT_EP));
+            // INTERRUPT OUT completion: detected by hardware CLEARING the
+            // Active bit of the OUT entry (the INTSTAT bit index is not
+            // reliable for an arbitrary endpoint). The INTSTAT bit is still
+            // write-1-cleared opportunistically so the status register does
+            // not latch up.
+            if (ep->out_armed && !ep->in_armed && !ep->done) {
+                uint32_t entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR
+                                     + USB_EP_LIST_OUT_OFFSET(ep->ep_num));
 
-            if (!(entry & USB_EP_ENTRY_ACTIVE)) {
-                uint32_t residual;
-                uint32_t errors     = 0u;
-                uint32_t round_base = int_round * INT_ROUND_OFFSET;
+                if (!(entry & USB_EP_ENTRY_ACTIVE)) {
+                    uint32_t residual;
+                    uint32_t errors = 0u;
 
-                if (intstat & int_ep_out_int_mask)
-                    lsu_write_32(USB_DEV_INTSTAT, int_ep_out_int_mask);
+                    if (intstat & ep_mask)
+                        lsu_write_32(USB_DEV_INTSTAT, ep_mask);
 
-                residual = (entry >> 11) & 0x7FFFu;
+                    residual = (entry >> 11) & 0x7FFFu;
 
-                VPRINTF(LOW,
-                    "MCU: [int round %d] EP%d INTERRUPT OUT done - received %d bytes (residual=%d)\n",
-                    int_round, USB_INT_EP,
-                    USB_INT_TRANSFER_BYTES - residual, residual);
+                    VPRINTF(LOW,
+                        "MCU: EP%d INTERRUPT OUT done - received %d bytes (residual=%d)\n",
+                        ep->ep_num,
+                        USB_INT_TRANSFER_BYTES - residual, residual);
 
-                // Expected host pattern: byte[i] = (i + round*85) % 256.
-                for (i = 0; i < USB_INT_TRANSFER_BYTES; i++) {
-                    uint32_t word = lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                                + USB_SRAM_INT_OUT_BUF_OFFSET
-                                                + (i & ~3u));
-                    uint8_t  actual   = (uint8_t)((word >> ((i & 3u) * 8u))
-                                                  & 0xFFu);
-                    uint8_t  expected = (uint8_t)((i + round_base) % 256u);
-                    if (actual != expected) {
-                        if (errors < 8)
-                            VPRINTF(LOW,
-                                "MCU: [int round %d] OUT MISMATCH byte[%d]: got 0x%x exp 0x%x\n",
-                                int_round, i, actual, expected);
-                        errors++;
+                    // Expected host pattern: byte[i] = (i + base) % 256.
+                    for (i = 0; i < USB_INT_TRANSFER_BYTES; i++) {
+                        uint32_t word = lsu_read_32(USB_DEV_DMA_BASE_ADDR
+                                                    + ep->out_buf_offset
+                                                    + (i & ~3u));
+                        uint8_t  actual   = (uint8_t)((word >> ((i & 3u) * 8u))
+                                                      & 0xFFu);
+                        uint8_t  expected =
+                            (uint8_t)((i + ep->pattern_base) % 256u);
+                        if (actual != expected) {
+                            if (errors < 8)
+                                VPRINTF(LOW,
+                                    "MCU: EP%d OUT MISMATCH byte[%d]: got 0x%x exp 0x%x\n",
+                                    ep->ep_num, i, actual, expected);
+                            errors++;
+                        }
                     }
-                }
-                if (errors == 0)
-                    VPRINTF(LOW,
-                        "MCU: [int round %d] EP%d INTERRUPT OUT data check PASSED\n",
-                        int_round, USB_INT_EP);
-                else
-                    VPRINTF(LOW,
-                        "MCU: [int round %d] EP%d INTERRUPT OUT data check FAILED (%d errors)\n",
-                        int_round, USB_INT_EP, errors);
+                    if (errors == 0)
+                        VPRINTF(LOW,
+                            "MCU: EP%d INTERRUPT OUT data check PASSED\n",
+                            ep->ep_num);
+                    else
+                        VPRINTF(LOW,
+                            "MCU: EP%d INTERRUPT OUT data check FAILED (%d errors)\n",
+                            ep->ep_num, errors);
 
-                // Copy the received payload into the IN buffer and arm IN.
-                for (i = 0; i < USB_INT_TRANSFER_BYTES; i += 4) {
-                    uint32_t word = lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                                + USB_SRAM_INT_OUT_BUF_OFFSET
-                                                + i);
-                    lsu_write_32(USB_DEV_DMA_BASE_ADDR
-                                 + USB_SRAM_INT_IN_BUF_OFFSET + i, word);
+                    // Copy the received payload into the IN buffer and arm IN.
+                    for (i = 0; i < USB_INT_TRANSFER_BYTES; i += 4) {
+                        uint32_t word = lsu_read_32(USB_DEV_DMA_BASE_ADDR
+                                                    + ep->out_buf_offset + i);
+                        lsu_write_32(USB_DEV_DMA_BASE_ADDR
+                                     + ep->in_buf_offset + i, word);
+                    }
+                    usb_int_ep_in_arm(ep);
+                    ep->in_armed = true;
                 }
-                usb_int_ep_in_arm();
-                int_in_armed = true;
             }
-        }
 
-        // INTERRUPT IN completion: unlike isochronous IN, an interrupt IN is
-        // ACKed by the host, so hardware does clear the Active bit here.
-        if (int_in_armed) {
-            uint32_t in_entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR
-                                    + USB_EP_LIST_IN_BUF0_OFFSET(USB_INT_EP));
-            if (!(in_entry & USB_EP_ENTRY_ACTIVE)) {
-                int_in_armed = false;
-                int_round++;
-                VPRINTF(LOW,
-                    "MCU: EP%d INTERRUPT loopback round %d PASSED (%d/%d rounds done)\n",
-                    USB_INT_EP, int_round - 1u, int_round, N_INT_ROUNDS);
-
-                if (int_round < N_INT_ROUNDS) {
-                    // Re-arm OUT for the next INTERRUPT round. The host runs
-                    // the ISO phase in between, so this entry simply stays
-                    // Active (the device NAKs nothing - no IN/OUT tokens are
-                    // sent to EP1 during the ISO phase) until phase 2 starts.
-                    usb_int_ep_out_arm();
+            // INTERRUPT IN completion: unlike isochronous IN, an interrupt IN
+            // is ACKed by the host, so hardware does clear the Active bit.
+            if (ep->in_armed) {
+                uint32_t in_entry = lsu_read_32(USB_DEV_DMA_BASE_ADDR
+                                 + USB_EP_LIST_IN_BUF0_OFFSET(ep->ep_num));
+                if (!(in_entry & USB_EP_ENTRY_ACTIVE)) {
+                    ep->in_armed = false;
+                    ep->done     = true;
+                    int_done_cnt++;
+                    VPRINTF(LOW,
+                        "MCU: EP%d INTERRUPT loopback PASSED (%d/%d interrupt endpoints done)\n",
+                        ep->ep_num, int_done_cnt, N_INT_EPS);
                 }
             }
         }
@@ -510,14 +537,14 @@ void main(void) {
             iso_done = true;
         }
 
-        // Both endpoint families finished.
-        if (int_round >= N_INT_ROUNDS && iso_done)
+        // Every endpoint family finished.
+        if (int_done_cnt >= N_INT_EPS && iso_done)
             all_done = true;
 
         if (poll_count % 5000 == 0 && poll_count > 0) {
             VPRINTF(LOW,
-                "MCU: [poll %d int_round %d iso_out_done %d iso_done %d] DEVCMDSTAT=0x%x INTSTAT=0x%x\n",
-                poll_count, int_round, (uint32_t)iso_out_done,
+                "MCU: [poll %d int_done %d iso_out_done %d iso_done %d] DEVCMDSTAT=0x%x INTSTAT=0x%x\n",
+                poll_count, int_done_cnt, (uint32_t)iso_out_done,
                 (uint32_t)iso_done,
                 lsu_read_32(USB_DEV_DEVCMDSTAT),
                 lsu_read_32(USB_DEV_INTSTAT));
@@ -526,14 +553,18 @@ void main(void) {
 
     if (all_done)
         VPRINTF(LOW,
-            "MCU: USB HS dev mixed INT EP%d (%d rounds) + ISO EP%d PASSED\n",
-            USB_INT_EP, int_round, USB_ISO_EP);
+            "MCU: USB HS dev mixed INT EP%d + ISO EP%d + INT EP%d PASSED\n",
+            USB_INT_EP, USB_ISO_EP, USB_INT_EP2);
     else
         VPRINTF(LOW,
-            "MCU: USB HS dev mixed INT+ISO TIMEOUT (int_round=%d/%d int_out_armed=%d int_in_armed=%d iso_out_done=%d iso_in_armed=%d iso_done=%d)\n",
-            int_round, N_INT_ROUNDS, (uint32_t)int_out_armed,
-            (uint32_t)int_in_armed, (uint32_t)iso_out_done,
-            (uint32_t)iso_in_armed, (uint32_t)iso_done);
+            "MCU: USB HS dev mixed INT+ISO TIMEOUT (int_done=%d/%d ep%d[out=%d in=%d done=%d] ep%d[out=%d in=%d done=%d] iso_out_done=%d iso_in_armed=%d iso_done=%d)\n",
+            int_done_cnt, N_INT_EPS,
+            int_eps[0].ep_num, (uint32_t)int_eps[0].out_armed,
+            (uint32_t)int_eps[0].in_armed, (uint32_t)int_eps[0].done,
+            int_eps[1].ep_num, (uint32_t)int_eps[1].out_armed,
+            (uint32_t)int_eps[1].in_armed, (uint32_t)int_eps[1].done,
+            (uint32_t)iso_out_done, (uint32_t)iso_in_armed,
+            (uint32_t)iso_done);
 
     VPRINTF(LOW, "MCU: USB HS device mixed INTERRUPT + ISO test - halting\n");
     csr_write_mpmc_halt();

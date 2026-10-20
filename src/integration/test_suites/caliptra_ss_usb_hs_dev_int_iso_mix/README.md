@@ -1,9 +1,9 @@
 # caliptra_ss_usb_hs_dev_int_iso_mix
 
-Mixed-endpoint USB 2.0 High Speed device test: one INTERRUPT endpoint (EP1) and
-one ISOCHRONOUS endpoint (EP2) are armed at the same time and driven in an
-interleaved order, so the device DMA and the shared EP command/status list are
-exercised with two different transfer types live simultaneously.
+Mixed-endpoint USB 2.0 High Speed device test: two INTERRUPT endpoints (EP1 and
+EP3) and one ISOCHRONOUS endpoint (EP2) are armed at the same time and driven in
+the order EP1 -> EP2 -> EP3, so the device DMA and the shared EP command/status
+list are exercised with two different transfer types live simultaneously.
 
 The test is a merge of:
 
@@ -19,31 +19,31 @@ traffic phases after hub + USBDC0 enumeration:
 |---|---|---|---|
 | 0 | EP1 | INTERRUPT | OUT 64 B (ramp `i`), then IN 64 B loopback compare |
 | 1 | EP2 | ISOCHRONOUS | OUT 1024 B (ramp `i % 256`), then IN buf0 512 B + IN buf1 512 B |
-| 2 | EP1 | INTERRUPT | OUT 64 B (ramp `(i + 85) % 256`), then IN 64 B loopback compare |
+| 2 | EP3 | INTERRUPT | OUT 64 B (ramp `(i + 85) % 256`), then IN 64 B loopback compare |
 
-Both OUT endpoints are armed once `DEVCMDSTAT.DEV_ADDR != 0`, so EP1 stays
-armed across the whole ISO phase and EP2 stays armed across the whole second
-INTERRUPT phase. The firmware is phase-agnostic and simply services whichever
+All three OUT endpoints are armed once `DEVCMDSTAT.DEV_ADDR != 0`, so EP1 and
+EP3 stay armed across the whole ISO phase and EP2 stays armed across both
+INTERRUPT phases. The firmware is phase-agnostic and simply services whichever
 endpoint the host drives next.
 
 ## Resource map
 
-No overlap between the two endpoint families. EP0 keeps data region
-`0x000-0x1FF`; the ISO side keeps the offsets proven by the standalone
-`iso_out` test and only the INTERRUPT side was relocated.
+No overlap between the endpoint families. EP0 keeps data region `0x000-0x1FF`;
+the ISO side keeps the offsets proven by the standalone `iso_out` test and only
+the INTERRUPT side was relocated.
 
-| Resource | EP1 (INTERRUPT) | EP2 (ISOCHRONOUS) |
-|---|---|---|
-| EP-list OUT word | `0x010` | `0x020` |
-| EP-list IN buf0 | `0x018` | `0x028` |
-| EP-list IN buf1 | - | `0x02C` |
-| SRAM OUT buffer | `0x200` (64 B) | `0x600` (1024 B) |
-| SRAM IN buffer | `0x400` (64 B) | `0xA00` (1024 B) |
+| Resource | EP1 (INTERRUPT) | EP2 (ISOCHRONOUS) | EP3 (INTERRUPT) |
+|---|---|---|---|
+| EP-list OUT word | `0x010` | `0x020` | `0x030` |
+| EP-list IN buf0 | `0x018` | `0x028` | `0x038` |
+| EP-list IN buf1 | - | `0x02C` | - |
+| SRAM OUT buffer | `0x200` (64 B) | `0x600` (1024 B) | `0x240` (64 B) |
+| SRAM IN buffer | `0x400` (64 B) | `0xA00` (1024 B) | `0x440` (64 B) |
 
 The EP command/status list is a table of 16-byte blocks indexed by LOGICAL
 endpoint (`0x10*n` OUT, `0x10*n + 8` IN buf0, `0x10*n + 0xC` IN buf1). The
-highest slot used here (`0x02C`) stays well below the SETUP buffer at `0x100`;
-a runtime boundary assert guards this.
+highest slot used here (`0x038`) stays below the SETUP buffer at `0x100`; a
+runtime boundary assert guards this.
 
 ## Completion-signal asymmetry
 
@@ -62,12 +62,12 @@ it is the data Toggle bit and must be left clear.
 
 Firmware side (MCU log):
 
-- `[int round 0] EP1 INTERRUPT OUT data check PASSED`
-- `EP1 INTERRUPT loopback round 0 PASSED`
+- `EP1 INTERRUPT OUT data check PASSED`
+- `EP1 INTERRUPT loopback PASSED (1/2 interrupt endpoints done)`
 - `EP2 ISO OUT data check PASSED`
-- `[int round 1] EP1 INTERRUPT OUT data check PASSED`
-- `EP1 INTERRUPT loopback round 1 PASSED`
-- `USB HS dev mixed INT EP1 (2 rounds) + ISO EP2 PASSED`
+- `EP3 INTERRUPT OUT data check PASSED`
+- `EP3 INTERRUPT loopback PASSED (2/2 interrupt endpoints done)`
+- `USB HS dev mixed INT EP1 + ISO EP2 + INT EP3 PASSED`
 
 Host side (UVM log): no data mismatches in either INTERRUPT IN compare or in
 the two ISO IN buffer compares, and the final sequence summary reports PASS.

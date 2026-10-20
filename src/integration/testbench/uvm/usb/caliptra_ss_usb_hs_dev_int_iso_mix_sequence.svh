@@ -13,7 +13,8 @@
 `define CALIPTRA_SS_USB_HS_DEV_INT_ISO_MIX_SEQUENCE_SV
 
 // =============================================================================
-// USB High-Speed device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) sequence.
+// USB High-Speed device mixed INTERRUPT (EP1) + ISOCHRONOUS (EP2) +
+// INTERRUPT (EP3) sequence.
 //
 // This sequence merges caliptra_ss_usb_hs_dev_int_loopback_sequence (INTERRUPT
 // OUT + IN loopback) and caliptra_ss_usb_hs_dev_iso_out_sequence (ISO OUT 1024
@@ -21,25 +22,29 @@
 // endpoint types are armed at the same time and the shared device DMA / EP
 // command-status list is exercised concurrently.
 //
-// Phase order (as requested): INT(EP1) -> ISO(EP2) -> INT(EP1)
-//   Phase 0: INTERRUPT OUT 64 B to EP1, pattern byte[i] = i, then INTERRUPT
+// Endpoint access order (as requested): EP1 -> EP2 -> EP3
+//   Phase 0: EP1 INTERRUPT OUT 64 B, pattern byte[i] = i, then INTERRUPT
 //            IN 64 B from EP1 and byte-compare (firmware loops OUT -> IN).
-//   Phase 1: ISOCHRONOUS OUT 1024 B to EP2, pattern byte[i] = i % 256, then
+//   Phase 1: EP2 ISOCHRONOUS OUT 1024 B, pattern byte[i] = i % 256, then
 //            two ISOCHRONOUS IN tokens of 512 B each from EP2, expected
 //            byte[i] = 255 - (i % 256).
-//   Phase 2: INTERRUPT round 1 on EP1 with a shifted pattern
-//            byte[i] = (i + 85) % 256. The different pattern proves the
-//            firmware re-armed the endpoint and refilled the loopback buffer
-//            rather than returning stale SRAM from phase 0.
+//   Phase 2: EP3 INTERRUPT OUT 64 B + IN 64 B loopback, identical mechanism to
+//            phase 0 but on a SECOND interrupt endpoint and with a shifted
+//            pattern byte[i] = (i + 85) % 256. The distinct endpoint proves
+//            the EP command/status list indexing is correct for a third live
+//            endpoint, and the distinct pattern proves no stale SRAM from
+//            phase 0 is returned.
 //
 // Endpoint assignment is FIXED (no randomization, no reconfigure()):
-//   EP1 = INTERRUPT, EP2 = ISOCHRONOUS. These must match USB_INT_EP / USB_ISO_EP
-//   in caliptra_ss_usb_hs_dev_int_iso_mix.c and the endpoint_cfg[] slots built
-//   by caliptra_ss_usb_hs_dev_int_iso_mix_test.
+//   EP1 = INTERRUPT, EP2 = ISOCHRONOUS, EP3 = INTERRUPT. These must match
+//   USB_INT_EP / USB_ISO_EP / USB_INT_EP2 in
+//   caliptra_ss_usb_hs_dev_int_iso_mix.c and the endpoint_cfg[] slots built by
+//   caliptra_ss_usb_hs_dev_int_iso_mix_test.
 //
 // endpoint_cfg[] slot map (array index, NOT endpoint number):
 //   [0] EP0 CONTROL   [1] EP2 ISO IN   [2] EP2 ISO OUT
 //   [3] EP1 INT IN    [4] EP1 INT OUT
+//   [5] EP3 INT IN    [6] EP3 INT OUT
 // =============================================================================
 
 class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_sequence;
@@ -49,13 +54,14 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
     // Endpoint numbers - must match the firmware.
     localparam int INT_EP            = 1;
     localparam int ISO_EP            = 2;
+    localparam int INT_EP2           = 3;
 
     // Transfer sizes.
     localparam int INT_XFER_BYTES    = 64;
     localparam int ISO_BYTES         = 1024;
     localparam int ISO_IN_BYTES      = 512;
 
-    // Per-round pattern offset for the second INTERRUPT round.
+    // Pattern offset applied on the second INTERRUPT endpoint (EP3).
     localparam int INT_ROUND_OFFSET  = 85;
 
     // endpoint_cfg[] array indices.
@@ -63,18 +69,23 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
     localparam int ISO_OUT_ANCHOR    = 2;
     localparam int INT_IN_ANCHOR     = 3;
     localparam int INT_OUT_ANCHOR    = 4;
+    localparam int INT2_IN_ANCHOR    = 5;
+    localparam int INT2_OUT_ANCHOR   = 6;
 
     function new(string name = "caliptra_ss_usb_hs_dev_int_iso_mix_sequence");
         super.new(name);
     endfunction
 
     // -------------------------------------------------------------------------
-    // One INTERRUPT OUT + IN loopback round on EP1.
-    // Pattern: byte[i] = (i + round*INT_ROUND_OFFSET) % 256.
+    // One INTERRUPT OUT + IN loopback round on an arbitrary interrupt endpoint.
+    // Pattern: byte[i] = (i + pattern_base) % 256.
     // -------------------------------------------------------------------------
     virtual task run_int_round(svt_usb_agent         host_agent_h,
                                svt_usb_configuration usb_cfg,
-                               int unsigned          round,
+                               int unsigned          ep_num,
+                               int unsigned          out_anchor,
+                               int unsigned          in_anchor,
+                               int unsigned          pattern_base,
                                ref int unsigned      err_cnt);
         svt_usb_transfer int_out_req;
         svt_usb_transfer int_in_req;
@@ -82,26 +93,26 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         bit [7:0]        rnd_base;
         int unsigned     mismatch_count;
 
-        rnd_base  = 8'((INT_ROUND_OFFSET * round) % 256);
+        rnd_base  = 8'(pattern_base % 256);
         send_data = new[INT_XFER_BYTES];
         for (int unsigned i = 0; i < INT_XFER_BYTES; i++)
             send_data[i] = 8'((i + rnd_base) % 256);
 
         `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-            $sformatf("--- INTERRUPT round %0d on EP%0d (pattern base=0x%02X) ---",
-                      round, INT_EP, rnd_base), UVM_LOW)
+            $sformatf("--- INTERRUPT round on EP%0d (pattern base=0x%02X) ---",
+                      ep_num, rnd_base), UVM_LOW)
 
         do_data_xfer(
             .agent_h       (host_agent_h),
             .usb_cfg       (usb_cfg),
             .xfer_kind     (svt_usb_transfer::INTERRUPT_OUT_TRANSFER),
             .device_addr   (2),
-            .ep_num        (INT_EP),
+            .ep_num        (ep_num),
             .byte_count    (INT_XFER_BYTES),
-            .ep_anchor_idx (INT_OUT_ANCHOR),
-            .label         ($sformatf("HS_INT_OUT_EP%0d_r%0d", INT_EP, round)),
+            .ep_anchor_idx (out_anchor),
+            .label         ($sformatf("HS_INT_OUT_EP%0d", ep_num)),
             .req           (int_out_req),
-            .obj_name      ($sformatf("int_out_req_r%0d", round)),
+            .obj_name      ($sformatf("int_out_req_ep%0d", ep_num)),
             .payload_data  (send_data));
 
         // Allow firmware to verify the OUT payload, copy it into the IN buffer
@@ -113,20 +124,20 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
             .usb_cfg       (usb_cfg),
             .xfer_kind     (svt_usb_transfer::INTERRUPT_IN_TRANSFER),
             .device_addr   (2),
-            .ep_num        (INT_EP),
+            .ep_num        (ep_num),
             .byte_count    (INT_XFER_BYTES),
-            .ep_anchor_idx (INT_IN_ANCHOR),
-            .label         ($sformatf("HS_INT_IN_EP%0d_r%0d", INT_EP, round)),
+            .ep_anchor_idx (in_anchor),
+            .label         ($sformatf("HS_INT_IN_EP%0d", ep_num)),
             .req           (int_in_req),
-            .obj_name      ($sformatf("int_in_req_r%0d", round)));
+            .obj_name      ($sformatf("int_in_req_ep%0d", ep_num)));
 
         mismatch_count = 0;
         for (int unsigned bi = 0; bi < INT_XFER_BYTES; bi++) begin
             if (int_in_req.payload.data[bi] !== send_data[bi]) begin
                 if (mismatch_count < 5)
                     `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
-                        $sformatf("INT round %0d mismatch byte[%0d]: sent=0x%02h got=0x%02h",
-                                  round, bi, send_data[bi], int_in_req.payload.data[bi]))
+                        $sformatf("INT EP%0d mismatch byte[%0d]: sent=0x%02h got=0x%02h",
+                                  ep_num, bi, send_data[bi], int_in_req.payload.data[bi]))
                 mismatch_count++;
             end
         end
@@ -134,12 +145,12 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
 
         if (mismatch_count == 0)
             `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("INT round %0d loopback PASSED (all %0d bytes match).",
-                          round, INT_XFER_BYTES), UVM_LOW)
+                $sformatf("INT EP%0d loopback PASSED (all %0d bytes match).",
+                          ep_num, INT_XFER_BYTES), UVM_LOW)
         else
             `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("INT round %0d loopback FAILED: %0d byte(s) mismatched.",
-                          round, mismatch_count))
+                $sformatf("INT EP%0d loopback FAILED: %0d byte(s) mismatched.",
+                          ep_num, mismatch_count))
 
         // Allow firmware to observe the IN Active-bit clear and re-arm.
         #20us;
@@ -283,20 +294,23 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         `uvm_info("USB_HS_INT_ISO_MIX_SEQ", "Enumeration complete.", UVM_LOW)
         #10us;
 
-        // Phase 0: INTERRUPT round 0 on EP1.
-        run_int_round(host_agent_h, usb_cfg, 0, total_err_cnt);
+        // Phase 0: INTERRUPT loopback on EP1 (pattern base 0).
+        run_int_round(host_agent_h, usb_cfg, INT_EP,
+                      INT_OUT_ANCHOR, INT_IN_ANCHOR, 0, total_err_cnt);
         #50us;
 
         // Phase 1: ISOCHRONOUS round on EP2.
         run_iso_round(host_agent_h, usb_cfg, total_err_cnt);
         #50us;
 
-        // Phase 2: INTERRUPT round 1 on EP1 with a shifted pattern.
-        run_int_round(host_agent_h, usb_cfg, 1, total_err_cnt);
+        // Phase 2: INTERRUPT loopback on EP3 with a shifted pattern.
+        run_int_round(host_agent_h, usb_cfg, INT_EP2,
+                      INT2_OUT_ANCHOR, INT2_IN_ANCHOR, INT_ROUND_OFFSET,
+                      total_err_cnt);
 
         if (total_err_cnt == 0)
             `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-                "Mixed INT(EP1)/ISO(EP2)/INT(EP1) sequence PASSED - all phases clean.",
+                "Mixed INT(EP1)/ISO(EP2)/INT(EP3) sequence PASSED - all phases clean.",
                 UVM_LOW)
         else
             `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
