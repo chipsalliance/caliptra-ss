@@ -341,6 +341,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         join
 
         if (xfer_wait_timed_out) begin
+            agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.cancel();
             `uvm_error("USB_BASE_SEQ",
                 $sformatf({"Transfer %s never completed within %0d us ",
                            "(NOTIFY_USB_TRANSFER_ENDED was never fired). The ",
