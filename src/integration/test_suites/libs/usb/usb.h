@@ -271,6 +271,47 @@ typedef struct {
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
 #define USB_EP_ENTRY_DISABLED     (1u << 30)
 #define USB_EP_ENTRY_STALL        (1u << 29)
+// TR bit (bit 28) - Toggle Reset. Per the register documentation:
+//   "When software sets this bit to one, the HW will set the toggle value
+//    equal to the value indicated in the toggle value (TV) bit. For the
+//    control endpoint 0, this is not needed to be used because the hardware
+//    resets the endpoint toggle to one for both directions when a setup token
+//    is received. For the other endpoints, the toggle can only be reset to 0
+//    when the endpoint is reset."
+//
+// TR is therefore a LOAD, not a clear: it copies bit 27 (TV) into the
+// endpoint's data toggle. TR=1 with TV=0 loads DATA0, TR=1 with TV=1 loads
+// DATA1, and TR=0 leaves the hardware's own alternation untouched. Always pair
+// TR with an explicit TV (USB_EP_ENTRY_TOGGLE_VALUE_DATA0 /
+// USB_EP_ENTRY_TOGGLE_VALUE_DATA1) so the loaded value is stated rather than
+// inherited from whatever happens to be in the entry word.
+//
+// The RTL latches it straight out of the entry word the DMA engine fetches
+// (usb_ep_config_handler.m.vhdl):
+//   reg_ep_toggle_reset(epconfig_link) <= upd_dma_wdata(28);
+// and the vector is placed back into the per-endpoint info word at bit 28 by
+// usb_ep_config_hub_pkg.p.vhdl.
+//
+// WHEN TO SET IT. Only when the host side is known to restart from a fixed
+// toggle expectation, which is NOT symmetric between the two directions:
+//   EP0        never needs TR - hardware reloads both toggles on every SETUP.
+//   bulk OUT   the host carries a running toggle across transfers, so TR must
+//              be set only on the first arm after a bus reset or after
+//              SET_CONFIGURATION. Setting it mid-stream is a MISMATCH, and a
+//              mismatch is silent: USB 2.0 requires the device to ACK the
+//              packet and DISCARD it as a presumed retransmission, so the wire
+//              looks healthy while the buffer is never consumed and hardware
+//              never clears Active. The endpoint is then permanently dead and
+//              host retry cannot help, because the toggle IS the retry
+//              mechanism (USB 2.0 section 8.6).
+//   bulk IN    a host that builds each IN transfer as an independent object
+//              (for example the SVT VIP, which has no cross-transfer toggle
+//              state) expects DATA0 at the start of every transfer, so every
+//              IN arm needs TR=1 | TV=0.
+// Single-transfer tests can leave TR clear, since a bus reset already zeroes
+// the toggle (reg_ep_toggle_value is cleared on sync_busreset in
+// usb_reg_if.m.vhdl).
+#define USB_EP_ENTRY_TOGGLE_RESET (1u << 28)
 // T bit (bit 26) - Endpoint Type:
 //   0 = Generic (bulk / rate-feedback interrupt)
 //   1 = Periodic. The RF bit then selects isochronous vs interrupt.
@@ -285,6 +326,15 @@ typedef struct {
 #define USB_EP_ENTRY_TYPE_PERIODIC (1u << 26)
 #define USB_EP_ENTRY_RF_ISO        (0u)
 #define USB_EP_ENTRY_RF_INT        (1u << 27)
+// TV bit (bit 27) - Toggle Value. This is the SAME physical bit as RF above;
+// the hardware interprets it as the rate-feedback selector only for periodic
+// endpoints (T=1) and as the toggle value for generic/bulk endpoints (T=0).
+// It is meaningful only together with USB_EP_ENTRY_TOGGLE_RESET, which loads
+// it into the endpoint's data toggle. DATA0 is deliberately spelled out as a
+// zero-valued macro so an arm can state which value it is loading instead of
+// relying on the bit being absent.
+#define USB_EP_ENTRY_TOGGLE_VALUE_DATA0 (0u)
+#define USB_EP_ENTRY_TOGGLE_VALUE_DATA1 (1u << 27)
 #define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
 // USB_EP_ENTRY_ADDR(off) - AddrOffset field [10:0] from a MEM-base-relative
 // byte offset. This is the correct form on this RTL: the SRAM is a dedicated
