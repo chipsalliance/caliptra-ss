@@ -22,12 +22,6 @@
 // Device-initiated, host-completed remote wakeup against the hub-composite IP.
 // Verdict is CHK_DEVICE_WAKEUP_K in caliptra_ss_usb_device_wakeup_checker, not
 // any VIP status field.
-//
-// Design notes, flow, constant derivations and the tinactivity rationale live
-// in a single note. Read it before changing anything here:
-//   caliptra_ss_nxp_dv_accessories/docs/handover/claude_md/
-//       25_usb_remotewakeup_fromdevice_design_notes.md
-// The FS -> HS port record is note 24 of the same directory.
 // =============================================================================
 
 class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test extends caliptra_ss_usb_base_test;
@@ -46,13 +40,12 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
         // caliptra_ss_usb_shared_cfg.svh already defaults the environment to
         // high speed, so the correct HS configuration is the one obtained by
         // NOT overriding anything. The firmware side matches by calling
-        // boot_usb_core_hub() rather than boot_usb_core_fs(). Note 25 section 8.
+        // boot_usb_core_hub() rather than boot_usb_core_fs().
 
         // tinactivity is relaxed here for enumeration only; the tight
         // suspend-window value is applied by the sequence immediately before
         // SOF-off. The tight value must not be in force during enumeration or
         // SET_ADDRESS is never granted the link. Keep the two in sync.
-        // Note 25 section 6.
         cfg.host_cfg.tinactivity = 10_000_000_000.0; // 10 ms in ps, enumeration phase
         cfg.dev_cfg.tinactivity  = 10_000_000_000.0;
 

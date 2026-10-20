@@ -22,12 +22,6 @@
 // Device-initiated, host-completed remote wakeup against the hub-composite IP.
 // Verdict is CHK_DEVICE_WAKEUP_K in caliptra_ss_usb_device_wakeup_checker, not
 // any VIP status field.
-//
-// Design notes, flow, constant derivations and the tinactivity rationale live
-// in a single note. Read it before changing anything here:
-//   caliptra_ss_nxp_dv_accessories/docs/handover/claude_md/
-//       25_usb_remotewakeup_fromdevice_design_notes.md
-// The HS port of this test is note 24 of the same directory.
 // =============================================================================
 
 class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test extends caliptra_ss_usb_base_test;
@@ -44,9 +38,9 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
 
         // FS conversion block, same as the FS global_suspend_L2 test. Puts the
         // VIP into FS-only mode and re-stamps the default endpoints to FS so
-        // cfg.is_valid() passes (claude_md/02_tests.md section 6). The widened
-        // FS-link timing knobs keep the link alive through enumeration in
-        // scaledown simulation. The HS variant omits this block entirely.
+        // cfg.is_valid() passes. The widened FS-link timing knobs keep the link
+        // alive through enumeration in scaledown simulation. The HS variant
+        // omits this block entirely.
         cfg.host_cfg.local_host_cfg.high_speed_capable        = 0;
         cfg.host_cfg.speed                                    = svt_usb_types::FS;
         cfg.dev_cfg.speed                                     = svt_usb_types::FS;
@@ -66,7 +60,6 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
         // suspend-window value is applied by the sequence immediately before
         // SOF-off. The tight value must not be in force during enumeration or
         // SET_ADDRESS is never granted the link. Keep the two in sync.
-        // Note 25 section 6.
         cfg.host_cfg.tinactivity = 10_000_000_000.0; // 10 ms in ps, enumeration phase
         cfg.dev_cfg.tinactivity  = 10_000_000_000.0;
 

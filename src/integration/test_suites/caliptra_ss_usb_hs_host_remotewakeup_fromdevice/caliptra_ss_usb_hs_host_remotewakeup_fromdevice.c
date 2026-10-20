@@ -19,13 +19,6 @@
 // to report itself suspended, then calls usb_request_remote_wakeup() so USBDC0
 // drives resume K upstream. The verdict is CHK_DEVICE_WAKEUP_K in
 // caliptra_ss_usb_device_wakeup_checker, not anything this file prints.
-//
-// Design notes, the pie resume timeline, the register-access conventions and the
-// poll-constant derivations all live in a single note. Read it before changing
-// anything here:
-//   caliptra_ss_nxp_dv_accessories/docs/handover/claude_md/
-//       25_usb_remotewakeup_fromdevice_design_notes.md
-// The FS -> HS port record is note 24 of the same directory.
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -39,20 +32,19 @@
 // mcu_isr.o for this test (see tools/scripts/Makefile).
 #include "mcu_isr.h"
 
-// Ceiling on the DEVCMDSTAT polling loop, not a dwell: the loop exits as soon as
-// the whole suspend -> wakeup -> resume cycle has been observed. ~12 ms at the
-// measured ~80 ns per iteration. Kept at the FS value deliberately.
-// Note 25 section 8.
+// Ceiling on the DEVCMDSTAT polling loop, not a dwell: the loop exits as soon
+// as the suspend -> wakeup -> resume cycle has been observed. ~12 ms at ~80 ns
+// per iteration. Kept at the FS value deliberately.
 #define USB_POLL_TIMEOUT 150000
 
 // How long to stay suspended before asking for the wakeup, in poll iterations
 // (~80 ns each, so ~80 us). Must not pre-empt the SuspendM falling edge the
-// checker scores as CHK_SUSPEND_SEEN. Note 25 section 8.
+// checker scores as CHK_SUSPEND_SEEN.
 #define USB_WAKEUP_ARM_DELAY_POLLS 1000
 
 // Grace window kept running after the resume so the sequence's post-resume
-// GET_DESCRIPTOR(DEVICE) still finds EP0 served. ~5.6 ms; must stay longer than
-// POST_RESUME_SETTLE in the sequence. Note 25 section 8.
+// GET_DESCRIPTOR(DEVICE) still finds EP0 served. ~5.6 ms; must stay longer
+// than POST_RESUME_SETTLE in the sequence.
 #define USB_POST_RESUME_GRACE_POLLS 70000
 
 
@@ -85,21 +77,17 @@ void main(void) {
     // HS boot entry point: leaves DEVCMDSTAT FORCE_FULLSPEED clear so the chirp
     // handshake runs and HS is negotiated. Must NOT be replaced by the FS
     // variant's boot_usb_core_fs(), which would pin the link at full speed.
-    // Note 25 section 8.
     boot_usb_core_hub();
 
-    // Enable the USB interrupt (PIC vector 3) now that boot_usb_core_hub() has
-    // programmed INTEN and cleared any stale INTSTAT bits. Deliberately not
-    // init_interrupts(): that routine also writes the MCI and I3C interrupt
+    // Not init_interrupts(): that also writes the MCI and I3C interrupt
     // registers, and this early the I3C write does not complete, stalling the
     // LSU pipeline before mstatus.MIE is set.
     intr_count = 0;
     init_usb_interrupts();
 
-    // Second phase of hub bring-up: HUB_EN was set inside boot_usb_core_hub();
-    // now that USBDC0's EP list / DEVCMDSTAT / DCON are fully programmed it is
-    // safe to connect the hub upstream. Only after HUB_CONNECT does the host
-    // see the hub, reset it, and enumerate downstream port 0 (USBDC0).
+    // Second phase of hub bring-up, safe only now that USBDC0's EP list /
+    // DEVCMDSTAT / DCON are programmed. Only after HUB_CONNECT does the host
+    // see the hub, reset it and enumerate downstream port 0 (USBDC0).
     usb_hub_connect();
 
     mcu_cptra_advance_brkpoint();
@@ -109,7 +97,7 @@ void main(void) {
 
     // Release the unconditional UTMI clock request before the host stops SOF.
     // Load-bearing: with FORCE_NEEDCLK still set, utmi_suspendm never falls and
-    // there is no suspended state to wake from. Note 25 section 8.
+    // there is no suspended state to wake from.
     usb_allow_clock_stop();
 
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
@@ -132,13 +120,10 @@ void main(void) {
                               : "memory");
         }
 
-        // Note the prefix split in the two macro families used below: the
-        // register ADDRESSES are the device-neutral USB_DEV_* macros, while the
-        // bitfield MASKS are DEV0_CSR_*. That is the documented convention, see
-        // libs/usb/usb.h: soc_address_map.h only generates the DEV0_CSR_*
-        // MASK/SHIFT macros, and those masks are offset-independent within a CSR
-        // bank, so they apply verbatim to USBDC0 and USBDC1 alike. USB_DEV_SEL
-        // parametrizes the addresses only.
+        // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the
+        // device-neutral USB_DEV_* macros, bitfield MASKS use DEV0_CSR_*. The
+        // masks are offset-independent within a CSR bank, so they apply to
+        // USBDC0 and USBDC1 alike; USB_DEV_SEL parametrizes addresses only.
         if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             if (lsu_read_32(USB_DEV_DEVCMDSTAT) & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
@@ -146,11 +131,10 @@ void main(void) {
         // EP0 IN completion needs no action: the ISR already acknowledged it.
 
         if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK) {
-            // DSUS_C is write-1-to-clear. Read-modify-write of the live value
-            // rather than reg_data so that no other status bit that changed in
-            // the meantime is clobbered. Note the wakeup request below performs
-            // its own DSUS_C acknowledge, which is why the entry edge is only
-            // acked here when the wakeup has not been armed yet.
+            // DSUS_C is write-1-to-clear. Read-modify-write the live value
+            // rather than reg_data so no other status bit that changed
+            // meanwhile is clobbered. The wakeup request below does its own
+            // DSUS_C acknowledge.
             if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK) {
                 if (!suspend_seen) {
                     suspend_seen = 1;
@@ -194,15 +178,11 @@ void main(void) {
             }
         }
 
-        // Everything this firmware exists to do has happened. Keep serving EP0
-        // for a bounded grace window so the sequence's post-resume control
-        // transfer can complete, then stop. Nothing in the testbench can end
-        // the simulation while the MCU runs: caliptra_ss_usb_base_test holds a
-        // run_phase objection in mcu_halt_monitor_task() until
-        // cptra_ss_mcu_halt_status_o asserts, which only happens once this
-        // function reaches csr_write_mpmc_halt(). Spinning to USB_POLL_TIMEOUT
-        // after the observation is complete would add wall-clock time and no
-        // coverage.
+        // Observation complete. Keep serving EP0 for a bounded grace window so
+        // the sequence's post-resume control transfer can finish, then stop.
+        // The simulation cannot end early: the test holds a run_phase objection
+        // until csr_write_mpmc_halt() is reached below. Spinning on to
+        // USB_POLL_TIMEOUT would only add wall-clock time.
         if (resume_seen && wakeup_requested) {
             if (++grace_polls >= USB_POST_RESUME_GRACE_POLLS) {
                 VPRINTF(LOW, "MCU: post-resume grace window complete at poll %d; ending poll loop\n",
