@@ -49,7 +49,7 @@
 // event loop needs a much higher poll ceiling than the HS sibling (30000) to
 // stay alive through enumeration plus the host-side silence window. Same
 // value as the other FS device tests (see caliptra_ss_usb_fs_dev_bulk_out.c).
-#define USB_POLL_TIMEOUT 30000
+#define USB_POLL_TIMEOUT 21000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 

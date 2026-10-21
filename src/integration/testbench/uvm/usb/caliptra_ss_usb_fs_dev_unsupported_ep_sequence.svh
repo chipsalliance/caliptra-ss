@@ -70,6 +70,12 @@
 // for C_DEV0_NBPHYSEP / C_DEV1_NBPHYSEP = 28 (see the header comment).
 `define USB_FS_UNSUPPORTED_EP_NUM 15
 
+// USB device address of the probe target. The hub takes address 1 and the
+// device enumerated behind the active downstream port takes address 2. Used
+// both for do_data_xfer() and for the report-catcher signature match, so the
+// two can never drift apart.
+`define USB_FS_UNSUPPORTED_EP_DEV_ADDR 2
+
 // -----------------------------------------------------------------------------
 // Scoped report catcher: the host VIP legitimately complains here, because
 // silence is exactly what we asked for. A non-responding endpoint produces TWO
@@ -77,15 +83,17 @@
 //
 //   1. transfer/protocol level, on uvm_test_top.env.host_agent.prot:
 //        "Unexpected Device Timeout <Dev:2 EP:15 BULK_OUT_TRANSFER>"
-//      Matched by the *timeout* / *TIMEOUT* patterns.
+//      Matched on the message by the exact probe signature
+//      "*Device Timeout*Dev:<addr>*EP:<num>*BULK_OUT*", built from the
+//      DEV_ADDR / EP_NUM macros above.
 //
 //   2. link level, on uvm_test_top.env.host_agent.link, id
 //      "register_fail:LINK 20 TIMING CHECKS:COMMON:tend_to_end_delay_check":
 //        "... Maximum End-to-end Signal Delay - Response packet not received
 //         within the expiry of End to End Delay Timer."
-//      Matched by *tend_to_end_delay* on the id and the End-to-end patterns on
-//      the message. Note the text contains neither "timeout" nor "TIMEOUT", so
-//      the first family's patterns do NOT cover it.
+//      Matched on the id by "*tend_to_end_delay_check*" only. The text
+//      contains neither "timeout" nor "TIMEOUT", so family 1's signature does
+//      NOT cover it.
 //
 // At FS the test build_phase also widens tend_to_end_delay_fs to 2 ms (part of
 // the standard FS conversion block), which reduces how often family 2 re-fires
@@ -93,11 +101,23 @@
 // so the timer still expires. The catcher is therefore kept as is.
 //
 // Demote both to UVM_INFO so the intended behavior does not fail the run, while
-// keeping the evidence of silence visible in the log. The match is deliberately
-// narrow: the broad "TIMING CHECKS" id prefix is NOT matched, so any other VIP
-// timing violation still fails the run. Any unrelated error is passed through
-// untouched. Armed from the start: there is no earlier phase that would need
-// protecting.
+// keeping the evidence of silence visible in the log.
+//
+// Three independent guards keep the demotion from swallowing unrelated
+// failures:
+//   - the reporting component must live inside the host VIP agent
+//     (get_client().get_full_name() matches "*host_agent*"), so reports from
+//     the test, the environment or the MCU-halt watchdog are never touched;
+//   - the report must carry one of the two signatures above - no bare
+//     "timeout" / "TIMEOUT" / "End-to-end" text matching, and the broad
+//     "TIMING CHECKS" id prefix is deliberately NOT matched, so any other VIP
+//     timing violation still fails the run;
+//   - the catcher is armed only for the probe window: it is registered right
+//     before arm_window() (i.e. after enumeration, so an enumeration timeout
+//     stays an UVM_ERROR) and deleted again once the outstanding probe has
+//     drained. In particular the base test's "TIMEOUT: MCU did not halt ..."
+//     watchdog error is reported after the catcher is gone, and from
+//     uvm_test_top, so it can never be demoted.
 // -----------------------------------------------------------------------------
 
 class caliptra_ss_usb_fs_unsupported_ep_timeout_catcher extends uvm_report_catcher;
@@ -111,24 +131,35 @@ class caliptra_ss_usb_fs_unsupported_ep_timeout_catcher extends uvm_report_catch
     virtual function action_e catch();
         string id_s;
         string msg_s;
+        string client_s;
+        string probe_sig;
 
         if (!armed) return THROW;
         if (get_severity() != UVM_ERROR && get_severity() != UVM_FATAL)
             return THROW;
 
+        // Only the host VIP agent may be demoted. Reports from the test, the
+        // environment or any other component (for example the base test's
+        // MCU-halt watchdog, which reports from uvm_test_top) pass through.
+        client_s = (get_client() == null) ? "" : get_client().get_full_name();
+        if (!uvm_is_match("*host_agent*", client_s))
+            return THROW;
+
         id_s  = get_id();
         msg_s = get_message();
 
-        // Family 1: transfer/protocol level device-response timeout.
-        // Family 2: link level end-to-end signal delay timing check. Its text
-        // never contains "timeout", hence the extra patterns.
-        if (!(uvm_is_match("*timeout*",            id_s)  ||
-              uvm_is_match("*TIMEOUT*",            id_s)  ||
-              uvm_is_match("*tend_to_end_delay*",  id_s)  ||
-              uvm_is_match("*timeout*",            msg_s) ||
-              uvm_is_match("*TIMEOUT*",            msg_s) ||
-              uvm_is_match("*End to End Delay*",   msg_s) ||
-              uvm_is_match("*End-to-end*",         msg_s)))
+        // Family 1: transfer/protocol level device-response timeout, matched
+        // on the exact probe signature so that a timeout against any other
+        // device address, endpoint or transfer kind still fails the run.
+        probe_sig = $sformatf("*Device Timeout*Dev:%0d*EP:%0d*BULK_OUT*",
+                              `USB_FS_UNSUPPORTED_EP_DEV_ADDR,
+                              `USB_FS_UNSUPPORTED_EP_NUM);
+
+        // Family 2: link level end-to-end signal delay timing check, matched
+        // on the specific check name only (not the broad "TIMING CHECKS"
+        // prefix). Its text never contains "timeout".
+        if (!(uvm_is_match(probe_sig,                    msg_s) ||
+              uvm_is_match("*tend_to_end_delay_check*",  id_s)))
             return THROW;
 
         set_severity(UVM_INFO);
@@ -189,13 +220,6 @@ class caliptra_ss_usb_fs_dev_unsupported_ep_sequence extends caliptra_ss_usb_bas
             host_agent_h.link_mon, pkt_cb);
         caliptra_ss_usb_handshake_counter_callback::disarm_window();
 
-        // Register and arm the timeout catcher. Enumeration is not expected to
-        // time out, and if it ever does the handshake counter still fails the
-        // run, so arming early costs nothing.
-        to_catcher = new("fs_unsupported_ep_timeout_catcher");
-        caliptra_ss_usb_fs_unsupported_ep_timeout_catcher::armed = 1;
-        uvm_report_cb::add(null, to_catcher);
-
         // Step 4: enumerate the hub at address 1, bring up downstream port 1,
         // then enumerate USBDC0 at address 2 (base-class steps A -> B -> C).
         enumerate_hub_and_usbdc0(host_agent_h, usb_cfg);
@@ -213,6 +237,14 @@ class caliptra_ss_usb_fs_dev_unsupported_ep_sequence extends caliptra_ss_usb_bas
                             `USB_FS_UNSUPPORTED_EP_NUM),
                   UVM_LOW)
 
+        // Register and arm the timeout catcher only now. Everything before
+        // this point (link bring-up, hub and device enumeration) must still be
+        // able to fail the run on a timeout, so the catcher is deliberately
+        // not installed any earlier.
+        to_catcher = new("fs_unsupported_ep_timeout_catcher");
+        caliptra_ss_usb_fs_unsupported_ep_timeout_catcher::armed = 1;
+        uvm_report_cb::add(null, to_catcher);
+
         caliptra_ss_usb_handshake_counter_callback::arm_window();
 
         xfer_returned = 0;
@@ -222,7 +254,7 @@ class caliptra_ss_usb_fs_dev_unsupported_ep_sequence extends caliptra_ss_usb_bas
                     .agent_h            (host_agent_h),
                     .usb_cfg            (usb_cfg),
                     .xfer_kind          (svt_usb_transfer::BULK_OUT_TRANSFER),
-                    .device_addr        (2),
+                    .device_addr        (`USB_FS_UNSUPPORTED_EP_DEV_ADDR),
                     .ep_num             (`USB_FS_UNSUPPORTED_EP_NUM),
                     .byte_count         (`USB_FS_UNSUPPORTED_EP_BYTES),
                     .ep_anchor_idx      (1),
@@ -278,9 +310,15 @@ class caliptra_ss_usb_fs_dev_unsupported_ep_sequence extends caliptra_ss_usb_bas
                           `USB_FS_UNSUPPORTED_EP_NUM),
                 UVM_LOW)
 
-        // Drain. The timeout catcher stays armed so the VIP's late
+        // Drain. The catcher stays armed across this delay so the VIP's late
         // device_timeout for the aborted probe transfer cannot fail the run.
         #200us;
+
+        // The probe has drained: remove the catcher so that every later report
+        // (in particular the base test's MCU-halt watchdog error) is seen at
+        // its original severity.
+        caliptra_ss_usb_fs_unsupported_ep_timeout_catcher::armed = 0;
+        uvm_report_cb::delete(null, to_catcher);
 
         `uvm_info("USB_FS_UNSUPPORTED_EP_SEQ",
                   "FS unsupported-endpoint sequence complete.", UVM_LOW)
@@ -291,6 +329,7 @@ endclass
 `undef USB_FS_UNSUPPORTED_EP_BYTES
 `undef USB_FS_UNSUPPORTED_EP_SILENCE_US
 `undef USB_FS_UNSUPPORTED_EP_NUM
+`undef USB_FS_UNSUPPORTED_EP_DEV_ADDR
 
 `endif // CALIPTRA_SS_USB_FS_DEV_UNSUPPORTED_EP_SEQUENCE_SV
 
