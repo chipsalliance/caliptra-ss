@@ -93,6 +93,18 @@
 #define USB_DEV_INTEN         (USB_DEV_CSR_BASE_ADDR + 0x24u)
 #define USB_DEV_INTSETSTAT    (USB_DEV_CSR_BASE_ADDR + 0x28u)
 #define USB_DEV_EPTOGGLE      (USB_DEV_CSR_BASE_ADDR + 0x34u)
+
+// USB_DEV_ULPIDEBUG - DEPRECATED / NON-FUNCTIONAL on the compound IP.
+//
+// The compound structure instantiates BOTH device CSR banks (usb_reg_if_1 for
+// DEV0 and usb_reg_if_2 for DEV1) with the generic C_USB_HUB set to TRUE, which
+// compiles out the per-device PHY register (register select "1111", byte offset
+// 0x3C) and forces every usbreg_phy_* output to zero. Reads of this address
+// therefore return 0 and writes are dropped.
+//
+// Indirect ULPI PHY access now lives in the HUB aperture at USB_HUB_ULPI_PHY
+// (table word 15 / C_HUB_PHY, SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C). The
+// define is kept only so legacy references still compile.
 #define USB_DEV_ULPIDEBUG     (USB_DEV_CSR_BASE_ADDR + 0x3cu)
 
 // -------------------------------------------------------------------------
@@ -127,12 +139,27 @@
 //
 // On the compound IP the hub CSR/descriptor aperture is at
 // SOC_USB_COMBO_HUB_BASE_ADDR (0x2000_1000); the hub control/status word
-// (C_HUB_CS) is SOC_USB_COMBO_HUB_CONTROL (0x2000_103C):
-//   bit  0 = HUB_EN       (structural mux select; hub entity enabled and
-//                          presents USBDC0/USBDC1 as embedded downstream
-//                          devices)
-//   bit 16 = HUB_CONNECT  (hub connects to the upstream port, ANDed with
-//                          VBus valid inside the IP)
+// (C_HUB_CS) is SOC_USB_COMBO_HUB_CONTROL. NOTE: C_HUB_CS moved from table
+// word 15 to table word 12, so the byte offset changed from 0x3C to 0x30 and
+// the absolute address is now 0x2000_1030. Table word 15 (0x2000_103C) is now
+// the hub ULPI PHY access register (C_HUB_PHY, see USB_HUB_ULPI_PHY below).
+//
+//   bit  0 = HUB_EN          (structural mux select; hub entity enabled and
+//                             presents USBDC0/USBDC1 as embedded downstream
+//                             devices)
+//   bit  9 = PLL_ON          (hub clock request; ORed with the DEV0/DEV1
+//                             DEVCMDSTAT.FORCE_NEEDCLK requests)
+//   bit 11 = LPM_SUP         (advertise LPM/L1 support; RESET VALUE IS 1 and
+//                             it supersedes DEV0 DEVCMDSTAT.LPM_SUP while
+//                             HUB_EN is set. A full-zero write to this
+//                             register CLEARS this default)
+//   bit 16 = HUB_CONNECT     (hub connects to the upstream port, ANDed with
+//                             VBus valid inside the IP)
+//   bit 18 = SELF_POWERED    (self-powered reporting)
+//   bit 21 = FORCE_FULLSPEED (suppress HS chirp; this is now the ONLY software
+//                             path to the port FORCE_FULLSPEED control because
+//                             the per-device DEVCMDSTAT.FORCE_FULLSPEED output
+//                             is left unconnected in the compound structure)
 //
 // USB_EnableHub is tied 1'b0 at top level (caliptra_ss_top.sv:1190), so
 // hub_enable_q is driven by the register bit ep0_mem(C_HUB_CS)(0) and firmware
@@ -157,7 +184,38 @@
 #define USB_HUB_CTRL                 SOC_USB_COMBO_HUB_CONTROL
 
 #define USBHUB_CTRL_HUB_EN_MASK      ((1u << 0) | (1u << 7))
+#define USBHUB_CTRL_PLL_ON_MASK      (1u << 9)
+#define USBHUB_CTRL_LPM_SUP_MASK     (1u << 11)
 #define USBHUB_CTRL_HUB_CONNECT_MASK (1u << 16)
+#define USBHUB_CTRL_SELF_POWERED_MASK (1u << 18)
+#define USBHUB_CTRL_FORCE_FS_MASK    (1u << 21)
+
+// Hub control bits that must be preserved across any HUB_CTRL reprogramming so
+// the LPM_SUP reset default (bit 11) is not silently dropped by a full-zero or
+// partial write. Firmware composes HUB_CTRL values as
+// USBHUB_CTRL_DEFAULT_MASK | <desired bits>.
+#define USBHUB_CTRL_DEFAULT_MASK     USBHUB_CTRL_LPM_SUP_MASK
+
+// -------------------------------------------------------------------------
+// HUB indirect ULPI PHY access register (C_HUB_PHY, hub table word 15,
+// SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C).
+//
+// Replaces the now non-functional per-device USB_DEV_ULPIDEBUG register.
+// Usage: program ADDR / WDATA / WRITE / MODE, then set START. Hardware clears
+// START and latches RDATA when the access completes, so START can be polled
+// for completion and RDATA read afterwards.
+// -------------------------------------------------------------------------
+#define USB_HUB_ULPI_PHY             SOC_USB_COMBO_HUB_ULPI_PHY
+
+#define USBHUB_PHY_ADDR_SHIFT        0u
+#define USBHUB_PHY_ADDR_MASK         (0xFFu << USBHUB_PHY_ADDR_SHIFT)
+#define USBHUB_PHY_WDATA_SHIFT       8u
+#define USBHUB_PHY_WDATA_MASK        (0xFFu << USBHUB_PHY_WDATA_SHIFT)
+#define USBHUB_PHY_RDATA_SHIFT       16u
+#define USBHUB_PHY_RDATA_MASK        (0xFFu << USBHUB_PHY_RDATA_SHIFT)
+#define USBHUB_PHY_WRITE_MASK        (1u << 24)
+#define USBHUB_PHY_START_MASK        (1u << 25)
+#define USBHUB_PHY_MODE_MASK         (1u << 31)
 
 // Hub DEVICE descriptor override (DataPhase_Buffer_0 of the hub aperture,
 // base SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR = 0x2000_1000). The 18-byte
@@ -204,6 +262,43 @@
 #define USB_HUB_DESC_HUB_BASE        (USB_HUB_DESC_DEVICE_BASE + 0x080u)
 #define USB_HUB_DESC_HUB_WORD1       (USB_HUB_DESC_HUB_BASE + 0x04u)
 #define USB_HUB_DESC_HUB_WORD1_VAL   0x0A643200u
+
+// -------------------------------------------------------------------------
+// Hub BOS descriptor (DataPhase_Buffer_5, hub table word 80, base +0x140).
+//
+// Added by the hub IP release that also moved C_HUB_CS from word 15 to word
+// 12. The hub DEVICE descriptor bcdUSB is now 0x0210 so the hub advertises
+// LPM, and the ROM answers GET_DESCRIPTOR(BOS) from this block:
+//
+//   word0 @ +0x140 = bLength 0x05 | bDescriptorType 0x0F (BOS) <<8 |
+//                    wTotalLength 0x000C <<16
+//   word1 @ +0x144 = bNumDeviceCaps 0x01 | cap bLength 0x07 <<8 |
+//                    cap bDescriptorType 0x10 (DEVICE_CAPABILITY) <<16 |
+//                    cap bDevCapabilityType 0x02 (USB 2.0 Extension) <<24
+//   word2 @ +0x148 = bmAttributes 0x0000_0002 (LPM supported)
+//
+// Descriptor block placement is unchanged for every pre-existing block
+// (CONFIGURATION +0x40, HUB +0x80, DEVICE_QUALIFIER +0xC0,
+// OTHER_SPEED_CONFIGURATION +0x100); BOS was appended at +0x140 and only the
+// SETUP match table moved (word 80 -> word 96, +0x180).
+// -------------------------------------------------------------------------
+#define USB_HUB_DESC_BOS_BASE        (USB_HUB_DESC_DEVICE_BASE + 0x140u)
+#define USB_HUB_DESC_BOS_WORD0       (USB_HUB_DESC_BOS_BASE + 0x00u)
+#define USB_HUB_DESC_BOS_WORD1       (USB_HUB_DESC_BOS_BASE + 0x04u)
+#define USB_HUB_DESC_BOS_WORD2       (USB_HUB_DESC_BOS_BASE + 0x08u)
+#define USB_HUB_DESC_BOS_WORD0_VAL   0x000C0F05u
+#define USB_HUB_DESC_BOS_WORD1_VAL   0x02100701u
+#define USB_HUB_DESC_BOS_WORD2_VAL   0x00000002u
+
+// Hub SETUP match table base (hub table word 96, base +0x180). Moved from
+// word 80 by the BOS descriptor insertion.
+#define USB_HUB_SETUP_TABLE_BASE     (USB_HUB_DESC_DEVICE_BASE + 0x180u)
+
+// BOS descriptor type and USB 2.0 Extension device-capability encodings.
+#define USB_DESC_BOS                       0x0Fu
+#define USB_DESC_DEVICE_CAPABILITY         0x10u
+#define USB_DEV_CAP_TYPE_USB2_EXTENSION    0x02u
+#define USB_BOS_USB2_EXT_LPM_MASK          (1u << 1)
 
 // -------------------------------------------------------------------------
 // Legacy EP0 observer telemetry (MCI generic-wire handshake). Retained from

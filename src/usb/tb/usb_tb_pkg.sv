@@ -45,7 +45,7 @@ package usb_tb_pkg;
   localparam int unsigned USB_PACKET_RAM_DATA_WIDTH = 64;
   localparam int unsigned USB_DEV0_RAM_DEPTH = 8192;
   localparam int unsigned USB_DEV1_RAM_DEPTH = 8192;
-  localparam int unsigned USB_HUB_FIFO_SIZE = 172;
+  localparam int unsigned USB_HUB_FIFO_SIZE = 196;
   localparam int unsigned USB_DEV0_NBPHYSEP = 28;
   localparam int unsigned USB_DEV1_NBPHYSEP = 28;
   localparam logic [31:0] USB_DEV0_ROUTE_MASK = (32'hffff_ffff >> (30 - USB_DEV0_NBPHYSEP)) | 32'hc000_0000;
