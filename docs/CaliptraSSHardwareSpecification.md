@@ -1716,6 +1716,8 @@ Note: trace is **collected continuously** whenever the selected trace source is 
 
 The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace).
 
+Note: When Caliptra core tracing is selected (`CTRL.cptra_core_sel = 1`), a Caliptra core hitless firmware update may result in one corrupted trace-buffer entry at the core reset boundary.
+
 MCU RISC-V processor can enable/disable its own tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces; only the read-access debug gating and the source select above apply.
 
 The trace buffer is a circular buffer where the oldest data is overwritten by new traces when the buffer is full. When a trace packet is stored the write pointer increments by [MCU Trace Buffer Packet Size](#mcu-trace-buffer-packet)/DWORD
