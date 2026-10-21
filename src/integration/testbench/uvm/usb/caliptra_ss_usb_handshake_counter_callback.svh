@@ -29,7 +29,21 @@
 //
 // Only RX packets are counted - in device-under-test mode the VIP is the host,
 // so a handshake arriving on RX is by definition sourced by the DUT.
+//
+// The callback ALSO observes the TX side (host-sourced, i.e. the stimulus) so
+// that a bounded silence window can never race its own stimulus submission.
+// A sequence calls expect_probe(dev_addr, ep_num) BEFORE forking the transfer
+// and then waits for probe_data_observed(): the counting window is opened by
+// this callback at the instant the matching OUT token is seen on the wire, not
+// by the sequence at the instant it asked the VIP for a transfer. If the probe
+// never reaches the bus the sequence can tell the difference between "the
+// device stayed silent" and "nothing was ever sent", instead of reporting a
+// silent false pass.
+//
+// Backward compatible: with no expectation set the TX hook does nothing and
+// arm_window() / disarm_window() behave exactly as before.
 // =============================================================================
+
 
 class caliptra_ss_usb_handshake_counter_callback
     extends svt_usb_link_monitor_callback;
@@ -44,9 +58,66 @@ class caliptra_ss_usb_handshake_counter_callback
     protected static int unsigned nak_count;
     protected static int unsigned stall_count;
 
+    // Stimulus-observation state. probe_expect_valid gates the whole TX hook,
+    // so with no expectation set this callback behaves exactly as before.
+    protected static bit          probe_expect_valid;
+    protected static bit [6:0]    probe_dev_addr;
+    protected static bit [3:0]    probe_ep_num;
+    protected static bit          probe_token_seen;
+    protected static bit          probe_data_seen;
+    protected static int unsigned probe_data_bytes;
+    protected static realtime     probe_data_end_time;
+
     function new(string name = "caliptra_ss_usb_handshake_counter_callback");
         super.new(name);
     endfunction
+
+    // Declare the stimulus that must be observed on the wire before any
+    // silence measurement is meaningful. Call this BEFORE forking the
+    // transfer, and leave the counting window closed: it is opened by the TX
+    // hook at the instant the matching OUT token is seen, which removes the
+    // race between the measurement window and the transfer submission.
+    static function void expect_probe(bit [6:0] dev_addr, bit [3:0] ep_num);
+        probe_dev_addr      = dev_addr;
+        probe_ep_num        = ep_num;
+        probe_token_seen    = 0;
+        probe_data_seen     = 0;
+        probe_data_bytes    = 0;
+        probe_data_end_time = 0.0;
+        probe_expect_valid  = 1;
+        // The window is opened by the TX hook, not here.
+        ack_count           = 0;
+        nak_count           = 0;
+        stall_count         = 0;
+        window_armed        = 0;
+    endfunction
+
+    // Drop the expectation. Observation flags keep their values so a sequence
+    // can still report what was seen.
+    static function void clear_probe_expectation();
+        probe_expect_valid = 0;
+    endfunction
+
+    // The OUT token for the expected device address / endpoint number was
+    // seen on the bus.
+    static function bit probe_token_observed();
+        return probe_token_seen;
+    endfunction
+
+    // The DATA packet that follows the expected OUT token was seen on the
+    // bus. This is the point from which bus silence can be measured.
+    static function bit probe_data_observed();
+        return probe_data_seen;
+    endfunction
+
+    static function int unsigned get_probe_data_bytes();
+        return probe_data_bytes;
+    endfunction
+
+    static function realtime get_probe_data_end_time();
+        return probe_data_end_time;
+    endfunction
+
 
     // Clear all counters and open the counting window.
     static function void arm_window();
@@ -98,7 +169,66 @@ class caliptra_ss_usb_handshake_counter_callback
         endcase
     endfunction
 
+    // -------------------------------------------------------------------------
+    // Stimulus observation. The VIP is the host in this testbench, so a TX
+    // packet is host sourced, i.e. it IS the stimulus. Watching it here is the
+    // only way to know that the probe actually reached the wire.
+    //
+    // Sequence of interest:
+    //   TX OUT token      device address / endpoint number equal to the
+    //                     expectation -> probe_token_seen, and the handshake
+    //                     counting window is opened AT THIS INSTANT.
+    //   TX DATA0 / DATA1  the first data packet after that token ->
+    //                     probe_data_seen, byte count and end time recorded.
+    //                     Silence is measured from here.
+    //
+    // Matching uses pid_name only (OUT / DATA0 / DATA1) and the accessors
+    // get_device_address_val() / ept_num / get_payload_byte_count(), i.e.
+    // exactly the VIP API already exercised by
+    // caliptra_ss_usb_ocp_arbiter_packet_callback.
+    // -------------------------------------------------------------------------
+
+    virtual function void usb_20_tx_packet_ended(
+        svt_usb_link_monitor link_mon,
+        svt_usb_packet pkt);
+
+        if (!probe_expect_valid) return;
+        if (pkt == null)         return;
+
+        if (pkt.pid_name == svt_usb_packet::OUT) begin
+            if ((pkt.get_device_address_val() == probe_dev_addr) &&
+                (pkt.ept_num                  == probe_ep_num)) begin
+                // Self-arm: the counting window opens exactly when the probe
+                // token is on the bus, so no device response can be missed
+                // and no pre-token interval is attributed to the window.
+                probe_token_seen = 1;
+                if (!window_armed) begin
+                    ack_count    = 0;
+                    nak_count    = 0;
+                    stall_count  = 0;
+                    window_armed = 1;
+                end
+            end else begin
+                // An OUT token to a different endpoint retires a pending
+                // expectation that has not reached its DATA packet yet: the
+                // host has moved on to other traffic.
+                if (probe_token_seen && !probe_data_seen)
+                    probe_token_seen = 0;
+            end
+            return;
+        end
+
+        if (probe_token_seen && !probe_data_seen &&
+            ((pkt.pid_name == svt_usb_packet::DATA0) ||
+             (pkt.pid_name == svt_usb_packet::DATA1))) begin
+            probe_data_seen     = 1;
+            probe_data_bytes    = pkt.get_payload_byte_count();
+            probe_data_end_time = $realtime;
+        end
+    endfunction
+
 endclass
+
 
 `endif // CALIPTRA_SS_USB_HANDSHAKE_COUNTER_CALLBACK_SV
 

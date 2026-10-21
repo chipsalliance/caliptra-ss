@@ -74,6 +74,14 @@
 // does not depend on the VIP device_timeout expiring.
 `define USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US 200
 
+// Maximum time the probe may take to reach the wire, in microseconds, counted
+// from the moment the transfer is forked. About 27 HS frames: far more than the
+// post-enumeration latency to the first token, and far less than the silence
+// budget above. If the OUT token / DATA packet for the probe is not observed by
+// the link monitor within this time the stimulus never happened, which is a
+// missing-stimulus failure and NOT bus silence.
+`define USB_HS_DEV1_UNSUPPORTED_EP_STIMULUS_TIMEOUT_US 50
+
 // Probe endpoint number: first endpoint with no physical endpoint behind it
 // for C_DEV0_NBPHYSEP / C_DEV1_NBPHYSEP = 28 (see the header comment).
 `define USB_HS_DEV1_UNSUPPORTED_EP_NUM 15
@@ -250,7 +258,13 @@ class caliptra_ss_usb_hs_dev1_unsupported_ep_sequence extends caliptra_ss_usb_ba
         caliptra_ss_usb_hs_dev1_unsupported_ep_timeout_catcher::armed = 1;
         uvm_report_cb::add(null, to_catcher);
 
-        caliptra_ss_usb_handshake_counter_callback::arm_window();
+        // Declare the stimulus that must be observed on the wire. The counting
+        // window stays CLOSED here: the callback opens it at the instant the
+        // matching OUT token is actually on the bus, so the silence window can
+        // never race the transfer submission.
+        caliptra_ss_usb_handshake_counter_callback::expect_probe(
+            `USB_HS_DEV1_UNSUPPORTED_EP_DEV_ADDR,
+            `USB_HS_DEV1_UNSUPPORTED_EP_NUM);
 
         xfer_returned = 0;
         fork
@@ -275,12 +289,26 @@ class caliptra_ss_usb_hs_dev1_unsupported_ep_sequence extends caliptra_ss_usb_ba
                     .payload_data       (probe_data));
                 xfer_returned = 1;
             end
+        join_none
+
+        // Phase 1: wait until the probe is PROVEN to be on the wire. The
+        // transfer is submitted in the background above and, by design, never
+        // completes (do_data_xfer waits for a transfer-ended notification that
+        // only the VIP device_timeout can produce here), so submission alone
+        // must never be mistaken for stimulus. Only the link monitor can tell
+        // us the OUT token and its DATA packet really left the host.
+        fork
             begin
-                // Bounded silence window. do_data_xfer always waits for the
-                // transfer-ended notification, which by design never arrives
-                // here until the VIP device_timeout expires, so this window is
-                // what ends the probe.
-                #(`USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US * 1us);
+                // Polled, not wait(): the observation flag lives inside the
+                // callback class, so a wait() expression built from an
+                // accessor function would have no sensitivity to it. One HS
+                // microframe of granularity is far finer than the windows
+                // involved here.
+                while (!caliptra_ss_usb_handshake_counter_callback::probe_data_observed())
+                    #125ns;
+            end
+            begin
+                #(`USB_HS_DEV1_UNSUPPORTED_EP_STIMULUS_TIMEOUT_US * 1us);
             end
         join_any
         // "disable fork" is a statement, so it needs its own semicolon.
@@ -288,32 +316,74 @@ class caliptra_ss_usb_hs_dev1_unsupported_ep_sequence extends caliptra_ss_usb_ba
         // reports a syntax error on the following line.
         disable fork;
 
-        caliptra_ss_usb_handshake_counter_callback::disarm_window();
-
-        hs_count = caliptra_ss_usb_handshake_counter_callback::get_handshake_count();
-        `uvm_info("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
-                  $sformatf("Handshakes from device: %0d (ACK=%0d NAK=%0d STALL=%0d), xfer_returned=%0d",
-                            hs_count,
-                            caliptra_ss_usb_handshake_counter_callback::get_ack_count(),
-                            caliptra_ss_usb_handshake_counter_callback::get_nak_count(),
-                            caliptra_ss_usb_handshake_counter_callback::get_stall_count(),
-                            xfer_returned),
-                  UVM_LOW)
-
-        if (hs_count != 0)
-            `uvm_error("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
-                $sformatf("The UNSUPPORTED endpoint EP%0d responded. %0d handshake(s) observed (ACK=%0d NAK=%0d STALL=%0d); the expected behavior is no response at all.",
+        if (!caliptra_ss_usb_handshake_counter_callback::probe_data_observed()) begin
+            // Missing stimulus. Reporting bus silence here would be a false
+            // pass: nothing was ever sent to EP15, so there was nothing for
+            // the device to stay silent about. The silence verdict below is
+            // deliberately skipped.
+            `uvm_error("USB_HS_DEV1_UNSUPPORTED_EP_NO_STIMULUS",
+                $sformatf("The OUT token / DATA packet for Dev:%0d EP:%0d was never observed on the bus within %0d us, so the probe never reached the wire and no silence measurement is possible (token_seen=%0d, xfer_returned=%0d).",
+                          `USB_HS_DEV1_UNSUPPORTED_EP_DEV_ADDR,
                           `USB_HS_DEV1_UNSUPPORTED_EP_NUM,
-                          hs_count,
-                          caliptra_ss_usb_handshake_counter_callback::get_ack_count(),
-                          caliptra_ss_usb_handshake_counter_callback::get_nak_count(),
-                          caliptra_ss_usb_handshake_counter_callback::get_stall_count()))
-        else
+                          `USB_HS_DEV1_UNSUPPORTED_EP_STIMULUS_TIMEOUT_US,
+                          caliptra_ss_usb_handshake_counter_callback::probe_token_observed(),
+                          xfer_returned))
+        end
+        else begin
             `uvm_info("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
-                $sformatf("PASSED: bus stayed silent for %0d us after the OUT token to UNSUPPORTED EP%0d.",
-                          `USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US,
-                          `USB_HS_DEV1_UNSUPPORTED_EP_NUM),
+                $sformatf("Probe observed on the bus: OUT token + %0d-byte DATA packet to Dev:%0d EP:%0d, DATA ended at %0t. Measuring %0d us of bus silence from here.",
+                          caliptra_ss_usb_handshake_counter_callback::get_probe_data_bytes(),
+                          `USB_HS_DEV1_UNSUPPORTED_EP_DEV_ADDR,
+                          `USB_HS_DEV1_UNSUPPORTED_EP_NUM,
+                          caliptra_ss_usb_handshake_counter_callback::get_probe_data_end_time(),
+                          `USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US),
                 UVM_LOW)
+
+            if (caliptra_ss_usb_handshake_counter_callback::get_probe_data_bytes() !=
+                `USB_HS_DEV1_UNSUPPORTED_EP_BYTES)
+                `uvm_error("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
+                    $sformatf("The observed probe DATA packet carries %0d bytes, expected %0d. The stimulus is not the one this test measures.",
+                              caliptra_ss_usb_handshake_counter_callback::get_probe_data_bytes(),
+                              `USB_HS_DEV1_UNSUPPORTED_EP_BYTES))
+
+            // Phase 2: the bounded silence window, measured FROM the observed
+            // stimulus and not from the submission. The counting window was
+            // opened by the callback when the token appeared, so no device
+            // response in between could have been missed.
+            #(`USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US * 1us);
+
+            caliptra_ss_usb_handshake_counter_callback::disarm_window();
+
+            hs_count = caliptra_ss_usb_handshake_counter_callback::get_handshake_count();
+            `uvm_info("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
+                      $sformatf("Handshakes from device: %0d (ACK=%0d NAK=%0d STALL=%0d), xfer_returned=%0d",
+                                hs_count,
+                                caliptra_ss_usb_handshake_counter_callback::get_ack_count(),
+                                caliptra_ss_usb_handshake_counter_callback::get_nak_count(),
+                                caliptra_ss_usb_handshake_counter_callback::get_stall_count(),
+                                xfer_returned),
+                      UVM_LOW)
+
+            if (hs_count != 0)
+                `uvm_error("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
+                    $sformatf("The UNSUPPORTED endpoint EP%0d responded. %0d handshake(s) observed (ACK=%0d NAK=%0d STALL=%0d); the expected behavior is no response at all.",
+                              `USB_HS_DEV1_UNSUPPORTED_EP_NUM,
+                              hs_count,
+                              caliptra_ss_usb_handshake_counter_callback::get_ack_count(),
+                              caliptra_ss_usb_handshake_counter_callback::get_nak_count(),
+                              caliptra_ss_usb_handshake_counter_callback::get_stall_count()))
+            else
+                `uvm_info("USB_HS_DEV1_UNSUPPORTED_EP_SEQ",
+                    $sformatf("PASSED: the OUT token and its %0d-byte DATA packet to UNSUPPORTED EP%0d were observed on the bus at %0t, and the bus then stayed silent for %0d us.",
+                              caliptra_ss_usb_handshake_counter_callback::get_probe_data_bytes(),
+                              `USB_HS_DEV1_UNSUPPORTED_EP_NUM,
+                              caliptra_ss_usb_handshake_counter_callback::get_probe_data_end_time(),
+                              `USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US),
+                    UVM_LOW)
+        end
+
+        caliptra_ss_usb_handshake_counter_callback::clear_probe_expectation();
+        caliptra_ss_usb_handshake_counter_callback::disarm_window();
 
         // Drain. The catcher stays armed across this delay so the VIP's late
         // device_timeout for the aborted probe transfer cannot fail the run.
@@ -333,6 +403,7 @@ endclass
 
 `undef USB_HS_DEV1_UNSUPPORTED_EP_BYTES
 `undef USB_HS_DEV1_UNSUPPORTED_EP_SILENCE_US
+`undef USB_HS_DEV1_UNSUPPORTED_EP_STIMULUS_TIMEOUT_US
 `undef USB_HS_DEV1_UNSUPPORTED_EP_NUM
 `undef USB_HS_DEV1_UNSUPPORTED_EP_DEV_ADDR
 
