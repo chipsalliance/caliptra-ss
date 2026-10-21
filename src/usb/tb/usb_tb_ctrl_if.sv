@@ -22,7 +22,8 @@
 interface usb_tb_ctrl_if #(
   parameter int unsigned UW = 32,
   parameter int unsigned COMBO_NUM_USERS = 4,
-  parameter int unsigned DEV1_NUM_USERS = 4
+  parameter int unsigned DEV1_NUM_USERS = 4,
+  parameter int unsigned DEV0_MEMORY_AW = 13
 ) (
   input logic clk,
   input logic rst_n
@@ -31,6 +32,9 @@ interface usb_tb_ctrl_if #(
   logic [UW-1:0] combo_priv_axi_users [COMBO_NUM_USERS];
   logic dev1_enable_axi_user_filtering;
   logic [UW-1:0] dev1_priv_axi_users [DEV1_NUM_USERS];
+  logic dev0_memory_request;
+  logic dev0_memory_write;
+  logic [DEV0_MEMORY_AW-1:0] dev0_memory_address;
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
