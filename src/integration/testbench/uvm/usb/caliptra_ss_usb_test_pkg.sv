@@ -24,6 +24,9 @@
 
 package caliptra_ss_usb_test_pkg;
 
+  // Force VCS recompile when USB UVM package contents change.
+  localparam int USB_PKG_VERSION = 327;
+
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   import svt_uvm_pkg::*;
@@ -51,6 +54,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_hub_config_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_get_hub_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_get_bos_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_interface_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
@@ -303,6 +307,9 @@ package caliptra_ss_usb_test_pkg;
   //                     (caliptra_ss_usb_get_hub_status_sequence).
   //   - get_device_descriptor: standard GET_DESCRIPTOR(DEVICE) for hub and dev0
   //                     (caliptra_ss_usb_get_device_descriptor_sequence).
+  //   - get_bos_descriptor: standard GET_DESCRIPTOR(BOS) for the hub, read
+  //                     twice (5-byte header, then the full 12 bytes)
+  //                     (caliptra_ss_usb_get_bos_descriptor_sequence).
   `include "caliptra_ss_usb_hs_dev_get_status_test.svh"
   `include "caliptra_ss_usb_fs_dev_get_status_test.svh"
   `include "caliptra_ss_usb_hs_dev_hub_qualifier_test.svh"
@@ -311,6 +318,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev_get_hub_descriptor_test.svh"
   `include "caliptra_ss_usb_fs_dev_get_hub_descriptor_test.svh"
+  `include "caliptra_ss_usb_hs_dev_get_bos_descriptor_test.svh"
+  `include "caliptra_ss_usb_fs_dev_get_bos_descriptor_test.svh"
   // Standard GET_INTERFACE on the hub and on dev0 (both return
   // bAlternateSetting=0; the hub answers in EP0 hardware, dev0 in firmware).
   // The FS sibling reuses the same sequence and only applies the FS VIP
