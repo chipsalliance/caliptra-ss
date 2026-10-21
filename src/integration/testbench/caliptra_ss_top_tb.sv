@@ -97,11 +97,9 @@ module caliptra_ss_top_tb
     logic cptra_ss_usb_utmi_xcvrselect_o, cptra_ss_usb_utmi_termselect_o, cptra_ss_usb_utmi_vcontrolloadm_o;
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
-    logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_sessend_i, cptra_ss_usb_async_disable_i;
-    logic cptra_ss_usb_avalid_i;
+    logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_async_disable_i;
     logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
     logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
-    logic cptra_ss_usb_vbuscomp_on_o, cptra_ss_usb_chrgvbus_o, cptra_ss_usb_dischrgvbus_o;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
     logic [7:0] cptra_ss_usb_ulpi_rxdata_i, cptra_ss_usb_ulpi_txdata_o;
@@ -2078,7 +2076,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP
-    assign cptra_ss_usb_avalid_i              = usb_20_mac_if.utmi_dut_mac_if.AValid;
 
     // --- DUT device MAC outputs -> VIP modeled PHY inputs ---
     assign usb_20_mac_if.utmi_dut_mac_if.DataIn      = cptra_ss_usb_utmi_txdata_o;
@@ -2202,9 +2199,7 @@ module caliptra_ss_top_tb
 
     caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
         .vbus           (cptra_ss_usb_USB_VBus_i),
-        .sessend        (cptra_ss_usb_sessend_i),
-        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
-        .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
+        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid)
     );
 
     `endif
@@ -2656,11 +2651,6 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_ulpi_ddr_sel_i    (cptra_ss_usb_ulpi_ddr_sel_i),
 
         .cptra_ss_usb_USB_VBus_i        (cptra_ss_usb_USB_VBus_i),
-        .cptra_ss_usb_vbuscomp_on_o     (cptra_ss_usb_vbuscomp_on_o),
-        .cptra_ss_usb_chrgvbus_o        (cptra_ss_usb_chrgvbus_o),
-        .cptra_ss_usb_dischrgvbus_o     (cptra_ss_usb_dischrgvbus_o),
-        .cptra_ss_usb_avalid_i          (cptra_ss_usb_avalid_i),
-        .cptra_ss_usb_sessend_i         (cptra_ss_usb_sessend_i),
         .cptra_ss_usb_async_disable_i   (cptra_ss_usb_async_disable_i),
 
         .cptra_ss_usb_frametoggle_o     (), // FIXME: NXP DV add functionality
@@ -2801,3 +2791,4 @@ endmodule
 // it triggers i3c test cases.
 `include "ai3c_tests_bench.sv"
 
+// File contains AI-generated response based on internal company sources
