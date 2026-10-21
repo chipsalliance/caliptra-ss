@@ -262,6 +262,13 @@ global:
         ## Enable force/release on VHDL targets (needed for USB dev_enable)
         #- '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
+        # USB 2.0 link state-machine/timer verbosity. Edit or remove this single
+        # argument to change the policy
+        - '+vip_verbosity=svt_usb_link_20_device_a_sm:UVM_NONE,svt_usb_link_20_device_b_sm:UVM_NONE,svt_usb_link_20_timer:UVM_NONE'
+        # Optionally append svt_usb_physical_port_utmi:UVM_NONE to the same
+        # argument to quiet UTMI ports, including their control INFO messages.
+        # Standard UVM reporter verbosity is independent of the scoped VIP setting.
+        #- '+UVM_VERBOSITY=UVM_LOW'
         # Enable SVT debug automation: activates protocol and link trace log
         # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
         # config object properties (enable_prot_tracing, enable_link_tracing)
