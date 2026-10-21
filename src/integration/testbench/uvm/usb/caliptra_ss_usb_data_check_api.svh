@@ -61,6 +61,16 @@ interface class caliptra_ss_usb_data_check_api;
   // bMaxPacketSize0, bNumConfigurations, bReserved.
   pure virtual function void check_device_qualifier(uvm_object usb_item, string device_name);
 
+  // GET_DESCRIPTOR(BOS) check. The response is a 12-byte Binary Device Object
+  // Store: a 5-byte BOS header (bDescriptorType=0x0F) followed by a single
+  // 7-byte DEVICE_CAPABILITY descriptor (bDescriptorType=0x10) of type USB 2.0
+  // Extension (bDevCapabilityType=0x02) whose bmAttributes advertises LPM.
+  // The expected values mirror the BOS DESCRIPTOR block of the hub ROM
+  // constant in
+  // third_party/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl.
+  pure virtual function void check_bos_descriptor(uvm_object usb_item, string device_name);
+
+
   // GET_DESCRIPTOR(CONFIGURATION) check. The response is a 25-byte composite
   // descriptor: a 9-byte CONFIGURATION header (bDescriptorType=0x02) followed
   // by a 9-byte INTERFACE descriptor and a 7-byte ENDPOINT descriptor. The

@@ -137,6 +137,45 @@ static void usb_devcmdstat_write(uint32_t val) {
     lsu_write_32(USB_DEV_DEVCMDSTAT, val);
 }
 
+// Sticky HUB_CTRL bits that every subsequent HUB_CTRL write must carry.
+//
+// HUB_CTRL is written as a whole word (the hub control/status table word has no
+// per-bit set/clear semantics), so each write must restate every bit that is
+// meant to stay asserted. Two classes of bit live here:
+//
+//   LPM_SUP (bit 11)         - its RESET value is 1 and, while HUB_EN is set,
+//                              it is the upstream LPM_SUP source that
+//                              supersedes DEV0 DEVCMDSTAT.LPM_SUP. A plain
+//                              full-word write would clear it and permanently
+//                              disable LPM/L1 for the run.
+//   FORCE_FULLSPEED (bit 21) - the ONLY software path to the port
+//                              FORCE_FULLSPEED control now that the per-device
+//                              DEVCMDSTAT.FORCE_FULLSPEED output is left
+//                              unconnected in the compound structure. The
+//                              FS-only boot path sets it before HUB_CONNECT and
+//                              it must survive the HUB_CONNECT write.
+//
+// Initialized to the LPM_SUP reset default; boot_usb_core_fs() adds
+// FORCE_FULLSPEED via usb_hub_force_fullspeed().
+static uint32_t usb_hub_ctrl_sticky = USBHUB_CTRL_DEFAULT_MASK;
+
+// Every HUB_CTRL write goes through here so the sticky bits above are always
+// re-asserted.
+static void usb_hub_ctrl_write(uint32_t val) {
+    lsu_write_32(USB_HUB_CTRL, val | usb_hub_ctrl_sticky);
+}
+
+// Latch FORCE_FULLSPEED into the sticky set and apply it immediately, keeping
+// whatever HUB_EN / HUB_CONNECT state is already programmed. Called by the
+// FS-only boot path after the hub has been enabled and before HUB_CONNECT.
+static void usb_hub_force_fullspeed(void) {
+    usb_hub_ctrl_sticky |= USBHUB_CTRL_FORCE_FS_MASK;
+    uint32_t cur = lsu_read_32(USB_HUB_CTRL);
+    usb_hub_ctrl_write(cur);
+    VPRINTF(LOW, "MCU: HUB_CTRL FORCE_FULLSPEED set, readback = 0x%x\n",
+            lsu_read_32(USB_HUB_CTRL));
+}
+
 __attribute__((weak))
 const uint8_t *usb_get_config_descriptor(uint16_t *len) {
     if (usb_config_descriptor_override != 0) {
@@ -227,8 +266,10 @@ void usb_hub_init_and_connect(void) {
     VPRINTF(LOW, "MCU: usb_hub_init_and_connect - enabling hub entity\n");
 
     // Clear HUB_CONNECT and HUB_EN first, so the enable is a clean edge even if
-    // a previous run left the register set.
-    lsu_write_32(USB_HUB_CTRL, 0x00000000u);
+    // a previous run left the register set. Routed through usb_hub_ctrl_write()
+    // so the LPM_SUP reset default (bit 11) is preserved - a literal
+    // 0x00000000 write would clear it and disable LPM/L1 for the whole run.
+    usb_hub_ctrl_write(0x00000000u);
 
     // Override the hub DEVICE descriptor (DataPhase_Buffer_0) BEFORE
     // HUB_CONNECT, while the descriptor flip-flop array is still unlocked.
@@ -276,7 +317,7 @@ void usb_hub_init_and_connect(void) {
             lsu_read_32(USB_HUB_DESC_HUB_WORD1));
 
     // Enable the hub entity. HUB_CONNECT is set later by usb_hub_connect().
-    lsu_write_32(USB_HUB_CTRL, USBHUB_CTRL_HUB_EN_MASK);
+    usb_hub_ctrl_write(USBHUB_CTRL_HUB_EN_MASK);
     uint32_t hub_ctrl_rb = lsu_read_32(USB_HUB_CTRL);
     VPRINTF(LOW, "MCU: HUB_CTRL after HUB_EN=1 readback = 0x%x\n", hub_ctrl_rb);
 
@@ -295,7 +336,7 @@ void usb_hub_init_and_connect(void) {
 // as the hub connects upstream.
 // -------------------------------------------------------------------------
 void usb_hub_connect(void) {
-    lsu_write_32(USB_HUB_CTRL, USBHUB_CTRL_HUB_EN_MASK | USBHUB_CTRL_HUB_CONNECT_MASK);
+    usb_hub_ctrl_write(USBHUB_CTRL_HUB_EN_MASK | USBHUB_CTRL_HUB_CONNECT_MASK);
     uint32_t hub_ctrl_rb = lsu_read_32(USB_HUB_CTRL);
     VPRINTF(LOW, "MCU: HUB_CTRL after HUB_CONNECT=1 readback = 0x%x\n", hub_ctrl_rb);
     VPRINTF(LOW, "MCU: usb_hub_connect - done\n");
@@ -494,12 +535,20 @@ void boot_usb_core_hub(void) {
 // -------------------------------------------------------------------------
 // boot_usb_core_fs - Initialize the USB device controller in HUB+DEVICE FS mode
 //
-// Identical to boot_usb_core_hub() except that DEVCMDSTAT bit 21
-// (FORCE_FULLSPEED - the legacy PFSC bit) is set before connecting, which
-// suppresses the device-side K-chirp so the UTMI TX is ready for FS packet
-// exchange immediately. Use in tests that run with a FS-only host VIP
-// (high_speed_capable=0) where no chirp reply is driven and the ~2.2ms chirp
-// timeout would stall the first SETUP. DO NOT use when HS operation is required.
+// Identical to boot_usb_core_hub() except that FORCE_FULLSPEED is asserted
+// before connecting, which suppresses the device-side K-chirp so the UTMI TX is
+// ready for FS packet exchange immediately. Use in tests that run with a FS-only
+// host VIP (high_speed_capable=0) where no chirp reply is driven and the ~2.2ms
+// chirp timeout would stall the first SETUP. DO NOT use when HS operation is
+// required.
+//
+// FORCE_FULLSPEED now lives in the HUB control register (HUB_CTRL bit 21), not
+// in DEVCMDSTAT. The compound structure leaves the per-device
+// usbreg_port_force_fullspeed outputs unconnected (the device CSR banks are
+// instantiated with C_USB_HUB set to TRUE), so a DEVCMDSTAT bit-21 write is a
+// silent no-op and the link would still negotiate HS. usb_hub_force_fullspeed()
+// latches the bit into the sticky HUB_CTRL set so it also survives the later
+// HUB_CONNECT write.
 // -------------------------------------------------------------------------
 void boot_usb_core_fs(void) {
     uint32_t reg_data;
@@ -508,6 +557,12 @@ void boot_usb_core_fs(void) {
 
     // --- Step -1: bring up the compound hub (phase 1 of 2) ---
     usb_hub_init_and_connect();
+
+    // --- Step -0.5: force full-speed operation on the upstream port ---
+    // Must be done through HUB_CTRL bit 21: the per-device
+    // DEVCMDSTAT.FORCE_FULLSPEED output is unconnected in the compound
+    // structure. Latched sticky so the HUB_CONNECT write preserves it.
+    usb_hub_force_fullspeed();
 
     // --- Step 0: Initialize SRAM via DMA port ---
     uint32_t ep0_out_entry = USB_EP_ENTRY_ACTIVE
@@ -538,14 +593,15 @@ void boot_usb_core_fs(void) {
     lsu_write_32(USB_DEV_DATABUFSTART, 0x00000000);
 
     // --- Step 3: Enable device in FS-only mode ---
-    // FORCE_FULLSPEED (bit 21) suppresses the device-side K-chirp so the UTMI
-    // TX initializes immediately for FS. Written through usb_devcmdstat_write()
-    // so LPM_SUP is (re-)forced.
+    // FORCE_FULLSPEED is NOT set here: it is a HUB_CTRL bit on this IP and was
+    // already asserted at Step -0.5 by usb_hub_force_fullspeed(). The
+    // per-device DEVCMDSTAT.FORCE_FULLSPEED output is unconnected in the
+    // compound structure, so writing it here would have no effect on the port.
+    // Written through usb_devcmdstat_write() so LPM_SUP is (re-)forced.
     reg_data = DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK
              | DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK
              | DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK
-             | DEV0_CSR_DEVCMDSTAT_DCON_MASK
-             | DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK;
+             | DEV0_CSR_DEVCMDSTAT_DCON_MASK;
     usb_devcmdstat_write(reg_data);
     VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n",
             reg_data | DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK);
@@ -934,13 +990,29 @@ void usb_set_device_connect(uint8_t connected) {
 // falls and a suspend/resume checker never sees its edge. Call this after
 // enumeration completes and before the host-side suspend stimulus is armed.
 // FORCE_VBUS is left untouched.
+//
+// The clock request is now an OR-tree in the compound structure:
+//   usbreg_pll_on <= hub_pll_on or dev0_usbreg_pll_on or dev1_usbreg_pll_on
+// so clearing only this controller's DEVCMDSTAT.FORCE_NEEDCLK is not sufficient
+// if the hub also requests the clock. HUB_CTRL.PLL_ON (bit 9) is therefore
+// cleared from the sticky set and from the register as well. The OTHER device
+// controller's FORCE_NEEDCLK is left alone: a dual-device test must call this
+// for each controller it brought up.
 // -------------------------------------------------------------------------
 void usb_allow_clock_stop(void) {
     uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
     cmd &= ~DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK;
     usb_devcmdstat_write(cmd);
-    VPRINTF(LOW, "MCU: FORCE_NEEDCLK cleared (DEVCMDSTAT=0x%x)\n",
-            lsu_read_32(USB_DEV_DEVCMDSTAT));
+
+    // Drop the hub's own clock request so the OR-tree can actually release.
+    usb_hub_ctrl_sticky &= ~USBHUB_CTRL_PLL_ON_MASK;
+    uint32_t hub_ctrl = lsu_read_32(USB_HUB_CTRL);
+    hub_ctrl &= ~USBHUB_CTRL_PLL_ON_MASK;
+    usb_hub_ctrl_write(hub_ctrl);
+
+    VPRINTF(LOW, "MCU: FORCE_NEEDCLK cleared (DEVCMDSTAT=0x%x HUB_CTRL=0x%x)\n",
+            lsu_read_32(USB_DEV_DEVCMDSTAT),
+            lsu_read_32(USB_HUB_CTRL));
 }
 
 // -------------------------------------------------------------------------

@@ -47,7 +47,7 @@ module caliptra_ss_top
     ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
-    ,parameter USB_C_HUB_FIFO_SIZE = 176
+    ,parameter USB_C_HUB_FIFO_SIZE = 196
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter SPI_HOST_ENA = 1
@@ -363,11 +363,6 @@ module caliptra_ss_top
 
 // USB core power / VBus interface
     input  logic                           cptra_ss_usb_USB_VBus_i,
-    output logic                           cptra_ss_usb_vbuscomp_on_o,
-    output logic                           cptra_ss_usb_chrgvbus_o,
-    output logic                           cptra_ss_usb_dischrgvbus_o,
-    input  logic                           cptra_ss_usb_avalid_i,
-    input  logic                           cptra_ss_usb_sessend_i,
     input  logic                           cptra_ss_usb_async_disable_i,
 
 // USB core frame timing, PHY clock request and wakeup interface
@@ -1183,13 +1178,6 @@ module caliptra_ss_top
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
-        .vbuscomp_on      (cptra_ss_usb_vbuscomp_on_o),
-        .chrg_vbus        (cptra_ss_usb_chrgvbus_o),
-        .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
-
-        // ---- OTG / Session Signals ----
-        .avalid           (cptra_ss_usb_avalid_i),
-        .sessend          (cptra_ss_usb_sessend_i),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),

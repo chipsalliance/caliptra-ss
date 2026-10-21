@@ -40,7 +40,7 @@ interfaces:
         TOGGLE_REG_READABLE: 1
         DEV0_MINOR_REV: 0
         DEV0_MAJOR_REV: 2
-        HUB_FIFO_WORDS: 176
+        HUB_FIFO_WORDS: 196
     base_address: 0x2010_0000
     output:
       path: ../tb/ral/generated/usb_combo_ral_pkg.sv
