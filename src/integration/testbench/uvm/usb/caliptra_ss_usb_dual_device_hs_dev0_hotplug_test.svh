@@ -30,12 +30,30 @@
 // polling, so the device_timeout and HS end-to-end delay thresholds are raised
 // relative to caliptra_ss_usb_dual_device_hs_bulk_loopback_test.
 //
-// The SVT VIP models a SINGLE remote device (shared_cfg
-// local_device_cfg_size=1). The sequence addresses the hub (addr 1), USBDC0
-// (addr 2) and USBDC1 (addr 3) one at a time by mutating
-// remote_device_cfg[0].device_address + reconfigure(). The endpoint
-// configuration below therefore describes ONE device (EP0 CTRL, EP1 BULK IN,
-// EP1 BULK OUT); it is reused for whichever controller is currently addressed.
+// REMOTE-DEVICE MODELLING. This test gives EVERY device on the bus its own
+// PERSISTENT host_cfg.remote_device_cfg[] slot, created once in build_phase
+// via caliptra_ss_usb_shared_cfg::add_remote_device_slot():
+//   slot 0 - device_address 0 (the default address a device answers on
+//            between a hub port reset and SET_ADDRESS)
+//   slot 1 - hub,    device_address 1
+//   slot 2 - USBDC0, device_address 2
+//   slot 3 - USBDC1, device_address 3
+// Transfers select their target with the dev_anchor_idx argument, so no slot
+// is ever retargeted and reconfigure() is never called after bring-up.
+//
+// This replaced a single-slot design in which the sequence retargeted
+// remote_device_cfg[0].device_address and called reconfigure() before every
+// transfer. reconfigure() rebuilds EVERY endpoint protocol processor on the
+// agent, and a freshly built BULK endpoint restarts its DATA TOGGLE at DATA0;
+// USB 2.0 section 8.6 then makes the device DISCARD the next OUT as a presumed
+// retransmission, silently - no buffer write, no completion interrupt. The
+// measured USBDC1 EP1 BULK OUT PIDs were DATA0, DATA1, DATA0, DATA0 with the
+// fourth needing to be DATA1, which is precisely why three loopbacks passed
+// and the fourth killed the endpoint. The full evidence table lives in
+// caliptra_ss_usb_shared_cfg::add_remote_device_slot.
+//
+// Each slot carries its own copy of the same 3-endpoint layout (EP0 CTRL,
+// EP1 BULK IN, EP1 BULK OUT) configured below on slot 0 and cloned from it.
 //
 // endpoint_cfg[] is an array INDEX, not the USB endpoint number:
 //   endpoint_cfg[0] ep_number=0 direction=IN  CONTROL  (shared_cfg default)
@@ -59,6 +77,15 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
                  uvm_component parent = null);
         super.new(name, parent);
     endfunction
+
+    // Indices of the persistent remote_device_cfg[] slots created in
+    // build_phase, one per bus address. Published via the config_db for the
+    // sequence to pick up. Slot 0 is the pre-existing entry and stays at
+    // device_address 0, the default address a device answers on between a hub
+    // port reset and SET_ADDRESS.
+    int hub_anchor_idx;
+    int usbdc0_anchor_idx;
+    int usbdc1_anchor_idx;
 
     virtual function void build_phase(uvm_phase phase);
         `uvm_info("build_phase", "Entered...", UVM_LOW)
@@ -123,6 +150,64 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_test
         // run, so it still carries the VIP default max_retry_due_to_nak of 10.
         // Re-apply the shared budget now that every endpoint object exists.
         cfg.apply_nak_retry_budget();
+
+        // ------------------------------------------------------------------
+        // Persistent per-device remote_device_cfg[] slots.
+        //
+        // These MUST be created after the endpoint_cfg[] layout above:
+        // add_remote_device_slot() clones slot 0's endpoints, so slot 0 has to
+        // be complete (all three endpoints, correct packet sizes, the
+        // allow_aligned_transfer_without_zero_length flag and the NAK budget)
+        // before any clone is taken.
+        //
+        // WHY THEY EXIST. Previously ONE slot described every device in turn,
+        // so the sequence had to retarget it between transfers with
+        // remote_device_cfg[0].device_address = addr + reconfigure(). That
+        // retarget is destructive: reconfigure() rebuilds EVERY endpoint
+        // protocol processor on the agent and a freshly built BULK endpoint
+        // restarts its DATA TOGGLE at DATA0, which USB 2.0 section 8.6 turns
+        // into a SILENT data loss on the next OUT. The measured BULK OUT PID
+        // sequence on USBDC1 EP1 was DATA0, DATA1, DATA0, DATA0 where the
+        // fourth had to be DATA1 - the first transfer at which the reset was
+        // observable at all, and hence why exactly three loopbacks passed
+        // before the endpoint went dead. Full evidence table in
+        // caliptra_ss_usb_shared_cfg::add_remote_device_slot.
+        //
+        // With one persistent slot per bus address nothing is ever retargeted,
+        // no reconfigure() is needed after bring-up, every endpoint xactor
+        // lives for the whole run, and the toggles advance continuously the
+        // way they do against a real host.
+        //
+        // Slot 0 keeps device_address 0, which is what a device answers on
+        // after a hub port reset and before SET_ADDRESS, so it serves every
+        // enumeration's default-address stage.
+        //
+        // The slot indices are published through the config_db rather than
+        // hardcoded in the sequence so the two cannot drift apart.
+        hub_anchor_idx    = cfg.add_remote_device_slot(7'd1); // hub
+        usbdc0_anchor_idx = cfg.add_remote_device_slot(7'd2); // USBDC0
+        usbdc1_anchor_idx = cfg.add_remote_device_slot(7'd3); // USBDC1
+
+        // Context must be null, not "this". A set(this, "*", ...) stores the
+        // entry under the scope "uvm_test_top.*", which matches neither the
+        // exact scope "uvm_test_top" nor the wildcard "*" that the sequence
+        // uses to read it back, so the get() returned 0 and tripped a
+        // uvm_fatal. The sequence runs on the host agent virtual sequencer,
+        // which is not a child of this test, so a test-relative scope cannot
+        // reach it. Publishing with a null context stores under the global
+        // scope "*", which is the pattern already proven by usb_int_ep_num in
+        // caliptra_ss_top_tb_services.sv and read by
+        // caliptra_ss_usb_hs_dev_int_loopback_sequence.svh.
+        uvm_config_db#(int)::set(null, "*", "hub_anchor_idx",    hub_anchor_idx);
+        uvm_config_db#(int)::set(null, "*", "usbdc0_anchor_idx", usbdc0_anchor_idx);
+        uvm_config_db#(int)::set(null, "*", "usbdc1_anchor_idx", usbdc1_anchor_idx);
+
+
+        `uvm_info("build_phase",
+            $sformatf({"Persistent remote-device slots: addr0=0 hub=%0d ",
+                       "usbdc0=%0d usbdc1=%0d (remote_device_cfg_size=%0d)."},
+                      hub_anchor_idx, usbdc0_anchor_idx, usbdc1_anchor_idx,
+                      cfg.host_cfg.remote_device_cfg_size), UVM_LOW)
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
