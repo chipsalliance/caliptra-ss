@@ -1171,6 +1171,13 @@ module caliptra_ss_top
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
+        .vbuscomp_on      (),
+        .chrg_vbus        (),
+        .dischrg_vbus     (),
+
+        // ---- Unused OTG / Session Signals ----
+        .avalid           (1'b0),
+        .sessend          (1'b0),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
