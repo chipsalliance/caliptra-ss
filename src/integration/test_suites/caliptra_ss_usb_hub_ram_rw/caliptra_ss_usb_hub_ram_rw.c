@@ -95,26 +95,34 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // ---------------------------------------------------------------------------
 // Hub descriptor-array geometry.
 //
-// C_NWORDS = 196 32-bit words (usb_ep0_hub_descr.m.vhdl). Two words are
+// C_NWORDS = 196 32-bit words (usb_ep0_hub_descr.m.vhdl). Three words are
 // excluded from the random sweep:
 //   C_HUB_CS  = word 12: Hub Control/Status register, always writable even
 //               under the lock, so it is driven only by the explicit
 //               phase-control writes and never randomized.
+//   C_HUB_LPM = word 13: Hub LPM L1 register. PROC_REG_WRITE assigns
+//               ep0_mem(C_HUB_LPM)(3 downto 0) <= hub_lpm_hird_hw on every
+//               clock, unconditionally, so bits [3:0] always read back as the
+//               hardware HIRD value (0 when no LPM transaction is in flight)
+//               regardless of what was written.
 //   C_HUB_PHY = word 15: ULPI PHY access register, partly hardware-written
 //               (PHY read data lands in bits [23:16] and PHY_START bit 25
 //               self-clears), so it does not read back what was written.
 // ---------------------------------------------------------------------------
 #define USB_HUB_RAM_WORDS 196u   // C_NWORDS: total words in the ep0_mem array
 #define USB_HUB_CS_WORD   12u    // C_HUB_CS:  Hub Control/Status register word
+#define USB_HUB_LPM_WORD  13u    // C_HUB_LPM: Hub LPM L1 register word
 #define USB_HUB_PHY_WORD  15u    // C_HUB_PHY: ULPI PHY access register word
 #define USB_HUB_RAM_LOOPS 3u     // number of unlocked/locked iterations
 
-// Number of words actually swept (total minus the two excluded above).
-#define USB_HUB_RAM_SWEPT_WORDS (USB_HUB_RAM_WORDS - 2u)
+// Number of words actually swept (total minus the three excluded above).
+#define USB_HUB_RAM_SWEPT_WORDS (USB_HUB_RAM_WORDS - 3u)
 
 // True for the words excluded from the random sweep.
 static inline int hub_word_skipped(uint32_t i) {
-    return (i == USB_HUB_CS_WORD) || (i == USB_HUB_PHY_WORD);
+    return (i == USB_HUB_CS_WORD) ||
+           (i == USB_HUB_LPM_WORD) ||
+           (i == USB_HUB_PHY_WORD);
 }
 
 // Per-word byte address of hub word index i.
