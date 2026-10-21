@@ -382,11 +382,6 @@ module caliptra_ss_top_w_stub #(
 
 // USB core power / VBus interface
     logic        cptra_ss_usb_USB_VBus_i;
-    logic        cptra_ss_usb_vbuscomp_on_o;
-    logic        cptra_ss_usb_chrgvbus_o;
-    logic        cptra_ss_usb_dischrgvbus_o;
-    logic        cptra_ss_usb_avalid_i;
-    logic        cptra_ss_usb_sessend_i;
     logic        cptra_ss_usb_async_disable_i;
 
 // USB core frame timing, PHY clock request and wakeup interface
@@ -508,8 +503,6 @@ module caliptra_ss_top_w_stub #(
 
     // USB core power / VBus interface
         cptra_ss_usb_USB_VBus_i = '0;
-        cptra_ss_usb_avalid_i = '0;
-        cptra_ss_usb_sessend_i = '0;
         cptra_ss_usb_async_disable_i = '0;
 
     // USB core PHY clock request and wakeup interface (inactive)
@@ -820,11 +813,6 @@ module caliptra_ss_top_w_stub #(
 
     // USB core power / VBus interface
         .cptra_ss_usb_USB_VBus_i,
-        .cptra_ss_usb_vbuscomp_on_o,
-        .cptra_ss_usb_chrgvbus_o,
-        .cptra_ss_usb_dischrgvbus_o,
-        .cptra_ss_usb_avalid_i,
-        .cptra_ss_usb_sessend_i,
         .cptra_ss_usb_async_disable_i,
 
     // USB core frame timing, PHY clock request and wakeup interface
