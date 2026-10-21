@@ -55,10 +55,10 @@ targets:
       - $AVERY_AXI/src.uvm
       - $AVERY_AXI/src.axi.VCS
       - $AVERY_AXI/src.axi
-      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
+      - $CALIPTRA_AXI4PC_DIR
       - $AVERY_AXI/testbench
     files:
-      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
+      - $CALIPTRA_AXI4PC_DIR/Axi4PC.sv
       - $AVERY_AXI/src.axi/aaxi_pkg.sv
       - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
       - $AVERY_AXI/src.axi/aaxi_class_pll.sv
