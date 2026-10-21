@@ -78,7 +78,6 @@ interfaces:
         SINGLE_BUFFER_SUPPORTED: 1
         DOUBLE_BUFFER_SUPPORTED: 1
         TOGGLE_REG_READABLE: 1
-        PLL_ENABLE: 0
         UTMI_SUPPORT: 1
         ULPI_SUPPORT: 1
         MINOR_REV: 0
