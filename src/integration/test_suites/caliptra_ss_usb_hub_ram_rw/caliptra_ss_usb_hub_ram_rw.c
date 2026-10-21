@@ -19,19 +19,19 @@
 //
 //  The embedded USB hub keeps its descriptors (device, configuration, hub
 //  class, qualifier, other-speed config) and its SETUP-match table in an
-//  internal 172-word (C_NWORDS) 32-bit flip-flop array named ep0_mem inside
+//  internal 176-word (C_NWORDS) 32-bit flip-flop array named ep0_mem inside
 //  the compound IP (usb_ep0_hub_descr.m.vhdl). The whole array is reachable
 //  from the MCU LSU AXI master over the hub_axi aperture at
 //  USB_HUB_DESC_DEVICE_BASE (SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR =
 //  0x2000_1000); word i lives at base + i*4. The aperture spans
-//  0x2000_1000 .. 0x2000_12AF, which is exactly 172 words, and word 15 is
+//  0x2000_1000 .. 0x2000_12BF, which is exactly 176 words, and word 15 is
 //  SOC_USB_COMBO_HUB_CONTROL (0x2000_103C) = C_HUB_CS, which confirms the base.
 //  No USB link bring-up and no USB traffic are required to access it - this is
 //  a standalone memory test.
 //
 //  Write-lock rule (from the RTL):
 //    hub_write_lock <= ep0_mem(C_HUB_CS)(0) and ep0_mem(C_HUB_CS)(16)
-//    write allowed only if (hub_write_lock='0' OR waddr=C_HUB_CS) and waddr<172
+//    write allowed only if (hub_write_lock='0' OR waddr=C_HUB_CS) and waddr<C_NWORDS
 //  C_HUB_CS is word 15 (byte offset 0x3C), the Hub Control/Status register:
 //    bit 0  = HUB_EN, bit 16 = HUB_CONNECT (DCON).
 //  So the array is writable while at most one of HUB_EN / HUB_CONNECT is set,
@@ -86,11 +86,11 @@ volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 // ---------------------------------------------------------------------------
 // Hub descriptor-array geometry.
 //
-// C_NWORDS = 172 32-bit words (usb_ep0_hub_descr.m.vhdl). Word C_HUB_CS = 15 is
+// C_NWORDS = 176 32-bit words (usb_ep0_hub_descr.m.vhdl). Word C_HUB_CS = 15 is
 // the Hub Control/Status register and is handled separately (always writable,
 // never randomized).
 // ---------------------------------------------------------------------------
-#define USB_HUB_RAM_WORDS 172u   // C_NWORDS: total words in the ep0_mem array
+#define USB_HUB_RAM_WORDS ((SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR - SOC_USB_COMBO_HUB_BASE_ADDR + 1u) / 4u)
 #define USB_HUB_CS_WORD   15u    // C_HUB_CS: Hub Control/Status register word
 #define USB_HUB_RAM_LOOPS 3u     // number of unlocked/locked iterations
 
