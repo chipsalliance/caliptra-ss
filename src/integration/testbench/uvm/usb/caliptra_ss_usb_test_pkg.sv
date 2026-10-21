@@ -85,7 +85,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_dev1_ram_rw_test.svh"
 
   // Standalone HUB descriptor-array (ep0_mem) RW / write-lock test (no link
-  // bring-up). Verifies the 172-word hub descriptor array is writable when
+  // bring-up). Verifies the 176-word hub descriptor array is writable when
   // unlocked (HUB_EN only) and frozen when locked (HUB_EN and HUB_CONNECT both
   // set).
   `include "caliptra_ss_usb_hub_ram_rw_test.svh"
@@ -147,6 +147,13 @@ package caliptra_ss_usb_test_pkg;
   // unconditional host resume after a fixed delay). See the test README.
   `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence.svh"
   `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test.svh"
+  // HS counterpart of the above, ported from it. Same flow and same verdict
+  // (CHK_DEVICE_WAKEUP_K); the differences are the firmware boot entry point
+  // (boot_usb_core_hub instead of boot_usb_core_fs, so the chirp handshake runs)
+  // and the suspend-window timing, which is re-derived from T_SUSPEND_DET_SIM_HS
+  // rather than T_SUSPEND_DET_SIM_FS. See docs/handover/claude_md.
+  `include "caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence.svh"
+  `include "caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test.svh"
 //  `include "caliptra_ss_usb_fs_idau_sec_level_sequence.svh"
 //  `include "caliptra_ss_usb_fs_idau_sec_level_test.svh"
 //  `include "caliptra_ss_usb_fs_root2_sequence.svh"
