@@ -85,7 +85,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_dev1_ram_rw_test.svh"
 
   // Standalone HUB descriptor-array (ep0_mem) RW / write-lock test (no link
-  // bring-up). Verifies the 172-word hub descriptor array is writable when
+  // bring-up). Verifies the 176-word hub descriptor array is writable when
   // unlocked (HUB_EN only) and frozen when locked (HUB_EN and HUB_CONNECT both
   // set).
   `include "caliptra_ss_usb_hub_ram_rw_test.svh"
