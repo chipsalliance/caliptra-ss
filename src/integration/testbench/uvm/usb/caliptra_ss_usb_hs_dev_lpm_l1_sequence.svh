@@ -23,19 +23,53 @@
 // stays on for the whole test, and the L1 transition is caused by
 // svt_usb_protocol_service_usb_20_lpm_sequence on prot_service_sequencer.
 //
-// Why the LPM token is sent unconditionally rather than after a capability
-// handshake: the hub front-end of this IP does not advertise LPM at all -
-// usb_ep0_hub_descr.m.vhdl hardcodes bcdUSB=0x0200 and there is no BOS
-// descriptor anywhere in the design - and the hub implements no
-// SetPortFeature(PORT_L1). A real host would therefore never try LPM here.
-// The device controller behind the hub, however, does implement LPM and its
-// LPM state is genuinely wired out to SW-visible registers, so driving the
-// token directly is both necessary and sufficient to exercise it. See
-// docs/usb_l1_lpm_test_feasibility_report.md for the full RTL audit.
+// WHAT THIS SEQUENCE COVERS, AND WHAT THE HUB-LEVEL L1 TEST COVERS INSTEAD
 //
-// DEV0 ONLY. DEV1's LPM control ports are tied "=> open" in
-// ip_xxx_3511_hs_mem_compound_structure.a.vhdl, so a DEV1 variant of this
-// test would be reporting an IP gap, not verifying a feature.
+// This is the device-controller / PIE-level LPM path: the LPM token is
+// addressed to USBDC0 and decoded by the device controller behind the hub.
+//
+// Since release_2.6 the hub front-end ALSO advertises and implements LPM, so
+// the old rationale for this sequence ("a real host would never try LPM here")
+// no longer holds and must not be re-asserted:
+//   - the hub DEVICE descriptor reports bcdUSB=0x0210 and the hub returns a
+//     12-byte BOS with a USB 2.0 Extension capability whose bmAttributes bit 1
+//     (LPM) is set (usb_ep0_hub_descr.m.vhdl), so a host IS permitted to use
+//     LPM on this device. That advertisement is checked separately by
+//     caliptra_ss_usb_{hs,fs}_dev_get_bos_descriptor.
+//   - usb_app_hw_hub.m.vhdl implements SetAndTestPortFeature(PORT_L1), so the
+//     host can also drive L1 through the hub.
+//
+// Sending the token directly is still the right stimulus for THIS sequence,
+// because it is the only way to exercise the device controller's own LPM
+// decode: a hub-class PORT_L1 request is handled by usb_app_hw_hub and reaches
+// the device as a level on hub_port_l1(N), never as an LPM token. The two are
+// different mechanisms and are kept as different tests. There are exactly TWO
+// ways into L1 in this IP, and both of them name a DEVICE:
+//   caliptra_ss_usb_hs_dev_lpm_l1 (this one)    - EXT + LPM token addressed to
+//                                                 USBDC0's bus address, decoded
+//                                                 by the PIE
+//   caliptra_ss_usb_dual_device_hs_hub_port_l1  - SetAndTestPortFeature(PORT_L1)
+//                                                 to the hub naming downstream
+//                                                 port 1 (DEV0) then port 2
+//                                                 (DEV1), plus the
+//                                                 SUCCESS/NYET/STALL-code
+//                                                 response ladder
+//
+// There is deliberately NO third "hub-targeted L1" test, because no such
+// request exists. SetAndTestPortFeature(PORT_L1) is legal only against a
+// downstream port: usb_app_hw_hub.m.vhdl answers a wIndex[3:0] port field of 0
+// - i.e. the hub itself - with a protocol STALL
+// ("null; -- A stall will be returned upon this request"), and hub_port_l1 is a
+// per-port vector (C_HUB_NB_PORTS-1 downto 0) with no broadcast encoding.
+// Do not re-add a "global L1" test on the strength of the word "global".
+// See docs/usb_l1_lpm_test_feasibility_report.md for the original RTL audit.
+//
+// DIRECT-TOKEN PATH IS DEV0 ONLY. DEV1 has no software-visible LPM control of
+// its own, so there is no DEV1 variant of THIS sequence. That is not a gap in
+// L1 coverage any more: hub_port_lpm_sup(1) <= dev1_lpm_sup and hub_port_l1(1)
+// feeds dev1_lpm_suspend, so DEV1's L1 behaviour is reachable through the hub
+// and is covered by caliptra_ss_usb_dual_device_hs_hub_port_l1.
+
 //
 // Sequence flow:
 //   1. Wait for the HS host link to reach ENABLED, then start SOF.
@@ -72,15 +106,23 @@ class caliptra_ss_usb_hs_dev_lpm_l1_sequence extends caliptra_ss_usb_base_sequen
     // look for runtime reduction once a baseline log exists.
     // -------------------------------------------------------------------------
 
-    // Empirical margin, identical rationale to the L2 sequence: acting on the
-    // link before the VIP SM has settled in ENABLED can push it to
-    // DISCONNECTED and start an unintended second bus-reset cycle.
-    localparam realtime LINK_SETTLE_DELAY = 500us;
+    // Post-reset settle: long enough for the controller to re-arm EP0 after
+    // the bus reset that brought the link to ENABLED. 50 us, matching the
+    // newer sequences (dual_device_hs_bulk_loopback,
+    // dual_device_hs_dev0_hotplug). This was a 500 us empirical guard band
+    // carried over from the L2 sequences; that approach is no longer used, and
+    // here it was the entire gap between "SOF generation started" and
+    // "Enumerating hub and USBDC0" in the log.
+    localparam realtime POST_RESET_SETTLE = 50us;
 
-    // Empirical margin. Lets enumeration traffic drain and the firmware finish
-    // its post-enumeration register writes (usb_allow_clock_stop, LPM_SUP
-    // check) before the LPM token arrives.
-    localparam realtime PRE_LPM_SETTLE = 100us;
+    // Lets enumeration traffic drain and the firmware finish its
+    // post-enumeration register writes (usb_allow_clock_stop, LPM_SUP check)
+    // before the LPM token arrives. Unlike the settle above this one is
+    // waiting on the MCU polling loop, which the host cannot observe, so it
+    // stays a fixed delay - but 50 us is the same order as the enumeration
+    // settle used elsewhere and is ample for the handful of register writes
+    // involved.
+    localparam realtime PRE_LPM_SETTLE = 50us;
 
     // Timeout ceiling, not a dwell: the wait ends on usb_dut_suspend_seen. L1
     // entry latency is microseconds, not milliseconds, because it is driven by
@@ -178,8 +220,8 @@ class caliptra_ss_usb_hs_dev_lpm_l1_sequence extends caliptra_ss_usb_base_sequen
         wait_for_link_enabled(shared_status, "HS host link");
         start_sof_generation();
 
-        // Step 2: settling delay. See LINK_SETTLE_DELAY.
-        #LINK_SETTLE_DELAY;
+        // Step 2: settling delay. See POST_RESET_SETTLE.
+        #POST_RESET_SETTLE;
 
         // Step 3: enumerate hub + USBDC0. The LPM token is addressed to
         // LPM_DEV_ADDRESS, which is the address step C assigns here.

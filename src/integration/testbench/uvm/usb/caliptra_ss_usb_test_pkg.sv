@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 327;
+  localparam int USB_PKG_VERSION = 330;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -130,6 +130,10 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_global_suspend_L2_test.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_test.svh"
+  // The hub-request counterpart of the lpm_l1 pair above lives with the other
+  // dual-device tests: caliptra_ss_usb_dual_device_hs_hub_port_l1. There is no
+  // separate hub-targeted L1 test because there is no such request - see the
+  // note there.
   // Upstream-only device remote-wakeup test (kept).
   `include "caliptra_ss_usb_hs_dev_remote_wakeup_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_remote_wakeup_test.svh"
@@ -245,6 +249,17 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh"
   `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_test.svh"
+  // The hub-request L1 scenario: SetAndTestPortFeature(PORT_L1) targeting each
+  // of the two downstream devices in turn, checking per-port isolation, the
+  // SUCCESS/NYET/STALL-code response ladder and the request validation (a
+  // wIndex port field of 0 - i.e. the hub itself - must STALL, since
+  // SetAndTestPortFeature(PORT_L1) is only legal against a downstream port).
+  // Dual-device because the hub's per-port L1 inputs come from the DEVICE CSRs,
+  // so port 2 can only answer SUCCESS if USBDC1 is booted. The firmware polls
+  // both controllers from one loop, so unlike the bulk loopback pair above it
+  // needs neither -DUSB_HUB_COMPOUND_DEV1_IRQ nor the TB IRQ loopback plusarg.
+  `include "caliptra_ss_usb_dual_device_hs_hub_port_l1_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_hs_hub_port_l1_test.svh"
 
   // Full-speed port of the dual-device bulk loopback pair above. Same dual
   // aperture firmware topology and same TB dev1 IRQ loopback; the link is
