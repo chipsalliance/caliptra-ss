@@ -47,7 +47,7 @@ module caliptra_ss_top
     ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
-    ,parameter USB_C_HUB_FIFO_SIZE = 176
+    ,parameter USB_C_HUB_FIFO_SIZE = 196
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter SPI_HOST_ENA = 1
@@ -1171,13 +1171,6 @@ module caliptra_ss_top
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
-        .vbuscomp_on      (),
-        .chrg_vbus        (),
-        .dischrg_vbus     (),
-
-        // ---- Unused OTG / Session Signals ----
-        .avalid           (1'b0),
-        .sessend          (1'b0),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
