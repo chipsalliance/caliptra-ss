@@ -179,10 +179,22 @@ void main (void) {
         // (filled by service_usb_dev1_intr()), NOT the usb field (vector 3 /
         // USBDC0). service_usb_dev1_intr() already read and acknowledged
         // INTSTAT, so the foreground loop must not touch INTSTAT itself.
-        // Snapshot then clear by complement so bits the ISR sets while we are
-        // handling this batch are not lost.
-        usb_events = mcu_intr_rcv.usb_dev1;
-        mcu_intr_rcv.usb_dev1 &= ~usb_events;
+        // Atomically snapshot and clear the ISR mailbox, preserving prior MIE.
+        {
+            uint32_t saved_mstatus;
+            __asm__ volatile ("csrrc %0, mstatus, %1"
+                              : "=r" (saved_mstatus)
+                              : "r" (0x8u)
+                              : "memory");
+            usb_events = mcu_intr_rcv.usb_dev1;
+            mcu_intr_rcv.usb_dev1 = 0;
+            if (saved_mstatus & 0x8u) {
+                __asm__ volatile ("csrrs zero, mstatus, %0"
+                                  :
+                                  : "r" (0x8u)
+                                  : "memory");
+            }
+        }
 
 
         // Check for device-level interrupts (bus reset, connect change)
