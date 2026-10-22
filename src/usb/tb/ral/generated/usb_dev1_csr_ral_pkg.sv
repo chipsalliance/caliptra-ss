@@ -42,7 +42,6 @@ package usb_dev1_csr_ral_pkg;
         rand uvm_reg_field DCON_C;
         rand uvm_reg_field DSUS_C;
         rand uvm_reg_field DRES_C;
-        rand uvm_reg_field OTG_C;
         rand uvm_reg_field VBUS_DEBOUNCED;
         rand uvm_reg_field PHY_TEST_MODE;
 
@@ -89,8 +88,6 @@ package usb_dev1_csr_ral_pkg;
             this.DSUS_C.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
             this.DRES_C = new("DRES_C");
             this.DRES_C.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.OTG_C = new("OTG_C");
-            this.OTG_C.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
             this.VBUS_DEBOUNCED = new("VBUS_DEBOUNCED");
             this.VBUS_DEBOUNCED.configure(this, 1, 28, "RO", 1, 'h0, 0, 1, 0);
             this.PHY_TEST_MODE = new("PHY_TEST_MODE");
@@ -154,11 +151,6 @@ package usb_dev1_csr_ral_pkg;
         rand uvm_reg_field HIRD_HW;
         rand uvm_reg_field HIRD_SW;
         rand uvm_reg_field DATA_PENDING;
-        rand uvm_reg_field VBUSCOMP_OFF;
-        rand uvm_reg_field CHRG_VBUS;
-        rand uvm_reg_field DISCHRG_VBUS;
-        rand uvm_reg_field AVALID;
-        rand uvm_reg_field SESSEND;
 
         function new(string name = "usb_dev1_csr__LPM");
             super.new(name, 32, UVM_NO_COVERAGE);
@@ -171,16 +163,6 @@ package usb_dev1_csr_ral_pkg;
             this.HIRD_SW.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
             this.DATA_PENDING = new("DATA_PENDING");
             this.DATA_PENDING.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
-            this.VBUSCOMP_OFF = new("VBUSCOMP_OFF");
-            this.VBUSCOMP_OFF.configure(this, 1, 16, "RW", 0, 'h0, 1, 1, 0);
-            this.CHRG_VBUS = new("CHRG_VBUS");
-            this.CHRG_VBUS.configure(this, 1, 17, "RW", 0, 'h0, 1, 1, 0);
-            this.DISCHRG_VBUS = new("DISCHRG_VBUS");
-            this.DISCHRG_VBUS.configure(this, 1, 18, "RW", 0, 'h0, 1, 1, 0);
-            this.AVALID = new("AVALID");
-            this.AVALID.configure(this, 1, 20, "RO", 1, 'h0, 0, 1, 0);
-            this.SESSEND = new("SESSEND");
-            this.SESSEND.configure(this, 1, 21, "RO", 1, 'h0, 0, 1, 0);
         endfunction : build
     endclass : usb_dev1_csr__LPM
 
@@ -387,7 +369,6 @@ package usb_dev1_csr_ral_pkg;
         rand uvm_reg_field SINGLE_BUFFER;
         rand uvm_reg_field DOUBLE_BUFFER;
         rand uvm_reg_field TOGGLE_READABLE;
-        rand uvm_reg_field PLL;
         rand uvm_reg_field UTMI;
         rand uvm_reg_field ULPI;
 
@@ -404,8 +385,6 @@ package usb_dev1_csr_ral_pkg;
             this.DOUBLE_BUFFER.configure(this, 1, 6, "RO", 0, 'h1, 1, 1, 0);
             this.TOGGLE_READABLE = new("TOGGLE_READABLE");
             this.TOGGLE_READABLE.configure(this, 1, 7, "RO", 0, 'h1, 1, 1, 0);
-            this.PLL = new("PLL");
-            this.PLL.configure(this, 1, 8, "RO", 0, 'h0, 1, 1, 0);
             this.UTMI = new("UTMI");
             this.UTMI.configure(this, 1, 9, "RO", 0, 'h1, 1, 1, 0);
             this.ULPI = new("ULPI");
@@ -427,52 +406,6 @@ package usb_dev1_csr_ral_pkg;
         endfunction : build
     endclass : usb_dev1_csr__EPTOGGLE
 
-    // Reg - usb_dev1_csr.CLKCTRL
-    class usb_dev1_csr__CLKCTRL extends uvm_reg;
-        rand uvm_reg_field EXT_CLK_ENABLE;
-
-        function new(string name = "usb_dev1_csr__CLKCTRL");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.EXT_CLK_ENABLE = new("EXT_CLK_ENABLE");
-            this.EXT_CLK_ENABLE.configure(this, 1, 0, "RO", 0, 'h1, 1, 1, 0);
-        endfunction : build
-    endclass : usb_dev1_csr__CLKCTRL
-
-    // Reg - usb_dev1_csr.ULPIDEBUG
-    class usb_dev1_csr__ULPIDEBUG extends uvm_reg;
-        rand uvm_reg_field PHY_ADDR;
-        rand uvm_reg_field PHY_ADDR_HIGH;
-        rand uvm_reg_field PHY_WDATA;
-        rand uvm_reg_field PHY_RDATA;
-        rand uvm_reg_field PHY_RW;
-        rand uvm_reg_field PHY_ACCESS;
-        rand uvm_reg_field PHY_MODE;
-
-        function new(string name = "usb_dev1_csr__ULPIDEBUG");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.PHY_ADDR = new("PHY_ADDR");
-            this.PHY_ADDR.configure(this, 4, 0, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_ADDR_HIGH = new("PHY_ADDR_HIGH");
-            this.PHY_ADDR_HIGH.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_WDATA = new("PHY_WDATA");
-            this.PHY_WDATA.configure(this, 8, 8, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_RDATA = new("PHY_RDATA");
-            this.PHY_RDATA.configure(this, 8, 16, "RW", 1, 'h0, 1, 1, 0);
-            this.PHY_RW = new("PHY_RW");
-            this.PHY_RW.configure(this, 1, 24, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_ACCESS = new("PHY_ACCESS");
-            this.PHY_ACCESS.configure(this, 1, 25, "RW", 1, 'h0, 1, 1, 0);
-            this.PHY_MODE = new("PHY_MODE");
-            this.PHY_MODE.configure(this, 1, 31, "RW", 0, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_dev1_csr__ULPIDEBUG
-
     // Addrmap - usb_dev1_csr
     class usb_dev1_csr extends uvm_reg_block;
         rand usb_dev1_csr__DEVCMDSTAT DEVCMDSTAT;
@@ -489,8 +422,6 @@ package usb_dev1_csr_ral_pkg;
         rand usb_dev1_csr__INTROUTE INTROUTE;
         rand usb_dev1_csr__CONFIG CONFIG;
         rand usb_dev1_csr__EPTOGGLE EPTOGGLE;
-        rand usb_dev1_csr__CLKCTRL CLKCTRL;
-        rand usb_dev1_csr__ULPIDEBUG ULPIDEBUG;
 
         function new(string name = "usb_dev1_csr");
             super.new(name);
@@ -568,16 +499,6 @@ package usb_dev1_csr_ral_pkg;
 
             this.EPTOGGLE.build();
             this.default_map.add_reg(this.EPTOGGLE, 'h34);
-            this.CLKCTRL = new("CLKCTRL");
-            this.CLKCTRL.configure(this);
-
-            this.CLKCTRL.build();
-            this.default_map.add_reg(this.CLKCTRL, 'h38);
-            this.ULPIDEBUG = new("ULPIDEBUG");
-            this.ULPIDEBUG.configure(this);
-
-            this.ULPIDEBUG.build();
-            this.default_map.add_reg(this.ULPIDEBUG, 'h3c);
         endfunction : build
     endclass : usb_dev1_csr
 
