@@ -22,18 +22,25 @@
 // endpoint types are armed at the same time and the shared device DMA / EP
 // command-status list is exercised concurrently.
 //
-// Endpoint access order (as requested): EP1 -> EP2 -> EP3
-//   Phase 0: EP1 INTERRUPT OUT 64 B, pattern byte[i] = i, then INTERRUPT
-//            IN 64 B from EP1 and byte-compare (firmware loops OUT -> IN).
-//   Phase 1: EP2 ISOCHRONOUS OUT 1024 B, pattern byte[i] = i % 256, then
-//            two ISOCHRONOUS IN tokens of 512 B each from EP2, expected
-//            byte[i] = 255 - (i % 256).
+// Endpoint access order: TWO loops of EP1 -> EP2 -> EP3
+//   Phase 0: EP1 INTERRUPT OUT 64 B, pattern byte[i] = (i + shift) % 256,
+//            then INTERRUPT IN 64 B from EP1 and byte-compare (firmware
+//            loops OUT -> IN).
+//   Phase 1: EP2 ISOCHRONOUS OUT 1024 B, pattern byte[i] = (i + shift) % 256,
+//            then two ISOCHRONOUS IN tokens of 512 B each from EP2, expected
+//            byte[i] = 255 - ((i + shift) % 256).
 //   Phase 2: EP3 INTERRUPT OUT 64 B + IN 64 B loopback, identical mechanism to
-//            phase 0 but on a SECOND interrupt endpoint and with a shifted
-//            pattern byte[i] = (i + 85) % 256. The distinct endpoint proves
-//            the EP command/status list indexing is correct for a third live
+//            phase 0 but on a SECOND interrupt endpoint and with an extra
+//            pattern offset of 85. The distinct endpoint proves the EP
+//            command/status list indexing is correct for a third live
 //            endpoint, and the distinct pattern proves no stale SRAM from
 //            phase 0 is returned.
+//
+// The three phases above are run N_LOOPS (=2) times. Every loop applies an
+// additional pattern shift of LOOP_PATTERN_STEP (=37) bytes, so the second
+// loop can never be satisfied by stale SRAM contents or by a missed firmware
+// re-arm: the data itself differs between loops even though both loops reuse
+// the same endpoints, EP command/status list slots and SRAM buffers.
 //
 // Endpoint assignment is FIXED (no randomization, no reconfigure()):
 //   EP1 = INTERRUPT, EP2 = ISOCHRONOUS, EP3 = INTERRUPT. These must match
@@ -64,6 +71,11 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
     // Pattern offset applied on the second INTERRUPT endpoint (EP3).
     localparam int INT_ROUND_OFFSET  = 85;
 
+    // Number of EP1 -> EP2 -> EP3 loops, and the extra per-loop pattern
+    // shift. Must match N_LOOPS / LOOP_PATTERN_STEP in the firmware.
+    localparam int N_LOOPS           = 2;
+    localparam int LOOP_PATTERN_STEP = 37;
+
     // endpoint_cfg[] array indices.
     localparam int ISO_IN_ANCHOR     = 1;
     localparam int ISO_OUT_ANCHOR    = 2;
@@ -86,6 +98,7 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
                                int unsigned          out_anchor,
                                int unsigned          in_anchor,
                                int unsigned          pattern_base,
+                               int unsigned          loop_idx,
                                ref int unsigned      err_cnt);
         svt_usb_transfer int_out_req;
         svt_usb_transfer int_in_req;
@@ -93,14 +106,14 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         bit [7:0]        rnd_base;
         int unsigned     mismatch_count;
 
-        rnd_base  = 8'(pattern_base % 256);
+        rnd_base  = 8'((pattern_base + loop_idx * LOOP_PATTERN_STEP) % 256);
         send_data = new[INT_XFER_BYTES];
         for (int unsigned i = 0; i < INT_XFER_BYTES; i++)
             send_data[i] = 8'((i + rnd_base) % 256);
 
         `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-            $sformatf("--- INTERRUPT round on EP%0d (pattern base=0x%02X) ---",
-                      ep_num, rnd_base), UVM_LOW)
+            $sformatf("--- INTERRUPT round on EP%0d (loop %0d/%0d, pattern base=0x%02X) ---",
+                      ep_num, loop_idx + 1, N_LOOPS, rnd_base), UVM_LOW)
 
         do_data_xfer(
             .agent_h       (host_agent_h),
@@ -145,12 +158,12 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
 
         if (mismatch_count == 0)
             `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("INT EP%0d loopback PASSED (all %0d bytes match).",
-                          ep_num, INT_XFER_BYTES), UVM_LOW)
+                $sformatf("INT EP%0d loopback PASSED (loop %0d/%0d, all %0d bytes match).",
+                          ep_num, loop_idx + 1, N_LOOPS, INT_XFER_BYTES), UVM_LOW)
         else
             `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("INT EP%0d loopback FAILED: %0d byte(s) mismatched.",
-                          ep_num, mismatch_count))
+                $sformatf("INT EP%0d loopback FAILED (loop %0d/%0d): %0d byte(s) mismatched.",
+                          ep_num, loop_idx + 1, N_LOOPS, mismatch_count))
 
         // Allow firmware to observe the IN Active-bit clear and re-arm.
         #20us;
@@ -162,6 +175,7 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
     // -------------------------------------------------------------------------
     virtual task run_iso_round(svt_usb_agent         host_agent_h,
                                svt_usb_configuration usb_cfg,
+                               int unsigned          loop_idx,
                                ref int unsigned      err_cnt);
         svt_usb_transfer iso_out_req;
         svt_usb_transfer iso_in_req0;
@@ -170,11 +184,12 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         int unsigned     iso_err_cnt;
 
         `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-            $sformatf("--- ISOCHRONOUS round on EP%0d ---", ISO_EP), UVM_LOW)
+            $sformatf("--- ISOCHRONOUS round on EP%0d (loop %0d/%0d) ---",
+                      ISO_EP, loop_idx + 1, N_LOOPS), UVM_LOW)
 
         iso_data = new[ISO_BYTES];
         for (int unsigned i = 0; i < ISO_BYTES; i++)
-            iso_data[i] = 8'(i % 256);
+            iso_data[i] = 8'((i + loop_idx * LOOP_PATTERN_STEP) % 256);
 
         do_data_xfer(
             .agent_h         (host_agent_h),
@@ -234,7 +249,7 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         iso_err_cnt = 0;
         for (int unsigned ci = 0; ci < ISO_IN_BYTES; ci++) begin
             bit [7:0] expected_val;
-            expected_val = 8'(255 - (ci % 256));
+            expected_val = 8'(255 - ((ci + loop_idx * LOOP_PATTERN_STEP) % 256));
             if (iso_in_req0.payload.data[ci] !== expected_val) begin
                 if (iso_err_cnt < 5)
                     `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
@@ -245,7 +260,7 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         end
         for (int unsigned ci = 0; ci < ISO_IN_BYTES; ci++) begin
             bit [7:0] expected_val;
-            expected_val = 8'(255 - (ci % 256));
+            expected_val = 8'(255 - ((ci + loop_idx * LOOP_PATTERN_STEP) % 256));
             if (iso_in_req1.payload.data[ci] !== expected_val) begin
                 if (iso_err_cnt < 5)
                     `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
@@ -258,12 +273,13 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
 
         if (iso_err_cnt == 0)
             `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("ISO round PASSED (%0d bytes verified).", ISO_BYTES),
+                $sformatf("ISO round PASSED (loop %0d/%0d, %0d bytes verified).",
+                          loop_idx + 1, N_LOOPS, ISO_BYTES),
                 UVM_LOW)
         else
             `uvm_error("USB_HS_INT_ISO_MIX_SEQ",
-                $sformatf("ISO round FAILED: %0d/%0d bytes mismatched.",
-                          iso_err_cnt, ISO_BYTES))
+                $sformatf("ISO round FAILED (loop %0d/%0d): %0d/%0d bytes mismatched.",
+                          loop_idx + 1, N_LOOPS, iso_err_cnt, ISO_BYTES))
     endtask
 
     virtual task body();
@@ -294,23 +310,39 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_sequence extends caliptra_ss_usb_base_s
         `uvm_info("USB_HS_INT_ISO_MIX_SEQ", "Enumeration complete.", UVM_LOW)
         #10us;
 
-        // Phase 0: INTERRUPT loopback on EP1 (pattern base 0).
-        run_int_round(host_agent_h, usb_cfg, INT_EP,
-                      INT_OUT_ANCHOR, INT_IN_ANCHOR, 0, total_err_cnt);
-        #50us;
+        // Run the EP1 -> EP2 -> EP3 phase order N_LOOPS times. Each loop uses
+        // a different data pattern (loop_i * LOOP_PATTERN_STEP) so a stale
+        // SRAM buffer or a missed firmware re-arm cannot produce a false pass.
+        for (int unsigned loop_i = 0; loop_i < N_LOOPS; loop_i++) begin
+            `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
+                $sformatf("===== LOOP %0d/%0d : EP1 -> EP2 -> EP3 =====",
+                          loop_i + 1, N_LOOPS), UVM_LOW)
 
-        // Phase 1: ISOCHRONOUS round on EP2.
-        run_iso_round(host_agent_h, usb_cfg, total_err_cnt);
-        #50us;
+            // Phase 0: INTERRUPT loopback on EP1 (pattern base 0).
+            run_int_round(host_agent_h, usb_cfg, INT_EP,
+                          INT_OUT_ANCHOR, INT_IN_ANCHOR, 0, loop_i,
+                          total_err_cnt);
+            #50us;
 
-        // Phase 2: INTERRUPT loopback on EP3 with a shifted pattern.
-        run_int_round(host_agent_h, usb_cfg, INT_EP2,
-                      INT2_OUT_ANCHOR, INT2_IN_ANCHOR, INT_ROUND_OFFSET,
-                      total_err_cnt);
+            // Phase 1: ISOCHRONOUS round on EP2.
+            run_iso_round(host_agent_h, usb_cfg, loop_i, total_err_cnt);
+            #50us;
+
+            // Phase 2: INTERRUPT loopback on EP3 with a shifted pattern.
+            run_int_round(host_agent_h, usb_cfg, INT_EP2,
+                          INT2_OUT_ANCHOR, INT2_IN_ANCHOR, INT_ROUND_OFFSET,
+                          loop_i, total_err_cnt);
+
+            // Inter-loop gap: the ISO IN direction has no completion signal, so
+            // the firmware only re-arms the ISO OUT entry after its bounded IN
+            // read window elapses. This gap keeps the host from reaching the
+            // next loop's ISO OUT before that re-arm happened.
+            #500us;
+        end
 
         if (total_err_cnt == 0)
             `uvm_info("USB_HS_INT_ISO_MIX_SEQ",
-                "Mixed INT(EP1)/ISO(EP2)/INT(EP3) sequence PASSED - all phases clean.",
+                "Mixed INT(EP1)/ISO(EP2)/INT(EP3) sequence PASSED - 2 loops of EP1 -> EP2 -> EP3 clean.",
                 UVM_LOW)
         else
             `uvm_error("USB_HS_INT_ISO_MIX_SEQ",

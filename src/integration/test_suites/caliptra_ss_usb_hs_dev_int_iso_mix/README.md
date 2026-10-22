@@ -5,6 +5,10 @@ EP3) and one ISOCHRONOUS endpoint (EP2) are armed at the same time and driven in
 the order EP1 -> EP2 -> EP3, so the device DMA and the shared EP command/status
 list are exercised with two different transfer types live simultaneously.
 
+The EP1 -> EP2 -> EP3 order is executed TWICE (two loops, `N_LOOPS = 2`), which
+additionally covers firmware re-arming of all three endpoints and reuse of the
+same EP-list slots and SRAM buffers for a second round.
+
 The test is a merge of:
 
 - `caliptra_ss_usb_hs_dev_int_loopback` (INTERRUPT OUT + IN loopback)
@@ -13,18 +17,40 @@ The test is a merge of:
 ## Phase order
 
 The host sequence (`caliptra_ss_usb_hs_dev_int_iso_mix_sequence`) runs three
-traffic phases after hub + USBDC0 enumeration:
+traffic phases after hub + USBDC0 enumeration, and repeats the whole group for
+`N_LOOPS = 2` loops. `L` below is the zero-based loop index and
+`S = L * LOOP_PATTERN_STEP` with `LOOP_PATTERN_STEP = 37`:
 
 | Phase | Endpoint | Type | Traffic |
 |---|---|---|---|
-| 0 | EP1 | INTERRUPT | OUT 64 B (ramp `i`), then IN 64 B loopback compare |
-| 1 | EP2 | ISOCHRONOUS | OUT 1024 B (ramp `i % 256`), then IN buf0 512 B + IN buf1 512 B |
-| 2 | EP3 | INTERRUPT | OUT 64 B (ramp `(i + 85) % 256`), then IN 64 B loopback compare |
+| 0 | EP1 | INTERRUPT | OUT 64 B (ramp `(i + S) % 256`), then IN 64 B loopback compare |
+| 1 | EP2 | ISOCHRONOUS | OUT 1024 B (ramp `(i + S) % 256`), then IN buf0 512 B + IN buf1 512 B, expected `255 - ((i + S) % 256)` |
+| 2 | EP3 | INTERRUPT | OUT 64 B (ramp `(i + 85 + S) % 256`), then IN 64 B loopback compare |
 
 All three OUT endpoints are armed once `DEVCMDSTAT.DEV_ADDR != 0`, so EP1 and
 EP3 stay armed across the whole ISO phase and EP2 stays armed across both
 INTERRUPT phases. The firmware is phase-agnostic and simply services whichever
 endpoint the host drives next.
+
+## Two-loop behaviour
+
+- The per-loop pattern shift (`LOOP_PATTERN_STEP = 37`, identical localparam in
+  the sequence and `#define` in the firmware) makes loop 1 impossible to satisfy
+  with stale SRAM contents or with an endpoint that was never re-armed. Without
+  it a missed re-arm could alias into a false pass.
+- Firmware no longer latches "done" after the first round. Each INTERRUPT
+  endpoint keeps a `rounds_done` counter and re-arms its OUT entry after a
+  successful IN completion until `rounds_done == N_LOOPS`. The ISO side keeps
+  `iso_rounds_done` and re-arms ISO OUT after each read window.
+- ISO IN has no completion signal, so the ISO re-arm is purely time-based. To
+  keep the re-arm ahead of the next loop, `ISO_IN_READ_WINDOW` was shortened
+  from 10000 to 2000 spins and the sequence inserts a `#500us` gap between
+  loops.
+- Budgets were doubled for the extra loop: firmware `USB_POLL_TIMEOUT`
+  100000 -> 250000, test `device_timeout` 35000us -> 70000us, and
+  `tend_to_end_delay_hs` 100 ms -> 200 ms.
+- The resource map below is deliberately UNCHANGED; both loops reuse the same
+  EP-list slots and SRAM buffers.
 
 ## Resource map
 
@@ -62,15 +88,18 @@ it is the data Toggle bit and must be left clear.
 
 Firmware side (MCU log):
 
-- `EP1 INTERRUPT OUT data check PASSED`
-- `EP1 INTERRUPT loopback PASSED (1/2 interrupt endpoints done)`
-- `EP2 ISO OUT data check PASSED`
-- `EP3 INTERRUPT OUT data check PASSED`
-- `EP3 INTERRUPT loopback PASSED (2/2 interrupt endpoints done)`
-- `USB HS dev mixed INT EP1 + ISO EP2 + INT EP3 PASSED`
+- `EP1 INTERRUPT OUT data check PASSED` (once per loop)
+- `EP1 INTERRUPT loopback round 1/2 PASSED` then `round 2/2 PASSED`
+- `EP2 ISO OUT data check PASSED` (once per loop)
+- `EP2 ISO IN read window elapsed - round 1/2 complete`, then `round 2/2`
+- `EP3 INTERRUPT OUT data check PASSED` (once per loop)
+- `EP3 INTERRUPT loopback round 1/2 PASSED` then `round 2/2 PASSED`
+- `USB HS dev mixed INT EP1 + ISO EP2 + INT EP3 PASSED (2 loops of EP1 -> EP2 -> EP3)`
 
 Host side (UVM log): no data mismatches in either INTERRUPT IN compare or in
-the two ISO IN buffer compares, and the final sequence summary reports PASS.
+the two ISO IN buffer compares in EITHER loop, and the final sequence summary
+reports PASS for 2 loops. On a timeout the firmware prints the per-endpoint
+`rounds=` and `iso_rounds=` counters so the stalled loop is identifiable.
 
 ## Running
 
