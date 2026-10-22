@@ -20,17 +20,28 @@ module caliptra_ss_usb_sva ();
   logic waive_chk_at_sim_begin   = 1;
 
   `define TOP_TO_COMPOUND_CONN(top_sig, compound_sig, sig_name) \
-      wire compound_``compound_sig = `CPTRA_SS_TOP_PATH.usb_core_i.u_hub_compound.compound_sig;\
+      wire compound_conn_chk``compound_sig = `CPTRA_SS_TOP_PATH.usb_core_i.u_hub_compound.compound_sig;\
       \
-      always begin \
+      always_comb begin \
         if(waive_chk_at_sim_begin == 0) begin \
-          $display("[caliptra_ss_usb_sva] checking USB_self_powered input of usb_core_i"); \
-          CHK_``sig_name``_COMPOUND : assert (top_sig === compound_``compound_sig) \
-            else $error($sformatf("[caliptra_ss_usb_sva] %s value mismatch between top(%b) and compound value(%b)", `"sig_name`" , top_sig, compound_``compound_sig)); \
+          CHK_``sig_name``_UNKNOWN : assert($isunknown(top_sig) == 0) else \
+            $error($sformatf("[caliptra_ss_usb_sva] %s is unknown", `"sig_name`")); \
+          CHK_``sig_name``_COMPOUND : assert (top_sig === compound_conn_chk``compound_sig) \
+            else $error($sformatf("[caliptra_ss_usb_sva] %s value mismatch between top(%b) and compound value(%b)", \
+                                    `"sig_name`" , top_sig, compound_conn_chk``compound_sig)); \
         end \
-        @(top_sig, compound_``compound_sig, waive_chk_at_sim_begin);\
       end
 
+  `define COMPOUND_TIE_INPUT(compound_sig, tie_val, sig_name) \
+      wire compound_tie_chk_``compound_sig = `CPTRA_SS_TOP_PATH.usb_core_i.u_hub_compound.compound_sig;\
+      \
+      always_comb begin \
+        if(waive_chk_at_sim_begin == 0) begin \
+          $display($sformatf("[caliptra_ss_usb_sva] checking the tie value of %s", `"sig_name`")); \
+          CHK_``sig_name``_TIE : assert (tie_val === compound_tie_chk_``compound_sig) \
+            else $error($sformatf("[caliptra_ss_usb_sva] %s not tie to %b", `"sig_name`" , tie_val)); \
+        end \
+      end
 
   initial begin
     waive_chk_at_sim_begin = 1;
@@ -48,12 +59,12 @@ module caliptra_ss_usb_sva ();
     @(usb_self_powered_pin, waive_chk_at_sim_begin);
   end
 
-  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_self_powered_i, USB_self_powered, SELF_POWERED)
+  `COMPOUND_TIE_INPUT(USB_self_powered,1, SELF_POWERED)
+  `COMPOUND_TIE_INPUT(sys_donotwakeup_n, 1, DONOT_WAKEUP)
+  `COMPOUND_TIE_INPUT(sys_dev_wakeup_n, 1, DEV_WAKEUP_N)
+  `COMPOUND_TIE_INPUT(USB_EnableHub, 0, ENABLE_HUB)
 
-  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_donotwakeup_n_i, sys_donotwakeup_n, DONOT_WAKEUP)
-
-  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_dev_wakeup_n_i, sys_dev_wakeup_n, DEV_WAKEUP_N)
-
-  `TOP_TO_COMPOUND_CONN(`CPTRA_SS_TOP_PATH.cptra_ss_usb_enable_hub_i, USB_EnableHub, ENABLE_HUB)
+  `undef COMPOUND_TIE_INPUT
+  `undef TOP_TO_COMPOUND_CONN
 endmodule
 
