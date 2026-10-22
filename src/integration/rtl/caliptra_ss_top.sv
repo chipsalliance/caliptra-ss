@@ -363,22 +363,10 @@ module caliptra_ss_top
 
 // USB core power / VBus interface
     input  logic                           cptra_ss_usb_USB_VBus_i,
-    output logic                           cptra_ss_usb_vbuscomp_on_o,
-    output logic                           cptra_ss_usb_chrgvbus_o,
-    output logic                           cptra_ss_usb_dischrgvbus_o,
-    input  logic                           cptra_ss_usb_avalid_i,
-    input  logic                           cptra_ss_usb_sessend_i,
     input  logic                           cptra_ss_usb_async_disable_i,
 
-// USB core frame timing, PHY clock request and wakeup interface
+// USB core frame timing interface
     output logic                           cptra_ss_usb_frametoggle_o,
-    output logic                           cptra_ss_usb_needclk_o,
-    input  logic                           cptra_ss_usb_donotwakeup_n_i,
-    input  logic                           cptra_ss_usb_dev_wakeup_n_i,
-
-// USB core hub control interface
-    input  logic                           cptra_ss_usb_enable_hub_i,
-    input  logic                           cptra_ss_usb_self_powered_i,
 
     output logic cptra_ss_usb_recovery_payload_available_o,
     input  logic cptra_ss_usb_recovery_payload_available_i,
@@ -1178,18 +1166,18 @@ module caliptra_ss_top
         // Unused since RISC-V does not have the same FIQ as ARM. Every DEV0 interrupt
         // source can be routed to IRQ (INTROUTE resets to IRQ), so FIQ is not connected to the MCU.
         .dev0_usb_fiq    (),
-        .usb_frametoggle (cptra_ss_usb_frametoggle_o),
-        .usb_needclk     (cptra_ss_usb_needclk_o),
+        .usb_frametoggle (cptra_ss_usb_frametoggle_o), 
+        .usb_needclk     (),
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
-        .vbuscomp_on      (cptra_ss_usb_vbuscomp_on_o),
-        .chrg_vbus        (cptra_ss_usb_chrgvbus_o),
-        .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
+        .vbuscomp_on      (),
+        .chrg_vbus        (),
+        .dischrg_vbus     (),
 
-        // ---- OTG / Session Signals ----
-        .avalid           (cptra_ss_usb_avalid_i),
-        .sessend          (cptra_ss_usb_sessend_i),
+        // ---- Unused OTG / Session Signals ----
+        .avalid           (1'b0),
+        .sessend          (1'b0),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
@@ -1221,13 +1209,13 @@ module caliptra_ss_top
         .ulpi_ddr_sel     (cptra_ss_usb_ulpi_ddr_sel_i),
 
         // ---- System / Wakeup / Hub Control ----
-        .sys_donotwakeup_n   (cptra_ss_usb_donotwakeup_n_i),
-        .sys_dev_wakeup_n    (cptra_ss_usb_dev_wakeup_n_i),
+        .sys_donotwakeup_n   (1'b1),
+        .sys_dev_wakeup_n    (1'b1),
         .sys_utmi_clkin_lock (cptra_ss_usb_utmi_clk_lock_i),
-        .USB_EnableHub       (cptra_ss_usb_enable_hub_i),
-        .USB_self_powered    (cptra_ss_usb_self_powered_i),
-        .testmode            (cptra_ss_cptra_core_scan_mode_i),
-        .async_disable       (cptra_ss_usb_async_disable_i),
+        .USB_EnableHub       (1'b0),
+        .USB_self_powered    (1'b1),
+        .testmode            (cptra_ss_cptra_core_scan_mode_i), // FIXME: Rename when NXP finalizes functionality   
+        .async_disable       (cptra_ss_usb_async_disable_i),    // FIXME: Evaluate when NXP finaliazes functionality
 
         // ---- OCP Recovery data-plane sideband --------------------------
         .payload_available      (cptra_ss_usb_payload_available_w),

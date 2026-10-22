@@ -26,7 +26,7 @@ class usb_delayed_reg extends uvm_reg;
 
   virtual task read(
     output uvm_status_e status, output uvm_reg_data_t value,
-    input uvm_path_e path = UVM_DEFAULT_PATH, input uvm_reg_map map = null,
+    input uvm_door_e path = UVM_DEFAULT_DOOR, input uvm_reg_map map = null,
     input uvm_sequence_base parent = null, input int prior = -1,
     input uvm_object extension = null, input string fname = "",
     input int lineno = 0
@@ -38,7 +38,7 @@ class usb_delayed_reg extends uvm_reg;
 
   virtual task write(
     output uvm_status_e status, input uvm_reg_data_t value,
-    input uvm_path_e path = UVM_DEFAULT_PATH, input uvm_reg_map map = null,
+    input uvm_door_e path = UVM_DEFAULT_DOOR, input uvm_reg_map map = null,
     input uvm_sequence_base parent = null, input int prior = -1,
     input uvm_object extension = null, input string fname = "",
     input int lineno = 0
