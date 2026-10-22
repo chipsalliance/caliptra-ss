@@ -37,6 +37,7 @@ class caliptra_ss_usb_ocp_arbiter_test_base
         logic [15:0] stop_generation;
         bit acknowledged;
         bit idle;
+        bit halted;
 
         if (!uvm_config_db#(
                 virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
@@ -52,6 +53,22 @@ class caliptra_ss_usb_ocp_arbiter_test_base
             100us, acknowledged);
         if (!acknowledged) begin
             `uvm_fatal("OCP_ARB_TEARDOWN", "MCU STOP acknowledgement timed out")
+        end
+        // The STOP acknowledgement precedes the firmware's halt instruction.
+        // An LSU-idle sample alone can end simulation while IFU still runs.
+        halted = 1'b0;
+        fork : wait_for_stop_halt
+            begin
+                wait (bfm_if.mcu_halt_status);
+                halted = 1'b1;
+            end
+            begin
+                #100us;
+            end
+        join_any
+        disable wait_for_stop_halt;
+        if (!halted) begin
+            `uvm_fatal("OCP_ARB_TEARDOWN", "MCU did not halt after STOP acknowledgement")
         end
         observer_vif.wait_for_mcu_axi_idle(100us, idle);
         if (!idle) begin

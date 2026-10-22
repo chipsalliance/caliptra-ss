@@ -43,6 +43,9 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
     protected svt_usb_transfer observed_transfers[$];
     protected logic [31:0] baseline_fields[0:SNAPSHOT_FIELD_COUNT-1];
     protected bit observation_active;
+    protected bit packet_only_window;
+    protected bit wire_length_override;
+    protected bit [15:0] expected_wire_length;
     protected bit path_disabled;
     protected logic [15:0] active_generation;
     protected int unsigned windows_checked;
@@ -77,6 +80,7 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         end
 
         observation_active = 1'b0;
+        packet_only_window = 1'b0;
         path_disabled = 1'b0;
         active_generation = '0;
         windows_checked = 0;
@@ -135,7 +139,8 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             bm_request_type
         };
         setup_word1 = {
-            transfer.setup_data_w_length,
+            wire_length_override ? expected_wire_length :
+                transfer.setup_data_w_length,
             transfer.setup_data_w_index
         };
         return {setup_word1, setup_word0};
@@ -425,6 +430,45 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         unclaimed_windows_checked++;
     endfunction
 
+    // A stalled token has no SETUP mirror exemption. Use the same firmware
+    // snapshots as claimed transfers, but require every legacy effect stable.
+    function void expect_packet_only_window();
+        if (!observation_active || path_disabled) begin
+            `uvm_fatal("OCP_ARB_CHECK",
+                "Packet-only isolation requires an active recovery window.")
+        end
+        packet_only_window = 1'b1;
+    endfunction
+
+    // A VIP transfer-format exception changes only the on-wire SETUP, not
+    // the completed transfer descriptor. Preserve byte-exact mirror checking.
+    function void expect_wire_setup_length(input bit [15:0] length);
+        if (!observation_active)
+            `uvm_fatal("OCP_ARB_CHECK", "Wire-length expectation requires an active window.")
+        wire_length_override = 1'b1;
+        expected_wire_length = length;
+    endfunction
+
+    protected function void check_packet_only_window();
+        if ((observed_transfers.size() != 0) ||
+            (observer_vif.write_count() != 0) ||
+            (packet_callback.packet_count() == 0)) begin
+            `uvm_error("OCP_ARB_CHECK",
+                $sformatf("Packet-only window: transfers=%0d SRAM_writes=%0d packets=%0d.",
+                          observed_transfers.size(), observer_vif.write_count(),
+                          packet_callback.packet_count()))
+        end
+        for (int unsigned field_index = 0;
+             field_index < SNAPSHOT_FIELD_COUNT; field_index++) begin
+            if ((field_index == observer_vif.SNAPSHOT_FIELD_VERSION) ||
+                (field_index == observer_vif.SNAPSHOT_FIELD_PUBLISH_SEQUENCE))
+                continue;
+            check_field_unchanged(field_index,
+                $sformatf("Packet-only legacy field %0d", field_index));
+        end
+        claimed_windows_checked++;
+    endfunction
+
     task begin_observation(
         input  logic [15:0] generation,
         input  bit          disable_recovery_path,
@@ -456,6 +500,8 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         end
 
         observed_transfers.delete();
+        packet_only_window = 1'b0;
+        wire_length_override = 1'b0;
         active_generation = generation;
         path_disabled = disable_recovery_path;
         ready = observer_vif.start_window(generation);
@@ -526,6 +572,11 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             return;
         end
 
+        if (packet_only_window) begin
+            check_packet_only_window();
+            windows_checked++;
+            return;
+        end
         if (observed_transfers.size() == 0) begin
             `uvm_error("OCP_ARB_CHECK",
                 "Observation window contained no completed USB transfer.")

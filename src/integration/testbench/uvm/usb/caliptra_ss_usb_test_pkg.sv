@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 326;
+  localparam int USB_PKG_VERSION = 335;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -344,6 +344,9 @@ package caliptra_ss_usb_test_pkg;
   // ==== Upstream OCP Recovery sequences (preserved from upstream test_pkg) ====
   `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_arbiter_packet_callback.svh"
+  `include "caliptra_ss_usb_ocp_stall_model.svh"
+  `include "caliptra_ss_usb_ocp_fifo_packet_model.svh"
+  `include "caliptra_ss_usb_ocp_scoreboard.svh"
   `include "caliptra_ss_usb_ocp_arbiter_checker.svh"
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_disconnect_sequence.svh"
@@ -357,10 +360,14 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_status_ownership_sequence.svh"
+  `include "caliptra_ss_usb_ocp_directed_packet_sequence.svh"
+  `include "caliptra_ss_usb_ocp_raw_response_callback.svh"
+  `include "caliptra_ss_usb_ocp_stall_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
+  `include "caliptra_ss_usb_ocp_persistent_stall_sequence.svh"
+  `include "caliptra_ss_usb_ocp_packet_observer_selftest_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
 
-  `include "caliptra_ss_usb_ocp_scoreboard.svh"
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
 
   // ==== Upstream OCP Recovery tests (preserved from upstream test_pkg) ====

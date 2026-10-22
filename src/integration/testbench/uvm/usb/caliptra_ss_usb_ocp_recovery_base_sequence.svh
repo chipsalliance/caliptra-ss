@@ -176,6 +176,15 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endfunction
 
+    protected virtual function void configure_ocp_transfer(
+        input svt_usb_transfer request);
+    endfunction
+
+    protected virtual function void completed_ocp_transfer(
+        input svt_usb_transfer request,
+        input caliptra_ss_usb_ocp_xfer_result_e result);
+    endfunction
+
     protected virtual task ocp_class_xfer_result(
         input bit dir_in,
         input ocp_cmd_t cmd_code,
@@ -186,6 +195,49 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input string label);
 
         svt_usb_transfer req;
+        bit completed;
+        bit submission_started;
+        bit [7:0] request_payload[$], response_payload[$];
+        caliptra_ss_usb_ocp_xfer_result_e request_result;
+        // The completion-event watchdog is 2 ms. This outer infrastructure
+        // guard also covers sequencer acquisition and item_done stalls.
+        localparam time REQUEST_BOUND = 2100us;
+        req = svt_usb_transfer::type_id::create({label, "_req"});
+        request_payload = payload_bytes;
+        completed = 1'b0;
+        submission_started = 1'b0;
+        fork : bounded_ocp_request
+            begin
+                execute_ocp_class_xfer(req, submission_started, dir_in,
+                    cmd_code, wlength, request_payload, response_payload,
+                    request_result, label);
+                completed = 1'b1;
+            end
+            begin
+                #(REQUEST_BOUND);
+            end
+        join_any
+        if (!completed) begin
+            if (submission_started) req.abort(1'b1);
+            `uvm_fatal("OCP_BASE",
+                {label, ": sequencer submission/completion exceeded request bound."})
+        end
+        disable bounded_ocp_request;
+        resp_bytes = response_payload;
+        result = request_result;
+        completed_ocp_transfer(req, result);
+    endtask
+
+    protected task execute_ocp_class_xfer(
+        input svt_usb_transfer req,
+        ref bit submission_started,
+        input bit dir_in, input ocp_cmd_t cmd_code,
+        input bit [15:0] wlength,
+        ref bit [7:0] payload_bytes[$],
+        ref bit [7:0] resp_bytes[$],
+        output caliptra_ss_usb_ocp_xfer_result_e result,
+        input string label);
+
         bit [7:0]        bm_dir;
         bit [15:0]       wvalue_v;
         bit [15:0]       windex_v;
@@ -196,7 +248,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         wvalue_v = {8'h00, cmd_code};
         windex_v = {8'h00, 8'(get_iface_num())};
 
-        req = svt_usb_transfer::type_id::create({label, "_req"});
         start_item(req, -1, p_sequencer.xfer_sequencer);
         if (usb_cfg != null) begin
             req.cfg = usb_cfg;
@@ -234,9 +285,25 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 $sformatf("Transfer randomization failed for %s.", label))
         end
 
-        finish_item(req, -1);
-        transfers_issued++;
-        host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+        configure_ocp_transfer(req);
+        // Arm completion before handing the request to the VIP: an immediate
+        // STALL may otherwise complete before the event waiter is installed.
+        fork
+            begin
+                wait_xfer_done(host_agent_h, label);
+            end
+            begin
+                submission_started = 1'b1;
+                finish_item(req, -1);
+                transfers_issued++;
+            end
+        join
+        if (xfer_wait_timed_out) begin
+            req.abort(1'b1);
+            result = OCP_XFER_ABORTED;
+            resp_bytes.delete();
+            return;
+        end
         result = get_xfer_result(req);
         if (dir_in && (result == OCP_XFER_SUCCESS)) begin
             copy_in_payload(req, wlength, resp_bytes);
@@ -252,7 +319,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
     endtask
 
     protected virtual task configure_ep0_nak_retry_limit(
-        input int unsigned retry_limit);
+        input int unsigned retry_limit,
+        input int unsigned endpoint_retry_limit = 1);
         if ((usb_cfg == null) ||
             (usb_cfg.remote_device_cfg.size() == 0) ||
             (usb_cfg.remote_device_cfg[0].endpoint_cfg.size() == 0)) begin
@@ -262,7 +330,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].
             max_retry_due_to_nak = retry_limit;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].
-            max_retry_due_to_nak_before_moving_to_next_ep = 1;
+            max_retry_due_to_nak_before_moving_to_next_ep = endpoint_retry_limit;
         if (!ping_retry_callback_registered) begin
             ping_retry_callback =
                 caliptra_ss_usb_ping_retry_callback::type_id::create(
