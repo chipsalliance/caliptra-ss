@@ -6,13 +6,56 @@
 
 Brings the upstream USB 2.0 link up at High Speed, enumerates the composite hub
 and USBDC0, then makes the host send an **LPM transaction** (EXT token + LPM
-token with `bLinkState = 1`) addressed to USBDC0. USBDC0 is expected to ACK it
-and enter L1 (Sleep). The link is then brought back to L0, either by the host
-(`clear_l1suspend`) or by the device (`DEVCMDSTAT` LPM remote-wakeup write),
-selected by a plusarg.
+token with `bLinkState = 1`) addressed directly to USBDC0. USBDC0 is expected to
+ACK it and enter L1 (Sleep). The link is then brought back to L0, either by the
+host (`clear_l1suspend`) or by the device (`DEVCMDSTAT` LPM remote-wakeup
+write), selected by a plusarg.
 
 In parallel the MCU firmware polls `DEVCMDSTAT` on USBDC0 and logs and
 classifies every `DSUS_C` event as an L1 entry, an L1 exit, or an L2 event.
+
+## Scope of This Test vs the Hub-Level L1 Test
+
+This is the **device-controller / PIE-level** LPM check: the LPM token is
+addressed to the device controller behind the hub, which is the IP-level entry
+path into L1.
+
+Since release_2.6 the hub front-end also implements
+`SetAndTestPortFeature(PORT_L1)`, so a real host can now put a downstream port
+into L1 through the hub. That path is covered by a separate test and is
+deliberately **not** folded into this one, because it exercises a different
+mechanism (a hub class control transfer dispatched by `usb_app_hw_hub`, not a
+raw LPM token decoded by the PIE).
+
+There are exactly **two** ways into L1 in this IP, and both of them ultimately
+name a *device*:
+
+| Test | Mechanism | Target |
+|------|-----------|--------|
+| `caliptra_ss_usb_hs_dev_lpm_l1` (this test) | EXT + LPM token, decoded by the PIE | USBDC0's bus address |
+| `caliptra_ss_usb_dual_device_hs_hub_port_l1` | `SetAndTestPortFeature(PORT_L1)` control transfer to the hub, with the SUCCESS / NYET / STALL-code response ladder | downstream port 1 (DEV0) and port 2 (DEV1), independently |
+
+There is deliberately **no** third "hub-targeted L1" test, because no such
+request exists: `SetAndTestPortFeature(PORT_L1)` is only legal against a
+downstream port. A `wIndex[3:0]` port field of `0` - i.e. the hub itself - is
+rejected with a protocol STALL by `usb_app_hw_hub.m.vhdl`:
+
+```vhdl
+when C_CLASS_REQ_SET_AND_TEST =>
+  if to_integer(unsigned(ep0_windex(3 downto 0))) = 0 then
+    null; -- A stall will be returned upon this request
+```
+
+and `hub_port_l1` is a per-port vector (`C_HUB_NB_PORTS-1 downto 0`) with no
+broadcast form. "Global" L1 in the sense of one request suspending the whole
+hub is not a feature of this design.
+
+Both mechanisms end up asserting the same device-visible state: in the compound
+structure `devN_lpm_suspend <= (sync_lpm_suspend and hub_port_enable(N)) or
+hub_port_l1(N)`, so hub-driven PORT_L1 reaches `DEVCMDSTAT.LPM_SUS` / `DSUS_C`
+exactly as the direct token does. The firmware classification logic in this
+test is therefore reusable unchanged by the hub-level test.
+
 
 ## Why This Is Not Just Another Suspend Test
 
@@ -120,26 +163,52 @@ Firmware-side `DSUS_C` prints are diagnostic only; nothing scores them.
 
 Read these before trusting a pass.
 
-- **DEV0 only.** At the `usb_reg_if_2` instantiation the four LPM control ports
-  (`usbreg_lpm_sup`, `usbreg_lpmremotewakeup`, `usbreg_lpm_hird_sw`,
-  `usbreg_lpm_nyet`) are tied `=> open`, so USBDC1 has no software-visible LPM
-  control. A dev1 replica of this test would be meaningless and is not
-  provided.
-- **LPM is not advertised to the host.** There is no BOS / USB 2.0 Extension
-  descriptor in this design, and `usb_ep0_hub_descr.m.vhdl` hardcodes
-  `bcdUSB = 0x0200`. A real host would therefore never attempt an LPM
-  transaction. This test has the VIP send the LPM token unconditionally, which
-  is legitimate as an IP-level check of the device's LPM handling but is *not* a
-  system-level check that a host would use L1 here.
-- **No hub-level L1.** There is no `SetPortFeature(PORT_L1)` support, so
-  selective (per-port) L1 is out of scope. What is exercised is the device
-  controller's response to an LPM transaction addressed to it.
+- **Direct-token path is DEV0 only.** The LPM token in this test is addressed to
+  USBDC0. USBDC1 still has no software-visible LPM *control* of its own, so a
+  dev1 replica of *this* test is not provided.
+
+  This is no longer a limitation on L1 coverage as a whole. In the compound
+  structure `hub_port_lpm_sup(0) <= dev0_lpm_sup` and
+  `hub_port_lpm_sup(1) <= dev1_lpm_sup`, with the matching per-port
+  `hub_port_lpm_data_pending` / `hub_port_lpm_hird_sw` wiring, and
+  `hub_port_l1(N)` feeds `devN_lpm_suspend`. Both ports are therefore reachable
+  and independently steerable **through the hub**, which is exactly what
+  `caliptra_ss_usb_dual_device_hs_hub_port_l1` covers.
+- **LPM *is* advertised to the host.** The hub DEVICE descriptor reports
+  `bcdUSB = 0x0210` and the hub exposes a 12-byte BOS containing a USB 2.0
+  Extension device capability with the LPM bit set (`bmAttributes = 0x02`).
+  This is what makes an LPM transaction legal for a real host, and it is checked
+  independently by `caliptra_ss_usb_hs_dev_get_bos_descriptor` and
+  `caliptra_ss_usb_fs_dev_get_bos_descriptor` via `check_bos_descriptor()`.
+
+  Residual RTL inconsistency worth knowing about: the hub **DEVICE_QUALIFIER**
+  descriptor still reports `bcdUSB = 0x0200` while the DEVICE descriptor reports
+  `0x0210`. Harmless for this test, but it is a spec inconsistency in
+  `usb_ep0_hub_descr.m.vhdl`, not a testbench bug.
+- **Hub-level L1 exists, and is covered elsewhere.** `usb_app_hw_hub.m.vhdl`
+  implements `SetAndTestPortFeature(PORT_L1)` (`bmRequestType = 0xA3`,
+  `bRequest = 0x0C`, `wValue = 10`, `wLength = 1`) with `wIndex[3:0]` = 1-based
+  port, `wIndex[7:4]` = HIRD, `wIndex[15]` = remote-wake enable, and a
+  one-byte response of `0x00` SUCCESS / `0x10` NYET / `0x30` STALL-code.
+  The request is **downstream-port-only**: a port field of `0`, naming the hub
+  itself, is answered with a protocol STALL, and there is no broadcast encoding.
+  Selective per-port L1 is therefore **in** scope for the design and is covered
+  by `caliptra_ss_usb_dual_device_hs_hub_port_l1`. What *this* test still
+  uniquely covers is the device controller's own response to an LPM token
+  addressed directly to it, which no hub-class request exercises.
 - **HIRD, not BESL.** This IP implements the HIRD flavour of LPM. The decode is
   in `usb_host_pie.m.vhdl` (HIRD 0 -> 50 us, +75 us per step, 15 -> 1175 us).
   `HIRD = 1` is used here to keep the L1 residency short.
+
+  Naming caveat for anyone reading the register model: the hub LPM register is
+  described in `systemrdl/usb_hub.rdl` with fields named `BESL_SW` / `BESL_HW`,
+  but the RTL it documents (`hub_lpm_hird_sw` / `hub_lpm_hird_hw`) is the HIRD
+  encoding. The names differ; the semantics are HIRD.
 - **`DSUS_C` is shared with L2.** The firmware must classify events from the
   live `LPM_SUS` / `DSUS` bits; a test that assumed `DSUS_C` meant L2 would
-  misreport.
+  misreport. This is unchanged by the hub path: hub-driven PORT_L1 arrives on
+  the same `devN_lpm_suspend` net, so the same classification is required there.
+
 
 ## Test Components
 
