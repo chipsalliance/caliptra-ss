@@ -19,7 +19,9 @@
 // Combines caliptra_ss_usb_hs_dev_int_loopback_test and
 // caliptra_ss_usb_hs_dev_iso_out_test into one simulation: two INTERRUPT
 // endpoints (EP1, EP3) and one ISOCHRONOUS endpoint (EP2) are modeled and
-// armed, and the sequence accesses them in the order EP1 -> EP2 -> EP3.
+// armed, and the sequence accesses them in the order EP1 -> EP2 -> EP3, and it
+// repeats that whole EP1 -> EP2 -> EP3 order twice (two loops). The timing
+// budgets below are therefore doubled with respect to the single-loop version.
 //
 // endpoint_cfg[] is an array INDEX, not the USB endpoint number:
 //   endpoint_cfg[0] ep_number=0 direction=IN  CONTROL      (shared_cfg default)
@@ -134,8 +136,10 @@ class caliptra_ss_usb_hs_dev_int_iso_mix_test extends caliptra_ss_usb_base_test;
         // test needed a 35 ms device_timeout for its long software-polled
         // phases; the INTERRUPT test needed the widened end-to-end delay so a
         // software-polled IN is not declared a response timeout.
-        cfg.dev_cfg.local_device_cfg[0].device_timeout = 35000us;
-        cfg.host_cfg.tend_to_end_delay_hs             = 100000000.0; // 100 ms in ns
+        // Both budgets are doubled because the sequence now runs two loops of
+        // the EP1 -> EP2 -> EP3 phase order.
+        cfg.dev_cfg.local_device_cfg[0].device_timeout = 70000us;
+        cfg.host_cfg.tend_to_end_delay_hs             = 200000000.0; // 200 ms in ns
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
