@@ -25,7 +25,8 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 326;
+  localparam int USB_PKG_VERSION = 336;
+
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -45,6 +46,9 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_init_sequence.svh"
 
   `include "caliptra_ss_usb_nak_monitor_callback.svh"
+  // Handshake (ACK/NAK/STALL) counter used by the HS unsupported-endpoint test
+  // to prove the device stays silent. Must precede the sequence that uses it.
+  `include "caliptra_ss_usb_handshake_counter_callback.svh"
   `include "caliptra_ss_usb_get_status_sequence.svh"
   `include "caliptra_ss_usb_hub_qualifier_sequence.svh"
   `include "caliptra_ss_usb_hub_config_descriptor_sequence.svh"
@@ -98,6 +102,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_conn_test.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_test.svh"
+  // BULK OUT token to an endpoint number with no physical endpoint behind it
+  // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
+  // ACK/NAK/STALL), checked by a bounded bus-silence observation.
+  `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
@@ -163,6 +172,12 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_conn_test.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_test.svh"
+  // Full-Speed sibling of caliptra_ss_usb_hs_dev_unsupported_ep: BULK OUT
+  // token to an endpoint number with no physical endpoint behind it (EP15 for
+  // C_DEV0_NBPHYSEP = 28). The endpoint map is speed independent, so only the
+  // wire speed, packet sizes and observation delays differ.
+  `include "caliptra_ss_usb_fs_dev_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_test.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_sequence.svh"
@@ -181,6 +196,13 @@ package caliptra_ss_usb_test_pkg;
   // tools/scripts/gen_usb_dev_variants.py.
   `include "caliptra_ss_usb_hs_dev1_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_out_test.svh"
+  // USBDC1 replica of caliptra_ss_usb_hs_dev_unsupported_ep: BULK OUT token
+  // to an endpoint number with no physical endpoint behind it (EP15 for
+  // C_DEV1_NBPHYSEP = 28). The endpoint map is identical on both device
+  // instances, so only the hub downstream port (port 2) and the firmware
+  // build flag (-DUSB_DEV_SEL=1) differ.
+  `include "caliptra_ss_usb_hs_dev1_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev1_nbyte_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev1_iso_out_sequence.svh"

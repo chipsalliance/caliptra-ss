@@ -955,7 +955,7 @@ function void caliptra_ss_usb_data_check_api_impl::check_config_like_descriptor(
   //          C_ADDR_SP1 (and C_ADDR_SP2 for the other-speed descriptor) is
   //          patched to 0xC0 when usb_self_powered is high and 0x80 when it is
   //          low, where usb_self_powered = usb_self_powered_pin OR HUB_CS[18].
-  //          caliptra_ss_top_tb.sv ties cptra_ss_usb_self_powered_i to 1'b1, and no test
+  //          caliptra_ss_top.sv ties USB_self_powered to 1'b1, and no test
   //          writes HUB_CS[18], so the expected value is 1. The tie-off itself
   //          is verified independently by caliptra_ss_usb_sva.sv.
   //   bits[5:0] other than bit6 are reserved and zero (bit5 Remote Wakeup is

@@ -16,7 +16,7 @@
 // caliptra_ss_usb_vbus_driver
 //
 // Purpose
-//   Own the DUT VBus / SessEnd input pins so that a test can model cable
+//   Own the DUT VBus input so that a test can model cable
 //   removal (VBus going away) instead of only asking the VIP to change its
 //   own internal link state.
 //
@@ -25,7 +25,6 @@
 //   It used to be a constant tie-off in caliptra_ss_top_tb.sv:
 //
 //       assign cptra_ss_usb_USB_VBus_i = 1'b1;
-//       assign cptra_ss_usb_sessend_i  = 1'b0;
 //
 //   With a constant 1 the device controller can never observe VBus removal:
 //   DEVCMDSTAT.VBUS_DEBOUNCED can never clear and the DCON_C change bit can
@@ -73,16 +72,14 @@
 //
 // Interface
 //   vbus            drives cptra_ss_usb_USB_VBus_i
-//   sessend         drives cptra_ss_usb_sessend_i
+//   sessend         resolved session-end status (unused by the subsystem TB)
 //   vip_vbus_valid  observes usb_20_mac_if.utmi_dut_mac_if.VbusValid
 //   vip_sessend     observes usb_20_mac_if.utmi_dut_mac_if.SessEnd
 //
 //   SessEnd is tracked separately from VBus, because the VIP may drive
 //   VbusValid and leave SessEnd undriven. In that case sessend is forced to
-//   ~vbus rather than forwarding X. Session-end asserted is the correct
-//   electrical companion to VBus removal: with VBus gone the session really
-//   has ended, and holding sessend at 0 would present the controller an
-//   inconsistent pair of power inputs.
+//   ~vbus rather than forwarding X. The subsystem only consumes VBus; the
+//   session-end output is left unconnected in caliptra_ss_top_tb.sv.
 //
 // Handshake
 //   Stimulus does not move the pin, but it still needs to know when the pin

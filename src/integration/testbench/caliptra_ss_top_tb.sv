@@ -2177,14 +2177,14 @@ module caliptra_ss_top_tb
     // USB power / VBus interface
     //
     // caliptra_ss_usb_vbus_driver samples the VIP UTMI VbusValid / SessEnd
-    // outputs and forwards the resolved value to the two DUT power pins, so a
+    // outputs and forwards the resolved VBus value to the DUT power input, so a
     // single svt_usb_physical_service_vbus_off_sequence moves both the VIP
     // link state machine and the DUT power pin without the two desynchronising.
     // This is also the physically correct model: a device never sources the
     // 5 V rail, it only senses what the host supplies through the cable.
     //
     // The driver never forwards X/Z to a DUT power input. If the VIP is not
-    // driving, it holds the last known-good value (default VBus=1 / SessEnd=0,
+    // driving, it holds the last known-good value (default VBus=1,
     // bit-identical to the old tie-off) and reports once at UVM_LOW. Stimulus
     // can wait for the pin via the global uvm_events usb_vbus_off_req /
     // usb_vbus_on_req and the matching done events. See
@@ -2192,7 +2192,7 @@ module caliptra_ss_top_tb
     //
     // The ifndef guard is load bearing. Host-DUT tests put the VIP in DEVICE
     // mode on USB_20_SERIAL_IF through nvs_usb_phy, where device_b_sm reads
-    // VbusValid instead of driving it and nvs_usb_phy drives these two pins
+    // VbusValid instead of driving it and nvs_usb_phy drives the DUT VBus input
     // directly. This driver must stay out of that build - do not remove the
     // guard.
     `ifndef CALIPTRA_USB_HOST_PHY_TEST
@@ -2214,14 +2214,6 @@ module caliptra_ss_top_tb
 
     // USB AXI USER filtering policy is driven by caliptra_ss_top_tb_soc_bfm
     assign cptra_ss_usb_async_disable_i = 1'b0;
-
-    // USB PHY clock request, wakeup and hub control inputs.
-    // Tie-offs reproduce the values previously hard-coded in caliptra_ss_top.
-    assign cptra_ss_usb_donotwakeup_n_i = 1'b1; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_dev_wakeup_n_i  = 1'b1; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_enable_hub_i    = 1'b0; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_self_powered_i  = 1'b1; // FIXME: NXP DV add functionality
-
 
     // --- SPI host env and interface ---
     logic cptra_ss_sck_o;
@@ -2654,11 +2646,6 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_async_disable_i   (cptra_ss_usb_async_disable_i),
 
         .cptra_ss_usb_frametoggle_o     (), // FIXME: NXP DV add functionality
-        .cptra_ss_usb_needclk_o         (), // FIXME: NXP DV add functionality
-        .cptra_ss_usb_donotwakeup_n_i   (cptra_ss_usb_donotwakeup_n_i),
-        .cptra_ss_usb_dev_wakeup_n_i    (cptra_ss_usb_dev_wakeup_n_i),
-        .cptra_ss_usb_enable_hub_i      (cptra_ss_usb_enable_hub_i),
-        .cptra_ss_usb_self_powered_i    (cptra_ss_usb_self_powered_i),
 
         .cptra_ss_usb_recovery_payload_available_o  (cptra_ss_usb_recovery_payload_available_o),
         .cptra_ss_usb_recovery_payload_available_i  (cptra_ss_usb_recovery_payload_available_o),
