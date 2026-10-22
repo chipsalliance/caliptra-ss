@@ -18,7 +18,7 @@
 // Each bus operation is one full 32-bit word; wider RAL memory accesses are
 // split by the register maps before reaching this adapter.
 
-// Supply the legacy item end-event notification needed by the RAL path.
+// Supply the item end-event notification needed by the RAL path.
 class usb_axi_ral_parent_sequence extends uvm_sequence;
   `uvm_object_utils(usb_axi_ral_parent_sequence)
 
@@ -29,9 +29,13 @@ class usb_axi_ral_parent_sequence extends uvm_sequence;
 
   // Complete sequencer execution before publishing the item's RAL end event.
   virtual task finish_item(uvm_sequence_item item, int set_priority = -1);
+    uvm_event_pool events;
+    uvm_event#(uvm_object) end_event;
+
     super.finish_item(item, set_priority);
-    // Bridge sequencer completion to the legacy RAL end-event handshake.
-    item.end_event.trigger();
+    events = item.get_event_pool();
+    end_event = events.get("end");
+    end_event.trigger();
   endtask
 endclass
 
