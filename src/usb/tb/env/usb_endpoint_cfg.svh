@@ -207,18 +207,18 @@ class usb_endpoint_cfg extends uvm_object;
 
   virtual function void do_print(uvm_printer printer);
     super.do_print(printer);
-    printer.print_int("ep_number", ep_number, 32, UVM_DEC);
+    printer.print_field_int("ep_number", ep_number, 32, UVM_DEC);
     printer.print_string("direction", direction.name());
     printer.print_string("transfer_type", transfer_type.name());
-    printer.print_int("max_packet_size", max_packet_size, 32, UVM_DEC);
-    printer.print_int("interval", interval, 32, UVM_DEC);
+    printer.print_field_int("max_packet_size", max_packet_size, 32, UVM_DEC);
+    printer.print_field_int("interval", interval, 32, UVM_DEC);
     if (max_burst_size_valid) begin
-      printer.print_int("max_burst_size", max_burst_size, 32, UVM_DEC);
+      printer.print_field_int("max_burst_size", max_burst_size, 32, UVM_DEC);
     end
-    printer.print_int("allow_aligned_transfer_without_zero_length", allow_aligned_transfer_without_zero_length, 1, UVM_BIN);
+    printer.print_field_int("allow_aligned_transfer_without_zero_length", allow_aligned_transfer_without_zero_length, 1, UVM_BIN);
     if (anchor_index_valid) begin
-      printer.print_int("anchor_index", anchor_index, 32, UVM_DEC);
+      printer.print_field_int("anchor_index", anchor_index, 32, UVM_DEC);
     end
-    printer.print_int("physical_index", physical_index(), 32, UVM_DEC);
+    printer.print_field_int("physical_index", physical_index(), 32, UVM_DEC);
   endfunction
 endclass

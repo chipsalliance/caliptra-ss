@@ -382,22 +382,10 @@ module caliptra_ss_top_w_stub #(
 
 // USB core power / VBus interface
     logic        cptra_ss_usb_USB_VBus_i;
-    logic        cptra_ss_usb_vbuscomp_on_o;
-    logic        cptra_ss_usb_chrgvbus_o;
-    logic        cptra_ss_usb_dischrgvbus_o;
-    logic        cptra_ss_usb_avalid_i;
-    logic        cptra_ss_usb_sessend_i;
     logic        cptra_ss_usb_async_disable_i;
 
-// USB core frame timing, PHY clock request and wakeup interface
+// USB core frame timing interface
     logic        cptra_ss_usb_frametoggle_o;
-    logic        cptra_ss_usb_needclk_o;
-    logic        cptra_ss_usb_donotwakeup_n_i;
-    logic        cptra_ss_usb_dev_wakeup_n_i;
-
-// USB core hub control interface
-    logic        cptra_ss_usb_enable_hub_i;
-    logic        cptra_ss_usb_self_powered_i;
 
     logic cptra_ss_usb_recovery_payload_available_o;
     logic cptra_ss_usb_recovery_image_activated_o;
@@ -508,17 +496,7 @@ module caliptra_ss_top_w_stub #(
 
     // USB core power / VBus interface
         cptra_ss_usb_USB_VBus_i = '0;
-        cptra_ss_usb_avalid_i = '0;
-        cptra_ss_usb_sessend_i = '0;
         cptra_ss_usb_async_disable_i = '0;
-
-    // USB core PHY clock request and wakeup interface (inactive)
-        cptra_ss_usb_donotwakeup_n_i = 1'b1;
-        cptra_ss_usb_dev_wakeup_n_i = 1'b1;
-
-    // USB core hub control interface: FW-controlled hub, self-powered
-        cptra_ss_usb_enable_hub_i = 1'b0;
-        cptra_ss_usb_self_powered_i = 1'b1;
 
         // USB AXI USER filtering enabled; the all-zero allowlists authorize the
         // MCU LSU and Caliptra DMA straps, which are tied to zero above.
@@ -820,22 +798,10 @@ module caliptra_ss_top_w_stub #(
 
     // USB core power / VBus interface
         .cptra_ss_usb_USB_VBus_i,
-        .cptra_ss_usb_vbuscomp_on_o,
-        .cptra_ss_usb_chrgvbus_o,
-        .cptra_ss_usb_dischrgvbus_o,
-        .cptra_ss_usb_avalid_i,
-        .cptra_ss_usb_sessend_i,
         .cptra_ss_usb_async_disable_i,
 
-    // USB core frame timing, PHY clock request and wakeup interface
+    // USB core frame timing interface
         .cptra_ss_usb_frametoggle_o,
-        .cptra_ss_usb_needclk_o,
-        .cptra_ss_usb_donotwakeup_n_i,
-        .cptra_ss_usb_dev_wakeup_n_i,
-
-    // USB core hub control interface
-        .cptra_ss_usb_enable_hub_i,
-        .cptra_ss_usb_self_powered_i,
 
         .cptra_ss_usb_recovery_payload_available_o,
         .cptra_ss_usb_recovery_payload_available_i(cptra_ss_usb_recovery_payload_available_o),

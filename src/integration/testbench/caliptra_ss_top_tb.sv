@@ -97,11 +97,7 @@ module caliptra_ss_top_tb
     logic cptra_ss_usb_utmi_xcvrselect_o, cptra_ss_usb_utmi_termselect_o, cptra_ss_usb_utmi_vcontrolloadm_o;
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
-    logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_sessend_i, cptra_ss_usb_async_disable_i;
-    logic cptra_ss_usb_avalid_i;
-    logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
-    logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
-    logic cptra_ss_usb_vbuscomp_on_o, cptra_ss_usb_chrgvbus_o, cptra_ss_usb_dischrgvbus_o;
+    logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_async_disable_i;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
     logic [7:0] cptra_ss_usb_ulpi_rxdata_i, cptra_ss_usb_ulpi_txdata_o;
@@ -2078,7 +2074,6 @@ module caliptra_ss_top_tb
     assign cptra_ss_usb_utmi_txready_i        = usb_20_mac_if.utmi_dut_mac_if.TXReady;
     assign cptra_ss_usb_utmi_linestate_i      = usb_20_mac_if.utmi_dut_mac_if.LineState;
     assign cptra_ss_usb_utmi_vstatus_i        = '0; // Not modeled by VIP
-    assign cptra_ss_usb_avalid_i              = usb_20_mac_if.utmi_dut_mac_if.AValid;
 
     // --- DUT device MAC outputs -> VIP modeled PHY inputs ---
     assign usb_20_mac_if.utmi_dut_mac_if.DataIn      = cptra_ss_usb_utmi_txdata_o;
@@ -2180,14 +2175,14 @@ module caliptra_ss_top_tb
     // USB power / VBus interface
     //
     // caliptra_ss_usb_vbus_driver samples the VIP UTMI VbusValid / SessEnd
-    // outputs and forwards the resolved value to the two DUT power pins, so a
+    // outputs and forwards the resolved VBus value to the DUT power input, so a
     // single svt_usb_physical_service_vbus_off_sequence moves both the VIP
     // link state machine and the DUT power pin without the two desynchronising.
     // This is also the physically correct model: a device never sources the
     // 5 V rail, it only senses what the host supplies through the cable.
     //
     // The driver never forwards X/Z to a DUT power input. If the VIP is not
-    // driving, it holds the last known-good value (default VBus=1 / SessEnd=0,
+    // driving, it holds the last known-good value (default VBus=1,
     // bit-identical to the old tie-off) and reports once at UVM_LOW. Stimulus
     // can wait for the pin via the global uvm_events usb_vbus_off_req /
     // usb_vbus_on_req and the matching done events. See
@@ -2195,14 +2190,14 @@ module caliptra_ss_top_tb
     //
     // The ifndef guard is load bearing. Host-DUT tests put the VIP in DEVICE
     // mode on USB_20_SERIAL_IF through nvs_usb_phy, where device_b_sm reads
-    // VbusValid instead of driving it and nvs_usb_phy drives these two pins
+    // VbusValid instead of driving it and nvs_usb_phy drives the DUT VBus input
     // directly. This driver must stay out of that build - do not remove the
     // guard.
     `ifndef CALIPTRA_USB_HOST_PHY_TEST
 
     caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
         .vbus           (cptra_ss_usb_USB_VBus_i),
-        .sessend        (cptra_ss_usb_sessend_i),
+        .sessend        (),
         .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
         .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
     );
@@ -2219,14 +2214,6 @@ module caliptra_ss_top_tb
 
     // USB AXI USER filtering policy is driven by caliptra_ss_top_tb_soc_bfm
     assign cptra_ss_usb_async_disable_i = 1'b0;
-
-    // USB PHY clock request, wakeup and hub control inputs.
-    // Tie-offs reproduce the values previously hard-coded in caliptra_ss_top.
-    assign cptra_ss_usb_donotwakeup_n_i = 1'b1; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_dev_wakeup_n_i  = 1'b1; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_enable_hub_i    = 1'b0; // FIXME: NXP DV add functionality
-    assign cptra_ss_usb_self_powered_i  = 1'b1; // FIXME: NXP DV add functionality
-
 
     // --- SPI host env and interface ---
     logic cptra_ss_sck_o;
@@ -2656,19 +2643,9 @@ module caliptra_ss_top_tb
         .cptra_ss_usb_ulpi_ddr_sel_i    (cptra_ss_usb_ulpi_ddr_sel_i),
 
         .cptra_ss_usb_USB_VBus_i        (cptra_ss_usb_USB_VBus_i),
-        .cptra_ss_usb_vbuscomp_on_o     (cptra_ss_usb_vbuscomp_on_o),
-        .cptra_ss_usb_chrgvbus_o        (cptra_ss_usb_chrgvbus_o),
-        .cptra_ss_usb_dischrgvbus_o     (cptra_ss_usb_dischrgvbus_o),
-        .cptra_ss_usb_avalid_i          (cptra_ss_usb_avalid_i),
-        .cptra_ss_usb_sessend_i         (cptra_ss_usb_sessend_i),
         .cptra_ss_usb_async_disable_i   (cptra_ss_usb_async_disable_i),
 
         .cptra_ss_usb_frametoggle_o     (), // FIXME: NXP DV add functionality
-        .cptra_ss_usb_needclk_o         (), // FIXME: NXP DV add functionality
-        .cptra_ss_usb_donotwakeup_n_i   (cptra_ss_usb_donotwakeup_n_i),
-        .cptra_ss_usb_dev_wakeup_n_i    (cptra_ss_usb_dev_wakeup_n_i),
-        .cptra_ss_usb_enable_hub_i      (cptra_ss_usb_enable_hub_i),
-        .cptra_ss_usb_self_powered_i    (cptra_ss_usb_self_powered_i),
 
         .cptra_ss_usb_recovery_payload_available_o  (cptra_ss_usb_recovery_payload_available_o),
         .cptra_ss_usb_recovery_payload_available_i  (cptra_ss_usb_recovery_payload_available_o),

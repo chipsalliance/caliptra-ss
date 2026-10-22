@@ -349,9 +349,9 @@ class usb_env_cfg extends uvm_object;
 
   virtual function void do_print(uvm_printer printer);
     super.do_print(printer);
-    printer.print_int("axi_delay_random", axi_delay_random, 1, UVM_BIN);
-    printer.print_int("device_address", device_address, $bits(device_address), UVM_DEC);
-    printer.print_int("endpoint_list_base", endpoint_list_base, $bits(endpoint_list_base), UVM_HEX);
+    printer.print_field_int("axi_delay_random", axi_delay_random, 1, UVM_BIN);
+    printer.print_field_int("device_address", device_address, $bits(device_address), UVM_DEC);
+    printer.print_field_int("endpoint_list_base", endpoint_list_base, $bits(endpoint_list_base), UVM_HEX);
     printer.print_time("reset_timeout", reset_timeout);
     printer.print_time("transfer_timeout", transfer_timeout);
     printer.print_time("vbus_timeout", vbus_timeout);
