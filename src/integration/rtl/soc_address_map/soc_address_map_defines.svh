@@ -69,7 +69,7 @@
 `define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_END_ADDR                                                   (32'h2000103b)
 `define SOC_USB_COMBO_HUB_CONTROL                                                                   (32'h2000103c)
 `define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_BASE_ADDR                                                 (32'h20001040)
-`define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (32'h200012af)
+`define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (32'h200012bf)
 `define SOC_USB_DEV1_CSR_BASE_ADDR                                                                  (32'h20002000)
 `define SOC_USB_DEV1_CSR_DEVCMDSTAT                                                                 (32'h20002000)
 `define SOC_USB_DEV1_CSR_INFO                                                                       (32'h20002004)

@@ -47,7 +47,7 @@ module caliptra_ss_top
     ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
-    ,parameter USB_C_HUB_FIFO_SIZE = 172
+    ,parameter USB_C_HUB_FIFO_SIZE = 176
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter SPI_HOST_ENA = 1

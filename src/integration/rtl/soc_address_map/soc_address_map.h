@@ -532,7 +532,7 @@
 #define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (0xfff80000)
 #endif
 #define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_BASE_ADDR                                                 (0x20001040)
-#define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (0x200012af)
+#define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (0x200012bf)
 #define SOC_USB_DEV1_CSR_BASE_ADDR                                                                  (0x20002000)
 #define SOC_USB_DEV1_CSR_DEVCMDSTAT                                                                 (0x20002000)
 #ifndef USB_DEV1_CSR_DEVCMDSTAT
