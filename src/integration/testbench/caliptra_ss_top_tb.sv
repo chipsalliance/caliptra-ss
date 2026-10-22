@@ -98,6 +98,8 @@ module caliptra_ss_top_tb
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
     logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_async_disable_i;
+    logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
+    logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
     logic [7:0] cptra_ss_usb_ulpi_rxdata_i, cptra_ss_usb_ulpi_txdata_o;
@@ -2197,9 +2199,7 @@ module caliptra_ss_top_tb
 
     caliptra_ss_usb_vbus_driver i_caliptra_ss_usb_vbus_driver (
         .vbus           (cptra_ss_usb_USB_VBus_i),
-        .sessend        (),
-        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid),
-        .vip_sessend    (usb_20_mac_if.utmi_dut_mac_if.SessEnd)
+        .vip_vbus_valid (usb_20_mac_if.utmi_dut_mac_if.VbusValid)
     );
 
     `endif
@@ -2778,3 +2778,4 @@ endmodule
 // it triggers i3c test cases.
 `include "ai3c_tests_bench.sv"
 
+// File contains AI-generated response based on internal company sources

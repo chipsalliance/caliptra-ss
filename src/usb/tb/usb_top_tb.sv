@@ -272,13 +272,8 @@ module usb_top_tb;
     .usb_frametoggle(), // FIXME: DV add functionality
     .payload_available     (),
     .ocp_firmware_activated(),
-    // Device-mode VBus/session indications come from SVT.
+    // Device-mode VBus indication comes from SVT.
     .USB_VBus(usb_20_mac_if.utmi_dut_mac_if.VbusValid),
-    .vbuscomp_on(),
-    .chrg_vbus(),
-    .dischrg_vbus(),
-    .avalid(usb_20_mac_if.utmi_dut_mac_if.AValid),
-    .sessend(usb_20_mac_if.utmi_dut_mac_if.SessEnd),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
     .utmi_rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
     .utmi_rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
