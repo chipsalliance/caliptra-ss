@@ -278,6 +278,8 @@ class caliptra_ss_usb_hs_dev_lpm_l1_sequence extends caliptra_ss_usb_base_sequen
             end
         join_any
 
+        #10us;
+
         // Step 7: exit L1.
         if (dev_driven_exit) begin
             // Device-driven: the firmware asserts usbreg_lpmremotewakeup by
