@@ -22,13 +22,13 @@
 `include "caliptra_macros.svh"
 `include "caliptra_prim_assert.sv"
 `include "caliptra_sva.svh"
-`include "i3c_defines.svh"
 `include "caliptra_ss_includes.svh"
 
 module caliptra_ss_top
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import mci_reg_pkg::*;
+    import caliptra_ss_top_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
     ,parameter CPTRA_SS_ROM_SIZE_KB = 256
@@ -47,7 +47,7 @@ module caliptra_ss_top
     ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
     ,parameter USB_C_DEV0_NBPHYSEP = 28
     ,parameter USB_C_DEV1_NBPHYSEP = 28
-    ,parameter USB_C_HUB_FIFO_SIZE = 172
+    ,parameter USB_C_HUB_FIFO_SIZE = 196
     ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
     ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
     ,parameter SPI_HOST_ENA = 1
@@ -363,22 +363,10 @@ module caliptra_ss_top
 
 // USB core power / VBus interface
     input  logic                           cptra_ss_usb_USB_VBus_i,
-    output logic                           cptra_ss_usb_vbuscomp_on_o,
-    output logic                           cptra_ss_usb_chrgvbus_o,
-    output logic                           cptra_ss_usb_dischrgvbus_o,
-    input  logic                           cptra_ss_usb_avalid_i,
-    input  logic                           cptra_ss_usb_sessend_i,
     input  logic                           cptra_ss_usb_async_disable_i,
 
-// USB core frame timing, PHY clock request and wakeup interface
+// USB core frame timing interface
     output logic                           cptra_ss_usb_frametoggle_o,
-    output logic                           cptra_ss_usb_needclk_o,
-    input  logic                           cptra_ss_usb_donotwakeup_n_i,
-    input  logic                           cptra_ss_usb_dev_wakeup_n_i,
-
-// USB core hub control interface
-    input  logic                           cptra_ss_usb_enable_hub_i,
-    input  logic                           cptra_ss_usb_self_powered_i,
 
     output logic cptra_ss_usb_recovery_payload_available_o,
     input  logic cptra_ss_usb_recovery_payload_available_i,
@@ -558,7 +546,7 @@ module caliptra_ss_top
 
     //---------------------------I3C---------------------------------------
     logic                       disable_id_filtering_i;
-    logic [`AXI_USER_WIDTH-1:0] priv_ids [`NUM_PRIV_IDS];
+    logic [$bits(cptra_ss_i3c_s_axi_if_w_sub.awuser)-1:0] priv_ids [I3cNumPrivIds];
 
     //------------------------ SPI host ------------------------------------
     logic spi_host_intg_error;
@@ -1178,18 +1166,11 @@ module caliptra_ss_top
         // Unused since RISC-V does not have the same FIQ as ARM. Every DEV0 interrupt
         // source can be routed to IRQ (INTROUTE resets to IRQ), so FIQ is not connected to the MCU.
         .dev0_usb_fiq    (),
-        .usb_frametoggle (cptra_ss_usb_frametoggle_o),
-        .usb_needclk     (cptra_ss_usb_needclk_o),
+        .usb_frametoggle (cptra_ss_usb_frametoggle_o), 
+        .usb_needclk     (),
 
         // ---- USB Power / VBus ----
         .USB_VBus         (cptra_ss_usb_USB_VBus_i),
-        .vbuscomp_on      (cptra_ss_usb_vbuscomp_on_o),
-        .chrg_vbus        (cptra_ss_usb_chrgvbus_o),
-        .dischrg_vbus     (cptra_ss_usb_dischrgvbus_o),
-
-        // ---- OTG / Session Signals ----
-        .avalid           (cptra_ss_usb_avalid_i),
-        .sessend          (cptra_ss_usb_sessend_i),
 
         // ---- UTMI PHY Interface ----
         .utmi_clk         (cptra_ss_usb_utmi_clk_i),
@@ -1221,13 +1202,13 @@ module caliptra_ss_top
         .ulpi_ddr_sel     (cptra_ss_usb_ulpi_ddr_sel_i),
 
         // ---- System / Wakeup / Hub Control ----
-        .sys_donotwakeup_n   (cptra_ss_usb_donotwakeup_n_i),
-        .sys_dev_wakeup_n    (cptra_ss_usb_dev_wakeup_n_i),
+        .sys_donotwakeup_n   (1'b1),
+        .sys_dev_wakeup_n    (1'b1),
         .sys_utmi_clkin_lock (cptra_ss_usb_utmi_clk_lock_i),
-        .USB_EnableHub       (cptra_ss_usb_enable_hub_i),
-        .USB_self_powered    (cptra_ss_usb_self_powered_i),
-        .testmode            (cptra_ss_cptra_core_scan_mode_i),
-        .async_disable       (cptra_ss_usb_async_disable_i),
+        .USB_EnableHub       (1'b0),
+        .USB_self_powered    (1'b1),
+        .testmode            (cptra_ss_cptra_core_scan_mode_i), // FIXME: Rename when NXP finalizes functionality   
+        .async_disable       (cptra_ss_usb_async_disable_i),    // FIXME: Evaluate when NXP finaliazes functionality
 
         // ---- OCP Recovery data-plane sideband --------------------------
         .payload_available      (cptra_ss_usb_payload_available_w),
@@ -1252,13 +1233,47 @@ module caliptra_ss_top
     assign disable_id_filtering_i = ~cptra_i3c_axi_user_id_filtering_enable_i;
 
     i3c_wrapper #(
-        .AxiDataWidth(`AXI_DATA_WIDTH),
-        .AxiAddrWidth(`AXI_ADDR_WIDTH),
-        .AxiUserWidth(`AXI_USER_WIDTH),
-        .AxiIdWidth  (`AXI_ID_WIDTH)
+        .UseAxi           (1'b1),
+        .AhbDataWidth     (64),   // Don't care
+        .AhbAddrWidth     (18),   // Don't care
+        .AxiDataWidth     ($bits(cptra_ss_i3c_s_axi_if_w_sub.wdata)),
+        .AxiAddrWidth     ($bits(cptra_ss_i3c_s_axi_if_w_sub.awaddr)),
+        .AxiUserWidth     ($bits(cptra_ss_i3c_s_axi_if_w_sub.awuser)),
+        .AxiIdWidth       ($bits(cptra_ss_i3c_s_axi_if_w_sub.awid)),
+        .EnableIdFiltering(1'b1),
+        .NumPrivIds       (I3cNumPrivIds),
+        .CmdFifoDepth     (64),
+        .RespFifoDepth    (64),
+        .RxFifoDepth      (64),
+        .TxFifoDepth      (64),
+        .IbiFifoDepth     (64),
+        .IbiFifoExtSize   (1'b0),
+        .DatDepth         (128),
+        .DctDepth         (128),
+        .DisableLoopback  (1'b0),
+        .DatAw            (7),
+        .DctAw            (7),
+        .CsrAddrWidth     (12),
+        .CsrDataWidth     (32)
     ) i3c (
         .clk_i                          (cptra_ss_clk_i),
         .rst_ni                         (cptra_ss_rst_b_o),
+
+        // AHB is unused; the subsystem always selects the AXI frontend.
+        .haddr_i                        ('0),
+        .hburst_i                       ('0),
+        .hprot_i                        ('0),
+        .hsize_i                        ('0),
+        .htrans_i                       (2'b00),
+        .hwdata_i                       ('0),
+        .hwstrb_i                       ('0),
+        .hwrite_i                       (1'b0),
+        .hrdata_o                       (),
+        .hreadyout_o                    (),
+        .hresp_o                        (),
+        .hsel_i                         (1'b0),
+        .hready_i                       (1'b1),
+
         .s_axi_w_if                     (cptra_ss_i3c_s_axi_if_w_sub),
         .s_axi_r_if                     (cptra_ss_i3c_s_axi_if_r_sub),
     
@@ -1312,7 +1327,7 @@ module caliptra_ss_top
 
     mci_top #(
         .AXI_ADDR_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.araddr)),
-        .AXI_DATA_WIDTH  (32                                       ),
+        .AXI_DATA_WIDTH  ($bits(cptra_ss_mci_s_axi_if_w_sub.wdata)),
         .AXI_USER_WIDTH  ($bits(cptra_ss_mci_s_axi_if_r_sub.aruser)),
         .AXI_ID_WIDTH    ($bits(cptra_ss_mci_s_axi_if_r_sub.arid)  ),
         .MCU_SRAM_SIZE_KB(MCU_SRAM_SIZE_KB                         ),
@@ -1695,9 +1710,9 @@ module caliptra_ss_top
             .NumCS   (SPI_HOST_NUM_CS),
             .CmdDepth(SPI_HOST_CMD_DEPTH),
             .AxiAw   (axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
-            .AxiDw   (`AXI_DATA_WIDTH),
-            .AxiUw   (`AXI_USER_WIDTH),
-            .AxiIw   (`AXI_ID_WIDTH)
+            .AxiDw   ($bits(cptra_ss_spi_host_s_axi_if_w_sub.wdata)),
+            .AxiUw   ($bits(cptra_ss_spi_host_s_axi_if_w_sub.awuser)),
+            .AxiIw   ($bits(cptra_ss_spi_host_s_axi_if_w_sub.awid))
         ) spi_host_axi_i (
             .clk_i           (cptra_ss_clk_i),
             .rst_ni          (cptra_ss_rst_b_o),
@@ -1732,9 +1747,9 @@ module caliptra_ss_top
         // Tie-off AXI interface
         axi_sub #(
             .AW(axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
-            .DW(`AXI_DATA_WIDTH),
-            .UW(`AXI_USER_WIDTH),
-            .IW(`AXI_ID_WIDTH),
+            .DW($bits(cptra_ss_spi_host_s_axi_if_w_sub.wdata)),
+            .UW($bits(cptra_ss_spi_host_s_axi_if_w_sub.awuser)),
+            .IW($bits(cptra_ss_spi_host_s_axi_if_w_sub.awid)),
             .C_LAT(0)
         ) axi_sub_spi_host_Axi_err_resp_i (
             .clk       (cptra_ss_clk_i),
@@ -1770,9 +1785,9 @@ module caliptra_ss_top
 
         uart_axi #(
             .AxiAw(axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
-            .AxiDw(`AXI_DATA_WIDTH),
-            .AxiUw(`AXI_USER_WIDTH),
-            .AxiIw(`AXI_ID_WIDTH)
+            .AxiDw($bits(cptra_ss_uart_s_axi_if_w_sub.wdata)),
+            .AxiUw($bits(cptra_ss_uart_s_axi_if_w_sub.awuser)),
+            .AxiIw($bits(cptra_ss_uart_s_axi_if_w_sub.awid))
         ) uart_axi_i (
             .clk_i               (cptra_ss_clk_i),
             .rst_ni              (cptra_ss_rst_b_o),
@@ -1806,9 +1821,9 @@ module caliptra_ss_top
         // Tie-off AXI interface
         axi_sub #(
             .AW(axi_struct_pkg::TLUL_AXI_STRUCT_ADDR_WIDTH),
-            .DW(`AXI_DATA_WIDTH),
-            .UW(`AXI_USER_WIDTH),
-            .IW(`AXI_ID_WIDTH),
+            .DW($bits(cptra_ss_uart_s_axi_if_w_sub.wdata)),
+            .UW($bits(cptra_ss_uart_s_axi_if_w_sub.awuser)),
+            .IW($bits(cptra_ss_uart_s_axi_if_w_sub.awid)),
             .C_LAT(0)
         ) axi_sub_uart_err_resp_i (
             .clk       (cptra_ss_clk_i),

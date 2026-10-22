@@ -13,3 +13,5 @@ src/integration/stimulus/USB_DEV1_caliptra_ss_top_tb_regression.yml
 src/integration/stimulus/USB_SANITY_caliptra_ss_top_tb_regression.yml
 src/integration/stimulus/USB_CMD_VALUE_CHECK_caliptra_ss_top_tb_regression.yml
 
+*.log
+

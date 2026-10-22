@@ -20,7 +20,6 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
-`include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
 `include "caliptra_ss_includes.svh"
 

@@ -26,8 +26,28 @@ interface class caliptra_ss_usb_data_check_api;
   // Standard device GET_STATUS check. The response is a 2-byte status word;
   // usable for dev0, dev1 and hub (recipient=device). bit[0]=Self-Powered,
   // bit[1]=Remote-Wakeup.
+  //
+  // The same check is equally valid for recipient=endpoint (USB 2.0 section
+  // 9.4.5, bmRequestType=0x82, wIndex=endpoint address). In that case the
+  // returned 2-byte word has bit[0]=ENDPOINT_HALT and all other bits reserved
+  // zero, so pass expected=16'h0001 for a halted endpoint and 16'h0000 for a
+  // running one. On the compound hub the only Halt-able endpoint is EP1 IN
+  // (wIndex=0x0081); see caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh.
   pure virtual function void check_get_status(uvm_object usb_item, string device_name,
                                               bit [15:0] expected);
+
+  // Standard GET_INTERFACE check (USB 2.0 section 9.4.4). A GET_INTERFACE
+  // request (bmRequestType=0x81 IN/STANDARD/INTERFACE, bRequest=0x0A,
+  // wValue=0x0000, wIndex=interface number, wLength=0x0001) returns a single
+  // byte holding the currently selected bAlternateSetting of that interface.
+  // The compound hub EP0 answers this request from its descriptor RAM with a
+  // constant 0x00: the hub exposes one interface with a single alternate
+  // setting (see C_STD_REQ_GET_INTERFACE in
+  // RTL/INTERFACE/usb_ep_config_hub_pkg.p.vhdl). The embedded device
+  // controllers return their per-controller bAlternateSetting shadow in firmware,
+  // so "hub", "dev0", and "dev1" are valid device_name values here.
+  pure virtual function void check_get_interface(uvm_object usb_item, string device_name,
+                                                 bit [7:0] expected_alt_setting);
 
   // Hub-class GetHubStatus check. The response is 4 bytes: wHubStatus
   // (bytes[1:0]) + wHubChange (bytes[3:2]), each a 16-bit little-endian word.
@@ -40,6 +60,16 @@ interface class caliptra_ss_usb_data_check_api;
   // bcdUSB (LE), bDeviceClass, bDeviceSubClass, bDeviceProtocol,
   // bMaxPacketSize0, bNumConfigurations, bReserved.
   pure virtual function void check_device_qualifier(uvm_object usb_item, string device_name);
+
+  // GET_DESCRIPTOR(BOS) check. The response is a 12-byte Binary Device Object
+  // Store: a 5-byte BOS header (bDescriptorType=0x0F) followed by a single
+  // 7-byte DEVICE_CAPABILITY descriptor (bDescriptorType=0x10) of type USB 2.0
+  // Extension (bDevCapabilityType=0x02) whose bmAttributes advertises LPM.
+  // The expected values mirror the BOS DESCRIPTOR block of the hub ROM
+  // constant in
+  // third_party/usb_hub_composite_device/RTL/RTL/usb_ep0_hub_descr.m.vhdl.
+  pure virtual function void check_bos_descriptor(uvm_object usb_item, string device_name);
+
 
   // GET_DESCRIPTOR(CONFIGURATION) check. The response is a 25-byte composite
   // descriptor: a 9-byte CONFIGURATION header (bDescriptorType=0x02) followed
@@ -86,6 +116,30 @@ interface class caliptra_ss_usb_data_check_api;
   // of src/integration/testbench/usb_dev_addr_probe.sv.
   pure virtual function void check_device_speed(string device_name,
                                                bit [1:0] expected_speed);
+
+  // Hub PHY test-mode check (SET_FEATURE(DEVICE, TEST_MODE) accept/reject).
+  // Like check_device_speed this reads the RTL through usb_dev_addr_probe, so
+  // there is no usb_item argument and no USB transfer is involved.
+  //
+  // SET_FEATURE(TEST_MODE) is wValue=0x0002 with the test selector in
+  // wIndex[15:8]. The hub EP0 handler accepts selectors 1..5 (Test_J, Test_K,
+  // Test_SE0_NAK, Test_Packet, Test_Force_Enable) and stalls anything above 5
+  // (see C_STD_REQ_SET_FEATURE_DEV in usb_ep0_handler.m.vhdl). On acceptance it
+  // loads usb_phy_test_mode with selector[2:0]; on rejection the register is
+  // left untouched. It resets to 3'b000 and no handler path ever clears it, so:
+  //   expected = 3'b000        -> the request must have been rejected
+  //   expected = selector[2:0] -> the request must have been accepted
+  //
+  // Only "hub" is a valid device_name: test mode is implemented for the hub
+  // only (the compound device's downstream ports are neither removable nor
+  // accessible, so the handler restricts the feature to device index 0).
+  //
+  // Caution for sequence authors: once a test mode is accepted, the PIE enters
+  // BUS_EVENT_TEST_MODE and its only documented exit is a power cycle
+  // (usb_pie.m.vhdl). An accepted SET_FEATURE(TEST_MODE) must therefore be the
+  // last USB activity of a test.
+  pure virtual function void check_phy_test_mode(string device_name,
+                                                 bit [2:0] expected_test_mode);
 
   // Note: there is no CHIP_ID check in this API. CHIP_ID is INFO[31:16] =
   // {C_MAJOR_REV, C_MINOR_REV}, both VHDL generics of usb_reg_if, and VCS does

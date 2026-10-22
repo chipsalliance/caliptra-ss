@@ -16,7 +16,7 @@
 // caliptra_ss_usb_vbus_driver
 //
 // Purpose
-//   Own the DUT VBus / SessEnd input pins so that a test can model cable
+//   Own the DUT VBus input so that a test can model cable
 //   removal (VBus going away) instead of only asking the VIP to change its
 //   own internal link state.
 //
@@ -25,7 +25,6 @@
 //   It used to be a constant tie-off in caliptra_ss_top_tb.sv:
 //
 //       assign cptra_ss_usb_USB_VBus_i = 1'b1;
-//       assign cptra_ss_usb_sessend_i  = 1'b0;
 //
 //   With a constant 1 the device controller can never observe VBus removal:
 //   DEVCMDSTAT.VBUS_DEBOUNCED can never clear and the DCON_C change bit can
@@ -73,16 +72,14 @@
 //
 // Interface
 //   vbus            drives cptra_ss_usb_USB_VBus_i
-//   sessend         drives cptra_ss_usb_sessend_i
+//   sessend         resolved session-end status (unused by the subsystem TB)
 //   vip_vbus_valid  observes usb_20_mac_if.utmi_dut_mac_if.VbusValid
 //   vip_sessend     observes usb_20_mac_if.utmi_dut_mac_if.SessEnd
 //
 //   SessEnd is tracked separately from VBus, because the VIP may drive
 //   VbusValid and leave SessEnd undriven. In that case sessend is forced to
-//   ~vbus rather than forwarding X. Session-end asserted is the correct
-//   electrical companion to VBus removal: with VBus gone the session really
-//   has ended, and holding sessend at 0 would present the controller an
-//   inconsistent pair of power inputs.
+//   ~vbus rather than forwarding X. The subsystem only consumes VBus; the
+//   session-end output is left unconnected in caliptra_ss_top_tb.sv.
 //
 // Handshake
 //   Stimulus does not move the pin, but it still needs to know when the pin
@@ -121,9 +118,7 @@
 //   value-identical at every instant, not merely from the first timestep on.
 module caliptra_ss_usb_vbus_driver (
     output wire vbus,
-    output wire sessend,
-    input  wire vip_vbus_valid,
-    input  wire vip_sessend
+    input  wire vip_vbus_valid
 );
 
     import uvm_pkg::*;
@@ -145,10 +140,8 @@ module caliptra_ss_usb_vbus_driver (
     // Default state is VBus present, matching the constant tie-off this module
     // replaces. sessend tracks the inverse.
     logic vbus_q    = 1'b1;
-    logic sessend_q = 1'b0;
 
     assign vbus    = vbus_q;
-    assign sessend = sessend_q;
 
     // ---------------------------------------------------------------------
     // Sample the VIP UTMI power signals.
@@ -165,7 +158,7 @@ module caliptra_ss_usb_vbus_driver (
     bit vip_seen_driving;      // VIP has driven a clean value at least once
     bit reported_not_driving;  // one-shot log for the undriven case
 
-    always @(vip_vbus_valid or vip_sessend) begin
+    always @(vip_vbus_valid) begin
         if (!$isunknown(vip_vbus_valid)) begin
             if (!vip_seen_driving) begin
                 vip_seen_driving = 1'b1;
@@ -188,13 +181,6 @@ module caliptra_ss_usb_vbus_driver (
                 UVM_LOW);
         end
 
-        // SessEnd is tracked separately: the VIP may drive VbusValid and
-        // leave SessEnd undriven. Fall back to the electrical companion of
-        // VBus rather than forwarding X.
-        if (!$isunknown(vip_sessend))
-            sessend_q = vip_sessend;
-        else
-            sessend_q = ~vbus_q;
     end
 
     initial begin
@@ -208,7 +194,7 @@ module caliptra_ss_usb_vbus_driver (
         vbus_on_done  = uvm_event_pool::get_global(VBUS_ON_DONE_EVENT);
 
         uvm_report_info(MSG_ID,
-            $sformatf("DUT VBus follows the VIP UTMI VbusValid/SessEnd outputs. Requests %s / %s complete once the pin reaches the asked level (acks %s / %s). X/Z on the VIP side is never forwarded to the DUT.",
+            $sformatf("DUT VBus follows the VIP UTMI VbusValid outputs. Requests %s / %s complete once the pin reaches the asked level (acks %s / %s). X/Z on the VIP side is never forwarded to the DUT.",
                       VBUS_OFF_REQ_EVENT, VBUS_ON_REQ_EVENT,
                       VBUS_OFF_DONE_EVENT, VBUS_ON_DONE_EVENT),
             UVM_LOW);

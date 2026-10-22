@@ -45,6 +45,45 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
     localparam real USB_TIMER_150US_PS = 150000000.0;
     localparam real USB_TIMER_300US_PS = 300000000.0;
 
+    // Per-transaction device response timeout applied to every USB 2.0
+    // speed/transfer-type combination. This bounds how long the host waits
+    // for *a* response (any handshake) to a single transaction; it does NOT
+    // bound how many times a NAKed transaction is re-tried. The retry count
+    // is a separate, count-based budget - see
+    // USB_EP_MAX_RETRY_DUE_TO_NAK below.
+    localparam real USB_20_DEVICE_RESPONSE_TIMEOUT = 200us;
+
+    // Number of times the host VIP re-tries a transaction that the device
+    // answers with NAK before it gives up and marks the whole transfer
+    // ABORTED. This is the budget that actually governs NAK retry.
+    //
+    // svt_usb_endpoint_configuration::max_retry_due_to_nak defaults to 10,
+    // which is 1 initial attempt + 10 retries = 11 NAKs. That is exactly
+    // what the VIP trace shows before it aborts:
+    //
+    //   <Dev:2 EP:0 CONTROL HS> [check_20_xact_complete] [Xact:1] - Transaction ENDED ...
+    //   <Dev:2 EP:0 CONTROL HS> [check_20_xfer_complete] - Transfer ABORTED ...
+    //   [transfer_ended] This transfer completed with results_status[127:0] = 128'b0
+    //
+    // The abort is a budget exhaustion, not a protocol error, which is why
+    // results_status is all-zero and why no timeout knob can prevent it:
+    // every one of the 11 transactions got a prompt, legal NAK well inside
+    // the device timeout ([device_timeout_check] passes each time, and
+    // [complete_device_response] reports "no observed or injected errors").
+    //
+    // The DUT is software-polled MCU firmware. A control request can easily
+    // need more than 11 polling intervals before the firmware has primed the
+    // EP0 buffer, so 10 retries is too small a budget here and produces a
+    // false failure on a device that does eventually answer correctly.
+    //
+    // 500 is chosen to sit well above the deepest NAK burst actually observed
+    // while still letting a genuinely dead endpoint fail in bounded time. The
+    // measured bursts on the hotplug test (dev0 enumeration + 3 reconnect
+    // cycles, software-polled firmware) peaked at 11 NAKs over ~4.9 us, i.e.
+    // roughly 450 ns per NAK, so 500 retries is a ~45x margin on the real
+    // worst case and costs at most ~225 us per genuinely wedged transfer.
+    localparam int USB_EP_MAX_RETRY_DUE_TO_NAK = 500;
+
     // host_cfg drives host_agent; dev_cfg is cloned into host_agent.remote_cfg.
     svt_usb_agent_configuration host_cfg;
     svt_usb_agent_configuration dev_cfg;
@@ -161,6 +200,25 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
 
         for (int ep = 0; ep < num_endpoints; ep++) begin
             dev_cfg.local_device_cfg[0].endpoint_cfg[ep] = new();
+
+            // Raise the NAK retry budget on every endpoint. The VIP default
+            // of 10 aborts the transfer after 11 NAKs, which a software
+            // polled device routinely exceeds while its firmware is still
+            // getting round to the request. See USB_EP_MAX_RETRY_DUE_TO_NAK.
+            //
+            // max_retry_due_to_nak is declared rand and the VIP carries a
+            // reasonable_max_retry constraint pinning it to 10, but these
+            // endpoint configurations are populated by direct assignment and
+            // randomize() is never called on them, so the assignment stands.
+            dev_cfg.local_device_cfg[0].endpoint_cfg[ep].max_retry_due_to_nak =
+                USB_EP_MAX_RETRY_DUE_TO_NAK;
+
+            // Keep the "move to the next endpoint" threshold below the abort
+            // budget. The VIP documents that if this is not strictly less
+            // than max_retry_due_to_nak the transfer is aborted before the
+            // bus access algorithm ever gets a chance to run.
+            dev_cfg.local_device_cfg[0].endpoint_cfg[ep].max_retry_due_to_nak_before_moving_to_next_ep =
+                USB_EP_MAX_RETRY_DUE_TO_NAK / 2;
         end
         // EP0: CONTROL
         if (num_endpoints >= 1) begin
@@ -185,6 +243,72 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         // -------------------- Scaled-down timers -----------------------------
         void'(host_cfg.set_timer_values(svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
         void'(dev_cfg.set_timer_values (svt_usb_configuration::USB_VIP_SCALEDOWN_TIMER_VALUES));
+
+        // ---------------- USB 2.0 per-transaction device timeouts -----------
+        // Applied after set_timer_values() so the scaledown pass cannot put
+        // the spec-derived defaults back.
+        //
+        // These are the knobs that actually bound how long the host VIP keeps
+        // re-trying a transaction the device is answering with NAK. They are
+        // selected by speed AND transfer type, and are entirely separate from
+        // svt_usb_device_configuration::device_timeout, which is a whole
+        // transfer abort deadline whose documented fallback is the SuperSpeed
+        // constant SVT_USB_SS_T_HOST_TRANSACTION_TIMEOUT. This testbench runs
+        // USB 2.0 HS/FS only, so device_timeout is not the control that
+        // governs NAK retry here.
+        //
+        // The VIP defaults (svt_usb_timing_defines.svi) are spec-derived and
+        // far too tight for a software-polled MCU device, which only services
+        // a SETUP or primes an endpoint buffer when its polling loop next
+        // runs:
+        //
+        //   usb_20_device_timeout_control_hs         1.8  us
+        //   usb_20_device_timeout_bulk_hs           10.5  us
+        //   usb_20_device_timeout_interrupt_hs      20.5  us
+        //   usb_20_device_timeout_isoc_hs           20.5  us
+        //   usb_20_device_timeout_non_isoc_fs       54    us
+        //   usb_20_device_timeout_non_isoc_ls       79    us
+        //   usb_20_utmi_device_timeout_control_hs    1.95 us
+        //   usb_20_utmi_device_timeout_bulk_hs      10.65 us
+        //   usb_20_utmi_device_timeout_non_isoc_fs  54.5  us
+        //   usb_20_utmi_device_timeout_non_isoc_ls  82    us
+        //
+        // Raising these was originally expected to also fix the "11 NAKs then
+        // abort" failure. It did not: with every value at 200 us the abort
+        // still happened, deterministically, within 17 ns of where it
+        // happened before. The VIP trace shows why - each NAK arrives
+        // promptly and legally, [device_timeout_check] passes every time, and
+        // the abort comes from the count-based retry budget instead. That is
+        // handled by USB_EP_MAX_RETRY_DUE_TO_NAK. These timeouts are still
+        // raised because a software-polled device can legitimately be slow to
+        // answer at all, which is exactly what they bound.
+        //
+        // usb_20_device_timeout_isoc_fs is deliberately left at its 800 us
+        // default, which is already larger than the budget and must not be
+        // reduced.
+        host_cfg.usb_20_device_timeout_control_hs       = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_device_timeout_bulk_hs          = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_device_timeout_interrupt_hs     = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_device_timeout_isoc_hs          = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_device_timeout_non_isoc_fs      = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_device_timeout_non_isoc_ls      = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_utmi_device_timeout_control_hs  = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_utmi_device_timeout_bulk_hs     = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_utmi_device_timeout_non_isoc_fs = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        host_cfg.usb_20_utmi_device_timeout_non_isoc_ls = USB_20_DEVICE_RESPONSE_TIMEOUT;
+
+        // The device agent models the peripheral side of the same bus; keep
+        // its view of these timeouts consistent with the host's.
+        dev_cfg.usb_20_device_timeout_control_hs        = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_device_timeout_bulk_hs           = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_device_timeout_interrupt_hs      = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_device_timeout_isoc_hs           = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_device_timeout_non_isoc_fs       = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_device_timeout_non_isoc_ls       = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_utmi_device_timeout_control_hs   = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_utmi_device_timeout_bulk_hs      = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_utmi_device_timeout_non_isoc_fs  = USB_20_DEVICE_RESPONSE_TIMEOUT;
+        dev_cfg.usb_20_utmi_device_timeout_non_isoc_ls  = USB_20_DEVICE_RESPONSE_TIMEOUT;
 
         // -------------------- Link-up timer overrides ------------------------
         // tsigatt: signal attach debounce. Auto-attach fires at 20 us so the
@@ -230,6 +354,50 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         host_cfg.enable_link_cov                = 1;
         dev_cfg.enable_prot_cov                 = 1;
         dev_cfg.enable_link_cov                 = 1;
+    endfunction
+
+    // -------------------------------------------------------------------------
+    // apply_nak_retry_budget
+    //
+    // Re-applies USB_EP_MAX_RETRY_DUE_TO_NAK to every currently allocated
+    // endpoint configuration.
+    //
+    // setup_usb_20_utmi_host_defaults() already does this for the endpoints it
+    // allocates itself, but several tests add further endpoints (typically
+    // endpoint_cfg[2], a BULK OUT) in their own build_phase, which runs after
+    // the shared setup. Those endpoint objects do not exist yet at that point,
+    // so they would otherwise keep the VIP default of 10 and remain exposed to
+    // the spurious "11 NAKs then ABORTED" failure.
+    //
+    // A test that allocates extra endpoints should call this at the end of its
+    // build_phase. It is idempotent and safe to call more than once.
+    //
+    // agent_cfg defaults to this object's own dev_cfg, which is what the
+    // cfg.dev_cfg-based tests want. The hs_host_* tests instead build their
+    // own local svt_usb_agent_configuration (dev_agent_cfg) that is not
+    // reachable from here, so they pass that handle in explicitly.
+    // -------------------------------------------------------------------------
+    function void apply_nak_retry_budget(
+        svt_usb_agent_configuration agent_cfg = null);
+
+        svt_usb_device_configuration dev_view;
+
+        if (agent_cfg == null) agent_cfg = dev_cfg;
+
+        if (agent_cfg == null)                   return;
+        if (agent_cfg.local_device_cfg_size < 1) return;
+
+        dev_view = agent_cfg.local_device_cfg[0];
+        if (dev_view == null) return;
+
+        for (int ep = 0; ep < dev_view.num_endpoints; ep++) begin
+            if (dev_view.endpoint_cfg[ep] == null) continue;
+
+            dev_view.endpoint_cfg[ep].max_retry_due_to_nak =
+                USB_EP_MAX_RETRY_DUE_TO_NAK;
+            dev_view.endpoint_cfg[ep].max_retry_due_to_nak_before_moving_to_next_ep =
+                USB_EP_MAX_RETRY_DUE_TO_NAK / 2;
+        end
     endfunction
 
     /**

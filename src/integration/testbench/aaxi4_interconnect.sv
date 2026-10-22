@@ -32,7 +32,9 @@ import aaxi_pll::*;
 import aaxi_pkg_caliptra_test::*;
 import tb_top_pkg::*;
 
-// Default HUB size 172 gives a 1 KiB native aperture at local 0x1000.
+// Default HUB size 196 gives a 1 KiB native aperture at local 0x1000
+// ($clog2(196) = 8, so 2**(8+2) = 1024 bytes - unchanged from the earlier
+// 172-word default, which also rounded up to 256 words).
 // The resulting 13-bit Combo port exposes local addresses 0x0000-0x1fff.
 localparam int unsigned USB_COMBO_AXI_APERTURE_BYTES = 8 * 1024;
 // DEV1 CSR consumes local address bits [5:0], covering 0x00-0x3f.
@@ -488,3 +490,5 @@ initial begin
         test.run();
     endtask
 endmodule
+
+// File contains AI-generated response based on internal company sources

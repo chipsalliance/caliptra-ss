@@ -98,6 +98,13 @@ class caliptra_ss_usb_dual_device_hs_bulk_loopback_test
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
             caliptra_ss_usb_dual_device_hs_bulk_loopback_sequence::type_id::get());
 
+        // Endpoints allocated above are created after shared_cfg has already
+        // run, so they still carry the VIP default max_retry_due_to_nak of
+        // 10 (1 attempt + 10 retries = 11 NAKs, then the transfer is marked
+        // ABORTED with an all-zero results_status). Re-apply the shared
+        // budget now that every endpoint object exists.
+        cfg.apply_nak_retry_budget();
+
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction
 

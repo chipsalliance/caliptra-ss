@@ -302,7 +302,7 @@ The following USB parameters are set on [caliptra_ss_top](../src/integration/rtl
 | `USB_C_DEV1_RAM_ADDRWIDTH` | `13` | Address width of DEV1 packet SRAM. Provide `2**USB_C_DEV1_RAM_ADDRWIDTH` 64-bit words; the default is 8192 words (64 KiB). Actual RAM size could be smaller than what the address width allows. |
 | `USB_C_DEV0_NBPHYSEP` | `28` | Number of physical endpoints for the MCU-facing DEV0 controller (excluding EP0); forwarded to the USB IP's `C_DEV0_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
 | `USB_C_DEV1_NBPHYSEP` | `28` | Number of physical endpoints for the SoC-facing DEV1 controller (excluding EP0); forwarded to the USB IP's `C_DEV1_NBPHYSEP` parameter. Must be a multiple of 2 required by USB IP. Max value: 28|
-| `USB_C_HUB_FIFO_SIZE` | `172` | Number of 32-bit words in the internal hub descriptor storage. Keep the default unless changing the USB IP configuration. |
+| `USB_C_HUB_FIFO_SIZE` | `176` | Number of 32-bit words in the internal hub descriptor storage. Supported range: 176 to 4096 words; the fixed high-speed descriptor and setup-request image requires at least 176 words. |
 | `USB_COMBO_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_combo_priv_axi_users_i` entries; must be at least 1. See [AXI USER Filtering](#axi-user-filtering). |
 | `USB_DEV1_NUM_PRIV_AXI_USERS` | `4` | Number of `cptra_ss_usb_dev1_priv_axi_users_i` entries; must be at least 1. See [AXI USER Filtering](#axi-user-filtering). |
 | `CPTRA_CORE_JTAG_IDCODE` | `1` | JTAG IDCODE for Caliptra Core RISC-V. Integrators must override using product-specific value. |
@@ -513,7 +513,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | output    | 1     | `cptra_ss_usb_dev1_irq_o` | DEV1 interrupt request. Connect to the SoC interrupt controller. |
 | External | output    | 1     | `cptra_ss_usb_dev1_fiq_o` | DEV1 fast interrupt request. Connect to the SoC interrupt controller. |
 | External | input     | 1 | `cptra_ss_usb_utmi_clk_i` | Clock from the PHY for the UTMI interface, separate from `cptra_ss_clk_i`. |
-| External | input     | 1 | `cptra_ss_usb_utmi_clk_lock_i` | PHY clock-status input indicating that the UTMI clock is stable; not a UTMI-clocked data signal. **Clock:** `cptra_ss_usb_utmi_clk_i`. |
+| External | input     | 1 | `cptra_ss_usb_utmi_clk_lock_i` | PHY clock-status input indicating that the UTMI clock is stable; not a UTMI-clocked data signal. Tie to `1'b1` if the PHY does not provide a clock-lock signal. **Clock:** `cptra_ss_usb_utmi_clk_i`. |
 | External | input     | 8 | `cptra_ss_usb_utmi_rxdata_i` | Received data from the PHY. **Clock:** `cptra_ss_usb_utmi_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_utmi_rxvalid_i` | The PHY is presenting valid received data. **Clock:** `cptra_ss_usb_utmi_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_utmi_rxactive_i` | The PHY is receiving a packet. **Clock:** `cptra_ss_usb_utmi_clk_i`. |
@@ -539,17 +539,7 @@ Internally, strap values are consumed at different points during the boot sequen
 | External | input     | 1 | `cptra_ss_usb_ulpi_nxt_i` | PHY handshake signal for transferring the next data byte. **Clock:** `cptra_ss_usb_ulpi_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_ulpi_ddr_sel_i` | Static selection of double-data-rate operation. Set to match the PHY mode. **Clock:** `cptra_ss_usb_ulpi_clk_i`. |
 | External | input     | 1 | `cptra_ss_usb_USB_VBus_i` | Indicates that USB VBus power is present. Connect to the VBus detector. |
-| External | output    | 1 | `cptra_ss_usb_vbuscomp_on_o` | Enables the external VBus comparator. |
-| External | output    | 1 | `cptra_ss_usb_chrgvbus_o` | Requests charging VBus through external PHY/power circuitry. |
-| External | output    | 1 | `cptra_ss_usb_dischrgvbus_o` | Requests discharging VBus through external PHY/power circuitry. |
-| External | input     | 1 | `cptra_ss_usb_avalid_i` | UTMI+ extension (AValid). Indicates whether the session for an A-peripheral is valid. 1 = VBUS above 2 V. 0 = VBUS below 0.8 V. Detector threshold: 0.8 V < Vth < 2 V. Tie low if unused. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
-| External | input     | 1 | `cptra_ss_usb_sessend_i` | Indicates that VBus has fallen below the session-end threshold. |
 | External | output    | 1 | `cptra_ss_usb_frametoggle_o` | USB frame/microframe timing toggle. Toggles every 1 ms at full speed or 125 us at high speed. If SOF is not seen, a timer will force the signal to toggle. **Clock:** `cptra_ss_usb_utmi_clk_i` (`cptra_ss_usb_ulpi_clk_i` in ULPI mode). |
-| External | output    | 1 | `cptra_ss_usb_needclk_o` | USB PHY clock request. 1 = PHY clock requested. 0 = PHY clock not required; permits PHY clock stop. **Clock:** Asynchronous; combinational from `cptra_ss_clk_i`, PHY-clock, and asynchronous logic. |
-| External | input     | 1 | `cptra_ss_usb_donotwakeup_n_i` | Silicon-test control. Prevents USB from waking up during low-power operation. Forces usb_needclk = 0 and UTMI SuspendM low, and suppresses the ULPI wake request. 1 = Normal USB operation. 0 = Do not wake. **Clock:** Asynchronous; not synchronized internally. Combinationally overrides the PHY clock-request, suspend, and wake outputs, and is sampled by `cptra_ss_usb_ulpi_clk_i` logic in ULPI mode. |
-| External | input     | 1 | `cptra_ss_usb_dev_wakeup_n_i` | Active-low request to force the USB PHY clock on. When asserted, usb_needclk and UTMI SuspendM are asserted. 1 = Normal USB operation. 0 = Force clock on. **Clock:** Asynchronous; not synchronized internally. Drives combinational and asynchronous set/reset wake logic, and is sampled by `cptra_ss_usb_utmi_clk_i` logic in UTMI mode. |
-| External | input     | 1 | `cptra_ss_usb_enable_hub_i` | HW control of the hub's ENABLE and CONNECT (DCON). 1 = Force the hub's ENABLE and DCON to 1. 0 = FW controls the hub's ENABLE and DCON. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
-| External | input     | 1 | `cptra_ss_usb_self_powered_i` | Hardware reporting of the USB HUB's self-powered status. ORed with the hub's FW SELF_POWERED CSR bit. When the OR of the HW input and FW SELF_POWERED bit changes, the HUB updates its GET_STATUS self-powered bit and configuration-descriptor power attributes. 1 = Report self-powered. 0 = Report bus-powered only when FW SELF_POWERED is also 0. **Clock:** Asynchronous; synchronized internally to `cptra_ss_clk_i`. |
 | External | input     | 64    | `cptra_ss_mci_generic_input_wires_i` | Generic input wires for MCI              |
 | External | input     | 1     | `cptra_ss_mcu_no_rom_config_i`       | No ROM configuration input               |
 | External | input     | 1     | `cptra_ss_mci_boot_seq_brkpoint_i`   | MCI boot sequence breakpoint input       |
@@ -706,7 +696,7 @@ Integrator must connect following list of manager and subordinates to axi interc
   | cptra_ss_cptra_core_s_axi_if | 8 | [config_defines.svh](../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh) | Default value of 8 is controlled using the macro `CALIPTRA_AXI_ID_WIDTH`. |
   | cptra_ss_mcu_rom_s_axi_if | 8 | [config_defines.svh](../third_party/caliptra-rtl/src/integration/rtl/config_defines.svh) | Default value of 8 is controlled using the macro `CALIPTRA_AXI_ID_WIDTH`. |
   | cptra_ss_mci_s_axi_if | 8 | [caliptra_ss_top.sv](../src/integration/rtl/caliptra_ss_top.sv) | ID_WIDTH value is derived from the width of AxID signals in the connected AXI interface. |
-  | cptra_ss_i3c_s_axi_if | 8 | [i3c_defines.svh](../third_party/i3c-core/src/i3c_defines.svh) | Default value of 8 is controlled using the macro `AXI_ID_WIDTH`. |
+  | cptra_ss_i3c_s_axi_if | 8 | [caliptra_ss_top.sv](../src/integration/rtl/caliptra_ss_top.sv) | ID_WIDTH value is derived from the width of AxID signals in the connected AXI interface. |
   | cptra_ss_lc_axi_wr, cptra_ss_lc_axi_rd | 8 | src/tlul/rtl/tlul_pkg.sv | Default value is derived from the macro `CALIPTRA_AXI_ID_WIDTH`, overrideable using the macro `CALIPTRA_SS_TLUL_AXI_ID_WIDTH`. |
   | cptra_ss_otp_core_axi_wr, cptra_ss_otp_core_axi_rd | 8 | src/tlul/rtl/tlul_pkg.sv | Default value is derived from the macro `CALIPTRA_AXI_ID_WIDTH`, overrideable using the macro `CALIPTRA_SS_TLUL_AXI_ID_WIDTH`. |
 
@@ -2767,17 +2757,37 @@ The I3C core can be configured as an [AXI Recovery interface](CaliptraSSHardware
 
 ## Parameters and defines
 
-| Parameter/Define   | Default Value                         | Description                                 |
-|--------------------|---------------------------------------|---------------------------------------------|
-| `AxiDataWidth`     | `AXI_DATA_WIDTH                       | Width (in bits) of the AXI data bus         |
-| `AxiAddrWidth`     | `AXI_ADDR_WIDTH                       | Width (in bits) of the AXI address bus      |
-| `AxiUserWidth`     | `AXI_USER_WIDTH                       | Width (in bits) of the AXI user signals     |
-| `AxiIdWidth`       | `AXI_ID_WIDTH                         | Width (in bits) of the AXI ID signals       |
-| `DatAw`            | i3c_pkg::DatAw                        | Data address width (defined in i3c_pkg)     |
-| `DctAw`            | i3c_pkg::DctAw                        | Device context address width (i3c_pkg)      |
-| `CsrAddrWidth`     | I3CCSR_pkg::I3CCSR_MIN_ADDR_WIDTH     | CSR address width (defined in I3CCSR_pkg)   |
-| `CsrDataWidth`     | I3CCSR_pkg::I3CCSR_DATA_WIDTH         | CSR data width (defined in I3CCSR_pkg)      |
-| `DISABLE_INPUT_FF` | Not Defined                           | DO NOT DEFINE. NO LONGER VALID CONFIG. If defined will remove synchronizer on SCL input signal causing CDC issue.       |
+The table lists the fixed values and derivations used by the subsystem's
+`i3c_wrapper` instance in `src/integration/rtl/caliptra_ss_top.sv`, rather than
+the standalone core's default parameter values. These settings are not exposed
+as separate I3C configuration parameters or defines on `caliptra_ss_top`.
+The AXI widths follow the connected `cptra_ss_i3c_s_axi_if_w_sub` interface;
+the width of each privileged-ID entry also follows its `awuser` field.
+
+| Parameter | Subsystem value or derivation | Description |
+|-----------|------------------------------|-------------|
+| `UseAxi` | 1 | Select the AXI frontend |
+| `AhbDataWidth` | 64 | Data width of the unused AHB frontend |
+| `AhbAddrWidth` | 18 | Address width of the unused AHB frontend |
+| `AxiDataWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.wdata)` | Derived from the connected interface's data width |
+| `AxiAddrWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awaddr)` | Derived from the connected interface's address width; CSR address width remains fixed at 12 |
+| `AxiUserWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awuser)` | Derived from the connected interface's USER width |
+| `AxiIdWidth` | `$bits(cptra_ss_i3c_s_axi_if_w_sub.awid)` | Derived from the connected interface's ID width |
+| `EnableIdFiltering` | 1 | Include AXI USER filtering; runtime control is provided by `cptra_i3c_axi_user_id_filtering_enable_i` |
+| `NumPrivIds` | `caliptra_ss_top_pkg::I3cNumPrivIds` (4) | Fixed package localparam in `src/integration/rtl/caliptra_ss_top_pkg.sv`; spare slots repeat authorized users |
+| `CmdFifoDepth` | 64 | Command FIFO depth |
+| `RespFifoDepth` | 64 | Response FIFO depth |
+| `RxFifoDepth` | 64 | Receive FIFO depth |
+| `TxFifoDepth` | 64 | Transmit FIFO depth |
+| `IbiFifoDepth` | 64 | IBI FIFO depth |
+| `IbiFifoExtSize` | 0 | Disable extended IBI FIFO size |
+| `DatDepth` | 128 | DAT memory depth |
+| `DctDepth` | 128 | DCT memory depth |
+| `DisableLoopback` | 0 | Loopback-disable setting |
+| `DatAw` | 7 | DAT memory address width |
+| `DctAw` | 7 | DCT memory address width |
+| `CsrAddrWidth` | 12 | CSR address width |
+| `CsrDataWidth` | 32 | CSR data width |
 
 
 ## Interface
@@ -2942,7 +2952,7 @@ The [Combo AXI memory map](CaliptraSSHardwareSpecification.md#combo-axi-memory-m
 
 | AXI interface prefix (both `_r_sub` and `_w_sub`) | Required base-address alignment |
 |:------------------------------------------------|:--------------------------------|
-| `cptra_ss_usb_combo_s_axi_if` | `0x2000` (8 KiB) for the default `USB_C_HUB_FIFO_SIZE = 172`. For other values, use the Combo window size from the [HW address map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map). |
+| `cptra_ss_usb_combo_s_axi_if` | `0x2000` (8 KiB) for the default `USB_C_HUB_FIFO_SIZE = 176`. For other values, use the Combo window size from the [HW address map](CaliptraSSHardwareSpecification.md#combo-axi-memory-map). |
 | `cptra_ss_usb_dev0_mem_s_axi_if` | `DEV0_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |
 | `cptra_ss_usb_dev1_csr_s_axi_if` | `0x40` (64 bytes), fixed. |
 | `cptra_ss_usb_dev1_mem_s_axi_if` | `DEV1_RAM_SIZE` bytes; for 64 KiB RAM, align to `0x10000`. |

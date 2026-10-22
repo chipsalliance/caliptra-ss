@@ -1716,6 +1716,8 @@ Note: trace is **collected continuously** whenever the selected trace source is 
 
 The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace).
 
+Note: When Caliptra core tracing is selected (`CTRL.cptra_core_sel = 1`), a Caliptra core hitless firmware update may result in one corrupted trace-buffer entry at the core reset boundary.
+
 MCU RISC-V processor can enable/disable its own tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces; only the read-access debug gating and the source select above apply.
 
 The trace buffer is a circular buffer where the oldest data is overwritten by new traces when the buffer is full. When a trace packet is stored the write pointer increments by [MCU Trace Buffer Packet Size](#mcu-trace-buffer-packet)/DWORD
@@ -1939,7 +1941,7 @@ MCI controls various resets for other IPs like MCU and Caliptra Core. When the `
 
 ## Combo AXI memory map
 
-The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 172` words. Offsets are byte offsets from the SoC-assigned Combo base address.
+The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 176` words. Offsets are byte offsets from the SoC-assigned Combo base address.
 
 | Internal block | Start offset | End offset |
 |:---------------|:-------------|:-----------|
@@ -1952,7 +1954,7 @@ The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers,
 **`USB_C_HUB_FIFO_SIZE` changes the Hub end offset and the trailing unmapped range; the earlier ranges stay fixed.** Calculate the boundaries as follows (`ceil` rounds up):
 
 ```text
-N = USB_C_HUB_FIFO_SIZE      (172 to 4096 DWORDs inclusive; default 172)
+N = USB_C_HUB_FIFO_SIZE      (176 to 4096 DWORDs inclusive; default 176)
 H = 4 * 2^ceil(log2(N))      (Hub aperture in bytes)
 U = 0x1000 + H               (first byte offset after Hub)
 C = 2^ceil(log2(U))          (Combo window size in bytes)
