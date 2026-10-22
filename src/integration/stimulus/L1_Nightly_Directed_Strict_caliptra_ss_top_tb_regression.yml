@@ -42,6 +42,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_dual_device_fs_bulk_loopback/caliptra_ss_usb_dual_device_fs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_dual_device_hs_dev0_hotplug/caliptra_ss_usb_dual_device_hs_dev0_hotplug.yml
+        - ../test_suites/caliptra_ss_usb_dual_device_hs_hub_port_l1/caliptra_ss_usb_dual_device_hs_hub_port_l1.yml
+
         - ../test_suites/caliptra_ss_usb_fs_conn/caliptra_ss_usb_fs_conn.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_bulk_out/caliptra_ss_usb_fs_dev_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_unsupported_ep/caliptra_ss_usb_fs_dev_unsupported_ep.yml
