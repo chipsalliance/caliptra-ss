@@ -264,7 +264,30 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input int        device_addr,
         input string     label,
         input svt_usb_configuration usb_cfg = null,
-        input bit        no_queue_and_hold = 0
+        input bit        no_queue_and_hold = 0,
+        // Device anchor: the dev_idx argument of fix_anchors(). Selects WHICH
+        // host_cfg.remote_device_cfg[] entry this control transfer is
+        // addressed to. Defaults to 0, the single-remote-device layout every
+        // existing caller relies on, so adding this changes no behaviour.
+        //
+        // Pass a non-zero index to address a device that has its OWN
+        // persistent slot (see caliptra_ss_usb_shared_cfg::
+        // add_remote_device_slot). Doing so avoids the
+        // "remote_device_cfg[0].device_address = addr; reconfigure()" retarget
+        // that would otherwise be required - and that retarget is destructive:
+        // reconfigure() rebuilds EVERY endpoint protocol processor, and a
+        // freshly built BULK endpoint restarts its DATA TOGGLE at DATA0.
+        //
+        // That matters here even though CONTROL transfers are themselves
+        // immune (a control transfer's toggle is defined by the SETUP/DATA/
+        // STATUS stages, not carried across transfers). The damage is to
+        // OTHER devices: an enumeration reconfigure() issued while an
+        // unrelated device is mid-BULK-stream silently desynchronises that
+        // device's toggle, and USB 2.0 section 8.6 then has the device discard
+        // the next OUT as a presumed retransmission - no buffer write, no
+        // completion interrupt. See add_remote_device_slot() for the measured
+        // PID evidence.
+        input  int       dev_anchor_idx = 0
     );
         svt_usb_transfer req;
         req = svt_usb_transfer::type_id::create({label, "_req"});
@@ -274,8 +297,10 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         if (usb_cfg != null)
             req.cfg = usb_cfg;
         // fix_anchors(dev_idx, ep_idx, upstream_idx): dev_idx is the array
-        // index into remote_device_cfg[], always 0 for a single-device setup.
-        req.fix_anchors(0, 0, 0);
+        // index into remote_device_cfg[]. 0 is the only valid value for a
+        // single-device setup; see dev_anchor_idx above for the multi-slot
+        // case.
+        req.fix_anchors(dev_anchor_idx, 0, 0);
         // no_queue_and_hold constrains queue_and_hold==0 on the transfer.
         //
         // NOTE: this has no effect on VIP behaviour. svt_usb_transfer
@@ -547,7 +572,11 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input svt_usb_configuration usb_cfg = null,
         input bit        no_queue_and_hold = 0,
         input int unsigned min_payload_bytes = 0,
-        output bit       fail
+        output bit       fail,
+        // Forwarded verbatim to do_control_xfer() - see its dev_anchor_idx
+        // documentation. Declared after the output so every existing
+        // positional and named call site is unaffected.
+        input int        dev_anchor_idx = 0
     );
         fork
             begin
@@ -565,7 +594,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                     .device_addr          (device_addr),
                     .label                (label),
                     .usb_cfg              (usb_cfg),
-                    .no_queue_and_hold    (no_queue_and_hold));
+                    .no_queue_and_hold    (no_queue_and_hold),
+                    .dev_anchor_idx       (dev_anchor_idx));
             end
         join
         check_xfer_status(.xfer             (last_ctrl_seq_item),
@@ -670,8 +700,33 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   GET_DESC(8)@0 -> SET_ADDRESS(1)@0 -> GET_DESC(18)/CFG9/CFG25/HUB9@1 ->
     //   SET_CONFIGURATION(1)@1.
     // On entry the VIP anchor must be 0; on exit it is left at 1.
+    // dev_anchor_idx selects which remote_device_cfg[] slot the post-
+    // SET_ADDRESS transfers below are routed through.
+    //
+    //   0 (default) - LEGACY single-slot behaviour. Slot 0 is retargeted from
+    //                 address 0 to address 1 and the agent is reconfigure()d,
+    //                 which is what every caller that owns only one slot
+    //                 expects. Unchanged for all such callers.
+    //   non-zero    - the caller has already created a PERSISTENT slot for the
+    //                 hub at address 1 (see
+    //                 caliptra_ss_usb_shared_cfg::add_remote_device_slot) and
+    //                 passes its index here. The retarget and the reconfigure()
+    //                 are then BOTH skipped and the addr-1 transfers are
+    //                 anchored to that slot instead.
+    //
+    // The skip is not an optimisation, it is required for correctness in the
+    // multi-slot case: assigning address 1 to slot 0 while a persistent hub
+    // slot already holds address 1 puts two entries of remote_device_cfg[] on
+    // the same address, and reconfigure() -> is_valid() rejects that outright
+    // ("device_address must be unique within remote_device_cfg"), which the VIP
+    // escalates to a uvm_fatal in svt_agent::change_dynamic_cfg. Skipping it
+    // also keeps the no-reconfigure invariant that protects live bulk data
+    // toggles - see the block comment on the anchor fields in
+    // caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.
     task hub_enum_stepA(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
-                        string suffix = "", bit no_queue_and_hold = 0);
+                        string suffix = "", bit no_queue_and_hold = 0,
+                        int dev_anchor_idx = 0);
+
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
             .bm_request_type_type (svt_usb_types::STANDARD),
@@ -703,8 +758,21 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         wait_xfer_done(.agent_h(host_agent_h), .label({"SET_ADDRESS_1_hub", suffix}));
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
-        host_agent_h.reconfigure(usb_cfg);
+        // Legacy single-slot path only. With a persistent hub slot the
+        // address is already correct, and doing this would create a duplicate
+        // device_address that reconfigure() rejects - see the dev_anchor_idx
+        // notes in this task's header.
+        if (dev_anchor_idx == 0) begin
+            usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+            host_agent_h.reconfigure(usb_cfg);
+        end
+        else begin
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf({"Hub addressed through persistent slot %0d - ",
+                           "skipping the slot-0 retarget and reconfigure()."},
+                          dev_anchor_idx), UVM_HIGH)
+        end
+
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -717,7 +785,9 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_DEV_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
+
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr1_hub", suffix}));
         usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
                                                 .device_name("hub"), .expected_address(1));
@@ -733,7 +803,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_CFG9_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_CFG9_addr1_hub", suffix}));
 
         do_control_xfer(
@@ -747,7 +818,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_CFG25_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_CFG25_addr1_hub", suffix}));
         // NOTE: Expected to fail for (usb_cfg.speed != svt_usb_types::HS)
 	//       unless MCU validation firmware overrides the descriptor
@@ -773,7 +845,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_HUB9_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_HUB9_addr1_hub", suffix}));
 
         do_control_xfer(
@@ -787,7 +860,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"SET_CONFIG_1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"SET_CONFIG_1_hub", suffix}));
 
         `uvm_info("USB_BASE_SEQ", "Step A: HUB enumeration complete (addr 1).", UVM_MEDIUM)
@@ -806,9 +880,18 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   port 1 -> USBDC0 (dev0_axi, register base 0x2000_1000)
     //   port 2 -> USBDC1 (dev1_axi, register base 0x2001_0000)
     // The default of 1 preserves the behaviour of every pre-existing test.
+    //
+    // dev_anchor_idx selects which remote_device_cfg[] slot these hub-class
+    // requests are addressed through. Leave it at 0 for the legacy
+    // single-slot layout. A test that has given the hub its OWN persistent
+    // slot (caliptra_ss_usb_shared_cfg::add_remote_device_slot) passes that
+    // slot index here, which removes the need for the caller to retarget slot
+    // 0 and reconfigure() just to talk to the hub - and every reconfigure()
+    // rebuilds EVERY endpoint xactor, silently resetting the DATA toggle of
+    // any unrelated device that is mid-bulk-stream.
     task hub_port_bringup_stepB(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                                 string suffix = "", bit no_queue_and_hold = 0,
-                                int port_num = 1);
+                                int port_num = 1, int dev_anchor_idx = 0);
         string p;
         p = $sformatf("_Port%0d", port_num);
 
@@ -823,7 +906,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GetPortStatus", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GetPortStatus", p, suffix}));
         // At this point the device has just connected to the hub downstream
         // port and the port is powered, but no port feature has been cleared
@@ -843,7 +927,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"ClearFeature_C_PORT_CONNECTION", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"ClearFeature_C_PORT_CONNECTION", p, suffix}));
 
         do_control_xfer(
@@ -857,7 +942,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"SetFeature_PORT_RESET", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"SetFeature_PORT_RESET", p, suffix}));
         #10us;
 
@@ -872,7 +958,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"ClearFeature_C_PORT_RESET", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"ClearFeature_C_PORT_RESET", p, suffix}));
         #10us;
 
@@ -901,20 +988,61 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // ABORTED just as it does on success. The IN transfers additionally
     // require their full expected payload, so a data check can never run
     // against an empty payload and pass by accident.
+    //
+    // addr0_anchor_idx / addressed_anchor_idx select which
+    // remote_device_cfg[] slots carry the default-address (0) and the
+    // post-SET_ADDRESS views of this device. Both default to 0, which
+    // reproduces the historical single-slot behaviour exactly: slot 0 is
+    // retargeted to address 0, then to assign_address, with a reconfigure()
+    // after each change.
+    //
+    // WHY A CALLER WOULD OVERRIDE THEM. Those two reconfigure() calls are the
+    // reason a dev0 RE-enumeration cannot be performed while an unrelated
+    // device is streaming bulk data. reconfigure() rebuilds EVERY endpoint
+    // protocol processor on the agent, not just this device's, and a freshly
+    // built BULK endpoint restarts its DATA TOGGLE at DATA0 - so a device
+    // that was mid-stream silently desynchronises and, per USB 2.0 section
+    // 8.6, discards its next OUT as a presumed retransmission. See
+    // caliptra_ss_usb_shared_cfg::add_remote_device_slot for the measured PID
+    // evidence.
+    //
+    // A test that pre-creates one PERSISTENT slot per address (address 0 and
+    // assign_address included) passes those slot indices here instead. The
+    // task then addresses every transfer through an anchor, never mutates a
+    // slot, and never calls reconfigure() - leaving every other device's
+    // endpoint xactors, and therefore their toggles, untouched.
     task usbdc0_enum_stepC(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                            string suffix = "", bit with_get_config_readback = 1,
                            bit no_queue_and_hold = 0, int unsigned device_idx=0,
-                           bit [6:0] assign_address = 7'd2);
+                           bit [6:0] assign_address = 7'd2,
+                           int addr0_anchor_idx = 0,
+                           int addressed_anchor_idx = 0);
         bit xfer_fail;
+        // Anchors already point at the right addresses when the caller
+        // supplied dedicated slots, so no slot has to be mutated and no
+        // reconfigure() is needed. Only the legacy single-slot layout
+        // (both anchors 0) still has to retarget and reconfigure.
+        bit use_persistent_anchors;
+        use_persistent_anchors = (addr0_anchor_idx != 0) ||
+                                 (addressed_anchor_idx != 0);
 
         // Reset VIP anchor to addr=0 before addressing the freshly port-reset
         // USBDC0 - see the constraint note in this block's header comment.
-
-        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
-        host_agent_h.reconfigure(usb_cfg);
-        `uvm_info("USB_BASE_SEQ",
-            "Reset host agent remote device_address=0 before enumerating USBDC0.",
-            UVM_HIGH)
+        if (!use_persistent_anchors) begin
+            usb_cfg.remote_device_cfg[0].device_address = 7'd0;
+            host_agent_h.reconfigure(usb_cfg);
+            `uvm_info("USB_BASE_SEQ",
+                "Reset host agent remote device_address=0 before enumerating USBDC0.",
+                UVM_HIGH)
+        end
+        else begin
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf({"Enumerating USBDC0 through persistent anchors ",
+                           "(addr0 slot %0d, addressed slot %0d) - no ",
+                           "reconfigure(), so no other device's data toggle ",
+                           "is disturbed."},
+                          addr0_anchor_idx, addressed_anchor_idx), UVM_HIGH)
+        end
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -927,7 +1055,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (0),
             .label                ({"GET_DESC_DEV_addr0", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
         // 18-byte DEVICE descriptor read at the default address. This is the
         // very first SETUP the device sees after the port reset; if it aborts,
         // the device controller is not servicing EP0 at all and nothing after
@@ -948,7 +1077,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (0),
             .label                ({"GET_STATUS_addr0", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
         // 2-byte device status word.
         wait_and_check_xfer(.agent_h          (host_agent_h),
                             .label            ({"GET_STATUS_addr0", suffix}),
@@ -966,7 +1096,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (0),
             .label                ({"SET_ADDRESS_2", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
         // No data stage, so no payload requirement - but the status stage
         // must be accepted, otherwise the device never commits the new
         // address and every transfer below is sent to an address nobody
@@ -977,8 +1108,10 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                             .fail             (xfer_fail));
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = assign_address;
-        host_agent_h.reconfigure(usb_cfg);
+        if (!use_persistent_anchors) begin
+            usb_cfg.remote_device_cfg[0].device_address = assign_address;
+            host_agent_h.reconfigure(usb_cfg);
+        end
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -991,7 +1124,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (int'(assign_address)),
             .label                ({"GET_DESC_DEV_addr2", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addressed_anchor_idx));
         // First transfer at the newly assigned address: proves the device
         // accepted SET_ADDRESS and is answering on the new address with a
         // full 18-byte descriptor.
@@ -1021,7 +1155,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_addr2", suffix}),
                 .usb_cfg              (usb_cfg),
-                .no_queue_and_hold    (no_queue_and_hold));
+                .no_queue_and_hold    (no_queue_and_hold),
+                .dev_anchor_idx       (addressed_anchor_idx));
             // 1-byte bConfigurationValue readback before SET_CONFIGURATION.
             wait_and_check_xfer(.agent_h          (host_agent_h),
                                 .label            ({"GET_CONFIG_addr2", suffix}),
@@ -1051,7 +1186,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .usb_cfg              (usb_cfg),
             .no_queue_and_hold    (no_queue_and_hold),
             .min_payload_bytes    (0),
-            .fail                 (xfer_fail));
+            .fail                 (xfer_fail),
+            .dev_anchor_idx       (addressed_anchor_idx));
 
         if (with_get_config_readback) begin
             // 1-byte bConfigurationValue readback confirming the device
@@ -1074,7 +1210,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .usb_cfg              (usb_cfg),
                 .no_queue_and_hold    (no_queue_and_hold),
                 .min_payload_bytes    (1),
-                .fail                 (xfer_fail));
+                .fail                 (xfer_fail),
+                .dev_anchor_idx       (addressed_anchor_idx));
         end
 
 
@@ -1232,12 +1369,48 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input  int unsigned          byte_count,
         input  int                   ep_anchor_idx,
         input  string                label,
+
         output svt_usb_transfer      req,
         input  string                obj_name           = "",
         input  bit [7:0]             payload_data[]     = {},
         input  bit                   no_zero_length_end = 0,
         input  bit                   single_isoc_txn    = 0,
-        input  bit                   fork_wait          = 1
+        input  bit                   fork_wait          = 1,
+        // Device anchor: the dev_idx argument of fix_anchors(). Selects WHICH
+        // host_cfg.remote_device_cfg[] entry this transfer is addressed to.
+        // Defaults to 0, the single-remote-device layout every existing caller
+        // relies on, so adding this parameter changes no existing behaviour.
+        //
+        // WHY THIS EXISTS. remote_device_cfg[$] is a QUEUE and the VIP fully
+        // supports several remote devices at once - svt_usb_configuration
+        // constrains each populated entry to a DISTINCT device_address. While
+        // dev_idx was hardcoded to 0 a multi-device test had only one config
+        // slot, so it had to retarget that slot between transfers with
+        // remote_device_cfg[0].device_address = addr followed by
+        // agent_h.reconfigure(usb_cfg).
+        //
+        // That retarget is DESTRUCTIVE. reconfigure() tears down and rebuilds
+        // the endpoint protocol processors, and a freshly built bulk endpoint
+        // starts its DATA TOGGLE AT DATA0. The host therefore emitted DATA0 on
+        // every bulk OUT instead of alternating, because the object holding
+        // the toggle was deleted between transfers. Evidence from the
+        // dual_device_hs_dev0_hotplug run: the Dev:3 EP:1 BULK OUT processor
+        // is destroyed and re-registered around every single transfer
+        // (registered 1749682.753 ns, stop_xactor 1751531.879 ns, and the same
+        // pairing at 688405/786220, 810534/812217, 1269418/1271267,
+        // 1295882/1297564). A conformant device advances its own toggle after
+        // each accepted OUT, so once the device reached DATA1 while the host
+        // was still stuck at DATA0, USB 2.0 section 8.6 required the device to
+        // discard every further packet as a presumed retransmission - with no
+        // buffer write, no descriptor retire and no completion interrupt. The
+        // endpoint went silently dead for the rest of the run.
+        //
+        // Passing a per-device anchor instead lets a test populate one
+        // remote_device_cfg[] entry per physical device ONCE, keep every
+        // endpoint processor alive for the whole run, and address transfers by
+        // anchor. The toggles then advance continuously, as against a real
+        // host.
+        input  int                   dev_anchor_idx     = 0
     );
         if (no_zero_length_end && single_isoc_txn)
             `uvm_fatal("USB_BASE_SEQ",
@@ -1255,7 +1428,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             req.payload.USER_DEFINED_ALGORITHM_wt   = 1;
             req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
         end
-        req.fix_anchors(0, ep_anchor_idx, 0);
+        req.fix_anchors(dev_anchor_idx, ep_anchor_idx, 0);
 
         if (no_zero_length_end) begin
             if (!req.randomize() with {
