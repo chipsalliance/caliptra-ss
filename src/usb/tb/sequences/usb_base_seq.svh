@@ -59,9 +59,7 @@ class usb_base_seq extends uvm_sequence;
         p_sequencer.dev0_memory_sequencer == null ||
         p_sequencer.dev1_csr_sequencer == null ||
         p_sequencer.dev1_memory_sequencer == null ||
-        p_sequencer.host_sequencer == null ||
-        p_sequencer.physical_monitor == null ||
-        p_sequencer.raw_rx == null) begin
+        p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_SEQ", "USB virtual sequencer is missing required RAL, configuration, or Avery handles")
     end
   endtask

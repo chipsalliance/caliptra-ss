@@ -12,7 +12,69 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Sends one SVT USB 2.0 packet with an intentional PID_CHECK_ERROR exception
+// (transaction/class_svt_usb_packet_exception.html) on usb_20_pkt_sequencer.
+class usb_bad_pid_packet_seq extends svt_usb_packet_base_sequence;
+  `uvm_object_utils(usb_bad_pid_packet_seq)
+
+  bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
+  bit [3:0] endpoint_number = 4'd1;
+
+  function new(string name = "usb_bad_pid_packet_seq");
+    super.new(name);
+  endfunction
+
+  virtual task body();
+    svt_usb_packet packet;
+    svt_usb_packet_exception pid_exception;
+
+    packet = new_item("bad_pid_out_token");
+    packet.speed = svt_usb_types::HS;
+    packet.payload = new("packet_payload");
+    packet.payload_offset = 0;
+    start_item(packet);
+    if (!packet.randomize() with {
+          pid_type == svt_usb_packet::TOKEN;
+          pid_name == svt_usb_packet::OUT;
+          device_address == local::device_address;
+          ept_num == local::endpoint_number;
+          payload.byte_count == 0;
+        }) begin
+      `uvm_fatal("USB_BAD_PID_PKT", "Failed to randomize bad-PID OUT token packet")
+    end
+    pid_exception = new("bad_pid_check");
+    pid_exception.cfg = packet.cfg;
+    pid_exception.xact = packet;
+    pid_exception.error_group = svt_usb_packet_exception::RANDOM_ERROR_GROUP;
+    pid_exception.error_kind = svt_usb_packet_exception::PID_CHECK_ERROR;
+    pid_exception.mask_or_value = 32'h1;
+    pid_exception.no_exception = 1'b0;
+    pid_exception.recognized = 1'b0;
+    if (packet.exception_list == null) begin
+      packet.exception_list = new("packet_exceptions");
+    end
+    packet.exception_list.add_exception(pid_exception);
+    finish_item(packet);
+    if (!packet.end_is_on()) begin
+      packet.wait_end();
+    end
+  endtask
+endclass
+
 // Injects an invalid PID complement through VIP and checks ERROR_PID_ENCODING.
+//
+// Relies on the Synopsys SVT USB VIP's built-in svt_usb_packet_exception
+// (PID_CHECK_ERROR in transaction/class_svt_usb_packet_exception.html) and
+// built-in protocol/link checks on the subsequent recovery bulk OUT transfer
+// (enabled by default via register_default_chks = 1, enable_default_chks = 1 in
+// protocolChecks.html, coverage/class_svt_usb_protocol_ep_sc.html, and
+// coverage/class_svt_usb_link_20_sc.html):
+//   - svt_usb_link_20_sc:
+//     * unexpected_response_check: Verifies the device remains silent when a
+//       packet with an invalid PID check field is received.
+//   - svt_usb_protocol_ep_sc:
+//     * packet_error_check, data_toggle_check, valid_device_response_check on
+//       the post-error bulk OUT recovery transfer.
 class usb_bad_pid_seq extends usb_resume_recovery_seq;
   `uvm_object_utils(usb_bad_pid_seq)
 
@@ -28,13 +90,11 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
 
   // USB 2.0 Section 8.1 requires the high PID nibble to complement the low.
   task inject_bad_pid();
-    usb_vip_packet_seq packet_sequence;
+    usb_bad_pid_packet_seq packet_sequence;
 
-    packet_sequence = usb_vip_packet_seq::type_id::create("bad_pid_packet");
-    packet_sequence.packet_pid = svt_usb_packet::OUT;
+    packet_sequence = usb_bad_pid_packet_seq::type_id::create("bad_pid_packet");
     packet_sequence.device_address = p_sequencer.cfg.device_address;
-    packet_sequence.endpoint_number = 1;
-    packet_sequence.corrupt_pid_check = 1'b1;
+    packet_sequence.endpoint_number = 4'd1;
     packet_sequence.start(p_sequencer.host_sequencer.usb_20_pkt_sequencer, this);
     `uvm_info("USB_BAD_PID", "Injected VIP PID_CHECK_ERROR on one OUT token", UVM_LOW)
   endtask

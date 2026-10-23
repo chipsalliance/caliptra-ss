@@ -13,6 +13,25 @@
 // limitations under the License.
 
 // Exchanges two packets in each direction through double-buffered EP1.
+//
+// Relies on the Synopsys SVT USB VIP's built-in BULK_OUT_TRANSFER and
+// BULK_IN_TRANSFER sequences (transaction/class_svt_usb_transfer.html) and
+// built-in protocol/link/physical checks (enabled by default via
+// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_protocol_ep_sc.html,
+// coverage/class_svt_usb_link_20_sc.html, and
+// coverage/class_svt_usb_physical_20_sc.html):
+//   - svt_usb_transfer::results_status[5]:
+//     Verifies the 2-packet (1024 B) bulk IN transfer is terminated by a
+//     zero-length DATA0 packet when aligned_transfer_ends_with_zero_length == 1.
+//   - svt_usb_protocol_ep_sc:
+//     * data_toggle_check: Checks DATA0 -> DATA1 toggle alternation across
+//       buffers 0 and 1 (and DATA0 on the terminating IN ZLP).
+//     * packet_error_check: Checks PID, CRC5, CRC16, bitstuff, and framing.
+//     * valid_device_data_check: Checks IN packet lengths against 512 B
+//       wMaxPacketSize and expected transfer byte counts.
+//     * valid_device_response_check & valid_host_response_check: Checks
+//       accepting handshakes across both double-buffered packets.
 class usb_double_buffer_bulk_seq extends usb_base_seq;
   `uvm_object_utils(usb_double_buffer_bulk_seq)
 

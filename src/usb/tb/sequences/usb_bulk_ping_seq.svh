@@ -13,8 +13,32 @@
 // limitations under the License.
 
 // Forces high-speed bulk OUT flow control through NAK and PING before ACK.
+//
+// Relies on the Synopsys SVT USB VIP's built-in PING protocol engine
+// (svt_usb_host_configuration::ping_protocol_supported = 1), built-in protocol
+// packet notifications (host_agent.prot.NOTIFY_20_HOST_TX_PACKET and
+// NOTIFY_20_HOST_RX_PACKET in others/class_svt_usb_protocol.html), and
+// built-in protocol/link checks (enabled by default via register_default_chks = 1,
+// enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_protocol_ep_sc.html, and
+// coverage/class_svt_usb_link_20_sc.html):
+//   - svt_usb_protocol_ep_sc:
+//     * valid_device_response_check: Checks device NAK/ACK/NYET responses to
+//       OUT and PING transactions per USB 2.0 Section 8.5.1.
+//     * valid_host_response_check: Checks host PING protocol transitions after
+//       receiving NAK/NYET on a high-speed bulk OUT endpoint.
+//     * data_toggle_check: Checks DATA0 toggle retention across the initial
+//       NAKed OUT attempt and the subsequent ACK-accepted OUT retry.
+//     * packet_error_check: Checks all tokens, data packets, and handshakes for
+//       PID, CRC5, CRC16, bitstuff, and framing errors.
+//     * flow_control_duration_check: Checks flow-control duration limits.
+//   - svt_usb_link_20_sc:
+//     * unexpected_response_check: Checks that every handshake belongs to an
+//       active token/data exchange.
 class usb_bulk_ping_seq extends usb_base_seq;
   `uvm_object_utils(usb_bulk_ping_seq)
+
+  localparam logic [3:0] ERROR_SENT_RECEIVED_NAK = 4'h9;
 
   logic [31:0] buffer_offset = 32'h0000_0200;
   int unsigned payload_bytes = 64;
@@ -51,98 +75,49 @@ class usb_bulk_ping_seq extends usb_base_seq;
     end
   endtask
 
-  function void check_ping_flow(usb_endpoint_cfg endpoint);
-    typedef enum {
-      EXPECT_OUT_NAK, EXPECT_PING_NAK, EXPECT_PING_ACK,
-      EXPECT_ACCEPTED_OUT, FLOW_DONE
-    } flow_step_e;
-    usb_packet_monitor_callback::usb_packet_record_t records[$];
-    flow_step_e step;
-    svt_usb_packet::pid_name_enum pending_pid;
-    bit pending;
-    bit data_seen;
+  // Wait on the SVT protocol component's built-in NOTIFY_20_HOST_TX_PACKET and
+  // NOTIFY_20_HOST_RX_PACKET events until the host issues a PING to the target
+  // bulk OUT endpoint and the inactive device responds with NAK.
+  task wait_for_vip_ping_nak(svt_usb_agent host_agent, usb_endpoint_cfg endpoint);
+    bit observed_ping_nak;
 
-    step = EXPECT_OUT_NAK;
-    pending = 1'b0;
-    data_seen = 1'b0;
-    p_sequencer.packet_monitor.get_records(records);
-    foreach (records[index]) begin
-      if (records[index].direction == usb_packet_monitor_callback::USB_PACKET_TX) begin
-        if (records[index].pid_name inside {
-              svt_usb_packet::OUT, svt_usb_packet::PING,
-              svt_usb_packet::IN, svt_usb_packet::SETUP}) begin
-          if (pending) begin
-            `uvm_fatal("USB_BULK_PING", "Target transaction had no response before the next token")
+    observed_ping_nak = 1'b0;
+    fork
+      begin
+        while (!observed_ping_nak) begin
+          uvm_object tx_obj;
+          svt_usb_packet tx_pkt;
+
+          host_agent.prot.NOTIFY_20_HOST_TX_PACKET.wait_ptrigger_data(tx_obj);
+          if (!$cast(tx_pkt, tx_obj)) begin
+            continue;
           end
-          pending = records[index].device_address == p_sequencer.cfg.device_address &&
-                    records[index].endpoint_number == endpoint.ep_number;
-          data_seen = 1'b0;
-          if (!pending) continue;
-          pending_pid = records[index].pid_name;
-          if (((step inside {EXPECT_OUT_NAK, EXPECT_ACCEPTED_OUT}) &&
-               pending_pid != svt_usb_packet::OUT) ||
-              ((step inside {EXPECT_PING_NAK, EXPECT_PING_ACK}) &&
-               pending_pid != svt_usb_packet::PING) ||
-              step == FLOW_DONE) begin
-            `uvm_fatal("USB_BULK_PING", $sformatf("Unexpected %s at %0t in %s", pending_pid.name(), records[index].observed_at, step.name()))
+          if (tx_pkt.get_pid_name_val() == svt_usb_packet::PING &&
+              tx_pkt.get_device_address_val() == p_sequencer.cfg.device_address &&
+              tx_pkt.get_ept_num_val() == 4'(endpoint.ep_number)) begin
+            uvm_object rx_obj;
+            svt_usb_packet rx_pkt;
+
+            host_agent.prot.NOTIFY_20_HOST_RX_PACKET.wait_ptrigger_data(rx_obj);
+            if ($cast(rx_pkt, rx_obj) &&
+                rx_pkt.get_pid_name_val() == svt_usb_packet::NAK) begin
+              observed_ping_nak = 1'b1;
+            end
           end
-        end else if (pending && records[index].pid_name inside {
-                       svt_usb_packet::DATA0, svt_usb_packet::DATA1}) begin
-          if (pending_pid != svt_usb_packet::OUT || data_seen) begin
-            `uvm_fatal("USB_BULK_PING", "DATA does not belong to one pending target OUT")
-          end
-          data_seen = 1'b1;
         end
-        continue;
       end
-      if (!pending || !(records[index].pid_name inside {
-            svt_usb_packet::ACK, svt_usb_packet::NAK,
-            svt_usb_packet::NYET, svt_usb_packet::STALL})) continue;
-      if (pending_pid == svt_usb_packet::OUT && !data_seen) begin
-        `uvm_fatal("USB_BULK_PING", "Target OUT response preceded its DATA")
+      begin
+        #(ping_timeout);
+        if (!observed_ping_nak) begin
+          `uvm_fatal(
+            "USB_BULK_PING",
+            $sformatf("Timed out after %0t waiting for VIP PING -> NAK exchange on EP%0d OUT", ping_timeout, endpoint.ep_number)
+          )
+        end
       end
-      case (step)
-        EXPECT_OUT_NAK: begin
-          if (records[index].pid_name != svt_usb_packet::NAK) begin
-            `uvm_fatal("USB_BULK_PING", "Initial target OUT must receive NAK")
-          end
-          step = EXPECT_PING_NAK;
-        end
-        EXPECT_PING_NAK: begin
-          if (records[index].pid_name != svt_usb_packet::NAK) begin
-            `uvm_fatal("USB_BULK_PING", "First target PING must observe the inactive endpoint's NAK")
-          end
-          step = EXPECT_PING_ACK;
-        end
-        EXPECT_PING_ACK: begin
-          if (records[index].pid_name == svt_usb_packet::ACK) step = EXPECT_ACCEPTED_OUT;
-          else if (records[index].pid_name != svt_usb_packet::NAK) begin
-            `uvm_fatal("USB_BULK_PING", "Target PING must receive NAK or readiness ACK")
-          end
-        end
-        EXPECT_ACCEPTED_OUT: begin
-          // USB 2.0 Section 8.5.1: ACK and NYET both accept HS OUT data.
-          if (!(records[index].pid_name inside {svt_usb_packet::ACK, svt_usb_packet::NYET})) begin
-            `uvm_fatal("USB_BULK_PING", "OUT following PING ACK was not accepted")
-          end
-          step = FLOW_DONE;
-        end
-        default: `uvm_fatal("USB_BULK_PING", "Unexpected response after flow completion")
-      endcase
-      `uvm_info(
-        "USB_BULK_PING",
-        $sformatf("Matched target %s/%s at %0t; next=%s",
-                  pending_pid.name(), records[index].pid_name.name(),
-                  records[index].observed_at, step.name()),
-        UVM_LOW
-      )
-      pending = 1'b0;
-      data_seen = 1'b0;
-    end
-    if (pending || step != FLOW_DONE) begin
-      `uvm_fatal("USB_BULK_PING", $sformatf("Incomplete target PING flow: pending=%0b step=%s", pending, step.name()))
-    end
-  endfunction
+    join_any
+    disable fork;
+  endtask
 
   // Enumerate, force a PING retry, then complete and verify the transfer.
   virtual task body();
@@ -151,9 +126,7 @@ class usb_bulk_ping_seq extends usb_base_seq;
     usb_endpoint_cfg endpoint;
     usb_ep_entry_t inactive_entry;
     usb_ep_entry_t active_entry;
-    bit ping_seen;
-    int unsigned ping_count;
-    int unsigned nak_count;
+    svt_usb_agent host_agent;
 
     completed = 1'b0;
     `uvm_info("USB_BULK_PING", "Starting bulk OUT PING flow-control scenario; running enumeration first", UVM_LOW)
@@ -161,6 +134,10 @@ class usb_bulk_ping_seq extends usb_base_seq;
     init_sequence.start(m_sequencer, this);
     if (!init_sequence.completed) begin
       `uvm_fatal("USB_BULK_PING", "Enumeration did not complete")
+    end
+    if (!$cast(host_agent, p_sequencer.host_sequencer.get_parent()) ||
+        host_agent.prot == null) begin
+      `uvm_fatal("USB_BULK_PING", "Unable to resolve the SVT host agent protocol component")
     end
 
     endpoint = get_endpoint(1, USB_DIRECTION_OUT);
@@ -170,6 +147,7 @@ class usb_bulk_ping_seq extends usb_base_seq;
     write_endpoint_entry(endpoint, inactive_entry);
     enable_endpoint_interrupt(endpoint);
     clear_endpoint_interrupt(endpoint);
+    ral_write32("INFO", p_sequencer.reg_model.combo.dev0_csr.INFO, 32'h0);
 
     host_sequence = usb_bulk_out_host_seq::type_id::create("host_sequence");
     host_sequence.target_endpoint = endpoint;
@@ -179,8 +157,7 @@ class usb_bulk_ping_seq extends usb_base_seq;
     host_sequence.bulk_transfer_timeout = ping_timeout;
     host_sequence.transfer_label = "Bulk OUT after PING";
 
-    p_sequencer.packet_monitor.start_window("Bulk OUT NAK/PING/ACK");
-    `uvm_info("USB_BULK_PING", "EP1 OUT is inactive; starting bulk OUT and waiting for host PING", UVM_LOW)
+    `uvm_info("USB_BULK_PING", "EP1 OUT is inactive; starting bulk OUT and waiting for VIP PING -> NAK", UVM_LOW)
     fork
       begin
         host_sequence.start(p_sequencer.host_sequencer);
@@ -189,32 +166,20 @@ class usb_bulk_ping_seq extends usb_base_seq;
         end
       end
       begin
-        p_sequencer.packet_monitor.wait_for_ping(ping_timeout, ping_seen);
-        if (!ping_seen) begin
-          `uvm_fatal("USB_BULK_PING", $sformatf("No host PING was observed within %0t", ping_timeout))
-        end
-        `uvm_info("USB_BULK_PING", "Observed host PING after endpoint NAK; arming EP1 OUT", UVM_LOW)
+        wait_for_vip_ping_nak(host_agent, endpoint);
+        wait_for_sie_error_code(ERROR_SENT_RECEIVED_NAK, ping_timeout, "Bulk OUT NAK/PING");
+        `uvm_info("USB_BULK_PING", "Observed VIP PING -> NAK and DUT ERROR_SENT_RECEIVED_NAK; arming EP1 OUT", UVM_LOW)
         arm_endpoint(endpoint, payload_bytes, buffer_offset, active_entry);
       end
     join
-    p_sequencer.packet_monitor.stop_window();
 
-    ping_count = p_sequencer.packet_monitor.count_pid(
-      svt_usb_packet::PING,
-      usb_packet_monitor_callback::USB_PACKET_TX
-    );
-    nak_count = p_sequencer.packet_monitor.count_pid(
-      svt_usb_packet::NAK,
-      usb_packet_monitor_callback::USB_PACKET_RX
-    );
-    check_ping_flow(endpoint);
     wait_for_endpoint_interrupt(endpoint, ping_timeout);
     verify_transfer(endpoint);
 
     completed = 1'b1;
     `uvm_info(
       "USB_BULK_PING",
-      $sformatf("Bulk OUT PING flow control verified: host PING=%0d device NAK=%0d payload_bytes=%0d", ping_count, nak_count, payload_bytes),
+      $sformatf("Bulk OUT PING flow control verified: payload_bytes=%0d", payload_bytes),
       UVM_LOW
     )
   endtask

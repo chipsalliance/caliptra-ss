@@ -13,6 +13,19 @@
 // limitations under the License.
 
 // Sets EPSKIP during an observed OUT data packet and verifies delayed service.
+//
+// Relies on the Synopsys SVT USB VIP's built-in protocol packet notification
+// (host_agent.prot.NOTIFY_20_HOST_TX_PACKET in
+// others/class_svt_usb_protocol.html) to time the EPSKIP register write
+// while the 512-byte DATA0 packet (~8.5 us on UTMI) is in flight on the bus,
+// and on the VIP's built-in protocol/link checks (enabled by default via
+// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_protocol_ep_sc.html, and
+// coverage/class_svt_usb_link_20_sc.html):
+//   - svt_usb_protocol_ep_sc:
+//     * packet_error_check, data_toggle_check, valid_device_response_check
+//   - svt_usb_link_20_sc:
+//     * unexpected_response_check
 class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
   `uvm_object_utils(usb_dev_skip_during_rx_seq)
 
@@ -69,17 +82,54 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     `uvm_info("USB_SKIP_RX_SEQ", $sformatf("Delayed skip preserved and committed all %0d in-flight bytes", inflight_payload_bytes), UVM_LOW)
   endtask
 
-  // Enumerate, overlap EPSKIP with an OUT token, then prove endpoint recovery.
+  // Wait on the SVT protocol component until the target OUT token completes and
+  // the 512-byte DATA0 packet is actively transmitting on UTMI.
+  task wait_for_target_out_data_start(svt_usb_agent host_agent);
+    bit out_token_seen;
+
+    out_token_seen = 1'b0;
+    while (!out_token_seen) begin
+      uvm_object tx_obj;
+      svt_usb_packet tx_pkt;
+
+      host_agent.prot.NOTIFY_20_HOST_TX_PACKET.wait_ptrigger_data(tx_obj);
+      if ($cast(tx_pkt, tx_obj) &&
+          tx_pkt.get_pid_name_val() == svt_usb_packet::OUT &&
+          tx_pkt.get_device_address_val() == p_sequencer.cfg.device_address &&
+          tx_pkt.get_ept_num_val() == 4'(skip_endpoint.ep_number)) begin
+        out_token_seen = 1'b1;
+      end
+    end
+    // Advance 1 us into the ~8.5 us 512-byte DATA0 packet transmission so
+    // UTMI RXACTIVE is high at the DUT when EPSKIP is written.
+    #1us;
+  endtask
+
+  // Wait on the SVT protocol component until the in-flight DATA packet finishes.
+  task wait_for_target_out_data_end(svt_usb_agent host_agent, output realtime data_ended_at);
+    bit data_ended;
+
+    data_ended = 1'b0;
+    while (!data_ended) begin
+      uvm_object tx_obj;
+      svt_usb_packet tx_pkt;
+
+      host_agent.prot.NOTIFY_20_HOST_TX_PACKET.wait_ptrigger_data(tx_obj);
+      if ($cast(tx_pkt, tx_obj) &&
+          tx_pkt.get_pid_name_val() inside {svt_usb_packet::DATA0, svt_usb_packet::DATA1}) begin
+        data_ended_at = $realtime;
+        data_ended = 1'b1;
+      end
+    end
+  endtask
+
+  // Enumerate, overlap EPSKIP with an OUT DATA packet, then prove endpoint recovery.
   virtual task body();
     usb_init_seq init_sequence;
     usb_bulk_out_host_seq inflight_host_sequence;
     usb_dev_skip_host_seq recovery_host_sequence;
     usb_ep_entry_t initial_entry;
-    uvm_event out_token_event;
-    uvm_event data_packet_event;
-    uvm_event rx_data_packet_event;
-    uvm_object observed_object;
-    usb2_phy_packet_snapshot observed_packet;
+    svt_usb_agent host_agent;
     realtime skip_write_accepted_at;
     realtime rx_packet_completed_at;
     realtime skip_cleared_at;
@@ -90,6 +140,10 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     init_sequence.start(m_sequencer, this);
     if (!init_sequence.completed) begin
       `uvm_fatal("USB_SKIP_RX_SEQ", "Enumeration did not complete")
+    end
+    if (!$cast(host_agent, p_sequencer.host_sequencer.get_parent()) ||
+        host_agent.prot == null) begin
+      `uvm_fatal("USB_SKIP_RX_SEQ", "Unable to resolve the SVT host agent protocol component")
     end
 
     skip_endpoint = get_endpoint(skip_target_ep_number, skip_target_direction);
@@ -107,13 +161,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
     inflight_host_sequence.device_address = p_sequencer.cfg.device_address;
     inflight_host_sequence.transfer_label = "In-flight bulk OUT";
 
-    out_token_event = p_sequencer.physical_monitor.out_token_event;
-    data_packet_event = p_sequencer.physical_monitor.data_started_event;
-    rx_data_packet_event = p_sequencer.physical_monitor.rx_data_ended_event;
-    out_token_event.reset();
-    data_packet_event.reset();
-    rx_data_packet_event.reset();
-    `uvm_info("USB_SKIP_RX_SEQ", "Armed OUT-token and DATA-packet observation; starting the bulk transfer", UVM_LOW)
+    `uvm_info("USB_SKIP_RX_SEQ", "Armed SVT link monitor OUT/DATA observation; starting the bulk transfer", UVM_LOW)
     fork
       begin
         inflight_host_sequence.start(p_sequencer.host_sequencer);
@@ -122,46 +170,36 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
         end
       end
       begin
-        out_token_event.wait_ptrigger();
-        data_packet_event.wait_ptrigger();
-        `uvm_info("USB_SKIP_RX_SEQ", "Observed the target OUT token and DATA packet; writing EPSKIP while payload reception is active", UVM_LOW)
-        request_endpoint_skip(skip_endpoint);
-        skip_write_accepted_at = $realtime;
-        if (rx_data_packet_event.is_on()) begin
-          `uvm_fatal("USB_SKIP_RX_SEQ", "EPSKIP write completed after the in-flight DATA packet reception ended")
-        end
+        wait_for_target_out_data_start(host_agent);
+        `uvm_info("USB_SKIP_RX_SEQ", "Observed the target OUT token and DATA packet start; writing EPSKIP while payload reception is active", UVM_LOW)
         fork
           begin
-            rx_data_packet_event.wait_on();
-            observed_object = rx_data_packet_event.get_trigger_data();
-            if (!$cast(observed_packet, observed_object)) begin
-              `uvm_fatal("USB_SKIP_RX_SEQ", "VIP DATA completion has no packet snapshot")
-            end
-            rx_packet_completed_at = observed_packet.completed_at;
-          end
-          begin
+            request_endpoint_skip(skip_endpoint);
+            skip_write_accepted_at = $realtime;
             wait_for_endpoint_skip_clear(
                 skip_endpoint,
                 skip_clear_timeout,
                 skip_clear_poll_interval);
             skip_cleared_at = $realtime;
           end
+          begin
+            wait_for_target_out_data_end(host_agent, rx_packet_completed_at);
+          end
         join
-        if (skip_write_accepted_at >= observed_packet.payload_completed_at) begin
+        if (skip_write_accepted_at >= rx_packet_completed_at) begin
           `uvm_fatal(
             "USB_SKIP_RX_SEQ",
             $sformatf(
               "EPSKIP write was not accepted during reception: write=%0t receive-end=%0t",
               skip_write_accepted_at,
-              observed_packet.payload_completed_at
+              rx_packet_completed_at
             )
           )
         end
         `uvm_info(
           "USB_SKIP_RX_SEQ",
-          $sformatf("VIP receive ordering: EPSKIP accepted=%0t payload-end=%0t packet-end=%0t skip-clear=%0t",
-                    skip_write_accepted_at, observed_packet.payload_completed_at,
-                    rx_packet_completed_at, skip_cleared_at),
+          $sformatf("VIP receive ordering: EPSKIP accepted=%0t packet-end=%0t skip-clear=%0t",
+                    skip_write_accepted_at, rx_packet_completed_at, skip_cleared_at),
           UVM_LOW
         )
         if (skip_cleared_at < rx_packet_completed_at) begin

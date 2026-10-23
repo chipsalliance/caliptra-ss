@@ -31,39 +31,43 @@
 // returned payload all match the request intent. Run this sequence on the SVT
 // host agent's virtual sequencer; usb_init_seq supplies the concurrent DUT-side
 // EP0 service needed to answer these requests.
+//
+// Relies on the Synopsys SVT USB VIP's built-in protocol, link, physical, and
+// device-framework checks (enabled by default via register_default_chks = 1,
+// enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_device_framework_sc.html,
+// coverage/class_svt_usb_protocol_ep_sc.html,
+// coverage/class_svt_usb_link_20_sc.html, and
+// coverage/class_svt_usb_physical_20_sc.html):
+//   - svt_usb_device_framework_sc:
+//     * device_descriptor_blength_18_check, device_descriptor_bDescriptorType_check,
+//       device_descriptor_hs_bcdUSBhibyte_check, device_descriptor_hs_bcdUSBlowbyte_check,
+//       device_descriptor_hs_bMaxPacketSize0_check, device_descriptor_bNumConfigurations_check
+//     * configuration_descriptor_bLength_check, configuration_descriptor_bDescriptorType_check,
+//       configuration_descriptor_bmAttributes_check, configuration_descriptor_bNumInterfaces_check,
+//       configuration_descriptor_non_ss_bMaxPower_check
+//     * interface_descriptor_bLength_check, interface_descriptor_bNumEndpoints_check,
+//       interface_descriptor_interface_number_check, Interface_descriptor_first_alternate_setting_number_check
+//     * endpoint_descriptor_bLength_check, endpoint_descriptor_bEndPointAddress_check,
+//       endpoint_descriptor_bmAttributes_check, endpoint_descriptor_wMaxPacketSize_check,
+//       endpoint_descriptor_bInterval_check, endpoint_descriptor_validity_check
+//   - svt_usb_protocol_ep_sc:
+//     * device_setup_payload_check, data_toggle_check, packet_error_check,
+//       valid_device_data_check, valid_device_response_check
+//   - svt_usb_physical_20_sc:
+//     * chk_tdrst, chk_utmi_chirp_condition, chk_utmi_linestate_during_reset,
+//       chk_utmi_linestate_during_chirp, utmi_signal_X_Z_check
 class usb_init_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_init_host_seq)
 
   int unsigned validated_transfer_count;
   localparam int unsigned ENUMERATION_REQUEST_COUNT = 9;
-  // USB 2.0 chapter 9 descriptor types, lengths, and field offsets.
   localparam byte unsigned DEVICE_DESCRIPTOR_TYPE = 1;
   localparam byte unsigned CONFIGURATION_DESCRIPTOR_TYPE = 2;
-  localparam byte unsigned INTERFACE_DESCRIPTOR_TYPE = 4;
-  localparam byte unsigned ENDPOINT_DESCRIPTOR_TYPE = 5;
   localparam int unsigned DEVICE_DESCRIPTOR_LENGTH = 18;
   localparam int unsigned CONFIGURATION_DESCRIPTOR_LENGTH = 9;
-  localparam int unsigned INTERFACE_DESCRIPTOR_LENGTH = 9;
-  localparam int unsigned ENDPOINT_DESCRIPTOR_LENGTH = 7;
-  localparam int unsigned DESCRIPTOR_LENGTH_OFFSET = 0;
-  localparam int unsigned DESCRIPTOR_TYPE_OFFSET = 1;
-  localparam int unsigned DEVICE_USB_VERSION_OFFSET = 2;
-  localparam int unsigned DEVICE_EP0_PACKET_SIZE_OFFSET = 7;
-  localparam int unsigned DEVICE_CONFIGURATION_COUNT_OFFSET = 17;
   localparam int unsigned CONFIGURATION_TOTAL_LENGTH_OFFSET = 2;
-  localparam int unsigned CONFIGURATION_INTERFACE_COUNT_OFFSET = 4;
   localparam int unsigned CONFIGURATION_VALUE_OFFSET = 5;
-  localparam int unsigned CONFIGURATION_ATTRIBUTES_OFFSET = 7;
-  localparam int unsigned CONFIGURATION_POWER_OFFSET = 8;
-  localparam int unsigned INTERFACE_NUMBER_OFFSET = 2;
-  localparam int unsigned INTERFACE_ALTERNATE_OFFSET = 3;
-  localparam int unsigned INTERFACE_ENDPOINT_COUNT_OFFSET = 4;
-  localparam int unsigned ENDPOINT_ADDRESS_OFFSET = 2;
-  localparam int unsigned ENDPOINT_ATTRIBUTES_OFFSET = 3;
-  localparam int unsigned ENDPOINT_PACKET_SIZE_OFFSET = 4;
-  localparam int unsigned ENDPOINT_INTERVAL_OFFSET = 6;
-  localparam byte unsigned ISOCHRONOUS_ENDPOINT_TYPE = 1;
-  localparam byte unsigned BULK_ENDPOINT_TYPE = 2;
   byte unsigned discovered_payload[$];
   byte unsigned selected_configuration;
 
@@ -83,122 +87,6 @@ class usb_init_host_seq extends usb_host_base_seq;
 
   virtual function string report_id();
     return "USB_INIT_HOST";
-  endfunction
-
-  // USB 2.0 section 9.6.1: HS devices report USB 2.0, a 64-byte EP0,
-  // and at least one configuration. Identity fields are not an oracle.
-  function void check_device_descriptor(byte unsigned descriptor[$]);
-    if (descriptor.size() != DEVICE_DESCRIPTOR_LENGTH) begin
-      `uvm_fatal("USB_INIT_HOST", "Device descriptor must contain exactly 18 bytes")
-    end
-    if (descriptor[DESCRIPTOR_LENGTH_OFFSET] != DEVICE_DESCRIPTOR_LENGTH ||
-        descriptor[DESCRIPTOR_TYPE_OFFSET] != DEVICE_DESCRIPTOR_TYPE ||
-        descriptor[DEVICE_USB_VERSION_OFFSET] != 0 || descriptor[DEVICE_USB_VERSION_OFFSET + 1] != 2 ||
-        descriptor[DEVICE_EP0_PACKET_SIZE_OFFSET] != 64 || descriptor[DEVICE_CONFIGURATION_COUNT_OFFSET] == 0) begin
-      `uvm_fatal("USB_INIT_HOST", "Invalid USB 2.0 HS device descriptor or no advertised configurations")
-    end
-  endfunction
-
-  // USB 2.0 section 9.6.3, Table 9-10. Validate the header independently
-  // before trusting its transfer length or selecting its configuration value.
-  function void check_configuration_header(byte unsigned descriptor[$]);
-    if (descriptor.size() < CONFIGURATION_DESCRIPTOR_LENGTH) begin
-      `uvm_fatal("USB_INIT_HOST", "Truncated configuration descriptor header")
-    end
-    if (descriptor[DESCRIPTOR_LENGTH_OFFSET] != CONFIGURATION_DESCRIPTOR_LENGTH ||
-        descriptor[DESCRIPTOR_TYPE_OFFSET] != CONFIGURATION_DESCRIPTOR_TYPE ||
-        (int'(descriptor[CONFIGURATION_TOTAL_LENGTH_OFFSET]) |
-         (int'(descriptor[CONFIGURATION_TOTAL_LENGTH_OFFSET + 1]) << 8)) <
-        CONFIGURATION_DESCRIPTOR_LENGTH + INTERFACE_DESCRIPTOR_LENGTH ||
-        descriptor[CONFIGURATION_INTERFACE_COUNT_OFFSET] == 0 || descriptor[CONFIGURATION_VALUE_OFFSET] == 0 ||
-        (descriptor[CONFIGURATION_ATTRIBUTES_OFFSET] & 8'h9f) != 8'h80 ||
-        descriptor[CONFIGURATION_POWER_OFFSET] > 250) begin
-      `uvm_fatal("USB_INIT_HOST", "Invalid configuration descriptor header")
-    end
-  endfunction
-
-  // USB 2.0 sections 9.6.5/9.6.6: walk descriptor boundaries and validate
-  // interface/endpoint counts, addresses, HS packet sizes, and intervals.
-  // This scenario selects default alternate settings, not alternate interfaces.
-  function void check_configuration_descriptor(byte unsigned descriptor[$]);
-    int unsigned offset;
-    int unsigned interface_count;
-    int unsigned expected_endpoints;
-    int unsigned observed_endpoints;
-    bit interface_seen[byte unsigned];
-    bit endpoint_seen[byte unsigned];
-
-    check_configuration_header(descriptor);
-    if (descriptor.size() != (int'(descriptor[CONFIGURATION_TOTAL_LENGTH_OFFSET]) |
-                              (int'(descriptor[CONFIGURATION_TOTAL_LENGTH_OFFSET + 1]) << 8))) begin
-      `uvm_fatal("USB_INIT_HOST", "Configuration tree length differs from wTotalLength")
-    end
-    offset = descriptor[DESCRIPTOR_LENGTH_OFFSET];
-    interface_count = 0;
-    expected_endpoints = 0;
-    observed_endpoints = 0;
-    while (offset < descriptor.size()) begin
-      int unsigned descriptor_length;
-
-      if (offset + 2 > descriptor.size()) begin
-        `uvm_fatal("USB_INIT_HOST", "Truncated subordinate descriptor header")
-      end
-      descriptor_length = descriptor[offset + DESCRIPTOR_LENGTH_OFFSET];
-      if (descriptor_length < 2 || offset + descriptor_length > descriptor.size()) begin
-        `uvm_fatal("USB_INIT_HOST", "Invalid subordinate descriptor boundary")
-      end
-      case (descriptor[offset + DESCRIPTOR_TYPE_OFFSET])
-        INTERFACE_DESCRIPTOR_TYPE: begin
-          if (descriptor_length != INTERFACE_DESCRIPTOR_LENGTH || observed_endpoints != expected_endpoints) begin
-            `uvm_fatal("USB_INIT_HOST", "Invalid interface length or preceding endpoint count")
-          end
-          if (descriptor[offset + INTERFACE_ALTERNATE_OFFSET] != 0 ||
-              interface_seen.exists(descriptor[offset + INTERFACE_NUMBER_OFFSET]) ||
-              descriptor[offset + INTERFACE_NUMBER_OFFSET] >= descriptor[CONFIGURATION_INTERFACE_COUNT_OFFSET]) begin
-            `uvm_fatal("USB_INIT_HOST", "Expected unique, zero-based default interface settings")
-          end
-          interface_seen[descriptor[offset + INTERFACE_NUMBER_OFFSET]] = 1;
-          interface_count++;
-          expected_endpoints = descriptor[offset + INTERFACE_ENDPOINT_COUNT_OFFSET];
-          observed_endpoints = 0;
-        end
-        ENDPOINT_DESCRIPTOR_TYPE: begin
-          byte unsigned address;
-          byte unsigned attributes;
-          int unsigned packet_size;
-          int unsigned additional_transactions;
-
-          if (descriptor_length != ENDPOINT_DESCRIPTOR_LENGTH || interface_count == 0) begin
-            `uvm_fatal("USB_INIT_HOST", "Invalid endpoint descriptor length or missing interface")
-          end
-          address = descriptor[offset + ENDPOINT_ADDRESS_OFFSET];
-          attributes = descriptor[offset + ENDPOINT_ATTRIBUTES_OFFSET];
-          packet_size = int'(descriptor[offset + ENDPOINT_PACKET_SIZE_OFFSET]) |
-                        (int'(descriptor[offset + ENDPOINT_PACKET_SIZE_OFFSET + 1]) << 8);
-          additional_transactions = (packet_size >> 11) & 3;
-          if ((address & 8'h70) != 0 || (address & 8'h0f) == 0 || endpoint_seen.exists(address) ||
-              (attributes & 8'hc0) != 0 || (attributes & 3) == 0 ||
-              ((attributes & 3) != ISOCHRONOUS_ENDPOINT_TYPE && (attributes & 8'hfc) != 0) ||
-              ((attributes & 3) == ISOCHRONOUS_ENDPOINT_TYPE && (attributes & 8'h30) == 8'h30) ||
-              (packet_size & 16'he000) != 0 || additional_transactions == 3 ||
-              (packet_size & 16'h07ff) == 0 || (packet_size & 16'h07ff) > 1024 ||
-              ((attributes & 3) == BULK_ENDPOINT_TYPE && packet_size != 512) ||
-              ((attributes & 3) != BULK_ENDPOINT_TYPE &&
-               (descriptor[offset + ENDPOINT_INTERVAL_OFFSET] == 0 ||
-                descriptor[offset + ENDPOINT_INTERVAL_OFFSET] > 16))) begin
-            `uvm_fatal("USB_INIT_HOST", "Invalid HS endpoint address, attributes, packet size, or interval")
-          end
-          endpoint_seen[address] = 1;
-          observed_endpoints++;
-        end
-        default: `uvm_fatal("USB_INIT_HOST", "Unexpected descriptor in the enumeration fixture")
-      endcase
-      offset += descriptor_length;
-    end
-    if (interface_count != descriptor[CONFIGURATION_INTERFACE_COUNT_OFFSET] ||
-        observed_endpoints != expected_endpoints) begin
-      `uvm_fatal("USB_INIT_HOST", "Configuration interface/endpoint counts do not match their descriptors")
-    end
   endfunction
 
   // Derives the SVT success mask expected for the two zero-length host writes.
@@ -561,7 +449,6 @@ class usb_init_host_seq extends usb_host_base_seq;
       no_payload,
       1'b1
     );
-    check_device_descriptor(discovered_payload);
     descriptor_payload = discovered_payload;
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
@@ -641,7 +528,6 @@ class usb_init_host_seq extends usb_host_base_seq;
       1'b1
     );
     configuration_header = discovered_payload;
-    check_configuration_header(configuration_header);
     configuration_length = int'(configuration_header[CONFIGURATION_TOTAL_LENGTH_OFFSET]) |
                            (int'(configuration_header[CONFIGURATION_TOTAL_LENGTH_OFFSET + 1]) << 8);
     run_control_transfer(
@@ -656,7 +542,6 @@ class usb_init_host_seq extends usb_host_base_seq;
       no_payload,
       1'b1
     );
-    check_configuration_descriptor(discovered_payload);
     foreach (configuration_header[byte_index]) begin
       if (configuration_header[byte_index] != discovered_payload[byte_index]) begin
         `uvm_fatal("USB_INIT_HOST", "Configuration header changed between discovery requests")

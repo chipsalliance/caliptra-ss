@@ -25,13 +25,6 @@ class usb_virtual_sequencer extends uvm_sequencer #(uvm_sequence_item);
   aaxi_sequencer dev1_csr_sequencer;
   aaxi_sequencer dev1_memory_sequencer;
   svt_usb_virtual_sequencer host_sequencer;
-  // usb_env creates/registers these callbacks; sequences use the same objects
-  // through p_sequencer. Each window, queue, or expectation has one sequence
-  // owner; concurrent sequences must not reset or consume another's state.
-  // See each callback's class comments for its API and VIP documentation.
-  usb_packet_monitor_callback packet_monitor;
-  usb_vip_physical_monitor_callback physical_monitor;
-  usb_vip_raw_rx_callback raw_rx;
   // AXI USER filter policy control shared by all four manager paths.
   virtual usb_tb_ctrl_if #(
     .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),

@@ -13,6 +13,30 @@
 // limitations under the License.
 
 // Shared malformed-CRC stimulus, DUT status checking, retry, and payload check.
+//
+// Relies on the Synopsys SVT USB VIP's built-in error-injection callbacks
+// (svt_usb_protocol_20_host_tx_packet_crc5_error and
+// svt_usb_protocol_20_host_tx_packet_crc16_error in
+// callback/class_svt_usb_protocol_20_host_tx_packet_crc5_error.html and
+// callback/class_svt_usb_protocol_20_host_tx_packet_crc16_error.html), built-in
+// protocol packet notification (host_agent.prot.NOTIFY_20_HOST_TX_PACKET in
+// others/class_svt_usb_protocol.html), and built-in protocol/link checks
+// (enabled by default via register_default_chks = 1, enable_default_chks = 1 in
+// protocolChecks.html, coverage/class_svt_usb_protocol_ep_sc.html, and
+// coverage/class_svt_usb_link_20_sc.html):
+//   - svt_usb_protocol::NOTIFY_20_HOST_TX_PACKET:
+//     Confirms the host transmitted both the initial CRC-corrupted OUT attempt
+//     and the subsequent clean retry after device response timeout.
+//   - svt_usb_protocol_ep_sc:
+//     * data_toggle_check: Checks DATA0 toggle preservation across the
+//       rejected attempt and the retried transaction.
+//     * valid_device_response_check: Checks the device ACK/NYET handshake on
+//       the clean retry.
+//     * packet_error_check: Checks all uncorrupted packets and handshakes for
+//       PID, CRC, bitstuff, and framing validity.
+//   - svt_usb_link_20_sc:
+//     * unexpected_response_check: Checks that no handshake is returned for a
+//       corrupted token or data packet.
 virtual class usb_bad_packet_crc_seq extends usb_base_seq;
   logic [31:0] buffer_offset = 32'h0000_0200;
   int unsigned payload_bytes = 64;
@@ -75,8 +99,9 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
     if (!init_sequence.completed) begin
       `uvm_fatal("USB_BAD_PACKET_CRC", "Enumeration did not complete")
     end
-    if (!$cast(host_agent, p_sequencer.host_sequencer.get_parent())) begin
-      `uvm_fatal("USB_BAD_PACKET_CRC", "Unable to resolve the SVT host agent")
+    if (!$cast(host_agent, p_sequencer.host_sequencer.get_parent()) ||
+        host_agent.prot == null) begin
+      `uvm_fatal("USB_BAD_PACKET_CRC", "Unable to resolve the SVT host agent protocol component")
     end
     p_sequencer.host_sequencer.get_cfg(base_usb_cfg);
     if (!$cast(usb_cfg, base_usb_cfg)) begin
@@ -104,45 +129,56 @@ virtual class usb_bad_packet_crc_seq extends usb_base_seq;
             "sof_off_sequence");
     sof_off_sequence.start(
         p_sequencer.host_sequencer.prot_service_sequencer);
-    p_sequencer.packet_monitor.start_window(
-        {"Bulk OUT retry after ", scenario_label()});
     usb_cfg.disable_tend_to_end_delay_check_for_expected_timeout = 1'b1;
     host_agent.reconfigure(usb_cfg);
     install_injection(host_agent);
+    out_attempt_count = 0;
     `uvm_info("USB_BAD_PACKET_CRC", $sformatf("Registered one-shot host injection for %s", scenario_label()), UVM_LOW)
     fork
       begin
-        host_sequence.start(p_sequencer.host_sequencer);
-        if (!host_sequence.completed) begin
-          `uvm_fatal("USB_BAD_PACKET_CRC", "Bulk OUT host sequence returned incomplete")
-        end
-      end
-      begin
-        wait_for_sie_error_code(expected_error_code(), error_timeout, scenario_label());
+        fork
+          begin
+            while (out_attempt_count < 2) begin
+              uvm_object tx_obj;
+              svt_usb_packet tx_pkt;
+
+              host_agent.prot.NOTIFY_20_HOST_TX_PACKET.wait_ptrigger_data(tx_obj);
+              if ($cast(tx_pkt, tx_obj) &&
+                  tx_pkt.get_pid_name_val() == svt_usb_packet::OUT &&
+                  tx_pkt.get_device_address_val() == p_sequencer.cfg.device_address &&
+                  tx_pkt.get_ept_num_val() == 4'(endpoint.ep_number)) begin
+                out_attempt_count++;
+              end
+            end
+          end
+          begin
+            host_sequence.start(p_sequencer.host_sequencer);
+            if (!host_sequence.completed) begin
+              `uvm_fatal("USB_BAD_PACKET_CRC", "Bulk OUT host sequence returned incomplete")
+            end
+          end
+          begin
+            wait_for_sie_error_code(expected_error_code(), error_timeout, scenario_label());
+          end
+        join
       end
     join
     remove_injection(host_agent);
     usb_cfg.disable_tend_to_end_delay_check_for_expected_timeout = 1'b0;
     host_agent.reconfigure(usb_cfg);
-    p_sequencer.packet_monitor.stop_window();
     sof_on_sequence =
         svt_usb_protocol_service_20_sof_on_sequence::type_id::create(
             "sof_on_sequence");
     sof_on_sequence.start(
         p_sequencer.host_sequencer.prot_service_sequencer);
 
-    if (injected_packet_count() == 0) begin
-      `uvm_fatal("USB_BAD_PACKET_CRC", $sformatf("The %s injection did not modify a packet", scenario_label()))
-    end
-    if (!p_sequencer.packet_monitor.observed_rejected_out_retry(
-          p_sequencer.cfg.device_address,
-          4'(endpoint.ep_number),
-          out_attempt_count)) begin
+    if (injected_packet_count() == 0 || out_attempt_count < 2) begin
       `uvm_fatal(
         "USB_BAD_PACKET_CRC",
         $sformatf(
-          "%s did not produce a rejected target OUT followed by an ACK/NYET-accepted retry; attempts=%0d",
+          "The %s injection did not trigger a rejected attempt and retry (injected=%0d attempts=%0d)",
           scenario_label(),
+          injected_packet_count(),
           out_attempt_count
         )
       )

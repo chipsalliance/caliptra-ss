@@ -12,7 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Drives one checked interrupt transfer in either endpoint direction.
+// Drives one checked interrupt transfer in either endpoint direction,
+// scheduled within a single high-speed microframe via
+// svt_usb_transfer::start_uframe_bus_interval and end_uframe_bus_interval
+// (transaction/class_svt_usb_transfer.html). If a burst does not complete
+// before the end of target_microframe, the SVT VIP aborts the transfer with
+// status == ABORTED and results_status[6] = 1'b1.
 class usb_interrupt_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_interrupt_host_seq)
 
@@ -25,6 +30,7 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
   time transfer_timeout = 500us;
   string transfer_label = "Interrupt transfer";
+  int unsigned scheduled_microframe;
 
   function new(string name = "usb_interrupt_host_seq");
     super.new(name);
@@ -46,7 +52,7 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
            packet_index * payload_packet_stride;
   endfunction
 
-  // Submit one transfer and check its direction, result, and payload.
+  // Submit one transfer confined to a single microframe and check its result.
   virtual task body();
     svt_usb_transfer transfer;
     svt_usb_transfer completed_transfer;
@@ -67,15 +73,19 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
     end
 
     resolve_host_context();
+    if (shared_status == null || shared_status.local_host_status == null) begin
+      `uvm_fatal(report_id(), "SVT host shared_status.local_host_status is required")
+    end
     target_ep_number = 4'(target_endpoint.ep_number);
     expected_transfer_type = target_endpoint.direction == USB_DIRECTION_IN ?
                              svt_usb_transfer::INTERRUPT_IN_TRANSFER :
                              svt_usb_transfer::INTERRUPT_OUT_TRANSFER;
+    scheduled_microframe = shared_status.local_host_status.micro_frame_count + 2;
     transfer = svt_usb_transfer::type_id::create("interrupt_transfer");
     `uvm_info(
       report_id(),
-      $sformatf("%s starting on %s: address=%0d bytes=%0d stream_offset=%0d",
-                transfer_label, target_endpoint.convert2string(), device_address, payload_byte_count, payload_stream_offset),
+      $sformatf("%s starting on %s: address=%0d bytes=%0d stream_offset=%0d uframe=%0d",
+                transfer_label, target_endpoint.convert2string(), device_address, payload_byte_count, payload_stream_offset, scheduled_microframe),
       UVM_LOW
     )
 
@@ -83,6 +93,8 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
     start_item(transfer, -1, p_sequencer.xfer_sequencer);
     transfer.cfg = usb_cfg;
     transfer.fix_anchors(0, target_endpoint.anchor_index, 0);
+    transfer.reasonable_start_uframe_bus_interval.constraint_mode(0);
+    transfer.reasonable_end_uframe_bus_interval.constraint_mode(0);
     if (target_endpoint.direction == USB_DIRECTION_OUT) begin
       transfer.payload.USER_DEFINED_ALGORITHM_wt = 1;
       transfer.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
@@ -93,6 +105,8 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
           endpoint_number == target_ep_number;
           payload_intended_byte_count == local::payload_byte_count;
           aligned_transfer_ends_with_zero_length == 0;
+          start_uframe_bus_interval == int'(scheduled_microframe);
+          end_uframe_bus_interval == int'(scheduled_microframe);
         }) begin
       `uvm_fatal(report_id(), $sformatf("Unable to randomize %s", transfer_label))
     end
@@ -146,6 +160,6 @@ class usb_interrupt_host_seq extends usb_host_base_seq;
     end
 
     completed = 1'b1;
-    `uvm_info(report_id(), $sformatf("%s accepted with %0d bytes", transfer_label, payload_byte_count), UVM_LOW)
+    `uvm_info(report_id(), $sformatf("%s accepted with %0d bytes in uframe %0d", transfer_label, payload_byte_count, scheduled_microframe), UVM_LOW)
   endtask
 endclass

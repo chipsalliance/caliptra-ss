@@ -13,6 +13,29 @@
 // limitations under the License.
 
 // Checks DEV0 L2 status across host resume and verifies post-resume traffic.
+//
+// Relies on the Synopsys SVT USB VIP's built-in suspend/resume sequences
+// (svt_usb_protocol_service_20_sof_off_sequence,
+// svt_usb_link_service_clear_suspend_sequence, and
+// svt_usb_protocol_service_20_sof_on_sequence in
+// sequences/class_svt_usb_protocol_service_20_sof_off_sequence.html,
+// sequences/class_svt_usb_link_service_clear_suspend_sequence.html, and
+// sequences/class_svt_usb_protocol_service_20_sof_on_sequence.html),
+// shared_status.link_usb_20_state (SUSPEND -> RESUME -> L0), and built-in
+// protocol/link/physical checks (enabled by default via
+// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_protocol_ep_sc.html,
+// coverage/class_svt_usb_link_20_host_sc.html, and
+// coverage/class_svt_usb_physical_20_sc.html):
+//   - svt_usb_protocol_ep_sc:
+//     * packet_error_check, valid_device_response_check, data_toggle_check,
+//       sof_not_received_after_link_enters_l0
+//   - svt_usb_link_20_host_sc:
+//     * tdrsmdn_timing_check
+//   - svt_usb_physical_20_sc:
+//     * chk_utmi_suspendm, chk_utmi_resume_length,
+//       chk_utmi_speed_before_and_after_suspend_resume,
+//       chk_utmi_after_resume_switch_to_hs, utmi_signal_X_Z_check
 class usb_l2_host_resume_seq extends usb_resume_recovery_seq;
   `uvm_object_utils(usb_l2_host_resume_seq)
 

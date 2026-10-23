@@ -13,6 +13,24 @@
 // limitations under the License.
 
 // Checks DEV0 LPM L1 status across host exit and verifies recovered traffic.
+//
+// Relies on the Synopsys SVT USB VIP's built-in LPM sequences
+// (svt_usb_protocol_service_usb_20_lpm_sequence and
+// svt_usb_link_service_clear_l1suspend_sequence in
+// sequences/class_svt_usb_protocol_service_usb_20_lpm_sequence.html and
+// sequences/class_svt_usb_link_service_clear_l1suspend_sequence.html),
+// shared_status.link_usb_20_state (L1SUSPEND -> L1RESUME -> L0), and built-in
+// protocol/link/physical checks (enabled by default via
+// register_default_chks = 1, enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_protocol_ep_sc.html,
+// coverage/class_svt_usb_link_20_sc.html, and
+// coverage/class_svt_usb_physical_20_sc.html):
+//   - svt_usb_protocol_ep_sc:
+//     * packet_error_check, valid_device_response_check, data_toggle_check,
+//       sof_not_received_after_link_enters_l0
+//   - svt_usb_physical_20_sc:
+//     * chk_utmi_suspendm, chk_utmi_resume_length,
+//       chk_utmi_after_resume_switch_to_hs, utmi_signal_X_Z_check
 class usb_l1_host_resume_seq extends usb_resume_recovery_seq;
   `uvm_object_utils(usb_l1_host_resume_seq)
 

@@ -12,9 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Sends one unsupported control OUT request and requires non-success.
+// Sends one unsupported control OUT request and requires STALL termination.
+//
+// Relies on the Synopsys SVT USB VIP's built-in transfer status reporting and
+// protocol/link checks (enabled by default via register_default_chks = 1,
+// enable_default_chks = 1 in protocolChecks.html,
+// transaction/class_svt_usb_transfer.html#item_results_status,
+// coverage/class_svt_usb_protocol_ep_sc.html, and
+// coverage/class_svt_usb_link_20_sc.html):
+//   - svt_usb_transfer::status == svt_sequence_item::ABORTED and
+//     svt_usb_transfer::results_status[4] == 1'b1:
+//     Verifies the USB 2.0 control transfer was aborted due to a STALL
+//     handshake from the device.
+//   - svt_usb_protocol_ep_sc:
+//     * device_setup_payload_check, valid_device_response_check,
+//       packet_error_check, data_toggle_check
+//   - svt_usb_link_20_sc:
+//     * unexpected_response_check
 class usb_unsupported_request_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_unsupported_request_host_seq)
+
+  localparam int unsigned SVT_USB_RESULTS_STALL_BIT = 4;
 
   usb_endpoint_cfg control_endpoint;
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
@@ -30,12 +48,13 @@ class usb_unsupported_request_host_seq extends usb_host_base_seq;
     return "USB_UNSUPPORTED_HOST";
   endfunction
 
-  // Drive the unsupported SETUP and payload, then reject a successful result.
+  // Drive the unsupported SETUP and payload, then require STALL abort status.
   virtual task body();
     svt_usb_transfer request_transfer;
     svt_usb_transfer completed_transfer;
     uvm_object completed_object;
     string failure_reason;
+    bit [`SVT_USB_RESULTS_STATUS_SIZE - 1:0] expected_stall_results;
 
     completed = 1'b0;
     if (control_endpoint == null || !control_endpoint.anchor_index_valid) begin
@@ -79,16 +98,26 @@ class usb_unsupported_request_host_seq extends usb_host_base_seq;
     if (!cast_completed_transfer(completed_object, completed_transfer, failure_reason)) begin
       `uvm_fatal(report_id(), $sformatf("Unsupported request completion rejected: %s", failure_reason))
     end
-    if (completed_transfer.status === svt_sequence_item::ACCEPT &&
-        completed_transfer.results_status === '0) begin
-      `uvm_fatal(report_id(), "Unsupported control request completed successfully instead of terminating with STALL")
+    expected_stall_results = '0;
+    expected_stall_results[SVT_USB_RESULTS_STALL_BIT] = 1'b1;
+    if (completed_transfer.status !== svt_sequence_item::ABORTED ||
+        completed_transfer.results_status !== expected_stall_results) begin
+      `uvm_fatal(
+        report_id(),
+        $sformatf(
+          "Unsupported control request did not abort with STALL: status=%s results=0x%0h expected_results=0x%0h",
+          completed_transfer.status.name(),
+          completed_transfer.results_status,
+          expected_stall_results
+        )
+      )
     end
 
     completed = 1'b1;
     `uvm_info(
       report_id(),
       $sformatf(
-        "Unsupported request completed non-successfully: status=%s results=0x%0h",
+        "Unsupported request aborted with STALL as expected: status=%s results=0x%0h",
         completed_transfer.status.name(),
         completed_transfer.results_status
       ),
