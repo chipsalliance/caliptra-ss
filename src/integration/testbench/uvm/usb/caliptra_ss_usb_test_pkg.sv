@@ -185,6 +185,14 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_test.svh"
+  // Full Speed sibling of caliptra_ss_usb_hs_dev_int_iso_mix: INTERRUPT EP1 +
+  // ISOCHRONOUS EP2 + INTERRUPT EP3 armed concurrently and driven in the order
+  // EP1 -> EP2 -> EP3. Only ONE loop is run (the HS test runs two), because at
+  // Full Speed every token costs far more simulation time. The ISO side follows
+  // the FS rules proven by caliptra_ss_usb_fs_dev_iso_out: ISO OUT re-armed per
+  // 512-byte token and ISO IN ping-pong with RF selecting ISO.
+  `include "caliptra_ss_usb_fs_dev_int_iso_mix_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_int_iso_mix_test.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_fs_dev_powerdown_sequence.svh"

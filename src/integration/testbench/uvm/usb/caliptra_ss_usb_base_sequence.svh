@@ -1222,6 +1222,22 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                        before the calling thread resumes cannot make
     //                        the wait miss the event. Set to 0 only where the
     //                        original code deliberately waited sequentially.
+    //   timeout_us         - ceiling handed to wait_xfer_done() for this
+    //                        transfer. The 2000 us default matches
+    //                        wait_xfer_done()'s own default and is safe at
+    //                        high speed, where the frame period is 125 us.
+    //                        FULL-SPEED callers must raise it: the FS frame
+    //                        period is 1 ms, so one FS interrupt or
+    //                        isochronous transfer of a few hundred bytes can
+    //                        cost more than 2000 us of simulation time on a
+    //                        perfectly healthy bus and the default then
+    //                        expires on a transfer that was about to
+    //                        complete. Measured reference: a 64-byte FS
+    //                        INTERRUPT IN loopback in
+    //                        caliptra_ss_usb_fs_dev_int_iso_mix took about
+    //                        2019 us end to end. Raise this per call site
+    //                        instead of raising the global default, so the
+    //                        guard stays tight for the high-speed tests.
     // -------------------------------------------------------------------
     task do_data_xfer(
         input  svt_usb_agent         agent_h,
@@ -1237,7 +1253,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input  bit [7:0]             payload_data[]     = {},
         input  bit                   no_zero_length_end = 0,
         input  bit                   single_isoc_txn    = 0,
-        input  bit                   fork_wait          = 1
+        input  bit                   fork_wait          = 1,
+        input  int unsigned          timeout_us         = 2000
     );
         if (no_zero_length_end && single_isoc_txn)
             `uvm_fatal("USB_BASE_SEQ",
@@ -1301,13 +1318,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                                   label, device_addr, ep_num, byte_count), UVM_LOW)
                 end
                 begin
-                    wait_xfer_done(.agent_h(agent_h), .label(label));
+                    wait_xfer_done(.agent_h(agent_h), .label(label),
+                                   .timeout_us(timeout_us));
                 end
             join
         end
         else begin
             finish_item(req, -1);
-            wait_xfer_done(.agent_h(agent_h), .label(label));
+            wait_xfer_done(.agent_h(agent_h), .label(label),
+                           .timeout_us(timeout_us));
         end
     endtask
 
