@@ -350,9 +350,24 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // The default ceiling is deliberately generous: it must not fire on a
     // transfer that is merely slow on this testbench, only on one that is never
     // going to complete. Callers with a tighter expectation can pass their own.
+    //
+    // The default is sized for FULL SPEED, which is the slowest mode this
+    // testbench runs. The FS frame period is 1 ms against 125 us at high
+    // speed, so a single FS interrupt, isochronous or control transfer can
+    // legitimately cost a few milliseconds of simulation time on a perfectly
+    // healthy bus. The earlier 2000 us default was sized for high speed and
+    // expired on healthy FS traffic: measured overruns were about 2019 us for
+    // a 64-byte FS INTERRUPT IN, and the FS enumeration control transfers
+    // (GET_CONFIGURATION readbacks) and FS bulk IN transfers in the nightly
+    // regression overran it as well, each time producing a uvm_error plus a
+    // cascade of follow-on errors against an empty payload while the firmware
+    // reported the very same transfer as PASSED. 10000 us (ten FS frames)
+    // removes that false failure while keeping the guard meaningful: a
+    // transfer the VIP will never complete is still never going to complete
+    // at 10 ms, which is the only case this timeout exists to report.
     // -------------------------------------------------------------------
     task wait_xfer_done(svt_usb_agent agent_h, string label,
-                        int unsigned timeout_us = 2000);
+                        int unsigned timeout_us = 10000);
         xfer_wait_timed_out = 1'b0;
         fork
             begin: WAIT_XFER
@@ -1223,21 +1238,23 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                        the wait miss the event. Set to 0 only where the
     //                        original code deliberately waited sequentially.
     //   timeout_us         - ceiling handed to wait_xfer_done() for this
-    //                        transfer. The 2000 us default matches
-    //                        wait_xfer_done()'s own default and is safe at
-    //                        high speed, where the frame period is 125 us.
-    //                        FULL-SPEED callers must raise it: the FS frame
-    //                        period is 1 ms, so one FS interrupt or
-    //                        isochronous transfer of a few hundred bytes can
-    //                        cost more than 2000 us of simulation time on a
-    //                        perfectly healthy bus and the default then
-    //                        expires on a transfer that was about to
-    //                        complete. Measured reference: a 64-byte FS
+    //                        transfer. The 10000 us default matches
+    //                        wait_xfer_done()'s own default and is sized for
+    //                        FULL SPEED, the slowest mode this testbench
+    //                        runs: the FS frame period is 1 ms against 125 us
+    //                        at high speed, so one FS interrupt, isochronous
+    //                        or bulk transfer of a few hundred bytes can cost
+    //                        milliseconds of simulation time on a perfectly
+    //                        healthy bus. The previous 2000 us default was
+    //                        sized for high speed and expired on healthy FS
+    //                        traffic - measured reference: a 64-byte FS
     //                        INTERRUPT IN loopback in
     //                        caliptra_ss_usb_fs_dev_int_iso_mix took about
-    //                        2019 us end to end. Raise this per call site
-    //                        instead of raising the global default, so the
-    //                        guard stays tight for the high-speed tests.
+    //                        2019 us end to end. No FS call site needs a
+    //                        local override any more; see wait_xfer_done()
+    //                        for the full rationale. Pass a tighter value
+    //                        only where the test itself has a stricter
+    //                        latency expectation.
     // -------------------------------------------------------------------
     task do_data_xfer(
         input  svt_usb_agent         agent_h,
@@ -1254,7 +1271,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input  bit                   no_zero_length_end = 0,
         input  bit                   single_isoc_txn    = 0,
         input  bit                   fork_wait          = 1,
-        input  int unsigned          timeout_us         = 2000
+        input  int unsigned          timeout_us         = 10000
     );
         if (no_zero_length_end && single_isoc_txn)
             `uvm_fatal("USB_BASE_SEQ",
