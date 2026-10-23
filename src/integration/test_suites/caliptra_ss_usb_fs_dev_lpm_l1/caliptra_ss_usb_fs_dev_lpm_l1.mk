@@ -12,4 +12,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+VCS_SIM_OPTS += +UVM_TESTNAME=caliptra_ss_usb_fs_dev_lpm_l1_test
 VCS_SIM_OPTS += +usb_suspend_resume_check=1
