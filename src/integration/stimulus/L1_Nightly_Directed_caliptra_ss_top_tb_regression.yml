@@ -226,3 +226,10 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_release/smoke_test_mcu_rom_patch_sram_release: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_mcu_rom_patch_sram_reuse/smoke_test_mcu_rom_patch_sram_reuse: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_cptra_uds_fe_soc_write_blocked/smoke_test_cptra_uds_fe_soc_write_blocked: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_int_loopback/caliptra_ss_usb_fs_dev_int_loopback: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_hub_port_suspend/caliptra_ss_usb_fs_dev_hub_port_suspend: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_fs_dev_lpm_l1/caliptra_ss_usb_fs_dev_lpm_l1: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_int_loopback/caliptra_ss_usb_hs_dev1_int_loopback: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_hub_port_suspend/caliptra_ss_usb_hs_dev1_hub_port_suspend: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_get_hub_descriptor/caliptra_ss_usb_hs_dev1_get_hub_descriptor: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev1_hub_config_descriptor/caliptra_ss_usb_hs_dev1_hub_config_descriptor: { weight: 100 }
