@@ -421,12 +421,9 @@ void boot_usb_core(bool fs_en, bool hub_en) {
     }
     if (hub_en) {
         reg_data |= DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK;
-        usb_devcmdstat_write(reg_data);
-        reg_data |= DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK;
-    } else {
-        lsu_write_32(USB_DEV_DEVCMDSTAT, reg_data);
     }
-    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data);
+    usb_devcmdstat_write(reg_data);
+    VPRINTF(LOW, "MCU: USB DEVCMDSTAT written = 0x%x\n", reg_data | DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK);
 
     // Read back to confirm
     reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
