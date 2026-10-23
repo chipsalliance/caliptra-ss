@@ -98,8 +98,6 @@ module caliptra_ss_top_tb
     logic [1:0] cptra_ss_usb_utmi_opmode_o, cptra_ss_usb_utmi_linestate_i, usb_dut_vip_xcvrselect;
     logic [3:0] cptra_ss_usb_utmi_vcontrol_o;
     logic cptra_ss_usb_USB_VBus_i, cptra_ss_usb_async_disable_i;
-    logic cptra_ss_usb_donotwakeup_n_i, cptra_ss_usb_dev_wakeup_n_i;
-    logic cptra_ss_usb_enable_hub_i, cptra_ss_usb_self_powered_i;
     logic cptra_ss_usb_ulpi_clk_i, cptra_ss_usb_ulpi_txenable_o, cptra_ss_usb_ulpi_dir_i, cptra_ss_usb_ulpi_stp_o;
     logic cptra_ss_usb_ulpi_nxt_i, cptra_ss_usb_ulpi_ddr_sel_i;
     logic [7:0] cptra_ss_usb_ulpi_rxdata_i, cptra_ss_usb_ulpi_txdata_o;
