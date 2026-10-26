@@ -248,12 +248,6 @@ By performing these design and verification tasks, the integrator ensures that t
 
 It is mandatory that any build processes used (e.g. simulation, lint, synthesis) define the Verilog macro `CALIPTRA_MODE_SUBSYSTEM`, as described in the [Caliptra Core Integration Specification](https://github.com/chipsalliance/caliptra-rtl/blob/main/docs/CaliptraIntegrationSpecification.md). This ensures that Caliptra provides all Subsystem-related features and configuration. Example build scripts provided in the Caliptra Subsystem repository (such as [Makefile](../tools/scripts/Makefile)) demonstrate how this might be performed.
 
-## Scan-mode Asynchronous Reset Muxes
-
-Scan-mode selection of asynchronous resets uses `caliptra_prim_rst_mux2`. A low `sel_i` selects the functional reset on `rst0_i`; a high `sel_i` selects the scan reset on `rst1_i`. The select must be known.
-
-The generic implementation, `caliptra_prim_generic_rst_mux2`, is combinational logic and does not guarantee glitchless behavior. Integrators must replace it with a technology-specific glitchless reset mux using `CALIPTRA_PRIM_ROOT` and `CALIPTRA_PRIM_MODULE_PREFIX`, following the primitive replacement and preservation requirements in the Caliptra Core Integration Specification. The replacement must support static reset inputs; a clock mux that requires toggling inputs is not sufficient.
-
 ## Design Considerations
 
 1. **Replace the AXI Interconnect**:
