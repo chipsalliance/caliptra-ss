@@ -107,9 +107,26 @@ logic min_mcu_rst_count_elapsed_nxt;
 /////////////////////////////////////////////////
 // DFT                                 
 /////////////////////////////////////////////////
-assign cptra_ss_rst_b_o   = scan_mode ? mci_rst_b           :  cptra_ss_rst_b_o_ff;
-assign mcu_rst_b          = scan_mode ? mci_rst_b           :  mcu_rst_b_ff;
-assign cptra_rst_b        = scan_mode ? mci_rst_b           :  cptra_rst_b_ff;
+caliptra_prim_rst_mux2 cptra_ss_rst_mux (
+    .rst0_i(cptra_ss_rst_b_o_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_ss_rst_b_o)
+);
+
+caliptra_prim_rst_mux2 mcu_rst_mux (
+    .rst0_i(mcu_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (mcu_rst_b)
+);
+
+caliptra_prim_rst_mux2 cptra_rst_mux (
+    .rst0_i(cptra_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_rst_b)
+);
 
 /////////////////////////////////////////////////
 // Reset Window                        
