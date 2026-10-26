@@ -142,7 +142,14 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
-caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
+caliptra_prim_flop_2sync #(
+  .Width(1),
+  .ResetValue(1'b1)
+) i_rst_window_sync (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(mci_rst_window),
+  .q_o(mci_rst_window_sync));
 
 
 always_ff @(posedge clk or negedge mci_pwrgood) begin
