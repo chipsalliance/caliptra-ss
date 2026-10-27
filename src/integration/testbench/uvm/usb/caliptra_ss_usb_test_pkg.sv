@@ -105,6 +105,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
+  `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_test.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev_hub_port_suspend_sequence.svh"
