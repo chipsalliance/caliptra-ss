@@ -195,6 +195,8 @@ global:
         - +define+AVERY_CLOCK=5
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
+        # Uncomment and rebuild to generate AXI *_intf.txt logs instead of routing to /dev/null.
+        #- +define+CALIPTRA_SS_AXI_INTF_TRACK
         - +define+AAXI_MAX_DATA_WIDTH=64
         - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
@@ -247,6 +249,10 @@ global:
         #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
+        # Uncomment either runtime plusarg to generate AXI *_tracker.txt logs (no rebuild).
+        # ENDPOINTS logs external BFMs; ALL also logs internal/default ports and takes precedence.
+        #- '+CALIPTRA_SS_AXI_TRACK_ENDPOINTS'
+        #- '+CALIPTRA_SS_AXI_TRACK_ALL'
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
