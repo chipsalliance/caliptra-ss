@@ -50,8 +50,6 @@ requires:
   - fuse_ctrl
   - mci_top
   - caliptra_top
-  - spi_host_subsystem
-  - uart_subsystem
 targets:
   rtl_lint:
     waiver_files:
