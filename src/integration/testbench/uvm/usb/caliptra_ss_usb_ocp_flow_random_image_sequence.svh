@@ -76,9 +76,9 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         int unsigned min_image_dwords;
         int unsigned max_image_dwords;
 
-        if (!get_sem_vif()) return;
+        if (!ocp_configure_sem_vif()) return;
         apply_config();
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
         nak_callback =
             caliptra_ss_usb_nak_monitor_callback::type_id::create(
                 "nak_callback");
@@ -87,14 +87,14 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
             svt_usb_link_monitor_callback)::add(
                 host_agent_h.link_mon, nak_callback);
 
-        prot_cap_read_and_check(agent_caps, cms_count, heartbeat_period);
+        ocp_do_read_and_check_prot_cap(agent_caps, cms_count, heartbeat_period);
         if (!agent_caps[OCP_CAP_PUSH_C_IMAGE] ||
             !agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
             `uvm_fatal("OCP_FLOW_006",
                 $sformatf("PROT_CAP lacks Push C-image/FIFO CMS support: 0x%04h.",
                           agent_caps))
         end
-        require_recovery_status_pair(
+        ocp_do_poll_and_check_recovery_status_pair(
             OCP_DEVICE_STATUS_RECOVERY_MODE,
             OCP_RECOVERY_STATUS_AWAITING_IMAGE,
             4'h0, 8'h00, OCP_PROTOCOL_ERROR_NONE,
@@ -103,7 +103,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         read_and_check_status(status, "FLOW006_FIFO_DISCOVERY");
         if ((status.region_type != OCP_REGION_RECOVERY_CODE_WO) ||
             (status.fifo_size == 0) ||
-            (legal_max_chunk_dwords(status) == 0)) begin
+            (ocp_get_max_chunk_dwords(status) == 0)) begin
             `uvm_fatal("OCP_FLOW_006",
                 $sformatf({"Invalid FIFO discovery: type=0x%02h size=%0d ",
                            "max_transfer=%0d."},
@@ -112,7 +112,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         end
 
         min_image_dwords =
-            status.fifo_size + legal_max_chunk_dwords(status) + 1;
+            status.fifo_size + ocp_get_max_chunk_dwords(status) + 1;
         max_image_dwords = status.fifo_size * 3;
         if (max_image_dwords > FLOW_MAX_IMAGE_DWORDS)
             max_image_dwords = FLOW_MAX_IMAGE_DWORDS;
@@ -133,10 +133,10 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
             $sformatf({"Starting randomized multi-batch flow: ",
                        "image_dwords=%0d fifo_size=%0d max_chunk=%0d."},
                       image_dwords, status.fifo_size,
-                      legal_max_chunk_dwords(status)),
+                      ocp_get_max_chunk_dwords(status)),
             UVM_NONE)
 
-        prepare_fifo_image(
+        ocp_do_fifo_image_config_xfers(
             cms, OCP_RC_IMAGE_SEL_CMS, image_dwords,
             "FLOW006_RECOVERY_CTRL_SELECT", "FLOW006_FIFO_CTRL");
         successful_attempts = 0;
@@ -155,7 +155,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
             `uvm_fatal("OCP_FLOW_006",
                 "Multi-batch flow observed no USB PING retry tokens.")
         end
-        wait_fw_state_generation_bounded(
+        ocp_wait_fw_state_generation(
             OCP_FW_STATE_RECOVERY_PENDING, 16'h0000,
             FLOW_STATUS_TIMEOUT, "FLOW006_PENDING_FW", "OCP_FLOW_006");
         read_and_check_status(status, "FLOW006_FINAL_EMPTY");
@@ -168,47 +168,47 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
                           status.empty, status.full, status.write_index,
                           status.read_index))
         end
-        require_recovery_status_pair(
+        ocp_do_poll_and_check_recovery_status_pair(
             OCP_DEVICE_STATUS_RECOVERY_PENDING,
             OCP_RECOVERY_STATUS_AWAITING_IMAGE,
             4'h0, 8'h00, OCP_PROTOCOL_ERROR_NONE,
             2000, 10us, "PENDING", "OCP_FLOW_006");
 
         sem_vif.clear_recovery_image_activated_seen();
-        recovery_ctrl_write(
+        ocp_do_recovery_ctrl_write(
             cms, OCP_RC_IMAGE_SEL_CMS, 1'b1,
             "FLOW006_ACTIVATE");
-        wait_for_recovery_activation_observed(
+        ocp_poll_recovery_activation(
             1000us, 1us, "FLOW006_ACTIVATE", "OCP_FLOW_006");
 
-        wait_fw_state_generation_bounded(
+        ocp_wait_fw_state_generation(
             sem_vif.FW_STATE_FLOW_BOOTING_READY, 16'h0000,
             FLOW_STATUS_TIMEOUT, "FLOW006_BOOTING_READY", "OCP_FLOW_006");
-        require_recovery_status_pair(
+        ocp_do_poll_and_check_recovery_status_pair(
             OCP_DEVICE_STATUS_RUNNING_RECOVERY,
             OCP_RECOVERY_STATUS_BOOTING_IMAGE,
             4'h0, 8'h00, OCP_PROTOCOL_ERROR_NONE,
             2000, 10us, "BOOTING", "OCP_FLOW_006");
 
-        issue_fw_command_and_wait(
+        ocp_issue_fw_command_and_wait(
             sem_vif.FW_COMMAND_FLOW_ADVANCE,
             16'h0001,
             sem_vif.FW_STATE_FLOW_SUCCESS_READY,
             FLOW_STATUS_TIMEOUT, "FLOW006_SUCCESS_READY", "OCP_FLOW_006");
-        require_recovery_status_pair(
+        ocp_do_poll_and_check_recovery_status_pair(
             OCP_DEVICE_STATUS_RUNNING_RECOVERY,
             OCP_RECOVERY_STATUS_SUCCESS,
             4'h0, 8'h00, OCP_PROTOCOL_ERROR_NONE,
             2000, 10us, "SUCCESS", "OCP_FLOW_006");
 
-        issue_fw_command_and_wait(
+        ocp_issue_fw_command_and_wait(
             sem_vif.FW_COMMAND_FLOW_COMPLETE,
             16'h0002,
             sem_vif.FW_STATE_FLOW_COMPLETE,
             FLOW_STATUS_TIMEOUT, "FLOW006_COMPLETE", "OCP_FLOW_006");
 
-        wait_mcu_axi_idle_before_finish("OCP_FLOW_006");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("OCP_FLOW_006");
+        ocp_publish_transfer_count();
         `uvm_info("OCP_FLOW_006",
             $sformatf({"Randomized recovery flow complete: image_dwords=%0d ",
                        "chunks=%0d observed_naks=%0d observed_pings=%0d ",

@@ -155,7 +155,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         int iface_num;
         int payload_size;
 
-        iface_num = get_iface_num();
+        iface_num = ocp_get_iface_num();
         payload_size = wMaxWrTransferSize;
 
         req = svt_usb_transfer::type_id::create({label, "_req"});
@@ -271,7 +271,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
             $sformatf({"[FIRMWARE_PROTOCOL_ERROR] %s: aborted transfer retired at %0t with ",
                        "result %s."},
                       label, $realtime,
-                      get_xfer_result(req).name()), UVM_NONE)
+                      ocp_get_xfer_result(req).name()), UVM_NONE)
 
         // Issue a valid, unclaimed standard request. Only its SETUP ACK is
         // required: the replacement SETUP itself is the abort stimulus.
@@ -347,9 +347,9 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
 
         // Configure the FIFO region so the control-OUT INDIRECT_FIFO_DATA
         // transfer is a legal OCP claim rather than a pre-DATA reject.
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             8'h00, 1'b1, 32'h0000_0040, "FW_ERROR_FIFO_CTRL_RESET");
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             8'h00, 1'b0, 32'h0000_0040, "FW_ERROR_FIFO_CTRL_ARM");
 
         // Deliver the trigger via the canonical replacement-SETUP path.
@@ -369,23 +369,23 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         end
 
         // USB RA read pattern: 0xFF present -> cleared on next read -> 0.
-        device_status_read_and_check(device_status, "FW_ERROR_USB_STATUS_1");
+        ocp_do_read_and_check_device_status(device_status, "FW_ERROR_USB_STATUS_1");
         check_prot_error_byte(
             "FW_ERROR_USB_STATUS_1 first read", device_status,
             OCP_PROTOCOL_ERROR_GENERAL);
 
-        device_status_read_and_check(second_status, "FW_ERROR_USB_STATUS_2");
+        ocp_do_read_and_check_device_status(second_status, "FW_ERROR_USB_STATUS_2");
         check_prot_error_byte(
             "FW_ERROR_USB_STATUS_2 cleared", second_status,
             OCP_PROTOCOL_ERROR_NONE);
 
-        device_status_read_and_check(third_status, "FW_ERROR_USB_STATUS_3");
+        ocp_do_read_and_check_device_status(third_status, "FW_ERROR_USB_STATUS_3");
         check_prot_error_byte(
             "FW_ERROR_USB_STATUS_3 stable-zero", third_status,
             OCP_PROTOCOL_ERROR_NONE);
 
-        publish_transfer_count();
-        wait_mcu_axi_idle_before_finish("FW_ERROR_FINISH");
+        ocp_publish_transfer_count();
+        ocp_poll_mcu_axi_idle("FW_ERROR_FINISH");
 
         `uvm_info("OCP_FIRMWARE_ERROR",
             "[FIRMWARE_PROTOCOL_ERROR] Firmware-originated 0xFF and clear-on-RA-read complete.",

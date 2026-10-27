@@ -114,6 +114,7 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
         input int unsigned generation,
         input ocp_protocol_error_e expected_protocol_error,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] device_status_response[$];
         bit [7:0] recovery_status_response[$];
@@ -135,17 +136,17 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
             expected_vendor_status,
             expected_hw_status);
 
-        ocp_read(
+        ocp_do_read(
             OCP_CMD_RECOVERY_STATUS,
-            recovery_status_response,
+            recovery_status_response, ignored_result,
             {label, "_RECOVERY_STATUS"});
-        ocp_read(
+        ocp_do_read(
             OCP_CMD_HW_STATUS,
-            hw_status_response,
+            hw_status_response, ignored_result,
             {label, "_HW_STATUS"});
-        ocp_read(
+        ocp_do_read(
             OCP_CMD_DEVICE_STATUS,
-            device_status_response,
+            device_status_response, ignored_result,
             {label, "_DEVICE_STATUS"});
 
         if (device_status_response.size() <= OCP_OFF_DS_REC_REASON_HI) begin
@@ -227,7 +228,7 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
         payload = '{8'hA5};
         arb_checker.packet_callback.start_window(packet_window_generation);
         packet_window_generation++;
-        ocp_try_write(command, payload, result, label);
+        ocp_do_write(command, payload, result, label, 0);
         arb_checker.packet_callback.stop_window();
         stall_count = arb_checker.packet_callback.count_pid(
             svt_usb_packet::STALL,
@@ -246,9 +247,9 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
     endtask
 
     virtual task body();
-        if (!get_sem_vif()) return;
+        if (!ocp_configure_sem_vif()) return;
         if (!get_arb_chk()) return;
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
 
         for (int unsigned generation = 1; generation <= 5; generation++) begin
             wait_fw_generation(
@@ -301,8 +302,8 @@ class caliptra_ss_usb_ocp_firmware_status_ownership_sequence
 
         wait_fw_generation(
             OCP_STATUS_OWNERSHIP_STATE_DONE, 16'd5, "OCP_STATUS_DONE");
-        wait_mcu_axi_idle_before_finish("OCP_STATUS_OWNERSHIP");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("OCP_STATUS_OWNERSHIP");
+        ocp_publish_transfer_count();
         `uvm_info("OCP_STATUS_OWNERSHIP",
             "Firmware-owned status milestone and host-read-only matrix complete.",
             UVM_NONE)

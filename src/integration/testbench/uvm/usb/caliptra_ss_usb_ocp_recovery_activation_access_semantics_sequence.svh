@@ -102,10 +102,11 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     protected virtual task read_recovery_ctrl_activate(
         output logic [7:0] activate_out,
         input  string      label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] resp[$];
         activate_out = 8'hFF;
-        ocp_read(OCP_CMD_RECOVERY_CTRL, resp, label);
+        ocp_do_read(OCP_CMD_RECOVERY_CTRL, resp, ignored_result, label);
         if (resp.size() < (OCP_OFF_RC_ACTIVATE + 1)) begin
             `uvm_error("RA_SEM_SEQ",
                 $sformatf("%s: RECOVERY_CTRL response too short (%0d bytes).",
@@ -134,6 +135,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     endtask
 
     virtual task body();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [15:0]  agent_caps;
         bit [7:0]   cms_count;
         bit [7:0]   heartbeat_period;
@@ -143,10 +145,10 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         bit [7:0]   device_status[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
 
-        if (!get_sem_vif()) return;
+        if (!ocp_configure_sem_vif()) return;
 
-        initialize_ocp_transport();
-        prot_cap_read_and_check(agent_caps, cms_count, heartbeat_period);
+        ocp_do_initialize_and_check_transport();
+        ocp_do_read_and_check_prot_cap(agent_caps, cms_count, heartbeat_period);
         sem_vif.clear_i3c_recovery_seen();
         if (sem_vif.i3c_recovery_image_activated !== 1'b0) begin
             `uvm_fatal("OCP_ACTIVATION_LEVEL",
@@ -165,7 +167,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
 
         // Program IMAGE_SIZE as a protocol-visible start trigger for firmware.
         // Data is not pushed until the pre-RA level checks end.
-        indirect_fifo_ctrl_write(8'h00, 1'b0, 32'd1,
+        ocp_do_fifo_ctrl_write(8'h00, 1'b0, 32'd1,
                                  "RA_SEM_FIFO_START_TRIGGER");
 
         wait_fw_state(RA_SEM_STATE_FW_NONZERO_STORED_PRE,
@@ -205,17 +207,17 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         // -----------------------------------------------------------------
         // Initiate recovery: write RECOVERY_CTRL with Activate=0x00.
         // -----------------------------------------------------------------
-        recovery_ctrl_write(8'h00, 8'h00, 1'b0, "RA_SEM_RC_INIT");
+        ocp_do_recovery_ctrl_write(8'h00, 8'h00, 1'b0, "RA_SEM_RC_INIT");
 
         // Write the deterministic one-DWORD image.
         payload = '{ACT_FIFO_DWORD[7:0],  ACT_FIFO_DWORD[15:8],
                     ACT_FIFO_DWORD[23:16], ACT_FIFO_DWORD[31:24]};
-        ocp_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, "RA_SEM_FIFO_DATA");
+        ocp_do_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, ignored_result, "RA_SEM_FIFO_DATA");
 
         // -----------------------------------------------------------------
         // USB write RECOVERY_CTRL ACTIVATE=0x0F.
         // -----------------------------------------------------------------
-        recovery_ctrl_write(8'h00, 8'h00, 1'b1, "RA_SEM_RC_ACTIVATE");
+        ocp_do_recovery_ctrl_write(8'h00, 8'h00, 1'b1, "RA_SEM_RC_ACTIVATE");
 
         // -----------------------------------------------------------------
         // Wait RA_ACTIVATE_PENDING; confirm ACTIVATE=0x0F repeatedly.
@@ -270,8 +272,8 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         // waits for the RA DEVICE_STATUS read to clear it.
         // -----------------------------------------------------------------
         payload = '{8'h00};
-        ocp_try_write(
-            OCP_CMD_PROT_CAP, payload, result, "RA_SEM_ZERO_ARM_TRIGGER");
+        ocp_do_write(
+            OCP_CMD_PROT_CAP, payload, result, "RA_SEM_ZERO_ARM_TRIGGER", 0);
         if (result == OCP_XFER_ABORTED) begin
             `uvm_fatal("RA_SEM_SEQ",
                 "Pre-zero protocol-error trigger aborted.")
@@ -287,8 +289,8 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         // The RA read clears PROT_ERROR and releases firmware toward the zero
         // write. The exact DEVICE_STATUS length is checked by the command test;
         // this read is used only as the protocol-defined clear operation.
-        ocp_read(
-            OCP_CMD_DEVICE_STATUS, device_status, "RA_SEM_ZERO_ARM_RELEASE");
+        ocp_do_read(
+            OCP_CMD_DEVICE_STATUS, device_status, ignored_result, "RA_SEM_ZERO_ARM_RELEASE");
 
         // -----------------------------------------------------------------
         // Wait FW_ACTIVATE_CLEARED; verify RECOVERY_CTRL readback zero.
@@ -322,8 +324,8 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 "I3C image-activated source asserted during USB route validation.")
         end
 
-        wait_mcu_axi_idle_before_finish("OCP_ACTIVATION_LEVEL");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("OCP_ACTIVATION_LEVEL");
+        ocp_publish_transfer_count();
 
         `uvm_info("RA_SEM_SEQ",
             "OCP_SEM_003 complete: recovery activation stored-level semantics checked.",

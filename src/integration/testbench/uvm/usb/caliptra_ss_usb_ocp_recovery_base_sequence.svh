@@ -63,7 +63,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         ping_retry_callback_registered = 1'b0;
     endfunction
 
-    protected virtual function bit get_sem_vif();
+    protected virtual function bit ocp_configure_sem_vif();
         if (!uvm_config_db#(
                 virtual caliptra_ss_usb_ocp_access_semantics_if)::get(
                     null, "uvm_test_top.env",
@@ -75,7 +75,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         return 1'b1;
     endfunction
 
-    protected virtual function int get_iface_num();
+    protected virtual function int ocp_get_iface_num();
         caliptra_ss_usb_shared_cfg scfg;
         if (uvm_config_db#(caliptra_ss_usb_shared_cfg)::get(
                 null, "", "cfg", scfg)) begin
@@ -85,7 +85,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
     endfunction
 
     protected virtual function caliptra_ss_usb_ocp_xfer_result_e
-        get_xfer_result(svt_usb_transfer req);
+        ocp_get_xfer_result(svt_usb_transfer req);
         if ((req == null) || (req.status == svt_sequence_item::ABORTED)) begin
             return OCP_XFER_ABORTED;
         end
@@ -95,7 +95,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         return OCP_XFER_SUCCESS;
     endfunction
 
-    protected virtual function void copy_in_payload(
+    protected virtual function void ocp_copy_in_payload(
         input svt_usb_transfer req,
         input int unsigned max_bytes,
         ref bit [7:0] resp_bytes[$]);
@@ -130,28 +130,28 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endfunction
 
-    protected virtual function bit [15:0] get_le16(
+    protected virtual function bit [15:0] ocp_get_le16(
         ref bit [7:0] bytes[$], input int offset);
         return {bytes[offset + 1], bytes[offset]};
     endfunction
 
-    protected virtual function bit [31:0] get_le32(
+    protected virtual function bit [31:0] ocp_get_le32(
         ref bit [7:0] bytes[$], input int offset);
         return {bytes[offset + 3], bytes[offset + 2],
                 bytes[offset + 1], bytes[offset]};
     endfunction
 
-    protected virtual function int unsigned bytes_to_dwords(
+    protected virtual function int unsigned ocp_bytes_to_dwords(
         input int unsigned byte_count);
         return (byte_count + 3) / 4;
     endfunction
 
-    protected virtual function int unsigned dwords_to_bytes(
+    protected virtual function int unsigned ocp_dwords_to_bytes(
         input int unsigned dword_count);
         return dword_count * 4;
     endfunction
 
-    protected virtual function int unsigned legal_max_chunk_dwords(
+    protected virtual function int unsigned ocp_get_max_chunk_dwords(
         input fifo_status_s status);
         int unsigned usb_limit_dwords;
 
@@ -161,38 +161,39 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         return usb_limit_dwords;
     endfunction
 
-    protected virtual function automatic void slice_image_payload(
+    protected virtual function automatic void ocp_prepare_image_payload_slice(
         ref byte_queue_t source_bytes,
         input int unsigned start_dword,
         input int unsigned dword_count,
         ref bit [7:0] payload[$]);
 
         payload.delete();
-        for (int unsigned i = dwords_to_bytes(start_dword);
-             (i < dwords_to_bytes(start_dword + dword_count)) &&
+        for (int unsigned i = ocp_dwords_to_bytes(start_dword);
+             (i < ocp_dwords_to_bytes(start_dword + dword_count)) &&
              (i < source_bytes.size());
              i++) begin
             payload.push_back(source_bytes[i]);
         end
     endfunction
 
-    protected virtual function void configure_ocp_transfer(
+    protected virtual function void ocp_configure_xfer(
         input svt_usb_transfer request);
     endfunction
 
-    protected virtual function void completed_ocp_transfer(
+    protected virtual function void ocp_note_xfer_completed(
         input svt_usb_transfer request,
         input caliptra_ss_usb_ocp_xfer_result_e result);
     endfunction
 
-    protected virtual task ocp_class_xfer_result(
+    protected virtual task ocp_do_class_xfer(
         input bit dir_in,
         input ocp_cmd_t cmd_code,
         input bit [15:0] wlength,
         ref bit [7:0] payload_bytes[$],
         ref bit [7:0] resp_bytes[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
-        input string label);
+        input string label,
+        input bit check_success = 0);
 
         svt_usb_transfer req;
         bit completed;
@@ -208,7 +209,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         submission_started = 1'b0;
         fork : bounded_ocp_request
             begin
-                execute_ocp_class_xfer(req, submission_started, dir_in,
+                ocp_do_class_xfer_impl(req, submission_started, dir_in,
                     cmd_code, wlength, request_payload, response_payload,
                     request_result, label);
                 completed = 1'b1;
@@ -225,10 +226,15 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         disable bounded_ocp_request;
         resp_bytes = response_payload;
         result = request_result;
-        completed_ocp_transfer(req, result);
+        ocp_note_xfer_completed(req, result);
+        if (check_success && (result != OCP_XFER_SUCCESS)) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s cmd=0x%02h did not complete successfully (%s).",
+                          label, cmd_code, result.name()))
+        end
     endtask
 
-    protected task execute_ocp_class_xfer(
+    protected task ocp_do_class_xfer_impl(
         input svt_usb_transfer req,
         ref bit submission_started,
         input bit dir_in, input ocp_cmd_t cmd_code,
@@ -246,7 +252,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         bm_dir   = dir_in ? svt_usb_types::DEVICE_TO_HOST
                           : svt_usb_types::HOST_TO_DEVICE;
         wvalue_v = {8'h00, cmd_code};
-        windex_v = {8'h00, 8'(get_iface_num())};
+        windex_v = {8'h00, 8'(ocp_get_iface_num())};
 
         start_item(req, -1, p_sequencer.xfer_sequencer);
         if (usb_cfg != null) begin
@@ -285,7 +291,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 $sformatf("Transfer randomization failed for %s.", label))
         end
 
-        configure_ocp_transfer(req);
+        ocp_configure_xfer(req);
         // Arm completion before handing the request to the VIP: an immediate
         // STALL may otherwise complete before the event waiter is installed.
         fork
@@ -304,9 +310,9 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             resp_bytes.delete();
             return;
         end
-        result = get_xfer_result(req);
+        result = ocp_get_xfer_result(req);
         if (dir_in && (result == OCP_XFER_SUCCESS)) begin
-            copy_in_payload(req, wlength, resp_bytes);
+            ocp_copy_in_payload(req, wlength, resp_bytes);
         end else begin
             resp_bytes.delete();
         end
@@ -318,7 +324,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             UVM_NONE)
     endtask
 
-    protected virtual task configure_ep0_nak_retry_limit(
+    protected virtual task ocp_configure_ep0_nak_retry_limit(
         input int unsigned retry_limit,
         input int unsigned endpoint_retry_limit = 1);
         if ((usb_cfg == null) ||
@@ -344,53 +350,26 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         host_agent_h.reconfigure(usb_cfg);
     endtask
 
-    protected virtual task ocp_class_xfer(
-        input bit dir_in,
-        input bit [7:0] cmd_code,
-        input bit [15:0] wlength,
-        ref bit [7:0] payload_bytes[$],
-        ref bit [7:0] resp_bytes[$],
-        input string label);
-
-        caliptra_ss_usb_ocp_xfer_result_e result;
-
-        ocp_class_xfer_result(
-            dir_in, ocp_cmd_t'(cmd_code), wlength,
-            payload_bytes, resp_bytes, result, label);
-    endtask
-
-    protected virtual task ocp_try_read(
+    protected virtual task ocp_do_read(
         input ocp_cmd_t cmd_code,
         ref bit [7:0] resp_bytes[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
-        input string label);
+        input string label,
+        input bit check_success = 1);
 
         bit [7:0] empty_payload[$];
         empty_payload.delete();
-        ocp_class_xfer_result(
+        ocp_do_class_xfer(
             1'b1, cmd_code, 16'(wMaxRdTransferSize),
-            empty_payload, resp_bytes, result, label);
+            empty_payload, resp_bytes, result, label, check_success);
     endtask
 
-    protected virtual task ocp_read(
-        input ocp_cmd_t cmd_code,
-        ref bit [7:0] resp_bytes[$],
-        input string label);
-
-        caliptra_ss_usb_ocp_xfer_result_e result;
-        ocp_try_read(cmd_code, resp_bytes, result, label);
-        if (result != OCP_XFER_SUCCESS) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("%s cmd=0x%02h did not complete successfully (%s).",
-                          label, cmd_code, result.name()))
-        end
-    endtask
-
-    protected virtual task ocp_try_write(
+    protected virtual task ocp_do_write(
         input ocp_cmd_t cmd_code,
         ref bit [7:0] payload_bytes[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
-        input string label);
+        input string label,
+        input bit check_success = 1);
 
         bit [7:0] resp_bytes[$];
         if (payload_bytes.size() > wMaxWrTransferSize) begin
@@ -398,53 +377,29 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 $sformatf("%s payload length %0d exceeds wMaxWrTransferSize=%0d.",
                           label, payload_bytes.size(), wMaxWrTransferSize))
         end
-        ocp_class_xfer_result(
+        ocp_do_class_xfer(
             1'b0, cmd_code, 16'(payload_bytes.size()),
-            payload_bytes, resp_bytes, result, label);
+            payload_bytes, resp_bytes, result, label, check_success);
     endtask
 
-    protected virtual task ocp_write(
-        input ocp_cmd_t cmd_code,
-        ref bit [7:0] payload_bytes[$],
-        input string label);
-
-        caliptra_ss_usb_ocp_xfer_result_e result;
-        ocp_try_write(cmd_code, payload_bytes, result, label);
-        if (result != OCP_XFER_SUCCESS) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("%s cmd=0x%02h did not complete successfully (%s).",
-                          label, cmd_code, result.name()))
-        end
-    endtask
-
-    protected virtual task recovery_ctrl_write(
+    protected virtual function void ocp_prepare_recovery_ctrl_payload(
         input bit [7:0] cms,
         input bit [7:0] image_selection,
         input bit activate,
-        input string label);
+        output bit [7:0] payload[$]);
 
-        bit [7:0] payload[$];
-
-        if (image_selection > 8'h02) begin
-            `uvm_fatal("OCP_BASE",
-                $sformatf("%s image selection 0x%02h is reserved.",
-                          label, image_selection))
-        end
         payload = '{
             cms,
             image_selection,
             activate ? OCP_RC_ACTIVATE_CODE : 8'h00
         };
-        ocp_write(OCP_CMD_RECOVERY_CTRL, payload, label);
-    endtask
+    endfunction
 
-    protected virtual task indirect_fifo_ctrl_write(
+    protected virtual function void ocp_prepare_fifo_ctrl_payload(
         input bit [7:0] cms,
         input bit reset_fifo,
         input bit [31:0] image_size_dwords,
-        input string label);
-
-        bit [7:0] payload[$];
+        output bit [7:0] payload[$]);
 
         payload = '{
             cms,
@@ -454,99 +409,102 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             image_size_dwords[23:16],
             image_size_dwords[31:24]
         };
-        ocp_write(OCP_CMD_INDIRECT_FIFO_CTRL, payload, label);
+    endfunction
+
+    protected virtual task ocp_do_recovery_ctrl_write(
+        input bit [7:0] cms,
+        input bit [7:0] image_selection,
+        input bit activate,
+        input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+
+        bit [7:0] payload[$];
+
+        if (image_selection > 8'h02) begin
+            `uvm_fatal("OCP_BASE",
+                $sformatf("%s image selection 0x%02h is reserved.",
+                          label, image_selection))
+        end
+        ocp_prepare_recovery_ctrl_payload(
+            cms, image_selection, activate, payload);
+        ocp_do_write(OCP_CMD_RECOVERY_CTRL, payload, ignored_result, label);
     endtask
 
-    protected virtual task prepare_fifo_image(
+    protected virtual task ocp_do_fifo_ctrl_write(
+        input bit [7:0] cms,
+        input bit reset_fifo,
+        input bit [31:0] image_size_dwords,
+        input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+
+        bit [7:0] payload[$];
+
+        ocp_prepare_fifo_ctrl_payload(
+            cms, reset_fifo, image_size_dwords, payload);
+        ocp_do_write(OCP_CMD_INDIRECT_FIFO_CTRL, payload, ignored_result, label);
+    endtask
+
+    protected virtual task ocp_do_fifo_image_config_xfers(
         input bit [7:0] cms,
         input bit [7:0] image_selection,
         input bit [31:0] image_size_dwords,
         input string recovery_ctrl_label,
         input string fifo_ctrl_label);
 
-        recovery_ctrl_write(
+        ocp_do_recovery_ctrl_write(
             cms, image_selection, 1'b0, recovery_ctrl_label);
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             cms, 1'b1, image_size_dwords, fifo_ctrl_label);
     endtask
 
-    protected virtual task indirect_fifo_data_try_write(
+    protected virtual task ocp_do_fifo_data_write(
         ref bit [7:0] payload[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
-        input string label);
+        input string label,
+        input bit check_success = 1);
 
         if (payload.size() < OCP_SPEC_MIN_LEN_INDIRECT_FIFO_DATA) begin
             `uvm_fatal("OCP_BASE",
                 $sformatf("%s requires at least one payload byte.", label))
         end
-        ocp_try_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, result, label);
+        ocp_do_write(OCP_CMD_INDIRECT_FIFO_DATA, payload, result, label, check_success);
     endtask
 
-    protected virtual task indirect_fifo_data_write(
-        ref bit [7:0] payload[$],
-        input string label);
-
-        caliptra_ss_usb_ocp_xfer_result_e result;
-
-        indirect_fifo_data_try_write(payload, result, label);
-        if (result != OCP_XFER_SUCCESS) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("%s cmd=0x%02h did not complete successfully (%s).",
-                          label, OCP_CMD_INDIRECT_FIFO_DATA, result.name()))
-        end
-    endtask
-
-    protected virtual task indirect_fifo_status_read(
+    protected virtual task ocp_do_read_and_check_fifo_status(
         ref bit [7:0] response[$],
-        output bit fifo_empty,
-        output bit fifo_full,
-        output bit [7:0] region_type,
-        output bit [31:0] write_index,
-        output bit [31:0] read_index,
-        output bit [31:0] fifo_size,
-        output bit [31:0] max_transfer_dwords,
+        output fifo_status_s status,
         input string label);
 
-        ocp_read(OCP_CMD_INDIRECT_FIFO_STATUS, response, label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+        ocp_do_read(OCP_CMD_INDIRECT_FIFO_STATUS, response, ignored_result, label);
         if (response.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) begin
             `uvm_error("OCP_BASE",
                 $sformatf("%s response length=%0d, expected %0d.",
                           label, response.size(),
                           OCP_SPEC_LEN_INDIRECT_FIFO_STATUS))
-            fifo_empty          = 1'b0;
-            fifo_full           = 1'b0;
-            region_type         = '0;
-            write_index         = '0;
-            read_index          = '0;
-            fifo_size           = '0;
-            max_transfer_dwords = '0;
+            status.empty               = 1'b0;
+            status.full                = 1'b0;
+            status.region_type         = '0;
+            status.write_index         = '0;
+            status.read_index          = '0;
+            status.fifo_size           = '0;
+            status.max_transfer_dwords = '0;
             return;
         end
 
-        fifo_empty = (response[OCP_OFF_IFS_STATUS] &
+        status.empty = (response[OCP_OFF_IFS_STATUS] &
                       OCP_IFS_EMPTY_MASK) != 0;
-        fifo_full = (response[OCP_OFF_IFS_STATUS] &
+        status.full = (response[OCP_OFF_IFS_STATUS] &
                      OCP_IFS_FULL_MASK) != 0;
-        region_type = response[OCP_OFF_IFS_REGION_TYPE];
-        write_index = get_le32(response, OCP_OFF_IFS_WRITE_INDEX_B0);
-        read_index = get_le32(response, OCP_OFF_IFS_READ_INDEX_B0);
-        fifo_size = get_le32(response, OCP_OFF_IFS_FIFO_SIZE_B0);
-        max_transfer_dwords =
-            get_le32(response, OCP_OFF_IFS_MAX_TRANSFER_B0);
+        status.region_type = response[OCP_OFF_IFS_REGION_TYPE];
+        status.write_index = ocp_get_le32(response, OCP_OFF_IFS_WRITE_INDEX_B0);
+        status.read_index = ocp_get_le32(response, OCP_OFF_IFS_READ_INDEX_B0);
+        status.fifo_size = ocp_get_le32(response, OCP_OFF_IFS_FIFO_SIZE_B0);
+        status.max_transfer_dwords =
+            ocp_get_le32(response, OCP_OFF_IFS_MAX_TRANSFER_B0);
     endtask
 
-    protected virtual task read_fifo_status(
-        output fifo_status_s status,
-        input string label);
-        bit [7:0] response[$];
-
-        indirect_fifo_status_read(
-            response, status.empty, status.full, status.region_type,
-            status.write_index, status.read_index, status.fifo_size,
-            status.max_transfer_dwords, label);
-    endtask
-
-    protected virtual task poll_device_status(
+    protected virtual task ocp_do_poll_and_check_device_status(
         input ocp_device_status_e target_status,
         input int unsigned max_polls,
         input time poll_delay,
@@ -556,7 +514,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         reached_target = 1'b0;
         for (int unsigned poll = 0; poll < max_polls; poll++) begin
-            device_status_read_and_check(
+            ocp_do_read_and_check_device_status(
                 last_response, $sformatf("%s_%0d", label, poll));
             if ((last_response.size() >=
                     OCP_SPEC_MIN_LEN_DEVICE_STATUS) &&
@@ -568,17 +526,18 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task poll_recovery_status(
+    protected virtual task ocp_do_poll_recovery_status(
         input ocp_recovery_status_e target_status,
         input int unsigned max_polls,
         input time poll_delay,
         output bit reached_target,
         ref bit [7:0] last_response[$],
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         reached_target = 1'b0;
         for (int unsigned poll = 0; poll < max_polls; poll++) begin
-            ocp_read(OCP_CMD_RECOVERY_STATUS, last_response,
+            ocp_do_read(OCP_CMD_RECOVERY_STATUS, last_response, ignored_result,
                      $sformatf("%s_%0d", label, poll));
             if ((last_response.size() ==
                     OCP_SPEC_LEN_RECOVERY_STATUS) &&
@@ -591,7 +550,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task standard_get_configuration_descriptor(
+    protected virtual task ocp_do_read_and_check_configuration_descriptor(
         input int unsigned requested_length,
         ref bit [7:0] descriptor_bytes[$],
         input string label);
@@ -624,7 +583,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         finish_item(req, -1);
         host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
 
-        result = get_xfer_result(req);
+        result = ocp_get_xfer_result(req);
         if (result != OCP_XFER_SUCCESS) begin
             descriptor_bytes.delete();
             `uvm_error("OCP_BASE",
@@ -632,10 +591,10 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           label, result.name()))
             return;
         end
-        copy_in_payload(req, requested_length, descriptor_bytes);
+        ocp_copy_in_payload(req, requested_length, descriptor_bytes);
     endtask
 
-    protected virtual task discover_functional_descriptor();
+    protected virtual task ocp_do_discover_and_check_functional_descriptor();
         bit [7:0] header[$];
         bit [7:0] descriptor_blob[$];
         int unsigned total_length;
@@ -643,20 +602,20 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         int entry_length;
         bit found;
 
-        standard_get_configuration_descriptor(9, header, "OCP_CONFIG_HEADER");
+        ocp_do_read_and_check_configuration_descriptor(9, header, "OCP_CONFIG_HEADER");
         if (header.size() != 9) begin
             `uvm_fatal("OCP_BASE",
                 $sformatf("Configuration descriptor header length=%0d, expected 9.",
                           header.size()))
         end
 
-        total_length = get_le16(header, 2);
+        total_length = ocp_get_le16(header, 2);
         if (total_length < 9) begin
             `uvm_fatal("OCP_BASE",
                 $sformatf("Configuration wTotalLength=%0d is less than 9.",
                           total_length))
         end
-        standard_get_configuration_descriptor(
+        ocp_do_read_and_check_configuration_descriptor(
             total_length, descriptor_blob, "OCP_CONFIG_FULL");
 
         found  = 1'b0;
@@ -724,16 +683,16 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             UVM_NONE)
     endtask
 
-    protected virtual task initialize_ocp_transport();
+    protected virtual task ocp_do_initialize_and_check_transport();
         caliptra_ss_usb_init_sequence init_seq;
 
         resolve_xfer_handles(host_agent_h, usb_cfg, shared_status);
         init_seq = caliptra_ss_usb_init_sequence::type_id::create("init_seq");
         init_seq.start(p_sequencer, this);
-        discover_functional_descriptor();
+        ocp_do_discover_and_check_functional_descriptor();
     endtask
 
-    protected virtual task prepare_usb_route_validation();
+    protected virtual task ocp_configure_usb_route_validation();
         sem_vif.clear_i3c_recovery_seen();
         if (sem_vif.i3c_recovery_payload_available !== 1'b0) begin
             `uvm_fatal("OCP_PAYLOAD_ROUTE",
@@ -746,20 +705,22 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         sem_vif.clear_recovery_payload_available_seen();
     endtask
 
-    protected virtual task read_check_recovery_capabilities(
+    protected virtual task ocp_do_read_and_check_recovery_capabilities(
         input string label,
         output bit [15:0] initial_agent_caps);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] empty_q[$];
         bit [7:0] prot_cap[$];
 
         initial_agent_caps = '0;
         empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_PROT_CAP),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap),
+                       .result(ignored_result),
                        .label(label));
         if (prot_cap.size() < 8) begin
             `uvm_error("OCPREC",
@@ -809,16 +770,18 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task read_log_device_id(input string label);
+    protected virtual task ocp_do_read_and_log_device_id(input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] empty_q[$];
         bit [7:0] dev_id[$];
 
         empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_ID),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(dev_id),
+                       .result(ignored_result),
                        .label(label));
         `uvm_info("OCPREC",
             $sformatf("DEVICE_ID returned %0d bytes; first 4: 0x%02h 0x%02h 0x%02h 0x%02h",
@@ -830,20 +793,23 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             UVM_NONE)
     endtask
 
-    protected virtual task wait_firmware_ready_status();
+    protected virtual task ocp_do_poll_firmware_ready_status(
+        input int unsigned max_polls = 20,
+        input time poll_delay = 5us);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] device_status[$];
         bit [7:0] recovery_status[$];
         bit       reached;
 
         reached = 1'b0;
-        for (int unsigned poll = 0; poll < 20; poll++) begin
-            ocp_read(
+        for (int unsigned poll = 0; poll < max_polls; poll++) begin
+            ocp_do_read(
                 OCP_REC_CMD_DEVICE_STATUS,
-                device_status,
+                device_status, ignored_result,
                 $sformatf("OCP_FW_DEVICE_STATUS_READY_%0d", poll));
-            ocp_read(
+            ocp_do_read(
                 OCP_REC_CMD_RECOVERY_STATUS,
-                recovery_status,
+                recovery_status, ignored_result,
                 $sformatf("OCP_FW_RECOVERY_STATUS_READY_%0d", poll));
 
             if ((device_status.size() > OCP_OFF_DS_VENDOR_LEN) &&
@@ -861,7 +827,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                 reached = 1'b1;
                 break;
             end
-            #5us;
+            #(poll_delay);
         end
 
         if (!reached) begin
@@ -874,9 +840,10 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task check_unsupported_indirect_ctrl_protocol_error(
+    protected virtual task ocp_do_unsupported_indirect_ctrl_and_check_protocol_error(
         input string label_prefix = "OCPREC",
         input string report_id = "OCPREC");
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] empty_q[$];
         bit [7:0] unsup_resp[$];
         bit [7:0] ds_proto[$];
@@ -884,20 +851,22 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         unsup_resp.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_INDIRECT_CTRL),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(unsup_resp),
+                       .result(ignored_result),
                        .label({label_prefix, "_UNSUPPORTED_INDIRECT_CTRL"}));
 
         empty_q.delete();
         ds_proto.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto),
+                       .result(ignored_result),
                        .label({label_prefix, "_DEVICE_STATUS_PROTOERR"}));
         if (ds_proto.size() < 2) begin
             `uvm_error(report_id,
@@ -915,11 +884,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ds_proto_clr.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_clr),
+                       .result(ignored_result),
                        .label({label_prefix, "_DEVICE_STATUS_PROTOERR_CLR"}));
         if (ds_proto_clr.size() < 2) begin
             `uvm_error(report_id,
@@ -936,10 +906,11 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task check_rejected_prot_cap_write(
+    protected virtual task ocp_do_prot_cap_write_and_check_rejection(
         input bit [15:0] initial_agent_caps,
         input string label_prefix = "OCPREC",
         input string report_id = "OCPREC");
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] empty_q[$];
         bit [7:0] resp_q[$];
@@ -952,21 +923,23 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                                  8'hFF, 8'hFF, 8'hFF, 8'hFF,
                                  8'hFF, 8'hFF, 8'hFF, 8'hFF};
         resp_q.delete();
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_PROT_CAP),
                        .wlength(16'(prot_cap_wr_payload.size())),
                        .payload_bytes(prot_cap_wr_payload),
                        .resp_bytes(resp_q),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_PROT_CAP_HOST_WRITE_REJECTED"}));
 
         empty_q.delete();
         ds_proto_r7.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_DEVICE_STATUS_PROTOERR_R7_PROTCAP"}));
         if (ds_proto_r7.size() < 2) begin
@@ -985,11 +958,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ds_proto_r7_clr.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7_clr),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_DEVICE_STATUS_PROTOERR_R7_PROTCAP_CLR"}));
         if (ds_proto_r7_clr.size() < 2) begin
@@ -1004,11 +978,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         prot_cap_after.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_PROT_CAP),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap_after),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_PROT_CAP_UNCHANGED_AFTER_HOST_WRITE"}));
         if (prot_cap_after.size() < 12) begin
@@ -1030,11 +1005,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task check_rejected_fifo_status_write(
+    protected virtual task ocp_do_fifo_status_write_and_check_rejection(
         input string label_prefix = "OCPREC",
         input string report_id = "OCPREC",
         input bit send_payload = 1'b0,
-        input bit verify_unchanged = 1'b0);
+        input bit check_status_unchanged = 1'b0);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] empty_q[$];
         bit [7:0] write_payload[$];
         bit [7:0] resp_q[$];
@@ -1048,28 +1024,30 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         write_payload.delete();
         if (send_payload)
             write_payload.push_back(8'hFF);
-        if (verify_unchanged) begin
-            ocp_read(
+        if (check_status_unchanged) begin
+            ocp_do_read(
                 OCP_REC_CMD_INDIRECT_FIFO_STATUS,
-                fifo_status_before,
+                fifo_status_before, ignored_result,
                 {label_prefix, "_INDIRECT_FIFO_STATUS_BEFORE"});
         end
         resp_q.delete();
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
                        .wlength(16'd1),
                        .payload_bytes(write_payload),
                        .resp_bytes(resp_q),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_INDIRECT_FIFO_STATUS_HOST_WRITE_REJECTED"}));
 
         empty_q.delete();
         ds_proto_r7.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS"}));
         if (ds_proto_r7.size() < 2) begin
@@ -1088,11 +1066,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ds_proto_r7_clr.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7_clr),
+                       .result(ignored_result),
                        .label({label_prefix,
                                "_DEVICE_STATUS_PROTOERR_R7_FIFOSTATUS_CLR"}));
         if (ds_proto_r7_clr.size() < 2) begin
@@ -1105,10 +1084,10 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           ds_proto_r7_clr[1]))
         end
 
-        if (verify_unchanged) begin
-            ocp_read(
+        if (check_status_unchanged) begin
+            ocp_do_read(
                 OCP_REC_CMD_INDIRECT_FIFO_STATUS,
-                fifo_status_after,
+                fifo_status_after, ignored_result,
                 {label_prefix, "_INDIRECT_FIFO_STATUS_AFTER"});
             status_unchanged =
                 fifo_status_after.size() == fifo_status_before.size();
@@ -1131,63 +1110,67 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task initiate_recovery(
+    protected virtual task ocp_do_recovery_init_xfer(
         input bit [7:0] cms,
         input bit [7:0] image_selection,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] payload[$];
         bit [7:0] response[$];
 
-        payload = '{cms, image_selection, 8'h00};
+        ocp_prepare_recovery_ctrl_payload(
+            cms, image_selection, 1'b0, payload);
         `uvm_info("OCPREC",
             $sformatf({"RECOVERY_CTRL (cmd 0x26) OUT: CMS=%0d, ",
                        "ImgSel=%0d, Activate=0 (sec 9.2)."},
                       cms, image_selection),
             UVM_NONE)
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
+                       .result(ignored_result),
                        .label(label));
     endtask
 
-    protected virtual task prepare_fifo_control(
+    protected virtual task ocp_do_fifo_reset_config_xfer(
         input bit [7:0] cms,
         input int unsigned image_size_dwords,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] payload[$];
         bit [7:0] response[$];
 
-        payload = '{cms, 8'h01,
-                    image_size_dwords[7:0],
-                    image_size_dwords[15:8],
-                    image_size_dwords[23:16],
-                    image_size_dwords[31:24]};
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_prepare_fifo_ctrl_payload(
+            cms, 1'b1, image_size_dwords, payload);
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
+                       .result(ignored_result),
                        .label(label));
     endtask
 
-    protected virtual task check_fifo_control_readback(
+    protected virtual task ocp_do_read_and_check_fifo_ctrl(
         input bit [7:0] expected_cms,
         input int unsigned expected_image_size_dwords,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] empty_q[$];
         bit [7:0] response[$];
 
         response.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(response),
+                       .result(ignored_result),
                        .label(label));
         if (response.size() >= OCP_SPEC_LEN_INDIRECT_FIFO_CTRL) begin
             int unsigned img_sz_rb;
@@ -1219,7 +1202,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task automatic build_le_dword_image(
+    protected virtual task automatic ocp_prepare_le_dword_image(
         ref bit [31:0] pattern_dwords[$],
         output bit [7:0] image_bytes[$]);
 
@@ -1232,7 +1215,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task automatic build_default_recovery_image(
+    protected virtual task automatic ocp_prepare_default_recovery_image(
         input int unsigned image_size_dwords,
         output bit [7:0] image_bytes[$]);
 
@@ -1244,19 +1227,21 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         pattern_dwords.push_back(32'h9ABCDEF0);
         for (int j = pattern_dwords.size(); j < image_size_dwords; j++)
             pattern_dwords.push_back(32'h00000010 + j);
-        build_le_dword_image(pattern_dwords, image_bytes);
+        ocp_prepare_le_dword_image(pattern_dwords, image_bytes);
     endtask
 
-    protected virtual task automatic stream_fifo_image(
+    protected virtual task automatic ocp_do_single_batch_fifo_image_xfer(
         ref bit [7:0] image_bytes[$],
         input string label);
+        bit [7:0] status_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
         fifo_status_s status;
         int unsigned image_dwords;
 
-        read_fifo_status(status, {label, "_SINGLE_BATCH_STATUS"});
-        image_dwords = bytes_to_dwords(image_bytes.size());
+        ocp_do_read_and_check_fifo_status(status_response, status, {label, "_SINGLE_BATCH_STATUS"});
+        image_dwords = ocp_bytes_to_dwords(image_bytes.size());
         if ((status.fifo_size == 0) ||
             (status.max_transfer_dwords == 0)) begin
             `uvm_fatal("OCPREC",
@@ -1276,27 +1261,30 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           wMaxWrTransferSize, status.max_transfer_dwords,
                           status.fifo_size))
         end
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
                        .wlength(16'(image_bytes.size())),
                        .payload_bytes(image_bytes),
                        .resp_bytes(response),
+                       .result(ignored_result),
                        .label(label));
     endtask
 
-    protected virtual task check_fifo_status(
+    protected virtual task ocp_do_read_and_check_fifo_write_index(
         input int unsigned expected_write_index,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] empty_q[$];
         bit [7:0] fifo_status[$];
 
         empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(fifo_status),
+                       .result(ignored_result),
                        .label(label));
         if (fifo_status.size() >= 8) begin
             int unsigned wr_idx;
@@ -1320,8 +1308,9 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task wait_for_recovery_pending(
+    protected virtual task ocp_do_poll_recovery_pending(
         output bit recovery_pending_seen);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] empty_q[$];
         bit [7:0] dev_status[$];
@@ -1331,11 +1320,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         recovery_pending_seen = 1'b0;
         forever begin
             empty_q.delete();
-            ocp_class_xfer(.dir_in(1'b1),
+            ocp_do_class_xfer(.dir_in(1'b1),
                            .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
                            .wlength(16'(wMaxRdTransferSize)),
                            .payload_bytes(empty_q),
                            .resp_bytes(dev_status),
+                           .result(ignored_result),
                            .label($sformatf("OCPREC_DEVICE_STATUS_poll%0d",
                                             poll_iter)));
             if (dev_status.size() < 1) begin
@@ -1363,7 +1353,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task check_usb_route_at_recovery_pending();
+    protected virtual task ocp_do_read_and_check_pending_usb_route();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit firmware_pending_seen;
         bit [7:0] empty_q[$];
         bit [7:0] rec_status[$];
@@ -1398,11 +1389,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
 
         empty_q.delete();
-        ocp_class_xfer(.dir_in(1'b1),
+        ocp_do_class_xfer(.dir_in(1'b1),
                        .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(rec_status),
+                       .result(ignored_result),
                        .label("OCP_FW_RECOVERY_STATUS_PENDING"));
         if ((rec_status.size() < OCP_SPEC_LEN_RECOVERY_STATUS) ||
             (rec_status[OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0] !==
@@ -1412,49 +1404,53 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task activate_recovery(
+    protected virtual task ocp_do_recovery_activation_xfer(
         input bit [7:0] cms,
         input bit [7:0] image_selection,
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] payload[$];
         bit [7:0] response[$];
 
-        payload = '{cms, image_selection, OCP_RC_ACTIVATE_CODE};
+        ocp_prepare_recovery_ctrl_payload(
+            cms, image_selection, 1'b1, payload);
         `uvm_info("OCPREC",
             $sformatf({"RECOVERY_CTRL (cmd 0x26) OUT: CMS=%0d, ",
                        "ImgSel=%0d, Activate=0x%02h."},
                       cms, image_selection, OCP_RC_ACTIVATE_CODE),
             UVM_NONE)
-        ocp_class_xfer(.dir_in(1'b0),
+        ocp_do_class_xfer(.dir_in(1'b0),
                        .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
+                       .result(ignored_result),
                        .label(label));
     endtask
 
-    protected virtual task check_i3c_route_quiescent();
+    protected virtual task ocp_check_i3c_route_quiescent();
         if (sem_vif.i3c_recovery_payload_available_seen) begin
             `uvm_error("OCP_PAYLOAD_ROUTE",
                 "I3C payload-available source was not quiescent across the recovery flow.")
         end
     endtask
 
-    protected virtual task legacy_completion_wait(
-        input bit recovery_pending_seen);
+    protected virtual task ocp_hold_for_legacy_completion(
+        input bit recovery_pending_seen,
+        input time timeout = 200us);
 
         if (recovery_pending_seen) begin
             `uvm_info("OCPREC",
                 "DEVICE_STATUS=0x04 RECOVERY_PENDING observed. Holding the main_phase objection so the MCU can complete streaming-boot and report TB_CMD_END_SIM_WITH_SUCCESS (which $finishes the sim). Bounded fail-safe wait engaged.",
                 UVM_NONE)
-            #200us;
+            #(timeout);
             `uvm_error("OCPREC",
                 "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
         end
     endtask
 
-    protected virtual task wait_fw_state_generation_bounded(
+    protected virtual task ocp_wait_fw_state_generation(
         input logic [7:0] state,
         input logic [15:0] generation,
         input time timeout,
@@ -1472,7 +1468,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task issue_fw_command_and_wait(
+    protected virtual task ocp_issue_fw_command_and_wait(
         input logic [7:0] command,
         input logic [15:0] generation,
         input logic [7:0] expected_state,
@@ -1481,12 +1477,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         input string report_id);
 
         sem_vif.issue_fw_command(command, generation);
-        wait_fw_state_generation_bounded(
+        ocp_wait_fw_state_generation(
             expected_state, generation, timeout, label, report_id);
         sem_vif.clear_fw_command();
     endtask
 
-    protected virtual task require_recovery_status_pair(
+    protected virtual task ocp_do_poll_and_check_recovery_status_pair(
         input ocp_device_status_e expected_device_status,
         input ocp_recovery_status_e expected_recovery_status,
         input bit [3:0] expected_image_index,
@@ -1505,7 +1501,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         bit [3:0] observed_image_index;
         bit [7:0] observed_vendor_status;
 
-        poll_device_status(
+        ocp_do_poll_and_check_device_status(
             expected_device_status, max_polls, poll_delay, reached, response,
             {label, "_DEVICE"});
         observed_device_status =
@@ -1524,7 +1520,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           observed_protocol_error, response.size()))
         end
 
-        poll_recovery_status(
+        ocp_do_poll_recovery_status(
             expected_recovery_status, max_polls, poll_delay, reached, response,
             {label, "_RECOVERY"});
         observed_recovery_status =
@@ -1550,7 +1546,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task wait_for_recovery_activation_observed(
+    protected virtual task ocp_poll_recovery_activation(
         input time timeout,
         input time poll_delay,
         input string label,
@@ -1575,7 +1571,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual function bit legal_device_id_type(bit [7:0] value);
+    protected virtual function bit ocp_check_device_id_type(bit [7:0] value);
         case (value)
             OCP_DEVICE_ID_PCI_VENDOR,
             OCP_DEVICE_ID_IANA,
@@ -1588,7 +1584,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         endcase
     endfunction
 
-    protected virtual function bit legal_device_status(bit [7:0] value);
+    protected virtual function bit ocp_check_device_status_value(bit [7:0] value);
         case (value)
             OCP_DEVICE_STATUS_PENDING,
             OCP_DEVICE_STATUS_HEALTHY,
@@ -1602,7 +1598,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         endcase
     endfunction
 
-    protected virtual function bit legal_recovery_status(bit [3:0] value);
+    protected virtual function bit ocp_check_recovery_status_value(bit [3:0] value);
         case (value)
             OCP_RECOVERY_STATUS_NOT_IN_RECOVERY,
             OCP_RECOVERY_STATUS_AWAITING_IMAGE,
@@ -1616,14 +1612,15 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         endcase
     endfunction
 
-    protected virtual task prot_cap_read_and_check(
+    protected virtual task ocp_do_read_and_check_prot_cap(
         output bit [15:0] agent_caps,
         output bit [7:0] cms_count,
         output bit [7:0] heartbeat_period);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
         int unsigned expected_length;
-        ocp_read(OCP_CMD_PROT_CAP, response, "OCP_CMD_001_PROT_CAP");
+        ocp_do_read(OCP_CMD_PROT_CAP, response, ignored_result, "OCP_CMD_001_PROT_CAP");
 
         expected_length = OCP_SPEC_LEN_PROT_CAP;
         if (response.size() != expected_length) begin
@@ -1692,12 +1689,13 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task device_id_read_and_check(
+    protected virtual task ocp_do_read_and_check_device_id(
         input bit [OCP_SPEC_MIN_LEN_DEVICE_ID*8-1:0] expected_device_id = '0);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
         int unsigned vendor_length;
 
-        ocp_read(OCP_CMD_DEVICE_ID, response, "OCP_CMD_002_DEVICE_ID");
+        ocp_do_read(OCP_CMD_DEVICE_ID, response, ignored_result, "OCP_CMD_002_DEVICE_ID");
         if ((response.size() < OCP_SPEC_MIN_LEN_DEVICE_ID) ||
             (response.size() > OCP_SPEC_MAX_LEN_DEVICE_ID)) begin
             `uvm_error("OCP_BASE",
@@ -1706,7 +1704,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           OCP_SPEC_MAX_LEN_DEVICE_ID))
             return;
         end
-        if (!legal_device_id_type(response[OCP_OFF_DID_DESC_TYPE])) begin
+        if (!ocp_check_device_id_type(response[OCP_OFF_DID_DESC_TYPE])) begin
             `uvm_error("OCP_BASE",
                 $sformatf("DEVICE_ID descriptor type 0x%02h is reserved.",
                           response[OCP_OFF_DID_DESC_TYPE]))
@@ -1729,15 +1727,16 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task device_status_read_and_check(
+    protected virtual task ocp_do_read_and_check_device_status(
         ref bit [7:0] response[$],
         input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         int unsigned vendor_length;
         bit [15:0] heartbeat;
         bit [15:0] recovery_reason;
 
-        ocp_read(OCP_CMD_DEVICE_STATUS, response, label);
+        ocp_do_read(OCP_CMD_DEVICE_STATUS, response, ignored_result, label);
         if ((response.size() < OCP_SPEC_MIN_LEN_DEVICE_STATUS) ||
             (response.size() > OCP_SPEC_MAX_LEN_DEVICE_STATUS)) begin
             `uvm_error("OCP_BASE",
@@ -1746,14 +1745,14 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           OCP_SPEC_MAX_LEN_DEVICE_STATUS))
             return;
         end
-        if (!legal_device_status(response[OCP_OFF_DS_STATUS])) begin
+        if (!ocp_check_device_status_value(response[OCP_OFF_DS_STATUS])) begin
             `uvm_error("OCP_BASE",
                 $sformatf("DEVICE_STATUS value 0x%02h is reserved.",
                           response[OCP_OFF_DS_STATUS]))
         end
-        heartbeat = get_le16(response, OCP_OFF_DS_HEARTBEAT_LO);
+        heartbeat = ocp_get_le16(response, OCP_OFF_DS_HEARTBEAT_LO);
         recovery_reason =
-            get_le16(response, OCP_OFF_DS_REC_REASON_LO);
+            ocp_get_le16(response, OCP_OFF_DS_REC_REASON_LO);
         if (heartbeat > OCP_DEVICE_STATUS_HEARTBEAT_MAX) begin
             `uvm_error("OCP_BASE",
                 $sformatf("DEVICE_STATUS heartbeat=%0d exceeds 4095.",
@@ -1787,11 +1786,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task hw_status_read_and_check();
+    protected virtual task ocp_do_read_and_check_hw_status();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
         int unsigned vendor_length;
 
-        ocp_read(OCP_CMD_HW_STATUS, response, "OCP_CMD_007_HW_STATUS");
+        ocp_do_read(OCP_CMD_HW_STATUS, response, ignored_result, "OCP_CMD_007_HW_STATUS");
         if ((response.size() < OCP_SPEC_MIN_LEN_HW_STATUS) ||
             (response.size() > OCP_SPEC_MAX_LEN_HW_STATUS)) begin
             `uvm_error("OCP_BASE",
@@ -1819,11 +1819,12 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task recovery_status_read_and_check();
+    protected virtual task ocp_do_read_and_check_recovery_status();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
         bit [3:0] recovery_status;
 
-        ocp_read(OCP_CMD_RECOVERY_STATUS, response,
+        ocp_do_read(OCP_CMD_RECOVERY_STATUS, response, ignored_result,
                  "OCP_RECOVERY_STATUS_FORMAT");
         if (response.size() != OCP_SPEC_LEN_RECOVERY_STATUS) begin
             `uvm_error("OCP_BASE",
@@ -1833,17 +1834,18 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
         recovery_status =
             response[OCP_OFF_RS_STATUS_IMAGE_INDEX][3:0];
-        if (!legal_recovery_status(recovery_status)) begin
+        if (!ocp_check_recovery_status_value(recovery_status)) begin
             `uvm_error("OCP_BASE",
                 $sformatf("RECOVERY_STATUS value 0x%01h is reserved.",
                           recovery_status))
         end
     endtask
 
-    protected virtual task indirect_fifo_status_read_and_check();
+    protected virtual task ocp_do_read_and_check_fifo_status_format();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
 
-        ocp_read(OCP_CMD_INDIRECT_FIFO_STATUS, response,
+        ocp_do_read(OCP_CMD_INDIRECT_FIFO_STATUS, response, ignored_result,
                  "OCP_INDIRECT_FIFO_STATUS_FORMAT");
         if (response.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) begin
             `uvm_error("OCP_BASE",
@@ -1874,13 +1876,13 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         endcase
     endtask
 
-    protected virtual task ocp_expect_protocol_error(
+    protected virtual task ocp_do_request_and_check_protocol_error(
         input bit dir_in,
         input ocp_cmd_t cmd_code,
         ref bit [7:0] payload_bytes[$],
         input ocp_protocol_error_e expected_error,
         input string label,
-        input bit stall_expected);
+        input bit check_non_success);
 
         bit [7:0] response[$];
         bit [7:0] device_status[$];
@@ -1889,22 +1891,22 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         if (dir_in) begin
             bit [7:0] empty_payload[$];
             empty_payload.delete();
-            ocp_class_xfer_result(
+            ocp_do_class_xfer(
                 1'b1, cmd_code, 16'(wMaxRdTransferSize),
                 empty_payload, response, result, label);
         end else begin
-            ocp_try_write(cmd_code, payload_bytes, result, label);
+            ocp_do_write(cmd_code, payload_bytes, result, label, 0);
         end
         // Synopsys reports STALL-terminated control transfers as ABORTED.
         // Some in-band errors, such as a host write to read-only PROT_CAP,
         // complete successfully while setting PROTOCOL_ERROR.
-        if (stall_expected && (result == OCP_XFER_SUCCESS)) begin
+        if (check_non_success && (result == OCP_XFER_SUCCESS)) begin
             `uvm_error("OCP_BASE",
                 $sformatf("%s erroneous transfer completed successfully.",
                           label))
         end
 
-        device_status_read_and_check(
+        ocp_do_read_and_check_device_status(
             device_status, {label, "_DEVICE_STATUS_SET"});
         if (device_status.size() > OCP_OFF_DS_PROT_ERROR) begin
             if (device_status[OCP_OFF_DS_PROT_ERROR] != expected_error) begin
@@ -1916,7 +1918,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             end
         end
 
-        device_status_read_and_check(
+        ocp_do_read_and_check_device_status(
             device_status, {label, "_DEVICE_STATUS_CLEAR"});
         if (device_status.size() > OCP_OFF_DS_PROT_ERROR) begin
             if (device_status[OCP_OFF_DS_PROT_ERROR] !=
@@ -1929,13 +1931,14 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task publish_transfer_count();
+    protected virtual task ocp_publish_transfer_count();
         uvm_config_db#(int unsigned)::set(
             null, "*", "ocp_transfers_issued", transfers_issued);
     endtask
 
-    protected virtual task wait_mcu_axi_idle_before_finish(
-        input string label);
+    protected virtual task ocp_poll_mcu_axi_idle(
+        input string label,
+        input time timeout = 100us);
 
         virtual caliptra_ss_usb_legacy_ep0_observer_if observer_vif;
         bit idle;
@@ -1947,7 +1950,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             `uvm_fatal("OCP_BASE",
                 $sformatf("%s could not obtain the MCU AXI observer.", label))
         end
-        observer_vif.wait_for_mcu_axi_idle(100us, idle);
+        observer_vif.wait_for_mcu_axi_idle(timeout, idle);
         if (!idle) begin
             `uvm_error("OCP_BASE",
                 $sformatf("%s MCU AXI did not reach an idle interval.", label))

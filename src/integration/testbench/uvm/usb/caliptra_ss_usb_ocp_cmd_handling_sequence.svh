@@ -69,13 +69,13 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         bit [15:0] second_heartbeat;
         time heartbeat_wait;
 
-        device_status_read_and_check(
+        ocp_do_read_and_check_device_status(
             first_status, "OCP_CMD_011_DEVICE_STATUS_FIRST");
         if ((heartbeat_period != 0) && (heartbeat_period <= 12)) begin
             heartbeat_wait = (64'd1 << heartbeat_period) * 1us;
             #(heartbeat_wait + 1us);
         end
-        device_status_read_and_check(
+        ocp_do_read_and_check_device_status(
             second_status, "OCP_CMD_011_DEVICE_STATUS_SECOND");
         if ((first_status.size() < OCP_SPEC_MIN_LEN_DEVICE_STATUS) ||
             (second_status.size() < OCP_SPEC_MIN_LEN_DEVICE_STATUS)) begin
@@ -83,9 +83,9 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         end
 
         first_heartbeat =
-            get_le16(first_status, OCP_OFF_DS_HEARTBEAT_LO);
+            ocp_get_le16(first_status, OCP_OFF_DS_HEARTBEAT_LO);
         second_heartbeat =
-            get_le16(second_status, OCP_OFF_DS_HEARTBEAT_LO);
+            ocp_get_le16(second_status, OCP_OFF_DS_HEARTBEAT_LO);
 
         if ((heartbeat_period == 0) &&
             (first_heartbeat != second_heartbeat)) begin
@@ -114,12 +114,12 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
         bit [7:0] empty_payload[$];
         if (agent_caps[OCP_CAP_HW_STATUS]) begin
-            hw_status_read_and_check();
+            ocp_do_read_and_check_hw_status();
             mark_check("OCP_CMD_007",
                 "advertised HW_STATUS accepted and format checked");
         end else begin
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_HW_STATUS, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_007_HW_STATUS_UNADVERTISED", 1'b1);
@@ -130,6 +130,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
     protected virtual task check_optional_vendor(
         input bit [15:0] agent_caps);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
         bit [7:0] prot_cap_response[$];
@@ -142,7 +143,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         bit identification_enabled;
         bit vendor_disabled;
         if (agent_caps[OCP_CAP_VENDOR]) begin
-            ocp_read(OCP_CMD_VENDOR, response,
+            ocp_do_read(OCP_CMD_VENDOR, response, ignored_result,
                      "OCP_CMD_009_VENDOR_ADVERTISED");
             if ((response.size() < OCP_SPEC_MIN_LEN_VENDOR) ||
                 (response.size() > wMaxRdTransferSize)) begin
@@ -162,13 +163,13 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             // Firmware owns Identification advertisement. Disable it while
             // VENDOR remains available as the directed policy request channel.
             payload = '{IDENTIFICATION_DISABLE_TOKEN};
-            ocp_write(
-                OCP_CMD_VENDOR, payload,
+            ocp_do_write(
+                OCP_CMD_VENDOR, payload, ignored_result,
                 "OCP_CMD_002_DEVICE_ID_DISABLE");
             identification_disabled = 1'b0;
             repeat (100) begin
-                ocp_read(
-                    OCP_CMD_PROT_CAP, prot_cap_response,
+                ocp_do_read(
+                    OCP_CMD_PROT_CAP, prot_cap_response, ignored_result,
                     "OCP_CMD_002_DEVICE_ID_DISABLE_POLL");
                 if (prot_cap_response.size() >
                         OCP_OFF_PC_AGENT_CAPS_HI) begin
@@ -187,7 +188,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                     "Firmware did not clear Identification capability after the disable token.")
             end
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_DEVICE_ID, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_002_DEVICE_ID_DISABLED_IN", 1'b1);
@@ -195,13 +196,13 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 "firmware-disabled DEVICE_ID rejected");
 
             payload = '{IDENTIFICATION_ENABLE_TOKEN};
-            ocp_write(
-                OCP_CMD_VENDOR, payload,
+            ocp_do_write(
+                OCP_CMD_VENDOR, payload, ignored_result,
                 "OCP_CMD_002_DEVICE_ID_ENABLE");
             identification_enabled = 1'b0;
             repeat (100) begin
-                ocp_read(
-                    OCP_CMD_PROT_CAP, prot_cap_response,
+                ocp_do_read(
+                    OCP_CMD_PROT_CAP, prot_cap_response, ignored_result,
                     "OCP_CMD_002_DEVICE_ID_ENABLE_POLL");
                 if (prot_cap_response.size() >
                         OCP_OFF_PC_AGENT_CAPS_HI) begin
@@ -223,17 +224,17 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             // Restore the firmware-owned VENDOR payload before independently
             // disabling VENDOR command support.
             payload = '{VENDOR_DEFAULT_DATA};
-            ocp_write(
-                OCP_CMD_VENDOR, payload,
+            ocp_do_write(
+                OCP_CMD_VENDOR, payload, ignored_result,
                 "OCP_CMD_009_VENDOR_DATA_RESTORE");
 
             // This directed firmware contract proves that capability
             // advertisement controls both VENDOR directions at runtime.
             payload = '{VENDOR_DISABLE_TOKEN};
-            ocp_write(OCP_CMD_VENDOR, payload, "OCP_CMD_009_VENDOR_DISABLE");
+            ocp_do_write(OCP_CMD_VENDOR, payload, ignored_result, "OCP_CMD_009_VENDOR_DISABLE");
             vendor_disabled = 1'b0;
             repeat (100) begin
-                prot_cap_read_and_check(
+                ocp_do_read_and_check_prot_cap(
                     updated_agent_caps,
                     unused_cms_count,
                     unused_heartbeat_period);
@@ -249,12 +250,12 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             end
 
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_VENDOR, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_009_VENDOR_DISABLED_IN", 1'b1);
             payload = '{VENDOR_DEFAULT_DATA};
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b0, OCP_CMD_VENDOR, payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_009_VENDOR_DISABLED_OUT", 1'b1);
@@ -262,7 +263,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 "firmware-disabled VENDOR rejected in both directions");
         end else begin
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_VENDOR, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_009_VENDOR_UNADVERTISED", 1'b1);
@@ -273,17 +274,18 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
     protected virtual task check_optional_indirect_commands(
         input bit [15:0] agent_caps);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
         bit [7:0] empty_payload[$];
 
         if (agent_caps[OCP_CAP_INDIRECT_CTRL]) begin
-            ocp_read(OCP_CMD_INDIRECT_CTRL, response,
+            ocp_do_read(OCP_CMD_INDIRECT_CTRL, response, ignored_result,
                      "OCP_INDIRECT_CTRL_ADVERTISED");
             check_fixed_length(
                 response, OCP_SPEC_LEN_INDIRECT_CTRL, "INDIRECT_CTRL");
 
-            ocp_read(OCP_CMD_INDIRECT_STATUS, response,
+            ocp_do_read(OCP_CMD_INDIRECT_STATUS, response, ignored_result,
                      "OCP_INDIRECT_STATUS_ADVERTISED");
             check_fixed_length(
                 response, OCP_SPEC_LEN_INDIRECT_STATUS, "INDIRECT_STATUS");
@@ -295,22 +297,22 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             end
         end else begin
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_INDIRECT_CTRL, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_INDIRECT_CTRL_UNADVERTISED", 1'b1);
         end
 
         if (agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
-            ocp_read(OCP_CMD_INDIRECT_FIFO_CTRL, response,
+            ocp_do_read(OCP_CMD_INDIRECT_FIFO_CTRL, response, ignored_result,
                      "OCP_INDIRECT_FIFO_CTRL_ADVERTISED");
             check_fixed_length(
                 response, OCP_SPEC_LEN_INDIRECT_FIFO_CTRL,
                 "INDIRECT_FIFO_CTRL");
-            indirect_fifo_status_read_and_check();
+            ocp_do_read_and_check_fifo_status_format();
         end else begin
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_INDIRECT_FIFO_CTRL, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_INDIRECT_FIFO_CTRL_UNADVERTISED", 1'b1);
@@ -319,6 +321,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
 
     protected virtual task check_device_reset_command(
         input bit [15:0] agent_caps);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
         bit [7:0] empty_payload[$];
@@ -332,13 +335,13 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             agent_caps[OCP_CAP_FLASHLESS_BOOT];
 
         if (reset_capability) begin
-            ocp_read(OCP_CMD_DEVICE_RESET, response,
+            ocp_do_read(OCP_CMD_DEVICE_RESET, response, ignored_result,
                      "OCP_DEVICE_RESET_READ_ONLY_PROBE");
             check_fixed_length(
                 response, OCP_SPEC_LEN_DEVICE_RESET, "DEVICE_RESET");
         end else begin
             empty_payload.delete();
-            ocp_expect_protocol_error(
+            ocp_do_request_and_check_protocol_error(
                 1'b1, OCP_CMD_DEVICE_RESET, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_DEVICE_RESET_UNADVERTISED", 1'b1);
@@ -346,9 +349,10 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
     endtask
 
     protected virtual task check_recovery_ctrl_read();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
 
-        ocp_read(OCP_CMD_RECOVERY_CTRL, response,
+        ocp_do_read(OCP_CMD_RECOVERY_CTRL, response, ignored_result,
                  "OCP_RECOVERY_CTRL_READ");
         check_fixed_length(
             response, OCP_SPEC_LEN_RECOVERY_CTRL, "RECOVERY_CTRL");
@@ -392,21 +396,21 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         bit [7:0] device_status[$];
         bit [7:0] rejected_write[$];
 
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
 
-        prot_cap_read_and_check( agent_caps, cms_count, heartbeat_period);
+        ocp_do_read_and_check_prot_cap( agent_caps, cms_count, heartbeat_period);
         mark_check("OCP_CMD_001",
                    $sformatf("PROT_CAP spec invariants checked caps=0x%04h cms_count=%0d",
                              agent_caps, cms_count));
 
-        device_id_read_and_check(EXPECTED_DEVICE_ID);
+        ocp_do_read_and_check_device_id(EXPECTED_DEVICE_ID);
         mark_check("OCP_CMD_002", "firmware-programmed DEVICE_ID readback and host-RO policy checked");
         rejected_write = '{8'h00};
-        ocp_expect_protocol_error(1'b0, OCP_CMD_DEVICE_ID, rejected_write,
+        ocp_do_request_and_check_protocol_error(1'b0, OCP_CMD_DEVICE_ID, rejected_write,
                                   OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                                   "OCP_CMD_002_DEVICE_ID_HOST_WRITE", 1'b1);
 
-        device_status_read_and_check( device_status, "OCP_CMD_011_DEVICE_STATUS");
+        ocp_do_read_and_check_device_status( device_status, "OCP_CMD_011_DEVICE_STATUS");
         check_heartbeat_behavior(heartbeat_period);
 
         // OCP Recovery v1.1 Sec 9.1 requires a write to a read-only command
@@ -414,7 +418,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         // DEVICE_STATUS read observes the error and the second proves the
         // clear-on-read behavior required by Sec 9.1 and Sec 9.2.
         rejected_write = '{8'h00};
-        ocp_expect_protocol_error(1'b0, OCP_CMD_PROT_CAP, rejected_write,
+        ocp_do_request_and_check_protocol_error(1'b0, OCP_CMD_PROT_CAP, rejected_write,
                                   OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                                   "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
         mark_check("OCP_CMD_004",
@@ -428,11 +432,11 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         // the OCP_CMD flow, OCP_FIFO, and OCP_FLOW sequences.
         check_device_reset_command(agent_caps);
         check_recovery_ctrl_read();
-        recovery_status_read_and_check();
+        ocp_do_read_and_check_recovery_status();
         check_optional_indirect_commands(agent_caps);
 
-        wait_mcu_axi_idle_before_finish("OCP_CMD_HANDLING_FINISH");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("OCP_CMD_HANDLING_FINISH");
+        ocp_publish_transfer_count();
         report_executed_checks();
         #1us;
     endtask

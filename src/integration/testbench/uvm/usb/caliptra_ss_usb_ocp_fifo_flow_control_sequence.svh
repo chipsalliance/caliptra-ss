@@ -154,14 +154,15 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         input int unsigned start_dword,
         input int unsigned dword_count,
         ref bit [7:0] payload[$]);
-        slice_image_payload(
+        ocp_prepare_image_payload_slice(
             image_bytes, start_dword, dword_count, payload);
     endfunction
 
     protected virtual task read_and_check_status(
         output fifo_status_s status,
         input string label);
-        read_fifo_status(status, label);
+        bit [7:0] status_response[$];
+        ocp_do_read_and_check_fifo_status(status_response, status, label);
         if ((status.fifo_size == 0) ||
             (status.max_transfer_dwords == 0)) begin
             `uvm_error("OCP_FIFO_FLOW",
@@ -194,13 +195,13 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         offset_dwords = 0;
         chunk_number = 0;
         equal_index_state_reported = 1'b0;
-        configure_ep0_nak_retry_limit(10000);
-        while (offset_dwords < bytes_to_dwords(image_bytes.size())) begin
+        ocp_configure_ep0_nak_retry_limit(10000);
+        while (offset_dwords < ocp_bytes_to_dwords(image_bytes.size())) begin
             read_and_check_status(
                 status,
                 $sformatf("OCP_FIFO_INDEX_STATUS_%0d", chunk_number));
             remaining_dwords =
-                bytes_to_dwords(image_bytes.size()) - offset_dwords;
+                ocp_bytes_to_dwords(image_bytes.size()) - offset_dwords;
             chunk_dwords = fifo_space(
                 status.write_index, status.read_index, status.fifo_size);
             if (chunk_dwords == 0) begin
@@ -209,14 +210,14 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 // protocol backpressure instead of waiting indefinitely.
                 chunk_dwords = 1;
             end
-            if (chunk_dwords > legal_max_chunk_dwords(status))
-                chunk_dwords = legal_max_chunk_dwords(status);
+            if (chunk_dwords > ocp_get_max_chunk_dwords(status))
+                chunk_dwords = ocp_get_max_chunk_dwords(status);
             if (chunk_dwords > remaining_dwords)
                 chunk_dwords = remaining_dwords;
             slice_payload(offset_dwords, chunk_dwords, payload);
-            indirect_fifo_data_try_write(
+            ocp_do_fifo_data_write(
                 payload, result,
-                $sformatf("OCP_FIFO_INDEX_DATA_%0d", chunk_number));
+                $sformatf("OCP_FIFO_INDEX_DATA_%0d", chunk_number), 0);
             if (result != OCP_XFER_SUCCESS) begin
                 rejected_attempts++;
                 `uvm_info("OCP_FIFO_FLOW",
@@ -271,7 +272,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                           chunk_number, poll));
             if ((status.fifo_size != 0) &&
                 (status.max_transfer_dwords != 0) &&
-                (legal_max_chunk_dwords(status) != 0) &&
+                (ocp_get_max_chunk_dwords(status) != 0) &&
                 status.empty && !status.full) return;
             #(poll_delay);
         end
@@ -296,16 +297,16 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         offset_dwords = 0;
         chunk_number = 0;
         equal_index_state_reported = 1'b0;
-        while (offset_dwords < bytes_to_dwords(image_bytes.size())) begin
+        while (offset_dwords < ocp_bytes_to_dwords(image_bytes.size())) begin
             wait_until_empty_by_flags(status, chunk_number);
             remaining_dwords =
-                bytes_to_dwords(image_bytes.size()) - offset_dwords;
+                ocp_bytes_to_dwords(image_bytes.size()) - offset_dwords;
             batch_dwords = remaining_dwords;
             if (batch_dwords > status.fifo_size)
                 batch_dwords = status.fifo_size;
             batch_sent = 0;
             while (batch_sent < batch_dwords) begin
-                chunk_dwords = legal_max_chunk_dwords(status);
+                chunk_dwords = ocp_get_max_chunk_dwords(status);
                 if (chunk_dwords > (batch_dwords - batch_sent))
                     chunk_dwords = batch_dwords - batch_sent;
                 if (chunk_dwords == 0) begin
@@ -313,9 +314,9 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                         "Status-flag flow control could not form a legal chunk.")
                 end
                 slice_payload(offset_dwords, chunk_dwords, payload);
-                indirect_fifo_data_try_write(
+                ocp_do_fifo_data_write(
                     payload, result,
-                    $sformatf("OCP_FIFO_FLAGS_DATA_%0d", chunk_number));
+                    $sformatf("OCP_FIFO_FLAGS_DATA_%0d", chunk_number), 0);
                 if (result != OCP_XFER_SUCCESS) begin
                     rejected_attempts++;
                     `uvm_error("OCP_FIFO_FLOW",
@@ -368,14 +369,14 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         read_and_check_status(status, "OCP_FIFO_NAK_CAPABILITY_STATUS");
         if ((status.fifo_size == 0) ||
             (status.max_transfer_dwords == 0) ||
-            (legal_max_chunk_dwords(status) == 0)) return;
-        configure_ep0_nak_retry_limit(10000);
+            (ocp_get_max_chunk_dwords(status) == 0)) return;
+        ocp_configure_ep0_nak_retry_limit(10000);
         offset_dwords = 0;
         chunk_number = 0;
-        while (offset_dwords < bytes_to_dwords(image_bytes.size())) begin
+        while (offset_dwords < ocp_bytes_to_dwords(image_bytes.size())) begin
             remaining_dwords =
-                bytes_to_dwords(image_bytes.size()) - offset_dwords;
-            chunk_dwords = legal_max_chunk_dwords(status);
+                ocp_bytes_to_dwords(image_bytes.size()) - offset_dwords;
+            chunk_dwords = ocp_get_max_chunk_dwords(status);
             if (chunk_dwords > remaining_dwords)
                 chunk_dwords = remaining_dwords;
             batch_space_dwords =
@@ -396,9 +397,9 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
 
             nak_count_before =
                 caliptra_ss_usb_nak_monitor_callback::get_nak_count();
-            indirect_fifo_data_try_write(
+            ocp_do_fifo_data_write(
                 payload, result,
-                $sformatf("OCP_FIFO_NAK_DATA_%0d", chunk_number));
+                $sformatf("OCP_FIFO_NAK_DATA_%0d", chunk_number), 0);
             nak_count_after =
                 caliptra_ss_usb_nak_monitor_callback::get_nak_count();
             nak_observed = nak_count_after > nak_count_before;
@@ -423,7 +424,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 UVM_NONE)
             offset_dwords += chunk_dwords;
             if (((offset_dwords % status.fifo_size) == 0) &&
-                (offset_dwords < bytes_to_dwords(image_bytes.size()))) begin
+                (offset_dwords < ocp_bytes_to_dwords(image_bytes.size()))) begin
                 // Let the already-blocked EXT read acquire the shared path
                 // before the next DATA transaction begins retrying.
                 #(poll_delay);
@@ -498,10 +499,10 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         `uvm_info("OCP_FIFO_FLOW",
             $sformatf("OCP_FIFO_FLOW_START strategy=%s cms=%0d image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t",
                       strategy.name(), cms, image_bytes.size(),
-                      bytes_to_dwords(image_bytes.size()), pattern_base,
+                      ocp_bytes_to_dwords(image_bytes.size()), pattern_base,
                       poll_delay, max_polls, max_retries, completion_wait),
             UVM_NONE)
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
         nak_callback =
             caliptra_ss_usb_nak_monitor_callback::type_id::create(
                 "nak_callback");
@@ -511,20 +512,20 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 host_agent_h.link_mon, nak_callback);
         caliptra_ss_usb_nak_monitor_callback::reset_nak_count();
         if (image_bytes.size() != 0) begin
-            prepare_fifo_image(
-                cms, 8'h00, bytes_to_dwords(image_bytes.size()),
+            ocp_do_fifo_image_config_xfers(
+                cms, 8'h00, ocp_bytes_to_dwords(image_bytes.size()),
                 "OCP_FIFO_FLOW_RECOVERY_CTRL", "OCP_FIFO_FLOW_CTRL");
             push_image();
             wait_for_final_empty();
         end else begin
-            recovery_ctrl_write(
+            ocp_do_recovery_ctrl_write(
                 cms, 8'h00, 1'b0, "OCP_FIFO_FLOW_RECOVERY_CTRL");
         end
-        publish_transfer_count();
+        ocp_publish_transfer_count();
         `uvm_info("OCP_FIFO_FLOW",
             $sformatf("OCP_FIFO_FLOW_SUMMARY strategy=%s image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t successful_attempts=%0d rejected_attempts=%0d observed_naks=%0d transfers=%0d",
                        strategy.name(), image_bytes.size(),
-                       bytes_to_dwords(image_bytes.size()),
+                       ocp_bytes_to_dwords(image_bytes.size()),
                        pattern_base, poll_delay, max_polls, max_retries,
                        completion_wait,
                        successful_attempts, rejected_attempts,

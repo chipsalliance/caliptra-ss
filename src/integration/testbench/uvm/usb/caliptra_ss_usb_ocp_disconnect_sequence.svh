@@ -120,7 +120,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         init_seq.post_reset_only = sof_running;
         init_seq.start(p_sequencer, this);
         dev_addr_v = 1;
-        discover_functional_descriptor();
+        ocp_do_discover_and_check_functional_descriptor();
         run_claimed_read(
             OCP_CMD_PROT_CAP,
             1'b1,
@@ -168,7 +168,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
                 `uvm_error("OCP_DISCONNECT",
                     "MCU AXI did not become idle after DCON clear.")
             end
-            publish_transfer_count();
+            ocp_publish_transfer_count();
             `uvm_info("OCP_DISCONNECT",
                 "DCON clear removed the configured USB link after a claimed OCP transfer.",
                 UVM_NONE)
@@ -185,7 +185,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
                     "MCU AXI did not become idle after VBUS reconnect.")
             end
         end
-        publish_transfer_count();
+        ocp_publish_transfer_count();
         `uvm_info("OCP_DISCONNECT",
             "VBUS-loss recovery completed with post-reconnect OCP access.",
             UVM_NONE)

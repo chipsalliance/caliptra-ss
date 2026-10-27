@@ -97,11 +97,19 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
     protected virtual task read_status(
         output fifo_status_s status,
         input string label);
+        caliptra_ss_usb_ocp_recovery_base_sequence::fifo_status_s transport_status;
         bit [7:0] response[$];
-        indirect_fifo_status_read(
-            response, status.empty, status.full, status.region_type,
-            status.write_index, status.read_index, status.fifo_size,
-            status.max_transfer_dwords, label);
+        ocp_do_read_and_check_fifo_status(
+            response, transport_status, label);
+        status = '{
+            empty: transport_status.empty,
+            full: transport_status.full,
+            region_type: transport_status.region_type,
+            write_index: transport_status.write_index,
+            read_index: transport_status.read_index,
+            fifo_size: transport_status.fifo_size,
+            max_transfer_dwords: transport_status.max_transfer_dwords
+        };
 
         if (status.fifo_size < 2) begin
             `uvm_fatal("OCP_FIFO_RING",
@@ -136,6 +144,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
     endtask
 
     virtual task body();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         fifo_status_s status;
         fifo_status_s initial_status;
         fifo_status_s full_status;
@@ -149,8 +158,8 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         int unsigned nak_after_overflow;
         bit empty_reached;
 
-        initialize_ocp_transport();
-        recovery_ctrl_write(
+        ocp_do_initialize_and_check_transport();
+        ocp_do_recovery_ctrl_write(
             8'h00, 8'h00, 1'b0, "OCP_FIFO_RING_RECOVERY_CTRL");
 
         // Register the USB NAK monitor callback and reset the packet counter.
@@ -175,7 +184,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         end
 
         // The terminal retry contributes one DWORD after the first batch.
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             8'h00, 1'b1, initial_status.fifo_size + 1,
             "OCP_FIFO_RING_CTRL");
         read_status(status, "OCP_FIFO_RING_STATUS_RESET");
@@ -207,8 +216,8 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
             for (int unsigned i = 0; i < chunk_dwords; i++) begin
                 append_dword(payload, 32'hC0DE_0000 | (32'(offset + i)));
             end
-            indirect_fifo_data_write(
-                payload, $sformatf("OCP_FIFO_RING_PUSH_%0d", chunk));
+            ocp_do_fifo_data_write(
+                payload, ignored_result, $sformatf("OCP_FIFO_RING_PUSH_%0d", chunk));
             offset += chunk_dwords;
             chunk++;
         end
@@ -231,7 +240,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
 
         // Keep one CONTROL OUT transfer active. The VIP retries the same DATA
         // transaction after NAK until Caliptra drains the first batch.
-        configure_ep0_nak_retry_limit(10000);
+        ocp_configure_ep0_nak_retry_limit(10000);
         payload.delete();
         append_dword(
             payload,
@@ -239,8 +248,8 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
 
         nak_before_overflow =
             caliptra_ss_usb_nak_monitor_callback::get_nak_count();
-        indirect_fifo_data_try_write(
-            payload, extra_result, "OCP_FIFO_RING_RETRIED_PUSH");
+        ocp_do_fifo_data_write(
+            payload, extra_result, "OCP_FIFO_RING_RETRIED_PUSH", 0);
         nak_after_overflow =
             caliptra_ss_usb_nak_monitor_callback::get_nak_count();
 
@@ -290,7 +299,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         uvm_config_db#(int unsigned)::set(
             null, "*", "ocp_expected_fifo_external_reads",
              initial_status.fifo_size + 1);
-        publish_transfer_count();
+        ocp_publish_transfer_count();
 
         `uvm_info("OCP_FIFO_RING",
             $sformatf("FIFO batch test complete: FIFO_SIZE=%0d MAX_TRANSFER_SIZE=%0d USB_MAX_WR_BYTES=%0d retry_naks=%0d transfers=%0d.",

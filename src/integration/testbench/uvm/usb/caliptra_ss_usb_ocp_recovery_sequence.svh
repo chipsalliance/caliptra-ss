@@ -44,10 +44,10 @@ class caliptra_ss_usb_ocp_recovery_sequence
         bit        recovery_pending_seen;
         recovery_error_case_e selected_error_case;
 
-        initialize_ocp_transport();
-        read_check_recovery_capabilities(
+        ocp_do_initialize_and_check_transport();
+        ocp_do_read_and_check_recovery_capabilities(
             "OCPREC_PROT_CAP", initial_agent_caps);
-        wait_firmware_ready_status();
+        ocp_do_poll_firmware_ready_status();
 
         selected_error_case = recovery_error_case_e'(
             $urandom_range(RECOVERY_ERROR_FIFO_STATUS_READ_ONLY,
@@ -60,31 +60,31 @@ class caliptra_ss_usb_ocp_recovery_sequence
             UVM_NONE)
         case (selected_error_case)
             RECOVERY_ERROR_UNSUPPORTED_INDIRECT_CTRL:
-                check_unsupported_indirect_ctrl_protocol_error();
+                ocp_do_unsupported_indirect_ctrl_and_check_protocol_error();
             RECOVERY_ERROR_PROT_CAP_READ_ONLY:
-                check_rejected_prot_cap_write(initial_agent_caps);
+                ocp_do_prot_cap_write_and_check_rejection(initial_agent_caps);
             RECOVERY_ERROR_FIFO_STATUS_READ_ONLY:
-                check_rejected_fifo_status_write();
+                ocp_do_fifo_status_write_and_check_rejection();
             default:
                 `uvm_fatal("OCPREC", "Unsupported recovery error case.")
         endcase
 
-        initiate_recovery(8'h00, 8'h00, "OCPREC_RECOVERY_CTRL");
-        prepare_fifo_control(8'h00, 12, "OCPREC_INDIRECT_FIFO_CTRL");
-        check_fifo_control_readback(
+        ocp_do_recovery_init_xfer(8'h00, 8'h00, "OCPREC_RECOVERY_CTRL");
+        ocp_do_fifo_reset_config_xfer(8'h00, 12, "OCPREC_INDIRECT_FIFO_CTRL");
+        ocp_do_read_and_check_fifo_ctrl(
             8'h00, 12, "OCPREC_INDIRECT_FIFO_CTRL_RDBK");
-        build_default_recovery_image(12, image_bytes);
-        stream_fifo_image(image_bytes, "OCPREC_INDIRECT_FIFO_DATA");
-        check_fifo_status(12, "OCPREC_INDIRECT_FIFO_STATUS");
-        wait_for_recovery_pending(recovery_pending_seen);
+        ocp_prepare_default_recovery_image(12, image_bytes);
+        ocp_do_single_batch_fifo_image_xfer(image_bytes, "OCPREC_INDIRECT_FIFO_DATA");
+        ocp_do_read_and_check_fifo_write_index(12, "OCPREC_INDIRECT_FIFO_STATUS");
+        ocp_do_poll_recovery_pending(recovery_pending_seen);
 
         if (recovery_pending_seen) begin
-            activate_recovery(
+            ocp_do_recovery_activation_xfer(
                 8'h00, 8'h00, "OCPREC_RECOVERY_CTRL_ACTIVATE");
         end
 
-        legacy_completion_wait(recovery_pending_seen);
-        publish_transfer_count();
+        ocp_hold_for_legacy_completion(recovery_pending_seen);
+        ocp_publish_transfer_count();
 
         `uvm_info("OCPREC", "OCP recovery sequence complete", UVM_NONE)
     endtask

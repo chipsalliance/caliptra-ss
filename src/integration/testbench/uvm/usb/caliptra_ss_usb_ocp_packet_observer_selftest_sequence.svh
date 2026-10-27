@@ -348,6 +348,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
     endfunction
 
     protected task check_live_fifo();
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] status_bytes[$], response[$], payload[$];
         int unsigned size_dwords, max_dwords, bytes;
         logic [15:0] live_generation;
@@ -358,8 +359,8 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_LIMITS");
         if (status_bytes.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS)
             `uvm_fatal("OCP_PACKET_SELFTEST", "Live FIFO limits truncated.")
-        size_dwords = get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0);
-        max_dwords = get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0);
+        size_dwords = ocp_get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0);
+        max_dwords = ocp_get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0);
         // Keep an extra DWORD free beyond the normative reserved ring slot.
         // Select at most two HS packets; all limits are discovered at runtime.
         if ((size_dwords < 3) || (max_dwords == 0) ||
@@ -372,11 +373,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         if (bytes > wMaxWrTransferSize) bytes = wMaxWrTransferSize;
         if (bytes == 0)
             `uvm_fatal("OCP_PACKET_SELFTEST", "No legal live FIFO transfer length.")
-        recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_CMS, 1'b0, "LIVE_FIFO_IMAGE");
+        ocp_do_recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_CMS, 1'b0, "LIVE_FIFO_IMAGE");
         prepare_modeled_fifo((bytes + 3) / 4, "LIVE_FIFO_RESET");
         for (int unsigned i = 0; i < bytes; i++) payload.push_back(8'(i ^ 8'hA5));
         open_observation_window(live_generation);
-        indirect_fifo_data_write(payload, "LIVE_FIFO_DATA");
+        ocp_do_fifo_data_write(payload, ignored_result, "LIVE_FIFO_DATA");
         close_observation_window(live_generation, 4'h0);
         require_accepted_setup("LIVE_FIFO_DATA");
         require_true((fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4) &&
@@ -386,7 +387,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_UNCHANGED");
         require_true(fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4,
             "unrelated legal command cannot discard committed bytes");
-        indirect_fifo_ctrl_write(0, 1'b1, (bytes + 3) / 4, "LIVE_FIFO_FINAL_RESET");
+        ocp_do_fifo_ctrl_write(0, 1'b1, (bytes + 3) / 4, "LIVE_FIFO_FINAL_RESET");
         legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_RESET_CHECK");
         require_true(fifo_packet_model.committed_byte_count() == 0 &&
             fifo_packet_model.indices_match(0, 0), "live reset completion evidence");

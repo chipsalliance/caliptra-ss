@@ -69,7 +69,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
                 "ocp_access_semantics_if not found in config_db")
         end
 
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
         observer_vif.issue_mcu_command_bounded(
             observer_vif.MCU_COMMAND_RELEASE_CALIPTRA,
             16'h0001,
@@ -190,7 +190,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
 
         empty_payload.delete();
         open_observation_window(generation);
-        ocp_class_xfer_result(
+        ocp_do_class_xfer(
             1'b1,
             command,
             requested_length,
@@ -240,7 +240,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         bit [7:0] descriptor[$];
 
         open_observation_window(generation);
-        standard_get_configuration_descriptor(9, descriptor, label);
+        ocp_do_read_and_check_configuration_descriptor(9, descriptor, label);
         close_observation_window(generation, 4'h1);
         if (descriptor.size() != 9) begin
             `uvm_error("OCP_ARB_SEQ",
@@ -341,7 +341,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         init_seq.post_reset_only = 1'b1;
         init_seq.start(p_sequencer, this);
         dev_addr_v = 1;
-        discover_functional_descriptor();
+        ocp_do_discover_and_check_functional_descriptor();
     endtask
 
     protected virtual task run_reset_during_control_stage(
@@ -365,7 +365,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         time maximum_se0_duration;
 
         empty_payload.delete();
-        iface_num = get_iface_num();
+        iface_num = ocp_get_iface_num();
         req = svt_usb_transfer::type_id::create({label, "_req"});
         if (usb_cfg != null) begin
             req.cfg = usb_cfg;
@@ -484,7 +484,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         `uvm_info("OCP_ARB_006",
             $sformatf("%s reset completed with transfer result %s and %0d packets",
                       label,
-                      get_xfer_result(req).name(),
+                      ocp_get_xfer_result(req).name(),
                       checker.packet_callback.packet_count()),
             UVM_NONE)
     endtask
@@ -522,7 +522,7 @@ class caliptra_ss_usb_ocp_arb_001_sequence
                          "ARB001_INDIRECT_CTRL_READ");
         run_claimed_read(OCP_CMD_INDIRECT_STATUS, 1'b0,
                          "ARB001_INDIRECT_STATUS_READ");
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -545,7 +545,7 @@ class caliptra_ss_usb_ocp_arb_002_sequence
         `uvm_info("OCP_ARB_002",
             "Coverage gap: new-SETUP abandonment remains deferred.",
             UVM_NONE)
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -568,7 +568,7 @@ class caliptra_ss_usb_ocp_arb_003_sequence
         run_claimed_read(OCP_CMD_PROT_CAP, 1'b0, "ARB003_DISABLED");
         set_path_disable(1'b0);
         run_claimed_read(OCP_CMD_PROT_CAP, 1'b1, "ARB003_ENABLED_SECOND");
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -625,7 +625,7 @@ class caliptra_ss_usb_ocp_arb_004_sequence
         require_setup_stage_ack("ARB004_RESERVED_COMMAND");
         report_packet_outcome("ARB004_RESERVED_COMMAND");
         require_stalled_non_success(result, "ARB004_RESERVED_COMMAND");
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -681,7 +681,7 @@ class caliptra_ss_usb_ocp_arb_005_sequence
              "exact 64-byte multiple, so positive terminating-ZLP coverage ",
              "remains open."},
             UVM_NONE)
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -734,7 +734,7 @@ class caliptra_ss_usb_ocp_arb_006_sequence
         run_reset_variant(
             svt_usb_transfer::STATUS_STAGE,
             "ARB006_STATUS_STAGE");
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 
@@ -773,7 +773,7 @@ class caliptra_ss_usb_ocp_arb_007_sequence
             empty_payload.delete();
             open_observation_window(generation);
             observer_vif.wait_launch_phase(phase_index);
-            ocp_class_xfer_result(
+            ocp_do_class_xfer(
                 1'b1,
                 OCP_CMD_PROT_CAP,
                 16'(wMaxRdTransferSize),
@@ -833,7 +833,7 @@ class caliptra_ss_usb_ocp_arb_007_sequence
                           utmi_bins.num(),
                           core_bins.num()))
         end
-        publish_transfer_count();
+        ocp_publish_transfer_count();
     endtask
 endclass
 

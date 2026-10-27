@@ -127,7 +127,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         payload = '{8'h00};
         arb_checker.packet_callback.start_window(packet_window_generation);
         packet_window_generation++;
-        ocp_try_write(OCP_CMD_PROT_CAP, payload, result, label);
+        ocp_do_write(OCP_CMD_PROT_CAP, payload, result, label, 0);
         arb_checker.packet_callback.stop_window();
         stall_count = arb_checker.packet_callback.count_pid(
             svt_usb_packet::STALL,
@@ -158,10 +158,11 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     protected virtual task read_device_status_prot_error(
         output logic [7:0] prot_error_out,
         input  string      label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] resp[$];
         prot_error_out = 8'h00;
-        ocp_read(OCP_CMD_DEVICE_STATUS, resp, label);
+        ocp_do_read(OCP_CMD_DEVICE_STATUS, resp, ignored_result, label);
         if (resp.size() < (OCP_OFF_DS_PROT_ERROR + 1)) begin
             `uvm_fatal("DS_SEM_SEQ",
                 $sformatf("%s: DEVICE_STATUS response too short (%0d bytes).",
@@ -180,15 +181,15 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         logic [7:0] observed_error2;
         bit [15:0] initial_agent_caps;
 
-        if (!get_sem_vif()) return;
+        if (!ocp_configure_sem_vif()) return;
         if (!get_arb_chk()) return;
 
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
 
         // Step 1: Wait for firmware READY.
         wait_fw_state(DS_SEM_STATE_READY, "DS_SEM_READY");
         `uvm_info("DS_SEM_SEQ", "Firmware READY observed.", UVM_NONE)
-        read_check_recovery_capabilities(
+        ocp_do_read_and_check_recovery_capabilities(
             "DS_SEM_PROT_CAP_BASELINE", initial_agent_caps);
 
         // Step 2: Trigger PROTOCOL_ERROR.
@@ -277,13 +278,13 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
             end
         end
 
-        check_rejected_prot_cap_write(
+        ocp_do_prot_cap_write_and_check_rejection(
             initial_agent_caps, "DS_SEM_RO", "DS_SEM_SEQ");
-        check_rejected_fifo_status_write(
+        ocp_do_fifo_status_write_and_check_rejection(
             "DS_SEM_RO", "DS_SEM_SEQ", 1'b1, 1'b1);
 
-        wait_mcu_axi_idle_before_finish("DEVICE_STATUS_SEMANTICS");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("DEVICE_STATUS_SEMANTICS");
+        ocp_publish_transfer_count();
 
         `uvm_info("DS_SEM_SEQ",
             $sformatf({"OCP_SEM_001/OCP_NEG_002 complete: %0d stress ",

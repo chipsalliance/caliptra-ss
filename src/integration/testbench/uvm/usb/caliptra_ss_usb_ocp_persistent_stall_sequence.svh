@@ -109,7 +109,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         bit [7:0] empty_payload[$];
         bit [15:0] interface_index;
 
-        interface_index = 16'(get_iface_num());
+        interface_index = 16'(ocp_get_iface_num());
         // OCP Section 8.5.1 read PROT_CAP SETUP; only the token CRC is bad.
         setup_bytes = '{{1'b1, BMRT_TYPE_CLASS, BMRT_RECIPIENT_IFACE},
             OCP_BREQUEST_XFER, OCP_CMD_PROT_CAP, 8'h00,
@@ -165,7 +165,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         // USB 2.0 Sections 9.4.1/9.4.5 allow Request Error when EP0 has
         // no Halt feature. Its accepted SETUP, not its status, is the
         // protocol-STALL boundary required by Section 8.5.3.4.
-        result = get_xfer_result(last_ctrl_seq_item);
+        result = ocp_get_xfer_result(last_ctrl_seq_item);
         if (xfer_wait_timed_out ||
             ((result != OCP_XFER_SUCCESS) &&
              !checker.packet_callback.validate_control_stall(7'(dev_addr_v), 4'h0)))

@@ -63,7 +63,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             `uvm_fatal("OCP_STALL", "FIFO scoreboard is unavailable.")
         fifo_model_configured = 1'b0;
         checks_completed = 0;
-        prot_cap_read_and_check(agent_capabilities, cms_count, heartbeat_period);
+        ocp_do_read_and_check_prot_cap(agent_capabilities, cms_count, heartbeat_period);
         read_status_and_check("INITIAL_STATUS");
         read_status_and_check("INITIAL_CLEAR");
         normal_nak_retry_limit =
@@ -87,9 +87,9 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         stall_model.note_accepted_setup();
     endfunction
 
-    protected virtual function void configure_ocp_transfer( input svt_usb_transfer request);
+    protected virtual function void ocp_configure_xfer( input svt_usb_transfer request);
         svt_usb_transfer_exception exception_item;
-        super.configure_ocp_transfer(request);
+        super.ocp_configure_xfer(request);
         if (fifo_model_configured &&
             (request.setup_data_w_value[7:0] == OCP_CMD_INDIRECT_FIFO_DATA) &&
             (request.setup_data_bmrequesttype_dir == svt_usb_types::HOST_TO_DEVICE)) begin
@@ -128,9 +128,9 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         request.exception_list.add_exception(exception_item);
     endfunction
 
-    protected virtual function void completed_ocp_transfer( input svt_usb_transfer request,
+    protected virtual function void ocp_note_xfer_completed( input svt_usb_transfer request,
                                                             input caliptra_ss_usb_ocp_xfer_result_e result);
-                                                            super.completed_ocp_transfer(request, result);
+                                                            super.ocp_note_xfer_completed(request, result);
         if (fifo_window_pending &&
             (request.setup_data_w_value[7:0] == OCP_CMD_INDIRECT_FIFO_DATA) &&
             (request.setup_data_bmrequesttype_dir == svt_usb_types::HOST_TO_DEVICE) &&
@@ -154,7 +154,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         bit [7:0] status_bytes[$];
         logic [15:0] generation;
         open_observation_window(generation);
-        device_status_read_and_check(status_bytes, label);
+        ocp_do_read_and_check_device_status(status_bytes, label);
         close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
         if (status_bytes.size() <= OCP_OFF_DS_PROT_ERROR) begin
@@ -166,16 +166,17 @@ class caliptra_ss_usb_ocp_stall_base_sequence
 
     protected task legal_read( input ocp_cmd_t command, ref bit [7:0] response[$],
                                input string label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         logic [15:0] generation;
         open_observation_window(generation);
-        ocp_read(command, response, label);
+        ocp_do_read(command, response, ignored_result, label);
         close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
         if (fifo_model_configured && (command == OCP_CMD_INDIRECT_FIFO_STATUS) &&
             (response.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
             !fifo_packet_model.indices_match(
-                get_le32(response, OCP_OFF_IFS_WRITE_INDEX_B0),
-                get_le32(response, OCP_OFF_IFS_READ_INDEX_B0)))
+                ocp_get_le32(response, OCP_OFF_IFS_WRITE_INDEX_B0),
+                ocp_get_le32(response, OCP_OFF_IFS_READ_INDEX_B0)))
             `uvm_error("OCP_STALL", {label, ": FIFO indices differ from packet acceptance model."})
         if (checker.packet_callback.count_pid(svt_usb_packet::STALL,
                 caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) != 0)
@@ -199,15 +200,15 @@ class caliptra_ss_usb_ocp_stall_base_sequence
 
         // Only negative OCP requests require immediate rejection. Standard
         // firmware-serviced requests must retain their normal retry budget.
-        configure_ep0_nak_retry_limit(NEGATIVE_NAK_RETRY_LIMIT);
+        ocp_configure_ep0_nak_retry_limit(NEGATIVE_NAK_RETRY_LIMIT);
         open_observation_window(generation);
         if (inject_short_data)
             checker.expect_wire_setup_length(OCP_SPEC_LEN_RECOVERY_CTRL);
         expecting_rejection = 1'b1;
-        ocp_class_xfer_result(dir_in, command, requested_length,
+        ocp_do_class_xfer(dir_in, command, requested_length,
             payload, response, result, label);
         expecting_rejection = 1'b0;
-        configure_ep0_nak_retry_limit(
+        ocp_configure_ep0_nak_retry_limit(
             normal_nak_retry_limit, normal_endpoint_retry_limit);
         close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
@@ -263,27 +264,27 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             if (fifo_model_configured &&
                 (fifo_status.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
                 !fifo_packet_model.indices_match(
-                    get_le32(fifo_status, OCP_OFF_IFS_WRITE_INDEX_B0),
-                    get_le32(fifo_status, OCP_OFF_IFS_READ_INDEX_B0)))
+                    ocp_get_le32(fifo_status, OCP_OFF_IFS_WRITE_INDEX_B0),
+                    ocp_get_le32(fifo_status, OCP_OFF_IFS_READ_INDEX_B0)))
                 `uvm_error("OCP_STALL", {label, ": FIFO indices differ from independent reference."})
         end
     endtask
 
     protected task prepare_modeled_fifo( input int unsigned image_dwords, input string label);
         bit [7:0] status_bytes[$];
-        indirect_fifo_ctrl_write(0, 1'b1, image_dwords, label);
+        ocp_do_fifo_ctrl_write(0, 1'b1, image_dwords, label);
         legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, {label, "_CAPS"});
         if (status_bytes.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS)
             `uvm_fatal("OCP_STALL", "FIFO capability discovery was truncated.")
         fifo_packet_model.configure(
-            get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0),
-            get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0),
+            ocp_get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0),
+            ocp_get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0),
             HS_CONTROL_PACKET_BYTES, 1'b1, wMaxWrTransferSize, image_dwords);
         fifo_model_configured = 1'b1;
         fifo_scoreboard.enable_packet_fifo_checking();
         if (!fifo_packet_model.indices_match(
-                get_le32(status_bytes, OCP_OFF_IFS_WRITE_INDEX_B0),
-                get_le32(status_bytes, OCP_OFF_IFS_READ_INDEX_B0)))
+                ocp_get_le32(status_bytes, OCP_OFF_IFS_WRITE_INDEX_B0),
+                ocp_get_le32(status_bytes, OCP_OFF_IFS_READ_INDEX_B0)))
             `uvm_error("OCP_STALL", "Protocol FIFO reset did not establish initial indices.")
     endtask
 
@@ -315,7 +316,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         legal_read(OCP_CMD_PROT_CAP, response, {label, "_FINAL_PROT_CAP"});
         if (response.size() != OCP_SPEC_LEN_PROT_CAP)
             `uvm_error("OCP_STALL", {label, ": final capability response truncated."})
-        publish_transfer_count();
+        ocp_publish_transfer_count();
         `uvm_info("OCP_STALL",
             $sformatf("%s complete: checks=%0d transfers=%0d.",
                       label, checks_completed, transfers_issued), UVM_NONE)
