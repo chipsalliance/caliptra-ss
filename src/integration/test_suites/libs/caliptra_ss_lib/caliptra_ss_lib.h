@@ -90,6 +90,8 @@
 #define CMD_MCI_RELEASE_STATE_ERROR     FC_LCC_CMD_OFFSET + 0x26
 #define CMD_OTP_DFT_EN_EXPECT_LOW        FC_LCC_CMD_OFFSET + 0x27
 #define CMD_OTP_DFT_EN_EXPECT_HIGH       FC_LCC_CMD_OFFSET + 0x28
+#define CMD_MCU_ROM_PATCH_EXPECT_UDS_FE_ZEROIZED FC_LCC_CMD_OFFSET + 0x29
+#define CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES     FC_LCC_CMD_OFFSET + 0x2A
 
 
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
@@ -166,8 +168,8 @@ typedef struct {
 
     // USB
     bool cfg_boot_usb_core;
-    usb_config_descriptor_provider_t usb_config_desc_fn;
-    usb_class_request_handler_t usb_class_req_fn;
+    bool usb_hub_en;
+    bool usb_fs_en;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -198,8 +200,8 @@ typedef struct {
     .cptra_wdt_cfg_0                 = 0u,     \
     /* USB */                                 \
     .cfg_boot_usb_core               = false,  \
-    .usb_config_desc_fn              = 0,      \
-    .usb_class_req_fn                = 0
+    .usb_hub_en                      = false,  \
+    .usb_fs_en                       = false
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!

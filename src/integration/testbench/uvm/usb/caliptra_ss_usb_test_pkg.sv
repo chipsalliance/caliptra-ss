@@ -24,8 +24,9 @@
 
 package caliptra_ss_usb_test_pkg;
 
+  // Force VCS recompile when USB UVM package contents change.
+  localparam int USB_PKG_VERSION = 336;
 
-  localparam int USB_PKG_VERSION = 293;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -39,22 +40,26 @@ package caliptra_ss_usb_test_pkg;
 
   `include "caliptra_ss_usb_shared_cfg.svh"
   `include "caliptra_ss_usb_env.svh"
-  `include "caliptra_ss_usb_ctrl_base_sequence.svh"
-  // Legacy NXP host-side base sequence. Distinct from the upstream
-  // caliptra_ss_usb_ctrl_base_sequence above: upstream PR #1309 renamed its
-  // own base sequence to _ctrl_ precisely to avoid a name clash with this
-  // pre-existing NXP class, so the two coexist. The ~40 NXP device/dev1/hub
-  // sequences below extend this class, so it must be included before them.
+  // Common host-side base sequence. Every device/dev1/hub, init and OCP
+  // recovery sequence below extends this class, so it must be included first.
   `include "caliptra_ss_usb_base_sequence.svh"
   `include "caliptra_ss_usb_init_sequence.svh"
 
   `include "caliptra_ss_usb_nak_monitor_callback.svh"
+  // Handshake (ACK/NAK/STALL) counter used by the HS unsupported-endpoint test
+  // to prove the device stays silent. Must precede the sequence that uses it.
+  `include "caliptra_ss_usb_handshake_counter_callback.svh"
   `include "caliptra_ss_usb_get_status_sequence.svh"
   `include "caliptra_ss_usb_hub_qualifier_sequence.svh"
   `include "caliptra_ss_usb_hub_config_descriptor_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_hub_config_descriptor_sequence.svh"
   `include "caliptra_ss_usb_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_get_hub_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_get_interface_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -65,11 +70,31 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_clock_sequence.svh"
   `include "caliptra_ss_usb_fs_clock_test.svh"
 
+  // Shared observation-window sequence for the standalone register / RAM access
+  // tests below. Those tests drive no USB traffic; the sequence only holds the
+  // main_phase objection open for a per-test run_window_us while the MCU
+  // firmware does the checking. Must precede the tests that use it.
+  `include "caliptra_ss_usb_mem_rw_sequence.svh"
+
   // Standalone dev0/dev1 register read/write access test (no link bring-up).
-  // Sequence must precede the test.
-  `include "caliptra_ss_usb_dev_reg_rw_sequence.svh"
   `include "caliptra_ss_usb_dev_reg_rw_test.svh"
+
+  // Standalone dev RAM (DMA/SRAM window) random read/write access test (no link
+  // bring-up).
+  `include "caliptra_ss_usb_dev_ram_rw_test.svh"
+
+  // USBDC1 (device1) variant of the standalone RAM (DMA/SRAM window) random
+  // read/write access test. Same firmware, built with -DUSB_DEV_SEL=1 to target
+  // the USBDC1 aperture (0x2001_0100); no link bring-up.
+  `include "caliptra_ss_usb_dev1_ram_rw_test.svh"
+
+  // Standalone HUB descriptor-array (ep0_mem) RW / write-lock test (no link
+  // bring-up). Verifies the 196-word hub descriptor array is writable when
+  // unlocked (HUB_EN only) and frozen when locked (HUB_EN and HUB_CONNECT both
+  // set).
+  `include "caliptra_ss_usb_hub_ram_rw_test.svh"
   `include "caliptra_ss_usb_fs_host_traffic_sequence.svh"
+
   `include "caliptra_ss_usb_fs_host_traffic_test.svh"
 
   // HS testcases
@@ -77,6 +102,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_conn_test.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_test.svh"
+  // BULK OUT token to an endpoint number with no physical endpoint behind it
+  // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
+  // ACK/NAK/STALL), checked by a bounded bus-silence observation.
+  `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
@@ -126,6 +156,8 @@ package caliptra_ss_usb_test_pkg;
   // unconditional host resume after a fixed delay). See the test README.
   `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence.svh"
   `include "caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test.svh"
+  `include "caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence.svh"
+  `include "caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test.svh"
 //  `include "caliptra_ss_usb_fs_idau_sec_level_sequence.svh"
 //  `include "caliptra_ss_usb_fs_idau_sec_level_test.svh"
 //  `include "caliptra_ss_usb_fs_root2_sequence.svh"
@@ -142,6 +174,12 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_conn_test.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_test.svh"
+  // Full-Speed sibling of caliptra_ss_usb_hs_dev_unsupported_ep: BULK OUT
+  // token to an endpoint number with no physical endpoint behind it (EP15 for
+  // C_DEV0_NBPHYSEP = 28). The endpoint map is speed independent, so only the
+  // wire speed, packet sizes and observation delays differ.
+  `include "caliptra_ss_usb_fs_dev_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_test.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_sequence.svh"
@@ -160,12 +198,35 @@ package caliptra_ss_usb_test_pkg;
   // tools/scripts/gen_usb_dev_variants.py.
   `include "caliptra_ss_usb_hs_dev1_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_out_test.svh"
+  // USBDC1 replica of caliptra_ss_usb_hs_dev_unsupported_ep: BULK OUT token
+  // to an endpoint number with no physical endpoint behind it (EP15 for
+  // C_DEV1_NBPHYSEP = 28). The endpoint map is identical on both device
+  // instances, so only the hub downstream port (port 2) and the firmware
+  // build flag (-DUSB_DEV_SEL=1) differ.
+  `include "caliptra_ss_usb_hs_dev1_unsupported_ep_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev1_nbyte_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev1_iso_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_iso_out_test.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_loopback_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_bulk_loopback_test.svh"
+  // Dual-device parallel bulk loopback: exercises BOTH embedded controllers
+  // (USBDC0 port 1 @addr2, USBDC1 port 2 @addr3) in one image. The matching
+  // firmware is built with -DUSB_HUB_COMPOUND_DEV1_IRQ (NOT -DUSB_DEV_SEL=1)
+  // and services dev1 on PIC vector 6 via the TB IRQ loopback.
+  `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_hs_bulk_loopback_test.svh"
+  `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_hs_dev0_hotplug_test.svh"
+
+  // Full-speed port of the dual-device bulk loopback pair above. Same dual
+  // aperture firmware topology and same TB dev1 IRQ loopback; the link is
+  // forced to FS (host high_speed_capable=0 plus boot_usb_core_fs() in the
+  // firmware) and the TB FS line-speed checker is armed by the test .mk so the
+  // run fails if the link silently came up at HS.
+  `include "caliptra_ss_usb_dual_device_fs_bulk_loopback_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_fs_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev1_powerdown_sequence.svh"
@@ -228,6 +289,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev_get_hub_descriptor_test.svh"
   `include "caliptra_ss_usb_fs_dev_get_hub_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev0 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev0 in firmware).
+  // The FS sibling reuses the same sequence and only applies the FS VIP
+  // conversion block. The dev1 variant (HS only) lives with the other dev1
+  // command-value-check tests below.
+  `include "caliptra_ss_usb_hs_dev_get_interface_test.svh"
+  `include "caliptra_ss_usb_fs_dev_get_interface_test.svh"
   // HS-only hub CONFIGURATION / OTHER_SPEED_CONFIGURATION descriptor check
   // (OTHER_SPEED_CONFIGURATION is defined only for HS-capable devices).
   `include "caliptra_ss_usb_hs_dev_hub_config_descriptor_test.svh"
@@ -251,10 +319,38 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev1_get_interface_sequence.svh"
   `include "caliptra_ss_usb_hs_dev1_get_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_hub_qualifier_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_hub_status_test.svh"
   `include "caliptra_ss_usb_hs_dev1_get_device_descriptor_test.svh"
+  // Standard GET_INTERFACE on the hub and on dev1 (both return
+  // bAlternateSetting=0; the hub answers in EP0 hardware, dev1 in firmware).
+  `include "caliptra_ss_usb_hs_dev1_get_interface_test.svh"
+
+  // HS-only hub SET_FEATURE(DEVICE, TEST_MODE): one random invalid test
+  // selector (6..255, must be stalled) then one random valid selector (1..5,
+  // must be accepted), both observed on the RTL usb_phy_test_mode register
+  // through check_phy_test_mode(). Hub-only enumeration; the accepted request
+  // is the last USB activity because the PIE then enters BUS_EVENT_TEST_MODE
+  // until a power cycle.
+  `include "caliptra_ss_usb_hs_hub_test_mode_test.svh"
+
+  // Full-speed sibling of the hub SET_FEATURE(DEVICE, TEST_MODE) test above.
+  // The EP0 request decode is speed-independent, so the same accept/reject
+  // scenario is run with the FS VIP conversion applied. The accepted request
+  // is still the last USB activity: at FS it also forces the HS electrical
+  // gate and drops the link, which is harmless only because the final check
+  // reads the RTL usb_phy_test_mode probe and not the bus.
+  `include "caliptra_ss_usb_fs_hub_test_mode_test.svh"
+
+  // HS-only hub ENDPOINT_HALT round trip on the one Halt-able hub endpoint
+  // (endpoint 1 IN, wIndex=0x0081): GET_STATUS baseline, SET_FEATURE,
+  // GET_STATUS, CLEAR_FEATURE, GET_STATUS. Control transfers only, hub-only
+  // enumeration; the status bit is read back out of
+  // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
+  `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
+  `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
 
 
 //  `include "caliptra_ss_usb_usbd_wakeup_sequence.svh"
@@ -273,6 +369,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_sequence.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_sequence.svh"
+  `include "caliptra_ss_usb_ocp_access_collision_sequence.svh"
   `include "caliptra_ss_usb_ocp_device_status_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_w1dc_access_semantics_sequence.svh"
   `include "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence.svh"
@@ -287,6 +384,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_ring_test.svh"
   `include "caliptra_ss_usb_ocp_cmd_handling_test.svh"
+  `include "caliptra_ss_usb_ocp_access_collision_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_indices_test.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_status_flags_test.svh"

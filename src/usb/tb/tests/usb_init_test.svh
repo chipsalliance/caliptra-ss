@@ -21,17 +21,14 @@ class usb_init_test extends usb_base_test;
 
   function new(string name = "usb_init_test", uvm_component parent = null);
     super.new(name, parent);
-  endfunction
-
-  virtual function time selected_test_timeout();
-    return USB_INIT_TEST_TIMEOUT;
+    test_timeout = 2ms;
   endfunction
 
   task run_phase(uvm_phase phase);
     usb_init_seq init_sequence;
 
     phase.raise_objection(this);
-    `uvm_info("USB_INIT_TEST", $sformatf("Starting real-traffic USB INIT test; timeout=%0t", selected_test_timeout()), UVM_LOW)
+    `uvm_info("USB_INIT_TEST", $sformatf("Starting real-traffic USB INIT test; timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
     if (env.host_agent == null || env.host_agent.virt_sequencer == null) begin
       `uvm_fatal("USB_INIT_TEST", "USB INIT requires an active SVT host agent")

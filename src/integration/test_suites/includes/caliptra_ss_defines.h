@@ -35,13 +35,25 @@
 #define CSS_MCU0_VEER_INTR_VEC_UART        5
 // Used to tie-off undefined upper intr bits
 #define CSS_MCU0_VEER_INTR_EXT_LSB         6
+// usb_hub_compound dual USB device test. VEER_INTR_EXT_LSB (vector 6) is the
+// first configurable external interrupt pin. The testbench loops the USB
+// device1 IRQ output (cptra_ss_usb_dev1_irq_o) back onto this pin so device1
+// can interrupt the MCU on its own vector, mirroring how device0 is routed to
+// CSS_MCU0_VEER_INTR_VEC_USB. See src/integration/rtl/caliptra_ss_includes.svh.
+#define CSS_MCU0_VEER_INTR_VEC_USB_DEV1    6
 
 #define CSS_MCU0_VEER_INTR_PRIO_MCI        8
 #define CSS_MCU0_VEER_INTR_PRIO_I3C        7
 #define CSS_MCU0_VEER_INTR_PRIO_USB        7
 #define CSS_MCU0_VEER_INTR_PRIO_SPIH       7
 #define CSS_MCU0_VEER_INTR_PRIO_UART       7
+// device1 shares device0's priority so the two USB vectors serialize rather
+// than preempt one another (no mutual nesting between the two controllers).
+#define CSS_MCU0_VEER_INTR_PRIO_USB_DEV1   7
 #define CSS_MCU0_VEER_INTR_PRIO_BFM        6
 
 
+
 #endif // CALIPTRA_SS_DEFINES_H
+
+// File contains AI-generated response based on internal company sources

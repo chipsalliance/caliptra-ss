@@ -73,6 +73,16 @@
 // is unchanged.
 #define USB_DEV_DEVCMDSTAT    (USB_DEV_CSR_BASE_ADDR + 0x00u)
 #define USB_DEV_INFO          (USB_DEV_CSR_BASE_ADDR + 0x04u)
+// Expected CHIP_ID = INFO[31:16] = {MAJREV, MINREV} for the delivered IP
+// configuration. The two revision bytes come from the usb_reg_if
+// C_MAJOR_REV / C_MINOR_REV VHDL generics. VCS rejects a cross-module
+// reference whose target is a VHDL generic (Error-[VHDLXMRE-NS]), so the
+// value cannot be probed from the testbench; CHIP_ID is checked here in
+// firmware by reading the INFO register instead, which exercises the same
+// readback path those generics feed. The IP databook section 5.2 shows
+// 0x0100 only as an example: the delivered RTL/RDL is the source of truth.
+#define USB_DEV_INFO_CHIP_ID_EXP  0x0200u
+
 #define USB_DEV_EPLISTSTART   (USB_DEV_CSR_BASE_ADDR + 0x08u)
 #define USB_DEV_DATABUFSTART  (USB_DEV_CSR_BASE_ADDR + 0x0cu)
 #define USB_DEV_LPM           (USB_DEV_CSR_BASE_ADDR + 0x10u)
@@ -83,6 +93,18 @@
 #define USB_DEV_INTEN         (USB_DEV_CSR_BASE_ADDR + 0x24u)
 #define USB_DEV_INTSETSTAT    (USB_DEV_CSR_BASE_ADDR + 0x28u)
 #define USB_DEV_EPTOGGLE      (USB_DEV_CSR_BASE_ADDR + 0x34u)
+
+// USB_DEV_ULPIDEBUG - DEPRECATED / NON-FUNCTIONAL on the compound IP.
+//
+// The compound structure instantiates BOTH device CSR banks (usb_reg_if_1 for
+// DEV0 and usb_reg_if_2 for DEV1) with the generic C_USB_HUB set to TRUE, which
+// compiles out the per-device PHY register (register select "1111", byte offset
+// 0x3C) and forces every usbreg_phy_* output to zero. Reads of this address
+// therefore return 0 and writes are dropped.
+//
+// Indirect ULPI PHY access now lives in the HUB aperture at USB_HUB_ULPI_PHY
+// (table word 15 / C_HUB_PHY, SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C). The
+// define is kept only so legacy references still compile.
 #define USB_DEV_ULPIDEBUG     (USB_DEV_CSR_BASE_ADDR + 0x3cu)
 
 // -------------------------------------------------------------------------
@@ -117,12 +139,27 @@
 //
 // On the compound IP the hub CSR/descriptor aperture is at
 // SOC_USB_COMBO_HUB_BASE_ADDR (0x2000_1000); the hub control/status word
-// (C_HUB_CS) is SOC_USB_COMBO_HUB_CONTROL (0x2000_103C):
-//   bit  0 = HUB_EN       (structural mux select; hub entity enabled and
-//                          presents USBDC0/USBDC1 as embedded downstream
-//                          devices)
-//   bit 16 = HUB_CONNECT  (hub connects to the upstream port, ANDed with
-//                          VBus valid inside the IP)
+// (C_HUB_CS) is SOC_USB_COMBO_HUB_CONTROL. NOTE: C_HUB_CS moved from table
+// word 15 to table word 12, so the byte offset changed from 0x3C to 0x30 and
+// the absolute address is now 0x2000_1030. Table word 15 (0x2000_103C) is now
+// the hub ULPI PHY access register (C_HUB_PHY, see USB_HUB_ULPI_PHY below).
+//
+//   bit  0 = HUB_EN          (structural mux select; hub entity enabled and
+//                             presents USBDC0/USBDC1 as embedded downstream
+//                             devices)
+//   bit  9 = PLL_ON          (hub clock request; ORed with the DEV0/DEV1
+//                             DEVCMDSTAT.FORCE_NEEDCLK requests)
+//   bit 11 = LPM_SUP         (advertise LPM/L1 support; RESET VALUE IS 1 and
+//                             it supersedes DEV0 DEVCMDSTAT.LPM_SUP while
+//                             HUB_EN is set. A full-zero write to this
+//                             register CLEARS this default)
+//   bit 16 = HUB_CONNECT     (hub connects to the upstream port, ANDed with
+//                             VBus valid inside the IP)
+//   bit 18 = SELF_POWERED    (self-powered reporting)
+//   bit 21 = FORCE_FULLSPEED (suppress HS chirp; this is now the ONLY software
+//                             path to the port FORCE_FULLSPEED control because
+//                             the per-device DEVCMDSTAT.FORCE_FULLSPEED output
+//                             is left unconnected in the compound structure)
 //
 // USB_EnableHub is tied 1'b0 at top level (caliptra_ss_top.sv:1190), so
 // hub_enable_q is driven by the register bit ep0_mem(C_HUB_CS)(0) and firmware
@@ -147,7 +184,38 @@
 #define USB_HUB_CTRL                 SOC_USB_COMBO_HUB_CONTROL
 
 #define USBHUB_CTRL_HUB_EN_MASK      ((1u << 0) | (1u << 7))
+#define USBHUB_CTRL_PLL_ON_MASK      (1u << 9)
+#define USBHUB_CTRL_LPM_SUP_MASK     (1u << 11)
 #define USBHUB_CTRL_HUB_CONNECT_MASK (1u << 16)
+#define USBHUB_CTRL_SELF_POWERED_MASK (1u << 18)
+#define USBHUB_CTRL_FORCE_FS_MASK    (1u << 21)
+
+// Hub control bits that must be preserved across any HUB_CTRL reprogramming so
+// the LPM_SUP reset default (bit 11) is not silently dropped by a full-zero or
+// partial write. Firmware composes HUB_CTRL values as
+// USBHUB_CTRL_DEFAULT_MASK | <desired bits>.
+#define USBHUB_CTRL_DEFAULT_MASK     USBHUB_CTRL_LPM_SUP_MASK
+
+// -------------------------------------------------------------------------
+// HUB indirect ULPI PHY access register (C_HUB_PHY, hub table word 15,
+// SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C).
+//
+// Replaces the now non-functional per-device USB_DEV_ULPIDEBUG register.
+// Usage: program ADDR / WDATA / WRITE / MODE, then set START. Hardware clears
+// START and latches RDATA when the access completes, so START can be polled
+// for completion and RDATA read afterwards.
+// -------------------------------------------------------------------------
+#define USB_HUB_ULPI_PHY             SOC_USB_COMBO_HUB_ULPI_PHY
+
+#define USBHUB_PHY_ADDR_SHIFT        0u
+#define USBHUB_PHY_ADDR_MASK         (0xFFu << USBHUB_PHY_ADDR_SHIFT)
+#define USBHUB_PHY_WDATA_SHIFT       8u
+#define USBHUB_PHY_WDATA_MASK        (0xFFu << USBHUB_PHY_WDATA_SHIFT)
+#define USBHUB_PHY_RDATA_SHIFT       16u
+#define USBHUB_PHY_RDATA_MASK        (0xFFu << USBHUB_PHY_RDATA_SHIFT)
+#define USBHUB_PHY_WRITE_MASK        (1u << 24)
+#define USBHUB_PHY_START_MASK        (1u << 25)
+#define USBHUB_PHY_MODE_MASK         (1u << 31)
 
 // Hub DEVICE descriptor override (DataPhase_Buffer_0 of the hub aperture,
 // base SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR = 0x2000_1000). The 18-byte
@@ -196,6 +264,43 @@
 #define USB_HUB_DESC_HUB_WORD1_VAL   0x0A643200u
 
 // -------------------------------------------------------------------------
+// Hub BOS descriptor (DataPhase_Buffer_5, hub table word 80, base +0x140).
+//
+// Added by the hub IP release that also moved C_HUB_CS from word 15 to word
+// 12. The hub DEVICE descriptor bcdUSB is now 0x0210 so the hub advertises
+// LPM, and the ROM answers GET_DESCRIPTOR(BOS) from this block:
+//
+//   word0 @ +0x140 = bLength 0x05 | bDescriptorType 0x0F (BOS) <<8 |
+//                    wTotalLength 0x000C <<16
+//   word1 @ +0x144 = bNumDeviceCaps 0x01 | cap bLength 0x07 <<8 |
+//                    cap bDescriptorType 0x10 (DEVICE_CAPABILITY) <<16 |
+//                    cap bDevCapabilityType 0x02 (USB 2.0 Extension) <<24
+//   word2 @ +0x148 = bmAttributes 0x0000_0002 (LPM supported)
+//
+// Descriptor block placement is unchanged for every pre-existing block
+// (CONFIGURATION +0x40, HUB +0x80, DEVICE_QUALIFIER +0xC0,
+// OTHER_SPEED_CONFIGURATION +0x100); BOS was appended at +0x140 and only the
+// SETUP match table moved (word 80 -> word 96, +0x180).
+// -------------------------------------------------------------------------
+#define USB_HUB_DESC_BOS_BASE        (USB_HUB_DESC_DEVICE_BASE + 0x140u)
+#define USB_HUB_DESC_BOS_WORD0       (USB_HUB_DESC_BOS_BASE + 0x00u)
+#define USB_HUB_DESC_BOS_WORD1       (USB_HUB_DESC_BOS_BASE + 0x04u)
+#define USB_HUB_DESC_BOS_WORD2       (USB_HUB_DESC_BOS_BASE + 0x08u)
+#define USB_HUB_DESC_BOS_WORD0_VAL   0x000C0F05u
+#define USB_HUB_DESC_BOS_WORD1_VAL   0x02100701u
+#define USB_HUB_DESC_BOS_WORD2_VAL   0x00000002u
+
+// Hub SETUP match table base (hub table word 96, base +0x180). Moved from
+// word 80 by the BOS descriptor insertion.
+#define USB_HUB_SETUP_TABLE_BASE     (USB_HUB_DESC_DEVICE_BASE + 0x180u)
+
+// BOS descriptor type and USB 2.0 Extension device-capability encodings.
+#define USB_DESC_BOS                       0x0Fu
+#define USB_DESC_DEVICE_CAPABILITY         0x10u
+#define USB_DEV_CAP_TYPE_USB2_EXTENSION    0x02u
+#define USB_BOS_USB2_EXT_LPM_MASK          (1u << 1)
+
+// -------------------------------------------------------------------------
 // Legacy EP0 observer telemetry (MCI generic-wire handshake). Retained from
 // upstream; used by the legacy-EP0 observation tests.
 // -------------------------------------------------------------------------
@@ -217,6 +322,7 @@
 #define USB_LEGACY_EP0_COMMAND_PUBLISH_RESET_POST 0x4u
 #define USB_LEGACY_EP0_COMMAND_CLEAR_DCON        0x5u
 #define USB_LEGACY_EP0_COMMAND_SET_DCON          0x6u
+#define USB_LEGACY_EP0_COMMAND_STOP              0x7u
 #define USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT       24u
 #define USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT      20u
 #define USB_LEGACY_EP0_COMMAND_DELTA_SHIFT       16u
@@ -260,6 +366,47 @@ typedef struct {
 #define USB_EP_ENTRY_ACTIVE       (1u << 31)
 #define USB_EP_ENTRY_DISABLED     (1u << 30)
 #define USB_EP_ENTRY_STALL        (1u << 29)
+// TR bit (bit 28) - Toggle Reset. Per the register documentation:
+//   "When software sets this bit to one, the HW will set the toggle value
+//    equal to the value indicated in the toggle value (TV) bit. For the
+//    control endpoint 0, this is not needed to be used because the hardware
+//    resets the endpoint toggle to one for both directions when a setup token
+//    is received. For the other endpoints, the toggle can only be reset to 0
+//    when the endpoint is reset."
+//
+// TR is therefore a LOAD, not a clear: it copies bit 27 (TV) into the
+// endpoint's data toggle. TR=1 with TV=0 loads DATA0, TR=1 with TV=1 loads
+// DATA1, and TR=0 leaves the hardware's own alternation untouched. Always pair
+// TR with an explicit TV (USB_EP_ENTRY_TOGGLE_VALUE_DATA0 /
+// USB_EP_ENTRY_TOGGLE_VALUE_DATA1) so the loaded value is stated rather than
+// inherited from whatever happens to be in the entry word.
+//
+// The RTL latches it straight out of the entry word the DMA engine fetches
+// (usb_ep_config_handler.m.vhdl):
+//   reg_ep_toggle_reset(epconfig_link) <= upd_dma_wdata(28);
+// and the vector is placed back into the per-endpoint info word at bit 28 by
+// usb_ep_config_hub_pkg.p.vhdl.
+//
+// WHEN TO SET IT. Only when the host side is known to restart from a fixed
+// toggle expectation, which is NOT symmetric between the two directions:
+//   EP0        never needs TR - hardware reloads both toggles on every SETUP.
+//   bulk OUT   the host carries a running toggle across transfers, so TR must
+//              be set only on the first arm after a bus reset or after
+//              SET_CONFIGURATION. Setting it mid-stream is a MISMATCH, and a
+//              mismatch is silent: USB 2.0 requires the device to ACK the
+//              packet and DISCARD it as a presumed retransmission, so the wire
+//              looks healthy while the buffer is never consumed and hardware
+//              never clears Active. The endpoint is then permanently dead and
+//              host retry cannot help, because the toggle IS the retry
+//              mechanism (USB 2.0 section 8.6).
+//   bulk IN    a host that builds each IN transfer as an independent object
+//              (for example the SVT VIP, which has no cross-transfer toggle
+//              state) expects DATA0 at the start of every transfer, so every
+//              IN arm needs TR=1 | TV=0.
+// Single-transfer tests can leave TR clear, since a bus reset already zeroes
+// the toggle (reg_ep_toggle_value is cleared on sync_busreset in
+// usb_reg_if.m.vhdl).
+#define USB_EP_ENTRY_TOGGLE_RESET (1u << 28)
 // T bit (bit 26) - Endpoint Type:
 //   0 = Generic (bulk / rate-feedback interrupt)
 //   1 = Periodic. The RF bit then selects isochronous vs interrupt.
@@ -274,6 +421,15 @@ typedef struct {
 #define USB_EP_ENTRY_TYPE_PERIODIC (1u << 26)
 #define USB_EP_ENTRY_RF_ISO        (0u)
 #define USB_EP_ENTRY_RF_INT        (1u << 27)
+// TV bit (bit 27) - Toggle Value. This is the SAME physical bit as RF above;
+// the hardware interprets it as the rate-feedback selector only for periodic
+// endpoints (T=1) and as the toggle value for generic/bulk endpoints (T=0).
+// It is meaningful only together with USB_EP_ENTRY_TOGGLE_RESET, which loads
+// it into the endpoint's data toggle. DATA0 is deliberately spelled out as a
+// zero-valued macro so an arm can state which value it is loading instead of
+// relying on the bit being absent.
+#define USB_EP_ENTRY_TOGGLE_VALUE_DATA0 (0u)
+#define USB_EP_ENTRY_TOGGLE_VALUE_DATA1 (1u << 27)
 #define USB_EP_ENTRY_NBYTES(n)    (((uint32_t)(n) & 0x7FFFu) << 11)
 // USB_EP_ENTRY_ADDR(off) - AddrOffset field [10:0] from a MEM-base-relative
 // byte offset. This is the correct form on this RTL: the SRAM is a dedicated
@@ -422,41 +578,65 @@ extern const usb_device_descriptor_t usb_dev0_device_descriptor;
 extern const usb_device_descriptor_t usb_dev1_device_descriptor;
 
 // -------------------------------------------------------------------------
-// Default minimal USB 2.0 device descriptor (18 bytes, packed as uint32_t[5]).
-// Defined in usb.c. Used by the hook-based (OCP/host) enumeration path. Tests
-// that need a custom descriptor may define their own array and pass it to
-// usb_ep0_send_data().
-// -------------------------------------------------------------------------
-extern const uint32_t usb_default_device_descriptor[5];
-
-// -------------------------------------------------------------------------
 // USB driver API
 // -------------------------------------------------------------------------
 
-// Initialize the USB device controller (STANDALONE DEV0, no hub bring-up):
-// set up the EP command/status list and SRAM buffers, enable device mode and
-// interrupts. config_desc_fn / class_req_fn install the application's
-// config-descriptor and class-request hooks BEFORE enumeration can begin; pass
-// 0 for either to use the built-in default (no config descriptor / STALL class
-// requests). This is the OCP-recovery / host enumeration entry point.
-void boot_usb_core(usb_config_descriptor_provider_t config_desc_fn,
-                   usb_class_request_handler_t class_req_fn);
+// Runtime active-device selector for the shared USB library.
+//
+// usb.c normally binds every CSR/MEM access to the controller chosen at
+// compile time by USB_DEV_SEL (default 0 = USBDC0). usb_select_device() lets a
+// single compiled image retarget the shared enumeration / control-transfer
+// helpers to USBDC0 (dev=0) or USBDC1 (dev=1) at run time, which the
+// usb_hib_compound dual-device test uses to bring up BOTH controllers in
+// parallel. Per-device shadow state (device address, current configuration,
+// remote-wakeup, EP0 IN pending) is kept in private arrays inside usb.c so the
+// two controllers do not corrupt each other's enumeration state.
+//
+// The initial value is USB_DEV_SEL, so any test that never calls
+// usb_select_device() behaves byte-for-byte as before. Pass 0 for USBDC0 or 1
+// for USBDC1; any other value is treated as 0.
+void usb_select_device(int dev);
 
-// Initialize the USB device controller in HUB+DEVICE (hub-composite) mode:
-// bring the on-chip hub up (usb_hub_init_and_connect(): HUB_EN + descriptor
-// overrides), configure the EP list/SRAM buffers, force LPM_SUP and
-// FORCE_NEEDCLK during bring-up, and enable device mode and interrupts. This
-// is the entry point for the migrated device tests that target the hub-composite
-// configuration. HUB_CONNECT is NOT asserted here - the test calls
-// usb_hub_connect() once the device controller is fully programmed.
+// Returns the currently selected active device (0 = USBDC0, 1 = USBDC1).
+int usb_get_active_device(void);
+
+// Runtime base-address accessors for the currently selected active device.
+//
+// usb.c re-defines the device-neutral USB_DEV_* register macros and
+// USB_DMA_BASE_ADDR to resolve against usb_select_device()'s runtime choice,
+// but that #undef/#define retargeting is scoped to usb.c's translation unit.
+// A test that includes usb.h and accesses USB_DEV_* directly in its OWN
+// functions still gets the compile-time USB_DEV_SEL-fixed base and cannot
+// follow usb_select_device(). These accessors expose usb.c's selection logic so
+// such a test can build its own runtime-selected addresses (see the dual-device
+// test's USB_DEV_* re-definition). usb_active_dev_csr_base() returns the active
+// controller's CSR bank base; usb_active_dev_mem_base() its packet SRAM base.
+uint32_t usb_active_dev_csr_base(void);
+uint32_t usb_active_dev_mem_base(void);
+
+
+
+
+
+// Initialize the USB device controller: configure the EP list/SRAM buffers
+// and enable device mode and interrupts. Hub mode also forces LPM_SUP and
+// FORCE_NEEDCLK during bring-up; standalone mode leaves both bits clear.
+//   hub_en: bring the on-chip hub up (usb_hub_init_and_connect(): HUB_EN +
+//           descriptor overrides). HUB_CONNECT is NOT asserted here - the test
+//           calls usb_hub_connect() once the device controller is programmed.
+//           When 0, the hub stays disabled and USBDC0 connects directly
+//           upstream (standalone).
+//   fs_en:  also set DEVCMDSTAT.FORCE_VBUS and HUB_CTRL.FORCE_FULLSPEED
+//           (suppresses device-side K-chirp) for FS-only host VIPs.
+//           Do NOT use when HS is required.
+// Typical calls: boot_usb_core(false, true) for hub-composite HS tests;
+// boot_usb_core(false, false) for standalone USBDC0 (mcu_cptra_init).
+void boot_usb_core(bool fs_en, bool hub_en);
+
+// Legacy HS-only entry point: wrapper for boot_usb_core(false, true).
 void boot_usb_core_hub(void);
 
-// Initialize the USB device controller in HUB+DEVICE FS-only mode: identical
-// to boot_usb_core_hub() but also sets DEVCMDSTAT bit 21 (FORCE_FULLSPEED, the
-// legacy PFSC bit) to suppress device-side K-chirp. Use in tests with a FS-only
-// host VIP (high_speed_capable=0) so the UTMI TX is ready immediately after bus
-// reset instead of waiting ~2.2ms for the chirp timeout. Do NOT use when HS
-// operation is required.
+// Legacy FS-only entry point: wrapper for boot_usb_core(true, true).
 void boot_usb_core_fs(void);
 
 // Program HUB descriptor overrides then set HUB_EN in the HUB control register.
@@ -523,16 +703,19 @@ void usb_dump_state(const char *tag);
 // expected_transfers==0 means loop indefinitely.
 uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers);
 
+// Application hooks. usb.c provides weak defaults; an application library
+// (e.g. usb_ocp_recovery.c) overrides them by defining strong symbols with the
+// same name. Do not mark these prototypes weak: that would also make the
+// overriding definitions weak.
+//
 // Returns the device's full configuration descriptor blob and writes its
-// length in bytes to *len. The default weak implementation returns NULL and
-// sets *len=0 so GET_DESCRIPTOR(CONFIGURATION) falls through to STALL.
-__attribute__((weak))
+// length in bytes to *len. The default implementation returns NULL and sets
+// *len=0 so GET_DESCRIPTOR(CONFIGURATION) falls through to STALL.
 const uint8_t *usb_get_config_descriptor(uint16_t *len);
 
 // Handles a class-typed SETUP packet. Return true once the request has been
 // fully serviced; return false to let the dispatcher STALL the request. The
-// default weak implementation returns false.
-__attribute__((weak))
+// default implementation returns false.
 bool usb_handle_class_request(const usb_setup_pkt_t *setup);
 
 // Update the USB device address field in DEVCMDSTAT.
@@ -547,11 +730,11 @@ void usb_set_device_connect(uint8_t connected);
 // handoff until USB enumeration is complete.
 uint8_t usb_is_configured(void);
 
-// Clear DEVCMDSTAT.FORCE_NEEDCLK so the device controller stops requesting the
-// UTMI clock unconditionally and can actually enter suspend. boot_usb_core_hub()
-// / boot_usb_core_fs() set FORCE_NEEDCLK during bring-up. Call after enumeration
-// completes and before host-side suspend stimulus is armed. Suspend-oriented
-// tests only. FORCE_VBUS is not modified.
+// Clear DEVCMDSTAT.FORCE_NEEDCLK and HUB_CTRL.PLL_ON so the device and hub stop
+// requesting the UTMI clock unconditionally and can actually enter suspend.
+// Hub-mode boot sets FORCE_NEEDCLK during bring-up. Call after enumeration
+// completes and before host-side suspend stimulus is armed, for each active
+// controller in dual-device tests. FORCE_VBUS is not modified.
 void usb_allow_clock_stop(void);
 
 // Drive a device-initiated remote wakeup: resume K signalling on the upstream
@@ -567,6 +750,12 @@ bool usb_request_remote_wakeup(void);
 // L1 (DEVCMDSTAT.LPM_SUS) with host-granted remote wake (DEVCMDSTAT.LPM_REWP);
 // returns false and does nothing otherwise.
 bool usb_request_lpm_remote_wakeup(void);
+
+// Strict exact-value check of CHIP_ID = INFO[31:16] = {MAJREV, MINREV}
+// against the delivered IP configuration. Pass USB_DEV_INFO_CHIP_ID_EXP.
+// A mismatch fails the test (VPRINTF(FATAL) + TB_CMD_TEST_FAIL + halt).
+// Targets the active controller, so it is valid for USBDC0 and USBDC1.
+void usb_check_chip_id(uint32_t expected_chip_id);
 
 // Capture the complete legacy baseline and publish it field-by-field over the
 // MCI generic-wire handshake. UVM starts SRAM observation only after firmware

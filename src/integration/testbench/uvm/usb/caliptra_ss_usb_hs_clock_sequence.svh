@@ -40,7 +40,7 @@ class caliptra_ss_usb_hs_clock_sequence extends caliptra_ss_usb_base_sequence;
     `uvm_object_utils(caliptra_ss_usb_hs_clock_sequence)
 
     // Observation window held open after SOF generation starts, so the TB
-    // speed checker has live FS traffic to measure.
+    // speed checker has live HS traffic to measure.
     //
     // This must close BEFORE the MCU firmware halts, otherwise the
     // observation-window-done event below is never triggered and the checker's
@@ -75,7 +75,7 @@ class caliptra_ss_usb_hs_clock_sequence extends caliptra_ss_usb_base_sequence;
         // Bounded link wait from the base class. On timeout it raises the
         // uvm_error and sets link_wait_timed_out, so the observation window
         // below is skipped rather than measuring a dead link.
-        wait_for_link_enabled(shared_status, "FS host link", link_up_timeout_us);
+        wait_for_link_enabled(shared_status, "HS host link", link_up_timeout_us);
         if (link_wait_timed_out)
             return;
 
@@ -95,7 +95,7 @@ class caliptra_ss_usb_hs_clock_sequence extends caliptra_ss_usb_base_sequence;
         #(obs_window_us * 1us);
 
         `uvm_info("USB_HS_CLK_SEQ",
-            "USB FS clock observation window complete.", UVM_LOW)
+            "USB HS clock observation window complete.", UVM_LOW)
 
         // Release the TB speed checker's completeness guard. This is done
         // unconditionally on every path that reaches the end of the window, so
@@ -111,6 +111,27 @@ class caliptra_ss_usb_hs_clock_sequence extends caliptra_ss_usb_base_sequence;
                           obs_window_event_name),
                 UVM_LOW)
         end
+
+        // End-of-test register-field checks against the RTL, read through
+        // usb_dev_addr_probe (see
+        // src/integration/testbench/usb_dev_addr_probe.sv). These are TB-side
+        // checks: nothing is requested over USB and the MCU firmware is not
+        // involved, so the verdict does not depend on the DUT checking itself.
+        //
+        // They run after the observation window has closed, by which point the
+        // link has long reached ENABLED and speed negotiation (chirp for HS,
+        // or its absence for FS) has completed, so DEVCMDSTAT.Speed holds its
+        // final value.
+        //
+        // DEVCMDSTAT.Speed is expected to read HIGH_SPEED (2'b10) for this test.
+        // A mismatch raises a uvm_error, which makes the test fail.
+        //
+        // CHIP_ID is NOT checked here: VCS rejects a cross-module reference
+        // whose target is a VHDL generic (Error-[VHDLXMRE-NS]), so
+        // C_MAJOR_REV / C_MINOR_REV cannot be probed from SystemVerilog. That
+        // check lives in MCU firmware instead, as usb_check_chip_id() reading
+        // the INFO register (see src/integration/test_suites/libs/usb/usb.c).
+        usb_data_check_api.check_device_speed("dev0", 2'b10);
     endtask
 
 endclass

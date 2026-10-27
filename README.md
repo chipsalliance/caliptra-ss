@@ -10,6 +10,12 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 [Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_1/regs/?p=)<BR>
 [Caliptra Subsystem Example Register Map (main branch)](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
 
+## **Release Consumption and Integration** ##
+Prior official releases are available at: https://github.com/chipsalliance/caliptra-ss/releases<br>
+Documentation for any consumed release must be pulled from the corresponding release branch, not from `main`.
+Releases are published as a tag, and also contain downloadable assets (which should not be used).
+Instead of downloading the assets attached to the published release, integrators should consume Caliptra Subsystem releases by pulling code from the repository at the associated tag, due to https://github.com/chipsalliance/caliptra-rtl/issues/471.
+
 ## **Tools Used** ##
 
 OS:

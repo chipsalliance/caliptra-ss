@@ -46,8 +46,6 @@
 class usb_axi_filter_seq extends usb_base_seq;
   `uvm_object_utils(usb_axi_filter_seq)
 
-  typedef bit [USB_TB_AXI_USER_WIDTH-1:0] axi_user_t;
-
   // One filtered AXI path. Its USERs come from the allowlist ports: CSR paths
   // use entry 0 and SRAM paths the last entry, so both ends of each list are used.
   typedef struct {
@@ -59,11 +57,10 @@ class usb_axi_filter_seq extends usb_base_seq;
   } filter_path_t;
 
   localparam int unsigned FILTER_PATH_COUNT = 4;
-  localparam logic [31:0] DEVICE_ROUTE_ADDR = 32'h2c;
   localparam logic [31:0] SRAM_WORD_ADDR = 32'h0;
   localparam bit OWN_LIST = 1'b1;
   localparam bit OTHER_LIST = 1'b0;
-  localparam axi_user_t USER_MSB = axi_user_t'(1) << (USB_TB_AXI_USER_WIDTH - 1);
+  localparam usb_axi_user_t USER_MSB = usb_axi_user_t'(1) << (USB_TB_AXI_USER_WIDTH - 1);
   // The patterns differ in bits 31:30 and the low bits, so they stay distinct under both route masks.
   localparam logic [31:0] PATTERN_A = 32'h4000_a55a;
   localparam logic [31:0] PATTERN_B = 32'h8000_5aa5;
@@ -98,13 +95,13 @@ class usb_axi_filter_seq extends usb_base_seq;
 
   bit completed;
   filter_path_t paths[FILTER_PATH_COUNT] = '{
-    '{target: USB_DEV0_CSR,  combo_policy: 1'b1, is_csr: 1'b1, offset: DEVICE_ROUTE_ADDR, mask: USB_DEV0_ROUTE_MASK},
+    '{target: USB_DEV0_CSR,  combo_policy: 1'b1, is_csr: 1'b1, offset: '0,                mask: USB_DEV0_ROUTE_MASK},
     '{target: USB_DEV0_SRAM, combo_policy: 1'b1, is_csr: 1'b0, offset: SRAM_WORD_ADDR,    mask: 32'hffff_ffff},
-    '{target: USB_DEV1_CSR,  combo_policy: 1'b0, is_csr: 1'b1, offset: DEVICE_ROUTE_ADDR, mask: USB_DEV1_ROUTE_MASK},
+    '{target: USB_DEV1_CSR,  combo_policy: 1'b0, is_csr: 1'b1, offset: '0,                mask: USB_DEV1_ROUTE_MASK},
     '{target: USB_DEV1_SRAM, combo_policy: 1'b0, is_csr: 1'b0, offset: SRAM_WORD_ADDR,    mask: 32'hffff_ffff}
   };
   // Random USER in neither allowlist; the only USER not observable on the control VIF.
-  axi_user_t nonmember_user;
+  usb_axi_user_t nonmember_user;
   logic [31:0] shadow[USB_TARGET_COUNT];
   int unsigned denied_writes[USB_TARGET_COUNT];
   int unsigned denied_reads[USB_TARGET_COUNT];
@@ -126,29 +123,20 @@ class usb_axi_filter_seq extends usb_base_seq;
   time p8_max_256_write[USB_TARGET_COUNT];
   time p8_max_256_read[USB_TARGET_COUNT];
   string phase_name;
-  protected virtual usb_tb_ctrl_if #(
-    .UW(usb_tb_pkg::USB_TB_AXI_USER_WIDTH),
-    .COMBO_NUM_USERS(usb_tb_pkg::USB_COMBO_NUM_PRIV_AXI_USERS),
-    .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
-  ) ctrl_vif;
 
   // Create the sequence. Counters and shadow values are cleared in body().
   function new(string name = "usb_axi_filter_seq");
     super.new(name);
   endfunction
 
-  // Extend the base handle check: require the filter control VIF, then at a
-  // rising edge require both enables to still hold the interface's known-low
-  // bypass default.
+  // Extend the base handle check: require both filter policies to still hold
+  // their known-low bypass default, and resolve each CSR path's route-register
+  // offset from the RAL.
   virtual task pre_start();
     super.pre_start();
-    ctrl_vif = p_sequencer.ctrl_vif;
-    if (ctrl_vif == null) begin
-      `uvm_fatal("USB_FILTER_SEQ", "USB virtual sequencer is missing the AXI USER filter control VIF")
-    end
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== 1'b0 || ctrl_vif.dev1_enable_axi_user_filtering !== 1'b0) begin
-      `uvm_fatal("USB_FILTER_SEQ", $sformatf("Filter enables are not known-low at start: combo=%b dev1=%b", ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering))
+    check_axi_user_filters_bypassed();
+    foreach (paths[index]) begin
+      if (paths[index].is_csr) paths[index].offset = csr_offset(paths[index].target, "INTROUTE");
     end
   endtask
 
@@ -157,32 +145,21 @@ class usb_axi_filter_seq extends usb_base_seq;
   // ---------------------------------------------------------------------------
 
   // Begin a scenario phase: record its label for failure messages, log the
-  // checkpoint, and drive both filter enables with nonblocking assignments at
-  // a rising edge. Returns after the next rising edge, once the enables read
-  // back as requested. The caller must have no transfer in flight (every
-  // access task here is blocking).
+  // checkpoint, and set both filter enables. The caller must have no transfer
+  // in flight (every access task here is blocking).
   protected task start_phase(string name, string description, bit combo_enable, bit dev1_enable);
     phase_name = name;
     `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Starting with combo_enable=%0b dev1_enable=%0b: %s", phase_name, combo_enable, dev1_enable, description), UVM_LOW)
-    @(posedge ctrl_vif.clk);
-    ctrl_vif.combo_enable_axi_user_filtering <= combo_enable;
-    ctrl_vif.dev1_enable_axi_user_filtering <= dev1_enable;
-    @(posedge ctrl_vif.clk);
-    if (ctrl_vif.combo_enable_axi_user_filtering !== combo_enable || ctrl_vif.dev1_enable_axi_user_filtering !== dev1_enable) begin
-      `uvm_fatal("USB_FILTER_SEQ", $sformatf("[%s] Enables read back combo=%b dev1=%b, expected %0b/%0b", phase_name, ctrl_vif.combo_enable_axi_user_filtering, ctrl_vif.dev1_enable_axi_user_filtering, combo_enable, dev1_enable))
-    end
+    set_axi_user_filter_enables(combo_enable, dev1_enable);
   endtask
 
-  // Randomize every entry of both allowlists and nonmember_user, then drive the
-  // lists with nonblocking assignments at a rising edge. All values are unique
-  // across both lists and the nonmember, and no entry's MSB-flipped value is in
-  // its own list. Returns after the next rising edge and logs the lists as
-  // read back from the VIF.
+  // Randomize every entry of both allowlists and nonmember_user, then drive
+  // and confirm both lists. All values are unique across both lists and the
+  // nonmember, and no entry's MSB-flipped value is in its own list. Logs the
+  // lists as the DUT sees them.
   protected task program_allowlists();
-    axi_user_t combo_users[USB_COMBO_NUM_PRIV_AXI_USERS];
-    axi_user_t dev1_users[USB_DEV1_NUM_PRIV_AXI_USERS];
-    string combo_text;
-    string dev1_text;
+    usb_combo_allowlist_t combo_users;
+    usb_dev1_allowlist_t dev1_users;
 
     if (!std::randomize(combo_users, dev1_users, nonmember_user) with {
           unique {combo_users, dev1_users, nonmember_user};
@@ -191,63 +168,37 @@ class usb_axi_filter_seq extends usb_base_seq;
         }) begin
       `uvm_fatal("USB_FILTER_SEQ", "Unable to randomize the AXI USER allowlists")
     end
-    @(posedge ctrl_vif.clk);
-    foreach (combo_users[index]) ctrl_vif.combo_priv_axi_users[index] <= combo_users[index];
-    foreach (dev1_users[index]) ctrl_vif.dev1_priv_axi_users[index] <= dev1_users[index];
-    @(posedge ctrl_vif.clk);
-    for (int unsigned index = 0; index < USB_COMBO_NUM_PRIV_AXI_USERS; index++) begin
-      combo_text = {combo_text, $sformatf(" 0x%08h", ctrl_vif.combo_priv_axi_users[index])};
-    end
-    for (int unsigned index = 0; index < USB_DEV1_NUM_PRIV_AXI_USERS; index++) begin
-      dev1_text = {dev1_text, $sformatf(" 0x%08h", ctrl_vif.dev1_priv_axi_users[index])};
-    end
-    `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Allowlists programmed: Combo =%s; DEV1 =%s; nonmember=0x%08h", phase_name, combo_text, dev1_text, nonmember_user), UVM_LOW)
+    set_axi_user_allowlists(combo_users, dev1_users);
+    `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Allowlists programmed: %s; nonmember=0x%08h", phase_name, format_axi_user_allowlists(), nonmember_user), UVM_LOW)
   endtask
 
   // Return a USER read from the allowlist signals on the control VIF: from the
   // path's own list (OWN_LIST) or the other device's list (OTHER_LIST), at the
   // path's position (entry 0 for CSR paths, last entry for SRAM paths).
-  protected function axi_user_t path_user(filter_path_t path, bit own_list);
+  protected function usb_axi_user_t path_user(filter_path_t path, bit own_list);
     bit combo_list;
 
     combo_list = own_list ? path.combo_policy : !path.combo_policy;
-    if (combo_list) begin
-      return ctrl_vif.combo_priv_axi_users[path.is_csr ? 0 : USB_COMBO_NUM_PRIV_AXI_USERS - 1];
-    end
-    return ctrl_vif.dev1_priv_axi_users[path.is_csr ? 0 : USB_DEV1_NUM_PRIV_AXI_USERS - 1];
-  endfunction
-
-  // Return 1 if user matches any entry of the Combo (combo_list=1) or DEV1
-  // allowlist currently on the control VIF, i.e. what the DUT sees.
-  protected function bit in_driven_list(bit combo_list, axi_user_t user);
-    if (combo_list) begin
-      for (int unsigned index = 0; index < USB_COMBO_NUM_PRIV_AXI_USERS; index++) begin
-        if (ctrl_vif.combo_priv_axi_users[index] === user) return 1'b1;
-      end
-    end else begin
-      for (int unsigned index = 0; index < USB_DEV1_NUM_PRIV_AXI_USERS; index++) begin
-        if (ctrl_vif.dev1_priv_axi_users[index] === user) return 1'b1;
-      end
-    end
-    return 1'b0;
+    if (path.is_csr) return axi_user_allowlist_entry(combo_list, 0);
+    return axi_user_allowlist_entry(combo_list, (combo_list ? USB_COMBO_NUM_PRIV_AXI_USERS : USB_DEV1_NUM_PRIV_AXI_USERS) - 1);
   endfunction
 
   // Fatal if a chosen USER would not exercise the intended decision on the
   // lists the DUT sees: the nonmember must be in neither list, and each path's
   // opposite and MSB-flipped (CSR only) USERs must be absent from its own list.
   protected function void check_user_choices();
-    if (in_driven_list(1'b1, nonmember_user) || in_driven_list(1'b0, nonmember_user)) begin
+    if (axi_user_in_allowlist(1'b1, nonmember_user) || axi_user_in_allowlist(1'b0, nonmember_user)) begin
       `uvm_fatal("USB_FILTER_SEQ", $sformatf("Nonmember USER 0x%0h is present in an allowlist", nonmember_user))
     end
     foreach (paths[index]) begin
       filter_path_t path = paths[index];
-      axi_user_t opposite_user = path_user(path, OTHER_LIST);
-      axi_user_t near_miss_user = path_user(path, OWN_LIST) ^ USER_MSB;
+      usb_axi_user_t opposite_user = path_user(path, OTHER_LIST);
+      usb_axi_user_t near_miss_user = path_user(path, OWN_LIST) ^ USER_MSB;
 
-      if (in_driven_list(path.combo_policy, opposite_user)) begin
+      if (axi_user_in_allowlist(path.combo_policy, opposite_user)) begin
         `uvm_fatal("USB_FILTER_SEQ", $sformatf("%s opposite USER 0x%0h is present in its own allowlist", usb_target_name(path.target), opposite_user))
       end
-      if (path.is_csr && in_driven_list(path.combo_policy, near_miss_user)) begin
+      if (path.is_csr && axi_user_in_allowlist(path.combo_policy, near_miss_user)) begin
         `uvm_fatal("USB_FILTER_SEQ", $sformatf("%s near-miss USER 0x%0h is present in its own allowlist", usb_target_name(path.target), near_miss_user))
       end
     end
@@ -266,13 +217,13 @@ class usb_axi_filter_seq extends usb_base_seq;
 
   // Read the path with user; require OKAY and the last accepted value under the
   // path's mask. Counts one read and one comparison in target_stats.
-  protected task expect_stored(filter_path_t path, axi_user_t user);
+  protected task expect_stored(filter_path_t path, usb_axi_user_t user);
     expect32(path.target, path.offset, shadow[path.target], path.mask, usb_axi_user_override::with_value(user));
   endtask
 
   // Require user to be accepted on the path: write next_pattern() expecting
   // OKAY, record it in shadow[], then read it back with the same USER.
-  protected task expect_accept(filter_path_t path, axi_user_t user);
+  protected task expect_accept(filter_path_t path, usb_axi_user_t user);
     logic [31:0] data;
 
     data = next_pattern(path);
@@ -283,7 +234,7 @@ class usb_axi_filter_seq extends usb_base_seq;
 
   // Write next_pattern() with user and require a locally generated SLVERR.
   // shadow[] and the base success counters are left unchanged.
-  protected task deny_write(filter_path_t path, axi_user_t user);
+  protected task deny_write(filter_path_t path, usb_axi_user_t user);
     aaxi_master_tr transaction;
     logic [31:0] data;
 
@@ -300,7 +251,7 @@ class usb_axi_filter_seq extends usb_base_seq;
 
   // Read with user and require exactly one SLVERR beat carrying a full,
   // known-zero data word. unpack_read_data() is not used because it requires OKAY.
-  protected task deny_read(filter_path_t path, axi_user_t user);
+  protected task deny_read(filter_path_t path, usb_axi_user_t user);
     aaxi_master_tr transaction;
 
     check_address(path.target, path.offset);
@@ -324,7 +275,7 @@ class usb_axi_filter_seq extends usb_base_seq;
   // Require user to be rejected on the path: a denied write, then a read with
   // the path's own allowlisted USER proving the write did not reach storage,
   // then a denied read.
-  protected task expect_deny(filter_path_t path, axi_user_t user);
+  protected task expect_deny(filter_path_t path, usb_axi_user_t user);
     deny_write(path, user);
     expect_stored(path, path_user(path, OWN_LIST));
     deny_read(path, user);
@@ -358,9 +309,9 @@ class usb_axi_filter_seq extends usb_base_seq;
     int unsigned span;
 
     if (!path.is_csr) return SRAM_WORD_ADDR;
-    if (bucket_is_fixed(bucket)) return DEVICE_ROUTE_ADDR;
+    if (bucket_is_fixed(bucket)) return path.offset;
     span = 4 * (beats - 1);
-    return (span >= DEVICE_ROUTE_ADDR) ? 32'h0 : DEVICE_ROUTE_ADDR - span;
+    return (span >= path.offset) ? 32'h0 : path.offset - span;
   endfunction
 
   // Send one multi-beat 32-bit FIXED or INCR burst from nonmember_user and
@@ -467,7 +418,7 @@ class usb_axi_filter_seq extends usb_base_seq;
   // bucket use its minimum then maximum length; later lengths are random.
   protected task run_burst_path(int unsigned path_index);
     filter_path_t path = paths[path_index];
-    axi_user_t own_user = path_user(path, OWN_LIST);
+    usb_axi_user_t own_user = path_user(path, OWN_LIST);
     burst_bucket_e open_buckets[$];
     burst_bucket_e bucket;
     p7_operation_e operation;
@@ -562,7 +513,7 @@ class usb_axi_filter_seq extends usb_base_seq;
   // with every strobe set; reads leave the request data queue empty.
   protected function aaxi_master_tr create_accepted_burst(filter_path_t path, logic [31:0] offset, int unsigned beats, bit is_write, logic [31:0] data_q[$], string label);
     aaxi_master_tr transaction;
-    axi_user_t own_user;
+    usb_axi_user_t own_user;
     logic [31:0] last_offset;
     logic [63:0] first_byte;
     logic [63:0] last_byte;

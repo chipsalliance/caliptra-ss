@@ -12,3 +12,5 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_fs_host_remotewakeup_fromdevice_test'
+  - '+usb_suspend_resume_check=1'
+  - '+usb_device_wakeup_check=1'

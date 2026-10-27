@@ -82,6 +82,10 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  usb \
 		  spi_host
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
+
+# Optional per-test makefile fragment for extra objects/libs/headers/plusargs
+-include $(TEST_DIR)/$(TESTNAME).mk
+
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_mmap.h \
@@ -339,8 +343,13 @@ VCS_ELAB_OPTS += -ignore unique_checks
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
 #VCS_SIM_OPTS  += -mx_force
-VCS_SIM_OPTS  += +svt_debug_opts
+# Enable SVT debug automation: activates protocol, link, and physical trace
+# files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+# Config properties enable_prot_tracing, enable_link_tracing, and
+# enable_phys_tracing gate which layers are written.
+#VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
+VCS_SIM_OPTS  += +mcu_console_fail_check=1
 ############# VCS Simulation Override Options #############
 VCS_SIM_EXTRA_OPTS ?= 
 

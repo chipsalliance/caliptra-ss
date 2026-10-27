@@ -30,7 +30,7 @@ class usb_axi_filter_test extends usb_base_test;
   task run_phase(uvm_phase phase);
     usb_axi_filter_seq seq;
     phase.raise_objection(this);
-    `uvm_info("USB_TEST", $sformatf("Starting AXI USER filter test; whole-test timeout=%0t", USB_TEST_TIMEOUT), UVM_LOW)
+    `uvm_info("USB_TEST", $sformatf("Starting AXI USER filter test; whole-test timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
     seq = usb_axi_filter_seq::type_id::create("axi_filter_sequence");
     seq.start(env.virtual_sequencer);

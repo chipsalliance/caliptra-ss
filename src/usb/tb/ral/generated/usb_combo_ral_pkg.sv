@@ -42,7 +42,6 @@ package usb_combo_ral_pkg;
         rand uvm_reg_field DCON_C;
         rand uvm_reg_field DSUS_C;
         rand uvm_reg_field DRES_C;
-        rand uvm_reg_field OTG_C;
         rand uvm_reg_field VBUS_DEBOUNCED;
         rand uvm_reg_field PHY_TEST_MODE;
 
@@ -89,8 +88,6 @@ package usb_combo_ral_pkg;
             this.DSUS_C.configure(this, 1, 25, "W1C", 1, 'h0, 1, 1, 0);
             this.DRES_C = new("DRES_C");
             this.DRES_C.configure(this, 1, 26, "W1C", 1, 'h0, 1, 1, 0);
-            this.OTG_C = new("OTG_C");
-            this.OTG_C.configure(this, 1, 27, "W1C", 1, 'h0, 1, 1, 0);
             this.VBUS_DEBOUNCED = new("VBUS_DEBOUNCED");
             this.VBUS_DEBOUNCED.configure(this, 1, 28, "RO", 1, 'h0, 0, 1, 0);
             this.PHY_TEST_MODE = new("PHY_TEST_MODE");
@@ -154,11 +151,6 @@ package usb_combo_ral_pkg;
         rand uvm_reg_field HIRD_HW;
         rand uvm_reg_field HIRD_SW;
         rand uvm_reg_field DATA_PENDING;
-        rand uvm_reg_field VBUSCOMP_OFF;
-        rand uvm_reg_field CHRG_VBUS;
-        rand uvm_reg_field DISCHRG_VBUS;
-        rand uvm_reg_field AVALID;
-        rand uvm_reg_field SESSEND;
 
         function new(string name = "usb_combo__dev0_csr__LPM");
             super.new(name, 32, UVM_NO_COVERAGE);
@@ -171,16 +163,6 @@ package usb_combo_ral_pkg;
             this.HIRD_SW.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
             this.DATA_PENDING = new("DATA_PENDING");
             this.DATA_PENDING.configure(this, 1, 8, "RW", 0, 'h0, 1, 1, 0);
-            this.VBUSCOMP_OFF = new("VBUSCOMP_OFF");
-            this.VBUSCOMP_OFF.configure(this, 1, 16, "RW", 0, 'h0, 1, 1, 0);
-            this.CHRG_VBUS = new("CHRG_VBUS");
-            this.CHRG_VBUS.configure(this, 1, 17, "RW", 0, 'h0, 1, 1, 0);
-            this.DISCHRG_VBUS = new("DISCHRG_VBUS");
-            this.DISCHRG_VBUS.configure(this, 1, 18, "RW", 0, 'h0, 1, 1, 0);
-            this.AVALID = new("AVALID");
-            this.AVALID.configure(this, 1, 20, "RO", 1, 'h0, 0, 1, 0);
-            this.SESSEND = new("SESSEND");
-            this.SESSEND.configure(this, 1, 21, "RO", 1, 'h0, 0, 1, 0);
         endfunction : build
     endclass : usb_combo__dev0_csr__LPM
 
@@ -387,7 +369,6 @@ package usb_combo_ral_pkg;
         rand uvm_reg_field SINGLE_BUFFER;
         rand uvm_reg_field DOUBLE_BUFFER;
         rand uvm_reg_field TOGGLE_READABLE;
-        rand uvm_reg_field PLL;
         rand uvm_reg_field UTMI;
         rand uvm_reg_field ULPI;
 
@@ -404,8 +385,6 @@ package usb_combo_ral_pkg;
             this.DOUBLE_BUFFER.configure(this, 1, 6, "RO", 0, 'h1, 1, 1, 0);
             this.TOGGLE_READABLE = new("TOGGLE_READABLE");
             this.TOGGLE_READABLE.configure(this, 1, 7, "RO", 0, 'h1, 1, 1, 0);
-            this.PLL = new("PLL");
-            this.PLL.configure(this, 1, 8, "RO", 0, 'h0, 1, 1, 0);
             this.UTMI = new("UTMI");
             this.UTMI.configure(this, 1, 9, "RO", 0, 'h1, 1, 1, 0);
             this.ULPI = new("ULPI");
@@ -427,52 +406,6 @@ package usb_combo_ral_pkg;
         endfunction : build
     endclass : usb_combo__dev0_csr__EPTOGGLE
 
-    // Reg - usb_combo.dev0_csr.CLKCTRL
-    class usb_combo__dev0_csr__CLKCTRL extends uvm_reg;
-        rand uvm_reg_field EXT_CLK_ENABLE;
-
-        function new(string name = "usb_combo__dev0_csr__CLKCTRL");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.EXT_CLK_ENABLE = new("EXT_CLK_ENABLE");
-            this.EXT_CLK_ENABLE.configure(this, 1, 0, "RO", 0, 'h1, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__dev0_csr__CLKCTRL
-
-    // Reg - usb_combo.dev0_csr.ULPIDEBUG
-    class usb_combo__dev0_csr__ULPIDEBUG extends uvm_reg;
-        rand uvm_reg_field PHY_ADDR;
-        rand uvm_reg_field PHY_ADDR_HIGH;
-        rand uvm_reg_field PHY_WDATA;
-        rand uvm_reg_field PHY_RDATA;
-        rand uvm_reg_field PHY_RW;
-        rand uvm_reg_field PHY_ACCESS;
-        rand uvm_reg_field PHY_MODE;
-
-        function new(string name = "usb_combo__dev0_csr__ULPIDEBUG");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.PHY_ADDR = new("PHY_ADDR");
-            this.PHY_ADDR.configure(this, 4, 0, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_ADDR_HIGH = new("PHY_ADDR_HIGH");
-            this.PHY_ADDR_HIGH.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_WDATA = new("PHY_WDATA");
-            this.PHY_WDATA.configure(this, 8, 8, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_RDATA = new("PHY_RDATA");
-            this.PHY_RDATA.configure(this, 8, 16, "RW", 1, 'h0, 1, 1, 0);
-            this.PHY_RW = new("PHY_RW");
-            this.PHY_RW.configure(this, 1, 24, "RW", 0, 'h0, 1, 1, 0);
-            this.PHY_ACCESS = new("PHY_ACCESS");
-            this.PHY_ACCESS.configure(this, 1, 25, "RW", 1, 'h0, 1, 1, 0);
-            this.PHY_MODE = new("PHY_MODE");
-            this.PHY_MODE.configure(this, 1, 31, "RW", 0, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__dev0_csr__ULPIDEBUG
-
     // Addrmap - usb_combo.dev0_csr
     class usb_combo__dev0_csr extends uvm_reg_block;
         rand usb_combo__dev0_csr__DEVCMDSTAT DEVCMDSTAT;
@@ -489,8 +422,6 @@ package usb_combo_ral_pkg;
         rand usb_combo__dev0_csr__INTROUTE INTROUTE;
         rand usb_combo__dev0_csr__CONFIG CONFIG;
         rand usb_combo__dev0_csr__EPTOGGLE EPTOGGLE;
-        rand usb_combo__dev0_csr__CLKCTRL CLKCTRL;
-        rand usb_combo__dev0_csr__ULPIDEBUG ULPIDEBUG;
 
         function new(string name = "usb_combo__dev0_csr");
             super.new(name);
@@ -568,16 +499,6 @@ package usb_combo_ral_pkg;
 
             this.EPTOGGLE.build();
             this.default_map.add_reg(this.EPTOGGLE, 'h34);
-            this.CLKCTRL = new("CLKCTRL");
-            this.CLKCTRL.configure(this);
-
-            this.CLKCTRL.build();
-            this.default_map.add_reg(this.CLKCTRL, 'h38);
-            this.ULPIDEBUG = new("ULPIDEBUG");
-            this.ULPIDEBUG.configure(this);
-
-            this.ULPIDEBUG.build();
-            this.default_map.add_reg(this.ULPIDEBUG, 'h3c);
         endfunction : build
     endclass : usb_combo__dev0_csr
 
@@ -817,202 +738,6 @@ package usb_combo_ral_pkg;
             this.VENDOR_STATUS_0.configure(this, 8, 24, "RO", 1, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__DEVICE_STATUS_1
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_2
-    class usb_combo__recovery__DEVICE_STATUS_2 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_4_1;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_2");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_4_1 = new("VENDOR_STATUS_4_1");
-            this.VENDOR_STATUS_4_1.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_2
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_3
-    class usb_combo__recovery__DEVICE_STATUS_3 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_8_5;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_3");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_8_5 = new("VENDOR_STATUS_8_5");
-            this.VENDOR_STATUS_8_5.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_3
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_4
-    class usb_combo__recovery__DEVICE_STATUS_4 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_12_9;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_4");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_12_9 = new("VENDOR_STATUS_12_9");
-            this.VENDOR_STATUS_12_9.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_4
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_5
-    class usb_combo__recovery__DEVICE_STATUS_5 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_16_13;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_5");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_16_13 = new("VENDOR_STATUS_16_13");
-            this.VENDOR_STATUS_16_13.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_5
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_6
-    class usb_combo__recovery__DEVICE_STATUS_6 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_20_17;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_6");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_20_17 = new("VENDOR_STATUS_20_17");
-            this.VENDOR_STATUS_20_17.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_6
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_7
-    class usb_combo__recovery__DEVICE_STATUS_7 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_24_21;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_7");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_24_21 = new("VENDOR_STATUS_24_21");
-            this.VENDOR_STATUS_24_21.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_7
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_8
-    class usb_combo__recovery__DEVICE_STATUS_8 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_28_25;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_8");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_28_25 = new("VENDOR_STATUS_28_25");
-            this.VENDOR_STATUS_28_25.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_8
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_9
-    class usb_combo__recovery__DEVICE_STATUS_9 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_32_29;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_9");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_32_29 = new("VENDOR_STATUS_32_29");
-            this.VENDOR_STATUS_32_29.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_9
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_10
-    class usb_combo__recovery__DEVICE_STATUS_10 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_36_33;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_10");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_36_33 = new("VENDOR_STATUS_36_33");
-            this.VENDOR_STATUS_36_33.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_10
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_11
-    class usb_combo__recovery__DEVICE_STATUS_11 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_40_37;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_11");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_40_37 = new("VENDOR_STATUS_40_37");
-            this.VENDOR_STATUS_40_37.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_11
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_12
-    class usb_combo__recovery__DEVICE_STATUS_12 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_44_41;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_12");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_44_41 = new("VENDOR_STATUS_44_41");
-            this.VENDOR_STATUS_44_41.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_12
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_13
-    class usb_combo__recovery__DEVICE_STATUS_13 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_48_45;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_13");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_48_45 = new("VENDOR_STATUS_48_45");
-            this.VENDOR_STATUS_48_45.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_13
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_14
-    class usb_combo__recovery__DEVICE_STATUS_14 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_52_49;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_14");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_52_49 = new("VENDOR_STATUS_52_49");
-            this.VENDOR_STATUS_52_49.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_14
-
-    // Reg - usb_combo.recovery.DEVICE_STATUS_15
-    class usb_combo__recovery__DEVICE_STATUS_15 extends uvm_reg;
-        rand uvm_reg_field VENDOR_STATUS_56_53;
-
-        function new(string name = "usb_combo__recovery__DEVICE_STATUS_15");
-            super.new(name, 32, UVM_NO_COVERAGE);
-        endfunction : new
-
-        virtual function void build();
-            this.VENDOR_STATUS_56_53 = new("VENDOR_STATUS_56_53");
-            this.VENDOR_STATUS_56_53.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
-        endfunction : build
-    endclass : usb_combo__recovery__DEVICE_STATUS_15
 
     // Reg - usb_combo.recovery.DEVICE_RESET
     class usb_combo__recovery__DEVICE_RESET extends uvm_reg;
@@ -1339,20 +1064,6 @@ package usb_combo_ral_pkg;
         rand usb_combo__recovery__DEVICE_ID_5 DEVICE_ID_5;
         rand usb_combo__recovery__DEVICE_STATUS_0 DEVICE_STATUS_0;
         rand usb_combo__recovery__DEVICE_STATUS_1 DEVICE_STATUS_1;
-        rand usb_combo__recovery__DEVICE_STATUS_2 DEVICE_STATUS_2;
-        rand usb_combo__recovery__DEVICE_STATUS_3 DEVICE_STATUS_3;
-        rand usb_combo__recovery__DEVICE_STATUS_4 DEVICE_STATUS_4;
-        rand usb_combo__recovery__DEVICE_STATUS_5 DEVICE_STATUS_5;
-        rand usb_combo__recovery__DEVICE_STATUS_6 DEVICE_STATUS_6;
-        rand usb_combo__recovery__DEVICE_STATUS_7 DEVICE_STATUS_7;
-        rand usb_combo__recovery__DEVICE_STATUS_8 DEVICE_STATUS_8;
-        rand usb_combo__recovery__DEVICE_STATUS_9 DEVICE_STATUS_9;
-        rand usb_combo__recovery__DEVICE_STATUS_10 DEVICE_STATUS_10;
-        rand usb_combo__recovery__DEVICE_STATUS_11 DEVICE_STATUS_11;
-        rand usb_combo__recovery__DEVICE_STATUS_12 DEVICE_STATUS_12;
-        rand usb_combo__recovery__DEVICE_STATUS_13 DEVICE_STATUS_13;
-        rand usb_combo__recovery__DEVICE_STATUS_14 DEVICE_STATUS_14;
-        rand usb_combo__recovery__DEVICE_STATUS_15 DEVICE_STATUS_15;
         rand usb_combo__recovery__DEVICE_RESET DEVICE_RESET;
         rand usb_combo__recovery__RECOVERY_CTRL RECOVERY_CTRL;
         rand usb_combo__recovery__RECOVERY_STATUS RECOVERY_STATUS;
@@ -1380,197 +1091,127 @@ package usb_combo_ral_pkg;
             this.PROT_CAP_0.configure(this);
 
             this.PROT_CAP_0.build();
-            this.default_map.add_reg(this.PROT_CAP_0, 'h0);
+            this.default_map.add_reg(this.PROT_CAP_0, 'h4);
             this.PROT_CAP_1 = new("PROT_CAP_1");
             this.PROT_CAP_1.configure(this);
 
             this.PROT_CAP_1.build();
-            this.default_map.add_reg(this.PROT_CAP_1, 'h4);
+            this.default_map.add_reg(this.PROT_CAP_1, 'h8);
             this.PROT_CAP_2 = new("PROT_CAP_2");
             this.PROT_CAP_2.configure(this);
 
             this.PROT_CAP_2.build();
-            this.default_map.add_reg(this.PROT_CAP_2, 'h8);
+            this.default_map.add_reg(this.PROT_CAP_2, 'hc);
             this.PROT_CAP_3 = new("PROT_CAP_3");
             this.PROT_CAP_3.configure(this);
 
             this.PROT_CAP_3.build();
-            this.default_map.add_reg(this.PROT_CAP_3, 'hc);
+            this.default_map.add_reg(this.PROT_CAP_3, 'h10);
             this.DEVICE_ID_0 = new("DEVICE_ID_0");
             this.DEVICE_ID_0.configure(this);
 
             this.DEVICE_ID_0.build();
-            this.default_map.add_reg(this.DEVICE_ID_0, 'h10);
+            this.default_map.add_reg(this.DEVICE_ID_0, 'h14);
             this.DEVICE_ID_1 = new("DEVICE_ID_1");
             this.DEVICE_ID_1.configure(this);
 
             this.DEVICE_ID_1.build();
-            this.default_map.add_reg(this.DEVICE_ID_1, 'h14);
+            this.default_map.add_reg(this.DEVICE_ID_1, 'h18);
             this.DEVICE_ID_2 = new("DEVICE_ID_2");
             this.DEVICE_ID_2.configure(this);
 
             this.DEVICE_ID_2.build();
-            this.default_map.add_reg(this.DEVICE_ID_2, 'h18);
+            this.default_map.add_reg(this.DEVICE_ID_2, 'h1c);
             this.DEVICE_ID_3 = new("DEVICE_ID_3");
             this.DEVICE_ID_3.configure(this);
 
             this.DEVICE_ID_3.build();
-            this.default_map.add_reg(this.DEVICE_ID_3, 'h1c);
+            this.default_map.add_reg(this.DEVICE_ID_3, 'h20);
             this.DEVICE_ID_4 = new("DEVICE_ID_4");
             this.DEVICE_ID_4.configure(this);
 
             this.DEVICE_ID_4.build();
-            this.default_map.add_reg(this.DEVICE_ID_4, 'h20);
+            this.default_map.add_reg(this.DEVICE_ID_4, 'h24);
             this.DEVICE_ID_5 = new("DEVICE_ID_5");
             this.DEVICE_ID_5.configure(this);
 
             this.DEVICE_ID_5.build();
-            this.default_map.add_reg(this.DEVICE_ID_5, 'h24);
+            this.default_map.add_reg(this.DEVICE_ID_5, 'h28);
             this.DEVICE_STATUS_0 = new("DEVICE_STATUS_0");
             this.DEVICE_STATUS_0.configure(this);
 
             this.DEVICE_STATUS_0.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_0, 'h28);
+            this.default_map.add_reg(this.DEVICE_STATUS_0, 'h30);
             this.DEVICE_STATUS_1 = new("DEVICE_STATUS_1");
             this.DEVICE_STATUS_1.configure(this);
 
             this.DEVICE_STATUS_1.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_1, 'h2c);
-            this.DEVICE_STATUS_2 = new("DEVICE_STATUS_2");
-            this.DEVICE_STATUS_2.configure(this);
-
-            this.DEVICE_STATUS_2.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_2, 'h30);
-            this.DEVICE_STATUS_3 = new("DEVICE_STATUS_3");
-            this.DEVICE_STATUS_3.configure(this);
-
-            this.DEVICE_STATUS_3.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_3, 'h34);
-            this.DEVICE_STATUS_4 = new("DEVICE_STATUS_4");
-            this.DEVICE_STATUS_4.configure(this);
-
-            this.DEVICE_STATUS_4.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_4, 'h38);
-            this.DEVICE_STATUS_5 = new("DEVICE_STATUS_5");
-            this.DEVICE_STATUS_5.configure(this);
-
-            this.DEVICE_STATUS_5.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_5, 'h3c);
-            this.DEVICE_STATUS_6 = new("DEVICE_STATUS_6");
-            this.DEVICE_STATUS_6.configure(this);
-
-            this.DEVICE_STATUS_6.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_6, 'h40);
-            this.DEVICE_STATUS_7 = new("DEVICE_STATUS_7");
-            this.DEVICE_STATUS_7.configure(this);
-
-            this.DEVICE_STATUS_7.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_7, 'h44);
-            this.DEVICE_STATUS_8 = new("DEVICE_STATUS_8");
-            this.DEVICE_STATUS_8.configure(this);
-
-            this.DEVICE_STATUS_8.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_8, 'h48);
-            this.DEVICE_STATUS_9 = new("DEVICE_STATUS_9");
-            this.DEVICE_STATUS_9.configure(this);
-
-            this.DEVICE_STATUS_9.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_9, 'h4c);
-            this.DEVICE_STATUS_10 = new("DEVICE_STATUS_10");
-            this.DEVICE_STATUS_10.configure(this);
-
-            this.DEVICE_STATUS_10.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_10, 'h50);
-            this.DEVICE_STATUS_11 = new("DEVICE_STATUS_11");
-            this.DEVICE_STATUS_11.configure(this);
-
-            this.DEVICE_STATUS_11.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_11, 'h54);
-            this.DEVICE_STATUS_12 = new("DEVICE_STATUS_12");
-            this.DEVICE_STATUS_12.configure(this);
-
-            this.DEVICE_STATUS_12.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_12, 'h58);
-            this.DEVICE_STATUS_13 = new("DEVICE_STATUS_13");
-            this.DEVICE_STATUS_13.configure(this);
-
-            this.DEVICE_STATUS_13.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_13, 'h5c);
-            this.DEVICE_STATUS_14 = new("DEVICE_STATUS_14");
-            this.DEVICE_STATUS_14.configure(this);
-
-            this.DEVICE_STATUS_14.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_14, 'h60);
-            this.DEVICE_STATUS_15 = new("DEVICE_STATUS_15");
-            this.DEVICE_STATUS_15.configure(this);
-
-            this.DEVICE_STATUS_15.build();
-            this.default_map.add_reg(this.DEVICE_STATUS_15, 'h64);
+            this.default_map.add_reg(this.DEVICE_STATUS_1, 'h34);
             this.DEVICE_RESET = new("DEVICE_RESET");
             this.DEVICE_RESET.configure(this);
 
             this.DEVICE_RESET.build();
-            this.default_map.add_reg(this.DEVICE_RESET, 'h68);
+            this.default_map.add_reg(this.DEVICE_RESET, 'h38);
             this.RECOVERY_CTRL = new("RECOVERY_CTRL");
             this.RECOVERY_CTRL.configure(this);
 
             this.RECOVERY_CTRL.build();
-            this.default_map.add_reg(this.RECOVERY_CTRL, 'h6c);
+            this.default_map.add_reg(this.RECOVERY_CTRL, 'h3c);
             this.RECOVERY_STATUS = new("RECOVERY_STATUS");
             this.RECOVERY_STATUS.configure(this);
 
             this.RECOVERY_STATUS.build();
-            this.default_map.add_reg(this.RECOVERY_STATUS, 'h70);
+            this.default_map.add_reg(this.RECOVERY_STATUS, 'h40);
             this.HW_STATUS = new("HW_STATUS");
             this.HW_STATUS.configure(this);
 
             this.HW_STATUS.build();
-            this.default_map.add_reg(this.HW_STATUS, 'h74);
+            this.default_map.add_reg(this.HW_STATUS, 'h44);
             this.INDIRECT_FIFO_CTRL_0 = new("INDIRECT_FIFO_CTRL_0");
             this.INDIRECT_FIFO_CTRL_0.configure(this);
 
             this.INDIRECT_FIFO_CTRL_0.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_0, 'h184);
+            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_0, 'h48);
             this.INDIRECT_FIFO_CTRL_1 = new("INDIRECT_FIFO_CTRL_1");
             this.INDIRECT_FIFO_CTRL_1.configure(this);
 
             this.INDIRECT_FIFO_CTRL_1.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_1, 'h188);
+            this.default_map.add_reg(this.INDIRECT_FIFO_CTRL_1, 'h4c);
             this.INDIRECT_FIFO_STATUS_0 = new("INDIRECT_FIFO_STATUS_0");
             this.INDIRECT_FIFO_STATUS_0.configure(this);
 
             this.INDIRECT_FIFO_STATUS_0.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_0, 'h18c);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_0, 'h50);
             this.INDIRECT_FIFO_STATUS_1 = new("INDIRECT_FIFO_STATUS_1");
             this.INDIRECT_FIFO_STATUS_1.configure(this);
 
             this.INDIRECT_FIFO_STATUS_1.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_1, 'h190);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_1, 'h54);
             this.INDIRECT_FIFO_STATUS_2 = new("INDIRECT_FIFO_STATUS_2");
             this.INDIRECT_FIFO_STATUS_2.configure(this);
 
             this.INDIRECT_FIFO_STATUS_2.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_2, 'h194);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_2, 'h58);
             this.INDIRECT_FIFO_STATUS_3 = new("INDIRECT_FIFO_STATUS_3");
             this.INDIRECT_FIFO_STATUS_3.configure(this);
 
             this.INDIRECT_FIFO_STATUS_3.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_3, 'h198);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_3, 'h5c);
             this.INDIRECT_FIFO_STATUS_4 = new("INDIRECT_FIFO_STATUS_4");
             this.INDIRECT_FIFO_STATUS_4.configure(this);
 
             this.INDIRECT_FIFO_STATUS_4.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_4, 'h19c);
+            this.default_map.add_reg(this.INDIRECT_FIFO_STATUS_4, 'h60);
             this.INDIRECT_FIFO_DATA = new("INDIRECT_FIFO_DATA");
             this.INDIRECT_FIFO_DATA.configure(this);
 
             this.INDIRECT_FIFO_DATA.build();
-            this.default_map.add_reg(this.INDIRECT_FIFO_DATA, 'h1a0);
+            this.default_map.add_reg(this.INDIRECT_FIFO_DATA, 'h68);
             this.VENDOR = new("VENDOR");
             this.VENDOR.configure(this);
 
             this.VENDOR.build();
-            this.default_map.add_reg(this.VENDOR, 'h1a4);
+            this.default_map.add_reg(this.VENDOR, 'h100);
             this.CALIPTRA_CTRL = new("CALIPTRA_CTRL");
             this.CALIPTRA_CTRL.configure(this);
 
@@ -1599,7 +1240,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.default_map = create_map("reg_map", 0, 4.0, UVM_NO_ENDIAN);
-            this.m_mem = new("m_mem", 15, 32, "RW");
+            this.m_mem = new("m_mem", 12, 32, "RW");
             this.m_mem.configure(this);
             this.default_map.add_mem(this.m_mem, 0);
         endfunction : build
@@ -1609,9 +1250,18 @@ package usb_combo_ral_pkg;
     class usb_combo__hub__CONTROL extends uvm_reg;
         rand uvm_reg_field ENABLE;
         rand uvm_reg_field RESERVED_LOW;
+        rand uvm_reg_field FORCE_NEEDCLK;
+        rand uvm_reg_field FORCE_VBUS;
+        rand uvm_reg_field LPM_SUP;
+        rand uvm_reg_field RESERVED_MID;
         rand uvm_reg_field DCON;
         rand uvm_reg_field RESERVED_17;
         rand uvm_reg_field SELF_POWERED;
+        rand uvm_reg_field RESERVED_MID2;
+        rand uvm_reg_field FORCE_FULLSPEED;
+        rand uvm_reg_field Speed;
+        rand uvm_reg_field RESERVED_MID3;
+        rand uvm_reg_field VBUS_DEBOUNCED;
         rand uvm_reg_field RESERVED_HIGH;
 
         function new(string name = "usb_combo__hub__CONTROL");
@@ -1622,17 +1272,87 @@ package usb_combo_ral_pkg;
             this.ENABLE = new("ENABLE");
             this.ENABLE.configure(this, 1, 0, "RW", 1, 'h0, 1, 1, 0);
             this.RESERVED_LOW = new("RESERVED_LOW");
-            this.RESERVED_LOW.configure(this, 15, 1, "RW", 0, 'h0, 1, 1, 0);
+            this.RESERVED_LOW.configure(this, 8, 1, "RW", 0, 'h0, 1, 1, 0);
+            this.FORCE_NEEDCLK = new("FORCE_NEEDCLK");
+            this.FORCE_NEEDCLK.configure(this, 1, 9, "RW", 0, 'h0, 1, 1, 0);
+            this.FORCE_VBUS = new("FORCE_VBUS");
+            this.FORCE_VBUS.configure(this, 1, 10, "RW", 0, 'h0, 1, 1, 0);
+            this.LPM_SUP = new("LPM_SUP");
+            this.LPM_SUP.configure(this, 1, 11, "RW", 0, 'h1, 1, 1, 0);
+            this.RESERVED_MID = new("RESERVED_MID");
+            this.RESERVED_MID.configure(this, 4, 12, "RW", 0, 'h0, 1, 1, 0);
             this.DCON = new("DCON");
             this.DCON.configure(this, 1, 16, "RW", 1, 'h0, 1, 1, 0);
             this.RESERVED_17 = new("RESERVED_17");
             this.RESERVED_17.configure(this, 1, 17, "RW", 0, 'h0, 1, 1, 0);
             this.SELF_POWERED = new("SELF_POWERED");
             this.SELF_POWERED.configure(this, 1, 18, "RW", 0, 'h0, 1, 1, 0);
+            this.RESERVED_MID2 = new("RESERVED_MID2");
+            this.RESERVED_MID2.configure(this, 2, 19, "RW", 0, 'h0, 1, 1, 0);
+            this.FORCE_FULLSPEED = new("FORCE_FULLSPEED");
+            this.FORCE_FULLSPEED.configure(this, 1, 21, "RW", 0, 'h0, 1, 1, 0);
+            this.Speed = new("Speed");
+            this.Speed.configure(this, 2, 22, "RO", 1, 'h0, 0, 1, 0);
+            this.RESERVED_MID3 = new("RESERVED_MID3");
+            this.RESERVED_MID3.configure(this, 4, 24, "RW", 0, 'h0, 1, 1, 0);
+            this.VBUS_DEBOUNCED = new("VBUS_DEBOUNCED");
+            this.VBUS_DEBOUNCED.configure(this, 1, 28, "RO", 1, 'h0, 0, 1, 0);
             this.RESERVED_HIGH = new("RESERVED_HIGH");
-            this.RESERVED_HIGH.configure(this, 13, 19, "RW", 0, 'h0, 1, 1, 0);
+            this.RESERVED_HIGH.configure(this, 3, 29, "RW", 0, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__hub__CONTROL
+
+    // Reg - usb_combo.hub.LPM
+    class usb_combo__hub__LPM extends uvm_reg;
+        rand uvm_reg_field BESL_HW;
+        rand uvm_reg_field BESL_SW;
+        rand uvm_reg_field RESERVED_HIGH;
+
+        function new(string name = "usb_combo__hub__LPM");
+            super.new(name, 32, UVM_NO_COVERAGE);
+        endfunction : new
+
+        virtual function void build();
+            this.BESL_HW = new("BESL_HW");
+            this.BESL_HW.configure(this, 4, 0, "RW", 1, 'h0, 1, 1, 0);
+            this.BESL_SW = new("BESL_SW");
+            this.BESL_SW.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
+            this.RESERVED_HIGH = new("RESERVED_HIGH");
+            this.RESERVED_HIGH.configure(this, 24, 8, "RW", 0, 'h0, 1, 1, 0);
+        endfunction : build
+    endclass : usb_combo__hub__LPM
+
+    // Reg - usb_combo.hub.ULPIDEBUG
+    class usb_combo__hub__ULPIDEBUG extends uvm_reg;
+        rand uvm_reg_field PHY_ADDR;
+        rand uvm_reg_field PHY_ADDR_HIGH;
+        rand uvm_reg_field PHY_WDATA;
+        rand uvm_reg_field PHY_RDATA;
+        rand uvm_reg_field PHY_RW;
+        rand uvm_reg_field PHY_ACCESS;
+        rand uvm_reg_field PHY_MODE;
+
+        function new(string name = "usb_combo__hub__ULPIDEBUG");
+            super.new(name, 32, UVM_NO_COVERAGE);
+        endfunction : new
+
+        virtual function void build();
+            this.PHY_ADDR = new("PHY_ADDR");
+            this.PHY_ADDR.configure(this, 4, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.PHY_ADDR_HIGH = new("PHY_ADDR_HIGH");
+            this.PHY_ADDR_HIGH.configure(this, 4, 4, "RW", 0, 'h0, 1, 1, 0);
+            this.PHY_WDATA = new("PHY_WDATA");
+            this.PHY_WDATA.configure(this, 8, 8, "RW", 0, 'h0, 1, 1, 0);
+            this.PHY_RDATA = new("PHY_RDATA");
+            this.PHY_RDATA.configure(this, 8, 16, "RW", 1, 'h0, 1, 1, 0);
+            this.PHY_RW = new("PHY_RW");
+            this.PHY_RW.configure(this, 1, 24, "RW", 0, 'h0, 1, 1, 0);
+            this.PHY_ACCESS = new("PHY_ACCESS");
+            this.PHY_ACCESS.configure(this, 1, 25, "RW", 1, 'h0, 1, 1, 0);
+            this.PHY_MODE = new("PHY_MODE");
+            this.PHY_MODE.configure(this, 1, 31, "RW", 0, 'h0, 1, 1, 0);
+        endfunction : build
+    endclass : usb_combo__hub__ULPIDEBUG
 
     // Mem - usb_combo.hub.DESCRIPTOR_HIGH
     class usb_combo__hub__DESCRIPTOR_HIGH extends uvm_reg_block;
@@ -1644,7 +1364,7 @@ package usb_combo_ral_pkg;
 
         virtual function void build();
             this.default_map = create_map("reg_map", 0, 4.0, UVM_NO_ENDIAN);
-            this.m_mem = new("m_mem", 156, 32, "RW");
+            this.m_mem = new("m_mem", 180, 32, "RW");
             this.m_mem.configure(this);
             this.default_map.add_mem(this.m_mem, 0);
         endfunction : build
@@ -1654,6 +1374,8 @@ package usb_combo_ral_pkg;
     class usb_combo__hub extends uvm_reg_block;
         rand usb_combo__hub__DESCRIPTOR_LOW DESCRIPTOR_LOW;
         rand usb_combo__hub__CONTROL CONTROL;
+        rand usb_combo__hub__LPM LPM;
+        rand usb_combo__hub__ULPIDEBUG ULPIDEBUG;
         rand usb_combo__hub__DESCRIPTOR_HIGH DESCRIPTOR_HIGH;
 
         function new(string name = "usb_combo__hub");
@@ -1670,7 +1392,17 @@ package usb_combo_ral_pkg;
             this.CONTROL.configure(this);
 
             this.CONTROL.build();
-            this.default_map.add_reg(this.CONTROL, 'h3c);
+            this.default_map.add_reg(this.CONTROL, 'h30);
+            this.LPM = new("LPM");
+            this.LPM.configure(this);
+
+            this.LPM.build();
+            this.default_map.add_reg(this.LPM, 'h34);
+            this.ULPIDEBUG = new("ULPIDEBUG");
+            this.ULPIDEBUG.configure(this);
+
+            this.ULPIDEBUG.build();
+            this.default_map.add_reg(this.ULPIDEBUG, 'h3c);
             this.DESCRIPTOR_HIGH = new("DESCRIPTOR_HIGH");
             this.DESCRIPTOR_HIGH.configure(this);
             this.DESCRIPTOR_HIGH.build();

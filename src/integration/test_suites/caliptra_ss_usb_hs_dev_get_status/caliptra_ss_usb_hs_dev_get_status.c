@@ -41,7 +41,7 @@
 // mcu_isr.o for this test (see tools/scripts/Makefile).
 #include "mcu_isr.h"
 
-#define USB_POLL_TIMEOUT 12000
+#define USB_POLL_TIMEOUT 5000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -95,7 +95,7 @@ void main (void) {
     // USBDC0's own EP list/DEVCMDSTAT/DCON are now fully programmed (end
     // of boot_usb_core_hub()), so it is safe to connect the hub upstream:
     // usb_hub_connect() sets HUB_CONNECT, per the reference
-    // janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this call
+    // BFM two-phase sequencing. Only after this call
     // will the host see the hub on the bus and begin enumerating its
     // downstream port (where USBDC0 is attached).
     usb_hub_connect();
@@ -119,8 +119,23 @@ void main (void) {
         // acknowledged INTSTAT, so the foreground loop must not touch
         // INTSTAT itself. Snapshot then clear by complement so bits the
         // ISR sets while we are handling this batch are not lost.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        //
+        // The snapshot plus clear is a read-modify-write (lw / and / sw) on
+        // a location the ISR also updates with |=. If the USB interrupt is
+        // taken between the lw and the sw, the bit the ISR just published is
+        // overwritten by the stale value and lost for good, because
+        // service_usb_intr() has already W1C'd INTSTAT so the hardware
+        // source never refires. That loses one EP0OUT event and the SETUP
+        // then sits in DEVCMDSTAT forever. Mask mstatus.MIE (bit 3) across
+        // the pair to make it atomic, and restore only if it was set.
+        {
+            uint32_t prev_mstatus = csr_read_clr_bits_mstatus(0x8u);
+            usb_events = mcu_intr_rcv.usb;
+            mcu_intr_rcv.usb &= ~usb_events;
+            if (prev_mstatus & 0x8u) {
+                csr_set_bits_mstatus(0x8u);
+            }
+        }
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
@@ -133,22 +148,30 @@ void main (void) {
             // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
-        // Check for EP0 OUT interrupt (SETUP or data)
-        if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+        // Check for EP0 OUT work: either the ISR reported an EP0OUT event,
+        // or the hardware is holding DEVCMDSTAT.SETUP. The second condition
+        // is the recovery path: DEVCMDSTAT.SETUP is a sticky hardware flag
+        // that only firmware clears (usb_clear_setup_bit()), so polling it
+        // directly means a lost or coalesced EP0OUT mailbox bit can no
+        // longer wedge the loop. Dispatching on the register rather than on
+        // the event makes the handling idempotent and self healing.
+        {
             uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+            uint32_t ep0out_evt = usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK;
+            uint32_t setup_pend = cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK;
 
-            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+            if (setup_pend) {
                 // NOTE: do NOT VPRINTF before usb_handle_control_transfer.
                 // Each VPRINTF adds ~1-2us; the host VIP gives up on IN
                 // polling ~5us after the SETUP ACK. Logging is done inside
                 // the handler AFTER the SETUP bit is cleared.
                 usb_handle_control_transfer();
                 transfers_handled++;
-            } else {
+            } else if (ep0out_evt) {
                 // Status-stage ZLP OUT for a control-read completed (no
                 // SETUP set). HW cleared ACTIVE on the EP0 OUT descriptor;
                 // re-arm it so the next SETUP packet is received instead
-                // of NAK'd. Matches janus_ahb_fw_bfm.sv:
+                // of NAK'd. Matches BFM:
                 // dma_write32(EP0_OUT_DESC, 0xa0000000). Without this the
                 // hub-composite IP's EP-list SRAM keeps EP0 OUT disarmed
                 // after the first status-stage ZLP and every subsequent

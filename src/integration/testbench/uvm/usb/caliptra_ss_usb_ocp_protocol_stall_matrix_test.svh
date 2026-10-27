@@ -17,8 +17,7 @@
 
 // Thin test wrapper for the mirrored-SETUP protocol-STALL and error-code
 // matrix. Reuses the post-sync arbiter test base, which installs the arbiter
-// checker. This test opts into mirrored-SETUP behavior
-// before the environment creates that checker.
+// checker and owns the common command-service-loop completion policy.
 class caliptra_ss_usb_ocp_protocol_stall_matrix_test
     extends caliptra_ss_usb_ocp_arbiter_test_base;
 
@@ -31,8 +30,6 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_test
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
-        uvm_config_db#(bit)::set(
-            null, "", "ocp_arbiter_mirrored_setup_mode", 1'b1);
         super.build_phase(phase);
         uvm_config_db#(uvm_object_wrapper)::set(
             this,

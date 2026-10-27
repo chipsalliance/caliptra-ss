@@ -69,6 +69,14 @@ package tb_top_pkg;
     localparam [4:0] SET_MCU_MBOX1_AXI_USER_INTEG   = { 1'b0,          1'b0,          1'b0,          1'b0,          1'b0};
     localparam [4:0][31:0] MCU_MBOX1_VALID_AXI_USER = {32'h4444_4444, 32'h3333_3333, 32'h2222_2222, 32'h1111_1111, 32'h0000_0000};
 
+    // MCU ROM Patch SRAM
+    localparam MCU_ROM_PATCH_SRAM_SIZE_KB = 4;
+    localparam MCU_ROM_PATCH_SRAM_DATA_W = 32;
+    localparam MCU_ROM_PATCH_SRAM_ECC_DATA_W = 7;
+    localparam MCU_ROM_PATCH_SRAM_DATA_AND_ECC_W = MCU_ROM_PATCH_SRAM_DATA_W + MCU_ROM_PATCH_SRAM_ECC_DATA_W;
+    localparam MCU_ROM_PATCH_SRAM_DEPTH = (MCU_ROM_PATCH_SRAM_SIZE_KB * 1024 * 8) / MCU_ROM_PATCH_SRAM_DATA_W;
+    localparam MCU_ROM_PATCH_SRAM_ADDR_W = $clog2(MCU_ROM_PATCH_SRAM_DEPTH);
+
     // SPI Host
     `ifndef SPI_HOST_ENA_TB
         parameter SPI_HOST_ENA_TB       = 1;

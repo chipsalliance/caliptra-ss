@@ -4,11 +4,6 @@ requires:
   - axi_sub
   - caliptra_prim_pkg
 targets:
-  tb:
-    directories:
-      - $COMPILE_ROOT/../../third_party/i3c-core/src
-    files:
-      - $COMPILE_ROOT/../../third_party/i3c-core/src/i3c_defines.svh
   rtl:
     directories:
       - $COMPILE_ROOT/../../third_party/i3c-core/src

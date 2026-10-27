@@ -13,5 +13,3 @@ pre-exec: |
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_lpm_l1_test'
   - '+usb_suspend_resume_check=1'
-
-# File contains AI-generated response based on internal company sources
