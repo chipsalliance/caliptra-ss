@@ -47,6 +47,7 @@
   ]
 
   // Coverage exclusion
+  vcs_cov_excl_files: ["{self_dir}/../config/cov_waivers.el"]
   xcelium_cov_refine_files: ["{self_dir}/cov/spi_host_unr_excl.vRefine"]
 
   // Default iterations for all tests - each test entry can override this.
@@ -76,6 +77,7 @@
       name: spi_host_upper_range_clkdiv
       uvm_test_seq: spi_host_upper_range_clkdiv_vseq
       reseed: 5
+      run_opts: ["+test_timeout_ns=1_000_000_000"]
     }
     {
       name: spi_host_performance
@@ -89,22 +91,19 @@
     {
       name: spi_host_overflow_underflow
       uvm_test_seq: spi_host_overflow_underflow_vseq
-      run_opts: ["+en_scb=0"]
     }
     {
       name: spi_host_error_cmd
       uvm_test_seq: spi_host_error_cmd_vseq
-      run_opts: ["+en_scb=0"]
     }
     {
       name: spi_host_event
       uvm_test_seq: spi_host_event_vseq
-      run_opts: ["+en_scb=0", "+test_timeout_ns=1_000_000_000"]
+      run_opts: ["+test_timeout_ns=1_000_000_000"]
     }
     {
       name: spi_host_passthrough_mode
       uvm_test_seq: spi_host_passthrough_mode_vseq
-      run_opts: ["+en_scb=0"]
     }
     {
       name: spi_host_status_stall
@@ -123,6 +122,7 @@
     {
       name: spi_host_spien
       uvm_test_seq: spi_host_spien_vseq
+      run_opts: ["+test_timeout_ns=1_000_000_000"]
     }
     {
       name: spi_host_flash

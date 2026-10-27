@@ -2,11 +2,13 @@
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 // SPDX-License-Identifier: Apache-2.0
 
-// Report catcher used only during the negative scoreboard self-check to verify
-// that the scoreboard reports a UVM_ERROR when observed SPI data mismatches expected TX data.
+// Report catcher used only during negative scoreboard self-checks to verify
+// that the scoreboard reports a UVM_ERROR when observed SPI data, 4-state pin state,
+// or timing mismatches expected behavior.
 class spi_host_scb_neg_catcher extends uvm_report_catcher;
   `uvm_object_utils(spi_host_scb_neg_catcher)
   int unsigned caught_err_cnt = 0;
+  string       match_pattern  = "*WRITE: actual data did not match exp data*";
 
   function new(string name = "spi_host_scb_neg_catcher");
     super.new(name);
@@ -14,7 +16,7 @@ class spi_host_scb_neg_catcher extends uvm_report_catcher;
 
   virtual function action_e catch();
     if (get_severity() == UVM_ERROR &&
-        uvm_is_match("*WRITE: actual data did not match exp data*", get_message())) begin
+        uvm_is_match(match_pattern, get_message())) begin
       caught_err_cnt++;
       set_severity(UVM_INFO);
       return CAUGHT;
@@ -472,10 +474,60 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
 
       program_control_reg();
       csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
+
+      // 8b. Verify command queued while CONTROL.OUTPUT_EN == 0 (with SPIEN == 0) enters u_cmd_queue
+      // and executes with full scoreboard TX/RX checking once OUTPUT_EN == 1 and SPIEN == 1.
+      begin
+        int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+        int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+        bit [7:0] exp_rx_b = 8'h69;
+
+        ral.control.spien.set(1'b0);
+        ral.control.output_en.set(1'b0);
+        ral.control.sw_rst.set(1'b0);
+        csr_wr(.ptr(ral.control), .value(ral.control.get()));
+
+        write_txdata(32'h0000_0096, 4'b0001, status);
+        cmd.direction = Bidir;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+        csr_rd_check(.ptr(ral.status.cmdqd), .compare_value(4'd1));
+
+        fork
+          begin
+            @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
+            for (int b = 7; b >= 0; b--) begin
+              cfg.m_spi_agent_cfg.vif.sio_out[1] = exp_rx_b[b];
+              @(negedge cfg.m_spi_agent_cfg.vif.sck);
+            end
+            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+          end
+          begin
+            program_control_reg(); // Enables spien=1, output_en=1
+            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                         .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+          end
+        join
+        csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        ral.rxdata.read(status, 0, dummy_rdata);
+        `DV_CHECK_EQ(dummy_rdata[7:0], exp_rx_b,
+                     "Expected RXDATA byte 0x69 for command queued while OUTPUT_EN==0")
+        cfg.clk_rst_vif.wait_clks(10);
+        if (cfg.en_scb) begin
+          `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                       "Expected scoreboard to check command queued while OUTPUT_EN==0")
+          `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                       "Expected scoreboard RX check for command queued while OUTPUT_EN==0")
+        end
+      end
     end
 
-    // 9. Target u_select (spi_host_byte_select) partial byte_en drain conditions (do_drain=1)
-    // and back-to-back sub-word FIFO writes via bus-propagated byte enables without FIFO reset.
+    // 9. Target u_select (spi_host_byte_select) partial byte_en drain conditions (do_drain=1),
+    // all 8 valid TXDATA byte masks (including 4'b0110), partial-word RxOnly & Bidir checks,
+    // and CS1 distinct-setting checked transfers.
     begin
       bit [7:0] subword_q[$];
 
@@ -492,6 +544,43 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       cmd.len       = 9'd1; // 2 enabled bytes total across the two words (8'hA5, 8'h5A)
       program_command_reg(cmd);
       csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+      // Verify valid middle 2-byte mask 4'b0110 (Thread #12) and remaining valid sub-word masks
+      // (4'b0010, 4'b0100, 4'b1100, 4'b0011, 4'b1111) with non-zero garbage in masked lanes.
+      begin
+        int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+        // 4'b0110 selects bytes [2:1] = {8'h56, 8'h34}; masked bytes [3] (8'hFE) and [0] (8'hDC) must be ignored
+        write_txdata(32'hFE56_34DC, 4'b0110, status);
+        `DV_CHECK_EQ(status, UVM_IS_OK, "Valid 2-byte mask 4'b0110 write to TXDATA failed")
+        csr_rd_check(.ptr(ral.error_status.accessinval), .compare_value(1'b0));
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd1; // 2 bytes (8'h34, then 8'h56)
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+        // Exercise remaining single/double byte masks (4'b0010, 4'b0100, 4'b1100) so all 8 valid
+        // masks in unaligned_data_cg (mask[0..15]) are covered alongside the 8 invalid masks.
+        write_txdata(32'hDEAD_77EF, 4'b0010, status); // 1 byte: 8'h77
+        write_txdata(32'hDE88_BEEF, 4'b0100, status); // 1 byte: 8'h88
+        write_txdata(32'hAA99_BEEF, 4'b1100, status); // 2 bytes: 8'h99, 8'hAA
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd3; // 4 enabled bytes total (77, 88, 99, AA)
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        cfg.clk_rst_vif.wait_clks(10);
+        if (cfg.en_scb) begin
+          `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 2,
+                       "Expected scoreboard to check 4'b0110 and sub-word mask transfers")
+        end
+      end
 
       // Immediately follow (without resetting the FIFO) with a 3-byte transfer and a 9-byte transfer
       // through access_data_fifo() to verify sub-word byte enables (4'b0011, 4'b0001) and scoreboard checking.
@@ -514,6 +603,133 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       cmd.len       = 9'd8; // 9 bytes
       program_command_reg(cmd);
       csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+
+      // 9b. Partial-word (1, 2, 3, 5, and 9 bytes) RxOnly and Bidir transfers:
+      // Verifies sub-word RX packing, zero-padding of unused upper bytes in the final RXDATA word,
+      // and scoreboard RX comparison across non-multiple-of-4 segment lengths.
+      begin
+        int partial_lens[5] = '{1, 2, 3, 5, 9};
+        spi_dir_e rx_dirs[2] = '{RxOnly, Bidir};
+        csr_wr(.ptr(ral.csid),       .value(32'h0));
+        csr_wr(.ptr(ral.configopts), .value(32'h0111_0002));
+
+        foreach (rx_dirs[d_i]) begin
+          foreach (partial_lens[l_i]) begin
+            int num_b = partial_lens[l_i];
+            int num_rx_words = (num_b + 3) / 4;
+            int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+            bit [7:0] tx_q[$];
+            bit [7:0] exp_rx_q[$];
+
+            tx_q.delete();
+            exp_rx_q.delete();
+            for (int b_idx = 0; b_idx < num_b; b_idx++) begin
+              tx_q.push_back(8'h30 + 8'(b_idx * 7 + l_i));
+              exp_rx_q.push_back(8'hA1 + 8'(b_idx * 13 + d_i * 5 + l_i));
+            end
+
+            if (rx_dirs[d_i] == Bidir) begin
+              access_data_fifo(tx_q, TxFifo);
+            end
+
+            wait_ready_for_command();
+            cmd.direction = rx_dirs[d_i];
+            cmd.mode      = Standard;
+            cmd.csaat     = 1'b0;
+            cmd.len       = 9'(num_b - 1);
+
+            fork
+              begin
+                @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
+                for (int byte_i = 0; byte_i < num_b; byte_i++) begin
+                  for (int bit_i = 7; bit_i >= 0; bit_i--) begin
+                    cfg.m_spi_agent_cfg.vif.sio_out[1] = exp_rx_q[byte_i][bit_i];
+                    @(negedge cfg.m_spi_agent_cfg.vif.sck);
+                  end
+                end
+                cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+              end
+              begin
+                program_command_reg(cmd);
+                csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                             .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+              end
+            join
+
+            for (int w_i = 0; w_i < num_rx_words; w_i++) begin
+              bit [31:0] exp_word = 32'h0;
+              for (int lane = 0; lane < 4; lane++) begin
+                if ((w_i * 4 + lane) < num_b) begin
+                  exp_word[8 * lane +: 8] = exp_rx_q[w_i * 4 + lane];
+                end
+              end
+              csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0),
+                           .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+              ral.rxdata.read(status, 0, dummy_rdata);
+              `DV_CHECK_EQ(dummy_rdata, exp_word,
+                           $sformatf("Partial-word %s (%0dB) RXDATA mismatch at word %0d",
+                                     rx_dirs[d_i].name(), num_b, w_i))
+            end
+            cfg.clk_rst_vif.wait_clks(10);
+            if (cfg.en_scb) begin
+              `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + num_rx_words,
+                           $sformatf("Expected scoreboard to check %0d RX words for %0dB %s",
+                                     num_rx_words, num_b, rx_dirs[d_i].name()))
+            end
+          end
+        end
+      end
+
+      // 9c. CS1 distinct-setting checked Bidir transfer (CS0 in Mode 0 vs CS1 in Mode 3)
+      if (SPI_HOST_NUM_CS > 1) begin
+        int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+        int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+        bit [7:0] cs1_rx_byte = 8'hD2;
+
+        csr_wr(.ptr(ral.configopts),   .value(32'h0111_0002)); // CS0: Mode 0, lead/trail/idle=1, clkdiv=2
+        csr_wr(.ptr(ral.configopts_1), .value(32'hC222_0004)); // CS1: Mode 3 (cpol=1, cpha=1), lead/trail/idle=2, clkdiv=4
+        csr_wr(.ptr(ral.csid),         .value(32'h1));
+
+        write_txdata(32'h0000_004B, 4'b0001, status);
+        wait_ready_for_command();
+        cmd.direction = Bidir;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+
+        fork
+          begin
+            // Mode 3 (cpol=1, cpha=1): drive on negedge SCK, sample on posedge SCK
+            @(negedge cfg.m_spi_agent_cfg.vif.csb[1]);
+            for (int bit_i = 7; bit_i >= 0; bit_i--) begin
+              @(negedge cfg.m_spi_agent_cfg.vif.sck);
+              cfg.m_spi_agent_cfg.vif.sio_out[1] = cs1_rx_byte[bit_i];
+              @(posedge cfg.m_spi_agent_cfg.vif.sck);
+            end
+            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+          end
+          begin
+            program_command_reg(cmd);
+            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                         .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+          end
+        join
+
+        csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        ral.rxdata.read(status, 0, dummy_rdata);
+        `DV_CHECK_EQ(dummy_rdata[7:0], cs1_rx_byte, "CS1 Mode 3 Bidir RXDATA mismatch")
+        cfg.clk_rst_vif.wait_clks(10);
+        if (cfg.en_scb) begin
+          `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                       "Expected scoreboard TX check on CS1 Mode 3 transfer")
+          `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                       "Expected scoreboard RX check on CS1 Mode 3 transfer")
+        end
+
+        csr_wr(.ptr(ral.csid),         .value(32'h0));
+        csr_wr(.ptr(ral.configopts_1), .value(32'h0111_0002));
+      end
     end
 
     // 10. Target spi_host.sv command_busy=1 with test_csid_inval=1 and test_dir_inval=1,
@@ -587,10 +803,13 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
                      $sformatf("Expected SLVERR on sub-word write to CSR %s", csrs[i].get_name()))
       end
 
-      // 12b. Unmapped CSR read and write at offset 0x3c must return SLVERR (UVM_NOT_OK)
-      begin
+      // 12b. Unmapped CSR read and write at offset 0x3c must return SLVERR (UVM_NOT_OK),
+      // both under normal handshake and under multi-cycle AXI RREADY/BREADY backpressure (Thread #7).
+      for (int bp = 0; bp < 2; bp++) begin
         uvm_sequence_item rsp_item;
         axi_reg_op_item   unmapped_rsp;
+        axi_response_accept_item::s_force_backpressure = bit'(bp);
+        axi_response_accept_item::s_forced_delay       = 4;
 
         unmapped_op = axi_reg_op_item::type_id::create("unmapped_rd_op");
         unmapped_op.m_rw.kind    = UVM_READ;
@@ -603,7 +822,7 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         get_response(rsp_item);
         `downcast(unmapped_rsp, rsp_item)
         `DV_CHECK_EQ(unmapped_rsp.m_rw.status, UVM_NOT_OK,
-                     "Expected SLVERR on bus read from unmapped address 0x3c")
+                     $sformatf("Expected SLVERR on bus read from unmapped address 0x3c (bp=%0d)", bp))
 
         unmapped_op = axi_reg_op_item::type_id::create("unmapped_wr_op");
         unmapped_op.m_rw.kind    = UVM_WRITE;
@@ -616,8 +835,9 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
         get_response(rsp_item);
         `downcast(unmapped_rsp, rsp_item)
         `DV_CHECK_EQ(unmapped_rsp.m_rw.status, UVM_NOT_OK,
-                     "Expected SLVERR on bus write to unmapped address 0x3c")
+                     $sformatf("Expected SLVERR on bus write to unmapped address 0x3c (bp=%0d)", bp))
       end
+      axi_response_accept_item::s_force_backpressure = 1'b0;
 
       // 12c. Bus-level TL-UL command integrity fault injection on CSR and window accesses
       `DV_CHECK_EQ(cfg.intg_error_vif.sample_pin(0), 1'b0,
@@ -642,28 +862,122 @@ class spi_host_smoke_vseq extends spi_host_tx_rx_vseq;
       program_spi_host_regs();
     end
 
-    // 13. Negative scoreboard self-check: verify that a mismatch between expected TX data
-    // and observed SPI bus data is actively caught and reported as a UVM_ERROR by the scoreboard.
+    // 13. Negative & 4-state scoreboard self-checks:
+    // 13a. TX data mismatch negative control
+    // 13b. RX data mismatch negative control
+    // 13c. Floating-Z (1'bz) on active TX lane negative control when exp_byte == 8'h00 (SCB-PIN-01),
+    //      plus positive control confirming 1'bz on unused lanes (sio[3:2] in Standard mode) passes.
     if (cfg.en_scb) begin
-      spi_host_scb_neg_catcher catcher = spi_host_scb_neg_catcher::type_id::create("scb_neg_catcher");
-      bit orig_bit_dir = cfg.m_spi_agent_cfg.host_bit_dir;
-      uvm_report_cb::add(null, catcher);
-      cfg.m_spi_agent_cfg.host_bit_dir = ~orig_bit_dir;
+      // 13a. TX mismatch
+      begin
+        spi_host_scb_neg_catcher catcher = spi_host_scb_neg_catcher::type_id::create("scb_tx_neg_catcher");
+        bit orig_bit_dir = cfg.m_spi_agent_cfg.host_bit_dir;
+        uvm_report_cb::add(null, catcher);
+        cfg.m_spi_agent_cfg.host_bit_dir = ~orig_bit_dir;
 
-      write_txdata(32'h0000_00A4, 4'b0001, status); // 8'hA4 != bit-reversed 8'h25
-      wait_ready_for_command();
-      cmd.direction = TxOnly;
-      cmd.mode      = Standard;
-      cmd.csaat     = 1'b0;
-      cmd.len       = 9'd0;
-      program_command_reg(cmd);
-      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50), .timeout_ns(50_000_000));
-      cfg.clk_rst_vif.wait_clks(10);
+        write_txdata(32'h0000_00A4, 4'b0001, status); // 8'hA4 != bit-reversed 8'h25
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        cfg.clk_rst_vif.wait_clks(10);
 
-      cfg.m_spi_agent_cfg.host_bit_dir = orig_bit_dir;
-      uvm_report_cb::delete(null, catcher);
-      `DV_CHECK_EQ(catcher.caught_err_cnt, 1,
-                   "Expected scoreboard negative self-check to catch exactly 1 TX data mismatch error")
+        cfg.m_spi_agent_cfg.host_bit_dir = orig_bit_dir;
+        uvm_report_cb::delete(null, catcher);
+        `DV_CHECK_EQ(catcher.caught_err_cnt, 1,
+                     "Expected scoreboard negative self-check to catch exactly 1 TX data mismatch error")
+      end
+
+      // 13b. RX mismatch
+      begin
+        spi_host_scb_neg_catcher catcher_rx = spi_host_scb_neg_catcher::type_id::create("scb_rx_neg_catcher");
+        bit orig_dev_bit_dir = cfg.m_spi_agent_cfg.device_bit_dir;
+        bit [7:0] rx_drv_byte = 8'hA4; // non-palindromic: bit-reversed is 8'h25
+        catcher_rx.match_pattern = "*READ: actual data did not match exp data*";
+        uvm_report_cb::add(null, catcher_rx);
+        cfg.m_spi_agent_cfg.device_bit_dir = ~orig_dev_bit_dir;
+        csr_wr(.ptr(ral.csid),       .value(32'h0));
+        csr_wr(.ptr(ral.configopts), .value(32'h0111_0002)); // cpol=0, cpha=0
+
+        fork
+          begin
+            @(negedge cfg.m_spi_agent_cfg.vif.csb[0]);
+            for (int b = 7; b >= 0; b--) begin
+              cfg.m_spi_agent_cfg.vif.sio_out[1] = rx_drv_byte[b];
+              @(negedge cfg.m_spi_agent_cfg.vif.sck);
+            end
+            cfg.m_spi_agent_cfg.vif.sio_out = 4'bzzzz;
+          end
+        join_none
+
+        wait_ready_for_command();
+        cmd.direction = RxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        ral.rxdata.read(status, 0, dummy_rdata);
+        cfg.clk_rst_vif.wait_clks(10);
+
+        cfg.m_spi_agent_cfg.device_bit_dir = orig_dev_bit_dir;
+        uvm_report_cb::delete(null, catcher_rx);
+        `DV_CHECK_EQ(catcher_rx.caught_err_cnt, 1,
+                     "Expected scoreboard negative self-check to catch exactly 1 RX data mismatch error")
+      end
+
+      // 13c. Floating-Z (1'bz) on active TX lane sio[0] when exp_byte == 8'h00 (SCB-PIN-01),
+      // followed by positive control with 1'bz on unused lanes sio[3:2] in Standard mode.
+      begin
+        spi_host_scb_neg_catcher catcher_z = spi_host_scb_neg_catcher::type_id::create("scb_z_neg_catcher");
+        int unsigned prev_tx_cnt;
+        catcher_z.match_pattern = "*WRITE: floating/unknown value on active TX lane*";
+        uvm_report_cb::add(null, catcher_z);
+
+        // Force active Standard TX lane sio[0] to 1'bz (overriding tb.sv pullup(sd[0]))
+        cfg.m_spi_agent_cfg.vif.set_force_sio_z(4'b0001);
+
+        write_txdata(32'h0000_0000, 4'b1111, status); // 4 expected 8'h00 bytes
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd3; // 4 bytes
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        cfg.clk_rst_vif.wait_clks(10);
+
+        cfg.m_spi_agent_cfg.vif.set_force_sio_z(4'b0000);
+        uvm_report_cb::delete(null, catcher_z);
+        `DV_CHECK_EQ(catcher_z.caught_err_cnt, 4,
+                     "Expected scoreboard to reject 4 floating-Z bytes on active TX lane even when expected TX data is 0x00")
+
+        // Positive control: 1'bz on unused lanes sio[3:2] during Standard TxOnly transfer must pass
+        prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+        cfg.m_spi_agent_cfg.vif.set_force_sio_z(4'b1100);
+        write_txdata(32'h0000_0000, 4'b1111, status);
+        wait_ready_for_command();
+        cmd.direction = TxOnly;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd3;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0),
+                     .spinwait_delay_ns(50), .timeout_ns(50_000_000));
+        cfg.clk_rst_vif.wait_clks(10);
+        cfg.m_spi_agent_cfg.vif.set_force_sio_z(4'b0000);
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected Standard TxOnly transfer with 1'bz on unused lanes sio[3:2] to pass scoreboard")
+      end
+      program_spi_host_regs();
     end
     `uvm_info(`gfn, "Completed targeted functional coverage stimulus", UVM_LOW)
   endtask : run_functional_coverage_stimulus

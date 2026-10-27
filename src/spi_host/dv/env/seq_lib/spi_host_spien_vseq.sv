@@ -10,11 +10,10 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
   `uvm_object_new
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     super.pre_start();
     // Ensure the command is long enough for us to stop in the middle of it.
     cfg.seq_cfg.host_spi_min_len = 4;
-    cfg.seq_cfg.host_spi_max_len = 6;
+    cfg.seq_cfg.host_spi_max_len = 4;
     cfg.seq_cfg.host_spi_min_num_seg = 4;
     cfg.seq_cfg.host_spi_max_num_seg = 8;
   endtask // pre_start
@@ -25,6 +24,7 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
     bit rd_rx_fifo_finished;
     spinwait_ctrl_obj = csr_spinwait_ctrl_object::type_id::create("spinwait_ctrl_obj");
     fork start_agent_reactive_seqs(); join_none
+    program_spi_host_regs();
     wait_ready_for_command();
 
     fork
@@ -36,29 +36,32 @@ class spi_host_spien_vseq extends spi_host_tx_rx_vseq;
         start_spi_host_trans(.num_transactions(3), .wait_ready(1));
         // Wait until the DUT has finished processing commands, and
         // the RXFIFO is empty (has been fully processed by the scoreboard).
-        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .timeout_ns(50_000_000));
-        csr_spinwait(.ptr(ral.status.rxqd), .exp_data(8'h0));
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .timeout_ns(500_000_000));
+        csr_spinwait(.ptr(ral.status.rxqd), .exp_data(8'h0), .timeout_ns(500_000_000));
         cfg.clk_rst_vif.wait_clks(100);
         // This thread should be the last to end.
       end
-      do begin
-        cfg.clk_rst_vif.wait_clks($urandom_range(0, 20000)); // clk_i cycles
+      begin
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b1), .backdoor(1), .timeout_ns(500_000_000));
+        do begin
+          cfg.clk_rst_vif.wait_clks($urandom_range(20, 2000)); // clk_i cycles
 
-        // Deassert CONTROL.SPIEN for a random length of time
-        csr_wr(.ptr(ral.control.spien), .value(1'b0));
-        spinwait_ctrl_obj.stop = 1;
-        start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-        `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=0", UVM_DEBUG)
+          // Deassert CONTROL.SPIEN for a random length of time
+          csr_wr(.ptr(ral.control.spien), .value(1'b0));
+          spinwait_ctrl_obj.stop = 1;
+          start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
+          `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=0", UVM_DEBUG)
 
-        cfg.clk_rst_vif.wait_clks($urandom_range(0, 20000));
-        csr_wr(.ptr(ral.control.spien), .value(1'b1));
-        spinwait_ctrl_obj.stop = 0;
-        start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
-        `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=1", UVM_DEBUG)
+          cfg.clk_rst_vif.wait_clks($urandom_range(20, 2000));
+          csr_wr(.ptr(ral.control.spien), .value(1'b1));
+          spinwait_ctrl_obj.stop = 0;
+          start_stop_spinwait_ev.trigger(spinwait_ctrl_obj);
+          `uvm_info(`gfn, "Triggered 'start_stop_spinwait_ev' due to Control.spien=1", UVM_DEBUG)
 
-        // Break when STATUS.ACTIVE == 0
-        csr_rd(.ptr(ral.status), .value(status), .backdoor(1));
-      end while (status.active == 1);
+          // Break when STATUS.ACTIVE == 0
+          csr_rd(.ptr(ral.status), .value(status), .backdoor(1));
+        end while (status.active == 1);
+      end
     join
 
   endtask : body

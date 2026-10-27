@@ -39,6 +39,15 @@ interface spi_if
     disconnected = set_disconnect;
   endfunction : disconnect
 
+  // Force/release selected SPI data lanes to high-Z (1'bz) using constant bit-selects
+  // (per IEEE 1800-2017 10.6.2) for 4-state floating-lane scoreboard negative/positive controls.
+  task automatic set_force_sio_z(bit [3:0] lane_mask);
+    if (lane_mask[0]) force sio[0] = 1'bz; else release sio[0];
+    if (lane_mask[1]) force sio[1] = 1'bz; else release sio[1];
+    if (lane_mask[2]) force sio[2] = 1'bz; else release sio[2];
+    if (lane_mask[3]) force sio[3] = 1'bz; else release sio[3];
+  endtask : set_force_sio_z
+
   task automatic wait_for_clks(int clks);
     repeat (clks) @(posedge sck);
   endtask : wait_for_clks
@@ -60,6 +69,13 @@ interface spi_if
     end
     return 0;
   endfunction : get_active_csb
+
+  initial begin
+    if (!(CSB_WIDTH >= 1 && CSB_WIDTH <= 16 && NUM_CSB == (2 ** CSB_WIDTH))) begin
+      `uvm_fatal(msg_id, $sformatf("Invalid CSB_WIDTH=%0d / NUM_CSB=%0d configuration",
+                                   CSB_WIDTH, NUM_CSB))
+    end
+  end
 
   initial forever begin
     @(posedge sck);

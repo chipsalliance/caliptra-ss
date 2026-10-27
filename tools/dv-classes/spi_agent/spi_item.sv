@@ -33,7 +33,7 @@ class spi_item extends uvm_sequence_item;
   // Currently the spi_agent assumes the data will flow a certain order (opcode, addr, data)  which
   // blocks spi_host full testing when generating random spi_segments. This queue allows the
   // scoreboard to take the data from the bus directly in a per-cycle basis and group it accordingly
-  rand bit [3:0]           plain_data_q[$];
+  rand logic [3:0]         plain_data_q[$];
 
   // transaction status. only use in monitor on flash mode
   // allow scb to process payload when one byte data is received, instead

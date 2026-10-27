@@ -8,6 +8,9 @@
 class axi_response_accept_item extends uvm_sequence_item;
   `uvm_object_utils(axi_response_accept_item)
 
+  static bit          s_force_backpressure = 1'b0;
+  static int unsigned s_forced_delay       = 4;
+
   // Should the driver assert READY some of the time when VALID has not yet been asserted? This
   // field gives the percentage of the time that READY should be asserted. To only assert READY
   // after VALID, set this to zero.
@@ -68,9 +71,11 @@ function bit axi_response_accept_item::do_compare(uvm_object rhs, uvm_comparer c
 endfunction
 
 constraint axi_response_accept_item::ready_without_valid_c {
+  s_force_backpressure -> (m_ready_without_valid_pct == 0);
   m_ready_without_valid_pct <= 100;
 }
 
 constraint axi_response_accept_item::valid_to_ready_c {
+  s_force_backpressure -> (m_valid_to_ready_delay == s_forced_delay);
   soft m_valid_to_ready_delay <= 5;
 }

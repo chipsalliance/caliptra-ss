@@ -66,10 +66,10 @@ Branch 2 "840386731" "(speed_i == Standard)" (3) "(speed_i == Standard) 0,0,0"
 // 3. SPI HOST FSM (tb.dut.u_spi_core.u_fsm)
 //==================================================
 // Unreachable condition rows due to FSM invariant relationships:
-// - Condition 74: shift_en_internal is gated by ~stall in FSM state equations.
-// - Conditions 100, 106, 112, 115: state_changing is 0 whenever sw_rst_i is 1
-//   and state_q is already Idle, or mutually exclusive with WaitLead/InternalClk*.
-// - Conditions 149, 151: rd_en_o / wr_en_o stall the FSM when !sr_rd_ready_i / !sr_wr_ready_i.
+// - Condition 74: shift_en_internal requires bit_cntr_q != 0 while stall requires bit_cntr_q == 0.
+// - Conditions 100, 106, 112, 115: sw_rst_i == 1 forces state_d == Idle, so ~sw_rst_i == 0
+//   cannot co-occur with state_d == WaitLead / InternalClkLow / InternalClkHigh.
+// - Conditions 149, 151: rd_en_o / wr_en_o are already gated by ~stall (sr_rd_ready_i / sr_wr_ready_i).
 CHECKSUM: "1990714023 2778135185"
 INSTANCE: tb.dut.u_spi_core.u_fsm
 ANNOTATION: "UNR: Mutually exclusive FSM state/stall/handshake condition terms"

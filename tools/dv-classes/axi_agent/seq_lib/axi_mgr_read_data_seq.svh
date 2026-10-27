@@ -6,8 +6,11 @@
 // response to that item will be stored in the rsp class variable, which will be null if the
 // sequence saw a reset and stopped early.
 
-class axi_mgr_read_data_seq extends uvm_sequence #(axi_response_accept_item, axi_read_data_item);
+class axi_mgr_read_data_seq extends uvm_sequence #(axi_response_accept_item, uvm_sequence_item);
   `uvm_object_utils(axi_mgr_read_data_seq)
+
+  // Typed read data response (null if the sequence saw a reset and received an axi_status_item)
+  axi_read_data_item rsp;
 
   // This sequence uses late randomisation, so doesn't randomise the request until it is scheduled
   // on the sequencer. Of course, this is a bit tricky to use in a situation where you want to
@@ -34,6 +37,7 @@ endfunction
 task axi_mgr_read_data_seq::body();
   axi_response_accept_item item = axi_response_accept_item::type_id::create("item");
   uvm_sequence_item base_response_item;
+  rsp = null;
 
   start_item(item);
 

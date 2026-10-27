@@ -9,8 +9,6 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
   `uvm_object_new
 
   virtual task pre_start();
-    cfg.en_scb = 0;
-    cfg.m_spi_agent_cfg.en_monitor = 0;
     super.pre_start();
   endtask
 
@@ -19,7 +17,7 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
     fork
     begin
       forever begin
-        if(!en) break;
+        if (!en) break;
         @(posedge cfg.clk_rst_vif.clk);
         if (cfg.spi_passthrough_vif.passthrough_en && (SPI_HOST_NUM_CS == 1)) begin
           `DV_CHECK_EQ(cfg.spi_passthrough_vif.cio_sck_o, cfg.spi_passthrough_vif.sck)
@@ -55,20 +53,44 @@ class spi_host_passthrough_mode_vseq extends spi_host_tx_rx_vseq;
     end
     begin
       @(posedge cfg.clk_rst_vif.clk);
-      for (int i = 0; i < (num_trans*num_runs); i++) begin
+      for (int i = 0; i < (num_trans * num_runs); i++) begin
         bit pt_en = (i % 2);
         @(posedge cfg.clk_rst_vif.clk);
         cfg.spi_passthrough_vif.passthrough_en <= (SPI_HOST_NUM_CS == 1) ? pt_en : 1'b0;
-        if (cov != null) begin
-          cov.passthrough_cg.sample(pt_en, 1'b0, 1'b0);
-          cov.passthrough_cg.sample(pt_en, 1'b0, 1'b1);
-          cov.passthrough_cg.sample(pt_en, 1'b1, 1'b0);
-          cov.passthrough_cg.sample(pt_en, 1'b1, 1'b1);
-        end
         cfg.clk_rst_vif.wait_clks($urandom_range(100, 200));
       end
       en = 1'b0;
     end
     join
+    cfg.spi_passthrough_vif.passthrough_en <= 1'b0;
+    cfg.clk_rst_vif.wait_clks(5);
+
+    // Verify normal SPI host operation and scoreboard checking on non-passthrough traffic
+    spi_host_init();
+    program_spi_host_regs();
+    begin
+      uvm_status_e status;
+      uvm_reg_data_t rdata;
+      spi_host_command_t cmd;
+      int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+      write_txdata(32'hDEAD_BEEF, 4'hf, status);
+      wait_ready_for_command();
+      cmd.direction = Bidir;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd3;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      ral.rxdata.read(status, 0, rdata);
+      cfg.clk_rst_vif.wait_clks(10);
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected scoreboard TX check on baseline transfer in passthrough_mode test")
+        `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                     "Expected scoreboard RX check on baseline transfer in passthrough_mode test")
+      end
+    end
   endtask : body
 endclass : spi_host_passthrough_mode_vseq

@@ -17,7 +17,6 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
   spi_host_command_t command[$];
 
   virtual task pre_start();
-    cfg.en_scb = 0;
     super.pre_start();
   endtask
 
@@ -50,16 +49,49 @@ class spi_host_overflow_underflow_vseq extends spi_host_tx_rx_vseq;
     join
 
     access_data_fifo(read_q, RxFifo, 1'b0); // attempting empty read error underflow
-    check_error(ral.error_status.underflow,1);
+    check_error(ral.error_status.underflow, 1);
+    csr_wr(.ptr(ral.error_status.underflow), .value(1'b1)); // W1C clear underflow
+    csr_wr(.ptr(ral.intr_state), .value(32'h3));
 
-    csr_wr(.ptr(ral.configopts.clkdiv), .value(16'h28)); // clk div set to 20
+    csr_wr(.ptr(ral.configopts.clkdiv), .value(16'h28)); // clk div set to 40
 
-    while (segms_words <= (SPI_HOST_TX_DEPTH + 1))  begin
-      check_error(ral.error_status.overflow,0);
+    while (segms_words <= (SPI_HOST_TX_DEPTH + 1)) begin
+      check_error(ral.error_status.overflow, 0);
       gen_trans();
     end
-    check_error(ral.error_status.overflow,1);
+    check_error(ral.error_status.overflow, 1);
     csr_wr(.ptr(ral.error_status.overflow), .value(1'b1)); // W1C clear overflow
+
+    // Drain overflowed TX FIFO via SW reset, clear any latched error/interrupt status,
+    // and verify end-to-end recovery via a scoreboard-checked Bidir transfer.
+    spi_host_init();
+    csr_wr(.ptr(ral.error_status), .value(32'h3f));
+    csr_wr(.ptr(ral.intr_state),   .value(32'h3));
+    program_spi_host_regs();
+    begin
+      uvm_status_e status;
+      uvm_reg_data_t rdata;
+      spi_host_command_t cmd;
+      int unsigned prev_tx_cnt = cfg.scb_checked_tx_seg_cnt;
+      int unsigned prev_rx_cnt = cfg.scb_checked_rx_seq_cnt;
+      write_txdata(32'h5AA5_C33C, 4'hf, status);
+      wait_ready_for_command();
+      cmd.direction = Bidir;
+      cmd.mode      = Standard;
+      cmd.csaat     = 1'b0;
+      cmd.len       = 9'd3;
+      program_command_reg(cmd);
+      csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+      ral.rxdata.read(status, 0, rdata);
+      cfg.clk_rst_vif.wait_clks(10);
+      if (cfg.en_scb) begin
+        `DV_CHECK_EQ(cfg.scb_checked_tx_seg_cnt, prev_tx_cnt + 1,
+                     "Expected scoreboard TX check on post-overflow recovery transfer")
+        `DV_CHECK_EQ(cfg.scb_checked_rx_seq_cnt, prev_rx_cnt + 1,
+                     "Expected scoreboard RX check on post-overflow recovery transfer")
+      end
+    end
   endtask : body
 
   virtual task gen_trans();

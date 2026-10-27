@@ -42,6 +42,8 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
           csr_update(ral.control);
           cfg.clk_rst_vif.wait_clks(10);
           spi_host_init();
+          program_configopt_regs();
+          update_spi_agent_regs();
           generate_transaction();
           // send normal spi transaction csaat last segment 0 to release CS
           send_trans_w_csaat(transaction, 1, 0);
@@ -76,6 +78,56 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
             csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
             csr_wr(.ptr(ral.csid), .value(32'h0));
           end
+
+          // Exercise CPHA=1 CSAAT=1 -> IdleCSBActive -> InternalClkHigh (same CSID, cpha_q == 1)
+          // and pipelined back-to-back CPHA=1 CSAAT=1 segments
+          begin
+            uvm_status_e status;
+            spi_host_command_t cmd;
+
+            csr_wr(.ptr(ral.csid), .value(32'h0));
+            // Configure CPHA=1, CPOL=0, csnlead=1, csntrail=1, csnidle=1, clkdiv=1
+            csr_wr(.ptr(ral.configopts), .value(32'h4111_0001));
+
+            // 1) Parked IdleCSBActive with CPHA=1 followed by same-CS command -> InternalClkHigh
+            ral.txdata.write(status, 0, 32'hCAFE_1234);
+            wait_ready_for_command();
+            cmd.direction = TxOnly;
+            cmd.mode      = Standard;
+            cmd.csaat     = 1'b1;
+            cmd.len       = 9'd3;
+            program_command_reg(cmd);
+            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
+
+            ral.txdata.write(status, 0, 32'h5678_BEEF);
+            wait_ready_for_command();
+            cmd.direction = TxOnly;
+            cmd.mode      = Standard;
+            cmd.csaat     = 1'b0;
+            cmd.len       = 9'd3;
+            program_command_reg(cmd);
+            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
+
+            // 2) Pipelined back-to-back CPHA=1 CSAAT=1 on same CS (InternalClkLow -> InternalClkHigh)
+            ral.txdata.write(status, 0, 32'h1357_2468);
+            ral.txdata.write(status, 0, 32'h8642_7531);
+            wait_ready_for_command();
+            cmd.direction = TxOnly;
+            cmd.mode      = Standard;
+            cmd.csaat     = 1'b1;
+            cmd.len       = 9'd3;
+            program_command_reg(cmd);
+
+            wait_ready_for_command();
+            cmd.direction = TxOnly;
+            cmd.mode      = Standard;
+            cmd.csaat     = 1'b0;
+            cmd.len       = 9'd3;
+            program_command_reg(cmd);
+            csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0));
+
+            program_configopt_regs();
+          end
         end
 
         disable fork;
@@ -102,7 +154,7 @@ class spi_host_idlecsbactive_vseq extends spi_host_tx_rx_vseq;
       // lock fifo to this seq
       spi_host_atomic.get(1);
       // write data to fifo
-      if (segment.command_reg.direction != RxOnly) begin
+      if (segment.command_reg.direction inside {TxOnly, Bidir}) begin
         access_data_fifo(segment.spi_data, TxFifo);
       end
       program_command_reg(segment.command_reg);

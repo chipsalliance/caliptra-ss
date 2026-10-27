@@ -76,8 +76,8 @@ package spi_host_env_pkg;
     // csid register
     rand bit [31:0] csid;
     // control register fields
-    rand bit [8:0]  tx_watermark;
-    rand bit [6:0]  rx_watermark;
+    rand bit [7:0]  tx_watermark;
+    rand bit [7:0]  rx_watermark;
   } spi_host_ctrl_t;
 
   // spi direction

@@ -18,8 +18,8 @@ class spi_monitor extends dv_reactive_monitor #(
   bit [CSB_WIDTH-1:0] active_csb;
 
   // store the data across multiple CSB in case host sends byte transfers
-  bit [7:0] generic_mode_host_byte_q[$];
-  bit [7:0] generic_mode_device_byte_q[$];
+  logic [7:0] generic_mode_host_byte_q[$];
+  logic [7:0] generic_mode_device_byte_q[$];
 
   // Analysis port for the collected transfer.
   uvm_analysis_port #(spi_item) host_analysis_port;
