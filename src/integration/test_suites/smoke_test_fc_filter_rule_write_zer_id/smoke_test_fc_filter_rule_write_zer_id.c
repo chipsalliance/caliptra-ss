@@ -121,7 +121,7 @@ bool test_double_address_write(void) {
 // the filter reaches FUSE_CMD_AXI_ADDR_ST with:
 //   - fuse_cmd = DaiWrite
 //   - latched_cmd_id = MCU user
-//   - latched_fuse_addr = 0x48 (secret range)
+//   - fuse address (dai_addr_i) = 0x48 (secret range)
 //   - wr_req_allowed = false (MCU not in table for [0x48,0xF0])
 //
 // Earlier branches in FUSE_CMD_AXI_ADDR_ST are skipped:
