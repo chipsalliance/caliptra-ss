@@ -91,7 +91,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         if (!checker.packet_callback.check_stall_probe(
                 pid, 7'(dev_addr_v), 4'h0, label))
             `uvm_error("OCP_STALL", {label, ": ordered token/STALL evidence mismatch."})
-        mark_check(label);
+        ocp_stall_note_check_completed(label);
     endtask
 
     protected task probe_all_tokens(input string label);
@@ -134,13 +134,13 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             `uvm_error("OCP_STALL", "Expected one on-wire CRC corruption marker.")
         if (require_existing_stall) begin
             probe_all_tokens("AFTER_CORRUPT_SETUP");
-            mark_check("corrupt SETUP unaccepted; existing STALL retained");
+            ocp_stall_note_check_completed("corrupt SETUP unaccepted; existing STALL retained");
         end else begin
             // A clean sticky-code baseline makes a spurious OCP checksum
             // code visible instead of hiding it behind first-code retention.
-            read_status_and_check("CORRUPT_SETUP_NO_OCP_CODE");
-            read_status_and_check("CORRUPT_SETUP_CODE_CLEAR");
-            mark_check("USB CRC corruption creates no OCP checksum code");
+            ocp_stall_do_read_and_check_device_status("CORRUPT_SETUP_NO_OCP_CODE");
+            ocp_stall_do_read_and_check_device_status("CORRUPT_SETUP_CODE_CLEAR");
+            ocp_stall_note_check_completed("USB CRC corruption creates no OCP checksum code");
         end
     endtask
 
@@ -161,7 +161,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
                 .usb_cfg(usb_cfg));
         join
         ocp_arb_check_and_close_observation_window(generation, 4'h1);
-        require_accepted_setup("CLEAR_FEATURE_EP0");
+        ocp_stall_check_single_accepted_setup("CLEAR_FEATURE_EP0");
         // USB 2.0 Sections 9.4.1/9.4.5 allow Request Error when EP0 has
         // no Halt feature. Its accepted SETUP, not its status, is the
         // protocol-STALL boundary required by Section 8.5.3.4.
@@ -170,10 +170,10 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             ((result != OCP_XFER_SUCCESS) &&
              !checker.packet_callback.validate_control_stall(7'(dev_addr_v), 4'h0)))
             `uvm_error("OCP_STALL", "CLEAR_FEATURE did not complete or return a legal Request Error.")
-        legal_read(OCP_CMD_PROT_CAP, response, "AFTER_CLEAR_FEATURE");
-        read_status_and_check("CLEAR_FEATURE_RETAINED_CODE");
-        read_status_and_check("CLEAR_FEATURE_CODE_CLEAR");
-        mark_check("CLEAR_FEATURE ACKed SETUP recovery; legal OCP continuation");
+        ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, "AFTER_CLEAR_FEATURE");
+        ocp_stall_do_read_and_check_device_status("CLEAR_FEATURE_RETAINED_CODE");
+        ocp_stall_do_read_and_check_device_status("CLEAR_FEATURE_CODE_CLEAR");
+        ocp_stall_note_check_completed("CLEAR_FEATURE ACKed SETUP recovery; legal OCP continuation");
     endtask
 
     virtual task body();
@@ -181,57 +181,57 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         bit [7:0] response[$];
         bit [7:0] rc_before[$], fc_before[$], fs_before[$];
         bit [7:0] rc_after[$], fc_after[$], fs_after[$];
-        initialize_stall_transport();
+        ocp_stall_do_initialize_and_check_transport();
         p_sequencer.usb_20_pkt_sequencer.reconfigure(usb_cfg);
         raw_response_callback =
             caliptra_ss_usb_ocp_raw_response_callback::type_id::create(
                 "raw_response_callback");
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::add(
             host_agent_h.prot, raw_response_callback);
-        snapshot_command_state(rc_before, fc_before, fs_before, "PERSIST_BASELINE");
+        ocp_stall_do_read_and_check_command_state(rc_before, fc_before, fs_before, "PERSIST_BASELINE");
         payload = '{8'h00};
-        issue_stall(0, RESERVED_COMMAND, payload.size(), payload,
-            OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "SETUP_DECODE_STALL");
+        ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
+                                             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "SETUP_DECODE_STALL");
         probe_all_tokens("SETUP_DECODE");
         corrupt_setup_preserves_stall();
-        legal_read(OCP_CMD_PROT_CAP, response, "ACCEPTED_LEGAL_SETUP");
-        read_status_and_check("DECODE_RETAINED_CODE");
-        read_status_and_check("DECODE_CODE_CLEAR");
-        snapshot_command_state(rc_after, fc_after, fs_after, "PERSIST_AFTER");
+        ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, "ACCEPTED_LEGAL_SETUP");
+        ocp_stall_do_read_and_check_device_status("DECODE_RETAINED_CODE");
+        ocp_stall_do_read_and_check_device_status("DECODE_CODE_CLEAR");
+        ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "PERSIST_AFTER");
         if ((rc_before != rc_after) || (fc_before != fc_after) ||
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Stalled/corrupt traffic changed command/FIFO state.")
 
         corrupt_setup_preserves_stall(1'b0);
-        snapshot_command_state(rc_after, fc_after, fs_after, "CLEAN_CRC_AFTER");
+        ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "CLEAN_CRC_AFTER");
         if ((rc_before != rc_after) || (fc_before != fc_after) ||
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Corrupt SETUP changed command/FIFO state.")
-        snapshot_command_state(rc_before, fc_before, fs_before, "DATA_BASELINE");
+        ocp_stall_do_read_and_check_command_state(rc_before, fc_before, fs_before, "DATA_BASELINE");
         payload = '{8'h00, RESERVED_IMAGE_SELECTION, 8'h00};
-        issue_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_PARAMETER, "DATA_DECODE_STALL", 1);
         probe_all_tokens("DATA_DECODE");
-        read_status_and_check("DATA_DECODE_RETAINED_CODE");
-        read_status_and_check("DATA_DECODE_CODE_CLEAR");
-        snapshot_command_state(rc_after, fc_after, fs_after, "DATA_AFTER");
+        ocp_stall_do_read_and_check_device_status("DATA_DECODE_RETAINED_CODE");
+        ocp_stall_do_read_and_check_device_status("DATA_DECODE_CODE_CLEAR");
+        ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "DATA_AFTER");
         if ((rc_before != rc_after) || (fc_before != fc_after) ||
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Rejected DATA-stage command changed command/FIFO state.")
 
         payload = '{8'h00};
-        issue_stall(0, RESERVED_COMMAND, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "CLEAR_FEATURE_PRECONDITION");
         clear_feature_recovery();
 
-        issue_stall(0, RESERVED_COMMAND, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "NEW_INVALID_FIRST");
-        issue_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
             OCP_PROTOCOL_ERROR_LENGTH, "NEW_INVALID_SECOND");
         probe_all_tokens("NEW_INVALID_REENTRY");
-        read_status_and_check("NEW_INVALID_FIRST_CODE");
-        read_status_and_check("NEW_INVALID_CLEAR_NO_DEFERRED_CODE");
-        finish_stall_test("PERSISTENT_STALL");
+        ocp_stall_do_read_and_check_device_status("NEW_INVALID_FIRST_CODE");
+        ocp_stall_do_read_and_check_device_status("NEW_INVALID_CLEAR_NO_DEFERRED_CODE");
+        ocp_stall_do_final_read_and_check_completion("PERSISTENT_STALL");
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::delete(
             host_agent_h.prot, raw_response_callback);
     endtask

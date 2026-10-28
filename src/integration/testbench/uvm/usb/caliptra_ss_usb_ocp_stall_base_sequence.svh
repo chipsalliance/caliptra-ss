@@ -45,7 +45,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         super.new(name);
     endfunction
 
-    protected task initialize_stall_transport();
+    protected task ocp_stall_do_initialize_and_check_transport();
         bit [7:0] cms_count;
         bit [7:0] heartbeat_period;
         ocp_arb_do_initialize_and_check_transport();
@@ -64,21 +64,21 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         fifo_model_configured = 1'b0;
         checks_completed = 0;
         ocp_do_read_and_check_prot_cap(agent_capabilities, cms_count, heartbeat_period);
-        read_status_and_check("INITIAL_STATUS");
-        read_status_and_check("INITIAL_CLEAR");
+        ocp_stall_do_read_and_check_device_status("INITIAL_STATUS");
+        ocp_stall_do_read_and_check_device_status("INITIAL_CLEAR");
         normal_nak_retry_limit =
             usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak;
         normal_endpoint_retry_limit = usb_cfg.remote_device_cfg[0].
             endpoint_cfg[0].max_retry_due_to_nak_before_moving_to_next_ep;
     endtask
 
-    protected function void mark_check(input string label);
+    protected function void ocp_stall_note_check_completed(input string label);
         checks_completed++;
         `uvm_info("OCP_STALL",
             $sformatf("check=%0d %s", checks_completed, label), UVM_NONE)
     endfunction
 
-    protected function void require_accepted_setup(input string label);
+    protected function void ocp_stall_check_single_accepted_setup(input string label);
         if (checker.packet_callback.accepted_setup_count() != 1) begin
             `uvm_error("OCP_STALL",
                 $sformatf("%s requires exactly one ACKed SETUP; observed %0d.",
@@ -150,13 +150,13 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         end
     endtask
 
-    protected task read_status_and_check(input string label);
+    protected task ocp_stall_do_read_and_check_device_status(input string label);
         bit [7:0] status_bytes[$];
         logic [15:0] generation;
         ocp_arb_open_observation_window(generation);
         ocp_do_read_and_check_device_status(status_bytes, label);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
-        require_accepted_setup(label);
+        ocp_stall_check_single_accepted_setup(label);
         if (status_bytes.size() <= OCP_OFF_DS_PROT_ERROR) begin
             `uvm_fatal("OCP_STALL", {label, ": status code not returned."})
         end
@@ -164,14 +164,15 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             status_bytes[OCP_OFF_DS_PROT_ERROR], label));
     endtask
 
-    protected task legal_read( input ocp_cmd_t command, ref bit [7:0] response[$],
-                               input string label);
+    protected task ocp_stall_do_read_and_check_no_stall(
+        input ocp_cmd_t command, ref bit [7:0] response[$],
+        input string label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         logic [15:0] generation;
         ocp_arb_open_observation_window(generation);
         ocp_do_read(command, response, ignored_result, label);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
-        require_accepted_setup(label);
+        ocp_stall_check_single_accepted_setup(label);
         if (fifo_model_configured && (command == OCP_CMD_INDIRECT_FIFO_STATUS) &&
             (response.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
             !fifo_packet_model.indices_match(
@@ -183,20 +184,16 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             `uvm_error("OCP_STALL", {label, ": legal read received STALL."})
     endtask
 
-    protected task issue_stall( input bit dir_in, input ocp_cmd_t command,
-                                input bit [15:0] requested_length,
-                                ref bit [7:0] payload[$],
-                                input ocp_protocol_error_e expected_code,
-                                input string label,
-                                input bit require_out_data = 1'b0);
+    protected task ocp_stall_do_request_and_check_stall(
+        input bit dir_in, input ocp_cmd_t command,
+        input bit [15:0] requested_length,
+        ref bit [7:0] payload[$],
+        input ocp_protocol_error_e expected_code,
+        input string label,
+        input bit require_out_data = 1'b0);
         caliptra_ss_usb_ocp_xfer_result_e result;
         bit [7:0] response[$];
         logic [15:0] generation;
-        bit ack_seen;
-        bit stall_seen;
-        int unsigned out_data_packets;
-        int unsigned out_data_bytes;
-        caliptra_ss_usb_ocp_arbiter_packet_callback::packet_record_t record;
 
         // Only negative OCP requests require immediate rejection. Standard
         // firmware-serviced requests must retain their normal retry budget.
@@ -211,7 +208,23 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         ocp_configure_ep0_nak_retry_limit(
             normal_nak_retry_limit, normal_endpoint_retry_limit);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
-        require_accepted_setup(label);
+        ocp_stall_check_single_accepted_setup(label);
+        ocp_stall_check_control_stall(
+            result, payload.size(), expected_code, label, require_out_data);
+    endtask
+
+    protected function void ocp_stall_check_control_stall(
+        input caliptra_ss_usb_ocp_xfer_result_e result,
+        input int unsigned payload_bytes,
+        input ocp_protocol_error_e expected_code,
+        input string label,
+        input bit require_out_data = 1'b0);
+        bit ack_seen;
+        bit stall_seen;
+        int unsigned out_data_packets;
+        int unsigned out_data_bytes;
+        caliptra_ss_usb_ocp_arbiter_packet_callback::packet_record_t record;
+
         ack_seen = 1'b0;
         stall_seen = 1'b0;
         out_data_packets = 0;
@@ -247,20 +260,22 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         end
         if (require_out_data && (out_data_packets == 0))
             `uvm_error("OCP_STALL", {label, ": DATA-stage stimulus was not delivered."})
-        if (inject_short_data && (out_data_bytes != payload.size()))
+        if (inject_short_data && (out_data_bytes != payload_bytes))
             `uvm_error("OCP_STALL", {label, ": short-DATA wire byte count mismatch."})
         stall_model.note_error(expected_code);
         void'(stall_model.require_stalled(label));
-    endtask
+    endfunction
 
-    protected task snapshot_command_state( ref bit [7:0] recovery_control[$],
-                                           ref bit [7:0] fifo_control[$],
-                                           ref bit [7:0] fifo_status[$],
-                                           input string label);
-        legal_read(OCP_CMD_RECOVERY_CTRL, recovery_control, {label, "_RC"});
+    protected task ocp_stall_do_read_and_check_command_state(
+        ref bit [7:0] recovery_control[$],
+        ref bit [7:0] fifo_control[$],
+        ref bit [7:0] fifo_status[$],
+        input string label);
+        ocp_stall_do_read_and_check_no_stall(
+            OCP_CMD_RECOVERY_CTRL, recovery_control, {label, "_RC"});
         if (agent_capabilities[OCP_CAP_INDIRECT_FIFO]) begin
-            legal_read(OCP_CMD_INDIRECT_FIFO_CTRL, fifo_control, {label, "_FC"});
-            legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, fifo_status, {label, "_FS"});
+            ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_CTRL, fifo_control, {label, "_FC"});
+            ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, fifo_status, {label, "_FS"});
             if (fifo_model_configured &&
                 (fifo_status.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
                 !fifo_packet_model.indices_match(
@@ -270,10 +285,10 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         end
     endtask
 
-    protected task prepare_modeled_fifo( input int unsigned image_dwords, input string label);
+    protected task ocp_stall_do_configure_and_check_fifo(input int unsigned image_dwords, input string label);
         bit [7:0] status_bytes[$];
         ocp_do_fifo_ctrl_write(0, 1'b1, image_dwords, label);
-        legal_read(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, {label, "_CAPS"});
+        ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, {label, "_CAPS"});
         if (status_bytes.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS)
             `uvm_fatal("OCP_STALL", "FIFO capability discovery was truncated.")
         fifo_packet_model.configure(
@@ -288,32 +303,31 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             `uvm_error("OCP_STALL", "Protocol FIFO reset did not establish initial indices.")
     endtask
 
-    protected task check_rejected_request( input bit dir_in,
-                                           input ocp_cmd_t command,
-                                           input bit [15:0] requested_length,
-                                           ref bit [7:0] payload[$],
-                                           input ocp_protocol_error_e expected_code,
-                                           input string label,
-                                           input bit require_out_data = 1'b0);
+    protected task ocp_stall_do_request_and_check_rejection(input bit dir_in,
+                                                            input ocp_cmd_t command,
+                                                            input bit [15:0] requested_length,
+                                                            ref bit [7:0] payload[$],
+                                                            input ocp_protocol_error_e expected_code,
+                                                            input string label,
+                                                            input bit require_out_data = 1'b0);
         bit [7:0] rc_before[$], fc_before[$], fs_before[$];
         bit [7:0] rc_after[$], fc_after[$], fs_after[$];
-        snapshot_command_state(rc_before, fc_before, fs_before, {label, "_BEFORE"});
-        issue_stall(dir_in, command, requested_length, payload,
-            expected_code, label, require_out_data);
-        read_status_and_check({label, "_CODE"});
-        read_status_and_check({label, "_CLEAR"});
-        snapshot_command_state(rc_after, fc_after, fs_after, {label, "_AFTER"});
+        ocp_stall_do_read_and_check_command_state(rc_before, fc_before, fs_before, {label, "_BEFORE"});
+        ocp_stall_do_request_and_check_stall(dir_in, command, requested_length, payload, expected_code, label, require_out_data);
+        ocp_stall_do_read_and_check_device_status({label, "_CODE"});
+        ocp_stall_do_read_and_check_device_status({label, "_CLEAR"});
+        ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, {label, "_AFTER"});
         if ((rc_before != rc_after) || (fc_before != fc_after) ||
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", {label, ": rejected request changed command/FIFO state."})
-        mark_check(label);
+        ocp_stall_note_check_completed(label);
     endtask
 
-    protected task finish_stall_test(input string label);
+    protected task ocp_stall_do_final_read_and_check_completion(input string label);
         bit [7:0] response[$];
         if (fifo_window_pending)
             `uvm_error("OCP_STALL", {label, ": FIFO request observation was not consumed."})
-        legal_read(OCP_CMD_PROT_CAP, response, {label, "_FINAL_PROT_CAP"});
+        ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, {label, "_FINAL_PROT_CAP"});
         if (response.size() != OCP_SPEC_LEN_PROT_CAP)
             `uvm_error("OCP_STALL", {label, ": final capability response truncated."})
         ocp_publish_transfer_count();

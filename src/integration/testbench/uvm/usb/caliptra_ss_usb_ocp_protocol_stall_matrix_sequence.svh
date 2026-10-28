@@ -37,19 +37,19 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
         bit [7:0] payload[$];
         payload = '{8'h00};
         // First-error-wins is a Caliptra local contract, not OCP Section 9.1.
-        issue_stall(1'b0, RESERVED_COMMAND, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(1'b0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "LOCAL_FIRST_A");
-        issue_stall(1'b0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
+        ocp_stall_do_request_and_check_stall(1'b0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
             OCP_PROTOCOL_ERROR_LENGTH, "LOCAL_SECOND_B");
-        read_status_and_check("LOCAL_FIRST_CODE");
-        read_status_and_check("LOCAL_CLEAR_NO_DEFERRED_CODE");
-        mark_check("local first-code retention; second request still stalled");
+        ocp_stall_do_read_and_check_device_status("LOCAL_FIRST_CODE");
+        ocp_stall_do_read_and_check_device_status("LOCAL_CLEAR_NO_DEFERRED_CODE");
+        ocp_stall_note_check_completed("local first-code retention; second request still stalled");
     endtask
 
     virtual task body();
         negative_case_t cases[$];
         bit [7:0] payload[$];
-        initialize_stall_transport();
+        ocp_stall_do_initialize_and_check_transport();
 
         // OCP Recovery v1.1 Sections 9.1/9.2 define these classes and lengths.
         cases.push_back('{0, RESERVED_COMMAND, 1,
@@ -77,7 +77,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
             cases.push_back('{0, OCP_CMD_INDIRECT_FIFO_CTRL,
                 OCP_SPEC_LEN_INDIRECT_FIFO_CTRL + 1,
                 OCP_PROTOCOL_ERROR_LENGTH, 0, "FIFO_CTRL_LONG"});
-            prepare_modeled_fifo((wMaxWrTransferSize + 3) / 4, "FIFO_SETUP");
+            ocp_stall_do_configure_and_check_fifo((wMaxWrTransferSize + 3) / 4, "FIFO_SETUP");
             cases.push_back('{0, OCP_CMD_INDIRECT_FIFO_DATA, 0,
                 OCP_PROTOCOL_ERROR_LENGTH, 0, "FIFO_DATA_ZERO"});
             if (wMaxWrTransferSize < 16'hFFFF)
@@ -105,7 +105,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
                 repeat (cases[i].length) payload.push_back(8'h00);
             if (cases[i].data_stage)
                 payload[OCP_OFF_RC_IMG_SEL] = RESERVED_IMAGE_SELECTION;
-            check_rejected_request(cases[i].dir_in, cases[i].command,
+            ocp_stall_do_request_and_check_rejection(cases[i].dir_in, cases[i].command,
                 16'(cases[i].length), payload, cases[i].code,
                 cases[i].label, cases[i].data_stage);
         end
@@ -114,23 +114,23 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
         // The mirrored SETUP check independently proves that wire length.
         inject_short_data = 1'b1;
         payload = '{8'h00};
-        check_rejected_request(0, OCP_CMD_RECOVERY_CTRL, payload.size(),
+        ocp_stall_do_request_and_check_rejection(0, OCP_CMD_RECOVERY_CTRL, payload.size(),
             payload, OCP_PROTOCOL_ERROR_LENGTH, "DELIVERED_DATA_SHORT", 1'b1);
         inject_short_data = 1'b0;
         if (agent_capabilities[OCP_CAP_INDIRECT_FIFO]) begin
-            prepare_modeled_fifo(1, "FIFO_SMALL_IMAGE");
+            ocp_stall_do_configure_and_check_fifo(1, "FIFO_SMALL_IMAGE");
             payload = '{8'h00, 8'h01, 8'h02, 8'h03, 8'h04};
-            check_rejected_request(0, OCP_CMD_INDIRECT_FIFO_DATA,
+            ocp_stall_do_request_and_check_rejection(0, OCP_CMD_INDIRECT_FIFO_DATA,
                 payload.size(), payload, OCP_PROTOCOL_ERROR_LENGTH,
                 "FIFO_DATA_OVER_IMAGE_REMAINING");
         end
         check_first_error_wins();
         ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("STANDARD_BYPASS");
-        read_status_and_check("STANDARD_BYPASS_STATUS");
+        ocp_stall_do_read_and_check_device_status("STANDARD_BYPASS_STATUS");
         // USB link CRC is not an OCP checksum. No USB OCP checksum field
         // is defined; code 0x04 is not applicable (OCP Sections 8.5/9.2).
-        mark_check("OCP checksum code 0x04 not applicable to USB encapsulation");
-        finish_stall_test("PROTOCOL_MATRIX");
+        ocp_stall_note_check_completed("OCP checksum code 0x04 not applicable to USB encapsulation");
+        ocp_stall_do_final_read_and_check_completion("PROTOCOL_MATRIX");
     endtask
 endclass
 
