@@ -17,6 +17,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_recovery_init/caliptra_ss_usb_ocp_recovery_init: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_usb_axi_filter/smoke_test_usb_axi_filter: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_cmd_handling/caliptra_ss_usb_ocp_cmd_handling: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_setup_supersession/caliptra_ss_usb_ocp_setup_supersession: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_firmware_protocol_error/caliptra_ss_usb_ocp_firmware_protocol_error: { weight: 100 }
