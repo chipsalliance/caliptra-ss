@@ -12043,8 +12043,8 @@
 #define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (0x184)
 #define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
 #define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (0xffff)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_LOW                                           (16)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_MASK                                          (0xffff0000)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                                (16)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                               (0xffff0000)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2                                                (0xa0030188)
 #ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2
@@ -12073,8 +12073,8 @@
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1                                                   (0x190)
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                              (0)
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                             (0xffff)
-#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_RSVD_LOW                                          (16)
-#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_RSVD_MASK                                         (0xffff0000)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                               (16)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                              (0xffff0000)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2                                               (0xa0030194)
 #ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2
@@ -12089,6 +12089,60 @@
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_MASK                                         (0x7ff80000)
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                   (31)
 #define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                  (0x80000000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                         (0xa0030198)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_0
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                             (0x198)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                         (0xa003019c)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_1
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                             (0x19c)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                         (0xa00301a0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_2
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                             (0x1a0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                         (0xa00301a4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_3
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                             (0x1a4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                         (0xa00301a8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_4
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                             (0x1a8)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                         (0xa00301ac)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_5
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                             (0x1ac)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                         (0xa00301b0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_6
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                             (0x1b0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                         (0xa00301b4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_7
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                             (0x1b4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                         (0xa00301b8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_8
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                             (0x1b8)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                         (0xa00301bc)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_9
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                             (0x1bc)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                        (0xa00301c0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_10
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                            (0x1c0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                        (0xa00301c4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_11
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                            (0x1c4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                      (0xa00301c8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                          (0x1c8)
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_LOW                                                 (0)
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_MASK                                                (0x1)
 #endif
 #define SOC_SOC_IFC_REG_FUSE_UDS_SEED_0                                                             (0xa0030200)
 #ifndef SOC_IFC_REG_FUSE_UDS_SEED_0
@@ -12603,6 +12657,28 @@
 #define SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                                (0x54c)
 #define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
 #define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (0x1)
+#endif
+#define SOC_SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                        (0xa0030550)
+#ifndef SOC_IFC_REG_SS_OTP_FC_STATUS_CFG
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                            (0x550)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_LOW                                          (0)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_MASK                                         (0xffff)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_LOW                                       (16)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_MASK                                      (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                           (0xa0030554)
+#ifndef SOC_IFC_REG_SS_OTP_FC_CMD_CFG
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                               (0x554)
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_LOW                                  (0)
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_MASK                                 (0xffff)
+#endif
+#define SOC_SOC_IFC_REG_SS_FW_FEATURE_CFG                                                           (0xa0030558)
+#ifndef SOC_IFC_REG_SS_FW_FEATURE_CFG
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG                                                               (0x558)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_LOW                                       (0)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_MASK                                      (0x1)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_LOW                                   (31)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_MASK                                  (0x80000000)
 #endif
 #define SOC_SOC_IFC_REG_SS_STRAP_GENERIC_0                                                          (0xa00305a0)
 #ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
