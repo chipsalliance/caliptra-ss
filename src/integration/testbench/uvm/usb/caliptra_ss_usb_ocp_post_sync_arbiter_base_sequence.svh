@@ -40,12 +40,12 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         path_disabled = 1'b0;
     endfunction
 
-    protected virtual function time configured_reset_duration();
+    protected virtual function time ocp_arb_get_reset_duration();
         // Synopsys USB VIP timer reals are expressed in picoseconds.
         return $rtoi(usb_cfg.tdrst) * 1ps;
     endfunction
 
-    protected virtual task initialize_arbiter_transport();
+    protected virtual task ocp_arb_do_initialize_and_check_transport();
         bit ready;
 
         if (!uvm_config_db#(
@@ -91,7 +91,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task open_observation_window(
+    protected virtual task ocp_arb_open_observation_window(
         output logic [15:0] generation);
 
         bit acknowledged;
@@ -122,7 +122,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task close_observation_window(
+    protected virtual task ocp_arb_check_and_close_observation_window(
         input logic [15:0] generation,
         input logic [3:0] expected_legacy_dispatch_delta);
 
@@ -151,45 +151,19 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task run_claimed_read(
-        input ocp_cmd_t command,
-        input bit require_success,
-        input string label);
-
-        bit [7:0] response[$];
-        caliptra_ss_usb_ocp_xfer_result_e result;
-
-        run_claimed_read_length(
-            command,
-            16'(wMaxRdTransferSize),
-            response,
-            result,
-            label);
-
-        if ((result == OCP_XFER_ABORTED) && require_success
-            && !path_disabled) begin
-            `uvm_error("OCP_ARB_SEQ",
-                $sformatf("%s was aborted", label))
-        end
-        if (require_success && (result != OCP_XFER_SUCCESS)) begin
-            `uvm_error("OCP_ARB_SEQ",
-                $sformatf("%s did not return a successful recovery response",
-                          label))
-        end
-    endtask
-
-    protected virtual task run_claimed_read_length(
+    protected virtual task ocp_arb_do_claimed_read(
         input ocp_cmd_t command,
         input bit [15:0] requested_length,
         ref bit [7:0] response[$],
         output caliptra_ss_usb_ocp_xfer_result_e result,
-        input string label);
+        input string label,
+        input bit check_success = 1'b0);
 
         logic [15:0] generation;
         bit [7:0] empty_payload[$];
 
         empty_payload.delete();
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         ocp_do_class_xfer(
             1'b1,
             command,
@@ -198,11 +172,22 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
             response,
             result,
             label);
-        close_observation_window(
+        ocp_arb_check_and_close_observation_window(
             generation, path_disabled ? 4'h1 : 4'h0);
+
+        if ((result == OCP_XFER_ABORTED) && check_success
+            && !path_disabled) begin
+            `uvm_error("OCP_ARB_SEQ",
+                $sformatf("%s was aborted", label))
+        end
+        if (check_success && (result != OCP_XFER_SUCCESS)) begin
+            `uvm_error("OCP_ARB_SEQ",
+                $sformatf("%s did not return a successful recovery response",
+                          label))
+        end
     endtask
 
-    protected virtual function void require_setup_stage_ack(
+    protected virtual function void ocp_arb_check_setup_stage_ack(
         input string label);
 
         if (!checker.packet_callback.setup_stage_acked()) begin
@@ -212,7 +197,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endfunction
 
-    protected virtual function void report_packet_outcome(
+    protected virtual function void ocp_arb_report_packet_outcome(
         input string label);
 
         int unsigned nak_count;
@@ -233,15 +218,15 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
             UVM_NONE)
     endfunction
 
-    protected virtual task run_unclaimed_configuration_descriptor(
+    protected virtual task ocp_arb_do_read_and_check_unclaimed_configuration_descriptor(
         input string label);
 
         logic [15:0] generation;
         bit [7:0] descriptor[$];
 
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         ocp_do_read_and_check_configuration_descriptor(9, descriptor, label);
-        close_observation_window(generation, 4'h1);
+        ocp_arb_check_and_close_observation_window(generation, 4'h1);
         if (descriptor.size() != 9) begin
             `uvm_error("OCP_ARB_SEQ",
                 $sformatf("%s returned %0d descriptor bytes, expected 9",
@@ -249,7 +234,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task set_path_disable(input bit disabled);
+    protected virtual task ocp_arb_set_path_disable(input bit disabled);
         bit complete;
         logic [15:0] generation;
 
@@ -268,7 +253,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         path_disabled = disabled;
     endtask
 
-    protected virtual task capture_legacy_snapshot(
+    protected virtual task ocp_arb_capture_legacy_snapshot(
         output logic [15:0] generation);
 
         bit acknowledged;
@@ -299,7 +284,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task capture_reset_post_snapshot(
+    protected virtual task ocp_arb_capture_reset_post_snapshot(
         input logic [15:0] generation,
         input time timeout);
 
@@ -331,7 +316,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         end
     endtask
 
-    protected virtual task reenumerate_after_reset();
+    protected virtual task ocp_arb_do_reenumerate_and_check_after_reset();
         caliptra_ss_usb_init_sequence init_seq;
 
         usb_cfg.remote_device_cfg[0].device_address = 7'd0;
@@ -344,7 +329,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         ocp_do_discover_and_check_functional_descriptor();
     endtask
 
-    protected virtual task run_reset_during_control_stage(
+    protected virtual task ocp_arb_do_stage_reset_and_check_reset_timing(
         input svt_usb_transfer::xfer_stage_enum target_stage,
         input string label);
 
@@ -396,7 +381,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         bounded_completion = 1'b0;
         stage_waiter_armed = 1'b0;
         reset_signal_observed = 1'b0;
-        expected_se0_duration = configured_reset_duration();
+        expected_se0_duration = ocp_arb_get_reset_duration();
         reset_timeout = expected_se0_duration * 4;
         minimum_se0_duration =
             expected_se0_duration *
@@ -501,27 +486,24 @@ class caliptra_ss_usb_ocp_arb_001_sequence
     endfunction
 
     virtual task body();
-        initialize_arbiter_transport();
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+
+        ocp_arb_do_initialize_and_check_transport();
 
         // OCP Recovery v1.1 Section 9.2 defines these commands as host-readable.
         // Mandatory commands must respond; optional capability reads may reject
         // the request while still remaining owned by the recovery path.
-        run_claimed_read(OCP_CMD_PROT_CAP, 1'b1, "ARB001_PROT_CAP");
-        run_claimed_read(OCP_CMD_DEVICE_ID, 1'b1, "ARB001_DEVICE_ID");
-        run_claimed_read(OCP_CMD_DEVICE_STATUS, 1'b1, "ARB001_DEVICE_STATUS");
-        run_claimed_read(OCP_CMD_RECOVERY_STATUS, 1'b1,
-                         "ARB001_RECOVERY_STATUS");
-        run_claimed_read(OCP_CMD_RECOVERY_CTRL, 1'b1,
-                         "ARB001_RECOVERY_CTRL_READ");
-        run_claimed_read(OCP_CMD_INDIRECT_FIFO_CTRL, 1'b1,
-                         "ARB001_INDIRECT_FIFO_CTRL_READ");
-        run_claimed_read(OCP_CMD_INDIRECT_FIFO_STATUS, 1'b1,
-                         "ARB001_INDIRECT_FIFO_STATUS_READ");
-        run_claimed_read(OCP_CMD_HW_STATUS, 1'b0, "ARB001_HW_STATUS");
-        run_claimed_read(OCP_CMD_INDIRECT_CTRL, 1'b0,
-                         "ARB001_INDIRECT_CTRL_READ");
-        run_claimed_read(OCP_CMD_INDIRECT_STATUS, 1'b0,
-                         "ARB001_INDIRECT_STATUS_READ");
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP            , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_PROT_CAP"                 , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_DEVICE_ID           , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_DEVICE_ID"                , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_DEVICE_STATUS       , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_DEVICE_STATUS"            , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_RECOVERY_STATUS     , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_RECOVERY_STATUS"          , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_RECOVERY_CTRL       , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_RECOVERY_CTRL_READ"       , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_INDIRECT_FIFO_CTRL  , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_INDIRECT_FIFO_CTRL_READ"  , 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_INDIRECT_FIFO_STATUS, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_INDIRECT_FIFO_STATUS_READ", 1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_HW_STATUS           , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_HW_STATUS"                , 1'b0);
+        ocp_arb_do_claimed_read(OCP_CMD_INDIRECT_CTRL       , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_INDIRECT_CTRL_READ"       , 1'b0);
+        ocp_arb_do_claimed_read(OCP_CMD_INDIRECT_STATUS     , 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB001_INDIRECT_STATUS_READ"     , 1'b0);
         ocp_publish_transfer_count();
     endtask
 endclass
@@ -536,15 +518,17 @@ class caliptra_ss_usb_ocp_arb_002_sequence
     endfunction
 
     virtual task body();
-        initialize_arbiter_transport();
-        run_claimed_read(OCP_CMD_PROT_CAP, 1'b1, "ARB002_PROT_CAP_FIRST");
-        run_unclaimed_configuration_descriptor("ARB002_CONFIG_SECOND");
-        run_unclaimed_configuration_descriptor("ARB002_CONFIG_FIRST");
-        run_claimed_read(OCP_CMD_DEVICE_ID, 1'b1,
-                         "ARB002_DEVICE_ID_SECOND");
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+
+        ocp_arb_do_initialize_and_check_transport();
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB002_PROT_CAP_FIRST", 1'b1);
+        ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("ARB002_CONFIG_SECOND");
+        ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("ARB002_CONFIG_FIRST");
+        ocp_arb_do_claimed_read(OCP_CMD_DEVICE_ID, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB002_DEVICE_ID_SECOND", 1'b1);
         `uvm_info("OCP_ARB_002",
-            "Coverage gap: new-SETUP abandonment remains deferred.",
-            UVM_NONE)
+                  "Coverage gap: new-SETUP abandonment remains deferred.",
+                  UVM_NONE)
         ocp_publish_transfer_count();
     endtask
 endclass
@@ -559,15 +543,18 @@ class caliptra_ss_usb_ocp_arb_003_sequence
     endfunction
 
     virtual task body();
-        initialize_arbiter_transport();
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
+
+        ocp_arb_do_initialize_and_check_transport();
 
         // All phases use the same OCP Recovery v1.1 PROT_CAP read SETUP. Only
         // path ownership changes, so response payload equality is not assumed.
-        run_claimed_read(OCP_CMD_PROT_CAP, 1'b1, "ARB003_ENABLED_FIRST");
-        set_path_disable(1'b1);
-        run_claimed_read(OCP_CMD_PROT_CAP, 1'b0, "ARB003_DISABLED");
-        set_path_disable(1'b0);
-        run_claimed_read(OCP_CMD_PROT_CAP, 1'b1, "ARB003_ENABLED_SECOND");
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB003_ENABLED_FIRST", 1'b1);
+        ocp_arb_set_path_disable(1'b1);
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB003_DISABLED", 1'b0);
+        ocp_arb_set_path_disable(1'b0);
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), ignored_response, ignored_result, "ARB003_ENABLED_SECOND", 1'b1);
         ocp_publish_transfer_count();
     endtask
 endclass
@@ -604,26 +591,16 @@ class caliptra_ss_usb_ocp_arb_004_sequence
         bit [7:0] response[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
 
-        initialize_arbiter_transport();
+        ocp_arb_do_initialize_and_check_transport();
 
-        run_claimed_read_length(
-            OCP_CMD_PROT_CAP,
-            16'(wMaxRdTransferSize - 1),
-            response,
-            result,
-            "ARB004_WRONG_READ_LENGTH");
-        require_setup_stage_ack("ARB004_WRONG_READ_LENGTH");
-        report_packet_outcome("ARB004_WRONG_READ_LENGTH");
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize - 1), response, result, "ARB004_WRONG_READ_LENGTH");
+        ocp_arb_check_setup_stage_ack("ARB004_WRONG_READ_LENGTH");
+        ocp_arb_report_packet_outcome("ARB004_WRONG_READ_LENGTH");
         require_stalled_non_success(result, "ARB004_WRONG_READ_LENGTH");
 
-        run_claimed_read_length(
-            ocp_cmd_t'(8'hFF),
-            16'(wMaxRdTransferSize),
-            response,
-            result,
-            "ARB004_RESERVED_COMMAND");
-        require_setup_stage_ack("ARB004_RESERVED_COMMAND");
-        report_packet_outcome("ARB004_RESERVED_COMMAND");
+        ocp_arb_do_claimed_read(ocp_cmd_t'(8'hFF), 16'(wMaxRdTransferSize), response, result, "ARB004_RESERVED_COMMAND");
+        ocp_arb_check_setup_stage_ack("ARB004_RESERVED_COMMAND");
+        ocp_arb_report_packet_outcome("ARB004_RESERVED_COMMAND");
         require_stalled_non_success(result, "ARB004_RESERVED_COMMAND");
         ocp_publish_transfer_count();
     endtask
@@ -644,14 +621,9 @@ class caliptra_ss_usb_ocp_arb_005_sequence
         int unsigned last_data_length;
         bit found_data;
 
-        initialize_arbiter_transport();
-        run_claimed_read_length(
-            OCP_CMD_PROT_CAP,
-            16'(wMaxRdTransferSize),
-            response,
-            result,
-            "ARB005_SHORT_PROT_CAP");
-        require_setup_stage_ack("ARB005_SHORT_PROT_CAP");
+        ocp_arb_do_initialize_and_check_transport();
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), response, result, "ARB005_SHORT_PROT_CAP");
+        ocp_arb_check_setup_stage_ack("ARB005_SHORT_PROT_CAP");
         if (result != OCP_XFER_SUCCESS) begin
             `uvm_error("OCP_ARB_005",
                 "PROT_CAP short-response case did not complete successfully")
@@ -701,39 +673,28 @@ class caliptra_ss_usb_ocp_arb_006_sequence
         logic [15:0] before_generation;
         logic [31:0] before_reset_count;
         logic [31:0] after_reset_count;
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
-        capture_legacy_snapshot(before_generation);
-        before_reset_count = observer_vif.get_snapshot_field(
-            observer_vif.SNAPSHOT_FIELD_BUS_RESET_COUNT);
-        run_reset_during_control_stage(target_stage, label);
-        capture_reset_post_snapshot(
-            before_generation,
-            configured_reset_duration() * 4);
-        after_reset_count = observer_vif.get_snapshot_field(
-            observer_vif.SNAPSHOT_FIELD_BUS_RESET_COUNT);
+        ocp_arb_capture_legacy_snapshot(before_generation);
+        before_reset_count = observer_vif.get_snapshot_field(observer_vif.SNAPSHOT_FIELD_BUS_RESET_COUNT);
+        ocp_arb_do_stage_reset_and_check_reset_timing(target_stage, label);
+        ocp_arb_capture_reset_post_snapshot(before_generation, ocp_arb_get_reset_duration() * 4);
+        after_reset_count = observer_vif.get_snapshot_field(observer_vif.SNAPSHOT_FIELD_BUS_RESET_COUNT);
         if (after_reset_count <= before_reset_count) begin
             `uvm_fatal("OCP_ARB_006",
                 $sformatf("%s bus-reset count did not advance: %0d -> %0d",
                           label, before_reset_count, after_reset_count))
         end
-        reenumerate_after_reset();
-        run_claimed_read(
-            OCP_CMD_PROT_CAP,
-            1'b1,
-            {label, "_POST_RESET_PROT_CAP"});
+        ocp_arb_do_reenumerate_and_check_after_reset();
+        ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), ignored_response, ignored_result, {label, "_POST_RESET_PROT_CAP"}, 1'b1);
     endtask
 
     virtual task body();
-        initialize_arbiter_transport();
-        run_reset_variant(
-            svt_usb_transfer::SETUP_STAGE,
-            "ARB006_SETUP_STAGE");
-        run_reset_variant(
-            svt_usb_transfer::DATA_STAGE,
-            "ARB006_DATA_STAGE");
-        run_reset_variant(
-            svt_usb_transfer::STATUS_STAGE,
-            "ARB006_STATUS_STAGE");
+        ocp_arb_do_initialize_and_check_transport();
+        run_reset_variant( svt_usb_transfer::SETUP_STAGE, "ARB006_SETUP_STAGE");
+        run_reset_variant( svt_usb_transfer::DATA_STAGE, "ARB006_DATA_STAGE");
+        run_reset_variant( svt_usb_transfer::STATUS_STAGE, "ARB006_STATUS_STAGE");
         ocp_publish_transfer_count();
     endtask
 endclass
@@ -766,24 +727,16 @@ class caliptra_ss_usb_ocp_arb_007_sequence
         int unsigned core_bucket;
         string phase_key;
 
-        initialize_arbiter_transport();
+        ocp_arb_do_initialize_and_check_transport();
         for (int unsigned phase_index = 0;
              phase_index < 8;
              phase_index++) begin
             empty_payload.delete();
-            open_observation_window(generation);
+            ocp_arb_open_observation_window(generation);
             observer_vif.wait_launch_phase(phase_index);
-            ocp_do_class_xfer(
-                1'b1,
-                OCP_CMD_PROT_CAP,
-                16'(wMaxRdTransferSize),
-                empty_payload,
-                response,
-                result,
-                $sformatf("ARB007_PHASE_%0d", phase_index));
-            close_observation_window(generation, 4'h0);
-            require_setup_stage_ack(
-                $sformatf("ARB007_PHASE_%0d", phase_index));
+            ocp_do_class_xfer( 1'b1, OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize), empty_payload, response, result, $sformatf("ARB007_PHASE_%0d", phase_index));
+            ocp_arb_check_and_close_observation_window(generation, 4'h0);
+            ocp_arb_check_setup_stage_ack( $sformatf("ARB007_PHASE_%0d", phase_index));
             if (result != OCP_XFER_SUCCESS) begin
                 `uvm_error("OCP_ARB_007",
                     $sformatf("Arrival phase %0d did not complete successfully",

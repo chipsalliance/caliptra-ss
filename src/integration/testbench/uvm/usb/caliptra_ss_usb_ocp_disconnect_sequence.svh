@@ -114,6 +114,8 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         input string label,
         input bit sof_running);
         caliptra_ss_usb_init_sequence init_seq;
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         init_seq = caliptra_ss_usb_init_sequence::type_id::create(
             {label, "_init"});
@@ -121,10 +123,13 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         init_seq.start(p_sequencer, this);
         dev_addr_v = 1;
         ocp_do_discover_and_check_functional_descriptor();
-        run_claimed_read(
+        ocp_arb_do_claimed_read(
             OCP_CMD_PROT_CAP,
-            1'b1,
-            {label, "_PROT_CAP"});
+            16'(wMaxRdTransferSize),
+            ignored_response,
+            ignored_result,
+            {label, "_PROT_CAP"},
+            1'b1);
     endtask
 
     protected virtual task vbus_cycle_and_reconnect(input string label);
@@ -149,15 +154,20 @@ class caliptra_ss_usb_ocp_disconnect_sequence
 
     virtual task body();
         bit dcon_only;
+        bit [7:0] ignored_response[$];
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         dcon_only = 1'b0;
         void'(uvm_config_db#(bit)::get(
             null, get_full_name(), "dcon_only", dcon_only));
-        initialize_arbiter_transport();
-        run_claimed_read(
+        ocp_arb_do_initialize_and_check_transport();
+        ocp_arb_do_claimed_read(
             OCP_CMD_PROT_CAP,
-            1'b1,
-            "OCP_DISCONNECT_PRECHECK");
+            16'(wMaxRdTransferSize),
+            ignored_response,
+            ignored_result,
+            "OCP_DISCONNECT_PRECHECK",
+            1'b1);
 
         if (dcon_only) begin
             bit axi_idle;

@@ -125,7 +125,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
                 "FIFO_DATA_OVER_IMAGE_REMAINING");
         end
         check_first_error_wins();
-        run_unclaimed_configuration_descriptor("STANDARD_BYPASS");
+        ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("STANDARD_BYPASS");
         read_status_and_check("STANDARD_BYPASS_STATUS");
         // USB link CRC is not an OCP checksum. No USB OCP checksum field
         // is defined; code 0x04 is not applicable (OCP Sections 8.5/9.2).

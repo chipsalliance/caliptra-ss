@@ -70,7 +70,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         int unsigned expected_packets;
 
         void'(stall_model.require_stalled(label));
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         checker.expect_packet_only_window();
         raw_response_callback.enabled = 1'b1;
         transmit_packet(pid, payload);
@@ -86,7 +86,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             `uvm_error("OCP_STALL", {label, ": response observation timed out."})
         // Snapshot collection keeps observation active after the first
         // response, so duplicate or delayed responses cannot escape checking.
-        close_observation_window(generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
         raw_response_callback.enabled = 1'b0;
         if (!checker.packet_callback.check_stall_probe(
                 pid, 7'(dev_addr_v), 4'h0, label))
@@ -115,13 +115,13 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             OCP_BREQUEST_XFER, OCP_CMD_PROT_CAP, 8'h00,
             interface_index[7:0], interface_index[15:8],
             8'(wMaxRdTransferSize), 8'(wMaxRdTransferSize >> 8)};
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         checker.expect_packet_only_window();
         raw_response_callback.enabled = 1'b1;
         transmit_packet(svt_usb_packet::SETUP, empty_payload, 1'b1);
         transmit_packet(svt_usb_packet::DATA0, setup_bytes);
         #(PACKET_RESPONSE_BOUND);
-        close_observation_window(generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
         raw_response_callback.enabled = 1'b0;
         if ((checker.packet_callback.accepted_setup_count() != 0) ||
             (checker.packet_callback.count_pid(svt_usb_packet::ACK,
@@ -148,7 +148,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         logic [15:0] generation;
         caliptra_ss_usb_ocp_xfer_result_e result;
         bit [7:0] response[$];
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         fork
             wait_xfer_done(host_agent_h, "CLEAR_FEATURE_EP0");
             do_control_xfer(
@@ -160,7 +160,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
                 .device_addr(dev_addr_v), .label("CLEAR_FEATURE_EP0"),
                 .usb_cfg(usb_cfg));
         join
-        close_observation_window(generation, 4'h1);
+        ocp_arb_check_and_close_observation_window(generation, 4'h1);
         require_accepted_setup("CLEAR_FEATURE_EP0");
         // USB 2.0 Sections 9.4.1/9.4.5 allow Request Error when EP0 has
         // no Halt feature. Its accepted SETUP, not its status, is the

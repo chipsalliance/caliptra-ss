@@ -340,7 +340,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         bit [7:0] second_status[$];
         bit [7:0] third_status[$];
 
-        initialize_arbiter_transport();
+        ocp_arb_do_initialize_and_check_transport();
 
         // Firmware must have reached READY before we drive the trigger.
         expect_fw_state(FW_PROTOCOL_ERROR_STATE_READY, "READY_BEFORE_TRIGGER");

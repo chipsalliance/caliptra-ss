@@ -48,7 +48,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
     protected task initialize_stall_transport();
         bit [7:0] cms_count;
         bit [7:0] heartbeat_period;
-        initialize_arbiter_transport();
+        ocp_arb_do_initialize_and_check_transport();
         checker.packet_callback.enable_diagnostics();
         if (!uvm_config_db#(caliptra_ss_usb_ocp_stall_model)::get(
                 null, "", "ocp_stall_model", stall_model)) begin
@@ -138,10 +138,10 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             fifo_window_owner_aborted = 1'b1;
     endfunction
 
-    protected virtual task close_observation_window(
+    protected virtual task ocp_arb_check_and_close_observation_window(
         input logic [15:0] generation,
         input logic [3:0] expected_legacy_dispatch_delta);
-        super.close_observation_window(generation, expected_legacy_dispatch_delta);
+        super.ocp_arb_check_and_close_observation_window(generation, expected_legacy_dispatch_delta);
         if (fifo_window_pending) begin
             fifo_scoreboard.observe_fifo_window(checker.packet_callback,
                 generation, 7'(dev_addr_v), fifo_window_bytes,
@@ -153,9 +153,9 @@ class caliptra_ss_usb_ocp_stall_base_sequence
     protected task read_status_and_check(input string label);
         bit [7:0] status_bytes[$];
         logic [15:0] generation;
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         ocp_do_read_and_check_device_status(status_bytes, label);
-        close_observation_window(generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
         if (status_bytes.size() <= OCP_OFF_DS_PROT_ERROR) begin
             `uvm_fatal("OCP_STALL", {label, ": status code not returned."})
@@ -168,9 +168,9 @@ class caliptra_ss_usb_ocp_stall_base_sequence
                                input string label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         logic [15:0] generation;
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         ocp_do_read(command, response, ignored_result, label);
-        close_observation_window(generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
         if (fifo_model_configured && (command == OCP_CMD_INDIRECT_FIFO_STATUS) &&
             (response.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
@@ -201,7 +201,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         // Only negative OCP requests require immediate rejection. Standard
         // firmware-serviced requests must retain their normal retry budget.
         ocp_configure_ep0_nak_retry_limit(NEGATIVE_NAK_RETRY_LIMIT);
-        open_observation_window(generation);
+        ocp_arb_open_observation_window(generation);
         if (inject_short_data)
             checker.expect_wire_setup_length(OCP_SPEC_LEN_RECOVERY_CTRL);
         expecting_rejection = 1'b1;
@@ -210,7 +210,7 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         expecting_rejection = 1'b0;
         ocp_configure_ep0_nak_retry_limit(
             normal_nak_retry_limit, normal_endpoint_retry_limit);
-        close_observation_window(generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(generation, 4'h0);
         require_accepted_setup(label);
         ack_seen = 1'b0;
         stall_seen = 1'b0;

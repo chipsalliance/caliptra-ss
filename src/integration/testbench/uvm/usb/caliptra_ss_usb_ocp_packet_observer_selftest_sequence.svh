@@ -376,9 +376,9 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_do_recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_CMS, 1'b0, "LIVE_FIFO_IMAGE");
         prepare_modeled_fifo((bytes + 3) / 4, "LIVE_FIFO_RESET");
         for (int unsigned i = 0; i < bytes; i++) payload.push_back(8'(i ^ 8'hA5));
-        open_observation_window(live_generation);
+        ocp_arb_open_observation_window(live_generation);
         ocp_do_fifo_data_write(payload, ignored_result, "LIVE_FIFO_DATA");
-        close_observation_window(live_generation, 4'h0);
+        ocp_arb_check_and_close_observation_window(live_generation, 4'h0);
         require_accepted_setup("LIVE_FIFO_DATA");
         require_true((fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4) &&
             (fifo_packet_model.partial_byte_count() == 0), "live packet/status commit");
