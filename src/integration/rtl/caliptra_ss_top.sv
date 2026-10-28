@@ -744,6 +744,8 @@ module caliptra_ss_top
     assign ext_int[`VEER_INTR_VEC_MCI]                  = mci_intr;
     assign ext_int[`VEER_INTR_VEC_I3C]                  = i3c_irq_o;
     assign ext_int[`VEER_INTR_VEC_USB]                  = usb_dev_irq;
+    assign ext_int[`VEER_INTR_VEC_RSVD4]                = 1'b0;
+    assign ext_int[`VEER_INTR_VEC_RSVD5]                = 1'b0;
     assign ext_int[pt.PIC_TOTAL_INT:`VEER_INTR_EXT_LSB] = cptra_ss_mcu_ext_int;
 
     //Aggregate error connections

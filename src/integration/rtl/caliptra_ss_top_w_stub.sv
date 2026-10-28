@@ -137,7 +137,7 @@ module caliptra_ss_top_w_stub #(
     axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_usb_dev1_mem_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_o));
     `AXI_S_IF_TIE_OFF(cptra_ss_usb_dev1_mem_s_axi_if)
-    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if)
     axi_mem_if #(.ADDR_WIDTH(15),.DATA_WIDTH(64))
