@@ -568,7 +568,7 @@ class caliptra_ss_usb_ocp_arb_004_sequence
         super.new(name);
     endfunction
 
-    protected virtual task require_stalled_non_success(
+    protected virtual task ocp_arb_check_stalled_non_success(
         input caliptra_ss_usb_ocp_xfer_result_e result,
         input string label);
 
@@ -596,12 +596,12 @@ class caliptra_ss_usb_ocp_arb_004_sequence
         ocp_arb_do_claimed_read(OCP_CMD_PROT_CAP, 16'(wMaxRdTransferSize - 1), response, result, "ARB004_WRONG_READ_LENGTH");
         ocp_arb_check_setup_stage_ack("ARB004_WRONG_READ_LENGTH");
         ocp_arb_report_packet_outcome("ARB004_WRONG_READ_LENGTH");
-        require_stalled_non_success(result, "ARB004_WRONG_READ_LENGTH");
+        ocp_arb_check_stalled_non_success(result, "ARB004_WRONG_READ_LENGTH");
 
         ocp_arb_do_claimed_read(ocp_cmd_t'(8'hFF), 16'(wMaxRdTransferSize), response, result, "ARB004_RESERVED_COMMAND");
         ocp_arb_check_setup_stage_ack("ARB004_RESERVED_COMMAND");
         ocp_arb_report_packet_outcome("ARB004_RESERVED_COMMAND");
-        require_stalled_non_success(result, "ARB004_RESERVED_COMMAND");
+        ocp_arb_check_stalled_non_success(result, "ARB004_RESERVED_COMMAND");
         ocp_publish_transfer_count();
     endtask
 endclass
@@ -666,7 +666,7 @@ class caliptra_ss_usb_ocp_arb_006_sequence
         super.new(name);
     endfunction
 
-    protected virtual task run_reset_variant(
+    protected virtual task ocp_arb_do_reset_variant_and_check_recovery(
         input svt_usb_transfer::xfer_stage_enum target_stage,
         input string label);
 
@@ -692,9 +692,9 @@ class caliptra_ss_usb_ocp_arb_006_sequence
 
     virtual task body();
         ocp_arb_do_initialize_and_check_transport();
-        run_reset_variant( svt_usb_transfer::SETUP_STAGE, "ARB006_SETUP_STAGE");
-        run_reset_variant( svt_usb_transfer::DATA_STAGE, "ARB006_DATA_STAGE");
-        run_reset_variant( svt_usb_transfer::STATUS_STAGE, "ARB006_STATUS_STAGE");
+        ocp_arb_do_reset_variant_and_check_recovery( svt_usb_transfer::SETUP_STAGE, "ARB006_SETUP_STAGE");
+        ocp_arb_do_reset_variant_and_check_recovery( svt_usb_transfer::DATA_STAGE, "ARB006_DATA_STAGE");
+        ocp_arb_do_reset_variant_and_check_recovery( svt_usb_transfer::STATUS_STAGE, "ARB006_STATUS_STAGE");
         ocp_publish_transfer_count();
     endtask
 endclass

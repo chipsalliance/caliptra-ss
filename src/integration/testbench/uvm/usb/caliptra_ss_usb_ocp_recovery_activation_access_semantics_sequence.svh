@@ -62,7 +62,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         super.new(name);
     endfunction
 
-    protected virtual task wait_fw_state(
+    protected virtual task ocp_ra_poll_fw_state(
         input logic [7:0] target_state,
         input string      label);
 
@@ -76,7 +76,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         end
     endtask
 
-    protected virtual task wait_fw_post_ra_nonzero();
+    protected virtual task ocp_ra_poll_fw_post_ra_nonzero();
         bit found;
 
         found = 1'b0;
@@ -97,9 +97,9 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // read_recovery_ctrl_activate: read RECOVERY_CTRL and return ACTIVATE byte.
+    // ocp_ra_do_read_activate_and_check_length: read RECOVERY_CTRL and return ACTIVATE byte.
     // -------------------------------------------------------------------------
-    protected virtual task read_recovery_ctrl_activate(
+    protected virtual task ocp_ra_do_read_activate_and_check_length(
         output logic [7:0] activate_out,
         input  string      label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
@@ -120,7 +120,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     // Wait for the exact stored-value level rather than sampling in the same
     // delta cycle as a firmware state publication.
     // -------------------------------------------------------------------------
-    protected virtual task wait_recovery_image_activated_level(
+    protected virtual task ocp_ra_poll_recovery_image_activated_level(
         input  bit expected_level,
         output bit reached_out);
 
@@ -156,9 +156,9 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         end
 
         // Wait firmware READY.
-        wait_fw_state(RA_SEM_STATE_READY, "RA_SEM_READY");
+        ocp_ra_poll_fw_state(RA_SEM_STATE_READY, "RA_SEM_READY");
         `uvm_info("RA_SEM_SEQ", "Firmware READY observed.", UVM_NONE)
-        wait_recovery_image_activated_level(1'b0, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b0, reached);
         if (!reached) begin
             `uvm_fatal("OCP_ACTIVATION_LEVEL",
                 "Activation level was not low before the first firmware 0x0F write.")
@@ -170,16 +170,16 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         ocp_do_fifo_ctrl_write(8'h00, 1'b0, 32'd1,
                                  "RA_SEM_FIFO_START_TRIGGER");
 
-        wait_fw_state(RA_SEM_STATE_FW_NONZERO_STORED_PRE,
+        ocp_ra_poll_fw_state(RA_SEM_STATE_FW_NONZERO_STORED_PRE,
                       "RA_SEM_FW_NONZERO_PRE");
-        read_recovery_ctrl_activate(
+        ocp_ra_do_read_activate_and_check_length(
             activate_val, "RA_SEM_RC_FW_NONZERO_PRE");
         if (activate_val !== OCP_RC_ACTIVATE_CODE) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 $sformatf("Firmware pre-RA ACTIVATE readback=0x%02h expected 0x%02h.",
                           activate_val, OCP_RC_ACTIVATE_CODE))
         end
-        wait_recovery_image_activated_level(1'b1, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b1, reached);
         if (!reached || !sem_vif.recovery_image_activated_seen) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Firmware pre-RA ACTIVATE=0x0F did not assert the activation level and edge.")
@@ -189,15 +189,15 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 UVM_NONE)
         end
 
-        wait_fw_state(RA_SEM_STATE_FW_PRE_RA_CLEARED, "RA_SEM_FW_PRE_CLEARED");
-        read_recovery_ctrl_activate(
+        ocp_ra_poll_fw_state(RA_SEM_STATE_FW_PRE_RA_CLEARED, "RA_SEM_FW_PRE_CLEARED");
+        ocp_ra_do_read_activate_and_check_length(
             activate_val, "RA_SEM_RC_FW_PRE_CLEARED");
         if (activate_val !== 8'h00) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 $sformatf("Firmware pre-RA clear readback=0x%02h expected 0x00.",
                           activate_val))
         end
-        wait_recovery_image_activated_level(1'b0, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b0, reached);
         if (!reached) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Firmware pre-RA ACTIVATE=0 did not deassert the activation level.")
@@ -222,11 +222,11 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         // -----------------------------------------------------------------
         // Wait RA_ACTIVATE_PENDING; confirm ACTIVATE=0x0F repeatedly.
         // -----------------------------------------------------------------
-        wait_fw_state(RA_SEM_STATE_RA_ACTIVATE_PENDING,
+        ocp_ra_poll_fw_state(RA_SEM_STATE_RA_ACTIVATE_PENDING,
                       "RA_SEM_RA_PENDING");
 
         for (int unsigned i = 0; i < ACTIVATE_CONFIRM_READS; i++) begin
-            read_recovery_ctrl_activate(activate_val,
+            ocp_ra_do_read_activate_and_check_length(activate_val,
                 $sformatf("RA_SEM_ACTIVATE_CONFIRM_%0d", i));
             if (activate_val !== OCP_RC_ACTIVATE_CODE) begin
                 `uvm_error("RA_SEM_SEQ",
@@ -236,7 +236,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
             end
         end
 
-        wait_recovery_image_activated_level(1'b1, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b1, reached);
         if (!reached || !sem_vif.recovery_image_activated_seen) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Recovery Agent ACTIVATE=0x0F did not assert a fresh activation level and edge.")
@@ -248,15 +248,15 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
 
         // Rewriting the activation code while already high maintains the
         // stored-value level and does not require another edge.
-        wait_fw_post_ra_nonzero();
-        read_recovery_ctrl_activate(
+        ocp_ra_poll_fw_post_ra_nonzero();
+        ocp_ra_do_read_activate_and_check_length(
             activate_val, "RA_SEM_RC_FW_NONZERO_AFTER_RA");
         if (activate_val !== OCP_RC_ACTIVATE_CODE) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 $sformatf("Firmware post-RA ACTIVATE readback=0x%02h expected 0x%02h.",
                           activate_val, OCP_RC_ACTIVATE_CODE))
         end
-        wait_recovery_image_activated_level(1'b1, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b1, reached);
         if (!reached) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Firmware post-RA ACTIVATE=0x0F did not maintain the activation level.")
@@ -279,8 +279,8 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 "Pre-zero protocol-error trigger aborted.")
         end
 
-        wait_fw_state(RA_SEM_STATE_FW_ZERO_ARMED, "RA_SEM_FW_ZERO_ARMED");
-        wait_recovery_image_activated_level(1'b1, reached);
+        ocp_ra_poll_fw_state(RA_SEM_STATE_FW_ZERO_ARMED, "RA_SEM_FW_ZERO_ARMED");
+        ocp_ra_poll_recovery_image_activated_level(1'b1, reached);
         if (!reached) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Activation level deasserted before the firmware clear was released.")
@@ -295,10 +295,10 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         // -----------------------------------------------------------------
         // Wait FW_ACTIVATE_CLEARED; verify RECOVERY_CTRL readback zero.
         // -----------------------------------------------------------------
-        wait_fw_state(RA_SEM_STATE_FW_ACTIVATE_CLEARED,
+        ocp_ra_poll_fw_state(RA_SEM_STATE_FW_ACTIVATE_CLEARED,
                        "RA_SEM_FW_CLEARED");
 
-        read_recovery_ctrl_activate(activate_val, "RA_SEM_RC_POST_CLEAR");
+        ocp_ra_do_read_activate_and_check_length(activate_val, "RA_SEM_RC_POST_CLEAR");
         if (activate_val !== 8'h00) begin
             `uvm_error("RA_SEM_SEQ",
                 $sformatf("RECOVERY_CTRL ACTIVATE=0x%02h after firmware zero-write, expected 0x00.",
@@ -309,7 +309,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 UVM_NONE)
         end
 
-        wait_recovery_image_activated_level(1'b0, reached);
+        ocp_ra_poll_recovery_image_activated_level(1'b0, reached);
         if (!reached) begin
             `uvm_error("OCP_ACTIVATION_LEVEL",
                 "Firmware ACTIVATE=0 did not deassert the activation level.")

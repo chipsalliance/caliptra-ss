@@ -25,7 +25,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         super.new(name);
     endfunction
 
-    protected virtual task issue_dcon_command(input bit connected);
+    protected virtual task ocp_disconnect_issue_dcon_command_and_check_ack(input bit connected);
         bit acknowledged;
         logic [15:0] generation;
 
@@ -46,7 +46,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         end
     endtask
 
-    protected virtual task wait_host_state(
+    protected virtual task ocp_disconnect_poll_host_state(
         input svt_usb_types::link20sm_state_enum expected_state,
         input string label);
         bit reached;
@@ -67,7 +67,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         end
     endtask
 
-    protected virtual task wait_host_not_enabled(input string label);
+    protected virtual task ocp_disconnect_poll_and_check_host_not_enabled(input string label);
         bit reached;
 
         reached = 1'b0;
@@ -95,7 +95,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         end
     endtask
 
-    protected virtual task stop_sof();
+    protected virtual task ocp_disconnect_do_stop_sof();
         svt_usb_protocol_service_20_sof_off_sequence sof_off;
 
         sof_off =
@@ -104,13 +104,13 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         sof_off.start(p_sequencer.prot_service_sequencer);
     endtask
 
-    protected virtual task prepare_host_address_zero();
+    protected virtual task ocp_disconnect_configure_host_address_zero();
         usb_cfg.remote_device_cfg[0].device_address = 7'd0;
         host_agent_h.reconfigure(usb_cfg);
         dev_addr_v = 0;
     endtask
 
-    protected virtual task reconnect_and_check(
+    protected virtual task ocp_disconnect_do_reconnect_and_check_access(
         input string label,
         input bit sof_running);
         caliptra_ss_usb_init_sequence init_seq;
@@ -132,7 +132,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
             1'b1);
     endtask
 
-    protected virtual task vbus_cycle_and_reconnect(input string label);
+    protected virtual task ocp_disconnect_do_vbus_cycle_and_check_reconnect(input string label);
         svt_usb_physical_service_vbus_off_sequence vbus_off;
         svt_usb_physical_service_vbus_on_sequence vbus_on;
 
@@ -142,14 +142,14 @@ class caliptra_ss_usb_ocp_disconnect_sequence
         vbus_on =
             svt_usb_physical_service_vbus_on_sequence::type_id::create(
                 {label, "_vbus_on"});
-        stop_sof();
+        ocp_disconnect_do_stop_sof();
         vbus_off.start(p_sequencer.usb_20_phys_service_sequencer);
-        wait_host_state(svt_usb_types::POWERED_OFF, label);
-        issue_dcon_command(1'b0);
-        prepare_host_address_zero();
+        ocp_disconnect_poll_host_state(svt_usb_types::POWERED_OFF, label);
+        ocp_disconnect_issue_dcon_command_and_check_ack(1'b0);
+        ocp_disconnect_configure_host_address_zero();
         vbus_on.start(p_sequencer.usb_20_phys_service_sequencer);
-        issue_dcon_command(1'b1);
-        reconnect_and_check(label, 1'b0);
+        ocp_disconnect_issue_dcon_command_and_check_ack(1'b1);
+        ocp_disconnect_do_reconnect_and_check_access(label, 1'b0);
     endtask
 
     virtual task body();
@@ -171,8 +171,8 @@ class caliptra_ss_usb_ocp_disconnect_sequence
 
         if (dcon_only) begin
             bit axi_idle;
-            issue_dcon_command(1'b0);
-            wait_host_not_enabled("DCON clear");
+            ocp_disconnect_issue_dcon_command_and_check_ack(1'b0);
+            ocp_disconnect_poll_and_check_host_not_enabled("DCON clear");
             observer_vif.wait_for_mcu_axi_idle(100us, axi_idle);
             if (!axi_idle) begin
                 `uvm_error("OCP_DISCONNECT",
@@ -185,7 +185,7 @@ class caliptra_ss_usb_ocp_disconnect_sequence
             return;
         end
 
-        vbus_cycle_and_reconnect("OCP_VBUS_RECONNECT");
+        ocp_disconnect_do_vbus_cycle_and_check_reconnect("OCP_VBUS_RECONNECT");
 
         begin
             bit axi_idle;

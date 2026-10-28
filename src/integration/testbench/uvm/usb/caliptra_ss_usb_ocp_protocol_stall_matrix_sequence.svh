@@ -33,7 +33,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
         super.new(name);
     endfunction
 
-    protected task check_first_error_wins();
+    protected task ocp_stall_do_request_and_check_first_error_wins();
         bit [7:0] payload[$];
         payload = '{8'h00};
         // First-error-wins is a Caliptra local contract, not OCP Section 9.1.
@@ -124,7 +124,7 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_sequence
                 payload.size(), payload, OCP_PROTOCOL_ERROR_LENGTH,
                 "FIFO_DATA_OVER_IMAGE_REMAINING");
         end
-        check_first_error_wins();
+        ocp_stall_do_request_and_check_first_error_wins();
         ocp_arb_do_read_and_check_unclaimed_configuration_descriptor("STANDARD_BYPASS");
         ocp_stall_do_read_and_check_device_status("STANDARD_BYPASS_STATUS");
         // USB link CRC is not an OCP checksum. No USB OCP checksum field

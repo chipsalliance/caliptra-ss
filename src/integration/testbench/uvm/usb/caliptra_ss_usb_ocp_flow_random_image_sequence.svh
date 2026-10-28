@@ -60,7 +60,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         complete_flow_cg = new();
     endfunction
 
-    protected virtual function void sample_usb_nak_chunk(
+    protected virtual function void ocp_fifo_sample_usb_nak_chunk(
         input int unsigned chunk_dwords,
         input bit nak_observed);
 
@@ -77,7 +77,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         int unsigned max_image_dwords;
 
         if (!ocp_configure_sem_vif()) return;
-        apply_config();
+        ocp_fifo_configure_flow_control();
         ocp_do_initialize_and_check_transport();
         nak_callback =
             caliptra_ss_usb_nak_monitor_callback::type_id::create(
@@ -100,7 +100,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
             4'h0, 8'h00, OCP_PROTOCOL_ERROR_NONE,
             2000, 10us, "INITIAL", "OCP_FLOW_006");
 
-        read_and_check_status(status, "FLOW006_FIFO_DISCOVERY");
+        ocp_fifo_do_read_and_check_status(status, "FLOW006_FIFO_DISCOVERY");
         if ((status.region_type != OCP_REGION_RECOVERY_CODE_WO) ||
             (status.fifo_size == 0) ||
             (ocp_get_max_chunk_dwords(status) == 0)) begin
@@ -127,7 +127,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         final_valid_bytes = 4;
         randomize_chunks = 1'b1;
         strategy = FIFO_FLOW_BY_USB_NAK;
-        generate_default_image();
+        ocp_fifo_prepare_default_image();
 
         `uvm_info("OCP_FLOW_006",
             $sformatf({"Starting randomized multi-batch flow: ",
@@ -144,7 +144,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         observed_naks = 0;
         caliptra_ss_usb_nak_monitor_callback::reset_nak_count();
         caliptra_ss_usb_nak_monitor_callback::reset_ping_count();
-        push_image();
+        ocp_fifo_do_push_and_check_image();
         ping_count =
             caliptra_ss_usb_nak_monitor_callback::get_ping_count();
         if (observed_naks == 0) begin
@@ -158,7 +158,7 @@ class caliptra_ss_usb_ocp_flow_random_image_sequence
         ocp_wait_fw_state_generation(
             OCP_FW_STATE_RECOVERY_PENDING, 16'h0000,
             FLOW_STATUS_TIMEOUT, "FLOW006_PENDING_FW", "OCP_FLOW_006");
-        read_and_check_status(status, "FLOW006_FINAL_EMPTY");
+        ocp_fifo_do_read_and_check_status(status, "FLOW006_FINAL_EMPTY");
         if (!status.empty || status.full ||
             (status.write_index != status.read_index)) begin
             `uvm_fatal("OCP_FLOW_006",

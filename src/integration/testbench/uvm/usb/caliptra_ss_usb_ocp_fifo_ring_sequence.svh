@@ -59,7 +59,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         super.new(name);
     endfunction
 
-    protected virtual function int unsigned visible_occupancy(
+    protected virtual function int unsigned ocp_fifo_get_visible_occupancy(
         input fifo_status_s status);
         if (status.empty && status.full) return 0;
         if (status.empty) return 0;
@@ -71,7 +71,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
 
     // Smallest legal write chunk in DWORDs: min of OCP MAX_TRANSFER_SIZE
     // and the USB functional descriptor wMaxWrTransferSize.
-    protected virtual function int unsigned legal_chunk_dwords(
+    protected virtual function int unsigned ocp_fifo_get_legal_chunk_dwords(
         input fifo_status_s status);
         int unsigned usb_limit_dwords;
 
@@ -81,7 +81,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         return usb_limit_dwords;
     endfunction
 
-    protected virtual function void append_dword(
+    protected virtual function void ocp_fifo_prepare_payload_append_dword(
         ref bit [7:0] payload[$],
         input bit [31:0] value);
         payload.push_back(value[7:0]);
@@ -94,7 +94,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
     // FIFO_SIZE is runtime-discovered per OCP Recovery v1.1 Sec 8.2.5;
     // no implementation-derived upper bound is imposed beyond requiring
     // a functional ring (>= 2 slots) and a non-zero transfer limit.
-    protected virtual task read_status(
+    protected virtual task ocp_fifo_do_read_and_check_ring_status(
         output fifo_status_s status,
         input string label);
         caliptra_ss_usb_ocp_recovery_base_sequence::fifo_status_s transport_status;
@@ -176,8 +176,8 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
 
         // Capability discovery: FIFO_SIZE and limits are runtime fields per
         // OCP Recovery v1.1 Sec 8.2.5.  No compile-time values are assumed.
-        read_status(initial_status, "OCP_FIFO_RING_CAPABILITY_STATUS");
-        max_chunk = legal_chunk_dwords(initial_status);
+        ocp_fifo_do_read_and_check_ring_status(initial_status, "OCP_FIFO_RING_CAPABILITY_STATUS");
+        max_chunk = ocp_fifo_get_legal_chunk_dwords(initial_status);
         if (max_chunk == 0) begin
             `uvm_fatal("OCP_FIFO_RING",
                 "Runtime FIFO and USB transfer limits do not permit one DWORD.")
@@ -187,7 +187,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         ocp_do_fifo_ctrl_write(
             8'h00, 1'b1, initial_status.fifo_size + 1,
             "OCP_FIFO_RING_CTRL");
-        read_status(status, "OCP_FIFO_RING_STATUS_RESET");
+        ocp_fifo_do_read_and_check_ring_status(status, "OCP_FIFO_RING_STATUS_RESET");
         if (!status.empty || status.full ||
             (status.write_index !== status.read_index)) begin
             `uvm_error("OCP_FIFO_RING",
@@ -214,7 +214,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
             if (chunk_dwords > max_chunk) chunk_dwords = max_chunk;
             payload.delete();
             for (int unsigned i = 0; i < chunk_dwords; i++) begin
-                append_dword(payload, 32'hC0DE_0000 | (32'(offset + i)));
+                ocp_fifo_prepare_payload_append_dword(payload, 32'hC0DE_0000 | (32'(offset + i)));
             end
             ocp_do_fifo_data_write(
                 payload, ignored_result, $sformatf("OCP_FIFO_RING_PUSH_%0d", chunk));
@@ -222,16 +222,16 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
             chunk++;
         end
 
-        read_status(full_status, "OCP_FIFO_RING_STATUS_FULL");
+        ocp_fifo_do_read_and_check_ring_status(full_status, "OCP_FIFO_RING_STATUS_FULL");
         if (!full_status.full || full_status.empty ||
-            (visible_occupancy(full_status) !== full_status.fifo_size) ||
+            (ocp_fifo_get_visible_occupancy(full_status) !== full_status.fifo_size) ||
             (full_status.write_index !== full_status.read_index) ||
             (full_status.write_index !== base_index)) begin
             `uvm_error("OCP_FIFO_RING",
                 $sformatf("Merged full-batch state invalid: EMPTY=%0b FULL=%0b WRITE_INDEX=%0d READ_INDEX=%0d occupancy=%0d.",
                           full_status.empty, full_status.full,
                           full_status.write_index, full_status.read_index,
-                          visible_occupancy(full_status)))
+                          ocp_fifo_get_visible_occupancy(full_status)))
         end
         `uvm_info("OCP_FIFO_RING",
             {"FIFO reached full physical occupancy with FULL asserted and ",
@@ -242,7 +242,7 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         // transaction after NAK until Caliptra drains the first batch.
         ocp_configure_ep0_nak_retry_limit(10000);
         payload.delete();
-        append_dword(
+        ocp_fifo_prepare_payload_append_dword(
             payload,
             32'hC0DE_0000 | (32'(initial_status.fifo_size)));
 
@@ -268,12 +268,12 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         empty_reached = 1'b0;
         for (int unsigned poll = 0;
              poll < OCP_FIFO_RING_MAX_EMPTY_POLLS; poll++) begin
-            read_status(
+            ocp_fifo_do_read_and_check_ring_status(
                 status,
                 $sformatf("OCP_FIFO_RING_EMPTY_POLL_%0d", poll));
             if (status.empty &&
                 (status.write_index === status.read_index) &&
-                (visible_occupancy(status) === 0)) begin
+                (ocp_fifo_get_visible_occupancy(status) === 0)) begin
                 empty_reached = 1'b1;
                 break;
             end
@@ -286,12 +286,12 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
         end
         if (!status.empty || status.full ||
             (status.write_index !== status.read_index) ||
-            (visible_occupancy(status) !== 0)) begin
+            (ocp_fifo_get_visible_occupancy(status) !== 0)) begin
             `uvm_error("OCP_FIFO_RING",
                 $sformatf("Final empty state invalid: EMPTY=%0b FULL=%0b WRITE_INDEX=%0d READ_INDEX=%0d occupancy=%0d.",
                           status.empty, status.full,
                           status.write_index, status.read_index,
-                           visible_occupancy(status)))
+                           ocp_fifo_get_visible_occupancy(status)))
         end
 
         // Publish the expected Device consumption count so the scoreboard can

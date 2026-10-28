@@ -35,7 +35,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         super.new(name);
     endfunction
 
-    protected virtual function void mark_check(
+    protected virtual function void ocp_cmd_note_check_completed(
         input string test_id,
         input string detail);
 
@@ -48,7 +48,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
             UVM_NONE)
     endfunction
 
-    protected virtual function void check_fixed_length(
+    protected virtual function void ocp_cmd_check_fixed_response_length(
         ref bit [7:0] response[$],
         input int expected_length,
         input string label);
@@ -60,7 +60,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         end
     endfunction
 
-    protected virtual task check_heartbeat_behavior(
+    protected virtual task ocp_cmd_do_read_and_check_heartbeat_behavior(
         input bit [7:0] heartbeat_period);
 
         bit [7:0] first_status[$];
@@ -104,18 +104,18 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 $sformatf("Heartbeat period exponent %0d exceeds the bounded directed-test observation window; field legality was checked but increment timing is deferred to a long-running flow test.",
                           heartbeat_period))
         end
-        mark_check("OCP_CMD_011",
+        ocp_cmd_note_check_completed("OCP_CMD_011",
             $sformatf("heartbeat_period=%0d first=%0d second=%0d vendor-length bounds checked",
                       heartbeat_period, first_heartbeat, second_heartbeat));
     endtask
 
-    protected virtual task check_optional_hw_status(
+    protected virtual task ocp_cmd_do_request_and_check_optional_hw_status(
         input bit [15:0] agent_caps);
 
         bit [7:0] empty_payload[$];
         if (agent_caps[OCP_CAP_HW_STATUS]) begin
             ocp_do_read_and_check_hw_status();
-            mark_check("OCP_CMD_007",
+            ocp_cmd_note_check_completed("OCP_CMD_007",
                 "advertised HW_STATUS accepted and format checked");
         end else begin
             empty_payload.delete();
@@ -123,12 +123,12 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 1'b1, OCP_CMD_HW_STATUS, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_007_HW_STATUS_UNADVERTISED", 1'b1);
-            mark_check("OCP_CMD_007",
+            ocp_cmd_note_check_completed("OCP_CMD_007",
                 "unadvertised HW_STATUS reported unsupported");
         end
     endtask
 
-    protected virtual task check_optional_vendor(
+    protected virtual task ocp_cmd_do_exercise_and_check_optional_vendor(
         input bit [15:0] agent_caps);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
@@ -157,7 +157,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                     $sformatf("Advertised VENDOR data=0x%02h, expected firmware-programmed 0x%02h.",
                               response[0], VENDOR_DEFAULT_DATA))
             end
-            mark_check("OCP_CMD_009",
+            ocp_cmd_note_check_completed("OCP_CMD_009",
                 "advertised VENDOR transport accepted; payload is vendor-defined");
 
             // Firmware owns Identification advertisement. Disable it while
@@ -192,7 +192,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 1'b1, OCP_CMD_DEVICE_ID, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_002_DEVICE_ID_DISABLED_IN", 1'b1);
-            mark_check("OCP_CMD_002",
+            ocp_cmd_note_check_completed("OCP_CMD_002",
                 "firmware-disabled DEVICE_ID rejected");
 
             payload = '{IDENTIFICATION_ENABLE_TOKEN};
@@ -259,7 +259,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 1'b0, OCP_CMD_VENDOR, payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_009_VENDOR_DISABLED_OUT", 1'b1);
-            mark_check("OCP_CMD_009",
+            ocp_cmd_note_check_completed("OCP_CMD_009",
                 "firmware-disabled VENDOR rejected in both directions");
         end else begin
             empty_payload.delete();
@@ -267,12 +267,12 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
                 1'b1, OCP_CMD_VENDOR, empty_payload,
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "OCP_CMD_009_VENDOR_UNADVERTISED", 1'b1);
-            mark_check("OCP_CMD_009",
+            ocp_cmd_note_check_completed("OCP_CMD_009",
                 "unadvertised VENDOR command reported unsupported");
         end
     endtask
 
-    protected virtual task check_optional_indirect_commands(
+    protected virtual task ocp_cmd_do_request_and_check_optional_indirect_commands(
         input bit [15:0] agent_caps);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
@@ -282,12 +282,12 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         if (agent_caps[OCP_CAP_INDIRECT_CTRL]) begin
             ocp_do_read(OCP_CMD_INDIRECT_CTRL, response, ignored_result,
                      "OCP_INDIRECT_CTRL_ADVERTISED");
-            check_fixed_length(
+            ocp_cmd_check_fixed_response_length(
                 response, OCP_SPEC_LEN_INDIRECT_CTRL, "INDIRECT_CTRL");
 
             ocp_do_read(OCP_CMD_INDIRECT_STATUS, response, ignored_result,
                      "OCP_INDIRECT_STATUS_ADVERTISED");
-            check_fixed_length(
+            ocp_cmd_check_fixed_response_length(
                 response, OCP_SPEC_LEN_INDIRECT_STATUS, "INDIRECT_STATUS");
             if ((response.size() == OCP_SPEC_LEN_INDIRECT_STATUS) &&
                 ((response[0] & 8'hE0) != 8'h00)) begin
@@ -306,7 +306,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         if (agent_caps[OCP_CAP_INDIRECT_FIFO]) begin
             ocp_do_read(OCP_CMD_INDIRECT_FIFO_CTRL, response, ignored_result,
                      "OCP_INDIRECT_FIFO_CTRL_ADVERTISED");
-            check_fixed_length(
+            ocp_cmd_check_fixed_response_length(
                 response, OCP_SPEC_LEN_INDIRECT_FIFO_CTRL,
                 "INDIRECT_FIFO_CTRL");
             ocp_do_read_and_check_fifo_status_format();
@@ -319,7 +319,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         end
     endtask
 
-    protected virtual task check_device_reset_command(
+    protected virtual task ocp_cmd_do_read_and_check_device_reset_command(
         input bit [15:0] agent_caps);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
@@ -337,7 +337,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         if (reset_capability) begin
             ocp_do_read(OCP_CMD_DEVICE_RESET, response, ignored_result,
                      "OCP_DEVICE_RESET_READ_ONLY_PROBE");
-            check_fixed_length(
+            ocp_cmd_check_fixed_response_length(
                 response, OCP_SPEC_LEN_DEVICE_RESET, "DEVICE_RESET");
         end else begin
             empty_payload.delete();
@@ -348,13 +348,13 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         end
     endtask
 
-    protected virtual task check_recovery_ctrl_read();
+    protected virtual task ocp_cmd_do_read_and_check_recovery_ctrl();
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
 
         ocp_do_read(OCP_CMD_RECOVERY_CTRL, response, ignored_result,
                  "OCP_RECOVERY_CTRL_READ");
-        check_fixed_length(
+        ocp_cmd_check_fixed_response_length(
             response, OCP_SPEC_LEN_RECOVERY_CTRL, "RECOVERY_CTRL");
         if (response.size() == OCP_SPEC_LEN_RECOVERY_CTRL) begin
             if (response[OCP_OFF_RC_IMG_SEL] > 8'h02) begin
@@ -372,7 +372,7 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         end
     endtask
 
-    protected virtual function void report_executed_checks();
+    protected virtual function void ocp_cmd_report_executed_checks();
         string test_id;
         string summary;
 
@@ -399,19 +399,20 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         ocp_do_initialize_and_check_transport();
 
         ocp_do_read_and_check_prot_cap( agent_caps, cms_count, heartbeat_period);
-        mark_check("OCP_CMD_001",
+        ocp_cmd_note_check_completed("OCP_CMD_001",
                    $sformatf("PROT_CAP spec invariants checked caps=0x%04h cms_count=%0d",
                              agent_caps, cms_count));
 
         ocp_do_read_and_check_device_id(EXPECTED_DEVICE_ID);
-        mark_check("OCP_CMD_002", "firmware-programmed DEVICE_ID readback and host-RO policy checked");
+        ocp_cmd_note_check_completed("OCP_CMD_002",
+            "firmware-programmed DEVICE_ID readback and host-RO policy checked");
         rejected_write = '{8'h00};
         ocp_do_request_and_check_protocol_error(1'b0, OCP_CMD_DEVICE_ID, rejected_write,
                                   OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                                   "OCP_CMD_002_DEVICE_ID_HOST_WRITE", 1'b1);
 
         ocp_do_read_and_check_device_status( device_status, "OCP_CMD_011_DEVICE_STATUS");
-        check_heartbeat_behavior(heartbeat_period);
+        ocp_cmd_do_read_and_check_heartbeat_behavior(heartbeat_period);
 
         // OCP Recovery v1.1 Sec 9.1 requires a write to a read-only command
         // to set Unsupported/Write Command in DEVICE_STATUS. The first RA
@@ -421,23 +422,23 @@ class caliptra_ss_usb_ocp_cmd_handling_sequence
         ocp_do_request_and_check_protocol_error(1'b0, OCP_CMD_PROT_CAP, rejected_write,
                                   OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                                   "OCP_CMD_004_PROT_CAP_WRITE_TO_RO", 1'b0);
-        mark_check("OCP_CMD_004",
+        ocp_cmd_note_check_completed("OCP_CMD_004",
             "write-to-RO protocol status 0x01 latched and cleared by consecutive RA reads");
 
-        check_optional_hw_status(agent_caps);
-        check_optional_vendor(agent_caps);
+        ocp_cmd_do_request_and_check_optional_hw_status(agent_caps);
+        ocp_cmd_do_exercise_and_check_optional_vendor(agent_caps);
 
         // Non-destructive command handling probes. Stateful data transfers,
         // reset writes, FIFO writes, and recovery activation are covered by
         // the OCP_CMD flow, OCP_FIFO, and OCP_FLOW sequences.
-        check_device_reset_command(agent_caps);
-        check_recovery_ctrl_read();
+        ocp_cmd_do_read_and_check_device_reset_command(agent_caps);
+        ocp_cmd_do_read_and_check_recovery_ctrl();
         ocp_do_read_and_check_recovery_status();
-        check_optional_indirect_commands(agent_caps);
+        ocp_cmd_do_request_and_check_optional_indirect_commands(agent_caps);
 
         ocp_poll_mcu_axi_idle("OCP_CMD_HANDLING_FINISH");
         ocp_publish_transfer_count();
-        report_executed_checks();
+        ocp_cmd_report_executed_checks();
         #1us;
     endtask
 

@@ -68,7 +68,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
         super.new(name);
     endfunction
 
-    protected virtual task wait_fw_state(
+    protected virtual task ocp_w1dc_poll_fw_state(
         input logic [7:0] target_state,
         input string      label);
 
@@ -83,14 +83,14 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // write_fifo_dwords: write two deterministic DWORDs to the FIFO.
+    // ocp_w1dc_do_write_and_check_default_fifo_dwords: write two deterministic DWORDs to the FIFO.
     // -------------------------------------------------------------------------
-    protected virtual task write_fifo_dwords(input string label);
-        write_fifo_dword_values(
+    protected virtual task ocp_w1dc_do_write_and_check_default_fifo_dwords(input string label);
+        ocp_w1dc_do_write_and_check_fifo_dword_values(
             FIFO_DWORD_0, FIFO_DWORD_1, label);
     endtask
 
-    protected virtual task write_fifo_dword_values(
+    protected virtual task ocp_w1dc_do_write_and_check_fifo_dword_values(
         input bit [31:0] dword0,
         input bit [31:0] dword1,
         input string label);
@@ -111,10 +111,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // check_fifo_reset_usb: after USB INDIRECT_FIFO_CTRL RESET=1,
+    // ocp_w1dc_do_read_and_check_usb_fifo_reset: after USB INDIRECT_FIFO_CTRL RESET=1,
     // read back ctrl and status and verify RESET cleared + FIFO empty.
     // -------------------------------------------------------------------------
-    protected virtual task check_fifo_reset_usb(input string label);
+    protected virtual task ocp_w1dc_do_read_and_check_usb_fifo_reset(input string label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         fifo_status_s status;
         bit [7:0]  ctrl_resp[$];
@@ -154,10 +154,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // check_fifo_reset_fw: after firmware CPUif INDIRECT_FIFO_CTRL RESET,
+    // ocp_w1dc_do_read_and_check_fw_fifo_reset: after firmware CPUif INDIRECT_FIFO_CTRL RESET,
     // independently verify ctrl RESET zero and status empty/W==R.
     // -------------------------------------------------------------------------
-    protected virtual task check_fifo_reset_fw(input string label);
+    protected virtual task ocp_w1dc_do_read_and_check_fw_fifo_reset(input string label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         fifo_status_s status;
         bit [7:0]  ctrl_resp[$];
@@ -233,7 +233,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND;
 
         // Wait firmware READY.
-        wait_fw_state(W1DC_SEM_STATE_READY, "W1DC_READY");
+        ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_READY, "W1DC_READY");
         `uvm_info("W1DC_SEQ", "Firmware READY observed.", UVM_NONE)
 
         sem_vif.clear_subsystem_reset_seen();
@@ -255,7 +255,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
         // -----------------------------------------------------------------
 
         reset_n_stable = 1'b1;
-        wait_fw_state(W1DC_SEM_STATE_FW_DEVICE_RESET_STORED,
+        ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FW_DEVICE_RESET_STORED,
                       "W1DC_FW_DR_STORED");
 
         // Clear the start-trigger protocol error through the RA path.
@@ -263,7 +263,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             bit [7:0] device_status[$];
             ocp_do_read_and_check_device_status(
                 device_status, "W1DC_START_TRIGGER_CLEAR");
-            wait_fw_state(W1DC_SEM_STATE_FW_DEVICE_RESET_CLEARED,
+            ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FW_DEVICE_RESET_CLEARED,
                           "W1DC_FW_DR_CLEARED");
             ocp_do_read_and_check_device_status(
                 device_status, "W1DC_START_TRIGGER_CLEAR_CONFIRM");
@@ -289,10 +289,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
                                      "W1DC_FIFO_SETUP");
 
             // Write two deterministic DWORDs.
-            write_fifo_dwords("W1DC_FIFO_FILL_USB");
+            ocp_w1dc_do_write_and_check_default_fifo_dwords("W1DC_FIFO_FILL_USB");
 
             // Wait firmware FIFO_NONEMPTY_SEEN.
-            wait_fw_state(W1DC_SEM_STATE_FIFO_NONEMPTY_SEEN,
+            ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FIFO_NONEMPTY_SEEN,
                           "W1DC_FIFO_NONEMPTY");
 
             // USB write INDIRECT_FIFO_CTRL RESET=1.
@@ -300,12 +300,12 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
                                      "W1DC_FIFO_USB_RESET");
 
             // Verify RESET self-cleared and FIFO is empty with W==R.
-            check_fifo_reset_usb("W1DC_USB_RESET");
+            ocp_w1dc_do_read_and_check_usb_fifo_reset("W1DC_USB_RESET");
 
             // Wait firmware USB_FIFO_RESET_OBSERVED.
             // CALIPTRA_STATUS data from firmware is diagnostic only;
             // it is not an OCP-specified expected value.
-            wait_fw_state(W1DC_SEM_STATE_USB_FIFO_RESET_OBSERVED,
+            ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_USB_FIFO_RESET_OBSERVED,
                           "W1DC_USB_FIFO_RESET_OBS");
             `uvm_info("W1DC_SEQ",
                 $sformatf("USB_FIFO_RESET_OBSERVED: caliptra_status_region_reset=%0b (diagnostic)",
@@ -315,10 +315,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             // Refill FIFO (firmware is waiting for this).
             ocp_do_fifo_ctrl_write(8'h00, 1'b0, 32'd2,
                                      "W1DC_FIFO_REFILL_SETUP");
-            write_fifo_dwords("W1DC_FIFO_REFILL");
+            ocp_w1dc_do_write_and_check_default_fifo_dwords("W1DC_FIFO_REFILL");
 
             // Wait firmware FW_FIFO_RESET_OBSERVED (firmware did the reset).
-            wait_fw_state(W1DC_SEM_STATE_FW_FIFO_RESET_OBSERVED,
+            ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FW_FIFO_RESET_OBSERVED,
                           "W1DC_FW_FIFO_RESET_OBS");
 
             // Firmware reset is not a USB transfer, so explicitly synchronize
@@ -329,10 +329,10 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             fifo_model_reset_event.trigger();
 
             // Independently verify: USB read ctrl/status after FW reset.
-            check_fifo_reset_fw("W1DC_FW_RESET_VERIFY");
+            ocp_w1dc_do_read_and_check_fw_fifo_reset("W1DC_FW_RESET_VERIFY");
 
         end else begin
-            wait_fw_state(W1DC_SEM_STATE_FIFO_UNSUPPORTED,
+            ocp_w1dc_poll_fw_state(W1DC_SEM_STATE_FIFO_UNSUPPORTED,
                           "W1DC_FIFO_UNSUPPORTED_FW");
             // FIFO capability not advertised; verify unsupported behavior.
             empty_payload.delete();
@@ -349,14 +349,14 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             ocp_do_fifo_ctrl_write(
                 8'h00, 1'b0, 32'd2,
                 "OCP_FIFO_RESET_POST_VERIFY_SETUP");
-            write_fifo_dword_values(
+            ocp_w1dc_do_write_and_check_fifo_dword_values(
                 32'h13579BDF,
                 32'h2468ACE0,
                 "OCP_FIFO_RESET_POST_VERIFY");
-            wait_fw_state(
+            ocp_w1dc_poll_fw_state(
                 W1DC_SEM_STATE_POST_RESET_DRAIN,
                 "OCP_FIFO_RESET_POST_DRAIN");
-            check_fifo_reset_fw("OCP_FIFO_RESET_POST_EMPTY");
+            ocp_w1dc_do_read_and_check_fw_fifo_reset("OCP_FIFO_RESET_POST_EMPTY");
             ocp_poll_mcu_axi_idle("OCP_DEVICE_FIFO_CLEAR");
             ocp_publish_transfer_count();
             `uvm_info("W1DC_SEQ",
@@ -493,14 +493,14 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             ocp_do_fifo_ctrl_write(
                 8'h00, 1'b0, 32'd2,
                 "OCP_FIFO_RESET_POST_VERIFY_SETUP");
-            write_fifo_dword_values(
+            ocp_w1dc_do_write_and_check_fifo_dword_values(
                 32'h13579BDF,
                 32'h2468ACE0,
                 "OCP_FIFO_RESET_POST_VERIFY");
-            wait_fw_state(
+            ocp_w1dc_poll_fw_state(
                 W1DC_SEM_STATE_POST_RESET_DRAIN,
                 "OCP_FIFO_RESET_POST_DRAIN");
-            check_fifo_reset_fw("OCP_FIFO_RESET_POST_EMPTY");
+            ocp_w1dc_do_read_and_check_fw_fifo_reset("OCP_FIFO_RESET_POST_EMPTY");
             ocp_poll_mcu_axi_idle("OCP_W1DC_FINISH");
         end
 

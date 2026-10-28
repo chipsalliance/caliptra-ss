@@ -96,7 +96,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         fifo_flow_cg = new();
     endfunction
 
-    protected virtual function void generate_default_image();
+    protected virtual function void ocp_fifo_prepare_default_image();
         bit [31:0] word;
 
         if (image_bytes.size() != 0) return;
@@ -117,7 +117,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
     endfunction
 
-    protected virtual function int unsigned fifo_occupancy(
+    protected virtual function int unsigned ocp_fifo_get_occupancy(
         input int unsigned write_index,
         input int unsigned read_index,
         input int unsigned fifo_size);
@@ -125,7 +125,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         return (write_index + fifo_size - read_index) % fifo_size;
     endfunction
 
-    protected virtual function int unsigned fifo_space(
+    protected virtual function int unsigned ocp_fifo_get_space(
         input int unsigned write_index,
         input int unsigned read_index,
         input int unsigned fifo_size);
@@ -134,14 +134,14 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                fifo_size;
     endfunction
 
-    protected virtual function fifo_occupancy_state_e occupancy_state(
+    protected virtual function fifo_occupancy_state_e ocp_fifo_get_occupancy_state(
         input fifo_status_s status);
         int unsigned occupancy;
         int unsigned space;
 
-        occupancy = fifo_occupancy(
+        occupancy = ocp_fifo_get_occupancy(
             status.write_index, status.read_index, status.fifo_size);
-        space = fifo_space(
+        space = ocp_fifo_get_space(
             status.write_index, status.read_index, status.fifo_size);
         if (status.empty) return FIFO_OCC_EMPTY;
         if (status.full) return FIFO_OCC_FULL;
@@ -150,7 +150,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         return FIFO_OCC_EMPTY;
     endfunction
 
-    protected virtual function void slice_payload(
+    protected virtual function void ocp_fifo_prepare_payload_slice(
         input int unsigned start_dword,
         input int unsigned dword_count,
         ref bit [7:0] payload[$]);
@@ -158,7 +158,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             image_bytes, start_dword, dword_count, payload);
     endfunction
 
-    protected virtual task read_and_check_status(
+    protected virtual task ocp_fifo_do_read_and_check_status(
         output fifo_status_s status,
         input string label);
         bit [7:0] status_response[$];
@@ -177,10 +177,10 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                           label))
         end
         fifo_flow_cg.sample(
-            strategy, occupancy_state(status), 1'b0, 0, 1'b0);
+            strategy, ocp_fifo_get_occupancy_state(status), 1'b0, 0, 1'b0);
     endtask
 
-    protected virtual task push_by_indices();
+    protected virtual task ocp_fifo_do_push_and_check_by_indices();
         fifo_status_s status;
         fifo_status_s post_status;
         bit [7:0] payload[$];
@@ -197,12 +197,12 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         equal_index_state_reported = 1'b0;
         ocp_configure_ep0_nak_retry_limit(10000);
         while (offset_dwords < ocp_bytes_to_dwords(image_bytes.size())) begin
-            read_and_check_status(
+            ocp_fifo_do_read_and_check_status(
                 status,
                 $sformatf("OCP_FIFO_INDEX_STATUS_%0d", chunk_number));
             remaining_dwords =
                 ocp_bytes_to_dwords(image_bytes.size()) - offset_dwords;
-            chunk_dwords = fifo_space(
+            chunk_dwords = ocp_fifo_get_space(
                 status.write_index, status.read_index, status.fifo_size);
             if (chunk_dwords == 0) begin
                 // Equal indices are disambiguated by the explicit FULL and
@@ -214,7 +214,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 chunk_dwords = ocp_get_max_chunk_dwords(status);
             if (chunk_dwords > remaining_dwords)
                 chunk_dwords = remaining_dwords;
-            slice_payload(offset_dwords, chunk_dwords, payload);
+            ocp_fifo_prepare_payload_slice(offset_dwords, chunk_dwords, payload);
             ocp_do_fifo_data_write(
                 payload, result,
                 $sformatf("OCP_FIFO_INDEX_DATA_%0d", chunk_number), 0);
@@ -230,7 +230,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             wrapped = (((status.write_index % status.fifo_size) +
                         chunk_dwords) >= status.fifo_size);
             fifo_flow_cg.sample(
-                strategy, occupancy_state(status), wrapped,
+                strategy, ocp_fifo_get_occupancy_state(status), wrapped,
                 chunk_dwords, 1'b0);
             offset_dwords += chunk_dwords;
             if (!equal_index_state_reported &&
@@ -238,7 +238,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 (((status.write_index + chunk_dwords) %
                    status.fifo_size) == status.read_index)) begin
                 equal_index_state_reported = 1'b1;
-                read_and_check_status(
+                ocp_fifo_do_read_and_check_status(
                     post_status,
                     $sformatf("OCP_FIFO_INDEX_POST_BOUNDARY_%0d",
                               chunk_number));
@@ -262,11 +262,11 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
     endtask
 
-    protected virtual task wait_until_empty_by_flags(
+    protected virtual task ocp_fifo_do_poll_and_check_empty_by_flags(
         output fifo_status_s status,
         input int unsigned chunk_number);
         for (int unsigned poll = 0; poll < max_polls; poll++) begin
-            read_and_check_status(
+            ocp_fifo_do_read_and_check_status(
                 status,
                 $sformatf("OCP_FIFO_FLAGS_STATUS_%0d_%0d",
                           chunk_number, poll));
@@ -281,7 +281,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                       max_polls))
     endtask
 
-    protected virtual task push_by_status_flags();
+    protected virtual task ocp_fifo_do_push_and_check_by_status_flags();
         fifo_status_s status;
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
@@ -298,7 +298,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         chunk_number = 0;
         equal_index_state_reported = 1'b0;
         while (offset_dwords < ocp_bytes_to_dwords(image_bytes.size())) begin
-            wait_until_empty_by_flags(status, chunk_number);
+            ocp_fifo_do_poll_and_check_empty_by_flags(status, chunk_number);
             remaining_dwords =
                 ocp_bytes_to_dwords(image_bytes.size()) - offset_dwords;
             batch_dwords = remaining_dwords;
@@ -313,7 +313,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                     `uvm_fatal("OCP_FIFO_FLOW",
                         "Status-flag flow control could not form a legal chunk.")
                 end
-                slice_payload(offset_dwords, chunk_dwords, payload);
+                ocp_fifo_prepare_payload_slice(offset_dwords, chunk_dwords, payload);
                 ocp_do_fifo_data_write(
                     payload, result,
                     $sformatf("OCP_FIFO_FLAGS_DATA_%0d", chunk_number), 0);
@@ -328,7 +328,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 wrapped = (((status.write_index % status.fifo_size) +
                             batch_sent + chunk_dwords) >= status.fifo_size);
                 fifo_flow_cg.sample(
-                    strategy, occupancy_state(status), wrapped,
+                    strategy, ocp_fifo_get_occupancy_state(status), wrapped,
                     chunk_dwords, 1'b0);
                 offset_dwords += chunk_dwords;
                 batch_sent += chunk_dwords;
@@ -347,12 +347,12 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
     endtask
 
-    protected virtual function void sample_usb_nak_chunk(
+    protected virtual function void ocp_fifo_sample_usb_nak_chunk(
         input int unsigned chunk_dwords,
         input bit nak_observed);
     endfunction
 
-    protected virtual task push_by_usb_nak();
+    protected virtual task ocp_fifo_do_push_and_check_by_usb_nak();
         fifo_status_s status;
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
@@ -366,7 +366,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         bit nak_observed;
         bit wrapped;
 
-        read_and_check_status(status, "OCP_FIFO_NAK_CAPABILITY_STATUS");
+        ocp_fifo_do_read_and_check_status(status, "OCP_FIFO_NAK_CAPABILITY_STATUS");
         if ((status.fifo_size == 0) ||
             (status.max_transfer_dwords == 0) ||
             (ocp_get_max_chunk_dwords(status) == 0)) return;
@@ -393,7 +393,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                 `uvm_fatal("OCP_FIFO_FLOW",
                     "USB non-success flow control could not form a legal chunk.")
             end
-            slice_payload(offset_dwords, chunk_dwords, payload);
+            ocp_fifo_prepare_payload_slice(offset_dwords, chunk_dwords, payload);
 
             nak_count_before =
                 caliptra_ss_usb_nak_monitor_callback::get_nak_count();
@@ -414,9 +414,9 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             wrapped = (((status.write_index % status.fifo_size) +
                         offset_dwords + chunk_dwords) >= status.fifo_size);
             fifo_flow_cg.sample(
-                strategy, occupancy_state(status), wrapped,
+                strategy, ocp_fifo_get_occupancy_state(status), wrapped,
                 chunk_dwords, nak_observed);
-            sample_usb_nak_chunk(chunk_dwords, nak_observed);
+            ocp_fifo_sample_usb_nak_chunk(chunk_dwords, nak_observed);
             `uvm_info("OCP_FIFO_FLOW",
                 $sformatf("FIFO write %0d completed after observed_naks=%0d.",
                           chunk_number,
@@ -437,21 +437,21 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
     endtask
 
-    virtual task push_image();
+    virtual task ocp_fifo_do_push_and_check_image();
         case (strategy)
-            FIFO_FLOW_BY_INDICES:      push_by_indices();
-            FIFO_FLOW_BY_STATUS_FLAGS: push_by_status_flags();
-            FIFO_FLOW_BY_USB_NAK:      push_by_usb_nak();
+            FIFO_FLOW_BY_INDICES:      ocp_fifo_do_push_and_check_by_indices();
+            FIFO_FLOW_BY_STATUS_FLAGS: ocp_fifo_do_push_and_check_by_status_flags();
+            FIFO_FLOW_BY_USB_NAK:      ocp_fifo_do_push_and_check_by_usb_nak();
             default: `uvm_fatal("OCP_FIFO_FLOW",
                 $sformatf("Unsupported FIFO flow-control strategy %0d.",
                           strategy))
         endcase
     endtask
 
-    protected virtual task wait_for_final_empty();
+    protected virtual task ocp_fifo_do_poll_and_check_final_empty();
         fifo_status_s status;
         for (int unsigned poll = 0; poll < max_polls; poll++) begin
-            read_and_check_status(
+            ocp_fifo_do_read_and_check_status(
                 status, $sformatf("OCP_FIFO_FINAL_EMPTY_%0d", poll));
             if (status.empty && !status.full &&
                 (status.write_index == status.read_index)) return;
@@ -462,7 +462,7 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
                       max_polls))
     endtask
 
-    protected virtual function void apply_config();
+    protected virtual function void ocp_fifo_configure_flow_control();
         void'(uvm_config_db#(ocp_fifo_flow_control_strategy_e)::get(
             null, get_full_name(), "strategy", strategy));
         void'(uvm_config_db#(bit [7:0])::get(
@@ -491,8 +491,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
     endfunction
 
     virtual task body();
-        apply_config();
-        generate_default_image();
+        ocp_fifo_configure_flow_control();
+        ocp_fifo_prepare_default_image();
         successful_attempts = 0;
         rejected_attempts = 0;
         observed_naks = 0;
@@ -515,8 +515,8 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             ocp_do_fifo_image_config_xfers(
                 cms, 8'h00, ocp_bytes_to_dwords(image_bytes.size()),
                 "OCP_FIFO_FLOW_RECOVERY_CTRL", "OCP_FIFO_FLOW_CTRL");
-            push_image();
-            wait_for_final_empty();
+            ocp_fifo_do_push_and_check_image();
+            ocp_fifo_do_poll_and_check_final_empty();
         end else begin
             ocp_do_recovery_ctrl_write(
                 cms, 8'h00, 1'b0, "OCP_FIFO_FLOW_RECOVERY_CTRL");

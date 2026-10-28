@@ -31,7 +31,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         super.new(name);
     endfunction
 
-    protected task transmit_packet(
+    protected task ocp_stall_do_transmit_packet_and_check_completion(
         input svt_usb_packet::pid_name_enum pid,
         ref bit [7:0] payload[$], input bit corrupt_crc = 1'b0);
         caliptra_ss_usb_ocp_directed_packet_sequence packet_sequence;
@@ -62,7 +62,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         end
     endtask
 
-    protected task probe_stall(
+    protected task ocp_stall_do_probe_and_check_stall(
         input svt_usb_packet::pid_name_enum pid, input string label);
         bit [7:0] payload[$];
         logic [15:0] generation;
@@ -73,11 +73,11 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         ocp_arb_open_observation_window(generation);
         checker.expect_packet_only_window();
         raw_response_callback.enabled = 1'b1;
-        transmit_packet(pid, payload);
+        ocp_stall_do_transmit_packet_and_check_completion(pid, payload);
         expected_packets = 2;
         if (pid == svt_usb_packet::OUT) begin
             // A stalled OUT still consists of token + DATA + device handshake.
-            transmit_packet(svt_usb_packet::DATA1, payload);
+            ocp_stall_do_transmit_packet_and_check_completion(svt_usb_packet::DATA1, payload);
             expected_packets++;
         end
         checker.packet_callback.wait_for_packet_count(
@@ -94,15 +94,15 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         ocp_stall_note_check_completed(label);
     endtask
 
-    protected task probe_all_tokens(input string label);
+    protected task ocp_stall_do_probe_and_check_all_tokens(input string label);
         for (int unsigned i = 0; i < PROBE_REPETITIONS; i++) begin
-            probe_stall(svt_usb_packet::IN, $sformatf("%s_IN_%0d", label, i));
-            probe_stall(svt_usb_packet::OUT, $sformatf("%s_OUT_%0d", label, i));
-            probe_stall(svt_usb_packet::PING, $sformatf("%s_PING_%0d", label, i));
+            ocp_stall_do_probe_and_check_stall(svt_usb_packet::IN, $sformatf("%s_IN_%0d", label, i));
+            ocp_stall_do_probe_and_check_stall(svt_usb_packet::OUT, $sformatf("%s_OUT_%0d", label, i));
+            ocp_stall_do_probe_and_check_stall(svt_usb_packet::PING, $sformatf("%s_PING_%0d", label, i));
         end
     endtask
 
-    protected task corrupt_setup_preserves_stall(
+    protected task ocp_stall_do_corrupt_setup_and_check_effects(
         input bit require_existing_stall = 1'b1);
         logic [15:0] generation;
         bit [7:0] setup_bytes[$];
@@ -118,8 +118,8 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         ocp_arb_open_observation_window(generation);
         checker.expect_packet_only_window();
         raw_response_callback.enabled = 1'b1;
-        transmit_packet(svt_usb_packet::SETUP, empty_payload, 1'b1);
-        transmit_packet(svt_usb_packet::DATA0, setup_bytes);
+        ocp_stall_do_transmit_packet_and_check_completion(svt_usb_packet::SETUP, empty_payload, 1'b1);
+        ocp_stall_do_transmit_packet_and_check_completion(svt_usb_packet::DATA0, setup_bytes);
         #(PACKET_RESPONSE_BOUND);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
         raw_response_callback.enabled = 1'b0;
@@ -133,7 +133,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         if (checker.packet_callback.corruption_count() != 1)
             `uvm_error("OCP_STALL", "Expected one on-wire CRC corruption marker.")
         if (require_existing_stall) begin
-            probe_all_tokens("AFTER_CORRUPT_SETUP");
+            ocp_stall_do_probe_and_check_all_tokens("AFTER_CORRUPT_SETUP");
             ocp_stall_note_check_completed("corrupt SETUP unaccepted; existing STALL retained");
         end else begin
             // A clean sticky-code baseline makes a spurious OCP checksum
@@ -144,7 +144,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         end
     endtask
 
-    protected task clear_feature_recovery();
+    protected task ocp_stall_do_clear_feature_and_check_recovery();
         logic [15:0] generation;
         caliptra_ss_usb_ocp_xfer_result_e result;
         bit [7:0] response[$];
@@ -192,8 +192,8 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         payload = '{8'h00};
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
                                              OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "SETUP_DECODE_STALL");
-        probe_all_tokens("SETUP_DECODE");
-        corrupt_setup_preserves_stall();
+        ocp_stall_do_probe_and_check_all_tokens("SETUP_DECODE");
+        ocp_stall_do_corrupt_setup_and_check_effects();
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, "ACCEPTED_LEGAL_SETUP");
         ocp_stall_do_read_and_check_device_status("DECODE_RETAINED_CODE");
         ocp_stall_do_read_and_check_device_status("DECODE_CODE_CLEAR");
@@ -202,7 +202,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Stalled/corrupt traffic changed command/FIFO state.")
 
-        corrupt_setup_preserves_stall(1'b0);
+        ocp_stall_do_corrupt_setup_and_check_effects(1'b0);
         ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "CLEAN_CRC_AFTER");
         if ((rc_before != rc_after) || (fc_before != fc_after) ||
             (fs_before != fs_after))
@@ -211,7 +211,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         payload = '{8'h00, RESERVED_IMAGE_SELECTION, 8'h00};
         ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_PARAMETER, "DATA_DECODE_STALL", 1);
-        probe_all_tokens("DATA_DECODE");
+        ocp_stall_do_probe_and_check_all_tokens("DATA_DECODE");
         ocp_stall_do_read_and_check_device_status("DATA_DECODE_RETAINED_CODE");
         ocp_stall_do_read_and_check_device_status("DATA_DECODE_CODE_CLEAR");
         ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "DATA_AFTER");
@@ -222,13 +222,13 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         payload = '{8'h00};
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "CLEAR_FEATURE_PRECONDITION");
-        clear_feature_recovery();
+        ocp_stall_do_clear_feature_and_check_recovery();
 
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "NEW_INVALID_FIRST");
         ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
             OCP_PROTOCOL_ERROR_LENGTH, "NEW_INVALID_SECOND");
-        probe_all_tokens("NEW_INVALID_REENTRY");
+        ocp_stall_do_probe_and_check_all_tokens("NEW_INVALID_REENTRY");
         ocp_stall_do_read_and_check_device_status("NEW_INVALID_FIRST_CODE");
         ocp_stall_do_read_and_check_device_status("NEW_INVALID_CLEAR_NO_DEFERRED_CODE");
         ocp_stall_do_final_read_and_check_completion("PERSISTENT_STALL");

@@ -31,7 +31,7 @@ class caliptra_ss_usb_ocp_access_collision_sequence
         super.new(name);
     endfunction
 
-    protected task do_command(input logic [3:0] opcode,
+    protected task ocp_collision_issue_mcu_command_and_check_ack(input logic [3:0] opcode,
                            input int unsigned scenario_id);
         bit acknowledged;
         observer_vif.issue_mcu_command_bounded(
@@ -40,7 +40,7 @@ class caliptra_ss_usb_ocp_access_collision_sequence
             `uvm_fatal("OCP_COLLISION", "MCU command acknowledgement timed out")
     endtask
 
-    protected task run_scenario(input int unsigned scenario_id,
+    protected task ocp_collision_do_exercise_and_check_scenario(input int unsigned scenario_id,
                                 input logic [31:0] capability_word);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] response[$];
@@ -52,7 +52,8 @@ class caliptra_ss_usb_ocp_access_collision_sequence
         ocp_do_recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_NONE, 0,
                             "COLLISION_CTRL_BASELINE");
         collision_vif.arm(scenario_id, capability_word, 0);
-        do_command(observer_vif.MCU_COMMAND_COLLISION_START, scenario_id);
+        ocp_collision_issue_mcu_command_and_check_ack(observer_vif.MCU_COMMAND_COLLISION_START,
+            scenario_id);
         found = 0;
         attempts = 0;
         fork : bounded_collision_scenario
@@ -90,7 +91,8 @@ class caliptra_ss_usb_ocp_access_collision_sequence
             end
         join_any
         disable bounded_collision_scenario;
-        do_command(observer_vif.MCU_COMMAND_COLLISION_STOP, scenario_id);
+        ocp_collision_issue_mcu_command_and_check_ack(observer_vif.MCU_COMMAND_COLLISION_STOP,
+            scenario_id);
         collision_vif.finish();
         if (!found)
             `uvm_fatal("OCP_COLLISION",
@@ -128,7 +130,7 @@ class caliptra_ss_usb_ocp_access_collision_sequence
             `uvm_fatal("OCP_COLLISION", "Runtime PROT_CAP response too short")
         capability_word = ocp_get_le32(prot_cap, OCP_OFF_PC_VERSION_MAJOR);
         for (int unsigned scenario_id = 0; scenario_id < 4; scenario_id++)
-            run_scenario(scenario_id, capability_word);
+            ocp_collision_do_exercise_and_check_scenario(scenario_id, capability_word);
         ocp_poll_mcu_axi_idle("OCP_COLLISION_FINISH");
         ocp_publish_transfer_count();
     endtask
