@@ -107,6 +107,15 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_test.svh"
+
+  // Hub-bypass enumeration: firmware leaves HUB_CTRL.HUB_EN clear, so the
+  // compound muxes device0 straight onto the upstream link and the hub is not
+  // a bus participant. The only enumerating test that exercises the
+  // hub_enable_q = '0' legs of the compound structure muxes. Self-contained:
+  // it calls no hub_enum_stepA/B/C helper and USBDC0 takes address 1 (not the
+  // address 2 of every hub-mode test).
+  `include "caliptra_ss_usb_hs_dev_hub_bypass_enum_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_hub_bypass_enum_test.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev_hub_port_suspend_sequence.svh"

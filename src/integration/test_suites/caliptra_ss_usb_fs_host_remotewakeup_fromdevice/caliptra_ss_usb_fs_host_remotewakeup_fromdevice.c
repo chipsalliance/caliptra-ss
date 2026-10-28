@@ -43,6 +43,31 @@
 // checker scores as CHK_SUSPEND_SEEN.
 #define USB_WAKEUP_ARM_DELAY_POLLS 1000
 
+// Consecutive polls on which DSUS must read 1 before the wakeup command is
+// issued. The delay above counts polls since this firmware first noticed
+// suspend, which says nothing about whether the controller has finished
+// entering it; requiring a stable DSUS as well means the command cannot land
+// in a suspend-entry transition.
+#define USB_WAKEUP_STABLE_DSUS_POLLS 4
+
+// Bounded retries for the wakeup command. usbreg_remotewakeup is raised by a
+// DEVCMDSTAT write presenting DSUS as 0 while suspended; it is a command, not
+// a latched bit, so a write the controller does not act on leaves no trace and
+// cannot be recovered except by issuing it again. A nightly run showed the
+// command correctly formed and accepted (usb_request_remote_wakeup() returned
+// true) with DSUS still 1 afterwards and no resume K ever driven, i.e. the
+// controller silently ignored it. Retry a few times, then fail loudly naming
+// the register rather than letting the UVM checker report a bare missing K
+// several hundred microseconds later.
+#define USB_WAKEUP_MAX_ATTEMPTS 3
+
+// Polls to wait after a wakeup command before judging whether it took effect.
+// The controller must restart its clock and drive K upstream; ~160 us at
+// ~80 ns per poll is far longer than that needs, and still an order of
+// magnitude inside the sequence's device-K ceiling.
+#define USB_WAKEUP_VERIFY_POLLS 2000
+
+
 // Grace window kept running after the resume so the sequence's post-resume
 // GET_DESCRIPTOR(DEVICE) still finds EP0 served. ~5.6 ms; must stay longer
 // than POST_RESUME_SETTLE in the sequence.
@@ -68,8 +93,12 @@ void main(void) {
     uint32_t suspend_entry_poll = 0;
     uint32_t resume_poll        = 0;
     uint32_t grace_polls        = 0;
+    uint32_t dsus_stable_polls  = 0;
+    uint32_t wakeup_attempts    = 0;
+    uint32_t wakeup_last_poll   = 0;
     int      suspend_seen       = 0;
     int      wakeup_requested   = 0;
+    int      wakeup_ignored     = 0;
     int      resume_seen        = 0;
 
     VPRINTF(LOW, "MCU: fs_host_remotewakeup_fromdevice test\n");
@@ -151,22 +180,68 @@ void main(void) {
             }
         }
 
-        // Arm the wakeup once the controller has been suspended long enough.
+        // Track how long DSUS has read 1 without interruption. Reset on any
+        // poll where it is clear, so only a genuinely settled suspend can
+        // satisfy the stability requirement below.
+        if (reg_data & DEV0_CSR_DEVCMDSTAT_DSUS_MASK)
+            dsus_stable_polls++;
+        else
+            dsus_stable_polls = 0;
+
+        // Arm the wakeup once the controller has been suspended long enough
+        // AND DSUS has been stable for several consecutive polls.
         // usb_request_remote_wakeup() re-reads DEVCMDSTAT and refuses if DSUS
         // is no longer set, so a resume that arrives from the host in the
         // meantime cannot turn this into a spurious request.
-        if (suspend_seen && !wakeup_requested && !resume_seen &&
-            (poll_count - suspend_entry_poll) >= USB_WAKEUP_ARM_DELAY_POLLS) {
+        if (suspend_seen && !resume_seen && !wakeup_ignored &&
+            (wakeup_attempts == 0) &&
+            (poll_count - suspend_entry_poll) >= USB_WAKEUP_ARM_DELAY_POLLS &&
+            dsus_stable_polls >= USB_WAKEUP_STABLE_DSUS_POLLS) {
+            wakeup_attempts++;
+            wakeup_last_poll = poll_count;
             if (usb_request_remote_wakeup()) {
                 wakeup_requested = 1;
-                VPRINTF(LOW, "MCU: remote wakeup driven at poll %d\n", poll_count);
+                VPRINTF(LOW, "MCU: remote wakeup driven at poll %d (attempt %d)\n",
+                        poll_count, wakeup_attempts);
             } else {
-                // Not suspended any more. Do not retry: retrying would hide a
-                // real ordering problem behind a loop, and the DUT-side
-                // CHK_DEVICE_WAKEUP_K check will report the missing wakeup.
+                // Not suspended any more, so there is nothing to wake from.
+                // This is not the ignored-command case below and must not be
+                // retried: the DUT-side CHK_DEVICE_WAKEUP_K check owns the
+                // verdict for a wakeup that never happened.
                 wakeup_requested = 1;
+                wakeup_ignored   = 1;
                 VPRINTF(LOW, "MCU: remote wakeup request refused at poll %d (not suspended)\n",
                         poll_count);
+            }
+        }
+
+        // Verify the command actually took effect, and re-issue if it did not.
+        // usbreg_remotewakeup is a command rather than a latched bit: a write
+        // the controller does not act upon leaves no trace, so the only
+        // evidence is that DSUS is still set well after the request and no
+        // resume followed. Re-issuing is the only available recovery.
+        if (wakeup_requested && !resume_seen && !wakeup_ignored &&
+            (poll_count - wakeup_last_poll) >= USB_WAKEUP_VERIFY_POLLS) {
+            uint32_t cmd_now = lsu_read_32(USB_DEV_DEVCMDSTAT);
+
+            if ((cmd_now & DEV0_CSR_DEVCMDSTAT_DSUS_MASK) == 0u) {
+                // Left suspend without DSUS_C being observed above; the
+                // resume branch will record it on a later poll.
+                wakeup_last_poll = poll_count;
+            } else if (wakeup_attempts >= USB_WAKEUP_MAX_ATTEMPTS) {
+                wakeup_ignored = 1;
+                VPRINTF(LOW,
+                    "MCU: ERROR remote wakeup command ignored by controller after %d attempts"
+                    " at poll %d (DEVCMDSTAT=0x%x, DSUS still set, no resume K driven)\n",
+                    wakeup_attempts, poll_count, cmd_now);
+            } else {
+                VPRINTF(LOW,
+                    "MCU: remote wakeup had no effect after attempt %d (DEVCMDSTAT=0x%x);"
+                    " re-issuing at poll %d\n",
+                    wakeup_attempts, cmd_now, poll_count);
+                wakeup_attempts++;
+                wakeup_last_poll = poll_count;
+                (void)usb_request_remote_wakeup();
             }
         }
 
@@ -175,7 +250,7 @@ void main(void) {
         // The simulation cannot end early: the test holds a run_phase objection
         // until csr_write_mpmc_halt() is reached below. Spinning on to
         // USB_POLL_TIMEOUT would only add wall-clock time.
-        if (resume_seen && wakeup_requested) {
+        if ((resume_seen && wakeup_requested) || wakeup_ignored) {
             if (++grace_polls >= USB_POST_RESUME_GRACE_POLLS) {
                 VPRINTF(LOW, "MCU: post-resume grace window complete at poll %d; ending poll loop\n",
                         poll_count);
@@ -191,8 +266,20 @@ void main(void) {
     else if (!resume_seen)
         VPRINTF(LOW, "MCU: ERROR poll ceiling reached without observing resume\n");
     else
-        VPRINTF(LOW, "MCU: suspend at poll %d, resume at poll %d\n",
-                suspend_entry_poll, resume_poll);
+        VPRINTF(LOW, "MCU: suspend at poll %d, resume at poll %d (wakeup attempts %d)\n",
+                suspend_entry_poll, resume_poll, wakeup_attempts);
+
+    // Firmware verdict byte. Only the FAIL code is ever sent: TB_CMD_TEST_PASS
+    // makes the testbench $finish immediately, which would pre-empt the UVM
+    // final_phase where CHK_DEVICE_WAKEUP_K and the UVM error counts are
+    // judged. Report the firmware-visible failures explicitly so a dropped
+    // wakeup command is attributable here, at the register, instead of only
+    // surfacing as a missing K in the checker several hundred microseconds
+    // later.
+    if (!suspend_seen || !wakeup_requested || !resume_seen || wakeup_ignored) {
+        VPRINTF(LOW, "MCU: fs_host_remotewakeup_fromdevice - reporting FAIL to testbench\n");
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    }
 
     VPRINTF(LOW, "MCU: fs_host_remotewakeup_fromdevice test complete\n");
     csr_write_mpmc_halt();
