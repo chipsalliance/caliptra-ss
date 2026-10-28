@@ -585,7 +585,7 @@ The Fuse Controller is configured a total of **16 partitions** (See [Fuse Contro
 
 1. **Programming Access:**
    - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra Core.
-   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.
+   - Secret partitions are buffered, meaning they are stored in registers. They are not sensed (the registers stay zero) when debug intent is asserted before Fuse Controller initialization, except `SECRET_LC_TRANSITION_PARTITION` (see [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization)).
 2. **Locking Mechanism:**
    - Write access to a partition can be permanently locked when no further updates are required.
    - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
@@ -720,7 +720,7 @@ This enhancement protects the secrets provisioned in the manufacturing and produ
 ## Notes
 
 - **Zeroization of Secret Partitions:**
-  Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+  Secret partitions, except `SECRET_LC_TRANSITION_PARTITION`, are not sensed when debug intent is asserted before Fuse Controller initialization.
 - **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
