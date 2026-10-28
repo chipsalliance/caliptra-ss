@@ -33,13 +33,26 @@
 #include "mcu_isr.h"
 
 // Ceiling on the DEVCMDSTAT polling loop, not a dwell: the loop exits as soon
-// as the suspend -> wakeup -> resume cycle has been observed. ~12 ms at ~80 ns
-// per iteration, and it must stay above the poll index at which the grace
-// window below expires (~107700).
-#define USB_POLL_TIMEOUT 150000
+// as the suspend -> wakeup -> resume cycle has been observed, via the grace
+// window below. This is only a backstop against a run where the cycle never
+// completes, so its whole cost is paid on FAILING runs.
+//
+// The iteration rate was MEASURED on a passing run rather than estimated:
+// suspend at poll 19950 / 2664175 ns and the wakeup at poll 20950 / 2795045 ns
+// give 1000 polls = 130870 ns, i.e. ~131 ns per poll. An earlier comment here
+// claimed ~80 ns and a grace expiry at ~107700; both were wrong by ~1.6x,
+// which is how 150000 came to be ~19.6 ms of ceiling instead of the ~12 ms it
+// was believed to be.
+//
+// At ~131 ns, 80000 polls is ~10.5 ms. A healthy run leaves the loop via the
+// grace window at roughly 19950 + 1000 + 40000 = ~61000, so this ceiling is
+// never the exit path; the ~30% headroom is there because the MCU clock is
+// randomised 333/400 MHz (see note 11), and at the slower clock the same bus
+// instant lands ~1.2x later in polls (~65000). Do not trim it below that.
+#define USB_POLL_TIMEOUT 80000
 
 // How long to stay suspended before asking for the wakeup, in poll iterations
-// (~80 ns each, so ~80 us). Must not pre-empt the SuspendM falling edge the
+// (~131 ns each, so ~131 us). Must not pre-empt the SuspendM falling edge the
 // checker scores as CHK_SUSPEND_SEEN.
 #define USB_WAKEUP_ARM_DELAY_POLLS 1000
 
@@ -62,16 +75,27 @@
 #define USB_WAKEUP_MAX_ATTEMPTS 3
 
 // Polls to wait after a wakeup command before judging whether it took effect.
-// The controller must restart its clock and drive K upstream; ~160 us at
-// ~80 ns per poll is far longer than that needs, and still an order of
-// magnitude inside the sequence's device-K ceiling.
+// The controller must restart its clock and drive K upstream; ~260 us at
+// ~131 ns per poll is far longer than that needs, and still well inside the
+// sequence's device-K ceiling.
 #define USB_WAKEUP_VERIFY_POLLS 2000
 
 
 // Grace window kept running after the resume so the sequence's post-resume
-// GET_DESCRIPTOR(DEVICE) still finds EP0 served. ~5.6 ms; must stay longer
-// than POST_RESUME_SETTLE in the sequence.
-#define USB_POST_RESUME_GRACE_POLLS 70000
+// GET_DESCRIPTOR(DEVICE) still finds EP0 served. Must stay longer than
+// POST_RESUME_SETTLE in the sequence (3.5 ms at FS).
+//
+// Sized from measurement, and this is the DOMINANT term in the loop budget, so
+// it sets the simulated length of a PASSING run too. On the passing run the
+// resume was observed at 2797225 ns and the post-resume GetDescriptor was
+// served at 6324830 ns, i.e. 3.53 ms or ~27000 polls at the measured ~131 ns;
+// call it ~28000 to the transfer completing. 40000 polls is ~5.2 ms, leaving
+// ~43% margin, against the 70000 (~9.2 ms) this was previously set to.
+//
+// If this window ever truncates, the firmware stops serving EP0 mid-window and
+// the sequence's GetDescriptor times out looking exactly like a DUT fault, so
+// raise this before suspecting the DUT.
+#define USB_POST_RESUME_GRACE_POLLS 40000
 
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
