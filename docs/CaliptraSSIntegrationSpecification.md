@@ -731,6 +731,8 @@ Integrator must connect following list of manager and subordinates to axi interc
     | 64'h7000_0000    | 64'h7000_01FF    | 9             | 5           | Fuse Ctrl         | Fuse Controller           |
     | 64'h7000_0400    | 64'h7000_05FF    | 9             | 6           | Life Cycle Ctrl   | Life Cycle Controller     |
 
+  - The Fuse Controller supports only its 512-byte range (offsets `0x000`–`0x1FF`) and returns SLVERR for unimplemented offsets within it. Accesses beyond offset `0x1FF` are not supported and may alias or not complete; if the interconnect allocates a larger window to the Fuse Controller, it must return an error for those addresses.
+
 - Following are the header files path for the above suggested address map. These files would be useful in defining the address map using the given RDL Files.
 
   - [soc_address_map.h](../src/integration/rtl/soc_address_map/soc_address_map.h)
