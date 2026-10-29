@@ -631,6 +631,9 @@ void main(void) {
             (uint32_t)iso_out_done, (uint32_t)iso_in_armed,
             (uint32_t)iso_done);
 
+    if (!all_done) {
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    }
     VPRINTF(LOW, "MCU: USB HS device mixed INTERRUPT + ISO test - halting\n");
     csr_write_mpmc_halt();
 }
