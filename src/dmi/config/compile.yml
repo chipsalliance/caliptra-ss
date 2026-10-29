@@ -16,6 +16,7 @@ targets:
 provides: [dmi_jtag]
 schema_version: 2.4.0
 requires:
+  - caliptra_prim
   - dm_pkg
 targets:
   rtl:

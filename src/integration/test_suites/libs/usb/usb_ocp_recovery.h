@@ -91,14 +91,12 @@
 // OCP Recovery v1.1 Section 8.5.3: bcdOCPRecVersion encodes spec major.minor, so v1.1 is 0x0110.
 #define USB_OCP_RECOVERY_BCD_VERSION 0x0110u
 
-// Compatibility configuration descriptor entry point. Consumers that require
-// the OCP Recovery v1.1 Section 8.5.3 field ordering use the v1p1 entry point.
-const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len);
-
-// Returns the OCP Recovery v1.1 configuration descriptor using the functional
-// descriptor layout from Section 8.5.3: reserved byte at offset 3, maximum
-// write/read transfer sizes at offsets 4/6, and BCD version at offset 8.
-const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len);
+// Linking this library overrides the weak usb.c application hooks:
+//   usb_get_config_descriptor(): returns the OCP Recovery v1.1 configuration
+//     descriptor using the functional descriptor layout from Section 8.5.3:
+//     reserved byte at offset 3, maximum write/read transfer sizes at offsets
+//     4/6, and BCD version at offset 8.
+//   usb_handle_class_request(): see below.
 
 // Apply the platform capability policy before connecting the USB device.
 // Unsupported reset, recovery-mode, flashless-boot, and interface-mastering
@@ -113,12 +111,11 @@ bool usb_ocp_recovery_program_device_id(void);
 // storage. Returns true when a capability policy was updated.
 bool usb_ocp_recovery_service_capability_policy(void);
 
-// Class-request hook for OCP Recovery EP0 traffic.  The VHDL PIE arbiter
-// classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed requests to the
-// recovery RTL, so the MCU path must not claim them here.  This hook returns
-// false on every call; if an OCP recovery request reaches the MCU stack at all,
-// the implementation logs that unexpected condition and falls back to the
-// legacy USB stack behavior.
-bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup);
+// usb_handle_class_request() override for OCP Recovery EP0 traffic. The VHDL
+// PIE arbiter classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed
+// requests to the recovery RTL, so the MCU path must not claim them here. This
+// hook returns false on every call; if an OCP recovery request reaches the MCU
+// stack at all, the implementation logs that unexpected condition and falls
+// back to the legacy USB stack behavior.
 
 #endif // USB_OCP_RECOVERY_H
