@@ -82,7 +82,6 @@ module caliptra_ss_top_tb
     localparam int unsigned USB_DEV1_RAM_DEPTH = USB_DEV1_RAM_BYTES / (USB_PACKET_RAM_DATA_WIDTH / 8);
     localparam int unsigned USB_HUB_FIFO_WORDS = (`SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR - `SOC_USB_COMBO_HUB_BASE_ADDR + 1) / 4;
 
-    bit usb_utmi_clk;
     logic [USB_PACKET_RAM_DATA_WIDTH-1:0] cptra_ss_usb_dev0_mem_q_i, cptra_ss_usb_dev0_mem_d_o, cptra_ss_usb_dev0_mem_bsel_o;
     logic cptra_ss_usb_dev0_mem_cs_o, cptra_ss_usb_dev0_mem_web_out_o;
     logic [USB_C_DEV0_RAM_ADDRWIDTH_TB-1:0] cptra_ss_usb_dev0_mem_a_o;
@@ -1941,7 +1940,7 @@ module caliptra_ss_top_tb
     caliptra_ss_usb_legacy_ep0_observer_if
         usb_legacy_ep0_observer_if_inst (
             .clk                    (core_clk                                  ),
-            .utmi_clk               (usb_utmi_clk                              ),
+            .utmi_clk               (cptra_ss_usb_utmi_clk_i                   ),
             .utmi_line_state        (usb_20_mac_if.utmi_dut_mac_if.LineState   ),
             .mem_cs                 (cptra_ss_usb_dev0_mem_cs_o                ),
             .mem_web_out            (cptra_ss_usb_dev0_mem_web_out_o           ),
@@ -1992,19 +1991,6 @@ module caliptra_ss_top_tb
     // Single UTMI+ VIP interface used by host_agent and its remote_cfg PHY.
     svt_usb_if usb_20_mac_if();
 
-
-    // 60 MHz UTMI clock for USB 2.0 HS mode (period = 16667 ps)
-    parameter realtime USB_UTMI_CLK_PERIOD = 16667ps;
-
-    initial begin
-        usb_utmi_clk = 0;
-        #(USB_UTMI_CLK_PERIOD/2); // No clock edge at T=0
-        forever begin
-            usb_utmi_clk = ~usb_utmi_clk;
-            #(USB_UTMI_CLK_PERIOD/2);
-        end
-    end
-
     // Pass the single USB VIP virtual interface to the UVM environment. The
     // env binds it to host_agent; the agent also applies it to remote_cfg.
     initial begin
@@ -2053,17 +2039,7 @@ module caliptra_ss_top_tb
     end
 
     // --- UTMI clock and lock signals ---
-    `ifdef USE_SVT_USB_UTMI_CLOCK
-     assign cptra_ss_usb_utmi_clk_i = usb_20_mac_if.utmi_dut_mac_if.CLK;
-    `else
-    initial begin
-    	`uvm_info("TB", "disabling the generation of utmi clock from the VIP", UVM_NONE)
-        usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b0;
-    end
-    
-    assign usb_20_mac_if.utmi_dut_mac_if.CLK = usb_utmi_clk;
-    assign cptra_ss_usb_utmi_clk_i      = usb_utmi_clk;//usb_20_mac_if.utmi_dut_mac_if.CLK;
-    `endif
+    assign cptra_ss_usb_utmi_clk_i      = usb_20_mac_if.utmi_dut_mac_if.CLK;
     assign cptra_ss_usb_utmi_clk_lock_i = cptra_ss_pwrgood_i;
 
     // --- VIP modeled PHY outputs -> DUT device MAC inputs ---
@@ -2169,8 +2145,11 @@ module caliptra_ss_top_tb
     // --- VIP UTMI clock generation ---
     // Let the PHY stop CLK on suspend; the DUT must wake it for a pending connect.
     // The separate testbench clock remains free-running while the PHY sleeps.
-    assign usb_20_mac_if.utmi_dut_mac_if.clk = usb_utmi_clk;
-    assign usb_20_mac_if.testbench_clock     = usb_utmi_clk;
+    initial begin
+        usb_20_mac_if.utmi_dut_mac_if.generate_clk     = 1'b1;
+        usb_20_mac_if.utmi_dut_mac_if.enable_hs_fs_clk = 1'b1;
+    end
+    assign usb_20_mac_if.testbench_clock     = core_clk;
 
     // USB power / VBus interface
     //
