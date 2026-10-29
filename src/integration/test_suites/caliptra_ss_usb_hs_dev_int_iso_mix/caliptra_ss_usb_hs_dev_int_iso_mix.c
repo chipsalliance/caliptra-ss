@@ -289,6 +289,9 @@ static void usb_iso_ep_in_arm(uint32_t round) {
          | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                  + USB_SRAM_ISO_IN_BUF_OFFSET
                                  + USB_HS_ISO_IN_BUF_BYTES);
+    lsu_write_32(USB_DEV_EPBUFCFG,
+                 lsu_read_32(USB_DEV_EPBUFCFG)
+                 | (1u << (2u * USB_ISO_EP + 1u)));
     lsu_write_32(USB_DEV_DMA_BASE_ADDR
                  + USB_EP_LIST_IN_BUF0_OFFSET(USB_ISO_EP), buf0);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR
