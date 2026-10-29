@@ -589,10 +589,23 @@ Internally, strap values are consumed at different points during the boot sequen
 
 ### Clock
 
+Supported clock frequencies:
+
+| Clock | SoC uses I3C | SoC does not use I3C |
+| :-- | :-- | :-- |
+| `cptra_ss_clk_i` | 333 MHz minimum* | 60 MHz minimum |
+| `cptra_ss_usb_utmi_clk_i` | 60 MHz | 60 MHz |
+| `cptra_ss_usb_ulpi_clk_i` | 60 MHz | 60 MHz |
+
+\* See the I3C requirements under `cptra_ss_clk_i` below.
+
+Caliptra Subsystem synthesis closed timing at 400 MHz. See [Synthesis](#synthesis).
+
 The `cptra_ss_clk_i` signal is the primary clock input for the Caliptra Subsystem.
 
   - **Signal Name** `cptra_ss_clk_i`
-  - **Required Frequency** 333* MHz minimum
+  - **Required Frequency** 333* MHz minimum if the SoC uses I3C. 60 MHz minimum if the SoC does not use I3C.
+    - Without I3C, 60 MHz is the minimum frequency required for the subsystem to keep up with USB traffic.
     - I3C core imposes requirement for minimum operating clock frequency set to 333 MHz or higher to meet 12ns tSCO timing.
       - 333 MHz was calculated assuming SCL PAD -> D and SDA Q -> PAD timing is 0. SOCs with large timing delays might need to run at a faster clock frequency to meet tSCO timing of 12ns. 
     - SoCs that run Caliptra lower than 333 MHz will limit the max I3C SCL frequency. See [I3C Phy Spec](https://chipsalliance.github.io/i3c-core/phy.html#clock-synchronization-5-1-7) for more details.
@@ -3174,9 +3187,10 @@ This section defines a table of integration requirements that are mandatory for 
 
 | Category          | Originating Block     | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Rationale     |
 | :--               | :--                   | :--                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :--           |
-| CSS_Clk_1         | I3C                   | Clock frequency of primary input clock `cptra_ss_clk_i` must be a minimum of 333 MHz. SoCs with non-zero SCL PAD→D or SDA Q→PAD timing delays may require a higher minimum frequency to meet the 12 ns tSCO constraint, described further in [I3C Core Physical Layer](https://chipsalliance.github.io/i3c-core/phy.html#common-phy-layer).                                                                                                                                               | Functionality |
+| CSS_Clk_1         | I3C, USB              | The clock frequency of primary input clock `cptra_ss_clk_i` must be a minimum of 333 MHz if I3C is being used by the SoC, and a minimum of 60 MHz if I3C is not being used by the SoC. SoCs with non-zero SCL PAD→D or SDA Q→PAD timing delays may require a higher minimum frequency to meet the 12 ns tSCO constraint, described further in [I3C Core Physical Layer](https://chipsalliance.github.io/i3c-core/phy.html#common-phy-layer).                                                                                                                                               | Functionality |
 | CSS_Clk_2         | Caliptra Subsystem    | MCU SRAM and Mailbox memories must be connected to the Caliptra Subsystem RDC output clock, `cptra_ss_rdc_clk_cg_o`.                                                                                                                                                                                                                                                                                                                                                                      | Timing |
 | CSS_Clk_3         | Caliptra Subsystem    | The core clock (`cptra_ss_clk_i`) frequency must be at least twice the TCK clock frequency of each JTAG TAP endpoint so that JTAG data passes correctly through the DMI synchronizers.                                                                                                                                                                                                                                                                                                    | Timing |
+| CSS_Clk_4         | USB                   | The USB PHY clock (`cptra_ss_usb_utmi_clk_i` for UTMI or `cptra_ss_usb_ulpi_clk_i` for ULPI) must be 60 MHz. | Functionality |
 | CSS_Rst_1         | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must assert for a minimum duration of 32 clock cycles.                                                                                                                                                                                                                                                                                                                                                                                  | Functionality |
 | CSS_Rst_2         | Caliptra Subsystem    | Caliptra Subsystem reset input `cptra_ss_rst_b_i` must be deasserted synchronous to `cptra_ss_clk_i`.                                                                                                                                                                                                                                                                                                                                                                                     | Timing |
 | CSS_Rst_3         | Caliptra Subsystem    | `cptra_ss_rst_b_o` must be used for memory logic connected to MCU SRAM or MCU MBOX to avoid RDC corruption.                                                                                                                                                                                                                                                                                                                                                                               | Timing |
