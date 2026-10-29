@@ -105,6 +105,12 @@
   // return the entry that was written so a caller can compare against it.
   task arm_endpoint(usb_endpoint_cfg endpoint, int unsigned byte_count, logic [31:0] buffer_offset, output usb_ep_entry_t entry, input int unsigned buffer_select = 0);
     entry = endpoint_entry(1'b1, 1'b0, byte_count, buffer_offset);
+    entry.ep_type =
+        endpoint.transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS;
+    if (endpoint.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
+      entry.ep_type = 1'b1;
+      entry.toggle_value = 1'b1;
+    end
     write_endpoint_entry(endpoint, entry, buffer_select);
     `uvm_info("USB_EP", $sformatf("Armed %s buffer %0d: entry=%s", endpoint.convert2string(), buffer_select, describe_entry(entry)), UVM_LOW)
   endtask
@@ -264,6 +270,58 @@
       progress_interval
     );
     clear_endpoint_interrupt(endpoint);
+  endtask
+
+  // Wait for the latest SIE status code in INFO.ERR_CODE.
+  task wait_for_sie_error_code(
+    logic [3:0] expected_code,
+    time timeout,
+    string label,
+    input time poll_interval = EP_POLL_INTERVAL
+  );
+    uvm_reg_field error_field;
+    logic [31:0] info_value;
+    logic [3:0] observed_code;
+    realtime poll_deadline;
+    bit satisfied;
+
+    error_field = p_sequencer.reg_model.combo.dev0_csr.INFO.ERR_CODE;
+    info_value = 32'h0;
+    observed_code = 4'hx;
+    satisfied = 1'b0;
+    poll_deadline = $realtime + timeout;
+    `uvm_info("USB_SIE_STATUS", $sformatf("Waiting up to %0t for INFO.ERR_CODE=0x%0h (%s)", timeout, expected_code, label), UVM_LOW)
+
+    fork
+      begin
+        fork
+          begin
+            while (!satisfied && (usb_time_ps($realtime) < usb_time_ps(poll_deadline))) begin
+              ral_read32("INFO", p_sequencer.reg_model.combo.dev0_csr.INFO, info_value);
+              if (usb_time_ps($realtime) >= usb_time_ps(poll_deadline)) break;
+              observed_code = 4'((info_value & ral_field_mask(error_field)) >> error_field.get_lsb_pos());
+              if (observed_code === expected_code) begin
+                satisfied = 1'b1;
+              end else begin
+                #(poll_interval);
+              end
+            end
+          end
+          begin
+            #(timeout);
+          end
+        join_any
+        disable fork;
+      end
+    join
+
+    if (!satisfied) begin
+      `uvm_fatal(
+        "USB_SIE_STATUS",
+        $sformatf("INFO.ERR_CODE did not reach 0x%0h within %0t for %s; last=0x%0h", expected_code, timeout, label, observed_code)
+      )
+    end
+    `uvm_info("USB_SIE_STATUS", $sformatf("DUT reported INFO.ERR_CODE=0x%0h for %s", observed_code, label), UVM_LOW)
   endtask
 
   // Require the endpoint's entry to match an expected word exactly, reporting

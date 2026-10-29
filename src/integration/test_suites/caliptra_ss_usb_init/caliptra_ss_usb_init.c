@@ -57,12 +57,12 @@ void main (void) {
     // pull-up can settle while Caliptra completes boot. Null hooks select the
     // built-in USB descriptors and standard-request handling.
     mcu_cptra_init_d(
+        .cfg_enable_cptra_mbox_user_init=true,
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
         .cptra_wdt_cfg_0=1u,
         .cfg_boot_usb_core=true);
 
-    mcu_cptra_user_init();
     mcu_cptra_poll_mb_ready();
 
     VPRINTF(LOW, "MCU: Caliptra core ready, entering USB event loop\n");

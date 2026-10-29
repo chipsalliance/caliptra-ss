@@ -107,9 +107,26 @@ logic min_mcu_rst_count_elapsed_nxt;
 /////////////////////////////////////////////////
 // DFT                                 
 /////////////////////////////////////////////////
-assign cptra_ss_rst_b_o   = scan_mode ? mci_rst_b           :  cptra_ss_rst_b_o_ff;
-assign mcu_rst_b          = scan_mode ? mci_rst_b           :  mcu_rst_b_ff;
-assign cptra_rst_b        = scan_mode ? mci_rst_b           :  cptra_rst_b_ff;
+caliptra_prim_rst_mux2 cptra_ss_rst_mux (
+    .rst0_i(cptra_ss_rst_b_o_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_ss_rst_b_o)
+);
+
+caliptra_prim_rst_mux2 mcu_rst_mux (
+    .rst0_i(mcu_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (mcu_rst_b)
+);
+
+caliptra_prim_rst_mux2 cptra_rst_mux (
+    .rst0_i(cptra_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_rst_b)
+);
 
 /////////////////////////////////////////////////
 // Reset Window                        
@@ -125,7 +142,14 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
-caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
+caliptra_prim_flop_2sync #(
+  .Width(1),
+  .ResetValue(1'b1)
+) i_rst_window_sync (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(mci_rst_window),
+  .q_o(mci_rst_window_sync));
 
 
 always_ff @(posedge clk or negedge mci_pwrgood) begin

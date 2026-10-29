@@ -1060,6 +1060,7 @@ end
     .fc_init_done            (pwr_otp_rsp_d),
     .cptra_in_debug_mode_i   (cptra_in_debug_mode_i),
     .mcu_rom_patch_active_i  (mcu_rom_patch_active_i),
+    .dai_addr_i              (dai_addr),
     .core_axi_wr_req         (core_axi_wr_req),
     .core_axi_wr_rsp         (core_axi_wr_rsp),
     .discarded_fuse_write_i  (discarded_fuse_write),

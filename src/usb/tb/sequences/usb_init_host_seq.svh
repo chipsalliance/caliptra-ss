@@ -32,6 +32,8 @@
 class usb_init_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_init_host_seq)
 
+  localparam int unsigned ENUMERATION_REQUEST_COUNT = 7;
+
   int unsigned validated_transfer_count;
 
   // Scenario inputs. This sequence runs on the SVT sequencer, which has no
@@ -264,6 +266,7 @@ class usb_init_host_seq extends usb_host_base_seq;
     byte unsigned expected_payload[$]
   );
     svt_usb_transfer request_transfer;
+    uvm_sequence_item response;
     uvm_object completed_object;
     string transfer_label;
 
@@ -302,6 +305,13 @@ class usb_init_host_seq extends usb_host_base_seq;
       `uvm_fatal("USB_INIT_HOST", $sformatf("Unable to randomize %s", transfer_label))
     end
     finish_item(request_transfer);
+    // SVT also routes a UVM response for each request. Consume it by transaction
+    // ID before retiring the watch so response delivery shares the same deadline
+    // and cannot accumulate past UVM's bounded response queue.
+    get_response(response, request_transfer.get_transaction_id());
+    if (response == null || response.get_sequence_id() != request_transfer.get_sequence_id()) begin
+      `uvm_fatal("USB_INIT_HOST", $sformatf("%s received an invalid routed response", transfer_label))
+    end
     end_transfer_watch(completed_object);
     check_transfer_correlation(transfer_label, request_transfer, completed_object);
 

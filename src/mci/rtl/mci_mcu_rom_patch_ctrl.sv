@@ -194,11 +194,14 @@ assign lc_patch_allowed = otp_state_valid_q && !lc_fatal_state_error_i &&
 // cptra_core_rst_b_i is SoC driven, so it is synchronized and used as data only.
 // The 2-cycle sync still closes the window before Caliptra core captures UDS/FE
 // (several cycles after reset release, see McuRomPatchClosedBeforeUdsFeCapture_A).
-caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d0)) i_cptra_core_rst_b_sync (
-    .clk   (clk),
-    .rst_b (mci_pwrgood),
-    .din   (cptra_core_rst_b_i),
-    .dout  (cptra_core_rst_b_sync)
+caliptra_prim_flop_2sync #(
+    .Width(1),
+    .ResetValue(1'b0)
+) i_cptra_core_rst_b_sync (
+    .clk_i (clk),
+    .rst_ni(mci_pwrgood),
+    .d_i   (cptra_core_rst_b_i),
+    .q_o   (cptra_core_rst_b_sync)
 );
 
 always_ff @(posedge clk or negedge mci_pwrgood) begin

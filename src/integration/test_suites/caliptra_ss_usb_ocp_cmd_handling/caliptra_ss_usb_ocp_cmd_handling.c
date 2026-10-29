@@ -46,9 +46,7 @@ uint8_t main(void)
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
         .cptra_wdt_cfg_0=1u,
-        .cfg_boot_usb_core=true,
-        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
-        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
+        .cfg_boot_usb_core=true);
     mcu_cptra_user_init();
 
     // Keep the USB control pipe serviced while the Caliptra core reaches its
