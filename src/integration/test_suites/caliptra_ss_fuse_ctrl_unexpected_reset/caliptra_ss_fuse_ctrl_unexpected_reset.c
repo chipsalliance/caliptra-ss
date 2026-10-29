@@ -49,9 +49,20 @@ choosing_new_partition:
     if (is_caliptra_secret_addr(partition.address)) {
         VPRINTF(LOW, "INFO: Need to re-iterate...\n");
         goto choosing_new_partition;
-    } 
+    }
 
-    dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
+    // Skip SECRET_LC_TRANSITION_PARTITION: the OTP image generator locks it when
+    // the LC transition tokens are configured, so its digest is already set and
+    // both DAI writes and reads are rejected. Its lc_phase is TEST_UNLOCKED0, so
+    // it is write-locked in later LC states too.
+    if (partition.index == SECRET_LC_TRANSITION_PARTITION) {
+        VPRINTF(LOW, "INFO: Skipping locked SECRET_LC_TRANSITION_PARTITION...\n");
+        goto choosing_new_partition;
+    }
+
+    if (!dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0)) {
+        handle_error("ERROR: initial write to partition %d failed\n", partition.index);
+    }
 
     reset_fc_lcc_rtl();
     wait_dai_op_idle(0);
@@ -60,10 +71,14 @@ choosing_new_partition:
     // For software partitions are write should succeed while for
     // hardware partitions a read should go through.
     if (!partition.is_secret) {
-        dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0);
+        if (!dai_wr(partition.address, sentinel, 0x0, partition.granularity, 0)) {
+            handle_error("ERROR: partition %d is locked after reset\n", partition.index);
+        }
     } else {
         uint32_t read_data[2];
-        dai_rd(partition.address, &read_data[0], &read_data[1], partition.granularity, 0);
+        if (!dai_rd(partition.address, &read_data[0], &read_data[1], partition.granularity, 0)) {
+            handle_error("ERROR: partition %d is locked after reset\n", partition.index);
+        }
     }
 }
 

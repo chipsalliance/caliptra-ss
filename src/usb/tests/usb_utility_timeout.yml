@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Self-checking utility tests: CSR and poll deadlines, host submission stalls,
+# completion boundaries, and bulk result-mask validation. Expected fatals are
+# caught only by ID/message and checked for count and exact expiry time.
+---
+seed: 1
+testname: usb_utility_timeout
+plusargs:
+  - '+UVM_TESTNAME=usb_utility_timeout_test'

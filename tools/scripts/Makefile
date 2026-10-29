@@ -78,8 +78,14 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  mci \
 		  fuse_ctrl \
 		  lc_ctrl \
-		  wdt
+		  wdt \
+		  usb \
+		  spi_host
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
+
+# Optional per-test makefile fragment for extra objects/libs/headers/plusargs
+-include $(TEST_DIR)/$(TESTNAME).mk
+
 AUX_HEADER_FILES ?=
 HEADER_FILES := $(RTL_DIR)/soc_address_map/soc_address_map.h \
 		$(RTL_DIR)/fuse_ctrl_mmap.h \
@@ -105,7 +111,7 @@ TEST_GEN_FILES := $(CALIPTRA_SS_ROOT)/src/fuse_ctrl/data/otp-img.2048.vmem \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5 \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/Dilithium_ref/dilithium/ref/test/test_dilithium5_debug \
 	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/mldsa/tb/smoke_test_mldsa_vector.hex \
-	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/tb/vectors/ml_kem_fixed
+	          $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem
 
 # Separate OFILE variable since this is not used to build remote images
 # (i.e. FMC or RunTime)
@@ -120,6 +126,9 @@ ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 endif
 ifeq (0,$(shell test -e $(TEST_DIR)/$(TESTNAME).c && echo $$?))
 	OFILES += $(foreach comp_lib_name, $(COMP_LIB_NAMES), $(comp_lib_name).o)
+ifeq (0,$(shell grep -e '\#include "usb_ocp_recovery.h"' $(TEST_DIR)/$(TESTNAME).c > /dev/null && echo $$?))
+	OFILES += usb_ocp_recovery.o
+endif
 endif
 
 # Only build the mcu_isr lib (which consumes a large block of DCCM) if it is
@@ -168,7 +177,9 @@ endif
 VPATH = $(TEST_DIR) $(BUILD_DIR) $(TBDIR) $(RISCV_HW_IF_DIR) $(SOC_IFC_DIR) $(PRINTF_DIR) $(ISR_DIR) $(COMP_LIBS)
 
 # Use eval to expand env variables in the .vf file
-$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf | grep -v '+incdir+'))
+$(eval TBFILES = $(shell cat $(TBDIR)/../config/$(DUT).vf $(TBDIR)/../config/$(DUT).vhdl.vf | grep -v '+incdir+\|+define+'))
+
+SYNOPSYS_SIM_SETUP = $(CALIPTRA_SS_ROOT)/third_party/usb2/tools/scripts/synopsys_sim.setup
 
 #defines  = $(BUILD_DIR)/common_defines.vh
 #defines += $(RV_ROOT)/design/include/el2_def.sv
@@ -226,8 +237,21 @@ VERILATOR_MAKE_FLAGS = OPT_FAST="-Os"
 TB_DPI_SRCS = jtagdpi/jtagdpi.c \
               tcp_server/tcp_server.c
 
+VCS_DPI_INC_DIR := $(VCS_HOME)/linux64/include
 TB_DPI_INCS := $(addprefix -I$(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(dir $(TB_DPI_SRCS)))
 TB_DPI_SRCS := $(addprefix $(CALIPTRA_SS_ROOT)/third_party/caliptra-rtl/src/integration/test_suites/libs/,$(TB_DPI_SRCS))
+TB_DPI_INCS += -I$(UVM_HOME_2020)/src/dpi -I$(VCS_DPI_INC_DIR)
+TB_DPI_SRCS += $(UVM_HOME_2020)/src/dpi/uvm_dpi.cc
+
+TB_DPI_DIR := $(BUILD_DIR)/dpi
+TB_DPI_OFILES := $(addprefix $(TB_DPI_DIR)/,jtagdpi.o tcp_server.o uvm_dpi.o)
+TB_DPI_SO := $(TB_DPI_DIR)/lib_dpi.so
+DPI_CFLAGS := -m64 -g \
+    -fPIC -finput-charset=UTF-8 \
+    -Wall -Wno-unused-variable -Wno-unused-function \
+    -DVCS \
+    $(TB_DPI_INCS) \
+    -shared -c
 
 # Testbench sources
 TB_VERILATOR_SRCS = $(TBDIR)/test_$(DUT).cpp $(TB_DPI_SRCS)
@@ -255,6 +279,12 @@ CFLAGS += $(TB_DPI_INCS)
 ############# VCS Compile options #############
 VCS_COMP_OPTS += -debug_access+all
 VCS_COMP_OPTS += +define+CLP_ASSERT_ON
+VCS_COMP_OPTS += +define+ABR_ASSERT_ON
+# Pass USB_HOST_PHY_TEST=1 on the make command line to enable this define
+# without disturbing VCS_COMP_OPTS variable expansion order.
+ifdef USB_HOST_PHY_TEST
+VCS_COMP_OPTS += +define+CALIPTRA_USB_HOST_PHY_TEST
+endif
 VCS_COMP_OPTS += +define+AVERY_ASSERT_ON
 VCS_COMP_OPTS += +define+AVERY_MONITOR_ON
 # Used in caliptra_top_sva to find signals
@@ -271,12 +301,14 @@ VCS_COMP_OPTS += +define+AVERY_AXI_INTERCONNECT
 VCS_COMP_OPTS += +define+AAXI_MAX_DATA_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ADDR_WIDTH=64
 VCS_COMP_OPTS += +define+AAXI_MAX_ID_WIDTH=5
+VCS_COMP_OPTS += +define+AAXI_SPORT_ID_WIDTH=8
 VCS_COMP_OPTS += +define+AAXI_MAX_ARUSER_WIDTH=32
 VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
-VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_UART
-VCS_COMP_OPTS += -noinherit_timescale=1ns/1ps
+VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
+VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=8
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=14
+
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
 VCS_COMP_OPTS += +define+AI3C_TEST_CASE=$(TBDIR)/sv_tests/ai3c/ai3c_test_includes.svh
@@ -286,11 +318,23 @@ VCS_COMP_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 VCS_COMP_OPTS += -suppress=SV-LCM-PPWI
 VCS_COMP_OPTS += +define+I3C_BOOT_USING_ENTDAA
 VCS_COMP_OPTS += +define+CALIPTRA_SIMULATION
+VCS_COMP_OPTS += +define+SIMULATION
+VCS_COMP_OPTS += +define+SVT_UVM_TECHNOLOGY
+VCS_COMP_OPTS += +define+UVM_PACKER_MAX_BYTES=24000
+VCS_COMP_OPTS += +define+UVM_DISABLE_AUTO_ITEM_RECORDING
+VCS_COMP_OPTS += +define+SYNOPSYS_SV
+VCS_COMP_OPTS += +define+DESIGNWARE_INCDIR=$(DESIGNWARE_HOME_INC)
+VCS_COMP_OPTS += +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
+VCS_COMP_OPTS += +define+SVT_VERSION=latest
+VCS_COMP_OPTS += +define+SVT_MPHY_PKG_LOAD
 ############# VCS Elab options #############
 #FIXME implicit-wire-no-fanin and port-connection-width-mismatch warnings from i3c_core
 VCS_ELAB_OPTS += +warn=noIWNF
 VCS_ELAB_OPTS += +warn=noPCWM-W
 VCS_ELAB_OPTS += +warn=noTFIPC,noMDVMO
+# axi_mem_if is instantiated and connected in caliptra_ss_top_tb; UII-L is a benign VCS elaboration artifact
+VCS_ELAB_OPTS += +warn=noUII-L
+VCS_ELAB_OPTS += -suppress=SIMU-RESOLUTION,DRTZ
 VCS_ELAB_OPTS += $(AVERY_PLI)/lib.linux/libtb_vcs64.a
 VCS_ELAB_OPTS += -P $(AVERY_PLI)/tb_vcs64.tab
 #FIXME unique case violations in i3c_core
@@ -298,6 +342,16 @@ VCS_ELAB_OPTS += -ignore unique_checks
 ############# VCS Simulation options #############
 VCS_SIM_OPTS  += +vpi -lpthread
 VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
+#VCS_SIM_OPTS  += -mx_force
+# Enable SVT debug automation: activates protocol, link, and physical trace
+# files (svt_debug.transcript, svt_debug.out) on every USB sim run.
+# Config properties enable_prot_tracing, enable_link_tracing, and
+# enable_phys_tracing gate which layers are written.
+#VCS_SIM_OPTS  += +svt_debug_opts
+VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
+VCS_SIM_OPTS  += +mcu_console_fail_check=1
+############# VCS Simulation Override Options #############
+VCS_SIM_EXTRA_OPTS ?= 
 
 # Targets
 all: clean verilator
@@ -328,15 +382,38 @@ verilator-build: $(INCLUDES_DIR)/defines.h $(TB_VERILATOR_SRCS)
 	$(MAKE) -j`nproc` -e -C obj_dir/ -f V$(DUT).mk $(VERILATOR_MAKE_FLAGS) VM_PARALLEL_BUILDS=1
 	touch verilator-build
 
-vcs-build: $(TBFILES) $(TB_DPI_SRCS)
+vcs-build: $(TBFILES) $(TB_DPI_SO) $(SYNOPSYS_SIM_SETUP)
+	cp $(SYNOPSYS_SIM_SETUP) $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/rtl
+	USB_COMPILE_DIR=$(BUILD_DIR) \
+	vhdlan           -full64                -kdb=common_elab \
+	  -work rtl \
+	  -l vcs_vhdl_compile.log \
+	  -f $(TBDIR)/../config/$(DUT).vhdl.vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vlogan -sverilog -full64 -assert svaext -kdb -incr_vlogan +lint=IA_CHECKFAIL \
 	  $(VCS_COMP_OPTS) \
-	  -l vcs_compile.log \
+	  -work rtl \
+	  -l vcs_sv_compile.log \
 	  -f $(TBDIR)/../config/$(DUT).vf
+	USB_COMPILE_DIR=$(BUILD_DIR) \
 	vcs -full64 -kdb -lca -j8 +vcs+lic+wait -partcomp -fastpartcomp=j8 \
 	  $(VCS_ELAB_OPTS) \
 	  -l vcs_elab.log \
-	  -assert enable_hier $(DUT) -o simv.$(DUT) +dpi -cflags "$(TB_DPI_INCS)" $(TB_DPI_SRCS)
+	  -assert enable_hier $(DUT) -o simv.$(DUT)
+
+$(TB_DPI_DIR):
+	mkdir -p $(TB_DPI_DIR)
+
+$(TB_DPI_DIR)/%.o: $(TB_DPI_SRCS) | $(TB_DPI_DIR)
+	gcc $(DPI_CFLAGS) $(filter %$*.c %$*.cc,$(TB_DPI_SRCS)) -o $@
+
+$(TB_DPI_SO): $(TB_DPI_OFILES)
+	gcc -m64 \
+	    -fPIC \
+	    -shared \
+	    $(TB_DPI_OFILES) \
+	    -o $(TB_DPI_SO)
 
 ############ TEST Simulation ###############################
 
@@ -345,8 +422,10 @@ verilator: mcu_program.hex verilator-build
 
 vcs: cptra_program.hex mcu_program.hex vcs-build
 	cp -r $(TEST_GEN_FILES) $(BUILD_DIR)
+	mkdir -p $(BUILD_DIR)/ml-kem/tv
 	./simv.$(DUT) \
 	  $(VCS_SIM_OPTS) \
+	  $(VCS_SIM_EXTRA_OPTS) \
 	  -l vcs_sim.log
 
 ############ Caliptra TEST build ######################
@@ -359,7 +438,7 @@ CALIPTRA_TEST_DIR=$(TEST_DIR)
 endif
 cptra_program.hex:
 	make -f $(CALIPTRA_ROOT)/tools/scripts/Makefile \
-	     CALIPTRA_INTERNAL_TRNG=0 \
+	     CALIPTRA_INTERNAL_TRNG=1 \
 	     TEST_DIR=$(CALIPTRA_TEST_DIR) \
 	     AUX_HEADER_FILES="$(CALIPTRA_AUX_HEADER_FILES)" \
 	     AUX_OFILES="$(CALIPTRA_AUX_OFILES)" \

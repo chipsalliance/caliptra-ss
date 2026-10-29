@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 module mci_reg_top 
     import mci_reg_pkg::*;
     import mci_pkg::*;
     import mci_mcu_trace_buffer_pkg::*;
     import mci_dmi_pkg::*;
+    import caliptra_prim_mubi_pkg::*;
     import soc_ifc_pkg::*;
     #(
         parameter AXI_USER_WIDTH = 32
@@ -154,6 +154,9 @@ module mci_reg_top
     input  logic        mcu_sram_single_ecc_error,
     input  logic        mcu_sram_double_ecc_error,
     input  logic        mcu_sram_dmi_axi_collision_error,
+    // MCU ROM patch SRAM specific signals
+    input  logic        mcu_rom_patch_sram_double_ecc_error,
+    input  logic        mcu_rom_patch_active,
     output logic        mcu_sram_dmi_uncore_en,
     output logic        mcu_sram_dmi_uncore_wr_en,
     output logic [ 6:0] mcu_sram_dmi_uncore_addr,
@@ -162,7 +165,8 @@ module mci_reg_top
 
     // Boot status
     input  logic mcu_reset_once,
-    input  mci_boot_fsm_state_e boot_fsm, 
+    input  logic [3:0] boot_fsm, 
+    input  logic boot_fsm_error,
 
     
     // Caliptra internal fabric response interface
@@ -179,7 +183,7 @@ logic mci_error_intr;
 logic mci_notif_intr;
     
 // Security
-logic security_state_debug_locked_d;
+caliptra_prim_mubi_pkg::mubi4_t security_state_debug_locked_d;
 logic security_state_debug_locked_edge;
 logic scan_mode_f;
 logic scan_mode_p;
@@ -423,21 +427,21 @@ assign mci_reg_hwif_in.HW_CONFIG1.MIN_MCU_RST_COUNTER_WIDTH.next = MIN_MCU_RST_C
 // Security Related      
 ///////////////////////////////////////////////
 assign mci_reg_hwif_in.SECURITY_STATE.device_lifecycle.next = security_state_o.device_lifecycle;
-assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = security_state_o.debug_locked;
+assign mci_reg_hwif_in.SECURITY_STATE.debug_locked.next     = mubi4_test_true_loose(security_state_o.debug_locked);
 assign mci_reg_hwif_in.SECURITY_STATE.scan_mode.next        = scan_mode;
 
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
     if (~mci_rst_b) begin
-        security_state_debug_locked_d <= '0;
+        security_state_debug_locked_d <= caliptra_prim_mubi_pkg::MuBi4False;
     end
     else begin
         security_state_debug_locked_d <= security_state_o.debug_locked;
     end
 end
 
-always_comb security_state_debug_locked_edge = security_state_o.debug_locked ^ security_state_debug_locked_d;
+always_comb security_state_debug_locked_edge = mubi4_test_true_loose(security_state_o.debug_locked) ^ mubi4_test_true_loose(security_state_debug_locked_d);
 
 // Generate a pulse to set the interrupt bit
 always_ff @(posedge clk or negedge mci_rst_b) begin
@@ -461,16 +465,14 @@ assign mci_reg_hwif_in.intr_block_rf.notif0_internal_intr_r.notif_debug_locked_s
 // DMI                   
 ///////////////////////////////////////////////
 
-assign mcu_dmi_core_enable          = !security_state_o.debug_locked;
-assign mcu_dmi_uncore_enable        = (!security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
+assign mcu_dmi_core_enable          = mubi4_test_false_strict(security_state_o.debug_locked);
+assign mcu_dmi_uncore_enable        = mubi4_test_false_strict(security_state_o.debug_locked) || (security_state_o.device_lifecycle == DEVICE_MANUFACTURING) || mci_ss_debug_intent;
 
 //Uncore registers open for all cases
 always_comb mcu_dmi_uncore_locked_en = mcu_dmi_uncore_en;
 
 //Uncore registers only open for debug unlock 
-always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & 
-                                                (~(security_state_o.debug_locked)  
-                                                 );
+always_comb mcu_dmi_uncore_dbg_unlocked_en = mcu_dmi_uncore_en & mubi4_test_false_strict(security_state_o.debug_locked);
 
 
 
@@ -492,20 +494,23 @@ always_comb mcu_dmi_uncore_dbg_unlocked_rdata_in =  ({32{(mcu_dmi_uncore_addr ==
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_WR_PTR           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_WR_PTR)            )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_RD_PTR           )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_RD_PTR)            )  | 
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCU_TRACE_DATA             )}}   &  32'(mcu_trace_buffer_dmi_reg.TRACE_DATA)              )  | 
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   &  32'({mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value}))  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   &  32'({mci_reg_hwif_out.HW_FLOW_STATUS.mcu_rom_patch_active.value,
+                                                                                                                                  mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   &  32'({mci_reg_hwif_out.RESET_REASON.WARM_RESET.value,
                                                                                                                                   mci_reg_hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value,
                                                                                                                                   mci_reg_hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value})  )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   &  32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                                   mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   &  32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value)     )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   &  32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value,
+                                                                                                                                  mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                                                                                                                  mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_FATAL.agg_error_fatal))  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   &  mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   &  32'({mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value,
                                                                                                                                   mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value}) )  |
-                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal))  |
+                                                    ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   &  mci_dmi_agg_error_non_fatal_concat(mci_reg_hwif_out.AGG_ERROR_NON_FATAL))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   &  32'(mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value) )  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   &  32'(mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value))  |
                                                     ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   &  32'(mci_reg_hwif_out.HW_ERROR_ENC.error_code.value)   )  |
@@ -538,20 +543,23 @@ always_comb mcu_dmi_uncore_locked_rdata_in =  // unused in 2.0 ({32{(mcu_dmi_unc
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_DOUT             )}}   &  mbox1_dmi_reg.MBOX_DOUT                     )  | 
                                               // unused in 2.0 ({32{(mcu_dmi_uncore_addr == MCI_DMI_REG_MBOX1_STATUS           )}}   &  mbox1_dmi_reg.MBOX_STATUS                   )  | 
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_MCI_BOOTFSM_GO             )}}   & 32'(mci_reg_hwif_out.MCI_BOOTFSM_GO.go.value) )  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & 32'(mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value))  |
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_FLOW_STATUS             )}}   & 32'({mci_reg_hwif_out.HW_FLOW_STATUS.mcu_rom_patch_active.value,
+                                                                                                                           mci_reg_hwif_out.HW_FLOW_STATUS.boot_fsm.value}))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_REASON               )}}   & 32'({mci_reg_hwif_out.RESET_REASON.WARM_RESET.value,
                                                                                                                            mci_reg_hwif_out.RESET_REASON.FW_BOOT_UPD_RESET.value,
                                                                                                                            mci_reg_hwif_out.RESET_REASON.FW_HITLESS_UPD_RESET.value}) )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_RESET_STATUS               )}}   & 32'({mci_reg_hwif_out.RESET_STATUS.mcu_reset_sts.value,
                                                                                                                            mci_reg_hwif_out.RESET_STATUS.cptra_reset_sts.value}))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_FLOW_STATUS             )}}   & 32'(mci_reg_hwif_out.FW_FLOW_STATUS.status.value         ))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_FATAL             )}}   & 32'({mci_reg_hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value,
+                                                                                                                           mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error.value,
+                                                                                                                           mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc.value}))  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   & `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_FATAL.agg_error_fatal))  |
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_FATAL            )}}   & mci_dmi_agg_error_fatal_concat(mci_reg_hwif_out.AGG_ERROR_FATAL))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_NON_FATAL         )}}   & 32'({mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox1_ecc_unc.value,
                                                                                                                            mci_reg_hwif_out.HW_ERROR_NON_FATAL.mbox0_ecc_unc.value}) )  |
-                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   & `SS_DMI_AGG_ERR_CONCAT(mci_reg_hwif_out.AGG_ERROR_NON_FATAL.agg_error_non_fatal))  |
+                                              ({32{(mcu_dmi_uncore_addr == MCI_DMI_AGG_ERROR_NON_FATAL        )}}   & mci_dmi_agg_error_non_fatal_concat(mci_reg_hwif_out.AGG_ERROR_NON_FATAL))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_FATAL             )}}   & 32'(mci_reg_hwif_out.FW_ERROR_FATAL.error_code.value) )  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_FW_ERROR_NON_FATAL         )}}   & 32'(mci_reg_hwif_out.FW_ERROR_NON_FATAL.error_code.value))  |
                                               ({32{(mcu_dmi_uncore_addr == MCI_DMI_HW_ERROR_ENC               )}}   & 32'(mci_reg_hwif_out.HW_ERROR_ENC.error_code.value)   )  |
@@ -733,6 +741,7 @@ assign mci_reg_hwif_in.RESET_STATUS.cptra_reset_sts.next = ~cptra_rst_b;
 assign mci_reg_hwif_in.RESET_STATUS.mcu_reset_sts.next   = ~mcu_rst_b;
 
 assign mci_reg_hwif_in.HW_FLOW_STATUS.boot_fsm.next = boot_fsm;
+assign mci_reg_hwif_in.HW_FLOW_STATUS.mcu_rom_patch_active.next = mcu_rom_patch_active;
 
 
 // pwrgood_hint informs if the powergood toggled
@@ -860,15 +869,21 @@ assign mcu_nmi_vector = mci_reg_hwif_out.MCU_NMI_VECTOR.vec;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  = mcu_sram_double_ecc_error;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      = nmi_intr;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  = mcu_sram_dmi_axi_collision_error;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  = boot_fsm_error;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we  = mcu_rom_patch_sram_double_ecc_error;
 // Using we+next instead of hwset allows us to encode the reserved fields in some fashion
 // other than bit-hot in the future, if needed (e.g. we need to encode > 32 FATAL events)
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next    = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next        = 1'b1;
 always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next  = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next  = 1'b1;
+always_comb mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next  = 1'b1;
 // Flag the write even if the field being written to is already set to 1 - this is a new occurrence of the error and should trigger a new interrupt
 always_comb unmasked_hw_error_fatal_write = (mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .we      && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin.value && |mci_reg_hwif_in.HW_ERROR_FATAL.nmi_pin     .next) ||
                                             (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_ecc_unc.next)  ||
-                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next);
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.next) ||
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.we  && |mci_reg_hwif_in.HW_ERROR_FATAL.fsm_error.next) || // Not maskable
+                                            (mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we  && ~mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value && |mci_reg_hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next);
 
 ////////////////////////////////////////////////////////
 // Write-enables for HW_ERROR_FATAL and HW_ERROR_NON_FATAL

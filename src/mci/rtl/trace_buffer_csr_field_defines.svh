@@ -35,10 +35,12 @@
 `ifndef TRACE_BUFFER_CSR_READ_PTR
 `define TRACE_BUFFER_CSR_READ_PTR                                                                   (32'h10)
 `endif
-`ifndef TRACE_BUFFER_CSR_CONTROL
-`define TRACE_BUFFER_CSR_CONTROL                                                                    (32'h14)
-`define TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                                   (0)
-`define TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                                  (32'h1)
+`ifndef TRACE_BUFFER_CSR_CTRL
+`define TRACE_BUFFER_CSR_CTRL                                                                       (32'h14)
+`define TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                    (0)
+`define TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                                   (32'h1)
+`define TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_LOW                                                    (1)
+`define TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_MASK                                                   (32'h2)
 `endif
 
 

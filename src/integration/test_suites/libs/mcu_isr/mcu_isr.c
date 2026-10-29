@@ -63,17 +63,35 @@ void nonstd_veer_mtvec_mcei(void) __attribute__ ((interrupt ("machine") , aligne
 // VeeR Per-Source Vectored ISR functions
 static void nonstd_veer_isr_mci  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_i3c  (void) __attribute__ ((interrupt ("machine")));
+static void nonstd_veer_isr_usb  (void) __attribute__ ((interrupt ("machine")));
 static void nonstd_veer_isr_bfm  (void) __attribute__ ((interrupt ("machine")));
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+static void nonstd_veer_isr_usb_dev1 (void) __attribute__ ((interrupt ("machine")));
+#endif
+
 
 // Could be much more fancy with C preprocessing to pair up the ISR with Vector
 // numbers as defined in caliptra_defines.h.... TODO
 static void          nonstd_veer_isr_0   (void) __attribute__ ((interrupt ("machine"))); // Empty function instead of function pointer for Vec 0
 static void (* const nonstd_veer_isr_1 ) (void) = nonstd_veer_isr_mci;    // Definitions come from the
 static void (* const nonstd_veer_isr_2 ) (void) = nonstd_veer_isr_i3c;    // param'd macro "nonstd_veer_isr" below
-static void (* const nonstd_veer_isr_3 ) (void) = std_rv_nop_machine; // -------.
-static void (* const nonstd_veer_isr_4 ) (void) = std_rv_nop_machine; //        |
+static void (* const nonstd_veer_isr_3 ) (void) = nonstd_veer_isr_usb;    // USB device controller
+static void (* const nonstd_veer_isr_4 ) (void) = std_rv_nop_machine; // -------.
 static void (* const nonstd_veer_isr_5 ) (void) = std_rv_nop_machine; //        |
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+// usb_hib_compound dual USB device test. PIC vector 6 (VEER_INTR_EXT_LSB) is
+// the first configurable external interrupt pin. In this build the testbench
+// loops the USB device1 IRQ output (cptra_ss_usb_dev1_irq_o) back onto this
+// pin, so vector 6 must route to a real handler instead of the nop. Device0
+// keeps vector 3; this dedicated device1 handler reads USBDC1's own aperture
+// (SOC_USB_DEV1_CSR_BASE_ADDR) directly, independent of the USB_DEV_SEL compile
+// switch, so a single dual device image can service both controllers.
+static void (* const nonstd_veer_isr_6 ) (void) = nonstd_veer_isr_usb_dev1; // USBDC1 looped IRQ
+#else
 static void (* const nonstd_veer_isr_6 ) (void) = std_rv_nop_machine; //        |
+#endif
+
+
 static void (* const nonstd_veer_isr_7 ) (void) = std_rv_nop_machine; //        |
 static void (* const nonstd_veer_isr_8 ) (void) = std_rv_nop_machine; //        |
 static void (* const nonstd_veer_isr_9 ) (void) = std_rv_nop_machine; //        |
@@ -214,6 +232,8 @@ void init_interrupts(void) {
     // MEIPL_S - assign interrupt priorities
     meipls[CSS_MCU0_VEER_INTR_VEC_MCI] = CSS_MCU0_VEER_INTR_PRIO_MCI; __asm__ volatile ("fence");
     meipls[CSS_MCU0_VEER_INTR_VEC_I3C] = CSS_MCU0_VEER_INTR_PRIO_I3C; __asm__ volatile ("fence");
+    meipls[CSS_MCU0_VEER_INTR_VEC_USB] = CSS_MCU0_VEER_INTR_PRIO_USB; __asm__ volatile ("fence");
+    meipls[CSS_MCU0_VEER_INTR_VEC_SPIH] = CSS_MCU0_VEER_INTR_PRIO_SPIH; __asm__ volatile ("fence");
     for (uint32_t undef = CSS_MCU0_VEER_INTR_EXT_LSB; undef <= CSS_MCU0_RV_PIC_TOTAL_INT; undef++) {
         meipls[undef] = CSS_MCU0_VEER_INTR_PRIO_BFM; __asm__ volatile ("fence");
     }
@@ -419,6 +439,103 @@ void init_interrupts(void) {
     // Enable MIE.MCEI (Correctable Error Interrupt)
     // Do not enable SW Interrupts
     csr_set_bits_mie(MIE_MEI_BIT_MASK | MIE_MTI_BIT_MASK | MIE_MCEI_BIT_MASK);
+
+    // Global interrupt enable
+    csr_set_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+
+}
+
+void init_usb_interrupts(void) {
+
+    // Minimal interrupt bring-up for the USB device controller only.
+    //
+    // Unlike init_interrupts(), this function touches nothing outside the MCU
+    // core and its memory mapped PIC. It deliberately does NOT program the MCI
+    // or I3C interrupt enable registers, and does not write MTIMECMP. Those
+    // blocks are not guaranteed to be out of reset or reachable in a USB
+    // focused testbench, and a write that never completes on the bus stalls
+    // the load/store pipeline and hangs the core before interrupts are ever
+    // enabled. The peripheral side enable for USB is the device INTEN
+    // register, which is already programmed by boot_usb_core().
+    //
+    // Only PIC vector 3 (USB) is enabled. Every other source is explicitly
+    // disabled because the unused entries of nonstd_veer_isr_vector_table
+    // still point at std_rv_nop_machine, which returns without clearing its
+    // source; with an active high level gateway that would re-trap forever.
+
+    volatile uint32_t * const mpiccfg    = (uint32_t*) VEER_MM_PIC_MPICCFG;
+    volatile uint32_t * const meipls     = (uint32_t*) VEER_MM_PIC_MEIPLS;
+    volatile uint32_t * const meies      = (uint32_t*) VEER_MM_PIC_MEIES;
+    volatile uint32_t * const meigwctrls = (uint32_t*) VEER_MM_PIC_MEIGWCTRLS;
+    volatile uint32_t * const meigwclrs  = (uint32_t*) VEER_MM_PIC_MEIGWCLRS;
+
+    // Global interrupt disable while the PIC is being configured
+    csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+
+    // MTVEC - standard RISC-V trap vector, MODE = 1 (Vectored)
+    csr_write_mtvec((uint_xlen_t) std_rv_isr_vector_table | 1);
+
+    // MEIVT - write the nonstd vector table base address
+    __asm__ volatile ("la t0, %0;\n"
+                      "csrw %1, t0;\n"
+                      : /* output: none */
+                      : "i" ((uintptr_t) &nonstd_veer_isr_vector_table), "i" (VEER_CSR_MEIVT)
+                      : "t0");
+
+    // MPICCFG - standard compliant priority order: 0=lowest, 15=highest
+    *mpiccfg = 0x0;
+    __asm__ volatile ("fence");
+
+    // MEIPT - no interrupts masked
+    __asm__ volatile ("csrwi    %0, %1"
+                      : /* output: none */
+                      : "i" (VEER_CSR_MEIPT), "i" (0x00)
+                      : /* clobbers: none */);
+
+    // MEICIDPL - claim ID priority level 0, allows nesting (per PRM 6.5.1)
+    __asm__ volatile ("csrwi    %0, %1"
+                      : /* output: none */
+                      : "i" (VEER_CSR_MEICIDPL), "i" (0x00)
+                      : /* clobbers: none */);
+
+    // MEICURPL - current priority level 0, allows all ext intr to preempt
+    __asm__ volatile ("csrwi    %0, %1"
+                      : /* output: none */
+                      : "i" (VEER_CSR_MEICURPL), "i" (0x00)
+                      : /* clobbers: none */);
+
+    // Disable every source first, so nothing that lacks a real handler can
+    // reach the core. Also clear each gateway pending bit; any write value
+    // clears it.
+    for (uint32_t vec = 1; vec <= CSS_MCU0_RV_PIC_TOTAL_INT; vec++) {
+        meies[vec] = 0; __asm__ volatile ("fence");
+        meigwclrs[vec] = 0; __asm__ volatile ("fence");
+    }
+
+    // Enable USB device0 (vector 3)
+    meipls[CSS_MCU0_VEER_INTR_VEC_USB]     = CSS_MCU0_VEER_INTR_PRIO_USB;    __asm__ volatile ("fence");
+    meigwctrls[CSS_MCU0_VEER_INTR_VEC_USB] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL; __asm__ volatile ("fence");
+    meigwclrs[CSS_MCU0_VEER_INTR_VEC_USB]  = 0;                              __asm__ volatile ("fence");
+    meies[CSS_MCU0_VEER_INTR_VEC_USB]      = 1;                              __asm__ volatile ("fence");
+
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+    // usb_hib_compound: also enable USB device1 (vector 6). The testbench loops
+    // cptra_ss_usb_dev1_irq_o onto cptra_ss_mcu_ext_int[6], so this vector must
+    // route to its real handler (nonstd_veer_isr_usb_dev1). device1 is given
+    // the same priority as device0 so the two USB vectors serialize instead of
+    // preempting one another. Active-high level gateway, same as device0, so
+    // the handler must W1C USBDC1 INTSTAT to deassert the line.
+    meipls[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]     = CSS_MCU0_VEER_INTR_PRIO_USB_DEV1; __asm__ volatile ("fence");
+    meigwctrls[CSS_MCU0_VEER_INTR_VEC_USB_DEV1] = VEER_MEIGWCTRL_ACTIVE_HI_LEVEL;   __asm__ volatile ("fence");
+    meigwclrs[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]  = 0;                                __asm__ volatile ("fence");
+    meies[CSS_MCU0_VEER_INTR_VEC_USB_DEV1]      = 1;                                __asm__ volatile ("fence");
+#endif
+
+    // MIE - external interrupts only. The timer interrupt is left disabled so
+
+    // that MTIMECMP does not need to be programmed, and the correctable error
+    // interrupt is left disabled because its thresholds are not set here.
+    csr_set_bits_mie(MIE_MEI_BIT_MASK);
 
     // Global interrupt enable
     csr_set_bits_mstatus(MSTATUS_MIE_BIT_MASK);
@@ -771,5 +888,15 @@ static void nonstd_veer_isr_0 (void) {
 nonstd_veer_isr(mci)
 // Non-Standard Vectored Interrupt Handler (I3C Interrupt = vector 2)
 nonstd_veer_isr(i3c)
+// Non-Standard Vectored Interrupt Handler (USB Interrupt = vector 3)
+nonstd_veer_isr(usb)
+#ifdef USB_HUB_COMPOUND_DEV1_IRQ
+// Non-Standard Vectored Interrupt Handler (USBDC1/device1 looped IRQ = vector 6)
+// Expands to nonstd_veer_isr_usb_dev1, calling service_usb_dev1_intr().
+nonstd_veer_isr(usb_dev1)
+#endif
 // Non-Standard Vectored Interrupt Handler (Default/BFM-driven Interrupt = vector 32:255)
 nonstd_veer_isr(bfm)
+
+
+// File contains AI-generated response based on internal company sources

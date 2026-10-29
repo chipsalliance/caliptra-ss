@@ -185,10 +185,9 @@ interface mci_top_cov_if
     covergroup mci_boot_seqr_cg @(posedge clk iff mci_rst_b);
         option.per_instance = 1;
 
-        // Each state entered
-        boot_states: coverpoint i_boot_seqr.boot_fsm {
-            illegal_bins bin_unknown = {BOOT_UNKNOWN};
-        }
+        // Each state entered. Automatic bins cover every enum value, including
+        // BOOT_ERROR, which is reached only by fault injection (mci_boot_fsm_glitch).
+        boot_states: coverpoint i_boot_seqr.boot_fsm;
         // Explicitly cover transitions where boot_fsm could take several branches
         boot_state_transition: coverpoint i_boot_seqr.boot_fsm {
             bins bin_bp_chk_bp = (BOOT_BREAKPOINT_CHECK => BOOT_BREAKPOINT);

@@ -4,6 +4,9 @@ files:
   - src/mcu/config/compile.yml
   - src/riscv_core/veer_el2/config/compile.yml
   - src/i3c_core/config/compile.yml
+  - src/usb/config/compile.yml
+  - src/spi_host/config/compile.yml
+  - src/uart/config/compile.yml
   - src/ast/config/compile.yml
   - src/pwrmgr/config/compile.yml
   - src/tlul/config/compile.yml
@@ -42,6 +45,7 @@ files:
   - third_party/caliptra-rtl/src/kmac/config/compile.yml
   - third_party/caliptra-rtl/src/entropy_src/config/compile.yml
   - third_party/caliptra-rtl/src/csrng/config/compile.yml
+  - third_party/caliptra-rtl/src/entropy_combiner/config/compile.yml
   # -- End RNG --
   # Adams Bridge
   - third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/config/compile.yml

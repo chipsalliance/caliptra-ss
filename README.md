@@ -10,6 +10,12 @@ HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and
 [Caliptra Subsystem v2.1 Example Register Map](https://chipsalliance.github.io/caliptra-ss/v2_1/regs/?p=)<BR>
 [Caliptra Subsystem Example Register Map (main branch)](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=)<BR>
 
+## **Release Consumption and Integration** ##
+Prior official releases are available at: https://github.com/chipsalliance/caliptra-ss/releases<br>
+Documentation for any consumed release must be pulled from the corresponding release branch, not from `main`.
+Releases are published as a tag, and also contain downloadable assets (which should not be used).
+Instead of downloading the assets attached to the published release, integrators should consume Caliptra Subsystem releases by pulling code from the repository at the associated tag, due to https://github.com/chipsalliance/caliptra-rtl/issues/471.
+
 ## **Tools Used** ##
 
 OS:
@@ -17,17 +23,19 @@ OS:
 
 LINT:
  - Synopsys SpyGlass
-   - `Version U-2023.03-SP2-8 -- Aug 09, 2024`
+   - `Version Y-2026.03-SP1-1`
 
 Simulation:
  - Synopsys VCS with Verdi
-   - `Version R-2020.12-SP2-7_Full64`
+   - `Version Y-2026.03-SP1`
+ - Synopsys VIP
+   - `2025.06` SVT USB VIP
  - Mentor Graphics AVERY
    - `avery/2025.1_20250313` AXI interconnect and I3C VIP
  - ARM AXI Protocol Checker
    - `BP063-BU-01000-r0p1-00rel0` Axi4PC.sv must be acquired from the ARM website
  - UVM installation
-   - `Version 1.1d`
+   - `Version 1800.2-2020`
 
 GCC:
  - RISCV Toolchain for generating memory initialization files
@@ -45,8 +53,8 @@ RDC:
     - 2022.A.P10.2
 
 Synthesis:
- - Synopsys Design Compiler (R) NXT 
-    - Version U-2022.12-SP6
+ - Synopsys Fusion Compiler
+   - `Version X-2025.06-SP3`
 
 Scripts:
  - Python
@@ -103,6 +111,10 @@ Required for simulation:<BR>
 `AVERY_SIM`: Directory within AVERY\_HOME that contains avery\_sim<BR>
 `AVERY_AXI`: Directory within AVERY\_HOME that contains axixactor<BR>
 `AVERY_I3C`: Directory within AVERY\_HOME that contains i3cxactor<BR>
+`UVM_HOME_2020`: Path to the installation of UVM library, version 1800.2-2020
+`VCS_HOME`: Path to the installation of VCS
+`DESIGNWARE_HOME`: Path to common/shared library code for Synopsys SVT VIP
+`DESIGNWARE_HOME_USB`: Path to SVT USB VIP installation
 
 Required for Firmware (i.e. Test suites) makefile:<BR>
   `TESTNAME`: Contains the name of one of the tests listed inside the `$CALIPTRA_SS_ROOT/src/integration/test_suites` folder; used for simulations with `caliptra_ss_top_tb` tests<BR>

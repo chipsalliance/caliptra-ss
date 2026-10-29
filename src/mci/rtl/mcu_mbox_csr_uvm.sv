@@ -237,10 +237,8 @@ package mcu_mbox_csr_uvm;
         protected bit            m_is_read;
 
         mcu_mbox_csr__mbox_target_status_bit_cg status_bit_cg[4];
-        mcu_mbox_csr__mbox_target_status_bit_cg done_bit_cg[1];
         mcu_mbox_csr__mbox_target_status_fld_cg fld_cg;
         rand uvm_reg_field status;
-        rand uvm_reg_field done;
 
         function new(string name = "mcu_mbox_csr__mbox_target_status");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -254,11 +252,8 @@ package mcu_mbox_csr_uvm;
         virtual function void build();
             this.status = new("status");
             this.status.configure(this, 4, 0, "RW", 1, 'h0, 1, 1, 0);
-            this.done = new("done");
-            this.done.configure(this, 1, 4, "RW", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(status_bit_cg[bt]) status_bit_cg[bt] = new();
-                foreach(done_bit_cg[bt]) done_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -303,9 +298,11 @@ package mcu_mbox_csr_uvm;
 
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_bit_cg ecc_single_error_bit_cg[1];
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_bit_cg ecc_double_error_bit_cg[1];
+        mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_bit_cg sram_owner_bit_cg[2];
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5_fld_cg fld_cg;
         rand uvm_reg_field ecc_single_error;
         rand uvm_reg_field ecc_double_error;
+        rand uvm_reg_field sram_owner;
 
         function new(string name = "mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -321,9 +318,12 @@ package mcu_mbox_csr_uvm;
             this.ecc_single_error.configure(this, 1, 0, "RO", 1, 'h0, 1, 1, 0);
             this.ecc_double_error = new("ecc_double_error");
             this.ecc_double_error.configure(this, 1, 1, "RO", 1, 'h0, 1, 1, 0);
+            this.sram_owner = new("sram_owner");
+            this.sram_owner.configure(this, 2, 2, "RO", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(ecc_single_error_bit_cg[bt]) ecc_single_error_bit_cg[bt] = new();
                 foreach(ecc_double_error_bit_cg[bt]) ecc_double_error_bit_cg[bt] = new();
+                foreach(sram_owner_bit_cg[bt]) sram_owner_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();

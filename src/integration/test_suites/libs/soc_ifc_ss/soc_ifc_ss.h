@@ -62,7 +62,7 @@ void cptra_mcu_mbox_wait_execute(uint32_t mbox_num, uint32_t attempt_count);
 
 void cptra_mcu_mbox_wait_target_user_valid(uint32_t mbox_num, uint32_t attempt_count);
 
-void cptra_mcu_mbox_set_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status targ_status);
+void cptra_mcu_mbox_set_target_status(uint32_t mbox_num, enum mcu_mbox_target_status targ_status);
 
 uint32_t cptra_mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
 
@@ -91,4 +91,3 @@ void cptra_wait_mcu_reset_req_interrupt_clear(uint32_t attempt_count);
 void cptra_wait_mcu_reset_status_set(uint32_t attempt_count);
 
 #endif // SOC_IFC_SS
-

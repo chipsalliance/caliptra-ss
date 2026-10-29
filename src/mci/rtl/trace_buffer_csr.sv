@@ -71,7 +71,7 @@ module trace_buffer_csr (
         logic DATA;
         logic WRITE_PTR;
         logic READ_PTR;
-        logic CONTROL;
+        logic CTRL;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_req;
@@ -85,7 +85,7 @@ module trace_buffer_csr (
         decoded_reg_strb.DATA = cpuif_req_masked & (cpuif_addr == 5'h8);
         decoded_reg_strb.WRITE_PTR = cpuif_req_masked & (cpuif_addr == 5'hc);
         decoded_reg_strb.READ_PTR = cpuif_req_masked & (cpuif_addr == 5'h10);
-        decoded_reg_strb.CONTROL = cpuif_req_masked & (cpuif_addr == 5'h14);
+        decoded_reg_strb.CTRL = cpuif_req_masked & (cpuif_addr == 5'h14);
     end
 
     // Pass down signals to next stage
@@ -136,8 +136,12 @@ module trace_buffer_csr (
             struct packed{
                 logic next;
                 logic load_next;
-            } trace_source;
-        } CONTROL;
+            } cptra_core_sel;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_shadow_sel;
+        } CTRL;
     } field_combo_t;
     field_combo_t field_combo;
 
@@ -173,8 +177,11 @@ module trace_buffer_csr (
         struct packed{
             struct packed{
                 logic value;
-            } trace_source;
-        } CONTROL;
+            } cptra_core_sel;
+            struct packed{
+                logic value;
+            } mcu_shadow_sel;
+        } CTRL;
     } field_storage_t;
     field_storage_t field_storage;
 
@@ -307,27 +314,48 @@ module trace_buffer_csr (
         end
     end
     assign hwif_out.READ_PTR.ptr.value = field_storage.READ_PTR.ptr.value;
-    // Field: trace_buffer_csr.CONTROL.trace_source
+    // Field: trace_buffer_csr.CTRL.cptra_core_sel
     always_comb begin
         automatic logic [0:0] next_c;
         automatic logic load_next_c;
-        next_c = field_storage.CONTROL.trace_source.value;
+        next_c = field_storage.CTRL.cptra_core_sel.value;
         load_next_c = '0;
-        if(decoded_reg_strb.CONTROL && decoded_req_is_wr) begin // SW write
-            next_c = (field_storage.CONTROL.trace_source.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
+        if(decoded_reg_strb.CTRL && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.CTRL.cptra_core_sel.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end
-        field_combo.CONTROL.trace_source.next = next_c;
-        field_combo.CONTROL.trace_source.load_next = load_next_c;
+        field_combo.CTRL.cptra_core_sel.next = next_c;
+        field_combo.CTRL.cptra_core_sel.load_next = load_next_c;
     end
     always_ff @(posedge clk or negedge hwif_in.rst_b) begin
         if(~hwif_in.rst_b) begin
-            field_storage.CONTROL.trace_source.value <= 1'h0;
-        end else if(field_combo.CONTROL.trace_source.load_next) begin
-            field_storage.CONTROL.trace_source.value <= field_combo.CONTROL.trace_source.next;
+            field_storage.CTRL.cptra_core_sel.value <= 1'h0;
+        end else if(field_combo.CTRL.cptra_core_sel.load_next) begin
+            field_storage.CTRL.cptra_core_sel.value <= field_combo.CTRL.cptra_core_sel.next;
         end
     end
-    assign hwif_out.CONTROL.trace_source.value = field_storage.CONTROL.trace_source.value;
+    assign hwif_out.CTRL.cptra_core_sel.value = field_storage.CTRL.cptra_core_sel.value;
+    // Field: trace_buffer_csr.CTRL.mcu_shadow_sel
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.CTRL.mcu_shadow_sel.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.CTRL && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.CTRL.mcu_shadow_sel.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.CTRL.mcu_shadow_sel.next = next_c;
+        field_combo.CTRL.mcu_shadow_sel.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            field_storage.CTRL.mcu_shadow_sel.value <= 1'h0;
+        end else if(field_combo.CTRL.mcu_shadow_sel.load_next) begin
+            field_storage.CTRL.mcu_shadow_sel.value <= field_combo.CTRL.mcu_shadow_sel.next;
+        end
+    end
+    assign hwif_out.CTRL.mcu_shadow_sel.value = field_storage.CTRL.mcu_shadow_sel.value;
 
     //--------------------------------------------------------------------------
     // Write response
@@ -353,8 +381,9 @@ module trace_buffer_csr (
     assign readback_array[2][31:0] = (decoded_reg_strb.DATA && !decoded_req_is_wr) ? field_storage.DATA.data.value : '0;
     assign readback_array[3][31:0] = (decoded_reg_strb.WRITE_PTR && !decoded_req_is_wr) ? field_storage.WRITE_PTR.ptr.value : '0;
     assign readback_array[4][31:0] = (decoded_reg_strb.READ_PTR && !decoded_req_is_wr) ? field_storage.READ_PTR.ptr.value : '0;
-    assign readback_array[5][0:0] = (decoded_reg_strb.CONTROL && !decoded_req_is_wr) ? field_storage.CONTROL.trace_source.value : '0;
-    assign readback_array[5][31:1] = '0;
+    assign readback_array[5][0:0] = (decoded_reg_strb.CTRL && !decoded_req_is_wr) ? field_storage.CTRL.cptra_core_sel.value : '0;
+    assign readback_array[5][1:1] = (decoded_reg_strb.CTRL && !decoded_req_is_wr) ? field_storage.CTRL.mcu_shadow_sel.value : '0;
+    assign readback_array[5][31:2] = '0;
 
     // Reduce the array
     always_comb begin
@@ -370,6 +399,7 @@ module trace_buffer_csr (
     assign cpuif_rd_data = readback_data;
     assign cpuif_rd_err = readback_err;
 
+`include "caliptra_prim_assert.sv"
 `CALIPTRA_ASSERT_KNOWN(ERR_HWIF_IN, hwif_in, clk, !hwif_in.rst_b)
 
 endmodule

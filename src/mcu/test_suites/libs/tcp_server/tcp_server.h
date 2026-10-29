@@ -44,12 +44,25 @@ void tcp_server_write(struct tcp_server_ctx *ctx, char dat);
 /**
  * Create a new TCP server instance
  *
+ * If listen_port is 0, the OS assigns an ephemeral port. Use
+ * tcp_server_get_port() to retrieve the actual port after creation.
+ *
  * @param display_name C string description of server
- * @param listen_port On which port the server should listen
+ * @param listen_port On which port the server should listen (0 for auto)
  * @return A pointer to the created context struct
  */
 struct tcp_server_ctx *tcp_server_create(const char *display_name,
                                          int listen_port);
+
+/**
+ * Get the actual port the server is listening on
+ *
+ * Useful when listen_port was 0 (OS-assigned ephemeral port).
+ *
+ * @param ctx tcp server context object
+ * @return the TCP port number
+ */
+uint16_t tcp_server_get_port(struct tcp_server_ctx *ctx);
 
 /**
  * Shut down the server and free all reserved memory

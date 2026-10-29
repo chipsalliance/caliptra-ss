@@ -31,6 +31,8 @@ module otp_ctrl
   input                                              FIPS_ZEROIZATION_CMD_i,
   input                                              cptra_in_debug_mode_i,
   input                                              cptra_ss_debug_intent_i,
+  // MCU ROM patch SRAM populated this power cycle (from MCI). Blocks UDS/FE provisioning.
+  input                                              mcu_rom_patch_active_i,
   input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
   input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
   input axi_struct_pkg::axi_wr_req_t                  core_axi_wr_req,
@@ -103,6 +105,10 @@ module otp_ctrl
   assign core_axi_if.awuser      = core_axi_wr_req.awuser;
   assign core_axi_if.awid        = core_axi_wr_req.awid;
   assign core_axi_if.awlock      = core_axi_wr_req.awlock;
+  assign core_axi_if.awcache     = core_axi_wr_req.awcache;
+  assign core_axi_if.awprot      = core_axi_wr_req.awprot;
+  assign core_axi_if.awqos       = core_axi_wr_req.awqos;
+  assign core_axi_if.awregion    = core_axi_wr_req.awregion;
   assign core_axi_if.awvalid     = core_axi_wr_req.awvalid;
   assign core_axi_wr_rsp.awready = core_axi_if.awready;
 
@@ -125,6 +131,10 @@ module otp_ctrl
   assign core_axi_if.aruser      = core_axi_rd_req.aruser;
   assign core_axi_if.arid        = core_axi_rd_req.arid;
   assign core_axi_if.arlock      = core_axi_rd_req.arlock;
+  assign core_axi_if.arcache     = core_axi_rd_req.arcache;
+  assign core_axi_if.arprot      = core_axi_rd_req.arprot;
+  assign core_axi_if.arqos       = core_axi_rd_req.arqos;
+  assign core_axi_if.arregion    = core_axi_rd_req.arregion;
   assign core_axi_if.arvalid     = core_axi_rd_req.arvalid;
   assign core_axi_rd_rsp.arready      = core_axi_if.arready;
 
@@ -1049,6 +1059,8 @@ end
     .cptra_ss_strap_cptra_axi_user_i    (cptra_ss_strap_cptra_axi_user_i),
     .fc_init_done            (pwr_otp_rsp_d),
     .cptra_in_debug_mode_i   (cptra_in_debug_mode_i),
+    .mcu_rom_patch_active_i  (mcu_rom_patch_active_i),
+    .dai_addr_i              (dai_addr),
     .core_axi_wr_req         (core_axi_wr_req),
     .core_axi_wr_rsp         (core_axi_wr_rsp),
     .discarded_fuse_write_i  (discarded_fuse_write),

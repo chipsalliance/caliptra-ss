@@ -630,7 +630,15 @@ module mci_reg (
     typedef struct packed{
         struct packed{
             struct packed{
-                logic [31:0] next;
+                logic [1:0] next;
+                logic load_next;
+            } STREAMING_BOOT_SELECT;
+            struct packed{
+                logic next;
+                logic load_next;
+            } CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
+            struct packed{
+                logic [28:0] next;
                 logic load_next;
             } cap;
         } HW_CAPABILITIES;
@@ -663,6 +671,10 @@ module mci_reg (
                 logic [3:0] next;
                 logic load_next;
             } boot_fsm;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -701,6 +713,14 @@ module mci_reg (
                 logic next;
                 logic load_next;
             } mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic next;
+                logic load_next;
+            } fsm_error;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_rom_patch_sram_ecc_unc;
         } HW_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -1015,6 +1035,10 @@ module mci_reg (
                 logic next;
                 logic load_next;
             } mask_mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_mcu_rom_patch_sram_ecc_unc;
         } internal_hw_error_fatal_mask;
         struct packed{
             struct packed{
@@ -3976,7 +4000,13 @@ module mci_reg (
     typedef struct packed{
         struct packed{
             struct packed{
-                logic [31:0] value;
+                logic [1:0] value;
+            } STREAMING_BOOT_SELECT;
+            struct packed{
+                logic value;
+            } CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
+            struct packed{
+                logic [28:0] value;
             } cap;
         } HW_CAPABILITIES;
         struct packed{
@@ -4003,6 +4033,9 @@ module mci_reg (
             struct packed{
                 logic [3:0] value;
             } boot_fsm;
+            struct packed{
+                logic value;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -4033,6 +4066,12 @@ module mci_reg (
             struct packed{
                 logic value;
             } mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic value;
+            } fsm_error;
+            struct packed{
+                logic value;
+            } mcu_rom_patch_sram_ecc_unc;
         } HW_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -4273,6 +4312,9 @@ module mci_reg (
             struct packed{
                 logic value;
             } mask_mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic value;
+            } mask_mcu_rom_patch_sram_ecc_unc;
         } internal_hw_error_fatal_mask;
         struct packed{
             struct packed{
@@ -6349,14 +6391,56 @@ module mci_reg (
     } field_storage_t;
     field_storage_t field_storage;
 
+    // Field: mci_reg.HW_CAPABILITIES.STREAMING_BOOT_SELECT
+    always_comb begin
+        automatic logic [1:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
+            next_c = (field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value & ~decoded_wr_biten[1:0]) | (decoded_wr_data[1:0] & decoded_wr_biten[1:0]);
+            load_next_c = '1;
+        end
+        field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.next = next_c;
+        field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value <= 2'h0;
+        end else if(field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.load_next) begin
+            field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value <= field_combo.HW_CAPABILITIES.STREAMING_BOOT_SELECT.next;
+        end
+    end
+    assign hwif_out.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value = field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value;
+    // Field: mci_reg.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
+            next_c = (field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value & ~decoded_wr_biten[2:2]) | (decoded_wr_data[2:2] & decoded_wr_biten[2:2]);
+            load_next_c = '1;
+        end
+        field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.next = next_c;
+        field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
+        if(~hwif_in.mci_rst_b) begin
+            field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value <= 1'h0;
+        end else if(field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.load_next) begin
+            field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value <= field_combo.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.next;
+        end
+    end
+    assign hwif_out.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value = field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value;
     // Field: mci_reg.HW_CAPABILITIES.cap
     always_comb begin
-        automatic logic [31:0] next_c;
+        automatic logic [28:0] next_c;
         automatic logic load_next_c;
         next_c = field_storage.HW_CAPABILITIES.cap.value;
         load_next_c = '0;
         if(decoded_reg_strb.HW_CAPABILITIES && decoded_req_is_wr && hwif_in.axi_mcu_req_or_mci_soc_config_req__cap_unlock) begin // SW write
-            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
+            next_c = (field_storage.HW_CAPABILITIES.cap.value & ~decoded_wr_biten[31:3]) | (decoded_wr_data[31:3] & decoded_wr_biten[31:3]);
             load_next_c = '1;
         end
         field_combo.HW_CAPABILITIES.cap.next = next_c;
@@ -6364,7 +6448,7 @@ module mci_reg (
     end
     always_ff @(posedge clk or negedge hwif_in.mci_rst_b) begin
         if(~hwif_in.mci_rst_b) begin
-            field_storage.HW_CAPABILITIES.cap.value <= 32'h0;
+            field_storage.HW_CAPABILITIES.cap.value <= 29'h0;
         end else if(field_combo.HW_CAPABILITIES.cap.load_next) begin
             field_storage.HW_CAPABILITIES.cap.value <= field_combo.HW_CAPABILITIES.cap.next;
         end
@@ -6473,6 +6557,26 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_FLOW_STATUS.boot_fsm.value = field_storage.HW_FLOW_STATUS.boot_fsm.value;
+    // Field: mci_reg.HW_FLOW_STATUS.mcu_rom_patch_active
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        load_next_c = '1;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next = next_c;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next = load_next_c;
+    end
+
+    always_ff @(posedge clk) begin
+        if(field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next) begin
+            field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value <= field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        end
+    end
+    assign hwif_out.HW_FLOW_STATUS.mcu_rom_patch_active.value = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
     // Field: mci_reg.RESET_REASON.FW_HITLESS_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c;
@@ -6653,6 +6757,54 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value = field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value;
+    // Field: mci_reg.HW_ERROR_FATAL.fsm_error
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_ERROR_FATAL.fsm_error.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.HW_ERROR_FATAL.fsm_error.value & ~(decoded_wr_data[3:3] & decoded_wr_biten[3:3]);
+            load_next_c = '1;
+        end else if(hwif_in.HW_ERROR_FATAL.fsm_error.we) begin // HW Write - we
+            next_c = hwif_in.HW_ERROR_FATAL.fsm_error.next;
+            load_next_c = '1;
+        end
+        field_combo.HW_ERROR_FATAL.fsm_error.next = next_c;
+        field_combo.HW_ERROR_FATAL.fsm_error.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.HW_ERROR_FATAL.fsm_error.value <= 1'h0;
+        end else if(field_combo.HW_ERROR_FATAL.fsm_error.load_next) begin
+            field_storage.HW_ERROR_FATAL.fsm_error.value <= field_combo.HW_ERROR_FATAL.fsm_error.next;
+        end
+    end
+    assign hwif_out.HW_ERROR_FATAL.fsm_error.value = field_storage.HW_ERROR_FATAL.fsm_error.value;
+    // Field: mci_reg.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we) begin // HW Write - we
+            next_c = hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next;
+            load_next_c = '1;
+        end
+        field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next = next_c;
+        field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value <= 1'h0;
+        end else if(field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.load_next) begin
+            field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value <= field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next;
+        end
+    end
+    assign hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value;
     // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -8415,6 +8567,27 @@ module mci_reg (
         end
     end
     assign hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value = field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value;
+    // Field: mci_reg.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_hw_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end
+        field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.next = next_c;
+        field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value <= 1'h0;
+        end else if(field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.load_next) begin
+            field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value <= field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.next;
+        end
+    end
+    assign hwif_out.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value = field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value;
     // Field: mci_reg.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc
     always_comb begin
         automatic logic [0:0] next_c;
@@ -22365,7 +22538,9 @@ module mci_reg (
 
     // Assign readback values to a flattened array
     logic [381-1:0][31:0] readback_array;
-    assign readback_array[0][31:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
+    assign readback_array[0][1:0] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.STREAMING_BOOT_SELECT.value : '0;
+    assign readback_array[0][2:2] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.value : '0;
+    assign readback_array[0][31:3] = (decoded_reg_strb.HW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.HW_CAPABILITIES.cap.value : '0;
     assign readback_array[1][31:0] = (decoded_reg_strb.FW_CAPABILITIES && !decoded_req_is_wr) ? field_storage.FW_CAPABILITIES.cap.value : '0;
     assign readback_array[2][0:0] = (decoded_reg_strb.CAP_LOCK && !decoded_req_is_wr) ? field_storage.CAP_LOCK.lock.value : '0;
     assign readback_array[2][31:1] = '0;
@@ -22386,7 +22561,8 @@ module mci_reg (
     assign readback_array[11][31:0] = (decoded_reg_strb.MCI_SOC_CONFIG_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next : '0;
     assign readback_array[12][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
     assign readback_array[13][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.boot_fsm.value : '0;
-    assign readback_array[13][31:4] = '0;
+    assign readback_array[13][4:4] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value : '0;
+    assign readback_array[13][31:5] = '0;
     assign readback_array[14][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
     assign readback_array[14][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
     assign readback_array[14][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
@@ -22401,7 +22577,9 @@ module mci_reg (
     assign readback_array[17][0:0] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_ecc_unc.value : '0;
     assign readback_array[17][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
     assign readback_array[17][2:2] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value : '0;
-    assign readback_array[17][31:3] = '0;
+    assign readback_array[17][3:3] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.fsm_error.value : '0;
+    assign readback_array[17][4:4] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value : '0;
+    assign readback_array[17][31:5] = '0;
     assign readback_array[18][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
     assign readback_array[18][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
     assign readback_array[18][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
@@ -22479,7 +22657,9 @@ module mci_reg (
     assign readback_array[33][0:0] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_ecc_unc.value : '0;
     assign readback_array[33][1:1] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value : '0;
     assign readback_array[33][2:2] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value : '0;
-    assign readback_array[33][31:3] = '0;
+    assign readback_array[33][3:3] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? 1'h0 : '0;
+    assign readback_array[33][4:4] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value : '0;
+    assign readback_array[33][31:5] = '0;
     assign readback_array[34][0:0] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value : '0;
     assign readback_array[34][1:1] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value : '0;
     assign readback_array[34][31:2] = '0;
@@ -23173,6 +23353,7 @@ module mci_reg (
     assign cpuif_rd_data = readback_data;
     assign cpuif_rd_err = readback_err;
 
+`include "caliptra_prim_assert.sv"
 `CALIPTRA_ASSERT_KNOWN(ERR_HWIF_IN, hwif_in, clk, !hwif_in.mci_pwrgood)
 
 endmodule

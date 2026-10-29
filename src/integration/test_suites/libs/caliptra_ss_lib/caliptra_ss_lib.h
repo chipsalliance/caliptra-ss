@@ -20,6 +20,7 @@
 #include "riscv_hw_if.h"
 #include "soc_address_map.h"
 #include "soc_ifc.h"
+#include "usb.h"
 #include "stdint.h"
 #include <stdbool.h>
 
@@ -27,6 +28,27 @@
 #define TB_CMD_TEST_PASS   0xFF
 
 #define TB_CMD_SHA_VECTOR_TO_MCU_SRAM   0x80
+
+// OCP recovery PROT_CAP values programmed by boot_i3c_reg().
+// The MCU is the single owner of PROT_CAP; no other agent may write these registers.
+// The AI3C testbench golden vector in
+// src/integration/testbench/sv_tests/ai3c/cptra_ss_i3c_core_defines.svh must match.
+#define I3C_PROT_CAP_0_VALUE            0x2050434f  // "OCP " magic
+#define I3C_PROT_CAP_1_VALUE            0x56434552  // "RECV" magic
+
+// PROT_CAP_2: byte 8 major version, byte 9 minor version, bytes 10-11 agent capabilities
+// Only Identification and FIFO CMS (INDIRECT_FIFO_CTRL) are advertised.
+#define I3C_PROT_CAP_MAJOR_VERSION      0x1
+#define I3C_PROT_CAP_MINOR_VERSION      0x1
+#define I3C_PROT_CAP_IDENTIFICATION_BIT 0   // Identification (DEVICE_ID structure)
+#define I3C_PROT_CAP_FIFO_CMS_BIT       12  // FIFO CMS support (INDIRECT_FIFO_CTRL)
+
+#define I3C_PROT_CAP_AGENT_CAPS         ((1 << I3C_PROT_CAP_IDENTIFICATION_BIT) | \
+                                         (1 << I3C_PROT_CAP_FIFO_CMS_BIT))
+
+#define I3C_PROT_CAP_2_VALUE            ((I3C_PROT_CAP_MAJOR_VERSION << 0)  | \
+                                         (I3C_PROT_CAP_MINOR_VERSION << 8)  | \
+                                         (I3C_PROT_CAP_AGENT_CAPS    << 16))
 
 #define FC_LCC_CMD_OFFSET 0x90
 #define CMD_FC_LCC_RESET                FC_LCC_CMD_OFFSET + 0x02
@@ -66,6 +88,10 @@
 #define CMD_FC_ALL_ONES_ENABLE_SVA      FC_LCC_CMD_OFFSET + 0x24
 #define CMD_MCI_FORCE_STATE_ERROR       FC_LCC_CMD_OFFSET + 0x25
 #define CMD_MCI_RELEASE_STATE_ERROR     FC_LCC_CMD_OFFSET + 0x26
+#define CMD_OTP_DFT_EN_EXPECT_LOW        FC_LCC_CMD_OFFSET + 0x27
+#define CMD_OTP_DFT_EN_EXPECT_HIGH       FC_LCC_CMD_OFFSET + 0x28
+#define CMD_MCU_ROM_PATCH_EXPECT_UDS_FE_ZEROIZED FC_LCC_CMD_OFFSET + 0x29
+#define CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES     FC_LCC_CMD_OFFSET + 0x2A
 
 
 #define TB_CMD_DISABLE_MCU_SRAM_PROT_ASSERTS 0xC0
@@ -88,6 +114,7 @@
 #define TB_CMD_INJECT_NOTIF0 0xf0
 #define TB_CMD_TOGGLE_GENERIC_INPUT_WIRES 0xf1
 #define TB_CMD_TOGGLE_EXT_INT 0xf2
+#define TB_CMD_USB_INT_EP 0xf3
 
 #define TB_CMD_COLD_RESET 0xF5
 #define TB_CMD_WARM_RESET 0xF6
@@ -99,6 +126,9 @@
 #define MCU_MBOX_AXI_CFG_STRIDE         (SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 - SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0)
 #define MCU_MBOX_MAX_SIZE_KB            2048
 #define MCU_MBOX_MAX_NUM                2
+
+// Caliptra mailbox command ID defined by caliptra-sw CommandId::RI_DOWNLOAD_FIRMWARE ("RIFD").
+#define CALIPTRA_MBOX_CMD_RI_DOWNLOAD_FIRMWARE 0x52494644u
 
 extern uint32_t state;
 
@@ -132,6 +162,14 @@ typedef struct {
 
     // WDT
     bool cfg_cptra_wdt;
+    uint16_t cptra_timer_cfg;
+    uint16_t cptra_wdt_cfg_1;
+    uint16_t cptra_wdt_cfg_0;
+
+    // USB
+    bool cfg_boot_usb_core;
+    bool usb_hub_en;
+    bool usb_fs_en;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -155,8 +193,15 @@ typedef struct {
     .cfg_boot_i3c_core          = false, \
     /* Trigger Prod ROM */                    \
     .cfg_trigger_prod_rom            = false, \
-    /* WDT */                                \
-    .cfg_cptra_wdt                   = false
+    /* WDT */                                 \
+    .cfg_cptra_wdt                   = false,  \
+    .cptra_timer_cfg                 = 1000u,  \
+    .cptra_wdt_cfg_1                 = 250u,   \
+    .cptra_wdt_cfg_0                 = 0u,     \
+    /* USB */                                 \
+    .cfg_boot_usb_core               = false,  \
+    .usb_hub_en                      = false,  \
+    .usb_fs_en                       = false
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!
@@ -202,6 +247,12 @@ enum mcu_mbox_target_status{
     MCU_MBOX_TARGET_STATUS_COMPLETE = 0x2,
     MCU_MBOX_TARGET_STATUS_FAILURE  = 0x3
 };
+enum mcu_mbox_sram_owner {
+    MCU_MBOX_SRAM_OWNER_NONE      = 0x0,
+    MCU_MBOX_SRAM_OWNER_REQUESTER = 0x1,
+    MCU_MBOX_SRAM_OWNER_ROOT      = 0x2,
+    MCU_MBOX_SRAM_OWNER_TARGET    = 0x3
+};
 
 void reset_fc_lcc_rtl(void);
 void mcu_cptra_wait_for_fuses() ;
@@ -215,6 +266,7 @@ void mcu_mci_poll_exec_lock();
 void mcu_mci_req_reset();
 void mcu_cptra_user_init();
 void mcu_cptra_poll_mb_ready();
+uint32_t mcu_cptra_mb_ready_nb();
 void mcu_cptra_mbox_cmd();
 void boot_mcu();
 void boot_i3c_core(void);
@@ -235,7 +287,7 @@ uintptr_t get_random_address(uint32_t rnd, uintptr_t start_address, uintptr_t en
 void mcu_mbox_clear_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num);
 bool is_mcu_mbox_clear_soc_req_while_mcu_lock_interrupt_set(uint32_t mbox_num);
 bool mcu_mbox_wait_for_soc_req_while_mcu_lock_interrupt(uint32_t mbox_num, uint32_t attempt_count);
-bool mcu_mbox_wait_for_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count);
+bool mcu_mbox_wait_for_target_status(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count);
 bool is_mcu_mbox_target_done_interrupt_set(uint32_t mbox_num);
 void mcu_mbox_clear_target_done_interrupt(uint32_t mbox_num);
 uint32_t mcu_mbox_get_sram_size_kb(uint32_t mbox_num);
@@ -247,6 +299,7 @@ void clear_mcu_mbox_clear_db_ecc_interrupt(uint32_t mbox_num);
 void update_cptra_wdt_cfg(uint16_t cptra_timer_cfg, uint16_t cptra_wdt_cfg_1, uint16_t cptra_wdt_cfg_0);
 void update_cptra_fuse_cfg(void);
 void update_pqc_key_type(void);
+void caliptra_mailbox_send_ri_download_firmware(void);
 void cptra_prod_rom_boot_go(void);
 bool mcu_mbox_wait_for_soc_data_avail_interrupt(uint32_t mbox_num, uint32_t attempt_count);
 bool is_mcu_mbox_soc_data_avail_interrupt_set(uint32_t mbox_num);
@@ -272,6 +325,7 @@ static inline void mcu_mbox_set_execute(uint32_t mbox_num) {
 static inline uint32_t mcu_mbox_read_execute(uint32_t mbox_num) {
     uint32_t rd_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num);
     VPRINTF(LOW, "MCU: Mbox%x Reading Execute: 0x%x\n", mbox_num, rd_data);
+    return rd_data;
 }
 
 static inline void mcu_mbox_write_cmd(uint32_t mbox_num, uint32_t cmd) {
@@ -324,6 +378,12 @@ static inline uint32_t mcu_mbox_read_hw_status(uint32_t mbox_num) {
     return rd_data;
 }
 
+static inline enum mcu_mbox_sram_owner mcu_mbox_read_sram_owner(uint32_t mbox_num) {
+    return (enum mcu_mbox_sram_owner)
+        ((mcu_mbox_read_hw_status(mbox_num) & MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK) >>
+         MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW);
+}
+
 static inline void mcu_mbox_write_sram_dword(uint32_t mbox_num, uint32_t dword_addr, uint32_t data) {
     VPRINTF(LOW, "MCU: Writing to MBOX%x SRAM[%d]: 0x%x\n", mbox_num, dword_addr, data); 
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR + 4*dword_addr + MCU_MBOX_NUM_STRIDE * mbox_num, data);
@@ -347,8 +407,9 @@ static inline uint32_t mcu_mbox_read_target_user(uint32_t mbox_num) {
 }
 
 static inline void mcu_mbox_write_target_user_valid(uint32_t mbox_num, uint32_t data) {
-    VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data); 
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, (data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK));    
+    VPRINTF(LOW, "MCU: Writing to MBOX%x TARGET_USER_VALID: 0x%x\n", mbox_num, data);
+    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num,
+                 data & MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID_VALID_MASK);
 }
 
 static inline uint32_t mcu_mbox_read_target_user_valid(uint32_t mbox_num) {

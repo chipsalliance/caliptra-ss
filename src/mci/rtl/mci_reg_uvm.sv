@@ -10,8 +10,12 @@ package mci_reg_uvm;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        mci_reg__HW_CAPABILITIES_bit_cg cap_bit_cg[32];
+        mci_reg__HW_CAPABILITIES_bit_cg STREAMING_BOOT_SELECT_bit_cg[2];
+        mci_reg__HW_CAPABILITIES_bit_cg CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_bit_cg[1];
+        mci_reg__HW_CAPABILITIES_bit_cg cap_bit_cg[29];
         mci_reg__HW_CAPABILITIES_fld_cg fld_cg;
+        rand uvm_reg_field STREAMING_BOOT_SELECT;
+        rand uvm_reg_field CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
         rand uvm_reg_field cap;
 
         function new(string name = "mci_reg__HW_CAPABILITIES");
@@ -24,9 +28,15 @@ package mci_reg_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
+            this.STREAMING_BOOT_SELECT = new("STREAMING_BOOT_SELECT");
+            this.STREAMING_BOOT_SELECT.configure(this, 2, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE = new("CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE");
+            this.CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
             this.cap = new("cap");
-            this.cap.configure(this, 32, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.cap.configure(this, 29, 3, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(STREAMING_BOOT_SELECT_bit_cg[bt]) STREAMING_BOOT_SELECT_bit_cg[bt] = new();
+                foreach(CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_bit_cg[bt]) CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_bit_cg[bt] = new();
                 foreach(cap_bit_cg[bt]) cap_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
@@ -381,8 +391,10 @@ package mci_reg_uvm;
         protected bit            m_is_read;
 
         mci_reg__HW_FLOW_STATUS_bit_cg boot_fsm_bit_cg[4];
+        mci_reg__HW_FLOW_STATUS_bit_cg mcu_rom_patch_active_bit_cg[1];
         mci_reg__HW_FLOW_STATUS_fld_cg fld_cg;
         rand uvm_reg_field boot_fsm;
+        rand uvm_reg_field mcu_rom_patch_active;
 
         function new(string name = "mci_reg__HW_FLOW_STATUS");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -396,8 +408,11 @@ package mci_reg_uvm;
         virtual function void build();
             this.boot_fsm = new("boot_fsm");
             this.boot_fsm.configure(this, 4, 0, "RO", 1, 'h0, 0, 1, 0);
+            this.mcu_rom_patch_active = new("mcu_rom_patch_active");
+            this.mcu_rom_patch_active.configure(this, 1, 4, "RO", 1, 'h0, 0, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(boot_fsm_bit_cg[bt]) boot_fsm_bit_cg[bt] = new();
+                foreach(mcu_rom_patch_active_bit_cg[bt]) mcu_rom_patch_active_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -528,10 +543,14 @@ package mci_reg_uvm;
         mci_reg__HW_ERROR_FATAL_bit_cg mcu_sram_ecc_unc_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_bit_cg nmi_pin_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_bit_cg mcu_sram_dmi_axi_collision_bit_cg[1];
+        mci_reg__HW_ERROR_FATAL_bit_cg fsm_error_bit_cg[1];
+        mci_reg__HW_ERROR_FATAL_bit_cg mcu_rom_patch_sram_ecc_unc_bit_cg[1];
         mci_reg__HW_ERROR_FATAL_fld_cg fld_cg;
         rand uvm_reg_field mcu_sram_ecc_unc;
         rand uvm_reg_field nmi_pin;
         rand uvm_reg_field mcu_sram_dmi_axi_collision;
+        rand uvm_reg_field fsm_error;
+        rand uvm_reg_field mcu_rom_patch_sram_ecc_unc;
 
         function new(string name = "mci_reg__HW_ERROR_FATAL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -549,10 +568,16 @@ package mci_reg_uvm;
             this.nmi_pin.configure(this, 1, 1, "W1C", 1, 'h0, 1, 1, 0);
             this.mcu_sram_dmi_axi_collision = new("mcu_sram_dmi_axi_collision");
             this.mcu_sram_dmi_axi_collision.configure(this, 1, 2, "W1C", 1, 'h0, 1, 1, 0);
+            this.fsm_error = new("fsm_error");
+            this.fsm_error.configure(this, 1, 3, "W1C", 1, 'h0, 1, 1, 0);
+            this.mcu_rom_patch_sram_ecc_unc = new("mcu_rom_patch_sram_ecc_unc");
+            this.mcu_rom_patch_sram_ecc_unc.configure(this, 1, 4, "W1C", 1, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(mcu_sram_ecc_unc_bit_cg[bt]) mcu_sram_ecc_unc_bit_cg[bt] = new();
                 foreach(nmi_pin_bit_cg[bt]) nmi_pin_bit_cg[bt] = new();
                 foreach(mcu_sram_dmi_axi_collision_bit_cg[bt]) mcu_sram_dmi_axi_collision_bit_cg[bt] = new();
+                foreach(fsm_error_bit_cg[bt]) fsm_error_bit_cg[bt] = new();
+                foreach(mcu_rom_patch_sram_ecc_unc_bit_cg[bt]) mcu_rom_patch_sram_ecc_unc_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
@@ -1123,10 +1148,14 @@ package mci_reg_uvm;
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_mcu_sram_ecc_unc_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_nmi_pin_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_bit_cg mask_mcu_sram_dmi_axi_collision_bit_cg[1];
+        mci_reg__internal_hw_error_fatal_mask_bit_cg mask_fsm_error_bit_cg[1];
+        mci_reg__internal_hw_error_fatal_mask_bit_cg mask_mcu_rom_patch_sram_ecc_unc_bit_cg[1];
         mci_reg__internal_hw_error_fatal_mask_fld_cg fld_cg;
         rand uvm_reg_field mask_mcu_sram_ecc_unc;
         rand uvm_reg_field mask_nmi_pin;
         rand uvm_reg_field mask_mcu_sram_dmi_axi_collision;
+        rand uvm_reg_field mask_fsm_error;
+        rand uvm_reg_field mask_mcu_rom_patch_sram_ecc_unc;
 
         function new(string name = "mci_reg__internal_hw_error_fatal_mask");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -1144,10 +1173,16 @@ package mci_reg_uvm;
             this.mask_nmi_pin.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             this.mask_mcu_sram_dmi_axi_collision = new("mask_mcu_sram_dmi_axi_collision");
             this.mask_mcu_sram_dmi_axi_collision.configure(this, 1, 2, "RW", 0, 'h0, 1, 1, 0);
+            this.mask_fsm_error = new("mask_fsm_error");
+            this.mask_fsm_error.configure(this, 1, 3, "RO", 0, 'h0, 1, 1, 0);
+            this.mask_mcu_rom_patch_sram_ecc_unc = new("mask_mcu_rom_patch_sram_ecc_unc");
+            this.mask_mcu_rom_patch_sram_ecc_unc.configure(this, 1, 4, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(mask_mcu_sram_ecc_unc_bit_cg[bt]) mask_mcu_sram_ecc_unc_bit_cg[bt] = new();
                 foreach(mask_nmi_pin_bit_cg[bt]) mask_nmi_pin_bit_cg[bt] = new();
                 foreach(mask_mcu_sram_dmi_axi_collision_bit_cg[bt]) mask_mcu_sram_dmi_axi_collision_bit_cg[bt] = new();
+                foreach(mask_fsm_error_bit_cg[bt]) mask_fsm_error_bit_cg[bt] = new();
+                foreach(mask_mcu_rom_patch_sram_ecc_unc_bit_cg[bt]) mask_mcu_rom_patch_sram_ecc_unc_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();

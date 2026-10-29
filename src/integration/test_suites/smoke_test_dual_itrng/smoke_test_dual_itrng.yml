@@ -1,0 +1,15 @@
+---
+# Subsystem-level dual-iTRNG (entropy_combiner) bring-up smoke test.
+# +CLP_ITRNG1_EN makes caliptra_ss_top_tb_soc_bfm drive
+# cptra_ss_cptra_core_itrng1_en_i, which straps CPTRA_HW_CONFIG.dual_iTRNG_en in
+# the Caliptra core and puts the entropy_combiner in combine mode.
+# +CLP_SECOND_RNG_DELAY pins the secondary source arrival for a reproducible run.
+seed: 1
+testname: smoke_test_dual_itrng
+pre-exec: |
+  echo "Running pre_exec for [smoke_test_dual_itrng]" &&
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_dual_itrng mcu_program.hex &&
+  CALIPTRA_ROOT=$CALIPTRA_SS_ROOT/third_party/caliptra-rtl make -f $CALIPTRA_SS_ROOT/third_party/caliptra-rtl/tools/scripts/Makefile CALIPTRA_INTERNAL_TRNG=0 TEST_DIR=$CALIPTRA_SS_ROOT/src/integration/test_suites/smoke_test_dual_itrng AUX_HEADER_FILES="$CALIPTRA_SS_ROOT/src/integration/test_suites/libs/caliptra_ss_lib/caliptra_ss_lib.h $CALIPTRA_SS_ROOT/src/integration/rtl/soc_address_map/soc_address_map.h" TESTNAME=cptra_dual_itrng program.hex
+plusargs:
+    - '+CLP_ITRNG1_EN'
+    - '+CLP_SECOND_RNG_DELAY=7'

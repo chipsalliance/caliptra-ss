@@ -43,11 +43,7 @@ class i3c_rand_streaming_boot extends cptra_ss_i3c_core_base_test;
 
 		test_log.substep("Reading PROT_CAP register");
 		
-		exp_data = new[15];
-		exp_data = '{'h4f, 'h43, 'h50, 'h20, 'h52, 'h45, 'h43, 'h56, 'h01, 'h01, 'h00, 'h00, 'h00, 'h00, 'h00};
-		exp_data[10] |= 1 << 7; //-- Push C-image support
-		exp_data[11] |= 1 << (11 - 8); //-- flashless boot (From RESET)
-		exp_data[11] |= 1 << (12 - 8); //-- FIFO CMS support (INDIRECT_FIFO_CTRL)
+		build_prot_cap_exp_data(exp_data);
 		i3c_read(recovery_target_addr, `I3C_CORE_PROT_CAP, 15, data);
 		check_data(data, exp_data, 15);
 

@@ -17,6 +17,741 @@
 
 
 #define SOC_BASE_ADDR                                                                               (0x0)
+#define SOC_USB_COMBO_BASE_ADDR                                                                     (0x20000000)
+#define SOC_USB_COMBO_DEV0_CSR_BASE_ADDR                                                            (0x20000000)
+#define SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT                                                           (0x20000000)
+#ifndef DEV0_CSR_DEVCMDSTAT
+#define DEV0_CSR_DEVCMDSTAT                                                                         (0x0)
+#define DEV0_CSR_DEVCMDSTAT_DEV_ADDR_LOW                                                            (0)
+#define DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK                                                           (0x7f)
+#define DEV0_CSR_DEVCMDSTAT_DEV_EN_LOW                                                              (7)
+#define DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK                                                             (0x80)
+#define DEV0_CSR_DEVCMDSTAT_SETUP_LOW                                                               (8)
+#define DEV0_CSR_DEVCMDSTAT_SETUP_MASK                                                              (0x100)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_LOW                                                       (9)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK                                                      (0x200)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_LOW                                                          (10)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK                                                         (0x400)
+#define DEV0_CSR_DEVCMDSTAT_LPM_SUP_LOW                                                             (11)
+#define DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK                                                            (0x800)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_AO_LOW                                                         (12)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_AO_MASK                                                        (0x1000)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_AI_LOW                                                         (13)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_AI_MASK                                                        (0x2000)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_CO_LOW                                                         (14)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_CO_MASK                                                        (0x4000)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_CI_LOW                                                         (15)
+#define DEV0_CSR_DEVCMDSTAT_INTONNAK_CI_MASK                                                        (0x8000)
+#define DEV0_CSR_DEVCMDSTAT_DCON_LOW                                                                (16)
+#define DEV0_CSR_DEVCMDSTAT_DCON_MASK                                                               (0x10000)
+#define DEV0_CSR_DEVCMDSTAT_DSUS_LOW                                                                (17)
+#define DEV0_CSR_DEVCMDSTAT_DSUS_MASK                                                               (0x20000)
+#define DEV0_CSR_DEVCMDSTAT_LPM_SUS_LOW                                                             (19)
+#define DEV0_CSR_DEVCMDSTAT_LPM_SUS_MASK                                                            (0x80000)
+#define DEV0_CSR_DEVCMDSTAT_LPM_REWP_LOW                                                            (20)
+#define DEV0_CSR_DEVCMDSTAT_LPM_REWP_MASK                                                           (0x100000)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_LOW                                                     (21)
+#define DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK                                                    (0x200000)
+#define DEV0_CSR_DEVCMDSTAT_SPEED_LOW                                                               (22)
+#define DEV0_CSR_DEVCMDSTAT_SPEED_MASK                                                              (0xc00000)
+#define DEV0_CSR_DEVCMDSTAT_DCON_C_LOW                                                              (24)
+#define DEV0_CSR_DEVCMDSTAT_DCON_C_MASK                                                             (0x1000000)
+#define DEV0_CSR_DEVCMDSTAT_DSUS_C_LOW                                                              (25)
+#define DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK                                                             (0x2000000)
+#define DEV0_CSR_DEVCMDSTAT_DRES_C_LOW                                                              (26)
+#define DEV0_CSR_DEVCMDSTAT_DRES_C_MASK                                                             (0x4000000)
+#define DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_LOW                                                      (28)
+#define DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK                                                     (0x10000000)
+#define DEV0_CSR_DEVCMDSTAT_PHY_TEST_MODE_LOW                                                       (29)
+#define DEV0_CSR_DEVCMDSTAT_PHY_TEST_MODE_MASK                                                      (0xe0000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_INFO                                                                 (0x20000004)
+#ifndef DEV0_CSR_INFO
+#define DEV0_CSR_INFO                                                                               (0x4)
+#define DEV0_CSR_INFO_FRAME_NR_LOW                                                                  (0)
+#define DEV0_CSR_INFO_FRAME_NR_MASK                                                                 (0x7ff)
+#define DEV0_CSR_INFO_ERR_CODE_LOW                                                                  (11)
+#define DEV0_CSR_INFO_ERR_CODE_MASK                                                                 (0x7800)
+#define DEV0_CSR_INFO_MINREV_LOW                                                                    (16)
+#define DEV0_CSR_INFO_MINREV_MASK                                                                   (0xff0000)
+#define DEV0_CSR_INFO_MAJREV_LOW                                                                    (24)
+#define DEV0_CSR_INFO_MAJREV_MASK                                                                   (0xff000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_EPLISTSTART                                                          (0x20000008)
+#ifndef DEV0_CSR_EPLISTSTART
+#define DEV0_CSR_EPLISTSTART                                                                        (0x8)
+#define DEV0_CSR_EPLISTSTART_EP_LIST_PRG_LOW                                                        (8)
+#define DEV0_CSR_EPLISTSTART_EP_LIST_PRG_MASK                                                       (0xffffff00)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_DATABUFSTART                                                         (0x2000000c)
+#ifndef DEV0_CSR_DATABUFSTART
+#define DEV0_CSR_DATABUFSTART                                                                       (0xc)
+#define DEV0_CSR_DATABUFSTART_DA_BUF_LOW                                                            (17)
+#define DEV0_CSR_DATABUFSTART_DA_BUF_MASK                                                           (0xfffe0000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_LPM                                                                  (0x20000010)
+#ifndef DEV0_CSR_LPM
+#define DEV0_CSR_LPM                                                                                (0x10)
+#define DEV0_CSR_LPM_HIRD_HW_LOW                                                                    (0)
+#define DEV0_CSR_LPM_HIRD_HW_MASK                                                                   (0xf)
+#define DEV0_CSR_LPM_HIRD_SW_LOW                                                                    (4)
+#define DEV0_CSR_LPM_HIRD_SW_MASK                                                                   (0xf0)
+#define DEV0_CSR_LPM_DATA_PENDING_LOW                                                               (8)
+#define DEV0_CSR_LPM_DATA_PENDING_MASK                                                              (0x100)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_EPSKIP                                                               (0x20000014)
+#ifndef DEV0_CSR_EPSKIP
+#define DEV0_CSR_EPSKIP                                                                             (0x14)
+#define DEV0_CSR_EPSKIP_SKIP_LOW                                                                    (0)
+#define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (0x3fffffff)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_EPINUSE                                                              (0x20000018)
+#ifndef DEV0_CSR_EPINUSE
+#define DEV0_CSR_EPINUSE                                                                            (0x18)
+#define DEV0_CSR_EPINUSE_EP0_BUF_LOW                                                                (0)
+#define DEV0_CSR_EPINUSE_EP0_BUF_MASK                                                               (0x3)
+#define DEV0_CSR_EPINUSE_BUF_LOW                                                                    (2)
+#define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (0x3ffffffc)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_EPBUFCFG                                                             (0x2000001c)
+#ifndef DEV0_CSR_EPBUFCFG
+#define DEV0_CSR_EPBUFCFG                                                                           (0x1c)
+#define DEV0_CSR_EPBUFCFG_BUF_SB_LOW                                                                (2)
+#define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (0x3ffffffc)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_INTSTAT                                                              (0x20000020)
+#ifndef DEV0_CSR_INTSTAT
+#define DEV0_CSR_INTSTAT                                                                            (0x20)
+#define DEV0_CSR_INTSTAT_EP0OUT_LOW                                                                 (0)
+#define DEV0_CSR_INTSTAT_EP0OUT_MASK                                                                (0x1)
+#define DEV0_CSR_INTSTAT_EP0IN_LOW                                                                  (1)
+#define DEV0_CSR_INTSTAT_EP0IN_MASK                                                                 (0x2)
+#define DEV0_CSR_INTSTAT_EP1OUT_LOW                                                                 (2)
+#define DEV0_CSR_INTSTAT_EP1OUT_MASK                                                                (0x4)
+#define DEV0_CSR_INTSTAT_EP1IN_LOW                                                                  (3)
+#define DEV0_CSR_INTSTAT_EP1IN_MASK                                                                 (0x8)
+#define DEV0_CSR_INTSTAT_EP2OUT_LOW                                                                 (4)
+#define DEV0_CSR_INTSTAT_EP2OUT_MASK                                                                (0x10)
+#define DEV0_CSR_INTSTAT_EP2IN_LOW                                                                  (5)
+#define DEV0_CSR_INTSTAT_EP2IN_MASK                                                                 (0x20)
+#define DEV0_CSR_INTSTAT_EP3OUT_LOW                                                                 (6)
+#define DEV0_CSR_INTSTAT_EP3OUT_MASK                                                                (0x40)
+#define DEV0_CSR_INTSTAT_EP3IN_LOW                                                                  (7)
+#define DEV0_CSR_INTSTAT_EP3IN_MASK                                                                 (0x80)
+#define DEV0_CSR_INTSTAT_EP4OUT_LOW                                                                 (8)
+#define DEV0_CSR_INTSTAT_EP4OUT_MASK                                                                (0x100)
+#define DEV0_CSR_INTSTAT_EP4IN_LOW                                                                  (9)
+#define DEV0_CSR_INTSTAT_EP4IN_MASK                                                                 (0x200)
+#define DEV0_CSR_INTSTAT_EP5OUT_LOW                                                                 (10)
+#define DEV0_CSR_INTSTAT_EP5OUT_MASK                                                                (0x400)
+#define DEV0_CSR_INTSTAT_EP5IN_LOW                                                                  (11)
+#define DEV0_CSR_INTSTAT_EP5IN_MASK                                                                 (0x800)
+#define DEV0_CSR_INTSTAT_EP_UPPER_LOW                                                               (12)
+#define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (0x3ffff000)
+#define DEV0_CSR_INTSTAT_FRAME_INT_LOW                                                              (30)
+#define DEV0_CSR_INTSTAT_FRAME_INT_MASK                                                             (0x40000000)
+#define DEV0_CSR_INTSTAT_DEV_INT_LOW                                                                (31)
+#define DEV0_CSR_INTSTAT_DEV_INT_MASK                                                               (0x80000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_INTEN                                                                (0x20000024)
+#ifndef DEV0_CSR_INTEN
+#define DEV0_CSR_INTEN                                                                              (0x24)
+#define DEV0_CSR_INTEN_EP_INT_EN_LOW                                                                (0)
+#define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (0x3fffffff)
+#define DEV0_CSR_INTEN_FRAME_INT_EN_LOW                                                             (30)
+#define DEV0_CSR_INTEN_FRAME_INT_EN_MASK                                                            (0x40000000)
+#define DEV0_CSR_INTEN_DEV_INT_EN_LOW                                                               (31)
+#define DEV0_CSR_INTEN_DEV_INT_EN_MASK                                                              (0x80000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_INTSETSTAT                                                           (0x20000028)
+#ifndef DEV0_CSR_INTSETSTAT
+#define DEV0_CSR_INTSETSTAT                                                                         (0x28)
+#define DEV0_CSR_INTSETSTAT_EP0OUT_LOW                                                              (0)
+#define DEV0_CSR_INTSETSTAT_EP0OUT_MASK                                                             (0x1)
+#define DEV0_CSR_INTSETSTAT_EP0IN_LOW                                                               (1)
+#define DEV0_CSR_INTSETSTAT_EP0IN_MASK                                                              (0x2)
+#define DEV0_CSR_INTSETSTAT_EP1OUT_LOW                                                              (2)
+#define DEV0_CSR_INTSETSTAT_EP1OUT_MASK                                                             (0x4)
+#define DEV0_CSR_INTSETSTAT_EP1IN_LOW                                                               (3)
+#define DEV0_CSR_INTSETSTAT_EP1IN_MASK                                                              (0x8)
+#define DEV0_CSR_INTSETSTAT_EP2OUT_LOW                                                              (4)
+#define DEV0_CSR_INTSETSTAT_EP2OUT_MASK                                                             (0x10)
+#define DEV0_CSR_INTSETSTAT_EP2IN_LOW                                                               (5)
+#define DEV0_CSR_INTSETSTAT_EP2IN_MASK                                                              (0x20)
+#define DEV0_CSR_INTSETSTAT_EP3OUT_LOW                                                              (6)
+#define DEV0_CSR_INTSETSTAT_EP3OUT_MASK                                                             (0x40)
+#define DEV0_CSR_INTSETSTAT_EP3IN_LOW                                                               (7)
+#define DEV0_CSR_INTSETSTAT_EP3IN_MASK                                                              (0x80)
+#define DEV0_CSR_INTSETSTAT_EP4OUT_LOW                                                              (8)
+#define DEV0_CSR_INTSETSTAT_EP4OUT_MASK                                                             (0x100)
+#define DEV0_CSR_INTSETSTAT_EP4IN_LOW                                                               (9)
+#define DEV0_CSR_INTSETSTAT_EP4IN_MASK                                                              (0x200)
+#define DEV0_CSR_INTSETSTAT_EP5OUT_LOW                                                              (10)
+#define DEV0_CSR_INTSETSTAT_EP5OUT_MASK                                                             (0x400)
+#define DEV0_CSR_INTSETSTAT_EP5IN_LOW                                                               (11)
+#define DEV0_CSR_INTSETSTAT_EP5IN_MASK                                                              (0x800)
+#define DEV0_CSR_INTSETSTAT_EP_UPPER_LOW                                                            (12)
+#define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (0x3ffff000)
+#define DEV0_CSR_INTSETSTAT_FRAME_INT_LOW                                                           (30)
+#define DEV0_CSR_INTSETSTAT_FRAME_INT_MASK                                                          (0x40000000)
+#define DEV0_CSR_INTSETSTAT_DEV_INT_LOW                                                             (31)
+#define DEV0_CSR_INTSETSTAT_DEV_INT_MASK                                                            (0x80000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_INTROUTE                                                             (0x2000002c)
+#ifndef DEV0_CSR_INTROUTE
+#define DEV0_CSR_INTROUTE                                                                           (0x2c)
+#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                          (0)
+#define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (0x3fffffff)
+#define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                       (30)
+#define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                      (0x40000000)
+#define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                         (31)
+#define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_MASK                                                        (0x80000000)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_CONFIG                                                               (0x20000030)
+#ifndef DEV0_CSR_CONFIG
+#define DEV0_CSR_CONFIG                                                                             (0x30)
+#define DEV0_CSR_CONFIG_NBPHYSEP_LOW                                                                (0)
+#define DEV0_CSR_CONFIG_NBPHYSEP_MASK                                                               (0x1f)
+#define DEV0_CSR_CONFIG_SINGLE_BUFFER_LOW                                                           (5)
+#define DEV0_CSR_CONFIG_SINGLE_BUFFER_MASK                                                          (0x20)
+#define DEV0_CSR_CONFIG_DOUBLE_BUFFER_LOW                                                           (6)
+#define DEV0_CSR_CONFIG_DOUBLE_BUFFER_MASK                                                          (0x40)
+#define DEV0_CSR_CONFIG_TOGGLE_READABLE_LOW                                                         (7)
+#define DEV0_CSR_CONFIG_TOGGLE_READABLE_MASK                                                        (0x80)
+#define DEV0_CSR_CONFIG_UTMI_LOW                                                                    (9)
+#define DEV0_CSR_CONFIG_UTMI_MASK                                                                   (0x200)
+#define DEV0_CSR_CONFIG_ULPI_LOW                                                                    (10)
+#define DEV0_CSR_CONFIG_ULPI_MASK                                                                   (0x400)
+#endif
+#define SOC_USB_COMBO_DEV0_CSR_EPTOGGLE                                                             (0x20000034)
+#ifndef DEV0_CSR_EPTOGGLE
+#define DEV0_CSR_EPTOGGLE                                                                           (0x34)
+#define DEV0_CSR_EPTOGGLE_TOGGLE_LOW                                                                (0)
+#define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (0x3fffffff)
+#endif
+#define SOC_USB_COMBO_RECOVERY_BASE_ADDR                                                            (0x20000800)
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_0                                                           (0x20000804)
+#ifndef RECOVERY_PROT_CAP_0
+#define RECOVERY_PROT_CAP_0                                                                         (0x4)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_1                                                           (0x20000808)
+#ifndef RECOVERY_PROT_CAP_1
+#define RECOVERY_PROT_CAP_1                                                                         (0x8)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_2                                                           (0x2000080c)
+#ifndef RECOVERY_PROT_CAP_2
+#define RECOVERY_PROT_CAP_2                                                                         (0xc)
+#define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_LOW                                                    (0)
+#define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_MASK                                                   (0xffff)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_LOW                                           (16)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK                                          (0x10000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_LOW                                          (17)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK                                         (0x20000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_LOW                                               (18)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK                                              (0x40000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_LOW                                             (19)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK                                            (0x80000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_LOW                                            (20)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_MASK                                           (0x100000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_LOW                                      (21)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_MASK                                     (0x200000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_LOW                                            (22)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_MASK                                           (0x400000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_LOW                                             (23)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_MASK                                            (0x800000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_LOW                                      (24)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK                                     (0x1000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_LOW                                          (25)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_MASK                                         (0x2000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_LOW                                           (26)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK                                          (0x4000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_LOW                                           (27)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK                                          (0x8000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_LOW                                         (28)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK                                        (0x10000000)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_LOW                                                 (29)
+#define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_MASK                                                (0xe0000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_PROT_CAP_3                                                           (0x20000810)
+#ifndef RECOVERY_PROT_CAP_3
+#define RECOVERY_PROT_CAP_3                                                                         (0x10)
+#define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_LOW                                                  (0)
+#define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_MASK                                                 (0xff)
+#define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_LOW                                                       (8)
+#define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_MASK                                                      (0xff00)
+#define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_LOW                                                    (16)
+#define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_MASK                                                   (0xff0000)
+#define RECOVERY_PROT_CAP_3_RESERVED_31_24_LOW                                                      (24)
+#define RECOVERY_PROT_CAP_3_RESERVED_31_24_MASK                                                     (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_0                                                          (0x20000814)
+#ifndef RECOVERY_DEVICE_ID_0
+#define RECOVERY_DEVICE_ID_0                                                                        (0x14)
+#define RECOVERY_DEVICE_ID_0_DESC_TYPE_LOW                                                          (0)
+#define RECOVERY_DEVICE_ID_0_DESC_TYPE_MASK                                                         (0xff)
+#define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_LOW                                         (8)
+#define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_MASK                                        (0xff00)
+#define RECOVERY_DEVICE_ID_0_DATA_3_2_LOW                                                           (16)
+#define RECOVERY_DEVICE_ID_0_DATA_3_2_MASK                                                          (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_1                                                          (0x20000818)
+#ifndef RECOVERY_DEVICE_ID_1
+#define RECOVERY_DEVICE_ID_1                                                                        (0x18)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_2                                                          (0x2000081c)
+#ifndef RECOVERY_DEVICE_ID_2
+#define RECOVERY_DEVICE_ID_2                                                                        (0x1c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_3                                                          (0x20000820)
+#ifndef RECOVERY_DEVICE_ID_3
+#define RECOVERY_DEVICE_ID_3                                                                        (0x20)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_4                                                          (0x20000824)
+#ifndef RECOVERY_DEVICE_ID_4
+#define RECOVERY_DEVICE_ID_4                                                                        (0x24)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_ID_5                                                          (0x20000828)
+#ifndef RECOVERY_DEVICE_ID_5
+#define RECOVERY_DEVICE_ID_5                                                                        (0x28)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_0                                                      (0x20000830)
+#ifndef RECOVERY_DEVICE_STATUS_0
+#define RECOVERY_DEVICE_STATUS_0                                                                    (0x30)
+#define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_LOW                                                     (0)
+#define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_MASK                                                    (0xff)
+#define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_LOW                                                     (8)
+#define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_MASK                                                    (0xff00)
+#define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_LOW                                                (16)
+#define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_MASK                                               (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_STATUS_1                                                      (0x20000834)
+#ifndef RECOVERY_DEVICE_STATUS_1
+#define RECOVERY_DEVICE_STATUS_1                                                                    (0x34)
+#define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_LOW                                                      (0)
+#define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_MASK                                                     (0xffff)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_LOW                                           (16)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_MASK                                          (0xff0000)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_LOW                                                (24)
+#define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_MASK                                               (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_DEVICE_RESET                                                         (0x20000838)
+#ifndef RECOVERY_DEVICE_RESET
+#define RECOVERY_DEVICE_RESET                                                                       (0x38)
+#define RECOVERY_DEVICE_RESET_RESET_CTRL_LOW                                                        (0)
+#define RECOVERY_DEVICE_RESET_RESET_CTRL_MASK                                                       (0xff)
+#define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_LOW                                                   (8)
+#define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_MASK                                                  (0xff00)
+#define RECOVERY_DEVICE_RESET_IF_CTRL_LOW                                                           (16)
+#define RECOVERY_DEVICE_RESET_IF_CTRL_MASK                                                          (0xff0000)
+#define RECOVERY_DEVICE_RESET_RESERVED_31_24_LOW                                                    (24)
+#define RECOVERY_DEVICE_RESET_RESERVED_31_24_MASK                                                   (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_RECOVERY_CTRL                                                        (0x2000083c)
+#ifndef RECOVERY_RECOVERY_CTRL
+#define RECOVERY_RECOVERY_CTRL                                                                      (0x3c)
+#define RECOVERY_RECOVERY_CTRL_CMS_LOW                                                              (0)
+#define RECOVERY_RECOVERY_CTRL_CMS_MASK                                                             (0xff)
+#define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_LOW                                                      (8)
+#define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_MASK                                                     (0xff00)
+#define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW                                                 (16)
+#define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK                                                (0xff0000)
+#define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_LOW                                                   (24)
+#define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_MASK                                                  (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_RECOVERY_STATUS                                                      (0x20000840)
+#ifndef RECOVERY_RECOVERY_STATUS
+#define RECOVERY_RECOVERY_STATUS                                                                    (0x40)
+#define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_LOW                                                 (0)
+#define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_MASK                                                (0xf)
+#define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_LOW                                                  (4)
+#define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_MASK                                                 (0xf0)
+#define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_LOW                                         (8)
+#define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_MASK                                        (0xff00)
+#define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_LOW                                                 (16)
+#define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_MASK                                                (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_HW_STATUS                                                            (0x20000844)
+#ifndef RECOVERY_HW_STATUS
+#define RECOVERY_HW_STATUS                                                                          (0x44)
+#define RECOVERY_HW_STATUS_TEMP_CRITICAL_LOW                                                        (0)
+#define RECOVERY_HW_STATUS_TEMP_CRITICAL_MASK                                                       (0x1)
+#define RECOVERY_HW_STATUS_SOFT_ERR_LOW                                                             (1)
+#define RECOVERY_HW_STATUS_SOFT_ERR_MASK                                                            (0x2)
+#define RECOVERY_HW_STATUS_FATAL_ERR_LOW                                                            (2)
+#define RECOVERY_HW_STATUS_FATAL_ERR_MASK                                                           (0x4)
+#define RECOVERY_HW_STATUS_RESERVED_7_3_LOW                                                         (3)
+#define RECOVERY_HW_STATUS_RESERVED_7_3_MASK                                                        (0xf8)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LOW                                                     (8)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_MASK                                                    (0xff00)
+#define RECOVERY_HW_STATUS_CTEMP_LOW                                                                (16)
+#define RECOVERY_HW_STATUS_CTEMP_MASK                                                               (0xff0000)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                                                 (24)
+#define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                                                (0xff000000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_0                                                 (0x20000848)
+#ifndef RECOVERY_INDIRECT_FIFO_CTRL_0
+#define RECOVERY_INDIRECT_FIFO_CTRL_0                                                               (0x48)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_LOW                                                       (0)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_MASK                                                      (0xff)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_LOW                                                     (8)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_MASK                                                    (0xff00)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                            (16)
+#define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                                           (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_1                                                 (0x2000084c)
+#ifndef RECOVERY_INDIRECT_FIFO_CTRL_1
+#define RECOVERY_INDIRECT_FIFO_CTRL_1                                                               (0x4c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0                                               (0x20000850)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_0
+#define RECOVERY_INDIRECT_FIFO_STATUS_0                                                             (0x50)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_LOW                                                   (0)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK                                                  (0x1)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_LOW                                                    (1)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_MASK                                                   (0x2)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_LOW                                            (2)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_MASK                                           (0xfc)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_LOW                                             (8)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_MASK                                            (0xff00)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_LOW                                          (16)
+#define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_MASK                                         (0xffff0000)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_1                                               (0x20000854)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_1
+#define RECOVERY_INDIRECT_FIFO_STATUS_1                                                             (0x54)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_2                                               (0x20000858)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_2
+#define RECOVERY_INDIRECT_FIFO_STATUS_2                                                             (0x58)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_3                                               (0x2000085c)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_3
+#define RECOVERY_INDIRECT_FIFO_STATUS_3                                                             (0x5c)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_4                                               (0x20000860)
+#ifndef RECOVERY_INDIRECT_FIFO_STATUS_4
+#define RECOVERY_INDIRECT_FIFO_STATUS_4                                                             (0x60)
+#endif
+#define SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA                                                   (0x20000868)
+#ifndef RECOVERY_INDIRECT_FIFO_DATA
+#define RECOVERY_INDIRECT_FIFO_DATA                                                                 (0x68)
+#endif
+#define SOC_USB_COMBO_RECOVERY_VENDOR                                                               (0x20000900)
+#ifndef RECOVERY_VENDOR
+#define RECOVERY_VENDOR                                                                             (0x100)
+#define RECOVERY_VENDOR_VENDOR_DATA_LOW                                                             (0)
+#define RECOVERY_VENDOR_VENDOR_DATA_MASK                                                            (0xff)
+#define RECOVERY_VENDOR_RESERVED_31_8_LOW                                                           (8)
+#define RECOVERY_VENDOR_RESERVED_31_8_MASK                                                          (0xffffff00)
+#endif
+#define SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL                                                        (0x20000a00)
+#ifndef RECOVERY_CALIPTRA_CTRL
+#define RECOVERY_CALIPTRA_CTRL                                                                      (0x200)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_LOW                                                 (0)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK                                                (0x1)
+#define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_LOW                                                  (1)
+#define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK                                                 (0x2)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_LOW                                       (2)
+#define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK                                      (0x4)
+#define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_LOW                                                    (3)
+#define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_MASK                                                   (0xfffffff8)
+#endif
+#define SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS                                                      (0x20000a04)
+#ifndef RECOVERY_CALIPTRA_STATUS
+#define RECOVERY_CALIPTRA_STATUS                                                                    (0x204)
+#define RECOVERY_CALIPTRA_STATUS_REGION_RESET_LOW                                                   (0)
+#define RECOVERY_CALIPTRA_STATUS_REGION_RESET_MASK                                                  (0x1)
+#define RECOVERY_CALIPTRA_STATUS_OVERFLOW_LOW                                                       (1)
+#define RECOVERY_CALIPTRA_STATUS_OVERFLOW_MASK                                                      (0x2)
+#define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_LOW                                                     (2)
+#define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (0x4)
+#define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
+#define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (0x8)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (0xfffffff0)
+#endif
+#define SOC_USB_COMBO_RECOVERY_WINDOW_PAD                                                           (0x20000ffc)
+#ifndef RECOVERY_WINDOW_PAD
+#define RECOVERY_WINDOW_PAD                                                                         (0x7fc)
+#endif
+#define SOC_USB_COMBO_HUB_BASE_ADDR                                                                 (0x20001000)
+#define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR                                                  (0x20001000)
+#define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_END_ADDR                                                   (0x2000102f)
+#define SOC_USB_COMBO_HUB_CONTROL                                                                   (0x20001030)
+#ifndef HUB_CONTROL
+#define HUB_CONTROL                                                                                 (0x30)
+#define HUB_CONTROL_ENABLE_LOW                                                                      (0)
+#define HUB_CONTROL_ENABLE_MASK                                                                     (0x1)
+#define HUB_CONTROL_RESERVED_LOW_LOW                                                                (1)
+#define HUB_CONTROL_RESERVED_LOW_MASK                                                               (0x1fe)
+#define HUB_CONTROL_FORCE_NEEDCLK_LOW                                                               (9)
+#define HUB_CONTROL_FORCE_NEEDCLK_MASK                                                              (0x200)
+#define HUB_CONTROL_FORCE_VBUS_LOW                                                                  (10)
+#define HUB_CONTROL_FORCE_VBUS_MASK                                                                 (0x400)
+#define HUB_CONTROL_LPM_SUP_LOW                                                                     (11)
+#define HUB_CONTROL_LPM_SUP_MASK                                                                    (0x800)
+#define HUB_CONTROL_RESERVED_MID_LOW                                                                (12)
+#define HUB_CONTROL_RESERVED_MID_MASK                                                               (0xf000)
+#define HUB_CONTROL_DCON_LOW                                                                        (16)
+#define HUB_CONTROL_DCON_MASK                                                                       (0x10000)
+#define HUB_CONTROL_RESERVED_17_LOW                                                                 (17)
+#define HUB_CONTROL_RESERVED_17_MASK                                                                (0x20000)
+#define HUB_CONTROL_SELF_POWERED_LOW                                                                (18)
+#define HUB_CONTROL_SELF_POWERED_MASK                                                               (0x40000)
+#define HUB_CONTROL_RESERVED_MID2_LOW                                                               (19)
+#define HUB_CONTROL_RESERVED_MID2_MASK                                                              (0x180000)
+#define HUB_CONTROL_FORCE_FULLSPEED_LOW                                                             (21)
+#define HUB_CONTROL_FORCE_FULLSPEED_MASK                                                            (0x200000)
+#define HUB_CONTROL_SPEED_LOW                                                                       (22)
+#define HUB_CONTROL_SPEED_MASK                                                                      (0xc00000)
+#define HUB_CONTROL_RESERVED_MID3_LOW                                                               (24)
+#define HUB_CONTROL_RESERVED_MID3_MASK                                                              (0xf000000)
+#define HUB_CONTROL_VBUS_DEBOUNCED_LOW                                                              (28)
+#define HUB_CONTROL_VBUS_DEBOUNCED_MASK                                                             (0x10000000)
+#define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (29)
+#define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (0xe0000000)
+#endif
+#define SOC_USB_COMBO_HUB_LPM                                                                       (0x20001034)
+#ifndef HUB_LPM
+#define HUB_LPM                                                                                     (0x34)
+#define HUB_LPM_BESL_HW_LOW                                                                         (0)
+#define HUB_LPM_BESL_HW_MASK                                                                        (0xf)
+#define HUB_LPM_BESL_SW_LOW                                                                         (4)
+#define HUB_LPM_BESL_SW_MASK                                                                        (0xf0)
+#define HUB_LPM_RESERVED_HIGH_LOW                                                                   (8)
+#define HUB_LPM_RESERVED_HIGH_MASK                                                                  (0xffffff00)
+#endif
+#define SOC_USB_COMBO_HUB_ULPIDEBUG                                                                 (0x2000103c)
+#ifndef HUB_ULPIDEBUG
+#define HUB_ULPIDEBUG                                                                               (0x3c)
+#define HUB_ULPIDEBUG_PHY_ADDR_LOW                                                                  (0)
+#define HUB_ULPIDEBUG_PHY_ADDR_MASK                                                                 (0xf)
+#define HUB_ULPIDEBUG_PHY_ADDR_HIGH_LOW                                                             (4)
+#define HUB_ULPIDEBUG_PHY_ADDR_HIGH_MASK                                                            (0xf0)
+#define HUB_ULPIDEBUG_PHY_WDATA_LOW                                                                 (8)
+#define HUB_ULPIDEBUG_PHY_WDATA_MASK                                                                (0xff00)
+#define HUB_ULPIDEBUG_PHY_RDATA_LOW                                                                 (16)
+#define HUB_ULPIDEBUG_PHY_RDATA_MASK                                                                (0xff0000)
+#define HUB_ULPIDEBUG_PHY_RW_LOW                                                                    (24)
+#define HUB_ULPIDEBUG_PHY_RW_MASK                                                                   (0x1000000)
+#define HUB_ULPIDEBUG_PHY_ACCESS_LOW                                                                (25)
+#define HUB_ULPIDEBUG_PHY_ACCESS_MASK                                                               (0x2000000)
+#define HUB_ULPIDEBUG_PHY_MODE_LOW                                                                  (31)
+#define HUB_ULPIDEBUG_PHY_MODE_MASK                                                                 (0x80000000)
+#endif
+#define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_BASE_ADDR                                                 (0x20001040)
+#define SOC_USB_COMBO_HUB_DESCRIPTOR_HIGH_END_ADDR                                                  (0x2000130f)
+#define SOC_USB_DEV1_CSR_BASE_ADDR                                                                  (0x20002000)
+#define SOC_USB_DEV1_CSR_DEVCMDSTAT                                                                 (0x20002000)
+#ifndef USB_DEV1_CSR_DEVCMDSTAT
+#define USB_DEV1_CSR_DEVCMDSTAT                                                                     (0x0)
+#define USB_DEV1_CSR_DEVCMDSTAT_DEV_ADDR_LOW                                                        (0)
+#define USB_DEV1_CSR_DEVCMDSTAT_DEV_ADDR_MASK                                                       (0x7f)
+#define USB_DEV1_CSR_DEVCMDSTAT_DEV_EN_LOW                                                          (7)
+#define USB_DEV1_CSR_DEVCMDSTAT_DEV_EN_MASK                                                         (0x80)
+#define USB_DEV1_CSR_DEVCMDSTAT_SETUP_LOW                                                           (8)
+#define USB_DEV1_CSR_DEVCMDSTAT_SETUP_MASK                                                          (0x100)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_NEEDCLK_LOW                                                   (9)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK                                                  (0x200)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_VBUS_LOW                                                      (10)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_VBUS_MASK                                                     (0x400)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUP_LOW                                                         (11)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUP_MASK                                                        (0x800)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AO_LOW                                                     (12)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AO_MASK                                                    (0x1000)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AI_LOW                                                     (13)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AI_MASK                                                    (0x2000)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CO_LOW                                                     (14)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CO_MASK                                                    (0x4000)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CI_LOW                                                     (15)
+#define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CI_MASK                                                    (0x8000)
+#define USB_DEV1_CSR_DEVCMDSTAT_DCON_LOW                                                            (16)
+#define USB_DEV1_CSR_DEVCMDSTAT_DCON_MASK                                                           (0x10000)
+#define USB_DEV1_CSR_DEVCMDSTAT_DSUS_LOW                                                            (17)
+#define USB_DEV1_CSR_DEVCMDSTAT_DSUS_MASK                                                           (0x20000)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUS_LOW                                                         (19)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUS_MASK                                                        (0x80000)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_REWP_LOW                                                        (20)
+#define USB_DEV1_CSR_DEVCMDSTAT_LPM_REWP_MASK                                                       (0x100000)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_FULLSPEED_LOW                                                 (21)
+#define USB_DEV1_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK                                                (0x200000)
+#define USB_DEV1_CSR_DEVCMDSTAT_SPEED_LOW                                                           (22)
+#define USB_DEV1_CSR_DEVCMDSTAT_SPEED_MASK                                                          (0xc00000)
+#define USB_DEV1_CSR_DEVCMDSTAT_DCON_C_LOW                                                          (24)
+#define USB_DEV1_CSR_DEVCMDSTAT_DCON_C_MASK                                                         (0x1000000)
+#define USB_DEV1_CSR_DEVCMDSTAT_DSUS_C_LOW                                                          (25)
+#define USB_DEV1_CSR_DEVCMDSTAT_DSUS_C_MASK                                                         (0x2000000)
+#define USB_DEV1_CSR_DEVCMDSTAT_DRES_C_LOW                                                          (26)
+#define USB_DEV1_CSR_DEVCMDSTAT_DRES_C_MASK                                                         (0x4000000)
+#define USB_DEV1_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_LOW                                                  (28)
+#define USB_DEV1_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK                                                 (0x10000000)
+#define USB_DEV1_CSR_DEVCMDSTAT_PHY_TEST_MODE_LOW                                                   (29)
+#define USB_DEV1_CSR_DEVCMDSTAT_PHY_TEST_MODE_MASK                                                  (0xe0000000)
+#endif
+#define SOC_USB_DEV1_CSR_INFO                                                                       (0x20002004)
+#ifndef USB_DEV1_CSR_INFO
+#define USB_DEV1_CSR_INFO                                                                           (0x4)
+#define USB_DEV1_CSR_INFO_FRAME_NR_LOW                                                              (0)
+#define USB_DEV1_CSR_INFO_FRAME_NR_MASK                                                             (0x7ff)
+#define USB_DEV1_CSR_INFO_ERR_CODE_LOW                                                              (11)
+#define USB_DEV1_CSR_INFO_ERR_CODE_MASK                                                             (0x7800)
+#define USB_DEV1_CSR_INFO_MINREV_LOW                                                                (16)
+#define USB_DEV1_CSR_INFO_MINREV_MASK                                                               (0xff0000)
+#define USB_DEV1_CSR_INFO_MAJREV_LOW                                                                (24)
+#define USB_DEV1_CSR_INFO_MAJREV_MASK                                                               (0xff000000)
+#endif
+#define SOC_USB_DEV1_CSR_EPLISTSTART                                                                (0x20002008)
+#ifndef USB_DEV1_CSR_EPLISTSTART
+#define USB_DEV1_CSR_EPLISTSTART                                                                    (0x8)
+#define USB_DEV1_CSR_EPLISTSTART_EP_LIST_PRG_LOW                                                    (8)
+#define USB_DEV1_CSR_EPLISTSTART_EP_LIST_PRG_MASK                                                   (0xffffff00)
+#endif
+#define SOC_USB_DEV1_CSR_DATABUFSTART                                                               (0x2000200c)
+#ifndef USB_DEV1_CSR_DATABUFSTART
+#define USB_DEV1_CSR_DATABUFSTART                                                                   (0xc)
+#define USB_DEV1_CSR_DATABUFSTART_DA_BUF_LOW                                                        (17)
+#define USB_DEV1_CSR_DATABUFSTART_DA_BUF_MASK                                                       (0xfffe0000)
+#endif
+#define SOC_USB_DEV1_CSR_LPM                                                                        (0x20002010)
+#ifndef USB_DEV1_CSR_LPM
+#define USB_DEV1_CSR_LPM                                                                            (0x10)
+#define USB_DEV1_CSR_LPM_HIRD_HW_LOW                                                                (0)
+#define USB_DEV1_CSR_LPM_HIRD_HW_MASK                                                               (0xf)
+#define USB_DEV1_CSR_LPM_HIRD_SW_LOW                                                                (4)
+#define USB_DEV1_CSR_LPM_HIRD_SW_MASK                                                               (0xf0)
+#define USB_DEV1_CSR_LPM_DATA_PENDING_LOW                                                           (8)
+#define USB_DEV1_CSR_LPM_DATA_PENDING_MASK                                                          (0x100)
+#endif
+#define SOC_USB_DEV1_CSR_EPSKIP                                                                     (0x20002014)
+#ifndef USB_DEV1_CSR_EPSKIP
+#define USB_DEV1_CSR_EPSKIP                                                                         (0x14)
+#define USB_DEV1_CSR_EPSKIP_SKIP_LOW                                                                (0)
+#define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (0x3fffffff)
+#endif
+#define SOC_USB_DEV1_CSR_EPINUSE                                                                    (0x20002018)
+#ifndef USB_DEV1_CSR_EPINUSE
+#define USB_DEV1_CSR_EPINUSE                                                                        (0x18)
+#define USB_DEV1_CSR_EPINUSE_EP0_BUF_LOW                                                            (0)
+#define USB_DEV1_CSR_EPINUSE_EP0_BUF_MASK                                                           (0x3)
+#define USB_DEV1_CSR_EPINUSE_BUF_LOW                                                                (2)
+#define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (0x3ffffffc)
+#endif
+#define SOC_USB_DEV1_CSR_EPBUFCFG                                                                   (0x2000201c)
+#ifndef USB_DEV1_CSR_EPBUFCFG
+#define USB_DEV1_CSR_EPBUFCFG                                                                       (0x1c)
+#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_LOW                                                            (2)
+#define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (0x3ffffffc)
+#endif
+#define SOC_USB_DEV1_CSR_INTSTAT                                                                    (0x20002020)
+#ifndef USB_DEV1_CSR_INTSTAT
+#define USB_DEV1_CSR_INTSTAT                                                                        (0x20)
+#define USB_DEV1_CSR_INTSTAT_EP0OUT_LOW                                                             (0)
+#define USB_DEV1_CSR_INTSTAT_EP0OUT_MASK                                                            (0x1)
+#define USB_DEV1_CSR_INTSTAT_EP0IN_LOW                                                              (1)
+#define USB_DEV1_CSR_INTSTAT_EP0IN_MASK                                                             (0x2)
+#define USB_DEV1_CSR_INTSTAT_EP1OUT_LOW                                                             (2)
+#define USB_DEV1_CSR_INTSTAT_EP1OUT_MASK                                                            (0x4)
+#define USB_DEV1_CSR_INTSTAT_EP1IN_LOW                                                              (3)
+#define USB_DEV1_CSR_INTSTAT_EP1IN_MASK                                                             (0x8)
+#define USB_DEV1_CSR_INTSTAT_EP2OUT_LOW                                                             (4)
+#define USB_DEV1_CSR_INTSTAT_EP2OUT_MASK                                                            (0x10)
+#define USB_DEV1_CSR_INTSTAT_EP2IN_LOW                                                              (5)
+#define USB_DEV1_CSR_INTSTAT_EP2IN_MASK                                                             (0x20)
+#define USB_DEV1_CSR_INTSTAT_EP3OUT_LOW                                                             (6)
+#define USB_DEV1_CSR_INTSTAT_EP3OUT_MASK                                                            (0x40)
+#define USB_DEV1_CSR_INTSTAT_EP3IN_LOW                                                              (7)
+#define USB_DEV1_CSR_INTSTAT_EP3IN_MASK                                                             (0x80)
+#define USB_DEV1_CSR_INTSTAT_EP4OUT_LOW                                                             (8)
+#define USB_DEV1_CSR_INTSTAT_EP4OUT_MASK                                                            (0x100)
+#define USB_DEV1_CSR_INTSTAT_EP4IN_LOW                                                              (9)
+#define USB_DEV1_CSR_INTSTAT_EP4IN_MASK                                                             (0x200)
+#define USB_DEV1_CSR_INTSTAT_EP5OUT_LOW                                                             (10)
+#define USB_DEV1_CSR_INTSTAT_EP5OUT_MASK                                                            (0x400)
+#define USB_DEV1_CSR_INTSTAT_EP5IN_LOW                                                              (11)
+#define USB_DEV1_CSR_INTSTAT_EP5IN_MASK                                                             (0x800)
+#define USB_DEV1_CSR_INTSTAT_EP_UPPER_LOW                                                           (12)
+#define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (0x3ffff000)
+#define USB_DEV1_CSR_INTSTAT_FRAME_INT_LOW                                                          (30)
+#define USB_DEV1_CSR_INTSTAT_FRAME_INT_MASK                                                         (0x40000000)
+#define USB_DEV1_CSR_INTSTAT_DEV_INT_LOW                                                            (31)
+#define USB_DEV1_CSR_INTSTAT_DEV_INT_MASK                                                           (0x80000000)
+#endif
+#define SOC_USB_DEV1_CSR_INTEN                                                                      (0x20002024)
+#ifndef USB_DEV1_CSR_INTEN
+#define USB_DEV1_CSR_INTEN                                                                          (0x24)
+#define USB_DEV1_CSR_INTEN_EP_INT_EN_LOW                                                            (0)
+#define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (0x3fffffff)
+#define USB_DEV1_CSR_INTEN_FRAME_INT_EN_LOW                                                         (30)
+#define USB_DEV1_CSR_INTEN_FRAME_INT_EN_MASK                                                        (0x40000000)
+#define USB_DEV1_CSR_INTEN_DEV_INT_EN_LOW                                                           (31)
+#define USB_DEV1_CSR_INTEN_DEV_INT_EN_MASK                                                          (0x80000000)
+#endif
+#define SOC_USB_DEV1_CSR_INTSETSTAT                                                                 (0x20002028)
+#ifndef USB_DEV1_CSR_INTSETSTAT
+#define USB_DEV1_CSR_INTSETSTAT                                                                     (0x28)
+#define USB_DEV1_CSR_INTSETSTAT_EP0OUT_LOW                                                          (0)
+#define USB_DEV1_CSR_INTSETSTAT_EP0OUT_MASK                                                         (0x1)
+#define USB_DEV1_CSR_INTSETSTAT_EP0IN_LOW                                                           (1)
+#define USB_DEV1_CSR_INTSETSTAT_EP0IN_MASK                                                          (0x2)
+#define USB_DEV1_CSR_INTSETSTAT_EP1OUT_LOW                                                          (2)
+#define USB_DEV1_CSR_INTSETSTAT_EP1OUT_MASK                                                         (0x4)
+#define USB_DEV1_CSR_INTSETSTAT_EP1IN_LOW                                                           (3)
+#define USB_DEV1_CSR_INTSETSTAT_EP1IN_MASK                                                          (0x8)
+#define USB_DEV1_CSR_INTSETSTAT_EP2OUT_LOW                                                          (4)
+#define USB_DEV1_CSR_INTSETSTAT_EP2OUT_MASK                                                         (0x10)
+#define USB_DEV1_CSR_INTSETSTAT_EP2IN_LOW                                                           (5)
+#define USB_DEV1_CSR_INTSETSTAT_EP2IN_MASK                                                          (0x20)
+#define USB_DEV1_CSR_INTSETSTAT_EP3OUT_LOW                                                          (6)
+#define USB_DEV1_CSR_INTSETSTAT_EP3OUT_MASK                                                         (0x40)
+#define USB_DEV1_CSR_INTSETSTAT_EP3IN_LOW                                                           (7)
+#define USB_DEV1_CSR_INTSETSTAT_EP3IN_MASK                                                          (0x80)
+#define USB_DEV1_CSR_INTSETSTAT_EP4OUT_LOW                                                          (8)
+#define USB_DEV1_CSR_INTSETSTAT_EP4OUT_MASK                                                         (0x100)
+#define USB_DEV1_CSR_INTSETSTAT_EP4IN_LOW                                                           (9)
+#define USB_DEV1_CSR_INTSETSTAT_EP4IN_MASK                                                          (0x200)
+#define USB_DEV1_CSR_INTSETSTAT_EP5OUT_LOW                                                          (10)
+#define USB_DEV1_CSR_INTSETSTAT_EP5OUT_MASK                                                         (0x400)
+#define USB_DEV1_CSR_INTSETSTAT_EP5IN_LOW                                                           (11)
+#define USB_DEV1_CSR_INTSETSTAT_EP5IN_MASK                                                          (0x800)
+#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_LOW                                                        (12)
+#define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (0x3ffff000)
+#define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_LOW                                                       (30)
+#define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_MASK                                                      (0x40000000)
+#define USB_DEV1_CSR_INTSETSTAT_DEV_INT_LOW                                                         (31)
+#define USB_DEV1_CSR_INTSETSTAT_DEV_INT_MASK                                                        (0x80000000)
+#endif
+#define SOC_USB_DEV1_CSR_INTROUTE                                                                   (0x2000202c)
+#ifndef USB_DEV1_CSR_INTROUTE
+#define USB_DEV1_CSR_INTROUTE                                                                       (0x2c)
+#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                      (0)
+#define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (0x3fffffff)
+#define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                   (30)
+#define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                  (0x40000000)
+#define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                     (31)
+#define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_MASK                                                    (0x80000000)
+#endif
+#define SOC_USB_DEV1_CSR_CONFIG                                                                     (0x20002030)
+#ifndef USB_DEV1_CSR_CONFIG
+#define USB_DEV1_CSR_CONFIG                                                                         (0x30)
+#define USB_DEV1_CSR_CONFIG_NBPHYSEP_LOW                                                            (0)
+#define USB_DEV1_CSR_CONFIG_NBPHYSEP_MASK                                                           (0x1f)
+#define USB_DEV1_CSR_CONFIG_SINGLE_BUFFER_LOW                                                       (5)
+#define USB_DEV1_CSR_CONFIG_SINGLE_BUFFER_MASK                                                      (0x20)
+#define USB_DEV1_CSR_CONFIG_DOUBLE_BUFFER_LOW                                                       (6)
+#define USB_DEV1_CSR_CONFIG_DOUBLE_BUFFER_MASK                                                      (0x40)
+#define USB_DEV1_CSR_CONFIG_TOGGLE_READABLE_LOW                                                     (7)
+#define USB_DEV1_CSR_CONFIG_TOGGLE_READABLE_MASK                                                    (0x80)
+#define USB_DEV1_CSR_CONFIG_UTMI_LOW                                                                (9)
+#define USB_DEV1_CSR_CONFIG_UTMI_MASK                                                               (0x200)
+#define USB_DEV1_CSR_CONFIG_ULPI_LOW                                                                (10)
+#define USB_DEV1_CSR_CONFIG_ULPI_MASK                                                               (0x400)
+#endif
+#define SOC_USB_DEV1_CSR_EPTOGGLE                                                                   (0x20002034)
+#ifndef USB_DEV1_CSR_EPTOGGLE
+#define USB_DEV1_CSR_EPTOGGLE                                                                       (0x34)
+#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_LOW                                                            (0)
+#define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (0x3fffffff)
+#endif
 #define SOC_I3CCSR_BASE_ADDR                                                                        (0x20004000)
 #define SOC_I3CCSR_I3CBASE_START                                                                    (0x20004000)
 #define SOC_I3CCSR_I3CBASE_HCI_VERSION                                                              (0x20004000)
@@ -6833,6 +7568,12 @@
 #define SOC_MCI_TOP_MCI_REG_HW_CAPABILITIES                                                         (0x21000000)
 #ifndef MCI_REG_HW_CAPABILITIES
 #define MCI_REG_HW_CAPABILITIES                                                                     (0x0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+#define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (0x3)
+#define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_LOW                    (2)
+#define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_MASK                   (0x4)
+#define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (3)
+#define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (0xfffffff8)
 #endif
 #define SOC_MCI_TOP_MCI_REG_FW_CAPABILITIES                                                         (0x21000004)
 #ifndef MCI_REG_FW_CAPABILITIES
@@ -6899,6 +7640,8 @@
 #define MCI_REG_HW_FLOW_STATUS                                                                      (0x34)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 #define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (0xf)
+#define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_LOW                                             (4)
+#define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK                                            (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_RESET_REASON                                                            (0x21000038)
 #ifndef MCI_REG_RESET_REASON
@@ -6937,6 +7680,10 @@
 #define MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK                                                         (0x2)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
 #define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (0x4)
+#define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
+#define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (0x8)
+#define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                                       (4)
+#define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                                      (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_AGG_ERROR_FATAL                                                         (0x21000054)
 #ifndef MCI_REG_AGG_ERROR_FATAL
@@ -7139,6 +7886,10 @@
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_MASK                                      (0x2)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
 #define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (0x4)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (0x8)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                    (4)
+#define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                   (0x10)
 #endif
 #define SOC_MCI_TOP_MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                        (0x21000094)
 #ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
@@ -9430,12 +10181,16 @@
 #ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 #define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (0x10)
 #endif
-#define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CONTROL                                                    (0x21010014)
-#ifndef MCU_TRACE_BUFFER_CSR_CONTROL
-#define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (0x14)
-#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
-#define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (0x1)
+#define SOC_MCI_TOP_MCU_TRACE_BUFFER_CSR_CTRL                                                       (0x21010014)
+#ifndef MCU_TRACE_BUFFER_CSR_CTRL
+#define MCU_TRACE_BUFFER_CSR_CTRL                                                                   (0x14)
+#define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                (0)
+#define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                               (0x1)
+#define MCU_TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_LOW                                                (1)
+#define MCU_TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_MASK                                               (0x2)
 #endif
+#define SOC_MCI_TOP_MCU_ROM_PATCH_SRAM_BASE_ADDR                                                    (0x21200000)
+#define SOC_MCI_TOP_MCU_ROM_PATCH_SRAM_END_ADDR                                                     (0x213fffff)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_BASE_ADDR                                                         (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21400000)
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_END_ADDR                                                (0x215fffff)
@@ -9478,8 +10233,6 @@
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 #define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
-#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-#define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
 #define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                   (0x21600020)
 #ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
@@ -9494,6 +10247,8 @@
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+#define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
 #endif
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                         (0x21800000)
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21800000)
@@ -9537,8 +10292,6 @@
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (0x20001c)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 #define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (0xf)
-#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-#define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (0x10)
 #endif
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                   (0x21a00020)
 #ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
@@ -9553,9 +10306,15 @@
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (0x1)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+#define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
 #endif
 #define SOC_MCI_TOP_MCU_SRAM_BASE_ADDR                                                              (0x21c00000)
 #define SOC_MCI_TOP_MCU_SRAM_END_ADDR                                                               (0x21dfffff)
+#define SOC_USB_DEV0_MEM_BASE_ADDR                                                                  (0x30000000)
+#define SOC_USB_DEV0_MEM_END_ADDR                                                                   (0x3000ffff)
+#define SOC_USB_DEV1_MEM_BASE_ADDR                                                                  (0x30010000)
+#define SOC_USB_DEV1_MEM_END_ADDR                                                                   (0x3001ffff)
 #define SOC_OTP_CTRL_BASE_ADDR                                                                      (0x70000000)
 #define SOC_OTP_CTRL_INTERRUPT_STATE                                                                (0x70000000)
 #ifndef OTP_CTRL_INTERRUPT_STATE
@@ -10505,6 +11264,342 @@
 #ifndef LC_CTRL_MANUF_STATE_7
 #define LC_CTRL_MANUF_STATE_7                                                                       (0x88)
 #endif
+#define SOC_SPI_HOST_BASE_ADDR                                                                      (0x70000800)
+#define SOC_SPI_HOST_INTR_STATE                                                                     (0x70000800)
+#ifndef SPI_HOST_INTR_STATE
+#define SPI_HOST_INTR_STATE                                                                         (0x0)
+#define SPI_HOST_INTR_STATE_ERROR_LOW                                                               (0)
+#define SPI_HOST_INTR_STATE_ERROR_MASK                                                              (0x1)
+#define SPI_HOST_INTR_STATE_SPI_EVENT_LOW                                                           (1)
+#define SPI_HOST_INTR_STATE_SPI_EVENT_MASK                                                          (0x2)
+#endif
+#define SOC_SPI_HOST_INTR_ENABLE                                                                    (0x70000804)
+#ifndef SPI_HOST_INTR_ENABLE
+#define SPI_HOST_INTR_ENABLE                                                                        (0x4)
+#define SPI_HOST_INTR_ENABLE_ERROR_LOW                                                              (0)
+#define SPI_HOST_INTR_ENABLE_ERROR_MASK                                                             (0x1)
+#define SPI_HOST_INTR_ENABLE_SPI_EVENT_LOW                                                          (1)
+#define SPI_HOST_INTR_ENABLE_SPI_EVENT_MASK                                                         (0x2)
+#endif
+#define SOC_SPI_HOST_INTR_TEST                                                                      (0x70000808)
+#ifndef SPI_HOST_INTR_TEST
+#define SPI_HOST_INTR_TEST                                                                          (0x8)
+#define SPI_HOST_INTR_TEST_ERROR_LOW                                                                (0)
+#define SPI_HOST_INTR_TEST_ERROR_MASK                                                               (0x1)
+#define SPI_HOST_INTR_TEST_SPI_EVENT_LOW                                                            (1)
+#define SPI_HOST_INTR_TEST_SPI_EVENT_MASK                                                           (0x2)
+#endif
+#define SOC_SPI_HOST_CONTROL                                                                        (0x7000080c)
+#ifndef SPI_HOST_CONTROL
+#define SPI_HOST_CONTROL                                                                            (0xc)
+#define SPI_HOST_CONTROL_RX_WATERMARK_LOW                                                           (0)
+#define SPI_HOST_CONTROL_RX_WATERMARK_MASK                                                          (0xff)
+#define SPI_HOST_CONTROL_TX_WATERMARK_LOW                                                           (8)
+#define SPI_HOST_CONTROL_TX_WATERMARK_MASK                                                          (0xff00)
+#define SPI_HOST_CONTROL_OUTPUT_EN_LOW                                                              (29)
+#define SPI_HOST_CONTROL_OUTPUT_EN_MASK                                                             (0x20000000)
+#define SPI_HOST_CONTROL_SW_RST_LOW                                                                 (30)
+#define SPI_HOST_CONTROL_SW_RST_MASK                                                                (0x40000000)
+#define SPI_HOST_CONTROL_SPIEN_LOW                                                                  (31)
+#define SPI_HOST_CONTROL_SPIEN_MASK                                                                 (0x80000000)
+#endif
+#define SOC_SPI_HOST_STATUS                                                                         (0x70000810)
+#ifndef SPI_HOST_STATUS
+#define SPI_HOST_STATUS                                                                             (0x10)
+#define SPI_HOST_STATUS_TXQD_LOW                                                                    (0)
+#define SPI_HOST_STATUS_TXQD_MASK                                                                   (0xff)
+#define SPI_HOST_STATUS_RXQD_LOW                                                                    (8)
+#define SPI_HOST_STATUS_RXQD_MASK                                                                   (0xff00)
+#define SPI_HOST_STATUS_CMDQD_LOW                                                                   (16)
+#define SPI_HOST_STATUS_CMDQD_MASK                                                                  (0xf0000)
+#define SPI_HOST_STATUS_RXWM_LOW                                                                    (20)
+#define SPI_HOST_STATUS_RXWM_MASK                                                                   (0x100000)
+#define SPI_HOST_STATUS_BYTEORDER_LOW                                                               (22)
+#define SPI_HOST_STATUS_BYTEORDER_MASK                                                              (0x400000)
+#define SPI_HOST_STATUS_RXSTALL_LOW                                                                 (23)
+#define SPI_HOST_STATUS_RXSTALL_MASK                                                                (0x800000)
+#define SPI_HOST_STATUS_RXEMPTY_LOW                                                                 (24)
+#define SPI_HOST_STATUS_RXEMPTY_MASK                                                                (0x1000000)
+#define SPI_HOST_STATUS_RXFULL_LOW                                                                  (25)
+#define SPI_HOST_STATUS_RXFULL_MASK                                                                 (0x2000000)
+#define SPI_HOST_STATUS_TXWM_LOW                                                                    (26)
+#define SPI_HOST_STATUS_TXWM_MASK                                                                   (0x4000000)
+#define SPI_HOST_STATUS_TXSTALL_LOW                                                                 (27)
+#define SPI_HOST_STATUS_TXSTALL_MASK                                                                (0x8000000)
+#define SPI_HOST_STATUS_TXEMPTY_LOW                                                                 (28)
+#define SPI_HOST_STATUS_TXEMPTY_MASK                                                                (0x10000000)
+#define SPI_HOST_STATUS_TXFULL_LOW                                                                  (29)
+#define SPI_HOST_STATUS_TXFULL_MASK                                                                 (0x20000000)
+#define SPI_HOST_STATUS_ACTIVE_LOW                                                                  (30)
+#define SPI_HOST_STATUS_ACTIVE_MASK                                                                 (0x40000000)
+#define SPI_HOST_STATUS_READY_LOW                                                                   (31)
+#define SPI_HOST_STATUS_READY_MASK                                                                  (0x80000000)
+#endif
+#define SOC_SPI_HOST_CONFIGOPTS_0                                                                   (0x70000814)
+#ifndef SPI_HOST_CONFIGOPTS_0
+#define SPI_HOST_CONFIGOPTS_0                                                                       (0x14)
+#define SPI_HOST_CONFIGOPTS_0_CLKDIV_LOW                                                            (0)
+#define SPI_HOST_CONFIGOPTS_0_CLKDIV_MASK                                                           (0xffff)
+#define SPI_HOST_CONFIGOPTS_0_CSNIDLE_LOW                                                           (16)
+#define SPI_HOST_CONFIGOPTS_0_CSNIDLE_MASK                                                          (0xf0000)
+#define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_LOW                                                          (20)
+#define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_MASK                                                         (0xf00000)
+#define SPI_HOST_CONFIGOPTS_0_CSNLEAD_LOW                                                           (24)
+#define SPI_HOST_CONFIGOPTS_0_CSNLEAD_MASK                                                          (0xf000000)
+#define SPI_HOST_CONFIGOPTS_0_FULLCYC_LOW                                                           (29)
+#define SPI_HOST_CONFIGOPTS_0_FULLCYC_MASK                                                          (0x20000000)
+#define SPI_HOST_CONFIGOPTS_0_CPHA_LOW                                                              (30)
+#define SPI_HOST_CONFIGOPTS_0_CPHA_MASK                                                             (0x40000000)
+#define SPI_HOST_CONFIGOPTS_0_CPOL_LOW                                                              (31)
+#define SPI_HOST_CONFIGOPTS_0_CPOL_MASK                                                             (0x80000000)
+#endif
+#define SOC_SPI_HOST_CONFIGOPTS_1                                                                   (0x70000818)
+#ifndef SPI_HOST_CONFIGOPTS_1
+#define SPI_HOST_CONFIGOPTS_1                                                                       (0x18)
+#define SPI_HOST_CONFIGOPTS_1_CLKDIV_LOW                                                            (0)
+#define SPI_HOST_CONFIGOPTS_1_CLKDIV_MASK                                                           (0xffff)
+#define SPI_HOST_CONFIGOPTS_1_CSNIDLE_LOW                                                           (16)
+#define SPI_HOST_CONFIGOPTS_1_CSNIDLE_MASK                                                          (0xf0000)
+#define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_LOW                                                          (20)
+#define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_MASK                                                         (0xf00000)
+#define SPI_HOST_CONFIGOPTS_1_CSNLEAD_LOW                                                           (24)
+#define SPI_HOST_CONFIGOPTS_1_CSNLEAD_MASK                                                          (0xf000000)
+#define SPI_HOST_CONFIGOPTS_1_FULLCYC_LOW                                                           (29)
+#define SPI_HOST_CONFIGOPTS_1_FULLCYC_MASK                                                          (0x20000000)
+#define SPI_HOST_CONFIGOPTS_1_CPHA_LOW                                                              (30)
+#define SPI_HOST_CONFIGOPTS_1_CPHA_MASK                                                             (0x40000000)
+#define SPI_HOST_CONFIGOPTS_1_CPOL_LOW                                                              (31)
+#define SPI_HOST_CONFIGOPTS_1_CPOL_MASK                                                             (0x80000000)
+#endif
+#define SOC_SPI_HOST_CSID                                                                           (0x7000081c)
+#ifndef SPI_HOST_CSID
+#define SPI_HOST_CSID                                                                               (0x1c)
+#endif
+#define SOC_SPI_HOST_COMMAND                                                                        (0x70000820)
+#ifndef SPI_HOST_COMMAND
+#define SPI_HOST_COMMAND                                                                            (0x20)
+#define SPI_HOST_COMMAND_LEN_LOW                                                                    (0)
+#define SPI_HOST_COMMAND_LEN_MASK                                                                   (0x1ff)
+#define SPI_HOST_COMMAND_CSAAT_LOW                                                                  (9)
+#define SPI_HOST_COMMAND_CSAAT_MASK                                                                 (0x200)
+#define SPI_HOST_COMMAND_SPEED_LOW                                                                  (10)
+#define SPI_HOST_COMMAND_SPEED_MASK                                                                 (0xc00)
+#define SPI_HOST_COMMAND_DIRECTION_LOW                                                              (12)
+#define SPI_HOST_COMMAND_DIRECTION_MASK                                                             (0x3000)
+#endif
+#define SOC_SPI_HOST_RXDATA                                                                         (0x70000824)
+#ifndef SPI_HOST_RXDATA
+#define SPI_HOST_RXDATA                                                                             (0x24)
+#endif
+#define SOC_SPI_HOST_TXDATA                                                                         (0x70000828)
+#ifndef SPI_HOST_TXDATA
+#define SPI_HOST_TXDATA                                                                             (0x28)
+#endif
+#define SOC_SPI_HOST_ERROR_ENABLE                                                                   (0x7000082c)
+#ifndef SPI_HOST_ERROR_ENABLE
+#define SPI_HOST_ERROR_ENABLE                                                                       (0x2c)
+#define SPI_HOST_ERROR_ENABLE_CMDBUSY_LOW                                                           (0)
+#define SPI_HOST_ERROR_ENABLE_CMDBUSY_MASK                                                          (0x1)
+#define SPI_HOST_ERROR_ENABLE_OVERFLOW_LOW                                                          (1)
+#define SPI_HOST_ERROR_ENABLE_OVERFLOW_MASK                                                         (0x2)
+#define SPI_HOST_ERROR_ENABLE_UNDERFLOW_LOW                                                         (2)
+#define SPI_HOST_ERROR_ENABLE_UNDERFLOW_MASK                                                        (0x4)
+#define SPI_HOST_ERROR_ENABLE_CMDINVAL_LOW                                                          (3)
+#define SPI_HOST_ERROR_ENABLE_CMDINVAL_MASK                                                         (0x8)
+#define SPI_HOST_ERROR_ENABLE_CSIDINVAL_LOW                                                         (4)
+#define SPI_HOST_ERROR_ENABLE_CSIDINVAL_MASK                                                        (0x10)
+#endif
+#define SOC_SPI_HOST_ERROR_STATUS                                                                   (0x70000830)
+#ifndef SPI_HOST_ERROR_STATUS
+#define SPI_HOST_ERROR_STATUS                                                                       (0x30)
+#define SPI_HOST_ERROR_STATUS_CMDBUSY_LOW                                                           (0)
+#define SPI_HOST_ERROR_STATUS_CMDBUSY_MASK                                                          (0x1)
+#define SPI_HOST_ERROR_STATUS_OVERFLOW_LOW                                                          (1)
+#define SPI_HOST_ERROR_STATUS_OVERFLOW_MASK                                                         (0x2)
+#define SPI_HOST_ERROR_STATUS_UNDERFLOW_LOW                                                         (2)
+#define SPI_HOST_ERROR_STATUS_UNDERFLOW_MASK                                                        (0x4)
+#define SPI_HOST_ERROR_STATUS_CMDINVAL_LOW                                                          (3)
+#define SPI_HOST_ERROR_STATUS_CMDINVAL_MASK                                                         (0x8)
+#define SPI_HOST_ERROR_STATUS_CSIDINVAL_LOW                                                         (4)
+#define SPI_HOST_ERROR_STATUS_CSIDINVAL_MASK                                                        (0x10)
+#define SPI_HOST_ERROR_STATUS_ACCESSINVAL_LOW                                                       (5)
+#define SPI_HOST_ERROR_STATUS_ACCESSINVAL_MASK                                                      (0x20)
+#endif
+#define SOC_SPI_HOST_EVENT_ENABLE                                                                   (0x70000834)
+#ifndef SPI_HOST_EVENT_ENABLE
+#define SPI_HOST_EVENT_ENABLE                                                                       (0x34)
+#define SPI_HOST_EVENT_ENABLE_RXFULL_LOW                                                            (0)
+#define SPI_HOST_EVENT_ENABLE_RXFULL_MASK                                                           (0x1)
+#define SPI_HOST_EVENT_ENABLE_TXEMPTY_LOW                                                           (1)
+#define SPI_HOST_EVENT_ENABLE_TXEMPTY_MASK                                                          (0x2)
+#define SPI_HOST_EVENT_ENABLE_RXWM_LOW                                                              (2)
+#define SPI_HOST_EVENT_ENABLE_RXWM_MASK                                                             (0x4)
+#define SPI_HOST_EVENT_ENABLE_TXWM_LOW                                                              (3)
+#define SPI_HOST_EVENT_ENABLE_TXWM_MASK                                                             (0x8)
+#define SPI_HOST_EVENT_ENABLE_READY_LOW                                                             (4)
+#define SPI_HOST_EVENT_ENABLE_READY_MASK                                                            (0x10)
+#define SPI_HOST_EVENT_ENABLE_IDLE_LOW                                                              (5)
+#define SPI_HOST_EVENT_ENABLE_IDLE_MASK                                                             (0x20)
+#endif
+#define SOC_UART_BASE_ADDR                                                                          (0x70000c00)
+#define SOC_UART_INTR_STATE                                                                         (0x70000c00)
+#ifndef UART_INTR_STATE
+#define UART_INTR_STATE                                                                             (0x0)
+#define UART_INTR_STATE_TX_WATERMARK_LOW                                                            (0)
+#define UART_INTR_STATE_TX_WATERMARK_MASK                                                           (0x1)
+#define UART_INTR_STATE_RX_WATERMARK_LOW                                                            (1)
+#define UART_INTR_STATE_RX_WATERMARK_MASK                                                           (0x2)
+#define UART_INTR_STATE_TX_DONE_LOW                                                                 (2)
+#define UART_INTR_STATE_TX_DONE_MASK                                                                (0x4)
+#define UART_INTR_STATE_RX_OVERFLOW_LOW                                                             (3)
+#define UART_INTR_STATE_RX_OVERFLOW_MASK                                                            (0x8)
+#define UART_INTR_STATE_RX_FRAME_ERR_LOW                                                            (4)
+#define UART_INTR_STATE_RX_FRAME_ERR_MASK                                                           (0x10)
+#define UART_INTR_STATE_RX_BREAK_ERR_LOW                                                            (5)
+#define UART_INTR_STATE_RX_BREAK_ERR_MASK                                                           (0x20)
+#define UART_INTR_STATE_RX_TIMEOUT_LOW                                                              (6)
+#define UART_INTR_STATE_RX_TIMEOUT_MASK                                                             (0x40)
+#define UART_INTR_STATE_RX_PARITY_ERR_LOW                                                           (7)
+#define UART_INTR_STATE_RX_PARITY_ERR_MASK                                                          (0x80)
+#define UART_INTR_STATE_TX_EMPTY_LOW                                                                (8)
+#define UART_INTR_STATE_TX_EMPTY_MASK                                                               (0x100)
+#endif
+#define SOC_UART_INTR_ENABLE                                                                        (0x70000c04)
+#ifndef UART_INTR_ENABLE
+#define UART_INTR_ENABLE                                                                            (0x4)
+#define UART_INTR_ENABLE_TX_WATERMARK_LOW                                                           (0)
+#define UART_INTR_ENABLE_TX_WATERMARK_MASK                                                          (0x1)
+#define UART_INTR_ENABLE_RX_WATERMARK_LOW                                                           (1)
+#define UART_INTR_ENABLE_RX_WATERMARK_MASK                                                          (0x2)
+#define UART_INTR_ENABLE_TX_DONE_LOW                                                                (2)
+#define UART_INTR_ENABLE_TX_DONE_MASK                                                               (0x4)
+#define UART_INTR_ENABLE_RX_OVERFLOW_LOW                                                            (3)
+#define UART_INTR_ENABLE_RX_OVERFLOW_MASK                                                           (0x8)
+#define UART_INTR_ENABLE_RX_FRAME_ERR_LOW                                                           (4)
+#define UART_INTR_ENABLE_RX_FRAME_ERR_MASK                                                          (0x10)
+#define UART_INTR_ENABLE_RX_BREAK_ERR_LOW                                                           (5)
+#define UART_INTR_ENABLE_RX_BREAK_ERR_MASK                                                          (0x20)
+#define UART_INTR_ENABLE_RX_TIMEOUT_LOW                                                             (6)
+#define UART_INTR_ENABLE_RX_TIMEOUT_MASK                                                            (0x40)
+#define UART_INTR_ENABLE_RX_PARITY_ERR_LOW                                                          (7)
+#define UART_INTR_ENABLE_RX_PARITY_ERR_MASK                                                         (0x80)
+#define UART_INTR_ENABLE_TX_EMPTY_LOW                                                               (8)
+#define UART_INTR_ENABLE_TX_EMPTY_MASK                                                              (0x100)
+#endif
+#define SOC_UART_INTR_TEST                                                                          (0x70000c08)
+#ifndef UART_INTR_TEST
+#define UART_INTR_TEST                                                                              (0x8)
+#define UART_INTR_TEST_TX_WATERMARK_LOW                                                             (0)
+#define UART_INTR_TEST_TX_WATERMARK_MASK                                                            (0x1)
+#define UART_INTR_TEST_RX_WATERMARK_LOW                                                             (1)
+#define UART_INTR_TEST_RX_WATERMARK_MASK                                                            (0x2)
+#define UART_INTR_TEST_TX_DONE_LOW                                                                  (2)
+#define UART_INTR_TEST_TX_DONE_MASK                                                                 (0x4)
+#define UART_INTR_TEST_RX_OVERFLOW_LOW                                                              (3)
+#define UART_INTR_TEST_RX_OVERFLOW_MASK                                                             (0x8)
+#define UART_INTR_TEST_RX_FRAME_ERR_LOW                                                             (4)
+#define UART_INTR_TEST_RX_FRAME_ERR_MASK                                                            (0x10)
+#define UART_INTR_TEST_RX_BREAK_ERR_LOW                                                             (5)
+#define UART_INTR_TEST_RX_BREAK_ERR_MASK                                                            (0x20)
+#define UART_INTR_TEST_RX_TIMEOUT_LOW                                                               (6)
+#define UART_INTR_TEST_RX_TIMEOUT_MASK                                                              (0x40)
+#define UART_INTR_TEST_RX_PARITY_ERR_LOW                                                            (7)
+#define UART_INTR_TEST_RX_PARITY_ERR_MASK                                                           (0x80)
+#define UART_INTR_TEST_TX_EMPTY_LOW                                                                 (8)
+#define UART_INTR_TEST_TX_EMPTY_MASK                                                                (0x100)
+#endif
+#define SOC_UART_CTRL                                                                               (0x70000c0c)
+#ifndef UART_CTRL
+#define UART_CTRL                                                                                   (0xc)
+#define UART_CTRL_TX_LOW                                                                            (0)
+#define UART_CTRL_TX_MASK                                                                           (0x1)
+#define UART_CTRL_RX_LOW                                                                            (1)
+#define UART_CTRL_RX_MASK                                                                           (0x2)
+#define UART_CTRL_NF_LOW                                                                            (2)
+#define UART_CTRL_NF_MASK                                                                           (0x4)
+#define UART_CTRL_SLPBK_LOW                                                                         (4)
+#define UART_CTRL_SLPBK_MASK                                                                        (0x10)
+#define UART_CTRL_LLPBK_LOW                                                                         (5)
+#define UART_CTRL_LLPBK_MASK                                                                        (0x20)
+#define UART_CTRL_PARITY_EN_LOW                                                                     (6)
+#define UART_CTRL_PARITY_EN_MASK                                                                    (0x40)
+#define UART_CTRL_PARITY_ODD_LOW                                                                    (7)
+#define UART_CTRL_PARITY_ODD_MASK                                                                   (0x80)
+#define UART_CTRL_RXBLVL_LOW                                                                        (8)
+#define UART_CTRL_RXBLVL_MASK                                                                       (0x300)
+#define UART_CTRL_NCO_LOW                                                                           (16)
+#define UART_CTRL_NCO_MASK                                                                          (0xffff0000)
+#endif
+#define SOC_UART_STATUS                                                                             (0x70000c10)
+#ifndef UART_STATUS
+#define UART_STATUS                                                                                 (0x10)
+#define UART_STATUS_TXFULL_LOW                                                                      (0)
+#define UART_STATUS_TXFULL_MASK                                                                     (0x1)
+#define UART_STATUS_RXFULL_LOW                                                                      (1)
+#define UART_STATUS_RXFULL_MASK                                                                     (0x2)
+#define UART_STATUS_TXEMPTY_LOW                                                                     (2)
+#define UART_STATUS_TXEMPTY_MASK                                                                    (0x4)
+#define UART_STATUS_TXIDLE_LOW                                                                      (3)
+#define UART_STATUS_TXIDLE_MASK                                                                     (0x8)
+#define UART_STATUS_RXIDLE_LOW                                                                      (4)
+#define UART_STATUS_RXIDLE_MASK                                                                     (0x10)
+#define UART_STATUS_RXEMPTY_LOW                                                                     (5)
+#define UART_STATUS_RXEMPTY_MASK                                                                    (0x20)
+#endif
+#define SOC_UART_RDATA                                                                              (0x70000c14)
+#ifndef UART_RDATA
+#define UART_RDATA                                                                                  (0x14)
+#define UART_RDATA_RDATA_LOW                                                                        (0)
+#define UART_RDATA_RDATA_MASK                                                                       (0xff)
+#endif
+#define SOC_UART_WDATA                                                                              (0x70000c18)
+#ifndef UART_WDATA
+#define UART_WDATA                                                                                  (0x18)
+#define UART_WDATA_WDATA_LOW                                                                        (0)
+#define UART_WDATA_WDATA_MASK                                                                       (0xff)
+#endif
+#define SOC_UART_FIFO_CTRL                                                                          (0x70000c1c)
+#ifndef UART_FIFO_CTRL
+#define UART_FIFO_CTRL                                                                              (0x1c)
+#define UART_FIFO_CTRL_RXRST_LOW                                                                    (0)
+#define UART_FIFO_CTRL_RXRST_MASK                                                                   (0x1)
+#define UART_FIFO_CTRL_TXRST_LOW                                                                    (1)
+#define UART_FIFO_CTRL_TXRST_MASK                                                                   (0x2)
+#define UART_FIFO_CTRL_RXILVL_LOW                                                                   (2)
+#define UART_FIFO_CTRL_RXILVL_MASK                                                                  (0x1c)
+#define UART_FIFO_CTRL_TXILVL_LOW                                                                   (5)
+#define UART_FIFO_CTRL_TXILVL_MASK                                                                  (0xe0)
+#endif
+#define SOC_UART_FIFO_STATUS                                                                        (0x70000c20)
+#ifndef UART_FIFO_STATUS
+#define UART_FIFO_STATUS                                                                            (0x20)
+#define UART_FIFO_STATUS_TXLVL_LOW                                                                  (0)
+#define UART_FIFO_STATUS_TXLVL_MASK                                                                 (0xff)
+#define UART_FIFO_STATUS_RXLVL_LOW                                                                  (16)
+#define UART_FIFO_STATUS_RXLVL_MASK                                                                 (0xff0000)
+#endif
+#define SOC_UART_OVRD                                                                               (0x70000c24)
+#ifndef UART_OVRD
+#define UART_OVRD                                                                                   (0x24)
+#define UART_OVRD_TXEN_LOW                                                                          (0)
+#define UART_OVRD_TXEN_MASK                                                                         (0x1)
+#define UART_OVRD_TXVAL_LOW                                                                         (1)
+#define UART_OVRD_TXVAL_MASK                                                                        (0x2)
+#endif
+#define SOC_UART_VAL                                                                                (0x70000c28)
+#ifndef UART_VAL
+#define UART_VAL                                                                                    (0x28)
+#define UART_VAL_RX_LOW                                                                             (0)
+#define UART_VAL_RX_MASK                                                                            (0xffff)
+#endif
+#define SOC_UART_TIMEOUT_CTRL                                                                       (0x70000c2c)
+#ifndef UART_TIMEOUT_CTRL
+#define UART_TIMEOUT_CTRL                                                                           (0x2c)
+#define UART_TIMEOUT_CTRL_VAL_LOW                                                                   (0)
+#define UART_TIMEOUT_CTRL_VAL_MASK                                                                  (0xffffff)
+#define UART_TIMEOUT_CTRL_EN_LOW                                                                    (31)
+#define UART_TIMEOUT_CTRL_EN_MASK                                                                   (0x80000000)
+#endif
 #define SOC_MBOX_CSR_BASE_ADDR                                                                      (0xa0020000)
 #define SOC_MBOX_CSR_MBOX_LOCK                                                                      (0xa0020000)
 #ifndef MBOX_CSR_MBOX_LOCK
@@ -10820,8 +11915,18 @@
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_NMI_PIN_MASK                                               (0x4)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_LOW                                             (3)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_MASK                                            (0x8)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (4)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xfffffff0)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_LOW                                               (4)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_MASK                                              (0x10)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_LOW                                     (5)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_MASK                                    (0x20)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_LOW                                              (6)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_MASK                                             (0x40)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_LOW                                            (7)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_MASK                                           (0x80)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_LOW                                   (8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_MASK                                  (0x100)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (9)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (0xfffffe00)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL                                                    (0xa0030004)
 #ifndef SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL
@@ -10832,8 +11937,10 @@
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_PROT_OOO_MASK                                     (0x2)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_LOW                                       (2)
 #define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_MASK                                      (0x4)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (3)
-#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (0xfffffff8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_LOW                                  (3)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_MASK                                 (0x8)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (4)
+#define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (0xfffffff0)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_FW_ERROR_FATAL                                                        (0xa0030008)
 #ifndef SOC_IFC_REG_CPTRA_FW_ERROR_FATAL
@@ -11120,6 +12227,10 @@
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_MASK                                          (0x20)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_LOW                                            (6)
 #define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (0x40)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_LOW                                               (7)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_MASK                                              (0x80)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_LOW                                                     (8)
+#define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_MASK                                                    (0x100)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                         (0xa00300e4)
 #ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN
@@ -11186,22 +12297,6 @@
 #define SOC_SOC_IFC_REG_CPTRA_WDT_CFG_1                                                             (0xa0030114)
 #ifndef SOC_IFC_REG_CPTRA_WDT_CFG_1
 #define SOC_IFC_REG_CPTRA_WDT_CFG_1                                                                 (0x114)
-#endif
-#define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                (0xa0030118)
-#ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                    (0x118)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                  (0)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                 (0xffff)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                 (16)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                                (0xffff0000)
-#endif
-#define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                (0xa003011c)
-#ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (0x11c)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (0xffff)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_LOW                                           (16)
-#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_MASK                                          (0xffff0000)
 #endif
 #define SOC_SOC_IFC_REG_CPTRA_RSVD_REG_0                                                            (0xa0030120)
 #ifndef SOC_IFC_REG_CPTRA_RSVD_REG_0
@@ -11278,6 +12373,120 @@
 #define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK                                                        (0x170)
 #define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK_LOCK_LOW                                               (0)
 #define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK_LOCK_MASK                                              (0x1)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                (0xa0030180)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                    (0x180)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                  (0)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                 (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                 (16)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                                (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                (0xa0030184)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (0x184)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                                (16)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                               (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2                                                (0xa0030188)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2                                                    (0x188)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_LOW                               (0)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_MASK                              (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_LOW                                (16)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_MASK                               (0x10000)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RNG_BIT_SEL_LOW                                    (17)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RNG_BIT_SEL_MASK                                   (0x60000)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RSVD_LOW                                           (19)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RSVD_MASK                                          (0x7ff80000)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                    (31)
+#define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                   (0x80000000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0                                               (0xa003018c)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0                                                   (0x18c)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                 (0)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                (16)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                               (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1                                               (0xa0030190)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1                                                   (0x190)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                              (0)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                             (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                               (16)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                              (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2                                               (0xa0030194)
+#ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2                                                   (0x194)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_LOW                              (0)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_MASK                             (0xffff)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_LOW                               (16)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_MASK                              (0x10000)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RNG_BIT_SEL_LOW                                   (17)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RNG_BIT_SEL_MASK                                  (0x60000)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_LOW                                          (19)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_MASK                                         (0x7ff80000)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                   (31)
+#define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                  (0x80000000)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                         (0xa0030198)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_0
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                             (0x198)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                         (0xa003019c)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_1
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                             (0x19c)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                         (0xa00301a0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_2
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                             (0x1a0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                         (0xa00301a4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_3
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                             (0x1a4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                         (0xa00301a8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_4
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                             (0x1a8)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                         (0xa00301ac)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_5
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                             (0x1ac)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                         (0xa00301b0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_6
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                             (0x1b0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                         (0xa00301b4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_7
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                             (0x1b4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                         (0xa00301b8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_8
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                             (0x1b8)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                         (0xa00301bc)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_9
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                             (0x1bc)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                        (0xa00301c0)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_10
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                            (0x1c0)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                        (0xa00301c4)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_11
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                            (0x1c4)
+#endif
+#define SOC_SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                      (0xa00301c8)
+#ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                          (0x1c8)
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_LOW                                                 (0)
+#define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_MASK                                                (0x1)
 #endif
 #define SOC_SOC_IFC_REG_FUSE_UDS_SEED_0                                                             (0xa0030200)
 #ifndef SOC_IFC_REG_FUSE_UDS_SEED_0
@@ -11793,6 +13002,28 @@
 #define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
 #define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (0x1)
 #endif
+#define SOC_SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                        (0xa0030550)
+#ifndef SOC_IFC_REG_SS_OTP_FC_STATUS_CFG
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                            (0x550)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_LOW                                          (0)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_MASK                                         (0xffff)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_LOW                                       (16)
+#define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_MASK                                      (0xffff0000)
+#endif
+#define SOC_SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                           (0xa0030554)
+#ifndef SOC_IFC_REG_SS_OTP_FC_CMD_CFG
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                               (0x554)
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_LOW                                  (0)
+#define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_MASK                                 (0xffff)
+#endif
+#define SOC_SOC_IFC_REG_SS_FW_FEATURE_CFG                                                           (0xa0030558)
+#ifndef SOC_IFC_REG_SS_FW_FEATURE_CFG
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG                                                               (0x558)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_LOW                                       (0)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_MASK                                      (0x1)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_LOW                                   (31)
+#define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_MASK                                  (0x80000000)
+#endif
 #define SOC_SOC_IFC_REG_SS_STRAP_GENERIC_0                                                          (0xa00305a0)
 #ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
 #define SOC_IFC_REG_SS_STRAP_GENERIC_0                                                              (0x5a0)
@@ -11870,6 +13101,866 @@
 #define SOC_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3                                                   (0xa00305dc)
 #ifndef SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3
 #define SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3                                                       (0x5dc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_0                                                      (0xa0030c00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_0
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_0                                                          (0xc00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_1                                                      (0xa0030c04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_1
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_1                                                          (0xc04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_2                                                      (0xa0030c08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_2
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_2                                                          (0xc08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_3                                                      (0xa0030c0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_3
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_3                                                          (0xc0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_4                                                      (0xa0030c10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_4
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_4                                                          (0xc10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_5                                                      (0xa0030c14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_5
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_5                                                          (0xc14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_6                                                      (0xa0030c18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_6
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_6                                                          (0xc18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_7                                                      (0xa0030c1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_7
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_7                                                          (0xc1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_8                                                      (0xa0030c20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_8
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_8                                                          (0xc20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_9                                                      (0xa0030c24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_9
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_9                                                          (0xc24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_10                                                     (0xa0030c28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_10
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_10                                                         (0xc28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_11                                                     (0xa0030c2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_11
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_11                                                         (0xc2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_12                                                     (0xa0030c30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_12
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_12                                                         (0xc30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_13                                                     (0xa0030c34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_13
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_13                                                         (0xc34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_14                                                     (0xa0030c38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_14
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_14                                                         (0xc38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_15                                                     (0xa0030c3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_15
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_15                                                         (0xc3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_16                                                     (0xa0030c40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_16
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_16                                                         (0xc40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_17                                                     (0xa0030c44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_17
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_17                                                         (0xc44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_18                                                     (0xa0030c48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_18
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_18                                                         (0xc48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_19                                                     (0xa0030c4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_19
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_19                                                         (0xc4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_20                                                     (0xa0030c50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_20
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_20                                                         (0xc50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_21                                                     (0xa0030c54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_21
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_21                                                         (0xc54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_22                                                     (0xa0030c58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_22
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_22                                                         (0xc58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_23                                                     (0xa0030c5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_23
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_23                                                         (0xc5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_24                                                     (0xa0030c60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_24
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_24                                                         (0xc60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_25                                                     (0xa0030c64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_25
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_25                                                         (0xc64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_26                                                     (0xa0030c68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_26
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_26                                                         (0xc68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_27                                                     (0xa0030c6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_27
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_27                                                         (0xc6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_28                                                     (0xa0030c70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_28
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_28                                                         (0xc70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_29                                                     (0xa0030c74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_29
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_29                                                         (0xc74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_30                                                     (0xa0030c78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_30
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_30                                                         (0xc78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_31                                                     (0xa0030c7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_31
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_31                                                         (0xc7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_32                                                     (0xa0030c80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_32
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_32                                                         (0xc80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_33                                                     (0xa0030c84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_33
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_33                                                         (0xc84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_34                                                     (0xa0030c88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_34
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_34                                                         (0xc88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_35                                                     (0xa0030c8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_35
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_35                                                         (0xc8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_36                                                     (0xa0030c90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_36
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_36                                                         (0xc90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_37                                                     (0xa0030c94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_37
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_37                                                         (0xc94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_38                                                     (0xa0030c98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_38
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_38                                                         (0xc98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_39                                                     (0xa0030c9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_39
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_39                                                         (0xc9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_40                                                     (0xa0030ca0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_40
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_40                                                         (0xca0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_41                                                     (0xa0030ca4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_41
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_41                                                         (0xca4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_42                                                     (0xa0030ca8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_42
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_42                                                         (0xca8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_43                                                     (0xa0030cac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_43
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_43                                                         (0xcac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_44                                                     (0xa0030cb0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_44
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_44                                                         (0xcb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_45                                                     (0xa0030cb4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_45
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_45                                                         (0xcb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_46                                                     (0xa0030cb8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_46
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_46                                                         (0xcb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_47                                                     (0xa0030cbc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_47
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_47                                                         (0xcbc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_48                                                     (0xa0030cc0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_48
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_48                                                         (0xcc0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_49                                                     (0xa0030cc4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_49
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_49                                                         (0xcc4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_50                                                     (0xa0030cc8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_50
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_50                                                         (0xcc8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_51                                                     (0xa0030ccc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_51
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_51                                                         (0xccc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_52                                                     (0xa0030cd0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_52
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_52                                                         (0xcd0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_53                                                     (0xa0030cd4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_53
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_53                                                         (0xcd4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_54                                                     (0xa0030cd8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_54
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_54                                                         (0xcd8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_55                                                     (0xa0030cdc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_55
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_55                                                         (0xcdc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_56                                                     (0xa0030ce0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_56
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_56                                                         (0xce0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_57                                                     (0xa0030ce4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_57
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_57                                                         (0xce4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_58                                                     (0xa0030ce8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_58
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_58                                                         (0xce8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_59                                                     (0xa0030cec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_59
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_59                                                         (0xcec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_60                                                     (0xa0030cf0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_60
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_60                                                         (0xcf0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_61                                                     (0xa0030cf4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_61
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_61                                                         (0xcf4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_62                                                     (0xa0030cf8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_62
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_62                                                         (0xcf8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_63                                                     (0xa0030cfc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_63
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_63                                                         (0xcfc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_64                                                     (0xa0030d00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_64
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_64                                                         (0xd00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_65                                                     (0xa0030d04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_65
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_65                                                         (0xd04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_66                                                     (0xa0030d08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_66
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_66                                                         (0xd08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_67                                                     (0xa0030d0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_67
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_67                                                         (0xd0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_68                                                     (0xa0030d10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_68
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_68                                                         (0xd10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_69                                                     (0xa0030d14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_69
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_69                                                         (0xd14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_70                                                     (0xa0030d18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_70
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_70                                                         (0xd18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_71                                                     (0xa0030d1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_71
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_71                                                         (0xd1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_72                                                     (0xa0030d20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_72
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_72                                                         (0xd20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_73                                                     (0xa0030d24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_73
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_73                                                         (0xd24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_74                                                     (0xa0030d28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_74
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_74                                                         (0xd28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_75                                                     (0xa0030d2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_75
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_75                                                         (0xd2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_76                                                     (0xa0030d30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_76
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_76                                                         (0xd30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_77                                                     (0xa0030d34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_77
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_77                                                         (0xd34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_78                                                     (0xa0030d38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_78
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_78                                                         (0xd38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_79                                                     (0xa0030d3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_79
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_79                                                         (0xd3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_80                                                     (0xa0030d40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_80
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_80                                                         (0xd40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_81                                                     (0xa0030d44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_81
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_81                                                         (0xd44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_82                                                     (0xa0030d48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_82
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_82                                                         (0xd48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_83                                                     (0xa0030d4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_83
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_83                                                         (0xd4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_84                                                     (0xa0030d50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_84
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_84                                                         (0xd50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_85                                                     (0xa0030d54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_85
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_85                                                         (0xd54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_86                                                     (0xa0030d58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_86
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_86                                                         (0xd58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_87                                                     (0xa0030d5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_87
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_87                                                         (0xd5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_88                                                     (0xa0030d60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_88
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_88                                                         (0xd60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_89                                                     (0xa0030d64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_89
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_89                                                         (0xd64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_90                                                     (0xa0030d68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_90
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_90                                                         (0xd68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_91                                                     (0xa0030d6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_91
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_91                                                         (0xd6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_92                                                     (0xa0030d70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_92
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_92                                                         (0xd70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_93                                                     (0xa0030d74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_93
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_93                                                         (0xd74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_94                                                     (0xa0030d78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_94
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_94                                                         (0xd78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_95                                                     (0xa0030d7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_95
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_95                                                         (0xd7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_96                                                     (0xa0030d80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_96
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_96                                                         (0xd80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_97                                                     (0xa0030d84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_97
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_97                                                         (0xd84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_98                                                     (0xa0030d88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_98
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_98                                                         (0xd88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_99                                                     (0xa0030d8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_99
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_99                                                         (0xd8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_100                                                    (0xa0030d90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_100
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_100                                                        (0xd90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_101                                                    (0xa0030d94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_101
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_101                                                        (0xd94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_102                                                    (0xa0030d98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_102
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_102                                                        (0xd98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_103                                                    (0xa0030d9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_103
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_103                                                        (0xd9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_104                                                    (0xa0030da0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_104
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_104                                                        (0xda0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_105                                                    (0xa0030da4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_105
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_105                                                        (0xda4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_106                                                    (0xa0030da8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_106
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_106                                                        (0xda8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_107                                                    (0xa0030dac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_107
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_107                                                        (0xdac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_108                                                    (0xa0030db0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_108
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_108                                                        (0xdb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_109                                                    (0xa0030db4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_109
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_109                                                        (0xdb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_110                                                    (0xa0030db8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_110
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_110                                                        (0xdb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_111                                                    (0xa0030dbc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_111
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_111                                                        (0xdbc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_112                                                    (0xa0030dc0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_112
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_112                                                        (0xdc0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_113                                                    (0xa0030dc4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_113
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_113                                                        (0xdc4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_114                                                    (0xa0030dc8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_114
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_114                                                        (0xdc8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_115                                                    (0xa0030dcc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_115
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_115                                                        (0xdcc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_116                                                    (0xa0030dd0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_116
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_116                                                        (0xdd0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_117                                                    (0xa0030dd4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_117
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_117                                                        (0xdd4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_118                                                    (0xa0030dd8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_118
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_118                                                        (0xdd8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_119                                                    (0xa0030ddc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_119
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_119                                                        (0xddc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_120                                                    (0xa0030de0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_120
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_120                                                        (0xde0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_121                                                    (0xa0030de4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_121
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_121                                                        (0xde4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_122                                                    (0xa0030de8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_122
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_122                                                        (0xde8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_123                                                    (0xa0030dec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_123
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_123                                                        (0xdec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_124                                                    (0xa0030df0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_124
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_124                                                        (0xdf0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_125                                                    (0xa0030df4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_125
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_125                                                        (0xdf4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_126                                                    (0xa0030df8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_126
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_126                                                        (0xdf8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_127                                                    (0xa0030dfc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_127
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_127                                                        (0xdfc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_128                                                    (0xa0030e00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_128
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_128                                                        (0xe00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_129                                                    (0xa0030e04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_129
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_129                                                        (0xe04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_130                                                    (0xa0030e08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_130
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_130                                                        (0xe08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_131                                                    (0xa0030e0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_131
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_131                                                        (0xe0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_132                                                    (0xa0030e10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_132
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_132                                                        (0xe10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_133                                                    (0xa0030e14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_133
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_133                                                        (0xe14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_134                                                    (0xa0030e18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_134
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_134                                                        (0xe18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_135                                                    (0xa0030e1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_135
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_135                                                        (0xe1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_136                                                    (0xa0030e20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_136
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_136                                                        (0xe20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_137                                                    (0xa0030e24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_137
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_137                                                        (0xe24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_138                                                    (0xa0030e28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_138
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_138                                                        (0xe28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_139                                                    (0xa0030e2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_139
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_139                                                        (0xe2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_140                                                    (0xa0030e30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_140
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_140                                                        (0xe30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_141                                                    (0xa0030e34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_141
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_141                                                        (0xe34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_142                                                    (0xa0030e38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_142
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_142                                                        (0xe38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_143                                                    (0xa0030e3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_143
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_143                                                        (0xe3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_144                                                    (0xa0030e40)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_144
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_144                                                        (0xe40)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_145                                                    (0xa0030e44)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_145
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_145                                                        (0xe44)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_146                                                    (0xa0030e48)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_146
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_146                                                        (0xe48)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_147                                                    (0xa0030e4c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_147
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_147                                                        (0xe4c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_148                                                    (0xa0030e50)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_148
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_148                                                        (0xe50)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_149                                                    (0xa0030e54)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_149
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_149                                                        (0xe54)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_150                                                    (0xa0030e58)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_150
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_150                                                        (0xe58)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_151                                                    (0xa0030e5c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_151
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_151                                                        (0xe5c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_152                                                    (0xa0030e60)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_152
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_152                                                        (0xe60)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_153                                                    (0xa0030e64)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_153
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_153                                                        (0xe64)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_154                                                    (0xa0030e68)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_154
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_154                                                        (0xe68)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_155                                                    (0xa0030e6c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_155
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_155                                                        (0xe6c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_156                                                    (0xa0030e70)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_156
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_156                                                        (0xe70)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_157                                                    (0xa0030e74)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_157
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_157                                                        (0xe74)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_158                                                    (0xa0030e78)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_158
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_158                                                        (0xe78)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_159                                                    (0xa0030e7c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_159
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_159                                                        (0xe7c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_160                                                    (0xa0030e80)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_160
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_160                                                        (0xe80)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_161                                                    (0xa0030e84)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_161
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_161                                                        (0xe84)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_162                                                    (0xa0030e88)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_162
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_162                                                        (0xe88)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_163                                                    (0xa0030e8c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_163
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_163                                                        (0xe8c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_164                                                    (0xa0030e90)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_164
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_164                                                        (0xe90)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_165                                                    (0xa0030e94)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_165
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_165                                                        (0xe94)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_166                                                    (0xa0030e98)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_166
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_166                                                        (0xe98)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_167                                                    (0xa0030e9c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_167
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_167                                                        (0xe9c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_168                                                    (0xa0030ea0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_168
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_168                                                        (0xea0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_169                                                    (0xa0030ea4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_169
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_169                                                        (0xea4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_170                                                    (0xa0030ea8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_170
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_170                                                        (0xea8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_171                                                    (0xa0030eac)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_171
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_171                                                        (0xeac)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_172                                                    (0xa0030eb0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_172
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_172                                                        (0xeb0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_173                                                    (0xa0030eb4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_173
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_173                                                        (0xeb4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_174                                                    (0xa0030eb8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_174
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_174                                                        (0xeb8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_175                                                    (0xa0030ebc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_175
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_175                                                        (0xebc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_176                                                    (0xa0030ec0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_176
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_176                                                        (0xec0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_177                                                    (0xa0030ec4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_177
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_177                                                        (0xec4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_178                                                    (0xa0030ec8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_178
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_178                                                        (0xec8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_179                                                    (0xa0030ecc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_179
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_179                                                        (0xecc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_180                                                    (0xa0030ed0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_180
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_180                                                        (0xed0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_181                                                    (0xa0030ed4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_181
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_181                                                        (0xed4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_182                                                    (0xa0030ed8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_182
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_182                                                        (0xed8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_183                                                    (0xa0030edc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_183
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_183                                                        (0xedc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_184                                                    (0xa0030ee0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_184
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_184                                                        (0xee0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_185                                                    (0xa0030ee4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_185
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_185                                                        (0xee4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_186                                                    (0xa0030ee8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_186
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_186                                                        (0xee8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_187                                                    (0xa0030eec)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_187
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_187                                                        (0xeec)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_188                                                    (0xa0030ef0)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_188
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_188                                                        (0xef0)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_189                                                    (0xa0030ef4)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_189
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_189                                                        (0xef4)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_190                                                    (0xa0030ef8)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_190
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_190                                                        (0xef8)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_191                                                    (0xa0030efc)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_191
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_191                                                        (0xefc)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_192                                                    (0xa0030f00)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_192
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_192                                                        (0xf00)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_193                                                    (0xa0030f04)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_193
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_193                                                        (0xf04)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_194                                                    (0xa0030f08)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_194
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_194                                                        (0xf08)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_195                                                    (0xa0030f0c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_195
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_195                                                        (0xf0c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_196                                                    (0xa0030f10)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_196
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_196                                                        (0xf10)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_197                                                    (0xa0030f14)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_197
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_197                                                        (0xf14)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_198                                                    (0xa0030f18)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_198
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_198                                                        (0xf18)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_199                                                    (0xa0030f1c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_199
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_199                                                        (0xf1c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_200                                                    (0xa0030f20)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_200
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_200                                                        (0xf20)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_201                                                    (0xa0030f24)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_201
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_201                                                        (0xf24)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_202                                                    (0xa0030f28)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_202
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_202                                                        (0xf28)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_203                                                    (0xa0030f2c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_203
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_203                                                        (0xf2c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_204                                                    (0xa0030f30)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_204
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_204                                                        (0xf30)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_205                                                    (0xa0030f34)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_205
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_205                                                        (0xf34)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_206                                                    (0xa0030f38)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_206
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_206                                                        (0xf38)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SLOT_DATA_207                                                    (0xa0030f3c)
+#ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_207
+#define SOC_IFC_REG_STASH_BANK_SLOT_DATA_207                                                        (0xf3c)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_SOC_LOCK                                                         (0xa0030f40)
+#ifndef SOC_IFC_REG_STASH_BANK_SOC_LOCK
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK                                                             (0xf40)
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_LOW                                                    (0)
+#define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_MASK                                                   (0xff)
+#endif
+#define SOC_SOC_IFC_REG_STASH_END_STASH                                                             (0xa0030f44)
+#ifndef SOC_IFC_REG_STASH_END_STASH
+#define SOC_IFC_REG_STASH_END_STASH                                                                 (0xf44)
+#define SOC_IFC_REG_STASH_END_STASH_END_STASH_LOW                                                   (0)
+#define SOC_IFC_REG_STASH_END_STASH_END_STASH_MASK                                                  (0x1)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_CPTRA_LOCK                                                       (0xa0030f48)
+#ifndef SOC_IFC_REG_STASH_BANK_CPTRA_LOCK
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK                                                           (0xf48)
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_LOW                                            (0)
+#define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_MASK                                           (0x1)
+#endif
+#define SOC_SOC_IFC_REG_STASH_BANK_STATUS                                                           (0xa0030f4c)
+#ifndef SOC_IFC_REG_STASH_BANK_STATUS
+#define SOC_IFC_REG_STASH_BANK_STATUS                                                               (0xf4c)
+#define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_LOW                                               (0)
+#define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_MASK                                              (0xff)
+#define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_LOW                                                 (8)
+#define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_MASK                                                (0x100)
+#define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_LOW                                                (9)
+#define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_MASK                                               (0x200)
 #endif
 
 

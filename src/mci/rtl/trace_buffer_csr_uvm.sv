@@ -159,17 +159,19 @@ package trace_buffer_csr_uvm;
         endfunction : build
     endclass : trace_buffer_csr__READ_PTR
 
-    // Reg - trace_buffer_csr::CONTROL
-    class trace_buffer_csr__CONTROL extends uvm_reg;
+    // Reg - trace_buffer_csr::CTRL
+    class trace_buffer_csr__CTRL extends uvm_reg;
         protected uvm_reg_data_t m_current;
         protected uvm_reg_data_t m_data;
         protected bit            m_is_read;
 
-        trace_buffer_csr__CONTROL_bit_cg trace_source_bit_cg[1];
-        trace_buffer_csr__CONTROL_fld_cg fld_cg;
-        rand uvm_reg_field trace_source;
+        trace_buffer_csr__CTRL_bit_cg cptra_core_sel_bit_cg[1];
+        trace_buffer_csr__CTRL_bit_cg mcu_shadow_sel_bit_cg[1];
+        trace_buffer_csr__CTRL_fld_cg fld_cg;
+        rand uvm_reg_field cptra_core_sel;
+        rand uvm_reg_field mcu_shadow_sel;
 
-        function new(string name = "trace_buffer_csr__CONTROL");
+        function new(string name = "trace_buffer_csr__CTRL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
         endfunction : new
         extern virtual function void sample_values();
@@ -179,15 +181,18 @@ package trace_buffer_csr_uvm;
                                                       uvm_reg_map     map);
 
         virtual function void build();
-            this.trace_source = new("trace_source");
-            this.trace_source.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.cptra_core_sel = new("cptra_core_sel");
+            this.cptra_core_sel.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.mcu_shadow_sel = new("mcu_shadow_sel");
+            this.mcu_shadow_sel.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
-                foreach(trace_source_bit_cg[bt]) trace_source_bit_cg[bt] = new();
+                foreach(cptra_core_sel_bit_cg[bt]) cptra_core_sel_bit_cg[bt] = new();
+                foreach(mcu_shadow_sel_bit_cg[bt]) mcu_shadow_sel_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
         endfunction : build
-    endclass : trace_buffer_csr__CONTROL
+    endclass : trace_buffer_csr__CTRL
 
     // Addrmap - trace_buffer_csr
     class trace_buffer_csr extends uvm_reg_block;
@@ -196,7 +201,7 @@ package trace_buffer_csr_uvm;
         rand trace_buffer_csr__DATA DATA;
         rand trace_buffer_csr__WRITE_PTR WRITE_PTR;
         rand trace_buffer_csr__READ_PTR READ_PTR;
-        rand trace_buffer_csr__CONTROL CONTROL;
+        rand trace_buffer_csr__CTRL CTRL;
 
         function new(string name = "trace_buffer_csr");
             super.new(name);
@@ -229,11 +234,11 @@ package trace_buffer_csr_uvm;
 
             this.READ_PTR.build();
             this.default_map.add_reg(this.READ_PTR, 'h10);
-            this.CONTROL = new("CONTROL");
-            this.CONTROL.configure(this);
+            this.CTRL = new("CTRL");
+            this.CTRL.configure(this);
 
-            this.CONTROL.build();
-            this.default_map.add_reg(this.CONTROL, 'h14);
+            this.CTRL.build();
+            this.default_map.add_reg(this.CTRL, 'h14);
         endfunction : build
     endclass : trace_buffer_csr
 

@@ -1,0 +1,14 @@
+seed: 1
+testname: caliptra_ss_usb_ocp_fifo_flow_indices
+pre-exec: |
+  set -eu
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_ocp_recovery_init \
+       CALIPTRA_TESTNAME=cptra_usb_ocp_fifo_flow_control \
+       CALIPTRA_AUX=usb_ocp_recovery_cptra \
+       CALIPTRA_CFLAGS="-DOCP_FIFO_FLOW_INITIAL_DELAY_CYCLES=1000u -DOCP_FIFO_FLOW_WORDS_PER_SERVICE=16u -DOCP_FIFO_FLOW_INTER_SERVICE_DELAY_CYCLES=1000u" \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_ocp_fifo_flow_indices_test'

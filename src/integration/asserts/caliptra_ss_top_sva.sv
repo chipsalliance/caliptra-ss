@@ -198,6 +198,8 @@ module caliptra_ss_top_sva
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
     (`MCI_REG_TOP_PATH.nmi_intr |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.nmi_pin) and (`MCI_REG_TOP_PATH.mcu_sram_double_ecc_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_ecc_unc) and (`MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error |=> `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision)
+    // fsm_error: allow one extra cycle for a coincident SW W1C, which has priority over the HW set
+    and (`MCI_REG_TOP_PATH.boot_fsm_error |-> ##[1:2] `MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL.fsm_error)
   ) else $display("SVA ERROR: MCI HW ERROR FATAL reg is not set correctly");
 
   mci_error_fatal_cold_rst_check: assert property (
@@ -208,14 +210,14 @@ module caliptra_ss_top_sva
   mci_error_fatal_warm_rst_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (!`CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i)
-    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL)[*5]))
+    ((~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i & `CPTRA_SS_TOP_PATH.cptra_ss_pwrgood_i & ~`MCI_REG_TOP_PATH.boot_fsm_error) |-> ($stable(`MCI_REG_TOP_PATH.mci_reg_hwif_out.HW_ERROR_FATAL)[*5]))
   ) else $display("SVA ERROR: MCI HW ERROR FATAL is expected to remain unchanged on warm reset");
 
   all_error_fatal_check: assert property (
     @(posedge `CPTRA_SS_TB_TOP_NAME.core_clk)
     disable iff (~`CPTRA_SS_TOP_PATH.cptra_ss_rst_b_i)
-    ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision) & (`MCI_REG_TOP_PATH.nmi_intr | `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error) & `MCI_REG_TOP_PATH.mci_intr |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
-    and ((&`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_fw_error_fatal_mask.mask & |`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL.error_code) |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
+    ((`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_nmi_pin & `MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision) & (`MCI_REG_TOP_PATH.nmi_intr | `MCI_REG_TOP_PATH.mcu_sram_dmi_axi_collision_error) & `MCI_REG_TOP_PATH.mci_intr & ~`MCI_REG_TOP_PATH.boot_fsm_error |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
+    and ((&`MCI_REG_TOP_PATH.mci_reg_hwif_out.internal_fw_error_fatal_mask.mask & |`MCI_REG_TOP_PATH.mci_reg_hwif_out.FW_ERROR_FATAL.error_code & ~`MCI_REG_TOP_PATH.boot_fsm_error) |=> ~`MCI_REG_TOP_PATH.all_error_fatal[*5])
   ) else $display("SVA ERROR: all_error_fatal is asserted unexpectedly");
 
   all_error_fatal_sram_doublebit_check: assert property (
@@ -667,6 +669,35 @@ module caliptra_ss_top_sva
      otp_err_e'(`FC_PATH.part_error[DaiIdx]) != NoError)
     |=> ##2
     (`FC_PATH.intr_otp_error_o)
+  )
+
+  ////////////////////////////////////////////////////
+  // MCU ROM patch
+  ////////////////////////////////////////////////////
+
+  // While a MCU ROM patch is loaded, Caliptra core must only ever see zero UDS/FE,
+  // both at its fuse input ports and in its captured (obfuscated) fuse registers.
+  `CALIPTRA_ASSERT(McuRomPatchUdsFePortsZero_A,
+    `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active |->
+    ((`CPTRA_CORE_TOP_PATH.cptra_obf_uds_seed == '0) &&
+     (`CPTRA_CORE_TOP_PATH.cptra_obf_field_entropy == '0))
+  )
+
+  `CALIPTRA_ASSERT(McuRomPatchCptraUdsFeZero_A,
+    `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active |->
+    ((`CPTRA_CORE_TOP_PATH.obf_uds_seed == '0) &&
+     (`CPTRA_CORE_TOP_PATH.obf_field_entropy == '0))
+  )
+
+  // The patch write window is closed before Caliptra core captures UDS/FE.
+  `CALIPTRA_ASSERT(McuRomPatchClosedBeforeUdsFeCapture_A,
+    $rose(`CPTRA_CORE_TOP_PATH.soc_ifc_top1.Warm_Reset_Capture_Flag) |->
+    `CPTRA_SS_TOP_PATH.mci_top_i.mcu_rom_patch_sram.i_mci_mcu_rom_patch_ctrl.cptra_released_q
+  )
+
+  // The fuse controller filter sees the same patch flag as MCI.
+  `CALIPTRA_ASSERT(McuRomPatchFlagToFcFilter_A,
+    `FC_PATH.u_fuse_ctrl_filter.mcu_rom_patch_active_i == `CPTRA_SS_TOP_PATH.mci_mcu_rom_patch_active
   )
 
 endmodule

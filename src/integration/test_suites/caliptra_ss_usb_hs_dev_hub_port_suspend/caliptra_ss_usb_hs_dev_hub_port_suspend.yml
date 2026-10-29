@@ -1,0 +1,21 @@
+seed: 1
+testname: caliptra_ss_usb_hs_dev_hub_port_suspend
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_hs_dev_hub_port_suspend"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_hs_dev_hub_port_suspend \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_hub_port_suspend_test'
+  # No other plusargs. In particular usb_suspend_resume_check is deliberately
+  # NOT enabled here: per-port suspend actuation is an accepted deviation on
+  # this IP, and that checker is a hard pass/fail for the global_suspend_L2
+  # tests, so it must not be relaxed. See
+  # docs/usb_hub_port_suspend_not_wired_report.md.
+
+# File contains AI-generated response based on internal company sources

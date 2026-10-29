@@ -48,7 +48,8 @@ import mci_pkg::*;
     input  logic mci_bootfsm_go,
     input  logic mcu_rst_req,
     output logic mcu_reset_once, // Has MCU been reset before?
-    output mci_boot_fsm_state_e boot_fsm,
+    output logic [3:0] boot_fsm_encoded,          // Compact boot FSM state for HW_FLOW_STATUS
+    output logic fsm_error,                       // Boot FSM in BOOT_ERROR or invalid encoding
 
     // SoC signals
     input  logic mci_boot_seq_brkpoint,
@@ -66,6 +67,8 @@ import mci_pkg::*;
     // Caliptra signals
 );
 
+mci_boot_fsm_state_e boot_fsm;
+mci_boot_fsm_state_e boot_fsm_d;
 mci_boot_fsm_state_e boot_fsm_nxt;
 mci_boot_fsm_state_e boot_fsm_prev;
 
@@ -104,9 +107,26 @@ logic min_mcu_rst_count_elapsed_nxt;
 /////////////////////////////////////////////////
 // DFT                                 
 /////////////////////////////////////////////////
-assign cptra_ss_rst_b_o   = scan_mode ? mci_rst_b           :  cptra_ss_rst_b_o_ff;
-assign mcu_rst_b          = scan_mode ? mci_rst_b           :  mcu_rst_b_ff;
-assign cptra_rst_b        = scan_mode ? mci_rst_b           :  cptra_rst_b_ff;
+caliptra_prim_rst_mux2 cptra_ss_rst_mux (
+    .rst0_i(cptra_ss_rst_b_o_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_ss_rst_b_o)
+);
+
+caliptra_prim_rst_mux2 mcu_rst_mux (
+    .rst0_i(mcu_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (mcu_rst_b)
+);
+
+caliptra_prim_rst_mux2 cptra_rst_mux (
+    .rst0_i(cptra_rst_b_ff),
+    .rst1_i(mci_rst_b),
+    .sel_i (scan_mode),
+    .rst_o (cptra_rst_b)
+);
 
 /////////////////////////////////////////////////
 // Reset Window                        
@@ -122,7 +142,14 @@ always_ff @(posedge clk or negedge mci_rst_b) begin
     end
 end
 
-caliptra_2ff_sync #(.WIDTH(1), .RST_VAL('d1)) i_rst_window_sync (.clk(clk), .rst_b(mci_pwrgood), .din(mci_rst_window), .       dout(mci_rst_window_sync));
+caliptra_prim_flop_2sync #(
+  .Width(1),
+  .ResetValue(1'b1)
+) i_rst_window_sync (
+  .clk_i(clk),
+  .rst_ni(mci_pwrgood),
+  .d_i(mci_rst_window),
+  .q_o(mci_rst_window_sync));
 
 
 always_ff @(posedge clk or negedge mci_pwrgood) begin
@@ -198,9 +225,14 @@ caliptra_prim_flop_2sync #(
 /////////////////////////////////////////////////
 // Boot FSM
 /////////////////////////////////////////////////
+// Sparse FSM flop for glitch hardening (invalid encoding -> BOOT_ERROR)
+// Warm reset forces BOOT_IDLE
+always_comb boot_fsm_d = warm_reset ? BOOT_IDLE : boot_fsm_nxt;
+
+`CALIPTRA_PRIM_FLOP_SPARSE_FSM(u_boot_state_regs, boot_fsm_d, boot_fsm, mci_boot_fsm_state_e, BOOT_IDLE, clk, mci_pwrgood, 0)
+
 always_ff @(posedge clk or negedge mci_pwrgood) begin
     if(!mci_pwrgood) begin
-        boot_fsm                    <= BOOT_IDLE;
         boot_fsm_prev               <= BOOT_IDLE;
         fc_opt_init                 <= '0;
         lc_init                     <= '0;
@@ -212,7 +244,6 @@ always_ff @(posedge clk or negedge mci_pwrgood) begin
         min_mcu_rst_count           <= '0;
     end
     else begin
-        boot_fsm                    <= warm_reset ? BOOT_IDLE : boot_fsm_nxt;
         boot_fsm_prev               <= (boot_fsm != boot_fsm_nxt) ? boot_fsm : boot_fsm_prev; // Capture where FSM came from
         fc_opt_init                 <= fc_opt_init_nxt;
         lc_init                     <= lc_init_nxt;
@@ -235,6 +266,7 @@ always_comb begin
     cptra_rst_b_nxt         = cptra_rst_b_ff;
     mcu_reset_once_nxt      = mcu_reset_once;
     mcu_cpu_halt_req_nxt    = 1'b0;
+    fsm_error               = 1'b0;
     unique case(boot_fsm)
         BOOT_IDLE: begin
             // Can only transition into IDLE on MCI reset
@@ -323,12 +355,29 @@ always_comb begin
                 boot_fsm_nxt  = BOOT_MCU;
             end
         end
+        BOOT_ERROR: begin
+            // Terminal error state - hold MCU and Caliptra in reset and keep
+            // the subsystem out of reset for error reporting. Only exits via
+            // warm reset (warm_reset mux above) or mci_pwrgood.
+            boot_fsm_nxt            = BOOT_ERROR;
+            fsm_error               = 1'b1;
+            mcu_rst_b_nxt           = 1'b0;
+            cptra_rst_b_nxt         = 1'b0;
+            cptra_ss_rst_b_o_nxt    = 1'b1;
+        end
         default: begin
-            // Unexpected state so set state to error encoding
-            boot_fsm_nxt = BOOT_UNKNOWN;
+            // Invalid encoding detected - go to terminal error
+            boot_fsm_nxt            = BOOT_ERROR;
+            fsm_error               = 1'b1;
+            mcu_rst_b_nxt           = 1'b0;
+            cptra_rst_b_nxt         = 1'b0;
+            cptra_ss_rst_b_o_nxt    = 1'b1;
         end
     endcase
 end
+
+// Encode sparse state to 4-bit sequential value for register visibility
+always_comb boot_fsm_encoded = mci_boot_fsm_state_encode(boot_fsm);
 
 always_ff@(posedge clk or negedge mci_pwrgood) begin
     if (!mci_pwrgood) begin
@@ -366,7 +415,8 @@ end
 // Counter must be a valid width. Meaning greater than 0
 `CALIPTRA_ASSERT_INIT(ERR_MIN_MCU_RST_COUNTER_WIDTH,  MIN_MCU_RST_COUNTER_WIDTH > 0)
 
-// If falling into default state the boot_fsm will value will be X
+// boot_fsm must always be a known value. Invalid (non-X) encodings are
+// handled functionally by transitioning to BOOT_ERROR.
 `CALIPTRA_ASSERT_KNOWN(ERR_MCI_BOOT_SEQR_VALID_STATE, boot_fsm, clk, !mci_rst_b)
 
 endmodule

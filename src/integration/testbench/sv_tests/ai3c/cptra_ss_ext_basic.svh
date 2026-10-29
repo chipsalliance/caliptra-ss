@@ -52,6 +52,7 @@ class cptra_ss_ext_basic extends cptra_ss_i3c_core_base_test;
 	virtual task test_body();
 
 		bit [7:0] data[];
+		bit [7:0] exp_data[];
 
 		//-- Read image from hex file
 		read_image();
@@ -62,7 +63,9 @@ class cptra_ss_ext_basic extends cptra_ss_i3c_core_base_test;
 		test_log.step("Step 1: Reading Base Registers");
 
 		test_log.substep("Reading PROT_CAP register");
+		build_prot_cap_exp_data(exp_data);
 		i3c_read(recovery_target_addr, 'd34, 15, data);
+		check_data(data, exp_data, 15);
 
 		test_log.substep("Reading DEVICE_ID register");
 		i3c_read(recovery_target_addr, 'd35, 24, data);

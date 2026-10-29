@@ -299,6 +299,9 @@ module mcu_top
     input  logic jtag_trst_n,  // JTAG Reset
     output logic jtag_tdo,     // JTAG TDO
     output logic jtag_tdoEn,   // JTAG Test Data Output enable
+    // jtag_id is tied to a constant at the SoC top level; it forms the upper 31
+    // bits of the JTAG IDCODE (bit 0 is the mandatory constant 1).
+    input  logic [31:1] jtag_id, // JTAG IDCODE
 
     input logic [31:4] core_id,
 

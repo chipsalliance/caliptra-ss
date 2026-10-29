@@ -16,6 +16,673 @@
 `define SOC_ADDRESS_MAP_FIELD_DEFINES_HEADER
 
 
+`ifndef DEV0_CSR_DEVCMDSTAT
+`define DEV0_CSR_DEVCMDSTAT                                                                         (32'h0)
+`define DEV0_CSR_DEVCMDSTAT_DEV_ADDR_LOW                                                            (0)
+`define DEV0_CSR_DEVCMDSTAT_DEV_ADDR_MASK                                                           (32'h7f)
+`define DEV0_CSR_DEVCMDSTAT_DEV_EN_LOW                                                              (7)
+`define DEV0_CSR_DEVCMDSTAT_DEV_EN_MASK                                                             (32'h80)
+`define DEV0_CSR_DEVCMDSTAT_SETUP_LOW                                                               (8)
+`define DEV0_CSR_DEVCMDSTAT_SETUP_MASK                                                              (32'h100)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_LOW                                                       (9)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK                                                      (32'h200)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_LOW                                                          (10)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK                                                         (32'h400)
+`define DEV0_CSR_DEVCMDSTAT_LPM_SUP_LOW                                                             (11)
+`define DEV0_CSR_DEVCMDSTAT_LPM_SUP_MASK                                                            (32'h800)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_AO_LOW                                                         (12)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_AO_MASK                                                        (32'h1000)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_AI_LOW                                                         (13)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_AI_MASK                                                        (32'h2000)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_CO_LOW                                                         (14)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_CO_MASK                                                        (32'h4000)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_CI_LOW                                                         (15)
+`define DEV0_CSR_DEVCMDSTAT_INTONNAK_CI_MASK                                                        (32'h8000)
+`define DEV0_CSR_DEVCMDSTAT_DCON_LOW                                                                (16)
+`define DEV0_CSR_DEVCMDSTAT_DCON_MASK                                                               (32'h10000)
+`define DEV0_CSR_DEVCMDSTAT_DSUS_LOW                                                                (17)
+`define DEV0_CSR_DEVCMDSTAT_DSUS_MASK                                                               (32'h20000)
+`define DEV0_CSR_DEVCMDSTAT_LPM_SUS_LOW                                                             (19)
+`define DEV0_CSR_DEVCMDSTAT_LPM_SUS_MASK                                                            (32'h80000)
+`define DEV0_CSR_DEVCMDSTAT_LPM_REWP_LOW                                                            (20)
+`define DEV0_CSR_DEVCMDSTAT_LPM_REWP_MASK                                                           (32'h100000)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_LOW                                                     (21)
+`define DEV0_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK                                                    (32'h200000)
+`define DEV0_CSR_DEVCMDSTAT_SPEED_LOW                                                               (22)
+`define DEV0_CSR_DEVCMDSTAT_SPEED_MASK                                                              (32'hc00000)
+`define DEV0_CSR_DEVCMDSTAT_DCON_C_LOW                                                              (24)
+`define DEV0_CSR_DEVCMDSTAT_DCON_C_MASK                                                             (32'h1000000)
+`define DEV0_CSR_DEVCMDSTAT_DSUS_C_LOW                                                              (25)
+`define DEV0_CSR_DEVCMDSTAT_DSUS_C_MASK                                                             (32'h2000000)
+`define DEV0_CSR_DEVCMDSTAT_DRES_C_LOW                                                              (26)
+`define DEV0_CSR_DEVCMDSTAT_DRES_C_MASK                                                             (32'h4000000)
+`define DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_LOW                                                      (28)
+`define DEV0_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK                                                     (32'h10000000)
+`define DEV0_CSR_DEVCMDSTAT_PHY_TEST_MODE_LOW                                                       (29)
+`define DEV0_CSR_DEVCMDSTAT_PHY_TEST_MODE_MASK                                                      (32'he0000000)
+`endif
+`ifndef DEV0_CSR_INFO
+`define DEV0_CSR_INFO                                                                               (32'h4)
+`define DEV0_CSR_INFO_FRAME_NR_LOW                                                                  (0)
+`define DEV0_CSR_INFO_FRAME_NR_MASK                                                                 (32'h7ff)
+`define DEV0_CSR_INFO_ERR_CODE_LOW                                                                  (11)
+`define DEV0_CSR_INFO_ERR_CODE_MASK                                                                 (32'h7800)
+`define DEV0_CSR_INFO_MINREV_LOW                                                                    (16)
+`define DEV0_CSR_INFO_MINREV_MASK                                                                   (32'hff0000)
+`define DEV0_CSR_INFO_MAJREV_LOW                                                                    (24)
+`define DEV0_CSR_INFO_MAJREV_MASK                                                                   (32'hff000000)
+`endif
+`ifndef DEV0_CSR_EPLISTSTART
+`define DEV0_CSR_EPLISTSTART                                                                        (32'h8)
+`define DEV0_CSR_EPLISTSTART_EP_LIST_PRG_LOW                                                        (8)
+`define DEV0_CSR_EPLISTSTART_EP_LIST_PRG_MASK                                                       (32'hffffff00)
+`endif
+`ifndef DEV0_CSR_DATABUFSTART
+`define DEV0_CSR_DATABUFSTART                                                                       (32'hc)
+`define DEV0_CSR_DATABUFSTART_DA_BUF_LOW                                                            (17)
+`define DEV0_CSR_DATABUFSTART_DA_BUF_MASK                                                           (32'hfffe0000)
+`endif
+`ifndef DEV0_CSR_LPM
+`define DEV0_CSR_LPM                                                                                (32'h10)
+`define DEV0_CSR_LPM_HIRD_HW_LOW                                                                    (0)
+`define DEV0_CSR_LPM_HIRD_HW_MASK                                                                   (32'hf)
+`define DEV0_CSR_LPM_HIRD_SW_LOW                                                                    (4)
+`define DEV0_CSR_LPM_HIRD_SW_MASK                                                                   (32'hf0)
+`define DEV0_CSR_LPM_DATA_PENDING_LOW                                                               (8)
+`define DEV0_CSR_LPM_DATA_PENDING_MASK                                                              (32'h100)
+`endif
+`ifndef DEV0_CSR_EPSKIP
+`define DEV0_CSR_EPSKIP                                                                             (32'h14)
+`define DEV0_CSR_EPSKIP_SKIP_LOW                                                                    (0)
+`define DEV0_CSR_EPSKIP_SKIP_MASK                                                                   (32'h3fffffff)
+`endif
+`ifndef DEV0_CSR_EPINUSE
+`define DEV0_CSR_EPINUSE                                                                            (32'h18)
+`define DEV0_CSR_EPINUSE_EP0_BUF_LOW                                                                (0)
+`define DEV0_CSR_EPINUSE_EP0_BUF_MASK                                                               (32'h3)
+`define DEV0_CSR_EPINUSE_BUF_LOW                                                                    (2)
+`define DEV0_CSR_EPINUSE_BUF_MASK                                                                   (32'h3ffffffc)
+`endif
+`ifndef DEV0_CSR_EPBUFCFG
+`define DEV0_CSR_EPBUFCFG                                                                           (32'h1c)
+`define DEV0_CSR_EPBUFCFG_BUF_SB_LOW                                                                (2)
+`define DEV0_CSR_EPBUFCFG_BUF_SB_MASK                                                               (32'h3ffffffc)
+`endif
+`ifndef DEV0_CSR_INTSTAT
+`define DEV0_CSR_INTSTAT                                                                            (32'h20)
+`define DEV0_CSR_INTSTAT_EP0OUT_LOW                                                                 (0)
+`define DEV0_CSR_INTSTAT_EP0OUT_MASK                                                                (32'h1)
+`define DEV0_CSR_INTSTAT_EP0IN_LOW                                                                  (1)
+`define DEV0_CSR_INTSTAT_EP0IN_MASK                                                                 (32'h2)
+`define DEV0_CSR_INTSTAT_EP1OUT_LOW                                                                 (2)
+`define DEV0_CSR_INTSTAT_EP1OUT_MASK                                                                (32'h4)
+`define DEV0_CSR_INTSTAT_EP1IN_LOW                                                                  (3)
+`define DEV0_CSR_INTSTAT_EP1IN_MASK                                                                 (32'h8)
+`define DEV0_CSR_INTSTAT_EP2OUT_LOW                                                                 (4)
+`define DEV0_CSR_INTSTAT_EP2OUT_MASK                                                                (32'h10)
+`define DEV0_CSR_INTSTAT_EP2IN_LOW                                                                  (5)
+`define DEV0_CSR_INTSTAT_EP2IN_MASK                                                                 (32'h20)
+`define DEV0_CSR_INTSTAT_EP3OUT_LOW                                                                 (6)
+`define DEV0_CSR_INTSTAT_EP3OUT_MASK                                                                (32'h40)
+`define DEV0_CSR_INTSTAT_EP3IN_LOW                                                                  (7)
+`define DEV0_CSR_INTSTAT_EP3IN_MASK                                                                 (32'h80)
+`define DEV0_CSR_INTSTAT_EP4OUT_LOW                                                                 (8)
+`define DEV0_CSR_INTSTAT_EP4OUT_MASK                                                                (32'h100)
+`define DEV0_CSR_INTSTAT_EP4IN_LOW                                                                  (9)
+`define DEV0_CSR_INTSTAT_EP4IN_MASK                                                                 (32'h200)
+`define DEV0_CSR_INTSTAT_EP5OUT_LOW                                                                 (10)
+`define DEV0_CSR_INTSTAT_EP5OUT_MASK                                                                (32'h400)
+`define DEV0_CSR_INTSTAT_EP5IN_LOW                                                                  (11)
+`define DEV0_CSR_INTSTAT_EP5IN_MASK                                                                 (32'h800)
+`define DEV0_CSR_INTSTAT_EP_UPPER_LOW                                                               (12)
+`define DEV0_CSR_INTSTAT_EP_UPPER_MASK                                                              (32'h3ffff000)
+`define DEV0_CSR_INTSTAT_FRAME_INT_LOW                                                              (30)
+`define DEV0_CSR_INTSTAT_FRAME_INT_MASK                                                             (32'h40000000)
+`define DEV0_CSR_INTSTAT_DEV_INT_LOW                                                                (31)
+`define DEV0_CSR_INTSTAT_DEV_INT_MASK                                                               (32'h80000000)
+`endif
+`ifndef DEV0_CSR_INTEN
+`define DEV0_CSR_INTEN                                                                              (32'h24)
+`define DEV0_CSR_INTEN_EP_INT_EN_LOW                                                                (0)
+`define DEV0_CSR_INTEN_EP_INT_EN_MASK                                                               (32'h3fffffff)
+`define DEV0_CSR_INTEN_FRAME_INT_EN_LOW                                                             (30)
+`define DEV0_CSR_INTEN_FRAME_INT_EN_MASK                                                            (32'h40000000)
+`define DEV0_CSR_INTEN_DEV_INT_EN_LOW                                                               (31)
+`define DEV0_CSR_INTEN_DEV_INT_EN_MASK                                                              (32'h80000000)
+`endif
+`ifndef DEV0_CSR_INTSETSTAT
+`define DEV0_CSR_INTSETSTAT                                                                         (32'h28)
+`define DEV0_CSR_INTSETSTAT_EP0OUT_LOW                                                              (0)
+`define DEV0_CSR_INTSETSTAT_EP0OUT_MASK                                                             (32'h1)
+`define DEV0_CSR_INTSETSTAT_EP0IN_LOW                                                               (1)
+`define DEV0_CSR_INTSETSTAT_EP0IN_MASK                                                              (32'h2)
+`define DEV0_CSR_INTSETSTAT_EP1OUT_LOW                                                              (2)
+`define DEV0_CSR_INTSETSTAT_EP1OUT_MASK                                                             (32'h4)
+`define DEV0_CSR_INTSETSTAT_EP1IN_LOW                                                               (3)
+`define DEV0_CSR_INTSETSTAT_EP1IN_MASK                                                              (32'h8)
+`define DEV0_CSR_INTSETSTAT_EP2OUT_LOW                                                              (4)
+`define DEV0_CSR_INTSETSTAT_EP2OUT_MASK                                                             (32'h10)
+`define DEV0_CSR_INTSETSTAT_EP2IN_LOW                                                               (5)
+`define DEV0_CSR_INTSETSTAT_EP2IN_MASK                                                              (32'h20)
+`define DEV0_CSR_INTSETSTAT_EP3OUT_LOW                                                              (6)
+`define DEV0_CSR_INTSETSTAT_EP3OUT_MASK                                                             (32'h40)
+`define DEV0_CSR_INTSETSTAT_EP3IN_LOW                                                               (7)
+`define DEV0_CSR_INTSETSTAT_EP3IN_MASK                                                              (32'h80)
+`define DEV0_CSR_INTSETSTAT_EP4OUT_LOW                                                              (8)
+`define DEV0_CSR_INTSETSTAT_EP4OUT_MASK                                                             (32'h100)
+`define DEV0_CSR_INTSETSTAT_EP4IN_LOW                                                               (9)
+`define DEV0_CSR_INTSETSTAT_EP4IN_MASK                                                              (32'h200)
+`define DEV0_CSR_INTSETSTAT_EP5OUT_LOW                                                              (10)
+`define DEV0_CSR_INTSETSTAT_EP5OUT_MASK                                                             (32'h400)
+`define DEV0_CSR_INTSETSTAT_EP5IN_LOW                                                               (11)
+`define DEV0_CSR_INTSETSTAT_EP5IN_MASK                                                              (32'h800)
+`define DEV0_CSR_INTSETSTAT_EP_UPPER_LOW                                                            (12)
+`define DEV0_CSR_INTSETSTAT_EP_UPPER_MASK                                                           (32'h3ffff000)
+`define DEV0_CSR_INTSETSTAT_FRAME_INT_LOW                                                           (30)
+`define DEV0_CSR_INTSETSTAT_FRAME_INT_MASK                                                          (32'h40000000)
+`define DEV0_CSR_INTSETSTAT_DEV_INT_LOW                                                             (31)
+`define DEV0_CSR_INTSETSTAT_DEV_INT_MASK                                                            (32'h80000000)
+`endif
+`ifndef DEV0_CSR_INTROUTE
+`define DEV0_CSR_INTROUTE                                                                           (32'h2c)
+`define DEV0_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                          (0)
+`define DEV0_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                         (32'h3fffffff)
+`define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                       (30)
+`define DEV0_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                      (32'h40000000)
+`define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                         (31)
+`define DEV0_CSR_INTROUTE_DEV_INT_ROUTE_MASK                                                        (32'h80000000)
+`endif
+`ifndef DEV0_CSR_CONFIG
+`define DEV0_CSR_CONFIG                                                                             (32'h30)
+`define DEV0_CSR_CONFIG_NBPHYSEP_LOW                                                                (0)
+`define DEV0_CSR_CONFIG_NBPHYSEP_MASK                                                               (32'h1f)
+`define DEV0_CSR_CONFIG_SINGLE_BUFFER_LOW                                                           (5)
+`define DEV0_CSR_CONFIG_SINGLE_BUFFER_MASK                                                          (32'h20)
+`define DEV0_CSR_CONFIG_DOUBLE_BUFFER_LOW                                                           (6)
+`define DEV0_CSR_CONFIG_DOUBLE_BUFFER_MASK                                                          (32'h40)
+`define DEV0_CSR_CONFIG_TOGGLE_READABLE_LOW                                                         (7)
+`define DEV0_CSR_CONFIG_TOGGLE_READABLE_MASK                                                        (32'h80)
+`define DEV0_CSR_CONFIG_UTMI_LOW                                                                    (9)
+`define DEV0_CSR_CONFIG_UTMI_MASK                                                                   (32'h200)
+`define DEV0_CSR_CONFIG_ULPI_LOW                                                                    (10)
+`define DEV0_CSR_CONFIG_ULPI_MASK                                                                   (32'h400)
+`endif
+`ifndef DEV0_CSR_EPTOGGLE
+`define DEV0_CSR_EPTOGGLE                                                                           (32'h34)
+`define DEV0_CSR_EPTOGGLE_TOGGLE_LOW                                                                (0)
+`define DEV0_CSR_EPTOGGLE_TOGGLE_MASK                                                               (32'h3fffffff)
+`endif
+`ifndef RECOVERY_PROT_CAP_0
+`define RECOVERY_PROT_CAP_0                                                                         (32'h4)
+`endif
+`ifndef RECOVERY_PROT_CAP_1
+`define RECOVERY_PROT_CAP_1                                                                         (32'h8)
+`endif
+`ifndef RECOVERY_PROT_CAP_2
+`define RECOVERY_PROT_CAP_2                                                                         (32'hc)
+`define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_LOW                                                    (0)
+`define RECOVERY_PROT_CAP_2_REC_PROT_VERSION_MASK                                                   (32'hffff)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_LOW                                           (16)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_IDENTIFICATION_MASK                                          (32'h10000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_LOW                                          (17)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FORCED_RECOVERY_MASK                                         (32'h20000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_LOW                                               (18)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_MGMT_RESET_MASK                                              (32'h40000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_LOW                                             (19)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_RESET_MASK                                            (32'h80000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_LOW                                            (20)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_DEVICE_STATUS_MASK                                           (32'h100000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_LOW                                      (21)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RECOVERY_MEM_ACCESS_MASK                                     (32'h200000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_LOW                                            (22)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_LOCAL_C_IMAGE_MASK                                           (32'h400000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_LOW                                             (23)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_PUSH_C_IMAGE_MASK                                            (32'h800000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_LOW                                      (24)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_INTERFACE_ISOLATION_MASK                                     (32'h1000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_LOW                                          (25)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_HARDWARE_STATUS_MASK                                         (32'h2000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_LOW                                           (26)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_VENDOR_COMMAND_MASK                                          (32'h4000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_LOW                                           (27)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FLASHLESS_BOOT_MASK                                          (32'h8000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_LOW                                         (28)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_FIFO_CMS_SUPPORT_MASK                                        (32'h10000000)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_LOW                                                 (29)
+`define RECOVERY_PROT_CAP_2_AGENT_CAPS_RESERVED_MASK                                                (32'he0000000)
+`endif
+`ifndef RECOVERY_PROT_CAP_3
+`define RECOVERY_PROT_CAP_3                                                                         (32'h10)
+`define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_LOW                                                  (0)
+`define RECOVERY_PROT_CAP_3_NUM_OF_CMS_REGIONS_MASK                                                 (32'hff)
+`define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_LOW                                                       (8)
+`define RECOVERY_PROT_CAP_3_MAX_RESP_TIME_MASK                                                      (32'hff00)
+`define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_LOW                                                    (16)
+`define RECOVERY_PROT_CAP_3_HEARTBEAT_PERIOD_MASK                                                   (32'hff0000)
+`define RECOVERY_PROT_CAP_3_RESERVED_31_24_LOW                                                      (24)
+`define RECOVERY_PROT_CAP_3_RESERVED_31_24_MASK                                                     (32'hff000000)
+`endif
+`ifndef RECOVERY_DEVICE_ID_0
+`define RECOVERY_DEVICE_ID_0                                                                        (32'h14)
+`define RECOVERY_DEVICE_ID_0_DESC_TYPE_LOW                                                          (0)
+`define RECOVERY_DEVICE_ID_0_DESC_TYPE_MASK                                                         (32'hff)
+`define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_LOW                                         (8)
+`define RECOVERY_DEVICE_ID_0_VENDOR_SPECIFIC_STR_LENGTH_MASK                                        (32'hff00)
+`define RECOVERY_DEVICE_ID_0_DATA_3_2_LOW                                                           (16)
+`define RECOVERY_DEVICE_ID_0_DATA_3_2_MASK                                                          (32'hffff0000)
+`endif
+`ifndef RECOVERY_DEVICE_ID_1
+`define RECOVERY_DEVICE_ID_1                                                                        (32'h18)
+`endif
+`ifndef RECOVERY_DEVICE_ID_2
+`define RECOVERY_DEVICE_ID_2                                                                        (32'h1c)
+`endif
+`ifndef RECOVERY_DEVICE_ID_3
+`define RECOVERY_DEVICE_ID_3                                                                        (32'h20)
+`endif
+`ifndef RECOVERY_DEVICE_ID_4
+`define RECOVERY_DEVICE_ID_4                                                                        (32'h24)
+`endif
+`ifndef RECOVERY_DEVICE_ID_5
+`define RECOVERY_DEVICE_ID_5                                                                        (32'h28)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_0
+`define RECOVERY_DEVICE_STATUS_0                                                                    (32'h30)
+`define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_LOW                                                     (0)
+`define RECOVERY_DEVICE_STATUS_0_DEV_STATUS_MASK                                                    (32'hff)
+`define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_LOW                                                     (8)
+`define RECOVERY_DEVICE_STATUS_0_PROT_ERROR_MASK                                                    (32'hff00)
+`define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_LOW                                                (16)
+`define RECOVERY_DEVICE_STATUS_0_REC_REASON_CODE_MASK                                               (32'hffff0000)
+`endif
+`ifndef RECOVERY_DEVICE_STATUS_1
+`define RECOVERY_DEVICE_STATUS_1                                                                    (32'h34)
+`define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_LOW                                                      (0)
+`define RECOVERY_DEVICE_STATUS_1_HEARTBEAT_MASK                                                     (32'hffff)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_LOW                                           (16)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_LENGTH_MASK                                          (32'hff0000)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_LOW                                                (24)
+`define RECOVERY_DEVICE_STATUS_1_VENDOR_STATUS_0_MASK                                               (32'hff000000)
+`endif
+`ifndef RECOVERY_DEVICE_RESET
+`define RECOVERY_DEVICE_RESET                                                                       (32'h38)
+`define RECOVERY_DEVICE_RESET_RESET_CTRL_LOW                                                        (0)
+`define RECOVERY_DEVICE_RESET_RESET_CTRL_MASK                                                       (32'hff)
+`define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_LOW                                                   (8)
+`define RECOVERY_DEVICE_RESET_FORCED_RECOVERY_MASK                                                  (32'hff00)
+`define RECOVERY_DEVICE_RESET_IF_CTRL_LOW                                                           (16)
+`define RECOVERY_DEVICE_RESET_IF_CTRL_MASK                                                          (32'hff0000)
+`define RECOVERY_DEVICE_RESET_RESERVED_31_24_LOW                                                    (24)
+`define RECOVERY_DEVICE_RESET_RESERVED_31_24_MASK                                                   (32'hff000000)
+`endif
+`ifndef RECOVERY_RECOVERY_CTRL
+`define RECOVERY_RECOVERY_CTRL                                                                      (32'h3c)
+`define RECOVERY_RECOVERY_CTRL_CMS_LOW                                                              (0)
+`define RECOVERY_RECOVERY_CTRL_CMS_MASK                                                             (32'hff)
+`define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_LOW                                                      (8)
+`define RECOVERY_RECOVERY_CTRL_REC_IMG_SEL_MASK                                                     (32'hff00)
+`define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_LOW                                                 (16)
+`define RECOVERY_RECOVERY_CTRL_ACTIVATE_REC_IMG_MASK                                                (32'hff0000)
+`define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_LOW                                                   (24)
+`define RECOVERY_RECOVERY_CTRL_RESERVED_31_24_MASK                                                  (32'hff000000)
+`endif
+`ifndef RECOVERY_RECOVERY_STATUS
+`define RECOVERY_RECOVERY_STATUS                                                                    (32'h40)
+`define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_LOW                                                 (0)
+`define RECOVERY_RECOVERY_STATUS_DEV_REC_STATUS_MASK                                                (32'hf)
+`define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_LOW                                                  (4)
+`define RECOVERY_RECOVERY_STATUS_REC_IMG_INDEX_MASK                                                 (32'hf0)
+`define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_LOW                                         (8)
+`define RECOVERY_RECOVERY_STATUS_VENDOR_SPECIFIC_STATUS_MASK                                        (32'hff00)
+`define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_LOW                                                 (16)
+`define RECOVERY_RECOVERY_STATUS_RESERVED_31_16_MASK                                                (32'hffff0000)
+`endif
+`ifndef RECOVERY_HW_STATUS
+`define RECOVERY_HW_STATUS                                                                          (32'h44)
+`define RECOVERY_HW_STATUS_TEMP_CRITICAL_LOW                                                        (0)
+`define RECOVERY_HW_STATUS_TEMP_CRITICAL_MASK                                                       (32'h1)
+`define RECOVERY_HW_STATUS_SOFT_ERR_LOW                                                             (1)
+`define RECOVERY_HW_STATUS_SOFT_ERR_MASK                                                            (32'h2)
+`define RECOVERY_HW_STATUS_FATAL_ERR_LOW                                                            (2)
+`define RECOVERY_HW_STATUS_FATAL_ERR_MASK                                                           (32'h4)
+`define RECOVERY_HW_STATUS_RESERVED_7_3_LOW                                                         (3)
+`define RECOVERY_HW_STATUS_RESERVED_7_3_MASK                                                        (32'hf8)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LOW                                                     (8)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_MASK                                                    (32'hff00)
+`define RECOVERY_HW_STATUS_CTEMP_LOW                                                                (16)
+`define RECOVERY_HW_STATUS_CTEMP_MASK                                                               (32'hff0000)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_LOW                                                 (24)
+`define RECOVERY_HW_STATUS_VENDOR_HW_STATUS_LEN_MASK                                                (32'hff000000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_CTRL_0
+`define RECOVERY_INDIRECT_FIFO_CTRL_0                                                               (32'h48)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_LOW                                                       (0)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_CMS_MASK                                                      (32'hff)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_LOW                                                     (8)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESET_MASK                                                    (32'hff00)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_LOW                                            (16)
+`define RECOVERY_INDIRECT_FIFO_CTRL_0_RESERVED_31_16_MASK                                           (32'hffff0000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_CTRL_1
+`define RECOVERY_INDIRECT_FIFO_CTRL_1                                                               (32'h4c)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_0
+`define RECOVERY_INDIRECT_FIFO_STATUS_0                                                             (32'h50)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_LOW                                                   (0)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK                                                  (32'h1)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_LOW                                                    (1)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_FULL_MASK                                                   (32'h2)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_LOW                                            (2)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_7_2_MASK                                           (32'hfc)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_LOW                                             (8)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_REGION_TYPE_MASK                                            (32'hff00)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_LOW                                          (16)
+`define RECOVERY_INDIRECT_FIFO_STATUS_0_RESERVED_31_16_MASK                                         (32'hffff0000)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_1
+`define RECOVERY_INDIRECT_FIFO_STATUS_1                                                             (32'h54)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_2
+`define RECOVERY_INDIRECT_FIFO_STATUS_2                                                             (32'h58)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_3
+`define RECOVERY_INDIRECT_FIFO_STATUS_3                                                             (32'h5c)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_STATUS_4
+`define RECOVERY_INDIRECT_FIFO_STATUS_4                                                             (32'h60)
+`endif
+`ifndef RECOVERY_INDIRECT_FIFO_DATA
+`define RECOVERY_INDIRECT_FIFO_DATA                                                                 (32'h68)
+`endif
+`ifndef RECOVERY_VENDOR
+`define RECOVERY_VENDOR                                                                             (32'h100)
+`define RECOVERY_VENDOR_VENDOR_DATA_LOW                                                             (0)
+`define RECOVERY_VENDOR_VENDOR_DATA_MASK                                                            (32'hff)
+`define RECOVERY_VENDOR_RESERVED_31_8_LOW                                                           (8)
+`define RECOVERY_VENDOR_RESERVED_31_8_MASK                                                          (32'hffffff00)
+`endif
+`ifndef RECOVERY_CALIPTRA_CTRL
+`define RECOVERY_CALIPTRA_CTRL                                                                      (32'h200)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_LOW                                                 (0)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK                                                (32'h1)
+`define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_LOW                                                  (1)
+`define RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK                                                 (32'h2)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_LOW                                       (2)
+`define RECOVERY_CALIPTRA_CTRL_OCP_PROTOCOL_ERROR_GENERAL_MASK                                      (32'h4)
+`define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_LOW                                                    (3)
+`define RECOVERY_CALIPTRA_CTRL_RESERVED_31_3_MASK                                                   (32'hfffffff8)
+`endif
+`ifndef RECOVERY_CALIPTRA_STATUS
+`define RECOVERY_CALIPTRA_STATUS                                                                    (32'h204)
+`define RECOVERY_CALIPTRA_STATUS_REGION_RESET_LOW                                                   (0)
+`define RECOVERY_CALIPTRA_STATUS_REGION_RESET_MASK                                                  (32'h1)
+`define RECOVERY_CALIPTRA_STATUS_OVERFLOW_LOW                                                       (1)
+`define RECOVERY_CALIPTRA_STATUS_OVERFLOW_MASK                                                      (32'h2)
+`define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_LOW                                                     (2)
+`define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (32'h4)
+`define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
+`define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (32'h8)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (32'hfffffff0)
+`endif
+`ifndef RECOVERY_WINDOW_PAD
+`define RECOVERY_WINDOW_PAD                                                                         (32'h7fc)
+`endif
+`ifndef HUB_CONTROL
+`define HUB_CONTROL                                                                                 (32'h30)
+`define HUB_CONTROL_ENABLE_LOW                                                                      (0)
+`define HUB_CONTROL_ENABLE_MASK                                                                     (32'h1)
+`define HUB_CONTROL_RESERVED_LOW_LOW                                                                (1)
+`define HUB_CONTROL_RESERVED_LOW_MASK                                                               (32'h1fe)
+`define HUB_CONTROL_FORCE_NEEDCLK_LOW                                                               (9)
+`define HUB_CONTROL_FORCE_NEEDCLK_MASK                                                              (32'h200)
+`define HUB_CONTROL_FORCE_VBUS_LOW                                                                  (10)
+`define HUB_CONTROL_FORCE_VBUS_MASK                                                                 (32'h400)
+`define HUB_CONTROL_LPM_SUP_LOW                                                                     (11)
+`define HUB_CONTROL_LPM_SUP_MASK                                                                    (32'h800)
+`define HUB_CONTROL_RESERVED_MID_LOW                                                                (12)
+`define HUB_CONTROL_RESERVED_MID_MASK                                                               (32'hf000)
+`define HUB_CONTROL_DCON_LOW                                                                        (16)
+`define HUB_CONTROL_DCON_MASK                                                                       (32'h10000)
+`define HUB_CONTROL_RESERVED_17_LOW                                                                 (17)
+`define HUB_CONTROL_RESERVED_17_MASK                                                                (32'h20000)
+`define HUB_CONTROL_SELF_POWERED_LOW                                                                (18)
+`define HUB_CONTROL_SELF_POWERED_MASK                                                               (32'h40000)
+`define HUB_CONTROL_RESERVED_MID2_LOW                                                               (19)
+`define HUB_CONTROL_RESERVED_MID2_MASK                                                              (32'h180000)
+`define HUB_CONTROL_FORCE_FULLSPEED_LOW                                                             (21)
+`define HUB_CONTROL_FORCE_FULLSPEED_MASK                                                            (32'h200000)
+`define HUB_CONTROL_SPEED_LOW                                                                       (22)
+`define HUB_CONTROL_SPEED_MASK                                                                      (32'hc00000)
+`define HUB_CONTROL_RESERVED_MID3_LOW                                                               (24)
+`define HUB_CONTROL_RESERVED_MID3_MASK                                                              (32'hf000000)
+`define HUB_CONTROL_VBUS_DEBOUNCED_LOW                                                              (28)
+`define HUB_CONTROL_VBUS_DEBOUNCED_MASK                                                             (32'h10000000)
+`define HUB_CONTROL_RESERVED_HIGH_LOW                                                               (29)
+`define HUB_CONTROL_RESERVED_HIGH_MASK                                                              (32'he0000000)
+`endif
+`ifndef HUB_LPM
+`define HUB_LPM                                                                                     (32'h34)
+`define HUB_LPM_BESL_HW_LOW                                                                         (0)
+`define HUB_LPM_BESL_HW_MASK                                                                        (32'hf)
+`define HUB_LPM_BESL_SW_LOW                                                                         (4)
+`define HUB_LPM_BESL_SW_MASK                                                                        (32'hf0)
+`define HUB_LPM_RESERVED_HIGH_LOW                                                                   (8)
+`define HUB_LPM_RESERVED_HIGH_MASK                                                                  (32'hffffff00)
+`endif
+`ifndef HUB_ULPIDEBUG
+`define HUB_ULPIDEBUG                                                                               (32'h3c)
+`define HUB_ULPIDEBUG_PHY_ADDR_LOW                                                                  (0)
+`define HUB_ULPIDEBUG_PHY_ADDR_MASK                                                                 (32'hf)
+`define HUB_ULPIDEBUG_PHY_ADDR_HIGH_LOW                                                             (4)
+`define HUB_ULPIDEBUG_PHY_ADDR_HIGH_MASK                                                            (32'hf0)
+`define HUB_ULPIDEBUG_PHY_WDATA_LOW                                                                 (8)
+`define HUB_ULPIDEBUG_PHY_WDATA_MASK                                                                (32'hff00)
+`define HUB_ULPIDEBUG_PHY_RDATA_LOW                                                                 (16)
+`define HUB_ULPIDEBUG_PHY_RDATA_MASK                                                                (32'hff0000)
+`define HUB_ULPIDEBUG_PHY_RW_LOW                                                                    (24)
+`define HUB_ULPIDEBUG_PHY_RW_MASK                                                                   (32'h1000000)
+`define HUB_ULPIDEBUG_PHY_ACCESS_LOW                                                                (25)
+`define HUB_ULPIDEBUG_PHY_ACCESS_MASK                                                               (32'h2000000)
+`define HUB_ULPIDEBUG_PHY_MODE_LOW                                                                  (31)
+`define HUB_ULPIDEBUG_PHY_MODE_MASK                                                                 (32'h80000000)
+`endif
+`ifndef USB_DEV1_CSR_DEVCMDSTAT
+`define USB_DEV1_CSR_DEVCMDSTAT                                                                     (32'h0)
+`define USB_DEV1_CSR_DEVCMDSTAT_DEV_ADDR_LOW                                                        (0)
+`define USB_DEV1_CSR_DEVCMDSTAT_DEV_ADDR_MASK                                                       (32'h7f)
+`define USB_DEV1_CSR_DEVCMDSTAT_DEV_EN_LOW                                                          (7)
+`define USB_DEV1_CSR_DEVCMDSTAT_DEV_EN_MASK                                                         (32'h80)
+`define USB_DEV1_CSR_DEVCMDSTAT_SETUP_LOW                                                           (8)
+`define USB_DEV1_CSR_DEVCMDSTAT_SETUP_MASK                                                          (32'h100)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_NEEDCLK_LOW                                                   (9)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_NEEDCLK_MASK                                                  (32'h200)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_VBUS_LOW                                                      (10)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_VBUS_MASK                                                     (32'h400)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUP_LOW                                                         (11)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUP_MASK                                                        (32'h800)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AO_LOW                                                     (12)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AO_MASK                                                    (32'h1000)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AI_LOW                                                     (13)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_AI_MASK                                                    (32'h2000)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CO_LOW                                                     (14)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CO_MASK                                                    (32'h4000)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CI_LOW                                                     (15)
+`define USB_DEV1_CSR_DEVCMDSTAT_INTONNAK_CI_MASK                                                    (32'h8000)
+`define USB_DEV1_CSR_DEVCMDSTAT_DCON_LOW                                                            (16)
+`define USB_DEV1_CSR_DEVCMDSTAT_DCON_MASK                                                           (32'h10000)
+`define USB_DEV1_CSR_DEVCMDSTAT_DSUS_LOW                                                            (17)
+`define USB_DEV1_CSR_DEVCMDSTAT_DSUS_MASK                                                           (32'h20000)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUS_LOW                                                         (19)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_SUS_MASK                                                        (32'h80000)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_REWP_LOW                                                        (20)
+`define USB_DEV1_CSR_DEVCMDSTAT_LPM_REWP_MASK                                                       (32'h100000)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_FULLSPEED_LOW                                                 (21)
+`define USB_DEV1_CSR_DEVCMDSTAT_FORCE_FULLSPEED_MASK                                                (32'h200000)
+`define USB_DEV1_CSR_DEVCMDSTAT_SPEED_LOW                                                           (22)
+`define USB_DEV1_CSR_DEVCMDSTAT_SPEED_MASK                                                          (32'hc00000)
+`define USB_DEV1_CSR_DEVCMDSTAT_DCON_C_LOW                                                          (24)
+`define USB_DEV1_CSR_DEVCMDSTAT_DCON_C_MASK                                                         (32'h1000000)
+`define USB_DEV1_CSR_DEVCMDSTAT_DSUS_C_LOW                                                          (25)
+`define USB_DEV1_CSR_DEVCMDSTAT_DSUS_C_MASK                                                         (32'h2000000)
+`define USB_DEV1_CSR_DEVCMDSTAT_DRES_C_LOW                                                          (26)
+`define USB_DEV1_CSR_DEVCMDSTAT_DRES_C_MASK                                                         (32'h4000000)
+`define USB_DEV1_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_LOW                                                  (28)
+`define USB_DEV1_CSR_DEVCMDSTAT_VBUS_DEBOUNCED_MASK                                                 (32'h10000000)
+`define USB_DEV1_CSR_DEVCMDSTAT_PHY_TEST_MODE_LOW                                                   (29)
+`define USB_DEV1_CSR_DEVCMDSTAT_PHY_TEST_MODE_MASK                                                  (32'he0000000)
+`endif
+`ifndef USB_DEV1_CSR_INFO
+`define USB_DEV1_CSR_INFO                                                                           (32'h4)
+`define USB_DEV1_CSR_INFO_FRAME_NR_LOW                                                              (0)
+`define USB_DEV1_CSR_INFO_FRAME_NR_MASK                                                             (32'h7ff)
+`define USB_DEV1_CSR_INFO_ERR_CODE_LOW                                                              (11)
+`define USB_DEV1_CSR_INFO_ERR_CODE_MASK                                                             (32'h7800)
+`define USB_DEV1_CSR_INFO_MINREV_LOW                                                                (16)
+`define USB_DEV1_CSR_INFO_MINREV_MASK                                                               (32'hff0000)
+`define USB_DEV1_CSR_INFO_MAJREV_LOW                                                                (24)
+`define USB_DEV1_CSR_INFO_MAJREV_MASK                                                               (32'hff000000)
+`endif
+`ifndef USB_DEV1_CSR_EPLISTSTART
+`define USB_DEV1_CSR_EPLISTSTART                                                                    (32'h8)
+`define USB_DEV1_CSR_EPLISTSTART_EP_LIST_PRG_LOW                                                    (8)
+`define USB_DEV1_CSR_EPLISTSTART_EP_LIST_PRG_MASK                                                   (32'hffffff00)
+`endif
+`ifndef USB_DEV1_CSR_DATABUFSTART
+`define USB_DEV1_CSR_DATABUFSTART                                                                   (32'hc)
+`define USB_DEV1_CSR_DATABUFSTART_DA_BUF_LOW                                                        (17)
+`define USB_DEV1_CSR_DATABUFSTART_DA_BUF_MASK                                                       (32'hfffe0000)
+`endif
+`ifndef USB_DEV1_CSR_LPM
+`define USB_DEV1_CSR_LPM                                                                            (32'h10)
+`define USB_DEV1_CSR_LPM_HIRD_HW_LOW                                                                (0)
+`define USB_DEV1_CSR_LPM_HIRD_HW_MASK                                                               (32'hf)
+`define USB_DEV1_CSR_LPM_HIRD_SW_LOW                                                                (4)
+`define USB_DEV1_CSR_LPM_HIRD_SW_MASK                                                               (32'hf0)
+`define USB_DEV1_CSR_LPM_DATA_PENDING_LOW                                                           (8)
+`define USB_DEV1_CSR_LPM_DATA_PENDING_MASK                                                          (32'h100)
+`endif
+`ifndef USB_DEV1_CSR_EPSKIP
+`define USB_DEV1_CSR_EPSKIP                                                                         (32'h14)
+`define USB_DEV1_CSR_EPSKIP_SKIP_LOW                                                                (0)
+`define USB_DEV1_CSR_EPSKIP_SKIP_MASK                                                               (32'h3fffffff)
+`endif
+`ifndef USB_DEV1_CSR_EPINUSE
+`define USB_DEV1_CSR_EPINUSE                                                                        (32'h18)
+`define USB_DEV1_CSR_EPINUSE_EP0_BUF_LOW                                                            (0)
+`define USB_DEV1_CSR_EPINUSE_EP0_BUF_MASK                                                           (32'h3)
+`define USB_DEV1_CSR_EPINUSE_BUF_LOW                                                                (2)
+`define USB_DEV1_CSR_EPINUSE_BUF_MASK                                                               (32'h3ffffffc)
+`endif
+`ifndef USB_DEV1_CSR_EPBUFCFG
+`define USB_DEV1_CSR_EPBUFCFG                                                                       (32'h1c)
+`define USB_DEV1_CSR_EPBUFCFG_BUF_SB_LOW                                                            (2)
+`define USB_DEV1_CSR_EPBUFCFG_BUF_SB_MASK                                                           (32'h3ffffffc)
+`endif
+`ifndef USB_DEV1_CSR_INTSTAT
+`define USB_DEV1_CSR_INTSTAT                                                                        (32'h20)
+`define USB_DEV1_CSR_INTSTAT_EP0OUT_LOW                                                             (0)
+`define USB_DEV1_CSR_INTSTAT_EP0OUT_MASK                                                            (32'h1)
+`define USB_DEV1_CSR_INTSTAT_EP0IN_LOW                                                              (1)
+`define USB_DEV1_CSR_INTSTAT_EP0IN_MASK                                                             (32'h2)
+`define USB_DEV1_CSR_INTSTAT_EP1OUT_LOW                                                             (2)
+`define USB_DEV1_CSR_INTSTAT_EP1OUT_MASK                                                            (32'h4)
+`define USB_DEV1_CSR_INTSTAT_EP1IN_LOW                                                              (3)
+`define USB_DEV1_CSR_INTSTAT_EP1IN_MASK                                                             (32'h8)
+`define USB_DEV1_CSR_INTSTAT_EP2OUT_LOW                                                             (4)
+`define USB_DEV1_CSR_INTSTAT_EP2OUT_MASK                                                            (32'h10)
+`define USB_DEV1_CSR_INTSTAT_EP2IN_LOW                                                              (5)
+`define USB_DEV1_CSR_INTSTAT_EP2IN_MASK                                                             (32'h20)
+`define USB_DEV1_CSR_INTSTAT_EP3OUT_LOW                                                             (6)
+`define USB_DEV1_CSR_INTSTAT_EP3OUT_MASK                                                            (32'h40)
+`define USB_DEV1_CSR_INTSTAT_EP3IN_LOW                                                              (7)
+`define USB_DEV1_CSR_INTSTAT_EP3IN_MASK                                                             (32'h80)
+`define USB_DEV1_CSR_INTSTAT_EP4OUT_LOW                                                             (8)
+`define USB_DEV1_CSR_INTSTAT_EP4OUT_MASK                                                            (32'h100)
+`define USB_DEV1_CSR_INTSTAT_EP4IN_LOW                                                              (9)
+`define USB_DEV1_CSR_INTSTAT_EP4IN_MASK                                                             (32'h200)
+`define USB_DEV1_CSR_INTSTAT_EP5OUT_LOW                                                             (10)
+`define USB_DEV1_CSR_INTSTAT_EP5OUT_MASK                                                            (32'h400)
+`define USB_DEV1_CSR_INTSTAT_EP5IN_LOW                                                              (11)
+`define USB_DEV1_CSR_INTSTAT_EP5IN_MASK                                                             (32'h800)
+`define USB_DEV1_CSR_INTSTAT_EP_UPPER_LOW                                                           (12)
+`define USB_DEV1_CSR_INTSTAT_EP_UPPER_MASK                                                          (32'h3ffff000)
+`define USB_DEV1_CSR_INTSTAT_FRAME_INT_LOW                                                          (30)
+`define USB_DEV1_CSR_INTSTAT_FRAME_INT_MASK                                                         (32'h40000000)
+`define USB_DEV1_CSR_INTSTAT_DEV_INT_LOW                                                            (31)
+`define USB_DEV1_CSR_INTSTAT_DEV_INT_MASK                                                           (32'h80000000)
+`endif
+`ifndef USB_DEV1_CSR_INTEN
+`define USB_DEV1_CSR_INTEN                                                                          (32'h24)
+`define USB_DEV1_CSR_INTEN_EP_INT_EN_LOW                                                            (0)
+`define USB_DEV1_CSR_INTEN_EP_INT_EN_MASK                                                           (32'h3fffffff)
+`define USB_DEV1_CSR_INTEN_FRAME_INT_EN_LOW                                                         (30)
+`define USB_DEV1_CSR_INTEN_FRAME_INT_EN_MASK                                                        (32'h40000000)
+`define USB_DEV1_CSR_INTEN_DEV_INT_EN_LOW                                                           (31)
+`define USB_DEV1_CSR_INTEN_DEV_INT_EN_MASK                                                          (32'h80000000)
+`endif
+`ifndef USB_DEV1_CSR_INTSETSTAT
+`define USB_DEV1_CSR_INTSETSTAT                                                                     (32'h28)
+`define USB_DEV1_CSR_INTSETSTAT_EP0OUT_LOW                                                          (0)
+`define USB_DEV1_CSR_INTSETSTAT_EP0OUT_MASK                                                         (32'h1)
+`define USB_DEV1_CSR_INTSETSTAT_EP0IN_LOW                                                           (1)
+`define USB_DEV1_CSR_INTSETSTAT_EP0IN_MASK                                                          (32'h2)
+`define USB_DEV1_CSR_INTSETSTAT_EP1OUT_LOW                                                          (2)
+`define USB_DEV1_CSR_INTSETSTAT_EP1OUT_MASK                                                         (32'h4)
+`define USB_DEV1_CSR_INTSETSTAT_EP1IN_LOW                                                           (3)
+`define USB_DEV1_CSR_INTSETSTAT_EP1IN_MASK                                                          (32'h8)
+`define USB_DEV1_CSR_INTSETSTAT_EP2OUT_LOW                                                          (4)
+`define USB_DEV1_CSR_INTSETSTAT_EP2OUT_MASK                                                         (32'h10)
+`define USB_DEV1_CSR_INTSETSTAT_EP2IN_LOW                                                           (5)
+`define USB_DEV1_CSR_INTSETSTAT_EP2IN_MASK                                                          (32'h20)
+`define USB_DEV1_CSR_INTSETSTAT_EP3OUT_LOW                                                          (6)
+`define USB_DEV1_CSR_INTSETSTAT_EP3OUT_MASK                                                         (32'h40)
+`define USB_DEV1_CSR_INTSETSTAT_EP3IN_LOW                                                           (7)
+`define USB_DEV1_CSR_INTSETSTAT_EP3IN_MASK                                                          (32'h80)
+`define USB_DEV1_CSR_INTSETSTAT_EP4OUT_LOW                                                          (8)
+`define USB_DEV1_CSR_INTSETSTAT_EP4OUT_MASK                                                         (32'h100)
+`define USB_DEV1_CSR_INTSETSTAT_EP4IN_LOW                                                           (9)
+`define USB_DEV1_CSR_INTSETSTAT_EP4IN_MASK                                                          (32'h200)
+`define USB_DEV1_CSR_INTSETSTAT_EP5OUT_LOW                                                          (10)
+`define USB_DEV1_CSR_INTSETSTAT_EP5OUT_MASK                                                         (32'h400)
+`define USB_DEV1_CSR_INTSETSTAT_EP5IN_LOW                                                           (11)
+`define USB_DEV1_CSR_INTSETSTAT_EP5IN_MASK                                                          (32'h800)
+`define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_LOW                                                        (12)
+`define USB_DEV1_CSR_INTSETSTAT_EP_UPPER_MASK                                                       (32'h3ffff000)
+`define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_LOW                                                       (30)
+`define USB_DEV1_CSR_INTSETSTAT_FRAME_INT_MASK                                                      (32'h40000000)
+`define USB_DEV1_CSR_INTSETSTAT_DEV_INT_LOW                                                         (31)
+`define USB_DEV1_CSR_INTSETSTAT_DEV_INT_MASK                                                        (32'h80000000)
+`endif
+`ifndef USB_DEV1_CSR_INTROUTE
+`define USB_DEV1_CSR_INTROUTE                                                                       (32'h2c)
+`define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_LOW                                                      (0)
+`define USB_DEV1_CSR_INTROUTE_EP_INT_ROUTE_MASK                                                     (32'h3fffffff)
+`define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_LOW                                                   (30)
+`define USB_DEV1_CSR_INTROUTE_FRAME_INT_ROUTE_MASK                                                  (32'h40000000)
+`define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_LOW                                                     (31)
+`define USB_DEV1_CSR_INTROUTE_DEV_INT_ROUTE_MASK                                                    (32'h80000000)
+`endif
+`ifndef USB_DEV1_CSR_CONFIG
+`define USB_DEV1_CSR_CONFIG                                                                         (32'h30)
+`define USB_DEV1_CSR_CONFIG_NBPHYSEP_LOW                                                            (0)
+`define USB_DEV1_CSR_CONFIG_NBPHYSEP_MASK                                                           (32'h1f)
+`define USB_DEV1_CSR_CONFIG_SINGLE_BUFFER_LOW                                                       (5)
+`define USB_DEV1_CSR_CONFIG_SINGLE_BUFFER_MASK                                                      (32'h20)
+`define USB_DEV1_CSR_CONFIG_DOUBLE_BUFFER_LOW                                                       (6)
+`define USB_DEV1_CSR_CONFIG_DOUBLE_BUFFER_MASK                                                      (32'h40)
+`define USB_DEV1_CSR_CONFIG_TOGGLE_READABLE_LOW                                                     (7)
+`define USB_DEV1_CSR_CONFIG_TOGGLE_READABLE_MASK                                                    (32'h80)
+`define USB_DEV1_CSR_CONFIG_UTMI_LOW                                                                (9)
+`define USB_DEV1_CSR_CONFIG_UTMI_MASK                                                               (32'h200)
+`define USB_DEV1_CSR_CONFIG_ULPI_LOW                                                                (10)
+`define USB_DEV1_CSR_CONFIG_ULPI_MASK                                                               (32'h400)
+`endif
+`ifndef USB_DEV1_CSR_EPTOGGLE
+`define USB_DEV1_CSR_EPTOGGLE                                                                       (32'h34)
+`define USB_DEV1_CSR_EPTOGGLE_TOGGLE_LOW                                                            (0)
+`define USB_DEV1_CSR_EPTOGGLE_TOGGLE_MASK                                                           (32'h3fffffff)
+`endif
 `ifndef I3CCSR_I3CBASE_HCI_VERSION
 `define I3CCSR_I3CBASE_HCI_VERSION                                                                  (32'h0)
 `endif
@@ -6416,6 +7083,12 @@
 `endif
 `ifndef MCI_REG_HW_CAPABILITIES
 `define MCI_REG_HW_CAPABILITIES                                                                     (32'h0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_LOW                                           (0)
+`define MCI_REG_HW_CAPABILITIES_STREAMING_BOOT_SELECT_MASK                                          (32'h3)
+`define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_LOW                    (2)
+`define MCI_REG_HW_CAPABILITIES_CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE_MASK                   (32'h4)
+`define MCI_REG_HW_CAPABILITIES_CAP_LOW                                                             (3)
+`define MCI_REG_HW_CAPABILITIES_CAP_MASK                                                            (32'hfffffff8)
 `endif
 `ifndef MCI_REG_FW_CAPABILITIES
 `define MCI_REG_FW_CAPABILITIES                                                                     (32'h4)
@@ -6469,6 +7142,8 @@
 `define MCI_REG_HW_FLOW_STATUS                                                                      (32'h34)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_LOW                                                         (0)
 `define MCI_REG_HW_FLOW_STATUS_BOOT_FSM_MASK                                                        (32'hf)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_LOW                                             (4)
+`define MCI_REG_HW_FLOW_STATUS_MCU_ROM_PATCH_ACTIVE_MASK                                            (32'h10)
 `endif
 `ifndef MCI_REG_RESET_REASON
 `define MCI_REG_RESET_REASON                                                                        (32'h38)
@@ -6503,6 +7178,10 @@
 `define MCI_REG_HW_ERROR_FATAL_NMI_PIN_MASK                                                         (32'h2)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_LOW                                       (2)
 `define MCI_REG_HW_ERROR_FATAL_MCU_SRAM_DMI_AXI_COLLISION_MASK                                      (32'h4)
+`define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_LOW                                                        (3)
+`define MCI_REG_HW_ERROR_FATAL_FSM_ERROR_MASK                                                       (32'h8)
+`define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                                       (4)
+`define MCI_REG_HW_ERROR_FATAL_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                                      (32'h10)
 `endif
 `ifndef MCI_REG_AGG_ERROR_FATAL
 `define MCI_REG_AGG_ERROR_FATAL                                                                     (32'h54)
@@ -6689,6 +7368,10 @@
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_NMI_PIN_MASK                                      (32'h2)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_LOW                    (2)
 `define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_SRAM_DMI_AXI_COLLISION_MASK                   (32'h4)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_LOW                                     (3)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_FSM_ERROR_MASK                                    (32'h8)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_LOW                    (4)
+`define MCI_REG_INTERNAL_HW_ERROR_FATAL_MASK_MASK_MCU_ROM_PATCH_SRAM_ECC_UNC_MASK                   (32'h10)
 `endif
 `ifndef MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK
 `define MCI_REG_INTERNAL_HW_ERROR_NON_FATAL_MASK                                                    (32'h94)
@@ -8626,10 +9309,12 @@
 `ifndef MCU_TRACE_BUFFER_CSR_READ_PTR
 `define MCU_TRACE_BUFFER_CSR_READ_PTR                                                               (32'h10)
 `endif
-`ifndef MCU_TRACE_BUFFER_CSR_CONTROL
-`define MCU_TRACE_BUFFER_CSR_CONTROL                                                                (32'h14)
-`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_LOW                                               (0)
-`define MCU_TRACE_BUFFER_CSR_CONTROL_TRACE_SOURCE_MASK                                              (32'h1)
+`ifndef MCU_TRACE_BUFFER_CSR_CTRL
+`define MCU_TRACE_BUFFER_CSR_CTRL                                                                   (32'h14)
+`define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                (0)
+`define MCU_TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                               (32'h1)
+`define MCU_TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_LOW                                                (1)
+`define MCU_TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_MASK                                               (32'h2)
 `endif
 `ifndef MCU_MBOX0_CSR_MBOX_LOCK
 `define MCU_MBOX0_CSR_MBOX_LOCK                                                                     (32'h200000)
@@ -8662,8 +9347,6 @@
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 `define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
-`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-`define MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
 `ifndef MCU_MBOX0_CSR_MBOX_CMD_STATUS
 `define MCU_MBOX0_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
@@ -8676,6 +9359,8 @@
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+`define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
 `endif
 `ifndef MCU_MBOX1_CSR_MBOX_LOCK
 `define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (32'h200000)
@@ -8708,8 +9393,6 @@
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS                                                            (32'h20001c)
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_LOW                                                 (0)
 `define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_STATUS_MASK                                                (32'hf)
-`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_LOW                                                   (4)
-`define MCU_MBOX1_CSR_MBOX_TARGET_STATUS_DONE_MASK                                                  (32'h10)
 `endif
 `ifndef MCU_MBOX1_CSR_MBOX_CMD_STATUS
 `define MCU_MBOX1_CSR_MBOX_CMD_STATUS                                                               (32'h200020)
@@ -8722,6 +9405,8 @@
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK                                          (32'h1)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_LOW                                           (1)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
+`define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
 `endif
 `ifndef OTP_CTRL_INTERRUPT_STATE
 `define OTP_CTRL_INTERRUPT_STATE                                                                    (32'h0)
@@ -9495,6 +10180,314 @@
 `ifndef LC_CTRL_MANUF_STATE_7
 `define LC_CTRL_MANUF_STATE_7                                                                       (32'h88)
 `endif
+`ifndef SPI_HOST_INTR_STATE
+`define SPI_HOST_INTR_STATE                                                                         (32'h0)
+`define SPI_HOST_INTR_STATE_ERROR_LOW                                                               (0)
+`define SPI_HOST_INTR_STATE_ERROR_MASK                                                              (32'h1)
+`define SPI_HOST_INTR_STATE_SPI_EVENT_LOW                                                           (1)
+`define SPI_HOST_INTR_STATE_SPI_EVENT_MASK                                                          (32'h2)
+`endif
+`ifndef SPI_HOST_INTR_ENABLE
+`define SPI_HOST_INTR_ENABLE                                                                        (32'h4)
+`define SPI_HOST_INTR_ENABLE_ERROR_LOW                                                              (0)
+`define SPI_HOST_INTR_ENABLE_ERROR_MASK                                                             (32'h1)
+`define SPI_HOST_INTR_ENABLE_SPI_EVENT_LOW                                                          (1)
+`define SPI_HOST_INTR_ENABLE_SPI_EVENT_MASK                                                         (32'h2)
+`endif
+`ifndef SPI_HOST_INTR_TEST
+`define SPI_HOST_INTR_TEST                                                                          (32'h8)
+`define SPI_HOST_INTR_TEST_ERROR_LOW                                                                (0)
+`define SPI_HOST_INTR_TEST_ERROR_MASK                                                               (32'h1)
+`define SPI_HOST_INTR_TEST_SPI_EVENT_LOW                                                            (1)
+`define SPI_HOST_INTR_TEST_SPI_EVENT_MASK                                                           (32'h2)
+`endif
+`ifndef SPI_HOST_CONTROL
+`define SPI_HOST_CONTROL                                                                            (32'hc)
+`define SPI_HOST_CONTROL_RX_WATERMARK_LOW                                                           (0)
+`define SPI_HOST_CONTROL_RX_WATERMARK_MASK                                                          (32'hff)
+`define SPI_HOST_CONTROL_TX_WATERMARK_LOW                                                           (8)
+`define SPI_HOST_CONTROL_TX_WATERMARK_MASK                                                          (32'hff00)
+`define SPI_HOST_CONTROL_OUTPUT_EN_LOW                                                              (29)
+`define SPI_HOST_CONTROL_OUTPUT_EN_MASK                                                             (32'h20000000)
+`define SPI_HOST_CONTROL_SW_RST_LOW                                                                 (30)
+`define SPI_HOST_CONTROL_SW_RST_MASK                                                                (32'h40000000)
+`define SPI_HOST_CONTROL_SPIEN_LOW                                                                  (31)
+`define SPI_HOST_CONTROL_SPIEN_MASK                                                                 (32'h80000000)
+`endif
+`ifndef SPI_HOST_STATUS
+`define SPI_HOST_STATUS                                                                             (32'h10)
+`define SPI_HOST_STATUS_TXQD_LOW                                                                    (0)
+`define SPI_HOST_STATUS_TXQD_MASK                                                                   (32'hff)
+`define SPI_HOST_STATUS_RXQD_LOW                                                                    (8)
+`define SPI_HOST_STATUS_RXQD_MASK                                                                   (32'hff00)
+`define SPI_HOST_STATUS_CMDQD_LOW                                                                   (16)
+`define SPI_HOST_STATUS_CMDQD_MASK                                                                  (32'hf0000)
+`define SPI_HOST_STATUS_RXWM_LOW                                                                    (20)
+`define SPI_HOST_STATUS_RXWM_MASK                                                                   (32'h100000)
+`define SPI_HOST_STATUS_BYTEORDER_LOW                                                               (22)
+`define SPI_HOST_STATUS_BYTEORDER_MASK                                                              (32'h400000)
+`define SPI_HOST_STATUS_RXSTALL_LOW                                                                 (23)
+`define SPI_HOST_STATUS_RXSTALL_MASK                                                                (32'h800000)
+`define SPI_HOST_STATUS_RXEMPTY_LOW                                                                 (24)
+`define SPI_HOST_STATUS_RXEMPTY_MASK                                                                (32'h1000000)
+`define SPI_HOST_STATUS_RXFULL_LOW                                                                  (25)
+`define SPI_HOST_STATUS_RXFULL_MASK                                                                 (32'h2000000)
+`define SPI_HOST_STATUS_TXWM_LOW                                                                    (26)
+`define SPI_HOST_STATUS_TXWM_MASK                                                                   (32'h4000000)
+`define SPI_HOST_STATUS_TXSTALL_LOW                                                                 (27)
+`define SPI_HOST_STATUS_TXSTALL_MASK                                                                (32'h8000000)
+`define SPI_HOST_STATUS_TXEMPTY_LOW                                                                 (28)
+`define SPI_HOST_STATUS_TXEMPTY_MASK                                                                (32'h10000000)
+`define SPI_HOST_STATUS_TXFULL_LOW                                                                  (29)
+`define SPI_HOST_STATUS_TXFULL_MASK                                                                 (32'h20000000)
+`define SPI_HOST_STATUS_ACTIVE_LOW                                                                  (30)
+`define SPI_HOST_STATUS_ACTIVE_MASK                                                                 (32'h40000000)
+`define SPI_HOST_STATUS_READY_LOW                                                                   (31)
+`define SPI_HOST_STATUS_READY_MASK                                                                  (32'h80000000)
+`endif
+`ifndef SPI_HOST_CONFIGOPTS_0
+`define SPI_HOST_CONFIGOPTS_0                                                                       (32'h14)
+`define SPI_HOST_CONFIGOPTS_0_CLKDIV_LOW                                                            (0)
+`define SPI_HOST_CONFIGOPTS_0_CLKDIV_MASK                                                           (32'hffff)
+`define SPI_HOST_CONFIGOPTS_0_CSNIDLE_LOW                                                           (16)
+`define SPI_HOST_CONFIGOPTS_0_CSNIDLE_MASK                                                          (32'hf0000)
+`define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_LOW                                                          (20)
+`define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_MASK                                                         (32'hf00000)
+`define SPI_HOST_CONFIGOPTS_0_CSNLEAD_LOW                                                           (24)
+`define SPI_HOST_CONFIGOPTS_0_CSNLEAD_MASK                                                          (32'hf000000)
+`define SPI_HOST_CONFIGOPTS_0_FULLCYC_LOW                                                           (29)
+`define SPI_HOST_CONFIGOPTS_0_FULLCYC_MASK                                                          (32'h20000000)
+`define SPI_HOST_CONFIGOPTS_0_CPHA_LOW                                                              (30)
+`define SPI_HOST_CONFIGOPTS_0_CPHA_MASK                                                             (32'h40000000)
+`define SPI_HOST_CONFIGOPTS_0_CPOL_LOW                                                              (31)
+`define SPI_HOST_CONFIGOPTS_0_CPOL_MASK                                                             (32'h80000000)
+`endif
+`ifndef SPI_HOST_CONFIGOPTS_1
+`define SPI_HOST_CONFIGOPTS_1                                                                       (32'h18)
+`define SPI_HOST_CONFIGOPTS_1_CLKDIV_LOW                                                            (0)
+`define SPI_HOST_CONFIGOPTS_1_CLKDIV_MASK                                                           (32'hffff)
+`define SPI_HOST_CONFIGOPTS_1_CSNIDLE_LOW                                                           (16)
+`define SPI_HOST_CONFIGOPTS_1_CSNIDLE_MASK                                                          (32'hf0000)
+`define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_LOW                                                          (20)
+`define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_MASK                                                         (32'hf00000)
+`define SPI_HOST_CONFIGOPTS_1_CSNLEAD_LOW                                                           (24)
+`define SPI_HOST_CONFIGOPTS_1_CSNLEAD_MASK                                                          (32'hf000000)
+`define SPI_HOST_CONFIGOPTS_1_FULLCYC_LOW                                                           (29)
+`define SPI_HOST_CONFIGOPTS_1_FULLCYC_MASK                                                          (32'h20000000)
+`define SPI_HOST_CONFIGOPTS_1_CPHA_LOW                                                              (30)
+`define SPI_HOST_CONFIGOPTS_1_CPHA_MASK                                                             (32'h40000000)
+`define SPI_HOST_CONFIGOPTS_1_CPOL_LOW                                                              (31)
+`define SPI_HOST_CONFIGOPTS_1_CPOL_MASK                                                             (32'h80000000)
+`endif
+`ifndef SPI_HOST_CSID
+`define SPI_HOST_CSID                                                                               (32'h1c)
+`endif
+`ifndef SPI_HOST_COMMAND
+`define SPI_HOST_COMMAND                                                                            (32'h20)
+`define SPI_HOST_COMMAND_LEN_LOW                                                                    (0)
+`define SPI_HOST_COMMAND_LEN_MASK                                                                   (32'h1ff)
+`define SPI_HOST_COMMAND_CSAAT_LOW                                                                  (9)
+`define SPI_HOST_COMMAND_CSAAT_MASK                                                                 (32'h200)
+`define SPI_HOST_COMMAND_SPEED_LOW                                                                  (10)
+`define SPI_HOST_COMMAND_SPEED_MASK                                                                 (32'hc00)
+`define SPI_HOST_COMMAND_DIRECTION_LOW                                                              (12)
+`define SPI_HOST_COMMAND_DIRECTION_MASK                                                             (32'h3000)
+`endif
+`ifndef SPI_HOST_RXDATA
+`define SPI_HOST_RXDATA                                                                             (32'h24)
+`endif
+`ifndef SPI_HOST_TXDATA
+`define SPI_HOST_TXDATA                                                                             (32'h28)
+`endif
+`ifndef SPI_HOST_ERROR_ENABLE
+`define SPI_HOST_ERROR_ENABLE                                                                       (32'h2c)
+`define SPI_HOST_ERROR_ENABLE_CMDBUSY_LOW                                                           (0)
+`define SPI_HOST_ERROR_ENABLE_CMDBUSY_MASK                                                          (32'h1)
+`define SPI_HOST_ERROR_ENABLE_OVERFLOW_LOW                                                          (1)
+`define SPI_HOST_ERROR_ENABLE_OVERFLOW_MASK                                                         (32'h2)
+`define SPI_HOST_ERROR_ENABLE_UNDERFLOW_LOW                                                         (2)
+`define SPI_HOST_ERROR_ENABLE_UNDERFLOW_MASK                                                        (32'h4)
+`define SPI_HOST_ERROR_ENABLE_CMDINVAL_LOW                                                          (3)
+`define SPI_HOST_ERROR_ENABLE_CMDINVAL_MASK                                                         (32'h8)
+`define SPI_HOST_ERROR_ENABLE_CSIDINVAL_LOW                                                         (4)
+`define SPI_HOST_ERROR_ENABLE_CSIDINVAL_MASK                                                        (32'h10)
+`endif
+`ifndef SPI_HOST_ERROR_STATUS
+`define SPI_HOST_ERROR_STATUS                                                                       (32'h30)
+`define SPI_HOST_ERROR_STATUS_CMDBUSY_LOW                                                           (0)
+`define SPI_HOST_ERROR_STATUS_CMDBUSY_MASK                                                          (32'h1)
+`define SPI_HOST_ERROR_STATUS_OVERFLOW_LOW                                                          (1)
+`define SPI_HOST_ERROR_STATUS_OVERFLOW_MASK                                                         (32'h2)
+`define SPI_HOST_ERROR_STATUS_UNDERFLOW_LOW                                                         (2)
+`define SPI_HOST_ERROR_STATUS_UNDERFLOW_MASK                                                        (32'h4)
+`define SPI_HOST_ERROR_STATUS_CMDINVAL_LOW                                                          (3)
+`define SPI_HOST_ERROR_STATUS_CMDINVAL_MASK                                                         (32'h8)
+`define SPI_HOST_ERROR_STATUS_CSIDINVAL_LOW                                                         (4)
+`define SPI_HOST_ERROR_STATUS_CSIDINVAL_MASK                                                        (32'h10)
+`define SPI_HOST_ERROR_STATUS_ACCESSINVAL_LOW                                                       (5)
+`define SPI_HOST_ERROR_STATUS_ACCESSINVAL_MASK                                                      (32'h20)
+`endif
+`ifndef SPI_HOST_EVENT_ENABLE
+`define SPI_HOST_EVENT_ENABLE                                                                       (32'h34)
+`define SPI_HOST_EVENT_ENABLE_RXFULL_LOW                                                            (0)
+`define SPI_HOST_EVENT_ENABLE_RXFULL_MASK                                                           (32'h1)
+`define SPI_HOST_EVENT_ENABLE_TXEMPTY_LOW                                                           (1)
+`define SPI_HOST_EVENT_ENABLE_TXEMPTY_MASK                                                          (32'h2)
+`define SPI_HOST_EVENT_ENABLE_RXWM_LOW                                                              (2)
+`define SPI_HOST_EVENT_ENABLE_RXWM_MASK                                                             (32'h4)
+`define SPI_HOST_EVENT_ENABLE_TXWM_LOW                                                              (3)
+`define SPI_HOST_EVENT_ENABLE_TXWM_MASK                                                             (32'h8)
+`define SPI_HOST_EVENT_ENABLE_READY_LOW                                                             (4)
+`define SPI_HOST_EVENT_ENABLE_READY_MASK                                                            (32'h10)
+`define SPI_HOST_EVENT_ENABLE_IDLE_LOW                                                              (5)
+`define SPI_HOST_EVENT_ENABLE_IDLE_MASK                                                             (32'h20)
+`endif
+`ifndef UART_INTR_STATE
+`define UART_INTR_STATE                                                                             (32'h0)
+`define UART_INTR_STATE_TX_WATERMARK_LOW                                                            (0)
+`define UART_INTR_STATE_TX_WATERMARK_MASK                                                           (32'h1)
+`define UART_INTR_STATE_RX_WATERMARK_LOW                                                            (1)
+`define UART_INTR_STATE_RX_WATERMARK_MASK                                                           (32'h2)
+`define UART_INTR_STATE_TX_DONE_LOW                                                                 (2)
+`define UART_INTR_STATE_TX_DONE_MASK                                                                (32'h4)
+`define UART_INTR_STATE_RX_OVERFLOW_LOW                                                             (3)
+`define UART_INTR_STATE_RX_OVERFLOW_MASK                                                            (32'h8)
+`define UART_INTR_STATE_RX_FRAME_ERR_LOW                                                            (4)
+`define UART_INTR_STATE_RX_FRAME_ERR_MASK                                                           (32'h10)
+`define UART_INTR_STATE_RX_BREAK_ERR_LOW                                                            (5)
+`define UART_INTR_STATE_RX_BREAK_ERR_MASK                                                           (32'h20)
+`define UART_INTR_STATE_RX_TIMEOUT_LOW                                                              (6)
+`define UART_INTR_STATE_RX_TIMEOUT_MASK                                                             (32'h40)
+`define UART_INTR_STATE_RX_PARITY_ERR_LOW                                                           (7)
+`define UART_INTR_STATE_RX_PARITY_ERR_MASK                                                          (32'h80)
+`define UART_INTR_STATE_TX_EMPTY_LOW                                                                (8)
+`define UART_INTR_STATE_TX_EMPTY_MASK                                                               (32'h100)
+`endif
+`ifndef UART_INTR_ENABLE
+`define UART_INTR_ENABLE                                                                            (32'h4)
+`define UART_INTR_ENABLE_TX_WATERMARK_LOW                                                           (0)
+`define UART_INTR_ENABLE_TX_WATERMARK_MASK                                                          (32'h1)
+`define UART_INTR_ENABLE_RX_WATERMARK_LOW                                                           (1)
+`define UART_INTR_ENABLE_RX_WATERMARK_MASK                                                          (32'h2)
+`define UART_INTR_ENABLE_TX_DONE_LOW                                                                (2)
+`define UART_INTR_ENABLE_TX_DONE_MASK                                                               (32'h4)
+`define UART_INTR_ENABLE_RX_OVERFLOW_LOW                                                            (3)
+`define UART_INTR_ENABLE_RX_OVERFLOW_MASK                                                           (32'h8)
+`define UART_INTR_ENABLE_RX_FRAME_ERR_LOW                                                           (4)
+`define UART_INTR_ENABLE_RX_FRAME_ERR_MASK                                                          (32'h10)
+`define UART_INTR_ENABLE_RX_BREAK_ERR_LOW                                                           (5)
+`define UART_INTR_ENABLE_RX_BREAK_ERR_MASK                                                          (32'h20)
+`define UART_INTR_ENABLE_RX_TIMEOUT_LOW                                                             (6)
+`define UART_INTR_ENABLE_RX_TIMEOUT_MASK                                                            (32'h40)
+`define UART_INTR_ENABLE_RX_PARITY_ERR_LOW                                                          (7)
+`define UART_INTR_ENABLE_RX_PARITY_ERR_MASK                                                         (32'h80)
+`define UART_INTR_ENABLE_TX_EMPTY_LOW                                                               (8)
+`define UART_INTR_ENABLE_TX_EMPTY_MASK                                                              (32'h100)
+`endif
+`ifndef UART_INTR_TEST
+`define UART_INTR_TEST                                                                              (32'h8)
+`define UART_INTR_TEST_TX_WATERMARK_LOW                                                             (0)
+`define UART_INTR_TEST_TX_WATERMARK_MASK                                                            (32'h1)
+`define UART_INTR_TEST_RX_WATERMARK_LOW                                                             (1)
+`define UART_INTR_TEST_RX_WATERMARK_MASK                                                            (32'h2)
+`define UART_INTR_TEST_TX_DONE_LOW                                                                  (2)
+`define UART_INTR_TEST_TX_DONE_MASK                                                                 (32'h4)
+`define UART_INTR_TEST_RX_OVERFLOW_LOW                                                              (3)
+`define UART_INTR_TEST_RX_OVERFLOW_MASK                                                             (32'h8)
+`define UART_INTR_TEST_RX_FRAME_ERR_LOW                                                             (4)
+`define UART_INTR_TEST_RX_FRAME_ERR_MASK                                                            (32'h10)
+`define UART_INTR_TEST_RX_BREAK_ERR_LOW                                                             (5)
+`define UART_INTR_TEST_RX_BREAK_ERR_MASK                                                            (32'h20)
+`define UART_INTR_TEST_RX_TIMEOUT_LOW                                                               (6)
+`define UART_INTR_TEST_RX_TIMEOUT_MASK                                                              (32'h40)
+`define UART_INTR_TEST_RX_PARITY_ERR_LOW                                                            (7)
+`define UART_INTR_TEST_RX_PARITY_ERR_MASK                                                           (32'h80)
+`define UART_INTR_TEST_TX_EMPTY_LOW                                                                 (8)
+`define UART_INTR_TEST_TX_EMPTY_MASK                                                                (32'h100)
+`endif
+`ifndef UART_CTRL
+`define UART_CTRL                                                                                   (32'hc)
+`define UART_CTRL_TX_LOW                                                                            (0)
+`define UART_CTRL_TX_MASK                                                                           (32'h1)
+`define UART_CTRL_RX_LOW                                                                            (1)
+`define UART_CTRL_RX_MASK                                                                           (32'h2)
+`define UART_CTRL_NF_LOW                                                                            (2)
+`define UART_CTRL_NF_MASK                                                                           (32'h4)
+`define UART_CTRL_SLPBK_LOW                                                                         (4)
+`define UART_CTRL_SLPBK_MASK                                                                        (32'h10)
+`define UART_CTRL_LLPBK_LOW                                                                         (5)
+`define UART_CTRL_LLPBK_MASK                                                                        (32'h20)
+`define UART_CTRL_PARITY_EN_LOW                                                                     (6)
+`define UART_CTRL_PARITY_EN_MASK                                                                    (32'h40)
+`define UART_CTRL_PARITY_ODD_LOW                                                                    (7)
+`define UART_CTRL_PARITY_ODD_MASK                                                                   (32'h80)
+`define UART_CTRL_RXBLVL_LOW                                                                        (8)
+`define UART_CTRL_RXBLVL_MASK                                                                       (32'h300)
+`define UART_CTRL_NCO_LOW                                                                           (16)
+`define UART_CTRL_NCO_MASK                                                                          (32'hffff0000)
+`endif
+`ifndef UART_STATUS
+`define UART_STATUS                                                                                 (32'h10)
+`define UART_STATUS_TXFULL_LOW                                                                      (0)
+`define UART_STATUS_TXFULL_MASK                                                                     (32'h1)
+`define UART_STATUS_RXFULL_LOW                                                                      (1)
+`define UART_STATUS_RXFULL_MASK                                                                     (32'h2)
+`define UART_STATUS_TXEMPTY_LOW                                                                     (2)
+`define UART_STATUS_TXEMPTY_MASK                                                                    (32'h4)
+`define UART_STATUS_TXIDLE_LOW                                                                      (3)
+`define UART_STATUS_TXIDLE_MASK                                                                     (32'h8)
+`define UART_STATUS_RXIDLE_LOW                                                                      (4)
+`define UART_STATUS_RXIDLE_MASK                                                                     (32'h10)
+`define UART_STATUS_RXEMPTY_LOW                                                                     (5)
+`define UART_STATUS_RXEMPTY_MASK                                                                    (32'h20)
+`endif
+`ifndef UART_RDATA
+`define UART_RDATA                                                                                  (32'h14)
+`define UART_RDATA_RDATA_LOW                                                                        (0)
+`define UART_RDATA_RDATA_MASK                                                                       (32'hff)
+`endif
+`ifndef UART_WDATA
+`define UART_WDATA                                                                                  (32'h18)
+`define UART_WDATA_WDATA_LOW                                                                        (0)
+`define UART_WDATA_WDATA_MASK                                                                       (32'hff)
+`endif
+`ifndef UART_FIFO_CTRL
+`define UART_FIFO_CTRL                                                                              (32'h1c)
+`define UART_FIFO_CTRL_RXRST_LOW                                                                    (0)
+`define UART_FIFO_CTRL_RXRST_MASK                                                                   (32'h1)
+`define UART_FIFO_CTRL_TXRST_LOW                                                                    (1)
+`define UART_FIFO_CTRL_TXRST_MASK                                                                   (32'h2)
+`define UART_FIFO_CTRL_RXILVL_LOW                                                                   (2)
+`define UART_FIFO_CTRL_RXILVL_MASK                                                                  (32'h1c)
+`define UART_FIFO_CTRL_TXILVL_LOW                                                                   (5)
+`define UART_FIFO_CTRL_TXILVL_MASK                                                                  (32'he0)
+`endif
+`ifndef UART_FIFO_STATUS
+`define UART_FIFO_STATUS                                                                            (32'h20)
+`define UART_FIFO_STATUS_TXLVL_LOW                                                                  (0)
+`define UART_FIFO_STATUS_TXLVL_MASK                                                                 (32'hff)
+`define UART_FIFO_STATUS_RXLVL_LOW                                                                  (16)
+`define UART_FIFO_STATUS_RXLVL_MASK                                                                 (32'hff0000)
+`endif
+`ifndef UART_OVRD
+`define UART_OVRD                                                                                   (32'h24)
+`define UART_OVRD_TXEN_LOW                                                                          (0)
+`define UART_OVRD_TXEN_MASK                                                                         (32'h1)
+`define UART_OVRD_TXVAL_LOW                                                                         (1)
+`define UART_OVRD_TXVAL_MASK                                                                        (32'h2)
+`endif
+`ifndef UART_VAL
+`define UART_VAL                                                                                    (32'h28)
+`define UART_VAL_RX_LOW                                                                             (0)
+`define UART_VAL_RX_MASK                                                                            (32'hffff)
+`endif
+`ifndef UART_TIMEOUT_CTRL
+`define UART_TIMEOUT_CTRL                                                                           (32'h2c)
+`define UART_TIMEOUT_CTRL_VAL_LOW                                                                   (0)
+`define UART_TIMEOUT_CTRL_VAL_MASK                                                                  (32'hffffff)
+`define UART_TIMEOUT_CTRL_EN_LOW                                                                    (31)
+`define UART_TIMEOUT_CTRL_EN_MASK                                                                   (32'h80000000)
+`endif
 `ifndef MBOX_CSR_MBOX_LOCK
 `define MBOX_CSR_MBOX_LOCK                                                                          (32'h0)
 `define MBOX_CSR_MBOX_LOCK_LOCK_LOW                                                                 (0)
@@ -9751,8 +10744,18 @@
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_NMI_PIN_MASK                                               (32'h4)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_LOW                                             (3)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_CRYPTO_ERR_MASK                                            (32'h8)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (4)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (32'hfffffff0)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_LOW                                               (4)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_KV_ERROR_MASK                                              (32'h10)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_LOW                                     (5)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_SHADOW_STORAGE_ERR_MASK                                    (32'h20)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_LOW                                              (6)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_FSM_ERROR_MASK                                             (32'h40)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_LOW                                            (7)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RV_DCLS_ERR_MASK                                           (32'h80)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_LOW                                   (8)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_DCCM_WR_READBACK_ERR_MASK                                  (32'h100)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_LOW                                                   (9)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_FATAL_RSVD_MASK                                                  (32'hfffffe00)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL
 `define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL                                                        (32'h4)
@@ -9762,8 +10765,10 @@
 `define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_PROT_OOO_MASK                                     (32'h2)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_LOW                                       (2)
 `define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_MBOX_ECC_UNC_MASK                                      (32'h4)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (3)
-`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (32'hfffffff8)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_LOW                                  (3)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_SHADOW_UPDATE_ERR_MASK                                 (32'h8)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_LOW                                               (4)
+`define SOC_IFC_REG_CPTRA_HW_ERROR_NON_FATAL_RSVD_MASK                                              (32'hfffffff0)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_FW_ERROR_FATAL
 `define SOC_IFC_REG_CPTRA_FW_ERROR_FATAL                                                            (32'h8)
@@ -9995,6 +11000,10 @@
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_SUBSYSTEM_MODE_EN_MASK                                          (32'h20)
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_LOW                                            (6)
 `define SOC_IFC_REG_CPTRA_HW_CONFIG_OCP_LOCK_MODE_EN_MASK                                           (32'h40)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_LOW                                               (7)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DUAL_ITRNG_EN_MASK                                              (32'h80)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_LOW                                                     (8)
+`define SOC_IFC_REG_CPTRA_HW_CONFIG_DCLS_EN_MASK                                                    (32'h100)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_WDT_TIMER1_EN
 `define SOC_IFC_REG_CPTRA_WDT_TIMER1_EN                                                             (32'he4)
@@ -10048,20 +11057,6 @@
 `endif
 `ifndef SOC_IFC_REG_CPTRA_WDT_CFG_1
 `define SOC_IFC_REG_CPTRA_WDT_CFG_1                                                                 (32'h114)
-`endif
-`ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                    (32'h118)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                  (0)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                 (32'hffff)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                 (16)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                                (32'hffff0000)
-`endif
-`ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (32'h11c)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (32'hffff)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_LOW                                           (16)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_MASK                                          (32'hffff0000)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_RSVD_REG_0
 `define SOC_IFC_REG_CPTRA_RSVD_REG_0                                                                (32'h120)
@@ -10120,6 +11115,101 @@
 `define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK                                                        (32'h170)
 `define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK_LOCK_LOW                                               (0)
 `define SOC_IFC_REG_CPTRA_OWNER_PK_HASH_LOCK_LOCK_MASK                                              (32'h1)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0                                                    (32'h180)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                  (0)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                 (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                 (16)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                                (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (32'h184)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                                (16)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                               (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2                                                    (32'h188)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_LOW                               (0)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_MASK                              (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_LOW                                (16)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_MASK                               (32'h10000)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RNG_BIT_SEL_LOW                                    (17)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RNG_BIT_SEL_MASK                                   (32'h60000)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RSVD_LOW                                           (19)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_RSVD_MASK                                          (32'h7ff80000)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                    (31)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                   (32'h80000000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0                                                   (32'h18c)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_LOW_THRESHOLD_LOW                                 (0)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_LOW_THRESHOLD_MASK                                (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_HIGH_THRESHOLD_LOW                                (16)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_0_HIGH_THRESHOLD_MASK                               (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1                                                   (32'h190)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                              (0)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                             (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                               (16)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                              (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2                                                   (32'h194)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_LOW                              (0)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_FIPS_WINDOW_SIZE_MASK                             (32'hffff)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_LOW                               (16)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_SINGLE_BIT_MODE_MASK                              (32'h10000)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RNG_BIT_SEL_LOW                                   (17)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RNG_BIT_SEL_MASK                                  (32'h60000)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_LOW                                          (19)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_MASK                                         (32'h7ff80000)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                   (31)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                  (32'h80000000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_0
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                             (32'h198)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_1
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                             (32'h19c)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_2
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                             (32'h1a0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_3
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                             (32'h1a4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_4
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                             (32'h1a8)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_5
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                             (32'h1ac)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_6
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                             (32'h1b0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_7
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                             (32'h1b4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_8
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                             (32'h1b8)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_9
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                             (32'h1bc)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_10
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                            (32'h1c0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_11
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                            (32'h1c4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                          (32'h1c8)
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_LOW                                                 (0)
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_MASK                                                (32'h1)
 `endif
 `ifndef SOC_IFC_REG_FUSE_UDS_SEED_0
 `define SOC_IFC_REG_FUSE_UDS_SEED_0                                                                 (32'h200)
@@ -10511,6 +11601,25 @@
 `define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
 `define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (32'h1)
 `endif
+`ifndef SOC_IFC_REG_SS_OTP_FC_STATUS_CFG
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                            (32'h550)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_LOW                                          (0)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_MASK                                         (32'hffff)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_LOW                                       (16)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_MASK                                      (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_SS_OTP_FC_CMD_CFG
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                               (32'h554)
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_LOW                                  (0)
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_MASK                                 (32'hffff)
+`endif
+`ifndef SOC_IFC_REG_SS_FW_FEATURE_CFG
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG                                                               (32'h558)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_LOW                                       (0)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_MASK                                      (32'h1)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_LOW                                   (31)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_MASK                                  (32'h80000000)
+`endif
 `ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
 `define SOC_IFC_REG_SS_STRAP_GENERIC_0                                                              (32'h5a0)
 `endif
@@ -10576,6 +11685,654 @@
 `endif
 `ifndef SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3
 `define SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_3                                                       (32'h5dc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_0
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_0                                                          (32'hc00)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_1
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_1                                                          (32'hc04)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_2
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_2                                                          (32'hc08)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_3
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_3                                                          (32'hc0c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_4
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_4                                                          (32'hc10)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_5
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_5                                                          (32'hc14)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_6
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_6                                                          (32'hc18)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_7
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_7                                                          (32'hc1c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_8
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_8                                                          (32'hc20)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_9
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_9                                                          (32'hc24)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_10
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_10                                                         (32'hc28)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_11
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_11                                                         (32'hc2c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_12
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_12                                                         (32'hc30)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_13
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_13                                                         (32'hc34)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_14
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_14                                                         (32'hc38)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_15
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_15                                                         (32'hc3c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_16
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_16                                                         (32'hc40)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_17
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_17                                                         (32'hc44)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_18
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_18                                                         (32'hc48)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_19
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_19                                                         (32'hc4c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_20
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_20                                                         (32'hc50)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_21
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_21                                                         (32'hc54)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_22
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_22                                                         (32'hc58)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_23
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_23                                                         (32'hc5c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_24
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_24                                                         (32'hc60)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_25
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_25                                                         (32'hc64)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_26
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_26                                                         (32'hc68)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_27
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_27                                                         (32'hc6c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_28
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_28                                                         (32'hc70)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_29
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_29                                                         (32'hc74)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_30
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_30                                                         (32'hc78)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_31
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_31                                                         (32'hc7c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_32
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_32                                                         (32'hc80)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_33
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_33                                                         (32'hc84)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_34
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_34                                                         (32'hc88)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_35
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_35                                                         (32'hc8c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_36
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_36                                                         (32'hc90)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_37
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_37                                                         (32'hc94)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_38
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_38                                                         (32'hc98)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_39
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_39                                                         (32'hc9c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_40
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_40                                                         (32'hca0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_41
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_41                                                         (32'hca4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_42
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_42                                                         (32'hca8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_43
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_43                                                         (32'hcac)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_44
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_44                                                         (32'hcb0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_45
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_45                                                         (32'hcb4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_46
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_46                                                         (32'hcb8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_47
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_47                                                         (32'hcbc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_48
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_48                                                         (32'hcc0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_49
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_49                                                         (32'hcc4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_50
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_50                                                         (32'hcc8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_51
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_51                                                         (32'hccc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_52
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_52                                                         (32'hcd0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_53
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_53                                                         (32'hcd4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_54
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_54                                                         (32'hcd8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_55
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_55                                                         (32'hcdc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_56
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_56                                                         (32'hce0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_57
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_57                                                         (32'hce4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_58
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_58                                                         (32'hce8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_59
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_59                                                         (32'hcec)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_60
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_60                                                         (32'hcf0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_61
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_61                                                         (32'hcf4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_62
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_62                                                         (32'hcf8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_63
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_63                                                         (32'hcfc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_64
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_64                                                         (32'hd00)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_65
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_65                                                         (32'hd04)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_66
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_66                                                         (32'hd08)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_67
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_67                                                         (32'hd0c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_68
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_68                                                         (32'hd10)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_69
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_69                                                         (32'hd14)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_70
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_70                                                         (32'hd18)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_71
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_71                                                         (32'hd1c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_72
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_72                                                         (32'hd20)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_73
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_73                                                         (32'hd24)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_74
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_74                                                         (32'hd28)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_75
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_75                                                         (32'hd2c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_76
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_76                                                         (32'hd30)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_77
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_77                                                         (32'hd34)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_78
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_78                                                         (32'hd38)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_79
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_79                                                         (32'hd3c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_80
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_80                                                         (32'hd40)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_81
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_81                                                         (32'hd44)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_82
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_82                                                         (32'hd48)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_83
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_83                                                         (32'hd4c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_84
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_84                                                         (32'hd50)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_85
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_85                                                         (32'hd54)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_86
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_86                                                         (32'hd58)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_87
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_87                                                         (32'hd5c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_88
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_88                                                         (32'hd60)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_89
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_89                                                         (32'hd64)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_90
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_90                                                         (32'hd68)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_91
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_91                                                         (32'hd6c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_92
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_92                                                         (32'hd70)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_93
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_93                                                         (32'hd74)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_94
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_94                                                         (32'hd78)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_95
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_95                                                         (32'hd7c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_96
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_96                                                         (32'hd80)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_97
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_97                                                         (32'hd84)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_98
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_98                                                         (32'hd88)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_99
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_99                                                         (32'hd8c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_100
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_100                                                        (32'hd90)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_101
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_101                                                        (32'hd94)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_102
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_102                                                        (32'hd98)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_103
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_103                                                        (32'hd9c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_104
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_104                                                        (32'hda0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_105
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_105                                                        (32'hda4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_106
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_106                                                        (32'hda8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_107
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_107                                                        (32'hdac)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_108
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_108                                                        (32'hdb0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_109
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_109                                                        (32'hdb4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_110
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_110                                                        (32'hdb8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_111
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_111                                                        (32'hdbc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_112
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_112                                                        (32'hdc0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_113
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_113                                                        (32'hdc4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_114
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_114                                                        (32'hdc8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_115
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_115                                                        (32'hdcc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_116
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_116                                                        (32'hdd0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_117
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_117                                                        (32'hdd4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_118
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_118                                                        (32'hdd8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_119
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_119                                                        (32'hddc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_120
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_120                                                        (32'hde0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_121
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_121                                                        (32'hde4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_122
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_122                                                        (32'hde8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_123
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_123                                                        (32'hdec)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_124
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_124                                                        (32'hdf0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_125
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_125                                                        (32'hdf4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_126
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_126                                                        (32'hdf8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_127
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_127                                                        (32'hdfc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_128
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_128                                                        (32'he00)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_129
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_129                                                        (32'he04)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_130
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_130                                                        (32'he08)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_131
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_131                                                        (32'he0c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_132
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_132                                                        (32'he10)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_133
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_133                                                        (32'he14)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_134
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_134                                                        (32'he18)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_135
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_135                                                        (32'he1c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_136
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_136                                                        (32'he20)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_137
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_137                                                        (32'he24)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_138
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_138                                                        (32'he28)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_139
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_139                                                        (32'he2c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_140
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_140                                                        (32'he30)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_141
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_141                                                        (32'he34)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_142
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_142                                                        (32'he38)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_143
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_143                                                        (32'he3c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_144
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_144                                                        (32'he40)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_145
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_145                                                        (32'he44)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_146
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_146                                                        (32'he48)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_147
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_147                                                        (32'he4c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_148
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_148                                                        (32'he50)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_149
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_149                                                        (32'he54)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_150
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_150                                                        (32'he58)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_151
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_151                                                        (32'he5c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_152
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_152                                                        (32'he60)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_153
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_153                                                        (32'he64)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_154
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_154                                                        (32'he68)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_155
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_155                                                        (32'he6c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_156
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_156                                                        (32'he70)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_157
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_157                                                        (32'he74)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_158
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_158                                                        (32'he78)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_159
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_159                                                        (32'he7c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_160
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_160                                                        (32'he80)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_161
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_161                                                        (32'he84)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_162
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_162                                                        (32'he88)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_163
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_163                                                        (32'he8c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_164
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_164                                                        (32'he90)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_165
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_165                                                        (32'he94)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_166
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_166                                                        (32'he98)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_167
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_167                                                        (32'he9c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_168
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_168                                                        (32'hea0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_169
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_169                                                        (32'hea4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_170
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_170                                                        (32'hea8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_171
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_171                                                        (32'heac)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_172
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_172                                                        (32'heb0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_173
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_173                                                        (32'heb4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_174
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_174                                                        (32'heb8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_175
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_175                                                        (32'hebc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_176
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_176                                                        (32'hec0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_177
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_177                                                        (32'hec4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_178
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_178                                                        (32'hec8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_179
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_179                                                        (32'hecc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_180
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_180                                                        (32'hed0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_181
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_181                                                        (32'hed4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_182
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_182                                                        (32'hed8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_183
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_183                                                        (32'hedc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_184
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_184                                                        (32'hee0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_185
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_185                                                        (32'hee4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_186
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_186                                                        (32'hee8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_187
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_187                                                        (32'heec)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_188
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_188                                                        (32'hef0)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_189
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_189                                                        (32'hef4)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_190
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_190                                                        (32'hef8)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_191
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_191                                                        (32'hefc)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_192
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_192                                                        (32'hf00)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_193
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_193                                                        (32'hf04)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_194
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_194                                                        (32'hf08)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_195
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_195                                                        (32'hf0c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_196
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_196                                                        (32'hf10)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_197
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_197                                                        (32'hf14)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_198
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_198                                                        (32'hf18)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_199
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_199                                                        (32'hf1c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_200
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_200                                                        (32'hf20)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_201
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_201                                                        (32'hf24)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_202
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_202                                                        (32'hf28)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_203
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_203                                                        (32'hf2c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_204
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_204                                                        (32'hf30)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_205
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_205                                                        (32'hf34)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_206
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_206                                                        (32'hf38)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SLOT_DATA_207
+`define SOC_IFC_REG_STASH_BANK_SLOT_DATA_207                                                        (32'hf3c)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_SOC_LOCK
+`define SOC_IFC_REG_STASH_BANK_SOC_LOCK                                                             (32'hf40)
+`define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_LOW                                                    (0)
+`define SOC_IFC_REG_STASH_BANK_SOC_LOCK_LOCK_MASK                                                   (32'hff)
+`endif
+`ifndef SOC_IFC_REG_STASH_END_STASH
+`define SOC_IFC_REG_STASH_END_STASH                                                                 (32'hf44)
+`define SOC_IFC_REG_STASH_END_STASH_END_STASH_LOW                                                   (0)
+`define SOC_IFC_REG_STASH_END_STASH_END_STASH_MASK                                                  (32'h1)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_CPTRA_LOCK
+`define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK                                                           (32'hf48)
+`define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_LOW                                            (0)
+`define SOC_IFC_REG_STASH_BANK_CPTRA_LOCK_CPTRA_LOCK_MASK                                           (32'h1)
+`endif
+`ifndef SOC_IFC_REG_STASH_BANK_STATUS
+`define SOC_IFC_REG_STASH_BANK_STATUS                                                               (32'hf4c)
+`define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_LOW                                               (0)
+`define SOC_IFC_REG_STASH_BANK_STATUS_SLOT_LOCKED_MASK                                              (32'hff)
+`define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_LOW                                                 (8)
+`define SOC_IFC_REG_STASH_BANK_STATUS_END_STASH_MASK                                                (32'h100)
+`define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_LOW                                                (9)
+`define SOC_IFC_REG_STASH_BANK_STATUS_CPTRA_LOCK_MASK                                               (32'h200)
 `endif
 
 

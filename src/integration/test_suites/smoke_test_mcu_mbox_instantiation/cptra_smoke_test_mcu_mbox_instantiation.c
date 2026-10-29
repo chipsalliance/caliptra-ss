@@ -129,9 +129,9 @@ void main(void) {
         while(1);
     }
 
-    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
+    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, 1);
     if(!status) {
-        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing to CSR TARGET_USER_VALID as invalid user\n", mbox_num);
+        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing CSR TARGET_USER_VALID as invalid user\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
@@ -139,6 +139,20 @@ void main(void) {
     status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
     if(!status) {
         VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR TARGET_USER_VALID as invalid user\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    status = cptra_axi_dword_write_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, xorshift32());
+    if(!status) {
+        VPRINTF(FATAL,"Caliptra: Expected AXI Error writing CSR TARGET_STATUS as invalid user\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    status = cptra_axi_dword_read_with_status(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num, payload);
+    if(!status) {
+        VPRINTF(FATAL,"Caliptra: Expected AXI Error reading CSR TARGET_STATUS as invalid user\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }

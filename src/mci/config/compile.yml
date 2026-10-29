@@ -41,6 +41,7 @@ targets:
       - $COMPILE_ROOT/rtl/mci_axi_sub_decode.sv
       - $COMPILE_ROOT/rtl/mci_axi_sub_top.sv
       - $COMPILE_ROOT/rtl/mci_mcu_sram_ctrl.sv
+      - $COMPILE_ROOT/rtl/mci_mcu_rom_patch_ctrl.sv
       - $COMPILE_ROOT/rtl/mci_mcu_sram_if.sv
       - $COMPILE_ROOT/rtl/cif_if.sv
       - $COMPILE_ROOT/rtl/mci_wdt_top.sv

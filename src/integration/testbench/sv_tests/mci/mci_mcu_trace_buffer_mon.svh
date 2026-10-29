@@ -24,15 +24,26 @@ task mcu_trace_buffer_mon();
             trace_buffer_rd_ptr_f <= '0;
             trace_buffer_wr_ptr_f <= '0;
         end else begin
-            if(`CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
+            // Capture follows the trace-buffer source select (CTRL.cptra_core_sel):
+            // 0 = MCU (VeeR) core trace, 1 = Caliptra core trace. Matches the DUT mux.
+            if (`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                    `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_valid_ip :
+                    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_valid_ip) begin
                 mcu_trace_buffer_valid  <= 1;
                 mcu_trace_buffer_wr_ptr <= (mcu_trace_buffer_wr_ptr + 4) % 256;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <=    `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_insn_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_address_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_tval_ip;
-                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 3]   <= {
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr]       <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_insn_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_insn_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 1]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_address_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_address_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 2]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ?
+                                                                       `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_tval_ip : `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_tval_ip;
+                mcu_trace_buffer[mcu_trace_buffer_wr_ptr + 3]   <= `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CTRL.cptra_core_sel.value ? {
                                             21'h0,
-                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_interrupt_ip, 
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_interrupt_ip,
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_ecause_ip,
+                                            `CPTRA_SS_TOP_PATH.cptra_trace_rv_i_exception_ip} : {
+                                            21'h0,
+                                            `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_interrupt_ip,
                                             `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_ecause_ip,
                                             `CPTRA_SS_TOP_PATH.mcu_trace_rv_i_exception_ip};
 
@@ -49,7 +60,7 @@ endtask
 
 // Verify when debug locked AXI reads return 0, writes are dropped and respond with error
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_AXI_READ_WRITE_DEBUG_REJECT_A,
-    `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.dv && `MCI_PATH.LCC_state_translator.security_state_o.debug_locked |->
+    `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.dv && mubi4_test_true_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked) |->
     !`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.s_cpuif_req &&
     !`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.s_cpuif_req_is_wr &&
     `MCI_PATH.i_mci_mcu_trace_buffer.cif_resp_if.rdata === '0 &&
@@ -60,7 +71,7 @@ endtask
 
 // Verify all DMI reads return 0 when in not in debug mode
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_READ_WRITE_DEBUG_REJECT_A,
-    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en &&`MCI_PATH.LCC_state_translator.security_state_o.debug_locked |->
+    `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && mubi4_test_true_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked) |->
     !`MCI_PATH.i_mci_mcu_trace_buffer.dmi_wr_en_qual &&
     `MCI_PATH.i_mci_mcu_trace_buffer.dmi_reg === '0,
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -71,7 +82,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_DATA_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_DATA |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === mcu_trace_buffer[trace_buffer_rd_ptr_f],  
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -83,7 +94,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_STATUS_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_STATUS |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata[1:0] === {`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.valid_data.value,`MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.STATUS.wrapped.value}, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -94,7 +105,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_CONFIG_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_CONFIG |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.CONFIG.trace_buffer_depth.value, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -105,7 +116,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_WR_PTR_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_WR_PTR |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_wr_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -116,7 +127,7 @@ endtask
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_READ_RD_PTR_A,
     !`MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |-> ##1
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_rdata === trace_buffer_rd_ptr_f, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 
@@ -137,7 +148,7 @@ end
 `CALIPTRA_ASSERT(MCU_TRACE_BUFF_DMI_SUCC_WRITE_RD_PTR_A,
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_wr_en && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_en && 
-    !`MCI_PATH.LCC_state_translator.security_state_o.debug_locked  && 
+    mubi4_test_false_strict(`MCI_PATH.LCC_state_translator.security_state_o.debug_locked)  && 
     `MCI_PATH.i_mci_reg_top.mcu_dmi_uncore_addr === MCI_DMI_MCU_TRACE_RD_PTR |=>
     mcu_trace_buffer_capture_write_data === `MCI_PATH.i_mci_mcu_trace_buffer.i_trace_buffer_csr.hwif_out.READ_PTR, 
     `MCI_PATH.i_mci_mcu_trace_buffer.clk, 

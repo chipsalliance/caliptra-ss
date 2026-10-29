@@ -45,6 +45,7 @@ class i3c_setmrl extends cptra_ss_i3c_core_base_test;
 
 		bit [7:0] data[];
 		bit [7:0] read_data[];
+		bit [7:0] exp_data[];
 		int       random_data_count;
 
 		//-- I3C bus initialization and address assignment
@@ -53,6 +54,8 @@ class i3c_setmrl extends cptra_ss_i3c_core_base_test;
 		test_log.step("=============================================================");
 		test_log.step("Step : Reading Recovery Register");
 		read_reg(recovery_target_addr,`I3C_CORE_PROT_CAP, 15, read_data);
+		build_prot_cap_exp_data(exp_data);
+		check_data(read_data, exp_data, 15);
 
 		test_log.step("Step : Writing General Target Address");
 		// sending command as 0 for MCTP packet

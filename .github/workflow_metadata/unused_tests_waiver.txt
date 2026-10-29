@@ -40,4 +40,53 @@ smoke_test_fuse_zeroize # To be removed from design: https://github.com/chipsall
 caliptra_ss_jtag_manuf_dbg # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
 caliptra_ss_jtag_uds_prog # To be removed from design: https://github.com/chipsalliance/caliptra-ss/issues/916
 
+# USB
+caliptra_ss_usb_hs_host_bulk_out # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_remotewakeup # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_iso_out # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_intnak # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_remotewakeup # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_host_traffic # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_idau_sec_level # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_root2 # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_powerdown # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_hs_host_resume # Host is not supported; retained as a reference test for future host capabilities
+caliptra_ss_usb_fs_dev1_bulk_loopback # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_bulk_out # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_disconnect # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_global_suspend_L2 # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_iso_out # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_nbyte # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_powerdown # DEV1 cannot entere FS mode when DEV0 is not connected
+caliptra_ss_usb_fs_dev1_resume # DEV1 cannot entere FS mode when DEV0 is not connected
+
+
+# WIP: wakeup sequence/test includes are commented out in caliptra_ss_usb_test_pkg.sv pending rework; not yet in any regression
+caliptra_ss_usb_usbd_wakeup # WIP: includes commented out in caliptra_ss_usb_test_pkg.sv; not yet enabled in any regression
+caliptra_ss_usb_usbd_wakeup_fromdevice # WIP: includes commented out in caliptra_ss_usb_test_pkg.sv; not yet enabled in any regression
+
+
+# USB OCP Recovery
+caliptra_ss_usb_ocp_arb_004 # WIP testcase
+caliptra_ss_usb_ocp_arb_006 # WIP testcase
+caliptra_ss_usb_ocp_dcon_disconnect # WIP testcase
+caliptra_ss_usb_ocp_device_fifo_clear # WIP testcase
+caliptra_ss_usb_ocp_disconnect # WIP testcase
+caliptra_ss_usb_ocp_fifo_flow_indices # WIP testcase
+caliptra_ss_usb_ocp_fifo_flow_status_flags # WIP testcase
+
+caliptra_ss_usb_ocp_fifo_ring # WIP testcase
+cptra_usb_ocp_fifo_ring # WIP testcase
+
+caliptra_ss_usb_ocp_firmware_status_ownership # WIP testcase
+cptra_usb_ocp_firmware_status_ownership # WIP testcase
+
+caliptra_ss_usb_ocp_post_sync_arbiter # WIP testcase
+
+caliptra_ss_usb_ocp_recovery_activation_access_semantics # WIP testcase
+cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
+
+caliptra_ss_usb_ocp_w1dc_access_semantics # WIP testcase
+cptra_usb_ocp_w1dc_access_semantics # WIP testcase
+
 

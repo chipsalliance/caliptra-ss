@@ -108,11 +108,16 @@ package trace_buffer_csr_pkg;
 
     typedef struct packed{
         logic value;
-    } trace_buffer_csr__CONTROL__trace_source__out_t;
+    } trace_buffer_csr__CTRL__cptra_core_sel__out_t;
 
     typedef struct packed{
-        trace_buffer_csr__CONTROL__trace_source__out_t trace_source;
-    } trace_buffer_csr__CONTROL__out_t;
+        logic value;
+    } trace_buffer_csr__CTRL__mcu_shadow_sel__out_t;
+
+    typedef struct packed{
+        trace_buffer_csr__CTRL__cptra_core_sel__out_t cptra_core_sel;
+        trace_buffer_csr__CTRL__mcu_shadow_sel__out_t mcu_shadow_sel;
+    } trace_buffer_csr__CTRL__out_t;
 
     typedef struct packed{
         trace_buffer_csr__STATUS__out_t STATUS;
@@ -120,7 +125,7 @@ package trace_buffer_csr_pkg;
         trace_buffer_csr__DATA__out_t DATA;
         trace_buffer_csr__WRITE_PTR__out_t WRITE_PTR;
         trace_buffer_csr__READ_PTR__out_t READ_PTR;
-        trace_buffer_csr__CONTROL__out_t CONTROL;
+        trace_buffer_csr__CTRL__out_t CTRL;
     } trace_buffer_csr__out_t;
 
     localparam TRACE_BUFFER_CSR_ADDR_WIDTH = 32'd5;

@@ -256,10 +256,22 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // CPTRA WDT CONFIGURATION
     ///////////////////////////////
     if (args.cfg_cptra_wdt) {
-        update_cptra_wdt_cfg(1000, 250, 0);
+        update_cptra_wdt_cfg(args.cptra_timer_cfg,
+                             args.cptra_wdt_cfg_1,
+                             args.cptra_wdt_cfg_0);
     }
-    else{
+    else if (!args.cfg_cptra_wdt) {
         VPRINTF(LOW, "MCU: INIT CONFIGURING: Skip CPTRA WDT\n");
+    }
+
+    /////////////////////////////////
+    // BOOT USB
+    /////////////////////////////////
+    if (args.cfg_boot_usb_core) {
+        boot_usb_core(args.usb_fs_en, args.usb_hub_en);
+    }
+    else {
+        VPRINTF(LOW, "MCU: Skipping USB Core boot\n");
     }
 
     /////////////////////////////////
@@ -577,14 +589,15 @@ bool mcu_mbox_wait_for_user_to_be_mcu(uint32_t mbox_num, uint32_t attempt_count)
     return false;
 }
 
-bool mcu_mbox_wait_for_target_status_done(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count) {
-    VPRINTF(LOW, "MCU: Waiting for caliptra (as TARGET USER) to set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+// A terminal (non-BUSY) TARGET_STATUS write by the Target returns SRAM ownership
+// to MCU and clears TARGET_USER in hardware.
+bool mcu_mbox_wait_for_target_status(uint32_t mbox_num, enum mcu_mbox_target_status status, uint32_t attempt_count) {
+    VPRINTF(LOW, "MCU: Waiting for caliptra (as TARGET USER) to set TARGET_STATUS to completion code: 0x%x (%x\n", status, mbox_num);
     for(uint32_t ii=0; ii<attempt_count; ii++) {
         uint32_t reg_data = lsu_read_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS + MCU_MBOX_NUM_STRIDE * mbox_num);
-        bool target_done = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_DONE_MASK) != 0;
         reg_data = (reg_data & MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_MASK) >> MCU_MBOX0_CSR_MBOX_TARGET_STATUS_STATUS_LOW;
-        if(target_done & (reg_data == status)){
-            VPRINTF(LOW, "MCU: Caliptra (as TARGET USER) set TARGET_STATUS DONE with completion code: 0x%x (%x\n", status, mbox_num);
+        if(reg_data == status){
+            VPRINTF(LOW, "MCU: Caliptra (as TARGET USER) set TARGET_STATUS to completion code: 0x%x (%x\n", status, mbox_num);
             return true;
         }
     }
@@ -660,9 +673,14 @@ uint32_t mcu_mbox_gen_rand_dword_addr(uint32_t mbox_num, uint32_t min_kb, uint32
     return rand_addr;
 }
 
+uint32_t mcu_cptra_mb_ready_nb(void) {
+    return (lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS)
+            & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK) ? 1u : 0u;
+}
+
 void mcu_cptra_poll_mb_ready() {
     // MBOX: Wait for ready_for_mb_processing
-    while(!(lsu_read_32(SOC_SOC_IFC_REG_CPTRA_FLOW_STATUS) & SOC_IFC_REG_CPTRA_FLOW_STATUS_READY_FOR_MB_PROCESSING_MASK)) {
+    while(!mcu_cptra_mb_ready_nb()) {
         mcu_sleep(16);
     }
     VPRINTF(LOW, "MCU: Ready for FW\n");
@@ -736,14 +754,14 @@ void boot_i3c_reg(void) {
     //-- PROT_CAP
     VPRINTF(LOW, "MCU: Updating I3C Recovery Registers..\n");
     
-    i3c_reg_data = 0x2050434f;
+    i3c_reg_data = I3C_PROT_CAP_0_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_0, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_0 with 'h %0x\n", i3c_reg_data);
-    i3c_reg_data = 0x56434552;
+    i3c_reg_data = I3C_PROT_CAP_1_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_1, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_1 with 'h %0x\n", i3c_reg_data);
 
-    i3c_reg_data = 0x00000101;
+    i3c_reg_data = I3C_PROT_CAP_2_VALUE;
     lsu_write_32( SOC_I3CCSR_I3C_EC_SECFWRECOVERYIF_PROT_CAP_2, i3c_reg_data);
     VPRINTF(LOW, "MCU: Wr PROT_CAP_2 with 'h %0x\n", i3c_reg_data);    
 
@@ -833,43 +851,31 @@ void boot_i3c_core(void) {
 
 }
 
-void cptra_prod_rom_boot_go(void) {
-
-    mcu_cptra_user_init();
-    
-    // MBOX: Acquire lock
-    VPRINTF(LOW, "MCU: Acquiring Mbox lock\n");
+void caliptra_mailbox_send_ri_download_firmware(void) {
+    VPRINTF(LOW, "MCU: Acquiring Caliptra mailbox lock for RI_DOWNLOAD_FIRMWARE\n");
     while((lsu_read_32(SOC_MBOX_CSR_MBOX_LOCK) & MBOX_CSR_MBOX_LOCK_LOCK_MASK));
-    VPRINTF(LOW, "MCU: Mbox lock acquired\n");
+    VPRINTF(LOW, "MCU: Caliptra mailbox lock acquired\n");
 
-    // MBOX: Write CMD
-    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD, 0x52494644 | MBOX_CMD_FIELD_RESP_MASK); // Resp required
-
-    // MBOX: Write DLEN
-    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0);
-
-    // MBOX: Execute
+    lsu_write_32(SOC_MBOX_CSR_MBOX_CMD,
+                 CALIPTRA_MBOX_CMD_RI_DOWNLOAD_FIRMWARE | MBOX_CMD_FIELD_RESP_MASK);
+    lsu_write_32(SOC_MBOX_CSR_MBOX_DLEN, 0u);
     lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, MBOX_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox execute\n");
+    VPRINTF(LOW, "MCU: RI_DOWNLOAD_FIRMWARE execute asserted\n");
 
-    // MBOX: Poll status
-    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK) >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
-        for (uint8_t ii = 0; ii < 16; ii++) {
-            __asm__ volatile ("nop"); // Sleep loop as "nop"
-        }
+    while(((lsu_read_32(SOC_MBOX_CSR_MBOX_STATUS) & MBOX_CSR_MBOX_STATUS_STATUS_MASK)
+            >> MBOX_CSR_MBOX_STATUS_STATUS_LOW) != CMD_COMPLETE) {
+        mcu_sleep(16);
     }
-    VPRINTF(LOW, "MCU: Mbox response ready\n");
+    VPRINTF(LOW, "MCU: RI_DOWNLOAD_FIRMWARE completed\n");
 
-    for (uint8_t ii = 0; ii < 16; ii++) {
-        __asm__ volatile ("nop"); // Sleep loop as "nop"
-    }
+    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0u);
+    VPRINTF(LOW, "MCU: Caliptra mailbox execute cleared\n");
+}
 
-    // MBOX: Clear Execute
-    lsu_write_32(SOC_MBOX_CSR_MBOX_EXECUTE, 0);
-    VPRINTF(LOW, "MCU: Mbox execute clear\n");
-
+void cptra_prod_rom_boot_go(void) {
+    mcu_cptra_user_init();
+    caliptra_mailbox_send_ri_download_firmware();
     VPRINTF(LOW, "MCU: Completed with cptra_prod_rom_boot_go\n");
-
 }
 
 // -- function to update cptra_wdt_cfg

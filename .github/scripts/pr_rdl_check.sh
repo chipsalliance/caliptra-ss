@@ -38,11 +38,17 @@ else
 fi
 cd "${CALIPTRA_SS_ROOT}"
 
-# Run the HTML Doc generator script (to update the REG macro header files)
-# and the individual reg generator script but then remove the docs directories
-# before checking if the script caused any file modifications
+# Regenerate the RDL-derived RTL, headers, register models, and integration
+# address-map outputs before checking for uncommitted changes.
+bash "${CALIPTRA_SS_ROOT}/tools/scripts/reg_gen.sh"
 bash "${CALIPTRA_SS_ROOT}/tools/scripts/gen_soc_regs.sh" "${CALIPTRA_SS_ROOT}"
 rm -rf "${CALIPTRA_SS_ROOT}/src/integration/docs"
+
+# Verify the independent USB interface RAL packages, including the Combo AXI
+# register model generated from third_party/usb2/systemrdl/usb_combo.rdl.
+python3 "${CALIPTRA_SS_ROOT}/tools/scripts/gen_ral.py" \
+  --recipe "${CALIPTRA_SS_ROOT}/src/usb/rdl/ral_exports.yml" \
+  --check
 
 # Check for any file changes
 if [[ $(git status -s --untracked-files=all --ignored=traditional -- "${CALIPTRA_SS_ROOT}/src/" | wc -l) -gt 0 ]]; then

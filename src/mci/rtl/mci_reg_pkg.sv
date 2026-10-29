@@ -69,7 +69,12 @@ package mci_reg_pkg;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__in_t;
 
     typedef struct packed{
+        logic next;
+    } mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__in_t;
+
+    typedef struct packed{
         mci_reg__HW_FLOW_STATUS__boot_fsm__in_t boot_fsm;
+        mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__in_t mcu_rom_patch_active;
     } mci_reg__HW_FLOW_STATUS__in_t;
 
     typedef struct packed{
@@ -121,6 +126,8 @@ package mci_reg_pkg;
         mci_reg__rw_rw_sticky_hw__in_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__in_t nmi_pin;
         mci_reg__rw_rw_sticky_hw__in_t mcu_sram_dmi_axi_collision;
+        mci_reg__rw_rw_sticky_hw__in_t fsm_error;
+        mci_reg__rw_rw_sticky_hw__in_t mcu_rom_patch_sram_ecc_unc;
     } mci_reg__HW_ERROR_FATAL__in_t;
 
     typedef struct packed{
@@ -864,6 +871,19 @@ package mci_reg_pkg;
     } mci_reg__in_t;
 
     typedef struct packed{
+        logic [1:0] value;
+    } mci_reg__HW_CAPABILITIES__STREAMING_BOOT_SELECT__out_t;
+
+    typedef struct packed{
+        logic value;
+    } mci_reg__HW_CAPABILITIES__CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE__out_t;
+
+    typedef struct packed{
+        mci_reg__HW_CAPABILITIES__STREAMING_BOOT_SELECT__out_t STREAMING_BOOT_SELECT;
+        mci_reg__HW_CAPABILITIES__CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE__out_t CPTRA_CORE_DCLS_CORRUPTION_DETECTION_DISABLE;
+    } mci_reg__HW_CAPABILITIES__out_t;
+
+    typedef struct packed{
         logic value;
     } mci_reg__CAP_LOCK__lock__out_t;
 
@@ -884,7 +904,12 @@ package mci_reg_pkg;
     } mci_reg__HW_FLOW_STATUS__boot_fsm__out_t;
 
     typedef struct packed{
+        logic value;
+    } mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__out_t;
+
+    typedef struct packed{
         mci_reg__HW_FLOW_STATUS__boot_fsm__out_t boot_fsm;
+        mci_reg__HW_FLOW_STATUS__mcu_rom_patch_active__out_t mcu_rom_patch_active;
     } mci_reg__HW_FLOW_STATUS__out_t;
 
     typedef struct packed{
@@ -926,6 +951,8 @@ package mci_reg_pkg;
         mci_reg__rw_rw_sticky_hw__out_t mcu_sram_ecc_unc;
         mci_reg__rw_rw_sticky_hw__out_t nmi_pin;
         mci_reg__rw_rw_sticky_hw__out_t mcu_sram_dmi_axi_collision;
+        mci_reg__rw_rw_sticky_hw__out_t fsm_error;
+        mci_reg__rw_rw_sticky_hw__out_t mcu_rom_patch_sram_ecc_unc;
     } mci_reg__HW_ERROR_FATAL__out_t;
 
     typedef struct packed{
@@ -1048,6 +1075,7 @@ package mci_reg_pkg;
         mci_reg__rw_ro_ro_sticky_hw__out_t mask_mcu_sram_ecc_unc;
         mci_reg__rw_ro_ro_sticky_hw__out_t mask_nmi_pin;
         mci_reg__rw_ro_ro_sticky_hw__out_t mask_mcu_sram_dmi_axi_collision;
+        mci_reg__rw_ro_ro_sticky_hw__out_t mask_mcu_rom_patch_sram_ecc_unc;
     } mci_reg__internal_hw_error_fatal_mask__out_t;
 
     typedef struct packed{
@@ -1463,6 +1491,7 @@ package mci_reg_pkg;
     } mci_reg__intr_block_t__out_t;
 
     typedef struct packed{
+        mci_reg__HW_CAPABILITIES__out_t HW_CAPABILITIES;
         mci_reg__CAP_LOCK__out_t CAP_LOCK;
         mci_reg__FW_FLOW_STATUS__out_t FW_FLOW_STATUS;
         mci_reg__HW_FLOW_STATUS__out_t HW_FLOW_STATUS;
@@ -1519,6 +1548,13 @@ package mci_reg_pkg;
         mci_reg__PROD_DEBUG_UNLOCK_PK_HASH_REG__out_t [8-1:0][12-1:0]PROD_DEBUG_UNLOCK_PK_HASH_REG;
         mci_reg__intr_block_t__out_t intr_block_rf;
     } mci_reg__out_t;
+
+    typedef enum logic [31:0] {
+        mci_reg__HW_CAPABILITIES__streaming_boot_select_e__USB = 'h0,
+        mci_reg__HW_CAPABILITIES__streaming_boot_select_e__I3C = 'h1,
+        mci_reg__HW_CAPABILITIES__streaming_boot_select_e__AXI = 'h2,
+        mci_reg__HW_CAPABILITIES__streaming_boot_select_e__RESERVED = 'h3
+    } mci_reg__HW_CAPABILITIES__streaming_boot_select_e_e;
 
     typedef enum logic [31:0] {
         mci_reg__SECURITY_STATE__device_lifecycle_e__DEVICE_UNPROVISIONED = 'h0,

@@ -157,9 +157,13 @@ def csv_to_yaml(csv_file_path, yml_file_path, criteria, generations):
             # Format the path properly
             test_path = row["TestName"]
             
-            # If the test path is in the format "ip_name/path/to/test.yml", 
-            # convert it to "../test_suites/path/to/test.yml"
-            if '/' in test_path:
+            if test_path.startswith("$CALIPTRA_SS_ROOT/"):
+                test_path = os.path.relpath(
+                    os.path.expandvars(test_path), os.path.dirname(yml_file_path)
+                )
+                if not test_path.endswith(('.yml', '.yaml')):
+                    test_path += '.yml'
+            elif '/' in test_path:
                 # Skip the IP name part and use the rest of the path
                 test_parts = test_path.split('/', 3)
                 test_path = f"../{test_parts[3]}.yml"
@@ -423,31 +427,39 @@ if __name__ == "__main__":
         logger.error("CALIPTRA_SS_ROOT environment variable is not set. Please set it before running this script.")
         exit(1)
     
-    # Scan for all test suites first
-    #all_tests = scan_test_suites(caliptra_ss)
+    csv_file_paths = sorted(glob.glob(os.path.join(
+        caliptra_ss, 'src', '*', 'stimulus', 'testsuites', '*.csv'
+    )))
+    if not csv_file_paths:
+        logger.error("No master test CSVs found under src/*/stimulus/testsuites.")
+        exit(1)
 
-    csv_file_path = os.path.join(caliptra_ss, 'src/integration/stimulus/testsuites/caliptra_ss_master_test_list.csv')
-
-    # Debug: Display CSV contents
-    logger.info("CSV file contents:")
-    try:
+    for csv_file_path in csv_file_paths:
+        logger.info(f"Reading master test CSV '{csv_file_path}'")
         with open(csv_file_path, mode='r', encoding='utf-8') as csv_file:
-            for i, line in enumerate(csv_file):
-                if i < 10:  # Show first 10 lines
-                    logger.info(f"Line {i}: {line.strip()}")
-                else:
-                    break
-    except Exception as e:
-        logger.error(f"Error reading CSV file: {e}")
+            csv_reader = csv.DictReader(csv_file)
+            csv_reader.fieldnames = [header.strip() for header in (csv_reader.fieldnames or [])]
+            if "DUT" not in csv_reader.fieldnames:
+                raise KeyError(f"Required header 'DUT' not found in '{csv_file_path}'.")
+            duts = set()
+            for row in csv_reader:
+                dut = (row["DUT"] or "").strip()
+                if not dut or dut == "None":
+                    raise ValueError(f"Missing DUT in '{csv_file_path}' at line {csv_reader.line_num}.")
+                duts.add(dut)
+        if not duts:
+            raise ValueError(f"No tests found in '{csv_file_path}'.")
 
-    combinations = [
-        {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": "caliptra_ss_top_tb", "PromotePipeline": "Promote", "OtherTags": "Lop_regression,top_regression"},  
-        {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None},
-        {"Directed|Random": "Random", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": "caliptra_ss_top_tb", "PromotePipeline": None}
-    ]
+        for dut in sorted(duts):
+            promote_tags = "Lop_regression,top_regression" if dut == "caliptra_ss_top_tb" else f"{dut},Promote"
+            combinations = [
+                {"Directed|Random": None, "Nightly|Weekly": None, "L0": "L0", "L1": None, "DUT": dut, "PromotePipeline": "Promote", "OtherTags": promote_tags},
+                {"Directed|Random": "Directed", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": dut, "PromotePipeline": None},
+                {"Directed|Random": "Random", "Nightly|Weekly": "Nightly", "L0": None, "L1": "L1", "DUT": dut, "PromotePipeline": None}
+            ]
 
-    for criteria in combinations:
-        output_filename = generate_output_filename(csv_file_path, criteria)
-        logger.info(f"Creating YAML file '{output_filename}' with criteria: {criteria}")
-        csv_to_yaml(csv_file_path, output_filename, criteria, 1) # Default to 1, will be adjusted based on template count
-        logger.info(f"YAML file '{output_filename}' successfully created.")
+            for criteria in combinations:
+                output_filename = generate_output_filename(csv_file_path, criteria)
+                logger.info(f"Creating YAML file '{output_filename}' with criteria: {criteria}")
+                csv_to_yaml(csv_file_path, output_filename, criteria, 1)
+                logger.info(f"YAML file '{output_filename}' successfully created.")

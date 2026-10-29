@@ -84,7 +84,7 @@ assign otp_state_valid_o            = otp_data_valid;
 always_ff @(posedge clk_i or negedge rst_ni) begin
     if(!rst_ni) begin
         mci_trans_st_current            <= TRANSLATOR_RESET;
-        security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+        security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};  // Default case
         otp_static_state                <=  LcStRaw; // This is all zeros
         SOC_DFT_EN                      <= 1'b0;
         SOC_HW_DEBUG_EN                 <= 1'b0;
@@ -94,14 +94,14 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
         FIPS_ZEROIZATION_CMD_o          <= MCU_ROM_zeroization_AND;
         if (otp_data_valid) begin
             mci_trans_st_current            <= mci_trans_st_next;
-            security_state_o                <= early_warm_reset_warn ?'{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1} : security_state_comb ;  // Default case
+            security_state_o                <= early_warm_reset_warn ?'{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True} : security_state_comb ;  // Default case
             otp_static_state                <= lc_state_e'(from_otp_to_lcc_program_i.state);
             SOC_DFT_EN                      <= ((lc_dft_en_i == lc_ctrl_pkg::On) | SOC_DFT_EN_AND) & !lcc_valid_SCRAP_req;
             SOC_HW_DEBUG_EN                 <= ((lc_hw_debug_en_i == lc_ctrl_pkg::On)  | SOC_HW_DEBUG_EN_AND) & !lcc_valid_SCRAP_req;
         end
         else begin
             mci_trans_st_current            <= TRANSLATOR_RESET;
-            security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+            security_state_o                <= '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};  // Default case
             otp_static_state                <=  LcStRaw; // This is all zeros
             SOC_DFT_EN                      <= 1'b0;
             SOC_HW_DEBUG_EN                 <= 1'b0;
@@ -115,7 +115,7 @@ always_comb begin: state_branch
     
     case(mci_trans_st_current)
         TRANSLATOR_RESET: begin
-            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};  // Default case
             if (otp_data_valid) begin
                 mci_trans_st_next = TRANSLATOR_IDLE;
             end
@@ -124,7 +124,7 @@ always_comb begin: state_branch
             end
         end
         TRANSLATOR_IDLE: begin
-            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};  // Default case
             // This module takes lcc state as a valid input only if LCC decides to enter SCRAP 
             // or Invalid state. This if condition also take SoC decision if it wants to put Caliptra
             // into non-debug mode due to a state error triggered through MCI fatal error logic
@@ -171,73 +171,73 @@ always_comb begin: state_branch
         TRANSLATOR_NON_DEBUG: begin
             if (lcc_volatile_raw_unlock_success_i && !(lcc_valid_SCRAP_req || state_error)) begin
                 mci_trans_st_next = TRANSLATOR_UNPROV_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};
             end
         end
         TRANSLATOR_UNPROV_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_UNPROV_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_UNPROVISIONED, debug_locked: 1'b0}; 
+                security_state_comb = '{device_lifecycle: DEVICE_UNPROVISIONED, debug_locked: MuBi4False}; 
             end
         end
         TRANSLATOR_MANUF_NON_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else if (ss_dbg_manuf_enable_i) begin
                 mci_trans_st_next = TRANSLATOR_MANUF_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_MANUF_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: MuBi4True}; 
             end
         end
         TRANSLATOR_MANUF_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_MANUF_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: 1'b0}; 
+                security_state_comb = '{device_lifecycle: DEVICE_MANUFACTURING, debug_locked: MuBi4False}; 
             end
         end
         TRANSLATOR_PROD_NON_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else if (CLPTR_PROD_DEBUG_UNLOCK_AND) begin
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_PROD_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
         end
         TRANSLATOR_PROD_DEBUG: begin
             if (lcc_valid_SCRAP_req || state_error) begin
                 mci_trans_st_next = TRANSLATOR_NON_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True}; 
             end
             else begin
                 mci_trans_st_next = TRANSLATOR_PROD_DEBUG;
-                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b0}; 
+                security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4False}; 
             end
         end
         default: begin
-            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: 1'b1};  // Default case
+            security_state_comb = '{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True};  // Default case
             mci_trans_st_next = TRANSLATOR_IDLE;
         end
     endcase
@@ -325,14 +325,14 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 `CALIPTRA_ASSERT(DebugUnlockedCheck_MANUF_A,
     $rose((ss_dbg_manuf_enable_i && (otp_static_state == LcStDev))
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##2 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 mubi4_test_false_strict(security_state_o.debug_locked)
 )
 
 `CALIPTRA_ASSERT(DebugUnlockedCheck_PROD_A,
     $rose(((CLPTR_PROD_DEBUG_UNLOCK_AND) 
         & (otp_static_state == LcStProd))  
         & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##2 (security_state_o.debug_locked == 1'b0)
+  |=> ##2 mubi4_test_false_strict(security_state_o.debug_locked)
 )
 
 `CALIPTRA_ASSERT(NonDebugUnlockedCheck_A,
@@ -342,7 +342,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
                                     LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7, LcStRma})
     & (mci_trans_st_current != TRANSLATOR_RESET))
   ) 
-  |=> ##1 (security_state_o.debug_locked == 1'b1)
+  |=> ##1 mubi4_test_true_strict(security_state_o.debug_locked)
 )
 
 //-----------------------------------------------------
@@ -355,7 +355,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
    & !(otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUnlocked2, LcStTestUnlocked3,
                                   LcStTestUnlocked4, LcStTestUnlocked5, LcStTestUnlocked6, LcStTestUnlocked7, LcStRma})) 
     & (mci_trans_st_current != TRANSLATOR_RESET))
-  |=> ##1 (security_state_o.debug_locked == 1'b1)
+  |=> ##1 mubi4_test_true_strict(security_state_o.debug_locked)
 )
 
 
@@ -379,7 +379,7 @@ $rose((otp_static_state inside {LcStTestUnlocked0, LcStTestUnlocked1, LcStTestUn
 //-----------------------------------------------------
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_A,
     $rose((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-        & (security_state_o.debug_locked == 1)
+        & mubi4_test_true_strict(security_state_o.debug_locked)
         & (mci_trans_st_current != TRANSLATOR_RESET))
     |=> ##1
     ((SOC_DFT_EN == 0) && (SOC_HW_DEBUG_EN == 0))
@@ -400,12 +400,12 @@ $rose((security_state_o.device_lifecycle == DEVICE_UNPROVISIONED)
             & ((lc_dft_en_i == lc_ctrl_pkg::On) || (lc_hw_debug_en_i == lc_ctrl_pkg::On)))
     |=>
     ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
-        && (security_state_o.debug_locked == 1'b0)) 
+        && mubi4_test_false_strict(security_state_o.debug_locked)) 
 )
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_DFT_A,
 $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-        &  (security_state_o.debug_locked == 0)
+        &  mubi4_test_false_strict(security_state_o.debug_locked)
         &  SOC_DFT_EN_AND)
         & (mci_trans_st_current != TRANSLATOR_RESET)
         & ((lc_dft_en_i == lc_ctrl_pkg::On)))
@@ -415,7 +415,7 @@ $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
 
 `CALIPTRA_ASSERT(ProdSIGNAL_Decoding_DebugHigh_HW_EN_A,
 $rose(((security_state_o.device_lifecycle == DEVICE_PRODUCTION)
-        &  (security_state_o.debug_locked == 0)
+        &  mubi4_test_false_strict(security_state_o.debug_locked)
         &  SOC_HW_DEBUG_EN_AND)  
         & (mci_trans_st_current != TRANSLATOR_RESET)        
         & (lc_hw_debug_en_i == lc_ctrl_pkg::On))
@@ -428,7 +428,7 @@ $rose(lcc_volatile_raw_unlock_success_i
             & (mci_trans_st_current != TRANSLATOR_RESET))
     |=> ##2
     ((SOC_DFT_EN == 1) && (SOC_HW_DEBUG_EN == 1) 
-        && (security_state_o.debug_locked == 1'b0)
+        && mubi4_test_false_strict(security_state_o.debug_locked)
         && (security_state_o.device_lifecycle == DEVICE_UNPROVISIONED) ) 
 )
 

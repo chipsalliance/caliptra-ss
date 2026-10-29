@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Hardware Specification </h1>
-<h3 align="center"> Version 2p1 </h3>
+<h3 align="center"> Version 2p2 (WIP) </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -13,29 +13,35 @@
   - [Caliptra-subsystem-mode](#caliptra-subsystem-mode)
   - [Caliptra Subsystem Architectural Requirements](#caliptra-subsystem-architectural-requirements)
   - [Caliptra Subsystem HW Requirements](#caliptra-subsystem-hw-requirements)
-    - [Caliptra 2.0 HW requirements (Subsystem Support)](#caliptra-20-hw-requirements-subsystem-support)
-    - [Caliptra 2.0 HW requirements (Not subsystem related)](#caliptra-20-hw-requirements-not-subsystem-related)
+    - [Caliptra 2.0/2.1 HW requirements (Subsystem Support)](#caliptra-2021-hw-requirements-subsystem-support)
+    - [Caliptra 2.2 HW requirements (Subsystem Support)](#caliptra-22-hw-requirements-subsystem-support)
+    - [Caliptra 2.0/2.1 HW requirements (Not subsystem related)](#caliptra-2021-hw-requirements-not-subsystem-related)
+    - [Caliptra Potential Future HW Features](#caliptra-potential-future-hw-features)
     - [MCU HW requirements](#mcu-hw-requirements)
-    - [Subsystem Components HW requirements](#subsystem-components-hw-requirements)
+    - [Caliptra 2.0/2.1 Subsystem Components HW requirements](#caliptra-2021-subsystem-components-hw-requirements)
       - [Fabric](#fabric)
       - [MCU SRAM](#mcu-sram)
       - [MCU ROM](#mcu-rom)
       - [I3C](#i3c)
       - [Fuse Controller](#fuse-controller)
       - [MCI](#mci)
+    - [Caliptra 2.2 Subsystem Components HW requirements](#caliptra-22-subsystem-components-hw-requirements)
+      - [USB](#usb)
+      - [SPI](#spi)
   - [Caliptra Subsystem Hardware Block Diagram](#caliptra-subsystem-hardware-block-diagram)
 - [Caliptra Subsystem Architectural Flows](#caliptra-subsystem-architectural-flows)
-- [I3C Streaming Boot (Recovery) Interface](#i3c-streaming-boot-recovery-interface)
-  - [Streaming Boot (Recovery) Interface hard coded logic](#streaming-boot-recovery-interface-hard-coded-logic)
-  - [Hardware Registers](#hardware-registers)
-  - [Streaming Boot (Recovery) Interface Wires](#streaming-boot-recovery-interface-wires)
-  - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
-  - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
-  - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
-- [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
-  - [AXI Streaming Boot Flow implementation](#axi-streaming-boot-flow-implementation)
-  - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
-  - [AXI Streaming Boot CSRs](#axi-streaming-boot-csrs)
+  - [USB Streaming Boot (Caliptra SS 2.2)](#usb-streaming-boot-caliptra-ss-22)
+  - [I3C Streaming Boot (Recovery) Interface](#i3c-streaming-boot-recovery-interface)
+    - [Streaming Boot (Recovery) Interface hard coded logic](#streaming-boot-recovery-interface-hard-coded-logic)
+    - [Hardware Registers](#hardware-registers)
+    - [Streaming Boot (Recovery) Interface Wires](#streaming-boot-recovery-interface-wires)
+    - [I3C Streaming Boot (Recovery) Flow](#i3c-streaming-boot-recovery-flow)
+    - [Caliptra ROM Requirements for OCP Streaming Boot](#caliptra-rom-requirements-for-ocp-streaming-boot)
+    - [I3C and Caliptra-AXI Interactions](#i3c-and-caliptra-axi-interactions)
+  - [AXI Streaming Boot (Recovery) Interface](#axi-streaming-boot-recovery-interface)
+    - [AXI Streaming Boot Flow implementation](#axi-streaming-boot-flow-implementation)
+    - [AXI Streaming Boot Handler](#axi-streaming-boot-handler)
+    - [AXI Streaming Boot CSRs](#axi-streaming-boot-csrs)
 - [Caliptra Core AXI Manager \& DMA assist](#caliptra-core-axi-manager--dma-assist)
   - [AXI Feature Support](#axi-feature-support)
   - [Routes](#routes)
@@ -52,6 +58,11 @@
   - [Locking the Validated Public Key Partition](#locking-the-validated-public-key-partition)
   - [Hardware Integrity Checker](#hardware-integrity-checker)
     - [Purpose](#purpose)
+  - [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization)
+    - [Effective debug intent](#effective-debug-intent)
+    - [Secret hardware-digest read masking](#secret-hardware-digest-read-masking)
+    - [Secret partition zeroization](#secret-partition-zeroization)
+    - [`SECRET_DIGEST_READ_LOCK`](#secret_digest_read_lock)
   - [Notes](#notes)
   - [General Guidance](#general-guidance)
     - [Reset Considerations](#reset-considerations)
@@ -81,11 +92,14 @@
       - [MCI CSR Access Restrictions](#mci-csr-access-restrictions)
     - [MCI Straps](#mci-straps)
     - [Subsystem Boot Finite State Machine (CSS-BootFSM)](#subsystem-boot-finite-state-machine-css-bootfsm)
+      - [CSS-BootFSM Glitch Protection](#css-bootfsm-glitch-protection)
     - [Watchdog Timer](#watchdog-timer)
     - [MCU Mailbox](#mcu-mailbox)
       - [MCU Mailbox Limited Trusted AXI users](#mcu-mailbox-limited-trusted-axi-users)
       - [MCU Mailbox Locking](#mcu-mailbox-locking)
       - [MCU Mailbox Target User](#mcu-mailbox-target-user)
+      - [MCU Mailbox SRAM Ownership](#mcu-mailbox-sram-ownership)
+      - [MCU Mailbox Status Registers](#mcu-mailbox-status-registers)
       - [MCU Mailbox Fully addressable SRAM](#mcu-mailbox-fully-addressable-sram)
       - [MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)
       - [MCU Mailbox Interrupts](#mcu-mailbox-interrupts)
@@ -100,6 +114,7 @@
     - [MCI Fuse Storage Support](#mci-fuse-storage-support)
     - [MCU Timer](#mcu-timer)
     - [MCU Trace Buffer](#mcu-trace-buffer)
+        - [Trace Source Select (MCU vs Caliptra core)](#trace-source-select-mcu-vs-caliptra-core)
       - [MCU Trace Buffer SW Interface](#mcu-trace-buffer-sw-interface)
       - [MCU Trace Buffer Packet](#mcu-trace-buffer-packet)
       - [MCU Trace Buffer Extraction](#mcu-trace-buffer-extraction)
@@ -117,6 +132,11 @@
       - [MCI Boot FSM Breakpoint Flow](#mci-boot-fsm-breakpoint-flow)
   - [MCI Design for Test (DFT)](#mci-design-for-test-dft)
     - [Reset Controls](#reset-controls)
+- [Caliptra SS USB2](#caliptra-ss-usb2)
+  - [Combo AXI memory map](#combo-axi-memory-map)
+  - [Ownership and access](#ownership-and-access)
+  - [AXI USER filtering](#axi-user-filtering)
+  - [DWORD-only accesses](#dword-only-accesses)
 
 # Scope
 
@@ -159,8 +179,8 @@ Caliptra owns the recovery interface (peripheral independent) and Caliptra is TH
 - Note: Widgets that toggle the reset or other wires that set security permissions are SOC specific implementations.
 
 6. Fuse controller for provisioning Caliptra fuses -> IFP (In-field programmable) fusing is performed by MCU RT; SW partition fuses in fuse controller are managed by MCU (ROM or RT); Caliptra HW is responsible for reading the secret fuses (Caliptra ROM, MCU ROM or any other SOC ROM or any RT FW should NOT have access to read the secret fuses in production).
-7. Recovery stack must be implemented. Please refer to I3C recovery section for more details and references.
-OCP Recovery registers implemented in I3C must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
+7. Recovery stack must be implemented. Please refer to I3C and USB recovery section for more details and references.
+OCP Recovery registers implemented in I3C and USB must follow the security filtering requirements specified in the recovery implementation spec (eg. MCU can ONLY access subset of the recovery registers as defined by the recovery implementation).
 8. Supports silicon t0 boot to load and run required FW across chiplets.
 9. OCP recovery stack is implemented in Caliptra for Caliptra-subsystem-mode
 10. MCU SRAM (or part of the SRAM that is mapped for Code/Data execution) should be readable/writeable ONLY by Caliptra until Caliptra gives permission to MCU to use it.
@@ -173,7 +193,7 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 
 ## Caliptra Subsystem HW Requirements
 
-### Caliptra 2.0 HW requirements (Subsystem Support)
+### Caliptra 2.0/2.1 HW requirements (Subsystem Support)
 
 1. Full AXI read/write channels (aka AXI manager) for subsystem (for MCU and Caliptra)
     a. For backward compatibility, AXI mgr. interface can be a no-connect and that configuration is validated.
@@ -182,11 +202,11 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 - Read MMIO space for variable length.
 - Data returned from the above read can be exposed directly to the FW OR allow it to be written to a subsystem/SOC destination as programmed by ROM/FW.
 - Programmable logic to allow for SOC directed writes (from FW or from the above route back) to be sent through the SHA accelerator.
-- (Future open/stretch goal): If AES engine accelerator is integrated into Caliptra, then implement decryption before sending the writes back to the destination programmed by the ROM/FW.
+- If AES engine accelerator is integrated into Caliptra, then implement decryption before sending the writes back to the destination programmed by the ROM/FW.
 - This widget should have accessibility in manufacturing and debug mode over JTAG (can be exposed using the same JTAG interface as Caliptra 1.0). Ensure through validation that no asset can be read using this widget in those modes.
 
 3. Expand manuf flow register to include UDS programming request steps
-4. SOC Key Release HW (Required for OCP Lock flow too)
+4. SOC Key Release HW (Required for OCP Lock flow too) - 2.1 Note: Was implemented for OCP LOCK but didnt follow SOC KV implementation requirement below
 
 - Separate SOC Key Vault must be implemented (it is a separate structure from the current Caliptra KV).
 - In at least one configuration, the SOC KV must be implemented as an SRAM that is external and configurable by the SOC OR or an internal configurable SOC KV structure. If this is achievable within the Caliptra 2.0 milestone, only one of these would be the chosen implementation and configuration. This will be a design decision based on effort & schedule.
@@ -195,11 +215,41 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 - Destination address to which the key must be written to is programmed by the Caliptra FW into AXI MGR DMA HW.
 - SOC KV must have the same attributes as Caliptra internal KV. Additionally, it must also have an attribute of read-once and clear.
 
-### Caliptra 2.0 HW requirements (Not subsystem related)
+### Caliptra 2.2 HW requirements (Subsystem Support)
+
+1. Shall include Dual-noise source support
+
+   Two independent physical noise sources are carried to the subsystem boundary,
+   each with its own external request output, so an integrator can attach two
+   distinct noise-generation technologies:
+
+   - Source 0 (primary): `cptra_ss_cptra_core_etrng0_req_o`,
+     `cptra_ss_cptra_core_itrng0_data_i`, `cptra_ss_cptra_core_itrng0_valid_i`
+   - Source 1 (secondary): `cptra_ss_cptra_core_etrng1_req_o`,
+     `cptra_ss_cptra_core_itrng1_data_i`, `cptra_ss_cptra_core_itrng1_valid_i`
+   - Mode select: `cptra_ss_cptra_core_itrng1_en_i`
+
+   Inside the Caliptra core each source is conditioned by its own `entropy_src`,
+   and the `entropy_combiner` merges the two conditioned outputs as
+   `SHA3-384(ES0||ES1)` into the single CSRNG seed. When
+   `cptra_ss_cptra_core_itrng1_en_i` is 0 the combiner is transparently bypassed
+   (source 0 straight to CSRNG) and the source-1 pins may be left unconnected, so
+   single-noise-source integrations are unaffected. See the Caliptra Core
+   hardware specification, *Dual iTRNG entropy combiner*, for the combiner
+   architecture, its ROM power-on KAT, and the write-once AHB lock.
+
+2. Shall upgrade ABR to the latest source (ABR 3.0)
+
+### Caliptra 2.0/2.1 HW requirements (Not subsystem related)
 
 1. Ability to use two or more cryptos concurrently
 2. Change APB -> AXI-Sub with the same capabilities (AXI USERID filtering replaces PAUSER based filtering, multiple targets for SHA acc, mailbox, fuses, registers etc. all)
-3. Future/Stretch Goal: Parity support on AXI-SUB & MGR
+
+### Caliptra Potential Future HW Features
+
+1. Parity support on AXI-SUB & MGR
+2. Dual core lock step for VeeR EL2 on Caliptra core
+3. MCU VeeR Data caching
 
 ### MCU HW requirements
 
@@ -213,8 +263,8 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 8. NV-storage peripheral shall be built in such a way that it will only accept transactions from MCU.
 9. Support for MCU first fetch vector to direct towards MCU SRAM post reset
 
-### Subsystem Components HW requirements
-
+### Caliptra 2.0/2.1 Subsystem Components HW requirements
+   
 #### Fabric
 
 1. AXI Interconnect connects Caliptra, I3C, Fuse Controller, Life Cycle Controller, MCU and its memory components with the rest of the SOC.
@@ -242,7 +292,7 @@ OCP Recovery registers implemented in I3C must follow the security filtering req
 3. AXI Sub must be supported.
 4. UserID to MCU and Caliptra
 5. MCU access lock for I3C recovery and data (FIFO) registers until recovery flow is completed. In other words, MCU ROM must not impact the data flow into Recovery IFC registers.
-Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
+Stretch Goal (Met in 2.0/2.1): DMA data payload back to destination (Caliptra)
 
 #### Fuse Controller
 
@@ -254,19 +304,40 @@ Stretch Goal: DMA data payload back to destination (Caliptra or MCU)
 6. When debug mode is intended to be enabled & when enabled, all secrets/assets as defined should be wiped and provide the indication to SOC for any secrets/assets it may have.
 
 #### MCI
-- HW logic to move secret fuses from Fuse controller to Caliptra.
+- HW logic to move secret fuses from Fuse controller to Caliptra (2.0/2.1 note: Implemented by MCU ROM for all non-secret fuses and secret fuses directly go to Caliptra core without any ROM or additional HW involvement).
+
+### Caliptra 2.2 Subsystem Components HW requirements
+
+#### USB
+
+1. USB2 integration with streaming boot support
+2. USB2 shall implement two devices - one for Caliptra subsystem usage and one for SOC usage
+3. USB2 access must follow the [ownership and AXI USER filtering policy](#ownership-and-access) and [DWORD-only access requirement](#dword-only-accesses).
+
+#### SPI
+
+SPI shall be supported along with AXI streaming boot block
 
 ## Caliptra Subsystem Hardware Block Diagram
 
-*Figure: Caliptra Subsystem Block Diagram*
+*Figure: Caliptra 2.0/2.1 Subsystem Block Diagram*
 
 ![](https://github.com/chipsalliance/Caliptra/blob/main/doc/images/Subsystem.png)
 
+*Figure: Caliptra 2.2 Subsystem Block Diagram*
+![](./images/CSS2p2.png)
+*Notes:*
+1. If an integration chooses to use USB for all the SOC/Platform facing flows, then it has an integration option to remove I3C
+2. SOCs will also have a choice of keeping both USB2 and I3C (USB2 shall always be there)
+   
 # Caliptra Subsystem Architectural Flows
 
 Please refer to [Caliptra Security Subsystem Specification](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-security-subsystem) for more details.
 
-# I3C Streaming Boot (Recovery) Interface
+## USB Streaming Boot (Caliptra SS 2.2)
+=================== Coming Soon ===========================
+
+## I3C Streaming Boot (Recovery) Interface
 
 The I3C recovery interface acts as a standalone I3C target device for recovery. It will have a unique address compared to any other I3C endpoint for the device. It will comply with I3C Basic v1.1.1 specification. It will support I3C read and write transfer operations. It must support Max read and write data transfer of 1-256B excluding the command code (1 Byte), length (2 Byte), and PEC (1 Byte), total 4 Byte I3C header. Therefore, max recovery data per transfer will be limited to 256-byte data.
 
@@ -276,7 +347,7 @@ I3C recovery interface is responsible for the following list of actions:
 2. Updating status registers based on interaction of AC-RoT and other devices
 3. Asserting / Deasserting “payload_available” & “image_activated” signals
 
-## Streaming Boot (Recovery) Interface hard coded logic
+### Streaming Boot (Recovery) Interface hard coded logic
 
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
 
@@ -284,7 +355,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 ![](./images/I3C-Recovery-IFC.png)
 
-## Hardware Registers
+### Hardware Registers
 
 Hardware registers size is fixed to multiple of 4 bytes, so that firmware can read or write with word boundary. Address offset will be programmed outside of the I3C device. Register access size must be restricted to individual register space and burst access with higher size must not be allowed.
 
@@ -292,7 +363,7 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 
 **TODO:** Add a link to rdl -> html file
 
-## Streaming Boot (Recovery) Interface Wires
+### Streaming Boot (Recovery) Interface Wires
 
 1. **Payload available**
 
@@ -304,38 +375,38 @@ Hardware registers size is fixed to multiple of 4 bytes, so that firmware can re
 - The I3C target will assert "image_activated" signal as soon as write to RECOVERY_CTRL register is received.
 - ROM will clear “image_activated” bit by writing to RECOVERY_CTRL register via DMA assist after the image is authenticated. As defined in the OCP Recovery Specification, RECOVERY_CTRL, byte 2 is used to specify the image activation control, and is Write-1-Clear. ROM must write 0xFF to this field to clear the image recovery status, which will also result in the Recovery Interface deasserting the “image_activated” signal to Caliptra.
 
-## I3C Streaming Boot (Recovery) Flow
+### I3C Streaming Boot (Recovery) Flow
 
 Please refer to [Caliptra Subsystem OCP Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-sequence).
 
 *Figure: Caliptra Subsystem I3C Streaming Boot (Recovery) Flow*
 ![](./images/CSS-Recovery-Flow.png)
 
-## Caliptra ROM Requirements for OCP Streaming Boot
+### Caliptra ROM Requirements for OCP Streaming Boot
 
 Caliptra firmware must follow these rules when implementing the OCP Streaming Boot flow:
 * Caliptra ROM and RT Firmware must wait for "image_activated" signal to assert before processing the image.
 * When image is sent to Caliptra Subsystem, Caliptra ROM & RT firmware must program DMA assist according to the rules defined in [OCP Streaming Boot Payloads](#ocp-streaming-boot-payloads).
 * Once the image is processed, Caliptra ROM & RT firmware must initiate a write with data 1 via DMA to clear byte 2 “Image_activated” of the RECOVERY_CTRL register. This will allow BMC (or streaming boot initiator) to initiate subsequent image writes.
 
-## I3C and Caliptra-AXI Interactions
+### I3C and Caliptra-AXI Interactions
 
 Received transfer data can be obtained by the driver via a read from XFER_DATA_PORT register. Received data threshold is indicated to BMC by the controller with TX_THLD_STAT interrupt if RX_THLD_STAT_EN is set. The RX threshold can be set via RX_BUF_THLD. In case of a read when no RX data is available, the controller shall raise an error on the frontend bus interface (AHB / AXI).
 
-# AXI Streaming Boot (Recovery) Interface
+## AXI Streaming Boot (Recovery) Interface
 
 This feature allows streaming data or firmware by MCU over the AXI bus of the I3C module which is repurposed as a streaming boot interface while disabling I3C usage.
 
-## AXI Streaming Boot Flow implementation
+### AXI Streaming Boot Flow implementation
 
 The AXI Streaming Boot flow reuses the logic already present in the I3C core used in the Caliptra-SS design, with a runtime option essentially bypassing most of the I3C core communication logic (including the I3C recovery flow logic).
 The loopback functionality is configurable via the [REC_INTF_CFG](https://chipsalliance.github.io/i3c-core/registers.html#rec-intf-cfg-register) CSR which is set to I3C mode by default.
 Streaming boot CSRs are accessible over AXI.
-The transactions to the I3C core may be filtered using the AXI ID field.
+In both I3C and AXI streaming boot modes, I3C AXI access must comply with [I3C AXI USER Filtering](CaliptraSSIntegrationSpecification.md#i3c-axi-user-filtering).
 The logic is implemented so that the streaming boot implementation in the Caliptra core (HW & ROM) can operate without any changes.
 In order to enable setting W1C streaming boot registers, AXI streaming mode introduces an additional register - `REC_INTF_REG_W1C_ACCESS`.
 
-## AXI Streaming Boot Handler
+### AXI Streaming Boot Handler
 
 In the regular (I3C) mode of the core, the Streaming Boot (Recovery) Handler strongly relies on the communication with the I3C Core internal logic by interfacing with TTI Queues.
 The bypass implementation modifies the I3C Core logic to allow direct access over the AXI bus to the structures specified by the OCP Streaming boot for compliance with the [Caliptra Subsystem Streaming Boot Sequence](https://github.com/chipsalliance/Caliptra/blob/main/doc/Caliptra.md#caliptra-subsystem-streaming-boot-interface-hardware).
@@ -355,7 +426,7 @@ The dataflow in bypass mode (marked with green arrows) is depicted in the diagra
 *Figure: AXI Streaming Boot Handler in I3C Bypass Mode*
 ![](images/AXI-Recovery-Handler-Bypass.png)
 
-## AXI Streaming Boot CSRs
+### AXI Streaming Boot CSRs
 
 With the bypass feature enabled, the FIFO status CSRs in the Streaming Boot CSR file will be updated by the Streaming Bott Handler module.
 However, some registers like e.g. `INDIRECT_FIFO_CTRL` which are updated by I3C commands in a standard streaming boot flow, will have to be accessed and configured properly from the software running on the Caliptra MCU via the AXI bus.
@@ -1007,15 +1078,15 @@ Certain registers within the CSR bank have write access restrictions based off o
 1. AXI User
 2. Lock bits (SS_CONFIG_DONE, CAP_LOCK, etc.)
 
-The privilaged users for the MCI CSRs are:
+The privileged users for the MCI CSRs are:
 
 1. MCU
 2. MCI SOC Config User (MSCU)
 3. MCU SRAM Config User (MSRCU)
 
-All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionalality like timers that are needed by the SOC but are critical for MCU functionality.
+All of these AXI Users come from straps and are not modifiable by SW. MCU is given the highest level of access and is expected to configure MCI registers and lock the configuration with various SS_CONFIG_DONE and LOCK bits. It also has access to certain functionality like timers that are needed by the SOC but are critical for MCU functionality.
 
-The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MCSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege.
+The MSCU is meant as a secondary config agent if the MCU is unable to configure MCI. Example when in the no ROM config it is expected the MSCU can configure and lock down the MCI configuration. MSCU can be **disabled** by setting the strap to 0x0. For debug the MSCU strap can be set to all 1s meaning every access will give this level of privilege.
 The MCRCU populates the MCU FW update in MCU SRAM. There are a few registers within the MCI register bank it has special access to for facilitating the FW update.
 The registers can be split up into a few different categories:
 
@@ -1028,8 +1099,8 @@ The registers can be split up into a few different categories:
 | Sticky MCU or MSCU and CONFIG locked      | Locked configuration by MCU ROM/MSCU and configured after each cold reset |
 | Locked by SS_CONFIG_DONE_STICKY        | Configuration once per cold reset. |
 | Locked by SS_CONFIG_DONE        | Configuration once per warm reset. |
-| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilieds then locked until next warm reset |
-| MBOX_USER_LOCK       |  Mailbox specific configuration locked by it's own LOCK bit. Configured afer each arem reset.       |
+| MCU or MSCU until CAP_LOCK       | Configured by a trusted agent to show HW/FW capabilities then locked until next warm reset |
+| MBOX_USER_LOCK       |  Mailbox-specific configuration locked by its own LOCK bit. Configured afer each warm reset.       |
 
 ### MCI Straps
 
@@ -1083,6 +1154,8 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 
    a. **Note:** MCU ROM may be used by some SOCs for doing additional SOC specific initializations.An example of such a SoC construction is MCI, MCU, CSS Fabric are running on external clock initially. MCU brings up PLL, some GPIO peripherals, does I3C init sequence etc and then performs clock switch to internal PLL clock domain so that the fabric is running on the internal clock domain before secrets are read on it from the fuse controller.
 
+   b. USB AXI filtering configuration must follow the [configuration and locking requirements](CaliptraSSIntegrationSpecification.md#axi-user-filtering).
+
 6. If MCU-No-ROM-Config is not set, MCU ROM will bring Caliptra out of reset by writing a MCI register (CPTRA_BOOT_GO)
 7. If MCU-No-ROM-Config is set, CSS-BootFSM waits for a Caliptra GO write from SOC to bring Caliptra out of reset.
 
@@ -1106,7 +1179,108 @@ The following boot flow explains the Caliptra subsystem bootFSM sequence.
 16. CSS-BootFSM waits for MCU to request the reset. Then CSS-BootFSM will do a halt req/ack handshake with MCU and assert the MCU reset after the MCU reports that it has successfully halted.
 17. MCU ROM will read the reset reason in the MCI and execute from MCU SRAM
 
-![](images/Caliptra-SS-BootFSM.png)
+The diagram below shows the MCI boot FSM in normal functional operation (`scan_mode == 0`). Circles name the encoded states; state actions are listed below. Edge labels name signals unless marked with `*`, which identifies a descriptive label or condition rather than a signal. 
+
+```mermaid
+---
+config:
+  theme: base
+  themeCSS: ".edgeLabel { font-family: Arial, sans-serif; } .flowchart-link { stroke-width: 2.5px; }"
+  themeVariables:
+    fontFamily: Arial, sans-serif
+    fontSize: 20px
+    lineColor: "#17647f"
+    edgeLabelBackground: "#ffffff"
+  block:
+    padding: 16
+---
+block-beta
+    columns 9
+    %% Fixed-size labels keep every encoded-state circle the same size.
+    space:3 RESET_EVENT((" ")) space:5
+    space:3 BOOT_IDLE(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_IDLE</div>")) space:5
+    space BOOT_RST_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>RST_MCU</div>")) space:3 BOOT_OTP_FC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_OTP_FC</div>")) space:3
+    BOOT_WAIT_MCU_HALTED(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_HALTED</div>")) space:5 BOOT_LCC(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_LCC</div>")) space:2
+    BOOT_HALT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>HALT_MCU</div>")) space:2 SPACING["<div style='width:236px;height:196px'></div>"] space:2 BOOT_BREAKPOINT_CHECK(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT_<br/>CHECK</div>")) space:2
+    BOOT_WAIT_MCU_RST_REQ(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>MCU_RST_REQ</div>")) space:5 BOOT_BREAKPOINT(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_<br/>BREAKPOINT</div>")) space ROM_SELECT((" "))
+    space BOOT_CPTRA(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_CPTRA</div>")) space:3 BOOT_MCU(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_MCU</div>")) space:3
+    space:3 BOOT_WAIT_CPTRA_GO(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_WAIT_<br/>CPTRA_GO</div>")) space:4 NO_ROM_CORNER((" "))
+    space:2 BAD_VALUE((" ")) space BOOT_ERROR(("<div style='width:156px;height:88px;display:flex;align-items:center;justify-content:center'>BOOT_ERROR</div>")) space:4
+
+    RESET_EVENT -- "Warm / power-good reset*" --> BOOT_IDLE
+    BOOT_IDLE -- "!warm_reset" --> BOOT_OTP_FC
+    BOOT_OTP_FC -- "fc_opt_done" --> BOOT_LCC
+    BOOT_LCC -- "lc_done" --> BOOT_BREAKPOINT_CHECK
+    BOOT_BREAKPOINT_CHECK -- "mci_boot_seq_brkpoint" --> BOOT_BREAKPOINT
+    BOOT_BREAKPOINT_CHECK -- "!mci_boot_seq_brkpoint" --> ROM_SELECT
+    BOOT_BREAKPOINT -- "mci_bootfsm_go" --> ROM_SELECT
+    ROM_SELECT -- "!mcu_no_rom_config" --> BOOT_MCU
+    ROM_SELECT -- "mcu_no_rom_config" --- NO_ROM_CORNER
+    NO_ROM_CORNER --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "!from_mcu_reset*" --> BOOT_WAIT_CPTRA_GO
+    BOOT_MCU -- "from_mcu_reset*" --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_CPTRA_GO -- "caliptra_boot_go" --> BOOT_CPTRA
+    BOOT_CPTRA --> BOOT_WAIT_MCU_RST_REQ
+    BOOT_WAIT_MCU_RST_REQ -- "mcu_rst_req" --> BOOT_HALT_MCU
+    BOOT_HALT_MCU -- "mcu_cpu_halt_ack_i" --> BOOT_WAIT_MCU_HALTED
+    BOOT_WAIT_MCU_HALTED -- "mcu_cpu_halt_status_i" --> BOOT_RST_MCU
+    BOOT_RST_MCU -- "reset_ready*" --> BOOT_MCU
+    BAD_VALUE -- "Bad FSM register value*" --> BOOT_ERROR
+
+    classDef normal fill:#17647f,stroke:#17647f,color:#fff,font-family:Arial
+    classDef error fill:#8b3030,stroke:#642222,color:#fff,font-family:Arial
+    classDef entry fill:none,stroke:none
+    classDef junction fill:#17647f,stroke:#17647f
+    class BOOT_IDLE,BOOT_OTP_FC,BOOT_LCC,BOOT_BREAKPOINT_CHECK,BOOT_BREAKPOINT,BOOT_MCU,BOOT_WAIT_CPTRA_GO,BOOT_CPTRA,BOOT_WAIT_MCU_RST_REQ,BOOT_HALT_MCU,BOOT_WAIT_MCU_HALTED,BOOT_RST_MCU normal
+    class BOOT_ERROR error
+    class RESET_EVENT,BAD_VALUE,SPACING entry
+    class ROM_SELECT,NO_ROM_CORNER junction
+```
+
+The reset-entry arrow applies to every state, including BOOT\_ERROR. `mci_pwrgood = 0` asynchronously resets the FSM to BOOT\_IDLE; `warm_reset` returns it to BOOT\_IDLE on a clock edge.
+
+| State | Output actions |
+| --- | --- |
+| `BOOT_IDLE` | `cptra_ss_rst_b_o = 0`, `mcu_rst_b = 0`, `cptra_rst_b = 0` |
+| `BOOT_OTP_FC` | `fc_opt_init = 1`, `cptra_ss_rst_b_o = 1` |
+| `BOOT_LCC` | `lc_init = 1` |
+| `BOOT_BREAKPOINT_CHECK` | None |
+| `BOOT_BREAKPOINT` | None |
+| `BOOT_MCU` | `mcu_rst_b = 1` |
+| `BOOT_WAIT_CPTRA_GO` | None |
+| `BOOT_CPTRA` | `cptra_rst_b = 1` |
+| `BOOT_WAIT_MCU_RST_REQ` | None |
+| `BOOT_HALT_MCU` | `mcu_cpu_halt_req_o = 1` |
+| `BOOT_WAIT_MCU_HALTED` | None |
+| `BOOT_RST_MCU` | `mcu_rst_b = 0`, `mcu_reset_once = 1` |
+| `BOOT_ERROR` | `mcu_rst_b = 0`, `cptra_rst_b = 0`, `cptra_ss_rst_b_o = 1`, `fsm_error = 1` |
+
+
+| Diagram label or reset signal | Meaning |
+| --- | --- |
+| `reset_ready*` | `min_mcu_rst_count_elapsed && mcu_sram_fw_exec_region_lock` |
+| `from_mcu_reset*` | `boot_fsm_prev == BOOT_RST_MCU`; `!from_mcu_reset*` means the comparison is false |
+| `Warm / power-good reset*` | Global reset entry: `warm_reset` forces idle on a clock edge, or `mci_pwrgood = 0` asynchronously resets the FSM |
+| `Bad FSM register value*` | The state register contains an unused encoding; selects BOOT\_ERROR unless overridden by reset |
+| `warm_reset` | Active-high, synchronized and delayed indication of active-low `cptra_ss_rst_b_i` (`mci_rst_b` inside MCI) |
+
+#### CSS-BootFSM Glitch Protection
+
+The CSS-BootFSM uses state encodings with a minimum Hamming distance of 5 to detect state-register corruption. This protection detects invalid state encodings; it does not detect corruption that changes one valid encoding into another.
+
+In normal operation (`scan_mode == 0`), detection of an invalid state encoding causes the following:
+
+1. The FSM enters BOOT\_ERROR and holds MCU and Caliptra in reset, without the MCU halt handshake.
+2. Subsystem reset (`cptra_ss_rst_b_o`) is deasserted so the SOC can access MCI registers.
+3. HW\_ERROR\_FATAL.fsm\_error is set and `all_error_fatal` is asserted. This error cannot be masked.
+4. HW\_FLOW\_STATUS.boot\_fsm reports 0xF. Normal-state values remain 0x0 through 0xB; the CSR and DMI addresses are unchanged.
+
+**Recovery**
+
+1. Apply warm reset or cycle power-good to return the FSM to BOOT\_IDLE and clear `all_error_fatal`. 
+2. After warm reset, clear the retained HW\_ERROR\_FATAL.fsm\_error bit using write-one-to-clear (W1C). Power-good reset clears this bit automatically.
+
+A software clear alone does not exit BOOT\_ERROR or clear the fatal output. The status bit can be set again while the FSM remains in BOOT\_ERROR. 
 
 ### Watchdog Timer
 
@@ -1138,48 +1312,146 @@ There are 5 trusted AXI Users determined at build time via parameters or via MCI
 
 Any untrusted AXI user trying to read or write the mailbox will receive an AXI error response ([MCU Mailbox Errors](#mcu-mailbox-errors)).
 
-Trusted users always have read access to the CSRs in the mailbox, but require a [lock](#mcu-mailbox-locking) to write the CSRs or read/write the SRAM.
+Trusted users always have read access to the CSRs in the mailbox, but require MBOX [lock](#mcu-mailbox-locking) to write the CSRs. SRAM reads and writes require the trusted user to be the current [exclusive SRAM owner](#mcu-mailbox-sram-ownership).
 
 #### MCU Mailbox Locking
 
-A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requestor has read access to the entire mailbox and write access to:
+A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requester has read access to the mailbox CSRs and write access to:
 
-- All mailbox registers except the following will be RO:
-  -  CMD_STATUS
-  -  TARGET_STATUS
-  -  TARGET_DONE
-  -  TARGET_USER
-- Mailbox SRAM
-Unlocking/releasing occurs when the requestor writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+- CMD and EXECUTE registers
+- DLEN register and mailbox SRAM while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership)
+
+Unlocking/releasing occurs when the Requester writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM.
 
 #### MCU Mailbox Target User
 
-A Target user is an additional user that can access and process the MBOX request. This user can only be setup by MCU and only valid when the TARGET_USER_VALID bit is set.
+A Target user is a
+[trusted AXI user](#mcu-mailbox-limited-trusted-axi-users) that Root selects to
+participate in a mailbox transaction. Root, typically MCU, is the only agent
+that programs `TARGET_USER` and `TARGET_USER_VALID`.
 
-One example of when a Target user becomes necessary is when the SOC wants Caliptra to process a MBOX request. The SOC will obtain a lock, MCU will see the command request is for Caliptra, MCU will add Caliptra as the Target user and notify Caliptra.
+Root shall write the Target AXI identity to `TARGET_USER` and then write
+`TARGET_USER_VALID=1`. The numeric value in `TARGET_USER` has no ownership
+meaning while valid is 0. 
 
-Another example is when MCU itself obtains the mailbox lock. It will add a Target user and notify the Target user via AXI or some other mechanism.
+While `TARGET_USER_VALID=0`, Root may write either target configuration
+register. Writing `TARGET_USER_VALID=1` locks both registers against all
+software writes. Software cannot retarget the mailbox or clear valid after the
+grant. Hardware clears and unlocks both registers on a terminal
+`TARGET_STATUS` write or when the mailbox is released.
 
-A Target user has read access to the entire mailbox and write access to:
+One example of when a Target user becomes necessary is when the SOC wants
+Caliptra to process a MBOX request. The SOC will obtain a lock, MCU will see the
+command request is for Caliptra, MCU will program Caliptra as the Target user,
+set `TARGET_USER_VALID`, and notify Caliptra.
 
-- DLEN register
+Another example is when MCU itself obtains the mailbox lock. It will program a
+Target user, set `TARGET_USER_VALID`, and notify the Target user via AXI or
+some other mechanism.
+
+A Target user has read access to the mailbox CSRs, and write access to:
+
 - TARGET_STATUS register
-- TARGET_DONE register
-- Mailbox SRAM
+- DLEN register and mailbox SRAM while it is the current [SRAM owner](#mcu-mailbox-sram-ownership)
 
-The Target user will notify MCU it is done processing by setting TARGET_STATUS and TARGET_DONE. Setting TARGET_DONE will interrupt MCU. If required, MCU will then update the CMD_STATUS register with the final status of the command for the Requestor.
+The Target user shall finish all SRAM and DMA accesses before writing a
+terminal `TARGET_STATUS` value, because that write ends its
+[SRAM ownership](#mcu-mailbox-sram-ownership).
 
-If a second Target user is required it is the MCU's responsibility to:
+If a second Target user is required, MCU shall wait for the first Target to
+publish a terminal `TARGET_STATUS` during normal operation. Hardware clears
+`TARGET_USER` and `TARGET_USER_VALID` on that write, after which MCU can
+program and validate the next Target user. `EXECUTE` remains 1 and the SRAM
+contents are preserved, so a re-grant does not require releasing the mailbox.
 
-1. Clear TARGET_STATUS
-2. Clear TARGET_DONE
-3. Set new TARGET_USER
 
-Otherwise these registers are cleared when the mailbox lock is released.
+#### MCU Mailbox SRAM Ownership
 
-Target users must be an [MCU Mailbox trusted user](mcu-mailbox-limited-trusted-AXI-user)
+The SRAM owner is derived from mailbox state. Ownership is a combinational function of the mailbox
+registers, evaluated in the following precedence order.
+
+```mermaid
+%%{init: {"flowchart": {"curve": "basis"}}}%%
+flowchart TD
+    accTitle: MCU mailbox SRAM owner resolution
+    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
+
+    Q1{"MBOX_LOCK set?"}
+    Q2{"SRAM zeroizing?"}
+    Q3{"EXECUTE = 1?"}
+    Q4{"TARGET_USER_VALID = 1?"}
+    Q5{"CMD_STATUS = BUSY?"}
+
+    NONE(["No software owner"])
+    TGTO(["TARGET_USER agent"])
+    ROOTO(["Root AXI user"])
+    HOLD(["Lock holder"])
+
+    Q1 -- No --> NONE
+    Q1 -- Yes --> Q2
+    Q2 -- Yes --> NONE
+    Q2 -- No --> Q3
+    Q3 -- No --> HOLD
+    Q3 -- Yes --> Q4
+    Q4 -- No --> Q5
+    Q4 -- Yes --> TGTO
+    Q5 -- No --> HOLD
+    Q5 -- Yes --> ROOTO
+```
+
+Because ownership is combinational, each register write below is what moves
+the exclusive owner from one agent to the next.
+
+| Event | New exclusive SRAM owner |
+|---|---|
+| MCI reset | Root, as the reset lock holder |
+| `LOCK` read returns 0 | The reading agent becomes lock holder |
+| `EXECUTE=1` while `TARGET_USER_VALID=0` | Root |
+| Root writes `TARGET_USER_VALID=1` while `EXECUTE=1` | The agent named by `TARGET_USER` |
+| Target writes terminal `TARGET_STATUS` | Root, and hardware clears `TARGET_USER` and `TARGET_USER_VALID` |
+| MCU writes non-BUSY `CMD_STATUS` | Lock holder |
+| `EXECUTE=0` | None, and hardware begins zeroization |
+| Zeroization completes | None, `LOCK` clears and the mailbox is reusable |
+
+Writing `EXECUTE=0` always revokes all software SRAM access and enters
+zeroization, including while a Target owns the SRAM.
+
+`DLEN` write access follows SRAM ownership. Only the current SRAM owner may
+write `DLEN`, so the agent that produced the data in the SRAM is the agent that
+reports its length.
+
+#### MCU Mailbox Status Registers
+
+`CMD_STATUS` and `TARGET_STATUS` use the following encodings:
+
+| Value | Meaning |
+|---:|---|
+| 0 | BUSY |
+| 1 | DATA_READY |
+| 2 | COMPLETE |
+| 3 | FAILURE |
+
+The two status registers serve different polling domains. Only MCU writes
+`CMD_STATUS`, and the original Requester polls it. Only the current Target
+writes `TARGET_STATUS`, and MCU reads it. A terminal Target status shall not be
+visible as command completion to the original Requester until MCU separately
+writes a terminal `CMD_STATUS`.
+
+Hardware resets `TARGET_STATUS` to BUSY on each Target handoff.
+
+`CMD_STATUS` is not used when MCU is the Requester, because there is no
+external Requester to serve. In that case MCU reads `TARGET_STATUS` directly.
+
+`MBOX_HW_STATUS.SRAM_OWNER` reports the current exclusive SRAM owner:
+
+| Value | Owner |
+|---:|---|
+| 0 | None |
+| 1 | Requester/lock holder |
+| 2 | Root AXI user, typically MCU |
+| 3 | Target selected by `TARGET_USER` while `TARGET_USER_VALID=1` |
 
 #### MCU Mailbox Fully addressable SRAM
 
@@ -1212,17 +1484,22 @@ It is expected that agents write their content from 0 to DLEN. If an agent write
 
 The following interrupts are sent to MCU:
 
-| **Interrupt** | **Description**     |
-| :---------         | :---------     |
-| SOC request MBOX             | Asserted when MCU has MBOX lock and an SOC agent tries to obtain the lock. MCU can decide to release the mailbox if this happens.        |
-| Mailbox data available from SOC             | Asserted when a SOC agent gets lock and assert the EXECUTE register, indicating data is availalbe for MCU.        |
-| Target Done          | Asserted when the Target user is done processing the data and is ready for MCU to consume or pass data to Requestor.         |
+| **Interrupt** | **Signal** | **Description**     |
+| :---------         | :---------     | :---------     |
+| SOC request MBOX             | `notif_mbox*_soc_req_lock` | Asserted when MCU has MBOX lock and an SOC agent tries to obtain the lock. MCU can decide to release the mailbox if this happens.        |
+| Mailbox data available from SOC             | `notif_mbox*_cmd_avail` | Asserted when a SOC agent gets lock and asserts the EXECUTE register, indicating data is available for MCU.        |
+| Target complete          | `notif_mbox*_target_done` | Asserted when the Target user writes a terminal TARGET_STATUS.         |
 
-The following interrup(s) are available for SOC consumption:
+Each interrupt has a corresponding enable, status, trigger, and count register
+field in the MCI register block, named with the `_en`, `_sts`, `_trig`, and
+`_intr_count_r` suffixes.
 
-| **Interrupt** | **Description**     |
-| :---------         | :---------     |
-| Mailbox data available from MCU             | Asserted when MCU gets lock and assert the EXECUTE register, indicating data is available for SOC consumption.        |
+The following signal is available for SOC consumption.
+
+| **Interrupt** | **Signal** | **Description**     |
+| :---------         | :---------     | :---------     |
+| Mailbox data available from MCU             | `cptra_ss_soc_mcu_mbox*_data_avail` | Asserted while MCU holds the mailbox lock and EXECUTE is 1.  |
+
 
 #### MCU Mailbox Errors
 
@@ -1231,7 +1508,7 @@ Each mailbox has the following errors:
 | **Error Type** | **Response**     | **Description** |
 | :---------         | :---------     | :---------     |
 | Untrusted User Access | Read:<br>&nbsp;- Data return 0 <br>&nbsp;- AXI Error<br>Write:<br>&nbsp;- Data dropped<br>&nbsp;- AXI Error | When an [Untrusted user](#mcu-mailbox-limited-trusted-axi-users) tries to access any address within the MBOX. |
-| Trusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access the mailbox when it doesn't have a lock<br>- Tries to write to a register it doesn't have access to.<br>- Tries to access an illegal SRAM address within the mailbox. |
+| Trusted User Illegal Access | Read:<br>&nbsp;- Data return 0 <br>Write:<br>&nbsp;- Data dropped| When a [Trusted user](#mcu-mailbox-limited-trusted-axi-users) tries to:<br>- Access mailbox SRAM when it is not the current owner<br>- Write a register it does not have access to<br>- Access an illegal SRAM address within the mailbox |
 | Single Bit ECC Error |- Interrupt to MCU<br>- Mailbox ECC SB status set<br>- Data corrected | Single bit ECC error while reading Mailbox. |
 | Double Bit ECC Error |- Error interrupt to MCU<br> - HW_NON_FATAL error set for SOC consumption<br>- Mailbox ECC DB status set<br>- Invalid data returned | Double bit ECC error while reading Mailbox. |
 
@@ -1239,9 +1516,39 @@ Whenever an agent reads data from the SRAM they either need to consume the Doubl
 
 #### MCU Mailbox MCU Access
 
-When there is a mailbox lock the MCU has full access to the mailbox CSRs and SRAM in order to facilitage interactions and help with any lockup.
+MCU has read access to the mailbox CSRs at all times. MCU write access is
+determined by its role in the current transaction, and follows the
+[status register](#mcu-mailbox-status-registers) writer rules.
 
-It is the only agent allowed to set TARGET_USER and update the final CMD_STATUS.
+Root is the only agent that may write `TARGET_USER` and
+`TARGET_USER_VALID`. Both registers are writable only while
+`TARGET_USER_VALID=0`. See
+[MCU Mailbox Target User](#mcu-mailbox-target-user).
+
+When an external Requester holds the lock, MCU is the only agent that may write
+`CMD_STATUS`. The Requester owns `CMD` and `EXECUTE` in this transaction, so
+those registers are read-only to MCU.
+
+When MCU holds the lock it is the Requester and has Requester write access to
+`CMD` and `EXECUTE`.
+
+`DLEN` follows [SRAM ownership](#mcu-mailbox-sram-ownership). MCU has write
+access to `DLEN` while it is the current SRAM owner, so it can report the length
+of a response it produced.
+
+| CSR | MCU holds the lock | An external Requester holds the lock |
+|---|---|---|
+| `CMD` | RW | RO |
+| `DLEN` | RW while MCU owns the SRAM | RW while MCU owns the SRAM |
+| `EXECUTE` | RW | RO |
+| `TARGET_USER` | RW while `TARGET_USER_VALID=0` | RW while `TARGET_USER_VALID=0` |
+| `TARGET_USER_VALID` | RW while 0 | RW while 0 |
+| `CMD_STATUS` | Unused | RW |
+| `TARGET_STATUS` | RO | RO |
+| `LOCK`, `USER` | Per mailbox locking rules | Per mailbox locking rules |
+
+MCU can access mailbox SRAM only while MCU is the current
+[SRAM owner](#mcu-mailbox-sram-ownership).
 
 #### MCU Mailbox Address Map
 
@@ -1304,6 +1611,23 @@ MCI tracks three different ```RESET_REASON``` in its register bank:
 
 ```FW_EXEC_CTLR[2]``` is an input signal to the MCI and is sent as an interrupt (```notif_cptra_mcu_reset_req_sts```) to the MCU. This interrupt should be cleared by the MCU before it requests a reset with ```RESET_REQUEST.req```. After a warm reset, setting ```FW_EXEC_CTRL[2]``` will trigger an interrupt to the MCU, indicating that the MCU should reset itself with ```RESET_REQUEST.req```. After the first MCU reset request, when this input signal is cleared, it triggers the interrupt. The MCU is held in reset until ```FW_EXEC_CTRL[2]``` is set, with a minimum reset time determined by the ```MIN_MCU_RST_COUNTER``` MCI parameter.
 
+### MCU ROM Patch SRAM
+
+MCI hosts a dedicated MCU ROM patch SRAM so integrators can fix MCU ROM bugs on pre-production parts. MCU ROM loads the patch (for example from the vendor non-secret fuse partition) and fetches patch instructions from it.
+
+A patched device must never run in production or provision device identity, so hardware enforces:
+
+- **Write window:** MCU LSU only, and only while the LC state is TEST_LOCKED0-6, TEST_UNLOCKED0-7 or DEV, and Caliptra core has not yet left reset in the current power cycle (checked both at the MCI boot sequencer and at the Caliptra core reset input). The window closes when Caliptra core is first released and stays closed until the next cold reset.
+- **Patch flag:** the first accepted write sets a flag that is only cleared by cold reset. The flag is stable before Caliptra core boots and is readable in `HW_FLOW_STATUS.mcu_rom_patch_active`.
+- **Sequential load:** patch words must be written in order from offset 0. A hardware write pointer counts them and is only cleared by cold reset.
+- **Fetch:** MCU IFU/LSU reads (MCU ROM and MCU RT FW) are allowed only below the write pointer and while the LC condition still holds. The patch survives warm resets, so MCU ROM does not reload it and MCU RT FW can call patched ROM functions. Only words MCU ROM wrote in the current power cycle can execute, so stale or preloaded SRAM content can never be fetched, and a stale patch cannot run after an LC transition to PROD.
+- **Identity:** while the flag is set, the UDS and Field Entropy delivered to Caliptra core are zeroized, and the fuse controller filter discards DAI write and digest commands to the UDS and Field Entropy fuses.
+- **Release:** if no patch was loaded, the SRAM is released as data memory to any AXI user once MCU RT FW is running (MCU released from reset with the FW exec region locked). It is never fetchable while released, and a warm reset closes it again until MCU RT FW is running. A loaded patch is never released, because MCU ROM needs it again after a warm reset.
+
+The patch SRAM is optional: setting `MCU_ROM_PATCH_SRAM_SIZE_KB` to 0 removes it, leaving its address window unmapped.
+
+See the Integration Specification for the address map and interface details.
+
 ### MCI AXI Subordinate
 
 MCI AXI Subordinate decodes the incoming AXI transaction and passes it onto the appropriate submodule within MCI.
@@ -1355,6 +1679,10 @@ MCI aggregates the error information (Fatal, Non-Fatal errors from Caliptra, any
 
 ![](images/MCI-error-agg.png)
 
+MCI internal hardware fatal errors are reported in HW\_ERROR\_FATAL and can be masked through internal\_hw\_error\_fatal\_mask, except for fsm\_error (bit 3). Its mask field, mask\_fsm\_error, is read-only 0. This boot-FSM error does not generate an MCU interrupt; the SOC handles it while MCU and Caliptra are held in reset.
+
+Clearing a fatal status bit does not deassert `all_error_fatal`; reset is required. For fsm\_error, follow the reset-then-W1C steps in [CSS-BootFSM Glitch Protection](#css-bootfsm-glitch-protection).
+
 Aggregate error register assignments are documented in the register specification: **TODO:** Add a link to rdl -> html file
 
 Regions of 6 bits in the aggregate error registers are reserved for each component.
@@ -1375,6 +1703,8 @@ MCI also generates error signals for its own internal blocks, specifically for M
 
 ![](images/MCI-internal-error.png)
 
+**Masking exception:** HW\_ERROR\_FATAL.fsm\_error bypasses the programmable hardware-fatal masking shown in this diagram and cannot be masked.
+
 ### MCI Fuse Storage Support
 
 MCI also provides capability to store fuses required for Caliptra subsystem for Caliptra core's usage for production debug unlock feature. MCU will read the fuse controller for the production debug unlock hashes , write to the corresponding registers in the MCI block and lock the registers from being changed by MCU RT FW. Lock is done by writing to do a FUSE_WR_DONE (FIXME: Add specific register & bit names).
@@ -1387,9 +1717,17 @@ Standard RISC-V timer interrupts for MCU are implemented using the mtime and mti
 
 ![](images/MCI-MCU-Trace-Buffer-Diagram.png)
 
-MCI hosts the MCU trace buffer. It can hold up to 64 trace packets from the MCU, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
+MCI hosts the MCU trace buffer. It can hold up to 64 trace packets, see [MCU Trace Buffer Packet](#mcu-trace-buffer-packet) for the data format. Read access to the trace buffer is controlled by the LCC state Translator. When Debug Locked all AXI and DMI accesses to the trace buffer are rejected. See [MCU Trace Buffer Error Handling](#mcu-trace-buffer-error-handling) for expected response while Debug Locked.
 
-MCU RISC-V processor can enable/disable tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces.
+Note: trace is **collected continuously** whenever the selected trace source is valid, independent of the security state; the debug-unlock gate applies only to *read access* (AXI/DMI), not to collection.
+
+##### Trace Source Select (MCU vs Caliptra core)
+
+The trace buffer can capture the instruction-retire trace of either the MCU (VeeR) core or the Caliptra core. The source is selected by the `CTRL.cptra_core_sel` field in the trace buffer CSR (0 = MCU core trace, the default; 1 = Caliptra core trace).
+
+Note: When Caliptra core tracing is selected (`CTRL.cptra_core_sel = 1`), a Caliptra core hitless firmware update may result in one corrupted trace-buffer entry at the core reset boundary.
+
+MCU RISC-V processor can enable/disable its own tracing with an internal CSR, by default it is enabled. Within MCI there is no way to disable traces; only the read-access debug gating and the source select above apply.
 
 Both, the main and the shadow core produce traces. `CONTROL.TRACE_SOURCE` can be used, when debug is unlocked, to select which trace is captured in the trace buffer. The reset value is to use the main core trace.
 
@@ -1599,3 +1937,64 @@ The MCI Breakpoint is used as a stopping point for debugging Caliptra SS. At thi
 ### Reset Controls
 
 MCI controls various resets for other IPs like MCU and Caliptra Core. When the `scan_mode` input port is set these resets are directly controlled by the mcu_rst_b input intead of the internal MCI logic.
+
+# Caliptra SS USB2
+
+- Caliptra Subsystem 2.2 provides USB2 support
+- USB2 supports two USB devices - one for Caliptra MCU usage and one for SOC usage. Both the USB devices are independent of each other. Each device has a separate AXI interfaces with a dedicated DMA SRAM.
+- Caliptra SS MCU uses USB Device 0 for streaming boot and MCU supported MCTP scenarios (eg. SPDM, PLDM)
+- **Note:** USB Device 1 is dedicated to SOC usage model. SOC usage has all 30 EPs for its usage.
+- Please refer to USB2 specification in the [USB2 repo](https://github.com/chipsalliance/USB2) for more details such as
+    - USB2 architecture and microarchitecture
+    - Virtual hub programming (Caliptra MCU responsibility)
+    - USB device programming
+    - OCP streaming boot microarchitecture implemented in USB device 0
+    - Multi-Device support microarchitecture
+
+## Combo AXI memory map
+
+The Combo (COMB) AXI interface routes accesses to DEV0 control/status registers, the OCP Recovery interface, and the Hub. The following map uses the default `USB_C_HUB_FIFO_SIZE = 176` words. Offsets are byte offsets from the SoC-assigned Combo base address.
+
+| Internal block | Start offset | End offset |
+|:---------------|:-------------|:-----------|
+| DEV0 CSRs | `0x0000` | `0x003F` |
+| Unmapped (fixed) | `0x0040` | `0x07FF` |
+| OCP Recovery interface | `0x0800` | `0x0FFF` |
+| Hub control and descriptor store (parameter-dependent end) | `0x1000` | `0x13FF` |
+| Unmapped after Hub (parameter-dependent) | `0x1400` | `0x1FFF` |
+
+**`USB_C_HUB_FIFO_SIZE` changes the Hub end offset and the trailing unmapped range; the earlier ranges stay fixed.** Calculate the boundaries as follows (`ceil` rounds up):
+
+```text
+N = USB_C_HUB_FIFO_SIZE      (176 to 4096 DWORDs inclusive; default 176)
+H = 4 * 2^ceil(log2(N))      (Hub aperture in bytes)
+U = 0x1000 + H               (first byte offset after Hub)
+C = 2^ceil(log2(U))          (Combo window size in bytes)
+```
+
+The Hub ends at `U - 1`. The trailing unmapped range is `U` through `C - 1`; if `U == C`, no trailing unmapped region exists. 
+
+## Ownership and access
+
+| Policy group | Protected resources | Ownership / usage |
+|:-------------|:--------------------|:------------------|
+| Combo | Combo AXI interface: DEV0 CSRs, Hub control/descriptor storage, and Recovery registers; DEV0 memory AXI interface | MCU owns DEV0 and Hub; Caliptra DMA accesses Recovery registers and drains the recovery FIFO |
+| DEV1 | DEV1 CSR and DEV1 memory AXI interfaces | A designated SoC firmware agent owns DEV1; MCU access is optional |
+
+All identities in an allowlist receive the same filter-level read/write authorization across that group. The [integration requirements](CaliptraSSIntegrationSpecification.md#axi-user-filtering) specify which identities the SoC must authorize.
+
+## AXI USER filtering
+
+The Combo and DEV1 policies have independent allowlists and active-high filtering enables. With filtering enabled, a read's `ARUSER` or a write's `AWUSER` must exactly match an entry in the corresponding allowlist. Disabling a filter permits all identities through that filter; see [USB and I3C AXI Access Control](CaliptraSSIntegrationSpecification.md#usb-and-i3c-axi-access-control).
+
+The decision is captured when the read or write address is accepted and retained for the entire request. Later policy changes do not revoke already accepted requests. A denied request never accesses the target: a denied read returns zero data and `SLVERR` on every requested beat; a denied write discards all requested data beats and returns one `SLVERR` response.
+
+Every allowlist entry participates; there are no per-entry enable bits. 
+
+Enables and allowlists are live inputs, not internally sampled straps. The USB block supplies no policy configuration registers, lock, implicit policy defaults, or automatic MCU/Caliptra authorization. SoC provisioning, locking, and reset obligations are defined in [USB and I3C AXI Access Control](CaliptraSSIntegrationSpecification.md#usb-and-i3c-axi-access-control).
+
+## DWORD-only accesses
+
+All four USB AXI interfaces support only aligned 32-bit DWORD accesses, including Hub descriptor, packet SRAM, and Recovery register/FIFO accesses. USB does not honor `WSTRB` masking, so deasserted strobes do not suppress writes.
+
+These are AXI-bus restrictions, not USB packet-length restrictions. The [AXI Access Restrictions](CaliptraSSIntegrationSpecification.md#axi-access-restrictions) specify the required transfer format and software restrictions.

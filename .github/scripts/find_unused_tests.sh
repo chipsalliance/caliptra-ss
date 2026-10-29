@@ -282,7 +282,7 @@ get_directly_used_tests() {
 find_transitive_dependencies() {
     print_header "Step 3: Finding transitive dependencies"
     
-    echo "Analyzing .yml files for TEST_DIR references..."
+    echo "Analyzing .yml files for TEST_DIR and CALIPTRA_TESTNAME references..."
     
     local -a to_check=("${DIRECTLY_USED[@]}")
     
@@ -298,7 +298,12 @@ find_transitive_dependencies() {
         local test_dir="$TEST_SUITES_PATH/$current_test"
         [ ! -d "$test_dir" ] && continue
         
-        # Look for TEST_DIR references
+        # Look for TEST_DIR references (explicit Caliptra Makefile invocation) as well as
+        # CALIPTRA_TESTNAME references (Caliptra core firmware target pulled in as a
+        # transitive dependency without an explicit TEST_DIR path). CALIPTRA_TESTNAME
+        # may point at a directory under caliptra-ss's own test_suites (checked below
+        # against ALL_TESTS) or at one in the caliptra-rtl submodule; the latter simply
+        # won't match any entry in ALL_TESTS and is safely ignored here.
         while IFS= read -r dep; do
             if [ -n "$dep" ] && [ -z "${USED_TESTS_MAP[$dep]:-}" ]; then
                 # Check if dep exists in ALL_TESTS
@@ -312,7 +317,9 @@ find_transitive_dependencies() {
                     fi
                 done
             fi
-        done < <(find "$test_dir" -name "*.yml" -type f -exec grep -oP 'TEST_DIR=\$CALIPTRA_SS_ROOT/src/integration/test_suites/\K[^/\s\n]+' {} \; 2>/dev/null)
+        done < <(find "$test_dir" -name "*.yml" -type f -exec grep -ohP \
+            '(?:TEST_DIR=\$CALIPTRA_SS_ROOT/src/integration/test_suites/|CALIPTRA_TESTNAME=)\K[^/\s\\]+' \
+            {} \; 2>/dev/null | sort -u)
     done
     
     echo -e "${GREEN}Found ${#TRANSITIVELY_USED[@]} transitively used tests${NC}"

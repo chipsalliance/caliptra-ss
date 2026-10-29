@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+diff --git a/spi_host_cmd_pkg.sv b/spi_host_cmd_pkg.sv
+index 330e576..50ab41e 100644
+--- a/spi_host_cmd_pkg.sv
++++ b/spi_host_cmd_pkg.sv
+@@ -40,7 +40,7 @@ package caliptra_ss_spi_host_cmd_pkg;
+     logic [1:0]  speed;
+     logic        cmd_wr_en;
+     logic        cmd_rd_en;
+-    logic [19:0] len;
++    logic [8:0]  len;
+     logic        csaat;
+   } caliptra_ss_segment_t;
+ 
+diff --git a/spi_host_command_queue.sv b/spi_host_command_queue.sv
+index 66b37ca..ea2c31e 100644
+--- a/spi_host_command_queue.sv
++++ b/spi_host_command_queue.sv
+@@ -36,8 +36,7 @@ module caliptra_ss_spi_host_command_queue #(
+   logic [CmdDepthW-1:0] cmd_depth;
+ 
+   caliptra_prim_fifo_sync #(
+-    .Width($bits(caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t) +
+-           caliptra_ss_spi_host_cmd_pkg::CSW),
++    .Width($bits(caliptra_ss_spi_host_cmd_pkg::caliptra_ss_command_t)),
+     .Pass(0),
+     .Depth(CmdDepth)
+   ) cmd_fifo (

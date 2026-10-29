@@ -19,17 +19,33 @@
 `include "config_defines.svh"
 `include "caliptra_macros.svh"
 
-module caliptra_ss_top_w_stub(
+module caliptra_ss_top_w_stub #(
+     parameter SPI_HOST_ENA = 1
+    ,parameter SPI_HOST_NUM_CS = 2
+    ,parameter SPI_HOST_CMD_DEPTH = 8
+    ,parameter USB_G_SIM_CHIRP_TIMERS = 0
+    ,parameter USB_C_DEV0_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV1_RAM_ADDRWIDTH = 13
+    ,parameter USB_C_DEV0_NBPHYSEP = 28
+    ,parameter USB_C_DEV1_NBPHYSEP = 28
+    ,parameter USB_C_HUB_FIFO_SIZE = 196
+    ,parameter USB_COMBO_NUM_PRIV_AXI_USERS = 4
+    ,parameter USB_DEV1_NUM_PRIV_AXI_USERS = 4
+    ,parameter UART_ENA = 1
+)(
     input logic cptra_ss_clk_i,
     input logic cptra_ss_cptra_core_jtag_tck_i,
     input logic cptra_ss_mcu_jtag_tck_i,
-    input jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i
+    input jtag_pkg::jtag_req_t cptra_ss_lc_ctrl_jtag_i,
+    input logic cptra_ss_usb_utmi_clk_i,
+    input logic cptra_ss_usb_ulpi_clk_i,
+    input logic cptra_ss_usb_utmi_clk_lock_i
 );
 
     import axi_pkg::*;
     import soc_ifc_pkg::*;
     import css_mcu0_el2_pkg::*;
-    
+
     `include "css_mcu0_el2_param.vh"
     ;
     // Define the logic and interfaces
@@ -68,6 +84,10 @@ module caliptra_ss_top_w_stub(
      assign ``_sig_name``.awburst = '0;\
      assign ``_sig_name``.awlock = '0;\
      assign ``_sig_name``.awuser = '0;\
+     assign ``_sig_name``.awcache = '0;\
+     assign ``_sig_name``.awprot = '0;\
+     assign ``_sig_name``.awqos = '0;\
+     assign ``_sig_name``.awregion = '0;\
      assign ``_sig_name``.wvalid = '0;\
      assign ``_sig_name``.wdata = '0;\
      assign ``_sig_name``.wstrb = '0;\
@@ -82,6 +102,10 @@ module caliptra_ss_top_w_stub(
      assign ``_sig_name``.arburst = '0;\
      assign ``_sig_name``.arlock = '0;\
      assign ``_sig_name``.aruser = '0;\
+     assign ``_sig_name``.arcache = '0;\
+     assign ``_sig_name``.arprot = '0;\
+     assign ``_sig_name``.arqos = '0;\
+     assign ``_sig_name``.arregion = '0;\
      assign ``_sig_name``.rready = '0;
     
     axi_if #(.AW(`CALIPTRA_SLAVE_ADDR_WIDTH(`CALIPTRA_SLAVE_SEL_SOC_IFC)),.DW(`CALIPTRA_AXI_DATA_WIDTH),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
@@ -102,9 +126,27 @@ module caliptra_ss_top_w_stub(
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
     cptra_ss_mcu_sb_m_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_M_IF_TIE_OFF(cptra_ss_mcu_sb_m_axi_if)
-    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH)) 
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_i3c_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_i3c_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_usb_combo_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_o));
+    `AXI_S_IF_TIE_OFF(cptra_ss_usb_combo_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_usb_dev0_mem_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_o));
+    `AXI_S_IF_TIE_OFF(cptra_ss_usb_dev0_mem_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_usb_dev1_csr_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_o));
+    `AXI_S_IF_TIE_OFF(cptra_ss_usb_dev1_csr_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_usb_dev1_mem_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_o));
+    `AXI_S_IF_TIE_OFF(cptra_ss_usb_dev1_mem_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_spi_host_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    `AXI_S_IF_TIE_OFF(cptra_ss_spi_host_s_axi_if)
+    axi_if #(.AW(32),.DW(32),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
+    cptra_ss_uart_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
+    `AXI_S_IF_TIE_OFF(cptra_ss_uart_s_axi_if)
     axi_if #(.AW(32),.DW(64),.IW(`CALIPTRA_AXI_ID_WIDTH),.UW(`CALIPTRA_AXI_USER_WIDTH))
     cptra_ss_mcu_rom_s_axi_if(.clk(cptra_ss_clk_i), .rst_n(cptra_ss_rst_b_i));
     `AXI_S_IF_TIE_OFF(cptra_ss_mcu_rom_s_axi_if)
@@ -122,36 +164,9 @@ module caliptra_ss_top_w_stub(
     axi_struct_pkg::axi_rd_req_t cptra_ss_otp_core_axi_rd_req_i;
     axi_struct_pkg::axi_rd_rsp_t cptra_ss_otp_core_axi_rd_rsp_o;
     
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_lsu_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_lsu_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_lsu_m_axi_if_arqos;
-    
     logic cptra_ss_mcu_halt_ack_o;
     logic cptra_ss_mcu_halt_status_o;
     logic cptra_ss_mcu_halt_req_o;
-
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_ifu_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_ifu_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_ifu_m_axi_if_arqos;
-
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awcache;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arcache;
-    logic [2:0] cptra_ss_mcu_sb_m_axi_if_awprot;
-    logic [2:0] cptra_ss_mcu_sb_m_axi_if_arprot;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awregion;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arregion;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_awqos;
-    logic [3:0] cptra_ss_mcu_sb_m_axi_if_arqos;
 
     logic [255:0] cptra_ss_cptra_obf_key_i;
     logic [`CLP_CSR_HMAC_KEY_DWORDS-1:0][31:0] cptra_ss_cptra_csr_hmac_key_i;
@@ -176,12 +191,19 @@ module caliptra_ss_top_w_stub(
     assign abr_memory_export.mem_inst0_bank1_rdata_o = '0;
     assign abr_memory_export.mem_inst1_rdata_o = '0;
     assign abr_memory_export.mem_inst2_rdata_o = '0;
-    assign abr_memory_export.mem_inst3_rdata_o = '0;
     assign abr_memory_export.sig_z_mem_rdata_o = '0;
     assign abr_memory_export.pk_mem_rdata_o = '0;
     assign abr_memory_export.sk_mem_bank0_rdata_o = '0;
     assign abr_memory_export.sk_mem_bank1_rdata_o = '0;
     assign abr_memory_export.w1_mem_rdata_o = '0;
+    // Masked memory read-data: this stub is the SRAM/resp side of abr_mem_if, so
+    // it must drive every *_rdata_o consumed by the design's `req` modport. The
+    // masked banks are unused in this stub configuration (MASKING_EN=0), so tie
+    // them to '0 per the abr_mem_if declaration. Fixes UndrivenInTerm-ML.
+    assign abr_memory_export.mem_inst0_bank0_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst0_bank1_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst1_masked_rdata_o = '0;
+    assign abr_memory_export.mem_inst2_masked_rdata_o = '0;
 
 
     logic cptra_ss_cptra_core_mbox_sram_cs_o;
@@ -199,9 +221,13 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_cptra_core_bootfsm_bp_i;
 
 `ifdef CALIPTRA_INTERNAL_TRNG
-    logic cptra_ss_cptra_core_etrng_req_o;
-    logic [3:0] cptra_ss_cptra_core_itrng_data_i;
-    logic cptra_ss_cptra_core_itrng_valid_i;
+    logic cptra_ss_cptra_core_etrng0_req_o;
+    logic cptra_ss_cptra_core_etrng1_req_o;
+    logic [3:0] cptra_ss_cptra_core_itrng0_data_i;
+    logic cptra_ss_cptra_core_itrng0_valid_i;
+    logic [3:0] cptra_ss_cptra_core_itrng1_data_i;
+    logic cptra_ss_cptra_core_itrng1_valid_i;
+    logic cptra_ss_cptra_core_itrng1_en_i;
 `endif
 
     logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i;
@@ -224,6 +250,11 @@ module caliptra_ss_top_w_stub(
         .rst_b(cptra_ss_rst_b_i)
     );
     assign cptra_ss_mcu_mbox1_sram_req_if.resp.rdata = '0;
+    mci_mcu_sram_if cptra_ss_mcu_rom_patch_sram_req_if(
+        .clk(cptra_ss_clk_i),
+        .rst_b(cptra_ss_rst_b_i)
+    );
+    assign cptra_ss_mcu_rom_patch_sram_req_if.resp.rdata = '0;
     css_mcu0_el2_mem_if cptra_ss_mcu0_el2_mem_export();
     assign cptra_ss_mcu0_el2_mem_export.wb_packeddout_pre = '0;
     assign cptra_ss_mcu0_el2_mem_export.wb_dout_pre_up = '0;
@@ -260,7 +291,8 @@ module caliptra_ss_top_w_stub(
 
     logic [63:0] cptra_ss_strap_caliptra_base_addr_i;
     logic [63:0] cptra_ss_strap_mci_base_addr_i;
-    logic [63:0] cptra_ss_strap_recovery_ifc_base_addr_i;
+    logic [63:0] cptra_ss_strap_usb_recovery_ifc_base_addr_i;
+    logic [63:0] cptra_ss_strap_i3c_recovery_ifc_base_addr_i;
     logic [63:0] cptra_ss_strap_otp_fc_base_addr_i;
     logic [63:0] cptra_ss_strap_uds_seed_base_addr_i;
     logic [31:0] cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i;
@@ -287,6 +319,7 @@ module caliptra_ss_top_w_stub(
     lc_ctrl_state_pkg::lc_state_e caliptra_ss_life_cycle_steady_state_o;
     logic caliptra_ss_otp_state_valid_o;
     logic caliptra_ss_volatile_raw_unlock_success_o;
+    logic cptra_ss_otp_dft_en_o;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_escalate_en_o;
     lc_ctrl_pkg::lc_tx_t cptra_ss_lc_check_byp_en_o;
 
@@ -304,6 +337,74 @@ module caliptra_ss_top_w_stub(
     logic cptra_ss_i3c_recovery_payload_available_o;
     logic cptra_ss_i3c_recovery_image_activated_o;
 
+// USB core SRAM interfaces
+    logic [63:0] cptra_ss_usb_dev0_mem_q_i;
+    logic [63:0] cptra_ss_usb_dev0_mem_d_o;
+    logic        cptra_ss_usb_dev0_mem_cs_o;
+    logic [USB_C_DEV0_RAM_ADDRWIDTH-1:0] cptra_ss_usb_dev0_mem_a_o;
+    logic        cptra_ss_usb_dev0_mem_web_out_o;
+    logic [63:0] cptra_ss_usb_dev0_mem_bsel_o;
+    logic [63:0] cptra_ss_usb_dev1_mem_q_i;
+    logic [63:0] cptra_ss_usb_dev1_mem_d_o;
+    logic        cptra_ss_usb_dev1_mem_cs_o;
+    logic [USB_C_DEV1_RAM_ADDRWIDTH-1:0] cptra_ss_usb_dev1_mem_a_o;
+    logic        cptra_ss_usb_dev1_mem_web_out_o;
+    logic [63:0] cptra_ss_usb_dev1_mem_bsel_o;
+    logic        cptra_ss_usb_dev1_irq_o;
+    logic        cptra_ss_usb_dev1_fiq_o;
+
+// USB core UTMI PHY interface
+    logic [7:0]  cptra_ss_usb_utmi_rxdata_i;
+    logic        cptra_ss_usb_utmi_rxvalid_i;
+    logic        cptra_ss_usb_utmi_rxactive_i;
+    logic        cptra_ss_usb_utmi_rxerror_i;
+    logic [7:0]  cptra_ss_usb_utmi_txdata_o;
+    logic        cptra_ss_usb_utmi_txvalid_o;
+    logic        cptra_ss_usb_utmi_txready_i;
+    logic        cptra_ss_usb_utmi_reset_o;
+    logic        cptra_ss_usb_utmi_suspendm_o;
+    logic        cptra_ss_usb_utmi_xcvrselect_o;
+    logic        cptra_ss_usb_utmi_termselect_o;
+    logic [1:0]  cptra_ss_usb_utmi_opmode_o;
+    logic [1:0]  cptra_ss_usb_utmi_linestate_i;
+    logic [3:0]  cptra_ss_usb_utmi_vcontrol_o;
+    logic        cptra_ss_usb_utmi_vcontrolloadm_o;
+    logic [7:0]  cptra_ss_usb_utmi_vstatus_i;
+
+// USB core ULPI PHY interface
+    logic [7:0]  cptra_ss_usb_ulpi_rxdata_i;
+    logic [7:0]  cptra_ss_usb_ulpi_txdata_o;
+    logic        cptra_ss_usb_ulpi_txenable_o;
+    logic        cptra_ss_usb_ulpi_dir_i;
+    logic        cptra_ss_usb_ulpi_stp_o;
+    logic        cptra_ss_usb_ulpi_nxt_i;
+    logic        cptra_ss_usb_ulpi_ddr_sel_i;
+
+// USB core power / VBus interface
+    logic        cptra_ss_usb_USB_VBus_i;
+    logic        cptra_ss_usb_async_disable_i;
+
+// USB core frame timing interface
+    logic        cptra_ss_usb_frametoggle_o;
+
+    logic cptra_ss_usb_recovery_payload_available_o;
+    logic cptra_ss_usb_recovery_image_activated_o;
+    logic cptra_ss_usb_combo_enable_axi_user_filtering_i;
+    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] cptra_ss_usb_combo_priv_axi_users_i [USB_COMBO_NUM_PRIV_AXI_USERS];
+    logic cptra_ss_usb_dev1_enable_axi_user_filtering_i;
+    logic [`CALIPTRA_AXI_USER_WIDTH-1:0] cptra_ss_usb_dev1_priv_axi_users_i [USB_DEV1_NUM_PRIV_AXI_USERS];
+
+    logic cptra_ss_sck_o;
+    logic cptra_ss_sck_en_o;
+    logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_o;
+    logic [SPI_HOST_NUM_CS-1:0] cptra_ss_csb_en_o;
+    logic [3:0] cptra_ss_sd_o;
+    logic [3:0] cptra_ss_sd_en_o;
+    logic [3:0] cptra_ss_sd_i;
+
+    logic cptra_ss_uart_rx_i;
+    logic cptra_ss_uart_tx_o;
+    logic cptra_ss_uart_tx_en_o;
 
     logic [63:0] cptra_ss_cptra_core_generic_input_wires_i;
     logic [63:0] cptra_ss_cptra_core_generic_output_wires_o;
@@ -328,8 +429,12 @@ module caliptra_ss_top_w_stub(
         cptra_ss_cptra_core_jtag_trst_n_i = '0;
         cptra_ss_cptra_core_bootfsm_bp_i = '0;
     `ifdef CALIPTRA_INTERNAL_TRNG
-        cptra_ss_cptra_core_itrng_data_i = '0;
-        cptra_ss_cptra_core_itrng_valid_i = '0;
+        cptra_ss_cptra_core_itrng0_data_i = '0;
+        cptra_ss_cptra_core_itrng0_valid_i = '0;
+        cptra_ss_cptra_core_itrng1_data_i = '0;
+        cptra_ss_cptra_core_itrng1_valid_i = '0;
+        // Secondary iTRNG source disabled: entropy_combiner stays in bypass mode.
+        cptra_ss_cptra_core_itrng1_en_i = '0;
     `endif
         cptra_ss_strap_mcu_lsu_axi_user_i = '0;
         cptra_ss_strap_mcu_ifu_axi_user_i = '0;
@@ -347,7 +452,8 @@ module caliptra_ss_top_w_stub(
         cptra_ss_mcu_jtag_trst_n_i = '0;
         cptra_ss_strap_caliptra_base_addr_i = '0;
         cptra_ss_strap_mci_base_addr_i = '0;
-        cptra_ss_strap_recovery_ifc_base_addr_i = '0;
+        cptra_ss_strap_usb_recovery_ifc_base_addr_i = '0;
+        cptra_ss_strap_i3c_recovery_ifc_base_addr_i = '0;
         cptra_ss_strap_otp_fc_base_addr_i = '0;
         cptra_ss_strap_uds_seed_base_addr_i = '0;
         cptra_ss_strap_prod_debug_unlock_auth_pk_hash_reg_bank_offset_i = '0;
@@ -368,9 +474,54 @@ module caliptra_ss_top_w_stub(
         cptra_ss_i3c_scl_i=0;
         cptra_ss_i3c_sda_i=0;
         cptra_ss_lc_sec_volatile_raw_unlock_en_i = 1'b1; // Enable the raw unlock for sec volatile
+
+    // USB core SRAM interfaces
+        cptra_ss_usb_dev0_mem_q_i = '0;
+        cptra_ss_usb_dev1_mem_q_i = '0;
+
+    // USB core UTMI PHY interface
+        cptra_ss_usb_utmi_rxdata_i = '0;
+        cptra_ss_usb_utmi_rxvalid_i = '0;
+        cptra_ss_usb_utmi_rxactive_i = '0;
+        cptra_ss_usb_utmi_rxerror_i = '0;
+        cptra_ss_usb_utmi_txready_i = '0;
+        cptra_ss_usb_utmi_linestate_i = '0;
+        cptra_ss_usb_utmi_vstatus_i = '0;
+
+    // USB core ULPI PHY interface
+        cptra_ss_usb_ulpi_rxdata_i = '0;
+        cptra_ss_usb_ulpi_dir_i = '0;
+        cptra_ss_usb_ulpi_nxt_i = '0;
+        cptra_ss_usb_ulpi_ddr_sel_i = '0;
+
+    // USB core power / VBus interface
+        cptra_ss_usb_USB_VBus_i = '0;
+        cptra_ss_usb_async_disable_i = '0;
+
+        // USB AXI USER filtering enabled; the all-zero allowlists authorize the
+        // MCU LSU and Caliptra DMA straps, which are tied to zero above.
+        cptra_ss_usb_combo_enable_axi_user_filtering_i = 1'b1;
+        cptra_ss_usb_combo_priv_axi_users_i = '{default: '0};
+        cptra_ss_usb_dev1_enable_axi_user_filtering_i = 1'b1;
+        cptra_ss_usb_dev1_priv_axi_users_i = '{default: '0};
+        cptra_ss_sd_i = '0;
+        cptra_ss_uart_rx_i = cptra_ss_uart_tx_o;
     end
 
-    caliptra_ss_top
+    caliptra_ss_top #(
+        .SPI_HOST_ENA(SPI_HOST_ENA),
+        .SPI_HOST_NUM_CS(SPI_HOST_NUM_CS),
+        .SPI_HOST_CMD_DEPTH(SPI_HOST_CMD_DEPTH),
+        .USB_G_SIM_CHIRP_TIMERS(USB_G_SIM_CHIRP_TIMERS),
+        .USB_C_DEV0_RAM_ADDRWIDTH(USB_C_DEV0_RAM_ADDRWIDTH),
+        .USB_C_DEV1_RAM_ADDRWIDTH(USB_C_DEV1_RAM_ADDRWIDTH),
+        .USB_C_DEV0_NBPHYSEP(USB_C_DEV0_NBPHYSEP),
+        .USB_C_DEV1_NBPHYSEP(USB_C_DEV1_NBPHYSEP),
+        .USB_C_HUB_FIFO_SIZE(USB_C_HUB_FIFO_SIZE),
+        .USB_COMBO_NUM_PRIV_AXI_USERS(USB_COMBO_NUM_PRIV_AXI_USERS),
+        .USB_DEV1_NUM_PRIV_AXI_USERS(USB_DEV1_NUM_PRIV_AXI_USERS),
+        .UART_ENA(UART_ENA)
+    )
     caliptra_ss_top_i (
 
         .cptra_ss_clk_i(cptra_ss_clk_i),
@@ -417,37 +568,31 @@ module caliptra_ss_top_w_stub(
     // AXI Manager INF
         .cptra_ss_mcu_ifu_m_axi_if_r_mgr(cptra_ss_mcu_ifu_m_axi_if.r_mgr),
         .cptra_ss_mcu_ifu_m_axi_if_w_mgr(cptra_ss_mcu_ifu_m_axi_if.w_mgr),
-        .cptra_ss_mcu_ifu_m_axi_if_awcache,
-        .cptra_ss_mcu_ifu_m_axi_if_arcache,
-        .cptra_ss_mcu_ifu_m_axi_if_awprot,
-        .cptra_ss_mcu_ifu_m_axi_if_arprot,
-        .cptra_ss_mcu_ifu_m_axi_if_awregion,
-        .cptra_ss_mcu_ifu_m_axi_if_arregion,
-        .cptra_ss_mcu_ifu_m_axi_if_awqos,
-        .cptra_ss_mcu_ifu_m_axi_if_arqos,
         .cptra_ss_mcu_lsu_m_axi_if_r_mgr(cptra_ss_mcu_lsu_m_axi_if.r_mgr),
         .cptra_ss_mcu_lsu_m_axi_if_w_mgr(cptra_ss_mcu_lsu_m_axi_if.w_mgr),
-        .cptra_ss_mcu_lsu_m_axi_if_awcache,
-        .cptra_ss_mcu_lsu_m_axi_if_arcache,
-        .cptra_ss_mcu_lsu_m_axi_if_awprot,
-        .cptra_ss_mcu_lsu_m_axi_if_arprot,
-        .cptra_ss_mcu_lsu_m_axi_if_awregion,
-        .cptra_ss_mcu_lsu_m_axi_if_arregion,
-        .cptra_ss_mcu_lsu_m_axi_if_awqos,
-        .cptra_ss_mcu_lsu_m_axi_if_arqos,
         .cptra_ss_mcu_sb_m_axi_if_r_mgr(cptra_ss_mcu_sb_m_axi_if.r_mgr),
         .cptra_ss_mcu_sb_m_axi_if_w_mgr(cptra_ss_mcu_sb_m_axi_if.w_mgr),
-        .cptra_ss_mcu_sb_m_axi_if_awcache,
-        .cptra_ss_mcu_sb_m_axi_if_arcache,
-        .cptra_ss_mcu_sb_m_axi_if_awprot,
-        .cptra_ss_mcu_sb_m_axi_if_arprot,
-        .cptra_ss_mcu_sb_m_axi_if_awregion,
-        .cptra_ss_mcu_sb_m_axi_if_arregion,
-        .cptra_ss_mcu_sb_m_axi_if_awqos,
-        .cptra_ss_mcu_sb_m_axi_if_arqos,
         // .mcu_dma_s_axi_if,
         .cptra_ss_i3c_s_axi_if_r_sub(cptra_ss_i3c_s_axi_if.r_sub),
         .cptra_ss_i3c_s_axi_if_w_sub(cptra_ss_i3c_s_axi_if.w_sub),
+
+    //USB Compound AXI Sub Interfaces
+        .cptra_ss_usb_combo_s_axi_if_r_sub(cptra_ss_usb_combo_s_axi_if.r_sub),
+        .cptra_ss_usb_combo_s_axi_if_w_sub(cptra_ss_usb_combo_s_axi_if.w_sub),
+        .cptra_ss_usb_dev0_mem_s_axi_if_r_sub(cptra_ss_usb_dev0_mem_s_axi_if.r_sub),
+        .cptra_ss_usb_dev0_mem_s_axi_if_w_sub(cptra_ss_usb_dev0_mem_s_axi_if.w_sub),
+        .cptra_ss_usb_dev1_csr_s_axi_if_r_sub(cptra_ss_usb_dev1_csr_s_axi_if.r_sub),
+        .cptra_ss_usb_dev1_csr_s_axi_if_w_sub(cptra_ss_usb_dev1_csr_s_axi_if.w_sub),
+        .cptra_ss_usb_dev1_mem_s_axi_if_r_sub(cptra_ss_usb_dev1_mem_s_axi_if.r_sub),
+        .cptra_ss_usb_dev1_mem_s_axi_if_w_sub(cptra_ss_usb_dev1_mem_s_axi_if.w_sub),
+
+    // SPI AXI interface
+        .cptra_ss_spi_host_s_axi_if_w_sub(cptra_ss_spi_host_s_axi_if.w_sub),
+        .cptra_ss_spi_host_s_axi_if_r_sub(cptra_ss_spi_host_s_axi_if.r_sub),
+
+    // UART AXI interface
+        .cptra_ss_uart_s_axi_if_w_sub(cptra_ss_uart_s_axi_if.w_sub),
+        .cptra_ss_uart_s_axi_if_r_sub(cptra_ss_uart_s_axi_if.r_sub),
 
     
         .cptra_ss_lc_axi_wr_req_i,
@@ -461,7 +606,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_otp_core_axi_wr_rsp_o,
         .cptra_ss_otp_core_axi_rd_req_i,
         .cptra_ss_otp_core_axi_rd_rsp_o,
-    
+
     //--------------------
     //caliptra core signals
     //--------------------
@@ -503,11 +648,15 @@ module caliptra_ss_top_w_stub(
        
     // TRNG Interface
     `ifdef CALIPTRA_INTERNAL_TRNG
-        // External Request
-        .cptra_ss_cptra_core_etrng_req_o,
-        // Physical Source for Internal TRNG
-        .cptra_ss_cptra_core_itrng_data_i,
-        .cptra_ss_cptra_core_itrng_valid_i,
+        // External Request (one per physical iTRNG source)
+        .cptra_ss_cptra_core_etrng0_req_o,
+        .cptra_ss_cptra_core_etrng1_req_o,
+        // Physical Sources for Internal TRNG
+        .cptra_ss_cptra_core_itrng0_data_i,
+        .cptra_ss_cptra_core_itrng0_valid_i,
+        .cptra_ss_cptra_core_itrng1_data_i,
+        .cptra_ss_cptra_core_itrng1_valid_i,
+        .cptra_ss_cptra_core_itrng1_en_i,
     `endif
     
     
@@ -521,6 +670,7 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_mci_mcu_sram_req_if,
         .cptra_ss_mcu_mbox0_sram_req_if,
         .cptra_ss_mcu_mbox1_sram_req_if,
+        .cptra_ss_mcu_rom_patch_sram_req_if,
         .cptra_ss_mcu0_el2_mem_export,
         .cptra_ss_soc_mcu_mbox0_data_avail,
         .cptra_ss_soc_mcu_mbox1_data_avail,
@@ -547,7 +697,8 @@ module caliptra_ss_top_w_stub(
     //Strap
         .cptra_ss_strap_caliptra_base_addr_i,
         .cptra_ss_strap_mci_base_addr_i,
-        .cptra_ss_strap_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_usb_recovery_ifc_base_addr_i,
+        .cptra_ss_strap_i3c_recovery_ifc_base_addr_i,
         .cptra_ss_strap_external_staging_area_base_addr_i('0),
         .cptra_ss_strap_otp_fc_base_addr_i,
         .cptra_ss_strap_uds_seed_base_addr_i,
@@ -578,6 +729,7 @@ module caliptra_ss_top_w_stub(
         .caliptra_ss_life_cycle_steady_state_o,
         .caliptra_ss_otp_state_valid_o,
         .caliptra_ss_volatile_raw_unlock_success_o,
+        .cptra_ss_otp_dft_en_o,
         .cptra_ss_lc_escalate_en_o,
         .cptra_ss_lc_check_byp_en_o,
 
@@ -597,7 +749,82 @@ module caliptra_ss_top_w_stub(
         .cptra_ss_i3c_recovery_image_activated_o,
         .cptra_ss_i3c_recovery_image_activated_i(cptra_ss_i3c_recovery_image_activated_o),
 
-    
+    // USB core SRAM interfaces
+        .cptra_ss_usb_dev0_mem_q_i,
+        .cptra_ss_usb_dev0_mem_d_o,
+        .cptra_ss_usb_dev0_mem_cs_o,
+        .cptra_ss_usb_dev0_mem_a_o,
+        .cptra_ss_usb_dev0_mem_web_out_o,
+        .cptra_ss_usb_dev0_mem_bsel_o,
+        .cptra_ss_usb_dev1_mem_q_i,
+        .cptra_ss_usb_dev1_mem_d_o,
+        .cptra_ss_usb_dev1_mem_cs_o,
+        .cptra_ss_usb_dev1_mem_a_o,
+        .cptra_ss_usb_dev1_mem_web_out_o,
+        .cptra_ss_usb_dev1_mem_bsel_o,
+
+        .cptra_ss_usb_dev1_irq_o,
+        .cptra_ss_usb_dev1_fiq_o,
+
+    // USB core UTMI PHY interface
+        .cptra_ss_usb_utmi_clk_i,
+        .cptra_ss_usb_utmi_clk_lock_i,
+        .cptra_ss_usb_utmi_rxdata_i,
+        .cptra_ss_usb_utmi_rxvalid_i,
+        .cptra_ss_usb_utmi_rxactive_i,
+        .cptra_ss_usb_utmi_rxerror_i,
+        .cptra_ss_usb_utmi_txdata_o,
+        .cptra_ss_usb_utmi_txvalid_o,
+        .cptra_ss_usb_utmi_txready_i,
+        .cptra_ss_usb_utmi_reset_o,
+        .cptra_ss_usb_utmi_suspendm_o,
+        .cptra_ss_usb_utmi_xcvrselect_o,
+        .cptra_ss_usb_utmi_termselect_o,
+        .cptra_ss_usb_utmi_opmode_o,
+        .cptra_ss_usb_utmi_linestate_i,
+        .cptra_ss_usb_utmi_vcontrol_o,
+        .cptra_ss_usb_utmi_vcontrolloadm_o,
+        .cptra_ss_usb_utmi_vstatus_i,
+
+    // USB core ULPI PHY interface
+        .cptra_ss_usb_ulpi_clk_i,
+        .cptra_ss_usb_ulpi_rxdata_i,
+        .cptra_ss_usb_ulpi_txdata_o,
+        .cptra_ss_usb_ulpi_txenable_o,
+        .cptra_ss_usb_ulpi_dir_i,
+        .cptra_ss_usb_ulpi_stp_o,
+        .cptra_ss_usb_ulpi_nxt_i,
+        .cptra_ss_usb_ulpi_ddr_sel_i,
+
+    // USB core power / VBus interface
+        .cptra_ss_usb_USB_VBus_i,
+        .cptra_ss_usb_async_disable_i,
+
+    // USB core frame timing interface
+        .cptra_ss_usb_frametoggle_o,
+
+        .cptra_ss_usb_recovery_payload_available_o,
+        .cptra_ss_usb_recovery_payload_available_i(cptra_ss_usb_recovery_payload_available_o),
+        .cptra_ss_usb_recovery_image_activated_o,
+        .cptra_ss_usb_recovery_image_activated_i(cptra_ss_usb_recovery_image_activated_o),
+
+        .cptra_ss_usb_combo_enable_axi_user_filtering_i,
+        .cptra_ss_usb_combo_priv_axi_users_i,
+        .cptra_ss_usb_dev1_enable_axi_user_filtering_i,
+        .cptra_ss_usb_dev1_priv_axi_users_i,
+
+        .cptra_ss_sck_o,
+        .cptra_ss_sck_en_o,
+        .cptra_ss_csb_o,
+        .cptra_ss_csb_en_o,
+        .cptra_ss_sd_o,
+        .cptra_ss_sd_en_o,
+        .cptra_ss_sd_i,
+
+        .cptra_ss_uart_rx_i,
+        .cptra_ss_uart_tx_o,
+        .cptra_ss_uart_tx_en_o,
+
         .cptra_ss_cptra_core_generic_input_wires_i,
         .cptra_ss_cptra_core_generic_output_wires_o,
         .cptra_ss_cptra_core_scan_mode_i,

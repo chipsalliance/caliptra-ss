@@ -111,8 +111,10 @@ void main (void) {
         clear_mcu_mbox_clear_sb_ecc_interrupt(mbox_num);
     }
 
-    // Check if SB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
+    // Check the ECC fields independently of the dynamic SRAM owner.
+    uint32_t ecc_status_mask = MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK |
+                               MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK;
+    if ((mcu_mbox_read_hw_status(mbox_num) & ecc_status_mask) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_SINGLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x SB ECC detected\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No SB ECC detected or DB ECC also set\n", mbox_num);
@@ -131,7 +133,7 @@ void main (void) {
     }
 
     // Check that ECC status registers are cleared
-    if (mcu_mbox_read_hw_status(mbox_num) != 0) {
+    if ((mcu_mbox_read_hw_status(mbox_num) & ecc_status_mask) != 0) {
         VPRINTF(FATAL, "MCU: Mbox%x SB ECC status not cleared\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
@@ -170,7 +172,7 @@ void main (void) {
     }
 
     // Check if DB ECC status has been logged
-    if (mcu_mbox_read_hw_status(mbox_num) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
+    if ((mcu_mbox_read_hw_status(mbox_num) & ecc_status_mask) == MCU_MBOX0_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK) {
         VPRINTF(LOW, "MCU: Mbox%x DB ECC detected\n", mbox_num);
     } else {
         VPRINTF(FATAL, "MCU: Mbox%x No DB ECC detected or SB ECC also set\n", mbox_num);

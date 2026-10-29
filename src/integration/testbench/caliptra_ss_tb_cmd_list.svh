@@ -121,6 +121,10 @@ localparam CMD_FC_ALL_ONES_DISABLE_SVA      = FC_LCC_CMD_OFFSET + 8'h23;
 localparam CMD_FC_ALL_ONES_ENABLE_SVA       = FC_LCC_CMD_OFFSET + 8'h24;
 localparam CMD_MCI_FORCE_STATE_ERROR        = FC_LCC_CMD_OFFSET + 8'h25;
 localparam CMD_MCI_RELEASE_STATE_ERROR      = FC_LCC_CMD_OFFSET + 8'h26;
+localparam CMD_OTP_DFT_EN_EXPECT_LOW         = FC_LCC_CMD_OFFSET + 8'h27;
+localparam CMD_OTP_DFT_EN_EXPECT_HIGH        = FC_LCC_CMD_OFFSET + 8'h28;
+localparam CMD_MCU_ROM_PATCH_EXPECT_UDS_FE_ZEROIZED = FC_LCC_CMD_OFFSET + 8'h29;
+localparam CMD_EXPECT_CPTRA_UDS_FE_FROM_FUSES     = FC_LCC_CMD_OFFSET + 8'h2A;
 
 
 localparam TB_DISABLE_MCU_SRAM_PROT_ASSERTS = 8'hc0;
@@ -143,6 +147,7 @@ localparam TB_CMD_INJECT_AGG_ERROR_NON_FATAL = 8'hef;
 localparam TB_CMD_INJECT_NOTIF0              = 8'hf0;
 localparam TB_CMD_TOGGLE_GENERIC_INPUT_WIRES = 8'hf1;
 localparam TB_CMD_TOGGLE_EXT_INT             = 8'hf2;
+localparam TB_CMD_USB_INT_EP                 = 8'hf3;
 
 localparam TB_CMD_COLD_RESET                  = 8'hF5;
 localparam TB_CMD_WARM_RESET                  = 8'hF6;
