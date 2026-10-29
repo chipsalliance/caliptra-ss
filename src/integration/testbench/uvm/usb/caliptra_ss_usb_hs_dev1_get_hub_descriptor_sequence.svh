@@ -120,18 +120,24 @@ class caliptra_ss_usb_hs_dev1_get_hub_descriptor_sequence extends caliptra_ss_us
         // WITH-constraint would contradict the anchored remote device's
         // address and randomize() would fail.
         set_anchor_addr(host_agent_h, usb_cfg, HUB_ADDR);
-        do_control_xfer(
-            .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
-            .bm_request_type_type (svt_usb_types::CLASS),
-            .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
-            .brequest_val         (8'h06),
-            .wvalue               (16'h2900),
-            .windex               (16'h0000),
-            .wlength              (16'h0009),
-            .device_addr          (HUB_ADDR),
-            .label                ("GET_HUB_DESCRIPTOR_hub"),
-            .usb_cfg              (usb_cfg));
-        wait_xfer_done(.agent_h(host_agent_h), .label("GET_HUB_DESCRIPTOR_hub"));
+        begin
+            bit fail;
+            do_control_xfer_and_wait(
+                .agent_h              (host_agent_h),
+                .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
+                .bm_request_type_type (svt_usb_types::CLASS),
+                .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
+                .brequest_val         (8'h06),
+                .wvalue               (16'h2900),
+                .windex               (16'h0000),
+                .wlength              (16'h0009),
+                .device_addr          (HUB_ADDR),
+                .label                ("GET_HUB_DESCRIPTOR_hub"),
+                .usb_cfg              (usb_cfg),
+                .min_payload_bytes    (9),
+                .fail                 (fail));
+            if (fail) return;
+        end
         usb_data_check_api.check_hub_descriptor(.usb_item(last_ctrl_seq_item),
                                                 .device_name("hub"));
 
