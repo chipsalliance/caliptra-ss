@@ -716,7 +716,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         initial_agent_caps = '0;
         empty_q.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .cmd_code(OCP_CMD_PROT_CAP),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap),
@@ -777,7 +777,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_ID),
+                       .cmd_code(OCP_CMD_DEVICE_ID),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(dev_id),
@@ -804,11 +804,11 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         reached = 1'b0;
         for (int unsigned poll = 0; poll < max_polls; poll++) begin
             ocp_do_read(
-                OCP_REC_CMD_DEVICE_STATUS,
+                OCP_CMD_DEVICE_STATUS,
                 device_status, ignored_result,
                 $sformatf("OCP_FW_DEVICE_STATUS_READY_%0d", poll));
             ocp_do_read(
-                OCP_REC_CMD_RECOVERY_STATUS,
+                OCP_CMD_RECOVERY_STATUS,
                 recovery_status, ignored_result,
                 $sformatf("OCP_FW_RECOVERY_STATUS_READY_%0d", poll));
 
@@ -852,7 +852,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         unsup_resp.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_CTRL),
+                       .cmd_code(OCP_CMD_INDIRECT_CTRL),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(unsup_resp),
@@ -862,7 +862,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto),
@@ -885,7 +885,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto_clr.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_clr),
@@ -924,7 +924,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                                  8'hFF, 8'hFF, 8'hFF, 8'hFF};
         resp_q.delete();
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .cmd_code(OCP_CMD_PROT_CAP),
                        .wlength(16'(prot_cap_wr_payload.size())),
                        .payload_bytes(prot_cap_wr_payload),
                        .resp_bytes(resp_q),
@@ -935,7 +935,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto_r7.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7),
@@ -959,7 +959,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto_r7_clr.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7_clr),
@@ -979,7 +979,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         prot_cap_after.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_PROT_CAP),
+                       .cmd_code(OCP_CMD_PROT_CAP),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(prot_cap_after),
@@ -1026,13 +1026,13 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
             write_payload.push_back(8'hFF);
         if (check_status_unchanged) begin
             ocp_do_read(
-                OCP_REC_CMD_INDIRECT_FIFO_STATUS,
+                OCP_CMD_INDIRECT_FIFO_STATUS,
                 fifo_status_before, ignored_result,
                 {label_prefix, "_INDIRECT_FIFO_STATUS_BEFORE"});
         end
         resp_q.delete();
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .cmd_code(OCP_CMD_INDIRECT_FIFO_STATUS),
                        .wlength(16'd1),
                        .payload_bytes(write_payload),
                        .resp_bytes(resp_q),
@@ -1043,7 +1043,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto_r7.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7),
@@ -1067,7 +1067,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         empty_q.delete();
         ds_proto_r7_clr.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                       .cmd_code(OCP_CMD_DEVICE_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(ds_proto_r7_clr),
@@ -1086,7 +1086,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         if (check_status_unchanged) begin
             ocp_do_read(
-                OCP_REC_CMD_INDIRECT_FIFO_STATUS,
+                OCP_CMD_INDIRECT_FIFO_STATUS,
                 fifo_status_after, ignored_result,
                 {label_prefix, "_INDIRECT_FIFO_STATUS_AFTER"});
             status_unchanged =
@@ -1127,7 +1127,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                       cms, image_selection),
             UVM_NONE)
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                       .cmd_code(OCP_CMD_RECOVERY_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
@@ -1147,7 +1147,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         ocp_prepare_fifo_ctrl_payload(
             cms, 1'b1, image_size_dwords, payload);
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
+                       .cmd_code(OCP_CMD_INDIRECT_FIFO_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
@@ -1166,7 +1166,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         response.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_CTRL),
+                       .cmd_code(OCP_CMD_INDIRECT_FIFO_CTRL),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(response),
@@ -1262,7 +1262,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                           status.fifo_size))
         end
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_DATA),
+                       .cmd_code(OCP_CMD_INDIRECT_FIFO_DATA),
                        .wlength(16'(image_bytes.size())),
                        .payload_bytes(image_bytes),
                        .resp_bytes(response),
@@ -1280,7 +1280,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_INDIRECT_FIFO_STATUS),
+                       .cmd_code(OCP_CMD_INDIRECT_FIFO_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(fifo_status),
@@ -1321,7 +1321,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         forever begin
             empty_q.delete();
             ocp_do_class_xfer(.dir_in(1'b1),
-                           .cmd_code(OCP_REC_CMD_DEVICE_STATUS),
+                           .cmd_code(OCP_CMD_DEVICE_STATUS),
                            .wlength(16'(wMaxRdTransferSize)),
                            .payload_bytes(empty_q),
                            .resp_bytes(dev_status),
@@ -1390,7 +1390,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
 
         empty_q.delete();
         ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_REC_CMD_RECOVERY_STATUS),
+                       .cmd_code(OCP_CMD_RECOVERY_STATUS),
                        .wlength(16'(wMaxRdTransferSize)),
                        .payload_bytes(empty_q),
                        .resp_bytes(rec_status),
@@ -1421,7 +1421,7 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                       cms, image_selection, OCP_RC_ACTIVATE_CODE),
             UVM_NONE)
         ocp_do_class_xfer(.dir_in(1'b0),
-                       .cmd_code(OCP_REC_CMD_RECOVERY_CTRL),
+                       .cmd_code(OCP_CMD_RECOVERY_CTRL),
                        .wlength(16'(payload.size())),
                        .payload_bytes(payload),
                        .resp_bytes(response),
