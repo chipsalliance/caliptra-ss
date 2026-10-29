@@ -352,6 +352,9 @@ class caliptra_ss_usb_hs_dev_hub_bypass_enum_sequence
             .min_payload_bytes    (1),
             .fail                 (xfer_fail));
 
+        if(xfer_fail)
+            `uvm_error("USB_HUB_BYPASS", "BYPASS_GET_CONFIG_verify failed")
+
         // -----------------------------------------------------------------
         // Step 8: negotiated speed must be High Speed.
         //
