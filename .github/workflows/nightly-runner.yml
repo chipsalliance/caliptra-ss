@@ -1,0 +1,84 @@
+name: Nightly Runner
+
+on: 
+  push:
+    branches: ['dev_sileno_nightly_runner']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke-ss:
+    runs-on: [caliptra-ss]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show what we got for caliptra-ss
+        run: |
+          which vcs verilator riscv64-unknown-elf-gcc python
+          verilator --version
+          riscv64-unknown-elf-gcc --version | head -1
+
+      - name: Compile and run a trivial testbench
+        run: |
+          cd "$RUNNER_TEMP"
+          cat > top.sv <<'SV'
+          module top;
+            initial begin
+              $display("HELLO_FROM_VCS");
+              $finish;
+            end
+          endmodule
+          SV
+          vcs -full64 -sverilog top.sv -o simv
+          ./simv
+
+  smoke-rtl:
+    runs-on: [caliptra-rtl]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show what we got for caliptra-rtl
+        run: |
+          which vcs verilator riscv64-unknown-elf-gcc python
+          verilator --version
+          riscv64-unknown-elf-gcc --version | head -1
+
+      - name: Compile and run a trivial testbench
+        run: |
+          cd "$RUNNER_TEMP"
+          cat > top.sv <<'SV'
+          module top;
+            initial begin
+              $display("HELLO_FROM_VCS");
+              $finish;
+            end
+          endmodule
+          SV
+          vcs -full64 -sverilog top.sv -o simv
+          ./simv
+
+  smoke-edavm:
+    runs-on: [eda-vm]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show what we got for caliptra-rtl
+        run: |
+          which vcs verilator riscv64-unknown-elf-gcc python
+          verilator --version
+          riscv64-unknown-elf-gcc --version | head -1
+
+      - name: Compile and run a trivial testbench
+        run: |
+          cd "$RUNNER_TEMP"
+          cat > top.sv <<'SV'
+          module top;
+            initial begin
+              $display("HELLO_FROM_VCS");
+              $finish;
+            end
+          endmodule
+          SV
+          vcs -full64 -sverilog top.sv -o simv
+          ./simv
+
