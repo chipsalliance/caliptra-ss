@@ -275,13 +275,16 @@ static void usb_iso_ep_in_arm(uint32_t round) {
                      b0 | (b1 << 8) | (b2 << 16) | (b3 << 24));
     }
 
-    // Per Integration Guide 4.2.3, bit 26 on IN entries is the Toggle bit
-    // (0=DATA0). Do NOT set USB_EP_ENTRY_TYPE_PERIODIC on IN entries.
+    // Select isochronous operation on both IN descriptors (T=1, RF=0).
     buf0 = USB_EP_ENTRY_ACTIVE
+         | USB_EP_ENTRY_TYPE_PERIODIC
+         | USB_EP_ENTRY_RF_ISO
          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
          | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                  + USB_SRAM_ISO_IN_BUF_OFFSET);
     buf1 = USB_EP_ENTRY_ACTIVE
+         | USB_EP_ENTRY_TYPE_PERIODIC
+         | USB_EP_ENTRY_RF_ISO
          | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
          | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                  + USB_SRAM_ISO_IN_BUF_OFFSET
