@@ -27,7 +27,6 @@
       - [MCI](#mci)
     - [Caliptra 2.2 Subsystem Components HW requirements](#caliptra-22-subsystem-components-hw-requirements)
       - [USB](#usb)
-      - [SPI](#spi)
   - [Caliptra Subsystem Hardware Block Diagram](#caliptra-subsystem-hardware-block-diagram)
 - [Caliptra Subsystem Architectural Flows](#caliptra-subsystem-architectural-flows)
   - [USB Streaming Boot (Caliptra SS 2.2)](#usb-streaming-boot-caliptra-ss-22)
@@ -313,10 +312,6 @@ Stretch Goal (Met in 2.0/2.1): DMA data payload back to destination (Caliptra)
 1. USB2 integration with streaming boot support
 2. USB2 shall implement two devices - one for Caliptra subsystem usage and one for SOC usage
 3. USB2 access must follow the [ownership and AXI USER filtering policy](#ownership-and-access) and [DWORD-only access requirement](#dword-only-accesses).
-
-#### SPI
-
-SPI shall be supported along with AXI streaming boot block
 
 ## Caliptra Subsystem Hardware Block Diagram
 

@@ -89,4 +89,6 @@ cptra_usb_ocp_recovery_activation_access_semantics # WIP testcase
 caliptra_ss_usb_ocp_w1dc_access_semantics # WIP testcase
 cptra_usb_ocp_w1dc_access_semantics # WIP testcase
 
-
+# SPI Host / UART
+smoke_test_spi_host_tx_rx # SPI Host has been removed from top-level integration; re-adding RTL instantiation and address map entries would be required to run this test again
+smoke_test_mcu_uart_loopback # UART has been removed from top-level integration; re-adding RTL instantiation and address map entries would be required to run this test again
