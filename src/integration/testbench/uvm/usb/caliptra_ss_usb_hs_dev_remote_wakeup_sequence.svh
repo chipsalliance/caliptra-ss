@@ -13,92 +13,167 @@
 `define CALIPTRA_SS_USB_HS_DEV_REMOTE_WAKEUP_SEQUENCE_SV
 
 // =============================================================================
-// USB HS device remote wakeup sequence.
+// USB HS device remote wakeup sequence (hub-composite IP).
+//
+// Topology note: the DUT is an on-chip 2-port USB hub with an embedded
+// downstream device controller (USBDC0). The upstream link only comes up after
+// the MCU firmware performs the two-phase hub bring-up: boot_usb_core_hub()
+// sets HUB_CTRL.HUB_EN, then usb_hub_connect() sets HUB_CONNECT. Only after
+// HUB_CONNECT does the hub present itself on the bus, so the host sees
+// connect / reset / HS chirp and the link reaches ENABLED. If the firmware
+// omits usb_hub_connect() the link can never reach ENABLED and step 1 below
+// reports it by name rather than hanging.
 //
 // Sequence flow:
-//   1. Wait for HS host link to reach ENABLED.
+//   1. Wait for the HS host link to reach ENABLED (bounded).
 //   2. Start SOF generation to keep the HS link alive.
-//   3. Settling delay to allow VIP link SM to stabilize in ENABLED before SUSPEND.
+//   3. Settling delay to allow the VIP link SM to stabilise in ENABLED.
 //   4. Host drives SUSPEND signaling (SOF_OFF).
-//   5. Wait for VIP link SM to reach SUSPENDED state.
-//   6. Suspend dwell: allow MCU firmware time to detect DSUS_C (suspend entry).
+//   5. Wait for the VIP link SM to reach SUSPENDED.
+//  5b. Arm the DUT-side checker (uvm_event usb_suspend_stimulus_armed). Before
+//      this point SuspendM activity belongs to boot, not to this stimulus, so
+//      the checker must not score it. See ARM_EVENT below.
+//   6. Wait for the DUT itself to enter suspend (uvm_event usb_dut_suspend_seen
+//      from caliptra_ss_usb_suspend_resume_checker), bounded by SUSPEND_DWELL.
 //   7. Host drives resume K-state via svt_usb_link_service_clear_suspend_sequence
 //      on link_service_sequencer. This is the only VIP sequence that actually
 //      drives K-state on the bus; resume_transfer_processing_sequence must NOT
 //      be used here because it drives zero bus activity and returns instantly.
-//   8. Restart SOF generation to hold link ENABLED after resume.
-//   9. Poll for link ENABLED after resume.
-//  10. Observation window for MCU firmware to log DSUS_C resume event.
+//   8. Restart SOF generation to hold the link ENABLED after resume.
+//   9. Poll for link ENABLED after resume, then wait for the DUT to leave
+//      suspend (uvm_event usb_dut_resume_seen), bounded by RESUME_WAIT_MAX.
+//  10. Short observation window, then close the checker observation window by
+//      triggering uvm_event usb_suspend_resume_obs_window_done. Without that
+//      trigger the checker never evaluates either check, so this step is a
+//      functional requirement, not just reporting.
+//
+// DUT-side verdict: the pass/fail decision lives in
+// caliptra_ss_usb_suspend_resume_checker (enabled by +usb_suspend_resume_check,
+// set in the test .mk and .yml), which watches the DUT UTMI SuspendM output.
+// This sequence drives the host side and reports VIP-link timing only.
 // =============================================================================
 
-class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
+class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends caliptra_ss_usb_base_sequence;
     `uvm_object_utils(caliptra_ss_usb_hs_dev_remote_wakeup_sequence)
-    `uvm_declare_p_sequencer(svt_usb_virtual_sequencer)
+
+    // -------------------------------------------------------------------------
+    // Sequence timing knobs. Values match the passing HS reference
+    // caliptra_ss_usb_hs_dev_global_suspend_L2_sequence; keep them in step.
+    // -------------------------------------------------------------------------
+
+    // Empirical margin. Guards a real failure mode: driving SOF_OFF while the
+    // VIP link SM is still walking TRANSMIT -> ENABLED makes the link go
+    // DISCONNECTED and starts an unintended second bus-reset cycle.
+    localparam realtime LINK_SETTLE_DELAY = 500us;
+
+    // Timeout ceiling, not a dwell. The wait ends as soon as the checker
+    // reports the DUT drove UTMI SuspendM low, so in the passing case this
+    // costs nothing. The device decides the bus is suspended from the
+    // T_SUSPEND_DET timer in usb_pie.m.vhdl, which is 200 us with
+    // G_SIM_CHIRP_TIMERS=1 (the setting used in caliptra_ss_top_tb.sv). Against
+    // a spec-timer build (3.072 ms) this ceiling must be raised first.
+    localparam realtime SUSPEND_DWELL = 2ms;
+
+    // Minimum time the DUT must be left in suspend before the host resumes it.
+    //
+    // This is a functional requirement, not a margin. The suspend/resume
+    // checker triggers usb_dut_suspend_seen the instant UTMI SuspendM falls,
+    // and both the clear_suspend link-service item and the SOF restart complete
+    // without advancing simulation time. Without a hold here the whole resume
+    // is driven in the same time step as the suspend, and a measured run showed
+    // the device suspended for 1 ps (SuspendM low at 1087845.354 ns, high again
+    // at 1087845.355 ns).
+    //
+    // DEVCMDSTAT.DSUS and DSUS_C are flip-flops in the device clock domain, so
+    // a suspend window that contains no clock edge is never registered and the
+    // firmware can never observe it: the MCU polled for 4.6 ms and reported
+    // "0 of 2 DSUS_C events". 50 us leaves the device suspended for several
+    // hundred MCU poll iterations at the measured ~131 ns period, and is small
+    // against the ~100 us the suspend detect itself already costs.
+    localparam realtime MIN_SUSPEND_HOLD = 50us;
+
+    // Timeout ceiling for the DUT leaving suspend after the host drove resume
+    // K-state. Same structure as SUSPEND_DWELL: ends early on the checker event.
+    localparam realtime RESUME_WAIT_MAX = 500us;
+
+    // Empirical margin. Lets the MCU polling loop sample DEVCMDSTAT once more
+    // and print the resume-side suspend-change event, and gives the DUT slack
+    // past the resume edge before the checker observation window is closed.
+    localparam realtime POST_RESUME_OBS = 200us;
+
+    // Poll ceilings in 1 us steps. Timeouts only: the loops exit as soon as the
+    // state is reached, so they cost nothing in the passing case.
+    localparam int unsigned SUSPEND_POLL_MAX_US = 10000;  // 10 ms ceiling
+    localparam int unsigned ENABLED_POLL_MAX_US = 50000;  // 50 ms ceiling
+
+    // Ceiling for the initial link bring-up. Sized well above the observed
+    // bring-up (bus reset at ~240 us, enumeration done under 1 ms) so that a
+    // timeout here means the device never connected at all.
+    localparam int unsigned LINK_UP_TIMEOUT_US  = 3000;   // 3 ms ceiling
+
+    // -------------------------------------------------------------------------
+    // Global uvm_event names shared with caliptra_ss_usb_suspend_resume_checker.
+    // These strings are the only coupling between this sequence and the
+    // testbench-scope checker module, and are duplicated verbatim there: a
+    // uvm_sequence cannot reach into testbench scope and the checker must not
+    // depend on the UVM package. Keep both copies in sync.
+    // -------------------------------------------------------------------------
+    // Triggered by this sequence to tell the checker its observation window has
+    // closed and both checks may now be evaluated.
+    localparam string OBS_WINDOW_EVENT  = "usb_suspend_resume_obs_window_done";
+    // Triggered by the checker when the DUT drives UTMI SuspendM low / high.
+    localparam string DUT_SUSPEND_EVENT = "usb_dut_suspend_seen";
+    localparam string DUT_RESUME_EVENT  = "usb_dut_resume_seen";
+    // Triggered by this sequence to arm the checker's SuspendM edge detector.
+    // Must not be triggered before the host has actually driven suspend: out of
+    // reset the DUT holds SuspendM low by design (usb_pie.m.vhdl BUS_EVENT_INIT
+    // drives suspendm from usbreg_pll_on or usbreg_dev_connect, both 0 until
+    // firmware writes DEVCMDSTAT), and it rises again inside boot_usb_core. A
+    // checker watching from time zero latches that boot-time low-then-high as a
+    // complete suspend/resume cycle, which is a false PASS.
+    localparam string ARM_EVENT = "usb_suspend_stimulus_armed";
 
     function new(string name = "caliptra_ss_usb_hs_dev_remote_wakeup_sequence");
         super.new(name);
     endfunction
 
-    virtual task pre_start();
-        uvm_phase phase;
-        super.pre_start();
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.raise_objection(this);
-    endtask
-
-    virtual task post_start();
-        uvm_phase phase;
-        phase = get_starting_phase();
-        if (get_parent_sequence() == null && phase != null)
-            phase.drop_objection(this);
-    endtask
-
     virtual task body();
         svt_usb_agent    host_agent_h;
-        uvm_component    parent_comp;
         svt_usb_status   shared_status;
 
-        parent_comp = p_sequencer.get_parent();
-        if (!$cast(host_agent_h, parent_comp))
-            `uvm_fatal("CALIPTRA_SS_USB_HS_D",
-                $sformatf("Cannot cast parent (%s) to svt_usb_agent",
-                          parent_comp.get_full_name()))
+        // Handles to the events shared with the DUT-side checker. Resolved up
+        // front: get_global() creates the event on first use, so resolving the
+        // DUT-reaction events before the suspend is driven removes any race
+        // with the checker triggering them.
+        uvm_event dut_suspend_ev;
+        uvm_event dut_resume_ev;
+        uvm_event obs_window_ev;
+        uvm_event arm_ev;
 
-        shared_status = p_sequencer.get_shared_status(this);
-        if (shared_status == null)
-            `uvm_fatal("CALIPTRA_SS_USB_HS_D", "get_shared_status returned null.")
+        dut_suspend_ev = uvm_event_pool::get_global(DUT_SUSPEND_EVENT);
+        dut_resume_ev  = uvm_event_pool::get_global(DUT_RESUME_EVENT);
+        obs_window_ev  = uvm_event_pool::get_global(OBS_WINDOW_EVENT);
+        arm_ev         = uvm_event_pool::get_global(ARM_EVENT);
+
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
 
         // Step 1: Wait for HS link ENABLED.
-        fork
-            begin: WE
-                wait (shared_status.link_usb_20_state == svt_usb_types::ENABLED);
-                disable RE;
-            end
-            begin: RE
-                forever begin
-                    #10us `uvm_info("CALIPTRA_SS_USB_HS_D",
-                        $sformatf("link=%p", shared_status.link_usb_20_state), UVM_LOW);
-                end
-            end
-        join
-        `uvm_info("CALIPTRA_SS_USB_HS_D", "HS link ENABLED.", UVM_LOW)
+        // Bounded on purpose. The previous shape was an unbounded
+        // wait (link_usb_20_state == ENABLED) inside a fork/join, which turned
+        // a firmware bring-up failure into a silent hang with zero UVM_ERROR.
+        // wait_for_link_enabled() reports the timeout and names hub bring-up
+        // (HUB_EN / HUB_CONNECT) as the thing to check.
+        //
+        // Ordering is deliberately link-first, SOF-second: the suspend/resume
+        // checker arms on the first SOF, so SOF must not start before link-up.
+        wait_for_link_enabled(shared_status, "HS host link", LINK_UP_TIMEOUT_US);
 
         // Step 2: Start SOF generation.
-        begin
-            svt_usb_protocol_service_20_sof_on_sequence sof_on;
-            sof_on = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on");
-            sof_on.start(p_sequencer.prot_service_sequencer);
-            `uvm_info("CALIPTRA_SS_USB_HS_D", "SOF generation started.", UVM_LOW)
-        end
+        start_sof_generation();
 
-        // Step 3: Settling delay after link-up.
-        // The VIP link SM transitions through TRANSMIT -> ENABLED in the first
-        // few microseconds after bus reset. Issuing SOF_OFF inside that window
-        // causes the link to go DISCONNECTED and trigger an unintended second
-        // bus-reset cycle. 500us ensures the link is fully stable with SOF
-        // running before suspend is driven.
-        #500us;
+        // Step 3: Settling delay after link-up. See LINK_SETTLE_DELAY above.
+        #LINK_SETTLE_DELAY;
 
         // Step 4: Host drives SUSPEND signaling.
         `uvm_info("USB_HS_DEV_RW_SEQ", "Suspending link...", UVM_LOW)
@@ -109,14 +184,14 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
         end
         `uvm_info("USB_HS_DEV_RW_SEQ", "SUSPEND signaling complete.", UVM_LOW)
 
-        // Step 5: Wait for VIP link SM to reach SUSPENDED state.
-        // SOF_OFF returns immediately; the 3ms USB 2.0 idle timer runs inside
-        // the VIP. We must confirm SUSPENDED before proceeding so that the
-        // MCU has a real suspended-bus condition to observe.
+        // Step 5: Wait for the VIP link SM to reach SUSPENDED.
+        // SOF_OFF returns immediately; the USB 2.0 idle timer runs inside the
+        // VIP. Confirm SUSPENDED before proceeding so that the MCU has a real
+        // suspended-bus condition to observe.
         begin
             int unsigned poll_cnt = 0;
             while (shared_status.link_usb_20_state != svt_usb_types::SUSPENDED
-                   && poll_cnt < 10000) begin
+                   && poll_cnt < SUSPEND_POLL_MAX_US) begin
                 #1us; poll_cnt++;
             end
             if (shared_status.link_usb_20_state == svt_usb_types::SUSPENDED)
@@ -126,19 +201,57 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
                 `uvm_error("USB_HS_DEV_RW_SEQ", "Timeout waiting for VIP link SUSPENDED.")
         end
 
-        // Step 6: Suspend dwell - give MCU firmware time to detect DSUS_C.
-        // From the log, SUSPENDED state arrives ~180 us after SOF_OFF but the
-        // MCU polling loop does not sample DEVCMDSTAT until ~614 us after that.
-        // 2ms is a safe margin for the firmware to see and print "Suspend change
-        // event 1" before the host drives resume signaling.
-        #2ms;
+        // Step 5b: Arm the DUT-side checker.
+        //
+        // This is the earliest point at which a change on the DUT SuspendM
+        // output can be attributed to this stimulus: the host has stopped SOF
+        // traffic and the VIP link has confirmed SUSPENDED, so any subsequent
+        // SuspendM low is the device controller reacting to bus idle.
+        // Everything before this is boot. See ARM_EVENT above.
+        arm_ev.trigger();
+        `uvm_info("USB_HS_DEV_RW_SEQ",
+            "Armed DUT-side suspend/resume checker; SuspendM activity from here on is attributable to this stimulus.",
+            UVM_LOW)
+
+        // Step 6: Wait for the DUT to enter suspend.
+        //
+        // This replaces an unconditional dwell. The timeout arm is deliberately
+        // not an error: whether the DUT suspended at all is the checker's
+        // CHK_SUSPEND_SEEN, and reporting it in one place keeps a single
+        // failure from producing two messages. On timeout the flow continues so
+        // the log shows how the rest of the sequence behaved.
+        fork
+            begin: WAIT_DUT_SUSPEND
+                // wait_ptrigger(), not wait_trigger(): uvm_event::trigger() is
+                // momentary and only releases a wait that is already pending at
+                // that instant. wait_ptrigger() also returns for an event that
+                // has already fired, which removes the ordering dependency
+                // between this fork and whatever ran before it.
+                dut_suspend_ev.wait_ptrigger();
+                `uvm_info("USB_HS_DEV_RW_SEQ",
+                    "DUT entered suspend (UTMI SuspendM low); ending suspend dwell early.",
+                    UVM_LOW)
+                disable SUSPEND_DWELL_TIMEOUT;
+            end
+            begin: SUSPEND_DWELL_TIMEOUT
+                #SUSPEND_DWELL;
+                `uvm_info("USB_HS_DEV_RW_SEQ",
+                    "Suspend dwell ceiling reached without the DUT entering suspend; continuing. The checker reports this as CHK_SUSPEND_SEEN.",
+                    UVM_LOW)
+                disable WAIT_DUT_SUSPEND;
+            end
+        join_any
+
+        // Step 6b: Hold the DUT in suspend. See MIN_SUSPEND_HOLD above: the
+        // resume below costs no simulation time, so without this the device
+        // leaves suspend in the same time step it entered and DEVCMDSTAT.DSUS_C
+        // never registers.
+        #MIN_SUSPEND_HOLD;
+        `uvm_info("USB_HS_DEV_RW_SEQ",
+            $sformatf("Held the DUT in suspend for %0t before resuming.", MIN_SUSPEND_HOLD),
+            UVM_LOW)
 
         // Step 7: Host drives resume K-state on the bus.
-        // svt_usb_link_service_clear_suspend_sequence is the correct sequence:
-        // it drives K-state from the host side and transitions the link SM
-        // SUSPENDED -> S_RESUME -> ENABLED.
-        // svt_usb_protocol_service_resume_transfer_processing_sequence must NOT
-        // be used here: it drives no bus activity and returns at zero sim-time.
         `uvm_info("USB_HS_DEV_RW_SEQ", "Host driving resume K-state (clear_suspend)...", UVM_LOW)
         begin
             svt_usb_link_service_clear_suspend_sequence clr_susp;
@@ -149,7 +262,7 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
 
         // Step 8: Restart SOF generation after resume.
         // Without SOF the VIP link SM re-enters SUSPEND after the keepalive
-        // timeout (~3ms). SOF must be restarted immediately after clear_suspend.
+        // timeout, so SOF must be restarted immediately after clear_suspend.
         begin
             svt_usb_protocol_service_20_sof_on_sequence sof_on2;
             sof_on2 = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on2");
@@ -157,11 +270,11 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
             `uvm_info("USB_HS_DEV_RW_SEQ", "SOF restarted after resume.", UVM_LOW)
         end
 
-        // Step 9: Poll for link ENABLED after resume.
-        // Allow up to 50ms (50000 x 1us) for the link to re-ENABLE.
+        // Step 9: Poll for link ENABLED after resume. Ceiling only.
         begin
             int unsigned poll_cnt = 0;
-            while (shared_status.link_usb_20_state != svt_usb_types::ENABLED && poll_cnt < 50000) begin
+            while (shared_status.link_usb_20_state != svt_usb_types::ENABLED
+                   && poll_cnt < ENABLED_POLL_MAX_US) begin
                 #1us; poll_cnt++;
                 `uvm_info("USB_HS_DEV_RW_SEQ",
                     $sformatf("Waiting ENABLED: link=%0s cnt=%0d",
@@ -176,10 +289,39 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_sequence extends uvm_sequence;
                         shared_status.link_usb_20_state.name()))
         end
 
-        // Step 10: Observation window for MCU firmware to log DSUS_C resume event.
-        // 200us gives the MCU polling loop enough iterations to sample DEVCMDSTAT
-        // and print "Suspend change event 2" before the sequence ends.
-        #200us;
+        // Step 9b: Wait for the DUT to leave suspend.
+        // Same shape as step 6; the checker owns CHK_RESUME_SEEN.
+        fork
+            begin: WAIT_DUT_RESUME
+                // wait_ptrigger() for the same reason as step 6. Step 9's
+                // ENABLED poll above can consume tens of microseconds before
+                // this fork is entered, so a momentary wait_trigger() misses
+                // the resume event and then prints a ceiling message that
+                // contradicts the "link ENABLED" line just above it.
+                dut_resume_ev.wait_ptrigger();
+                `uvm_info("USB_HS_DEV_RW_SEQ",
+                    "DUT left suspend (UTMI SuspendM high again).", UVM_LOW)
+                disable RESUME_WAIT_TIMEOUT;
+            end
+            begin: RESUME_WAIT_TIMEOUT
+                #RESUME_WAIT_MAX;
+                `uvm_info("USB_HS_DEV_RW_SEQ",
+                    "Resume wait ceiling reached without the DUT leaving suspend; continuing. The checker reports this as CHK_RESUME_SEEN.",
+                    UVM_LOW)
+                disable WAIT_DUT_RESUME;
+            end
+        join_any
+
+        // Step 10: Observation window for the MCU firmware to log the
+        // resume-side DSUS_C event. See POST_RESUME_OBS above.
+        #POST_RESUME_OBS;
+
+        // Close the checker observation window. This is mandatory, not
+        // cosmetic: caliptra_ss_usb_suspend_resume_checker evaluates
+        // CHK_SUSPEND_SEEN and CHK_RESUME_SEEN only on this event, so without
+        // the trigger neither check runs and the test would report PASSED
+        // whatever the DUT did.
+        obs_window_ev.trigger();
 
         `uvm_info("CALIPTRA_SS_USB_HS_D",
             "caliptra_ss_usb_hs_dev_remote_wakeup_sequence complete.", UVM_LOW)
