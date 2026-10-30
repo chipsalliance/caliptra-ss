@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Licensed under the Apache License, Version 2.0, see LICENSE for details.
 //
-// This is an automatically generated file by nasahlpa on Thu Jul 30 03:32:14 PM CEST 2026
+// This is an automatically generated file by nasahlpa on Mon Nov  2 01:29:31 PM CET 2026
 //
-// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dccm_addr_xor=1 -set=dccm_wr_readback=1 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=icache_addr_xor=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=lockstep_delay=2 -set=lockstep_enable=1 -set=lockstep_regfile_enable=1 -set=lockstep_regfile_read_enable=1 -set=mubi_width=4 -set=mubi_true=0x6 -set=mubi_false=0x9 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=css_mcu0_dcls 
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dccm_addr_xor=0 -set=dccm_wr_readback=0 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=icache_addr_xor=0 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=lockstep_delay=2 -set=lockstep_enable=0 -set=lockstep_regfile_enable=0 -set=lockstep_regfile_read_enable=0 -set=mubi_width=4 -set=mubi_true=0x6 -set=mubi_false=0x9 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=css_mcu0_nodcls
 //
 #ifndef RV_DEFINES
 #define RV_DEFINES
@@ -30,7 +30,6 @@
 #define RV_LSU_STBUF_DEPTH 4
 #define RV_TIMER_LEGAL_EN 1
 #define RV_USER_MODE 1
-#define RV_DCCM_ADDR_XOR 1
 #define RV_DCCM_BANK_BITS 2
 #define RV_DCCM_BITS 14
 #define RV_DCCM_BYTE_WIDTH 4
@@ -51,7 +50,6 @@
 #define RV_DCCM_SIZE 16
 #define RV_DCCM_SIZE_16 
 #define RV_DCCM_WIDTH_BITS 2
-#define RV_DCCM_WR_READBACK 1
 #define RV_LSU_SB_BITS 14
 #define RV_ICCM_BANK_BITS 2
 #define RV_ICCM_BANK_HI 3
@@ -166,13 +164,6 @@
 #define RV_INST_ACCESS_MASK5 0xffffffff
 #define RV_INST_ACCESS_MASK6 0xffffffff
 #define RV_INST_ACCESS_MASK7 0xffffffff
-#define RV_LOCKSTEP_DELAY 2
-#define RV_LOCKSTEP_ENABLE 1
-#define RV_LOCKSTEP_REGFILE_ENABLE 1
-#define RV_LOCKSTEP_REGFILE_READ_ENABLE 1
-#define RV_MUBI_FALSE 0x9
-#define RV_MUBI_TRUE 0x6
-#define RV_MUBI_WIDTH 4
 #define RV_PMP_ENTRIES 64
 #define RV_SMEPMP 1
 #ifndef RV_RESET_VEC
