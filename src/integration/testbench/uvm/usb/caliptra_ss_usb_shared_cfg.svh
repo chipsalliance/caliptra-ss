@@ -361,6 +361,124 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
     endfunction
 
     // -------------------------------------------------------------------------
+    // add_remote_device_slot
+    //
+    // Append ONE additional, PERSISTENT remote-device configuration slot to
+    // host_cfg.remote_device_cfg[$] at the given bus address, cloning the
+    // endpoint layout of slot 0. Returns the new slot's index, which callers
+    // pass to do_data_xfer() as dev_anchor_idx.
+    //
+    // WHY THIS EXISTS - THE DATA TOGGLE.
+    //
+    // remote_device_cfg[$] is a queue and the VIP fully supports several
+    // remote devices at once: svt_usb_configuration constrains each populated
+    // entry to a DISTINCT device_address, and the VIP's own example sequences
+    // address them with fix_anchors(1,0,0) / fix_anchors(tier,0,0).
+    //
+    // With only ONE slot available a multi-device test has to retarget that
+    // slot between transfers:
+    //
+    //     remote_device_cfg[0].device_address = addr;
+    //     host_agent_h.reconfigure(usb_cfg);
+    //
+    // That retarget is DESTRUCTIVE. reconfigure() tears down and rebuilds the
+    // endpoint protocol processors, and a freshly built BULK endpoint starts
+    // its DATA TOGGLE AT DATA0. USB 2.0 section 8.6 makes that fatal but
+    // SILENT: a conformant device advances its own toggle after each accepted
+    // OUT, so once the device expects DATA1 and the host restarts at DATA0 the
+    // device treats the packet as a presumed retransmission and DISCARDS it -
+    // no buffer write, no descriptor retire, no completion interrupt. The host
+    // then NAKs on the paired IN until its retry budget is exhausted and the
+    // transfer is reported ABORTED with results_status == 0.
+    //
+    // MEASURED EVIDENCE (dev0 hotplug test, USBDC1 EP1 BULK OUT; taken from
+    // the "ep_type=BULK ... pid_transmitted=" records in svt_debug.transcript):
+    //
+    //   OUT  time (ns)   PID sent   device expected   endpoint xactor
+    //    1     742336      DATA0         DATA0        created 688405
+    //    2     785935      DATA1         DATA1        SAME instance, reused
+    //    3    1270982      DATA0         DATA0        fresh @1269418
+    //    4    1751246      DATA0        *DATA1*       fresh @1749682  <- FAIL
+    //
+    // Every fresh xactor restarts at DATA0. OUT 2 happened to reuse a
+    // surviving instance and so advanced correctly; OUT 1 and OUT 3 were
+    // COINCIDENTALLY correct because DATA0 was what the device wanted anyway.
+    // OUT 4 is the first transfer where DATA1 was expected, and therefore the
+    // first one where the toggle reset is observable at all - which is exactly
+    // why three bulk loopbacks passed and only the fourth died. The failure is
+    // a testbench artefact; RTL and firmware both behaved correctly.
+    //
+    // Giving every device on the bus its own persistent slot removes the need
+    // to retarget, so the endpoint xactors live for the whole run and their
+    // toggles advance continuously.
+    //
+    // SCOPE - READ BEFORE ADDING A reconfigure(). This does NOT make
+    // reconfigure() safe to call again. Any reconfigure() still rebuilds EVERY
+    // endpoint xactor and so resets EVERY toggle, including those of devices
+    // the caller was not touching. Enumeration still legitimately retargets
+    // and reconfigures slot 0 because SET_ADDRESS genuinely changes an
+    // address, so it must run BEFORE any bulk stream that must not be
+    // disturbed.
+    // -------------------------------------------------------------------------
+    function int add_remote_device_slot(bit [6:0] device_address);
+        svt_usb_device_configuration src;
+        svt_usb_device_configuration slot;
+        int                          idx;
+
+        if (host_cfg == null || host_cfg.remote_device_cfg.size() < 1) begin
+            `uvm_error("add_remote_device_slot",
+                "host_cfg.remote_device_cfg[0] must exist before cloning it.")
+            return 0;
+        end
+
+        src  = host_cfg.remote_device_cfg[0];
+        slot = new();
+
+        // Mirror the attributes describing how the device sits on the bus.
+        // device_address MUST be distinct from every other populated slot:
+        // svt_usb_configuration constrains i != j -> addr[i] != addr[j], so a
+        // duplicate makes the configuration unsatisfiable.
+        slot.device_address               = device_address;
+        slot.connected_bus_speed          = src.connected_bus_speed;
+        slot.functionality_support        = src.functionality_support;
+        slot.connected_hub_device_address = src.connected_hub_device_address;
+        slot.hub_port_number              = src.hub_port_number;
+        slot.device_timeout               = src.device_timeout;
+        slot.num_endpoints                = src.num_endpoints;
+
+        // Clone the endpoint layout, including the NAK retry budget. These are
+        // FRESH objects, not shared handles - two slots sharing one endpoint
+        // configuration would defeat the entire purpose of separate slots.
+        for (int ep = 0; ep < src.num_endpoints; ep++) begin
+            if (src.endpoint_cfg[ep] == null) continue;
+            slot.endpoint_cfg[ep] = new();
+            slot.endpoint_cfg[ep].ep_number       = src.endpoint_cfg[ep].ep_number;
+            slot.endpoint_cfg[ep].direction       = src.endpoint_cfg[ep].direction;
+            slot.endpoint_cfg[ep].ep_type         = src.endpoint_cfg[ep].ep_type;
+            slot.endpoint_cfg[ep].speed           = src.endpoint_cfg[ep].speed;
+            slot.endpoint_cfg[ep].interval        = src.endpoint_cfg[ep].interval;
+            slot.endpoint_cfg[ep].max_packet_size = src.endpoint_cfg[ep].max_packet_size;
+            slot.endpoint_cfg[ep].max_burst_size  = src.endpoint_cfg[ep].max_burst_size;
+            slot.endpoint_cfg[ep].allow_aligned_transfer_without_zero_length =
+                src.endpoint_cfg[ep].allow_aligned_transfer_without_zero_length;
+            slot.endpoint_cfg[ep].max_retry_due_to_nak =
+                USB_EP_MAX_RETRY_DUE_TO_NAK;
+            slot.endpoint_cfg[ep].max_retry_due_to_nak_before_moving_to_next_ep =
+                USB_EP_MAX_RETRY_DUE_TO_NAK / 2;
+        end
+
+        host_cfg.remote_device_cfg.push_back(slot);
+        host_cfg.remote_device_cfg_size = host_cfg.remote_device_cfg.size();
+        idx = host_cfg.remote_device_cfg_size - 1;
+
+        `uvm_info("add_remote_device_slot",
+            $sformatf({"Added persistent remote_device_cfg[%0d] at device ",
+                       "address %0d (%0d endpoints cloned from slot 0)."},
+                      idx, device_address, src.num_endpoints), UVM_LOW)
+        return idx;
+    endfunction
+
+    // -------------------------------------------------------------------------
     // apply_nak_retry_budget
     //
     // Re-applies USB_EP_MAX_RETRY_DUE_TO_NAK to every currently allocated
