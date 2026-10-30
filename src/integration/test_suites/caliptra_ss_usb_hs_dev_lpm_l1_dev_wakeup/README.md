@@ -276,10 +276,72 @@ MCU: L1 EXIT event 2 DEVCMDSTAT=0x12914882 LPM=0x0
 MCU: L1 cycle complete, HIRD_HW seen at entry = 0, REWP = 1
 ```
 
-`HIRD_HW` is shown as **0** because that is what the hardware actually reports,
-even though the sequence requests `HIRD=1` in the LPM token. That mismatch is a
-known open item tracked separately; it is not part of the remote-wakeup path
-and does not affect the verdict here.
+`HIRD_HW` is shown as **0** even though the sequence requests `HIRD=1` in the
+LPM token. This was previously logged as an unexplained open item. It is not a
+bug - it is correct behaviour for the hub-composite configuration, and `0` is
+the only value this field can ever read on this path.
+
+### Why `HIRD_HW` reads 0, and why that is correct here
+
+The device's `LPM[3:0]` is a read-only mirror of its `sieint_lpm_hird_hw`
+input. In `usb_reg_if.m.vhdl`:
+
+```vhdl
+reg_lpm_hird_hw <= sieint_lpm_hird_hw;
+...
+reg_rdata( 3 downto  0) <= reg_lpm_hird_hw;
+```
+
+The top-level PIE *does* capture the HIRD from the wire unconditionally -
+`usb_pie.m.vhdl` latches `lpm_hird_hw_r <= rxdata(7 downto 4)` on
+`new_ext_token_byte2_vld` and drives it out as `pie_lpm_hird_hw`. So the value
+does arrive. It just never reaches USBDC0's register, because of the mux in
+`ip_xxx_3511_hs_mem_compound_structure.a.vhdl` line 2344:
+
+```vhdl
+dev0_lpm_hird_hw <= hub_port_lpm_hird_hw(3 downto 0) when hub_enable_q = '1'
+                    else sync_sieint_lpm_hird_hw;
+```
+
+With `HUB_EN` set - which this suite requires, and which `boot_usb_core_hub()`
+always does - the `else` branch carrying the token's HIRD is **not** selected.
+The device instead sees `hub_port_lpm_hird_hw`, which `usb_app_hw_hub.m.vhdl`
+writes from one place only:
+
+```vhdl
+when C_CLASS_REQ_SET_AND_TEST =>
+  ...
+  hub_port_lpm_hird_hw_int(var_port*4+3 downto var_port*4) <= ep0_windex(7 downto 4);
+```
+
+i.e. only from the `wIndex` of a hub-class `SetAndTestPortFeature(PORT_L1)`.
+It resets to all-zeros and nothing else ever writes it.
+
+So on the direct-token path the device-side `HIRD_HW` is structurally pinned at
+its reset value: the hub, not the LPM token, owns that field once `HUB_EN` is
+set. A direct LPM token addressed to dev0 still enters L1 correctly - entry
+comes through `dev0_lpm_suspend` (line 2342), a different signal - it just
+carries no HIRD into the device register.
+
+Two consequences worth knowing:
+
+- **`HIRD_HW=0` is the expected value for this suite and for
+  `caliptra_ss_usb_hs_dev_lpm_l1`.** Do not add a check expecting the token's
+  HIRD here; it would fail by construction. The firmware logs the field for
+  visibility, not as a comparison.
+- **The only test that can observe a non-zero `HIRD_HW` is
+  `caliptra_ss_usb_dual_device_hs_hub_port_l1`**, because
+  `SetAndTestPortFeature(PORT_L1)` is the sole writer. That is the right place
+  to check HIRD propagation, and `wIndex[7:4]` there should read back in
+  `LPM[3:0]` of the targeted port's device.
+
+Note the hub keeps its own copy at `ep0_mem(C_HUB_LPM)(3 downto 0) <=
+hub_lpm_hird_hw`, fed from `sync_sieint_lpm_hird_hw` - the token value. So the
+token's HIRD *is* observable, just at the hub's LPM register rather than the
+device's.
+
+None of this affects the remote-wakeup path or the verdict: the doorbell gates
+on `LPM_SUS` and `LPM_REWP`, never on `HIRD_HW`.
 
 UVM side (`svt_debug.transcript`), in order:
 

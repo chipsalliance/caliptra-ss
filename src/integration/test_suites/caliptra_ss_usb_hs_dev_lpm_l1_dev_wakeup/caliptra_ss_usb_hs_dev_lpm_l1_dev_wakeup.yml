@@ -13,9 +13,20 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_lpm_l1_test'
-  - '+usb_suspend_resume_check=1'
   - '+usb_lpm_dev_wakeup=1'
   - '+usb_device_wakeup_check=1'
+
+# +usb_suspend_resume_check is deliberately NOT enabled on this leg. That
+# checker scores edges of cptra_ss_usb_utmi_suspendm_o, and SuspendM can only
+# fall after clk_off_counter has counted CLOCKOFF_CYCLE = 255 pie_clk ticks of
+# continuous clock_on = 0, i.e. 4.25 us at 60 MHz. The L1 window here is
+# bounded by the firmware dwell, which also has to stay short enough that the
+# remote-wakeup doorbell write lands while LPM_SUS is still set, so the
+# SuspendM edge pair is not reliably observable on the device-initiated leg.
+# SuspendM / resume-edge coverage belongs to the host-driven twin
+# (caliptra_ss_usb_hs_dev_lpm_l1) and to the L2 global-suspend suites, where
+# the suspend window is orders of magnitude longer. The verdict that matters
+# here is CHK_DEVICE_WAKEUP_K.
 
 # DEVICE-DRIVEN L1 exit. Counterpart of caliptra_ss_usb_hs_dev_lpm_l1, which
 # covers the host-driven leg (svt_usb_link_service_clear_l1suspend_sequence).
