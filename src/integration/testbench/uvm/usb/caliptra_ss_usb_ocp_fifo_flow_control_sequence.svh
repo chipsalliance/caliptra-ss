@@ -33,7 +33,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         `uvm_field_int(poll_delay, UVM_DEFAULT)
         `uvm_field_int(max_polls, UVM_DEFAULT)
         `uvm_field_int(max_retries, UVM_DEFAULT)
-        `uvm_field_int(completion_wait, UVM_DEFAULT)
         `uvm_field_int(randomize_chunks, UVM_DEFAULT)
         `uvm_field_int(final_valid_bytes, UVM_DEFAULT)
     `uvm_object_utils_end
@@ -46,7 +45,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
     time                             poll_delay;
     int unsigned                     max_polls;
     int unsigned                     max_retries;
-    time                             completion_wait;
     bit                              randomize_chunks;
     int unsigned                     final_valid_bytes;
 
@@ -87,7 +85,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         poll_delay         = 1us;
         max_polls          = 100;
         max_retries        = 10;
-        completion_wait    = 500us;
         randomize_chunks    = 1'b0;
         final_valid_bytes   = 3;
         successful_attempts = 0;
@@ -477,8 +474,6 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
             null, get_full_name(), "max_polls", max_polls));
         void'(uvm_config_db#(int unsigned)::get(
             null, get_full_name(), "max_retries", max_retries));
-        void'(uvm_config_db#(time)::get(
-            null, get_full_name(), "completion_wait", completion_wait));
         void'(uvm_config_db#(bit)::get(
             null, get_full_name(), "randomize_chunks", randomize_chunks));
         void'(uvm_config_db#(int unsigned)::get(
@@ -497,10 +492,10 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         rejected_attempts = 0;
         observed_naks = 0;
         `uvm_info("OCP_FIFO_FLOW",
-            $sformatf("OCP_FIFO_FLOW_START strategy=%s cms=%0d image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t",
+            $sformatf("OCP_FIFO_FLOW_START strategy=%s cms=%0d image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d",
                       strategy.name(), cms, image_bytes.size(),
                       ocp_bytes_to_dwords(image_bytes.size()), pattern_base,
-                      poll_delay, max_polls, max_retries, completion_wait),
+                      poll_delay, max_polls, max_retries),
             UVM_NONE)
         ocp_do_initialize_and_check_transport();
         nak_callback =
@@ -523,22 +518,14 @@ class caliptra_ss_usb_ocp_fifo_flow_control_sequence
         end
         ocp_publish_transfer_count();
         `uvm_info("OCP_FIFO_FLOW",
-            $sformatf("OCP_FIFO_FLOW_SUMMARY strategy=%s image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d completion_wait=%0t successful_attempts=%0d rejected_attempts=%0d observed_naks=%0d transfers=%0d",
+            $sformatf("OCP_FIFO_FLOW_SUMMARY strategy=%s image_bytes=%0d image_dwords=%0d pattern_base=0x%08h poll_delay=%0t max_polls=%0d max_retries=%0d successful_attempts=%0d rejected_attempts=%0d observed_naks=%0d transfers=%0d",
                        strategy.name(), image_bytes.size(),
                        ocp_bytes_to_dwords(image_bytes.size()),
                        pattern_base, poll_delay, max_polls, max_retries,
-                       completion_wait,
                        successful_attempts, rejected_attempts,
                        observed_naks,
                        transfers_issued),
             UVM_NONE)
-        `uvm_info("OCP_FIFO_FLOW",
-            "Holding the main_phase objection for firmware completion.",
-            UVM_NONE)
-        #(completion_wait);
-        `uvm_error("OCP_FIFO_FLOW",
-            $sformatf("Firmware did not end simulation within completion_wait=%0t.",
-                      completion_wait))
     endtask
 
 endclass

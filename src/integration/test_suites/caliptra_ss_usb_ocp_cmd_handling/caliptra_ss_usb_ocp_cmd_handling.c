@@ -58,9 +58,8 @@ uint8_t main(void)
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
     }
 
-    // The UVM Recovery Agent owns test completion. Stop register polling after
-    // the directed VENDOR-disable request has been consumed; all subsequent
-    // checks use the hardware-owned OCP path and do not require MCU service.
+    // The UVM Recovery Agent owns test completion. Stop capability-policy
+    // polling after the directed VENDOR-disable request has been consumed.
     while (1) {
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
         if (usb_ocp_recovery_service_capability_policy()) {
@@ -73,6 +72,6 @@ uint8_t main(void)
         }
     }
 
-    VPRINTF(LOW, "MCU: USB OCP command-handling register traffic quiesced\n");
-    while (1);
+    VPRINTF(LOW, "MCU: USB OCP command-handling capability polling quiesced\n");
+    usb_ocp_recovery_wait_for_stop_and_halt(0u);
 }

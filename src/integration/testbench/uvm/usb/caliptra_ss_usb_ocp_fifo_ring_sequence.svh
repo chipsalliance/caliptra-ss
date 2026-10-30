@@ -309,9 +309,6 @@ class caliptra_ss_usb_ocp_fifo_ring_sequence
                       nak_after_overflow - nak_before_overflow,
                       transfers_issued),
             UVM_NONE)
-        #500us;
-        `uvm_error("OCP_FIFO_RING",
-            "Firmware did not end simulation within 500 us after FIFO drain.")
     endtask
 
 endclass

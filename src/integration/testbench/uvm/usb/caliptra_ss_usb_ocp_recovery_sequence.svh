@@ -83,7 +83,6 @@ class caliptra_ss_usb_ocp_recovery_sequence
                 8'h00, 8'h00, "OCPREC_RECOVERY_CTRL_ACTIVATE");
         end
 
-        ocp_hold_for_legacy_completion(recovery_pending_seen);
         ocp_publish_transfer_count();
 
         `uvm_info("OCPREC", "OCP recovery sequence complete", UVM_NONE)

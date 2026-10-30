@@ -173,7 +173,6 @@ void main(void)
             "CPTRA: verified all %u FIFO ring words in order\n",
             image_size_words);
 
-    spin_delay(10000u);
     lsu_write_32(
         CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
         SS_GENERIC_FW_EXEC_CTRL_GO_MASK);

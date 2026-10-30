@@ -1436,20 +1436,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         end
     endtask
 
-    protected virtual task ocp_hold_for_legacy_completion(
-        input bit recovery_pending_seen,
-        input time timeout = 200us);
-
-        if (recovery_pending_seen) begin
-            `uvm_info("OCPREC",
-                "DEVICE_STATUS=0x04 RECOVERY_PENDING observed. Holding the main_phase objection so the MCU can complete streaming-boot and report TB_CMD_END_SIM_WITH_SUCCESS (which $finishes the sim). Bounded fail-safe wait engaged.",
-                UVM_NONE)
-            #(timeout);
-            `uvm_error("OCPREC",
-                "Bounded post-RECOVERY_PENDING keep-alive (200us) elapsed without the MCU ending the sim via TB_CMD_END_SIM_WITH_SUCCESS. The streaming-boot handoff did not complete; ending the sequence so the test can report.")
-        end
-    endtask
-
     protected virtual task ocp_wait_fw_state_generation(
         input logic [7:0] state,
         input logic [15:0] generation,
