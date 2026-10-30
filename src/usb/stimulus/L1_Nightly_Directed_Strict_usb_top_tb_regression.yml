@@ -10,5 +10,7 @@ contents:
         - ../tests/usb_axi_write_backpressure.yml
         - ../tests/usb_dev_skip.yml
         - ../tests/usb_endpoint_rw.yml
+        - ../tests/usb_high_bandwidth_interrupt.yml
+        - ../tests/usb_high_bandwidth_iso.yml
         - ../tests/usb_init.yml
         - ../tests/usb_utility_timeout.yml
