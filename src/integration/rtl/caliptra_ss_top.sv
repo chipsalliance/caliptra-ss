@@ -416,7 +416,7 @@ module caliptra_ss_top
     logic                       mcu_dccm_ecc_single_error;
     logic                       mcu_dccm_ecc_double_error;
     el2_mubi_pkg::el2_mubi_t    mcu_dcls_corruption_error;
-    el2_mubi_pkg::el2_mubi_t    mcu_dcls_disable;
+    logic [3:0]                 mcu_dcls_disable;
     logic                       mcu_dccm_write_readback_error;
 
     logic                       i3c_irq_o;

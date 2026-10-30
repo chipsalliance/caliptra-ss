@@ -49,8 +49,8 @@ $RV_ROOT/configs/veer.config    \
 -set=dccm_region=0x5                \
 -set=dccm_offset=0x00000            \
 -set=dccm_size=16                   \
--set=dccm_addr_xor=1                \
--set=dccm_wr_readback=1             \
+-set=dccm_addr_xor=0                \
+-set=dccm_wr_readback=0             \
 -set=dma_buf_depth=5                \
 -set=fast_interrupt_redirect=1      \
 -set=icache_enable=1                \
@@ -63,7 +63,7 @@ $RV_ROOT/configs/veer.config    \
 -set=icache_num_bypass=2            \
 -set=icache_num_tag_bypass=2        \
 -set=icache_tag_bypass_enable=1     \
--set=icache_addr_xor=1              \
+-set=icache_addr_xor=0              \
 -set=iccm_enable=0                  \
 -set=iccm_num_banks=4               \
 -set=iccm_region=0x4                \
@@ -73,9 +73,9 @@ $RV_ROOT/configs/veer.config    \
 -set=lsu_num_nbload=4               \
 -set=load_to_use_plus1=0            \
 -set=lockstep_delay=2               \
--set=lockstep_enable=1              \
--set=lockstep_regfile_enable=1      \
--set=lockstep_regfile_read_enable=1 \
+-set=lockstep_enable=0              \
+-set=lockstep_regfile_enable=0      \
+-set=lockstep_regfile_read_enable=0 \
 -set=mubi_width=4                   \
 -set=mubi_true=0x6                  \
 -set=mubi_false=0x9                 \

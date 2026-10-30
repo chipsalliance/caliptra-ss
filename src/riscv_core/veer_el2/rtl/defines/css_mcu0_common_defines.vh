@@ -68,7 +68,6 @@
 `define css_mcu0_RV_LSU_STBUF_DEPTH 4
 `define css_mcu0_RV_TIMER_LEGAL_EN 1
 `define css_mcu0_RV_USER_MODE 1
-`define css_mcu0_RV_DCCM_ADDR_XOR 1
 `define css_mcu0_RV_DCCM_BANK_BITS 2
 `define css_mcu0_RV_DCCM_BITS 14
 `define css_mcu0_RV_DCCM_BYTE_WIDTH 4
@@ -89,10 +88,8 @@
 `define css_mcu0_RV_DCCM_SIZE 16
 `define css_mcu0_RV_DCCM_SIZE_16 
 `define css_mcu0_RV_DCCM_WIDTH_BITS 2
-`define css_mcu0_RV_DCCM_WR_READBACK 1
 `define css_mcu0_RV_LSU_SB_BITS 14
 `define css_mcu0_RV_ICACHE_2BANKS 1
-`define css_mcu0_RV_ICACHE_ADDR_XOR 1
 `define css_mcu0_RV_ICACHE_BANK_BITS 1
 `define css_mcu0_RV_ICACHE_BANK_HI 3
 `define css_mcu0_RV_ICACHE_BANK_LO 3
@@ -237,9 +234,6 @@
 `define css_mcu0_RV_INST_ACCESS_MASK6 'hffffffff
 `define css_mcu0_RV_INST_ACCESS_MASK7 'hffffffff
 `define css_mcu0_RV_LOCKSTEP_DELAY 2
-`define css_mcu0_RV_LOCKSTEP_ENABLE 1
-`define css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE 1
-`define css_mcu0_RV_LOCKSTEP_REGFILE_READ_ENABLE 1
 `define css_mcu0_RV_MUBI_FALSE 4'h9
 `define css_mcu0_RV_MUBI_TRUE 4'h6
 `define css_mcu0_RV_MUBI_WIDTH 4

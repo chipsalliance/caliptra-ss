@@ -378,7 +378,7 @@ module mcu_top
     output logic        dmi_active,
 
     // DCLS ports.
-    input  el2_mubi_pkg::el2_mubi_t mcu_dcls_disable_i,
+    input  logic [3:0]  mcu_dcls_disable_i,
     output el2_mubi_pkg::el2_mubi_t mcu_dcls_corruption_error_o,
 
     // DCCM write-readback mismatch.
@@ -438,12 +438,26 @@ module mcu_top
       .el2_icache_export(mem_export_icache.veer_icache_src),
       .dmi_core_enable(dmi_core_enable),
       .dmi_active(dmi_active),
-      .disable_corruption_detection_i(mcu_dcls_disable_i),
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+      .disable_corruption_detection_i(el2_mubi_pkg::el2_mubi_t'(mcu_dcls_disable_i)),
       .lockstep_err_injection_en_i(el2_mubi_pkg::El2MuBiFalse),
       .corruption_detected_o(mcu_dcls_corruption_error_o),
+`endif
       .dccm_write_readback_error(dccm_write_readback_error_pulse),
       .*
   );
+
+`ifndef css_mcu0_RV_LOCKSTEP_ENABLE
+  // DCLS disabled: no shadow core, so no lockstep error and no shadow trace.
+  assign mcu_dcls_corruption_error_o         = el2_mubi_pkg::El2MuBiFalse;
+  assign shadow_core_trace_rv_i_insn_ip      = '0;
+  assign shadow_core_trace_rv_i_address_ip   = '0;
+  assign shadow_core_trace_rv_i_valid_ip     = 1'b0;
+  assign shadow_core_trace_rv_i_exception_ip = 1'b0;
+  assign shadow_core_trace_rv_i_ecause_ip    = '0;
+  assign shadow_core_trace_rv_i_interrupt_ip = 1'b0;
+  assign shadow_core_trace_rv_i_tval_ip      = '0;
+`endif
 
   // Latch the DCCM write readback error pulse.
   always_ff @(posedge clk or negedge rst_l) begin
