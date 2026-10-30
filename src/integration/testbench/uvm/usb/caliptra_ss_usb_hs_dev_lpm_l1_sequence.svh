@@ -217,9 +217,28 @@ class caliptra_ss_usb_hs_dev_lpm_l1_sequence extends caliptra_ss_usb_base_sequen
     // LPM_HIRD is the host-initiated resume duration. usb_host_pie.m.vhdl
     // decodes it as 50 us + 75 us per step (0 -> 50 us ... 15 -> 1175 us), so a
     // small value is chosen deliberately to keep simulated time down per
-    // docs/SIM_RUNTIME_OPTIMIZATION.md. The firmware cross-checks this value
-    // against the read-only LPM[3:0] HIRD_HW field, so changing it here means
-    // changing the expected value in the log.
+    // docs/SIM_RUNTIME_OPTIMIZATION.md.
+    //
+    // The firmware LOGS the device's read-only LPM[3:0] HIRD_HW field but does
+    // NOT compare it against this value, and must not be changed to do so on
+    // this path. HIRD_HW always reads 0 at the device here, whatever is sent:
+    // in ip_xxx_3511_hs_mem_compound_structure.a.vhdl
+    //
+    //   dev0_lpm_hird_hw <= hub_port_lpm_hird_hw(3 downto 0)
+    //                       when hub_enable_q = '1'
+    //                       else sync_sieint_lpm_hird_hw;
+    //
+    // and boot_usb_core_hub() always sets HUB_EN, so the mux selects
+    // hub_port_lpm_hird_hw - whose only writer (usb_app_hw_hub.m.vhdl) runs
+    // exclusively under SetAndTestPortFeature(PORT_L1). The direct LPM token
+    // never writes it. The HIRD the token carried IS captured by the PIE
+    // (lpm_hird_hw_r <= rxdata(7 downto 4)) and is visible at the hub's own
+    // ep0_mem(C_HUB_LPM)(3 downto 0), just not at the device.
+    //
+    // So HIRD_HW = 0 in this suite's log is correct and expected, not a DUT
+    // bug and not a reason to retune this constant. Checking a non-zero
+    // HIRD_HW belongs to caliptra_ss_usb_dual_device_hs_hub_port_l1, which
+    // reaches the field through the hub request that actually writes it.
     //
     // LPM_BREMOTEWAKE must be 1 for the device-initiated exit variant to be
     // legal at all: the RTL gates usbreg_lpmremotewakeup on
