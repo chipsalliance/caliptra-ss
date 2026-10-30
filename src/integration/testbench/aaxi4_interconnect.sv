@@ -110,13 +110,22 @@ endgenerate
 // bus monitor/checker0
 `ifdef AVERY_ASSERT_ON
 
+// Define CALIPTRA_SS_AXI_INTF_TRACK at compile time for native channel dumps.
+// Otherwise preserve monitoring/checking while routing FNAME_TRACK to /dev/null.
+// BFM transaction trackers are selected independently at runtime.
+localparam string AXI_MONITOR_LOG_SINK = "/dev/null";
+
 generate 
     // interfaces between Master BFMs and Interconnect slave ports
     for ( i = 0; i < AAXI_INTC_MASTER_CNT; i++ ) begin: master_mon
         aaxi_monitor_wrapper monitor(mintf_arr[i]);
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_ID_WIDTH;
+`ifdef CALIPTRA_SS_AXI_INTF_TRACK
         defparam monitor.monitor.FNAME_TRACK= {"m0"+i,"_intf.txt"};
+`else
+        defparam monitor.monitor.FNAME_TRACK= AXI_MONITOR_LOG_SINK;
+`endif
         defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // MCU IFU, LSU, SB i/fs
@@ -132,7 +141,11 @@ generate
         aaxi_monitor_wrapper monitor(sintf_arr[i]);
         defparam monitor.VER= "AXI4";
         defparam monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
+`ifdef CALIPTRA_SS_AXI_INTF_TRACK
         defparam monitor.monitor.FNAME_TRACK= {"s0"+i,"_intf.txt"};
+`else
+        defparam monitor.monitor.FNAME_TRACK= AXI_MONITOR_LOG_SINK;
+`endif
         defparam monitor.checker0.RecMaxWaitOn= 0;
     end
     // NC, MCU ROM
@@ -162,7 +175,11 @@ defparam def_monitor.VER= "AXI4";
 defparam def_monitor.ID_WIDTH= AAXI_INTC_ID_WIDTH;
 defparam def_monitor.BUS_DATA_WIDTH= AAXI_DATA_WIDTH;    // set DATA BUS WIDTH
 defparam def_monitor.checker0.RecMaxWaitOn= 0;
+`ifdef CALIPTRA_SS_AXI_INTF_TRACK
 defparam def_monitor.monitor.FNAME_TRACK= "default_slave_intf.txt";
+`else
+defparam def_monitor.monitor.FNAME_TRACK= AXI_MONITOR_LOG_SINK;
+`endif
 
 `endif
 
@@ -170,6 +187,44 @@ defparam def_monitor.monitor.FNAME_TRACK= "default_slave_intf.txt";
 
 int j, depth2;
 aaxi_priority_tier_type priority_master;
+
+function automatic void set_axi_tracker(aaxi_device_class_base bfm, bit enable, string tracker_name);
+    if (bfm == null)
+        $fatal(1, "AXI_TRACKER: Cannot configure null Avery BFM %s", tracker_name);
+    bfm.log.enable_rx_tracker = enable;
+    bfm.log.enable_tx_tracker = enable;
+endfunction
+
+function automatic void configure_axi_trackers();
+    bit track_all;
+    bit track_endpoints;
+
+    track_all = $test$plusargs("CALIPTRA_SS_AXI_TRACK_ALL");
+    track_endpoints = track_all || $test$plusargs("CALIPTRA_SS_AXI_TRACK_ENDPOINTS");
+
+    // Control file output only; preserve passive monitors and protocol checkers.
+    for (int i = 0; i < AAXI_INTC_MASTER_CNT; i++) begin
+        set_axi_tracker(master[i], track_endpoints, $sformatf("master%0d", i));
+        set_axi_tracker(intc.master_ports[i], track_all, $sformatf("intc_mport%0d", i));
+    end
+    for (int i = 0; i < AAXI_INTC_SLAVE_CNT; i++) begin
+        set_axi_tracker(slave[i], track_endpoints, $sformatf("slave%0d", i));
+        set_axi_tracker(intc.slave_ports[i], track_all, $sformatf("intc_sport%0d", i));
+    end
+    set_axi_tracker(intc.default_slave, track_all, "default_slave");
+    set_axi_tracker(intc.default_slave_port, track_all, "default_slave_port");
+
+    $display("AXI_TRACKER: Applied tracker policy %s; opt in with +CALIPTRA_SS_AXI_TRACK_ENDPOINTS or +CALIPTRA_SS_AXI_TRACK_ALL",
+             track_all ? "ALL" : (track_endpoints ? "ENDPOINTS" : "NONE"));
+`ifdef AVERY_ASSERT_ON
+`ifdef CALIPTRA_SS_AXI_INTF_TRACK
+    $display("AXI_TRACKER: Native interface dumps enabled by CALIPTRA_SS_AXI_INTF_TRACK; monitors and protocol checkers remain enabled");
+`else
+    $display("AXI_TRACKER: Native interface dumps use %s; monitors and protocol checkers remain enabled",
+             AXI_MONITOR_LOG_SINK);
+`endif
+`endif
+endfunction
 
 
 initial begin
@@ -406,6 +461,8 @@ initial begin
     intc.set_port_bus_buffer_size(AAXI_BUS_TYPE_WRITE_ADDR, 4);
     intc.set_port_bus_buffer_size(AAXI_BUS_TYPE_READ_ADDR, 4);
 `endif
+    // Every BFM exists here, before any BFM starts recording transactions.
+    configure_axi_trackers();
     end
 
     //task automatic start_test(aaxi_test_base test);
