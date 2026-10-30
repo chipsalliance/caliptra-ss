@@ -2069,7 +2069,7 @@ A dedicated SRAM (`MCU_ROM_PATCH_SRAM_SIZE_KB`, offset 0x200000) that lets integ
     The integrator must use `SOC_DFT_EN` to gate the SoC's entry into scan mode. `SOC_DFT_EN` is asserted in two cases:
 
     - **TEST_UNLOCKED and RMA:** The LCC asserts `DFT_EN`, which also asserts `SOC_DFT_EN`. These states are intended for full-chip scan, including the Caliptra Subsystem: TEST_UNLOCKED for early manufacturing test before secrets are provisioned, and RMA for failure analysis.
-    - **MANUF, PROD, and PROD_END:** `SOC_DFT_EN` is asserted only after Caliptra grants a manufacturing or production debug unlock and the SoC enables `SOC_DFT_EN` for that debug level through the MCI masking registers. Because secrets such as UDS and Field Entropy may already be provisioned in these states, scan must cover only the rest of the SoC and must not include the Caliptra Subsystem, which remains the SoC's Root of Trust.
+    - **MANUF, PROD, and PROD_END:** `SOC_DFT_EN` is asserted only after Caliptra grants a manufacturing or production debug unlock and the SoC enables `SOC_DFT_EN` for that debug level through the MCI masking registers. Because secrets such as UDS and Field Entropy may already be provisioned in these states, scan enabled through `SOC_DFT_EN` must cover only the rest of the SoC and must not include the Caliptra Subsystem, which remains the SoC's Root of Trust.
 
     The SoC identifies the case from the life-cycle state on `caliptra_ss_life_cycle_steady_state_o` (valid while `caliptra_ss_otp_state_valid_o` is asserted), or from `caliptra_ss_volatile_raw_unlock_success_o` after a volatile RAW unlock. The SoC must sample this state together with `SOC_DFT_EN` when it latches the scan-entry decision.
 
