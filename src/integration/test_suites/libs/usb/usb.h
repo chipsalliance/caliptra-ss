@@ -102,9 +102,10 @@
 // 0x3C) and forces every usbreg_phy_* output to zero. Reads of this address
 // therefore return 0 and writes are dropped.
 //
-// Indirect ULPI PHY access now lives in the HUB aperture at USB_HUB_ULPI_PHY
-// (table word 15 / C_HUB_PHY, SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C). The
-// define is kept only so legacy references still compile.
+// Indirect ULPI PHY access now lives in the HUB aperture (table word 15 /
+// C_HUB_PHY, SOC_USB_COMBO_HUB_ULPIDEBUG = 0x2000_103C) - see the hub register
+// note further down. This define is kept only so legacy references still
+// compile.
 #define USB_DEV_ULPIDEBUG     (USB_DEV_CSR_BASE_ADDR + 0x3cu)
 
 // -------------------------------------------------------------------------
@@ -142,7 +143,8 @@
 // (C_HUB_CS) is SOC_USB_COMBO_HUB_CONTROL. NOTE: C_HUB_CS moved from table
 // word 15 to table word 12, so the byte offset changed from 0x3C to 0x30 and
 // the absolute address is now 0x2000_1030. Table word 15 (0x2000_103C) is now
-// the hub ULPI PHY access register (C_HUB_PHY, see USB_HUB_ULPI_PHY below).
+// the hub ULPI PHY access register (C_HUB_PHY, see the hub register note
+// below).
 //
 //   bit  0 = HUB_EN          (structural mux select; hub entity enabled and
 //                             presents USBDC0/USBDC1 as embedded downstream
@@ -197,25 +199,33 @@
 #define USBHUB_CTRL_DEFAULT_MASK     USBHUB_CTRL_LPM_SUP_MASK
 
 // -------------------------------------------------------------------------
-// HUB indirect ULPI PHY access register (C_HUB_PHY, hub table word 15,
-// SOC_USB_COMBO_HUB_ULPI_PHY = 0x2000_103C).
+// The other two HUB register words - no wrapper macros on purpose.
 //
-// Replaces the now non-functional per-device USB_DEV_ULPIDEBUG register.
-// Usage: program ADDR / WDATA / WRITE / MODE, then set START. Hardware clears
-// START and latches RDATA when the access completes, so START can be polled
-// for completion and RDATA read afterwards.
+// The compound register split gives the hub three register words inside its
+// 0x2000_1000 aperture. Only the first one has a firmware driver and therefore
+// a wrapper above (USB_HUB_CTRL); the other two are listed here for
+// orientation only:
+//
+//   C_HUB_LPM (word 13, SOC_USB_COMBO_HUB_LPM = 0x2000_1034)
+//     NEW register of the split: HIRD_HW[3:0] RO (hardware reloads it from
+//     hub_lpm_hird_hw every clock, so a firmware write cannot stick),
+//     HIRD_SW[7:4] RW, [31:8] reserved.
+//
+//   C_HUB_PHY (word 15, SOC_USB_COMBO_HUB_ULPIDEBUG = 0x2000_103C)
+//     The UTMI+/ULPI PHY debug register, MOVED here from the device banks
+//     (where C_USB_HUB=TRUE compiles register select "1111" away, which is why
+//     the per-device USB_DEV_ULPIDEBUG below is non-functional). Program
+//     ADDR / WDATA / WRITE / MODE then set START; hardware clears START and
+//     latches RDATA when the access completes.
+//
+// No USB_HUB_LPM / USB_HUB_ULPI_PHY wrappers and no field-mask macros are
+// defined because nothing uses them - a previous set was carried here unused
+// for a whole release. The first consumer should use the generated
+// SOC_USB_COMBO_HUB_* addresses from soc_address_map.h directly, and add
+// wrappers only alongside real code. Full field tables, access classes and the
+// hub reserved-bit gotcha: docs/usb/usb_register_structure.md Part 0 and
+// claude_md/35_usb_compound_register_split.md.
 // -------------------------------------------------------------------------
-#define USB_HUB_ULPI_PHY             SOC_USB_COMBO_HUB_ULPI_PHY
-
-#define USBHUB_PHY_ADDR_SHIFT        0u
-#define USBHUB_PHY_ADDR_MASK         (0xFFu << USBHUB_PHY_ADDR_SHIFT)
-#define USBHUB_PHY_WDATA_SHIFT       8u
-#define USBHUB_PHY_WDATA_MASK        (0xFFu << USBHUB_PHY_WDATA_SHIFT)
-#define USBHUB_PHY_RDATA_SHIFT       16u
-#define USBHUB_PHY_RDATA_MASK        (0xFFu << USBHUB_PHY_RDATA_SHIFT)
-#define USBHUB_PHY_WRITE_MASK        (1u << 24)
-#define USBHUB_PHY_START_MASK        (1u << 25)
-#define USBHUB_PHY_MODE_MASK         (1u << 31)
 
 // Hub DEVICE descriptor override (DataPhase_Buffer_0 of the hub aperture,
 // base SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR = 0x2000_1000). The 18-byte
