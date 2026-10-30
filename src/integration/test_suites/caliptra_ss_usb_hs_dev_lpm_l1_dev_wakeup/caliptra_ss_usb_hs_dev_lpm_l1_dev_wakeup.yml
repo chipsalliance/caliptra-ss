@@ -1,0 +1,67 @@
+seed: 1
+testname: caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       BUILD_CFLAGS="-DUSB_LPM_DEVICE_INITIATED_EXIT=1" \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_hs_dev_lpm_l1_test'
+  - '+usb_suspend_resume_check=1'
+  - '+usb_lpm_dev_wakeup=1'
+  - '+usb_device_wakeup_check=1'
+
+# DEVICE-DRIVEN L1 exit. Counterpart of caliptra_ss_usb_hs_dev_lpm_l1, which
+# covers the host-driven leg (svt_usb_link_service_clear_l1suspend_sequence).
+#
+# The UVM_TESTNAME is deliberately the SAME class as the host-driven suite:
+# both legs share one sequence, and +usb_lpm_dev_wakeup selects which of its
+# two step-7 branches runs. Only the firmware image differs.
+#
+# The two knobs below are a matched pair and must agree:
+#   BUILD_CFLAGS -DUSB_LPM_DEVICE_INITIATED_EXIT=1  compiles the firmware leg
+#                                                   that calls
+#                                                   usb_request_lpm_remote_wakeup()
+#   +usb_lpm_dev_wakeup=1                           selects the sequence's
+#                                                   device-initiated step-7
+#                                                   branch
+#   +usb_device_wakeup_check=1                       enables
+#                                                   caliptra_ss_usb_device_wakeup_checker
+#
+# +usb_device_wakeup_check is NOT optional on this leg. The checker is what
+# watches the DUT's own UTMI TXValid with linestate=K and publishes the global
+# event usb_dut_wakeup_k_seen; the sequence's host resume takeover is triggered
+# BY that event, so with the checker disabled the event never fires, the host
+# never answers, and the DUT parks forever in BUS_EVENT_SW_WAKEUP_3 - which has
+# no timeout arm. It also supplies the CHK_DEVICE_WAKEUP_K verdict.
+#
+# The host response is reactive on purpose. It is not scheduled alongside the
+# firmware doorbell, so a DUT that never requests wakeup cannot be masked by a
+# well-timed host resume: the event does not fire and the sequence reports the
+# failure instead. Do not "fix" a late takeover by pre-scheduling the resume.
+#
+# A BUILD_CFLAGS / plusarg mismatch fails quietly rather than loudly: the
+# plusarg alone leaves the firmware never ringing the doorbell (no device K, so
+# the sequence reports case (i) and the DUT sits in L1 to the dwell ceiling),
+# and the define alone means the sequence takes its host-driven branch while
+# the firmware also requests wakeup, giving two resume sources the log cannot
+# tell apart. The split into two suites is unavoidable -
+# USB_LPM_DEVICE_INITIATED_EXIT is a compile-time choice and MCU firmware
+# cannot read UVM plusargs.
+#
+# Expected log signature of a healthy run:
+#   MCU: L1 ENTRY event 1 ... REWP=1       <- host granted bRemoteWake
+#   MCU: L1 remote wakeup requested ...    <- doorbell write accepted
+#   MCU: device-initiated L1 exit driven
+#   MCU: L1 EXIT event 2 ...
+# "L1 wakeup skipped, host did not grant bRemoteWake" instead means
+# dev0_lpm_rw never arrived, which is an LPM_REWP/token problem rather than a
+# wakeup-path problem.
+
+# File contains AI-generated response based on internal company sources
