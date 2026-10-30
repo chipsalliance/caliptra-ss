@@ -426,9 +426,9 @@ import css_mcu0_el2_pkg::*;
    output logic [31:0] shadow_core_trace_rv_i_tval_ip,
 
    // Shadow Core control
-   input el2_mubi_pkg::el2_mubi_t disable_corruption_detection_i,
-   input el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en_i,
-   output el2_mubi_pkg::el2_mubi_t corruption_detected_o,
+   input css_mcu0_el2_mubi_pkg::el2_mubi_t disable_corruption_detection_i,
+   input css_mcu0_el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en_i,
+   output css_mcu0_el2_mubi_pkg::el2_mubi_t corruption_detected_o,
 `endif
 
    // external MPC halt/run interface
@@ -886,7 +886,7 @@ import css_mcu0_el2_pkg::*;
    logic [31:0]            dmi_reg_rdata;
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-   el2_regfile_if regfile ();
+   css_mcu0_el2_regfile_if regfile ();
 `endif
 
    // Instantiate the css_mcu0_el2_veer core

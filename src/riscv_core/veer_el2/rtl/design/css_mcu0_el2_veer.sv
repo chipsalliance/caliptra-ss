@@ -455,7 +455,7 @@ import css_mcu0_el2_pkg::*;
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
    // Register file
-   el2_regfile_if.veer_rf_src regfile,
+   css_mcu0_el2_regfile_if.veer_rf_src regfile,
 `endif
 
    input logic [pt.PIC_TOTAL_INT:1]           extintsrc_req,

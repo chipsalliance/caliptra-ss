@@ -16,7 +16,7 @@
 //********************************************************************************
 
 
-interface el2_regfile_if
+interface css_mcu0_el2_regfile_if
 import css_mcu0_el2_pkg::*;
 ();
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_READ_ENABLE

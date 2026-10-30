@@ -15,13 +15,13 @@
 
 module css_mcu0_el2_veer_lockstep
   import css_mcu0_el2_pkg::*;
-  import el2_mubi_pkg::*;
-  import el2_lockstep_pkg::*;
+  import css_mcu0_el2_mubi_pkg::*;
+  import css_mcu0_el2_lockstep_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
 ) (
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-    el2_regfile_if.veer_rf_sink main_core_regfile,
+    css_mcu0_el2_regfile_if.veer_rf_sink main_core_regfile,
 `endif
 
     input logic        clk,
@@ -789,10 +789,10 @@ module css_mcu0_el2_veer_lockstep
 `endif
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
   logic regfile_corrupted;
-  el2_regfile_if shadow_core_regfile ();
+  css_mcu0_el2_regfile_if shadow_core_regfile ();
 
   if (LockstepDelay > 0) begin : delayed_regfile
-      el2_regfile_if delayed_main_core_regfile[LockstepDelayPipeStages:0] ();
+      css_mcu0_el2_regfile_if delayed_main_core_regfile[LockstepDelayPipeStages:0] ();
 
       always_ff @(posedge clk or negedge rst_l) begin
         if (!rst_l) begin

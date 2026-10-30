@@ -249,7 +249,7 @@ import css_mcu0_el2_pkg::*;
    output logic  dec_tlu_icm_clk_override,  // override ICCM clock domain gating
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-   el2_regfile_if.veer_tlu_rf regfile,
+   css_mcu0_el2_regfile_if.veer_tlu_rf regfile,
 `endif
 
 `ifdef css_mcu0_RV_USER_MODE
