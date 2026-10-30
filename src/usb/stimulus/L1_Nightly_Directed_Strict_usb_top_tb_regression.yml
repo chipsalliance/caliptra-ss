@@ -11,4 +11,6 @@ contents:
         - ../tests/usb_dev_skip.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_l1_remote_wake.yml
+        - ../tests/usb_l2_remote_wake.yml
         - ../tests/usb_utility_timeout.yml

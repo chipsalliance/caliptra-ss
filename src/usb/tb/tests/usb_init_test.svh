@@ -14,7 +14,7 @@
 //
 // Runs the standalone USB INIT scenario against the real compound USB DUT.
 // It uses the Synopsys SVT host, starts usb_init_seq on the environment virtual
-// sequencer, and reports success only after all seven control transfers and
+// sequencer, and reports success only after all enumeration control transfers and
 // device-side EP0 operations complete.
 class usb_init_test extends usb_base_test;
   `uvm_component_utils(usb_init_test)
