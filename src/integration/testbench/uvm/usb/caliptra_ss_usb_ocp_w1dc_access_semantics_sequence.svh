@@ -44,6 +44,7 @@
 //     - Forced/Flashless capabilities: if advertised, issue write and
 //       require acceptance and report when the next-reset platform action
 //       cannot be observed. If de-advertised, require unsupported.
+//  6. Release firmware completion only after all host checks are complete.
 // =============================================================================
 
 class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
@@ -215,6 +216,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
         bit skip_platform_actions;
 
         if (!ocp_configure_sem_vif()) return;
+        sem_vif.clear_fw_command();
         skip_platform_actions = 1'b0;
         void'(uvm_config_db#(bit)::get(
             null, get_full_name(), "skip_platform_actions",
@@ -341,7 +343,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "W1DC_FIFO_UNADVERTISED", 1'b1);
             `uvm_info("W1DC_SEQ",
-                "INDIRECT_FIFO not advertised; unsupported-command error verified.",
+                "INDIRECT_FIFO not advertised; expected unsupported-command response verified.",
                 UVM_NONE)
         end
 
@@ -362,6 +364,12 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             `uvm_info("W1DC_SEQ",
                 "Device and FIFO clear validation complete.",
                 UVM_NONE)
+            ocp_issue_fw_command_and_wait(
+                sem_vif.FW_COMMAND_FLOW_COMPLETE,
+                16'h0001,
+                sem_vif.FW_STATE_FLOW_COMPLETE,
+                SEM_MAX_POLLS * SEM_POLL_PERIOD,
+                "OCP_DEVICE_FIFO_CLEAR_COMPLETE", "W1DC_SEQ");
             return;
         end
 
@@ -421,7 +429,7 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
                 OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND,
                 "W1DC_DEVICE_RESET_UNADVERTISED", 1'b1);
             `uvm_info("W1DC_SEQ",
-                "DEVICE_RESET not advertised; unsupported-command error verified.",
+                "DEVICE_RESET not advertised; expected unsupported-command response verified.",
                 UVM_NONE)
 
         end else begin
@@ -511,6 +519,12 @@ class caliptra_ss_usb_ocp_w1dc_access_semantics_sequence
             UVM_NONE)
 
         #1us;
+        ocp_issue_fw_command_and_wait(
+            sem_vif.FW_COMMAND_FLOW_COMPLETE,
+            16'h0001,
+            sem_vif.FW_STATE_FLOW_COMPLETE,
+            SEM_MAX_POLLS * SEM_POLL_PERIOD,
+            "OCP_W1DC_COMPLETE", "W1DC_SEQ");
     endtask
 
 endclass
