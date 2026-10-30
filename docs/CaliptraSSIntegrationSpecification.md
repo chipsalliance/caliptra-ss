@@ -2066,7 +2066,7 @@ A dedicated SRAM (`MCU_ROM_PATCH_SRAM_SIZE_KB`, offset 0x200000) that lets integ
 
     **Important: Scan mode is a destructive operation.** Once `scan_mode` is asserted and Caliptra assets are flushed, no guarantees can be made about the state of any signals coming out of the Caliptra Subsystem, including `SOC_DFT_EN` and `SOC_HW_DEBUG_EN`. These output signals are **not** guaranteed to remain stable during scan mode because scan data shifted into scannable flops can cause internal state (such as the LCC state translator outputs) to change unpredictably.
 
-    The integrator must use `SOC_DFT_EN` to gate entry into scan mode. `SOC_DFT_EN` is asserted in two cases:
+    The integrator must use `SOC_DFT_EN` to gate the SoC's entry into scan mode. `SOC_DFT_EN` is asserted in two cases:
 
     - **TEST_UNLOCKED and RMA:** The LCC asserts `DFT_EN`, which also asserts `SOC_DFT_EN`. These states are intended for full-chip scan, including the Caliptra Subsystem: TEST_UNLOCKED for early manufacturing test before secrets are provisioned, and RMA for failure analysis.
     - **MANUF, PROD, and PROD_END:** `SOC_DFT_EN` is asserted only after Caliptra grants a manufacturing or production debug unlock and the SoC enables `SOC_DFT_EN` for that debug level through the MCI masking registers. Because secrets such as UDS and Field Entropy may already be provisioned in these states, scan must cover only the rest of the SoC and must not include the Caliptra Subsystem, which remains the SoC's Root of Trust.
