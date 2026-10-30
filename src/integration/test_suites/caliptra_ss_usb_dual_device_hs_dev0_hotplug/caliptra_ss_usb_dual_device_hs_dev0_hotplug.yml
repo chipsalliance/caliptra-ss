@@ -23,11 +23,10 @@ testname: caliptra_ss_usb_dual_device_hs_dev0_hotplug
 # Separately, this test needs the USB VIP compile-time define
 # SVT_USB_MAX_DEVICE_DEBUG_PORT raised above its default of 3. That one is NOT
 # a plusarg and cannot be: it sizes static VIP interface arrays that are
-# elaborated before time 0. It is carried by the companion
-# caliptra_ss_usb_dual_device_hs_dev0_hotplug.mk, which tools/scripts/Makefile
-# pulls in automatically via "-include $(TEST_DIR)/$(TESTNAME).mk", so the
-# pre-exec make invocation below picks it up with no extra switch here. See
-# that .mk for the full explanation and the slot map.
+# elaborated before time 0. It is supplied by the global VCS compile options
+# in src/integration/config/compile.yml, which are used by regression HDL
+# builds. The companion .mk also sets it for direct Makefile-based builds;
+# see that file for the full explanation and the slot map.
 pre-exec: |
   set -eu
   echo "Running pre_exec for test caliptra_ss_usb_dual_device_hs_dev0_hotplug"
