@@ -170,8 +170,12 @@ class caliptra_ss_usb_shared_cfg extends uvm_object;
         dev_cfg.usb_ss_signal_interface    = svt_usb_configuration::NO_SS_IF;
         dev_cfg.usb_capability             = svt_usb_configuration::USB_20_ONLY;
         dev_cfg.utmi_data_width            = 8;
-        // Auto-attach at 100 us, after DUT firmware has initialized the
-        // controller and enabled the full-speed pull-up.
+        // Auto-attach at 20 us. Note this is BEFORE the DUT firmware has
+        // initialized the controller: firmware only reaches
+        // usb_hub_connect() (HUB_EN|HUB_CONNECT) at 55-70 us, so VBus is
+        // already present for the whole of USB bring-up in every test that
+        // takes this default. caliptra_ss_usb_hs_dev_vbus_absent_boot_test
+        // overrides this to 150 us to get the opposite ordering.
         dev_cfg.poweron_auto_attach_delay  = USB_TIMER_20US_PS;
 
         // local_device_cfg[0]: HS-capable device attaching initially as FS
