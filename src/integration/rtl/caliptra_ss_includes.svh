@@ -23,8 +23,8 @@
 `define VEER_INTR_VEC_MCI                 1
 `define VEER_INTR_VEC_I3C                 2
 `define VEER_INTR_VEC_USB                 3
-`define VEER_INTR_VEC_SPIH                4
-`define VEER_INTR_VEC_UART                5
+`define VEER_INTR_VEC_RSVD4               4 // reserved (formerly SPI host)
+`define VEER_INTR_VEC_RSVD5               5 // reserved (formerly UART)
 `define VEER_INTR_EXT_LSB                 6
 
 // Documentation-only alias for the first configurable external interrupt pin.
