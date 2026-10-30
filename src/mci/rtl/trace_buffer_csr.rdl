@@ -61,6 +61,7 @@ addrmap trace_buffer_csr {
         name="Trace Control";
         desc="Programmable control for the MCU trace buffer.";
         field {desc="Trace source select for the trace buffer capture path: 0 = MCU (VeeR) core instruction trace (default), 1 = Caliptra core instruction trace. Selects which core's trace_rv_i_* stream is captured into the trace buffer, analogous to the Caliptra core's internal main/shadow trace mux.";sw=rw; hw=r;} cptra_core_sel=0;
+        field {desc="Selects which MCU core's debug trace is captured when cptra_core_sel is 0. 0: main core (default). 1: DCLS shadow core. The shadow core trace lags the main core by RV_LOCKSTEP_DELAY cycles, so switching source mid-capture leaves a discontinuity in the buffer. Like the rest of this register block, only writable while debug is unlocked.";sw=rw; hw=r; } mcu_shadow_sel=0;
     } CTRL;
 
 };

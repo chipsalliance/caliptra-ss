@@ -52,6 +52,9 @@ module mci_mcu_trace_buffer
     input logic        mcu_trace_rv_i_interrupt_ip,
     input logic [31:0] mcu_trace_rv_i_tval_ip,
 
+    // Selects which MCU core drives the trace (trace_buffer_csr.CTRL.mcu_shadow_sel). 0: main core. 1: DCLS shadow core.
+    output logic       mcu_trace_source_sel,
+
     // Caliptra core Trace (selectable via CTRL.cptra_core_sel)
     input logic [31:0] cptra_trace_rv_i_insn_ip,
     input logic [31:0] cptra_trace_rv_i_address_ip,
@@ -134,6 +137,8 @@ assign write_trace_data_packet.trace_rv_i_address_ip     = sel_trace_rv_i_addres
 assign write_trace_data_packet.trace_rv_i_insn_ip        = sel_trace_rv_i_insn_ip;
 
 assign trace_buffer_hwif_in.CONFIG.trace_buffer_depth.next = TRACE_BUFFER_DWORD_DEPTH;
+
+assign mcu_trace_source_sel = trace_buffer_hwif_out.CTRL.mcu_shadow_sel.value;
 
 // Reads and writes occur in 1 clock cycles
 assign cif_resp_if.req_hold = '0;

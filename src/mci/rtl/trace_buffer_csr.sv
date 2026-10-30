@@ -137,6 +137,10 @@ module trace_buffer_csr (
                 logic next;
                 logic load_next;
             } cptra_core_sel;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_shadow_sel;
         } CTRL;
     } field_combo_t;
     field_combo_t field_combo;
@@ -174,6 +178,9 @@ module trace_buffer_csr (
             struct packed{
                 logic value;
             } cptra_core_sel;
+            struct packed{
+                logic value;
+            } mcu_shadow_sel;
         } CTRL;
     } field_storage_t;
     field_storage_t field_storage;
@@ -328,6 +335,27 @@ module trace_buffer_csr (
         end
     end
     assign hwif_out.CTRL.cptra_core_sel.value = field_storage.CTRL.cptra_core_sel.value;
+    // Field: trace_buffer_csr.CTRL.mcu_shadow_sel
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.CTRL.mcu_shadow_sel.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.CTRL && decoded_req_is_wr) begin // SW write
+            next_c = (field_storage.CTRL.mcu_shadow_sel.value & ~decoded_wr_biten[1:1]) | (decoded_wr_data[1:1] & decoded_wr_biten[1:1]);
+            load_next_c = '1;
+        end
+        field_combo.CTRL.mcu_shadow_sel.next = next_c;
+        field_combo.CTRL.mcu_shadow_sel.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.rst_b) begin
+        if(~hwif_in.rst_b) begin
+            field_storage.CTRL.mcu_shadow_sel.value <= 1'h0;
+        end else if(field_combo.CTRL.mcu_shadow_sel.load_next) begin
+            field_storage.CTRL.mcu_shadow_sel.value <= field_combo.CTRL.mcu_shadow_sel.next;
+        end
+    end
+    assign hwif_out.CTRL.mcu_shadow_sel.value = field_storage.CTRL.mcu_shadow_sel.value;
 
     //--------------------------------------------------------------------------
     // Write response
@@ -354,7 +382,8 @@ module trace_buffer_csr (
     assign readback_array[3][31:0] = (decoded_reg_strb.WRITE_PTR && !decoded_req_is_wr) ? field_storage.WRITE_PTR.ptr.value : '0;
     assign readback_array[4][31:0] = (decoded_reg_strb.READ_PTR && !decoded_req_is_wr) ? field_storage.READ_PTR.ptr.value : '0;
     assign readback_array[5][0:0] = (decoded_reg_strb.CTRL && !decoded_req_is_wr) ? field_storage.CTRL.cptra_core_sel.value : '0;
-    assign readback_array[5][31:1] = '0;
+    assign readback_array[5][1:1] = (decoded_reg_strb.CTRL && !decoded_req_is_wr) ? field_storage.CTRL.mcu_shadow_sel.value : '0;
+    assign readback_array[5][31:2] = '0;
 
     // Reduce the array
     always_comb begin

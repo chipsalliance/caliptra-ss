@@ -80,6 +80,7 @@ module css_mcu0_el2_dec_pmp_ctl
 
    // ----------------------------------------------------------------------
 
+   logic [pt.PMP_ENTRIES-1:0] pmp_locked_wr_en; // Check if certain types of regions are writable in SMEPMP without RLB set
    logic [pt.PMP_ENTRIES-1:0] entry_lock_eff;  // Effective entry lock
    for (genvar r = 0; r < pt.PMP_ENTRIES; r++) begin : g_pmpcfg_lock
 `ifdef css_mcu0_RV_SMEPMP
@@ -108,17 +109,30 @@ module css_mcu0_el2_dec_pmp_ctl
       logic [7:0] csr_wdata;
 
       // PMPCFG fields are WARL. Mask out bits 6:5 during write.
-      // When Smepmp is disabled R=0 and W=1 combination is illegal mask out W
-      // when R is cleared.
+      // When Smepmp is disabled or MML is unset, R=0 and W=1 combination
+      // is illegal - mask out W (bit 1) when R (bit 0) is cleared.
       assign raw_wdata = dec_csr_wrdata_r[(entry_idx[1:0]*8)+7:(entry_idx[1:0]*8)+0];
 `ifdef css_mcu0_RV_SMEPMP
-      assign csr_wdata = raw_wdata & 8'b10011111;
+      // The combination (R=0, W=1) remains reserved, until MML is set
+      assign csr_wdata = mseccfg.MML ?
+         (raw_wdata & 8'b10011111) :
+         (raw_wdata[0] ? (raw_wdata & 8'b10011111) : (raw_wdata & 8'b10011101));
+      // Check against regions that cannot be set without RLB, unless MML is disabled
+      // "Adding a rule with executable privileges that either is M-mode-only or a locked Shared-Region is not
+      // possible and such pmpcfg writes are ignored, leaving pmpcfg unchanged. This restriction can be
+      // temporarily lifted e.g. during the boot process, by setting mseccfg.RLB"
+      // simplified boolean formula for *allowed* writes is: L'+RW+W'X'
+      assign pmp_locked_wr_en[entry_idx] = mseccfg.RLB | ~mseccfg.MML
+         | ~raw_wdata[7] /* locked */ | (raw_wdata[0] & raw_wdata[1] /* read & write */)
+         | (~raw_wdata[2] & ~raw_wdata[1] /* ~exec & ~write */);
 `else
       assign csr_wdata = raw_wdata[0] ? (raw_wdata & 8'b10011111) : (raw_wdata & 8'b10011101);
+      assign pmp_locked_wr_en[entry_idx] = 1'b1;
 `endif
 
       css_mcu0_rvdffe #(8) pmpcfg_ff (.*, .clk(free_l2clk),
-                          .en(wr_pmpcfg_r & (wr_pmpcfg_group == entry_idx[5:2]) & (~entry_lock_eff[entry_idx])),
+                          .en(wr_pmpcfg_r & (wr_pmpcfg_group == entry_idx[5:2]) & (~entry_lock_eff[entry_idx])
+                              & pmp_locked_wr_en[entry_idx]),
                           .din(csr_wdata),
                           .dout(pmp_pmpcfg[entry_idx]));
    end
@@ -166,16 +180,17 @@ module css_mcu0_el2_dec_pmp_ctl
    logic [5:0] dec_pmp_rdata_selector [4];
 
    assign pmp_quarter_rdaddr     = dec_csr_rdaddr_d[3:0];
+
    for (genvar i = 0; i < 4; i++) begin: gen_csr_selector
-      assign pmp_pmpcfg_rdata_selector[i] = {pmp_quarter_rdaddr, 2'(i)};
-      assign dec_pmp_rdata_selector[i] = {2'(i), pmp_quarter_rdaddr};
+     assign pmp_pmpcfg_rdata_selector[i] = {pmp_quarter_rdaddr, 2'(i)};
+     assign dec_pmp_rdata_selector[i] = {2'(i), pmp_quarter_rdaddr};
    end
 
    assign pmp_pmpcfg_rddata      = { pmp_pmpcfg[pmp_pmpcfg_rdata_selector[3][PMP_ENTRIES_WIDTH-1:0]],
                                      pmp_pmpcfg[pmp_pmpcfg_rdata_selector[2][PMP_ENTRIES_WIDTH-1:0]],
                                      pmp_pmpcfg[pmp_pmpcfg_rdata_selector[1][PMP_ENTRIES_WIDTH-1:0]],
                                      pmp_pmpcfg[pmp_pmpcfg_rdata_selector[0][PMP_ENTRIES_WIDTH-1:0]]
-                                   };
+                                     };
    assign dec_pmp_read_d         = csr_pmpcfg | csr_pmpaddr0 | csr_pmpaddr16 | csr_pmpaddr32 | csr_pmpaddr48;
    assign dec_pmp_rddata_d[31:0] = ( ({32{csr_pmpcfg}}    & pmp_pmpcfg_rddata) |
                                      ({32{csr_pmpaddr0}}  & pmp_pmpaddr[dec_pmp_rdata_selector[0][PMP_ENTRIES_WIDTH-1:0]]) |
@@ -183,4 +198,5 @@ module css_mcu0_el2_dec_pmp_ctl
                                      ({32{csr_pmpaddr32}} & pmp_pmpaddr[dec_pmp_rdata_selector[2][PMP_ENTRIES_WIDTH-1:0]]) |
                                      ({32{csr_pmpaddr48}} & pmp_pmpaddr[dec_pmp_rdata_selector[3][PMP_ENTRIES_WIDTH-1:0]])
                                      );
+
 endmodule // dec_pmp_ctl
