@@ -574,13 +574,13 @@ FUSE controller is an RTL module that is responsible for programming and reading
 
 ## Partition Details
 
-The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
+The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the last LC state in which each partition can be provisioned. This is enforced by each partition's `lc_phase` attribute in the fuse map: a partition is write-locked in RAW and in all LC states after its `lc_phase` (e.g., `SW_TEST_UNLOCK_PARTITION` with `lc_phase: "LcStDev"` can be programmed in TEST_UNLOCKED before entering MANUF). Other access restrictions still apply; for example, the Fuse Controller rejects UDS and Field Entropy writes while Caliptra is in debug mode, which includes the TEST_UNLOCKED states.
 
 ### Key Characteristics of Secret Partitions
 
 1. **Programming Access:**
    - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra Core.
-   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.
+   - Secret partitions are buffered, meaning they are stored in registers. They are not sensed (the registers stay zero) when debug intent is asserted before Fuse Controller initialization, except `SECRET_LC_TRANSITION_PARTITION` (see [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization)).
 2. **Locking Mechanism:**
    - Write access to a partition can be permanently locked when no further updates are required.
    - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
@@ -715,7 +715,7 @@ This enhancement protects the secrets provisioned in the manufacturing and produ
 ## Notes
 
 - **Zeroization of Secret Partitions:**
-  Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+  Secret partitions, except `SECRET_LC_TRANSITION_PARTITION`, are not sensed when debug intent is asserted before Fuse Controller initialization.
 - **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
