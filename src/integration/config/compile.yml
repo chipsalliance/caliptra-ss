@@ -214,6 +214,7 @@ global:
         - +define+CALIPTRA_SIMULATION
         - +define+SIMULATION
         # --- Synopsys USB SVT VIP compile options ---
+        - +define+SVT_USB_MAX_DEVICE_DEBUG_PORT=8
         - +define+SVT_UVM_TECHNOLOGY
         - +define+UVM_PACKER_MAX_BYTES=24000
         - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
