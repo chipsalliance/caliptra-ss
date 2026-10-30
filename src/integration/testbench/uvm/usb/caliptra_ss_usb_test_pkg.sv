@@ -16,7 +16,7 @@
 // (100+ internal device/dev1/hub/status/loopback tests) and upstream's OCP
 // recovery test package. The legacy include ordering is preserved as the base;
 // upstream-only additions (common_pkg / ocp_recovery_tb_pkg imports,
-// nak_monitor_callback, hs_dev_remote_wakeup, and the full OCP recovery
+// nak_monitor_callback, hs_dev_sanity_suspend, and the full OCP recovery
 // sequence/test block) are injected. Neither side's tests are dropped. Final
 
 // de-duplication and init_sequence reconciliation are deferred to the cleanup
@@ -126,9 +126,12 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_global_suspend_L2_test.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_test.svh"
-  // Upstream-only device remote-wakeup test (kept).
-  `include "caliptra_ss_usb_hs_dev_remote_wakeup_sequence.svh"
-  `include "caliptra_ss_usb_hs_dev_remote_wakeup_test.svh"
+  // Host-driven HS global suspend/resume sanity check on dev0. Renamed from
+  // caliptra_ss_usb_hs_dev_remote_wakeup: it never drove a device-initiated
+  // wakeup, so the old name was misleading. The verdict is DUT-side, in
+  // caliptra_ss_usb_suspend_resume_checker.
+  `include "caliptra_ss_usb_hs_dev_sanity_suspend_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_sanity_suspend_test.svh"
   `include "caliptra_ss_usb_hs_dev_resume_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_resume_test.svh"
 //  `include "caliptra_ss_usb_hs_dev_ctrl_ep_sequence.svh"
