@@ -18,19 +18,42 @@
 // The policy signals are synchronous to clk: after time 0 the testbench
 // changes them only with nonblocking assignments at a clk rising edge.
 // rst_n is observation-only; this interface does not own reset or PHY lock
-// sequencing. Kept independent of usb_tb_pkg to avoid a compile cycle.
+// sequencing. UTMI inputs are passive observations of the DUT/native PHY.
+// Kept independent of usb_tb_pkg to avoid a compile cycle.
 interface usb_tb_ctrl_if #(
   parameter int unsigned UW = 32,
   parameter int unsigned COMBO_NUM_USERS = 4,
   parameter int unsigned DEV1_NUM_USERS = 4
 ) (
   input logic clk,
-  input logic rst_n
+  input logic rst_n,
+  input logic utmi_clk,
+  input logic dut_suspendm,
+  input logic dut_txvalid,
+  input logic [1:0] dut_opmode
 );
+  timeunit 1ns;
+  timeprecision 1ps;
+
   logic combo_enable_axi_user_filtering;
   logic [UW-1:0] combo_priv_axi_users [COMBO_NUM_USERS];
   logic dev1_enable_axi_user_filtering;
   logic [UW-1:0] dev1_priv_axi_users [DEV1_NUM_USERS];
+
+  realtime last_utmi_edge = 0;
+  logic [63:0] utmi_edge_count = '0;
+
+  // Record actual clock changes, including X/Z transitions, without driving the PHY.
+  always @(utmi_clk) begin
+    last_utmi_edge = $realtime;
+    utmi_edge_count++;
+  end
+
+  // Return whether a known clock has remained unchanged for the observation window.
+  function automatic bit utmi_clock_quiet(time observation_window);
+    return ((utmi_clk === 1'b0) || (utmi_clk === 1'b1)) &&
+      (utmi_edge_count > 1) && ($realtime - last_utmi_edge >= observation_window);
+  endfunction
 
   initial begin
     combo_enable_axi_user_filtering = 1'b0;
