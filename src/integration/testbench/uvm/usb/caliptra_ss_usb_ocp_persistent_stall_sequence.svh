@@ -188,6 +188,7 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
                 "raw_response_callback");
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::add(
             host_agent_h.prot, raw_response_callback);
+        // Reject an unsupported command; corrupt SETUP must not clear its STALL.
         ocp_stall_do_read_and_check_command_state(rc_before, fc_before, fs_before, "PERSIST_BASELINE");
         payload = '{8'h00};
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
@@ -202,11 +203,13 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Stalled/corrupt traffic changed command/FIFO state.")
 
+        // Clear the previous OCP error before injecting bad-CRC to prove that the CRC
+        // failure does not spuriously set a new protocol error.
         ocp_stall_do_corrupt_setup_and_check_effects(1'b0);
         ocp_stall_do_read_and_check_command_state(rc_after, fc_after, fs_after, "CLEAN_CRC_AFTER");
-        if ((rc_before != rc_after) || (fc_before != fc_after) ||
-            (fs_before != fs_after))
+        if ((rc_before != rc_after) || (fc_before != fc_after) || (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Corrupt SETUP changed command/FIFO state.")
+        // Repeat persistence and unchanged-state checks for invalid DATA contents.
         ocp_stall_do_read_and_check_command_state(rc_before, fc_before, fs_before, "DATA_BASELINE");
         payload = '{8'h00, RESERVED_IMAGE_SELECTION, 8'h00};
         ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
@@ -219,11 +222,13 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
             (fs_before != fs_after))
             `uvm_error("OCP_STALL", "Rejected DATA-stage command changed command/FIFO state.")
 
+        // Accepted CLEAR_FEATURE SETUP clears the prior STALL; its status stage may still STALL.
         payload = '{8'h00};
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "CLEAR_FEATURE_PRECONDITION");
         ocp_stall_do_clear_feature_and_check_recovery();
 
+        // Preserve the local first-error-wins contract across a second invalid request.
         ocp_stall_do_request_and_check_stall(0, RESERVED_COMMAND, payload.size(), payload,
             OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND, "NEW_INVALID_FIRST");
         ocp_stall_do_request_and_check_stall(0, OCP_CMD_RECOVERY_CTRL, payload.size(), payload,
