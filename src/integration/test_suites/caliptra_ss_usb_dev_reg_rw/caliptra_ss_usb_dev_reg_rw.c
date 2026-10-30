@@ -14,17 +14,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Description: USB device-controller register read/write test for the
-//  Caliptra Subsystem, exercising BOTH embedded device controllers (USBDC0 and
-//  USBDC1) in a single run.
+// Description: USB compound register read/write test for the Caliptra
+//  Subsystem, exercising BOTH embedded device controllers (USBDC0 and USBDC1)
+//  AND the virtual-hub register set in a single run.
 //
-//  Both register banks are directly reachable from the MCU LSU AXI master with
-//  no RTL change:
+//  All three register banks are directly reachable from the MCU LSU AXI master
+//  with no RTL change:
 //    USBDC0 registers at SOC_USB_COMBO_DEV0_CSR_BASE_ADDR (0x2000_0000)
 //    USBDC1 registers at SOC_USB_DEV1_CSR_BASE_ADDR       (0x2000_2000)
+//    HUB    registers at SOC_USB_COMBO_HUB_BASE_ADDR      (0x2000_1000)
 //  This test therefore uses the ABSOLUTE upstream CSR base macros directly
-//  (not the compile-time USB_DEV_SEL selection) and walks a single shared
-//  register-disposition table over both banks.
+//  (not the compile-time USB_DEV_SEL selection), walks one shared
+//  register-disposition table over the two identical device banks, and a
+//  second, separate table over the hub bank.
+//
+//  COMPOUND REGISTER SPLIT (current register specification).
+//  The compound structure instantiates both device CSR banks with the VHDL
+//  generic C_USB_HUB => TRUE (ip_xxx_3511_hs_mem_compound_structure.a.vhdl
+//  lines 1481 and 1583). That generic gates several device fields out of the
+//  read and write decode of usb_reg_if.m.vhdl, and the corresponding controls
+//  were MOVED into the hub register set:
+//    - DEVCMDSTAT.OTG_C[27]              gated at line 367 -> device bit now
+//                                        reserved / reads 0
+//    - LPM[0x10] bits 16/17/18 (VBus_Comp_OFF, CHRG_VBUS, DISCHRG_VBUS) and
+//      bits 20/21 (ADPPROBE, SESSION_END)
+//                                        gated at lines 409 (read) and 682
+//                                        (write) -> device bits now reserved
+//    - PHYDEBUG[0x3C] (UTMI+/ULPI debug) whole register gated at line 496 and
+//                                        in the write decode -> device word
+//                                        reads 0; the register now lives in
+//                                        the HUB aperture at 0x2000_103C
+//  The hub set correspondingly has three register words inside its 0x2000_1000
+//  aperture: HUB_CONTROL 0x30 (C_HUB_CS), HUB_LPM 0x34 (C_HUB_LPM, a NEW
+//  register) and HUB_ULPIDEBUG 0x3C (C_HUB_PHY, the moved PHY debug register).
 //
 //  Methodology (per bit-FIELD, not per register):
 //    Each register is described as a table of individual bit-fields, each with
@@ -48,19 +70,27 @@
 //    [16:0] since this integration sets the C_DALB generic to 17).
 //    A few bits are marked ACC_SKIP (documented in the field table but not
 //    driven in the RW walk): DEVCMDSTAT DEV_ADDR/DEV_EN and
-//    CONFIG.RSVD31_8 by request, plus DEVCMDSTAT DSUS/LPM_SUS because a write
+//    CONFIG.RSVD31_11 by request, plus DEVCMDSTAT DSUS/LPM_SUS because a write
 //    there triggers a remote-wakeup action instead of storing the value.
 //    EPSKIP (0x14) SKIP bits are ACC_SKIP: hardware self-clears them on its
 //    own (see the EPSKIP field table comment), so they have no stable storage
-//    to read back. PHYDEBUG (0x3C,
-//    the UTMI+/ULPI debug register per architecture spec v1.0.0 section 5.2.15)
-//    IS exercised: its PHY_ACCESS[25] start bit is ACC_SKIP (self-clearing;
-//    writing 1 launches a live PHY access and lets HW overwrite PHY_RDATA), all
-//    other implemented bits are plain RW. Whole registers excluded:
+//    to read back. The DEVICE PHYDEBUG word (0x3C) is NO LONGER a functional
+//    register on this compound (see the register-split note above): it is
+//    checked as a reserved read-as-0 word, and the real UTMI+/ULPI debug
+//    register is exercised on the HUB bank instead. Whole registers excluded:
 //    INTSTAT/INTSETSTAT (W1C/W1S).
-
 //
-//  Test structure (both phases run over DEV0 then DEV1):
+//  HUB-BANK RESERVED-BIT RULE (important, differs from the device banks).
+//  The hub register words are NOT a decoded register file; they are entries of
+//  the writable ep0_mem word array in usb_ep0_hub_descr.m.vhdl, whose write
+//  path is the unconditional "ep0_mem(reg_waddr) <= reg_wdata" at line 501.
+//  A spec-reserved hub bit therefore DOES store whatever firmware writes, and
+//  classifying it ACC_RO + chk_zero would report a false RTL bug on every run.
+//  Hub reserved fields are consequently ACC_SKIP, and only the bits hardware
+//  actually drives (Speed, VbusDebounced, HIRD_HW, PHY_RDATA/PHY_ACCESS) are
+//  classified RO/skip on hardware grounds.
+//
+//  Test structure (both phases run over DEV0, DEV1 then HUB):
 //    Phase 1 - reset-value check: read each register ONCE, before any write,
 //              and compare against its documented post-reset value (see the
 //              rst_val/rst_mask columns of the shared table). This observes the
@@ -179,10 +209,17 @@ typedef struct {
 // "0000" read and write decode in usb_reg_if.m.vhdl, cross-checked with the USB
 // Device Software Interface spec section 6.2.1.
 //
-// SETUP[8] and the four *_C change bits (DCON_C[24], DSUS_C[25], DRES_C[26],
-// OTG_C[27]) are W1C: the RTL write branch only clears the stored bit when a 1
-// is written (e.g. "if reg_wdata(27) = '1' then reg_dev_otg_change <= '0'"), so
-// they are ACC_W1C and excluded from the plain RW compare.
+// SETUP[8] and the three remaining *_C change bits (DCON_C[24], DSUS_C[25],
+// DRES_C[26]) are W1C: the RTL write branch only clears the stored bit when a 1
+// is written, so they are ACC_W1C and excluded from the plain RW compare.
+//
+// OTG_C[27] is NO LONGER a device bit on this compound. Both device banks are
+// elaborated with C_USB_HUB => TRUE, and the OTG-change read decode is wrapped
+// in "if not(C_USB_HUB)" (usb_reg_if.m.vhdl line 367), so bit 27 is never
+// driven and reads 0. It is therefore reclassified from ACC_W1C to
+// ACC_RO + chk_zero (RSVD27) and IS now included in the reset-value mask,
+// which also removes the historical OTG_C reset-mask waiver: the AValid /
+// SessEnd power-up edges can no longer latch anything into this bit.
 //
 // Plain RW (storage element written from reg_wdata and read back from the same
 // register): PLL_ON[9], FORCE_VBUS[10] (reg_dev_force_vbus), LPM_SUP[11], the
@@ -208,9 +245,10 @@ typedef struct {
 // LPM_REWP[20] (HW-set from the LPM token), Speed[23:22] (pie_speed: 01b
 // full-speed / 10b high-speed) and VbusDebounced[28] (live VBus status).
 //
-// Bit 18 is the ONLY reserved bit in this register: it is the one bit the RTL
-// read decode never drives, so it is ACC_RO + chk_zero (must be immutable AND
-// read back 0; a violation is a candidate RTL bug).
+// Reserved bits of this register on the compound: bit 18 (never driven by the
+// read decode in any configuration) and bit 27 (undriven because
+// C_USB_HUB = TRUE, see above). Both are ACC_RO + chk_zero (must be immutable
+// AND read back 0; a violation is a candidate RTL bug).
 // ---------------------------------------------------------------------------
 static const usb_field_t devcmdstat_fields[] = {
     { 0,  7, ACC_SKIP, 0, "DEV_ADDR"      }, // RW per spec, excluded from the RW walk by request
@@ -233,7 +271,7 @@ static const usb_field_t devcmdstat_fields[] = {
     { 24, 1, ACC_W1C, 0, "DCON_C"         }, // W1C, not plain RW
     { 25, 1, ACC_W1C, 0, "DSUS_C"         }, // W1C, not plain RW
     { 26, 1, ACC_W1C, 0, "DRES_C"         }, // W1C, not plain RW
-    { 27, 1, ACC_W1C, 0, "OTG_C"          }, // W1C per spec and RTL (ADP/SRP status change)
+    { 27, 1, ACC_RO,  1, "RSVD27"         }, // was OTG_C; undriven because C_USB_HUB=TRUE
     { 28, 1, ACC_RO,  0, "VbusDebounced"  }, // defined RO (may be non-zero)
     { 29, 3, ACC_RW,  0, "PHY_TEST_MODE"  }, // RW per spec (USB2.0 PHY test modes)
 };
@@ -268,22 +306,27 @@ static const usb_field_t databufstart_fields[] = {
     { 17, 15, ACC_RW, 0, "DA_BUF"   }, // data buffer page pointer bits [31:C_DALB]=[31:17]
 };
 
-// LPM (0x10) per the new spec: HIRD_HW[3:0] RO, HIRD_SW[7:4] RW,
-// DataPending[8] RW, RSVD[15:9], VBus_Comp_OFF[16] RW, CHRG_VBUS[17] RW,
-// DISCHRG_VBUS[18] RW, RSVD[19], ADPPROBE[20] RO, SESSION_END/ADP_SENSE[21] RO,
-// RSVD[31:22]. ADPPROBE and SESSION_END are RO status bits (no read-as-0 check).
+// LPM (0x10) per the current compound register specification:
+//   HIRD_HW[3:0]    RO  (loaded by HW from the last received LPM token)
+//   HIRD_SW[7:4]    RW  (reg_lpm_hird_sw)
+//   DataPending[8]  RW  (reg_lpm_nyet)
+//   [31:9]          reserved, read-as-0
+//
+// The ENTIRE upper half of this register was removed from the device view by
+// the compound split. usb_reg_if.m.vhdl guards the VBus/charger/ADP group with
+// "if not(C_USB_HUB)" on both the read side (line 409: bits 16/17/18 plus the
+// sync_avalid ADPPROBE bit 20 and sync_sessend ADP_SENSE bit 21) and the write
+// side (line 682: reg_vbuscomp_off / reg_chrg_vbus / reg_dischrg_vbus), and
+// both device banks are elaborated with C_USB_HUB => TRUE. Those bits are
+// therefore undriven and unwritable here, so they are folded into a single
+// reserved RSVD31_9 field with chk_zero set. This also makes the whole 32-bit
+// word a valid reset expectation (previously bits 20/21 had to be waived from
+// the reset mask because they tracked the live AValid / SessEnd pins).
 static const usb_field_t lpm_fields[] = {
-    { 0,   4, ACC_RO, 0, "HIRD_HW"       },
-    { 4,   4, ACC_RW, 0, "HIRD_SW"       },
-    { 8,   1, ACC_RW, 0, "DataPending"   },
-    { 9,   7, ACC_RO, 1, "RSVD15_9"      },
-    { 16,  1, ACC_RW, 0, "VBus_Comp_OFF" },
-    { 17,  1, ACC_RW, 0, "CHRG_VBUS"     },
-    { 18,  1, ACC_RW, 0, "DISCHRG_VBUS"  },
-    { 19,  1, ACC_RO, 1, "RSVD19"        },
-    { 20,  1, ACC_RO, 0, "ADPPROBE"      }, // RO status (may be non-zero)
-    { 21,  1, ACC_RO, 0, "SESSION_END"   }, // RO status (may be non-zero)
-    { 22, 10, ACC_RO, 1, "RSVD31_22"     },
+    { 0,   4, ACC_RO, 0, "HIRD_HW"     }, // HW-loaded from the LPM token
+    { 4,   4, ACC_RW, 0, "HIRD_SW"     },
+    { 8,   1, ACC_RW, 0, "DataPending" }, // reg_lpm_nyet
+    { 9,  23, ACC_RO, 1, "RSVD31_9"    }, // VBus/charger/ADP group gated out by C_USB_HUB
 };
 
 // EPSKIP (0x14): per-endpoint skip vector, width tracked by the C_NBPHYSEP
@@ -365,18 +408,28 @@ static const usb_field_t introute_fields[] = {
 };
 
 
-// CONFIG (0x30): PHYSEP[4:0] RO, SB/DB/TREG RO, [31:8] reserved. All defined RO
-// fields may be non-zero HW constants, so no read-0 there. RSVD31_8 is
-// classified ACC_SKIP (excluded from the RW walk by request); it is present in
-// the table for documentation only. PHYSEP reads back the C_NBPHYSEP generic
-// and the reset phase checks it against USB_C_NBPHYSEP (see the rst_val /
-// rst_mask columns of the shared table) as a tripwire on the generic.
+// CONFIG (0x30): PHYSEP[4:0] RO, SB/DB/TREG RO, UTMI[9]/ULPI[10] RO,
+// [31:11] reserved. All defined RO fields may be non-zero HW constants, so no
+// read-0 there. RSVD31_11 is classified ACC_SKIP (excluded from the RW walk by
+// request); it is present in the table for documentation only. PHYSEP reads
+// back the C_NBPHYSEP generic and the reset phase checks it against
+// USB_C_NBPHYSEP (see the rst_val / rst_mask columns of the shared table) as a
+// tripwire on the generic.
+//
+// Bits 9 and 10 are PHY-support build flags: usb_reg_if.m.vhdl register "1100"
+// sets bit 9 when C_UTMI_SUPPORT and bit 10 when C_ULPI_SUPPORT. Bit 8 remains
+// unused - the C_PLL_ENABLE leg that used to drive it is commented out in the
+// same decode, alongside the removal of the 0x38 PLL register (see
+// intpll_fields).
 static const usb_field_t config_fields[] = {
-    { 0,  5, ACC_RO,   0, "PHYSEP"   }, // reads back C_NBPHYSEP
-    { 5,  1, ACC_RO,   0, "SB"       },
-    { 6,  1, ACC_RO,   0, "DB"       },
-    { 7,  1, ACC_RO,   0, "TREG"     },
-    { 8, 24, ACC_SKIP, 0, "RSVD31_8" }, // excluded from the RW walk by request
+    { 0,  5, ACC_RO,   0, "PHYSEP"    }, // reads back C_NBPHYSEP
+    { 5,  1, ACC_RO,   0, "SB"        },
+    { 6,  1, ACC_RO,   0, "DB"        },
+    { 7,  1, ACC_RO,   0, "TREG"      },
+    { 8,  1, ACC_RO,   0, "RSVD8"     }, // former PLL flag, decode leg commented out
+    { 9,  1, ACC_RO,   0, "UTMI"      }, // set when C_UTMI_SUPPORT
+    { 10, 1, ACC_RO,   0, "ULPI"      }, // set when C_ULPI_SUPPORT
+    { 11, 21, ACC_SKIP, 0, "RSVD31_11" }, // excluded from the RW walk by request
 };
 
 // EPTOGGLE (0x34): per-endpoint data-toggle status, usbreg_epinfo_toggle is
@@ -399,39 +452,23 @@ static const usb_field_t intpll_fields[] = {
     { 0, 32, ACC_RO, 1, "RSVD" }, // register removed; whole word RO, reads 0
 };
 
-// PHYDEBUG (0x3C): "UTMI+/ULPI debug" register (architecture spec v1.0.0
-// section 5.2.15). It lets firmware read/write registers inside the attached
-// USB PHY. Reset value 0x00000000. This integration instantiates the compound
-// with BOTH C_UTMI_SUPPORT=TRUE and C_ULPI_SUPPORT=TRUE
-// (ip_xxx_3511_hs_mem_compound.e.vhdl, not overridden by the wrapper), so the
-// "both PHYs supported" branch of usb_reg_if.m.vhdl register "1111" is active:
-//   [7:0]   PHY_ADDR  <= reg_wdata(7:0)        RW
-//   [15:8]  PHY_WDATA <= reg_wdata(15:8)       RW (ULPI write data)
-//   [23:16] PHY_RDATA <= reg_wdata(23:16)      RW (also loaded by HW from
-//                                                 sync_phy_rdata when an access
-//                                                 completes)
-//   [24]    PHY_RW    <= reg_wdata(24)         RW (0=read / 1=write)
-//   [25]    PHY_ACCESS<= reg_wdata(25)         start bit: SW writes 1 to launch
-//                                                 an access, HW clears it on
-//                                                 sync_phy_endtoggle; SW may not
-//                                                 clear it. Classified ACC_SKIP:
-//                                                 driving 1 would launch a live
-//                                                 PHY transaction and let HW
-//                                                 overwrite PHY_RDATA, which is
-//                                                 not a plain RW check.
-//   [30:26] R                                  reserved, read-as-0
-//   [31]    PHY_MODE  <= reg_wdata(31)         RW here because both PHYs are
-//                                                 supported (0=UTMI+, 1=ULPI);
-//                                                 it would be RO if only one PHY
-//                                                 were supported.
+// PHYDEBUG (0x3C) on a DEVICE bank: the "UTMI+/ULPI debug" register MOVED to
+// the hub by the compound register split, so there is no functional register
+// behind this device address any more.
+//
+// The whole register select "1111" read decode is wrapped in
+// "if not(C_USB_HUB)" (usb_reg_if.m.vhdl line 496) and the matching write
+// decode is gated the same way (line 747), while every usbreg_phy_* output is
+// forced to zero at lines 269-276. Both device banks are elaborated with
+// C_USB_HUB => TRUE, so the address falls through to the default
+// reg_rdata <= (others => '0') and reads 0, exactly like the removed 0x38 PLL
+// register. The device-side check is therefore the same shape as INTPLL: the
+// whole word must be read-only and read back 0.
+//
+// The real PHY debug register IS exercised, on the hub bank: see
+// hub_phydebug_fields below.
 static const usb_field_t phydebug_fields[] = {
-    { 0,   8, ACC_RW,   0, "PHY_ADDR"   },
-    { 8,   8, ACC_RW,   0, "PHY_WDATA"  },
-    { 16,  8, ACC_RW,   0, "PHY_RDATA"  },
-    { 24,  1, ACC_RW,   0, "PHY_RW"     },
-    { 25,  1, ACC_SKIP, 0, "PHY_ACCESS" }, // self-clearing start bit; not driven
-    { 26,  5, ACC_RO,   1, "RSVD30_26"  }, // reserved, read-as-0
-    { 31,  1, ACC_RW,   0, "PHY_MODE"   }, // RW (both C_UTMI_SUPPORT and C_ULPI_SUPPORT)
+    { 0, 32, ACC_RO, 1, "RSVD" }, // moved to the hub; device word RO, reads 0
 };
 
 #define REG_DESC(off, nm, tbl, rv, rm) \
@@ -445,49 +482,50 @@ static const usb_field_t phydebug_fields[] = {
 // checked read-as-0 - EPLISTSTART [7:0], DATABUFSTART [16:0] with C_DALB=17).
 // EPSKIP 0x14 SKIP bits are ACC_SKIP: the DMA skip scanner clears them with no
 // USB traffic required, so they have no stable storage to read back (see the
-// EPSKIP field table comment). PHYDEBUG 0x3C
-// (UTMI+/ULPI debug, spec v1.0.0 section 5.2.15) IS
-// included: all implemented bits are RW except PHY_ACCESS[25], the
-// self-clearing start bit, which is ACC_SKIP. Registers deliberately excluded:
+// EPSKIP field table comment). The device PHYDEBUG word 0x3C is checked as a
+// reserved read-as-0 location because the UTMI+/ULPI debug register MOVED to
+// the hub bank. Registers deliberately excluded:
 // INTSTAT 0x20 / INTSETSTAT 0x28 (W1C / W1S).
 //
 // Reset-value expectation (rst_val / rst_mask) per docs/usb_register_structure.md
 // section 1.1:
 //   DEVCMDSTAT : expected 0x00000800 (the spec reset value, LPM_SUP[11] set).
-//                Six bits are EXCLUDED from the reset mask because they are
+//                Five bits are EXCLUDED from the reset mask because they are
 //                live or sticky HW status rather than fixed reset constants,
 //                so they are not reliable reset expectations:
 //                  Speed[23:22]      - pie_speed, the negotiated link speed
 //                  VbusDebounced[28]  - VBus present
-//                  DCON_C[24], DSUS_C[25], DRES_C[26], OTG_C[27] - the W1C
+//                  DCON_C[24], DSUS_C[25], DRES_C[26] - the W1C
 //                    status-change flags. These are HW-set and can only be
 //                    cleared by firmware writing 1, so any environment event
-//                    before the first read latches them. OTG_C in particular
-//                    is set by ANY edge on avalid (ADPPROBE) or sessend
-//                    (ADPSENSE) - see usb_reg_if.m.vhdl line 880 - and the
-//                    testbench drives both from the VIP UTMI interface, so the
-//                    power-up transition of AValid/SessEnd sets OTG_C long
-//                    before boot_mcu() returns. That is expected DUT behavior,
-//                    not a defect.
-//                That gives rst_mask 0xE03FFFFF. The other 25 bits ARE checked,
-//                so a set reserved bit (bit 18) is still reported as a
-//                candidate RTL issue.
+//                    before the first read latches them.
+//                That gives rst_mask 0xE83FFFFF. Bit 27 is NO LONGER waived:
+//                it used to be the OTG_C flag that ANY power-up edge on avalid
+//                (ADPPROBE) or sessend (ADPSENSE) could latch, but the OTG
+//                read decode is compiled out by C_USB_HUB => TRUE, so bit 27
+//                is now a plain reserved-0 bit and IS checked. All other 26
+//                bits ARE checked, so a set reserved bit (18 or 27) is
+//                reported as a candidate RTL issue.
 //   INFO       : reset depends on CHIP_ID[31:16], so only the low 16 bits
 //                (FRAME_NR / ERR_CODE / RSVD15) are checked against 0.
-//   LPM, EPINUSE, EPBUFCFG, INTEN, INTROUTE, EPTOGGLE, INTPLL : reset 0x0,
-//                all 32 bits checked.
+//   LPM        : reset 0x0 with ALL 32 bits checked (mask 0xFFFFFFFF). The
+//                previous 0xFFCFFFFF mask waived bits 20/21 because they
+//                tracked the live ADPPROBE / ADP_SENSE pins; those bits are
+//                compiled out by C_USB_HUB => TRUE and now read a stable 0.
+//   EPINUSE, EPBUFCFG, INTEN, INTROUTE, EPTOGGLE, INTPLL, PHYDEBUG : reset
+//                0x0, all 32 bits checked.
 //   CONFIG     : per-build RO constants. Only PHYSEP[4:0] is checked (mask
 //                0x1F), against USB_C_NBPHYSEP: it is a direct read-back of the
 //                C_NBPHYSEP generic and acts as a tripwire if the generic moves
 //                away from the value the EP field tables are sized for. SB/DB/
-//                TREG are left unchecked because they depend on other build
-//                options.
+//                TREG and the UTMI/ULPI PHY-support flags are left unchecked
+//                because they depend on other build options.
 static const usb_reg_desc_t usb_reg_table[] = {
-    REG_DESC(0x00u, "DEVCMDSTAT",   devcmdstat_fields,   0x00000800u, 0xE03FFFFFu),
+    REG_DESC(0x00u, "DEVCMDSTAT",   devcmdstat_fields,   0x00000800u, 0xE83FFFFFu),
     REG_DESC(0x04u, "INFO",         info_fields,         0x00000000u, 0x0000FFFFu),
     REG_DESC(0x08u, "EPLISTSTART",  epliststart_fields,  0x00000000u, 0xFFFFFFFFu),
     REG_DESC(0x0Cu, "DATABUFSTART", databufstart_fields, 0x00000000u, 0xFFFE0000u),
-    REG_DESC(0x10u, "LPM",        lpm_fields,        0x00000000u, 0xFFCFFFFFu),
+    REG_DESC(0x10u, "LPM",        lpm_fields,        0x00000000u, 0xFFFFFFFFu),
 
     REG_DESC(0x14u, "EPSKIP",     epskip_fields,     0x00000000u, 0xFFFFFFFFu),
     REG_DESC(0x18u, "EPINUSE",    epinuse_fields,    0x00000000u, 0xFFFFFFFFu),
@@ -504,6 +542,137 @@ static const usb_reg_desc_t usb_reg_table[] = {
 
 
 #define USB_REG_TABLE_LEN (sizeof(usb_reg_table) / sizeof(usb_reg_table[0]))
+
+
+// ===========================================================================
+// HUB register bank (SOC_USB_COMBO_HUB_BASE_ADDR = 0x2000_1000).
+//
+// The hub aperture is NOT a decoded register file. It is the ep0_mem word
+// array of usb_ep0_hub_descr.m.vhdl: most words hold the hub descriptors and
+// the SETUP match table, and exactly THREE words are register words (the hub
+// constants in that file at lines 82-84):
+//   C_HUB_CS  = word 12 -> byte offset 0x30, hub Command/Status
+//   C_HUB_LPM = word 13 -> byte offset 0x34, hub LPM (NEW in this spec)
+//   C_HUB_PHY = word 15 -> byte offset 0x3C, hub UTMI+/ULPI debug (MOVED here
+//                          from the device banks)
+// Only those three offsets are in the hub table below. The surrounding words
+// MUST NOT be walked: writing them would corrupt the descriptor ROM shadow /
+// SETUP match table that every other USB test depends on. Word 14 (0x38) is
+// not a register and is deliberately absent.
+//
+// IMPORTANT ACCESS-CLASS CAVEAT, repeated from the file header because it is
+// easy to get wrong: these words are plain writable storage
+// ("ep0_mem(reg_waddr) <= reg_wdata", line 501), guarded only by
+// hub_write_lock - and lines 497-499 EXEMPT exactly these three register words
+// from that lock, so they are always writable. Spec-reserved hub bits
+// therefore DO retain written data. They are classified ACC_SKIP, never
+// ACC_RO + chk_zero, so the walk does not manufacture false RTL-bug reports.
+// Only the fields hardware itself drives are RO.
+// ===========================================================================
+
+// HUB_CONTROL (0x30, C_HUB_CS). Reset value 0x00000800: the ROM initialiser at
+// lines 434-437 clears HUB_EN[0], HUB_DCON[16] and SELF_POWERED[18] and sets
+// LPM_SUP[11].
+//
+// HW-driven (ACC_RO, legally non-zero so no read-as-0 check):
+//   Speed[23:22]       <- pie_speed              (line 511)
+//   VbusDebounced[28]  <- hub_vbusdebounced      (line 512)
+//
+// ACC_SKIP for a FUNCTIONAL reason, not a storage reason:
+//   HUB_EN[0] and HUB_DCON[16]. Writing both sets hub_write_lock (line 528,
+//   "ep0_mem(C_HUB_CS)(0) and ep0_mem(C_HUB_CS)(16)"), which freezes the
+//   descriptor array, and it also signals a USB connect upstream. Driving
+//   them in a register walk would change hub state mid-test, so they are
+//   documented but not exercised here; the connect path is covered by the
+//   enumeration tests.
+//
+// Plain RW storage: PLL_ON[9], FORCE_VBUS[10], LPM_SUP[11], SELF_POWERED[18],
+// PFSC[21] (hub_force_fs, line 527).
+static const usb_field_t hub_ctrl_fields[] = {
+    { 0,  1, ACC_SKIP, 0, "HUB_EN"        }, // asserts hub_write_lock with HUB_DCON; not driven
+    { 1,  8, ACC_SKIP, 0, "RSVD8_1"       }, // spec-reserved, but writable hub storage
+    { 9,  1, ACC_RW,   0, "PLL_ON"        }, // hub_pll_on
+    { 10, 1, ACC_RW,   0, "FORCE_VBUS"    }, // hub_force_vbus
+    { 11, 1, ACC_RW,   0, "LPM_SUP"       }, // hub_lpm_sup, reset 1
+    { 12, 4, ACC_SKIP, 0, "RSVD15_12"     }, // spec-reserved, writable hub storage
+    { 16, 1, ACC_SKIP, 0, "HUB_DCON"      }, // signals connect / asserts hub_write_lock
+    { 17, 1, ACC_SKIP, 0, "RSVD17"        }, // spec-reserved, writable hub storage
+    { 18, 1, ACC_RW,   0, "SELF_POWERED"  }, // hub_self_powered
+    { 19, 2, ACC_SKIP, 0, "RSVD20_19"     }, // spec-reserved, writable hub storage
+    { 21, 1, ACC_RW,   0, "PFSC"          }, // hub_force_fs
+    { 22, 2, ACC_RO,   0, "Speed"         }, // HW-loaded from pie_speed
+    { 24, 4, ACC_SKIP, 0, "RSVD27_24"     }, // spec-reserved, writable hub storage
+    { 28, 1, ACC_RO,   0, "VbusDebounced" }, // HW-loaded from hub_vbusdebounced
+    { 29, 3, ACC_SKIP, 0, "RSVD31_29"     }, // spec-reserved, writable hub storage
+};
+
+// HUB_LPM (0x34, C_HUB_LPM) - the NEW register of this specification revision.
+// Reset value 0x00000000.
+//
+//   HIRD_HW[3:0] ACC_RO : hardware reloads ep0_mem(C_HUB_LPM)(3 downto 0) from
+//                         hub_lpm_hird_hw on EVERY clock (line 513), so a
+//                         firmware write cannot stick. Not chk_zero - the field
+//                         legally reflects the last received LPM token.
+//   HIRD_SW[7:4] ACC_RW : drives hub_lpm_hird_sw (line 530).
+//   [31:8]              : spec-reserved but writable hub storage -> ACC_SKIP.
+static const usb_field_t hub_lpm_fields[] = {
+    { 0,  4, ACC_RO,   0, "HIRD_HW"   }, // continuously reloaded from hub_lpm_hird_hw
+    { 4,  4, ACC_RW,   0, "HIRD_SW"   }, // hub_lpm_hird_sw
+    { 8, 24, ACC_SKIP, 0, "RSVD31_8"  }, // spec-reserved, writable hub storage
+};
+
+// HUB_ULPIDEBUG (0x3C, C_HUB_PHY) - the UTMI+/ULPI debug register MOVED here
+// from the device banks. Reset value 0x00000000.
+//
+// Field drives (usb_ep0_hub_descr.m.vhdl lines 532-536):
+//   PHY_ADDR[7:0]   -> hub_phy_addr      RW
+//   PHY_WDATA[15:8] -> hub_phy_wdata     RW
+//   PHY_RDATA[23:16]                     RW storage, but ALSO loaded by HW
+//                     from hub_phy_rdata when hub_phy_endtoggle asserts
+//                     (line 508). No access is launched in this test
+//                     (PHY_ACCESS stays 0), so it is treated as plain RW.
+//   PHY_RW[24]      -> hub_phy_write     RW
+//   PHY_ACCESS[25]  -> hub_phy_start     ACC_SKIP: writing 1 launches a live
+//                     PHY transaction and HW then clears the bit and
+//                     overwrites PHY_RDATA (lines 508-509), so it has no
+//                     plain RW behaviour.
+//   PHY_MODE[31]    -> hub_phy_mode      RW
+//   [30:26]                              spec-reserved, writable hub storage
+static const usb_field_t hub_phydebug_fields[] = {
+    { 0,   8, ACC_RW,   0, "PHY_ADDR"   },
+    { 8,   8, ACC_RW,   0, "PHY_WDATA"  },
+    { 16,  8, ACC_RW,   0, "PHY_RDATA"  }, // RW here; HW overwrites it only on a real access
+    { 24,  1, ACC_RW,   0, "PHY_RW"     },
+    { 25,  1, ACC_SKIP, 0, "PHY_ACCESS" }, // self-clearing start bit; launches a live access
+    { 26,  5, ACC_SKIP, 0, "RSVD30_26"  }, // spec-reserved, writable hub storage
+    { 31,  1, ACC_RW,   0, "PHY_MODE"   },
+};
+
+// Hub register table. Reset expectations:
+//   HUB_CONTROL : 0x00000800 (LPM_SUP set by the ROM initialiser). Speed[23:22]
+//                 and VbusDebounced[28] are EXCLUDED because they are live HW
+//                 status, exactly as on the device DEVCMDSTAT. Excluding bits
+//                 22, 23 and 28 means clearing 0x00C00000 | 0x10000000 =
+//                 0x10C00000, so the mask is ~0x10C00000 = 0xEF3FFFFF.
+//   HUB_LPM     : 0x0 with HIRD_HW[3:0] excluded (mask 0xFFFFFFF0) - it tracks
+//                 the last LPM token rather than a reset constant.
+//   HUB_PHY     : 0x0, all 32 bits checked.
+//
+// The offsets are BANK-RELATIVE (the walker adds the base), which is why they
+// are written as literals rather than as the SOC_USB_COMBO_HUB_* macros - those
+// are absolute addresses. The per-entry comments give the absolute equivalent
+// so the mapping to soc_address_map.h is explicit.
+static const usb_reg_desc_t usb_hub_reg_table[] = {
+    // SOC_USB_COMBO_HUB_CONTROL   = 0x2000_1030
+    REG_DESC(0x30u, "HUB_CONTROL",   hub_ctrl_fields,     0x00000800u, 0xEF3FFFFFu),
+    // SOC_USB_COMBO_HUB_LPM       = 0x2000_1034
+    REG_DESC(0x34u, "HUB_LPM",       hub_lpm_fields,      0x00000000u, 0xFFFFFFF0u),
+    // SOC_USB_COMBO_HUB_ULPIDEBUG = 0x2000_103C
+    REG_DESC(0x3Cu, "HUB_ULPIDEBUG", hub_phydebug_fields, 0x00000000u, 0xFFFFFFFFu),
+};
+
+#define USB_HUB_REG_TABLE_LEN \
+    (sizeof(usb_hub_reg_table) / sizeof(usb_hub_reg_table[0]))
 
 
 // RO-immutability probe patterns. Three distinct values so a bit that happens
@@ -579,22 +748,27 @@ static int check_field_ro(uint32_t addr, const usb_field_t *f,
     return 0;
 }
 
-// Read every register in the shared table ONCE (before any write) and compare
-// its post-reset value against the expected reset value in the table. Only the
-// bits selected by rst_mask are compared; a register with rst_mask == 0 is
-// skipped. This phase runs before check_reg_bank() so the reads observe the
-// true reset state rather than values left by the RW/RO walk.
+// Read every register of the supplied table ONCE (before any write) and
+// compare its post-reset value against the expected reset value in the table.
+// Only the bits selected by rst_mask are compared; a register with
+// rst_mask == 0 is skipped. This phase runs before check_reg_bank() so the
+// reads observe the true reset state rather than values left by the RW/RO walk.
+//
+// The table is a parameter so the SAME walker serves the two device banks
+// (usb_reg_table) and the hub bank (usb_hub_reg_table), which have different
+// register sets since the compound register split.
 //
 // NOTE: these reset reads are performed with NO write-before-read workaround
 // for the former DataKnown_A hazard. This is safe because the improved RTL no
 // longer drives X on the dev*_axi read path for never-written registers, so the
 // reads observe the true reset state without any hub bring-up.
-static int check_reset_values(uint32_t base, const char *bank) {
+static int check_reset_values(uint32_t base, const char *bank,
+                              const usb_reg_desc_t *table, uint32_t ntable) {
     int errors = 0;
     VPRINTF(LOW, "\n--- USB reset-value check: bank %s (base 0x%x) ---\n",
             bank, base);
-    for (uint32_t i = 0; i < USB_REG_TABLE_LEN; i++) {
-        const usb_reg_desc_t *r = &usb_reg_table[i];
+    for (uint32_t i = 0; i < ntable; i++) {
+        const usb_reg_desc_t *r = &table[i];
         if (r->rst_mask == 0u) {
             // Per-build RO-constant register with no fixed reset expectation:
             // skipped by the reset-value phase.
@@ -616,16 +790,18 @@ static int check_reset_values(uint32_t base, const char *bank) {
     return errors;
 }
 
-// Walk the shared register table over one device bank, checking every field.
-// Emits a per-field line ONLY on failure, plus a concise per-register summary.
-// Returns the number of failing fields found.
-static int check_reg_bank(uint32_t base, const char *bank) {
+// Walk the supplied register table over one bank, checking every field. Emits
+// a per-field line ONLY on failure, plus a concise per-register summary.
+// Returns the number of failing fields found. The table is a parameter so the
+// same walker drives both the device banks and the hub bank.
+static int check_reg_bank(uint32_t base, const char *bank,
+                          const usb_reg_desc_t *table, uint32_t ntable) {
 
     int errors = 0;
     VPRINTF(LOW, "\n--- USB register check: bank %s (base 0x%x) ---\n",
             bank, base);
-    for (uint32_t i = 0; i < USB_REG_TABLE_LEN; i++) {
-        const usb_reg_desc_t *r = &usb_reg_table[i];
+    for (uint32_t i = 0; i < ntable; i++) {
+        const usb_reg_desc_t *r = &table[i];
         uint32_t addr = base + r->offset;
         int reg_errors = 0;
         for (uint32_t j = 0; j < r->nfields; j++) {
@@ -656,22 +832,36 @@ void main(void) {
 
     int error_count = 0;
 
-    VPRINTF(LOW, "=================\nMCU: USB dev0/dev1 register RW test\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB dev0/dev1/hub register RW test\n=================\n\n");
 
     // Standard MCU boot sequence. This is a standalone register-access test, so
     // no USB core bring-up and no USB traffic is generated; the controllers
     // stay quiescent and we can safely randomize their configuration registers.
+    //
+    // No usb_hub_init_and_connect() either: the hub register words must be
+    // walked while hub_write_lock is DEASSERTED, which is exactly the
+    // post-reset state (HUB_EN and HUB_DCON both 0). The walk also leaves both
+    // of those bits untouched (ACC_SKIP), so the lock never engages.
     boot_mcu();
 
-    // Phase 1: verify the post-reset values of both device banks BEFORE any
-    // write disturbs them.
-    error_count += check_reset_values(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0");
-    error_count += check_reset_values(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1");
+    // Phase 1: verify the post-reset values of all three banks BEFORE any
+    // write disturbs them. The hub bank is read first-to-last in the same way,
+    // using its own three-register table.
+    error_count += check_reset_values(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0",
+                                      usb_reg_table, USB_REG_TABLE_LEN);
+    error_count += check_reset_values(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1",
+                                      usb_reg_table, USB_REG_TABLE_LEN);
+    error_count += check_reset_values(SOC_USB_COMBO_HUB_BASE_ADDR, "HUB",
+                                      usb_hub_reg_table, USB_HUB_REG_TABLE_LEN);
 
-    // Phase 2: exercise the RW/RO access classes of both banks with the shared
-    // table.
-    error_count += check_reg_bank(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0");
-    error_count += check_reg_bank(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1");
+    // Phase 2: exercise the RW/RO access classes. The two device banks share
+    // one table; the hub bank has its own.
+    error_count += check_reg_bank(SOC_USB_COMBO_DEV0_CSR_BASE_ADDR, "DEV0",
+                                  usb_reg_table, USB_REG_TABLE_LEN);
+    error_count += check_reg_bank(SOC_USB_DEV1_CSR_BASE_ADDR, "DEV1",
+                                  usb_reg_table, USB_REG_TABLE_LEN);
+    error_count += check_reg_bank(SOC_USB_COMBO_HUB_BASE_ADDR, "HUB",
+                                  usb_hub_reg_table, USB_HUB_REG_TABLE_LEN);
 
 
     VPRINTF(LOW, "\nMCU: USB register RW test complete, error_count = %d\n",
