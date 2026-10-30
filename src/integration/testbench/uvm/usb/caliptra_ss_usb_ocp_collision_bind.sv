@@ -15,7 +15,7 @@
 
 module caliptra_ss_usb_ocp_collision_bind;
 
-bind caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_ocp_recovery
+bind usb_ocp_recovery_top
     caliptra_ss_usb_ocp_collision_if collision_monitor (
         .clk          (clk          ),
         .rst_ni       (rst_ni       ),

@@ -374,8 +374,11 @@ module usb_top_tb;
   // --------------------------------------------------------------------------
   // Testbench control and UVM startup
   // --------------------------------------------------------------------------
+  caliptra_ss_usb_ocp_collision_bind ocp_collision_bind();
+
   initial begin
     usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b1;
+    usb_20_mac_if.utmi_dut_mac_if.enable_hs_fs_clk = 1'b1;
     `uvm_info("USB_TOP", "SVT PHY owns suspend-gated UTMI CLK; DUT wakeup is required", UVM_LOW)
   end
 
