@@ -8,7 +8,10 @@ contents:
         - ../tests/usb_axi_filter.yml
         - ../tests/usb_axi_read_backpressure.yml
         - ../tests/usb_axi_write_backpressure.yml
+        - ../tests/usb_bulk_ping.yml
         - ../tests/usb_dev_skip.yml
+        - ../tests/usb_dev_skip_during_rx.yml
+        - ../tests/usb_double_buffer_bulk.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_init.yml
         - ../tests/usb_utility_timeout.yml
