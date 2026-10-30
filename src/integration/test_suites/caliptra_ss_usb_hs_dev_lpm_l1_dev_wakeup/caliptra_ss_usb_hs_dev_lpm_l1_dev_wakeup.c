@@ -123,39 +123,28 @@
 // One DSUS_C event on L1 entry, one on L1 exit.
 #define USB_LPM_EVENTS_EXPECTED 2
 
-// In-L1 dwell before the remote-wakeup doorbell is rung. The dwell is built
-// from two nested knobs: USB_LPM_L1_DWELL_PRINTS outer passes, each doing
-// USB_LPM_L1_DWELL_POLLS DEVCMDSTAT reads followed by one MCU console write.
+// NO IN-L1 DWELL. This firmware rings the remote-wakeup doorbell as soon as it
+// sees LPM_SUS, and that is deliberate.
 //
-// WHY A DWELL IS NEEDED AT ALL. utmi_suspendm cannot fall until
-// clk_off_counter reaches 0, and that counter is CLOCKOFF_CYCLE = 255 ticks of
-// pie_clk - 4.25 us at 60 MHz - of CONTINUOUS clock_on = 0. If this firmware
-// rings the doorbell as soon as it notices LPM_SUS, the device leaves L1 while
-// the countdown is still running, SuspendM never drops, and the suspend half
-// of the test covers nothing. Full derivation at the use site below.
+// An earlier version of this test padded the time spent in L1 with register
+// reads and MCU console writes so that clk_off_counter (CLOCKOFF_CYCLE = 255
+// pie_clk ticks, 4.25 us at 60 MHz of continuous clock_on = 0) could reach 0
+// and let utmi_suspendm fall. That was done purely to satisfy the SuspendM
+// edge checker, which this suite no longer runs - see the yml for why that
+// coverage belongs to the host-driven twin and to the L2 suites instead.
 //
-// WHY THE CONSOLE WRITE IS PART OF THE DWELL AND NOT JUST MORE READS.
-// Measured progression on this suite, all read off clk_off_counter on the
-// waveform rather than off the log text:
+// Keeping the dwell was not neutral, it was harmful. The L1 window the host
+// grants is shorter than the padded dwell, so L1 closed before the doorbell
+// was written and the write was silently dropped: the readback came back with
+// LPM_SUS = 0, meaning usbreg_lpmremotewakeup was never set and the device K
+// that CHK_DEVICE_WAKEUP_K is there to observe was never driven by the
+// doorbell. The write must land while reg_dev_lpm_suspend is still 1, so the
+// correct behaviour is to issue it immediately.
 //
-//   no dwell    L1 window 3.15 us   counter 255 -> 68    68 ticks short
-//   64 reads    L1 window 3.80 us   counter 255 -> ~30   ~30 ticks short
-//
-// So 64 uncached register reads buy only about 0.65 us. Covering the residual
-// ~0.5 us with reads alone would need several hundred more iterations and
-// would leave the dwell sensitive to bus arbitration. A VPRINTF to
-// SOC_MCI_TOP_MCI_REG_DEBUG_OUT goes out a byte at a time over that same
-// uncached path and is by far the most expensive operation available to this
-// firmware, so a handful of them dominates the dwell and puts the window
-// clearly past the 4.25 us floor.
-//
-// Tuning order if a waveform still shows SuspendM high for the whole L1
-// window: raise USB_LPM_L1_DWELL_PRINTS first (coarse), then
-// USB_LPM_L1_DWELL_POLLS (fine). Judge the result by clk_off_counter reaching
-// 0, not by the log text - the log says what the firmware intended, not what
-// the PHY did.
-#define USB_LPM_L1_DWELL_POLLS  16u
-#define USB_LPM_L1_DWELL_PRINTS 8u
+// Do not reintroduce a dwell here to chase a SuspendM edge. On the
+// device-initiated leg the two goals are in direct conflict - time spent
+// waiting for the PHY to power down is time taken away from the window in
+// which the doorbell can still be accepted.
 
 
 // Set to 1 to build the device-initiated L1 exit variant (firmware asserts
@@ -281,68 +270,23 @@ void main(void) {
             // DSUS_C, so a separate acknowledge here would be redundant and
             // would also risk clearing the event this branch is reacting to.
             if (l1_entry_seen && !l1_exit_seen) {
-                // DWELL IN L1 BEFORE RINGING THE DOORBELL.
+                // Ring the doorbell immediately, with nothing between the
+                // DSUS_C event that reported L1 entry and this write.
                 //
-                // Without this the device wakes itself so fast that the PHY
-                // never finishes powering down, and utmi_suspendm cannot fall.
-                // The gate is clk_off_counter in
-                // ip_xxx_3511_hs_mem_compound_structure.a.vhdl:
+                // The write is only latched if reg_dev_lpm_suspend is still 1
+                // when it reaches usb_reg_if.m.vhdl:
                 //
-                //   utmi_suspendm <= '1' when ((clock_on = '1') or
-                //                              (clk_off_counter /= 0) or
-                //                              pwrctrl_wakeup_int = '1')
-                //                         and sys_donotwakeup_n = '1';
+                //   if reg_wdata(19) = '0' and reg_dev_lpm_suspend = '1'
+                //                          and reg_dev_lpm_remote_wake = '1'
                 //
-                // clk_off_counter reloads to CLOCKOFF_CYCLE = 255 whenever
-                // clock_on is high and then decrements once per pie_clk. At
-                // 60 MHz that is 255 * 16.7 ns = 4.25 us of CONTINUOUS
-                // clock_on = 0 before utmi_suspendm is allowed to drop.
-                //
-                // Measured without any dwell: the L1 window was only 3.15 us
-                // (500.98 -> 504.13 us), the counter went 255 -> 68, i.e. it
-                // ran out of window 68 ticks (1.13 us) short, and SuspendM
-                // stayed high for the whole of L1. All the other terms were
-                // confirmed inactive on the waveform (clock_on = 0,
-                // pie_lowpower_n = 0, pwrctrl_wakeup_int = 0,
-                // sys_donotwakeup_n = 1), so the countdown was the sole
-                // holder. CHK_SUSPEND_SEEN was therefore unreachable, not
-                // failing.
-                //
-                // A read-only dwell of 64 polls was then measured and was
-                // still short: the window grew to 3.80 us and the counter only
-                // reached ~30. Register reads are simply too cheap. The dwell
-                // below therefore interleaves MCU console writes, which are
-                // byte-at-a-time over the same uncached path and are the
-                // slowest thing this firmware can do, so the window clears the
-                // 4.25 us floor with real margin instead of by a few ticks.
-                //
-                // The reads are kept as well as the prints: they make each
-                // outer pass observe the live DEVCMDSTAT, so the dwell cannot
-                // be optimised away and is expressed in real bus time rather
-                // than in compiler-dependent empty iterations.
-                //
-                // Do NOT shorten this below the 4.25 us floor: the PHY would
-                // stay clocked, SuspendM would never fall, and the suspend
-                // half of this test would silently stop covering anything.
-                for (uint32_t pass = 0; pass < USB_LPM_L1_DWELL_PRINTS; pass++) {
-                    uint32_t dwell_snapshot = 0;
-                    for (uint32_t dwell = 0; dwell < USB_LPM_L1_DWELL_POLLS; dwell++) {
-                        dwell_snapshot = lsu_read_32(USB_DEV_DEVCMDSTAT);
-                    }
-                    // This print is load-bearing, not tracing: it is the bulk
-                    // of the in-L1 dwell. It also happens to be useful - if
-                    // LPM_SUS drops in the middle of these lines the device
-                    // left L1 before the doorbell, which is a different bug
-                    // from the counter never expiring.
-                    VPRINTF(LOW, "MCU: in-L1 dwell pass %d/%d DEVCMDSTAT=0x%x (holding L1 so clk_off_counter can run to 0)\n",
-                            (int)(pass + 1u), (int)USB_LPM_L1_DWELL_PRINTS,
-                            dwell_snapshot);
-                }
-
+                // There is no retry and no error - a write that arrives after
+                // L1 has already closed is simply ignored, so the only visible
+                // symptom is that no device K ever appears. Any delay inserted
+                // here is therefore spent out of the budget for that window.
+                // See the note at the top of this file for why the padding
+                // that used to sit here was removed.
                 if (usb_request_lpm_remote_wakeup())
-                    VPRINTF(LOW, "MCU: device-initiated L1 exit driven after the in-L1 dwell (%d passes of %d DEVCMDSTAT polls plus one console write each) that lets clk_off_counter reach 0 so utmi_suspendm can fall\n",
-                            (int)USB_LPM_L1_DWELL_PRINTS,
-                            (int)USB_LPM_L1_DWELL_POLLS);
+                    VPRINTF(LOW, "MCU: device-initiated L1 exit driven\n");
                 continue;
             }
 
