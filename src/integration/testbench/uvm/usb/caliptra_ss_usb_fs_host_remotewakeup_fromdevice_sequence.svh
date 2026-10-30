@@ -35,6 +35,24 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
     // Device address usbdc0_enum_stepC leaves USBDC0 at.
     localparam int unsigned DEV_ADDR = 2;
 
+    // Standard SET_FEATURE(DEVICE_REMOTE_WAKEUP) applied to the HUB at address 1
+    // after enumeration. This is load-bearing, not politeness: the compound
+    // gates the upstream wakeup request on ep0_remote_wake_enabled(0), which is
+    // set ONLY by this request. Step 2b carries the full RTL derivation and the
+    // evidence summary at the end of this file carries the measurement.
+    // bRequest 0x03 is SET_FEATURE. Do NOT use 0x01 here - that is
+    // CLEAR_FEATURE, which would drive ep0_remote_wake_enabled(0) to 0 and
+    // reproduce the exact failure this step exists to fix. Cross-checked
+    // against caliptra_ss_usb_get_status_sequence.svh:100.
+    localparam bit [7:0]  BREQ_SET_FEATURE          = 8'h03;
+    localparam bit [15:0] FEAT_DEVICE_REMOTE_WAKEUP = 16'h0001;
+
+    // Pacing gap before a SETUP token: the firmware is still in the tail of the
+    // preceding control transfer when wait_xfer_done() returns and has to re-arm
+    // EP0 OUT before the next SETUP is driven. Same value and reason as
+    // caliptra_ss_usb_get_status_sequence.svh:111.
+    localparam realtime CTRL_PACING_GAP = 10us;
+
     // Standard GetDescriptor(Device) for the post-resume traffic check.
     localparam bit [7:0]  BREQ_GET_DESCRIPTOR = 8'h06;
     localparam bit [15:0] DESC_DEVICE_W_VALUE = 16'h0100; // type 1, index 0
@@ -72,6 +90,15 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
 
     bit       vip_link_suspend_seen;
     realtime  vip_link_suspend_time;
+
+    // The relaxed tinactivity installed by the test class, saved just before the
+    // suspend window tightens it and restored before the post-resume phase. A
+    // class property and not a local because the tighten (step 4b-pre) and the
+    // restore (step 7-pre) are in different steps of body(). Leaving the tight
+    // value in force past the suspend window lets the VIP link slide back into
+    // SUSPENDED during POST_RESUME_SETTLE, after which every transfer is a
+    // silent no-op that the VIP logs as started and done without driving a bit.
+    real      tinactivity_relaxed_ps;
 
     // -------------------------------------------------------------------------
     // Global uvm_event names shared with the testbench-scope checkers. These
@@ -137,6 +164,63 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
         usbdc0_enum_stepC(host_agent_h, usb_cfg);
         `uvm_info(MSG_ID, "Hub-aware enumeration done (hub at addr 1, USBDC0 at addr 2).", UVM_LOW)
 
+        // Step 2b: enable remote wakeup on the HUB. This step is MANDATORY and
+        // its absence was the measured cause of this test failing: see the
+        // evidence summary at the end of this file.
+        //
+        // In hub mode the compound does not route the device's wakeup request
+        // upstream directly. From
+        // ip_xxx_3511_hs_mem_compound_structure.a.vhdl:2327-2334,
+        //
+        //   usbreg_remotewakeup <= hub_remotewakeup when hub_enable_q = '1'
+        //                          else hub_port_remotewakeup(0);
+        //   hub_remotewakeup    <= sync_suspend               and
+        //                          ep0_remote_wake_enabled(0) and
+        //                          (hub_epin_enable_buffer or
+        //                           (hub_port_enable(0) and hub_port_remotewakeup(0)) or
+        //                           (hub_port_enable(1) and hub_port_remotewakeup(1)));
+        //
+        // so with hub_enable_q = '1' the device request reaches the pie only
+        // through ep0_remote_wake_enabled(0). That bit is set ONLY by
+        // set_remote_wake_enabled in usb_ep0_handler.m.vhdl:405-407, which is
+        // asserted only by a Standard SET_FEATURE to the device with wValue
+        // bit 0 set, decoded at usb_ep0_handler.m.vhdl:334-337. The hub EP0 is
+        // a hardware handler, so no firmware or SETUP-match change is needed -
+        // the request simply has to be sent, and it has to be sent to the HUB
+        // (device index 0), not to USBDC0.
+        //
+        // The anchor is at 2 on entry here because usbdc0_enum_stepC leaves it
+        // there, so it must be moved to 1 first and moved back afterwards:
+        // do_control_xfer() pins dev_anchor.device_address from usb_cfg and the
+        // VIP then constrains device_address to equal it, so a mismatch is an
+        // unsatisfiable randomization and a UVM_FATAL, not a silent misroute.
+        // set_anchor_addr() is NOT a base-class helper - it is a task local to
+        // caliptra_ss_usb_get_status_sequence. The two lines below are the
+        // mechanism itself and must be issued in lockstep with every change of
+        // target address.
+        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+        host_agent_h.reconfigure(usb_cfg);
+        #CTRL_PACING_GAP;
+        do_control_xfer(
+            .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
+            .bm_request_type_type (svt_usb_types::STANDARD),
+            .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
+            .brequest_val         (BREQ_SET_FEATURE),
+            .wvalue               (FEAT_DEVICE_REMOTE_WAKEUP),
+            .windex               (16'h0000),
+            .wlength              (16'h0000),
+            .device_addr          (1),
+            .label                ("HubSetFeature_DeviceRemoteWakeup"),
+            .usb_cfg              (usb_cfg));
+        wait_xfer_done(.agent_h(host_agent_h),
+                       .label("HubSetFeature_DeviceRemoteWakeup"));
+        `uvm_info(MSG_ID,
+            "SET_FEATURE(DEVICE_REMOTE_WAKEUP) sent to the hub at address 1, which sets ep0_remote_wake_enabled(0) and is what lets the compound forward the device wakeup request upstream in hub mode. Without it hub_remotewakeup is gated off and the pie never sees a request, no matter how many times the firmware asks.",
+            UVM_LOW)
+        usb_cfg.remote_device_cfg[0].device_address = 7'(DEV_ADDR);
+        host_agent_h.reconfigure(usb_cfg);
+        #CTRL_PACING_GAP;
+
         // Step 3: arm the DUT-side checkers before the suspend stimulus.
         arm_ev.trigger();
         `uvm_info(MSG_ID,
@@ -154,11 +238,15 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
         // cannot be in force during enumeration. usb_cfg here is the agent's own
         // configuration, so tinactivity is a direct member (usb_cfg.host_cfg
         // does not compile).
-        usb_cfg.tinactivity = 900_000_000.0; // 0.9 ms in ps
+        // The relaxed value is saved here and restored at step 7-pre; leaving
+        // the tight one in force past the suspend window lets the VIP link
+        // re-suspend during POST_RESUME_SETTLE and silently no-op step 9.
+        tinactivity_relaxed_ps = usb_cfg.tinactivity;
+        usb_cfg.tinactivity    = 900_000_000.0; // 0.9 ms in ps
         host_agent_h.reconfigure(usb_cfg);
         `uvm_info(MSG_ID,
-            "tinactivity lowered to 0.9 ms for the suspend window (enumeration ran with the relaxed value).",
-            UVM_LOW)
+            $sformatf("tinactivity lowered to 0.9 ms for the suspend window (enumeration ran with the relaxed value %0.0f ps, which is restored before the post-resume phase).",
+                      tinactivity_relaxed_ps), UVM_LOW)
 
         // Step 4b: stop SOF to put the bus into global L2 suspend. The only
         // stimulus the host contributes; ending the suspend is the device's job.
@@ -236,17 +324,37 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
         report_vip_wakeup_view(shared_status);
 
         // Step 7: the HOST half. The ordering is protocol, not preference:
-        //   7a. clear_suspend drives the host resume K and terminates it with
-        //       the low-speed EOP the pie waits for in BUS_EVENT_SW_WAKEUP_3,
-        //       which has no other exit arc. It cannot forge the verdict:
-        //       CHK_DEVICE_WAKEUP_K needs the DUT's own TXValid;
-        //   7b. SOF restart, or the VIP link falls straight back into suspend.
+        //   7-pre. Configuration only, no delay: restore the relaxed
+        //          tinactivity. The suspend window is over and every remaining
+        //          idle gap (notably POST_RESUME_SETTLE) is longer than the
+        //          tightened value, so leaving it in force lets the VIP link
+        //          slide back into SUSPENDED and turns step 9 into a silent
+        //          no-op that is logged as started and done without a bit
+        //          being driven.
+        //   7a.    clear_suspend drives the host resume K and terminates it
+        //          with the low-speed EOP the pie waits for in
+        //          BUS_EVENT_SW_WAKEUP_3, which has no other exit arc. It
+        //          cannot forge the verdict: CHK_DEVICE_WAKEUP_K needs the
+        //          DUT's own TXValid.
+        //   7b.    SOF restart, or the VIP link falls straight back into
+        //          suspend.
         //
-        // The EOP lands ~3 ms before the pie can act on it. FS survives that
-        // only because every FS packet ends in an SE0, so the restarted SOF
-        // stream keeps supplying SE0s until one lands in the right state.
-        // Anyone restructuring this step should adopt the HS ordering (sized
-        // host K via tdrsmdn) rather than preserve that accident.
+        // On the EOP placement at full speed: every FS packet ends in an SE0,
+        // so the restarted SOF stream keeps supplying SE0s and one lands while
+        // the pie is in BUS_EVENT_SW_WAKEUP_3. tdrsmdn is deliberately NOT set
+        // here. The HS twin needs it because high speed has no SE0s in normal
+        // traffic at all, so nothing would ever rescue a short host K; at FS
+        // the SOF stream does that job. Setting tdrsmdn here would only add
+        // simulated time. An earlier revision of this comment described the FS
+        // behaviour as an accident to be replaced by the HS ordering - that was
+        // written before the failure was measured, and the measurement showed
+        // the host half was never the problem. See the evidence summary at the
+        // end of this file.
+        usb_cfg.tinactivity = tinactivity_relaxed_ps;
+        host_agent_h.reconfigure(usb_cfg);
+        `uvm_info(MSG_ID,
+            $sformatf("tinactivity restored to %0.0f ps before the host half; the suspend window is over and the remaining idle gaps are longer than the tightened value.",
+                      tinactivity_relaxed_ps), UVM_LOW)
         begin
             svt_usb_link_service_clear_suspend_sequence clr_susp;
             clr_susp = svt_usb_link_service_clear_suspend_sequence::type_id::create("clr_susp");
@@ -413,5 +521,67 @@ class caliptra_ss_usb_fs_host_remotewakeup_fromdevice_sequence extends caliptra_
     endtask
 
 endclass
+
+// =============================================================================
+// EVIDENCE SUMMARY: why step 2b exists
+//
+// Measured from the FSDB of a failing run of this test, over the window
+// 2600-3350 us. Signal paths are under
+// /caliptra_ss_top_tb/caliptra_ss_dut/usb_core_i/u_hub_compound/.
+// Reproduce non-interactively with fsdb2vcd -bt/-et and -s <path>; note the
+// emitted VCD timescale is 10 fs, so divide raw timestamps by 100000 to get ns.
+// BUS_EVENT_STATE_R is a VHDL enum and CANNOT be converted to VCD - the pin and
+// handshake signals below are what pin the state down instead.
+//
+//   Firmware behaviour (from mcu_console.log): usb_request_remote_wakeup() was
+//   issued three times, at 2764 us, 3047 us and 3326 us, each write and
+//   read-back byte-identical (wrote 0x12414C82, read back 0x10434C82). The
+//   read-back decodes to DSUS=1, FORCE_NEEDCLK=0, SPEED=01 (FS), DCON=1,
+//   VBUS_DEBOUNCED=1 - exactly the state the IP requires for a wakeup. Three
+//   identical ignored attempts 280 us apart is not a race; the firmware is
+//   correct and is exonerated.
+//
+//   | Signal                    | Measured                                   |
+//   | ------------------------- | ------------------------------------------ |
+//   | PIE_SUSPEND               | 1 from 2631.402 us (pie IS in suspend)     |
+//   | REG_DEV_SUSPEND           | 1 from 2631.424 us                         |
+//   | SYNC_SUSPEND              | 1 from 2631.424 us                         |
+//   | HUB_ENABLE_Q              | 1 for the whole run (hub mode)             |
+//   | HUB_PORT_ENABLE(0)        | 1 for the whole run                        |
+//   | HUB_PORT_REMOTEWAKEUP(0)  | 1 from 2761.774 us, stays 1                |
+//   | EP0_REMOTE_WAKE_ENABLED(0)| 0 for the ENTIRE run                       |
+//   | HUB_REMOTEWAKEUP          | 0 for the ENTIRE run                       |
+//   | USBREG_REMOTEWAKEUP       | 0 for the ENTIRE run                       |
+//   | cptra_ss_usb_utmi_txvalid_o | 0 for the ENTIRE window (no K ever driven)|
+//
+// So the device raised its request correctly and the pie was sitting in exactly
+// the state that would consume it, but ep0_remote_wake_enabled(0) = 0 gated
+// hub_remotewakeup off, the request never reached the pie, and no resume K was
+// ever driven. Every other term of the hub_remotewakeup AND at
+// ip_xxx_3511_hs_mem_compound_structure.a.vhdl:2330-2334 was satisfied; that
+// one bit was the whole failure.
+//
+// Three hypotheses were tested and REFUTED by this data. They are recorded so
+// they are not re-proposed:
+//
+//   1. "Raise the sequence timeout ceilings to 4-12 ms." Refuted: the
+//      device-wakeup-K ceiling expired at 3135669.170 ns and CHK_RESUME_SEEN
+//      fired 6.664 ns later at 3135675.834 ns - that resume was the host's own
+//      clear_suspend at step 7, not the device. No ceiling was ever short.
+//   2. "HUB_CTRL.PLL_ON is being cleared." Refuted: HUB_CTRL reads 0x10610881
+//      identically before and after usb_allow_clock_stop(); bit 9 is never set,
+//      so the clear is a no-op.
+//   3. "The pie needs a longer dwell in BUS_EVENT_HOST_RESUME, which the VIP
+//      must prolong via tdrsmdn." Refuted: BUS_EVENT_HOST_RESUME is on the
+//      HOST-initiated resume path. PIE_SUSPEND = 1 throughout, so the pie was
+//      in BUS_EVENT_SUSPEND, never in BUS_EVENT_HOST_RESUME, and no amount of
+//      tdrsmdn would have helped. tdrsmdn remains correct and necessary for the
+//      HS twin for the unrelated reason given at step 7.
+//
+// A fourth claim, an RTL wiring defect in the line-2327 mux itself, was also
+// considered and is NOT supported: the mux and the OR term that feeds it are
+// both correct. hub_port_remotewakeup(0) is present in the OR exactly as it
+// should be. The missing SET_FEATURE was a testbench omission, not an RTL bug.
+// =============================================================================
 
 `endif // CALIPTRA_SS_USB_FS_HOST_REMOTEWAKEUP_FROMDEVICE_SEQUENCE_SV
