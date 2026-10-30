@@ -579,7 +579,38 @@ The aperture includes the OCP commands `PROT_CAP`, `DEVICE_ID`,
 `DEVICE_STATUS`, `DEVICE_RESET`, `RECOVERY_CTRL`, `RECOVERY_STATUS`,
 `HW_STATUS`, `INDIRECT_FIFO_CTRL`, `INDIRECT_FIFO_STATUS`,
 `INDIRECT_FIFO_DATA`, and `VENDOR`, plus Caliptra-specific
-`CALIPTRA_CTRL` and `CALIPTRA_STATUS`.
+`CALIPTRA_CTRL`, `CALIPTRA_STATUS`, and `CALIPTRA_SETUP_DEBUG`.
+
+### 7.1 Diagnostic SETUP and arbiter visibility
+
+These Caliptra-only words are outside the USB command set. Both are read-only,
+non-destructive, and in the same clock domain as the post-sync arbiter.
+Offsets below are relative to the Recovery aperture (add `0x800` for the
+shared Combo-local address). Use generated register/field symbols in software.
+
+| Register | Recovery offset | Fields |
+|---|---|---|
+| `CALIPTRA_STATUS` | `0x204` | Existing FIFO status `[3:0]`; live `POST_SYNC_ARB_STATE[6:4]`; `[31:7]` zero |
+| `CALIPTRA_SETUP_DEBUG` | `0x208` | `GENERATION[11:0]`; `OWNER_OCP[12]`; `[31:13]` zero |
+
+`GENERATION` advances modulo 4096 once per accepted complete, successful,
+eight-byte Device0 EP0 SETUP, for both legacy and OCP owners. Accepted retries
+count separately, including valid requests whose command later STALLs.
+Bad-CRC, incomplete, wrong-length, DATA, and STATUS packets do not advance it.
+`OWNER_OCP` updates atomically with the generation: one for the current accepted
+OCP classification, zero for legacy (including the path-disabled fallback),
+not the previous retained owner. Both reset to zero on global reset, USB bus
+reset, Device0 port reset, or Device0 disconnect; reset wins acceptance.
+Claim abort, protocol error, path-disable writes, and unrelated Hub/Device1
+activity do not by themselves reset the word.
+
+`POST_SYNC_ARB_STATE` reports registered state with explicit encoding:
+0 IDLE, 1 MIRROR, 2 META_WAIT, 3 DATA, 4 STATUS, 5 PROT_STALL; 6-7 are reserved.
+It follows the real FSM's reset/transition behavior without separate retention.
+The live state and last-accepted-SETUP word are not an atomic cross-register
+snapshot. Neither certifies SETUP SRAM validity/coherency or firmware readiness;
+the mirror write drain may finish later. Neither changes notification timing
+or authorizes firmware dispatch.
 
 ---
 
@@ -658,19 +689,25 @@ Production MCU firmware must:
 2. Recognize the OCP request envelope and active Recovery interface. Leave
    claimed requests to hardware: do not execute them, arm a legacy response,
    or issue a legacy STALL merely because they are class requests.
-3. Consume or clear legacy SETUP-pending bookkeeping using the existing
-   interface and SETUP-buffer coherence rules. Clearing the software flag does
-   not clear hardware OCP ownership.
+3. Discover new legacy SETUP work only from its corresponding EP0 OUT
+   new-transfer interrupt/ISR-mailbox notification, not by polling
+   `DEVCMDSTAT.SETUP`. Distinguish DATA/STATUS completion and old sticky IRQs.
+   If SETUP is observed without that notification, leave it set: do not
+   dispatch, clear it, or rearm descriptors solely because its level is one.
+   A subsequent legacy SETUP supplies the normal service opportunity.
 4. Not require a legacy SETUP interrupt to service OCP Streaming Boot. Hardware
    services claimed control transfers; Caliptra firmware uses Recovery
    registers and `payload_available`.
 5. Apply existing shared-SETUP-buffer supersession discipline. A newer SETUP
    payload may overwrite an earlier payload while firmware is active.
+   Prepare the current EP0 OUT/IN metadata and response payload before
+   clearing SETUP. Hardware does not clear stale response descriptors on
+   a replacement SETUP; whole-buffer zero-fill and debug-register polling
+   are not required.
 
 The MCU legacy dispatcher and Caliptra Recovery library are separate flows.
 Suppressing a claimed SETUP's successful legacy interrupt does not prevent
-Recovery service. Any legacy flag cleanup is bookkeeping, not a new
-per-OCP-command firmware dispatch requirement.
+Recovery service.
 
 `DEVCMDSTAT.SETUP` is a sticky pending bit, not a counter or generation
 number. If it is already one, another SETUP leaves it one. Forwarding

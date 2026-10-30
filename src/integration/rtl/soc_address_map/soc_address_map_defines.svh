@@ -61,6 +61,7 @@
 `define SOC_USB_COMBO_RECOVERY_VENDOR                                                               (32'h20000900)
 `define SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL                                                        (32'h20000a00)
 `define SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS                                                      (32'h20000a04)
+`define SOC_USB_COMBO_RECOVERY_CALIPTRA_SETUP_DEBUG                                                 (32'h20000a08)
 `define SOC_USB_COMBO_RECOVERY_WINDOW_PAD                                                           (32'h20000ffc)
 `define SOC_USB_COMBO_HUB_BASE_ADDR                                                                 (32'h20001000)
 `define SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR                                                  (32'h20001000)

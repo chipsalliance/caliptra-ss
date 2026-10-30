@@ -422,8 +422,19 @@
 `define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (32'h4)
 `define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
 `define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (32'h8)
-`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
-`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (32'hfffffff0)
+`define RECOVERY_CALIPTRA_STATUS_POST_SYNC_ARB_STATE_LOW                                            (4)
+`define RECOVERY_CALIPTRA_STATUS_POST_SYNC_ARB_STATE_MASK                                           (32'h70)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_7_LOW                                                  (7)
+`define RECOVERY_CALIPTRA_STATUS_RESERVED_31_7_MASK                                                 (32'hffffff80)
+`endif
+`ifndef RECOVERY_CALIPTRA_SETUP_DEBUG
+`define RECOVERY_CALIPTRA_SETUP_DEBUG                                                               (32'h208)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_GENERATION_LOW                                                (0)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_GENERATION_MASK                                               (32'hfff)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_OWNER_OCP_LOW                                                 (12)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_OWNER_OCP_MASK                                                (32'h1000)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_RESERVED_31_13_LOW                                            (13)
+`define RECOVERY_CALIPTRA_SETUP_DEBUG_RESERVED_31_13_MASK                                           (32'hffffe000)
 `endif
 `ifndef RECOVERY_WINDOW_PAD
 `define RECOVERY_WINDOW_PAD                                                                         (32'h7fc)
