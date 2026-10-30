@@ -40,7 +40,7 @@ import css_mcu0_el2_pkg::*;
     output logic [31:0] rd1,
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-    el2_regfile_if.veer_gpr_rf regfile,
+    css_mcu0_el2_regfile_if.veer_gpr_rf regfile,
 `endif
 
    // Excluding scan_mode from coverage as its usage is determined by the integrator of the VeeR core.

@@ -415,7 +415,7 @@ module caliptra_ss_top
 
     logic                       mcu_dccm_ecc_single_error;
     logic                       mcu_dccm_ecc_double_error;
-    el2_mubi_pkg::el2_mubi_t    mcu_dcls_corruption_error;
+    css_mcu0_el2_mubi_pkg::el2_mubi_t    mcu_dcls_corruption_error;
     logic [3:0]                 mcu_dcls_disable;
     logic                       mcu_dccm_write_readback_error;
 
@@ -825,7 +825,7 @@ module caliptra_ss_top
 
     //Aggregate error connections
     assign agg_error_fatal[5:0]   = {5'b0, cptra_error_fatal}; //CPTRA
-    assign agg_error_fatal[11:6]  = {3'b0, mcu_dccm_write_readback_error, el2_mubi_pkg::mubi_check_true(mcu_dcls_corruption_error), mcu_dccm_ecc_double_error}; //MCU
+    assign agg_error_fatal[11:6]  = {3'b0, mcu_dccm_write_readback_error, css_mcu0_el2_mubi_pkg::mubi_check_true(mcu_dcls_corruption_error), mcu_dccm_ecc_double_error}; //MCU
     assign agg_error_fatal[17:12] = {{6-lc_ctrl_reg_pkg::NumAlerts{1'b0}}, lc_alerts_o}; //LCC
     assign agg_error_fatal[23:18] = {fc_intr_otp_error, fc_alerts}; //FC
     assign agg_error_fatal[29:24] = {4'b0, i3c_peripheral_reset, i3c_escalated_reset}; //I3C

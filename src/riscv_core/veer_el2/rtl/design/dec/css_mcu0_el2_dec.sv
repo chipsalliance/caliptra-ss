@@ -329,7 +329,7 @@ module css_mcu0_el2_dec
     output logic dec_tlu_icm_clk_override,    // override ICCM clock domain gating
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-    el2_regfile_if.veer_rf_src regfile,
+    css_mcu0_el2_regfile_if.veer_rf_src regfile,
 `endif
 
     output logic dec_tlu_i0_commit_cmt,  // committed i0 instruction
@@ -435,7 +435,7 @@ module css_mcu0_el2_dec
   css_mcu0_el2_dec_decode_ctl #(.pt(pt)) decode (.*);
 
 `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
-      el2_regfile_if regfile_if ();
+      css_mcu0_el2_regfile_if regfile_if ();
  `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_READ_ENABLE
       assign regfile.gpr.rd0 = regfile_if.gpr.rd0;
       assign regfile.gpr.rd1 = regfile_if.gpr.rd1;

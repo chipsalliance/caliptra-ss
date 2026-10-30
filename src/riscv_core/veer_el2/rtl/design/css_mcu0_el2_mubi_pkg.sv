@@ -15,7 +15,7 @@
 //
 // Implementation derived from https://github.com/lowRISC/opentitan/blob/891c6079b2f19650f2bb6d248c28ea4cfbd746d2/hw/ip/prim/rtl/prim_mubi_pkg.sv#L31
 
-package el2_mubi_pkg;
+package css_mcu0_el2_mubi_pkg;
 
   // Multibit feature without DCLS feature enabled
   // doesn't apply any encoding to the logic
@@ -36,7 +36,7 @@ package el2_mubi_pkg;
 `endif
 
   // This is a prerequisite for the multibit functions below to work
-  `ASSERT_STATIC_IN_PACKAGE(CheckMuBiValsComplementary, El2MuBiTrue == ~El2MuBiFalse)
+  `css_mcu0_ASSERT_STATIC_IN_PACKAGE(CheckMuBiValsComplementary, El2MuBiTrue == ~El2MuBiFalse)
 
   function automatic el2_mubi_t mubi_check_invalid(el2_mubi_t val);
     return (val inside {El2MuBiTrue, El2MuBiFalse}) ? El2MuBiFalse : El2MuBiTrue;
