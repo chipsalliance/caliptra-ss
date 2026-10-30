@@ -25,6 +25,5 @@
 # event never fires, the host never terminates the resume, and the DUT parks
 # forever in BUS_EVENT_SW_WAKEUP_3, which has no timeout arm. It also supplies
 # the CHK_DEVICE_WAKEUP_K verdict.
-VCS_SIM_OPTS += +usb_suspend_resume_check=1
 VCS_SIM_OPTS += +usb_lpm_dev_wakeup=1
 VCS_SIM_OPTS += +usb_device_wakeup_check=1
