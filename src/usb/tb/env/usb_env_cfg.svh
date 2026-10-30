@@ -125,6 +125,21 @@ class usb_env_cfg extends uvm_object;
   // Validation
   // ---------------------------------------------------------------------------
 
+  // HS packet size for the shared fixture and configured stress endpoints.
+  function int unsigned bulk_max_packet_size();
+    return `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+  endfunction
+
+  // Nonzero ISO and large HS interrupt bandwidth require a nondefault alternate.
+  function bit requires_alternate_setting();
+    foreach (endpoint_cfgs[index]) begin
+      if (endpoint_cfgs[index].transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS ||
+          (endpoint_cfgs[index].transfer_type == USB_TRANSFER_TYPE_INTERRUPT &&
+           endpoint_cfgs[index].max_packet_size > 64)) return 1'b1;
+    end
+    return 1'b0;
+  endfunction
+
   // Reject any configuration that cannot be represented before it reaches
   // the VIP or a sequence, so a mistake fails with its own diagnostic rather
   // than as an obscure VIP or CSR symptom.
