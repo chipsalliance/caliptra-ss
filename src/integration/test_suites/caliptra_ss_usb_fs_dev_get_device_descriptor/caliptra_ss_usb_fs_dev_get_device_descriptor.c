@@ -42,7 +42,7 @@
 #include "stdint.h"
 #include "veer-csr.h"
 
-#define USB_POLL_TIMEOUT 20000
+#define USB_POLL_TIMEOUT 9000
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 

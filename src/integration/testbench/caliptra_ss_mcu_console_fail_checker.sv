@@ -92,7 +92,13 @@ module caliptra_ss_mcu_console_fail_checker (
     int    fail_lines;
 
     initial begin
-        enabled    = $test$plusargs("mcu_console_fail_check");
+        enabled = 1;
+        if($test$plusargs("mcu_console_fail_check")) begin
+            int unsigned tmp_en;
+            if($value$plusargs("mcu_console_fail_check=%0d", tmp_en)) begin
+                enabled=bit'(tmp_en);
+            end
+        end
         fail_lines = 0;
         if (enabled) begin
             uvm_report_info(MSG_ID,
