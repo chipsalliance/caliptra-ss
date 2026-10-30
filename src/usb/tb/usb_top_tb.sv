@@ -76,7 +76,11 @@ module usb_top_tb;
     .DEV1_NUM_USERS(usb_tb_pkg::USB_DEV1_NUM_PRIV_AXI_USERS)
   ) usb_ctrl_if (
     .clk(bus_clk),
-    .rst_n(bus_reset_n)
+    .rst_n(bus_reset_n),
+    .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
+    .dut_suspendm(dut_utmi_suspendm),
+    .dut_txvalid(dut_utmi_txvalid),
+    .dut_opmode(dut_utmi_opmode)
   );
 
   // Low-power AXI handshaking is outside this focused TB, so each manager

@@ -19,12 +19,11 @@
 //   2. Wait for VBUS, enable/connect the controller, and handle the USB reset.
 //   3. Run usb_init_host_seq while concurrently polling DEV0 reset and EP0
 //      interrupt state.
-//   4. Decode and service seven standard requests: GET_DESCRIPTOR, GET_STATUS,
-//      SET_ADDRESS, GET_DESCRIPTOR, GET_CONFIGURATION, SET_CONFIGURATION, and
-//      GET_CONFIGURATION.
+//   4. Service device/configuration discovery, status, address assignment,
+//      configuration selection, and configuration readback.
 //   5. Require both host-side transfer validation and the final DUT state of
-//      the configured device address, configuration 1, and exactly seven
-//      serviced SETUP packets.
+//      the configured device address, advertised configuration, and every
+//      expected SETUP packet.
 //
 // usb_base_seq provides CSR RAL, native DEV0 packet-SRAM accesses, and the
 // generic endpoint-list and per-endpoint interrupt mechanics. Other scenarios
@@ -36,6 +35,36 @@ class usb_init_seq extends usb_base_seq;
 
   // On EP0 OUT, the second entry word is the SETUP buffer descriptor.
   localparam int unsigned SETUP_ENTRY_SELECT = 1;
+  localparam byte unsigned CONFIGURATION_VALUE = 1;
+  // USB 2.0 chapter 9 standard descriptor types and lengths.
+  localparam byte unsigned DEVICE_DESCRIPTOR_TYPE = 1;
+  localparam byte unsigned CONFIGURATION_DESCRIPTOR_TYPE = 2;
+  localparam byte unsigned INTERFACE_DESCRIPTOR_TYPE = 4;
+  localparam byte unsigned ENDPOINT_DESCRIPTOR_TYPE = 5;
+  // USB 2.0 LPM ECN section 3, Table 3-1 and the BOS descriptor format.
+  localparam byte unsigned BOS_DESCRIPTOR_TYPE = 15;
+  localparam byte unsigned DEVICE_CAPABILITY_DESCRIPTOR_TYPE = 16;
+  localparam byte unsigned USB20_EXTENSION_CAPABILITY_TYPE = 2;
+  localparam byte unsigned USB20_LPM_ATTRIBUTE = 8'h02;
+  localparam int unsigned BOS_DESCRIPTOR_LENGTH = 5;
+  localparam int unsigned USB20_EXTENSION_DESCRIPTOR_LENGTH = 7;
+  localparam int unsigned DEVICE_DESCRIPTOR_LENGTH = 18;
+  localparam int unsigned CONFIGURATION_DESCRIPTOR_LENGTH = 9;
+  localparam int unsigned INTERFACE_DESCRIPTOR_LENGTH = 9;
+  localparam int unsigned ENDPOINT_DESCRIPTOR_LENGTH = 7;
+  localparam byte unsigned ISOCHRONOUS_ENDPOINT_TYPE = 1;
+  localparam byte unsigned BULK_ENDPOINT_TYPE = 2;
+  localparam byte unsigned INTERRUPT_ENDPOINT_TYPE = 3;
+  // USB 2.0 sections 9.4.1, 9.4.5 and 9.6.3.
+  localparam logic [15:0] DEVICE_REMOTE_WAKEUP_FEATURE = 16'd1;
+  localparam byte unsigned REMOTE_WAKEUP_ATTRIBUTE = 8'h20;
+  localparam byte unsigned REMOTE_WAKEUP_STATUS = 8'h02;
+  byte unsigned device_descriptor[$];
+  byte unsigned configuration_descriptor[$];
+  byte unsigned bos_descriptor[$];
+  bit lpm_supported;
+  bit remote_wakeup_supported;
+  bit remote_wakeup_enabled;
 
   // EP0 packet-memory buffers, as byte offsets from DATABUFSTART (0). A
   // parent scenario may move them before start; they must stay clear of the
@@ -68,6 +97,72 @@ class usb_init_seq extends usb_base_seq;
     return usb_init_host_seq::ENUMERATION_REQUEST_COUNT;
   endfunction
 
+  // USB 2.0 sections 9.6.1, 9.6.3, 9.6.5 and 9.6.6. This device fixture
+  // exposes one bus-powered, vendor-specific interface containing its endpoints.
+  function void build_descriptors();
+    int unsigned total_length;
+
+    total_length = CONFIGURATION_DESCRIPTOR_LENGTH + INTERFACE_DESCRIPTOR_LENGTH +
+                   ENDPOINT_DESCRIPTOR_LENGTH * p_sequencer.cfg.endpoint_cfgs.size();
+    // The shared fixture uses one EP0 packet and a 64-byte IN buffer.
+    if (ep0_in_endpoint.max_packet_size != 64 || total_length > 64) begin
+      `uvm_fatal("USB_INIT_SEQ", "Descriptor fixture requires HS EP0 and configuration data fitting in 64 bytes")
+    end
+    device_descriptor = '{
+      DEVICE_DESCRIPTOR_LENGTH, DEVICE_DESCRIPTOR_TYPE, lpm_supported ? 8'h01 : 8'h00, 8'h02, 0, 0, 0, 64,
+      0, 0, 0, 0, 8'h00, 8'h01, 0, 0, 0, 1
+    };
+    configuration_descriptor = '{
+      CONFIGURATION_DESCRIPTOR_LENGTH, CONFIGURATION_DESCRIPTOR_TYPE,
+      8'(total_length), 8'(total_length >> 8), 1, CONFIGURATION_VALUE, 0,
+      8'h80 | (remote_wakeup_supported ? REMOTE_WAKEUP_ATTRIBUTE : 8'h00), 50,
+      INTERFACE_DESCRIPTOR_LENGTH, INTERFACE_DESCRIPTOR_TYPE,
+      0, 0, 8'(p_sequencer.cfg.endpoint_cfgs.size()), 8'hff, 0, 0, 0
+    };
+    bos_descriptor = '{
+      BOS_DESCRIPTOR_LENGTH, BOS_DESCRIPTOR_TYPE,
+      8'(BOS_DESCRIPTOR_LENGTH + USB20_EXTENSION_DESCRIPTOR_LENGTH), 8'h00, 8'h01,
+      USB20_EXTENSION_DESCRIPTOR_LENGTH, DEVICE_CAPABILITY_DESCRIPTOR_TYPE,
+      USB20_EXTENSION_CAPABILITY_TYPE, USB20_LPM_ATTRIBUTE, 8'h00, 8'h00, 8'h00
+    };
+    foreach (p_sequencer.cfg.endpoint_cfgs[endpoint_index]) begin
+      usb_endpoint_cfg endpoint;
+      byte unsigned attributes;
+      int unsigned packet_size;
+      int unsigned additional_transactions;
+
+      endpoint = p_sequencer.cfg.endpoint_cfgs[endpoint_index];
+      if (endpoint == null) begin
+        `uvm_fatal("USB_INIT_SEQ", "Null endpoint in descriptor fixture")
+      end
+      additional_transactions = endpoint.isoc_mult_valid ? endpoint.isoc_mult : 0;
+      case (endpoint.transfer_type)
+        USB_TRANSFER_TYPE_BULK: attributes = BULK_ENDPOINT_TYPE;
+        USB_TRANSFER_TYPE_INTERRUPT: attributes = INTERRUPT_ENDPOINT_TYPE;
+        USB_TRANSFER_TYPE_ISOCHRONOUS: attributes = ISOCHRONOUS_ENDPOINT_TYPE;
+        default: `uvm_fatal("USB_INIT_SEQ", "Only non-control endpoints belong in the interface descriptor")
+      endcase
+      if (endpoint.ep_number == 0 || endpoint.ep_number > 15 ||
+          endpoint.max_packet_size == 0 || endpoint.max_packet_size > 1024 ||
+          additional_transactions > 2 || endpoint.interval > 255 ||
+          (attributes == BULK_ENDPOINT_TYPE && (endpoint.max_packet_size != 512 || additional_transactions != 0)) ||
+          (attributes != BULK_ENDPOINT_TYPE && (endpoint.interval == 0 || endpoint.interval > 16))) begin
+        `uvm_fatal("USB_INIT_SEQ", $sformatf("Invalid HS descriptor endpoint: %s", endpoint.convert2string()))
+      end
+      // isoc_mult represents wMaxPacketSize[12:11] in USB 2.0; max_burst_size
+      // belongs to the USB 3.0 companion descriptor and is not encoded here.
+      packet_size = endpoint.max_packet_size | (additional_transactions << 11);
+      configuration_descriptor.push_back(ENDPOINT_DESCRIPTOR_LENGTH);
+      configuration_descriptor.push_back(ENDPOINT_DESCRIPTOR_TYPE);
+      configuration_descriptor.push_back(8'(endpoint.ep_number) |
+                                         (endpoint.direction == USB_DIRECTION_IN ? 8'h80 : 8'h00));
+      configuration_descriptor.push_back(attributes);
+      configuration_descriptor.push_back(8'(packet_size));
+      configuration_descriptor.push_back(8'(packet_size >> 8));
+      configuration_descriptor.push_back(8'(endpoint.interval));
+    end
+  endfunction
+
   // Preserve the protocol-owned address shadow whenever DEVCMDSTAT is written.
   task write_devcmdstat(logic [31:0] value);
     uvm_reg_field dev_addr_field;
@@ -97,14 +192,19 @@ class usb_init_seq extends usb_base_seq;
     bit vbus_detected;
 
     enable_connect_value = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
-                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON) |
-                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUP);
-    interrupt_enable_value = ral_field_value(p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN, ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()) |
+                           ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
+    // Keep hardware LPM acceptance consistent with the advertised capability.
+    if (lpm_supported) enable_connect_value |= ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.LPM_SUP);
+    interrupt_enable_value = ral_field_value(
+                               p_sequencer.reg_model.combo.dev0_csr.INTEN.EP_INT_EN,
+                               ep0_out_endpoint.csr_bit_mask() | ep0_in_endpoint.csr_bit_mask()
+                             ) |
                              ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTEN.DEV_INT_EN);
     vbus_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.VBUS_DEBOUNCED);
     `uvm_info("USB_INIT_SEQ", "Initializing DEV0 endpoint list and control registers", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
+    remote_wakeup_enabled = 1'b0;
     initialize_ep0_entries();
     // Clear every non-EP0 entry so no endpoint starts active.
     write32(USB_DEV0_SRAM, endpoint_list_base() + 32'h00c, 0);
@@ -162,6 +262,7 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info("USB_INIT_SEQ", "Handling USB bus reset", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
+    remote_wakeup_enabled = 1'b0;
     write_devcmdstat(command | reset_change_mask);
     initialize_ep0_entries();
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
@@ -171,7 +272,13 @@ class usb_init_seq extends usb_base_seq;
 
   // Decode the two little-endian words written by hardware into the EP0 SETUP
   // buffer into the standard eight-byte request fields.
-  task read_setup_packet(output byte unsigned request_type, output byte unsigned request, output logic [15:0] value, output logic [15:0] index, output logic [15:0] length);
+  task read_setup_packet(
+    output byte unsigned request_type,
+    output byte unsigned request,
+    output logic [15:0] value,
+    output logic [15:0] index,
+    output logic [15:0] length
+  );
     logic [31:0] word0;
     logic [31:0] word1;
 
@@ -186,12 +293,18 @@ class usb_init_seq extends usb_base_seq;
 
   // Populate the EP0 IN buffer and transfer ownership to hardware for a
   // bounded data-stage response.
-  task send_ep0_data(logic [31:0] data_words[5], int unsigned byte_count);
-    int unsigned word_count;
+  task send_ep0_data(byte unsigned data_bytes[$], int unsigned byte_count);
+    logic [31:0] word;
 
-    word_count = (byte_count + 3) / 4;
-    for (int unsigned word_index = 0; word_index < word_count; word_index++) begin
-      write_sram_bytes(USB_DEV0_SRAM, ep0_in_buffer_offset + word_index * 4, data_words[word_index], byte_count - word_index * 4);
+    if (byte_count == 0 || byte_count > data_bytes.size() || byte_count > ep0_in_endpoint.max_packet_size) begin
+      `uvm_fatal("USB_INIT_SEQ", "Invalid EP0 data response length")
+    end
+    for (int unsigned byte_index = 0; byte_index < byte_count; byte_index += 4) begin
+      word = 0;
+      for (int unsigned lane = 0; lane < 4 && byte_index + lane < byte_count; lane++) begin
+        word[lane * 8 +: 8] = data_bytes[byte_index + lane];
+      end
+      write_sram_bytes(USB_DEV0_SRAM, ep0_in_buffer_offset + byte_index, word, byte_count - byte_index);
     end
     write_endpoint_entry(ep0_in_endpoint, endpoint_entry(1'b1, 1'b0, byte_count, ep0_in_buffer_offset));
   endtask
@@ -230,30 +343,33 @@ class usb_init_seq extends usb_base_seq;
     logic [31:0] ep0in_mask;
     logic [31:0] intonnak_ci_mask;
     logic [31:0] intonnak_co_mask;
-    logic [31:0] response_words[5];
+    byte unsigned response_bytes[$];
     int unsigned response_length;
 
     ep0in_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTSTAT.EP0IN);
     intonnak_ci_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.INTONNAK_CI);
     intonnak_co_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.INTONNAK_CO);
-    response_words = '{
-      32'h0002_0112,
-      32'h4000_0000,
-      32'h0000_0000,
-      32'h0000_0100,
-      32'h0100_0000
-    };
     read_setup_packet(request_type, request, value, index, length);
     ral_write32("INTSTAT.EP0IN", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, ep0in_mask);
 
     case (request)
       8'h06: begin
-        // Return at most the fixed 18-byte device descriptor requested by host.
-        if (request_type != 8'h80 || value[15:8] != 8'h01) begin
+        if (request_type != 8'h80 || value[7:0] != 0 || index != 0 || length == 0) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_DESCRIPTOR request")
         end
-        response_length = length < 18 ? length : 18;
-        send_ep0_data(response_words, response_length);
+        case (value[15:8])
+          DEVICE_DESCRIPTOR_TYPE: response_bytes = device_descriptor;
+          CONFIGURATION_DESCRIPTOR_TYPE: response_bytes = configuration_descriptor;
+          BOS_DESCRIPTOR_TYPE: begin
+            if (!lpm_supported) begin
+              `uvm_fatal("USB_INIT_SEQ", "BOS was requested from a fixture without LPM capability")
+            end
+            response_bytes = bos_descriptor;
+          end
+          default: `uvm_fatal("USB_INIT_SEQ", "Unsupported descriptor type")
+        endcase
+        response_length = length < response_bytes.size() ? length : response_bytes.size();
+        send_ep0_data(response_bytes, response_length);
         arm_ep0_out();
         ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
         // Match the firmware's descriptor status-phase detection policy:
@@ -263,19 +379,17 @@ class usb_init_seq extends usb_base_seq;
         write_devcmdstat(command);
       end
       8'h00: begin
-        // Report the two-byte, all-zero device status expected by
-        // this scenario.
-        if (request_type != 8'h80 || length != 2) begin
+        if (request_type != 8'h80 || value != 0 || index != 0 || length != 2) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_STATUS request")
         end
-        response_words = '{default: 0};
-        send_ep0_data(response_words, 2);
+        response_bytes = '{remote_wakeup_enabled ? REMOTE_WAKEUP_STATUS : 8'h00, 8'h00};
+        send_ep0_data(response_bytes, 2);
         arm_ep0_out();
       end
       8'h05: begin
         // Match firmware ordering: arm status IN and rearm OUT, then program
         // the shadowed address. This branch does not wait for USB completion.
-        if (request_type != 8'h00 || length != 0) begin
+        if (request_type != 8'h00 || value > 127 || index != 0 || length != 0) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected SET_ADDRESS request")
         end
         send_ep0_zlp();
@@ -286,21 +400,32 @@ class usb_init_seq extends usb_base_seq;
       end
       8'h08: begin
         // Return the current configuration shadow before or after selection.
-        if (request_type != 8'h80 || length != 1) begin
+        if (request_type != 8'h80 || value != 0 || index != 0 || length != 1) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected GET_CONFIGURATION request")
         end
-        response_words = '{default: 0};
-        response_words[0] = current_configuration;
-        send_ep0_data(response_words, 1);
+        response_bytes = '{current_configuration};
+        send_ep0_data(response_bytes, 1);
         arm_ep0_out();
       end
       8'h09: begin
-        // Accept only configuration zero or the scenario's configuration one,
+        // Accept only configuration zero or the advertised configuration,
         // then acknowledge with a zero-length status packet.
-        if (request_type != 8'h00 || length != 0 || value[7:0] > 1) begin
+        if (request_type != 8'h00 || length != 0 || index != 0 ||
+            (value != 0 && value != CONFIGURATION_VALUE)) begin
           `uvm_fatal("USB_INIT_SEQ", "Unexpected SET_CONFIGURATION request")
         end
         current_configuration = value[7:0];
+        remote_wakeup_enabled = 1'b0;
+        send_ep0_zlp();
+        arm_ep0_out();
+      end
+      8'h01, 8'h03: begin
+        if (!remote_wakeup_supported || current_configuration == 0 ||
+            request_type != 8'h00 || value != DEVICE_REMOTE_WAKEUP_FEATURE ||
+            index != 0 || length != 0) begin
+          `uvm_fatal("USB_INIT_SEQ", "Unexpected device feature request")
+        end
+        remote_wakeup_enabled = request == 8'h03;
         send_ep0_zlp();
         arm_ep0_out();
       end
@@ -317,9 +442,8 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info(
       "USB_INIT_SEQ",
       $sformatf(
-        "Serviced SETUP %0d/%0d: type=0x%02h request=0x%02h value=0x%04h index=0x%04h length=%0d",
+        "Serviced SETUP %0d: type=0x%02h request=0x%02h value=0x%04h index=0x%04h length=%0d",
         serviced_request_count,
-        expected_setup_request_count(),
         request_type,
         request,
         value,
@@ -333,7 +457,7 @@ class usb_init_seq extends usb_base_seq;
   // Poll reset and interrupt state until every expected SETUP packet is serviced.
   // Device events are acknowledged independently from EP0 OUT events so a
   // reset cannot be hidden by simultaneous control traffic.
-  task service_ep0();
+  task service_ep0(int unsigned request_count = expected_setup_request_count());
     logic [31:0] command;
     logic [31:0] dev_int_mask;
     logic [31:0] ep0out_mask;
@@ -344,7 +468,7 @@ class usb_init_seq extends usb_base_seq;
     ep0out_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.INTSTAT.EP0OUT);
     setup_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.SETUP);
     `uvm_info("USB_INIT_SEQ", "Starting concurrent bus-reset and EP0 SETUP service", UVM_LOW)
-    while (serviced_request_count < expected_setup_request_count()) begin
+    while (serviced_request_count < request_count) begin
       ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
       handle_bus_reset(command);
       ral_read32("INTSTAT", p_sequencer.reg_model.combo.dev0_csr.INTSTAT, interrupt_status);
@@ -368,7 +492,7 @@ class usb_init_seq extends usb_base_seq;
     end
     `uvm_info(
       "USB_INIT_SEQ",
-      $sformatf("All %0d EP0 SETUP requests were serviced", expected_setup_request_count()),
+      $sformatf("All %0d EP0 SETUP requests were serviced", request_count),
       UVM_LOW
     )
   endtask
@@ -404,6 +528,7 @@ class usb_init_seq extends usb_base_seq;
     `uvm_info("USB_INIT_SEQ", "Starting standalone USB INIT scenario", UVM_LOW)
     ep0_out_endpoint = get_endpoint(0, USB_DIRECTION_OUT);
     ep0_in_endpoint = get_endpoint(0, USB_DIRECTION_IN);
+    build_descriptors();
     `uvm_info("USB_INIT_SEQ", $sformatf("Control endpoint resolved: %s / %s", ep0_out_endpoint.convert2string(), ep0_in_endpoint.convert2string()), UVM_LOW)
     check_buffer_clear_of_endpoint_list("EP0 SETUP", setup_buffer_offset, 8);
     check_buffer_clear_of_endpoint_list("EP0 OUT", ep0_out_buffer_offset, ep0_out_endpoint.max_packet_size);
@@ -423,7 +548,7 @@ class usb_init_seq extends usb_base_seq;
 
     completed = host_scenario_completed &&
                 serviced_request_count == expected_setup_request_count() &&
-                current_configuration == 1 &&
+                current_configuration == CONFIGURATION_VALUE &&
                 device_address_shadow == p_sequencer.cfg.device_address;
     if (!completed) begin
       `uvm_fatal(
