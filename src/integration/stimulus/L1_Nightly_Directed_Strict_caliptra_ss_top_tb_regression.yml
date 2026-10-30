@@ -24,6 +24,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_bulk_out/caliptra_ss_usb_hs_dev_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_unsupported_ep/caliptra_ss_usb_hs_dev_unsupported_ep.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_hub_bypass_enum/caliptra_ss_usb_hs_dev_hub_bypass_enum.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_vbus_absent_boot/caliptra_ss_usb_hs_dev_vbus_absent_boot.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_nbyte/caliptra_ss_usb_hs_dev_nbyte.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_resume/caliptra_ss_usb_hs_dev_resume.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_iso_out/caliptra_ss_usb_hs_dev_iso_out.yml
@@ -35,6 +37,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_clock/caliptra_ss_usb_hs_clock.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_bulk_loopback/caliptra_ss_usb_hs_dev_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_int_loopback/caliptra_ss_usb_hs_dev_int_loopback.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_int_iso_mix/caliptra_ss_usb_hs_dev_int_iso_mix.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_powerdown/caliptra_ss_usb_hs_dev_powerdown.yml
         - ../test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_dual_device_fs_bulk_loopback/caliptra_ss_usb_dual_device_fs_bulk_loopback.yml
@@ -44,6 +47,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_fs_dev_unsupported_ep/caliptra_ss_usb_fs_dev_unsupported_ep.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_disconnect/caliptra_ss_usb_fs_dev_disconnect.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_iso_out/caliptra_ss_usb_fs_dev_iso_out.yml
+        - ../test_suites/caliptra_ss_usb_fs_dev_int_iso_mix/caliptra_ss_usb_fs_dev_int_iso_mix.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_nbyte/caliptra_ss_usb_fs_dev_nbyte.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_powerdown/caliptra_ss_usb_fs_dev_powerdown.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_global_suspend_L2/caliptra_ss_usb_fs_dev_global_suspend_L2.yml
