@@ -350,9 +350,24 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // The default ceiling is deliberately generous: it must not fire on a
     // transfer that is merely slow on this testbench, only on one that is never
     // going to complete. Callers with a tighter expectation can pass their own.
+    //
+    // The default is sized for FULL SPEED, which is the slowest mode this
+    // testbench runs. The FS frame period is 1 ms against 125 us at high
+    // speed, so a single FS interrupt, isochronous or control transfer can
+    // legitimately cost a few milliseconds of simulation time on a perfectly
+    // healthy bus. The earlier 2000 us default was sized for high speed and
+    // expired on healthy FS traffic: measured overruns were about 2019 us for
+    // a 64-byte FS INTERRUPT IN, and the FS enumeration control transfers
+    // (GET_CONFIGURATION readbacks) and FS bulk IN transfers in the nightly
+    // regression overran it as well, each time producing a uvm_error plus a
+    // cascade of follow-on errors against an empty payload while the firmware
+    // reported the very same transfer as PASSED. 10000 us (ten FS frames)
+    // removes that false failure while keeping the guard meaningful: a
+    // transfer the VIP will never complete is still never going to complete
+    // at 10 ms, which is the only case this timeout exists to report.
     // -------------------------------------------------------------------
     task wait_xfer_done(svt_usb_agent agent_h, string label,
-                        int unsigned timeout_us = 2000);
+                        int unsigned timeout_us = 10000);
         xfer_wait_timed_out = 1'b0;
         fork
             begin: WAIT_XFER
@@ -1222,6 +1237,24 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                        before the calling thread resumes cannot make
     //                        the wait miss the event. Set to 0 only where the
     //                        original code deliberately waited sequentially.
+    //   timeout_us         - ceiling handed to wait_xfer_done() for this
+    //                        transfer. The 10000 us default matches
+    //                        wait_xfer_done()'s own default and is sized for
+    //                        FULL SPEED, the slowest mode this testbench
+    //                        runs: the FS frame period is 1 ms against 125 us
+    //                        at high speed, so one FS interrupt, isochronous
+    //                        or bulk transfer of a few hundred bytes can cost
+    //                        milliseconds of simulation time on a perfectly
+    //                        healthy bus. The previous 2000 us default was
+    //                        sized for high speed and expired on healthy FS
+    //                        traffic - measured reference: a 64-byte FS
+    //                        INTERRUPT IN loopback in
+    //                        caliptra_ss_usb_fs_dev_int_iso_mix took about
+    //                        2019 us end to end. No FS call site needs a
+    //                        local override any more; see wait_xfer_done()
+    //                        for the full rationale. Pass a tighter value
+    //                        only where the test itself has a stricter
+    //                        latency expectation.
     // -------------------------------------------------------------------
     task do_data_xfer(
         input  svt_usb_agent         agent_h,
@@ -1237,7 +1270,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input  bit [7:0]             payload_data[]     = {},
         input  bit                   no_zero_length_end = 0,
         input  bit                   single_isoc_txn    = 0,
-        input  bit                   fork_wait          = 1
+        input  bit                   fork_wait          = 1,
+        input  int unsigned          timeout_us         = 10000
     );
         if (no_zero_length_end && single_isoc_txn)
             `uvm_fatal("USB_BASE_SEQ",
@@ -1301,13 +1335,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                                   label, device_addr, ep_num, byte_count), UVM_LOW)
                 end
                 begin
-                    wait_xfer_done(.agent_h(agent_h), .label(label));
+                    wait_xfer_done(.agent_h(agent_h), .label(label),
+                                   .timeout_us(timeout_us));
                 end
             join
         end
         else begin
             finish_item(req, -1);
-            wait_xfer_done(.agent_h(agent_h), .label(label));
+            wait_xfer_done(.agent_h(agent_h), .label(label),
+                           .timeout_us(timeout_us));
         end
     endtask
 

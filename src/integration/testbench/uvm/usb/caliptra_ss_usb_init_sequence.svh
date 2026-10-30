@@ -142,7 +142,7 @@ class caliptra_ss_usb_init_sequence extends caliptra_ss_usb_base_sequence;
                     #10us `uvm_info("USB_INIT",
                         $sformatf("host agent link_usb_20_state [%p]",
                                   shared_status.link_usb_20_state),
-                        UVM_LOW);
+                        UVM_MEDIUM);
                 end
             end
         join

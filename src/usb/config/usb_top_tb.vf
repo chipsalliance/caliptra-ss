@@ -153,6 +153,9 @@ ${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
 ${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_intf.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_ral_config_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_combo_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
