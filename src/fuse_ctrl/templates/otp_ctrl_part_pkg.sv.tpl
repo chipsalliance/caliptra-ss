@@ -125,8 +125,9 @@ package otp_ctrl_part_pkg;
     logic integrity;        // Whether the partition is integrity protected
     logic iskeymgr_creator; // Whether the partition has any creator key material
     logic iskeymgr_owner;   // Whether the partition has any owner key material
-    // Decoded LC state index. A partition can be written as long this index is
-    // smaller or equal the current state index of the LC (see `dec_lc_state_e`).
+    // Decoded LC state index (see `dec_lc_state_e`) of the last LC state in which
+    // the partition can be written. The partition is write-locked in RAW and in
+    // any LC state whose decoded index is larger than this value.
     logic [DecLcStateWidth-1:0] lc_phase;
     logic zeroizable;       // Whether the partition can be zeroized.
   } part_info_t;

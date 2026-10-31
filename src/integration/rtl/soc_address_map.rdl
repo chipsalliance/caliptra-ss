@@ -26,8 +26,6 @@
 `include "../../../src/lc_ctrl/rtl/lc_ctrl.rdl"
 `include "../../../third_party/usb2/systemrdl/usb_device_memory.rdl"
 `include "../../../third_party/usb2/systemrdl/usb_combo.rdl"
-`include "../../../src/spi_host/rtl/spi_host.rdl"
-`include "../../../src/uart/rtl/uart.rdl"
 
 addrmap soc {
 
@@ -60,8 +58,4 @@ addrmap soc {
     otp_ctrl otp_ctrl @ 0x7000_0000;
 
     lc_ctrl lc_ctrl @ 0x7000_0400;
-
-    spi_host spi_host @ 0x7000_0800;
-
-    uart uart @ 0x7000_0C00;
 };

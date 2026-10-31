@@ -1,3 +1,0 @@
-+incdir+${CALIPTRA_SS_ROOT}/src/mcu/rtl
-${CALIPTRA_SS_ROOT}/src/mcu/rtl/caliptra_reg_defines.svh
-${CALIPTRA_SS_ROOT}/src/mcu/rtl/caliptra_reg_defines.svh
