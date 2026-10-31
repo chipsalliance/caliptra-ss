@@ -3,7 +3,11 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_filter                                  
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_read_backpressure                           , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_stress                                      , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_axi_write_backpressure                          , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_bad_crc16                                       , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_bad_crc5                                        , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_bad_pid                                         , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_dev_skip                                        , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_endpoint_rw                                     , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_init                                            , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_unsupported_request                             , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout                                 , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
