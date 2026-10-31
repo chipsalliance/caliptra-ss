@@ -214,6 +214,9 @@ package usb_tb_pkg;
   `include "sequences/usb_init_host_seq.svh"
   `include "sequences/usb_init_seq.svh"
   `include "sequences/usb_resume_recovery_seq.svh"
+  `include "sequences/usb_test_packet_seq.svh"
+  `include "sequences/usb_test_mode_nak_host_seq.svh"
+  `include "sequences/usb_test_modes_seq.svh"
   `include "sequences/usb_dev_skip_host_seq.svh"
   `include "sequences/usb_dev_skip_seq.svh"
   `include "tests/usb_base_test.svh"
@@ -223,6 +226,8 @@ package usb_tb_pkg;
   `include "tests/usb_axi_stress_test.svh"
   `include "tests/usb_endpoint_rw_test.svh"
   `include "tests/usb_init_test.svh"
+  `include "tests/usb_test_packet_test.svh"
+  `include "tests/usb_test_modes_test.svh"
   `include "tests/usb_dev_skip_test.svh"
   `include "tests/usb_utility_timeout_test.svh"
 endpackage
