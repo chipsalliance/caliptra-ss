@@ -11,4 +11,8 @@ contents:
         - ../tests/usb_dev_skip.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_test_j.yml
+        - ../tests/usb_test_k.yml
+        - ../tests/usb_test_packet.yml
+        - ../tests/usb_test_se0_nak.yml
         - ../tests/usb_utility_timeout.yml
