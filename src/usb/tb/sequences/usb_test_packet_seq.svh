@@ -194,6 +194,7 @@ class usb_test_packet_seq extends usb_base_seq;
         svt_usb_protocol_service_20_sof_off_sequence::type_id::create(
             "sof_off_sequence");
     sof_off_sequence.start(p_sequencer.host_sequencer.prot_service_sequencer);
+    // Let any already-started SOF finish before entering TEST_PACKET receiver mode.
     #1us;
 
     receive_test_mode_seq =
@@ -254,7 +255,6 @@ class usb_test_packet_seq extends usb_base_seq;
         )
       end
     join_none
-    #0;
     init_sequence.write_devcmdstat(command);
     wait (observed_packet_count >= MIN_TEST_PACKET_COUNT);
     if (observer.status() != process::FINISHED) observer.kill();
@@ -269,6 +269,7 @@ class usb_test_packet_seq extends usb_base_seq;
     // (usbreg_phy_test_mode = "000") and CSR readback sanity check.
     command &= ~test_mode_mask;
     init_sequence.write_devcmdstat(command);
+    // Allow PHY_TEST_MODE=0 to synchronize into USB_PIE_1 before CSR readback.
     #200ns;
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
     if ((command & test_mode_mask) !== 32'h0) begin

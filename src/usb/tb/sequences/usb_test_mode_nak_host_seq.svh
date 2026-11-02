@@ -79,7 +79,6 @@ class usb_test_mode_nak_host_seq extends usb_host_base_seq;
         abort_sequence.start(p_sequencer.prot_service_sequencer);
       end
     join_none
-    #0;
     start_item(request_transfer, -1, p_sequencer.xfer_sequencer);
     request_transfer.cfg = usb_cfg;
     request_transfer.fix_anchors(0, target_endpoint.anchor_index, 0);

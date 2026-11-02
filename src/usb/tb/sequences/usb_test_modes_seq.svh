@@ -165,7 +165,6 @@ class usb_test_modes_seq extends usb_base_seq;
         `uvm_fatal("USB_TEST_MODES", $sformatf("No native DUT %s observation within %0t", mode_name, watchdog_timeout))
       end
     join_none
-    #0;
     `uvm_info("USB_TEST_MODES", $sformatf("Native receiver armed; selecting DUT %s", mode_name), UVM_LOW)
     init_sequence.write_devcmdstat(command);
     if (selector == TEST_SE0_NAK_MODE) begin
@@ -237,11 +236,13 @@ class usb_test_modes_seq extends usb_base_seq;
         command = (command & ~mode_mask) |
                   ral_field_value(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.PHY_TEST_MODE, reserved_modes[idx]);
         init_sequence.write_devcmdstat(command);
+        // Allow PHY_TEST_MODE to synchronize into USB_PIE_1 (60 MHz phy_clk).
         #200ns;
       end
       ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
       command &= ~mode_mask;
       init_sequence.write_devcmdstat(command);
+      // Allow PHY_TEST_MODE=0 to synchronize into USB_PIE_1 before CSR readback.
       #200ns;
       ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
       if ((command & mode_mask) !== 32'h0) begin
