@@ -229,6 +229,8 @@ void main(void) {
             lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
             if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)
                 usb_handle_control_transfer();
+            else
+                usb_ep0_arm_out();
         }
         if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK)
             lsu_write_32(USB_DEV_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
