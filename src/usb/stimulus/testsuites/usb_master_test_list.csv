@@ -14,6 +14,10 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_endpoint_rw                                 
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_interrupt                        , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_high_bandwidth_iso                              , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_init                                            , Directed       , Nightly       , L0  , L1  , usb_top_tb        , Promote        , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_test_j                                          , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_test_k                                          , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_test_packet                                     , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_test_se0_nak                                    , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_unsupported_request                             , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_host_resume                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
