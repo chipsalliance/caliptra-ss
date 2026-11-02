@@ -98,6 +98,7 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
                 entry_buffer_byte_offset(entry) ===
                     initial_buffer + completed_transactions * transaction_bytes;
       if (!matched) begin
+        // Poll interval between SRAM descriptor reads while waiting for DMA writeback.
         #1us;
       end
     end
@@ -181,6 +182,7 @@ class usb_high_bandwidth_interrupt_seq extends usb_base_seq;
     deadline = $realtime + transfer_timeout;
     while (shared_status.local_host_status.micro_frame_count <= target_microframe &&
            $realtime < deadline) begin
+      // Poll interval while waiting for the SVT host microframe counter to advance.
       #1us;
     end
     if (shared_status.local_host_status.micro_frame_count <= target_microframe) begin

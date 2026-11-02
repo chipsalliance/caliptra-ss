@@ -313,7 +313,6 @@ class usb_high_bandwidth_iso_seq extends usb_base_seq;
     logic [31:0] interrupt_status;
     logic [31:0] interrupt_mask;
 
-    #1us;
     check_endpoint_entry_writeback(
       endpoint,
       armed_entry,
