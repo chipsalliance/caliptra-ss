@@ -120,18 +120,24 @@ class caliptra_ss_usb_hs_dev1_hub_config_descriptor_sequence extends caliptra_ss
 
         // Step 5: GET_DESCRIPTOR(CONFIGURATION) for the hub. wValue=0x0200
         // (CONFIGURATION descriptor, index 0), wLength=0x0019 (25 bytes).
-        do_control_xfer(
-            .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
-            .bm_request_type_type (svt_usb_types::STANDARD),
-            .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
-            .brequest_val         (8'h06),
-            .wvalue               (16'h0200),
-            .windex               (16'h0000),
-            .wlength              (16'h0019),
-            .device_addr          (HUB_ADDR),
-            .label                ("GET_CONFIGURATION_DESCRIPTOR_hub"),
-            .usb_cfg              (usb_cfg));
-        wait_xfer_done(.agent_h(host_agent_h), .label("GET_CONFIGURATION_DESCRIPTOR_hub"));
+        begin
+            bit fail;
+            do_control_xfer_and_wait(
+                .agent_h              (host_agent_h),
+                .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
+                .bm_request_type_type (svt_usb_types::STANDARD),
+                .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
+                .brequest_val         (8'h06),
+                .wvalue               (16'h0200),
+                .windex               (16'h0000),
+                .wlength              (16'h0019),
+                .device_addr          (HUB_ADDR),
+                .label                ("GET_CONFIGURATION_DESCRIPTOR_hub"),
+                .usb_cfg              (usb_cfg),
+                .min_payload_bytes    (25),
+                .fail                 (fail));
+            if (fail) return;
+        end
 
         // Step 6: Check the 25-byte CONFIGURATION descriptor returned by the
         // hub against the values in the RTL ROM.
