@@ -19,6 +19,10 @@ contents:
         - ../tests/usb_high_bandwidth_interrupt.yml
         - ../tests/usb_high_bandwidth_iso.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_test_j.yml
+        - ../tests/usb_test_k.yml
+        - ../tests/usb_test_packet.yml
+        - ../tests/usb_test_se0_nak.yml
         - ../tests/usb_unsupported_request.yml
         - ../tests/usb_l1_host_resume.yml
         - ../tests/usb_l2_host_resume.yml
