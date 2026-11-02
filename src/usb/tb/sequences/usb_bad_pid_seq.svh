@@ -91,6 +91,7 @@ class usb_bad_pid_seq extends usb_resume_recovery_seq;
             "sof_off_sequence");
     sof_off_sequence.start(
         p_sequencer.host_sequencer.prot_service_sequencer);
+    // Let any already-started SOF finish before injecting the malformed-PID token.
     #1us;
     inject_bad_pid();
     wait_for_sie_error_code(ERROR_PID_ENCODING, status_timeout, "bad PID encoding");
