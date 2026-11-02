@@ -56,6 +56,11 @@ class usb_env_cfg extends uvm_object;
   // resolved value back here before building the managers.
   bit axi_delay_random = 1'b1;
 
+  // AXI bus clock and reset shared by all four managers and both filter
+  // policies. usb_env points it at the combo manager VIF; sequences wait on
+  // the bus through the helpers below instead of a virtual interface.
+  virtual aaxi_intf bus_vif;
+
   // Address the host assigns with SET_ADDRESS. Every host and device
   // sequence takes the enumerated address from here.
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
@@ -362,5 +367,20 @@ class usb_env_cfg extends uvm_object;
     foreach (endpoint_cfgs[index]) begin
       printer.print_object($sformatf("endpoint_cfgs[%0d]", index), endpoint_cfgs[index]);
     end
+  endfunction
+
+  // Wait for count AXI bus clock rising edges; a count of zero returns at once.
+  task wait_bus_posedge(int unsigned count = 1);
+    repeat (count) @(posedge bus_vif.ACLK);
+  endtask
+
+  // Wait for the next AXI bus clock falling edge.
+  task wait_bus_negedge();
+    @(negedge bus_vif.ACLK);
+  endtask
+
+  // Return 1 unless the AXI bus reset is known deasserted.
+  function bit bus_in_reset();
+    return bus_vif.ARESETn !== 1'b1;
   endfunction
 endclass
