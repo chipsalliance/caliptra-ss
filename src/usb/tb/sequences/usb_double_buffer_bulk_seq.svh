@@ -122,6 +122,7 @@ class usb_double_buffer_bulk_seq extends usb_base_seq;
       retired = entry_0.active === 1'b0 && entry_0.nbytes === 0 &&
                 entry_1.active === 1'b0 && entry_1.nbytes === 0;
       if (!retired) begin
+        // Poll interval between SRAM descriptor reads while waiting for both OUT buffers to retire.
         #1us;
       end
     end

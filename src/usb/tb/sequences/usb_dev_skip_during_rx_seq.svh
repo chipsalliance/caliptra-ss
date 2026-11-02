@@ -484,6 +484,7 @@ class usb_dev_skip_during_rx_seq extends usb_dev_skip_seq;
             while (!stop_skip_wave) begin
               ral_write32("EPSKIP", p_sequencer.reg_model.combo.dev0_csr.EPSKIP, TOKEN_OVERLAP_SKIP_MASK);
               skip_wave_writes++;
+              // Vary inter-write spacing (15..45 ns) to sweep EPSKIP across the IN token EOP window.
               #((skip_wave_writes % 11) * 3ns + 15ns);
             end
           end
