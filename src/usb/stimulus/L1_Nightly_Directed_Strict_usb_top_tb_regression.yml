@@ -13,5 +13,7 @@ contents:
         - ../tests/usb_dev_skip_during_rx.yml
         - ../tests/usb_double_buffer_bulk.yml
         - ../tests/usb_endpoint_rw.yml
+        - ../tests/usb_high_bandwidth_interrupt.yml
+        - ../tests/usb_high_bandwidth_iso.yml
         - ../tests/usb_init.yml
         - ../tests/usb_utility_timeout.yml
