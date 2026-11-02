@@ -80,7 +80,9 @@ module usb_top_tb;
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
     .dut_suspendm(dut_utmi_suspendm),
     .dut_txvalid(dut_utmi_txvalid),
-    .dut_opmode(dut_utmi_opmode)
+    .dut_opmode(dut_utmi_opmode),
+    .dut_xcvrselect(usb_dut_vip_xcvrselect),
+    .dut_termselect(dut_utmi_termselect)
   );
 
   // Low-power AXI handshaking is outside this focused TB, so each manager

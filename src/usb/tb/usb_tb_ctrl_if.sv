@@ -30,7 +30,9 @@ interface usb_tb_ctrl_if #(
   input logic utmi_clk,
   input logic dut_suspendm,
   input logic dut_txvalid,
-  input logic [1:0] dut_opmode
+  input logic [1:0] dut_opmode,
+  input logic [1:0] dut_xcvrselect,
+  input logic dut_termselect
 );
   timeunit 1ns;
   timeprecision 1ps;
@@ -53,6 +55,14 @@ interface usb_tb_ctrl_if #(
   function automatic bit utmi_clock_quiet(time observation_window);
     return ((utmi_clk === 1'b0) || (utmi_clk === 1'b1)) &&
       (utmi_edge_count > 1) && ($realtime - last_utmi_edge >= observation_window);
+  endfunction
+
+  // Integration Guide 3.1 pp5-6: normal encoded FS operation, not chirp/raw TX.
+  // Native PHY checks retain continuous signaling and clock validation.
+  function automatic bit full_speed_receive_ready();
+    return dut_suspendm === 1'b1 && dut_txvalid === 1'b0 &&
+      dut_opmode === 2'b00 && dut_xcvrselect === 2'b01 && dut_termselect === 1'b1 &&
+      ((utmi_clk === 1'b0) || (utmi_clk === 1'b1));
   endfunction
 
   initial begin

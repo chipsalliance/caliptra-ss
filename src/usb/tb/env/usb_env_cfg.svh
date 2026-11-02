@@ -56,6 +56,9 @@ class usb_env_cfg extends uvm_object;
   // resolved value back here before building the managers.
   bit axi_delay_random = 1'b1;
 
+  // Negotiated bus selection; translated to vendor types only in the builder.
+  usb_speed_e speed = USB_SPEED_HIGH;
+
   // Address the host assigns with SET_ADDRESS. Every host and device
   // sequence takes the enumerated address from here.
   bit [6:0] device_address = USB_DEFAULT_DEVICE_ADDRESS;
@@ -110,10 +113,61 @@ class usb_env_cfg extends uvm_object;
     build_control_endpoint_cfgs();
     endpoint_cfgs.delete();
 
-    void'(add_endpoint(usb_endpoint_cfg::create_endpoint("ep1_bulk_in", 1, USB_DIRECTION_IN, USB_TRANSFER_TYPE_BULK, `SVT_USB_HS_BULK_MAX_PACKET_SIZE)));
+    void'(add_endpoint(usb_endpoint_cfg::create_endpoint("ep1_bulk_in", 1, USB_DIRECTION_IN, USB_TRANSFER_TYPE_BULK, bulk_max_packet_size())));
     // The device does not require a terminating zero-length packet after a
     // max-packet-aligned bulk OUT transfer; without this the VIP forces one.
-    void'(add_endpoint(usb_endpoint_cfg::create_endpoint("ep1_bulk_out", 1, USB_DIRECTION_OUT, USB_TRANSFER_TYPE_BULK, `SVT_USB_HS_BULK_MAX_PACKET_SIZE, 1, 1'b1)));
+    void'(add_endpoint(usb_endpoint_cfg::create_endpoint("ep1_bulk_out", 1, USB_DIRECTION_OUT, USB_TRANSFER_TYPE_BULK, bulk_max_packet_size(), 1, 1'b1)));
+  endfunction
+
+  // USB 2.0 sections 5.8.3 and 9.6.6; default bulk size follows bus speed.
+  function int unsigned bulk_max_packet_size();
+    return speed == USB_SPEED_FULL ? `SVT_USB_FS_BULK_MAX_PACKET_SIZE : `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+  endfunction
+
+  // Select before rebuilding endpoint defaults; no DUT register forces speed.
+  function void select_full_speed();
+    speed = USB_SPEED_FULL;
+    build_endpoint_cfgs();
+    link_timeout = USB_FS_LINK_TIMEOUT;
+    control_transfer_timeout = USB_FS_CONTROL_TRANSFER_TIMEOUT;
+  endfunction
+
+  // Validate on-wire endpoint semantics independently of VIP-normalized metadata.
+  function void validate_packet_size(usb_endpoint_cfg endpoint);
+    int unsigned mult;
+    bit valid_size;
+
+    mult = endpoint.isoc_mult_valid ? endpoint.isoc_mult : 0;
+    valid_size = 1'b0;
+    case (endpoint.transfer_type)
+      USB_TRANSFER_TYPE_CONTROL:
+        valid_size = speed == USB_SPEED_FULL ? endpoint.max_packet_size inside {8, 16, 32, 64} :
+                                              endpoint.max_packet_size == `SVT_USB_HS_CONTROL_MAX_PACKET_SIZE;
+      USB_TRANSFER_TYPE_BULK:
+        valid_size = speed == USB_SPEED_FULL ? endpoint.max_packet_size inside {8, 16, 32, 64} :
+                                              endpoint.max_packet_size == `SVT_USB_HS_BULK_MAX_PACKET_SIZE;
+      USB_TRANSFER_TYPE_INTERRUPT:
+        valid_size = endpoint.max_packet_size inside {[1:1024]} &&
+                     (speed != USB_SPEED_FULL || endpoint.max_packet_size <= `SVT_USB_FS_INTR_MAX_PACKET_SIZE);
+      USB_TRANSFER_TYPE_ISOCHRONOUS:
+        valid_size = endpoint.max_packet_size inside {[1:1024]} &&
+                     (speed != USB_SPEED_FULL || endpoint.max_packet_size <= `SVT_USB_FS_ISOC_MAX_PACKET_SIZE);
+    endcase
+    if (!valid_size || mult > 2 || (speed == USB_SPEED_FULL && mult != 0) ||
+        (endpoint.transfer_type inside {USB_TRANSFER_TYPE_CONTROL, USB_TRANSFER_TYPE_BULK} && mult != 0)) begin
+      `uvm_fatal("USB_CFG", $sformatf("Illegal %s packet size/mult: %s", speed.name(), endpoint.convert2string()))
+    end
+    if (endpoint.transfer_type inside {USB_TRANSFER_TYPE_INTERRUPT, USB_TRANSFER_TYPE_ISOCHRONOUS}) begin
+      if (endpoint.interval == 0 ||
+          endpoint.interval > ((speed == USB_SPEED_FULL && endpoint.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) ? 255 : 16)) begin
+        `uvm_fatal("USB_CFG", $sformatf("Illegal %s descriptor bInterval: %s", speed.name(), endpoint.convert2string()))
+      end
+    end else if (endpoint.interval > 255) begin
+      `uvm_fatal("USB_CFG", "Descriptor bInterval exceeds one byte")
+    end
+    if (speed == USB_SPEED_FULL && endpoint.max_burst_size_valid && endpoint.max_burst_size != 0) begin
+      `uvm_fatal("USB_CFG", "Ordinary FS endpoints cannot request bursts")
+    end
   endfunction
 
   // ---------------------------------------------------------------------------
@@ -124,6 +178,9 @@ class usb_env_cfg extends uvm_object;
   // the VIP or a sequence, so a mistake fails with its own diagnostic rather
   // than as an obscure VIP or CSR symptom.
   function void validate();
+    if (!(speed inside {USB_SPEED_HIGH, USB_SPEED_FULL})) begin
+      `uvm_fatal("USB_CFG", "Only direct-device HS and FS are supported")
+    end
     validate_endpoint_cfgs();
     if (device_address == 0) begin
       `uvm_fatal("USB_CFG", "device_address must be 1-127; address 0 is the default address before SET_ADDRESS")
@@ -178,6 +235,7 @@ class usb_env_cfg extends uvm_object;
         `uvm_fatal("USB_CFG", $sformatf("%s duplicates an endpoint already claiming physical index %0d", endpoint.convert2string(), physical_index))
       end
       physical_index_used[physical_index] = 1'b1;
+      validate_packet_size(endpoint);
     end
   endfunction
 
@@ -195,6 +253,7 @@ class usb_env_cfg extends uvm_object;
     if (endpoint.max_packet_size == 0) begin
       `uvm_fatal("USB_CFG", $sformatf("%s has a zero maximum packet size", endpoint.convert2string()))
     end
+    validate_packet_size(endpoint);
   endfunction
 
   // Record each endpoint's VIP anchor: the control endpoint at
@@ -276,6 +335,7 @@ class usb_env_cfg extends uvm_object;
       endpoint_cfgs.push_back(clone_endpoint(rhs_cfg.endpoint_cfgs[index]));
     end
     axi_delay_random = rhs_cfg.axi_delay_random;
+    speed = rhs_cfg.speed;
     device_address = rhs_cfg.device_address;
     endpoint_list_base = rhs_cfg.endpoint_list_base;
     reset_timeout = rhs_cfg.reset_timeout;
@@ -308,6 +368,7 @@ class usb_env_cfg extends uvm_object;
         !compare_endpoint(ep0_in_cfg, rhs_cfg.ep0_in_cfg, comparer) ||
         endpoint_cfgs.size() != rhs_cfg.endpoint_cfgs.size() ||
         axi_delay_random != rhs_cfg.axi_delay_random ||
+        speed != rhs_cfg.speed ||
         device_address != rhs_cfg.device_address ||
         endpoint_list_base !== rhs_cfg.endpoint_list_base ||
         reset_timeout != rhs_cfg.reset_timeout ||
@@ -334,7 +395,8 @@ class usb_env_cfg extends uvm_object;
 
   virtual function string convert2string();
     return $sformatf(
-      "axi_delay_random=%0b device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
+      "speed=%s axi_delay_random=%0b device_address=%0d endpoint_list_base=0x%08h reset_timeout=%0t transfer_timeout=%0t vbus_timeout=%0t link_timeout=%0t control_transfer_timeout=%0t endpoints: %s",
+      speed.name(),
       axi_delay_random,
       device_address,
       endpoint_list_base,
@@ -349,6 +411,7 @@ class usb_env_cfg extends uvm_object;
 
   virtual function void do_print(uvm_printer printer);
     super.do_print(printer);
+    printer.print_string("speed", speed.name());
     printer.print_field_int("axi_delay_random", axi_delay_random, 1, UVM_BIN);
     printer.print_field_int("device_address", device_address, $bits(device_address), UVM_DEC);
     printer.print_field_int("endpoint_list_base", endpoint_list_base, $bits(endpoint_list_base), UVM_HEX);

@@ -19,6 +19,27 @@ class usb_l2_remote_wake_cfg_builder extends usb_vip_cfg_builder;
     super.new(name);
   endfunction
 
+  // Share the candidate external-DUT budget; callers retain native scaled
+  // recovery and must independently prove readiness, origin and traffic.
+  static function void apply_downstream_resume_budget(svt_usb_configuration cfg);
+    cfg.tdrsmdn = vip_ps(usb_l2_remote_wake_host_seq::ACCELERATED_HOST_RESUME_BUDGET);
+    cfg.tdrsmdn_min = cfg.tdrsmdn;
+    cfg.tdrsmdn_nom = cfg.tdrsmdn;
+    cfg.tdrsmdn_longint = longint'(cfg.tdrsmdn);
+    cfg.tdrsmdn_min_longint = cfg.tdrsmdn_longint;
+    cfg.tdrsmdn_nom_longint = cfg.tdrsmdn_longint;
+    cfg.block_resume = 1'b0;
+    // Validate constraint mirrors before installation. Runtime admission uses
+    // resolved real timers; native sequencer configurations omit these mirrors.
+    if (!(cfg.tdrsmdn_longint === longint'(cfg.tdrsmdn)) ||
+        !(cfg.tdrsmdn_min_longint === longint'(cfg.tdrsmdn_min)) ||
+        !(cfg.tdrsmdn_nom_longint === longint'(cfg.tdrsmdn_nom))) begin
+      `uvm_fatal("USB_CFG", "Downstream resume drive/check fields and integer constraint mirrors disagree")
+    end
+    `uvm_info("USB_CFG", $sformatf("Downstream resume configuration: real drive/min/nom=%0.0f/%0.0f/%0.0f ps constraint mirrors=%0d/%0d/%0d ps",
+      cfg.tdrsmdn, cfg.tdrsmdn_min, cfg.tdrsmdn_nom, cfg.tdrsmdn_longint, cfg.tdrsmdn_min_longint, cfg.tdrsmdn_nom_longint), UVM_LOW)
+  endfunction
+
   // Keep native scaled idle/recovery; override only external-DUT resume compatibility.
   // This is an accelerated functional profile, not nominal USB timing compliance.
   protected virtual function void configure_timers();
@@ -35,13 +56,7 @@ class usb_l2_remote_wake_cfg_builder extends usb_vip_cfg_builder;
       resume_cfgs[index].tdrsmup_min_longint = longint'(vip_ps(1ms));
       resume_cfgs[index].tdrsmup_max_longint = longint'(vip_ps(15ms));
       resume_cfgs[index].tdrsmup_longint = longint'(vip_ps(1ms));
-      resume_cfgs[index].tdrsmdn = vip_ps(usb_l2_remote_wake_host_seq::ACCELERATED_HOST_RESUME_BUDGET);
-      resume_cfgs[index].tdrsmdn_min = resume_cfgs[index].tdrsmdn;
-      resume_cfgs[index].tdrsmdn_nom = resume_cfgs[index].tdrsmdn;
-      resume_cfgs[index].tdrsmdn_longint = longint'(resume_cfgs[index].tdrsmdn);
-      resume_cfgs[index].tdrsmdn_min_longint = resume_cfgs[index].tdrsmdn_longint;
-      resume_cfgs[index].tdrsmdn_nom_longint = resume_cfgs[index].tdrsmdn_longint;
-      resume_cfgs[index].block_resume = 1'b0;
+      apply_downstream_resume_budget(resume_cfgs[index]);
     end
     // Software recovery excludes device accesses, not resumed bus framing.
     host_cfg.enable_sof_during_recovery = 1'b1;
