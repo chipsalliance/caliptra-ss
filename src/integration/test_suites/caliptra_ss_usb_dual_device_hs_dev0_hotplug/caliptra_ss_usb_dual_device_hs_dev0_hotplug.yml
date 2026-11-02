@@ -19,6 +19,14 @@ testname: caliptra_ss_usb_dual_device_hs_dev0_hotplug
 # NOTE: run_caliptra_test.py only forwards plusargs that match the
 # +NAME=VALUE regex, so the trailing "=1" on USB_HUB_COMPOUND_DEV1_IRQ is
 # mandatory even though the RTL/TB only checks for its presence.
+#
+# Separately, this test needs the USB VIP compile-time define
+# SVT_USB_MAX_DEVICE_DEBUG_PORT raised above its default of 3. That one is NOT
+# a plusarg and cannot be: it sizes static VIP interface arrays that are
+# elaborated before time 0. It is supplied by the global VCS compile options
+# in src/integration/config/compile.yml, which are used by regression HDL
+# builds. The companion .mk also sets it for direct Makefile-based builds;
+# see that file for the full explanation and the slot map.
 pre-exec: |
   set -eu
   echo "Running pre_exec for test caliptra_ss_usb_dual_device_hs_dev0_hotplug"
