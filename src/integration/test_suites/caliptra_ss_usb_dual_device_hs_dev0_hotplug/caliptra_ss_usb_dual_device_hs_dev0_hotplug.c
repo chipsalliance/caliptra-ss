@@ -274,6 +274,13 @@
 // risks the firmware running ahead of the host.
 #define DEV0_DISCONNECT_HOLD_US     300u
 
+// How long the firmware keeps servicing BOTH controllers after its own pass
+// condition is satisfied, so the host can finish the transfers it still has
+// queued. See the long note at the pass-condition check in main() for the
+// measured evidence and the sizing argument.
+#define POST_PASS_GRACE_US          600u
+
+
 // CALIPTRA_SS_CLK_FREQ is in MHz (boot_i3c_socmgmt_if() prints it as "%u MHz"),
 // so it is exactly the number of MCU clock cycles per microsecond.
 #define MCU_CYCLES_PER_US             ((uint64_t)CALIPTRA_SS_CLK_FREQ)
@@ -281,6 +288,8 @@
     ((uint64_t)DEV0_DISCONNECT_HOLD_US * MCU_CYCLES_PER_US)
 #define USB_TEST_RUN_BUDGET_CYCLES \
     ((uint64_t)USB_TEST_RUN_BUDGET_US * MCU_CYCLES_PER_US)
+#define POST_PASS_GRACE_CYCLES \
+    ((uint64_t)POST_PASS_GRACE_US * MCU_CYCLES_PER_US)
 
 // EP1 OUT / IN data buffers in each controller's packet SRAM. EP0 uses
 // 0x000-0x1FF, so EP1 buffers are placed after it. Both controllers use the
@@ -326,6 +335,13 @@ typedef struct {
     bool     enumerated;     // has been seen configured at least once
     bool     enum_reported;  // the one-shot "enumerated" log line was printed
     bool     toggle_reset_pending; // next EP1 OUT arm must carry TR=1|TV=0
+    // Same meaning as toggle_reset_pending but for the IN direction, and it
+    // MUST be a separate flag: usb_ep1_out_arm() consumes and clears the OUT
+    // flag, and the IN arm always runs later in the same loopback iteration,
+    // so a single shared flag is always already false by the time the IN arm
+    // reads it.
+    bool     in_toggle_reset_pending;
+
     // Set when the firmware deliberately detaches this controller (DCON
     // cleared) and cleared only when a DRES_C bus reset is actually observed.
     // While it is true, every piece of "this controller is up" state that
@@ -376,8 +392,11 @@ static bool dev1_isolation_violation = false;
 // Earlier revisions set TR without ever writing TV, so every TR=1 meant "load
 // 0" only by accident. Both helpers below now state TV explicitly.
 //
-// The two directions need OPPOSITE rules, and that asymmetry is the whole
-// content of this fix:
+// BOTH directions now use the SAME rule: CONDITIONAL TR, set only where the
+// host genuinely restarts a stream (a bus reset, and SET_CONFIGURATION), and
+// clear on every mid-stream re-arm. Each direction needs its OWN pending flag
+// because usb_ep1_out_arm() consumes the OUT flag before the IN arm of the
+// same iteration runs.
 //
 //   EP1 OUT - CONDITIONAL TR, driven by st->toggle_reset_pending.
 //     The host carries a running OUT toggle across transfers. Proof from the
@@ -395,17 +414,31 @@ static bool dev1_isolation_violation = false;
 //     usb_ep1_out_complete() can never become true again. Host retry cannot
 //     rescue this: the toggle IS the retry mechanism (USB 2.0 section 8.6).
 //
-//   EP1 IN - UNCONDITIONAL TR=1 | TV=0 on every arm.
-//     The host VIP builds each bulk IN as an independent svt_usb_transfer with
-//     no cross-transfer toggle state, so it expects DATA0 at the start of
-//     EVERY IN transfer. A device that keeps alternating is right by the
-//     letter of the spec and still fails the VIP's checker. Round 14 made the
-//     IN conditional along with the OUT and produced exactly that:
-//       810432 ns  data_toggle_check_Dev3_EP1_IN: Received Data packet with
-//                  incorrect PID name : DATA1. Expecting DATA0 for DATA stage
-//     after the TR=0 IN arm at 787712 ns. Reloading DATA0 before every IN is
-//     also harmless on a conformant host, because an IN transfer that the host
-//     considers complete leaves no in-flight toggle state to disturb.
+//   EP1 IN - CONDITIONAL TR, driven by st->in_toggle_reset_pending.
+//     This was UNCONDITIONAL TR=1 | TV=0 until the host side stopped calling
+//     reconfigure() before every transfer, and the history matters because the
+//     old comment here asserted the opposite rule as settled fact.
+//
+//     The claim was that "the VIP builds each bulk IN as an independent
+//     transfer with no cross-transfer toggle state, so it expects DATA0 every
+//     time". What was actually true is that the host sequence was retargeting
+//     one shared remote_device_cfg[] slot and calling reconfigure() before
+//     each transfer, which DESTROYED AND REBUILT the VIP's EP1 IN endpoint
+//     xactor - and a freshly built xactor starts at DATA0. The host's
+//     expectation was being reset by a host-side bug, not by the VIP's design.
+//
+//     Once the per-device persistent anchors removed every reconfigure(), the
+//     VIP kept one long-lived EP1 IN xactor that alternates correctly, and the
+//     unconditional reload became the mismatch - mirrored into the IN
+//     direction:
+//       812536 ns  data_toggle_check_Dev3_EP1_IN: Received Data packet with
+//                  incorrect PID name : DATA0.  Expecting DATA1 for DATA stage
+//     on the SECOND loopback, i.e. the first IN at which DATA1 was ever due.
+//
+//     Unlike the OUT direction this one is NOT silent: the host is the
+//     receiver, so its checker sees the wrong PID directly and reports it,
+//     instead of ACKing and discarding as a device must.
+
 //
 // NOTE ON TIMING: neither helper is in a race with the host. An endpoint that
 // is not yet armed NAKs, and the host simply retries until device_timeout, so
@@ -441,9 +474,11 @@ static void usb_ep1_out_arm(usb_dev_loopback_state_t *st) {
             usb_get_active_device(), USB_BULK_LOOPBACK_BYTES,
             (int)st->toggle_reset_pending);
 
-    // Consumed here, by the OUT direction only. The pending toggle reset is now
-    // purely an EP1 OUT concern - EP1 IN below reloads DATA0 unconditionally -
-    // so this is the one and only place it is cleared.
+    // Consumed here, by the OUT direction only. The IN direction has its own
+    // flag (in_toggle_reset_pending, cleared in usb_ep1_loopback_arm_in()),
+    // because that arm runs later in the same loopback iteration and would
+    // always find a shared flag already cleared. This is the one and only
+    // place the OUT flag is cleared.
     st->toggle_reset_pending = false;
 }
 
@@ -461,20 +496,23 @@ static void usb_ep1_loopback_arm_in(usb_dev_loopback_state_t *st) {
                      + USB_SRAM_EP1_IN_BUF_OFFSET + i, rx_word);
     }
 
-    // UNCONDITIONAL TR=1 | TV=0, unlike the OUT direction. The host rebuilds
-    // every bulk IN as an independent transfer and expects DATA0 each time, so
-    // the device must load DATA0 before every IN packet. See the EP1 DATA
-    // TOGGLE OWNERSHIP block above for the evidence.
+    // CONDITIONAL TR, exactly like the OUT direction - see the EP1 DATA TOGGLE
+    // OWNERSHIP block above.
     ep1_in = USB_EP_ENTRY_ACTIVE
-           | USB_EP_ENTRY_TOGGLE_RESET
-           | USB_EP_ENTRY_TOGGLE_VALUE_DATA0
+           | (st->in_toggle_reset_pending
+                  ? (USB_EP_ENTRY_TOGGLE_RESET
+                     | USB_EP_ENTRY_TOGGLE_VALUE_DATA0)
+                  : 0u)
            | USB_EP_ENTRY_NBYTES(USB_BULK_LOOPBACK_BYTES)
            | USB_EP_ENTRY_ABS_ADDR(USB_DEV_DMA_BASE_ADDR
                                    + USB_SRAM_EP1_IN_BUF_OFFSET);
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_IN_OFFSET, ep1_in);
 
-    VPRINTF(LOW, "MCU: dev%d EP1 IN armed (loopback, TR=1 TV=0)\n",
-            usb_get_active_device());
+    VPRINTF(LOW, "MCU: dev%d EP1 IN armed (loopback, TR=%d TV=0)\n",
+            usb_get_active_device(), (int)st->in_toggle_reset_pending);
+
+    st->in_toggle_reset_pending = false;
+
 }
 
 // Returns true once the selected device's EP1 IN transfer has completed, i.e.
@@ -607,10 +645,14 @@ static void usb_service_device(int dev, uint32_t usb_events,
             st->loopback_armed = false;
 
             // A bus reset clears the endpoint data toggles in hardware and the
-            // host restarts its own OUT toggle from DATA0, so the next EP1 OUT
-            // arm must carry TR=1 | TV=0 to guarantee both sides agree. (EP1 IN
-            // reloads DATA0 on every arm regardless.)
-            st->toggle_reset_pending = true;
+            // host restarts BOTH its toggles from DATA0, so the next arm in
+            // each direction must carry TR=1 | TV=0 to guarantee the two sides
+            // agree. Hardware has already zeroed the device-side toggles here,
+            // so these loads are belt-and-braces in this particular path - they
+            // matter because the same flags also cover the SET_CONFIGURATION
+            // restart, where no hardware reset is involved.
+            st->toggle_reset_pending    = true;
+            st->in_toggle_reset_pending = true;
 
             // THE ONLY PLACE awaiting_reenum IS CLEARED. A DRES_C can only come
             // from the host driving a port reset, so observing one is positive,
@@ -720,11 +762,15 @@ static void usb_service_device(int dev, uint32_t usb_events,
     // DRES_C makes the arm wait for the host's port reset.
     if (!st->ep1_armed && !st->awaiting_reenum
         && usb_is_connected() && usb_is_configured()) {
-        // First arm of a newly configured controller: SET_CONFIGURATION resets
-        // the host's OUT toggle expectation to DATA0, so this arm needs
-        // TR=1 | TV=0.
-        st->toggle_reset_pending = true;
+        // First arm of a newly configured controller. SET_CONFIGURATION resets
+        // the host's toggle expectation to DATA0 in BOTH directions, so the
+        // first arm of each needs TR=1 | TV=0. The IN flag is set here and
+        // consumed later, by the first usb_ep1_loopback_arm_in() of this
+        // stream.
+        st->toggle_reset_pending    = true;
+        st->in_toggle_reset_pending = true;
         usb_ep1_out_arm(st);
+
         st->ep1_armed      = true;
         st->loopback_armed = false;
         st->enumerated     = true;
@@ -908,6 +954,10 @@ void main(void) {
     usb_dev_loopback_state_t dev_state[2] = {0};
     bool passed = false;
     uint64_t run_deadline;
+    // Absolute mcycle at which the post-pass grace window expires. Only
+    // meaningful once passed is set; initialised so the compiler cannot warn
+    // about a conditional first use.
+    uint64_t post_pass_deadline = 0u;
 
     VPRINTF(LOW, "=================\nMCU: USB dual-device HS DEV0 hotplug "
             "isolation test\n=================\n\n");
@@ -976,11 +1026,59 @@ void main(void) {
         if (dev1_isolation_violation)
             break;
 
-        if (dev0_cycle_count >= DEV0_TARGET_CYCLES
+        // Pass condition met - but DO NOT stop servicing yet.
+        //
+        // The firmware's counters say the test is over; the HOST does not. It
+        // still has queued work that needs this firmware alive to answer it,
+        // and halting the moment the counters are satisfied made the device go
+        // silent underneath the host mid-transfer. Measured on the run that
+        // first passed:
+        //   2196770 ns  cycle-3 SET_CONFIGURATION serviced
+        //   2202000 ns  cycle 3 complete (pass condition satisfied)
+        //   2207192 ns  csr_write_mpmc_halt()
+        //   2459466 ns  host GET_CONFIG_verify_dev0_recon2 ABORTED
+        //   2782436 ns  host USBDC1_final loopback got 0 of 64 bytes
+        // Cycles 1 and 2 each serviced FIVE SETUPs after their recon
+        // SET_ADDRESS; cycle 3 serviced only four, because nobody was left to
+        // answer the fifth. Both failures carried results_status=0x0 - no
+        // protocol failure reason at all - which is the signature of a
+        // transfer that was swept at teardown rather than rejected by a
+        // device.
+        //
+        // So the firmware keeps running its normal service loop for a grace
+        // window after the pass, draining EP0 and EP1 exactly as before. The
+        // only thing that changes at the pass point is that a deadline starts.
+        //
+        // SIZING. The host's outstanding work after the last cycle is the
+        // GET_CONFIG read-back, the final USBDC1 loopback, the final USBDC0
+        // loopback and a 20 us settle - of order 200 us when the device is
+        // ANSWERING. The 575 us gap measured above is NOT that work; it is
+        // mostly device_timeout burn against a dead device, so it is an upper
+        // bound, not the requirement. 600 us therefore covers even the
+        // pessimistic case - it exceeds the whole 575 us gap measured above -
+        // while staying far below the ceilings this budget has to respect:
+        // USB_TEST_RUN_BUDGET_US (4000 us) bounds the loop overall, and the
+        // testbench bounds the run at get_mcu_halt_timeout() = 5 ms /
+        // RUN_WATCHDOG = 10 ms. The observed run ends at ~2.2 ms, so a 600 us
+        // tail lands at ~2.8 ms and clears all three.
+        //
+        // The grace window is a MAXIMUM, not a fixed delay: it is also bounded
+        // by run_deadline in the loop condition, so it can never push the run
+        // past the overall budget.
+        if (!passed
+            && dev0_cycle_count >= DEV0_TARGET_CYCLES
             && dev_state[1].loop_count >= DEV1_TARGET_LOOPS) {
             passed = true;
-            break;
+            post_pass_deadline = csr_read_mcycle() + POST_PASS_GRACE_CYCLES;
+            VPRINTF(LOW, "MCU: pass condition met - servicing for %d us more "
+                    "so the host can finish its outstanding transfers\n",
+                    POST_PASS_GRACE_US);
         }
+
+        // Only leave the loop once the host has had its grace window.
+        if (passed && csr_read_mcycle() >= post_pass_deadline)
+            break;
+
 
         // Periodic progress dump, COUNT-gated like the reference rather than
         // wall-clock gated.
