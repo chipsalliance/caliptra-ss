@@ -286,8 +286,10 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
                         continue;
                     end
                     if ((r.direction === cb_t::PACKET_RX) &&
-                        (r.crc_error_detected || r.data_error_detected))
+                        (r.crc_error_detected || r.data_error_detected)) begin
+                        state = IDLE;
                         continue;
+                    end
                     if (!(r.direction === cb_t::PACKET_RX) ||
                         r.crc_error_detected || r.data_error_detected)
                         return 1'b0;
@@ -339,8 +341,10 @@ class caliptra_ss_usb_ocp_fifo_packet_model extends uvm_object;
                         !r.crc_error_detected && !r.data_error_detected)
                         continue;
                     if ((r.direction === cb_t::PACKET_RX) &&
-                        (r.crc_error_detected || r.data_error_detected))
+                        (r.crc_error_detected || r.data_error_detected)) begin
+                        state = IDLE;
                         continue;
+                    end
                     if (!(r.direction === cb_t::PACKET_RX) ||
                         r.crc_error_detected || r.data_error_detected)
                         return 1'b0;

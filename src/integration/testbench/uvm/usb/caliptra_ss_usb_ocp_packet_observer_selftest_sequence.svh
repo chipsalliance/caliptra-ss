@@ -141,6 +141,8 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
     endfunction
 
     protected function void ocp_packet_check_synthetic_fifo_adapter();
+        svt_usb_packet::pid_name_enum orphan_replies[$] = '{
+            svt_usb_packet::ACK, svt_usb_packet::NYET};
         adapter = caliptra_ss_usb_ocp_fifo_packet_model::type_id::create(
             "synthetic_fifo_adapter");
         ocp_packet_emit_synthetic_fifo_setup();
@@ -210,6 +212,60 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4),
             "ACK of corrupted DATA cannot manufacture acceptance");
         ocp_packet_check_true(adapter.observe_reset(), "reset corrupt acceptance");
+
+        // A CRC-marked RX DATA packet is an invalid OUT response, not a
+        // handshake with a fictitious CRC. It closes the response opportunity.
+        foreach (orphan_replies[i]) begin
+            ocp_packet_emit_synthetic_fifo_setup();
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 0, 4);
+            ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::DATA1),
+                .rx(1'b1), .bad_crc(1'b1));
+            ocp_packet_emit_synthetic_packet(orphan_replies[i], 1'b1);
+            ocp_packet_emit_synthetic_fifo_status();
+            ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+                (adapter.committed_byte_count() == 0) &&
+                (adapter.partial_byte_count() == 0),
+                $sformatf("orphan %s after corrupt OUT reply rejected",
+                    orphan_replies[i].name()));
+            ocp_packet_check_true(adapter.observe_reset(), "reset orphan OUT reply");
+        end
+
+        ocp_packet_emit_synthetic_fifo_setup();
+        ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 4, svt_usb_packet::ACK);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+        ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::DATA1),
+            .rx(1'b1), .bad_crc(1'b1));
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK);
+        ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
+            (adapter.committed_byte_count() == 0) &&
+            (adapter.partial_byte_count() == 4),
+            "orphan status DATA1 after corruption cannot commit");
+        ocp_packet_check_true(adapter.observe_reset(), "reset orphan status reply");
+
+        // USB 2.0 8.6.4 and 8.5.3.3: retry with a new token and the same PID.
+        ocp_packet_emit_synthetic_fifo_setup();
+        ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA0, 0, 4);
+        ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::DATA1),
+            .rx(1'b1), .bad_crc(1'b1));
+        ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA0, 4, svt_usb_packet::NYET);
+        ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA0, 4, svt_usb_packet::ACK);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+        ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::DATA1),
+            .rx(1'b1), .bad_crc(1'b1));
+        ocp_packet_emit_synthetic_fifo_status();
+        ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(20) &&
+            (adapter.committed_byte_count() == 20) &&
+            (adapter.partial_byte_count() == 0) &&
+            adapter.indices_match(5, 0),
+            "fresh-token retries preserve DATA0 toggle and commit once");
+        ocp_packet_check_true(adapter.observe_reset(), "reset corrupt-response retries");
+        `uvm_info("OCP_PACKET_SELFTEST",
+            {"Corrupt-response histories: orphan ACK, NYET and status rejected; ",
+             "fresh-token retries commit once."}, UVM_NONE)
 
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
