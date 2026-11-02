@@ -167,6 +167,16 @@ class caliptra_ss_usb_hs_dev1_int_loopback_sequence extends caliptra_ss_usb_base
             .req           (int_in_req),
             .obj_name      ("int_in_req"));
 
+        begin
+            bit out_fail;
+            bit in_fail;
+            check_xfer_status(.xfer(int_out_req), .label("INTERRUPT_OUT"),
+                              .min_payload_bytes(INT_XFER_BYTES), .fail(out_fail));
+            check_xfer_status(.xfer(int_in_req), .label("INTERRUPT_IN"),
+                              .min_payload_bytes(INT_XFER_BYTES), .fail(in_fail));
+            if (out_fail || in_fail) return;
+        end
+
         // Data check.
         begin
             int mismatch_count;
