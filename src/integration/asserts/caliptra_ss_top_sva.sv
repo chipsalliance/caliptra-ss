@@ -69,6 +69,16 @@ module caliptra_ss_top_sva
   `CALIPTRA_ASSERT(FcAxiFilterDiscard_A,
                    unpriv_dai_access |-> ##2 `FC_PATH.discard_fuse_write)
 
+  // Opt-in for reproducer tests that must observe the DAI outcome after a missed discard.
+`ifdef CLP_ASSERT_ON
+  initial begin
+    if ($test$plusargs("FC_FILTER_DISCARD_SVA_OFF")) begin
+      $display("[%0t] caliptra_ss_top_sva: FcAxiFilterDiscard_A disabled by +FC_FILTER_DISCARD_SVA_OFF", $time);
+      $assertoff(0, FcAxiFilterDiscard_A);
+    end
+  end
+`endif
+
   // If the fuse_ctrl filter decides that an AXI transaction's DAI request should be discarded, the
   // interface must signal a recoverable AccessError in its response (which becomes visible exactly
   // one cycle after u_otp_ctrl_dai signals that the operation has completed).
