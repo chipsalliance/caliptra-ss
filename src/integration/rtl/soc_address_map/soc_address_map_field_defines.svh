@@ -10173,314 +10173,6 @@
 `ifndef LC_CTRL_MANUF_STATE_7
 `define LC_CTRL_MANUF_STATE_7                                                                       (32'h88)
 `endif
-`ifndef SPI_HOST_INTR_STATE
-`define SPI_HOST_INTR_STATE                                                                         (32'h0)
-`define SPI_HOST_INTR_STATE_ERROR_LOW                                                               (0)
-`define SPI_HOST_INTR_STATE_ERROR_MASK                                                              (32'h1)
-`define SPI_HOST_INTR_STATE_SPI_EVENT_LOW                                                           (1)
-`define SPI_HOST_INTR_STATE_SPI_EVENT_MASK                                                          (32'h2)
-`endif
-`ifndef SPI_HOST_INTR_ENABLE
-`define SPI_HOST_INTR_ENABLE                                                                        (32'h4)
-`define SPI_HOST_INTR_ENABLE_ERROR_LOW                                                              (0)
-`define SPI_HOST_INTR_ENABLE_ERROR_MASK                                                             (32'h1)
-`define SPI_HOST_INTR_ENABLE_SPI_EVENT_LOW                                                          (1)
-`define SPI_HOST_INTR_ENABLE_SPI_EVENT_MASK                                                         (32'h2)
-`endif
-`ifndef SPI_HOST_INTR_TEST
-`define SPI_HOST_INTR_TEST                                                                          (32'h8)
-`define SPI_HOST_INTR_TEST_ERROR_LOW                                                                (0)
-`define SPI_HOST_INTR_TEST_ERROR_MASK                                                               (32'h1)
-`define SPI_HOST_INTR_TEST_SPI_EVENT_LOW                                                            (1)
-`define SPI_HOST_INTR_TEST_SPI_EVENT_MASK                                                           (32'h2)
-`endif
-`ifndef SPI_HOST_CONTROL
-`define SPI_HOST_CONTROL                                                                            (32'hc)
-`define SPI_HOST_CONTROL_RX_WATERMARK_LOW                                                           (0)
-`define SPI_HOST_CONTROL_RX_WATERMARK_MASK                                                          (32'hff)
-`define SPI_HOST_CONTROL_TX_WATERMARK_LOW                                                           (8)
-`define SPI_HOST_CONTROL_TX_WATERMARK_MASK                                                          (32'hff00)
-`define SPI_HOST_CONTROL_OUTPUT_EN_LOW                                                              (29)
-`define SPI_HOST_CONTROL_OUTPUT_EN_MASK                                                             (32'h20000000)
-`define SPI_HOST_CONTROL_SW_RST_LOW                                                                 (30)
-`define SPI_HOST_CONTROL_SW_RST_MASK                                                                (32'h40000000)
-`define SPI_HOST_CONTROL_SPIEN_LOW                                                                  (31)
-`define SPI_HOST_CONTROL_SPIEN_MASK                                                                 (32'h80000000)
-`endif
-`ifndef SPI_HOST_STATUS
-`define SPI_HOST_STATUS                                                                             (32'h10)
-`define SPI_HOST_STATUS_TXQD_LOW                                                                    (0)
-`define SPI_HOST_STATUS_TXQD_MASK                                                                   (32'hff)
-`define SPI_HOST_STATUS_RXQD_LOW                                                                    (8)
-`define SPI_HOST_STATUS_RXQD_MASK                                                                   (32'hff00)
-`define SPI_HOST_STATUS_CMDQD_LOW                                                                   (16)
-`define SPI_HOST_STATUS_CMDQD_MASK                                                                  (32'hf0000)
-`define SPI_HOST_STATUS_RXWM_LOW                                                                    (20)
-`define SPI_HOST_STATUS_RXWM_MASK                                                                   (32'h100000)
-`define SPI_HOST_STATUS_BYTEORDER_LOW                                                               (22)
-`define SPI_HOST_STATUS_BYTEORDER_MASK                                                              (32'h400000)
-`define SPI_HOST_STATUS_RXSTALL_LOW                                                                 (23)
-`define SPI_HOST_STATUS_RXSTALL_MASK                                                                (32'h800000)
-`define SPI_HOST_STATUS_RXEMPTY_LOW                                                                 (24)
-`define SPI_HOST_STATUS_RXEMPTY_MASK                                                                (32'h1000000)
-`define SPI_HOST_STATUS_RXFULL_LOW                                                                  (25)
-`define SPI_HOST_STATUS_RXFULL_MASK                                                                 (32'h2000000)
-`define SPI_HOST_STATUS_TXWM_LOW                                                                    (26)
-`define SPI_HOST_STATUS_TXWM_MASK                                                                   (32'h4000000)
-`define SPI_HOST_STATUS_TXSTALL_LOW                                                                 (27)
-`define SPI_HOST_STATUS_TXSTALL_MASK                                                                (32'h8000000)
-`define SPI_HOST_STATUS_TXEMPTY_LOW                                                                 (28)
-`define SPI_HOST_STATUS_TXEMPTY_MASK                                                                (32'h10000000)
-`define SPI_HOST_STATUS_TXFULL_LOW                                                                  (29)
-`define SPI_HOST_STATUS_TXFULL_MASK                                                                 (32'h20000000)
-`define SPI_HOST_STATUS_ACTIVE_LOW                                                                  (30)
-`define SPI_HOST_STATUS_ACTIVE_MASK                                                                 (32'h40000000)
-`define SPI_HOST_STATUS_READY_LOW                                                                   (31)
-`define SPI_HOST_STATUS_READY_MASK                                                                  (32'h80000000)
-`endif
-`ifndef SPI_HOST_CONFIGOPTS_0
-`define SPI_HOST_CONFIGOPTS_0                                                                       (32'h14)
-`define SPI_HOST_CONFIGOPTS_0_CLKDIV_LOW                                                            (0)
-`define SPI_HOST_CONFIGOPTS_0_CLKDIV_MASK                                                           (32'hffff)
-`define SPI_HOST_CONFIGOPTS_0_CSNIDLE_LOW                                                           (16)
-`define SPI_HOST_CONFIGOPTS_0_CSNIDLE_MASK                                                          (32'hf0000)
-`define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_LOW                                                          (20)
-`define SPI_HOST_CONFIGOPTS_0_CSNTRAIL_MASK                                                         (32'hf00000)
-`define SPI_HOST_CONFIGOPTS_0_CSNLEAD_LOW                                                           (24)
-`define SPI_HOST_CONFIGOPTS_0_CSNLEAD_MASK                                                          (32'hf000000)
-`define SPI_HOST_CONFIGOPTS_0_FULLCYC_LOW                                                           (29)
-`define SPI_HOST_CONFIGOPTS_0_FULLCYC_MASK                                                          (32'h20000000)
-`define SPI_HOST_CONFIGOPTS_0_CPHA_LOW                                                              (30)
-`define SPI_HOST_CONFIGOPTS_0_CPHA_MASK                                                             (32'h40000000)
-`define SPI_HOST_CONFIGOPTS_0_CPOL_LOW                                                              (31)
-`define SPI_HOST_CONFIGOPTS_0_CPOL_MASK                                                             (32'h80000000)
-`endif
-`ifndef SPI_HOST_CONFIGOPTS_1
-`define SPI_HOST_CONFIGOPTS_1                                                                       (32'h18)
-`define SPI_HOST_CONFIGOPTS_1_CLKDIV_LOW                                                            (0)
-`define SPI_HOST_CONFIGOPTS_1_CLKDIV_MASK                                                           (32'hffff)
-`define SPI_HOST_CONFIGOPTS_1_CSNIDLE_LOW                                                           (16)
-`define SPI_HOST_CONFIGOPTS_1_CSNIDLE_MASK                                                          (32'hf0000)
-`define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_LOW                                                          (20)
-`define SPI_HOST_CONFIGOPTS_1_CSNTRAIL_MASK                                                         (32'hf00000)
-`define SPI_HOST_CONFIGOPTS_1_CSNLEAD_LOW                                                           (24)
-`define SPI_HOST_CONFIGOPTS_1_CSNLEAD_MASK                                                          (32'hf000000)
-`define SPI_HOST_CONFIGOPTS_1_FULLCYC_LOW                                                           (29)
-`define SPI_HOST_CONFIGOPTS_1_FULLCYC_MASK                                                          (32'h20000000)
-`define SPI_HOST_CONFIGOPTS_1_CPHA_LOW                                                              (30)
-`define SPI_HOST_CONFIGOPTS_1_CPHA_MASK                                                             (32'h40000000)
-`define SPI_HOST_CONFIGOPTS_1_CPOL_LOW                                                              (31)
-`define SPI_HOST_CONFIGOPTS_1_CPOL_MASK                                                             (32'h80000000)
-`endif
-`ifndef SPI_HOST_CSID
-`define SPI_HOST_CSID                                                                               (32'h1c)
-`endif
-`ifndef SPI_HOST_COMMAND
-`define SPI_HOST_COMMAND                                                                            (32'h20)
-`define SPI_HOST_COMMAND_LEN_LOW                                                                    (0)
-`define SPI_HOST_COMMAND_LEN_MASK                                                                   (32'h1ff)
-`define SPI_HOST_COMMAND_CSAAT_LOW                                                                  (9)
-`define SPI_HOST_COMMAND_CSAAT_MASK                                                                 (32'h200)
-`define SPI_HOST_COMMAND_SPEED_LOW                                                                  (10)
-`define SPI_HOST_COMMAND_SPEED_MASK                                                                 (32'hc00)
-`define SPI_HOST_COMMAND_DIRECTION_LOW                                                              (12)
-`define SPI_HOST_COMMAND_DIRECTION_MASK                                                             (32'h3000)
-`endif
-`ifndef SPI_HOST_RXDATA
-`define SPI_HOST_RXDATA                                                                             (32'h24)
-`endif
-`ifndef SPI_HOST_TXDATA
-`define SPI_HOST_TXDATA                                                                             (32'h28)
-`endif
-`ifndef SPI_HOST_ERROR_ENABLE
-`define SPI_HOST_ERROR_ENABLE                                                                       (32'h2c)
-`define SPI_HOST_ERROR_ENABLE_CMDBUSY_LOW                                                           (0)
-`define SPI_HOST_ERROR_ENABLE_CMDBUSY_MASK                                                          (32'h1)
-`define SPI_HOST_ERROR_ENABLE_OVERFLOW_LOW                                                          (1)
-`define SPI_HOST_ERROR_ENABLE_OVERFLOW_MASK                                                         (32'h2)
-`define SPI_HOST_ERROR_ENABLE_UNDERFLOW_LOW                                                         (2)
-`define SPI_HOST_ERROR_ENABLE_UNDERFLOW_MASK                                                        (32'h4)
-`define SPI_HOST_ERROR_ENABLE_CMDINVAL_LOW                                                          (3)
-`define SPI_HOST_ERROR_ENABLE_CMDINVAL_MASK                                                         (32'h8)
-`define SPI_HOST_ERROR_ENABLE_CSIDINVAL_LOW                                                         (4)
-`define SPI_HOST_ERROR_ENABLE_CSIDINVAL_MASK                                                        (32'h10)
-`endif
-`ifndef SPI_HOST_ERROR_STATUS
-`define SPI_HOST_ERROR_STATUS                                                                       (32'h30)
-`define SPI_HOST_ERROR_STATUS_CMDBUSY_LOW                                                           (0)
-`define SPI_HOST_ERROR_STATUS_CMDBUSY_MASK                                                          (32'h1)
-`define SPI_HOST_ERROR_STATUS_OVERFLOW_LOW                                                          (1)
-`define SPI_HOST_ERROR_STATUS_OVERFLOW_MASK                                                         (32'h2)
-`define SPI_HOST_ERROR_STATUS_UNDERFLOW_LOW                                                         (2)
-`define SPI_HOST_ERROR_STATUS_UNDERFLOW_MASK                                                        (32'h4)
-`define SPI_HOST_ERROR_STATUS_CMDINVAL_LOW                                                          (3)
-`define SPI_HOST_ERROR_STATUS_CMDINVAL_MASK                                                         (32'h8)
-`define SPI_HOST_ERROR_STATUS_CSIDINVAL_LOW                                                         (4)
-`define SPI_HOST_ERROR_STATUS_CSIDINVAL_MASK                                                        (32'h10)
-`define SPI_HOST_ERROR_STATUS_ACCESSINVAL_LOW                                                       (5)
-`define SPI_HOST_ERROR_STATUS_ACCESSINVAL_MASK                                                      (32'h20)
-`endif
-`ifndef SPI_HOST_EVENT_ENABLE
-`define SPI_HOST_EVENT_ENABLE                                                                       (32'h34)
-`define SPI_HOST_EVENT_ENABLE_RXFULL_LOW                                                            (0)
-`define SPI_HOST_EVENT_ENABLE_RXFULL_MASK                                                           (32'h1)
-`define SPI_HOST_EVENT_ENABLE_TXEMPTY_LOW                                                           (1)
-`define SPI_HOST_EVENT_ENABLE_TXEMPTY_MASK                                                          (32'h2)
-`define SPI_HOST_EVENT_ENABLE_RXWM_LOW                                                              (2)
-`define SPI_HOST_EVENT_ENABLE_RXWM_MASK                                                             (32'h4)
-`define SPI_HOST_EVENT_ENABLE_TXWM_LOW                                                              (3)
-`define SPI_HOST_EVENT_ENABLE_TXWM_MASK                                                             (32'h8)
-`define SPI_HOST_EVENT_ENABLE_READY_LOW                                                             (4)
-`define SPI_HOST_EVENT_ENABLE_READY_MASK                                                            (32'h10)
-`define SPI_HOST_EVENT_ENABLE_IDLE_LOW                                                              (5)
-`define SPI_HOST_EVENT_ENABLE_IDLE_MASK                                                             (32'h20)
-`endif
-`ifndef UART_INTR_STATE
-`define UART_INTR_STATE                                                                             (32'h0)
-`define UART_INTR_STATE_TX_WATERMARK_LOW                                                            (0)
-`define UART_INTR_STATE_TX_WATERMARK_MASK                                                           (32'h1)
-`define UART_INTR_STATE_RX_WATERMARK_LOW                                                            (1)
-`define UART_INTR_STATE_RX_WATERMARK_MASK                                                           (32'h2)
-`define UART_INTR_STATE_TX_DONE_LOW                                                                 (2)
-`define UART_INTR_STATE_TX_DONE_MASK                                                                (32'h4)
-`define UART_INTR_STATE_RX_OVERFLOW_LOW                                                             (3)
-`define UART_INTR_STATE_RX_OVERFLOW_MASK                                                            (32'h8)
-`define UART_INTR_STATE_RX_FRAME_ERR_LOW                                                            (4)
-`define UART_INTR_STATE_RX_FRAME_ERR_MASK                                                           (32'h10)
-`define UART_INTR_STATE_RX_BREAK_ERR_LOW                                                            (5)
-`define UART_INTR_STATE_RX_BREAK_ERR_MASK                                                           (32'h20)
-`define UART_INTR_STATE_RX_TIMEOUT_LOW                                                              (6)
-`define UART_INTR_STATE_RX_TIMEOUT_MASK                                                             (32'h40)
-`define UART_INTR_STATE_RX_PARITY_ERR_LOW                                                           (7)
-`define UART_INTR_STATE_RX_PARITY_ERR_MASK                                                          (32'h80)
-`define UART_INTR_STATE_TX_EMPTY_LOW                                                                (8)
-`define UART_INTR_STATE_TX_EMPTY_MASK                                                               (32'h100)
-`endif
-`ifndef UART_INTR_ENABLE
-`define UART_INTR_ENABLE                                                                            (32'h4)
-`define UART_INTR_ENABLE_TX_WATERMARK_LOW                                                           (0)
-`define UART_INTR_ENABLE_TX_WATERMARK_MASK                                                          (32'h1)
-`define UART_INTR_ENABLE_RX_WATERMARK_LOW                                                           (1)
-`define UART_INTR_ENABLE_RX_WATERMARK_MASK                                                          (32'h2)
-`define UART_INTR_ENABLE_TX_DONE_LOW                                                                (2)
-`define UART_INTR_ENABLE_TX_DONE_MASK                                                               (32'h4)
-`define UART_INTR_ENABLE_RX_OVERFLOW_LOW                                                            (3)
-`define UART_INTR_ENABLE_RX_OVERFLOW_MASK                                                           (32'h8)
-`define UART_INTR_ENABLE_RX_FRAME_ERR_LOW                                                           (4)
-`define UART_INTR_ENABLE_RX_FRAME_ERR_MASK                                                          (32'h10)
-`define UART_INTR_ENABLE_RX_BREAK_ERR_LOW                                                           (5)
-`define UART_INTR_ENABLE_RX_BREAK_ERR_MASK                                                          (32'h20)
-`define UART_INTR_ENABLE_RX_TIMEOUT_LOW                                                             (6)
-`define UART_INTR_ENABLE_RX_TIMEOUT_MASK                                                            (32'h40)
-`define UART_INTR_ENABLE_RX_PARITY_ERR_LOW                                                          (7)
-`define UART_INTR_ENABLE_RX_PARITY_ERR_MASK                                                         (32'h80)
-`define UART_INTR_ENABLE_TX_EMPTY_LOW                                                               (8)
-`define UART_INTR_ENABLE_TX_EMPTY_MASK                                                              (32'h100)
-`endif
-`ifndef UART_INTR_TEST
-`define UART_INTR_TEST                                                                              (32'h8)
-`define UART_INTR_TEST_TX_WATERMARK_LOW                                                             (0)
-`define UART_INTR_TEST_TX_WATERMARK_MASK                                                            (32'h1)
-`define UART_INTR_TEST_RX_WATERMARK_LOW                                                             (1)
-`define UART_INTR_TEST_RX_WATERMARK_MASK                                                            (32'h2)
-`define UART_INTR_TEST_TX_DONE_LOW                                                                  (2)
-`define UART_INTR_TEST_TX_DONE_MASK                                                                 (32'h4)
-`define UART_INTR_TEST_RX_OVERFLOW_LOW                                                              (3)
-`define UART_INTR_TEST_RX_OVERFLOW_MASK                                                             (32'h8)
-`define UART_INTR_TEST_RX_FRAME_ERR_LOW                                                             (4)
-`define UART_INTR_TEST_RX_FRAME_ERR_MASK                                                            (32'h10)
-`define UART_INTR_TEST_RX_BREAK_ERR_LOW                                                             (5)
-`define UART_INTR_TEST_RX_BREAK_ERR_MASK                                                            (32'h20)
-`define UART_INTR_TEST_RX_TIMEOUT_LOW                                                               (6)
-`define UART_INTR_TEST_RX_TIMEOUT_MASK                                                              (32'h40)
-`define UART_INTR_TEST_RX_PARITY_ERR_LOW                                                            (7)
-`define UART_INTR_TEST_RX_PARITY_ERR_MASK                                                           (32'h80)
-`define UART_INTR_TEST_TX_EMPTY_LOW                                                                 (8)
-`define UART_INTR_TEST_TX_EMPTY_MASK                                                                (32'h100)
-`endif
-`ifndef UART_CTRL
-`define UART_CTRL                                                                                   (32'hc)
-`define UART_CTRL_TX_LOW                                                                            (0)
-`define UART_CTRL_TX_MASK                                                                           (32'h1)
-`define UART_CTRL_RX_LOW                                                                            (1)
-`define UART_CTRL_RX_MASK                                                                           (32'h2)
-`define UART_CTRL_NF_LOW                                                                            (2)
-`define UART_CTRL_NF_MASK                                                                           (32'h4)
-`define UART_CTRL_SLPBK_LOW                                                                         (4)
-`define UART_CTRL_SLPBK_MASK                                                                        (32'h10)
-`define UART_CTRL_LLPBK_LOW                                                                         (5)
-`define UART_CTRL_LLPBK_MASK                                                                        (32'h20)
-`define UART_CTRL_PARITY_EN_LOW                                                                     (6)
-`define UART_CTRL_PARITY_EN_MASK                                                                    (32'h40)
-`define UART_CTRL_PARITY_ODD_LOW                                                                    (7)
-`define UART_CTRL_PARITY_ODD_MASK                                                                   (32'h80)
-`define UART_CTRL_RXBLVL_LOW                                                                        (8)
-`define UART_CTRL_RXBLVL_MASK                                                                       (32'h300)
-`define UART_CTRL_NCO_LOW                                                                           (16)
-`define UART_CTRL_NCO_MASK                                                                          (32'hffff0000)
-`endif
-`ifndef UART_STATUS
-`define UART_STATUS                                                                                 (32'h10)
-`define UART_STATUS_TXFULL_LOW                                                                      (0)
-`define UART_STATUS_TXFULL_MASK                                                                     (32'h1)
-`define UART_STATUS_RXFULL_LOW                                                                      (1)
-`define UART_STATUS_RXFULL_MASK                                                                     (32'h2)
-`define UART_STATUS_TXEMPTY_LOW                                                                     (2)
-`define UART_STATUS_TXEMPTY_MASK                                                                    (32'h4)
-`define UART_STATUS_TXIDLE_LOW                                                                      (3)
-`define UART_STATUS_TXIDLE_MASK                                                                     (32'h8)
-`define UART_STATUS_RXIDLE_LOW                                                                      (4)
-`define UART_STATUS_RXIDLE_MASK                                                                     (32'h10)
-`define UART_STATUS_RXEMPTY_LOW                                                                     (5)
-`define UART_STATUS_RXEMPTY_MASK                                                                    (32'h20)
-`endif
-`ifndef UART_RDATA
-`define UART_RDATA                                                                                  (32'h14)
-`define UART_RDATA_RDATA_LOW                                                                        (0)
-`define UART_RDATA_RDATA_MASK                                                                       (32'hff)
-`endif
-`ifndef UART_WDATA
-`define UART_WDATA                                                                                  (32'h18)
-`define UART_WDATA_WDATA_LOW                                                                        (0)
-`define UART_WDATA_WDATA_MASK                                                                       (32'hff)
-`endif
-`ifndef UART_FIFO_CTRL
-`define UART_FIFO_CTRL                                                                              (32'h1c)
-`define UART_FIFO_CTRL_RXRST_LOW                                                                    (0)
-`define UART_FIFO_CTRL_RXRST_MASK                                                                   (32'h1)
-`define UART_FIFO_CTRL_TXRST_LOW                                                                    (1)
-`define UART_FIFO_CTRL_TXRST_MASK                                                                   (32'h2)
-`define UART_FIFO_CTRL_RXILVL_LOW                                                                   (2)
-`define UART_FIFO_CTRL_RXILVL_MASK                                                                  (32'h1c)
-`define UART_FIFO_CTRL_TXILVL_LOW                                                                   (5)
-`define UART_FIFO_CTRL_TXILVL_MASK                                                                  (32'he0)
-`endif
-`ifndef UART_FIFO_STATUS
-`define UART_FIFO_STATUS                                                                            (32'h20)
-`define UART_FIFO_STATUS_TXLVL_LOW                                                                  (0)
-`define UART_FIFO_STATUS_TXLVL_MASK                                                                 (32'hff)
-`define UART_FIFO_STATUS_RXLVL_LOW                                                                  (16)
-`define UART_FIFO_STATUS_RXLVL_MASK                                                                 (32'hff0000)
-`endif
-`ifndef UART_OVRD
-`define UART_OVRD                                                                                   (32'h24)
-`define UART_OVRD_TXEN_LOW                                                                          (0)
-`define UART_OVRD_TXEN_MASK                                                                         (32'h1)
-`define UART_OVRD_TXVAL_LOW                                                                         (1)
-`define UART_OVRD_TXVAL_MASK                                                                        (32'h2)
-`endif
-`ifndef UART_VAL
-`define UART_VAL                                                                                    (32'h28)
-`define UART_VAL_RX_LOW                                                                             (0)
-`define UART_VAL_RX_MASK                                                                            (32'hffff)
-`endif
-`ifndef UART_TIMEOUT_CTRL
-`define UART_TIMEOUT_CTRL                                                                           (32'h2c)
-`define UART_TIMEOUT_CTRL_VAL_LOW                                                                   (0)
-`define UART_TIMEOUT_CTRL_VAL_MASK                                                                  (32'hffffff)
-`define UART_TIMEOUT_CTRL_EN_LOW                                                                    (31)
-`define UART_TIMEOUT_CTRL_EN_MASK                                                                   (32'h80000000)
-`endif
 `ifndef MBOX_CSR_MBOX_LOCK
 `define MBOX_CSR_MBOX_LOCK                                                                          (32'h0)
 `define MBOX_CSR_MBOX_LOCK_LOCK_LOW                                                                 (0)
@@ -11120,8 +10812,8 @@
 `define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1                                                    (32'h184)
 `define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                               (0)
 `define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                              (32'hffff)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_LOW                                           (16)
-`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_RSVD_MASK                                          (32'hffff0000)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                                (16)
+`define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                               (32'hffff0000)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2
 `define SOC_IFC_REG_CPTRA_ITRNG_ENTROPY_CONFIG_2                                                    (32'h188)
@@ -11147,8 +10839,8 @@
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1                                                   (32'h190)
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_LOW                              (0)
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_REPETITION_COUNT_MASK                             (32'hffff)
-`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_RSVD_LOW                                          (16)
-`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_RSVD_MASK                                         (32'hffff0000)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_LOW                               (16)
+`define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_1_ALERT_THRESHOLD_MASK                              (32'hffff0000)
 `endif
 `ifndef SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2                                                   (32'h194)
@@ -11162,6 +10854,47 @@
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_RSVD_MASK                                         (32'h7ff80000)
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_LOW                                   (31)
 `define SOC_IFC_REG_CPTRA_ITRNG1_ENTROPY_CONFIG_2_BYPASS_MODE_MASK                                  (32'h80000000)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_0
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_0                                                             (32'h198)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_1
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_1                                                             (32'h19c)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_2
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_2                                                             (32'h1a0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_3
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_3                                                             (32'h1a4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_4
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_4                                                             (32'h1a8)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_5
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_5                                                             (32'h1ac)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_6
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_6                                                             (32'h1b0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_7
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_7                                                             (32'h1b4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_8
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_8                                                             (32'h1b8)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_9
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_9                                                             (32'h1bc)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_10
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_10                                                            (32'h1c0)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_11
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_11                                                            (32'h1c4)
+`endif
+`ifndef SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK                                                          (32'h1c8)
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_LOW                                                 (0)
+`define SOC_IFC_REG_CPTRA_AUX_PK_HASH_LOCK_LOCK_MASK                                                (32'h1)
 `endif
 `ifndef SOC_IFC_REG_FUSE_UDS_SEED_0
 `define SOC_IFC_REG_FUSE_UDS_SEED_0                                                                 (32'h200)
@@ -11552,6 +11285,25 @@
 `define SOC_IFC_REG_SS_OCP_LOCK_CTRL                                                                (32'h54c)
 `define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_LOW                                           (0)
 `define SOC_IFC_REG_SS_OCP_LOCK_CTRL_LOCK_IN_PROGRESS_MASK                                          (32'h1)
+`endif
+`ifndef SOC_IFC_REG_SS_OTP_FC_STATUS_CFG
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG                                                            (32'h550)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_LOW                                          (0)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_STATUS_OFFSET_MASK                                         (32'hffff)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_LOW                                       (16)
+`define SOC_IFC_REG_SS_OTP_FC_STATUS_CFG_DAI_IDLE_BIT_NUM_MASK                                      (32'hffff0000)
+`endif
+`ifndef SOC_IFC_REG_SS_OTP_FC_CMD_CFG
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG                                                               (32'h554)
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_LOW                                  (0)
+`define SOC_IFC_REG_SS_OTP_FC_CMD_CFG_DIRECT_ACCESS_CMD_OFFSET_MASK                                 (32'hffff)
+`endif
+`ifndef SOC_IFC_REG_SS_FW_FEATURE_CFG
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG                                                               (32'h558)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_LOW                                       (0)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_STABLE_OWNER_KEY_EN_MASK                                      (32'h1)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_LOW                                   (31)
+`define SOC_IFC_REG_SS_FW_FEATURE_CFG_VENDOR_DEBUG_IMAGES_DIS_MASK                                  (32'h80000000)
 `endif
 `ifndef SOC_IFC_REG_SS_STRAP_GENERIC_0
 `define SOC_IFC_REG_SS_STRAP_GENERIC_0                                                              (32'h5a0)

@@ -70,7 +70,12 @@ prim_clock_buf #(
 logic vcaon_pok;  // For Spyglass waiver!!!
 
 assign vcaon_pok = vcaon_pok_i;
-assign rst_aon_n = scan_mode_i ? scan_reset_ni : vcaon_pok;
+caliptra_prim_rst_mux2 u_rst_aon_mux (
+  .rst0_i ( vcaon_pok ),
+  .rst1_i ( scan_reset_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_aon_n )
+);
 
 
 ////////////////////////////////////////
@@ -89,7 +94,12 @@ end
 
 logic rst_sw_ckbpe_n, clk_ast_ext_scn, da_rst_sw_ckbpe_n, sw_clk_byp_en;
 
-assign rst_sw_ckbpe_n = scan_mode_i ? scan_reset_ni : rst_sw_clk_byp_en;
+caliptra_prim_rst_mux2 u_rst_sw_ckbpe_mux (
+  .rst0_i ( rst_sw_clk_byp_en ),
+  .rst1_i ( scan_reset_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_sw_ckbpe_n )
+);
 `ifndef AST_BYPASS_CLK
 assign clk_ast_ext_scn = scan_mode_i ? clk_osc_sys_i : clk_ast_ext_i;
 `else // of AST_BYPASS_CLK
@@ -162,7 +172,12 @@ prim_flop_2sync #(
   .q_o ( rst_aon_n_exda )
 );
 
-assign rst_aon_exda_n = scan_mode_i ? scan_reset_ni : rst_aon_n_exda;
+caliptra_prim_rst_mux2 u_rst_aon_exda_mux (
+  .rst0_i ( rst_aon_n_exda ),
+  .rst1_i ( scan_reset_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_aon_exda_n )
+);
 
 // External USB & AON clocks genaration
 ////////////////////////////////////////
@@ -575,7 +590,12 @@ prim_flop_2sync #(
   .q_o ( rst_aon_n_ioda )
 );
 
-assign rst_aon_ioda_n = scan_mode_i ? scan_reset_ni : rst_aon_n_ioda;
+caliptra_prim_rst_mux2 u_rst_aon_ioda_mux (
+  .rst0_i ( rst_aon_n_ioda ),
+  .rst1_i ( scan_reset_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_aon_ioda_n )
+);
 
 // SYS Clock Bypass Mux
 ////////////////////////////////////////

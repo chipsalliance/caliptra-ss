@@ -113,7 +113,7 @@ interface fuse_ctrl_cov_if
       CptraSsRmaToken_cp:                   coverpoint `FC_MEM[CptraSsRmaTokenOffset/2]                   { bins Fuse = { [1:$] }; }
       SecretLcTransitionPartitionDigest_cp: coverpoint `FC_MEM[SecretLcTransitionPartitionDigestOffset/2] { bins Fuse = { [1:$] }; }
       // SVN_PARTITION
-      CptraCoreFmcKeyManifestSvn_cp: coverpoint `FC_MEM[CptraCoreFmcKeyManifestSvnOffset/2] { bins Fuse = { [1:$] }; }
+      McuRuntimeSvn_cp:              coverpoint `FC_MEM[McuRuntimeSvnOffset/2]              { bins Fuse = { [1:$] }; }
       CptraCoreRuntimeSvn_cp:        coverpoint `FC_MEM[CptraCoreRuntimeSvnOffset/2]        { bins Fuse = { [1:$] }; }
       CptraCoreSocManifestSvn_cp:    coverpoint `FC_MEM[CptraCoreSocManifestSvnOffset/2]    { bins Fuse = { [1:$] }; }
       CptraCoreSocManifestMaxSvn_cp: coverpoint `FC_MEM[CptraCoreSocManifestMaxSvnOffset/2] { bins Fuse = { [1:$] }; }
