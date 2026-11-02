@@ -130,6 +130,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_global_suspend_L2_test.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_test.svh"
+  // Full-speed sibling of the test class above. It has NO sequence of its own
+  // by design: it installs caliptra_ss_usb_hs_dev_lpm_l1_sequence, included
+  // just above, because the LPM stimulus is speed-independent and only the VIP
+  // link configuration differs. Must therefore stay after that include.
+  `include "caliptra_ss_usb_fs_dev_lpm_l1_test.svh"
   // The hub-request counterpart of the lpm_l1 pair above lives with the other
   // dual-device tests: caliptra_ss_usb_dual_device_hs_hub_port_l1. There is no
   // separate hub-targeted L1 test because there is no such request - see the
@@ -260,6 +265,11 @@ package caliptra_ss_usb_test_pkg;
   // needs neither -DUSB_HUB_COMPOUND_DEV1_IRQ nor the TB IRQ loopback plusarg.
   `include "caliptra_ss_usb_dual_device_hs_hub_port_l1_sequence.svh"
   `include "caliptra_ss_usb_dual_device_hs_hub_port_l1_test.svh"
+  // Full-speed port of the pair above. Unlike the lpm_l1 FS variant this one
+  // does get its own sequence copy: the HS sequence hard-codes its own class
+  // name in the test's config_db lookup, so the two cannot share one object.
+  `include "caliptra_ss_usb_dual_device_fs_hub_port_l1_sequence.svh"
+  `include "caliptra_ss_usb_dual_device_fs_hub_port_l1_test.svh"
 
   // Full-speed port of the dual-device bulk loopback pair above. Same dual
   // aperture firmware topology and same TB dev1 IRQ loopback; the link is
