@@ -74,6 +74,8 @@
 //   USB_HUB_L1_RESPONSE_MODE = 2  DEVCMDSTAT.LPM_SUP cleared on both. Both
 //                                 ports must answer 0x30 and must NOT enter
 //                                 L1. Pair with +usb_hub_l1_expect=2.
+// CURRENTLY JUST MODE 0 IS IMPLEMENTED
+//
 //
 // The mode is applied to BOTH controllers so the two per-port legs of the host
 // sequence see the same answer. Applying it to only one would make the test's
