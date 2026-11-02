@@ -117,12 +117,22 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
-        // acknowledged INTSTAT, so the foreground loop must not touch
-        // INTSTAT itself. Snapshot then clear by complement so bits the
-        // ISR sets while we are handling this batch are not lost.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        // Atomically drain the ISR mailbox, preserving the previous MIE state.
+        {
+            uint32_t saved_mstatus;
+            __asm__ volatile ("csrrc %0, mstatus, %1"
+                              : "=r" (saved_mstatus)
+                              : "r" (0x8u)
+                              : "memory");
+            usb_events = mcu_intr_rcv.usb;
+            mcu_intr_rcv.usb = 0u;
+            if (saved_mstatus & 0x8u) {
+                __asm__ volatile ("csrrs zero, mstatus, %0"
+                                  :
+                                  : "r" (0x8u)
+                                  : "memory");
+            }
+        }
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
