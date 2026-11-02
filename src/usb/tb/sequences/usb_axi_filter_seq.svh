@@ -39,10 +39,10 @@
 //       then set completed.
 //
 // shadow[] holds the last value accepted on each path; every preservation
-// check compares against it. Allowlist USERs are random and are not stored in
-// the sequence: they are read back from the control VIF when needed. Policy
-// signals change only with nonblocking assignments at a clk rising edge, and
-// only between blocking transfers.
+// check compares against it. Allowlist USERs are random; the sequence keeps
+// only the lists the filter agents read back from the policy interfaces,
+// i.e. what the DUT sees. The agents change policy signals only at a clk
+// rising edge, and this sequence changes them only between blocking transfers.
 class usb_axi_filter_seq extends usb_base_seq;
   `uvm_object_utils(usb_axi_filter_seq)
 
@@ -100,7 +100,7 @@ class usb_axi_filter_seq extends usb_base_seq;
     '{target: USB_DEV1_CSR,  combo_policy: 1'b0, is_csr: 1'b1, offset: '0,                mask: USB_DEV1_ROUTE_MASK},
     '{target: USB_DEV1_SRAM, combo_policy: 1'b0, is_csr: 1'b0, offset: SRAM_WORD_ADDR,    mask: 32'hffff_ffff}
   };
-  // Random USER in neither allowlist; the only USER not observable on the control VIF.
+  // Random USER in neither allowlist; the only USER not read back from a filter agent.
   usb_axi_user_t nonmember_user;
   logic [31:0] shadow[USB_TARGET_COUNT];
   int unsigned denied_writes[USB_TARGET_COUNT];
@@ -172,7 +172,7 @@ class usb_axi_filter_seq extends usb_base_seq;
     `uvm_info("USB_FILTER_SEQ", $sformatf("[%s] Allowlists programmed: %s; nonmember=0x%08h", phase_name, format_axi_user_allowlists(), nonmember_user), UVM_LOW)
   endtask
 
-  // Return a USER read from the allowlist signals on the control VIF: from the
+  // Return a USER from the allowlists read back by the filter agents: from the
   // path's own list (OWN_LIST) or the other device's list (OTHER_LIST), at the
   // path's position (entry 0 for CSR paths, last entry for SRAM paths).
   protected function usb_axi_user_t path_user(filter_path_t path, bit own_list);
