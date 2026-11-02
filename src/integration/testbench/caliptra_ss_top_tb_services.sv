@@ -20,7 +20,6 @@
 `include "config_defines.svh"
 `include "caliptra_reg_defines.svh"
 `include "caliptra_macros.svh"
-`include "i3c_defines.svh"
 `include "soc_address_map_defines.svh"
 `include "caliptra_ss_includes.svh"
 
@@ -46,6 +45,7 @@ import uvm_pkg::*;
   mci_mcu_sram_if                    cptra_ss_mci_mcu_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox0_sram_req_if,
   mci_mcu_sram_if                    cptra_ss_mcu_mbox1_sram_req_if,
+  mci_mcu_sram_if                    cptra_ss_mcu_rom_patch_sram_req_if,
   axi_mem_if                         mcu_rom_mem_export_if
 );
 
@@ -235,6 +235,24 @@ import uvm_pkg::*;
     localparam NUM_NOTIF0_INTR = 12; //Exclude generic_input_wires, mcu_sram_single_ecc_error
     // Add buffer for console output only
     string console_buffer = "";
+
+    // ---------------------------------------------------------------------
+    // MCU console FAIL checker.
+    //
+    // The console monitor below only prints and logs the DEBUG_OUT character
+    // stream, so a firmware line such as "MCU: FAIL - enumeration timeout"
+    // was read by no checker and the UVM verdict still came out as
+    // TESTCASE PASSED. This checker consumes the same decoded stream and
+    // turns any console line containing FAIL into a UVM_ERROR, which is what
+    // caliptra_ss_usb_base_test::final_phase counts. Inert unless
+    // +mcu_console_fail_check is on the simv command line. See
+    // caliptra_ss_mcu_console_fail_checker.sv for the full rationale.
+    // ---------------------------------------------------------------------
+    caliptra_ss_mcu_console_fail_checker i_caliptra_ss_mcu_console_fail_checker (
+        .clk        (clk),
+        .char_valid (mailbox_data_val & mailbox_write),
+        .char_data  (mailbox_data[7:0])
+    );
 
     always @(negedge clk) begin
         // Modified console Monitor
@@ -1028,6 +1046,23 @@ end
         .wdata_i(cptra_ss_mcu_mbox1_sram_req_if.req.wdata ^ mbox1_sram_wdata_bitflip),
 
         .rdata_o(cptra_ss_mcu_mbox1_sram_req_if.resp.rdata)
+    );
+
+    caliptra_sram
+    #(
+        .DATA_WIDTH(MCU_ROM_PATCH_SRAM_DATA_AND_ECC_W),
+        .DEPTH     (MCU_ROM_PATCH_SRAM_DEPTH         )
+    )
+    mcu_rom_patch_ram
+    (
+        .clk_i(cptra_ss_rdc_clk_cg_o),
+
+        .cs_i(cptra_ss_mcu_rom_patch_sram_req_if.req.cs),
+        .we_i(cptra_ss_mcu_rom_patch_sram_req_if.req.we),
+        .addr_i(cptra_ss_mcu_rom_patch_sram_req_if.req.addr),
+        .wdata_i(cptra_ss_mcu_rom_patch_sram_req_if.req.wdata),
+
+        .rdata_o(cptra_ss_mcu_rom_patch_sram_req_if.resp.rdata)
     );
 
 

@@ -19,6 +19,8 @@
 // Base test for the Caliptra SS USB VIP environment.
 //
 // This test:
+// - Sets the default UVM report verbosity to UVM_LOW. A runtime
+//   +UVM_VERBOSITY=<level> plusarg overrides it.
 // - Creates caliptra_ss_usb_env with one VIP host_agent.
 // - Configures host_cfg for the local HS host stack.
 // - Configures dev_cfg as the template for host_agent.remote_cfg, the modeled
@@ -83,6 +85,7 @@ class caliptra_ss_usb_base_test extends uvm_test;
 
     extern virtual function void build_phase(uvm_phase phase);
     extern virtual function void end_of_elaboration_phase(uvm_phase phase);
+    extern virtual function void start_of_simulation_phase(uvm_phase phase);
     extern virtual function void phase_ready_to_end(uvm_phase phase);
     extern virtual function void final_phase(uvm_phase phase);
 
@@ -169,6 +172,24 @@ function void caliptra_ss_usb_base_test::end_of_elaboration_phase(uvm_phase phas
     `uvm_info("end_of_elaboration_phase", "Entered...", UVM_LOW)
     super.end_of_elaboration_phase(phase);
     `uvm_info("end_of_elaboration_phase", "Exiting...", UVM_LOW)
+endfunction
+
+// -----------------------------------------------------------------------------
+function void caliptra_ss_usb_base_test::start_of_simulation_phase(
+    uvm_phase phase);
+    string verb_args[$];
+    uvm_root root;
+
+    super.start_of_simulation_phase(phase);
+    // Apply the default only after build and elaboration have created the full
+    // environment hierarchy. A command-line verbosity remains authoritative.
+    if (uvm_cmdline_processor::get_inst().get_arg_values("+UVM_VERBOSITY=", verb_args) == 0) begin
+        root = uvm_root::get();
+        root.set_report_verbosity_level_hier(UVM_LOW);
+        `uvm_info("USB_VERBOSITY",
+                  "Applied default UVM_LOW verbosity to the complete hierarchy.",
+                  UVM_NONE)
+    end
 endfunction
 
 // -----------------------------------------------------------------------------

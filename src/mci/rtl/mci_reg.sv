@@ -669,6 +669,10 @@ module mci_reg (
                 logic [3:0] next;
                 logic load_next;
             } boot_fsm;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -711,6 +715,10 @@ module mci_reg (
                 logic next;
                 logic load_next;
             } fsm_error;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mcu_rom_patch_sram_ecc_unc;
         } HW_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -1025,6 +1033,10 @@ module mci_reg (
                 logic next;
                 logic load_next;
             } mask_mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic next;
+                logic load_next;
+            } mask_mcu_rom_patch_sram_ecc_unc;
         } internal_hw_error_fatal_mask;
         struct packed{
             struct packed{
@@ -4013,6 +4025,9 @@ module mci_reg (
             struct packed{
                 logic [3:0] value;
             } boot_fsm;
+            struct packed{
+                logic value;
+            } mcu_rom_patch_active;
         } HW_FLOW_STATUS;
         struct packed{
             struct packed{
@@ -4046,6 +4061,9 @@ module mci_reg (
             struct packed{
                 logic value;
             } fsm_error;
+            struct packed{
+                logic value;
+            } mcu_rom_patch_sram_ecc_unc;
         } HW_ERROR_FATAL;
         struct packed{
             struct packed{
@@ -4286,6 +4304,9 @@ module mci_reg (
             struct packed{
                 logic value;
             } mask_mcu_sram_dmi_axi_collision;
+            struct packed{
+                logic value;
+            } mask_mcu_rom_patch_sram_ecc_unc;
         } internal_hw_error_fatal_mask;
         struct packed{
             struct packed{
@@ -6523,6 +6544,26 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_FLOW_STATUS.boot_fsm.value = field_storage.HW_FLOW_STATUS.boot_fsm.value;
+    // Field: mci_reg.HW_FLOW_STATUS.mcu_rom_patch_active
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
+        load_next_c = '0;
+        
+        // HW Write
+        next_c = hwif_in.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        load_next_c = '1;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next = next_c;
+        field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next = load_next_c;
+    end
+
+    always_ff @(posedge clk) begin
+        if(field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.load_next) begin
+            field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value <= field_combo.HW_FLOW_STATUS.mcu_rom_patch_active.next;
+        end
+    end
+    assign hwif_out.HW_FLOW_STATUS.mcu_rom_patch_active.value = field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value;
     // Field: mci_reg.RESET_REASON.FW_HITLESS_UPD_RESET
     always_comb begin
         automatic logic [0:0] next_c;
@@ -6727,6 +6768,30 @@ module mci_reg (
         end
     end
     assign hwif_out.HW_ERROR_FATAL.fsm_error.value = field_storage.HW_ERROR_FATAL.fsm_error.value;
+    // Field: mci_reg.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.HW_ERROR_FATAL && decoded_req_is_wr) begin // SW write 1 clear
+            next_c = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value & ~(decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end else if(hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.we) begin // HW Write - we
+            next_c = hwif_in.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next;
+            load_next_c = '1;
+        end
+        field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next = next_c;
+        field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value <= 1'h0;
+        end else if(field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.load_next) begin
+            field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value <= field_combo.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.next;
+        end
+    end
+    assign hwif_out.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value = field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value;
     // Field: mci_reg.AGG_ERROR_FATAL.agg_error_fatal0
     always_comb begin
         automatic logic [0:0] next_c;
@@ -8489,6 +8554,27 @@ module mci_reg (
         end
     end
     assign hwif_out.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value = field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value;
+    // Field: mci_reg.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc
+    always_comb begin
+        automatic logic [0:0] next_c;
+        automatic logic load_next_c;
+        next_c = field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value;
+        load_next_c = '0;
+        if(decoded_reg_strb.internal_hw_error_fatal_mask && decoded_req_is_wr && hwif_in.axi_mcu_or_mci_soc_config_req) begin // SW write
+            next_c = (field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value & ~decoded_wr_biten[4:4]) | (decoded_wr_data[4:4] & decoded_wr_biten[4:4]);
+            load_next_c = '1;
+        end
+        field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.next = next_c;
+        field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.load_next = load_next_c;
+    end
+    always_ff @(posedge clk or negedge hwif_in.mci_pwrgood) begin
+        if(~hwif_in.mci_pwrgood) begin
+            field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value <= 1'h0;
+        end else if(field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.load_next) begin
+            field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value <= field_combo.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.next;
+        end
+    end
+    assign hwif_out.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value = field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value;
     // Field: mci_reg.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc
     always_comb begin
         automatic logic [0:0] next_c;
@@ -22441,7 +22527,8 @@ module mci_reg (
     assign readback_array[11][31:0] = (decoded_reg_strb.MCI_SOC_CONFIG_AXI_USER && !decoded_req_is_wr) ? hwif_in.MCI_SOC_CONFIG_AXI_USER.value.next : '0;
     assign readback_array[12][31:0] = (decoded_reg_strb.FW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.FW_FLOW_STATUS.status.value : '0;
     assign readback_array[13][3:0] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.boot_fsm.value : '0;
-    assign readback_array[13][31:4] = '0;
+    assign readback_array[13][4:4] = (decoded_reg_strb.HW_FLOW_STATUS && !decoded_req_is_wr) ? field_storage.HW_FLOW_STATUS.mcu_rom_patch_active.value : '0;
+    assign readback_array[13][31:5] = '0;
     assign readback_array[14][0:0] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_HITLESS_UPD_RESET.value : '0;
     assign readback_array[14][1:1] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.FW_BOOT_UPD_RESET.value : '0;
     assign readback_array[14][2:2] = (decoded_reg_strb.RESET_REASON && !decoded_req_is_wr) ? field_storage.RESET_REASON.WARM_RESET.value : '0;
@@ -22457,7 +22544,8 @@ module mci_reg (
     assign readback_array[17][1:1] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.nmi_pin.value : '0;
     assign readback_array[17][2:2] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_sram_dmi_axi_collision.value : '0;
     assign readback_array[17][3:3] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.fsm_error.value : '0;
-    assign readback_array[17][31:4] = '0;
+    assign readback_array[17][4:4] = (decoded_reg_strb.HW_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.HW_ERROR_FATAL.mcu_rom_patch_sram_ecc_unc.value : '0;
+    assign readback_array[17][31:5] = '0;
     assign readback_array[18][0:0] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal0.value : '0;
     assign readback_array[18][1:1] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal1.value : '0;
     assign readback_array[18][2:2] = (decoded_reg_strb.AGG_ERROR_FATAL && !decoded_req_is_wr) ? field_storage.AGG_ERROR_FATAL.agg_error_fatal2.value : '0;
@@ -22536,7 +22624,8 @@ module mci_reg (
     assign readback_array[33][1:1] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_nmi_pin.value : '0;
     assign readback_array[33][2:2] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_sram_dmi_axi_collision.value : '0;
     assign readback_array[33][3:3] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? 1'h0 : '0;
-    assign readback_array[33][31:4] = '0;
+    assign readback_array[33][4:4] = (decoded_reg_strb.internal_hw_error_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_fatal_mask.mask_mcu_rom_patch_sram_ecc_unc.value : '0;
+    assign readback_array[33][31:5] = '0;
     assign readback_array[34][0:0] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox0_ecc_unc.value : '0;
     assign readback_array[34][1:1] = (decoded_reg_strb.internal_hw_error_non_fatal_mask && !decoded_req_is_wr) ? field_storage.internal_hw_error_non_fatal_mask.mask_mbox1_ecc_unc.value : '0;
     assign readback_array[34][31:2] = '0;

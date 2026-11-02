@@ -23,8 +23,17 @@
 `define VEER_INTR_VEC_MCI                 1
 `define VEER_INTR_VEC_I3C                 2
 `define VEER_INTR_VEC_USB                 3
-`define VEER_INTR_VEC_SPIH                4
-`define VEER_INTR_VEC_UART                5
+`define VEER_INTR_VEC_RSVD4               4 // reserved (formerly SPI host)
+`define VEER_INTR_VEC_RSVD5               5 // reserved (formerly UART)
 `define VEER_INTR_EXT_LSB                 6
-    
+
+// Documentation-only alias for the first configurable external interrupt pin.
+// Bits [PIC_TOTAL_INT:VEER_INTR_EXT_LSB] of cptra_ss_mcu_ext_int are integrator
+// provided external interrupt inputs. In the dual USB device (usb_hub_compound)
+// scenario the testbench loops the USB device1 IRQ output (cptra_ss_usb_dev1_irq_o)
+// back onto this bit so that device1 can interrupt the MCU, mirroring how
+// device0 (dev0_usb_irq) is routed internally to VEER_INTR_VEC_USB.
+`define VEER_INTR_VEC_USB_DEV1            `VEER_INTR_EXT_LSB
+
 `endif // CALIPTRA_SS_INCLUDES_SVH
+

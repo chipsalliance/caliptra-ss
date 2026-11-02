@@ -93,7 +93,7 @@ void main (void) {
     // USBDC0's own EP list/DEVCMDSTAT/DCON are now fully programmed (end
     // of boot_usb_core_hub()), so it is safe to connect the hub upstream:
     // usb_hub_connect() sets HUB_CONNECT, per the reference
-    // janus_hub_ctrl_bfm.sv two-phase sequencing. Only after this call
+    // BFM two-phase sequencing. Only after this call
     // will the host see the hub on the bus and begin enumerating its
     // downstream port (where USBDC0 is attached).
     usb_hub_connect();
@@ -146,7 +146,7 @@ void main (void) {
                 // Status-stage ZLP OUT for a control-read completed (no
                 // SETUP set). HW cleared ACTIVE on the EP0 OUT descriptor;
                 // re-arm it so the next SETUP packet is received instead
-                // of NAK'd. Matches janus_ahb_fw_bfm.sv:
+                // of NAK'd. Matches BFM:
                 // dma_write32(EP0_OUT_DESC, 0xa0000000). Without this the
                 // hub-composite IP's EP-list SRAM keeps EP0 OUT disarmed
                 // after the first status-stage ZLP and every subsequent

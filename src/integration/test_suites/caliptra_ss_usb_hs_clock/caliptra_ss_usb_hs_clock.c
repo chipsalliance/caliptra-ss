@@ -109,8 +109,10 @@ void main (void) {
     // SPEED is read-only status; log the negotiated speed for diagnostic use.
     VPRINTF(LOW, "MCU: USB negotiated SPEED field = 0x%x\n",
             (reg_data & DEV0_CSR_DEVCMDSTAT_SPEED_MASK) >> DEV0_CSR_DEVCMDSTAT_SPEED_LOW);
-    reg_data = lsu_read_32(USB_DEV_INFO);
-    VPRINTF(LOW, "MCU: USB INFO = 0x%x\n", reg_data);
+    // CHIP_ID = INFO[31:16] = {MAJREV, MINREV}. Checked here in firmware
+    // because VCS cannot cross-module-reference the VHDL generics that drive
+    // those bytes (Error-[VHDLXMRE-NS]); a mismatch fails the test.
+    usb_check_chip_id(USB_DEV_INFO_CHIP_ID_EXP);
 
     // Idle loop: keep the device enabled while the TB speed checker observes
     // the UTMI interface. Also service any bus reset so the link does not drop
@@ -124,3 +126,5 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB FS clock test - halting\n");
     csr_write_mpmc_halt();
 }
+
+// File contains AI-generated response based on internal company sources

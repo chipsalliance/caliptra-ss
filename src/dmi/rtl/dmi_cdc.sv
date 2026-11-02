@@ -73,13 +73,11 @@ module dmi_cdc (
   );
 
   logic combined_rstn;
- caliptra_prim_clock_mux2 #(
-    .NoFpgaBufG(1'b1)
-  ) u_rst_mux (
-    .clk0_i(combined_rstn_premux),
-    .clk1_i(test_rst_ni),
+ caliptra_prim_rst_mux2 u_rst_mux (
+    .rst0_i(combined_rstn_premux),
+    .rst1_i(test_rst_ni),
     .sel_i(testmode_i),
-    .clk_o(combined_rstn)
+    .rst_o(combined_rstn)
   );
 
  caliptra_prim_fifo_async_simple #(

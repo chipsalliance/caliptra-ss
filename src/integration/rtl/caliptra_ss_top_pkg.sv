@@ -14,6 +14,8 @@
 
 package caliptra_ss_top_pkg;
 
+  localparam int unsigned I3cNumPrivIds = 4;
+
   parameter lc_ctrl_state_pkg::lc_token_t RndCnstRawUnlockTokenHashed = {
     128'h896e4a11_d1c8cbba_de8a30e6_f0930a4d
   };

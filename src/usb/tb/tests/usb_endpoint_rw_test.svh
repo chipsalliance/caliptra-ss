@@ -25,15 +25,14 @@ class usb_endpoint_rw_test extends usb_base_test;
 
   // Keep the basic read/write smoke at full AXI speed; other USB tests use
   // the central AXI delay randomization.
-  function void build_phase(uvm_phase phase);
-    uvm_config_db#(bit)::set(this, "env", "axi_delay_random", 1'b0);
-    super.build_phase(phase);
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    cfg.axi_delay_random = 1'b0;
   endfunction
 
   task run_phase(uvm_phase phase);
     usb_endpoint_rw_seq seq;
     phase.raise_objection(this);
-    `uvm_info("USB_TEST", $sformatf("Starting endpoint read/write test; whole-test timeout=%0t", USB_TEST_TIMEOUT), UVM_LOW)
+    `uvm_info("USB_TEST", $sformatf("Starting endpoint read/write test; whole-test timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
     seq = usb_endpoint_rw_seq::type_id::create("endpoint_rw_sequence");
     seq.start(env.virtual_sequencer);

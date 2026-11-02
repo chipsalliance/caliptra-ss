@@ -28,6 +28,16 @@ addrmap mci_top {
     mci_reg mci_reg @ 0x0000_0000;
     
     trace_buffer_csr mcu_trace_buffer_csr @ 0x0001_0000;
+
+    mem {name="MCU ROM Patch SRAM";
+         desc="Dedicated SRAM holding an MCU ROM patch. Writable by MCU LSU only while the LC state is TEST_LOCKED, TEST_UNLOCKED or DEV and Caliptra core has not yet left reset in the current power cycle, in increasing address order from offset 0. Readable/executable by MCU LSU/IFU only for the words loaded this power cycle. Without a patch, readable/writable as data memory by any AXI user once MCU RT FW is running. Max size is 2MB but is configurable by integration team (MCU_ROM_PATCH_SRAM_SIZE_KB).
+               [br]Caliptra Access: -
+               [br]MCU      Access: RW*
+               [br]SOC Access:      -";
+         memwidth=32;
+         mementries=524288;
+         sw=rw;
+    } external mcu_rom_patch_sram @ 0x20_0000;
     
     mcu_mbox_csr mcu_mbox0_csr @ 0x0040_0000;
     

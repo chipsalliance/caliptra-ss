@@ -29,7 +29,7 @@ EP1 (pattern: `word[i] = i`, 512 words x 4 bytes, HS 4 x 512-byte packets).
 MCU firmware receives the data, verifies each 32-bit word against the
 pattern, and logs PASSED. The firmware event loop keeps servicing EP0/DEV
 interrupts after the bulk transfer completes rather than exiting
-immediately (matching the reference `janus_ahb_fw_bfm.sv` never-exiting
+immediately (matching the reference `BFM` never-exiting
 `service_irq()` behavior).
 
 ## What Is Verified

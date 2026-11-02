@@ -54,8 +54,19 @@ prim_flop_2sync #(
   .q_o ( rst_src_da_n )
 );
 
-assign rst_src_n = scan_mode_i ? rst_src_ni : rst_src_ni && rst_dst_da_n;
-assign rst_dst_n = scan_mode_i ? rst_dst_ni : rst_dst_ni && rst_src_da_n;
+caliptra_prim_rst_mux2 u_rst_src_mux (
+  .rst0_i ( rst_src_ni && rst_dst_da_n ),
+  .rst1_i ( rst_src_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_src_n )
+);
+
+caliptra_prim_rst_mux2 u_rst_dst_mux (
+  .rst0_i ( rst_dst_ni && rst_src_da_n ),
+  .rst1_i ( rst_dst_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_dst_n )
+);
 
 
 // Pulse Rising Edge Detect & Block

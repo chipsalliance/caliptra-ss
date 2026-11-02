@@ -36,10 +36,8 @@
     `define CSS_INTC_SINTF_USB_COMBO_IDX     8
     `define CSS_INTC_SINTF_USB_DEV0_MEM_IDX  9
     `define CSS_INTC_SINTF_USB_DEV1_CSR_IDX  10
-    `define CSS_INTC_SINTF_SPI_IDX           11
-    `define CSS_INTC_SINTF_USB_DEV1_MEM_IDX  12
-    `define CSS_INTC_SINTF_UART_IDX          13
-    `define CSS_INTC_SLAVE_CNT              14
+    `define CSS_INTC_SINTF_USB_DEV1_MEM_IDX  11
+    `define CSS_INTC_SLAVE_CNT              12
 
 
 

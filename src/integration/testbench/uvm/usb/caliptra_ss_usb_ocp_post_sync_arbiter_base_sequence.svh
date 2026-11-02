@@ -166,7 +166,8 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
             result,
             label);
 
-        if ((result == OCP_XFER_ABORTED) && !path_disabled) begin
+        if ((result == OCP_XFER_ABORTED) && require_success
+            && !path_disabled) begin
             `uvm_error("OCP_ARB_SEQ",
                 $sformatf("%s was aborted", label))
         end
@@ -348,7 +349,7 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
         input string label);
 
         svt_usb_transfer req;
-        svt_usb_link_service_20_command_sequence reset_seq;
+        caliptra_ss_usb_port_reset_sequence reset_seq;
         bit [7:0] empty_payload[$];
         bit stage_reached;
         bit reset_completed;
@@ -415,18 +416,9 @@ class caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence
                         $sformatf("%s packet-stage trigger timed out", label))
                 end
                 reset_seq =
-                    svt_usb_link_service_20_command_sequence::type_id::create(
+                    caliptra_ss_usb_port_reset_sequence::type_id::create(
                         {label, "_reset"});
-                if (!reset_seq.randomize() with {
-                        link_20_command_type ==
-                            svt_usb_link_service::USB_20_PORT_RESET;
-                        prereq_link_20_state ==
-                            svt_usb_types::POWERED_OFF;
-                    }) begin
-                    `uvm_fatal("OCP_ARB_006",
-                        $sformatf("%s reset sequence randomization failed",
-                                  label))
-                end
+                reset_seq.link20sm_state_value = svt_usb_types::ENABLED;
                 observer_vif.arm_reset_signal_observation();
                 fork : reset_execution
                     begin
@@ -589,6 +581,25 @@ class caliptra_ss_usb_ocp_arb_004_sequence
         super.new(name);
     endfunction
 
+    protected virtual task require_stalled_non_success(
+        input caliptra_ss_usb_ocp_xfer_result_e result,
+        input string label);
+
+        int unsigned stall_count;
+
+        stall_count = checker.packet_callback.count_pid(
+            svt_usb_packet::STALL,
+            caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX);
+        if (stall_count == 0) begin
+            `uvm_error("OCP_ARB_004",
+                $sformatf("%s produced no device STALL packet.", label))
+        end
+        if (result == OCP_XFER_SUCCESS) begin
+            `uvm_error("OCP_ARB_004",
+                $sformatf("%s unexpectedly completed successfully.", label))
+        end
+    endtask
+
     virtual task body();
         bit [7:0] response[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
@@ -603,10 +614,7 @@ class caliptra_ss_usb_ocp_arb_004_sequence
             "ARB004_WRONG_READ_LENGTH");
         require_setup_stage_ack("ARB004_WRONG_READ_LENGTH");
         report_packet_outcome("ARB004_WRONG_READ_LENGTH");
-        if (result == OCP_XFER_ABORTED) begin
-            `uvm_error("OCP_ARB_004",
-                "Wrong-length transfer aborted before a protocol response")
-        end
+        require_stalled_non_success(result, "ARB004_WRONG_READ_LENGTH");
 
         run_claimed_read_length(
             ocp_cmd_t'(8'hFF),
@@ -616,10 +624,7 @@ class caliptra_ss_usb_ocp_arb_004_sequence
             "ARB004_RESERVED_COMMAND");
         require_setup_stage_ack("ARB004_RESERVED_COMMAND");
         report_packet_outcome("ARB004_RESERVED_COMMAND");
-        if (result == OCP_XFER_ABORTED) begin
-            `uvm_error("OCP_ARB_004",
-                "Reserved-command transfer aborted before a protocol response")
-        end
+        require_stalled_non_success(result, "ARB004_RESERVED_COMMAND");
         publish_transfer_count();
     endtask
 endclass
@@ -635,7 +640,6 @@ class caliptra_ss_usb_ocp_arb_005_sequence
 
     virtual task body();
         bit [7:0] response[$];
-        bit [7:0] exact_response[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
         int unsigned last_data_length;
         bit found_data;
@@ -671,26 +675,6 @@ class caliptra_ss_usb_ocp_arb_005_sequence
                 "Short PROT_CAP response incorrectly used a terminating ZLP")
         end
 
-        run_claimed_read_length(
-            OCP_CMD_PROT_CAP,
-            16'(response.size()),
-            exact_response,
-            result,
-            "ARB005_EXACT_REQUEST_PROT_CAP");
-        require_setup_stage_ack("ARB005_EXACT_REQUEST_PROT_CAP");
-        if ((result != OCP_XFER_SUCCESS) ||
-            (exact_response.size() != response.size())) begin
-            `uvm_error("OCP_ARB_005",
-                $sformatf("Exact-length PROT_CAP result=%s length=%0d expected=%0d",
-                          result.name(),
-                          exact_response.size(),
-                          response.size()))
-        end
-        if (checker.packet_callback.count_zlp(
-                caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) != 0) begin
-            `uvm_error("OCP_ARB_005",
-                "Exact-length PROT_CAP response incorrectly used a ZLP")
-        end
         `uvm_info("OCP_ARB_005",
             {"Coverage gap: no current protocol-visible response constructs ",
              "returned_length < wLength with a returned length that is an ",

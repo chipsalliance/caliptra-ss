@@ -10,6 +10,7 @@ targets:
     directories: [$COMPILE_ROOT]
     files:
       - $COMPILE_ROOT/caliptra_ss_top_sva.sv
+      - $COMPILE_ROOT/caliptra_ss_usb_sva.sv
 global:
   tool:
     vcs:

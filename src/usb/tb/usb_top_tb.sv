@@ -277,16 +277,11 @@ module usb_top_tb;
     .dev0_usb_fiq(),
     .dev1_usb_irq(),
     .dev1_usb_fiq(),
-    .usb_frametoggle(),
+    .usb_frametoggle(), // FIXME: DV add functionality
     .payload_available     (),
     .ocp_firmware_activated(),
-    // Device-mode VBus/session indications come from SVT.
+    // Device-mode VBus indication comes from SVT.
     .USB_VBus(usb_20_mac_if.utmi_dut_mac_if.VbusValid),
-    .vbuscomp_on(),
-    .chrg_vbus(),
-    .dischrg_vbus(),
-    .avalid(1'b0),
-    .sessend(usb_20_mac_if.utmi_dut_mac_if.SessEnd),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
     .utmi_rxdata(usb_20_mac_if.utmi_dut_mac_if.DataOut[7:0]),
     .utmi_rxvalid(usb_20_mac_if.utmi_dut_mac_if.RXValid),
@@ -313,13 +308,13 @@ module usb_top_tb;
     .ulpi_stp(),
     .ulpi_nxt(1'b0),
     .ulpi_ddr_sel(1'b0),
-    .usb_needclk(),
+    .usb_needclk(), // FIXME: DV add functionality
     // System wake/test policy is not modeled by this standalone harness.
-    .sys_donotwakeup_n(1'b1),
-    .sys_dev_wakeup_n(1'b1),
+    .sys_donotwakeup_n(1'b1), // FIXME: DV add functionality
+    .sys_dev_wakeup_n(1'b1), // FIXME: DV add functionality
     .sys_utmi_clkin_lock(phy_clock_locked),
-    .USB_EnableHub(1'b0),
-    .USB_self_powered(1'b0),
+    .USB_EnableHub(1'b0), // FIXME: DV add functionality
+    .USB_self_powered(1'b1), // FIXME: DV add functionality
     .testmode(1'b0),
     .async_disable(1'b0)
   );
@@ -387,8 +382,11 @@ module usb_top_tb;
   // --------------------------------------------------------------------------
   // Testbench control and UVM startup
   // --------------------------------------------------------------------------
+  caliptra_ss_usb_ocp_collision_bind ocp_collision_bind();
+
   initial begin
     usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b1;
+    usb_20_mac_if.utmi_dut_mac_if.enable_hs_fs_clk = 1'b1;
     `uvm_info("USB_TOP", "SVT PHY owns suspend-gated UTMI CLK; DUT wakeup is required", UVM_LOW)
   end
 
@@ -419,14 +417,16 @@ module usb_top_tb;
 `ifndef AVERY_ASSERT_ON
     `uvm_fatal("USB_CONFIG", "AVERY_ASSERT_ON is required for continuous AXI protocol checking")
 `endif
-    // Publish the four independent AXI managers, USB PHY, and filter policy interfaces to UVM.
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "combo_vif", combo_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev0_memory_vif", dev0_memory_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_csr_vif", dev1_csr_manager_vif);
-    uvm_config_db#(virtual aaxi_intf)::set(null, "uvm_test_top.env", "dev1_memory_vif", dev1_memory_manager_vif);
-    uvm_config_db#(virtual svt_usb_if)::set(null, "uvm_test_top.env", "usb_20_mac_if", usb_20_mac_if);
-    uvm_config_db#(usb_combo_filter_vif_t)::set(null, "uvm_test_top.env", "combo_filter_vif", combo_filter_if);
-    uvm_config_db#(usb_dev1_filter_vif_t)::set(null, "uvm_test_top.env", "dev1_filter_vif", dev1_filter_if);
+    // Publish the four independent AXI managers, USB PHY, and filter policy
+    // interfaces to any env instance named "env", so the environment can be reused
+    // under a different parent.
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "combo_vif", combo_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev0_memory_vif", dev0_memory_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_csr_vif", dev1_csr_manager_vif);
+    uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_memory_vif", dev1_memory_manager_vif);
+    uvm_config_db#(virtual svt_usb_if)::set(null, "*.env", "usb_20_mac_if", usb_20_mac_if);
+    uvm_config_db#(usb_combo_filter_vif_t)::set(null, "*.env", "combo_filter_vif", combo_filter_if);
+    uvm_config_db#(usb_dev1_filter_vif_t)::set(null, "*.env", "dev1_filter_vif", dev1_filter_if);
     run_test();
   end
 endmodule

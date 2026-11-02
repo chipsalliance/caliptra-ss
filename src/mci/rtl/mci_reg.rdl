@@ -220,6 +220,9 @@ addrmap mci_reg {
                      [br]0xA: BOOT_WAIT_MCU_HALTED
                      [br]0xB: BOOT_RST_MCU
                      [br]0xF: BOOT_ERROR or invalid state encoding (see HW_ERROR_FATAL.fsm_error)"; sw=r;                  hw=rw ; /* no storage, no reset */} boot_fsm[4];
+        field {desc="MCU ROM patch SRAM holds a patch loaded by MCU ROM in this power cycle.
+                     Cleared only by cold reset. MCU ROM uses it after a warm reset to fetch
+                     the patch without reloading it."; sw=r;                  hw=rw ; /* no storage, no reset */} mcu_rom_patch_active[4:4];
     } HW_FLOW_STATUS;
 
 
@@ -283,6 +286,7 @@ addrmap mci_reg {
         rw_rw_sticky_hw nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_rw_sticky_hw mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
         rw_rw_sticky_hw fsm_error=1'b0;         /* MCI boot FSM entered BOOT_ERROR or an invalid state encoding. Not maskable */
+        rw_rw_sticky_hw mcu_rom_patch_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU ROM patch SRAM */
     } HW_ERROR_FATAL @0x50;
     reg {
         name = "Aggregate Error Fatal";
@@ -491,6 +495,7 @@ addrmap mci_reg {
         rw_ro_ro_sticky_hw mask_nmi_pin=1'b0;           /* Non-Maskable Interrupt due to WDT timeout */
         rw_ro_ro_sticky_hw mask_mcu_sram_dmi_axi_collision=1'b0;  /* Collision between AXI and DMI MCU SRAM. No what data is in SRAM */
         field {sw=r; hw=na;} mask_fsm_error=1'b0;  /* Reserved, read-only 0 - fsm_error is not maskable */
+        rw_ro_ro_sticky_hw mask_mcu_rom_patch_sram_ecc_unc=1'b0;  /* Uncorrectable double-bit error in MCU ROM patch SRAM */
     } internal_hw_error_fatal_mask;
     reg {
         name = "Hardware Error Non-Fatal Mask";

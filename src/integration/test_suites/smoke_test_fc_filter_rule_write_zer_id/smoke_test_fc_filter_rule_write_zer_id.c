@@ -37,6 +37,11 @@
 //       but CMD uses Caliptra core user, causing !addr_and_cmd_same_id and
 //       a discard.
 //
+//   Scenario 5: DIRECT_ACCESS_ADDRESS written with bits above the register
+//       field. The filter must apply its rules to the address stored in the
+//       register, so MCU DaiRead, DaiWrite and DaiZeroize to the stored
+//       secret address are discarded, while a Caliptra core read succeeds.
+//
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -121,7 +126,7 @@ bool test_double_address_write(void) {
 // the filter reaches FUSE_CMD_AXI_ADDR_ST with:
 //   - fuse_cmd = DaiWrite
 //   - latched_cmd_id = MCU user
-//   - latched_fuse_addr = 0x48 (secret range)
+//   - fuse address (dai_addr_i) = 0x48 (secret range)
 //   - wr_req_allowed = false (MCU not in table for [0x48,0xF0])
 //
 // Earlier branches in FUSE_CMD_AXI_ADDR_ST are skipped:
@@ -297,6 +302,71 @@ bool test_dai_zeroize_mixed_ids(void) {
     return true;
 }
 
+//----------------------------------------------------------------------------
+// Scenario 5: DIRECT_ACCESS_ADDRESS written with bits above the register field
+//
+// DIRECT_ACCESS_ADDRESS only stores the bits covered by
+// OTP_CTRL_DIRECT_ACCESS_ADDRESS_ADDRESS_MASK, and the DAI operates on the
+// stored value. Writing the UDS address with the next higher bit set leaves
+// the UDS address in the register, so the filter has to treat these MCU
+// commands as secret-partition accesses and discard them.
+//
+// UDS is blank and has no digest in this image, so it is neither read nor
+// write locked. A Caliptra core read of the same address is done first to
+// confirm this, so the MCU errors below can only come from the filter.
+// FC/LCC is reset before each MCU command so a DAI error left by the previous
+// command cannot satisfy the next status check.
+//----------------------------------------------------------------------------
+bool test_dai_addr_above_field(void) {
+    VPRINTF(LOW, "\n--- Scenario 5: DIRECT_ACCESS_ADDRESS with bits above the field ---\n");
+
+    const partition_t uds = partitions[SECRET_MANUF_PARTITION];
+    const uint32_t addr = uds.address | (OTP_CTRL_DIRECT_ACCESS_ADDRESS_ADDRESS_MASK + 1);
+    uint32_t rdata0 = 0, rdata1 = 0;
+
+    VPRINTF(LOW, "DEBUG: Using DIRECT_ACCESS_ADDRESS value 0x%08X\n", addr);
+
+    // Control: Caliptra core is allowed to read UDS, so this must succeed.
+    grant_caliptra_core_for_fc_writes();
+    mcu_sleep(20);
+    if (!wait_dai_op_idle(0)) return false;
+
+    if (!dai_rd(addr, &rdata0, &rdata1, uds.granularity, 0)) {
+        VPRINTF(LOW, "ERROR: Caliptra core DaiRead failed, UDS is not accessible\n");
+        return false;
+    }
+
+    revoke_grant_mcu_for_fc_writes();
+    mcu_sleep(20);
+
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) return false;
+
+    if (!dai_rd(addr, &rdata0, &rdata1, uds.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+        VPRINTF(LOW, "ERROR: DaiRead was not discarded\n");
+        return false;
+    }
+
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) return false;
+
+    if (!dai_wr(addr, 0xA5A5A5A5, 0x5A5A5A5A, uds.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK)) {
+        VPRINTF(LOW, "ERROR: DaiWrite was not discarded\n");
+        return false;
+    }
+
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) return false;
+
+    if (!dai_zer(addr, uds.granularity, OTP_CTRL_STATUS_DAI_ERROR_MASK, true)) {
+        VPRINTF(LOW, "ERROR: DaiZeroize was not discarded\n");
+        return false;
+    }
+
+    VPRINTF(LOW, "PASS: Scenario 5 completed - commands to the stored address correctly discarded\n");
+    return true;
+}
+
 void main(void) {
     VPRINTF(LOW, "=================\nMCU Caliptra Boot Go\n=================\n\n");
 
@@ -329,6 +399,12 @@ void main(void) {
 
     // Scenario 4: DaiZeroize + !addr_and_cmd_same_id in FUSE_CMD_AXI_ADDR_ST
     if (!test_dai_zeroize_mixed_ids()) passed = false;
+
+    reset_fc_lcc_rtl();
+    if (!wait_dai_op_idle(0)) passed = false;
+
+    // Scenario 5: DIRECT_ACCESS_ADDRESS with bits above the register field
+    if (!test_dai_addr_above_field()) passed = false;
 
     mcu_sleep(160);
     VPRINTF(LOW, "\nINFO: MCU Caliptra Boot sequence completed.\n");

@@ -141,19 +141,24 @@ class caliptra_ss_usb_hs_dev1_nbyte_sequence extends caliptra_ss_usb_base_sequen
             "[DBG] Starting short-packet bulk OUT iteration loop.", UVM_NONE)
         for (int unsigned iter = 1; iter <= `USB_HS_NBYTE_ITERATIONS; iter++) begin
             `uvm_info("USB_HS_NBYTE_SEQ",
-                $sformatf("[DBG] Iteration %0d: waiting 130us then sending %0d-byte OUT.",
+                $sformatf("[DBG] Iteration %0d: waiting 200us then sending %0d-byte OUT.",
                           iter, iter), UVM_NONE)
             // Allow time for EP1 to be armed / re-armed by the MCU before
-            // submitting the next OUT token.  130 us is required to satisfy
+            // submitting the next OUT token.  200 us is required to satisfy
             // three constraints simultaneously:
             //   1. MCU polling latency: MCU takes ~22.5 us to detect Active=0
-            //      and re-arm; 130 us >> 22.5 us prevents residual mismatch.
-            //   2. FRAME_INT window: HS SOF fires every 125 us; 130 us
-            //      guarantees at least one SOF per iteration window so
-            //      frame_int_seen is set before the next EP1OUT detection.
+            //      and re-arm; 200 us >> 22.5 us prevents residual mismatch.
+            //   2. FRAME_INT window: at high speed SOF fires every 125 us.
+            //      200 us is 1.6 SOF periods, so at least one SOF is
+            //      guaranteed inside every iteration window no matter where
+            //      in the frame the previous packet landed, which makes the
+            //      firmware per-iteration FRAME_INT check satisfiable. The
+            //      previous value of 130 us left only a 4 percent margin and
+            //      the check had to be tolerated as informational.
             //   3. Host/MCU synchronization: keeps all 5 iterations in lockstep
             //      so the MCU processes each one before the next packet arrives.
-            #130us;
+            // Cost: 5 iterations x 70 us of extra simulated time (~350 us).
+            #200us;
 
             send_short_bulk_out(host_agent_h, usb_cfg, iter, int'(iter));
 

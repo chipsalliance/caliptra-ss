@@ -146,7 +146,7 @@ void main(void) {
     // DEVCMDSTAT / DCON are also fully programmed at this point, so assert
     // HUB_CONNECT here to present the hub upstream. Only after this call
     // does the host see the hub and begin enumerating its downstream port 2
-    // (USBDC1), per the reference janus_hub_ctrl_bfm.sv two-phase sequencing.
+    // (USBDC1), per the reference BFM two-phase sequencing.
     usb_hub_connect();
 
     // NOTE: Do NOT clear FORCE_VBUS here. In hub-enabled mode USBDC1 is an

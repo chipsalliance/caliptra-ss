@@ -1,57 +1,4 @@
 ---
-provides: [avery_vip]
-schema_version: 2.4.0
-targets:
-  tb:
-    directories:
-      - $COMPILE_ROOT/vip
-      #-- General
-      - $AVERY_SIM
-      - $AVERY_SIM/src
-      - $AVERY_SIM/src.IEEE
-      - $AVERY_PLI
-      #-- AXI Interconnect
-      - $AVERY_AXI/src.axi.VCS
-      - $AVERY_AXI/src.axi
-      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva
-      - $AVERY_AXI/testbench
-      #-- I3C VIP
-      - $AVERY_I3C/
-      - $AVERY_I3C/src
-      - $AVERY_I3C/src.i3c
-      - $AVERY_I3C/src.VCS
-      - $AVERY_I3C/src.i3c
-      - $AVERY_I3C/testsuite.i3c/examples
-      - $AVERY_I3C/testsuite.i3c/examples.uvm
-      - $AVERY_I3C/testsuite.i3c/dut
-      - $AVERY_I3C/testsuite.i3c/dut1_1
-      - $AVERY_I3C/testsuite.i3c/dut_slave
-      - $AVERY_I3C/testsuite.i3c/dut_master
-      - $AVERY_I3C/testsuite.i3c/dut_master_stby
-      - $AVERY_I3C/testbench
-    files:
-      #-- General
-      - $MSFT_REPO_ROOT/src/libs/arm_licensed/BP063-BU-01000-r0p1-00rel0/sva/Axi4PC.sv
-      - $AVERY_SIM/src/avery_pkg.sv
-      - $AVERY_SIM/src/avery_pkg_test.sv
-      #-- AXI Interconnect
-      - $AVERY_AXI/src.axi/aaxi_pkg.sv
-      - $AVERY_AXI/src.axi/aaxi_pkg_xactor.sv
-      - $AVERY_AXI/src.axi/aaxi_class_pll.sv
-      - $AVERY_AXI/checker/monitor_wrapper/BP063/aaxi_monitor_wrapper.sv
-      - $AVERY_AXI/src.VCS/aaxi_busmonitor.v
-      - $AVERY_AXI/src.axi/aaxi_coverage_metrics.sv 
-      - $AVERY_AXI/src.axi/aaxi_pkg_test.sv
-      - $AVERY_AXI/src.axi/aaxi_intf.sv
-      #-- I3C VIP
-      - $AVERY_I3C/src/ai2c_pkg.sv
-      - $AVERY_I3C/src.i3c/ai3c_pkg.sv
-      - $AVERY_I3C/src/ai2c_intf.sv
-      - $AVERY_I3C/src.i3c/ai3c_intf.sv
-    tops:
-      #-- NOTE: include this in the top level testbench
-      - ai3c_tests_bench
----
 provides: [caliptra_ss_top_defines]
 schema_version: 2.4.0
 targets:
@@ -103,8 +50,6 @@ requires:
   - fuse_ctrl
   - mci_top
   - caliptra_top
-  - spi_host_subsystem
-  - uart_subsystem
 targets:
   rtl_lint:
     waiver_files:
@@ -166,7 +111,8 @@ requires:
   - fuse_ctrl_pkg
   - caliptra_top_tb_pkg
   - 3rd_party_snps_usb_vip::usb_vip
-  - avery_vip
+  - ss_avery_axi_vip
+  - ss_avery_i3c_vip
   - caliptra_ss_top_tb_coverage
 targets:
   tb:
@@ -183,6 +129,8 @@ targets:
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_common_pkg.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_test_pkg.sv
       - $COMPILE_ROOT/testbench/tb_top_pkg.sv
@@ -201,10 +149,12 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_axi_64_to_32_downsizer.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_services.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_bfm_services_if.sv
+      - $COMPILE_ROOT/testbench/caliptra_ss_mcu_console_fail_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_fs_speed_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_vbus_driver.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_suspend_resume_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_device_wakeup_checker.sv
+      - $COMPILE_ROOT/testbench/usb_dev_addr_probe.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
       - $COMPILE_ROOT/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
@@ -233,8 +183,6 @@ global:
         - '-debug_access+all'
         - +define+CLP_ASSERT_ON
         - +define+ABR_ASSERT_ON
-        - +define+AVERY_ASSERT_ON
-        - +define+AVERY_MONITOR_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
@@ -242,10 +190,11 @@ global:
         - +define+CALIPTRA_MODE_SUBSYSTEM
         - +define+MCU_RV_BUILD_AXI4
         - +define+MCU_RV_OPENSOURCE
-        - +define+AVERY_VCS
         - +define+AVERY_CLOCK=5
         - +define+FOUR_OUTSTANDING
         - +define+AVERY_AXI_INTERCONNECT
+        # Uncomment and rebuild to generate AXI *_intf.txt logs instead of routing to /dev/null.
+        #- +define+CALIPTRA_SS_AXI_INTF_TRACK
         - +define+AAXI_MAX_DATA_WIDTH=64
         - +define+AAXI_MAX_ADDR_WIDTH=64
         - +define+AAXI_MAX_ID_WIDTH=5
@@ -255,18 +204,17 @@ global:
         - +define+CALIPTRA_INTERNAL_TRNG
         - '-noinherit_timescale=1ps/1ps'
         - +define+AAXI_INTC_MASTER_CNT=5
-        - +define+AAXI_INTC_SLAVE_CNT=14
+        - +define+AAXI_INTC_SLAVE_CNT=12
         - +define+AI3C_LANE_NUM=1
         - +define+AVERY_SV_TEST_CASE=1
         - +define+AI3C_TEST_CASE=$COMPILE_ROOT/testbench/sv_tests/ai3c/ai3c_test_includes.svh
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME : remve this Note suppression
         - '-suppress=SV-LCM-PPWI'
         - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
         - +define+SIMULATION
         # --- Synopsys USB SVT VIP compile options ---
+        - +define+SVT_USB_MAX_DEVICE_DEBUG_PORT=8
         - +define+SVT_UVM_TECHNOLOGY
         - +define+UVM_PACKER_MAX_BYTES=24000
         - +define+UVM_DISABLE_AUTO_ITEM_RECORDING
@@ -297,11 +245,13 @@ global:
         # Both are caught as errors by the Playbook log parser but are
         # harmless elaboration-time messages, so suppress them here.
         - '-suppress=SIMU-RESOLUTION,DRTZ'
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
         #FIXME unique case violations in i3c_core
         - '-ignore unique_checks'
       sim:
+        # Uncomment either runtime plusarg to generate AXI *_tracker.txt logs (no rebuild).
+        # ENDPOINTS logs external BFMs; ALL also logs internal/default ports and takes precedence.
+        #- '+CALIPTRA_SS_AXI_TRACK_ENDPOINTS'
+        #- '+CALIPTRA_SS_AXI_TRACK_ALL'
         # Uncomment for I3C debug prints
         #- +aaxi_dbg_name=all
         #- '+ai3c_dbg_name=master'
@@ -317,11 +267,20 @@ global:
         ## Enable force/release on VHDL targets (needed for USB dev_enable)
         #- '-mx_force'
         # --- Synopsys USB SVT VIP runtime options ---
+        # USB 2.0 link state-machine/timer verbosity. Edit or remove this single
+        # argument to change the policy
+        - '+vip_verbosity=svt_usb_link_20_device_a_sm:UVM_NONE,svt_usb_link_20_device_b_sm:UVM_NONE,svt_usb_link_20_timer:UVM_NONE'
+        # Optionally append svt_usb_physical_port_utmi:UVM_NONE to the same
+        # argument to quiet UTMI ports, including their control INFO messages.
+        # Standard UVM reporter verbosity is independent of the scoped VIP setting.
+        #- '+UVM_VERBOSITY=UVM_LOW'
         # Enable SVT debug automation: activates protocol and link trace log
         # files (svt_debug.transcript, svt_debug.out) on every USB sim run.
         # config object properties (enable_prot_tracing, enable_link_tracing)
-        # gate which layers are written; physical layer tracing is disabled.
-        - '+svt_debug_opts'
+        # gate which layers are written.
+        #- '+svt_debug_opts'
+        # Also try:
+        #- '+svt_debug_opts=inst:/.*host_agent\.(prot|link).*/'
         # Uncomment to enable USB VIP debug logging
         #- '+svt_usb_enable_debug'
       dpi_compile:

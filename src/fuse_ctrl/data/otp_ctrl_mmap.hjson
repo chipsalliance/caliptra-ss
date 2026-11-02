@@ -501,10 +501,10 @@
             zeroizable:   false,
             items: [
                 {
-                    name: "CPTRA_CORE_FMC_KEY_MANIFEST_SVN",
-                    size: "4",
+                    name: "MCU_RUNTIME_SVN",
+                    size: "16",
                     desc: '''
-                    FMC security version number.
+                    One-hot encoded value for the MCU runtime firmware minimum supported SVN.
                     '''
                 },
                 {

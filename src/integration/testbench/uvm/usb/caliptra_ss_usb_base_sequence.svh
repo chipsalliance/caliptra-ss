@@ -18,14 +18,18 @@
 // Centralizes the protocol-level boilerplate that was copy-pasted, near-
 // identically, across every per-test sequence file:
 //
-//   - pre_start()/post_start(): raise/drop the starting phase's objection
-//     when this sequence has no parent sequence (i.e. it was start()'d
-//     directly as a top-level sequence rather than nested inside another).
+//   - pre_start()/post_start(): resolve the shared usb_data_check_api handle
+//     from the config_db, and raise/drop the starting phase's objection when
+//     this sequence has no parent sequence (i.e. it was start()'d directly
+//     as a top-level sequence rather than nested inside another).
 //   - resolve_host_agent(): cast p_sequencer's parent component to
 //     svt_usb_agent (every sequence needs this to reach agent_h.prot for
 //     wait_xfer_done() and agent_h.reconfigure() after a SET_ADDRESS).
 //   - resolve_shared_status(): fetch the svt_usb_status object the link FSM
 //     writes, via p_sequencer.get_shared_status(this).
+//   - resolve_xfer_handles(): resolve the agent, configuration and shared
+//     status handles in one call (used by the init and OCP recovery
+//     sequences, which cache them as members).
 //   - wait_for_link_enabled(): the fork/disable idiom that blocks until
 //     shared_status.link_usb_20_state reaches ENABLED, with a periodic
 //     status log every 10 us while waiting. Bounded by timeout_us; on
@@ -66,33 +70,81 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     protected caliptra_ss_usb_data_check_api usb_data_check_api;
     protected svt_usb_transfer last_ctrl_seq_item;
 
+    // Bits of svt_usb_transfer::results_status that describe a NORMAL end of
+    // transfer rather than a failure, and must therefore be ignored when
+    // deciding whether a transfer succeeded.
+    //
+    //   bit 5 - "Transfer finished due to 0-length Data Packet" (Host).
+    //           Set on every control transfer with no data stage, i.e. on
+    //           SET_ADDRESS and SET_CONFIGURATION, and on any bulk IN that
+    //           ends on a zero-length packet. The VIP's own sequence library
+    //           (svt_usb_20_na_30_ss_transfer_system_virtual_sequence_collection)
+    //           reports status==ACCEPT with results_status==0x20 as
+    //           "completed normally (with 0-length DP)".
+    //
+    // Everything else in the table is a genuine failure reason (bit 1 host
+    // abort command, bit 2 device response timeout, bit 3 injected-error
+    // timeout, bit 4 STALL, bit 6 uframe interval exceeded, bit 7 unexpected
+    // device timeout, ...), so only these benign bits are masked out.
+    localparam bit [127:0] USB_RESULTS_STATUS_BENIGN_MASK = 128'h20;
+
+
     // Set by wait_for_link_enabled() when its timeout expired before the
     // link reached ENABLED. Cleared at every entry to that task. Sequences
     // that must abort the rest of their body on a failed link-up read this
     // instead of duplicating their own timeout fork.
     bit link_wait_timed_out = 1'b0;
 
+    // Set by wait_xfer_done() when its timeout expired before the VIP reported
+    // NOTIFY_USB_TRANSFER_ENDED. Cleared at every entry to that task. Sequences
+    // that want to abandon a multi-step flow after one transfer went unanswered
+    // read this instead of adding their own fork.
+    bit xfer_wait_timed_out = 1'b0;
+
+    // Hub Self-Powered state from bmAttributes D6 of its CONFIGURATION
+    // descriptor, captured during hub enumeration. GET_STATUS(DEVICE) D0
+    // must report the same state (USB 2.0 Sec 9.4.5, Sec 9.6.3).
+    bit hub_self_powered = 1'b0;
+
     function new(string name = "caliptra_ss_usb_base_sequence");
         super.new(name);
-
-        if(uvm_config_db#(caliptra_ss_usb_data_check_api)::get(null, "uvm_test_top", 
-                                                              "usb_data_check_api", 
-                                                              usb_data_check_api) != 1) begin
-            `uvm_fatal("USB_BASE_SEQ", "impossible to get usb_data_check_api")
-        end
     endfunction
 
     // -------------------------------------------------------------------
     // pre_start / post_start
     //
-    // Raise/drop the starting phase's objection, but only when this
-    // sequence has no parent sequence - i.e. it was start()'d directly as
-    // a top-level sequence from a test, rather than nested inside another
-    // sequence (which would already be holding its own objection).
+    // pre_start() does two things:
+    //
+    //  1. Resolves the shared usb_data_check_api handle from the config_db.
+    //     This is deliberately NOT done in new(): the handle is published by
+    //     caliptra_ss_usb_data_check_api_impl::build_phase(), which UVM runs
+    //     only after the enclosing test's own build_phase has returned. A
+    //     get() in the constructor would therefore make it illegal for a
+    //     test to create its sequence object inside build_phase - which is
+    //     exactly what a test must do when it needs to set fields on the
+    //     sequence instance before installing it as default_sequence.
+    //     pre_start() runs when the sequence is actually started, by which
+    //     point the handle always exists.
+    //
+    //     NOTE: any subclass that overrides pre_start() must call
+    //     super.pre_start(), or usb_data_check_api will be left null.
+    //
+    //  2. Raises the starting phase's objection, but only when this sequence
+    //     has no parent sequence - i.e. it was start()'d directly as a
+    //     top-level sequence from a test, rather than nested inside another
+    //     sequence (which would already be holding its own objection).
+    //     post_start() drops it symmetrically.
     // -------------------------------------------------------------------
     virtual task pre_start();
         uvm_phase phase;
         super.pre_start();
+
+        if (uvm_config_db#(caliptra_ss_usb_data_check_api)::get(null, "uvm_test_top",
+                                                               "usb_data_check_api",
+                                                               usb_data_check_api) != 1) begin
+            `uvm_fatal("USB_BASE_SEQ", "impossible to get usb_data_check_api")
+        end
+
         phase = get_starting_phase();
         if (get_parent_sequence() == null && phase != null)
             phase.raise_objection(this);
@@ -157,6 +209,22 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     endfunction
 
     // -------------------------------------------------------------------
+    // resolve_xfer_handles
+    //
+    // Resolve the host agent, configuration and shared status in one call
+    // for sequences that cache all three as members before issuing
+    // transfers.
+    // -------------------------------------------------------------------
+    virtual task resolve_xfer_handles(
+        output svt_usb_agent         host_agent_h,
+        output svt_usb_configuration usb_cfg,
+        output svt_usb_status        shared_status);
+        host_agent_h  = resolve_host_agent();
+        shared_status = resolve_shared_status();
+        usb_cfg       = resolve_usb_cfg();
+    endtask
+
+    // -------------------------------------------------------------------
     // start_sof_generation
     //
     // Start the svt_usb_protocol_service_20_sof_on_sequence on
@@ -196,7 +264,30 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input int        device_addr,
         input string     label,
         input svt_usb_configuration usb_cfg = null,
-        input bit        no_queue_and_hold = 0
+        input bit        no_queue_and_hold = 0,
+        // Device anchor: the dev_idx argument of fix_anchors(). Selects WHICH
+        // host_cfg.remote_device_cfg[] entry this control transfer is
+        // addressed to. Defaults to 0, the single-remote-device layout every
+        // existing caller relies on, so adding this changes no behaviour.
+        //
+        // Pass a non-zero index to address a device that has its OWN
+        // persistent slot (see caliptra_ss_usb_shared_cfg::
+        // add_remote_device_slot). Doing so avoids the
+        // "remote_device_cfg[0].device_address = addr; reconfigure()" retarget
+        // that would otherwise be required - and that retarget is destructive:
+        // reconfigure() rebuilds EVERY endpoint protocol processor, and a
+        // freshly built BULK endpoint restarts its DATA TOGGLE at DATA0.
+        //
+        // That matters here even though CONTROL transfers are themselves
+        // immune (a control transfer's toggle is defined by the SETUP/DATA/
+        // STATUS stages, not carried across transfers). The damage is to
+        // OTHER devices: an enumeration reconfigure() issued while an
+        // unrelated device is mid-BULK-stream silently desynchronises that
+        // device's toggle, and USB 2.0 section 8.6 then has the device discard
+        // the next OUT as a presumed retransmission - no buffer write, no
+        // completion interrupt. See add_remote_device_slot() for the measured
+        // PID evidence.
+        input  int       dev_anchor_idx = 0
     );
         svt_usb_transfer req;
         req = svt_usb_transfer::type_id::create({label, "_req"});
@@ -206,12 +297,21 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         if (usb_cfg != null)
             req.cfg = usb_cfg;
         // fix_anchors(dev_idx, ep_idx, upstream_idx): dev_idx is the array
-        // index into remote_device_cfg[], always 0 for a single-device setup.
-        req.fix_anchors(0, 0, 0);
-        // no_queue_and_hold forces queue_and_hold==0 so the VIP issues the
-        // transfer immediately instead of holding it in the queue. Needed by
-        // tests that pull the cable mid-stream and must not leave a held
-        // transfer behind (see caliptra_ss_usb_hs_dev_disconnect_sequence).
+        // index into remote_device_cfg[]. 0 is the only valid value for a
+        // single-device setup; see dev_anchor_idx above for the multi-slot
+        // case.
+        req.fix_anchors(dev_anchor_idx, 0, 0);
+        // no_queue_and_hold constrains queue_and_hold==0 on the transfer.
+        //
+        // NOTE: this has no effect on VIP behaviour. svt_usb_transfer
+        // documents queue_and_hold as "utilized by the USB Test Suite's DUT
+        // USB Host xHCI Driver for controlling whether or not the xHCI
+        // Doorbell for the endpoint is rung", and states explicitly "THIS
+        // FIELD IS NOT UTILIZED BY ANY OF THE USB SVT TRANSACTORS". It is
+        // kept only because the randomize() default distribution
+        // (QUEUE_AND_HOLD_SET_wt=70 vs CLEAR_wt=30) would otherwise leave the
+        // field randomized; pinning it keeps transfers reproducible. Do not
+        // rely on it to change when a transfer reaches the bus.
         if (no_queue_and_hold) begin
             if (!req.randomize() with {
                     xfer_type                          == svt_usb_transfer::CONTROL_TRANSFER;
@@ -258,12 +358,267 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     // which would make a wait AFTER finish_item() miss the pulse and hang
     // indefinitely (see caliptra_ss_usb_hs_dev_bulk_out_sequence.svh for the
     // canonical fork pattern).
+    //
+    // The wait is bounded by timeout_us. Without a bound, a transfer that the
+    // VIP never completes - for example a control transfer queued while the
+    // host link has gone SUSPENDED on its tinactivity timer, which the link
+    // then never grants - blocks this task forever. The run does not fail: the
+    // sequence simply stops making progress, never reaches the checker arm and
+    // observation events, and the simulation ends on the MCU-halt mechanism
+    // with no verdict at all and no UVM_ERROR (the silent-pass mode recorded in
+    // docs/handover/claude_md/16_usb_silent_fail_verdict_gap.md). The only
+    // visible symptom is unrelated-looking VIP chatter such as "SOF processor
+    // was not granted access to the link". On expiry a uvm_error naming the
+    // transfer is issued, xfer_wait_timed_out is set and the task returns, so
+    // the failure is reported where it happened.
+    //
+    // The default ceiling is deliberately generous: it must not fire on a
+    // transfer that is merely slow on this testbench, only on one that is never
+    // going to complete. Callers with a tighter expectation can pass their own.
+    //
+    // The default is sized for FULL SPEED, which is the slowest mode this
+    // testbench runs. The FS frame period is 1 ms against 125 us at high
+    // speed, so a single FS interrupt, isochronous or control transfer can
+    // legitimately cost a few milliseconds of simulation time on a perfectly
+    // healthy bus. The earlier 2000 us default was sized for high speed and
+    // expired on healthy FS traffic: measured overruns were about 2019 us for
+    // a 64-byte FS INTERRUPT IN, and the FS enumeration control transfers
+    // (GET_CONFIGURATION readbacks) and FS bulk IN transfers in the nightly
+    // regression overran it as well, each time producing a uvm_error plus a
+    // cascade of follow-on errors against an empty payload while the firmware
+    // reported the very same transfer as PASSED. 10000 us (ten FS frames)
+    // removes that false failure while keeping the guard meaningful: a
+    // transfer the VIP will never complete is still never going to complete
+    // at 10 ms, which is the only case this timeout exists to report.
     // -------------------------------------------------------------------
-    task wait_xfer_done(svt_usb_agent agent_h, string label);
-        agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+    task wait_xfer_done(svt_usb_agent agent_h, string label,
+                        int unsigned timeout_us = 10000);
+        xfer_wait_timed_out = 1'b0;
+        fork
+            begin: WAIT_XFER
+                agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
+                disable XFER_TIMEOUT;
+            end
+            begin: XFER_TIMEOUT
+                #(timeout_us * 1us);
+                xfer_wait_timed_out = 1'b1;
+                disable WAIT_XFER;
+            end
+        join
+
+        if (xfer_wait_timed_out) begin
+            agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.cancel();
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf({"Transfer %s never completed within %0d us ",
+                           "(NOTIFY_USB_TRANSFER_ENDED was never fired). The ",
+                           "transfer was issued but the VIP never reported it ",
+                           "finished, so either the device did not answer or ",
+                           "the host link was not granted to it. Check whether ",
+                           "the link went SUSPENDED - cfg.host_cfg.tinactivity ",
+                           "must stay longer than the largest idle gap in the ",
+                           "active phase of the test."},
+                          label, timeout_us))
+            return;
+        end
+
         `uvm_info("USB_BASE_SEQ",
             $sformatf("Transfer %s completed.", label), UVM_LOW)
     endtask
+
+    // -------------------------------------------------------------------
+    // check_xfer_status
+    //
+    // Assert that a transfer the VIP has finished with actually SUCCEEDED.
+    // NOTIFY_USB_TRANSFER_ENDED (and therefore wait_xfer_done()) fires on
+    // ANY terminal outcome, including ABORTED, so a sequence that only
+    // waits for the event cannot tell a good transfer from a dead one and
+    // will happily report "enumeration complete" on a bus where the device
+    // answered nothing at all.
+    //
+    // Two independent VIP fields are inspected:
+    //   svt_usb_transfer::status        - must be ACCEPT. ABORTED/CANCELLED
+    //                                    mean the VIP gave up on the
+    //                                    transfer (device response timeout,
+    //                                    STALL, protocol reset, ...).
+    //   svt_usb_transfer::results_status - a bit array describing how the
+    //                                    transfer ended. Most set bits are
+    //                                    failure reasons (bit 1/2/3 abort or
+    //                                    response timeout, bit 4 STALL, ...),
+    //                                    but NOT all of them: bit 5 means
+    //                                    "transfer finished due to 0-length
+    //                                    Data Packet", which is the normal
+    //                                    and expected outcome for a control
+    //                                    transfer with no data stage
+    //                                    (SET_ADDRESS, SET_CONFIGURATION)
+    //                                    and for a short/zero-length bulk IN.
+    //                                    The VIP's own sequence library
+    //                                    treats status==ACCEPT together with
+    //                                    results_status==0x20 as "completed
+    //                                    normally (with 0-length DP)", so the
+    //                                    benign bits are masked out here via
+    //                                    USB_RESULTS_STATUS_BENIGN_MASK and
+    //                                    only the remaining bits are failures.
+    //
+    // min_payload_bytes, when non-zero, additionally requires the transfer
+    // to have moved at least that many payload bytes. An ABORTED IN control
+    // transfer typically ends with a zero-length payload, so data checks
+    // run on it would be comparing against nothing and would pass by
+    // accident - callers that read a descriptor or a configuration value
+    // back must set this to the number of bytes they rely on.
+    //
+    // All failures are reported as uvm_error against the caller-supplied
+    // label so the log identifies the exact transfer, and fail is set to 1
+    // so a caller can skip dependent checks instead of cascading noise.
+    // -------------------------------------------------------------------
+    task check_xfer_status(svt_usb_transfer xfer,
+                           string           label,
+                           int unsigned     min_payload_bytes = 0,
+                           output bit       fail);
+        int unsigned     pld_bytes;
+        bit [127:0]      rs_failures;
+        fail = 1'b0;
+
+        if (xfer == null) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s: no transfer handle to check (null) - the transfer was never issued or the handle was lost.",
+                          label))
+            fail = 1'b1;
+            return;
+        end
+
+        if (xfer.status != svt_usb_transfer::ACCEPT) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s FAILED: status=%s (expected ACCEPT), results_status=0x%0h. The VIP terminated this transfer without a complete, accepted exchange - the device did not respond as the protocol requires.",
+                          label, xfer.status.name(), xfer.results_status))
+            fail = 1'b1;
+        end
+
+        // Only the non-benign bits count as failures. results_status==0x20
+        // alone means the transfer simply ended on a zero-length data packet,
+        // which is the normal outcome for SET_ADDRESS / SET_CONFIGURATION and
+        // for a bulk IN that terminates short.
+        rs_failures = xfer.results_status & ~USB_RESULTS_STATUS_BENIGN_MASK;
+        if (rs_failures != 0) begin
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("Transfer %s FAILED: results_status=0x%0h carries failure bits 0x%0h (status=%s). Each set bit encodes a transfer failure reason - decode it against the svt_usb_transfer results_status bit table (bit 2 device response timeout, bit 4 STALL, ...).",
+                          label, xfer.results_status, rs_failures, xfer.status.name()))
+            fail = 1'b1;
+        end
+
+        if (min_payload_bytes != 0) begin
+            pld_bytes = xfer.payload_byte_count();
+            if (pld_bytes < min_payload_bytes) begin
+                `uvm_error("USB_BASE_SEQ",
+                    $sformatf("Transfer %s FAILED: moved %0d payload bytes, expected at least %0d (status=%s, results_status=0x%0h). Any data check run on this transfer would be inspecting an empty or truncated payload.",
+                              label, pld_bytes, min_payload_bytes,
+                              xfer.status.name(), xfer.results_status))
+                fail = 1'b1;
+            end
+        end
+
+        if (!fail)
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf("Transfer %s status checked: ACCEPT, results_status=0x%0h (no failure bits), payload=%0d bytes.",
+                          label, xfer.results_status, xfer.payload_byte_count()), UVM_HIGH)
+    endtask
+
+    // -------------------------------------------------------------------
+    // wait_and_check_xfer
+    //
+    // wait_xfer_done() followed immediately by check_xfer_status() on the
+    // most recent control transfer (last_ctrl_seq_item, set by
+    // do_control_xfer()). This is the form every control-transfer call site
+    // should use: waiting without checking is what allowed a fully failing
+    // enumeration to be logged as successful.
+    // -------------------------------------------------------------------
+    task wait_and_check_xfer(svt_usb_agent agent_h,
+                             string        label,
+                             int unsigned  min_payload_bytes = 0,
+                             output bit    fail);
+        wait_xfer_done(.agent_h(agent_h), .label(label));
+        check_xfer_status(.xfer             (last_ctrl_seq_item),
+                          .label            (label),
+                          .min_payload_bytes(min_payload_bytes),
+                          .fail             (fail));
+    endtask
+
+
+    // -------------------------------------------------------------------
+    // do_control_xfer_and_wait
+    //
+    // Issue a control transfer and wait for ITS OWN completion, forking the
+    // wait before the transfer is handed to the driver.
+    //
+    // NOTIFY_USB_TRANSFER_ENDED is a protocol-layer-wide event, not a
+    // per-transfer one: the VIP fetches it from the protocol transactor's
+    // event pool, so every transfer on the agent pulses the same event. A
+    // caller that runs do_control_xfer() to completion and only then waits
+    // can therefore consume the pulse belonging to the PREVIOUS transfer and
+    // return while its own transfer is still in flight. check_xfer_status()
+    // then samples last_ctrl_seq_item mid-flight, sees a status that is
+    // neither ACCEPT nor DISABLED, and reports a failure against a transfer
+    // the device goes on to service perfectly a few microseconds later.
+    //
+    // That misreport is identifiable: status=ABORTED with results_status=0x0.
+    // Per svt_usb_transfer the results_status bits are set by whoever aborts
+    // a transfer ("It is the responsibility of the calling process to set any
+    // transfer attributes to correctly capture the reason for the abort"), and
+    // an all-zero vector is defined to mean a successful transfer. ABORTED
+    // with no reason bit set is thus not a device failure at all - it is
+    // set_aborted_status() sweeping a still-active transfer at teardown.
+    //
+    // The hazard only bites when two control transfers are issued back to
+    // back with no delay between them, which is exactly what the
+    // SET_CONFIGURATION + GET_CONFIGURATION read-back pair in
+    // usbdc0_enum_stepC() does. The bulk path has always forked (see the
+    // fork_wait branch of the data-transfer task); the control path did not.
+    // -------------------------------------------------------------------
+    task do_control_xfer_and_wait(
+        input svt_usb_agent agent_h,
+        input bit [7:0]  bm_request_type_dir,
+        input bit [7:0]  bm_request_type_type,
+        input bit [7:0]  bm_request_type_recip,
+        input bit [7:0]  brequest_val,
+        input bit [15:0] wvalue,
+        input bit [15:0] windex,
+        input bit [15:0] wlength,
+        input int        device_addr,
+        input string     label,
+        input svt_usb_configuration usb_cfg = null,
+        input bit        no_queue_and_hold = 0,
+        input int unsigned min_payload_bytes = 0,
+        output bit       fail,
+        // Forwarded verbatim to do_control_xfer() - see its dev_anchor_idx
+        // documentation. Declared after the output so every existing
+        // positional and named call site is unaffected.
+        input int        dev_anchor_idx = 0
+    );
+        fork
+            begin
+                wait_xfer_done(.agent_h(agent_h), .label(label));
+            end
+            begin
+                do_control_xfer(
+                    .bm_request_type_dir  (bm_request_type_dir),
+                    .bm_request_type_type (bm_request_type_type),
+                    .bm_request_type_recip(bm_request_type_recip),
+                    .brequest_val         (brequest_val),
+                    .wvalue               (wvalue),
+                    .windex               (windex),
+                    .wlength              (wlength),
+                    .device_addr          (device_addr),
+                    .label                (label),
+                    .usb_cfg              (usb_cfg),
+                    .no_queue_and_hold    (no_queue_and_hold),
+                    .dev_anchor_idx       (dev_anchor_idx));
+            end
+        join
+        check_xfer_status(.xfer             (last_ctrl_seq_item),
+                          .label            (label),
+                          .min_payload_bytes(min_payload_bytes),
+                          .fail             (fail));
+    endtask
+
 
     // -------------------------------------------------------------------
     // wait_for_link_enabled
@@ -360,8 +715,33 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   GET_DESC(8)@0 -> SET_ADDRESS(1)@0 -> GET_DESC(18)/CFG9/CFG25/HUB9@1 ->
     //   SET_CONFIGURATION(1)@1.
     // On entry the VIP anchor must be 0; on exit it is left at 1.
+    // dev_anchor_idx selects which remote_device_cfg[] slot the post-
+    // SET_ADDRESS transfers below are routed through.
+    //
+    //   0 (default) - LEGACY single-slot behaviour. Slot 0 is retargeted from
+    //                 address 0 to address 1 and the agent is reconfigure()d,
+    //                 which is what every caller that owns only one slot
+    //                 expects. Unchanged for all such callers.
+    //   non-zero    - the caller has already created a PERSISTENT slot for the
+    //                 hub at address 1 (see
+    //                 caliptra_ss_usb_shared_cfg::add_remote_device_slot) and
+    //                 passes its index here. The retarget and the reconfigure()
+    //                 are then BOTH skipped and the addr-1 transfers are
+    //                 anchored to that slot instead.
+    //
+    // The skip is not an optimisation, it is required for correctness in the
+    // multi-slot case: assigning address 1 to slot 0 while a persistent hub
+    // slot already holds address 1 puts two entries of remote_device_cfg[] on
+    // the same address, and reconfigure() -> is_valid() rejects that outright
+    // ("device_address must be unique within remote_device_cfg"), which the VIP
+    // escalates to a uvm_fatal in svt_agent::change_dynamic_cfg. Skipping it
+    // also keeps the no-reconfigure invariant that protects live bulk data
+    // toggles - see the block comment on the anchor fields in
+    // caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence.
     task hub_enum_stepA(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
-                        string suffix = "", bit no_queue_and_hold = 0);
+                        string suffix = "", bit no_queue_and_hold = 0,
+                        int dev_anchor_idx = 0);
+
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
             .bm_request_type_type (svt_usb_types::STANDARD),
@@ -393,8 +773,21 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         wait_xfer_done(.agent_h(host_agent_h), .label({"SET_ADDRESS_1_hub", suffix}));
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd1;
-        host_agent_h.reconfigure(usb_cfg);
+        // Legacy single-slot path only. With a persistent hub slot the
+        // address is already correct, and doing this would create a duplicate
+        // device_address that reconfigure() rejects - see the dev_anchor_idx
+        // notes in this task's header.
+        if (dev_anchor_idx == 0) begin
+            usb_cfg.remote_device_cfg[0].device_address = 7'd1;
+            host_agent_h.reconfigure(usb_cfg);
+        end
+        else begin
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf({"Hub addressed through persistent slot %0d - ",
+                           "skipping the slot-0 retarget and reconfigure()."},
+                          dev_anchor_idx), UVM_HIGH)
+        end
+
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -407,7 +800,9 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_DEV_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
+
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr1_hub", suffix}));
         usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
                                                 .device_name("hub"), .expected_address(1));
@@ -423,7 +818,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_CFG9_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_CFG9_addr1_hub", suffix}));
 
         do_control_xfer(
@@ -437,8 +833,21 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_CFG25_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_CFG25_addr1_hub", suffix}));
+        // NOTE: Expected to fail for (usb_cfg.speed != svt_usb_types::HS)
+	//       unless MCU validation firmware overrides the descriptor
+        usb_data_check_api.check_configuration_descriptor(.usb_item   (last_ctrl_seq_item),
+                                                          .device_name("hub"));
+        // Extract after the descriptor has been read in full and validated.
+        // bmAttributes is byte 7 of the CONFIGURATION descriptor; D6 is Self-powered.
+        if (last_ctrl_seq_item.payload_byte_count() > 7)
+            hub_self_powered = last_ctrl_seq_item.payload.data[7][6];
+        else
+            `uvm_error("USB_BASE_SEQ",
+                $sformatf("hub CONFIGURATION descriptor too short (%0d bytes)",
+                          last_ctrl_seq_item.payload_byte_count()))
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -451,7 +860,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GET_DESC_HUB9_addr1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_HUB9_addr1_hub", suffix}));
 
         do_control_xfer(
@@ -465,7 +875,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"SET_CONFIG_1_hub", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"SET_CONFIG_1_hub", suffix}));
 
         `uvm_info("USB_BASE_SEQ", "Step A: HUB enumeration complete (addr 1).", UVM_MEDIUM)
@@ -484,9 +895,18 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   port 1 -> USBDC0 (dev0_axi, register base 0x2000_1000)
     //   port 2 -> USBDC1 (dev1_axi, register base 0x2001_0000)
     // The default of 1 preserves the behaviour of every pre-existing test.
+    //
+    // dev_anchor_idx selects which remote_device_cfg[] slot these hub-class
+    // requests are addressed through. Leave it at 0 for the legacy
+    // single-slot layout. A test that has given the hub its OWN persistent
+    // slot (caliptra_ss_usb_shared_cfg::add_remote_device_slot) passes that
+    // slot index here, which removes the need for the caller to retarget slot
+    // 0 and reconfigure() just to talk to the hub - and every reconfigure()
+    // rebuilds EVERY endpoint xactor, silently resetting the DATA toggle of
+    // any unrelated device that is mid-bulk-stream.
     task hub_port_bringup_stepB(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                                 string suffix = "", bit no_queue_and_hold = 0,
-                                int port_num = 1);
+                                int port_num = 1, int dev_anchor_idx = 0);
         string p;
         p = $sformatf("_Port%0d", port_num);
 
@@ -501,7 +921,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"GetPortStatus", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"GetPortStatus", p, suffix}));
         // At this point the device has just connected to the hub downstream
         // port and the port is powered, but no port feature has been cleared
@@ -521,7 +942,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"ClearFeature_C_PORT_CONNECTION", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"ClearFeature_C_PORT_CONNECTION", p, suffix}));
 
         do_control_xfer(
@@ -535,7 +957,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"SetFeature_PORT_RESET", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"SetFeature_PORT_RESET", p, suffix}));
         #10us;
 
@@ -550,7 +973,8 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (1),
             .label                ({"ClearFeature_C_PORT_RESET", p, suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (dev_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label({"ClearFeature_C_PORT_RESET", p, suffix}));
         #10us;
 
@@ -564,16 +988,76 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //   GET_DESC(18)@2 -> [GET_CONFIG@2 ->] SET_CONFIG@2 [-> GET_CONFIG@2].
     // USBDC0 responds at address 0 after the step B port reset. On completion
     // the VIP anchor is left at 2 (USBDC0).
+    // assign_address selects the USB device address assigned to this device
+    // by SET_ADDRESS (default 2, matching every pre-existing single-device
+    // caller). A dual-device test enumerating BOTH embedded controllers on the
+    // same bus must give them DISTINCT addresses (e.g. USBDC0=2, USBDC1=3):
+    // two devices cannot share one address on a single USB bus.
+    //
+    // Every control transfer in this step is status-checked via
+    // wait_and_check_xfer(): an ABORTED transfer here means the device never
+    // answered the SETUP, which leaves it un-addressed or un-configured and
+    // makes every later stage of the test meaningless. Without these checks
+    // a completely dead device still produced a "USBDC0 enumeration complete"
+    // log line and zero errors, because NOTIFY_USB_TRANSFER_ENDED fires on
+    // ABORTED just as it does on success. The IN transfers additionally
+    // require their full expected payload, so a data check can never run
+    // against an empty payload and pass by accident.
+    //
+    // addr0_anchor_idx / addressed_anchor_idx select which
+    // remote_device_cfg[] slots carry the default-address (0) and the
+    // post-SET_ADDRESS views of this device. Both default to 0, which
+    // reproduces the historical single-slot behaviour exactly: slot 0 is
+    // retargeted to address 0, then to assign_address, with a reconfigure()
+    // after each change.
+    //
+    // WHY A CALLER WOULD OVERRIDE THEM. Those two reconfigure() calls are the
+    // reason a dev0 RE-enumeration cannot be performed while an unrelated
+    // device is streaming bulk data. reconfigure() rebuilds EVERY endpoint
+    // protocol processor on the agent, not just this device's, and a freshly
+    // built BULK endpoint restarts its DATA TOGGLE at DATA0 - so a device
+    // that was mid-stream silently desynchronises and, per USB 2.0 section
+    // 8.6, discards its next OUT as a presumed retransmission. See
+    // caliptra_ss_usb_shared_cfg::add_remote_device_slot for the measured PID
+    // evidence.
+    //
+    // A test that pre-creates one PERSISTENT slot per address (address 0 and
+    // assign_address included) passes those slot indices here instead. The
+    // task then addresses every transfer through an anchor, never mutates a
+    // slot, and never calls reconfigure() - leaving every other device's
+    // endpoint xactors, and therefore their toggles, untouched.
     task usbdc0_enum_stepC(svt_usb_agent host_agent_h, svt_usb_configuration usb_cfg,
                            string suffix = "", bit with_get_config_readback = 1,
-                           bit no_queue_and_hold = 0, int unsigned device_idx=0);
+                           bit no_queue_and_hold = 0, int unsigned device_idx=0,
+                           bit [6:0] assign_address = 7'd2,
+                           int addr0_anchor_idx = 0,
+                           int addressed_anchor_idx = 0);
+        bit xfer_fail;
+        // Anchors already point at the right addresses when the caller
+        // supplied dedicated slots, so no slot has to be mutated and no
+        // reconfigure() is needed. Only the legacy single-slot layout
+        // (both anchors 0) still has to retarget and reconfigure.
+        bit use_persistent_anchors;
+        use_persistent_anchors = (addr0_anchor_idx != 0) ||
+                                 (addressed_anchor_idx != 0);
+
         // Reset VIP anchor to addr=0 before addressing the freshly port-reset
         // USBDC0 - see the constraint note in this block's header comment.
-        usb_cfg.remote_device_cfg[0].device_address = 7'd0;
-        host_agent_h.reconfigure(usb_cfg);
-        `uvm_info("USB_BASE_SEQ",
-            "Reset host agent remote device_address=0 before enumerating USBDC0.",
-            UVM_HIGH)
+        if (!use_persistent_anchors) begin
+            usb_cfg.remote_device_cfg[0].device_address = 7'd0;
+            host_agent_h.reconfigure(usb_cfg);
+            `uvm_info("USB_BASE_SEQ",
+                "Reset host agent remote device_address=0 before enumerating USBDC0.",
+                UVM_HIGH)
+        end
+        else begin
+            `uvm_info("USB_BASE_SEQ",
+                $sformatf({"Enumerating USBDC0 through persistent anchors ",
+                           "(addr0 slot %0d, addressed slot %0d) - no ",
+                           "reconfigure(), so no other device's data toggle ",
+                           "is disturbed."},
+                          addr0_anchor_idx, addressed_anchor_idx), UVM_HIGH)
+        end
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -586,8 +1070,16 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (0),
             .label                ({"GET_DESC_DEV_addr0", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr0", suffix}));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
+        // 18-byte DEVICE descriptor read at the default address. This is the
+        // very first SETUP the device sees after the port reset; if it aborts,
+        // the device controller is not servicing EP0 at all and nothing after
+        // this point can succeed.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_DESC_DEV_addr0", suffix}),
+                            .min_payload_bytes(18),
+                            .fail             (xfer_fail));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -600,26 +1092,41 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .device_addr          (0),
             .label                ({"GET_STATUS_addr0", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_STATUS_addr0", suffix}));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
+        // 2-byte device status word.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_STATUS_addr0", suffix}),
+                            .min_payload_bytes(2),
+                            .fail             (xfer_fail));
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type (svt_usb_types::STANDARD),
             .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
             .brequest_val         (8'h05),
-            .wvalue               (16'h0002),
+            .wvalue               (16'(assign_address)),
             .windex               (16'h0000),
             .wlength              (16'h0000),
             .device_addr          (0),
             .label                ({"SET_ADDRESS_2", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"SET_ADDRESS_2", suffix}));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addr0_anchor_idx));
+        // No data stage, so no payload requirement - but the status stage
+        // must be accepted, otherwise the device never commits the new
+        // address and every transfer below is sent to an address nobody
+        // answers on.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"SET_ADDRESS_2", suffix}),
+                            .min_payload_bytes(0),
+                            .fail             (xfer_fail));
         #5us;
 
-        usb_cfg.remote_device_cfg[0].device_address = 7'd2;
-        host_agent_h.reconfigure(usb_cfg);
+        if (!use_persistent_anchors) begin
+            usb_cfg.remote_device_cfg[0].device_address = assign_address;
+            host_agent_h.reconfigure(usb_cfg);
+        end
 
         do_control_xfer(
             .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
@@ -629,14 +1136,27 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .wvalue               (16'h0100),
             .windex               (16'h0000),
             .wlength              (16'h0012),
-            .device_addr          (2),
+            .device_addr          (int'(assign_address)),
             .label                ({"GET_DESC_DEV_addr2", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"GET_DESC_DEV_addr2", suffix}));
-        usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item), 
-                                                .device_name($sformatf("dev%0d", device_idx)), 
-                                                .expected_address(2));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .dev_anchor_idx       (addressed_anchor_idx));
+        // First transfer at the newly assigned address: proves the device
+        // accepted SET_ADDRESS and is answering on the new address with a
+        // full 18-byte descriptor.
+        wait_and_check_xfer(.agent_h          (host_agent_h),
+                            .label            ({"GET_DESC_DEV_addr2", suffix}),
+                            .min_payload_bytes(18),
+                            .fail             (xfer_fail));
+        // Only run the address check when the transfer itself succeeded. The
+        // check reads the committed address out of RTL and would otherwise
+        // report a pass on the strength of a transfer that moved no data at
+        // all, which is how an entirely failed enumeration used to be logged
+        // as successful.
+        if (!xfer_fail)
+            usb_data_check_api.check_device_address(.usb_item(last_ctrl_seq_item),
+                                                    .device_name($sformatf("dev%0d", device_idx)),
+                                                    .expected_address(int'(assign_address)));
 
         if (with_get_config_readback) begin
             do_control_xfer(
@@ -647,14 +1167,28 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .wvalue               (16'h0000),
                 .windex               (16'h0000),
                 .wlength              (16'h0001),
-                .device_addr          (2),
+                .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_addr2", suffix}),
                 .usb_cfg              (usb_cfg),
-                .no_queue_and_hold    (no_queue_and_hold));
-            wait_xfer_done(.agent_h(host_agent_h), .label({"GET_CONFIG_addr2", suffix}));
+                .no_queue_and_hold    (no_queue_and_hold),
+                .dev_anchor_idx       (addressed_anchor_idx));
+            // 1-byte bConfigurationValue readback before SET_CONFIGURATION.
+            wait_and_check_xfer(.agent_h          (host_agent_h),
+                                .label            ({"GET_CONFIG_addr2", suffix}),
+                                .min_payload_bytes(1),
+                                .fail             (xfer_fail));
         end
 
-        do_control_xfer(
+        // The device only arms its non-control endpoints once it is
+        // configured, so an aborted SET_CONFIGURATION silently disables every
+        // bulk/iso stage of the test that follows.
+        //
+        // This and the GET_CONFIG_verify below are issued back to back with
+        // no delay, which is what makes the shared-notification race in
+        // wait_xfer_done() observable. Both therefore use the forked
+        // do_control_xfer_and_wait() form - see its header for the details.
+        do_control_xfer_and_wait(
+            .agent_h              (host_agent_h),
             .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
             .bm_request_type_type (svt_usb_types::STANDARD),
             .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
@@ -662,14 +1196,23 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             .wvalue               (16'h0001),
             .windex               (16'h0000),
             .wlength              (16'h0000),
-            .device_addr          (2),
+            .device_addr          (int'(assign_address)),
             .label                ({"SET_CONFIG_1", suffix}),
             .usb_cfg              (usb_cfg),
-            .no_queue_and_hold    (no_queue_and_hold));
-        wait_xfer_done(.agent_h(host_agent_h), .label({"SET_CONFIG_1", suffix}));
+            .no_queue_and_hold    (no_queue_and_hold),
+            .min_payload_bytes    (0),
+            .fail                 (xfer_fail),
+            .dev_anchor_idx       (addressed_anchor_idx));
 
         if (with_get_config_readback) begin
-            do_control_xfer(
+            // 1-byte bConfigurationValue readback confirming the device
+            // really entered the Configured state. Forked form: this is the
+            // transfer that reported ABORTED/results_status=0x0 on every
+            // controller whose SET_CONFIGURATION was immediately followed by
+            // this read-back, while the firmware log showed the request being
+            // serviced normally ~3.4 us later.
+            do_control_xfer_and_wait(
+                .agent_h              (host_agent_h),
                 .bm_request_type_dir  (svt_usb_types::DEVICE_TO_HOST),
                 .bm_request_type_type (svt_usb_types::STANDARD),
                 .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
@@ -677,12 +1220,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                 .wvalue               (16'h0000),
                 .windex               (16'h0000),
                 .wlength              (16'h0001),
-                .device_addr          (2),
+                .device_addr          (int'(assign_address)),
                 .label                ({"GET_CONFIG_verify", suffix}),
                 .usb_cfg              (usb_cfg),
-                .no_queue_and_hold    (no_queue_and_hold));
-            wait_xfer_done(.agent_h(host_agent_h), .label({"GET_CONFIG_verify", suffix}));
+                .no_queue_and_hold    (no_queue_and_hold),
+                .min_payload_bytes    (1),
+                .fail                 (xfer_fail),
+                .dev_anchor_idx       (addressed_anchor_idx));
         end
+
 
         `uvm_info("USB_BASE_SEQ", "Step C: USBDC0 enumeration complete (addr 2).", UVM_MEDIUM)
     endtask
@@ -828,6 +1374,34 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
     //                        before the calling thread resumes cannot make
     //                        the wait miss the event. Set to 0 only where the
     //                        original code deliberately waited sequentially.
+    //   dev_anchor_idx     - which host_cfg.remote_device_cfg[] slot this
+    //                        transfer is addressed to, i.e. the dev_idx
+    //                        argument of fix_anchors(). Defaults to 0, the
+    //                        single-remote-device layout, so existing callers
+    //                        are unaffected. Multi-device tests populate one
+    //                        slot per physical device and select between them
+    //                        with this instead of retargeting slot 0, which
+    //                        would destroy the endpoint processors and reset
+    //                        their data toggles. Full derivation at the
+    //                        declaration below.
+    //   timeout_us         - ceiling handed to wait_xfer_done() for this
+    //                        transfer. The 10000 us default matches
+    //                        wait_xfer_done()'s own default and is sized for
+    //                        FULL SPEED, the slowest mode this testbench
+    //                        runs: the FS frame period is 1 ms against 125 us
+    //                        at high speed, so one FS interrupt, isochronous
+    //                        or bulk transfer of a few hundred bytes can cost
+    //                        milliseconds of simulation time on a perfectly
+    //                        healthy bus. The previous 2000 us default was
+    //                        sized for high speed and expired on healthy FS
+    //                        traffic - measured reference: a 64-byte FS
+    //                        INTERRUPT IN loopback in
+    //                        caliptra_ss_usb_fs_dev_int_iso_mix took about
+    //                        2019 us end to end. No FS call site needs a
+    //                        local override any more; see wait_xfer_done()
+    //                        for the full rationale. Pass a tighter value
+    //                        only where the test itself has a stricter
+    //                        latency expectation.
     // -------------------------------------------------------------------
     task do_data_xfer(
         input  svt_usb_agent         agent_h,
@@ -838,12 +1412,49 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
         input  int unsigned          byte_count,
         input  int                   ep_anchor_idx,
         input  string                label,
+
         output svt_usb_transfer      req,
         input  string                obj_name           = "",
         input  bit [7:0]             payload_data[]     = {},
         input  bit                   no_zero_length_end = 0,
         input  bit                   single_isoc_txn    = 0,
-        input  bit                   fork_wait          = 1
+        input  bit                   fork_wait          = 1,
+        // Device anchor: the dev_idx argument of fix_anchors(). Selects WHICH
+        // host_cfg.remote_device_cfg[] entry this transfer is addressed to.
+        // Defaults to 0, the single-remote-device layout every existing caller
+        // relies on, so adding this parameter changes no existing behaviour.
+        //
+        // WHY THIS EXISTS. remote_device_cfg[$] is a QUEUE and the VIP fully
+        // supports several remote devices at once - svt_usb_configuration
+        // constrains each populated entry to a DISTINCT device_address. While
+        // dev_idx was hardcoded to 0 a multi-device test had only one config
+        // slot, so it had to retarget that slot between transfers with
+        // remote_device_cfg[0].device_address = addr followed by
+        // agent_h.reconfigure(usb_cfg).
+        //
+        // That retarget is DESTRUCTIVE. reconfigure() tears down and rebuilds
+        // the endpoint protocol processors, and a freshly built bulk endpoint
+        // starts its DATA TOGGLE AT DATA0. The host therefore emitted DATA0 on
+        // every bulk OUT instead of alternating, because the object holding
+        // the toggle was deleted between transfers. Evidence from the
+        // dual_device_hs_dev0_hotplug run: the Dev:3 EP:1 BULK OUT processor
+        // is destroyed and re-registered around every single transfer
+        // (registered 1749682.753 ns, stop_xactor 1751531.879 ns, and the same
+        // pairing at 688405/786220, 810534/812217, 1269418/1271267,
+        // 1295882/1297564). A conformant device advances its own toggle after
+        // each accepted OUT, so once the device reached DATA1 while the host
+        // was still stuck at DATA0, USB 2.0 section 8.6 required the device to
+        // discard every further packet as a presumed retransmission - with no
+        // buffer write, no descriptor retire and no completion interrupt. The
+        // endpoint went silently dead for the rest of the run.
+        //
+        // Passing a per-device anchor instead lets a test populate one
+        // remote_device_cfg[] entry per physical device ONCE, keep every
+        // endpoint processor alive for the whole run, and address transfers by
+        // anchor. The toggles then advance continuously, as against a real
+        // host.
+        input  int                   dev_anchor_idx     = 0,
+        input  int unsigned          timeout_us         = 10000
     );
         if (no_zero_length_end && single_isoc_txn)
             `uvm_fatal("USB_BASE_SEQ",
@@ -861,7 +1472,7 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
             req.payload.USER_DEFINED_ALGORITHM_wt   = 1;
             req.payload.TWO_SEED_BASED_ALGORITHM_wt = 0;
         end
-        req.fix_anchors(0, ep_anchor_idx, 0);
+        req.fix_anchors(dev_anchor_idx, ep_anchor_idx, 0);
 
         if (no_zero_length_end) begin
             if (!req.randomize() with {
@@ -907,13 +1518,15 @@ virtual class caliptra_ss_usb_base_sequence extends uvm_sequence;
                                   label, device_addr, ep_num, byte_count), UVM_LOW)
                 end
                 begin
-                    wait_xfer_done(.agent_h(agent_h), .label(label));
+                    wait_xfer_done(.agent_h(agent_h), .label(label),
+                                   .timeout_us(timeout_us));
                 end
             join
         end
         else begin
             finish_item(req, -1);
-            wait_xfer_done(.agent_h(agent_h), .label(label));
+            wait_xfer_done(.agent_h(agent_h), .label(label),
+                           .timeout_us(timeout_us));
         end
     endtask
 

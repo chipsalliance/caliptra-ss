@@ -1,14 +1,14 @@
-# Caliptra Subsystem USB OCP Recovery Boot Flow
+# Caliptra Subsystem USB OCP Streaming Boot Flow
 
 This document is the command-level source list for a later stick diagram. It
 uses these actors:
 
 | Actor | Responsibility |
 |---|---|
-| Recovery Agent (Host) | Enumerates the USB device, discovers recovery capabilities, pushes each recovery image, requests activation, and monitors status. |
+| Recovery Agent (Host) | Enumerates the USB device, discovers recovery capabilities, pushes each streaming boot image, requests activation, and monitors status. |
 | Recovery Device (USB Core) | Implements USB device EP0, exposes the OCP Recovery interface and command registers, buffers image data, reports status, and signals image availability. |
 | Device Firmware (MCU) | Brings up the USB device controller, installs the USB/OCP-recovery descriptors, completes standard USB enumeration, and programs placeholder `PROT_CAP`/`DEVICE_ID`/`DEVICE_STATUS` values so the recovery interface is enumerable before Caliptra is online. |
-| Device Firmware (Caliptra) | Once online, finalizes `PROT_CAP`/`DEVICE_ID`/`DEVICE_STATUS` (enabling the interface for host discovery/connection), then consumes and authenticates recovery images, updates recovery state, and boots each accepted image. |
+| Device Firmware (Caliptra) | Once online, finalizes `PROT_CAP`/`DEVICE_ID`/`DEVICE_STATUS` (enabling the interface for host discovery/connection), then consumes and authenticates streaming boot images, updates recovery state, and boots each accepted image. |
 
 ## Scope and interpretation
 
@@ -17,10 +17,10 @@ uses these actors:
   that is the Caliptra Subsystem USB recovery data path.
 - USB-controller register names and internal interrupt signals are
   Caliptra-specific implementation details. The OCP specification requires the
-  externally visible USB and recovery behavior, but does not prescribe those
+  externally visible USB and recovery command behavior, but does not prescribe those
   internal register accesses.
 - MCU and Caliptra firmware have distinct roles across boot, enumeration,
-  recovery, and runtime. MCU owns USB device-controller bring-up, descriptor
+  streaming boot, and runtime. MCU owns USB device-controller bring-up, descriptor
   installation, and standard enumeration, and programs the initial (pre-Caliptra)
   contents of the OCP Recovery registers so the interface is enumerable as soon
   as the host attaches. Once Caliptra comes online it finalizes that

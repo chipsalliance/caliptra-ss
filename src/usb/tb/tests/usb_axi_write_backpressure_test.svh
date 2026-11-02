@@ -23,9 +23,8 @@ class usb_axi_write_backpressure_test extends usb_base_test;
 
   // Use exact stimulus. The environment's outstanding depth already lets the
   // overlapping writes fill each bridge's two-entry B FIFO.
-  function void build_phase(uvm_phase phase);
-    uvm_config_db#(bit)::set(this, "env", "axi_delay_random", 1'b0);
-    super.build_phase(phase);
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    cfg.axi_delay_random = 1'b0;
   endfunction
 
   task run_phase(uvm_phase phase);

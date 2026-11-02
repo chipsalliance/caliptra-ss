@@ -40,8 +40,17 @@
 #include "veer-csr.h"
 
 // Poll timeout: number of main-loop iterations before declaring a timeout.
-// Each iteration is ~51 ns at MCU clock rate; 100000 gives ~5 ms headroom.
-#define USB_POLL_TIMEOUT    500000
+// Each iteration is ~51 ns at MCU clock rate.
+//
+// This is a failure ceiling, not a dwell: every loop that uses it exits early
+// via break or via its loop condition as soon as the awaited event arrives, so
+// lowering it costs nothing on a passing run. It only bounds how much
+// simulation is burned before a genuinely stuck run gives up. 500000 iterations
+// was ~25 ms of simulated time per stuck phase, which is what turned earlier
+// broken runs into multi-hour jobs. 100000 iterations is ~5 ms, still an order
+// of magnitude more than the longest legitimate wait here (host reconnect after
+// the 100 us VBus-off window plus HS chirp and bus reset).
+#define USB_POLL_TIMEOUT    100000
 
 // Number of SOF (FRAME_INT) events to count on each side of the disconnect.
 #define USB_SOF_COUNT       6
@@ -49,6 +58,46 @@
 // Number of standard enumeration control transfers expected:
 // GET_DESCRIPTOR + SET_ADDRESS + SET_CONFIGURATION = 3.
 #define USB_ENUM_XFER_COUNT 3
+
+// Post-re-enumeration EP0 service window.
+//
+// After Phase 4 has counted USB_ENUM_XFER_COUNT transfers the UVM sequence
+// (enumerate_hub_and_dev0) is not finished: it still drives GET_DESCRIPTOR
+// at the new address and SET_CONFIGURATION to USBDC0. If firmware halts
+// immediately after the counted transfers, EP0 is never re-armed for those
+// remaining SETUP packets and the device NAKs a SETUP token. The Synopsys
+// USB VIP flags that as a protocol violation
+// (valid_device_response_check_Dev2_EP0), which failed the test even though
+// the disconnect/reconnect behavior itself was correct.
+//
+// Keep servicing EP0 for a bounded window after the counted transfers so the
+// tail of the host-side enumeration is answered properly before halting.
+//
+// This is only a backstop ceiling, not a dwell: the loop normally exits via the
+// quiet-period check below, long before the cap is reached. Reduced from 200000
+// (~10 ms) to 40000 (~2 ms), which still spans far more than the handful of
+// control transfers the host has left to drive.
+#define USB_POST_ENUM_SERVICE_ITERS 40000
+
+// Number of additional control transfers the host drives after the counted
+// re-enumeration transfers (GET_DESCRIPTOR at new address + SET_CONFIGURATION).
+// This is the minimum the window must observe, not the point at which it exits.
+#define USB_POST_ENUM_XFER_COUNT 2
+
+// Quiet period, in poll iterations, that must elapse with no EP0 SETUP activity
+// before Phase 4b is allowed to finish.
+//
+// Counting USB_POST_ENUM_XFER_COUNT transfers is NOT a safe exit condition on
+// its own. The host has no way to know the firmware has stopped servicing EP0,
+// so it keeps driving control transfers for as long as the UVM sequence runs.
+// Leaving the window immediately after the last counted transfer made the MCU
+// halt while a further SETUP was already in flight; that SETUP went unanswered
+// and the device NAKed it, which the VIP correctly flags as a protocol
+// violation (valid_device_response_check: NAK to a SETUP is illegal). Requiring
+// an idle stretch first means the window only closes once the host has actually
+// gone quiet, so there is no SETUP left outstanding when the firmware halts.
+#define USB_POST_ENUM_QUIET_ITERS 2000
+
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -63,6 +112,8 @@ void main(void) {
     uint32_t poll_count;
     uint32_t intstat;
     uint32_t xfer_count;
+    // Poll index of the most recent EP0 SETUP, used by the Phase 4b quiet check.
+    uint32_t last_setup_poll;
     uint32_t sof_count;
 
     VPRINTF(LOW, "=================\nMCU: USB HS device disconnect test\n=================\n\n");
@@ -70,10 +121,25 @@ void main(void) {
     boot_mcu();
     boot_usb_core_hub();
 
+    // Connect the compound hub upstream.
+    //
+    // boot_usb_core_hub() calls usb_hub_init_and_connect(), which programs the
+    // HUB RAM and sets HUB_EN only - HUB_CONNECT is deliberately deferred so
+    // that USBDC0 is fully programmed before the host can see anything on the
+    // bus. This test was missing the second phase entirely, so the hub never
+    // attached upstream: the host never saw a device, never drove a bus reset,
+    // and the VIP PHY stayed parked in Non-Driving/SE0 forever while Phase 1
+    // spun out its poll timeout. Matches the ordering used by the passing
+    // caliptra_ss_usb_hs_dev_bulk_out test.
+    usb_hub_connect();
+
     // Clear FORCE_VBUS so the controller monitors the real VBus pin.
     // boot_usb_core_hub() sets FORCE_VBUS=1 for normal enumeration tests.
     // With FORCE_VBUS=1 the DUT ignores VBus removal; DCON_C never fires
     // and disconnect detection is impossible.
+    //
+    // Done after usb_hub_connect() so the hub bring-up write to HUB_CTRL
+    // cannot race this DEVCMDSTAT read-modify-write.
     {
         uint32_t cmd = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
         cmd &= ~DEV0_CSR_DEVCMDSTAT_FORCE_VBUS_MASK;
@@ -342,9 +408,77 @@ void main(void) {
     }
     VPRINTF(LOW, "MCU: Re-enumeration complete (%d transfers).\n", xfer_count);
 
+    // ------------------------------------------------------------------
+    // Phase 4b: Post-re-enumeration EP0 service window.
+    //
+    // The host-side UVM sequence (enumerate_hub_and_dev0) continues past
+    // the counted transfers: after SET_ADDRESS it re-anchors the VIP to the
+    // new address and drives GET_DESCRIPTOR and SET_CONFIGURATION to
+    // USBDC0. Those SETUP packets must still be answered. Halting here
+    // leaves EP0 un-armed and the device NAKs a SETUP, which the VIP
+    // protocol checker reports as an illegal device response.
+    //
+    // Keep the same EP0 / DEV_INT service pattern running for a bounded
+    // window. The window closes only once at least USB_POST_ENUM_XFER_COUNT
+    // more control transfers have been handled AND the host has then been
+    // silent for USB_POST_ENUM_QUIET_ITERS polls, so the firmware never halts
+    // with a SETUP still outstanding. The iteration cap is only a backstop.
+    // ------------------------------------------------------------------
+    VPRINTF(LOW, "MCU: Phase 4b - servicing EP0 for the tail of host enumeration\n");
+    xfer_count = 0;
+    last_setup_poll = 0;
+    for (poll_count = 0; poll_count < USB_POST_ENUM_SERVICE_ITERS; poll_count++) {
+
+        // Exit only when the host has both driven the transfers we expect and
+        // then stayed quiet long enough that nothing is still in flight.
+        if (xfer_count >= USB_POST_ENUM_XFER_COUNT &&
+            (poll_count - last_setup_poll) > USB_POST_ENUM_QUIET_ITERS) {
+            break;
+        }
+
+        reg_data = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_DEVCMDSTAT);
+        intstat  = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT);
+
+        if (intstat & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
+                usb_handle_bus_reset();
+            }
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_DEV_INT_MASK);
+        }
+
+        if (intstat & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0OUT_MASK);
+            if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+                // Any SETUP, counted or not, restarts the quiet timer.
+                last_setup_poll = poll_count;
+                if (usb_handle_control_transfer()) {
+                    xfer_count++;
+                    VPRINTF(LOW, "MCU: post-enumeration transfer %d of %d\n",
+                            xfer_count, USB_POST_ENUM_XFER_COUNT);
+                }
+            }
+        }
+
+        if (intstat & DEV0_CSR_INTSTAT_EP0IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
+        }
+    }
+
+    if (xfer_count < USB_POST_ENUM_XFER_COUNT) {
+        // Not fatal on its own: the host may legitimately drive fewer
+        // trailing transfers. Report it so a NAK-on-SETUP protocol error
+        // from the VIP can be correlated with a short service window.
+        VPRINTF(LOW, "MCU: WARNING - post-enumeration service window ended with %d of %d transfers\n",
+                xfer_count, USB_POST_ENUM_XFER_COUNT);
+    } else {
+        VPRINTF(LOW, "MCU: Post-enumeration service complete (%d transfers).\n",
+                xfer_count);
+    }
+
     // // ------------------------------------------------------------------
     // // Phase 5: Wait for USB_SOF_COUNT SOF events after reconnect.
     // // ------------------------------------------------------------------
+
     // VPRINTF(LOW, "MCU: Phase 5 - waiting for %d SOF events after reconnect\n",
     //         USB_SOF_COUNT);
 

@@ -32,7 +32,8 @@ class usb_axi_write_backpressure_seq extends usb_base_seq;
   endfunction
 
   // Build one full-strobe INCR write whose beat N carries first_data + N.
-  // Checked helpers reject the decode hole, so it uses a raw bus address.
+  // The decode hole is outside the checked CSR window, so it skips
+  // check_address().
   protected function aaxi_master_tr build_write(usb_target_e target, logic [31:0] offset, int unsigned beats, logic [31:0] first_data, bit decode_hole);
     aaxi_master_tr transaction;
     logic [31:0] beat_data;
@@ -40,10 +41,7 @@ class usb_axi_write_backpressure_seq extends usb_base_seq;
     if (!decode_hole) begin
       check_address(target, offset + 32'(4 * (beats - 1)));
     end
-    transaction = create_transaction(target, decode_hole ? '0 : offset, 1'b1, first_data, usb_axi_user_override::with_value('0));
-    if (decode_hole) begin
-      transaction.addr = map_for(target).get_base_addr(UVM_NO_HIER) + uvm_reg_addr_t'(offset);
-    end
+    transaction = create_transaction(target, offset, 1'b1, first_data, usb_axi_user_override::with_value('0));
     transaction.len = beats - 1;
     transaction.data.delete();
     transaction.strobes.delete();
@@ -132,8 +130,7 @@ class usb_axi_write_backpressure_seq extends usb_base_seq;
   protected task run_decode_hole_read();
     aaxi_master_tr transaction;
 
-    transaction = create_transaction(USB_DEV0_CSR, '0, 1'b0, '0, usb_axi_user_override::with_value('0));
-    transaction.addr = map_for(USB_DEV0_CSR).get_base_addr(UVM_NO_HIER) + uvm_reg_addr_t'(COMBO_DECODE_HOLE);
+    transaction = create_transaction(USB_DEV0_CSR, COMBO_DECODE_HOLE, 1'b0, '0, usb_axi_user_override::with_value('0));
     transaction.len = HOLE_READ_BEATS - 1;
     transaction.burst = AAXI_BURST_FIXED;
     transaction.ar_handshake_rready_delay = 16'(STALL_CYCLES);

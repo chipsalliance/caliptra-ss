@@ -68,6 +68,17 @@ uint8_t cptra_usb_ocp_recovery_read_recovery_status(uint32_t *word);
 uint8_t cptra_usb_ocp_recovery_read_hw_status(uint32_t *word);
 uint8_t cptra_usb_ocp_recovery_write_hw_status(uint32_t word);
 uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations);
+uint8_t cptra_usb_ocp_recovery_wait_image_activated(uint32_t poll_iterations);
+
+uint8_t cptra_usb_ocp_recovery_stream_fifo_to_axi(
+    uint64_t destination,
+    uint32_t byte_count,
+    uint16_t block_size);
+
+uint8_t cptra_usb_ocp_recovery_read_axi_payload(
+    uint64_t source,
+    uint32_t *destination,
+    uint32_t byte_count);
 
 uint8_t cptra_usb_ocp_recovery_poll_device_status(
     uint8_t target_status,

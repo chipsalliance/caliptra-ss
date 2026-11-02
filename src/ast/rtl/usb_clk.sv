@@ -47,7 +47,12 @@ prim_flop_2sync #(
   .q_o ( rst_da_n )
 );
 
-assign rst_n  = scan_mode_i ? rst_ast_usb_ni : rst_da_n;
+caliptra_prim_rst_mux2 u_rst_mux (
+  .rst0_i ( rst_da_n ),
+  .rst1_i ( rst_ast_usb_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_n )
+);
 
 
 ///////////////////////////////////////

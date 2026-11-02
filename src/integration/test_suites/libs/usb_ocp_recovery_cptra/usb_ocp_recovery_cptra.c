@@ -249,6 +249,88 @@ uint8_t cptra_usb_ocp_recovery_wait_payload_available(uint32_t poll_iterations)
     return 1u;
 }
 
+uint8_t cptra_usb_ocp_recovery_wait_image_activated(uint32_t poll_iterations)
+{
+    for (uint32_t poll = 0u; poll < poll_iterations; ++poll) {
+        if (lsu_read_32(CLP_AXI_DMA_REG_STATUS0)
+            & AXI_DMA_REG_STATUS0_IMAGE_ACTIVATED_MASK) {
+            return 0u;
+        }
+        cptra_usb_ocp_recovery_delay(CPTRA_USB_OCP_RECOVERY_RETRY_DELAY);
+    }
+    return 1u;
+}
+
+uint8_t cptra_usb_ocp_recovery_stream_fifo_to_axi(
+    uint64_t destination,
+    uint32_t byte_count,
+    uint16_t block_size)
+{
+    uint32_t control;
+    uint64_t source =
+        (uint64_t)SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA;
+
+    if ((byte_count == 0u) || (block_size == 0u)) {
+        return 1u;
+    }
+    if (cptra_usb_ocp_recovery_wait_dma_idle() != 0u) {
+        return 1u;
+    }
+
+    lsu_write_32(
+        CLP_AXI_DMA_REG_SRC_ADDR_L,
+        (uint32_t)source);
+    lsu_write_32(
+        CLP_AXI_DMA_REG_SRC_ADDR_H,
+        (uint32_t)(source >> 32));
+    lsu_write_32(CLP_AXI_DMA_REG_DST_ADDR_L, (uint32_t)destination);
+    lsu_write_32(CLP_AXI_DMA_REG_DST_ADDR_H, (uint32_t)(destination >> 32));
+    lsu_write_32(CLP_AXI_DMA_REG_BYTE_COUNT, byte_count);
+    lsu_write_32(CLP_AXI_DMA_REG_BLOCK_SIZE, (uint32_t)block_size);
+    control = AXI_DMA_REG_CTRL_GO_MASK
+        | (axi_dma_rd_route_AXI_WR << AXI_DMA_REG_CTRL_RD_ROUTE_LOW)
+        | (axi_dma_wr_route_AXI_RD << AXI_DMA_REG_CTRL_WR_ROUTE_LOW)
+        | AXI_DMA_REG_CTRL_RD_FIXED_MASK;
+    lsu_write_32(CLP_AXI_DMA_REG_CTRL, control);
+
+    return cptra_usb_ocp_recovery_wait_dma_idle();
+}
+
+uint8_t cptra_usb_ocp_recovery_read_axi_payload(
+    uint64_t source,
+    uint32_t *destination,
+    uint32_t byte_count)
+{
+    uint32_t control;
+    uint32_t word_count;
+
+    if ((destination == 0) || (byte_count == 0u)
+        || ((byte_count & (sizeof(uint32_t) - 1u)) != 0u)) {
+        return 1u;
+    }
+    if (cptra_usb_ocp_recovery_wait_dma_idle() != 0u) {
+        return 1u;
+    }
+
+    lsu_write_32(CLP_AXI_DMA_REG_SRC_ADDR_L, (uint32_t)source);
+    lsu_write_32(CLP_AXI_DMA_REG_SRC_ADDR_H, (uint32_t)(source >> 32));
+    lsu_write_32(CLP_AXI_DMA_REG_BYTE_COUNT, byte_count);
+    lsu_write_32(CLP_AXI_DMA_REG_BLOCK_SIZE, 0u);
+    control = AXI_DMA_REG_CTRL_GO_MASK
+        | (axi_dma_rd_route_AHB_FIFO << AXI_DMA_REG_CTRL_RD_ROUTE_LOW)
+        | (axi_dma_wr_route_DISABLE << AXI_DMA_REG_CTRL_WR_ROUTE_LOW);
+    lsu_write_32(CLP_AXI_DMA_REG_CTRL, control);
+
+    word_count = byte_count / sizeof(uint32_t);
+    for (uint32_t index = 0u; index < word_count; ++index) {
+        if (cptra_usb_ocp_recovery_wait_dma_fifo(1u) != 0u) {
+            return 1u;
+        }
+        destination[index] = lsu_read_32(CLP_AXI_DMA_REG_READ_DATA);
+    }
+    return cptra_usb_ocp_recovery_wait_dma_idle();
+}
+
 uint8_t cptra_usb_ocp_recovery_poll_device_status(
     uint8_t target_status,
     uint32_t poll_iterations,

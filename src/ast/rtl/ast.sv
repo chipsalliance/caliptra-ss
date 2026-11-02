@@ -260,7 +260,12 @@ prim_flop #(
 // Replace Latch for the OS code
 assign vcaon_pok_por_lat = rglssm_brout || por_sync_n;
 assign ast_pwst_o.aon_pok = vcaon_pok_por_lat;
-assign vcaon_pok_por = scan_mode ? scan_reset_n : vcaon_pok_por_lat;
+caliptra_prim_rst_mux2 u_vcaon_pok_por_mux (
+  .rst0_i ( vcaon_pok_por_lat ),
+  .rst1_i ( scan_reset_n ),
+  .sel_i ( scan_mode ),
+  .rst_o ( vcaon_pok_por )
+);
 
 
 ////////////////////////////////////////
@@ -270,7 +275,12 @@ logic rglssm_vmppr, vcmain_pok_por_src;
 
 assign vcmain_pok_por_src = vcaon_pok_por_lat && vcmain_pok && !rglssm_vmppr;
 assign ast_pwst_o.main_pok = vcmain_pok_por_src;
-assign vcmain_pok_por = scan_mode ? scan_reset_n : vcmain_pok_por_src;
+caliptra_prim_rst_mux2 u_vcmain_pok_por_mux (
+  .rst0_i ( vcmain_pok_por_src ),
+  .rst1_i ( scan_reset_n ),
+  .sel_i ( scan_mode ),
+  .rst_o ( vcmain_pok_por )
+);
 
 
 ///////////////////////////////////////
@@ -466,7 +476,12 @@ prim_flop_2sync #(
   .q_o ( vcmpp_aon_sync_n )
 );
 
-assign rst_vcmpp_aon_n = scan_mode ? scan_reset_n : vcmpp_aon_sync_n;
+caliptra_prim_rst_mux2 u_rst_vcmpp_aon_mux (
+  .rst0_i ( vcmpp_aon_sync_n ),
+  .rst1_i ( scan_reset_n ),
+  .sel_i ( scan_mode ),
+  .rst_o ( rst_vcmpp_aon_n )
+);
 
 
 ///////////////////////////////////////
@@ -630,7 +645,12 @@ prim_flop_2sync #(
   .q_o ( vcmain_pok_por_sys )
 );
 
-assign rst_src_sys_n = scan_mode ? scan_reset_n : vcmain_pok_por_sys;
+caliptra_prim_rst_mux2 u_rst_src_sys_mux (
+  .rst0_i ( vcmain_pok_por_sys ),
+  .rst1_i ( scan_reset_n ),
+  .sel_i ( scan_mode ),
+  .rst_o ( rst_src_sys_n )
+);
 
 `ifndef SYNTHESIS
 logic [EntropyRateWidth-1:0] dv_entropy_rate_value;

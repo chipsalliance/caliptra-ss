@@ -34,10 +34,9 @@ class usb_axi_read_backpressure_seq extends usb_base_seq;
     logic [31:0] expected;
     logic [31:0] actual;
 
-    address = 32'(p_sequencer.reg_model.combo.recovery.PROT_CAP_0.get_address(p_sequencer.reg_model.combo_map));
     expected = 32'(p_sequencer.reg_model.combo.recovery.PROT_CAP_0.get_reset());
-    transaction = create_transaction(USB_DEV0_CSR, '0, 1'b0, '0, usb_axi_user_override::with_value('0));
-    transaction.addr = address;
+    transaction = create_transaction(USB_DEV0_CSR, reg_offset(USB_DEV0_CSR, p_sequencer.reg_model.combo.recovery.PROT_CAP_0), 1'b0, '0, usb_axi_user_override::with_value('0));
+    address = 32'(transaction.addr);
     transaction.len = READ_BEATS - 1;
     transaction.burst = AAXI_BURST_FIXED;
     transaction.ar_handshake_rready_delay = 16'(stall_cycles);

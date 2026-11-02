@@ -24,7 +24,8 @@ module mci_axi_sub_top
     parameter AXI_DATA_WIDTH    = 32,
     parameter AXI_USER_WIDTH    = 32,
     parameter AXI_ID_WIDTH      = 8,
-    parameter MCU_SRAM_SIZE_KB  = 512
+    parameter MCU_SRAM_SIZE_KB  = 512,
+    parameter MCU_ROM_PATCH_SRAM_SIZE_KB = 4
     )
     (
     input logic clk,
@@ -50,6 +51,9 @@ module mci_axi_sub_top
 
     // Mbox1 SRAM Interface
     cif_if.request  mcu_mbox1_req_if,
+
+    // MCU ROM Patch SRAM Interface
+    cif_if.request  mcu_rom_patch_req_if,
 
 
     // Privileged requests 
@@ -126,7 +130,8 @@ assign soc_resp_if.req_data.size = '0;
 //This wrapper decodes that protocol, collapses the full-duplex protocol to
 // simplex, and issues requests to the MIC decode block
 mci_axi_sub_decode #(
-    .MCU_SRAM_SIZE_KB   (MCU_SRAM_SIZE_KB)
+    .MCU_SRAM_SIZE_KB   (MCU_SRAM_SIZE_KB),
+    .MCU_ROM_PATCH_SRAM_SIZE_KB (MCU_ROM_PATCH_SRAM_SIZE_KB)
 ) i_mci_axi_sub_decode (
     .clk,
     .rst_b,
@@ -148,6 +153,9 @@ mci_axi_sub_decode #(
 
     //MCI Mbox1
     .mcu_mbox1_req_if,
+
+    //MCU ROM Patch SRAM
+    .mcu_rom_patch_req_if,
 
     // Privileged requests 
     .axi_mci_soc_config_req,
