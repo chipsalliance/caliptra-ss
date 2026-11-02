@@ -16,4 +16,6 @@ contents:
         - ../tests/usb_high_bandwidth_interrupt.yml
         - ../tests/usb_high_bandwidth_iso.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_l1_host_resume.yml
+        - ../tests/usb_l2_host_resume.yml
         - ../tests/usb_utility_timeout.yml
