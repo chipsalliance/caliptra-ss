@@ -22,7 +22,7 @@
 //     endpoint-configuration-driven entry addressing, per-endpoint
 //     INTEN/INTSTAT/EPSKIP control, and bounded CSR polling.
 //   - usb_base_seq_filter.svh: AXI USER filter enables and allowlists driven
-//     through usb_tb_ctrl_if.
+//     through the filter policy agents.
 //
 // Scenarios extend this class directly. A scenario that needs another one as a
 // precondition (for example enumeration) starts it as a child sequence rather
@@ -58,7 +58,8 @@ class usb_base_seq extends uvm_sequence;
         p_sequencer.combo_sequencer == null ||
         p_sequencer.dev0_memory_sequencer == null ||
         p_sequencer.dev1_csr_sequencer == null ||
-        p_sequencer.dev1_memory_sequencer == null) begin
+        p_sequencer.dev1_memory_sequencer == null ||
+        p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_SEQ", "USB virtual sequencer is missing required RAL, configuration, or Avery handles")
     end
   endtask

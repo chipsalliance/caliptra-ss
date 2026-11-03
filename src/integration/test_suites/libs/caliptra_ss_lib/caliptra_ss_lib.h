@@ -168,8 +168,8 @@ typedef struct {
 
     // USB
     bool cfg_boot_usb_core;
-    usb_config_descriptor_provider_t usb_config_desc_fn;
-    usb_class_request_handler_t usb_class_req_fn;
+    bool usb_hub_en;
+    bool usb_fs_en;
 
 } mcu_cptra_init_args;
 #define mcu_cptra_init_arg_defaults           \
@@ -200,8 +200,8 @@ typedef struct {
     .cptra_wdt_cfg_0                 = 0u,     \
     /* USB */                                 \
     .cfg_boot_usb_core               = false,  \
-    .usb_config_desc_fn              = 0,      \
-    .usb_class_req_fn                = 0
+    .usb_hub_en                      = false,  \
+    .usb_fs_en                       = false
 
 // MAIN CPTRA INIT FUNCTION EVERYONE SHOULD USER 
 // TO LOAD FUSES!!!

@@ -89,22 +89,27 @@ schema_version: 2.4.0
 requires:
   - ip_xxx_3511_hs_mem_compound_wrapper
   - usb_compound_pkg
-  - avery_axi_uvm_lib
+  - ss_avery_axi_vip
 targets:
   tb:
     directories:
       - $COMPILE_ROOT/tb
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter
       - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/usb_svt/latest/sverilog/include
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest/sverilog/include
     files:
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_ral_config_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_combo_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
-      - $COMPILE_ROOT/tb/usb_tb_ctrl_if.sv
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
+      - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv
@@ -122,11 +127,10 @@ global:
         - +define+SIMULATION
         - +define+UVM
         - +define+CLP_ASSERT_ON
-        - +define+AVERY_VCS
-        - +define+AVERY_ASSERT_ON
-        - +define+AVERY_MONITOR_ON
+        - +define+AAXI_NO_COV
         - +define+AVERY_AXI_UVM
         - +define+AVERY_UVM
+        - +define+AVERY_AXI_INTERCONNECT
         - +define+AVERY_AXI_USER
         - +define+AVERY_NAMED_CONSTRUCTOR
         - +define+AAXI_MAX_DATA_WIDTH=32
@@ -145,14 +149,10 @@ global:
         - +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
         - +define+SVT_VERSION=latest
         - +define+SVT_MPHY_PKG_LOAD
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
       elab:
         # The TB instantiates axi_if; the separately analyzed RTL copy is unused.
         - '+warn=noUII-L'
         - '-suppress=SIMU-RESOLUTION,DRTZ'
-        - '$AVERY_PLI/lib.linux/libtb_vcs64.a'
-        - '-P $AVERY_PLI/tb_vcs64.tab'
       sim:
         - '+vpi'
         # Enable SVT debug automation: activates protocol, link, and physical

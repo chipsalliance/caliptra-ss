@@ -75,7 +75,18 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
     // DEVICE_REMOTE_WAKEUP(0x0001). The firmware sets/clears its remote-wakeup
     // shadow accordingly, so the paired GET_STATUS returns 0x0002 after enable
     // and 0x0000 after disable (passed in via expected_status by the caller).
+    //
+    // Pacing: a 10 us idle gap is inserted before each control transfer. The
+    // MCU firmware needs a few microseconds after a control transfer to finish
+    // its tail work (trailing VPRINTF, return to the poll loop, and the EP0 OUT
+    // re-arm in the no-SETUP branch). At High Speed the host can issue the next
+    // SETUP token before that completes, in which case EP0 OUT is still
+    // inactive and the SETUP is silently dropped. That was observed on
+    // CLEAR_FEATURE_REMOTE_WAKEUP_dev0: the firmware never saw bRequest=0x01,
+    // so its remote-wakeup shadow stayed set and the following GET_STATUS
+    // returned 0x0003 instead of 0x0001.
     // -------------------------------------------------------------------------
+
     task set_feature_and_get_status(svt_usb_agent         host_agent_h,
                                     svt_usb_configuration usb_cfg,
                                     int                   device_addr,
@@ -95,6 +106,10 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
         // device_address WITH-constraint matches the configured remote device.
         set_anchor_addr(host_agent_h, usb_cfg, device_addr);
 
+        // Let the MCU finish the tail of the preceding control transfer and
+        // re-arm EP0 OUT before the next SETUP token is driven.
+        #10us;
+
         // SET_FEATURE/CLEAR_FEATURE(DEVICE_REMOTE_WAKEUP): HOST_TO_DEVICE,
         // STANDARD, recipient=device, bRequest selected above, wValue=feature
         // selector DEVICE_REMOTE_WAKEUP(0x0001), no data stage.
@@ -111,6 +126,10 @@ class caliptra_ss_usb_get_status_sequence extends caliptra_ss_usb_base_sequence;
             .usb_cfg              (usb_cfg));
         wait_xfer_done(.agent_h(host_agent_h),
                        .label(feat_label));
+
+        // Same pacing gap before the GET_STATUS SETUP: the firmware is still
+        // in the SET_FEATURE/CLEAR_FEATURE tail when wait_xfer_done() returns.
+        #10us;
 
         // GET_STATUS: DEVICE_TO_HOST, STANDARD, recipient=device,
         // bRequest=GET_STATUS(0x00), 2-byte status response.

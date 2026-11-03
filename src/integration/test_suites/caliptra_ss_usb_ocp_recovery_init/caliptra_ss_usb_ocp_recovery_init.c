@@ -59,20 +59,17 @@ uint8_t main(void) {
     if (!usb_ocp_recovery_apply_capability_policy()) {
         handle_error("MCU: Failed to apply USB Recovery capability policy\n");
     }
-    // Boot the USB device controller AND advertise the OCP recovery interface
-    // in one step: the OCP composite config descriptor + recovery class-request
-    // handler are installed as boot_usb_core's hooks, so any host VIP
-    // enumeration that begins later already sees the recovery descriptor and
-    // class endpoints (OCP Recovery v1.1 sec 8.5: recovery interface must be
-    // advertised before any class request; otherwise GET_DESCRIPTOR(CONFIG) and
-    // class requests would be STALLed).
+    // Boot the USB device controller. Linking usb_ocp_recovery overrides the
+    // usb.c config-descriptor and class-request hooks, so any host VIP
+    // enumeration already sees the recovery descriptor and class endpoints
+    // (OCP Recovery v1.1 sec 8.5: recovery interface must be advertised before
+    // any class request; otherwise GET_DESCRIPTOR(CONFIG) and class requests
+    // would be STALLed).
     mcu_cptra_init_d(
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
         .cptra_wdt_cfg_0=1u,
-        .cfg_boot_usb_core=true,
-        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
-        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
+        .cfg_boot_usb_core=true);
     usb_dump_state("post-boot");
 
     mcu_cptra_user_init();

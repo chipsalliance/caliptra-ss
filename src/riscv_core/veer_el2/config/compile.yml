@@ -26,7 +26,7 @@ targets:
 ---
 provides: [css_mcu0_veer_el2_rtl_pkg]
 schema_version: 2.4.0
-requires: [css_mcu0_veer_el2_defines_pkg]
+requires: [css_mcu0_veer_el2_defines_pkg, caliptra_prim]
 targets:
   rtl:
     directories:
