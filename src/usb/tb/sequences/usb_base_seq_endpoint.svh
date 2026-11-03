@@ -71,6 +71,22 @@
   // Endpoint resolution
   // ---------------------------------------------------------------------------
 
+  // Integration Guide 4.2.2, p37: public Speed is 01 FS, 10 HS.
+  // Supplement native continuous PHY checks with an architectural speed check.
+  task check_device_speed(string label);
+    logic [31:0] command;
+    logic [1:0] expected_speed;
+    uvm_reg_field speed_field;
+
+    expected_speed = p_sequencer.cfg.speed == USB_SPEED_FULL ? 2'b01 : 2'b10;
+    speed_field = p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.Speed;
+    ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
+    if (2'((command & ral_field_mask(speed_field)) >> speed_field.get_lsb_pos()) !== expected_speed) begin
+      `uvm_fatal("USB_SPEED", $sformatf("%s expected %s; DEVCMDSTAT=0x%08h", label, p_sequencer.cfg.speed.name(), command))
+    end
+    `uvm_info("USB_SPEED", $sformatf("%s verified live DUT %s", label, p_sequencer.cfg.speed.name()), UVM_LOW)
+  endtask
+
   // Resolve an endpoint by protocol identity through the environment
   // configuration. A sequence never names an anchor or physical index directly.
   function usb_endpoint_cfg get_endpoint(int unsigned ep_number, usb_direction_e direction);

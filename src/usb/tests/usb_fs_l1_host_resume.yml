@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+# Disabled in regressions: L1 entry in FS mode; Synopsys SolvNet case 02083325.
+---
+seed: 1
+testname: usb_fs_l1_host_resume
+plusargs:
+  - '+UVM_TESTNAME=usb_fs_l1_host_resume_test'

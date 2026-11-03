@@ -86,6 +86,7 @@ class usb_init_seq extends usb_base_seq;
   byte unsigned current_configuration;
   int unsigned serviced_request_count;
   bit host_scenario_completed;
+  bit bus_reset_serviced;
 
   // Constructs the sequence; body() coordinates DUT and host enumeration.
   function new(string name = "usb_init_seq");
@@ -106,7 +107,7 @@ class usb_init_seq extends usb_base_seq;
                    ENDPOINT_DESCRIPTOR_LENGTH * p_sequencer.cfg.endpoint_cfgs.size();
     // The shared fixture uses one EP0 packet and a 64-byte IN buffer.
     if (ep0_in_endpoint.max_packet_size != 64 || total_length > 64) begin
-      `uvm_fatal("USB_INIT_SEQ", "Descriptor fixture requires HS EP0 and configuration data fitting in 64 bytes")
+      `uvm_fatal("USB_INIT_SEQ", "Descriptor fixture requires 64-byte EP0 and configuration data fitting in 64 bytes")
     end
     device_descriptor = '{
       DEVICE_DESCRIPTOR_LENGTH, DEVICE_DESCRIPTOR_TYPE, lpm_supported ? 8'h01 : 8'h00, 8'h02, 0, 0, 0, 64,
@@ -142,13 +143,7 @@ class usb_init_seq extends usb_base_seq;
         USB_TRANSFER_TYPE_ISOCHRONOUS: attributes = ISOCHRONOUS_ENDPOINT_TYPE;
         default: `uvm_fatal("USB_INIT_SEQ", "Only non-control endpoints belong in the interface descriptor")
       endcase
-      if (endpoint.ep_number == 0 || endpoint.ep_number > 15 ||
-          endpoint.max_packet_size == 0 || endpoint.max_packet_size > 1024 ||
-          additional_transactions > 2 || endpoint.interval > 255 ||
-          (attributes == BULK_ENDPOINT_TYPE && (endpoint.max_packet_size != 512 || additional_transactions != 0)) ||
-          (attributes != BULK_ENDPOINT_TYPE && (endpoint.interval == 0 || endpoint.interval > 16))) begin
-        `uvm_fatal("USB_INIT_SEQ", $sformatf("Invalid HS descriptor endpoint: %s", endpoint.convert2string()))
-      end
+      p_sequencer.cfg.validate_packet_size(endpoint);
       // isoc_mult represents wMaxPacketSize[12:11] in USB 2.0; max_burst_size
       // belongs to the USB 3.0 companion descriptor and is not encoded here.
       packet_size = endpoint.max_packet_size | (additional_transactions << 11);
@@ -259,6 +254,7 @@ class usb_init_seq extends usb_base_seq;
     if (!(command & reset_change_mask)) begin
       return;
     end
+    bus_reset_serviced = 1'b0;
     `uvm_info("USB_INIT_SEQ", "Handling USB bus reset", UVM_LOW)
     device_address_shadow = 0;
     current_configuration = 0;
@@ -268,6 +264,7 @@ class usb_init_seq extends usb_base_seq;
     ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
     command &= ~dev_addr_mask;
     write_devcmdstat(command);
+    bus_reset_serviced = 1'b1;
   endtask
 
   // Decode the two little-endian words written by hardware into the EP0 SETUP
@@ -497,7 +494,61 @@ class usb_init_seq extends usb_base_seq;
     )
   endtask
 
-  // Run the host side of the enumeration flow.
+  // Admit FS only after native reset ends, EP0 service acknowledges reset, and
+  // public speed/actual UTMI controls agree. No elapsed chirp timer is an oracle.
+  task wait_for_fs_admission();
+    svt_usb_status status;
+    uvm_reg_field speed_field;
+    logic [31:0] command;
+    logic [31:0] required_mask;
+    logic [31:0] forbidden_mask;
+    logic [63:0] previous_edges;
+    realtime deadline;
+    realtime next_progress;
+    bit admitted;
+
+    if (p_sequencer.ctrl_vif == null) `uvm_fatal("USB_INIT_SEQ", "FS admission requires actual MAC-side UTMI observation")
+    status = p_sequencer.host_sequencer.get_shared_status(this);
+    if (status == null) `uvm_fatal("USB_INIT_SEQ", "FS admission requires native host link observation")
+    speed_field = p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.Speed;
+    required_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_EN) |
+                    ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DCON);
+    forbidden_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DSUS) |
+                     ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DRES_C);
+    deadline = $realtime + p_sequencer.cfg.link_timeout;
+    next_progress = $realtime + 500us;
+    previous_edges = p_sequencer.ctrl_vif.utmi_edge_count;
+    admitted = 1'b0;
+    `uvm_info("USB_INIT_SEQ", $sformatf("Waiting up to %0t for native reset/actual FS/public DUT admission",
+      p_sequencer.cfg.link_timeout), UVM_LOW)
+    do begin
+      ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
+      admitted = bus_reset_serviced && status.link_usb_20_state === svt_usb_types::ENABLED &&
+                 (command & required_mask) === required_mask && (command & forbidden_mask) === 32'b0 &&
+                 2'((command & ral_field_mask(speed_field)) >> speed_field.get_lsb_pos()) === 2'b01 &&
+                 p_sequencer.ctrl_vif.full_speed_receive_ready() &&
+                 ((p_sequencer.ctrl_vif.utmi_edge_count > previous_edges) === 1'b1);
+      if (admitted) break;
+      if ($realtime >= next_progress) begin
+        `uvm_info("USB_INIT_SEQ", $sformatf("FS admission pending: link=%p DEVCMDSTAT=%08h OpMode=%b XcvrSelect=%b TermSelect=%b",
+          status.link_usb_20_state, command, p_sequencer.ctrl_vif.dut_opmode,
+          p_sequencer.ctrl_vif.dut_xcvrselect, p_sequencer.ctrl_vif.dut_termselect), UVM_LOW)
+        next_progress += 500us;
+      end
+      previous_edges = p_sequencer.ctrl_vif.utmi_edge_count;
+      #1us;
+    end while ($realtime < deadline);
+    if (!admitted || $realtime >= deadline) begin
+      `uvm_fatal("USB_INIT_SEQ", $sformatf({"FS reset/admission failed: link=%p DEVCMDSTAT=%08h OpMode=%b XcvrSelect=%b TermSelect=%b ",
+        "reset_serviced=%b SuspendM=%b TXValid=%b edges=%0d"},
+        status.link_usb_20_state, command, p_sequencer.ctrl_vif.dut_opmode,
+        p_sequencer.ctrl_vif.dut_xcvrselect, p_sequencer.ctrl_vif.dut_termselect, bus_reset_serviced,
+        p_sequencer.ctrl_vif.dut_suspendm, p_sequencer.ctrl_vif.dut_txvalid, p_sequencer.ctrl_vif.utmi_edge_count))
+    end
+    `uvm_info("USB_INIT_SEQ", "Native reset/public FS/reset ACK and actual encoded FS controls admitted; starting host EP0 flow", UVM_LOW)
+  endtask
+
+  // Run the host side after FS admission; concurrent reset/EP0 service remains active.
   virtual task run_host_scenario();
     usb_init_host_seq host_sequence;
 
@@ -507,6 +558,7 @@ class usb_init_seq extends usb_base_seq;
     host_sequence.device_address = p_sequencer.cfg.device_address;
     host_sequence.link_timeout = p_sequencer.cfg.link_timeout;
     host_sequence.control_transfer_timeout = p_sequencer.cfg.control_transfer_timeout;
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) wait_for_fs_admission();
     host_sequence.start(p_sequencer.host_sequencer);
     if (!host_sequence.completed) begin
       `uvm_fatal("USB_INIT_SEQ", "Host sequence returned incomplete")
@@ -521,6 +573,7 @@ class usb_init_seq extends usb_base_seq;
     completed = 1'b0;
     host_scenario_completed = 1'b0;
     serviced_request_count = 0;
+    bus_reset_serviced = 1'b0;
     if (p_sequencer.host_sequencer == null) begin
       `uvm_fatal("USB_INIT_SEQ", "INIT requires the SVT host virtual sequencer")
     end
@@ -546,6 +599,7 @@ class usb_init_seq extends usb_base_seq;
       end
     join
 
+    check_device_speed("Enumeration");
     completed = host_scenario_completed &&
                 serviced_request_count == expected_setup_request_count() &&
                 current_configuration == CONFIGURATION_VALUE &&

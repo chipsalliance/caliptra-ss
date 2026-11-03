@@ -61,6 +61,7 @@ class usb_endpoint_cfg extends uvm_object;
   usb_direction_e     direction = USB_DIRECTION_OUT;
   usb_transfer_type_e transfer_type = USB_TRANSFER_TYPE_BULK;
   int unsigned        max_packet_size;
+  // On-wire bInterval, not the VIP's normalized exponential metadata.
   int unsigned        interval = 1;
 
   // max_burst_size is only written into the SVT endpoint configuration when it

@@ -203,6 +203,11 @@ class usb_dev_skip_seq extends usb_base_seq;
     host_sequence.payload_byte_count = recovery_bytes;
     host_sequence.payload_base = recovery_payload_base;
     host_sequence.device_address = p_sequencer.cfg.device_address;
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) begin
+      if (recovery_timeout < USB_FS_TRANSFER_TIMEOUT) recovery_timeout = USB_FS_TRANSFER_TIMEOUT;
+      host_sequence.bulk_transfer_timeout = recovery_timeout;
+      `uvm_info("USB_SKIP_SEQ", $sformatf("FS recovery host/IRQ bound=%0t; CSR skip bound unchanged", recovery_timeout), UVM_LOW)
+    end
 
     // The endpoint is armed before the host starts, so the transfer and the
     // device-side interrupt wait run concurrently without NAK-retry reliance.

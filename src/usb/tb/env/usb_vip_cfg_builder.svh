@@ -26,6 +26,7 @@ class usb_vip_cfg_builder extends uvm_object;
   // configuration from device_phy_cfg.
   svt_usb_agent_configuration host_cfg;
   svt_usb_agent_configuration device_phy_cfg;
+  protected usb_speed_e bus_speed = USB_SPEED_HIGH;
 
   function new(string name = "usb_vip_cfg_builder");
     super.new(name);
@@ -43,6 +44,7 @@ class usb_vip_cfg_builder extends uvm_object;
     end
     cfg.validate();
     cfg.assign_anchor_indices();
+    bus_speed = cfg.speed;
 
     host_cfg = new();
     device_phy_cfg = new();
@@ -52,9 +54,11 @@ class usb_vip_cfg_builder extends uvm_object;
     configure_tracing();
     configure_coverage();
     validate_vip_cfgs();
+    `uvm_info("USB_CFG", $sformatf("Native USB2 configuration ready: bus=%s host=%s UTMI_capability=%s inactivity=%0.0f ps",
+      bus_speed.name(), host_cfg.speed.name(), device_phy_cfg.speed.name(), host_cfg.tinactivity), UVM_LOW)
   endfunction
 
-  // One local high-speed host and one remote device, with no hub between.
+  // One local HS/FS host and one remote device, with no hub between.
   // Both sides use 8-bit USB 2.0 only; the host uses TLM and the remote
   // device connects through UTMI. The device starts at the default address
   // zero for enumeration.
@@ -65,7 +69,7 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.top_layer = svt_usb_agent_configuration::PROTOCOL;
 
     host_cfg.local_host_cfg = new();
-    host_cfg.local_host_cfg.high_speed_capable = 1'b1;
+    host_cfg.local_host_cfg.high_speed_capable = bus_speed != USB_SPEED_FULL;
     host_cfg.local_device_cfg_size = 0;
 
     device_phy_cfg.local_device_cfg_size = 1;
@@ -80,7 +84,7 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.remote_device_cfg_size = host_cfg.local_device_cfg_size;
 
     host_cfg.capability = svt_usb_configuration::PLAIN;
-    host_cfg.speed = svt_usb_types::HS;
+    host_cfg.speed = bus_speed == USB_SPEED_FULL ? svt_usb_types::FS : svt_usb_types::HS;
     host_cfg.usb_20_signal_interface = svt_usb_configuration::USB_20_TLM;
     host_cfg.usb_ss_signal_interface = svt_usb_configuration::NO_SS_IF;
     host_cfg.usb_capability = svt_usb_configuration::USB_20_ONLY;
@@ -88,6 +92,7 @@ class usb_vip_cfg_builder extends uvm_object;
     host_cfg.poweron_auto_attach_delay = vip_ps(20us);
 
     device_phy_cfg.capability = svt_usb_configuration::PLAIN;
+    // SVT UTMI support requires HS capability even on a negotiated FS bus.
     device_phy_cfg.speed = svt_usb_types::HS;
     device_phy_cfg.usb_20_signal_interface = svt_usb_configuration::UTMI_IF;
     device_phy_cfg.usb_ss_signal_interface = svt_usb_configuration::NO_SS_IF;
@@ -95,11 +100,16 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.utmi_data_width = 8;
     device_phy_cfg.poweron_auto_attach_delay = vip_ps(20us);
 
-    device_phy_cfg.local_device_cfg[0].connected_bus_speed = svt_usb_types::HS;
-    device_phy_cfg.local_device_cfg[0].functionality_support = svt_usb_types::HS;
+    device_phy_cfg.local_device_cfg[0].connected_bus_speed = host_cfg.speed;
+    device_phy_cfg.local_device_cfg[0].functionality_support = host_cfg.speed;
+    if (bus_speed == USB_SPEED_FULL) begin
+      device_phy_cfg.local_device_cfg[0].max_packet_size_0 = `SVT_USB_FS_CONTROL_MAX_PACKET_SIZE;
+    end
     device_phy_cfg.local_device_cfg[0].device_address = 0;
     device_phy_cfg.local_device_cfg[0].connected_hub_device_address = 0;
-    device_phy_cfg.local_device_cfg[0].device_timeout = vip_ps(50us);
+    // The host abort budget must cover a maximum-size FS packet, not only
+    // response onset. Native PHY/link turnaround checks remain independent.
+    device_phy_cfg.local_device_cfg[0].device_timeout = vip_ps(bus_speed == USB_SPEED_FULL ? USB_FS_FRAME_PERIOD : 50us);
   endfunction
 
   // Fill the VIP's endpoint_cfg[] array at the anchors recorded in cfg.
@@ -134,7 +144,11 @@ class usb_vip_cfg_builder extends uvm_object;
     endcase
     vip_endpoint.interval = endpoint.interval;
     vip_endpoint.max_packet_size = endpoint.max_packet_size;
-    vip_endpoint.speed = svt_usb_types::HS;
+    vip_endpoint.speed = host_cfg.speed;
+    if (bus_speed == USB_SPEED_FULL &&
+        endpoint.transfer_type inside {USB_TRANSFER_TYPE_INTERRUPT, USB_TRANSFER_TYPE_ISOCHRONOUS}) begin
+      vip_endpoint.interval = vip_endpoint.get_endpoint_cfg_interval(8'(endpoint.interval));
+    end
     if (endpoint.max_burst_size_valid) begin
       vip_endpoint.max_burst_size = endpoint.max_burst_size;
     end
@@ -167,6 +181,28 @@ class usb_vip_cfg_builder extends uvm_object;
     device_phy_cfg.twths = vip_ps(10us);
     host_cfg.tinactivity = vip_ps(300us);
     device_phy_cfg.tinactivity = vip_ps(300us);
+    if (bus_speed == USB_SPEED_FULL) begin
+      // USB 2.0 7.1.7.6: normal 1 ms frame gaps must not enter suspend.
+      host_cfg.tinactivity = vip_ps(3ms);
+      device_phy_cfg.tinactivity = vip_ps(3ms);
+      host_cfg.local_host_cfg.micro_frame_period = vip_ps(125us);
+      configure_fs_reset(host_cfg);
+      configure_fs_reset(device_phy_cfg);
+    end
+  endfunction
+
+  // Keep the native scaled reset-check window; pair the candidate drive and
+  // integer fields for both agents. Passive DUT admission remains mandatory.
+  protected function void configure_fs_reset(svt_usb_configuration cfg);
+    cfg.tdrst = vip_ps(USB_FS_RESET_DURATION);
+    cfg.tdrst_longint = longint'(cfg.tdrst);
+    cfg.tdrst_min_longint = longint'(cfg.tdrst_min);
+    cfg.tdrst_max_longint = longint'(cfg.tdrst_max);
+    if (!((cfg.tdrst >= cfg.tdrst_min && cfg.tdrst <= cfg.tdrst_max) === 1'b1)) begin
+      `uvm_fatal("USB_CFG", "Candidate FS reset lies outside the retained native scaled reset-check window")
+    end
+    `uvm_info("USB_CFG", $sformatf("FS reset profile %s: drive=%0.0f ps retained window=%0.0f..%0.0f ps; DUT admission required",
+      cfg.get_name(), cfg.tdrst, cfg.tdrst_min, cfg.tdrst_max), UVM_LOW)
   endfunction
 
   // Retain protocol-through-PHY traces on both sides for live USB debug.

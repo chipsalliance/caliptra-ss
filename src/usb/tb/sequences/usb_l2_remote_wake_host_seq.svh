@@ -234,10 +234,10 @@ class usb_l2_remote_wake_host_seq extends usb_host_base_seq;
     wait (post_resume_sof_count != 0);
     state_deadline = $time + sof_progress_timeout;
     // Public DUT Speed is checked after scaled recovery; native PHY checks own UTMI speed behavior.
-    `uvm_info(report_id(), "Actual SOF observed; awaiting real UTMI non-suspend/known-control state; DUT HS is checked through CSR", UVM_LOW)
+    `uvm_info(report_id(), "Actual SOF observed; awaiting real UTMI non-suspend/known-control state; DUT speed is checked through CSR", UVM_LOW)
     while (!((ctrl_vif.dut_suspendm === 1'b1) && !$isunknown(ctrl_vif.dut_opmode))) begin
       if ($time >= state_deadline) begin
-        `uvm_fatal(report_id(), $sformatf("Accelerated UTMI non-suspend/control guard timed out: SuspendM=%b OpMode=%b; DUT HS check follows recovery",
+        `uvm_fatal(report_id(), $sformatf("Accelerated UTMI non-suspend/control guard timed out: SuspendM=%b OpMode=%b; DUT speed check follows recovery",
           ctrl_vif.dut_suspendm, ctrl_vif.dut_opmode))
       end
       @(posedge ctrl_vif.clk);

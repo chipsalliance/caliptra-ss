@@ -9,3 +9,15 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_init                                        
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_remote_wake                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_remote_wake                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout                                 , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_init                                         , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_dev_skip                                     , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_double_buffer_bulk                           , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_interrupt                                    , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_iso                                          , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l1_host_resume                               , Directed       , Nightly       , None, None, usb_top_tb        , None           , Waived   , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l2_host_resume                               , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l1_remote_wake                               , Directed       , Nightly       , None, None, usb_top_tb        , None           , Waived   , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l2_remote_wake                               , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_double_buffer_bulk                              , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_host_resume                                  , Directed       , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100

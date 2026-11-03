@@ -21,3 +21,13 @@ contents:
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_remote_wake: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_remote_wake: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/usb/tests/usb_utility_timeout: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_init: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_dev_skip: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_double_buffer_bulk: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_interrupt: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_iso: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l2_host_resume: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_fs_l2_remote_wake: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_double_buffer_bulk: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_l1_host_resume: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/usb/tests/usb_l2_host_resume: { weight: 100 }

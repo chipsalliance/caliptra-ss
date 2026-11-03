@@ -14,3 +14,13 @@ contents:
         - ../tests/usb_l1_remote_wake.yml
         - ../tests/usb_l2_remote_wake.yml
         - ../tests/usb_utility_timeout.yml
+        - ../tests/usb_fs_init.yml
+        - ../tests/usb_fs_dev_skip.yml
+        - ../tests/usb_fs_double_buffer_bulk.yml
+        - ../tests/usb_fs_interrupt.yml
+        - ../tests/usb_fs_iso.yml
+        - ../tests/usb_fs_l2_host_resume.yml
+        - ../tests/usb_fs_l2_remote_wake.yml
+        - ../tests/usb_double_buffer_bulk.yml
+        - ../tests/usb_l1_host_resume.yml
+        - ../tests/usb_l2_host_resume.yml

@@ -33,9 +33,7 @@ class usb_l2_remote_wake_seq extends usb_resume_recovery_seq;
     logic [31:0] command;
     logic [31:0] suspend_mask;
     logic [31:0] address_mask;
-    logic [31:0] speed_mask;
     uvm_reg_field address_field;
-    uvm_reg_field speed_field;
     int unsigned authorization_request_count;
 
     completed = 1'b0;
@@ -73,11 +71,13 @@ class usb_l2_remote_wake_seq extends usb_resume_recovery_seq;
     host_sequence.device_address = p_sequencer.cfg.device_address;
     host_sequence.link_state_timeout = resume_timeout;
     host_sequence.ctrl_vif = p_sequencer.ctrl_vif;
+    if (p_sequencer.cfg.speed == USB_SPEED_FULL) begin
+      // Nine native 125 us indices allow a full FS frame plus one index of progress.
+      host_sequence.sof_progress_timeout = 1125us;
+    end
     suspend_mask = ral_field_mask(p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DSUS);
     address_field = p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.DEV_ADDR;
     address_mask = ral_field_mask(address_field);
-    speed_field = p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT.Speed;
-    speed_mask = ral_field_mask(speed_field);
     fork
       host_sequence.start(p_sequencer.host_sequencer);
       begin
@@ -99,14 +99,14 @@ class usb_l2_remote_wake_seq extends usb_resume_recovery_seq;
           host_sequence.scaled_recovery), UVM_LOW)
         #(host_sequence.scaled_recovery);
         ral_read32("DEVCMDSTAT", p_sequencer.reg_model.combo.dev0_csr.DEVCMDSTAT, command);
-        // Public Speed=2'b10 is HS; descriptor ownership and checked completion prove functional admission.
-        if ((command & suspend_mask) !== 32'b0 || 2'((command & speed_mask) >> speed_field.get_lsb_pos()) !== 2'b10) begin
-          `uvm_fatal("USB_L2_REMOTE", $sformatf("Accelerated recovery incompatible: DUT must be non-suspended at HS, DEVCMDSTAT=0x%08h", command))
+        check_device_speed("Remote-wake recovery");
+        if ((command & suspend_mask) !== 32'b0) begin
+          `uvm_fatal("USB_L2_REMOTE", $sformatf("Accelerated recovery incompatible: DUT still suspended, DEVCMDSTAT=0x%08h", command))
         end
         if (7'((command & address_mask) >> address_field.get_lsb_pos()) !== p_sequencer.cfg.device_address) begin
           `uvm_fatal("USB_L2_REMOTE", "Device address changed across remote wake")
         end
-        host_sequence.report_protocol_status("After scaled recovery and public DUT HS/non-suspend check");
+        host_sequence.report_protocol_status("After scaled recovery and public DUT speed/non-suspend check");
         recovery_timeout = 2ms;
         run_recovery_transfer("Post-device-remote-wake bulk OUT");
         recovery_complete.trigger();

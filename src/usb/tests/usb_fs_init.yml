@@ -1,0 +1,6 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_fs_init
+plusargs:
+  - '+UVM_TESTNAME=usb_fs_init_test'
