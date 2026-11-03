@@ -14,27 +14,62 @@
 //
 // Implements the host side of the standalone USB INIT enumeration scenario
 // through the real Synopsys SVT USB 2.0 stack. After the link is enabled and
-// SOF generation is running, the sequence performs these seven EP0 requests:
+// SOF generation is running, the sequence performs these EP0 requests:
 //
 //   1. GET_DESCRIPTOR at the default address 0.
 //   2. GET_STATUS at address 0.
 //   3. SET_ADDRESS to assign device_address.
 //   4. GET_DESCRIPTOR again at the assigned device_address.
 //   5. GET_CONFIGURATION and confirm the device is unconfigured (value 0).
-//   6. SET_CONFIGURATION to select configuration 1.
-//   7. GET_CONFIGURATION and confirm configuration 1 is active.
+//   6. GET_DESCRIPTOR for the configuration header and its wTotalLength.
+//   7. GET_DESCRIPTOR for that complete configuration tree.
+//   8. SET_CONFIGURATION using the discovered bConfigurationValue.
+//   9. GET_CONFIGURATION and confirm the discovered configuration is active.
 //
 // Every request must finish on the bus before its bounded timeout. Completion
 // is accepted only when the SVT result, EP0 SETUP fields, device address, and
 // returned payload all match the request intent. Run this sequence on the SVT
 // host agent's virtual sequencer; usb_init_seq supplies the concurrent DUT-side
 // EP0 service needed to answer these requests.
+//
+// Relies on the Synopsys SVT USB VIP's built-in protocol, link, physical, and
+// device-framework checks (enabled by default via register_default_chks = 1,
+// enable_default_chks = 1 in protocolChecks.html,
+// coverage/class_svt_usb_device_framework_sc.html,
+// coverage/class_svt_usb_protocol_ep_sc.html,
+// coverage/class_svt_usb_link_20_sc.html, and
+// coverage/class_svt_usb_physical_20_sc.html):
+//   - svt_usb_device_framework_sc:
+//     * device_descriptor_blength_18_check, device_descriptor_bDescriptorType_check,
+//       device_descriptor_hs_bcdUSBhibyte_check, device_descriptor_hs_bcdUSBlowbyte_check,
+//       device_descriptor_hs_bMaxPacketSize0_check, device_descriptor_bNumConfigurations_check
+//     * configuration_descriptor_bLength_check, configuration_descriptor_bDescriptorType_check,
+//       configuration_descriptor_bmAttributes_check, configuration_descriptor_bNumInterfaces_check,
+//       configuration_descriptor_non_ss_bMaxPower_check
+//     * interface_descriptor_bLength_check, interface_descriptor_bNumEndpoints_check,
+//       interface_descriptor_interface_number_check, Interface_descriptor_first_alternate_setting_number_check
+//     * endpoint_descriptor_bLength_check, endpoint_descriptor_bEndPointAddress_check,
+//       endpoint_descriptor_bmAttributes_check, endpoint_descriptor_wMaxPacketSize_check,
+//       endpoint_descriptor_bInterval_check, endpoint_descriptor_validity_check
+//   - svt_usb_protocol_ep_sc:
+//     * device_setup_payload_check, data_toggle_check, packet_error_check,
+//       valid_device_data_check, valid_device_response_check
+//   - svt_usb_physical_20_sc:
+//     * chk_tdrst, chk_utmi_chirp_condition, chk_utmi_linestate_during_reset,
+//       chk_utmi_linestate_during_chirp, utmi_signal_X_Z_check
 class usb_init_host_seq extends usb_host_base_seq;
   `uvm_object_utils(usb_init_host_seq)
 
-  localparam int unsigned ENUMERATION_REQUEST_COUNT = 7;
-
   int unsigned validated_transfer_count;
+  localparam int unsigned ENUMERATION_REQUEST_COUNT = 9;
+  localparam byte unsigned DEVICE_DESCRIPTOR_TYPE = 1;
+  localparam byte unsigned CONFIGURATION_DESCRIPTOR_TYPE = 2;
+  localparam int unsigned DEVICE_DESCRIPTOR_LENGTH = 18;
+  localparam int unsigned CONFIGURATION_DESCRIPTOR_LENGTH = 9;
+  localparam int unsigned CONFIGURATION_TOTAL_LENGTH_OFFSET = 2;
+  localparam int unsigned CONFIGURATION_VALUE_OFFSET = 5;
+  byte unsigned discovered_payload[$];
+  byte unsigned selected_configuration;
 
   // Scenario inputs. This sequence runs on the SVT sequencer, which has no
   // usb_env_cfg handle, so the parent scenario copies these from
@@ -60,7 +95,9 @@ class usb_init_host_seq extends usb_host_base_seq;
     derive_expected_results_status = '0;
     if ((expected_direction === svt_usb_types::HOST_TO_DEVICE) &&
         ((expected_request === svt_usb_types::SET_ADDRESS) ||
-         (expected_request === svt_usb_types::SET_CONFIGURATION)) &&
+         (expected_request === svt_usb_types::SET_CONFIGURATION) ||
+         (expected_request === svt_usb_types::SET_FEATURE) ||
+         (expected_request === svt_usb_types::CLEAR_FEATURE)) &&
         (expected_length === 16'd0) &&
         (expected_payload.size() === 0)) begin
       derive_expected_results_status[5] = 1'b1;
@@ -245,10 +282,10 @@ class usb_init_host_seq extends usb_host_base_seq;
           expected_payload,
           failure_reason
         )) begin
-      `uvm_fatal("USB_INIT_HOST", $sformatf("Step %0d/7 %s completion rejected: %s", step_number, label, failure_reason))
+      `uvm_fatal("USB_INIT_HOST", $sformatf("Step %0d %s completion rejected: %s", step_number, label, failure_reason))
     end
     validated_transfer_count++;
-    `uvm_info("USB_INIT_HOST", $sformatf("Step %0d/7 %s validated: payload_bytes=%0d validated_count=%0d/7", step_number, label, expected_payload.size(), validated_transfer_count), UVM_LOW)
+    `uvm_info("USB_INIT_HOST", $sformatf("Step %0d %s validated: payload_bytes=%0d validated_count=%0d", step_number, label, expected_payload.size(), validated_transfer_count), UVM_LOW)
   endtask
 
   // Submits one control request and validates the resulting completion against
@@ -263,14 +300,17 @@ class usb_init_host_seq extends usb_host_base_seq;
     bit [6:0] device_address,
     int unsigned step_number,
     string label,
-    byte unsigned expected_payload[$]
+    byte unsigned expected_payload[$],
+    bit discover_descriptor = 1'b0
   );
     svt_usb_transfer request_transfer;
     uvm_sequence_item response;
     uvm_object completed_object;
+    svt_usb_transfer completed_transfer;
     string transfer_label;
+    string failure_reason;
 
-    transfer_label = $sformatf("Step %0d/7 %s", step_number, label);
+    transfer_label = $sformatf("Step %0d %s", step_number, label);
     request_transfer = svt_usb_transfer::type_id::create({label, "_request"});
     `uvm_info(
       "USB_INIT_HOST",
@@ -315,6 +355,25 @@ class usb_init_host_seq extends usb_host_base_seq;
     end_transfer_watch(completed_object);
     check_transfer_correlation(transfer_label, request_transfer, completed_object);
 
+    // Discovery has no fixture-byte oracle. Check the request/completion
+    // envelope below, then validate descriptor semantics in body().
+    if (discover_descriptor) begin
+      if (!cast_completed_transfer(completed_object, completed_transfer, failure_reason)) begin
+        `uvm_fatal("USB_INIT_HOST", failure_reason)
+      end
+      if (completed_transfer.payload == null) begin
+        `uvm_fatal("USB_INIT_HOST", "Descriptor response has no payload")
+      end
+      if (completed_transfer.payload.byte_count != length) begin
+        `uvm_fatal("USB_INIT_HOST", "Descriptor response length differs from requested discovery length")
+      end
+      discovered_payload.delete();
+      for (int unsigned byte_index = 0; byte_index < length; byte_index++) begin
+        discovered_payload.push_back(completed_transfer.payload.get_byte_val(byte_index));
+      end
+      expected_payload = discovered_payload;
+    end
+
     check_completed_transfer(
       step_number,
       label,
@@ -331,14 +390,16 @@ class usb_init_host_seq extends usb_host_base_seq;
     );
   endtask
 
-  // Runs the fixed seven-request USB INIT flow and gates completion on all
-  // seven transfer validations.
+  // Select configuration descriptor index zero, using only its bus response
+  // to determine wTotalLength and bConfigurationValue.
   virtual task body();
     byte unsigned no_payload[$];
     byte unsigned descriptor_payload[$];
     byte unsigned status_payload[$];
     byte unsigned unconfigured_payload[$];
     byte unsigned configured_payload[$];
+    byte unsigned configuration_header[$];
+    int unsigned configuration_length;
 
     completed = 1'b0;
     validated_transfer_count = 0;
@@ -346,16 +407,12 @@ class usb_init_host_seq extends usb_host_base_seq;
       `uvm_fatal("USB_INIT_HOST", "control_endpoint must be set to an applied EP0 configuration before start")
     end
 
-    // These are the exact data-stage bytes expected from the DUT-side EP0
-    // service for discovery, status, and configuration-state requests.
-    descriptor_payload = '{
-      8'h12, 8'h01, 8'h02, 8'h00, 8'h00, 8'h00, 8'h00, 8'h40,
-      8'h00, 8'h00, 8'h00, 8'h00, 8'h00, 8'h01, 8'h00, 8'h00,
-      8'h00, 8'h00
-    };
+    selected_configuration = 0;
+    discovered_payload.delete();
+    // USB 2.0 sections 9.4.4 and 9.4.5: bus-powered fixture status and
+    // configuration state before SET_CONFIGURATION.
     status_payload = '{8'h00, 8'h00};
     unconfigured_payload = '{8'h00};
-    configured_payload = '{8'h01};
 
     // Resolve the host agent, configuration, and shared status supplied by
     // usb_env; the shared status is required for the link wait below.
@@ -364,7 +421,7 @@ class usb_init_host_seq extends usb_host_base_seq;
     if (device_address == 0) begin
       `uvm_fatal("USB_INIT_HOST", "device_address must be 1-127")
     end
-    `uvm_info("USB_INIT_HOST", $sformatf("Starting seven-step USB INIT host enumeration from address 0 to address %0d and configuration 1", device_address), UVM_LOW)
+    `uvm_info("USB_INIT_HOST", $sformatf("Starting USB INIT host enumeration from address 0 to address %0d", device_address), UVM_LOW)
 
     // Bring up periodic USB framing before issuing the first EP0 request.
     wait_for_link_enabled(link_timeout);
@@ -383,14 +440,19 @@ class usb_init_host_seq extends usb_host_base_seq;
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_DESCRIPTOR,
-      16'h0100,
+      {DEVICE_DESCRIPTOR_TYPE, 8'h00},
       16'h0000,
-      16'h0012,
+      16'(DEVICE_DESCRIPTOR_LENGTH),
       0,
       1,
       "GET_DESCRIPTOR_address_0",
-      descriptor_payload
+      no_payload,
+      1'b1
     );
+    descriptor_payload = discovered_payload;
+    if (descriptor_payload.size() < DEVICE_DESCRIPTOR_LENGTH) begin
+      `uvm_fatal("USB_INIT_HOST", "Device descriptor discovery returned a truncated descriptor")
+    end
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_STATUS,
@@ -432,14 +494,14 @@ class usb_init_host_seq extends usb_host_base_seq;
     end
     `uvm_info("USB_INIT_HOST", $sformatf("Reconfigured the SVT host for device address %0d", device_address), UVM_LOW)
 
-    // Steps 4-7 prove communication at the assigned address, observe the
-    // initial configuration value, select configuration 1, and read it back.
+    // Prove descriptor stability at the assigned address, then discover and
+    // validate the complete configuration before selecting it.
     run_control_transfer(
       svt_usb_types::DEVICE_TO_HOST,
       svt_usb_types::GET_DESCRIPTOR,
-      16'h0100,
+      {DEVICE_DESCRIPTOR_TYPE, 8'h00},
       16'h0000,
-      16'h0012,
+      16'(DEVICE_DESCRIPTOR_LENGTH),
       device_address,
       4,
       $sformatf("GET_DESCRIPTOR_address_%0d", device_address),
@@ -457,14 +519,58 @@ class usb_init_host_seq extends usb_host_base_seq;
       unconfigured_payload
     );
     run_control_transfer(
+      svt_usb_types::DEVICE_TO_HOST,
+      svt_usb_types::GET_DESCRIPTOR,
+      {CONFIGURATION_DESCRIPTOR_TYPE, 8'h00},
+      16'h0000,
+      16'(CONFIGURATION_DESCRIPTOR_LENGTH),
+      device_address,
+      6,
+      "GET_CONFIGURATION_DESCRIPTOR_header",
+      no_payload,
+      1'b1
+    );
+    configuration_header = discovered_payload;
+    if (configuration_header.size() < CONFIGURATION_DESCRIPTOR_LENGTH) begin
+      `uvm_fatal("USB_INIT_HOST", "Configuration discovery returned a truncated header")
+    end
+    configuration_length = int'(configuration_header[CONFIGURATION_TOTAL_LENGTH_OFFSET]) |
+                           (int'(configuration_header[CONFIGURATION_TOTAL_LENGTH_OFFSET + 1]) << 8);
+    // USB 2.0 section 9.6.3: wTotalLength includes the configuration header.
+    if (configuration_length < CONFIGURATION_DESCRIPTOR_LENGTH) begin
+      `uvm_fatal("USB_INIT_HOST", $sformatf("Configuration wTotalLength=%0d is shorter than its header", configuration_length))
+    end
+    run_control_transfer(
+      svt_usb_types::DEVICE_TO_HOST,
+      svt_usb_types::GET_DESCRIPTOR,
+      {CONFIGURATION_DESCRIPTOR_TYPE, 8'h00},
+      16'h0000,
+      16'(configuration_length),
+      device_address,
+      7,
+      "GET_CONFIGURATION_DESCRIPTOR_full",
+      no_payload,
+      1'b1
+    );
+    if (discovered_payload.size() < configuration_length || discovered_payload.size() < configuration_header.size()) begin
+      `uvm_fatal("USB_INIT_HOST", "Configuration tree discovery returned fewer bytes than its declared length or saved header")
+    end
+    foreach (configuration_header[byte_index]) begin
+      if (configuration_header[byte_index] != discovered_payload[byte_index]) begin
+        `uvm_fatal("USB_INIT_HOST", "Configuration header changed between discovery requests")
+      end
+    end
+    selected_configuration = discovered_payload[CONFIGURATION_VALUE_OFFSET];
+    configured_payload = '{selected_configuration};
+    run_control_transfer(
       svt_usb_types::HOST_TO_DEVICE,
       svt_usb_types::SET_CONFIGURATION,
-      16'h0001,
+      16'(selected_configuration),
       16'h0000,
       16'h0000,
       device_address,
-      6,
-      "SET_CONFIGURATION_1",
+      8,
+      $sformatf("SET_CONFIGURATION_%0d", selected_configuration),
       no_payload
     );
     run_control_transfer(
@@ -474,20 +580,20 @@ class usb_init_host_seq extends usb_host_base_seq;
       16'h0000,
       16'h0001,
       device_address,
-      7,
+      9,
       "GET_CONFIGURATION_after_set",
       configured_payload
     );
 
     // Preserve a fixed post-enumeration observation window; this sequence
-    // adds no active checks during the delay. Then gate completion on exactly
-    // seven validated transfers, rather than treating elapsed time as proof
+    // adds no active checks during the delay. Then gate completion on all
+    // expected validated transfers, rather than treating elapsed time as proof
     // of success.
     #50us;
-    if (validated_transfer_count !== 7) begin
-      `uvm_fatal("USB_INIT_HOST", $sformatf("USB INIT validated %0d control transfers instead of exactly 7", validated_transfer_count))
+    if (validated_transfer_count != ENUMERATION_REQUEST_COUNT) begin
+      `uvm_fatal("USB_INIT_HOST", $sformatf("USB INIT validated %0d control transfers instead of %0d", validated_transfer_count, ENUMERATION_REQUEST_COUNT))
     end
     completed = 1'b1;
-    `uvm_info("USB_INIT_HOST", $sformatf("USB INIT host enumeration complete: validated_count=%0d/7 address=%0d configuration=1", validated_transfer_count, device_address), UVM_LOW)
+    `uvm_info("USB_INIT_HOST", $sformatf("USB INIT host enumeration complete: validated_count=%0d address=%0d configuration=%0d", validated_transfer_count, device_address, selected_configuration), UVM_LOW)
   endtask
 endclass
