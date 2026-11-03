@@ -19,6 +19,7 @@
 // observation window. The isolation checker uses transfer-level ownership and
 // legacy-state invariants; later control-phasing tests reuse these packet
 // records to distinguish ACK, NAK, STALL, DATA, and zero-length packets.
+// Streaming summaries and live stage events do not depend on trace retention.
 class caliptra_ss_usb_ocp_arbiter_packet_callback
     extends svt_usb_link_monitor_callback;
 
@@ -52,6 +53,16 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
     protected packet_record_t packet_records[$];
     protected int unsigned retained_packet_count;
     protected bit records_overflowed;
+    protected int unsigned pid_counts[packet_direction_e][svt_usb_packet::pid_name_enum];
+    protected int unsigned zlp_counts[2];
+    protected int unsigned accepted_setups;
+    protected bit rx_data_seen;
+    protected int unsigned last_rx_data_length;
+    protected bit setup_data_seen;
+    protected realtime first_setup_timestamp;
+    protected bit legacy_out_token_seen;
+    protected bit legacy_out_data_seen;
+    protected bit legacy_out_completed;
     protected int unsigned window_serial;
     protected bit token_target_valid;
     protected bit [6:0] token_address;
@@ -98,6 +109,18 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         explicit_aborts = 0;
         corrupted_packets = 0;
         reset_semantics();
+        reset_packet_summaries();
+    endfunction
+
+    protected function void reset_packet_summaries();
+        pid_counts.delete();
+        foreach (zlp_counts[index]) zlp_counts[index] = 0;
+        accepted_setups = 0;
+        rx_data_seen = 1'b0;
+        last_rx_data_length = 0;
+        setup_data_seen = 1'b0;
+        first_setup_timestamp = 0.0;
+        legacy_out_completed = 1'b0;
     endfunction
 
     protected function void reset_semantics();
@@ -112,6 +135,8 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         token_target_valid = 1'b0;
         token_address = '0;
         token_endpoint = '0;
+        legacy_out_token_seen = 1'b0;
+        legacy_out_data_seen = 1'b0;
         stage_observed.reset();
         setup_ack_observed.reset();
     endfunction
@@ -125,6 +150,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         corrupted_packets = 0;
         window_serial++;
         reset_semantics();
+        reset_packet_summaries();
         active_generation = generation;
         active = 1'b1;
     endfunction
@@ -266,29 +292,13 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         input svt_usb_packet::pid_name_enum pid_name,
         input packet_direction_e direction);
 
-        int unsigned count;
-        count = 0;
-        foreach (packet_records[index]) begin
-            if ((packet_records[index].pid_name == pid_name) &&
-                (packet_records[index].direction == direction)) begin
-                count++;
-            end
-        end
-        return count;
+        if (!pid_counts.exists(direction)) return 0;
+        if (!pid_counts[direction].exists(pid_name)) return 0;
+        return pid_counts[direction][pid_name];
     endfunction
 
     function int unsigned count_zlp(input packet_direction_e direction);
-        int unsigned count;
-        count = 0;
-        foreach (packet_records[index]) begin
-            if ((packet_records[index].direction == direction) &&
-                ((packet_records[index].pid_name == svt_usb_packet::DATA0) ||
-                 (packet_records[index].pid_name == svt_usb_packet::DATA1)) &&
-                (packet_records[index].data_length == 0)) begin
-                count++;
-            end
-        end
-        return count;
+        return zlp_counts[direction];
     endfunction
 
     function bit setup_stage_acked();
@@ -296,11 +306,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
     endfunction
 
     function int unsigned accepted_setup_count();
-        int unsigned count;
-        count = 0;
-        foreach (packet_records[index])
-            if (packet_records[index].accepted_setup) count++;
-        return count;
+        return accepted_setups;
     endfunction
 
     function bit overflowed();
@@ -335,6 +341,11 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
                 valid = 1'b0;
             if (packet_records[index].pid_name === svt_usb_packet::SOF)
                 continue;
+            if (!packet_records[index].target_valid) begin
+                valid = 1'b0;
+                probe_pending = 1'b0;
+                continue;
+            end
             // A probe window must not contain a SETUP, even at another EP.
             if (packet_records[index].pid_name === svt_usb_packet::SETUP)
                 valid = 1'b0;
@@ -361,8 +372,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
                 end
                 continue;
             end
-            if (!packet_records[index].target_valid ||
-                !(packet_records[index].device_address === address) ||
+            if (!(packet_records[index].device_address === address) ||
                 !(packet_records[index].endpoint_number === endpoint))
                 continue;
             if ((packet_records[index].direction === PACKET_RX) &&
@@ -441,57 +451,17 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
     endfunction
 
     function bit get_last_rx_data_length(output int unsigned data_length);
-        for (int index = packet_records.size() - 1; index >= 0; index--) begin
-            if ((packet_records[index].direction == PACKET_RX) &&
-                ((packet_records[index].pid_name == svt_usb_packet::DATA0) ||
-                 (packet_records[index].pid_name == svt_usb_packet::DATA1))) begin
-                data_length = packet_records[index].data_length;
-                return 1'b1;
-            end
-        end
-        data_length = 0;
-        return 1'b0;
+        data_length = last_rx_data_length;
+        return rx_data_seen;
     endfunction
 
     function bit get_setup_timestamp(output realtime setup_time);
-        foreach (packet_records[index]) begin
-            if (packet_records[index].setup_data) begin
-                setup_time = packet_records[index].observed_at;
-                return 1'b1;
-            end
-        end
-        setup_time = 0.0;
-        return 1'b0;
+        setup_time = first_setup_timestamp;
+        return setup_data_seen;
     endfunction
 
     function bit legacy_out_stage_completed();
-        bit out_token_seen;
-        bit out_data_seen;
-
-        out_token_seen = 1'b0;
-        out_data_seen = 1'b0;
-        foreach (packet_records[index]) begin
-            if ((packet_records[index].direction == PACKET_TX) &&
-                (packet_records[index].pid_name == svt_usb_packet::OUT)) begin
-                out_token_seen = 1'b1;
-                out_data_seen = 1'b0;
-                continue;
-            end
-            if (out_token_seen &&
-                (packet_records[index].direction == PACKET_TX) &&
-                ((packet_records[index].pid_name == svt_usb_packet::DATA0) ||
-                 (packet_records[index].pid_name == svt_usb_packet::DATA1))) begin
-                out_data_seen = 1'b1;
-                continue;
-            end
-            if (out_data_seen &&
-                (packet_records[index].direction == PACKET_RX) &&
-                ((packet_records[index].pid_name == svt_usb_packet::ACK) ||
-                 (packet_records[index].pid_name == svt_usb_packet::NYET))) begin
-                return 1'b1;
-            end
-        end
-        return 1'b0;
+        return legacy_out_completed;
     endfunction
 
     protected function void record_packet(
@@ -503,14 +473,6 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         if (!active || (pkt == null)) begin
             return;
         end
-        // Retain the first bounded window and fail closed on truncation.
-        if (packet_records.size() >= MAX_PACKET_RECORDS) begin
-            records_overflowed = 1'b1;
-            pending_setup_token = 1'b0;
-            pending_setup_data = 1'b0;
-            return;
-        end
-
         record = '{generation:'0, direction:PACKET_RX,
                    pid_type:svt_usb_packet::TOKEN,
                    pid_name:svt_usb_packet::OUT, default:0};
@@ -572,8 +534,45 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
                 pending_setup_data = 1'b0;
             end
         end
-        packet_records.push_back(record);
-        retained_packet_count++;
+        // Summaries and live triggers see every packet, even after trace fills.
+        pid_counts[direction][record.pid_name] =
+            count_pid(record.pid_name, direction) + 1;
+        if ((record.pid_name == svt_usb_packet::DATA0) ||
+            (record.pid_name == svt_usb_packet::DATA1)) begin
+            if (record.data_length == 0) zlp_counts[direction]++;
+            if (direction == PACKET_RX) begin
+                rx_data_seen = 1'b1;
+                last_rx_data_length = record.data_length;
+            end
+        end
+        if (record.setup_data && !setup_data_seen) begin
+            setup_data_seen = 1'b1;
+            first_setup_timestamp = record.observed_at;
+        end
+        if (record.accepted_setup) accepted_setups++;
+        if ((direction == PACKET_TX) &&
+            (record.pid_name == svt_usb_packet::OUT)) begin
+            legacy_out_token_seen = 1'b1;
+            legacy_out_data_seen = 1'b0;
+        end else if (legacy_out_token_seen &&
+                     (direction == PACKET_TX) &&
+                     ((record.pid_name == svt_usb_packet::DATA0) ||
+                      (record.pid_name == svt_usb_packet::DATA1))) begin
+            legacy_out_data_seen = 1'b1;
+        end else if (legacy_out_data_seen &&
+                     (direction == PACKET_RX) &&
+                     ((record.pid_name == svt_usb_packet::ACK) ||
+                      (record.pid_name == svt_usb_packet::NYET))) begin
+            legacy_out_completed = 1'b1;
+        end
+
+        // Retain a bounded prefix; incomplete histories cannot prove isolation.
+        if (packet_records.size() < MAX_PACKET_RECORDS) begin
+            packet_records.push_back(record);
+            retained_packet_count++;
+        end else begin
+            records_overflowed = 1'b1;
+        end
         if (record.accepted_setup) begin
             if (setup_ack_trigger_active) begin
                 setup_ack_trigger_seen = 1'b1;

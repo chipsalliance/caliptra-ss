@@ -110,6 +110,150 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         return observer.check_stall_probe(pid, 7'd5, 4'd0, "synthetic");
     endfunction
 
+    protected function void ocp_packet_emit_synthetic_stall_probe(
+        input svt_usb_packet::pid_name_enum pid);
+        ocp_packet_emit_synthetic_packet(pid);
+        if (pid == svt_usb_packet::OUT)
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b0, 3);
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::STALL, 1'b1);
+    endfunction
+
+    protected function bit ocp_packet_check_synthetic_history_complete();
+        caliptra_ss_usb_ocp_arbiter_packet_callback saved_callback;
+        bit complete;
+        // Exercise the production close predicate without altering live capture.
+        saved_callback = checker.packet_callback;
+        checker.packet_callback = observer;
+        complete = checker.packet_history_complete();
+        checker.packet_callback = saved_callback;
+        return complete;
+    endfunction
+
+    protected task ocp_packet_check_synthetic_overflow();
+        localparam int unsigned TraceLimit =
+            caliptra_ss_usb_ocp_arbiter_packet_callback::MAX_PACKET_RECORDS;
+        svt_usb_transfer::xfer_stage_enum stages[3] = '{
+            svt_usb_transfer::SETUP_STAGE, svt_usb_transfer::DATA_STAGE,
+            svt_usb_transfer::STATUS_STAGE};
+        bit observed;
+        int unsigned data_length;
+        realtime setup_time;
+        realtime expected_setup_time;
+
+        // -------------------------------------------------------------------------
+        // Fill trace storage, then deliver a complete control read after it fills.
+        // Run checks:
+        // * SETUP/DATA/STATUS events and SETUP acceptance still arrive.
+        // * Counters, lengths, timestamps and OUT completion include dropped records.
+        // * Full storage is complete; exceeding it prevents isolation checking.
+        foreach (stages[index]) begin
+            ocp_packet_open_synthetic_observation_window();
+            for (int unsigned i = 0; i < TraceLimit; i++)
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+            ocp_packet_check_true(!observer.overflowed() &&
+                ocp_packet_check_synthetic_history_complete(),
+                "full trace without truncation remains complete");
+            observer.arm_stage_trigger(stages[index]);
+            fork
+                observer.wait_for_stage_trigger(10ns, observed);
+                begin
+                    #1ns;
+                    expected_setup_time = $realtime;
+                    ocp_packet_emit_synthetic_setup_pair();
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1, 4);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
+                end
+            join
+            ocp_packet_check_true(observed,
+                $sformatf("%s trigger survives trace overflow", stages[index].name()));
+            observer.wait_for_setup_ack_trigger(1ns, observed);
+            ocp_packet_check_true(observed &&
+                (observer.accepted_setup_count() == 1) &&
+                observer.setup_stage_acked(), "SETUP summary survives overflow");
+            ocp_packet_check_true(observer.overflowed() &&
+                (observer.packet_count() == TraceLimit) &&
+                !ocp_packet_check_synthetic_history_complete() &&
+                !ocp_packet_check_synthetic_stall_probe(svt_usb_packet::IN) &&
+                !observer.validate_control_stall(7'd5, 4'd0),
+                "truncated trace cannot prove isolation or STALL");
+            ocp_packet_check_true(
+                (observer.count_pid(svt_usb_packet::OUT,
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_TX) == 1) &&
+                (observer.count_pid(svt_usb_packet::ACK,
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) == 2) &&
+                (observer.count_zlp(
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_TX) == 1) &&
+                (observer.count_zlp(
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) == 0),
+                "streaming packet counters include unretained traffic");
+            ocp_packet_check_true(observer.get_last_rx_data_length(data_length) &&
+                (data_length == 4) && observer.get_setup_timestamp(setup_time) &&
+                (setup_time == expected_setup_time) &&
+                observer.legacy_out_stage_completed(),
+                "streaming control-read summaries include unretained status");
+            observer.stop_window();
+            ocp_packet_check_true(observer.legacy_out_stage_completed() &&
+                (observer.accepted_setup_count() == 1) &&
+                observer.get_last_rx_data_length(data_length) &&
+                (data_length == 4) &&
+                !ocp_packet_check_synthetic_history_complete(),
+                "closed window preserves summaries and overflow");
+        end
+
+        // -------------------------------------------------------------------------
+        // Fill trace with control-IN retries, then complete DATA and OUT status.
+        // Run checks:
+        // * The status-stage event and OUT completion survive truncation.
+        // * Restarting capture removes the previous window's summaries.
+        ocp_packet_open_synthetic_observation_window();
+        ocp_packet_check_true(!observer.overflowed() &&
+            (observer.packet_count() == 0) &&
+            (observer.accepted_setup_count() == 0) &&
+            !observer.legacy_out_stage_completed() &&
+            !observer.get_last_rx_data_length(data_length) &&
+            !observer.get_setup_timestamp(setup_time) &&
+            (observer.count_pid(svt_usb_packet::OUT,
+                caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_TX) == 0) &&
+            (observer.count_zlp(
+                caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_TX) == 0),
+            "new window clears streaming summaries and overflow");
+        observer.arm_stage_trigger(svt_usb_transfer::STATUS_STAGE);
+        ocp_packet_emit_synthetic_setup_pair();
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
+        while ((observer.packet_count() + 2) <= TraceLimit) begin
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::NAK, 1'b1);
+        end
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+        ocp_packet_check_true((observer.packet_count() == TraceLimit) &&
+            !observer.overflowed(), "retry history fills the retained trace");
+        fork
+            observer.wait_for_stage_trigger(10ns, observed);
+            begin
+                #1ns;
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1, 4);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
+            end
+        join
+        ocp_packet_check_true(observed && observer.overflowed() &&
+            observer.legacy_out_stage_completed() &&
+            (observer.accepted_setup_count() == 1) &&
+            !ocp_packet_check_synthetic_history_complete(),
+            "control-IN retry overflow preserves completed OUT status");
+        observer.stop_window();
+        `uvm_info("OCP_PACKET_SELFTEST",
+            {"Streaming summaries and all three stage triggers survive trace ",
+             "overflow; truncated histories cannot prove isolation."}, UVM_NONE)
+    endtask
+
     protected function void ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_setup_pair();
@@ -534,6 +678,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         caliptra_ss_usb_ocp_arbiter_packet_callback::packet_record_t record;
         caliptra_ss_usb_ocp_fifo_packet_model fifo_model;
         svt_usb_packet::pid_name_enum forbidden[5];
+        svt_usb_packet::pid_name_enum probe_pids[3] = '{
+            svt_usb_packet::IN, svt_usb_packet::OUT, svt_usb_packet::PING};
+        svt_usb_packet::pid_name_enum prefixes[7] = '{
+            svt_usb_packet::ACK, svt_usb_packet::NAK, svt_usb_packet::NYET,
+            svt_usb_packet::STALL, svt_usb_packet::DATA0, svt_usb_packet::DATA1,
+            svt_usb_packet::IN};
 
         // -------------------------------------------------------------------------
         // Initialize real transport, then exercise private callback/model objects.
@@ -866,17 +1016,45 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         end
 
         // -------------------------------------------------------------------------
-        // Emit more SOF records than packet storage can retain.
+        // Prefix clean IN/OUT/PING probes with packets before their first token.
         // Run checks:
-        // * Retention stops at 4096 records and overflow is reported.
-        // * The incomplete history cannot pass probe checking.
-        ocp_packet_open_synthetic_observation_window();
-        for (int unsigned i = 0; i <= 4096; i++) ocp_packet_emit_synthetic_packet(
-            svt_usb_packet::SOF);
-        ocp_packet_check_true(observer.overflowed() && (observer.packet_count() == 4096),
-                     "bounded packet retention");
-        ocp_packet_check_true(!ocp_packet_check_synthetic_stall_probe(svt_usb_packet::IN),
-            "overflow fails closed");
+        // * Unattributed device responses and RX tokens invalidate the probe.
+        // * SOF and complete transactions to another target remain distinct.
+        foreach (probe_pids[p]) begin
+            foreach (prefixes[r]) begin
+                ocp_packet_open_synthetic_observation_window();
+                ocp_packet_emit_synthetic_packet(prefixes[r], 1'b1);
+                record = observer.get_packet(0);
+                ocp_packet_emit_synthetic_stall_probe(probe_pids[p]);
+                ocp_packet_check_true(!record.target_valid &&
+                    !ocp_packet_check_synthetic_stall_probe(probe_pids[p]),
+                    $sformatf("unattributed %s before %s probe rejected",
+                        prefixes[r].name(), probe_pids[p].name()));
+            end
+            ocp_packet_open_synthetic_observation_window();
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+            ocp_packet_emit_synthetic_stall_probe(probe_pids[p]);
+            ocp_packet_check_true(
+                ocp_packet_check_synthetic_stall_probe(probe_pids[p]),
+                "SOF before a clean probe is transparent");
+            ocp_packet_open_synthetic_observation_window();
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::IN, 1'b0, 0, 7'd6);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::NAK, 1'b1);
+            ocp_packet_emit_synthetic_stall_probe(probe_pids[p]);
+            ocp_packet_check_true(
+                ocp_packet_check_synthetic_stall_probe(probe_pids[p]),
+                "attributed other-target transaction is not unsolicited");
+        end
+        `uvm_info("OCP_PACKET_SELFTEST",
+            "Pre-token responses rejected for IN, OUT and PING; clean probes preserved.",
+            UVM_NONE)
+
+        // -------------------------------------------------------------------------
+        // Exercise bounded retention, streaming summaries and live stage events.
+        // Run checks:
+        // * Control-read completion remains visible after trace truncation.
+        // * Isolation and packet-history predicates reject overflowed windows.
+        ocp_packet_check_synthetic_overflow();
 
         // -------------------------------------------------------------------------
         // Apply error, accepted-SETUP and status-read events directly to the model.

@@ -449,6 +449,12 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         expected_wire_length = length;
     endfunction
 
+    // Pure predicate shared with synthetic checks; reporting belongs to close.
+    function bit packet_history_complete();
+        if (packet_callback == null) return 1'b0;
+        return !packet_callback.overflowed();
+    endfunction
+
     protected function void check_packet_only_window();
         if ((observed_transfers.size() != 0) ||
             (observer_vif.write_count() != 0) ||
@@ -541,6 +547,15 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             `uvm_error("OCP_ARB_CHECK",
                 $sformatf("Post snapshot generation %0d was not received.",
                           generation))
+            return;
+        end
+
+        if (!packet_history_complete()) begin
+            `uvm_error("OCP_ARB_CHECK",
+                $sformatf({"Packet history for generation %0d is unavailable ",
+                           "or overflowed; isolation cannot be checked from ",
+                           "a truncated trace."}, generation))
+            complete = 1'b0;
             return;
         end
 
