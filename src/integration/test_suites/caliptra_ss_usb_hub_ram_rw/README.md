@@ -8,33 +8,39 @@ firmware does all of the checking directly over the LSU AXI master.
 ## Hub descriptor array background
 
 The embedded USB hub keeps its descriptors (device, configuration, hub class,
-device qualifier, other-speed configuration) and its SETUP-match table in an
-internal 176-word (`C_NWORDS` = 176) 32-bit flip-flop array named `ep0_mem`
+device qualifier, other-speed configuration, BOS) and its SETUP-match table in
+an internal 196-word (`C_NWORDS` = 196) 32-bit flip-flop array named `ep0_mem`
 inside the compound IP (`usb_ep0_hub_descr.m.vhdl`). The array self-initializes
 from a ROM constant at reset, so firmware has nothing to program. The whole
 array is reachable from the MCU LSU AXI master over the `hub_axi` aperture at
 `USB_HUB_DESC_DEVICE_BASE` (= `SOC_USB_COMBO_HUB_DESCRIPTOR_LOW_BASE_ADDR`,
 0x2000_1000); word `i` lives at `base + i*4`. The aperture spans
-0x2000_1000 .. 0x2000_12BF (exactly 176 words), and word 15 is
-`SOC_USB_COMBO_HUB_CONTROL` (0x2000_103C) = `C_HUB_CS`, which confirms the base.
+0x2000_1000 .. 0x2000_130F (exactly 196 words), and word 12 is
+`SOC_USB_COMBO_HUB_CONTROL` (0x2000_1030) = `C_HUB_CS`, which confirms the base.
 
 ## Write-lock rule (from the RTL)
 
 ```
 hub_write_lock <= ep0_mem(C_HUB_CS)(0) and ep0_mem(C_HUB_CS)(16)
-write allowed only if (hub_write_lock='0' OR waddr=C_HUB_CS) and waddr < C_NWORDS
+write allowed only if (hub_write_lock='0'  OR
+                       waddr=C_HUB_CS      OR
+                       waddr=C_HUB_LPM     OR
+                       waddr=C_HUB_PHY) and waddr < C_NWORDS
 ```
 
-`C_HUB_CS` is word 15 (byte offset 0x3C), the Hub Control/Status register:
+The three register words of the aperture are ALL explicitly exempted from the
+lock (`usb_ep0_hub_descr.m.vhdl` lines 497-499), so they are always writable:
 
-- bit 0  = HUB_EN
-- bit 16 = HUB_CONNECT (DCON)
+| constant | word | byte offset | register |
+|---|---|---|---|
+| `C_HUB_CS`  | 12 | 0x30 | Hub Control/Status (bit 0 = HUB_EN, bit 16 = HUB_CONNECT/DCON) |
+| `C_HUB_LPM` | 13 | 0x34 | Hub LPM L1 |
+| `C_HUB_PHY` | 15 | 0x3C | ULPI PHY access |
 
 So the array is writable while at most one of HUB_EN / HUB_CONNECT is set, and
-freezes (every word except word 15) once BOTH are set. Word 15 is ALWAYS
-writable - it is explicitly exempted from the lock - so firmware can clear
-HUB_CONNECT afterwards to release the lock again. HUB_EN alone does not lock the
-array.
+the DESCRIPTOR words freeze once BOTH are set. The three register words above
+stay writable in either state, which is what lets firmware clear HUB_CONNECT to
+release the lock again. HUB_EN alone does not lock the array.
 
 ## What it does
 
@@ -42,25 +48,41 @@ The MCU firmware (`caliptra_ss_usb_hub_ram_rw.c`) runs
 `USB_HUB_RAM_LOOPS` (3) iterations of a two-phase check (Option B):
 
 - **Phase A - UNLOCKED** (HUB_EN=1, HUB_CONNECT=0): the lock is deasserted. For
-  every word except word 15, read the current value, write a random value
-  forced to differ from it, read it back, and require the readback to equal the
-  written value. This proves each word is writable when unlocked and that
-  neighboring words decode independently.
+  every sweepable word, read the current value, write a random value forced to
+  differ from it, read it back, and require the readback to equal the written
+  value. This proves each word is writable when unlocked and that neighboring
+  words decode independently.
 - **Phase B - LOCKED** (HUB_EN=1, HUB_CONNECT=1): the lock is asserted. First
-  capture the current value of every word except word 15 into a shadow array
-  (the post-lock baseline). Then attempt a random write to every word except
-  word 15, and after all writes complete read every word back and require it to
-  still equal the captured baseline. Writing all attempts first and comparing
-  afterward proves the whole array is frozen (a dropped write must not disturb
-  any word).
+  capture the current value of every sweepable word into a shadow array (the
+  post-lock baseline). Then attempt a random write to every sweepable word, and
+  after all writes complete read every word back and require it to still equal
+  the captured baseline. Writing all attempts first and comparing afterward
+  proves the whole array is frozen (a dropped write must not disturb any word).
 
-Between loops word 15 is cleared (HUB_EN=0, HUB_CONNECT=0), which is always
+Between loops `C_HUB_CS` is cleared (HUB_EN=0, HUB_CONNECT=0), which is always
 allowed, so the next loop starts from a clean, unlocked state.
 
-Word 15 (`C_HUB_CS`) is never given a random value: it holds the enable/connect
-controls and is always writable, so a random write there would change the lock
-state or disconnect the hub mid-test. It is driven only by the explicit
-phase-control writes.
+### Words excluded from the random sweep
+
+All three register words are skipped (`hub_word_skipped()`), leaving 193 of the
+196 words swept:
+
+- **word 12 (`C_HUB_CS`)** - holds the enable/connect controls and is exempt
+  from the lock, so a random write would change the lock state or disconnect
+  the hub mid-test. Driven only by the explicit phase-control writes.
+- **word 13 (`C_HUB_LPM`)** - `PROC_REG_WRITE` reloads bits [3:0] from
+  `hub_lpm_hird_hw` on every clock, so those bits never read back what was
+  written.
+- **word 15 (`C_HUB_PHY`)** - partly hardware-written: the PHY read data lands
+  in bits [23:16] and PHY_START (bit 25) self-clears.
+
+Skipping them is also required for Phase B to be correct: because all three are
+lock-exempt, a write attempt would legitimately succeed and the frozen-array
+compare would report a false write-lock leak.
+
+The access-class (reset / RW / RO) behaviour of those three register words is
+covered separately by the `caliptra_ss_usb_dev_reg_rw` test, which walks them
+field-by-field with the hub left quiescent.
 
 ## Why no bring-up is needed
 

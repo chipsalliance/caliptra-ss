@@ -586,6 +586,22 @@ static const usb_reg_desc_t usb_reg_table[] = {
 //   documented but not exercised here; the connect path is covered by the
 //   enumeration tests.
 //
+//   A second, test-correctness reason to keep them clear: once a connect is
+//   requested, pie_speed and hub_vbusdebounced start moving on their own and
+//   are reloaded into Speed[23:22] / VbusDebounced[28] on every clock (lines
+//   511-512). The RO check compares three successive reads of those fields,
+//   so a live connect would make it non-deterministic. Both check_field_rw()
+//   and check_field_ro() confine their write to the field under test, so
+//   neither control is ever driven by this walk.
+//
+//   Note that hub_write_lock behaviour itself is NOT under-covered by the
+//   skip: the lock-vs-no-lock write behaviour of the descriptor array is the
+//   dedicated subject of the caliptra_ss_usb_hub_ram_rw test, which runs an
+//   unlocked phase (HUB_EN=1, HUB_DCON=0) and a locked phase (both set) over
+//   the array words. Repeating that here would add no coverage because the
+//   three register words walked by this table are EXEMPT from the lock
+//   (RTL lines 497-499) and so behave identically in both lock states.
+//
 // Plain RW storage: PLL_ON[9], FORCE_VBUS[10], LPM_SUP[11], SELF_POWERED[18],
 // PFSC[21] (hub_force_fs, line 527).
 static const usb_field_t hub_ctrl_fields[] = {
@@ -719,12 +735,25 @@ static int check_field_rw(uint32_t addr, const usb_field_t *f,
 // require the field bits to be immutable across all three. The first write also
 // satisfies write-before-read so the reads never return X. Reserved fields
 // (chk_zero) must ADDITIONALLY read back 0. Returns 1 on any violation.
+//
+// The probe is CONFINED to this field's bits (ro_probe[i] & mask), exactly as
+// check_field_rw() confines its random value. Every other bit of the register
+// is written 0 in the same access. That matters for the hub bank: an unmasked
+// probe word would drive the ACC_SKIP controls HUB_EN[0] and HUB_DCON[16],
+// which request an upstream connection and assert hub_write_lock, and it would
+// drive PHY_ACCESS[25], which launches a live PHY transaction. All three must
+// stay clear so the hub remains quiescent for the duration of the walk.
+//
+// Masking does not weaken the check: each RO field still sees at least one 0
+// and one 1 attempt across the three probes (Speed[23:22] sees 00/10/01,
+// VbusDebounced[28] sees 0/0/1).
 static int check_field_ro(uint32_t addr, const usb_field_t *f,
                           const char *bank, const char *reg) {
     uint32_t mask = field_mask(f->lsb, f->width);
     uint32_t ref  = 0u;
     for (int i = 0; i < 3; i++) {
-        lsu_write_32(addr, ro_probe[i]);
+        uint32_t wr = ro_probe[i] & mask;
+        lsu_write_32(addr, wr);
         uint32_t rd = lsu_read_32(addr) & mask;
         if (i == 0) {
             ref = rd;
@@ -734,10 +763,11 @@ static int check_field_ro(uint32_t addr, const usb_field_t *f,
             VPRINTF(LOW, " %s not immutable: was 0x%x now 0x%x after writing "
                     "0x%x  <-- possible RTL bug\n",
                     (f->chk_zero ? "reserved" : "RO"),
-                    (ref >> f->lsb), (rd >> f->lsb), ro_probe[i]);
+                    (ref >> f->lsb), (rd >> f->lsb), (wr >> f->lsb));
             return 1;
         }
     }
+
     if (f->chk_zero && ref != 0u) {
         VPRINTF(LOW, "ERROR: %s %s.%s ", bank, reg, f->field);
         print_field_bits(f->lsb, f->width);
@@ -838,10 +868,18 @@ void main(void) {
     // no USB core bring-up and no USB traffic is generated; the controllers
     // stay quiescent and we can safely randomize their configuration registers.
     //
-    // No usb_hub_init_and_connect() either: the hub register words must be
-    // walked while hub_write_lock is DEASSERTED, which is exactly the
-    // post-reset state (HUB_EN and HUB_DCON both 0). The walk also leaves both
-    // of those bits untouched (ACC_SKIP), so the lock never engages.
+    // No usb_hub_init_and_connect() either: the hub bank is walked with the
+    // hub in its quiescent post-reset state (HUB_EN and HUB_DCON both 0), so
+    // no upstream connection is requested and the live status fields
+    // Speed[23:22] / VbusDebounced[28] stay stable for the RO immutability
+    // compare. The walk leaves both control bits untouched: they are ACC_SKIP,
+    // and both check_field_rw() and check_field_ro() confine their write to
+    // the field under test, so no probe pattern can set them as a side effect.
+    //
+    // hub_write_lock is irrelevant to this walk in either direction: the three
+    // register words of usb_hub_reg_table are exempt from the lock (RTL lines
+    // 497-499) and are always writable. Lock behaviour on the descriptor array
+    // is covered by the caliptra_ss_usb_hub_ram_rw test.
     boot_mcu();
 
     // Phase 1: verify the post-reset values of all three banks BEFORE any
