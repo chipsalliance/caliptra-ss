@@ -24,10 +24,6 @@
 
 package caliptra_ss_usb_test_pkg;
 
-  // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 336;
-
-
   import uvm_pkg::*;
   `include "uvm_macros.svh"
   import svt_uvm_pkg::*;
@@ -109,6 +105,17 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
+  `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_test.svh"
+
+  // Hub-bypass enumeration: firmware leaves HUB_CTRL.HUB_EN clear, so the
+  // compound muxes device0 straight onto the upstream link and the hub is not
+  // a bus participant. The only enumerating test that exercises the
+  // hub_enable_q = '0' legs of the compound structure muxes. Self-contained:
+  // it calls no hub_enum_stepA/B/C helper and USBDC0 takes address 1 (not the
+  // address 2 of every hub-mode test).
+  `include "caliptra_ss_usb_hs_dev_hub_bypass_enum_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_hub_bypass_enum_test.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_hs_dev_hub_port_suspend_sequence.svh"
@@ -170,6 +177,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_bulk_loopback_test.svh"
   `include "caliptra_ss_usb_hs_dev_int_loopback_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_int_loopback_test.svh"
+  // Combined INTERRUPT (EP1) + ISOCHRONOUS (EP2) + INTERRUPT (EP3) device
+  // test. Endpoint access order is EP1 -> EP2 -> EP3, with all three
+  // endpoints armed concurrently in the same EP command/status list. The
+  // sequence runs two loops of EP1 -> EP2 -> EP3 with a per-loop data pattern
+  // shift, so firmware re-arming of all three endpoints is also covered.
+  `include "caliptra_ss_usb_hs_dev_int_iso_mix_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_int_iso_mix_test.svh"
   `include "caliptra_ss_usb_fs_conn_sequence.svh"
   `include "caliptra_ss_usb_fs_conn_test.svh"
   `include "caliptra_ss_usb_fs_dev_bulk_out_sequence.svh"
@@ -182,6 +196,14 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_dev_unsupported_ep_test.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_iso_out_test.svh"
+  // Full Speed sibling of caliptra_ss_usb_hs_dev_int_iso_mix: INTERRUPT EP1 +
+  // ISOCHRONOUS EP2 + INTERRUPT EP3 armed concurrently and driven in the order
+  // EP1 -> EP2 -> EP3. Only ONE loop is run (the HS test runs two), because at
+  // Full Speed every token costs far more simulation time. The ISO side follows
+  // the FS rules proven by caliptra_ss_usb_fs_dev_iso_out: ISO OUT re-armed per
+  // 512-byte token and ISO IN ping-pong with RF selecting ISO.
+  `include "caliptra_ss_usb_fs_dev_int_iso_mix_sequence.svh"
+  `include "caliptra_ss_usb_fs_dev_int_iso_mix_test.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_nbyte_test.svh"
   `include "caliptra_ss_usb_fs_dev_powerdown_sequence.svh"

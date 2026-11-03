@@ -46,29 +46,41 @@
 //   de-activated or its device address drop back to 0 during a USBDC0 cycle,
 //   that is a real isolation failure.
 //
-// SINGLE-REMOTE-DEVICE VIP CONSTRAINT (important)
-//   The SVT VIP shared_cfg models ONE remote device (local_device_cfg_size=1).
-//   Addressing a specific controller is done by mutating
-//   usb_cfg.remote_device_cfg[0].device_address and calling
-//   host_agent_h.reconfigure(usb_cfg) - see select_remote_device() below and
-//   the constraint note in caliptra_ss_usb_base_sequence.svh.
+// PER-DEVICE REMOTE-DEVICE ANCHORS (important)
+//   Every device on the bus has its OWN persistent
+//   host_cfg.remote_device_cfg[] slot, created once by the test's build_phase:
+//     slot 0 = address 0 (default address, pre-SET_ADDRESS)
+//     slot 1 = hub       (address 1)  -> hub_anchor_idx
+//     slot 2 = USBDC0    (address 2)  -> usbdc0_anchor_idx
+//     slot 3 = USBDC1    (address 3)  -> usbdc1_anchor_idx
+//   Each transfer names its target with dev_anchor_idx, so NO slot is ever
+//   retargeted and reconfigure() is never called after step 2.
 //
-//   Consequence: the USBDC1 data transfers (anchor = address 3) and the hub
-//   port-1 status polling (anchor = address 1) CANNOT run as two truly
-//   concurrent forked threads - they would race on the single anchor and
-//   randomize() would fail with contradictory device_address constraints.
-//   They are therefore INTERLEAVED at transfer granularity instead:
+//   This replaced a single-slot design that had to retarget slot 0 and call
+//   reconfigure() before every transfer. That was the cause of a silent
+//   data-toggle bug: reconfigure() rebuilds every endpoint xactor and a fresh
+//   BULK endpoint restarts at DATA0, so a device mid-stream desynchronises and
+//   USB 2.0 section 8.6 has it discard the next OUT with no completion at all.
+//   See the block comment on the anchor fields below for the measured PIDs.
+//
+//   The USBDC1 bulk traffic and the hub port-1 polling are still INTERLEAVED
+//   rather than forked:
 //     USBDC1 bulk OUT -> hub port-1 poll -> USBDC1 bulk IN -> hub port-1 poll
-//   The hardware-level simultaneity we care about is still real: USBDC1's EP1
-//   endpoint stays armed in hardware, and the hub keeps forwarding to port 2,
-//   across the whole window in which port 1 drops and comes back. Only the
-//   host-side *observation* is serialized, not the DUT behaviour.
+//   Separate anchors do remove the old randomize() conflict, but the VIP drives
+//   one physical bus through one protocol transactor, and wait_xfer_done()
+//   keys off a transactor-wide NOTIFY_USB_TRANSFER_ENDED event that cannot
+//   distinguish whose transfer just ended, so concurrent threads would consume
+//   each other's completions. Interleaving costs nothing here: the
+//   simultaneity that matters is in the DUT - USBDC1's EP1 stays armed in
+//   hardware and the hub keeps forwarding to port 2 across the whole window in
+//   which port 1 drops and returns. Only the host-side observation is
+//   serialized.
 //
 // FLOW
 //   1.  Wait for HS host link ENABLED, start SOF generation, settle.
 //   2.  Enumerate the hub (addr 1).
 //   3.  Bring up port 1, enumerate USBDC0 at address 2.
-//   4.  Re-anchor to addr 1, bring up port 2, enumerate USBDC1 at address 3.
+//   4.  Bring up port 2, enumerate USBDC1 at address 3.
 //   5.  Baseline USBDC1 loopback - proves the steady state before perturbing.
 //   6.  For each hotplug cycle:
 //        a. Arm a USBDC1 bulk OUT (data now sitting in USBDC1 hardware).
@@ -180,22 +192,88 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
     // constant simply so the stimulus does not spend its time NAKing.
     localparam time         POST_BULK_OUT_SETTLE   = 20us;
 
+    // -------------------------------------------------------------------------
+    // Persistent remote-device slot indices, one per bus address, published by
+    // the test's build_phase (see
+    // caliptra_ss_usb_dual_device_hs_dev0_hotplug_test). Every transfer selects
+    // its target by passing one of these as dev_anchor_idx, so no slot is ever
+    // retargeted and reconfigure() is never called once bring-up is done.
+    //
+    // THIS IS THE FIX FOR A SILENT DATA-TOGGLE BUG. The previous design kept a
+    // single slot and retargeted it before every transfer:
+    //
+    //     usb_cfg.remote_device_cfg[0].device_address = addr;
+    //     host_agent_h.reconfigure(usb_cfg);          // select_remote_device()
+    //
+    // reconfigure() rebuilds EVERY endpoint protocol processor on the agent,
+    // and a freshly built BULK endpoint restarts its DATA TOGGLE at DATA0. Per
+    // USB 2.0 section 8.6 a device that expects DATA1 and receives DATA0
+    // DISCARDS the packet as a presumed retransmission - and does so silently:
+    // no buffer write, no descriptor retire, no completion interrupt. The
+    // firmware's completion poll therefore never fires, EP1 IN is never armed,
+    // and the paired BULK IN NAKs until its retry budget is exhausted.
+    //
+    // The measured USBDC1 EP1 BULK OUT PIDs in the failing run were
+    // DATA0, DATA1, DATA0, DATA0 - the fourth needed to be DATA1. Each fresh
+    // xactor restarts at DATA0, so the first three were correct only by
+    // coincidence (OUT 2 reused a surviving instance; OUT 1 and 3 wanted DATA0
+    // anyway) and OUT 4 was simply the first transfer at which the reset was
+    // observable. That is exactly why three loopbacks passed and the fourth
+    // killed the endpoint. The full evidence table is in
+    // caliptra_ss_usb_shared_cfg::add_remote_device_slot.
+    //
+    // CONSEQUENCE FOR MAINTAINERS: do NOT reintroduce a reconfigure() anywhere
+    // in this sequence after step 2. It would reset the toggles of ALL devices,
+    // including ones this sequence is not touching.
+    // -------------------------------------------------------------------------
+    int hub_anchor_idx;
+    int usbdc0_anchor_idx;
+    int usbdc1_anchor_idx;
+
+    // Slot 0 keeps device_address 0 - the default address a device answers on
+    // between a hub port reset and SET_ADDRESS - so it serves the
+    // default-address stage of every enumeration.
+    localparam int ADDR0_ANCHOR_IDX = 0;
+
     function new(string name = "caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence");
         super.new(name);
     endfunction
 
-    // Point the single remote-device model at the given bus address so the next
-    // transfer's device_address constraint is satisfiable. Must be called before
-    // every phase that targets a different controller (or the hub).
-    task select_remote_device(svt_usb_agent host_agent_h,
-                              svt_usb_configuration usb_cfg,
-                              bit [6:0] addr);
-        usb_cfg.remote_device_cfg[0].device_address = addr;
-        host_agent_h.reconfigure(usb_cfg);
+    // Fetch the slot indices the test published. Fatals rather than silently
+    // falling back to 0: a missing index would send every transfer through
+    // slot 0, which still sits at device_address 0, and the VIP constraint
+    // device_address == dev_anchor.device_address would then fail randomize()
+    // in a way that is far harder to read than this message.
+    function void resolve_device_anchors();
+        // Read with (null, "*"), the global scope. The test publishes these
+        // with uvm_config_db#(int)::set(null, "*", ...) from its build_phase.
+        // Both halves of the pair matter: an earlier version used
+        // set(this, "*", ...) in the test, which stores under the scope
+        // "uvm_test_top.*" and matches neither "uvm_test_top" nor "*" here, so
+        // the get() returned 0 and tripped the uvm_fatal below. This sequence
+        // runs on the host agent virtual sequencer, not under the test, so a
+        // test-relative scope cannot reach it. Matches the working pattern of
+        // usb_int_ep_num in caliptra_ss_usb_hs_dev_int_loopback_sequence.svh.
+
+        if (!uvm_config_db#(int)::get(null, "*", "hub_anchor_idx",
+                                      hub_anchor_idx))
+            `uvm_fatal("USB_DEV0_HOTPLUG_SEQ",
+                "hub_anchor_idx not found in config_db - the test must call add_remote_device_slot() and publish it.")
+        if (!uvm_config_db#(int)::get(null, "*", "usbdc0_anchor_idx",
+                                      usbdc0_anchor_idx))
+            `uvm_fatal("USB_DEV0_HOTPLUG_SEQ",
+                "usbdc0_anchor_idx not found in config_db - the test must call add_remote_device_slot() and publish it.")
+        if (!uvm_config_db#(int)::get(null, "*", "usbdc1_anchor_idx",
+                                      usbdc1_anchor_idx))
+            `uvm_fatal("USB_DEV0_HOTPLUG_SEQ",
+                "usbdc1_anchor_idx not found in config_db - the test must call add_remote_device_slot() and publish it.")
+
         `uvm_info("USB_DEV0_HOTPLUG_SEQ",
-            $sformatf("Remote device model retargeted to address %0d.", addr),
-            UVM_HIGH)
-    endtask
+            $sformatf({"Device anchors resolved: addr0=%0d hub=%0d ",
+                       "usbdc0=%0d usbdc1=%0d."},
+                      ADDR0_ANCHOR_IDX, hub_anchor_idx,
+                      usbdc0_anchor_idx, usbdc1_anchor_idx), UVM_LOW)
+    endfunction
 
     // Issue a single hub GetPortStatus(port_num) and return the reported
     // CURRENT_CONNECT_STATUS bit (wPortStatus bit 0).
@@ -221,7 +299,8 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             .wlength              (16'h0004),
             .device_addr          (int'(HUB_ADDR)),
             .label                (lbl),
-            .usb_cfg              (usb_cfg));
+            .usb_cfg              (usb_cfg),
+            .dev_anchor_idx       (hub_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label(lbl));
 
         if (last_ctrl_seq_item == null
@@ -243,7 +322,10 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
     // Poll hub port_num until CURRENT_CONNECT_STATUS reaches want_connected.
     // Raises a uvm_error and sets timed_out if the edge never arrives, so a
     // missed hotplug event is a hard failure instead of a silent pass.
-    // Leaves the VIP anchor at the hub address.
+    //
+    // Every poll is addressed through the hub's own persistent anchor, so no
+    // anchor retarget (and therefore no reconfigure()) is needed here. That
+    // matters because these polls run while USBDC1 is mid-bulk-stream.
     task automatic wait_port_connect_status(svt_usb_agent host_agent_h,
                                             svt_usb_configuration usb_cfg,
                                             int port_num,
@@ -254,7 +336,6 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
         int unsigned attempt;
 
         timed_out = 1'b0;
-        select_remote_device(host_agent_h, usb_cfg, HUB_ADDR);
 
         for (attempt = 0; attempt < PORT_POLL_MAX_ATTEMPTS; attempt++) begin
             get_port_connect_status(
@@ -301,7 +382,8 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             .wlength              (16'h0000),
             .device_addr          (int'(HUB_ADDR)),
             .label                (lbl),
-            .usb_cfg              (usb_cfg));
+            .usb_cfg              (usb_cfg),
+            .dev_anchor_idx       (hub_anchor_idx));
         wait_xfer_done(.agent_h(host_agent_h), .label(lbl));
     endtask
 
@@ -330,34 +412,35 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
         // iteration's EP1 IN completion before issuing the next OUT.
         #PRE_BULK_OUT_SETTLE;
 
-        select_remote_device(host_agent_h, usb_cfg, USBDC1_ADDR);
         do_data_xfer(
-            .agent_h      (host_agent_h),
-            .usb_cfg      (usb_cfg),
-            .xfer_kind    (svt_usb_transfer::BULK_OUT_TRANSFER),
-            .device_addr  (int'(USBDC1_ADDR)),
-            .ep_num       (1),
-            .byte_count   (LOOPBACK_BYTES),
-            .ep_anchor_idx(2),
-            .label        ({"HS_BULK_OUT_EP1_dev1_", label}),
-            .req          (out_req),
-            .obj_name     ("dev1_out_req"),
-            .payload_data (data));
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_OUT_TRANSFER),
+            .device_addr   (int'(USBDC1_ADDR)),
+            .ep_num        (1),
+            .byte_count    (LOOPBACK_BYTES),
+            .ep_anchor_idx (2),
+            .label         ({"HS_BULK_OUT_EP1_dev1_", label}),
+            .req           (out_req),
+            .obj_name      ("dev1_out_req"),
+            .payload_data  (data),
+            .dev_anchor_idx(usbdc1_anchor_idx));
 
         // Let the MCU copy EP1 OUT -> EP1 IN and arm EP1 IN.
         #POST_BULK_OUT_SETTLE;
 
         do_data_xfer(
-            .agent_h      (host_agent_h),
-            .usb_cfg      (usb_cfg),
-            .xfer_kind    (svt_usb_transfer::BULK_IN_TRANSFER),
-            .device_addr  (int'(USBDC1_ADDR)),
-            .ep_num       (1),
-            .byte_count   (LOOPBACK_BYTES),
-            .ep_anchor_idx(1),
-            .label        ({"HS_BULK_IN_EP1_dev1_", label}),
-            .req          (in_req),
-            .obj_name     ("dev1_in_req"));
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_IN_TRANSFER),
+            .device_addr   (int'(USBDC1_ADDR)),
+            .ep_num        (1),
+            .byte_count    (LOOPBACK_BYTES),
+            .ep_anchor_idx (1),
+            .label         ({"HS_BULK_IN_EP1_dev1_", label}),
+            .req           (in_req),
+            .obj_name      ("dev1_in_req"),
+            .dev_anchor_idx(usbdc1_anchor_idx));
 
         check_loopback({"USBDC1_", label}, in_req, data);
     endtask
@@ -377,6 +460,7 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
         host_agent_h  = resolve_host_agent();
         shared_status = resolve_shared_status();
         usb_cfg       = resolve_usb_cfg();
+        resolve_device_anchors();
 
         // Step 1: Wait for HS link ENABLED, keep it alive, let firmware settle.
         wait_for_link_enabled(shared_status, "HS host link");
@@ -384,36 +468,70 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
         start_sof_generation();
         #50us;
 
-        // Step 2: Enumerate the hub (addr 1).
-        hub_enum_stepA(host_agent_h, usb_cfg);
+        // Step 2: Enumerate the hub, addressing it through its own persistent
+        // slot.
+        //
+        // Passing hub_anchor_idx makes hub_enum_stepA SKIP the slot-0
+        // retarget and the reconfigure() it would otherwise do after
+        // SET_ADDRESS(1). Both halves of that matter here:
+        //
+        //  - Correctness. The hub slot ALREADY holds address 1, so assigning
+        //    address 1 to slot 0 as well would put two remote_device_cfg[]
+        //    entries on the same address. reconfigure() validates the whole
+        //    configuration and rejects a duplicate outright
+        //    ("device_address must be unique within remote_device_cfg"),
+        //    which the VIP escalates to a uvm_fatal in
+        //    svt_agent::change_dynamic_cfg - it killed the run at 398417 ns.
+        //
+        //  - The no-reconfigure invariant. With this call anchored, there is
+        //    now NO reconfigure() anywhere in this sequence, so nothing can
+        //    rebuild a bulk endpoint xactor and reset its data toggle
+        //    mid-stream.
+        //
+        // Slot 0 is left untouched at address 0, which is the role it holds
+        // for the whole run: the address a device answers on between a hub
+        // port reset and its SET_ADDRESS.
+        hub_enum_stepA(
+            .host_agent_h  (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .dev_anchor_idx(hub_anchor_idx));
+
 
         // Step 3: Bring up port 1 and enumerate USBDC0 at address 2.
         hub_port_bringup_stepB(
-            .host_agent_h(host_agent_h), .usb_cfg(usb_cfg), .port_num(1));
+            .host_agent_h  (host_agent_h), .usb_cfg(usb_cfg), .port_num(1),
+            .dev_anchor_idx(hub_anchor_idx));
         // Let firmware observe DRES_C and re-arm EP0 before the first SETUP.
         #POST_PORT_RESET_SETTLE;
         usbdc0_enum_stepC(
-            .host_agent_h  (host_agent_h),
-            .usb_cfg       (usb_cfg),
-            .suffix        ("_dev0_init"),
-            .device_idx    (0),
-            .assign_address(USBDC0_ADDR));
+            .host_agent_h        (host_agent_h),
+            .usb_cfg             (usb_cfg),
+            .suffix              ("_dev0_init"),
+            .device_idx          (0),
+            .assign_address      (USBDC0_ADDR),
+            .addr0_anchor_idx    (ADDR0_ANCHOR_IDX),
+            .addressed_anchor_idx(usbdc0_anchor_idx));
 
-        // Step 4: Re-anchor onto the hub before issuing hub-class requests.
-        // Step 3 left the anchor at address 2; hub_port_bringup_stepB() drives
-        // device_address==1 WITH-constraints and would otherwise contradict the
-        // VIP fixed_dev_ep_ustr_valid_ranges constraint and fail randomize().
-        select_remote_device(host_agent_h, usb_cfg, HUB_ADDR);
+        // Step 4: Bring up port 2 and enumerate USBDC1 at address 3.
+        //
+        // No re-anchoring step is needed any more. The hub-class requests below
+        // are addressed through hub_anchor_idx and the USBDC0 enumeration above
+        // never disturbed it, so the old
+        // "select_remote_device(host_agent_h, usb_cfg, HUB_ADDR)" that used to
+        // sit here - and the reconfigure() inside it - are gone.
         hub_port_bringup_stepB(
-            .host_agent_h(host_agent_h), .usb_cfg(usb_cfg), .port_num(2));
+            .host_agent_h  (host_agent_h), .usb_cfg(usb_cfg), .port_num(2),
+            .dev_anchor_idx(hub_anchor_idx));
         // Let firmware observe DRES_C and re-arm EP0 before the first SETUP.
         #POST_PORT_RESET_SETTLE;
         usbdc0_enum_stepC(
-            .host_agent_h  (host_agent_h),
-            .usb_cfg       (usb_cfg),
-            .suffix        ("_dev1"),
-            .device_idx    (1),
-            .assign_address(USBDC1_ADDR));
+            .host_agent_h        (host_agent_h),
+            .usb_cfg             (usb_cfg),
+            .suffix              ("_dev1"),
+            .device_idx          (1),
+            .assign_address      (USBDC1_ADDR),
+            .addr0_anchor_idx    (ADDR0_ANCHOR_IDX),
+            .addressed_anchor_idx(usbdc1_anchor_idx));
 
         `uvm_info("USB_DEV0_HOTPLUG_SEQ",
             "Dual-device enumeration complete (USBDC0@2, USBDC1@3).", UVM_LOW)
@@ -443,19 +561,19 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             // EP1 OUT, and that re-arm must land before this OUT is issued or
             // the OUT just NAKs until it does.
             #PRE_BULK_OUT_SETTLE;
-            select_remote_device(host_agent_h, usb_cfg, USBDC1_ADDR);
             do_data_xfer(
-                .agent_h      (host_agent_h),
-                .usb_cfg      (usb_cfg),
-                .xfer_kind    (svt_usb_transfer::BULK_OUT_TRANSFER),
-                .device_addr  (int'(USBDC1_ADDR)),
-                .ep_num       (1),
-                .byte_count   (LOOPBACK_BYTES),
-                .ep_anchor_idx(2),
-                .label        ($sformatf("HS_BULK_OUT_EP1_dev1_cyc%0d", cycle)),
-                .req          (dev1_out_req),
-                .obj_name     ("dev1_out_req"),
-                .payload_data (dev1_data));
+                .agent_h       (host_agent_h),
+                .usb_cfg       (usb_cfg),
+                .xfer_kind     (svt_usb_transfer::BULK_OUT_TRANSFER),
+                .device_addr   (int'(USBDC1_ADDR)),
+                .ep_num        (1),
+                .byte_count    (LOOPBACK_BYTES),
+                .ep_anchor_idx (2),
+                .label         ($sformatf("HS_BULK_OUT_EP1_dev1_cyc%0d", cycle)),
+                .req           (dev1_out_req),
+                .obj_name      ("dev1_out_req"),
+                .payload_data  (dev1_data),
+                .dev_anchor_idx(usbdc1_anchor_idx));
 
             // 6b. Observe USBDC0 dropping off hub port 1.
             wait_port_connect_status(
@@ -479,18 +597,18 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             // for it here exactly as dev1_loopback() does. Without this the IN
             // hits an un-armed EP1 and returns an empty payload.
             #POST_BULK_OUT_SETTLE;
-            select_remote_device(host_agent_h, usb_cfg, USBDC1_ADDR);
             do_data_xfer(
-                .agent_h      (host_agent_h),
-                .usb_cfg      (usb_cfg),
-                .xfer_kind    (svt_usb_transfer::BULK_IN_TRANSFER),
-                .device_addr  (int'(USBDC1_ADDR)),
-                .ep_num       (1),
-                .byte_count   (LOOPBACK_BYTES),
-                .ep_anchor_idx(1),
-                .label        ($sformatf("HS_BULK_IN_EP1_dev1_cyc%0d", cycle)),
-                .req          (dev1_in_req),
-                .obj_name     ("dev1_in_req"));
+                .agent_h       (host_agent_h),
+                .usb_cfg       (usb_cfg),
+                .xfer_kind     (svt_usb_transfer::BULK_IN_TRANSFER),
+                .device_addr   (int'(USBDC1_ADDR)),
+                .ep_num        (1),
+                .byte_count    (LOOPBACK_BYTES),
+                .ep_anchor_idx (1),
+                .label         ($sformatf("HS_BULK_IN_EP1_dev1_cyc%0d", cycle)),
+                .req           (dev1_in_req),
+                .obj_name      ("dev1_in_req"),
+                .dev_anchor_idx(usbdc1_anchor_idx));
             check_loopback($sformatf("USBDC1_dev0_down_cyc%0d", cycle),
                            dev1_in_req, dev1_data);
 
@@ -511,19 +629,27 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
             // handling a real host performs. The anchor is already at the hub
             // address after the poll above, as it requires.
             hub_port_bringup_stepB(
-                .host_agent_h(host_agent_h),
-                .usb_cfg     (usb_cfg),
-                .suffix      ($sformatf("_dev0_recon%0d", cycle)),
-                .port_num    (1));
-            // Let firmware observe DRES_C and re-arm EP0 before the first
-            // SETUP of the re-enumeration.
-            #POST_PORT_RESET_SETTLE;
-            usbdc0_enum_stepC(
                 .host_agent_h  (host_agent_h),
                 .usb_cfg       (usb_cfg),
                 .suffix        ($sformatf("_dev0_recon%0d", cycle)),
-                .device_idx    (0),
-                .assign_address(USBDC0_ADDR));
+                .port_num      (1),
+                .dev_anchor_idx(hub_anchor_idx));
+            // Let firmware observe DRES_C and re-arm EP0 before the first
+            // SETUP of the re-enumeration.
+            #POST_PORT_RESET_SETTLE;
+            // Re-enumerating USBDC0 through persistent anchors is what makes
+            // this cycle safe for USBDC1: the old single-slot form called
+            // reconfigure() twice here (once to reach address 0, once after
+            // SET_ADDRESS), and each of those rebuilt USBDC1's EP1 BULK
+            // endpoint and reset its data toggle while USBDC1 was mid-stream.
+            usbdc0_enum_stepC(
+                .host_agent_h        (host_agent_h),
+                .usb_cfg             (usb_cfg),
+                .suffix              ($sformatf("_dev0_recon%0d", cycle)),
+                .device_idx          (0),
+                .assign_address      (USBDC0_ADDR),
+                .addr0_anchor_idx    (ADDR0_ANCHOR_IDX),
+                .addressed_anchor_idx(usbdc0_anchor_idx));
 
             `uvm_info("USB_DEV0_HOTPLUG_SEQ",
                 $sformatf("DEV0 hotplug cycle %0d complete: USBDC0 re-enumerated at address %0d, USBDC1 loopback unaffected.",
@@ -540,33 +666,34 @@ class caliptra_ss_usb_dual_device_hs_dev0_hotplug_sequence
         for (i = 0; i < LOOPBACK_BYTES; i++)
             dev0_data[i] = i[7:0];
 
-        select_remote_device(host_agent_h, usb_cfg, USBDC0_ADDR);
         do_data_xfer(
-            .agent_h      (host_agent_h),
-            .usb_cfg      (usb_cfg),
-            .xfer_kind    (svt_usb_transfer::BULK_OUT_TRANSFER),
-            .device_addr  (int'(USBDC0_ADDR)),
-            .ep_num       (1),
-            .byte_count   (LOOPBACK_BYTES),
-            .ep_anchor_idx(2),
-            .label        ("HS_BULK_OUT_EP1_dev0_final"),
-            .req          (dev0_out_req),
-            .obj_name     ("dev0_out_req"),
-            .payload_data (dev0_data));
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_OUT_TRANSFER),
+            .device_addr   (int'(USBDC0_ADDR)),
+            .ep_num        (1),
+            .byte_count    (LOOPBACK_BYTES),
+            .ep_anchor_idx (2),
+            .label         ("HS_BULK_OUT_EP1_dev0_final"),
+            .req           (dev0_out_req),
+            .obj_name      ("dev0_out_req"),
+            .payload_data  (dev0_data),
+            .dev_anchor_idx(usbdc0_anchor_idx));
 
         #POST_BULK_OUT_SETTLE;
 
         do_data_xfer(
-            .agent_h      (host_agent_h),
-            .usb_cfg      (usb_cfg),
-            .xfer_kind    (svt_usb_transfer::BULK_IN_TRANSFER),
-            .device_addr  (int'(USBDC0_ADDR)),
-            .ep_num       (1),
-            .byte_count   (LOOPBACK_BYTES),
-            .ep_anchor_idx(1),
-            .label        ("HS_BULK_IN_EP1_dev0_final"),
-            .req          (dev0_in_req),
-            .obj_name     ("dev0_in_req"));
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::BULK_IN_TRANSFER),
+            .device_addr   (int'(USBDC0_ADDR)),
+            .ep_num        (1),
+            .byte_count    (LOOPBACK_BYTES),
+            .ep_anchor_idx (1),
+            .label         ("HS_BULK_IN_EP1_dev0_final"),
+            .req           (dev0_in_req),
+            .obj_name      ("dev0_in_req"),
+            .dev_anchor_idx(usbdc0_anchor_idx));
 
         check_loopback("USBDC0_post_hotplug", dev0_in_req, dev0_data);
 

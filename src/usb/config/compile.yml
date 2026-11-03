@@ -99,6 +99,9 @@ targets:
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest
       - $DESIGNWARE_HOME_USB/vip/svt/mphy_svt/latest/sverilog/include
     files:
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+      - $COMPILE_ROOT/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_ral_config_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_combo_ral_pkg.sv
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
@@ -122,6 +125,7 @@ global:
         - +define+SIMULATION
         - +define+UVM
         - +define+CLP_ASSERT_ON
+        - +define+AAXI_NO_COV
         - +define+AVERY_AXI_UVM
         - +define+AVERY_UVM
         - +define+AVERY_AXI_INTERCONNECT
