@@ -736,6 +736,16 @@ class caliptra_ss_usb_hs_dev_lpm_l1_sequence extends caliptra_ss_usb_base_sequen
                 // out ("Check whether the link went SUSPENDED - tinactivity
                 // must stay longer than the largest idle gap").
                 //
+                // NOTE ON ORDERING. This sits AFTER step 8's ENABLED check, so
+                // step 8 polls a bus with no SOF on it. That is tolerated
+                // rather than ideal: at HS the takeover leaves the link
+                // already ENABLED on the first sample (poll_cnt = 0) and step 8
+                // passes immediately. Moving the restart above step 8 was tried
+                // and is NOT an improvement - it does not help the FS case,
+                // whose real problem is that the MCU halts before the verdict
+                // below is reached, and it perturbs a known-good HS flow. Leave
+                // it here.
+                //
                 // The L2 analogue does the same thing for the same reason -
                 // see the sof_on2 restart in
                 // caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence

@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 330;
+  localparam int USB_PKG_VERSION = 335;
 
   import uvm_pkg::*;
   `include "uvm_macros.svh"
@@ -130,10 +130,16 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_global_suspend_L2_test.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_lpm_l1_test.svh"
-  // Full-speed sibling of the test class above. It has NO sequence of its own
-  // by design: it installs caliptra_ss_usb_hs_dev_lpm_l1_sequence, included
-  // just above, because the LPM stimulus is speed-independent and only the VIP
-  // link configuration differs. Must therefore stay after that include.
+  // Full-speed sibling of the pair above, with its own sequence.
+  //
+  // The sequence is a branch of the HS one, not a reuse, so FS changes cannot
+  // regress the HS flow (which is proven in the waves). The FS-only deltas are
+  // a much shorter ENABLED_POLL_MAX_US and step 8 not failing the
+  // device-driven leg; see that file's header for the measurements behind
+  // both, including why the ~51 ms resume seen in the waveform is the step-8
+  // ceiling expiring rather than a late host resume.
+
+  `include "caliptra_ss_usb_fs_dev_lpm_l1_sequence.svh"
   `include "caliptra_ss_usb_fs_dev_lpm_l1_test.svh"
   // The hub-request counterpart of the lpm_l1 pair above lives with the other
   // dual-device tests: caliptra_ss_usb_dual_device_hs_hub_port_l1. There is no
