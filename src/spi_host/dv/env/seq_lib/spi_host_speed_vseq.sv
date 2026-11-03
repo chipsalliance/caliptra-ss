@@ -100,6 +100,30 @@ class spi_host_speed_vseq extends spi_host_smoke_vseq;
       end
     end
 
+    // Exercise single-field CSNIDLE-only transition between back-to-back commands
+    // (covers u_fsm config_changed (csnidle != csnidle_q) term in isolation)
+    begin
+      bit [31:0] idle_cfgs[2] = '{
+        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd1, 16'd2},
+        {1'b0, 1'b0, 1'b0, 1'b0, 4'd2, 4'd2, 4'd5, 16'd2}
+      };
+
+      csr_wr(.ptr(ral.csid), .value(32'h0));
+      foreach (idle_cfgs[k]) begin
+        csr_wr(.ptr(ral.configopts), .value(idle_cfgs[k]));
+        write_txdata(32'h0000_005A ^ k, 4'b0001, status);
+        wait_ready_for_command();
+        cmd.direction = Bidir;
+        cmd.mode      = Standard;
+        cmd.csaat     = 1'b0;
+        cmd.len       = 9'd0;
+        program_command_reg(cmd);
+        csr_spinwait(.ptr(ral.status.active), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+        csr_spinwait(.ptr(ral.status.rxempty), .exp_data(1'b0), .backdoor(1'b0), .spinwait_delay_ns(50));
+        ral.rxdata.read(status, 0, rdata);
+      end
+    end
+
     // Also verify end-to-end Flash page program + Quad readback across both CS0 and CS1
     begin
       int saved_num_words = num_words;
