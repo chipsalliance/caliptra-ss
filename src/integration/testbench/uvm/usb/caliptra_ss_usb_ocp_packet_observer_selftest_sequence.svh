@@ -145,14 +145,24 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             svt_usb_packet::ACK, svt_usb_packet::NYET};
         adapter = caliptra_ss_usb_ocp_fifo_packet_model::type_id::create(
             "synthetic_fifo_adapter");
+
+        // -------------------------------------------------------------------------
+        // Exercise packet processing, drain, abort and reset before configuration.
+        // Run checks:
+        // * Unconfigured packet and lifecycle operations are rejected.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4) &&
             !adapter.observe_drain(1) &&
             !adapter.observe_abort(0) && !adapter.observe_reset(),
             "unconfigured lifecycle fails closed");
 
-        // Reserved ring space is the default. ACK/NYET allocate exactly once;
-        // a NAK followed by retry and an ACKed replay cannot inflate occupancy.
+        // -------------------------------------------------------------------------
+        // Retry NAKed DATA, replay accepted DATA, then complete status and drain.
+        // Run checks:
+        // * ACK/NYET acceptance counts each unique DATA packet once.
+        // * Status completion commits exactly 20 bytes.
+        // * Repeated history consumption is rejected.
+        // * Drain bounds and READ_INDEX match the consumed DWORDs.
         adapter.configure(8, 8, 16, 1'b1, 32, 64);
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::NAK);
@@ -170,6 +180,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!adapter.observe_drain(0) && !adapter.observe_drain(6) && (adapter.committed_byte_count() == 20), "excess drain rejected");
         ocp_packet_check_true(adapter.observe_drain(2) && adapter.indices_match(5, 2), "independent drain evidence");
 
+        // -------------------------------------------------------------------------
+        // Interrupt a write, apply unrelated/FIFO-write aborts, then drain/reset.
+        // Run checks:
+        // * An unrelated abort preserves partial and earlier committed bytes.
+        // * A FIFO-write abort discards only the partial bytes.
+        // * Drain and reset produce the expected indices.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(20, 1, 0, 1) &&
@@ -191,6 +207,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             adapter.observe_reset() && adapter.indices_match(0, 0),
             "drain and reset reconcile independently");
 
+        // -------------------------------------------------------------------------
+        // Retry corrupt DATA and corrupt or unacknowledged status responses.
+        // Run checks:
+        // * Valid completion commits the retried write once.
+        // * An ACK following corrupt OUT DATA cannot establish acceptance.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 0, 4, 7'd5, 4'd0, 1);
@@ -213,8 +234,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "ACK of corrupted DATA cannot manufacture acceptance");
         ocp_packet_check_true(adapter.observe_reset(), "reset corrupt acceptance");
 
-        // A CRC-marked RX DATA packet is an invalid OUT response, not a
-        // handshake with a fictitious CRC. It closes the response opportunity.
+        // -------------------------------------------------------------------------
+        // Supply corrupt RX DATA followed by unsolicited ACK/NYET or status DATA.
+        // Handshakes have no CRC; the OUT-reply fixture uses unexpected DATA.
+        // Run checks:
+        // * An unsolicited OUT reply allocates no bytes.
+        // * Unsolicited status DATA cannot commit the earlier accepted bytes.
         foreach (orphan_replies[i]) begin
             ocp_packet_emit_synthetic_fifo_setup();
             ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -244,7 +269,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "orphan status DATA1 after corruption cannot commit");
         ocp_packet_check_true(adapter.observe_reset(), "reset orphan status reply");
 
-        // USB 2.0 8.6.4 and 8.5.3.3: retry with a new token and the same PID.
+        // -------------------------------------------------------------------------
+        // Retry OUT/status with fresh tokens and replay DATA0 (USB 2.0 8.6.4).
+        // Run checks:
+        // * Earlier accepted bytes and the expected DATA0 toggle are preserved.
+        // * An ACKed DATA replay adds no bytes.
+        // * Status completion commits exactly 20 bytes once.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
@@ -267,6 +297,10 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             {"Corrupt-response histories: orphan ACK, NYET and status rejected; ",
              "fresh-token retries commit once."}, UVM_NONE)
 
+        // -------------------------------------------------------------------------
+        // Send an extra OUT ZLP after all declared write bytes were accepted.
+        // Run checks:
+        // * The extra OUT transaction makes the history invalid.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA0, 0, svt_usb_packet::ACK);
@@ -275,6 +309,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "extra OUT after exact request length cannot allocate or complete");
         ocp_packet_check_true(adapter.observe_reset(), "reset extra OUT history");
 
+        // -------------------------------------------------------------------------
+        // Fill most of the FIFO, send short DATA, then supply an unsafe PING ACK.
+        // Run checks:
+        // * Short DATA fits even when a maximum-sized packet would not.
+        // * PING ACK is rejected without space for a maximum-sized packet.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA0, 4, svt_usb_packet::NYET);
@@ -296,6 +335,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "unsafe maximum-packet PING ACK caught");
         ocp_packet_check_true(adapter.observe_reset(), "reset clears interrupted batch");
 
+        // -------------------------------------------------------------------------
+        // Supply a safe PING/write, STALLed writes and an unexpected accepted write.
+        // Run checks:
+        // * The safe write commits; later STALLed writes leave its data unchanged.
+        // * Packet acceptance is rejected when the request is expected to STALL.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::PING);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
@@ -319,6 +363,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "acceptance of rejected request caught");
         ocp_packet_check_true(adapter.observe_reset(), "reset rejected history");
 
+        // -------------------------------------------------------------------------
+        // Omit DATA/status ACK and vary packet length, toggle, target and capacity.
+        // Run checks:
+        // * Missing or invalid packets cannot establish acceptance or commit.
+        // * Unattributed/duplicate handshakes and over-capacity DATA are rejected.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_status();
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4),
@@ -365,6 +414,13 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!ocp_packet_check_and_consume_synthetic_fifo_window(4),
             "wrong target acceptance rejected");
         ocp_packet_check_true(adapter.observe_reset(), "reset wrong target");
+
+        // -------------------------------------------------------------------------
+        // Reset an unfinished write, complete a short write, then apply STALL/abort.
+        // Run checks:
+        // * Reset clears partial bytes and indices.
+        // * The short write occupies one rounded DWORD.
+        // * A later FIFO-write STALL or unrelated abort preserves that commit.
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 16, svt_usb_packet::ACK);
         ocp_packet_check_true(ocp_packet_check_and_consume_synthetic_fifo_window(20, 1, 0, 1) &&
@@ -389,6 +445,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             (adapter.committed_byte_count() == 4),
             "unrelated abort cannot discard a completed batch");
 
+        // -------------------------------------------------------------------------
+        // Exceed each image/USB/FIFO limit and drain an otherwise complete image.
+        // Run checks:
+        // * Image, USB-write and FIFO-transfer limits are enforced independently.
+        // * Drain frees FIFO space but does not restore the consumed image budget.
         adapter.configure(8, 8, 16, 1'b1, 32, 1);
         ocp_packet_emit_synthetic_fifo_setup();
         ocp_packet_emit_synthetic_fifo_out(svt_usb_packet::DATA1, 8, svt_usb_packet::ACK);
@@ -474,12 +535,21 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         caliptra_ss_usb_ocp_fifo_packet_model fifo_model;
         svt_usb_packet::pid_name_enum forbidden[5];
 
+        // -------------------------------------------------------------------------
+        // Initialize real transport, then exercise private callback/model objects.
+        // Synthetic packet calls below do not transmit traffic to the DUT.
         ocp_stall_do_initialize_and_check_transport();
         observer = caliptra_ss_usb_ocp_arbiter_packet_callback::type_id::create(
             "observer");
         model = caliptra_ss_usb_ocp_stall_model::type_id::create("model");
         observer.enable_diagnostics();
 
+        // -------------------------------------------------------------------------
+        // Supply SETUP/DATA0/ACK, wait on recorded packets, then rearm the trigger.
+        // Run checks:
+        // * SETUP is accepted once and its ACK uses the host token's target.
+        // * Already observed packets satisfy waits.
+        // * Rearming does not reuse an old ACK.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_setup_pair();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
@@ -502,6 +572,10 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         observer.wait_for_setup_ack_trigger(1ns, observed);
         ocp_packet_check_true(!observed, "rearm cannot consume old ACK");
 
+        // -------------------------------------------------------------------------
+        // Supply an ACK without SETUP and an ACK after NAK cancelled SETUP.
+        // Run checks:
+        // * Neither ACK is recorded as successful SETUP acceptance.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
         ocp_packet_check_true(!observer.setup_stage_acked(), "ACK without setup");
@@ -512,6 +586,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         observer.wait_for_setup_ack_trigger(1ns, observed);
         ocp_packet_check_true(!observed, "live tracker rejects stale ACK");
 
+        // -------------------------------------------------------------------------
+        // Interrupt pending SETUP with another token, host ACK or duplicate DATA.
+        // Run checks:
+        // * The interrupted SETUP is not accepted by a later device ACK.
+        // * SETUP using DATA1 instead of DATA0 is rejected.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_setup_pair();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::IN, 1'b0, 0, 7'd5, 4'd1);
@@ -538,6 +617,13 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b0, 8);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
         ocp_packet_check_true(!observer.setup_stage_acked(), "SETUP DATA1 rejected");
+
+        // -------------------------------------------------------------------------
+        // Replace SETUP, vary its DATA length and insert SOF records.
+        // Run checks:
+        // * Replacement SETUP needs its own DATA0 and device ACK.
+        // * SETUP DATA is exactly eight bytes.
+        // * SOF records leave pending SETUP tracking unchanged.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_setup_pair();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::SETUP, 1'b0, 0, 7'd5, 4'd1);
@@ -563,6 +649,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
         ocp_packet_check_true(observer.setup_stage_acked(), "SOF preserves setup");
 
+        // -------------------------------------------------------------------------
+        // Start packet waits, supply future packets, then abort/restart collection.
+        // Run checks:
+        // * Future packets wake the waiter; missing packets cause a timeout.
+        // * Abort and a new collection clear pending SETUP.
+        // * An old waiter cannot consume a new collection's packets.
         ocp_packet_open_synthetic_observation_window();
         fork
             begin
@@ -600,6 +692,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         join
         ocp_packet_check_true(!observed, "old waiter cannot consume new window packets");
 
+        // -------------------------------------------------------------------------
+        // Supply IN/PING STALL, duplicate replies and wrong/intervening tokens.
+        // Run checks:
+        // * A single correctly targeted STALL is recognized.
+        // * Duplicate responses, wrong targets and DATA following PING are rejected.
+        // * A PING token cannot make its response count as an earlier IN response.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::STALL, 1'b1);
@@ -651,6 +749,13 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::STALL, 1'b1);
         ocp_packet_check_true(!ocp_packet_check_synthetic_stall_probe(svt_usb_packet::IN),
             "PING steals pending IN response");
+
+        // -------------------------------------------------------------------------
+        // Supply OUT/DATA/STALL, omit DATA and add traffic after a control STALL.
+        // Run checks:
+        // * OUT STALL needs preceding DATA; a zero-length DATA packet qualifies.
+        // * Bare probes and control requests reject missing/unattributed responses.
+        // * A control request cannot continue successfully after STALL.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b0, 3);
@@ -694,6 +799,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b1, 1);
         ocp_packet_check_true(!observer.validate_control_stall(7'd5, 4'd0),
                      "control continuation after STALL rejected");
+
+        // -------------------------------------------------------------------------
+        // Vary IN targets, insert another token, repeat transactions and add SETUP.
+        // Run checks:
+        // * Wrong targets, intervening tokens and duplicate transactions are rejected.
+        // * A bare IN probe cannot include SETUP.
         ocp_packet_open_synthetic_observation_window();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::IN, 1'b0, 0, 7'd5, 4'd1);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::STALL, 1'b1);
@@ -720,6 +831,10 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!ocp_packet_check_synthetic_stall_probe(svt_usb_packet::IN),
             "SETUP forbidden in probe");
 
+        // -------------------------------------------------------------------------
+        // Place ACK, NAK, NYET or DATA before and after an IN/PING STALL.
+        // Run checks:
+        // * Any response in addition to STALL makes the probe history invalid.
         forbidden = '{svt_usb_packet::ACK, svt_usb_packet::NAK,
                       svt_usb_packet::NYET, svt_usb_packet::DATA0,
                       svt_usb_packet::DATA1};
@@ -749,6 +864,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             ocp_packet_check_true(!ocp_packet_check_synthetic_stall_probe(svt_usb_packet::PING),
                          "forbidden PING response after STALL");
         end
+
+        // -------------------------------------------------------------------------
+        // Emit more SOF records than packet storage can retain.
+        // Run checks:
+        // * Retention stops at 4096 records and overflow is reported.
+        // * The incomplete history cannot pass probe checking.
         ocp_packet_open_synthetic_observation_window();
         for (int unsigned i = 0; i <= 4096; i++) ocp_packet_emit_synthetic_packet(
             svt_usb_packet::SOF);
@@ -757,7 +878,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!ocp_packet_check_synthetic_stall_probe(svt_usb_packet::IN),
             "overflow fails closed");
 
-        // Explicit expected state first; no packet observation updates it.
+        // -------------------------------------------------------------------------
+        // Apply error, accepted-SETUP and status-read events directly to the model.
+        // Run checks:
+        // * Accepted SETUP clears STALL without clearing the error code.
+        // * A status read clears the code without clearing STALL.
+        // * Local policy retains the first unread error until a status read.
         model.reset();
         ocp_packet_check_true(!model.is_stalled(), "model reset clears stall");
         ocp_packet_check_true(!model.status_code_matches(8'h04), "negative status predicate");
@@ -780,9 +906,13 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(!model.is_stalled(), "NONE does not induce stall");
         model.report("synthetic selftest");
 
+        // -------------------------------------------------------------------------
+        // Exercise FIFO arithmetic directly with separate FIFO/transfer/packet limits.
+        // Run checks:
+        // * Reserved capacity and short final packet length use the supplied limits.
+        // * Commit and drain produce the expected byte counts and indices.
         fifo_model = caliptra_ss_usb_ocp_fifo_packet_model::type_id::create(
             "synthetic_fifo_model");
-        // Runtime FIFO, transfer and packet limits are independent inputs.
         fifo_model.configure(16, 12, 32, 1'b1);
         ocp_packet_check_true(fifo_model.free_byte_count() == 60,
                      "runtime FIFO reserves one ring slot");
@@ -805,6 +935,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                      fifo_model.free_byte_count() == 60 &&
                      fifo_model.indices_match(12, 12), "runtime drain reconciliation");
 
+        // -------------------------------------------------------------------------
+        // Select full-capacity storage, complete one write and abort the next.
+        // Run checks:
+        // * Actual packet size permits short DATA when maximum-packet PING cannot ACK.
+        // * Partial bytes remain separate from prior commits.
+        // * A FIFO-write abort discards only partial bytes.
         fifo_model.configure(8, 8, 16, 1'b0);
         ocp_packet_check_true(fifo_model.free_byte_count() == 32 &&
                      fifo_model.indices_match(0, 0), "reconfigure runtime FIFO limits");
@@ -835,6 +971,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                      fifo_model.indices_match(5, 0),
                      "owned abort discards only partial batch");
 
+        // -------------------------------------------------------------------------
+        // Apply an unrelated abort, then a FIFO-write abort, then drain.
+        // Run checks:
+        // * An unrelated abort preserves partial and committed bytes.
+        // * A FIFO-write abort drops partial bytes; drain consumes committed bytes.
         fifo_model.begin_batch(8);
         fifo_model.accept_packet(8);
         fifo_model.abort_batch(1'b0);
@@ -850,8 +991,11 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                      fifo_model.free_byte_count() == 32 &&
                      fifo_model.indices_match(5, 5), "prior commits drain independently");
 
-        // A non-dword final payload occupies a rounded FIFO word. The write
-        // index wraps modulo runtime depth, not modulo max transfer length.
+        // -------------------------------------------------------------------------
+        // Round a non-DWORD final write to storage words and drain those words.
+        // Run checks:
+        // * Partial data counts exact bytes; commit rounds storage to DWORDs.
+        // * Both indices wrap at FIFO depth, not at the maximum transfer length.
         fifo_model.begin_batch(15);
         ocp_packet_check_true(fifo_model.next_packet_bytes() == 15 &&
                      fifo_model.can_accept_next_packet(), "rounded batch capacity");
@@ -865,8 +1009,21 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true(fifo_model.free_byte_count() == 32 &&
                      fifo_model.committed_byte_count() == 0 &&
                      fifo_model.indices_match(1, 1), "rounded drain wraps read index");
+
+        // -------------------------------------------------------------------------
+        // Feed synthetic packet histories through the FIFO parser.
+        // Run checks:
+        // * Valid histories produce the expected FIFO byte counts and indices.
+        // * Invalid acceptance or completion histories are rejected.
         observer.stop_window();
         ocp_packet_check_synthetic_fifo_adapter();
+
+        // -------------------------------------------------------------------------
+        // Perform a real FIFO write, unrelated read and reset, then finish through UVM.
+        // Run checks:
+        // * Packet-qualified commit agrees with the reported FIFO indices.
+        // * The unrelated read preserves FIFO data.
+        // * Reset clears the model and visible indices.
         observer.stop_window();
         ocp_packet_do_exercise_and_check_live_fifo();
         `uvm_info("OCP_PACKET_SELFTEST", "Observer/model synthetic checks complete", UVM_LOW)
