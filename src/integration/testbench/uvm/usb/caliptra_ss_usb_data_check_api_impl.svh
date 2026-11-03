@@ -55,7 +55,6 @@ class caliptra_ss_usb_data_check_api_impl extends uvm_component implements calip
 
 
 
-
   extern function new(string name ="caliptra_ss_usb_data_check_api_impl",
                       uvm_component parent=null);
 
