@@ -672,7 +672,18 @@ void usb_ep0_reinit(void);
 void usb_handle_bus_reset(void);
 
 // Read the 8-byte SETUP packet from the SRAM SETUP buffer into pkt.
+//
+// Only valid while the packet is still current. The hardware overwrites this
+// buffer on the next SETUP, so do not call it to classify a request after
+// usb_handle_control_transfer() has returned; use usb_last_setup below.
 void usb_read_setup_packet(usb_setup_pkt_t *pkt);
+
+// Snapshot of the SETUP packet most recently dispatched by
+// usb_handle_control_transfer(), taken inside the handler before EP0 is armed.
+// Use this to classify a request after the handler returns: it is immune to the
+// next SETUP overwriting the SRAM buffer, which at high speed can happen only a
+// few microseconds later.
+extern usb_setup_pkt_t usb_last_setup;
 
 // Write data[] to the EP0 IN SRAM buffer and arm EP0 IN to transmit nbytes.
 void usb_ep0_send_data(const uint32_t *data, uint32_t nbytes);
