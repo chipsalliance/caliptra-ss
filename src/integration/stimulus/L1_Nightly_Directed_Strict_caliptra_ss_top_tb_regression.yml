@@ -128,6 +128,9 @@ contents:
         - ../test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox1_lock_return_one_during_zeroize.yml
         - ../test_suites/smoke_test_mbox_csr_zeros_after_release/smoke_test_mbox0_csr_zeros_after_release.yml
         - ../test_suites/smoke_test_mbox_csr_zeros_after_release/smoke_test_mbox1_csr_zeros_after_release.yml
+        - ../test_suites/mci_mbox_ownership_flow/mci_mbox0_ownership_flow.yml
+        - ../test_suites/mci_mbox_ownership_flow/mci_mbox1_ownership_flow.yml
+        - ../test_suites/mci_mbox_dlen_wrap/mci_mbox_dlen_wrap.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_escalation/caliptra_ss_fuse_ctrl_escalation.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_writeblank/caliptra_ss_fuse_ctrl_writeblank.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_zeroization/caliptra_ss_fuse_ctrl_zeroization.yml

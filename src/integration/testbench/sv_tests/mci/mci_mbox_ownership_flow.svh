@@ -32,8 +32,13 @@
 // One transaction per terminal status (DATA_READY, CMD_COMPLETE, CMD_FAILURE), with random lengths and CMD.
 // Then one aborted transaction per owned phase before the response, in random order: that phase's SRAM owner ends it
 // early with EXECUTE=0 (HW spec "MCU Mailbox Locking": only the SRAM owner may release).
+// Finally, Root and then the Target each release the request with EXECUTE=0 while the Requester reads SRAM word 0,
+// once per read delay in 0..MCI_COMM_FLOW_RACE_DELAYS-1. One delay lands the read in the cycle after the release is
+// accepted, before the wipe starts. Every read must return 0, and the re-acquired mailbox must be owned by the
+// Requester ("Writing EXECUTE=0 revokes all software SRAM access").
 
 localparam int MCI_COMM_FLOW_MAX_DLEN = 64;
+localparam int MCI_COMM_FLOW_RACE_DELAYS = 8;
 
 int mci_comm_flow_mbox;
 logic [31:0] mci_comm_flow_requester, mci_comm_flow_root, mci_comm_flow_target;
@@ -135,8 +140,37 @@ task automatic mci_comm_flow_transaction(input logic [31:0] status, input string
     mci_comm_flow_end(mci_comm_flow_requester);
 endtask
 
+// The Requester hands a request to Root, and `ender` (Root, or the Target after Root grants it) writes fresh data.
+// `ender` then releases with EXECUTE=0 while the Requester reads SRAM word 0 `delay` clocks later, over the separate
+// AXI read channel. Whether that read lands before, during or after the release, it must not return `ender`'s data.
+// The Requester holds LOCK on entry, and again on exit after re-acquiring it to check the wipe.
+task automatic mci_comm_flow_release_race(input logic [31:0] ender, input int delay);
+    mcu_mbox_write(mci_comm_flow_cmd_addr, mci_comm_flow_requester, $urandom_range(1, 32'hFFFF_FFFF));
+    mci_comm_flow_write_data(mci_comm_flow_requester);
+    mcu_mbox_write(mci_comm_flow_execute_addr, mci_comm_flow_requester, 1);
+    mcu_mbox_wait_clear_notif(mci_comm_flow_mbox, MCU_MBOX_NOTIF_CMD_AVAIL);
+    if (ender == mci_comm_flow_target) begin
+        mcu_mbox_write(mci_comm_flow_target_user_addr, mci_comm_flow_root, mci_comm_flow_target);
+        mcu_mbox_write(mci_comm_flow_target_valid_addr, mci_comm_flow_root, 1);
+    end
+    mci_comm_flow_write_data(ender);
+    fork
+        mcu_mbox_write(mci_comm_flow_execute_addr, ender, 0);
+        begin
+            repeat (delay) @(posedge core_clk);
+            mcu_mbox_read_check(mci_comm_flow_sram, mci_comm_flow_requester, 0);
+        end
+    join
+    mcu_mbox_acquire_lock(mci_comm_flow_mbox, mci_comm_flow_requester);
+    mcu_mbox_check_sram_owner(mci_comm_flow_mbox, MCU_MBOX_OWNER_REQUESTER,
+                              $sformatf("MCI_COMM_FLOW release race ender=%08x delay=%0d", ender, delay));
+    foreach (mci_comm_flow_payload[i]) mcu_mbox_read_check(mci_comm_flow_sram + 4*i, mci_comm_flow_requester, 0);
+    mci_comm_flow_payload = {};
+endtask
+
 task automatic mci_comm_flow_body(input int mbox_num);
     logic [31:0] soc_users [$];
+    logic [31:0] enders [2];
     string abort_points [$] = '{"requester-staged", "root-owns-request", "target-owns-request", "root-owns-response"};
     mci_comm_flow_mbox = mbox_num;
     mci_boot_mcu_and_caliptra();
@@ -163,6 +197,7 @@ task automatic mci_comm_flow_body(input int mbox_num);
     mcu_mbox_acquire_lock(mbox_num, mci_comm_flow_requester);
     mcu_mbox_wait_clear_notif(mbox_num, MCU_MBOX_NOTIF_CMD_AVAIL, .do_wait(0));
     mcu_mbox_wait_clear_notif(mbox_num, MCU_MBOX_NOTIF_TARGET_DONE, .do_wait(0));
+    enders = '{mci_comm_flow_root, mci_comm_flow_target};
 
     for (int status = mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__DATA_READY;
          status <= mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_FAILURE; status++)
@@ -172,6 +207,11 @@ task automatic mci_comm_flow_body(input int mbox_num);
         mci_comm_flow_transaction($urandom_range(mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__DATA_READY,
                                            mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_FAILURE),
                             abort_points[i]);
+    $display("[%0t] MCI_COMM_FLOW mbox=%0d release race, read delays 0..%0d", $time, mbox_num,
+             MCI_COMM_FLOW_RACE_DELAYS - 1);
+    foreach (enders[e])
+        for (int delay = 0; delay < MCI_COMM_FLOW_RACE_DELAYS; delay++)
+            mci_comm_flow_release_race(enders[e], delay);
 
     mcu_mbox_release(mbox_num, mci_comm_flow_requester);
 

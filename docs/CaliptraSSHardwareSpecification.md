@@ -1362,10 +1362,10 @@ registers, evaluated in the following precedence order.
 %%{init: {"flowchart": {"curve": "basis"}}}%%
 flowchart TD
     accTitle: MCU mailbox SRAM owner resolution
-    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
+    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, release, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
 
     Q1{"MBOX_LOCK set?"}
-    Q2{"SRAM zeroizing?"}
+    Q2{"Releasing or SRAM zeroizing?"}
     Q3{"EXECUTE = 1?"}
     Q4{"TARGET_USER_VALID = 1?"}
     Q5{"CMD_STATUS = BUSY?"}

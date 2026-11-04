@@ -195,10 +195,11 @@ assign mbox_axi_root_user_req  = cif_resp_if.dv & mbox_axi_root_user;
 // lock_set is used in RDL to lock the USER register. Need to do this on the 
 // same clock cycle as HWSET otherwise user isn't updated in time. 
 // Using regeister value to maintain lock set until the register is cleared.
-// When mailbox is released we clear the SRAM but keep LOCK set. During the
-// MBOX clearing assume lock is not set preventing users from writing to MBOX
-// registers.
-assign lock_set = (hwif_in.mbox_lock.lock.hwset | hwif_out.mbox_lock.lock.value) & !mbox_sram_zero_in_progress;
+// When mailbox is released we clear the SRAM but keep LOCK set. From the cycle
+// after an accepted EXECUTE=0 (mbox_release, one clock before zeroization
+// starts) until LOCK clears, assume lock is not set so no user can access the
+// MBOX registers or SRAM before the wipe.
+assign lock_set = (hwif_in.mbox_lock.lock.hwset | hwif_out.mbox_lock.lock.value) & !mbox_sram_zero_in_progress & !mbox_release;
 
 // Each CSR is writable by exactly one role. MCU is not granted access to a
 // register it does not own. CMD, DLEN, EXECUTE and the SRAM follow the SRAM
@@ -216,7 +217,7 @@ assign hwif_in.target_cfg_write_en   = target_cfg_write_en  ;
 ///////////////////////////////////////////////
 
 // Ownership is a pure function of mailbox state. lock_set already excludes the
-// zeroization window, so !lock_set implies no owner.
+// release cycle and the zeroization window, so !lock_set implies no owner.
 assign execute_set     = hwif_out.mbox_execute.execute.value;
 assign cmd_status_busy = (hwif_out.mbox_cmd_status.status.value == mcu_mbox_csr__mbox_cmd_status__status__mbox_status_e__CMD_BUSY);
 
