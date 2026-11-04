@@ -654,6 +654,12 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         bit [7:0] recovery_control[$], fifo_control[$];
         int unsigned size_dwords, max_dwords, bytes;
         logic [15:0] live_generation;
+
+        // -------------------------------------------------------------------------
+        // Discover command state and select a legal runtime-limited payload.
+        // Run checks:
+        // * State snapshots have complete fixed-length responses before model setup.
+        // * FIFO capacity and advertised transfer limits allow a nonzero write.
         if (!agent_capabilities[OCP_CAP_INDIRECT_FIFO]) begin
             `uvm_info("OCP_PACKET_SELFTEST", "Live FIFO not advertised.", UVM_LOW)
             return;
@@ -675,8 +681,20 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         if (bytes > wMaxWrTransferSize) bytes = wMaxWrTransferSize;
         if (bytes == 0)
             `uvm_fatal("OCP_PACKET_SELFTEST", "No legal live FIFO transfer length.")
+
+        // -------------------------------------------------------------------------
+        // Select the recovery image and establish an empty FIFO/model baseline.
+        // Run checks:
+        // * Reported reset indices agree with the newly configured packet model.
         ocp_do_recovery_ctrl_write(0, OCP_RC_IMAGE_SEL_CMS, 1'b0, "LIVE_FIFO_IMAGE");
         ocp_stall_do_configure_and_check_fifo((bytes + 3) / 4, "LIVE_FIFO_RESET");
+
+        // -------------------------------------------------------------------------
+        // Send a real FIFO write through a generation-qualified isolation window.
+        // Run checks:
+        // * One accepted SETUP and no forbidden legacy EP0 effects are observed.
+        // * Packet/status evidence commits the rounded batch with no partial bytes.
+        // * Complete command snapshots agree with the configured model indices.
         for (int unsigned i = 0; i < bytes; i++) payload.push_back(8'(i ^ 8'hA5));
         ocp_arb_open_observation_window(live_generation);
         ocp_do_fifo_data_write(payload, ignored_result, "LIVE_FIFO_DATA");
@@ -685,10 +703,20 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_check_true((fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4) &&
             (fifo_packet_model.partial_byte_count() == 0), "live packet/status commit");
         ocp_stall_do_read_and_check_command_state(recovery_control, fifo_control, status_bytes, "LIVE_FIFO_COMMIT");
+
+        // -------------------------------------------------------------------------
+        // Read an unrelated command, then recheck the committed FIFO state.
+        // Run checks:
+        // * Reported indices and the model's committed byte count remain unchanged.
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, "LIVE_FIFO_UNRELATED_READ");
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_UNCHANGED");
         ocp_packet_check_true(fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4,
             "unrelated legal command cannot discard committed bytes");
+
+        // -------------------------------------------------------------------------
+        // Reset the FIFO and require fresh protocol-visible completion evidence.
+        // Run checks:
+        // * The model has no committed bytes and both reported indices match zero.
         ocp_do_fifo_ctrl_write(0, 1'b1, (bytes + 3) / 4, "LIVE_FIFO_FINAL_RESET");
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_RESET_CHECK");
         ocp_packet_check_true(fifo_packet_model.committed_byte_count() == 0 &&
