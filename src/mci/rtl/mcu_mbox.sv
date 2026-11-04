@@ -236,7 +236,7 @@ always_comb begin
 end
 
 // SRAM, CMD, DLEN and EXECUTE follow the single resolved owner.
-// sram_owner_user reports the owner's AXI USER for debug only.
+// sram_owner_user reports the owner's AXI USER.
 always_comb begin
     valid_sram_owner_req = 1'b0;
     sram_owner_user      = '0;

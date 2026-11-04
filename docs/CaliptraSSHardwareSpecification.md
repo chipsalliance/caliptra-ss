@@ -1445,7 +1445,7 @@ external Requester to serve. In that case MCU reads `TARGET_STATUS` directly.
 | 2 | Root AXI user, typically MCU |
 | 3 | Target selected by `TARGET_USER` while `TARGET_USER_VALID=1` |
 
-For debug, `MBOX_SRAM_OWNER_USER` reports the AXI USER of that owner: `USER`
+`MBOX_SRAM_OWNER_USER` reports the AXI USER of that owner: `USER`
 for the Requester, the root AXI USER strap for Root, `TARGET_USER` for the
 Target, and 0 when there is no owner. It is read-only and has no effect on
 access control.
