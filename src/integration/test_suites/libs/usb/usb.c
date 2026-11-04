@@ -114,6 +114,13 @@ static uint32_t usb_ep0_out_irq_count = 0;
 static uint32_t usb_ep0_in_irq_count = 0;
 static uint32_t usb_setup_dispatch_count = 0;
 static uint32_t usb_snapshot_publish_sequence = 0;
+
+// Snapshot of the SETUP packet most recently dispatched by
+// usb_handle_control_transfer(), taken before EP0 is armed. Exists so a caller
+// can classify a request after the handler returns without re-reading the SRAM
+// SETUP buffer, which the hardware overwrites on the next SETUP.
+usb_setup_pkt_t usb_last_setup = {0};
+
 static uint8_t usb_baseline_ready_pending = 0;
 static uint16_t usb_baseline_ready_generation = 0;
 
@@ -1039,6 +1046,11 @@ bool usb_handle_control_transfer(void) {
 
     usb_setup_dispatch_count++;
     usb_read_setup_packet(&pkt);
+    // Publish the packet before anything else touches EP0, so a caller can
+    // classify this request after the handler returns. Re-reading the SRAM
+    // SETUP buffer at that point races the next SETUP and is unreliable at
+    // high speed, where the inter-SETUP gap is only a few microseconds.
+    usb_last_setup = pkt;
 
     uint8_t req_type  = USB_BMREQTYPE_TYPE(pkt.bmRequestType);
     uint8_t recipient = USB_BMREQTYPE_RECIPIENT(pkt.bmRequestType);
