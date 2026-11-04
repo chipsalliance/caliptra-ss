@@ -97,7 +97,6 @@ logic mbox_valid_user_error;
 logic csr_read_error;
 logic csr_write_error;
 
-logic valid_requester_req;
 logic valid_target_req;
 logic valid_root_req;
 logic valid_sram_owner_req;
@@ -202,14 +201,12 @@ assign mbox_axi_root_user_req  = cif_resp_if.dv & mbox_axi_root_user;
 assign lock_set = (hwif_in.mbox_lock.lock.hwset | hwif_out.mbox_lock.lock.value) & !mbox_sram_zero_in_progress;
 
 // Each CSR is writable by exactly one role. MCU is not granted access to a
-// register it does not own; when MCU holds the lock it qualifies as the
-// Requester through mbox_requester_user_req.
-assign valid_requester_req = lock_set & mbox_requester_user_req;
+// register it does not own. CMD, DLEN, EXECUTE and the SRAM follow the SRAM
+// owner below.
 assign valid_target_req    = lock_set & mbox_target_user_req;
 assign valid_root_req      = lock_set & mbox_axi_root_user_req;
 assign target_cfg_write_en = valid_root_req & !mbox_target_user_valid;
 
-assign hwif_in.valid_requester_req   = valid_requester_req  ;
 assign hwif_in.valid_target_req      = valid_target_req     ;
 assign hwif_in.valid_root_req        = valid_root_req       ;
 assign hwif_in.target_cfg_write_en   = target_cfg_write_en  ;
@@ -236,7 +233,7 @@ always_comb begin
     end
 end
 
-// SRAM and DLEN follow the single resolved owner.
+// SRAM, CMD, DLEN and EXECUTE follow the single resolved owner.
 always_comb begin
     valid_sram_owner_req = 1'b0;
     unique case (sram_owner)
@@ -262,7 +259,7 @@ always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
         execute_valid_write <= 1'b0;
     end else begin
-        execute_valid_write <= (hwif_out.mbox_execute.execute.swmod && valid_requester_req);
+        execute_valid_write <= (hwif_out.mbox_execute.execute.swmod && valid_sram_owner_req);
     end
 end
 
@@ -345,9 +342,12 @@ always_ff @(posedge clk or negedge rst_b) begin
 end
 
 
+// DLEN >= SRAM size must wipe the whole SRAM, not wrap.
 always_comb begin
     mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
-    mbox_sram_zero_end_addr = mbox_sram_zero_end_addr_bytes[MCU_MBOX_BYTE_ADDR_W-1:2];
+    mbox_sram_zero_end_addr = (mbox_max_dlen >= MCU_MBOX_SRAM_SIZE_BYTES) ?
+                              MCU_MBOX_SRAM_ADDR_W'(MCU_MBOX_SRAM_DEPTH - 1) :
+                              mbox_sram_zero_end_addr_bytes[MCU_MBOX_BYTE_ADDR_W-1:2];
 end
 
 // Release the mailbox after execute has had 0 written to it

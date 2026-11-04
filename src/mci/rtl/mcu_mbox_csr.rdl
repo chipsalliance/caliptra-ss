@@ -27,9 +27,8 @@ addrmap mcu_mbox_csr {
 
     //signal to indicate requests
     //Each signal names the single role permitted to write the associated CSRs.
-    signal {desc = "Current SRAM owner request. Gates DLEN.";} valid_sram_owner_req;
+    signal {desc = "Current SRAM owner request. Gates CMD, DLEN and EXECUTE.";} valid_sram_owner_req;
     signal {desc = "Target user request.";} valid_target_req;
-    signal {desc = "Requester (lock holder) request. Gates CMD and EXECUTE.";} valid_requester_req;
     signal {desc = "Root AXI user request. MCU is typically Root.";} valid_root_req;
     signal {desc = "Root target-configuration write enable. Deasserts while TARGET_USER_VALID is set.";} target_cfg_write_en;
 
@@ -84,8 +83,8 @@ addrmap mcu_mbox_csr {
 
     reg {
         name="Mailbox Command";
-        desc="Command requested for data in mailbox. Writable by the Requester. Cleared when lock is cleared.";
-        field {sw=rw;hwclr; swwe=valid_requester_req; } command[32]=0;
+        desc="Command requested for data in mailbox. Writable only by the current SRAM owner. Cleared when lock is cleared.";
+        field {sw=rw;hwclr; swwe=valid_sram_owner_req; } command[32]=0;
     } mbox_cmd;
 
     reg {
@@ -96,8 +95,8 @@ addrmap mcu_mbox_csr {
 
     reg {
         name="Mailbox Execute";
-        desc="Mailbox execute register indicates to receiver that the sender is done. Writable by the Requester. ";
-        field {sw=rw; hw=r; swwe=valid_requester_req; swmod=true;} execute=0;
+        desc="Mailbox execute register indicates to receiver that the sender is done. Writable only by the current SRAM owner. Writing 0 releases the mailbox.";
+        field {sw=rw; hw=r; swwe=valid_sram_owner_req; swmod=true;} execute=0;
     } mbox_execute;
 
     reg {   name="Mailbox Target Status";
