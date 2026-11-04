@@ -355,7 +355,7 @@ endtask
 // instead of calling end_test_successful_req() when the count is non-zero, so it never reports TESTCASE PASSED.
 // ---------------------------------------------------------------------------
 
-int unsigned mcu_mbox_err_cnt;
+int unsigned mcu_mbox_err_cnt = 0;
 
 // Write `data` to `addr` as `user`; counts an error unless the response is OKAY.
 task automatic mcu_mbox_write(input logic [AXI_AW-1:0] addr, input logic [31:0] user, input logic [31:0] data);
