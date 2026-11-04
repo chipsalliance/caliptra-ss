@@ -164,17 +164,38 @@ class caliptra_ss_usb_ocp_stall_base_sequence
             status_bytes[OCP_OFF_DS_PROT_ERROR], label));
     endtask
 
+    protected function bit ocp_stall_check_snapshot_length(
+        input ocp_cmd_t command, input int unsigned response_bytes,
+        output int unsigned expected_bytes);
+        // OCP Recovery v1.1 Section 9.2: fixed-size command state records.
+        case (command)
+            OCP_CMD_RECOVERY_CTRL:
+                expected_bytes = OCP_SPEC_LEN_RECOVERY_CTRL;
+            OCP_CMD_INDIRECT_FIFO_CTRL:
+                expected_bytes = OCP_SPEC_LEN_INDIRECT_FIFO_CTRL;
+            OCP_CMD_INDIRECT_FIFO_STATUS:
+                expected_bytes = OCP_SPEC_LEN_INDIRECT_FIFO_STATUS;
+            default:
+                expected_bytes = 0;
+        endcase
+        return (expected_bytes == 0) || (response_bytes == expected_bytes);
+    endfunction
+
     protected task ocp_stall_do_read_and_check_no_stall(
         input ocp_cmd_t command, ref bit [7:0] response[$],
         input string label);
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         logic [15:0] generation;
+        int unsigned expected_bytes;
         ocp_arb_open_observation_window(generation);
         ocp_do_read(command, response, ignored_result, label);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
         ocp_stall_check_single_accepted_setup(label);
+        if (!ocp_stall_check_snapshot_length(command, response.size(), expected_bytes))
+            `uvm_fatal("OCP_STALL",
+                $sformatf("%s cmd=0x%02h state response has %0d bytes; expected exactly %0d.",
+                    label, command, response.size(), expected_bytes))
         if (fifo_model_configured && (command == OCP_CMD_INDIRECT_FIFO_STATUS) &&
-            (response.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
             !fifo_packet_model.indices_match(
                 ocp_get_le32(response, OCP_OFF_IFS_WRITE_INDEX_B0),
                 ocp_get_le32(response, OCP_OFF_IFS_READ_INDEX_B0)))
@@ -276,12 +297,6 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         if (agent_capabilities[OCP_CAP_INDIRECT_FIFO]) begin
             ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_CTRL, fifo_control, {label, "_FC"});
             ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, fifo_status, {label, "_FS"});
-            if (fifo_model_configured &&
-                (fifo_status.size() == OCP_SPEC_LEN_INDIRECT_FIFO_STATUS) &&
-                !fifo_packet_model.indices_match(
-                    ocp_get_le32(fifo_status, OCP_OFF_IFS_WRITE_INDEX_B0),
-                    ocp_get_le32(fifo_status, OCP_OFF_IFS_READ_INDEX_B0)))
-                `uvm_error("OCP_STALL", {label, ": FIFO indices differ from independent reference."})
         end
     endtask
 

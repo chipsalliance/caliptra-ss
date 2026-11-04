@@ -39,6 +39,28 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             `uvm_fatal("OCP_PACKET_SELFTEST", label)
     endfunction
 
+    protected function void ocp_packet_check_snapshot_lengths();
+        ocp_cmd_t commands[3] = '{
+            OCP_CMD_RECOVERY_CTRL, OCP_CMD_INDIRECT_FIFO_CTRL,
+            OCP_CMD_INDIRECT_FIFO_STATUS};
+        int unsigned lengths[3] = '{
+            OCP_SPEC_LEN_RECOVERY_CTRL, OCP_SPEC_LEN_INDIRECT_FIFO_CTRL,
+            OCP_SPEC_LEN_INDIRECT_FIFO_STATUS};
+        int unsigned expected_bytes;
+        bit accepted;
+        foreach (commands[i]) begin
+            for (int unsigned bytes = 0; bytes <= lengths[i] + 1; bytes++) begin
+                accepted = ocp_stall_check_snapshot_length(
+                    commands[i], bytes, expected_bytes);
+                ocp_packet_check_true(
+                    (accepted == (bytes == lengths[i])) &&
+                    (expected_bytes == lengths[i]),
+                    $sformatf("snapshot cmd=0x%02h length=%0d requires exactly %0d bytes",
+                        commands[i], bytes, lengths[i]));
+            end
+        end
+    endfunction
+
     protected function void ocp_packet_open_synthetic_observation_window();
         generation++;
         observer.start_window(generation);
@@ -629,13 +651,14 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
     protected task ocp_packet_do_exercise_and_check_live_fifo();
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
         bit [7:0] status_bytes[$], response[$], payload[$];
+        bit [7:0] recovery_control[$], fifo_control[$];
         int unsigned size_dwords, max_dwords, bytes;
         logic [15:0] live_generation;
         if (!agent_capabilities[OCP_CAP_INDIRECT_FIFO]) begin
             `uvm_info("OCP_PACKET_SELFTEST", "Live FIFO not advertised.", UVM_LOW)
             return;
         end
-        ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_LIMITS");
+        ocp_stall_do_read_and_check_command_state(recovery_control, fifo_control, status_bytes, "LIVE_FIFO_LIMITS");
         if (status_bytes.size() != OCP_SPEC_LEN_INDIRECT_FIFO_STATUS)
             `uvm_fatal("OCP_PACKET_SELFTEST", "Live FIFO limits truncated.")
         size_dwords = ocp_get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0);
@@ -661,7 +684,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_stall_check_single_accepted_setup("LIVE_FIFO_DATA");
         ocp_packet_check_true((fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4) &&
             (fifo_packet_model.partial_byte_count() == 0), "live packet/status commit");
-        ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_COMMIT");
+        ocp_stall_do_read_and_check_command_state(recovery_control, fifo_control, status_bytes, "LIVE_FIFO_COMMIT");
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_PROT_CAP, response, "LIVE_FIFO_UNRELATED_READ");
         ocp_stall_do_read_and_check_no_stall(OCP_CMD_INDIRECT_FIFO_STATUS, status_bytes, "LIVE_FIFO_UNCHANGED");
         ocp_packet_check_true(fifo_packet_model.committed_byte_count() == ((bytes + 3) / 4) * 4,
@@ -1195,6 +1218,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         // * Invalid acceptance or completion histories are rejected.
         observer.stop_window();
         ocp_packet_check_synthetic_fifo_adapter();
+        ocp_packet_check_snapshot_lengths();
 
         // -------------------------------------------------------------------------
         // Perform a real FIFO write, unrelated read and reset, then finish through UVM.
