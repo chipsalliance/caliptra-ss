@@ -94,6 +94,7 @@ module mcu_mbox_csr (
         logic mbox_target_status;
         logic mbox_cmd_status;
         logic mbox_hw_status;
+        logic mbox_sram_owner_user;
     } decoded_reg_strb_t;
     decoded_reg_strb_t decoded_reg_strb;
     logic decoded_strb_is_external;
@@ -120,6 +121,7 @@ module mcu_mbox_csr (
         decoded_reg_strb.mbox_target_status = cpuif_req_masked & (cpuif_addr == 22'h20001c);
         decoded_reg_strb.mbox_cmd_status = cpuif_req_masked & (cpuif_addr == 22'h200020);
         decoded_reg_strb.mbox_hw_status = cpuif_req_masked & (cpuif_addr == 22'h200024);
+        decoded_reg_strb.mbox_sram_owner_user = cpuif_req_masked & (cpuif_addr == 22'h200028);
         decoded_strb_is_external = is_external;
         external_req = is_external;
     end
@@ -566,7 +568,7 @@ module mcu_mbox_csr (
     logic [31:0] readback_data;
 
     // Assign readback values to a flattened array
-    logic [11-1:0][31:0] readback_array;
+    logic [12-1:0][31:0] readback_array;
     assign readback_array[0] = hwif_in.MBOX_SRAM.rd_ack ? hwif_in.MBOX_SRAM.rd_data : '0;
     assign readback_array[1][0:0] = (decoded_reg_strb.mbox_lock && !decoded_req_is_wr) ? field_storage.mbox_lock.lock.value : '0;
     assign readback_array[1][31:1] = '0;
@@ -586,6 +588,7 @@ module mcu_mbox_csr (
     assign readback_array[10][1:1] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? field_storage.mbox_hw_status.ecc_double_error.value : '0;
     assign readback_array[10][3:2] = (decoded_reg_strb.mbox_hw_status && !decoded_req_is_wr) ? hwif_in.mbox_hw_status.sram_owner.next : '0;
     assign readback_array[10][31:4] = '0;
+    assign readback_array[11][31:0] = (decoded_reg_strb.mbox_sram_owner_user && !decoded_req_is_wr) ? hwif_in.mbox_sram_owner_user.user.next : '0;
 
     // Reduce the array
     always_comb begin
@@ -593,7 +596,7 @@ module mcu_mbox_csr (
         readback_done = decoded_req & ~decoded_req_is_wr & ~decoded_strb_is_external;
         readback_err = '0;
         readback_data_var = '0;
-        for(int i=0; i<11; i++) readback_data_var |= readback_array[i];
+        for(int i=0; i<12; i++) readback_data_var |= readback_array[i];
         readback_data = readback_data_var;
     end
 

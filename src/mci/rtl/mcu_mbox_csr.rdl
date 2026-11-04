@@ -186,6 +186,13 @@ addrmap mcu_mbox_csr {
             sw=r; hw=w; encode = mbox_owner_e;} sram_owner[2]=0;
     } mbox_hw_status;
 
+    reg {
+        name="Mailbox SRAM Owner USER";
+        desc="Debug only. AXI USER of the current SRAM owner reported in MBOX_HW_STATUS.SRAM_OWNER.
+        [br] REQUESTER: MBOX_USER. ROOT: the root AXI USER strap. TARGET: MBOX_TARGET_USER. NONE: 0.";
+        field {sw=r; hw=w;} user[32]=0;
+    } mbox_sram_owner_user;
+
 
     // This will auto clear the status register whenever a mailbox transfer
     // is not in progress. 1-cycle delayed from when the Receiver clears

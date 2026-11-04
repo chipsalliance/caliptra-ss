@@ -87,6 +87,7 @@ void main(void) {
         SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_DLEN,
         SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK,
         SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS,
+        SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER,
     };
     for (uint32_t i = 0; i < sizeof(mbox_csr_offsets) / sizeof(mbox_csr_offsets[0]); i++) {
         uint64_t csr_addr = mbox_csr_offsets[i] + MCU_MBOX_NUM_STRIDE * mbox_num;

@@ -75,6 +75,10 @@
 #define MCU_MBOX_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                  (2)
 #define MCU_MBOX_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                 (0xc)
 #endif
+#define MCU_MBOX_CSR_MBOX_SRAM_OWNER_USER                                                           (0x200028)
+#ifndef MCU_MBOX_CSR_MBOX_SRAM_OWNER_USER
+#define MCU_MBOX_CSR_MBOX_SRAM_OWNER_USER                                                           (0x200028)
+#endif
 
 
 #endif

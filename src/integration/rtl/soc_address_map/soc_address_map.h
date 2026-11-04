@@ -10242,6 +10242,10 @@
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
 #define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
 #endif
+#define SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER                                              (0x21600028)
+#ifndef MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER
+#define MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER                                                          (0x200028)
+#endif
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_BASE_ADDR                                                         (0x21800000)
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_BASE_ADDR                                               (0x21800000)
 #define SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_END_ADDR                                                (0x219fffff)
@@ -10300,6 +10304,10 @@
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (0x2)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
 #define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (0xc)
+#endif
+#define SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER                                              (0x21a00028)
+#ifndef MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER
+#define MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER                                                          (0x200028)
 #endif
 #define SOC_MCI_TOP_MCU_SRAM_BASE_ADDR                                                              (0x21c00000)
 #define SOC_MCI_TOP_MCU_SRAM_END_ADDR                                                               (0x21dfffff)

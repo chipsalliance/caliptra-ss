@@ -330,6 +330,36 @@ package mcu_mbox_csr_uvm;
         endfunction : build
     endclass : mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5
 
+    // Reg - mcu_mbox_csr::mbox_sram_owner_user
+    class mcu_mbox_csr__mbox_sram_owner_user extends uvm_reg;
+        protected uvm_reg_data_t m_current;
+        protected uvm_reg_data_t m_data;
+        protected bit            m_is_read;
+
+        mcu_mbox_csr__mbox_sram_owner_user_bit_cg user_bit_cg[32];
+        mcu_mbox_csr__mbox_sram_owner_user_fld_cg fld_cg;
+        rand uvm_reg_field user;
+
+        function new(string name = "mcu_mbox_csr__mbox_sram_owner_user");
+            super.new(name, 32, build_coverage(UVM_CVR_ALL));
+        endfunction : new
+        extern virtual function void sample_values();
+        extern protected virtual function void sample(uvm_reg_data_t  data,
+                                                      uvm_reg_data_t  byte_en,
+                                                      bit             is_read,
+                                                      uvm_reg_map     map);
+
+        virtual function void build();
+            this.user = new("user");
+            this.user.configure(this, 32, 0, "RO", 1, 'h0, 1, 1, 0);
+            if (has_coverage(UVM_CVR_REG_BITS)) begin
+                foreach(user_bit_cg[bt]) user_bit_cg[bt] = new();
+            end
+            if (has_coverage(UVM_CVR_FIELD_VALS))
+                fld_cg = new();
+        endfunction : build
+    endclass : mcu_mbox_csr__mbox_sram_owner_user
+
     // Addrmap - mcu_mbox_csr
     class mcu_mbox_csr extends uvm_reg_block;
         rand mcu_mbox_csr__MBOX_SRAM MBOX_SRAM;
@@ -343,6 +373,7 @@ package mcu_mbox_csr_uvm;
         rand mcu_mbox_csr__mbox_target_status mbox_target_status;
         rand mcu_mbox_csr__mbox_cmd_status mbox_cmd_status;
         rand mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5 mbox_hw_status;
+        rand mcu_mbox_csr__mbox_sram_owner_user mbox_sram_owner_user;
 
         function new(string name = "mcu_mbox_csr");
             super.new(name);
@@ -404,6 +435,11 @@ package mcu_mbox_csr_uvm;
 
             this.mbox_hw_status.build();
             this.default_map.add_reg(this.mbox_hw_status, 'h200024);
+            this.mbox_sram_owner_user = new("mbox_sram_owner_user");
+            this.mbox_sram_owner_user.configure(this);
+
+            this.mbox_sram_owner_user.build();
+            this.default_map.add_reg(this.mbox_sram_owner_user, 'h200028);
         endfunction : build
     endclass : mcu_mbox_csr
 

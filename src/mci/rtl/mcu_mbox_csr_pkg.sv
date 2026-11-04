@@ -97,6 +97,14 @@ package mcu_mbox_csr_pkg;
     } mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__in_t;
 
     typedef struct packed{
+        logic [31:0] next;
+    } mcu_mbox_csr__mbox_sram_owner_user__user__in_t;
+
+    typedef struct packed{
+        mcu_mbox_csr__mbox_sram_owner_user__user__in_t user;
+    } mcu_mbox_csr__mbox_sram_owner_user__in_t;
+
+    typedef struct packed{
         logic rst_b;
         logic valid_sram_owner_req;
         logic valid_target_req;
@@ -112,6 +120,7 @@ package mcu_mbox_csr_pkg;
         mcu_mbox_csr__mbox_target_status__in_t mbox_target_status;
         mcu_mbox_csr__mbox_cmd_status__in_t mbox_cmd_status;
         mcu_mbox_csr__mbox_hw_status_ecc_double_error_903cdbc7_ecc_single_error_1a9480c5__in_t mbox_hw_status;
+        mcu_mbox_csr__mbox_sram_owner_user__in_t mbox_sram_owner_user;
     } mcu_mbox_csr__in_t;
 
     typedef struct packed{
