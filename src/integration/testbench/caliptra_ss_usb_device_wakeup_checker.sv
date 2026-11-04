@@ -118,8 +118,17 @@ module caliptra_ss_usb_device_wakeup_checker (
     localparam bit [1:0] LINESTATE_K = 2'b10;
 
     // Polling step and the sustained-hold requirement. K_MIN_HOLD must stay far
-    // below the T_3ms device K (3.072 ms) and far above any incidental transmit
-    // that could leave linestate at K.
+    // below the shortest device K this checker has to catch, and far above any
+    // incidental transmit that could leave linestate at K. The L2 remote-wakeup
+    // path drives K for T_3ms (3.072 ms), but the L1 LPM path drives it for only
+    // T_60us (usb_pie.m.vhdl, BUS_EVENT_LPM_SW_WAKEUP_1), so 20 us is sized
+    // against the 60 us case and still leaves 3x margin there.
+    //
+    // READING THE ENABLE BANNER BELOW. It formats K_MIN_HOLD with %0t, which
+    // prints in the simulation time PRECISION, not in the unit written here.
+    // With 10 fs precision 20 us comes out as "2000000000". That is correct and
+    // is not evidence of a scaling bug - 20 us / 10 fs = 2e9. Divide by 1e8 to
+    // get microseconds before concluding anything is wrong with these values.
     localparam realtime POLL_STEP = 1us;
     localparam realtime K_MIN_HOLD = 20us;
 
