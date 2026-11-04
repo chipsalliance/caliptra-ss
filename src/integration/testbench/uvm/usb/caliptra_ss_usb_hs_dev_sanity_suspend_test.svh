@@ -9,13 +9,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-`ifndef CALIPTRA_SS_USB_HS_DEV_REMOTE_WAKEUP_TEST_SV
-`define CALIPTRA_SS_USB_HS_DEV_REMOTE_WAKEUP_TEST_SV
+`ifndef CALIPTRA_SS_USB_HS_DEV_SANITY_SUSPEND_TEST_SV
+`define CALIPTRA_SS_USB_HS_DEV_SANITY_SUSPEND_TEST_SV
 
-// Usage: +UVM_TESTNAME=caliptra_ss_usb_hs_dev_remote_wakeup_test
-class caliptra_ss_usb_hs_dev_remote_wakeup_test extends caliptra_ss_usb_base_test;
-    `uvm_component_utils(caliptra_ss_usb_hs_dev_remote_wakeup_test)
-    function new(string name = "caliptra_ss_usb_hs_dev_remote_wakeup_test", uvm_component parent = null);
+// Usage: +UVM_TESTNAME=caliptra_ss_usb_hs_dev_sanity_suspend_test
+class caliptra_ss_usb_hs_dev_sanity_suspend_test extends caliptra_ss_usb_base_test;
+    `uvm_component_utils(caliptra_ss_usb_hs_dev_sanity_suspend_test)
+    function new(string name = "caliptra_ss_usb_hs_dev_sanity_suspend_test", uvm_component parent = null);
         super.new(name, parent);
     endfunction
     virtual function void build_phase(uvm_phase phase);
@@ -23,8 +23,8 @@ class caliptra_ss_usb_hs_dev_remote_wakeup_test extends caliptra_ss_usb_base_tes
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
-            caliptra_ss_usb_hs_dev_remote_wakeup_sequence::type_id::get());
+            caliptra_ss_usb_hs_dev_sanity_suspend_sequence::type_id::get());
     endfunction
 endclass
 
-`endif // CALIPTRA_SS_USB_HS_DEV_REMOTE_WAKEUP_TEST_SV
+`endif // CALIPTRA_SS_USB_HS_DEV_SANITY_SUSPEND_TEST_SV
