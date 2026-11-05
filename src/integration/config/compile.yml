@@ -126,6 +126,14 @@ targets:
       - $COMPILE_ROOT/testbench/uvm/usb
     files:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
+      # USB compound functional coverage. The package must precede the observers
+      # that import it; the bind and probe must follow the observers they
+      # instantiate. Everything here is inert unless USB_FCOV is defined.
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_cov_pkg.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_addr_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_power_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_hub_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_cov_bind.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
@@ -155,6 +163,7 @@ targets:
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_suspend_resume_checker.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_usb_device_wakeup_checker.sv
       - $COMPILE_ROOT/testbench/usb_dev_addr_probe.sv
+      - $COMPILE_ROOT/testbench/usb_cov_probe_caliptra_ss.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb.sv
       - $COMPILE_ROOT/testbench/caliptra_ss_top_tb_soc_bfm.sv
       - $COMPILE_ROOT/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
@@ -213,6 +222,9 @@ global:
         - +define+I3C_BOOT_USING_ENTDAA
         - +define+CALIPTRA_SIMULATION
         - +define+SIMULATION
+        # Enables the USB compound functional coverage observers, binds and
+        # probe. Without it those files compile to nothing.
+        - +define+USB_FCOV
         # --- Synopsys USB SVT VIP compile options ---
         - +define+SVT_USB_MAX_DEVICE_DEBUG_PORT=8
         - +define+SVT_UVM_TECHNOLOGY
@@ -287,3 +299,5 @@ global:
         # Allow gcc to tokenize UTF-8 source correctly (fixes Unicode curly-quote
         # characters in #error text inside a false #if branch in uvm_hdl_vcs.c)
         - '-finput-charset=UTF-8'
+
+# File contains AI-generated response based on internal company sources
