@@ -44,6 +44,7 @@ class caliptra_ss_usb_ocp_recovery_sequence
         bit        recovery_pending_seen;
         recovery_error_case_e selected_error_case;
 
+        if (!ocp_configure_sem_vif()) return;
         ocp_do_initialize_and_check_transport();
         ocp_do_read_and_check_recovery_capabilities(
             "OCPREC_PROT_CAP", initial_agent_caps);
@@ -78,11 +79,18 @@ class caliptra_ss_usb_ocp_recovery_sequence
         ocp_do_read_and_check_fifo_write_index(12, "OCPREC_INDIRECT_FIFO_STATUS");
         ocp_do_poll_recovery_pending(recovery_pending_seen);
 
-        if (recovery_pending_seen) begin
-            ocp_do_recovery_activation_xfer(
-                8'h00, 8'h00, "OCPREC_RECOVERY_CTRL_ACTIVATE");
-        end
+        if (!recovery_pending_seen)
+            `uvm_fatal("OCPREC", "Recovery Pending was not observed before activation.")
 
+        // A low baseline prevents earlier activation history from satisfying this request.
+        if (sem_vif.recovery_image_activated !== 1'b0)
+            `uvm_fatal("OCPREC", "USB recovery activation was not low before the activation request.")
+        sem_vif.clear_recovery_image_activated_seen();
+        ocp_do_recovery_activation_xfer(
+            8'h00, 8'h00, "OCPREC_RECOVERY_CTRL_ACTIVATE");
+        ocp_poll_recovery_activation(
+            1000us, 1us, "OCPREC_RECOVERY_CTRL_ACTIVATE", "OCPREC");
+        `uvm_info("OCPREC", "Fresh USB recovery activation observed.", UVM_NONE)
         ocp_publish_transfer_count();
 
         `uvm_info("OCPREC", "OCP recovery sequence complete", UVM_NONE)

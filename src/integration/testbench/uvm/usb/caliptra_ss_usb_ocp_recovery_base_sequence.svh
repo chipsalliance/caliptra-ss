@@ -1426,7 +1426,8 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
                        .payload_bytes(payload),
                        .resp_bytes(response),
                        .result(ignored_result),
-                       .label(label));
+                       .label(label),
+                       .check_success(1'b1));
     endtask
 
     protected virtual task ocp_check_i3c_route_quiescent();
