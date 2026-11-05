@@ -42,24 +42,25 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
         // calling boot_usb_core_hub().
 
         // tdrsmdn is the VIP RESUMING -> SEND_EOR dwell, i.e. how long the host
-        // holds resume K before terminating it with the low-speed EOP. It is set
-        // HERE and not from the sequence: a mid-run reconfigure() of this field
-        // was measured delivering 28.03 us against 3.2 ms requested, so the
-        // write did not reach the running link SM.
+        // holds resume K before terminating it with the low-speed EOP. It is
+        // deliberately NOT overridden, and must not be.
         //
-        // The value must outlast the DUT's own resume K, because
-        // BUS_EVENT_SW_WAKEUP_3 only leaves on an SE0 and has no timeout arm, so
-        // an EOP driven before that state opens is simply lost. On the L2 path
-        // the device drives K for T_3ms (3.072 ms) and then takes T_TxENDDELAY
-        // (30 us) through SW_WAKEUP_2, so the window opens ~3.102 ms after the
-        // first K bit. 3.2 ms clears that with ~98 us to spare.
+        // SVT_USB_TDRSMDN_MIN == SVT_USB_TDRSMDN_NOM == 20 ms with no MAX
+        // (svt_usb_timing_defines.svi:21-22), so any smaller value sits below
+        // the VIP floor and is rejected. An earlier 3.2 ms override here was
+        // measured producing a 28.03 us dwell on the wire, and the host then
+        // never drove a terminating SE0 at all.
         //
-        // Do NOT copy the 200 us used by caliptra_ss_usb_hs_dev_lpm_l1: that
-        // path drives K for T_60us, not T_3ms (usb_pie.m.vhdl:1503 vs 1372), so
-        // its window opens ~90 us in. Both paths then converge on the SAME
-        // BUS_EVENT_SW_WAKEUP_2/_3 states (see the RTL comment at
-        // usb_pie.m.vhdl:1511), which is why only this one timer differs.
-        cfg.host_cfg.tdrsmdn = 3_200_000_000.0; // 3.2 ms in ps
+        // The untouched 20 ms default is already longer than the DUT needs: on
+        // the L2 path the device drives K for T_3ms (3.072 ms) and reaches
+        // BUS_EVENT_SW_WAKEUP_3 about T_TxENDDELAY (30 us) later, so the SE0
+        // lands inside that window with ~17 ms to spare. Measured on the
+        // 2026-11-05 run: window opens 4569.680 us, SE0 at 4675.809 us.
+        //
+        // Do NOT copy the 200 us from caliptra_ss_usb_hs_dev_lpm_l1 either. It
+        // is below the same floor and equally inert there; that test passes
+        // because its device K is only T_60us (usb_pie.m.vhdl:1503 vs 1372), so
+        // the 20 ms default covers it without any override.
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",

@@ -16,11 +16,31 @@
 // Device-initiated remote wakeup, HIGH SPEED, hub-composite IP.
 //
 // The resume is STARTED by the device: MCU firmware calls
-// usb_request_remote_wakeup(), USBDC0 drives resume K upstream, and the host
-// takes over and terminates it with a low-speed EOP.
+// usb_request_remote_wakeup() and USBDC0 drives resume K upstream. The DUT then
+// parks in BUS_EVENT_SW_WAKEUP_3 until it sees an SE0, which the restarted SOF
+// stream supplies as a frame EOP.
 //
 // Verdict: CHK_DEVICE_WAKEUP_K in caliptra_ss_usb_device_wakeup_checker (DUT
-// TXValid + linestate=K). Not any VIP status field.
+// TXValid + linestate=K), plus the post-resume GetDescriptor. Not any VIP
+// status field.
+//
+// SCOPE LIMIT, measured and deliberate. This test proves that the DEVICE can
+// initiate a wakeup and survives being woken. It does NOT prove USB 2.0
+// section 7.1.7.7 host conformance, because the host half never actually drives
+// a continuous resume K:
+//
+//   - clear_suspend carries prereq_link_20_state == SUSPEND, and the device's
+//     own K pulls the VIP receiver out of SUSPENDED before the sequence can
+//     react. CHK_DEVICE_WAKEUP_K needs K_MIN_HOLD = 20 us of sustained K first,
+//     so the responder fires ~19 us after the first K bit, by which point the
+//     precondition has already lapsed and the sequence is discarded in zero
+//     simulation time. A takeover latency of 0 ns in the log is that discard.
+//   - tdrsmdn, which would stretch a host resume, has MIN == NOM == 20 ms and
+//     cannot be lowered (see the localparam note below).
+//
+// Making this conformant needs the takeover armed on a raw TXValid/linestate=K
+// edge rather than on the debounced checker event, and the firmware grace
+// window widened past the resulting ~21.5 ms EOP. See claude_md note 36 s9.
 // =============================================================================
 
 class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_ss_usb_base_sequence;
@@ -63,15 +83,35 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     // Ceiling for UTMI SuspendM to rise again. NOT "the resume finished".
     localparam realtime RESUME_WAIT_MAX = 500us;
 
-    // The host-K duration (svt_usb_configuration::tdrsmdn) is NOT set here any
-    // more. It lives in the test class build_phase, because a mid-run
-    // reconfigure() of that field was measured delivering 28.03 us against
-    // 3.2 ms requested. See the rationale there.
+    // svt_usb_configuration::tdrsmdn is deliberately NOT touched, here or in
+    // the test class. SVT_USB_TDRSMDN_MIN == NOM == 20 ms
+    // (svt_usb_timing_defines.svi:21-22) with no MAX, so any smaller value is
+    // below the VIP floor and is rejected - which is why an earlier 3.2 ms
+    // override measured 28.03 us on the wire. The untouched 20 ms default is
+    // longer than the ~3.1 ms the DUT needs, so it already works.
 
-    // Settling time after clear_suspend returns: the host K itself, the pie
-    // leaving SW_WAKEUP_3 and the VIP granting the link to a queued transfer.
-    // Stays inside the firmware grace window of ~5.6 ms.
-    localparam realtime POST_RESUME_SETTLE = 3.3ms;
+    // Settling time for the VIP to grant the link to a queued transfer, counted
+    // from the SOF restart. The device K is NOT covered here - step 7b-wait
+    // below already blocks until the DUT stops driving K, so by this point the
+    // DUT is in SW_WAKEUP_3 and SOF is supplying frame EOPs.
+    //
+    // Sizing: SOF restarts at ~4570 us, so the transfer is issued at ~5570 us,
+    // inside the firmware grace window that closes at ~7178 us. Do not raise it
+    // much past 2 ms or the GetDescriptor lands after the firmware has stopped
+    // polling and fails for an unrelated reason.
+    localparam realtime POST_RESUME_SETTLE = 1ms;
+
+    // Ceiling for the DUT to stop driving its own resume K, polled before the
+    // SOF restart. The device holds K for T_3ms (3.072 ms) and this is a
+    // ceiling, not a dwell: the wait ends as soon as TXValid falls. 4 ms gives
+    // ~0.9 ms of margin. Exceeding it means the DUT never stopped driving K,
+    // which would be a genuine DUT fault and is reported as such.
+    localparam int unsigned K_END_WAIT_MAX_US = 4000;
+
+    // Guard after TXValid falls, so the DUT is definitely past SW_WAKEUP_2 and
+    // has armed its ls_filt SE0 detector in SW_WAKEUP_3 before SOF resumes.
+    // T_TxENDDELAY is 1800 pie_clk cycles = 30 us at 60 MHz; 50 us covers it.
+    localparam realtime SW_WAKEUP_3_ARM_GUARD = 50us;
 
     // Ceiling for the DEVICE to start driving resume K after the firmware
     // request, polled in ENABLED_POLL_STEP units by the main flow.
@@ -91,8 +131,8 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     localparam int unsigned ENABLED_POLL_MAX_US = 50000;
     localparam realtime     ENABLED_POLL_STEP   = 1us;
 
-    // UTMI TXValid, read for the fail-fast ordering gate below. This is the
-    // same DUT output caliptra_ss_usb_device_wakeup_checker keys on, read here
+    // UTMI TXValid, read for the step-7b ordering log below. This is the same
+    // DUT output caliptra_ss_usb_device_wakeup_checker keys on, read here
     // directly because a uvm_sequence cannot reach testbench scope.
     localparam string TXVALID_PATH =
         "caliptra_ss_top_tb.cptra_ss_usb_utmi_txvalid_o";
@@ -239,10 +279,13 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
                     "Device half done: the DUT drove resume K on its own UTMI TXValid (see CHK_DEVICE_WAKEUP_K). Answering immediately.",
                     UVM_LOW)
 
-                // tdrsmdn is NOT written here. It is set in the test class
-                // build_phase, because a reconfigure() at this point does not
-                // reach the running link SM: 3.2 ms was requested and 28.03 us
-                // was measured on the wire.
+                // tdrsmdn is left at the VIP default on purpose; see the
+                // localparam comment above for why it must not be lowered.
+                //
+                // clear_suspend returns well before the host resume K actually
+                // ends, so the log line below records when the TAKEOVER was
+                // ACCEPTED, not when the terminating SE0 reached the wire. The
+                // SE0 lands later, inside BUS_EVENT_SW_WAKEUP_3.
                 begin
                     svt_usb_link_service_clear_suspend_sequence clr_susp;
                     clr_susp = svt_usb_link_service_clear_suspend_sequence::type_id::create("clr_susp");
@@ -344,34 +387,48 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
                 UVM_LOW)
         end
 
-        // Step 7b: fail fast on a mis-ordered takeover. If the host has already
-        // finished terminating the resume while the DUT is STILL driving its own
-        // K, the terminating SE0 was spent before BUS_EVENT_SW_WAKEUP_3 opened.
-        // That state has no timeout arm, so the SE0 cannot be replayed and the
-        // DUT is parked for good; everything after this point can only time out.
+        // Step 7b: record the takeover ordering. INFORMATIONAL ONLY - do NOT
+        // promote this to a uvm_error. An earlier revision did, and it was a
+        // proven false failure; see claude_md note 36 s8/s9.
         //
-        // Reporting here instead of letting it run saves POST_RESUME_SETTLE plus
-        // the wait_xfer_done ceiling, and names the cause instead of surfacing a
-        // generic transfer timeout. Measured on the failing run: knowable at
-        // ~1500 us, previously reported at ~7179 us.
+        // TXValid still being high here is NORMAL on the L2 path: the device
+        // holds K for the full T_3ms (3.072 ms), and clear_suspend returns long
+        // before any host resume would end, so "takeover done" is not "EOP
+        // already driven".
         if (device_k_seen && host_takeover_done && device_k_still_driving()) begin
-            `uvm_error(MSG_ID,
-                $sformatf("Device-initiated remote wakeup FAILED on takeover ORDERING, not on either half: the DUT requested wakeup at %0t and the host completed its takeover, but UTMI TXValid is STILL high, so the DUT has not finished driving its own resume K. On the L2 path that K runs for T_3ms (3.072 ms) and BUS_EVENT_SW_WAKEUP_3 only opens T_TxENDDELAY (30 us) later, so a terminating SE0 driven now lands ~3.1 ms before the DUT starts looking for it and is lost - that state waits on ls_filt = LINESTATE_SE0 with no timeout arm. Raise tdrsmdn in the test build_phase so the host K outlasts the device K, or gate the takeover on TXValid falling. Not a DUT bug: the device half already passed (CHK_DEVICE_WAKEUP_K).",
-                          device_k_seen_time))
-            // Close the observation window so the checkers still evaluate, then
-            // stop: the remaining steps can only burn time.
-            obs_window_ev.trigger();
             `uvm_info(MSG_ID,
-                "caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence aborted early on the ordering failure above.",
-                UVM_LOW)
-            return;
+                $sformatf("Takeover ordering: the DUT requested wakeup at %0t, the host takeover returned, and UTMI TXValid is still high - so the device is still mid-K. Expected on the L2 path; the SE0 that releases BUS_EVENT_SW_WAKEUP_3 arrives later, after the wait below.",
+                          device_k_seen_time), UVM_LOW)
         end
+
+        // Step 7b-wait: let the device FINISH driving its own resume K before
+        // restarting SOF. This ordering is the whole fix, and it is load
+        // bearing - do not move the SOF restart back above it.
+        //
+        // WHY. BUS_EVENT_SW_WAKEUP_3 leaves on exactly one condition,
+        // ls_filt = LINESTATE_SE0, and has NO timeout arm (usb_pie.m.vhdl:1386).
+        // An SE0 driven before the state is entered is therefore LOST, and the
+        // DUT waits forever. Restarting SOF here instead of earlier means the
+        // FS frame stream - every frame of which ends in an EOP, i.e. an SE0 -
+        // is running while the detector is armed, so the DUT exits on the next
+        // frame. No single pulse has to be placed precisely.
+        //
+        // Being LATE costs nothing, precisely because there is no timeout arm.
+        // That is what makes this safe rather than another timing race.
+        //
+        // Measured 2026-11-06: with SOF restarted at ~1504 us, i.e. while the
+        // device was still mid-K, the only SE0 on the bus was at 1495.8 us, the
+        // state opened at 4569.7 us, and no further SE0 ever arrived - the DUT
+        // parked and the GetDescriptor timed out at 12003 us.
+        wait_for_device_k_end();
 
         begin
             svt_usb_protocol_service_20_sof_on_sequence sof_on2;
             sof_on2 = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on2");
             sof_on2.start(p_sequencer.prot_service_sequencer);
-            `uvm_info(MSG_ID, "SOF restarted so the link stays out of suspend.", UVM_LOW)
+            `uvm_info(MSG_ID,
+                "SOF restarted, now that the DUT has stopped driving K and is waiting in BUS_EVENT_SW_WAKEUP_3. Each restarted FS frame ends in an EOP (SE0), which is what releases that state.",
+                UVM_LOW)
         end
 
         // Step 7c: the VIP host link must report ENABLED again before any
@@ -484,9 +541,9 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     // Is the DUT still driving its own resume K right now? Reads UTMI TXValid,
     // a DUT OUTPUT, so nothing the host or the VIP does can forge the answer.
     //
-    // Returns 0 when the path cannot be read, so an unresolvable path downgrades
-    // the step-7b gate to its previous behaviour rather than inventing a
-    // failure. The uvm_warning makes that visible instead of silent.
+    // Returns 0 when the path cannot be read, so an unresolvable path just
+    // omits the step-7b log line. The uvm_warning makes that visible instead of
+    // silent. Nothing here can fail the test.
     // -------------------------------------------------------------------------
     function bit device_k_still_driving();
         logic [63:0] txvalid_val;
@@ -498,6 +555,35 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         end
         return (txvalid_val[0] === 1'b1);
     endfunction
+
+    // -------------------------------------------------------------------------
+    // Bounded poll for the DUT to STOP driving its own resume K, then a short
+    // guard so BUS_EVENT_SW_WAKEUP_3 is armed before the caller restarts SOF.
+    //
+    // Keys on UTMI TXValid, a DUT OUTPUT, so the host cannot forge the answer.
+    // The timeout IS a verdict here, unlike the step-7b log: the device K is
+    // self-terminating at T_3ms, so TXValid never falling means the DUT is
+    // stuck driving K, which is a real fault and not a testbench artefact.
+    // -------------------------------------------------------------------------
+    task wait_for_device_k_end();
+        int unsigned waited_us;
+        waited_us = 0;
+        while (device_k_still_driving() && (waited_us < K_END_WAIT_MAX_US)) begin
+            #ENABLED_POLL_STEP;
+            waited_us++;
+        end
+        if (device_k_still_driving()) begin
+            `uvm_error(MSG_ID,
+                $sformatf("UTMI TXValid is still high %0d us after the device wakeup K began, so the DUT never stopped driving resume K. It should self-terminate after T_3ms (3.072 ms) and move through SW_WAKEUP_2 into SW_WAKEUP_3. SOF is restarted anyway so the run completes, but the device cannot answer traffic while it is transmitting and the post-resume check below is expected to fail as a consequence.",
+                          waited_us))
+        end
+        else begin
+            `uvm_info(MSG_ID,
+                $sformatf("DUT stopped driving resume K after %0d us (T_3ms is 3072 us). Waiting %0t for T_TxENDDELAY so BUS_EVENT_SW_WAKEUP_3 is armed, then SOF can supply the terminating SE0.",
+                          waited_us, SW_WAKEUP_3_ARM_GUARD), UVM_LOW)
+            #SW_WAKEUP_3_ARM_GUARD;
+        end
+    endtask
 
     // -------------------------------------------------------------------------
     // Bounded poll for the VIP host link to report SUSPENDED after SOF-off.
@@ -515,7 +601,7 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         end
         if (shared_status.link_usb_20_state != svt_usb_types::SUSPENDED) begin
             `uvm_error(MSG_ID,
-                $sformatf("VIP host link is still %0s %0d us after SOF-off, so it never declared SUSPENDED. clear_suspend requires that state and is discarded silently without it, so the host would never start its half of the resume at all. Check tinactivity against the idle gap between SOF-off and the device K. NOTE this is NOT the explanation for a DUT parked in BUS_EVENT_SW_WAKEUP_3: that was measured with the link correctly SUSPENDED, and its cause is the terminating SE0 being driven before SW_WAKEUP_3 opens (step 7b).",
+                $sformatf("VIP host link is still %0s %0d us after SOF-off, so it never declared SUSPENDED. clear_suspend requires that state and is discarded silently without it, so the host would never start its half of the resume at all - a takeover latency of 0 ns in the step-7 log is the signature of that discard. Check tinactivity against the idle gap between SOF-off and the device K.",
                           shared_status.link_usb_20_state.name(), waited_us))
         end
         else begin
