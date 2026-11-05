@@ -36,18 +36,30 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
     virtual function void build_phase(uvm_phase phase);
         super.build_phase(phase);
 
-        // The FS variant's speed-conversion block is deliberately absent:
-        // caliptra_ss_usb_shared_cfg.svh already defaults the environment to
-        // high speed, so the correct HS configuration is the one obtained by
-        // NOT overriding anything. The firmware side matches by calling
-        // boot_usb_core_hub() rather than boot_usb_core_fs().
+        // tinactivity is deliberately NOT overridden. It must stay at its
+        // shared default or the VIP link never declares SUSPENDED and
+        // clear_suspend is discarded silently. The firmware side matches by
+        // calling boot_usb_core_hub().
 
-        // tinactivity is relaxed here for enumeration only; the tight
-        // suspend-window value is applied by the sequence immediately before
-        // SOF-off. The tight value must not be in force during enumeration or
-        // SET_ADDRESS is never granted the link. Keep the two in sync.
-        cfg.host_cfg.tinactivity = 10_000_000_000.0; // 10 ms in ps, enumeration phase
-        cfg.dev_cfg.tinactivity  = 10_000_000_000.0;
+        // tdrsmdn is the VIP RESUMING -> SEND_EOR dwell, i.e. how long the host
+        // holds resume K before terminating it with the low-speed EOP. It is set
+        // HERE and not from the sequence: a mid-run reconfigure() of this field
+        // was measured delivering 28.03 us against 3.2 ms requested, so the
+        // write did not reach the running link SM.
+        //
+        // The value must outlast the DUT's own resume K, because
+        // BUS_EVENT_SW_WAKEUP_3 only leaves on an SE0 and has no timeout arm, so
+        // an EOP driven before that state opens is simply lost. On the L2 path
+        // the device drives K for T_3ms (3.072 ms) and then takes T_TxENDDELAY
+        // (30 us) through SW_WAKEUP_2, so the window opens ~3.102 ms after the
+        // first K bit. 3.2 ms clears that with ~98 us to spare.
+        //
+        // Do NOT copy the 200 us used by caliptra_ss_usb_hs_dev_lpm_l1: that
+        // path drives K for T_60us, not T_3ms (usb_pie.m.vhdl:1503 vs 1372), so
+        // its window opens ~90 us in. Both paths then converge on the SAME
+        // BUS_EVENT_SW_WAKEUP_2/_3 states (see the RTL comment at
+        // usb_pie.m.vhdl:1511), which is why only this one timer differs.
+        cfg.host_cfg.tdrsmdn = 3_200_000_000.0; // 3.2 ms in ps
 
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
@@ -57,5 +69,3 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_test extends caliptra_ss_u
 endclass
 
 `endif // CALIPTRA_SS_USB_HS_HOST_REMOTEWAKEUP_FROMDEVICE_TEST_SV
-
-// File contains AI-generated response based on internal company sources
