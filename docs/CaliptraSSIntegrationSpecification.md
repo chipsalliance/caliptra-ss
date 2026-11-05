@@ -2284,8 +2284,7 @@ and other SoC agents. MCU MBOX SRAM has one exclusive owner at a time, and MCU
 accesses the SRAM only while it is that owner. See
 [MCU Mailbox MCU Access](./CaliptraSSHardwareSpecification.md#mcu-mailbox-mcu-access)
 for the MCU CSR access rules used by the flows below. Software can observe the
-current owner through `MBOX_HW_STATUS.SRAM_OWNER`, and its AXI USER through
-`MBOX_SRAM_OWNER_USER`.
+current owner through `MBOX_HW_STATUS.SRAM_OWNER`.
 
 The [Caliptra SS HW MCU Mailbox Spec](./CaliptraSSHardwareSpecification.md#mcu-mailbox) has more details about the specific registers and interrupts used in the mailbox flows.
 

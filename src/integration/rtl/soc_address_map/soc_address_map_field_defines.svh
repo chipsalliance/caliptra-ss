@@ -9355,9 +9355,6 @@
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
 `define MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
 `endif
-`ifndef MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER
-`define MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER                                                          (32'h200028)
-`endif
 `ifndef MCU_MBOX1_CSR_MBOX_LOCK
 `define MCU_MBOX1_CSR_MBOX_LOCK                                                                     (32'h200000)
 `define MCU_MBOX1_CSR_MBOX_LOCK_LOCK_LOW                                                            (0)
@@ -9403,9 +9400,6 @@
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_ECC_DOUBLE_ERROR_MASK                                          (32'h2)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW                                                 (2)
 `define MCU_MBOX1_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK                                                (32'hc)
-`endif
-`ifndef MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER
-`define MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER                                                          (32'h200028)
 `endif
 `ifndef OTP_CTRL_INTERRUPT_STATE
 `define OTP_CTRL_INTERRUPT_STATE                                                                    (32'h0)

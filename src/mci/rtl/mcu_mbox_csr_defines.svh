@@ -29,7 +29,6 @@
 `define MCU_MBOX_CSR_MBOX_TARGET_STATUS                                                             (32'h20001c)
 `define MCU_MBOX_CSR_MBOX_CMD_STATUS                                                                (32'h200020)
 `define MCU_MBOX_CSR_MBOX_HW_STATUS                                                                 (32'h200024)
-`define MCU_MBOX_CSR_MBOX_SRAM_OWNER_USER                                                           (32'h200028)
 
 
 `endif

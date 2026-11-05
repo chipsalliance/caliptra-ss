@@ -127,7 +127,6 @@ typedef enum logic [1:0] {
 } mcu_mbox_owner_e;
 
 mcu_mbox_owner_e sram_owner;
-logic [$bits(hwif_in.mbox_sram_owner_user.user.next)-1:0] sram_owner_user;
 
 logic lock_set;
 
@@ -236,33 +235,18 @@ always_comb begin
 end
 
 // SRAM, CMD, DLEN and EXECUTE follow the single resolved owner.
-// sram_owner_user reports the owner's AXI USER.
 always_comb begin
     valid_sram_owner_req = 1'b0;
-    sram_owner_user      = '0;
     unique case (sram_owner)
-        MBOX_OWNER_REQUESTER: begin
-            valid_sram_owner_req = mbox_requester_user_req;
-            sram_owner_user      = hwif_out.mbox_user.user.value;
-        end
-        MBOX_OWNER_ROOT: begin
-            valid_sram_owner_req = mbox_axi_root_user_req;
-            sram_owner_user      = strap_root_axi_user;
-        end
-        MBOX_OWNER_TARGET: begin
-            valid_sram_owner_req = mbox_target_user_req;
-            sram_owner_user      = hwif_out.mbox_target_user.user.value;
-        end
-        default: begin
-            valid_sram_owner_req = 1'b0;
-            sram_owner_user      = '0;
-        end
+        MBOX_OWNER_REQUESTER: valid_sram_owner_req = mbox_requester_user_req;
+        MBOX_OWNER_ROOT:      valid_sram_owner_req = mbox_axi_root_user_req;
+        MBOX_OWNER_TARGET:    valid_sram_owner_req = mbox_target_user_req;
+        default:              valid_sram_owner_req = 1'b0;
     endcase
 end
 
 assign hwif_in.valid_sram_owner_req = valid_sram_owner_req;
 assign hwif_in.mbox_hw_status.sram_owner.next = sram_owner;
-assign hwif_in.mbox_sram_owner_user.user.next = sram_owner_user;
 
 
 

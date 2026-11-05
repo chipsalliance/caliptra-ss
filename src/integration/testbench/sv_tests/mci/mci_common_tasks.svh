@@ -303,14 +303,6 @@ task get_mcu_mbox_hw_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_
     endcase
 endtask
 
-task get_mcu_mbox_sram_owner_user_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
-    case (mbox_num)
-        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_OWNER_USER;
-        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_SRAM_OWNER_USER;
-        default: $fatal(1, "get_mcu_mbox_sram_owner_user_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
-    endcase
-endtask
-
 task get_mcu_mbox_sram_base_addr(output logic [AXI_AW-1:0] addr, input int mbox_num = 0);
     if (mbox_num == 0)
         addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_SRAM_BASE_ADDR;
@@ -469,33 +461,13 @@ endtask
 // Counts an error unless MBOX_HW_STATUS.sram_owner reads `exp`.
 task automatic mcu_mbox_check_sram_owner(input int mbox_num, input mcu_mbox_sram_owner_e exp, input string what);
     logic [AXI_AW-1:0] addr;
-    logic [31:0] data, exp_user;
+    logic [31:0] data;
     get_mcu_mbox_hw_status_addr(addr, mbox_num);
     mcu_mbox_read(addr, cptra_ss_strap_mcu_lsu_axi_user_i, data);
     data = (data & `MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK) >> `MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW;
     if (data !== exp) begin
         mcu_mbox_err_cnt++;
         $error("%s: mbox=%0d sram_owner expected=%s actual=%0d", what, mbox_num, exp.name(), data);
-    end
-
-    // MBOX_SRAM_OWNER_USER must report the AXI USER of the same owner.
-    case (exp)
-        MCU_MBOX_OWNER_REQUESTER: begin
-            get_mcu_mbox_user_addr(addr, mbox_num);
-            mcu_mbox_read(addr, cptra_ss_strap_mcu_lsu_axi_user_i, exp_user);
-        end
-        MCU_MBOX_OWNER_ROOT:   exp_user = cptra_ss_strap_mcu_lsu_axi_user_i;
-        MCU_MBOX_OWNER_TARGET: begin
-            get_mcu_mbox_target_user_addr(addr, mbox_num);
-            mcu_mbox_read(addr, cptra_ss_strap_mcu_lsu_axi_user_i, exp_user);
-        end
-        default:               exp_user = '0;
-    endcase
-    get_mcu_mbox_sram_owner_user_addr(addr, mbox_num);
-    mcu_mbox_read(addr, cptra_ss_strap_mcu_lsu_axi_user_i, data);
-    if (data !== exp_user) begin
-        mcu_mbox_err_cnt++;
-        $error("%s: mbox=%0d sram_owner_user (%s) expected=%08x actual=%08x", what, mbox_num, exp.name(), exp_user, data);
     end
 endtask
 
