@@ -75,7 +75,7 @@ function void caliptra_ss_usb_ocp_recovery_env::build_phase(uvm_phase phase);
     // the OCP recovery sequence's lookup at uvm_config_db::get(null, "",
     // "cfg", scfg) hits. The base env::build_phase only sets it under
     // "this" scope, which is invisible to sequences that have no
-    // component context. Without this fix get_iface_num() silently
+    // component context. Without this fix ocp_get_iface_num() silently
     // returns 0 even if the recovery interface is renumbered.
     if (cfg != null) begin
         uvm_config_db#(caliptra_ss_usb_shared_cfg)::set(null, "*",

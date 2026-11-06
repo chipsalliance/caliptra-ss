@@ -99,8 +99,10 @@ uint8_t main(void)
             last_command = command;
             ack_command(command);
             if (opcode == COLLISION_STOP && scenario_id == COLLISION_SCENARIOS - 1u) {
-                // No new AXI polling can race the UVM end-of-test drain.
-                while (1);
+                // Scenario STOP is not teardown STOP; require a fresh command.
+                usb_ocp_recovery_wait_for_stop_and_halt(
+                    (uint16_t)(last_command &
+                               USB_LEGACY_EP0_COMMAND_GENERATION_MASK));
             }
             iteration = 0u;
         }
