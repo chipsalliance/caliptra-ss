@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// Owned snapshots only: no retained vendor transaction or payload handles.
+class usb_ocp_event extends uvm_sequence_item;
+  `uvm_object_utils(usb_ocp_event)
+
+  typedef enum {USB_PACKET, USB_TRANSFER, AXI_COMPLETED} kind_e;
+  kind_e kind;
+  longint unsigned order;
+  realtime observed_at;
+  logic host_tx;
+  svt_usb_packet::pid_name_enum pid;
+  logic packet_valid;
+  logic [6:0] address;
+  logic [3:0] endpoint;
+  logic [7:0] bytes[$];
+  logic [7:0] setup[8];
+  logic transfer_ok;
+  logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] results;
+  int unsigned vendor_instance;
+  longint unsigned transfer_start_order;
+  longint unsigned transfer_serial;
+  int unsigned manager;
+  logic write_access;
+  logic [63:0] axi_address;
+  logic [7:0] strobes[$];
+  logic response_ok;
+  // USB device/epoch/SETUP generation lives in usb_ocp_base_control.
+  // DATA and handshakes never establish context from their address fields.
+
+  function new(string name = "usb_ocp_event");
+    super.new(name);
+  endfunction
+endclass
