@@ -141,31 +141,8 @@ void main(void) {
 
         // Drain the ISR mailbox. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself.
-        //
-        // The snapshot/clear pair MUST be atomic with respect to the USB
-        // interrupt. service_usb_intr() publishes with "mcu_intr_rcv.usb |=
-        // act" and then immediately write-1-clears INTSTAT. A plain
-        // read-modify-write here (lw / and / sw) that is interrupted between
-        // the load and the store writes back the stale value and destroys the
-        // bit the ISR just published - and because the hardware source has
-        // already been acknowledged, that event never refires. The observed
-        // consequence was a SET_ADDRESS SETUP latched in DEVCMDSTAT.SETUP and
-        // never dispatched: the controller sat at DEV_ADDR=0 with
-        // DEVCMDSTAT=0x10414F80 and intr_cnt frozen for the rest of the run,
-        // so the host saw SET_ADDRESS abort and every later transfer was
-        // addressed to a device nobody owned. Masking mstatus.MIE (bit 3)
-        // across the pair closes the window. See
-        // docs/handover/claude_md/26_usb_hs_get_status_clear_feature_drop.md
-        // Failure 2 for the original diagnosis of this race.
-        {
-            uint32_t prev_mstatus = csr_read_clr_bits_mstatus(0x8u);
-            usb_events = mcu_intr_rcv.usb;
-            mcu_intr_rcv.usb &= ~usb_events;
-            if (prev_mstatus & 0x8u) {
-                csr_set_bits_mstatus(0x8u);
-            }
-        }
+        // itself. Atomically snapshot and clear the whole mailbox.
+        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
 
         // One DEVCMDSTAT read per iteration, shared by the bus-reset check and
         // the EP0 dispatch below.
