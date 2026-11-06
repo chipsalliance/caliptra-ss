@@ -1,0 +1,445 @@
+// SPDX-License-Identifier: Apache-2.0
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+class usb_ocp_predictor extends uvm_object;
+  `uvm_object_utils(usb_ocp_predictor)
+  typedef logic [7:0] bytes_t[$];
+  typedef usb_ocp_base_control::status_version_t status_version_t;
+  localparam int unsigned STATUS_VERSION_LIMIT = 64;
+
+  // Completed-write evidence is ordered independently of the deferred AXI
+  // ledger. Only the latest version survives between USB reads.
+  status_version_t current_status[2];
+  status_version_t setup_status_versions[2][$];
+
+  usb_ocp_base_control control[3];
+  logic [6:0] address[3] = '{0,126,127};
+  int unsigned default_device;
+  int unsigned ready_controls[$];
+  usb_ocp_event token;
+  usb_ocp_event candidate;
+  int unsigned token_device;
+  int unsigned token_epoch;
+  int unsigned token_generation;
+  int unsigned usb_completions[3];
+  int unsigned transfer_crosschecks[3];
+  logic enumerated[3];
+  logic device_descriptor_seen[3];
+  logic [31:0] device_identity[3];
+  logic config_descriptor_seen[3];
+  logic hub_descriptor_seen;
+  logic hub_enabled;
+  logic hub_connected;
+  logic device_prepared[2];
+  logic [31:0] hub_enable_mask;
+  logic [31:0] hub_connect_mask;
+  logic [63:0] hub_control_address;
+  logic [63:0] hub_identity_address;
+  logic [31:0] hub_identity_expected;
+  logic hub_identity_programmed;
+  logic [63:0] device_command_address[2];
+  logic [31:0] device_enable_mask[2];
+  logic [31:0] device_connect_mask[2];
+  string recovery_register[logic [63:0]];
+
+  // Recovery domain: never cleared by ocp_cancel_usb_epoch().
+  logic [7:0] fifo_expected[$];
+  logic [7:0] fifo_actual[$];
+  int unsigned accepted_bytes;
+  int unsigned returned_bytes;
+  int unsigned compared_bytes;
+  logic [31:0] image_words;
+  logic [7:0] selected_cms;
+  logic [23:0] recovery_ctrl;
+  logic baseline_zero;
+  logic activation_request;
+  logic activation_status_acked;
+  logic activation_observed;
+  logic activation_cleared;
+  logic recovery_mode_seen;
+  logic pending_seen;
+  logic final_status_seen;
+  logic clear_seen;
+  logic capabilities_seen;
+  logic discovery_seen;
+  logic fifo_discovered;
+  logic [7:0] interface_number;
+  int unsigned max_read;
+  int unsigned max_write;
+  int unsigned cms_count;
+  int unsigned fifo_depth_words;
+  int unsigned fifo_max_words;
+  int unsigned image_size_reads;
+  int unsigned control_reads;
+
+  function new(string name = "usb_ocp_predictor");
+    super.new(name);
+    foreach (control[i])
+      control[i] = usb_ocp_base_control::type_id::create($sformatf("control%0d", i));
+    foreach (current_status[i]) begin
+      current_status[i].valid = 0;
+      current_status[i].value = 0;
+      current_status[i].version = 0;
+      current_status[i].order = 0;
+      current_status[i].observed_at = 0;
+    end
+    default_device = 0;
+    usb_completions = '{default:0};
+    transfer_crosschecks = '{default:0};
+    enumerated = '{default:0};
+    device_descriptor_seen = '{default:0};
+    config_descriptor_seen = '{default:0};
+    device_prepared = '{default:0};
+    hub_descriptor_seen = 0;
+    hub_enabled = 0;
+    hub_connected = 0;
+    hub_identity_programmed = 0;
+    accepted_bytes = 0;
+    returned_bytes = 0;
+    compared_bytes = 0;
+    image_words = 0;
+    selected_cms = 0;
+    recovery_ctrl = 0;
+    baseline_zero = 0;
+    activation_request = 0;
+    activation_status_acked = 0;
+    activation_observed = 0;
+    activation_cleared = 0;
+    recovery_mode_seen = 0;
+    pending_seen = 0;
+    final_status_seen = 0;
+    clear_seen = 0;
+    capabilities_seen = 0;
+    discovery_seen = 0;
+    fifo_discovered = 0;
+    max_read = 0;
+    max_write = 0;
+    cms_count = 0;
+    fifo_depth_words = 0;
+    fifo_max_words = 0;
+    image_size_reads = 0;
+    control_reads = 0;
+  endfunction
+
+  function void ocp_configure_map(usb_reg_model ral);
+    uvm_reg regs[$];
+    ral.combo.recovery.get_registers(regs);
+    foreach (regs[i])
+      recovery_register[regs[i].get_address(ral.combo_map)] = regs[i].get_name();
+    hub_control_address = ral.combo.hub.CONTROL.get_address(ral.combo_map);
+    hub_identity_address = ral.combo.hub.DESCRIPTOR_LOW.m_mem.get_address(2,ral.combo_map);
+    hub_enable_mask = 32'(1) << ral.combo.hub.CONTROL.ENABLE.get_lsb_pos();
+    hub_connect_mask = 32'(1) << ral.combo.hub.CONTROL.DCON.get_lsb_pos();
+    device_command_address[0] = ral.combo.dev0_csr.DEVCMDSTAT.get_address(ral.combo_map);
+    device_command_address[1] = ral.dev1_csr.DEVCMDSTAT.get_address(ral.dev1_csr_map);
+    device_enable_mask[0] = 32'(1) << ral.combo.dev0_csr.DEVCMDSTAT.DEV_EN.get_lsb_pos();
+    device_enable_mask[1] = 32'(1) << ral.dev1_csr.DEVCMDSTAT.DEV_EN.get_lsb_pos();
+    device_connect_mask[0] = 32'(1) << ral.combo.dev0_csr.DEVCMDSTAT.DCON.get_lsb_pos();
+    device_connect_mask[1] = 32'(1) << ral.dev1_csr.DEVCMDSTAT.DCON.get_lsb_pos();
+  endfunction
+
+  static function logic [31:0] ocp_get_le32(bytes_t bytes, int offset);
+    if (offset + 4 > bytes.size())
+      `uvm_fatal("OCP_LENGTH", "DWORD beyond payload boundary")
+    return {bytes[offset+3],bytes[offset+2],bytes[offset+1],bytes[offset]};
+  endfunction
+
+  // OCP 1.1 9.2: DEVICE_STATUS and RECOVERY_STATUS describe current status,
+  // not any value previously programmed. AW/submitted intent is not evidence.
+  function void ocp_record_status_programming(usb_ocp_event item);
+    int status_index;
+    logic [7:0] command;
+    logic [31:0] word;
+    usb_ocp_base_control c;
+    if (item.manager != 0 || !item.write_access ||
+        !recovery_register.exists(item.axi_address)) return;
+    case (recovery_register[item.axi_address])
+      "DEVICE_STATUS_0": begin status_index = 0; command = OCP_CMD_DEVICE_STATUS; end
+      "RECOVERY_STATUS": begin status_index = 1; command = OCP_CMD_RECOVERY_STATUS; end
+      default: return;
+    endcase
+    if (item.response_ok !== 1'b1 || item.bytes.size() != 4 ||
+        item.strobes.size() != 4)
+      `uvm_fatal("OCP_STATUS", "Status version requires a completed successful DWORD write")
+    foreach (item.strobes[i])
+      if (item.strobes[i] !== 8'h01)
+        `uvm_fatal("OCP_STATUS", "Status programming requires all DWORD byte lanes")
+    word = ocp_get_le32(item.bytes,0);
+    if ($isunknown(word))
+      `uvm_fatal("OCP_STATUS", "Unknown firmware status programming")
+    if (current_status[status_index].valid &&
+        item.order <= current_status[status_index].order)
+      `uvm_fatal("OCP_STATUS", "Status programming is not in observer order")
+    current_status[status_index].valid = 1;
+    current_status[status_index].value = (status_index == 0) ? word : {16'b0,word[15:0]};
+    current_status[status_index].version++;
+    current_status[status_index].order = item.order;
+    current_status[status_index].observed_at = item.observed_at;
+
+    // Keep provisional versions across SETUP DATA/ACK, but do not supersede
+    // the prior control until the new SETUP is accepted.
+    if (token != null && token.pid == svt_usb_packet::SETUP && token_device == 1) begin
+      if (setup_status_versions[status_index].size() >= STATUS_VERSION_LIMIT)
+        `uvm_fatal("OCP_STATUS", "SETUP status-version window exceeded bound")
+      setup_status_versions[status_index].push_back(current_status[status_index]);
+    end
+    c = control[1];
+    if (c.active && c.status_read && !c.status_frozen && c.setup[2] === command) begin
+      if (c.status_versions.size() >= STATUS_VERSION_LIMIT)
+        `uvm_fatal("OCP_STATUS", "Read status-version window exceeded bound")
+      c.status_versions.push_back(current_status[status_index]);
+    end
+  endfunction
+
+  // USB reset policy is deliberately limited to transfer state. OCP reset
+  // retention remains unresolved; no reset workload calls this in bringup.
+  function void ocp_cancel_usb_epoch(int device);
+    control[device].epoch++;
+    control[device].active = 0;
+    control[device].status_acked = 0;
+    control[device].data.delete();
+    control[device].expected.delete();
+    control[device].status_versions.delete();
+    control[device].status_read = 0;
+    control[device].status_frozen = 0;
+    if (token != null && token_device == device) begin
+      foreach (setup_status_versions[i]) setup_status_versions[i].delete();
+      token = null;
+      candidate = null;
+    end
+  endfunction
+
+  function int ocp_find_device(logic [6:0] addr);
+    if (addr === 0) return default_device;
+    foreach (address[i]) if (address[i] === addr) return i;
+    `uvm_fatal("OCP_CONTEXT", $sformatf("Unknown USB address %0d", addr))
+    return 0;
+  endfunction
+
+  function void ocp_prepare_response(int device);
+    usb_ocp_base_control c;
+    c = control[device];
+    c.expected.delete();
+    if (c.setup[0] === 8'h80) begin
+      case (c.setup[1])
+        6: if (device != 0)
+             c.expected = usb_ocp_base_descriptors::ocp_prepare_descriptor(device, c.ocp_get_value());
+        8: c.expected.push_back(c.configuration);
+        0: if (device != 0) c.expected = '{0,0};
+        default: begin end
+      endcase
+      while (c.expected.size() > c.ocp_get_length()) void'(c.expected.pop_back());
+    end
+    // OCP requests must use only wire-discovered limits and interface.
+    if (device == 1 && c.setup[0] inside {8'h21,8'ha1}) begin
+      if (!discovery_seen || c.setup[1] !== OCP_BREQUEST_XFER ||
+          c.setup[3] !== 0 || c.setup[4] !== interface_number || c.setup[5] !== 0 ||
+          (c.setup[0][7] && c.ocp_get_length() != max_read) ||
+          (!c.setup[0][7] && c.ocp_get_length() > max_write))
+        `uvm_fatal("OCP_REQUEST", "OCP 8.5.1 request violates validated discovery")
+      if (c.setup[2] === OCP_CMD_PROT_CAP && !recovery_mode_seen)
+        `uvm_fatal("OCP_READY", "PROT_CAP before USB-observed Recovery Mode")
+    end
+  endfunction
+
+  function void ocp_accept_setup(int device, usb_ocp_event data);
+    usb_ocp_base_control c;
+    c = control[device];
+    if (data.bytes.size() != 8 || data.pid != svt_usb_packet::DATA0)
+      `uvm_fatal("OCP_SETUP", "SETUP requires eight DATA0 bytes")
+    // USB 2.0 5.5.5: supersession cancels control obligations, not accepted
+    // FIFO prefixes. The recovery ledger below is deliberately untouched.
+    c.generation++;
+    c.active = 1;
+    c.status_acked = 0;
+    c.data.delete();
+    c.compared = 0;
+    c.address = token.address;
+    c.next_toggle = '{1'b1,1'b1};
+    foreach (c.setup[i]) c.setup[i] = data.bytes[i];
+    c.status_versions.delete();
+    c.status_frozen = 0;
+    c.status_setup_order = token.order;
+    c.status_data_order = 0;
+    c.status_read = (device == 1 && c.setup[0] === 8'ha1 &&
+                    c.setup[2] inside {OCP_CMD_DEVICE_STATUS,OCP_CMD_RECOVERY_STATUS});
+    if (c.status_read)
+      c.status_versions = setup_status_versions[(c.setup[2] === OCP_CMD_RECOVERY_STATUS) ? 1 : 0];
+    foreach (setup_status_versions[i]) setup_status_versions[i].delete();
+    ocp_prepare_response(device);
+  endfunction
+
+  function void ocp_accept_out(int device, usb_ocp_event data);
+    usb_ocp_base_control c;
+    c = control[device];
+    if (device == 1 && c.setup[0] === 8'h21) begin
+      if (c.setup[2] === OCP_CMD_INDIRECT_FIFO_DATA) begin
+        if (!fifo_discovered || image_words == 0 ||
+            c.ocp_get_length() > fifo_max_words*4 ||
+            accepted_bytes + data.bytes.size() > image_words*4)
+          `uvm_fatal("OCP_FIFO", "FIFO write exceeds discovery/image bounds")
+        foreach (data.bytes[i]) fifo_expected.push_back(data.bytes[i]);
+        accepted_bytes += data.bytes.size();
+      end
+      if (c.data.size() == c.ocp_get_length()) begin
+        case (c.setup[2])
+          OCP_CMD_INDIRECT_FIFO_CTRL: begin
+            if (c.data.size() != OCP_SPEC_LEN_INDIRECT_FIFO_CTRL ||
+                c.data[1] !== 0 || accepted_bytes != 0)
+              `uvm_fatal("OCP_FIFO", "Unsupported bringup FIFO control/reset")
+            selected_cms = c.data[0];
+            image_words = ocp_get_le32(c.data, 2);
+          end
+          OCP_CMD_RECOVERY_CTRL: begin
+            if (c.data.size() != OCP_SPEC_LEN_RECOVERY_CTRL ||
+                c.data[0] !== selected_cms || c.data[1] !== OCP_RC_IMAGE_SEL_CMS ||
+                c.data[2] !== OCP_RC_ACTIVATE_CODE || !pending_seen || !baseline_zero)
+              `uvm_fatal("OCP_ACTIVATION", "Activation lacks pending/zero baseline or legal payload")
+            recovery_ctrl = {c.data[2],c.data[1],c.data[0]};
+            activation_request = 1;
+          end
+          default: begin end
+        endcase
+      end
+    end
+  endfunction
+
+  function void ocp_accept_status(int device);
+    usb_ocp_base_control c;
+    c = control[device];
+    c.active = 0;
+    c.status_acked = 1;
+    usb_completions[device]++;
+    ready_controls.push_back(device);
+    if (c.setup[0] === 0 && c.setup[1] === 5) begin
+      if (c.setup[2] == 0 || c.setup[2] > 127)
+        `uvm_fatal("OCP_ADDRESS", "Invalid SET_ADDRESS")
+      address[device] = c.setup[2][6:0];
+    end
+    if (c.setup[0] === 0 && c.setup[1] === 9) begin
+      c.configuration = c.setup[2];
+      enumerated[device] = (c.configuration === 1);
+    end
+    if (device == 0 && c.setup[0] === 8'h23 && c.setup[1] === 3 &&
+        c.ocp_get_value() === 4) begin
+      if (!(c.setup[4] inside {1,2}))
+        `uvm_fatal("OCP_PORT", "Invalid downstream port")
+      default_device = c.setup[4];
+    end
+    if (device == 1 && c.setup[0] === 8'h21 &&
+        c.setup[2] === OCP_CMD_RECOVERY_CTRL)
+      activation_status_acked = 1;
+  endfunction
+
+  function void ocp_observe_packet(usb_ocp_event item);
+    usb_ocp_base_control c;
+    logic incoming;
+    logic status_stage;
+    logic toggle;
+    string setup_context;
+    int unsigned setup_generation;
+    if (item.pid == svt_usb_packet::SOF) return;
+    if (item.host_tx && item.pid inside {svt_usb_packet::SETUP,
+        svt_usb_packet::IN,svt_usb_packet::OUT,svt_usb_packet::PING}) begin
+      token = item;
+      candidate = null;
+      if (!item.packet_valid) begin token = null; return; end
+      token_device = ocp_find_device(item.address);
+      token_epoch = control[token_device].epoch;
+      token_generation = control[token_device].generation;
+      if (item.endpoint !== 0) `uvm_fatal("OCP_CONTEXT", "Bringup is EP0 only")
+      if (item.pid == svt_usb_packet::SETUP) begin
+        foreach (setup_status_versions[i]) begin
+          setup_status_versions[i].delete();
+          if (current_status[i].valid)
+            setup_status_versions[i].push_back(current_status[i]);
+        end
+      end
+      return;
+    end
+    if (token == null) return;
+    c = control[token_device];
+    if (c.epoch != token_epoch || c.generation != token_generation)
+      `uvm_fatal("OCP_CONTEXT", "Stale token epoch or SETUP generation")
+    incoming = (token.pid == svt_usb_packet::IN);
+    if (item.pid inside {svt_usb_packet::DATA0,svt_usb_packet::DATA1}) begin
+      if (item.host_tx === incoming || !item.packet_valid)
+        `uvm_fatal("OCP_PACKET", "Wrong DATA direction or invalid CRC")
+      // These short OCP status replies fit one EP0 packet. Freeze before
+      // inspecting its bytes, not at ACK or control-transfer completion:
+      // subsequent programming cannot justify data already on the wire.
+      if (incoming && c.active && c.status_read && !c.status_frozen &&
+          item.pid == svt_usb_packet::DATA1) begin
+        c.status_data_order = item.order;
+        c.status_frozen = 1;
+      end
+      candidate = item;
+      return;
+    end
+    if (item.pid inside {svt_usb_packet::NAK,svt_usb_packet::STALL}) begin
+      if (item.pid == svt_usb_packet::STALL) begin
+        setup_generation = c.generation;
+        if (token.pid == svt_usb_packet::SETUP) begin
+          setup_generation++;
+          if (candidate != null && candidate.bytes.size() == 8)
+            setup_context = $sformatf("pending SETUP=%p (not ACKed)",candidate.bytes);
+          else setup_context = "pending SETUP unavailable (no complete SETUP DATA)";
+        end else if (c.generation != 0)
+          setup_context = $sformatf("accepted SETUP=%p",c.setup);
+        else setup_context = "SETUP unavailable (no accepted generation)";
+        `uvm_fatal("OCP_STALL",$sformatf(
+          "Unexpected STALL device=%s slot=%0d addr=%0d ep=%0d token=%s epoch=%0d setup_generation=%0d %s",
+          (token_device == 0) ? "hub" : ((token_device == 1) ? "dev0" : "dev1"),
+          token_device,token.address,token.endpoint,token.pid.name(),token_epoch,
+          setup_generation,setup_context))
+      end
+      candidate = null;
+      token = null;
+      return;
+    end
+    if (item.pid == svt_usb_packet::ACK ||
+        (item.pid == svt_usb_packet::NYET && !incoming)) begin
+      if (candidate == null) begin token = null; return; end
+      if (item.host_tx !== incoming)
+        `uvm_fatal("OCP_ACK", "Handshake from wrong endpoint")
+      if (token.pid == svt_usb_packet::SETUP) begin
+        if (item.pid != svt_usb_packet::ACK)
+          `uvm_fatal("OCP_SETUP", "SETUP requires ACK")
+        ocp_accept_setup(token_device, candidate);
+      end else begin
+        if (!c.active) `uvm_fatal("OCP_STAGE", "DATA without active control transfer")
+        status_stage = (c.ocp_get_length() == 0 || incoming != c.setup[0][7]);
+        toggle = (candidate.pid == svt_usb_packet::DATA1);
+        if (status_stage) begin
+          if (c.ocp_get_length() == 0 && !incoming)
+            `uvm_fatal("OCP_STATUS", "No-data control requires IN status")
+          if (candidate.bytes.size() != 0 || !toggle)
+            `uvm_fatal("OCP_STATUS", "Status stage must be DATA1 ZLP")
+          if (!c.setup[0][7] && c.data.size() != c.ocp_get_length())
+            `uvm_fatal("OCP_LENGTH", "OUT status before full data stage")
+          ocp_accept_status(token_device);
+        end else if (toggle === c.next_toggle[incoming]) begin
+          c.next_toggle[incoming] = !toggle;
+          foreach (candidate.bytes[i]) c.data.push_back(candidate.bytes[i]);
+          if (c.data.size() > c.ocp_get_length())
+            `uvm_fatal("OCP_LENGTH", "Control data exceeds wLength")
+          if (!incoming) ocp_accept_out(token_device, candidate);
+        end
+        // A retry with the previous toggle has no second acceptance effect.
+      end
+      token = null;
+      candidate = null;
+    end
+  endfunction
+endclass

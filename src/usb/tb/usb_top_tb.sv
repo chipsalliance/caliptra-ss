@@ -383,6 +383,7 @@ module usb_top_tb;
   // Testbench control and UVM startup
   // --------------------------------------------------------------------------
   caliptra_ss_usb_ocp_collision_bind ocp_collision_bind();
+  usb_ocp_cov_bind ocp_exercise_bind();
 
   initial begin
     usb_20_mac_if.utmi_dut_mac_if.generate_clk = 1'b1;
