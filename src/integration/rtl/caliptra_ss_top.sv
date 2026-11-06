@@ -1652,8 +1652,6 @@ module caliptra_ss_top
 
 // synthesis translate_off
 `ifdef CLP_ASSERT_ON
-    localparam realtime CPTRA_SS_CLK_MAX_PERIOD = 1us / 60.0;
-    localparam realtime CPTRA_SS_I3C_CLK_MAX_PERIOD = 1us / 333.0;
     bit i3c_scl_seen = 1'b0;
 
     // Any SCL change outside reset selects 333 MHz for the rest of the simulation.
@@ -1664,9 +1662,9 @@ module caliptra_ss_top
 
     property cptra_ss_min_clk_freq_p;
         realtime clk_edge_time;
-        // Measure a full period; allow 1 ps for simulator rounding.
+        // Convert the package limit to local time units; allow 1 ps for rounding.
         (1'b1, clk_edge_time = $realtime) |=>
-            ($realtime - clk_edge_time <= (i3c_scl_seen ? CPTRA_SS_I3C_CLK_MAX_PERIOD : CPTRA_SS_CLK_MAX_PERIOD) + 1ps);
+            ($realtime - clk_edge_time <= ((i3c_scl_seen ? CPTRA_SS_I3C_CLK_MAX_PERIOD : CPTRA_SS_CLK_MAX_PERIOD) / CPTRA_SS_TIME_1US) * 1us + 1ps);
     endproperty
 
     `CALIPTRA_ASSERT(CptraSsMinClkFreq_A, cptra_ss_min_clk_freq_p, cptra_ss_clk_i, !cptra_ss_rst_b_i)
