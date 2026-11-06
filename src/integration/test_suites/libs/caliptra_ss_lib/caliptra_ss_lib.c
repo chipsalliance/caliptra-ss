@@ -268,7 +268,7 @@ void mcu_cptra_init(mcu_cptra_init_args args) {
     // BOOT USB
     /////////////////////////////////
     if (args.cfg_boot_usb_core) {
-        boot_usb_core(args.usb_config_desc_fn, args.usb_class_req_fn);
+        boot_usb_core(args.usb_fs_en, args.usb_hub_en);
     }
     else {
         VPRINTF(LOW, "MCU: Skipping USB Core boot\n");

@@ -44,22 +44,6 @@ localparam ocp_cmd_t OCP_CMD_MAX                  = OCP_CMD_INDIRECT_FIFO_DATA;
 // registers; they are not protocol response expectations.
 `include "generated/usb_ocp_recovery_reg_addr_defs.svh"
 
-// Compatibility names used by the existing recovery sequence.
-localparam ocp_cmd_t OCP_REC_CMD_PROT_CAP             = OCP_CMD_PROT_CAP;
-localparam ocp_cmd_t OCP_REC_CMD_DEVICE_ID            = OCP_CMD_DEVICE_ID;
-localparam ocp_cmd_t OCP_REC_CMD_DEVICE_STATUS        = OCP_CMD_DEVICE_STATUS;
-localparam ocp_cmd_t OCP_REC_CMD_RESET                = OCP_CMD_DEVICE_RESET;
-localparam ocp_cmd_t OCP_REC_CMD_RECOVERY_CTRL        = OCP_CMD_RECOVERY_CTRL;
-localparam ocp_cmd_t OCP_REC_CMD_RECOVERY_STATUS      = OCP_CMD_RECOVERY_STATUS;
-localparam ocp_cmd_t OCP_REC_CMD_HW_STATUS            = OCP_CMD_HW_STATUS;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_CTRL        = OCP_CMD_INDIRECT_CTRL;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_STATUS      = OCP_CMD_INDIRECT_STATUS;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_DATA        = OCP_CMD_INDIRECT_DATA;
-localparam ocp_cmd_t OCP_REC_CMD_VENDOR               = OCP_CMD_VENDOR;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_FIFO_CTRL   = OCP_CMD_INDIRECT_FIFO_CTRL;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_FIFO_STATUS = OCP_CMD_INDIRECT_FIFO_STATUS;
-localparam ocp_cmd_t OCP_REC_CMD_INDIRECT_FIFO_DATA   = OCP_CMD_INDIRECT_FIFO_DATA;
-
 // OCP Recovery v1.1 Section 9.2 payload bounds.
 localparam int OCP_SPEC_LEN_PROT_CAP               = 15;
 localparam int OCP_SPEC_MIN_LEN_DEVICE_ID          = 24;

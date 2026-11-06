@@ -315,8 +315,6 @@ void main(void)
             generation);
         wait_for_flow_command_release();
     }
-#else
-    spin_delay(10000u);
 #endif
     lsu_write_32(
         CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,

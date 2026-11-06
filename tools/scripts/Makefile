@@ -79,8 +79,7 @@ COMP_LIB_NAMES := caliptra_ss_lib \
 		  fuse_ctrl \
 		  lc_ctrl \
 		  wdt \
-		  usb \
-		  spi_host
+		  usb
 COMP_LIBS := $(foreach name, $(COMP_LIB_NAMES), $(LIBS_DIR)/$(name))
 
 # Optional per-test makefile fragment for extra objects/libs/headers/plusargs
@@ -307,7 +306,7 @@ VCS_COMP_OPTS += +define+AAXI_MAX_AWUSER_WIDTH=32
 VCS_COMP_OPTS += +define+CALIPTRA_INTERNAL_TRNG
 VCS_COMP_OPTS += -noinherit_timescale=1ps/1ps
 VCS_COMP_OPTS += +define+AAXI_INTC_MASTER_CNT=5
-VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=14
+VCS_COMP_OPTS += +define+AAXI_INTC_SLAVE_CNT=12
 
 VCS_COMP_OPTS += +define+AI3C_LANE_NUM=1
 VCS_COMP_OPTS += +define+AVERY_SV_TEST_CASE=1
@@ -349,7 +348,6 @@ VCS_SIM_OPTS  += +CLP_BUS_LOGS=1
 # enable_phys_tracing gate which layers are written.
 #VCS_SIM_OPTS  += +svt_debug_opts
 VCS_SIM_OPTS  += -sv_lib $(TB_DPI_DIR)/lib_dpi
-VCS_SIM_OPTS  += +mcu_console_fail_check=1
 ############# VCS Simulation Override Options #############
 VCS_SIM_EXTRA_OPTS ?= 
 

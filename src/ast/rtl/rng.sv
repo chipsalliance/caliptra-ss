@@ -32,7 +32,12 @@ module rng #(
 logic rst_n;
 logic[EntropyStreams-1:0] lfsr_val;
 
-assign rst_n = scan_mode_i ? rst_ni : rst_ni && rng_en_i;
+caliptra_prim_rst_mux2 u_rst_mux (
+  .rst0_i ( rst_ni && rng_en_i ),
+  .rst1_i ( rst_ni ),
+  .sel_i ( scan_mode_i ),
+  .rst_o ( rst_n )
+);
 
 // These LFSR parameters have been generated with
 // $ ./util/design/gen-lfsr-seed.py --width 64 --seed 15513 --prefix "Rng"

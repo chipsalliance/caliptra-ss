@@ -61,9 +61,7 @@ uint8_t main(void)
     }
     mcu_cptra_init_d(
         .cfg_cptra_fuse=true, .cfg_cptra_wdt=true, .cptra_wdt_cfg_0=1u,
-        .cfg_boot_usb_core=true,
-        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
-        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
+        .cfg_boot_usb_core=true);
     mcu_cptra_user_init();
     while (!mcu_cptra_mb_ready_nb() || !usb_is_configured()) {
         usb_event_loop(1u, 0u);
@@ -101,8 +99,10 @@ uint8_t main(void)
             last_command = command;
             ack_command(command);
             if (opcode == COLLISION_STOP && scenario_id == COLLISION_SCENARIOS - 1u) {
-                // No new AXI polling can race the UVM end-of-test drain.
-                while (1);
+                // Scenario STOP is not teardown STOP; require a fresh command.
+                usb_ocp_recovery_wait_for_stop_and_halt(
+                    (uint16_t)(last_command &
+                               USB_LEGACY_EP0_COMMAND_GENERATION_MASK));
             }
             iteration = 0u;
         }

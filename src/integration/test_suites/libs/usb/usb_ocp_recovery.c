@@ -15,8 +15,15 @@
 
 #include <stddef.h>
 
+#include "caliptra_ss_lib.h"
 #include "printf.h"
+#include "riscv-csr.h"
 #include "usb_ocp_recovery.h"
+#include "veer-csr.h"
+
+#define USB_OCP_RECOVERY_STOP_ITERATION_LIMIT 1000000u
+// MPMC[0] requests halt; keep MPMC[1] clear to preserve masked interrupts.
+#define USB_OCP_RECOVERY_STOP_MPMC_HALT 0x1u
 
 // USB 2.0 Section 9.6.3 Table 9-10: bNumInterfaces for single-interface composite config.
 #define USB_OCP_RECOVERY_CONFIG_NUM_INTERFACES 1u
@@ -24,9 +31,10 @@
 #define USB_OCP_RECOVERY_CONFIG_VALUE 1u
 // USB 2.0 Section 9.6.3 / 9.6.5: iConfiguration / iInterface, zero when no string descriptors provided.
 #define USB_OCP_RECOVERY_STRING_INDEX_NONE 0u
-// USB 2.0 Section 9.6.3 Table 9-10: bmAttributes bit 7 reserved (1), bit 6 self-powered (0=bus-powered), bit 5 remote wakeup (0).
-#define USB_OCP_RECOVERY_CONFIG_ATTRIBUTES 0x80u
-// USB 2.0 Section 9.6.3 Table 9-10: bMaxPower in 2 mA units, zero for bus-powered with no additional draw.
+// USB 2.0 Section 9.6.3 Table 9-10: bmAttributes bit 7 reserved (1), bit 6 self-powered (1), bit 5 remote wakeup (0).
+// Self-powered must agree with GET_STATUS bit 0 reported by usb.c (USB 2.0 Section 9.4.5).
+#define USB_OCP_RECOVERY_CONFIG_ATTRIBUTES 0xC0u
+// USB 2.0 Section 9.6.3 Table 9-10: bMaxPower in 2 mA units, zero since the device draws no bus power.
 #define USB_OCP_RECOVERY_MAX_POWER_2MA_UNITS 0u
 // USB 2.0 Section 9.6.5 Table 9-12: bAlternateSetting, default alternate setting is 0.
 #define USB_OCP_RECOVERY_ALT_SETTING 0u
@@ -36,43 +44,6 @@
     (USB_STD_CONFIGURATION_DESCRIPTOR_LENGTH \
     + USB_STD_INTERFACE_DESCRIPTOR_LENGTH \
     + USB_OCP_RECOVERY_FUNCTIONAL_DESCRIPTOR_LENGTH)
-
-extern const uint8_t *(*usb_config_descriptor_override)(uint16_t *len);
-extern bool (*usb_class_request_override)(const usb_setup_pkt_t *setup);
-
-static const uint8_t usb_ocp_recovery_config_descriptor[USB_OCP_RECOVERY_CONFIG_TOTAL_LENGTH] = {
-    USB_STD_CONFIGURATION_DESCRIPTOR_LENGTH,
-    USB_DESC_CONFIGURATION,
-    (uint8_t)(sizeof(usb_ocp_recovery_config_descriptor) & 0xFFu),
-    (uint8_t)((sizeof(usb_ocp_recovery_config_descriptor) >> 8) & 0xFFu),
-    USB_OCP_RECOVERY_CONFIG_NUM_INTERFACES,
-    USB_OCP_RECOVERY_CONFIG_VALUE,
-    USB_OCP_RECOVERY_STRING_INDEX_NONE,
-    USB_OCP_RECOVERY_CONFIG_ATTRIBUTES,
-    USB_OCP_RECOVERY_MAX_POWER_2MA_UNITS,
-
-    USB_STD_INTERFACE_DESCRIPTOR_LENGTH,
-    USB_DESC_INTERFACE,
-    USB_OCP_RECOVERY_IFACE_NUM,
-    USB_OCP_RECOVERY_ALT_SETTING,
-    USB_OCP_RECOVERY_NUM_ENDPOINTS,
-    USB_OCP_RECOVERY_INTERFACE_CLASS,
-    USB_OCP_RECOVERY_INTERFACE_SUBCLASS,
-    USB_OCP_RECOVERY_INTERFACE_PROTOCOL,
-    USB_OCP_RECOVERY_STRING_INDEX_NONE,
-
-    // Compatibility descriptor field order. The OCP Recovery v1.1 Section
-    // 8.5.3 field order is provided by the descriptor below.
-    USB_OCP_RECOVERY_FUNCTIONAL_DESCRIPTOR_LENGTH,
-    USB_OCP_RECOVERY_FUNCTIONAL_DESC_TYPE,
-    USB_OCP_RECOVERY_FUNCTIONAL_DESC_SUBTYPE,
-    (uint8_t)(USB_OCP_RECOVERY_BCD_VERSION & 0xFFu),
-    (uint8_t)((USB_OCP_RECOVERY_BCD_VERSION >> 8) & 0xFFu),
-    (uint8_t)(USB_OCP_RECOVERY_MAX_WR_TRANSFER_SIZE & 0xFFu),
-    (uint8_t)((USB_OCP_RECOVERY_MAX_WR_TRANSFER_SIZE >> 8) & 0xFFu),
-    (uint8_t)(USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE & 0xFFu),
-    (uint8_t)((USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE >> 8) & 0xFFu),
-};
 
 static const uint8_t usb_ocp_recovery_v1p1_config_descriptor[
     USB_OCP_RECOVERY_CONFIG_TOTAL_LENGTH] = {
@@ -110,14 +81,9 @@ static const uint8_t usb_ocp_recovery_v1p1_config_descriptor[
     (uint8_t)((USB_OCP_RECOVERY_BCD_VERSION >> 8) & 0xFFu),
 };
 
-const uint8_t *usb_ocp_recovery_get_config_descriptor(uint16_t *len) {
-    if (len != NULL) {
-        *len = (uint16_t)sizeof(usb_ocp_recovery_config_descriptor);
-    }
-    return usb_ocp_recovery_config_descriptor;
-}
-
-const uint8_t *usb_ocp_recovery_get_v1p1_config_descriptor(uint16_t *len) {
+// Strong override of the weak usb.c default: serves the OCP Recovery
+// configuration descriptor on GET_DESCRIPTOR(CONFIGURATION).
+const uint8_t *usb_get_config_descriptor(uint16_t *len) {
     if (len != NULL) {
         *len =
             (uint16_t)sizeof(usb_ocp_recovery_v1p1_config_descriptor);
@@ -199,7 +165,53 @@ bool usb_ocp_recovery_service_capability_policy(void) {
     return true;
 }
 
-bool usb_ocp_recovery_handle_class_request(const usb_setup_pkt_t *setup) {
+void usb_ocp_recovery_wait_for_stop_and_halt(uint16_t last_generation) {
+    for (uint32_t iteration = 0u;
+         iteration < USB_OCP_RECOVERY_STOP_ITERATION_LIMIT; ++iteration) {
+        usb_event_loop(1u, 0u);
+        const uint32_t command =
+            lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
+        if ((command >> USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) !=
+                USB_LEGACY_EP0_COMMAND_MAGIC) {
+            continue;
+        }
+        const uint32_t opcode =
+            (command >> USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        if (opcode != USB_LEGACY_EP0_COMMAND_STOP) {
+            continue;
+        }
+        const uint32_t expected_delta =
+            (command >> USB_LEGACY_EP0_COMMAND_DELTA_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        const uint16_t generation =
+            (uint16_t)(command & USB_LEGACY_EP0_COMMAND_GENERATION_MASK);
+        const uint16_t distance = (uint16_t)(generation - last_generation);
+        // RFC 1982: reject duplicate/stale generations, accepting wraparound.
+        if ((expected_delta != 0u) || (distance == 0u) ||
+            (distance >= 0x8000u)) {
+            handle_error("MCU: invalid OCP teardown STOP command\n");
+        }
+
+        // No service, diagnostics, release polling, or IRQ I/O after the ACK.
+        csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+            ((uint32_t)USB_LEGACY_EP0_COMMAND_ACK_MAGIC <<
+             USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) |
+            (USB_LEGACY_EP0_COMMAND_STOP <<
+             USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) | generation);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        while (1) {
+            csr_write_mpmc(USB_OCP_RECOVERY_STOP_MPMC_HALT);
+        }
+    }
+    handle_error("MCU: OCP teardown STOP command timed out\n");
+    while (1);
+}
+
+// Strong override of the weak usb.c default class-request hook.
+bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
     if (setup == NULL) {
         return false;
     }

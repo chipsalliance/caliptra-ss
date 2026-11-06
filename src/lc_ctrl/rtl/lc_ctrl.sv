@@ -343,13 +343,11 @@ module lc_ctrl
       .clk_o (tck_muxed)
     );
 
-    caliptra_prim_clock_mux2 #(
-      .NoFpgaBufG(1'b1)
-    ) u_prim_rst_n_mux2 (
-      .clk0_i(jtag_i.trst_n),
-      .clk1_i(scan_rst_ni),
+    caliptra_prim_rst_mux2 u_prim_rst_n_mux2 (
+      .rst0_i(jtag_i.trst_n),
+      .rst1_i(scan_rst_ni),
       .sel_i (scanmode),
-      .clk_o (trst_n_muxed)
+      .rst_o (trst_n_muxed)
     );
 
     logic req_ready;

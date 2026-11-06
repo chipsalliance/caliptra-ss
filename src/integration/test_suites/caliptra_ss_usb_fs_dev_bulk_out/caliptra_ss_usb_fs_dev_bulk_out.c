@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// Description: USB HS device bulk OUT test firmware for the Caliptra SS.
-//
-//
+// Description: USB FS device bulk OUT test firmware for the Caliptra SS.
 //
 // This firmware:
-//   - Boots MCU and USB core in HS device mode
+//   - Boots MCU and USB core in full-speed device mode behind the on-chip hub
 //   - Handles enumeration (bus reset + EP0 SETUP packets)
-//   - Arms EP1 OUT (4096-byte buffer) after SET_CONFIGURATION
-//   - Verifies received data: word[i] == i for i = 0..1023
+//   - Arms EP1 OUT (1024-byte buffer) once the device reaches the Configured
+//     state, and re-arms it after every bus reset
+//   - Verifies received data: word[i] == i for i = 0..255
+//   - Reports a FAIL control byte to the testbench on timeout or data mismatch
 
 #include "soc_address_map.h"
 #include "printf.h"
@@ -40,7 +40,7 @@
 // until ~690 us. The loop then never saw a SETUP, NAK'd the host and reported
 // TIMEOUT. Sized to match the ISO test (100000) so the ceiling is only reached
 // when the DUT genuinely never completes the transfer.
-#define USB_POLL_TIMEOUT              100000
+#define USB_POLL_TIMEOUT              20000
 
 // EP1 OUT buffer placed after EP0 buffers in USB SRAM (EP0 uses 0x000-0x1FF).
 #define USB_SRAM_EP1_OUT_BUF_OFFSET   0x200u
@@ -102,8 +102,9 @@ void main(void) {
 
     bool     ep1_armed         = false;
     bool     bulk_done         = false;
+    bool     data_error        = false;
 
-    VPRINTF(LOW, "=================\nMCU: USB HS device bulk OUT test\n=================\n\n");
+    VPRINTF(LOW, "=================\nMCU: USB FS device bulk OUT test\n=================\n\n");
 
     boot_mcu();
     boot_usb_core_fs();
@@ -140,14 +141,38 @@ void main(void) {
 
         // Drain the ISR mailbox. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself. Snapshot then clear by complement so bits the ISR sets while
-        // we are handling this batch are not lost.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        // itself.
+        //
+        // The snapshot/clear pair MUST be atomic with respect to the USB
+        // interrupt. service_usb_intr() publishes with "mcu_intr_rcv.usb |=
+        // act" and then immediately write-1-clears INTSTAT. A plain
+        // read-modify-write here (lw / and / sw) that is interrupted between
+        // the load and the store writes back the stale value and destroys the
+        // bit the ISR just published - and because the hardware source has
+        // already been acknowledged, that event never refires. The observed
+        // consequence was a SET_ADDRESS SETUP latched in DEVCMDSTAT.SETUP and
+        // never dispatched: the controller sat at DEV_ADDR=0 with
+        // DEVCMDSTAT=0x10414F80 and intr_cnt frozen for the rest of the run,
+        // so the host saw SET_ADDRESS abort and every later transfer was
+        // addressed to a device nobody owned. Masking mstatus.MIE (bit 3)
+        // across the pair closes the window. See
+        // docs/handover/claude_md/26_usb_hs_get_status_clear_feature_drop.md
+        // Failure 2 for the original diagnosis of this race.
+        {
+            uint32_t prev_mstatus = csr_read_clr_bits_mstatus(0x8u);
+            usb_events = mcu_intr_rcv.usb;
+            mcu_intr_rcv.usb &= ~usb_events;
+            if (prev_mstatus & 0x8u) {
+                csr_set_bits_mstatus(0x8u);
+            }
+        }
+
+        // One DEVCMDSTAT read per iteration, shared by the bus-reset check and
+        // the EP0 dispatch below.
+        uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
 
-            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
             if (cmd & DEV0_CSR_DEVCMDSTAT_DRES_C_MASK) {
                 usb_handle_bus_reset();
                 if (ep1_armed) {
@@ -158,24 +183,37 @@ void main(void) {
             // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
-        if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
-            uint32_t cmd = lsu_read_32(USB_DEV_DEVCMDSTAT);
+        // EP0 dispatch is driven by DEVCMDSTAT.SETUP, not by the mailbox bit.
+        // SETUP is a sticky hardware flag that only firmware clears (via
+        // usb_clear_setup_bit() at the end of usb_handle_control_transfer()),
+        // so servicing it from the register makes the handling idempotent: if
+        // the EP0OUT mailbox event is ever lost or coalesced, the next poll
+        // iteration still services the SETUP instead of wedging forever.
+        // Defence in depth - the atomic drain above prevents the loss, this
+        // survives it.
+        if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
+            // SETUP packet received - decode and respond.
+            usb_handle_control_transfer();
+            transfers_handled++;
+        } else if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
+            // Status-stage ZLP OUT for a control-read completed.
+            // HW cleared ACTIVE on the EP0 OUT descriptor; re-arm it
+            // so the next SETUP packet is received instead of NAK'd.
+            // Matches BFM: dma_write32(EP0_OUT_DESC, 0xa0000000).
+            usb_ep0_arm_out();
+        }
 
-            if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
-                // SETUP packet received - decode and respond.
-                usb_handle_control_transfer();
-                transfers_handled++;
-                if (!ep1_armed) {
-                    usb_ep1_out_arm();
-                    ep1_armed = true;
-                }
-            } else {
-                // Status-stage ZLP OUT for a control-read completed.
-                // HW cleared ACTIVE on the EP0 OUT descriptor; re-arm it
-                // so the next SETUP packet is received instead of NAK'd.
-                // Matches BFM: dma_write32(EP0_OUT_DESC, 0xa0000000).
-                usb_ep0_arm_out();
-            }
+        // Arm EP1 OUT once the device has actually reached the Configured
+        // state. The controller only honours a non-control endpoint
+        // descriptor after an accepted SET_CONFIGURATION (USB 2.0 section
+        // 9.4.7), and the hardware clears Active on every endpoint at each bus
+        // reset, so this must be re-evaluated after the step-B port reset.
+        // Arming on the first SETUP instead (which is a GET_DESCRIPTOR at
+        // address 0) programmed the descriptor milliseconds too early and in
+        // the wrong device state.
+        if (!ep1_armed && !bulk_done && (usb_is_configured() != 0u)) {
+            usb_ep1_out_arm();
+            ep1_armed = true;
         }
 
         // EP0 IN completion needs no action: the ISR already acknowledged it.
@@ -209,11 +247,13 @@ void main(void) {
                 }
             }
 
-            if (errors == 0)
-                VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check PASSED\n");
-            else
-                VPRINTF(LOW, "MCU: USB HS dev bulk OUT - data check FAILED (%d errors)\n",
+            if (errors == 0) {
+                VPRINTF(LOW, "MCU: USB FS dev bulk OUT - data check PASSED\n");
+            } else {
+                data_error = true;
+                VPRINTF(LOW, "MCU: USB FS dev bulk OUT - data check FAILED (%d errors)\n",
                         errors);
+            }
 
             bulk_done = true;
             VPRINTF(LOW, "MCU: bulk OUT complete - remaining in USB event loop to"
@@ -235,9 +275,19 @@ void main(void) {
     }
 
     if (!bulk_done)
-        VPRINTF(LOW, "MCU: USB HS device bulk OUT - TIMEOUT\n");
+        VPRINTF(LOW, "MCU: USB FS device bulk OUT - TIMEOUT\n");
 
-    VPRINTF(LOW, "MCU: USB HS device bulk OUT test - halting\n");
+    // Firmware verdict byte. Only the FAIL code is ever sent: TB_CMD_TEST_PASS
+    // makes the testbench $finish immediately, which would pre-empt the UVM
+    // final_phase where the VIP/UVM error counts are judged. A silent exit is
+    // what previously produced "NO FIRMWARE VERDICT FOUND" for this test, so a
+    // timeout or a data mismatch must be reported explicitly here.
+    if (!bulk_done || data_error) {
+        VPRINTF(LOW, "MCU: USB FS device bulk OUT - reporting FAIL to testbench\n");
+        SEND_STDOUT_CTRL(TB_CMD_TEST_FAIL);
+    }
+
+    VPRINTF(LOW, "MCU: USB FS device bulk OUT test - halting\n");
     csr_write_mpmc_halt();
 }
 

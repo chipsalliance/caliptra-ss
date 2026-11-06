@@ -16,7 +16,7 @@
 `define CALIPTRA_SS_USB_OCP_FLOW_RANDOM_IMAGE_TEST_SV
 
 class caliptra_ss_usb_ocp_flow_random_image_test
-    extends caliptra_ss_usb_basic_utmi_test;
+    extends caliptra_ss_usb_ocp_base_test;
 
     `uvm_component_utils(caliptra_ss_usb_ocp_flow_random_image_test)
 

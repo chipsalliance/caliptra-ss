@@ -46,9 +46,7 @@ uint8_t main(void)
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
         .cptra_wdt_cfg_0=1u,
-        .cfg_boot_usb_core=true,
-        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
-        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
+        .cfg_boot_usb_core=true);
     mcu_cptra_user_init();
 
     // Keep the USB control pipe serviced while the Caliptra core reaches its
@@ -58,9 +56,8 @@ uint8_t main(void)
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
     }
 
-    // The UVM Recovery Agent owns test completion. Stop register polling after
-    // the directed VENDOR-disable request has been consumed; all subsequent
-    // checks use the hardware-owned OCP path and do not require MCU service.
+    // The UVM Recovery Agent owns test completion. Stop capability-policy
+    // polling after the directed VENDOR-disable request has been consumed.
     while (1) {
         usb_event_loop(USB_OCP_CMD_EVENT_LOOP_SLICE, 0u);
         if (usb_ocp_recovery_service_capability_policy()) {
@@ -73,6 +70,6 @@ uint8_t main(void)
         }
     }
 
-    VPRINTF(LOW, "MCU: USB OCP command-handling register traffic quiesced\n");
-    while (1);
+    VPRINTF(LOW, "MCU: USB OCP command-handling capability polling quiesced\n");
+    usb_ocp_recovery_wait_for_stop_and_halt(0u);
 }

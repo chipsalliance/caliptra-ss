@@ -32,7 +32,7 @@
 #define SS_GENERIC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 #define USB_EVENT_LOOP_SLICE_ITERS 1000u
 // Smaller slice for the post-handoff FW_EXEC_CTRL wait loop: the MCU must notice
-// Caliptra's completion signal (and report the pass) promptly, so it re-checks
+// Caliptra's completion signal promptly, so it re-checks
 // FW_EXEC_CTRL every ~few us instead of once per ~89us USB-servicing slice.
 // (Using the large slice here makes end-of-test latency depend on slice/FW_EXEC
 // alignment, 0..~89us.) Enumeration servicing is unaffected -- this loop runs
@@ -59,20 +59,17 @@ uint8_t main(void) {
     if (!usb_ocp_recovery_apply_capability_policy()) {
         handle_error("MCU: Failed to apply USB Recovery capability policy\n");
     }
-    // Boot the USB device controller AND advertise the OCP recovery interface
-    // in one step: the OCP composite config descriptor + recovery class-request
-    // handler are installed as boot_usb_core's hooks, so any host VIP
-    // enumeration that begins later already sees the recovery descriptor and
-    // class endpoints (OCP Recovery v1.1 sec 8.5: recovery interface must be
-    // advertised before any class request; otherwise GET_DESCRIPTOR(CONFIG) and
-    // class requests would be STALLed).
+    // Boot the USB device controller. Linking usb_ocp_recovery overrides the
+    // usb.c config-descriptor and class-request hooks, so any host VIP
+    // enumeration already sees the recovery descriptor and class endpoints
+    // (OCP Recovery v1.1 sec 8.5: recovery interface must be advertised before
+    // any class request; otherwise GET_DESCRIPTOR(CONFIG) and class requests
+    // would be STALLed).
     mcu_cptra_init_d(
         .cfg_cptra_fuse=true,
         .cfg_cptra_wdt=true,
         .cptra_wdt_cfg_0=1u,
-        .cfg_boot_usb_core=true,
-        .usb_config_desc_fn=usb_ocp_recovery_get_v1p1_config_descriptor,
-        .usb_class_req_fn=usb_ocp_recovery_handle_class_request);
+        .cfg_boot_usb_core=true);
     usb_dump_state("post-boot");
 
     mcu_cptra_user_init();
@@ -106,7 +103,6 @@ uint8_t main(void) {
     }
 
     usb_dump_state("streaming-boot-complete");
-    VPRINTF(LOW, "MCU: Streaming boot complete; reporting pass to the testbench\n");
-    SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
-    while(1);
+    VPRINTF(LOW, "MCU: Streaming boot complete; servicing USB until UVM STOP\n");
+    usb_ocp_recovery_wait_for_stop_and_halt(0u);
 }

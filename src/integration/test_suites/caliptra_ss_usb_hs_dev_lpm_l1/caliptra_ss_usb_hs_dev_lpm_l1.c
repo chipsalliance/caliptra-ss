@@ -40,12 +40,27 @@
 //                   variants are therefore two separate builds if both are
 //                   needed. Default is host-driven.
 //
-// DEV0 ONLY. At usb_reg_if_2 (DEV1) in
-// ip_xxx_3511_hs_mem_compound_structure.a.vhdl all four LPM control ports
-// (usbreg_lpm_sup, usbreg_lpmremotewakeup, usbreg_lpm_hird_sw,
-// usbreg_lpm_nyet) are tied "=> open", so DEV1 can read LPM status but
-// cannot control LPM. A DEV1 variant of this test would be an IP gap, not a
-// test. See docs/usb_l1_lpm_test_feasibility_report.md.
+// DIRECT-TOKEN PATH, DEV0 ONLY. The LPM token this firmware observes is
+// addressed to DEV0. DEV1 has no software-visible LPM control of its own, so
+// there is no DEV1 variant of this firmware.
+//
+// That is not a gap in L1 coverage. Since release_2.6 the hub implements
+// SetAndTestPortFeature(PORT_L1), and in
+// ip_xxx_3511_hs_mem_compound_structure.a.vhdl the per-port LPM inputs are
+// taken from each device (hub_port_lpm_sup(0) <= dev0_lpm_sup,
+// hub_port_lpm_sup(1) <= dev1_lpm_sup) while hub_port_l1(N) drives
+// devN_lpm_suspend. Both ports are therefore reachable through the hub, which
+// is what caliptra_ss_usb_dual_device_hs_hub_port_l1 covers.
+//
+// Note for whoever reuses this classification code in the hub-level test
+// (caliptra_ss_usb_dual_device_hs_hub_port_l1, the only other L1 test - the
+// hub request SetAndTestPortFeature(PORT_L1) is legal only against a
+// downstream port, so there is no separate hub-targeted L1 test):
+// because hub_port_l1(N) is ORed into devN_lpm_suspend, a hub-driven PORT_L1
+// shows up here identically to a direct LPM token - same DEVCMDSTAT.LPM_SUS,
+// same shared DSUS_C. The logic below needs no change for that path.
+// See docs/usb_l1_lpm_test_feasibility_report.md.
+
 //
 // Hub-composite IP: USBDC0 is an embedded downstream device of the on-chip
 // 2-port hub, so its registers live at USB_DEV_* (base 0x20001000) and the

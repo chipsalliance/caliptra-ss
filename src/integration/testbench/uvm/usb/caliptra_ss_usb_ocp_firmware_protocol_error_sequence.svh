@@ -105,7 +105,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
 
     // Wait for a firmware state under a bounded poll budget. A missing
     // transition blocks all dependent checks, so fail immediately.
-    protected virtual task expect_fw_state(
+    protected virtual task ocp_fw_error_poll_fw_state(
         input logic [7:0] target_state,
         input string label);
         bit found;
@@ -127,7 +127,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
 
     // Check that a DEVICE_STATUS response byte equals expected; treat a
     // truncated response as an actionable error.
-    protected virtual function void check_prot_error_byte(
+    protected virtual function void ocp_fw_error_check_protocol_error_byte(
         input string label,
         ref bit [7:0] response[$],
         input bit [7:0] expected);
@@ -148,14 +148,14 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
     // Build a legal control-OUT INDIRECT_FIFO_DATA transfer sized to
     // wMaxWrTransferSize. The payload contents are deterministic so
     // debug on a captured trace remains simple.
-    protected virtual function void build_fifo_data_transfer(
+    protected virtual function void ocp_fw_error_configure_fifo_data_transfer(
         input string label,
         output svt_usb_transfer req);
 
         int iface_num;
         int payload_size;
 
-        iface_num = get_iface_num();
+        iface_num = ocp_get_iface_num();
         payload_size = wMaxWrTransferSize;
 
         req = svt_usb_transfer::type_id::create({label, "_req"});
@@ -196,7 +196,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
     // proof can inspect packet records for (i) the original SETUP
     // sequence receiving its RX ACK and (ii) the replacement standard
     // GET_DESCRIPTOR transfer completing successfully.
-    protected virtual task run_replacement_setup_trigger(
+    protected virtual task ocp_fw_error_do_replacement_setup_and_check_trigger(
         input string label);
 
         svt_usb_transfer req;
@@ -205,7 +205,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         bit abort_completion_bounded;
         svt_usb_transfer replacement_req;
 
-        build_fifo_data_transfer(label, req);
+        ocp_fw_error_configure_fifo_data_transfer(label, req);
 
         checker.packet_callback.start_window(snapshot_generation);
         snapshot_generation++;
@@ -271,7 +271,7 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
             $sformatf({"[FIRMWARE_PROTOCOL_ERROR] %s: aborted transfer retired at %0t with ",
                        "result %s."},
                       label, $realtime,
-                      get_xfer_result(req).name()), UVM_NONE)
+                      ocp_get_xfer_result(req).name()), UVM_NONE)
 
         // Issue a valid, unclaimed standard request. Only its SETUP ACK is
         // required: the replacement SETUP itself is the abort stimulus.
@@ -340,25 +340,25 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         bit [7:0] second_status[$];
         bit [7:0] third_status[$];
 
-        initialize_arbiter_transport();
+        ocp_arb_do_initialize_and_check_transport();
 
         // Firmware must have reached READY before we drive the trigger.
-        expect_fw_state(FW_PROTOCOL_ERROR_STATE_READY, "READY_BEFORE_TRIGGER");
+        ocp_fw_error_poll_fw_state(FW_PROTOCOL_ERROR_STATE_READY, "READY_BEFORE_TRIGGER");
 
         // Configure the FIFO region so the control-OUT INDIRECT_FIFO_DATA
         // transfer is a legal OCP claim rather than a pre-DATA reject.
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             8'h00, 1'b1, 32'h0000_0040, "FW_ERROR_FIFO_CTRL_RESET");
-        indirect_fifo_ctrl_write(
+        ocp_do_fifo_ctrl_write(
             8'h00, 1'b0, 32'h0000_0040, "FW_ERROR_FIFO_CTRL_ARM");
 
         // Deliver the trigger via the canonical replacement-SETUP path.
         // No bus reset, no re-enumeration is required or performed.
-        run_replacement_setup_trigger("FW_ERROR_TRIGGER_REPLACEMENT_SETUP");
+        ocp_fw_error_do_replacement_setup_and_check_trigger("FW_ERROR_TRIGGER_REPLACEMENT_SETUP");
 
         // Intermediate firmware states can complete while the replacement
         // transfer retires. The final state carries the observed error byte.
-        expect_fw_state(
+        ocp_fw_error_poll_fw_state(
             FW_PROTOCOL_ERROR_STATE_DONE, "FIRMWARE_PROTOCOL_ERROR_DONE");
         if (semantics_vif.get_fw_data() != OCP_PROTOCOL_ERROR_GENERAL) begin
             `uvm_error("OCP_FIRMWARE_ERROR",
@@ -369,23 +369,23 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         end
 
         // USB RA read pattern: 0xFF present -> cleared on next read -> 0.
-        device_status_read_and_check(device_status, "FW_ERROR_USB_STATUS_1");
-        check_prot_error_byte(
+        ocp_do_read_and_check_device_status(device_status, "FW_ERROR_USB_STATUS_1");
+        ocp_fw_error_check_protocol_error_byte(
             "FW_ERROR_USB_STATUS_1 first read", device_status,
             OCP_PROTOCOL_ERROR_GENERAL);
 
-        device_status_read_and_check(second_status, "FW_ERROR_USB_STATUS_2");
-        check_prot_error_byte(
+        ocp_do_read_and_check_device_status(second_status, "FW_ERROR_USB_STATUS_2");
+        ocp_fw_error_check_protocol_error_byte(
             "FW_ERROR_USB_STATUS_2 cleared", second_status,
             OCP_PROTOCOL_ERROR_NONE);
 
-        device_status_read_and_check(third_status, "FW_ERROR_USB_STATUS_3");
-        check_prot_error_byte(
+        ocp_do_read_and_check_device_status(third_status, "FW_ERROR_USB_STATUS_3");
+        ocp_fw_error_check_protocol_error_byte(
             "FW_ERROR_USB_STATUS_3 stable-zero", third_status,
             OCP_PROTOCOL_ERROR_NONE);
 
-        publish_transfer_count();
-        wait_mcu_axi_idle_before_finish("FW_ERROR_FINISH");
+        ocp_publish_transfer_count();
+        ocp_poll_mcu_axi_idle("FW_ERROR_FINISH");
 
         `uvm_info("OCP_FIRMWARE_ERROR",
             "[FIRMWARE_PROTOCOL_ERROR] Firmware-originated 0xFF and clear-on-RA-read complete.",

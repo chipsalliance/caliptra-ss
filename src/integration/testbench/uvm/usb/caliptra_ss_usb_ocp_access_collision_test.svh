@@ -15,7 +15,7 @@
 `ifndef CALIPTRA_SS_USB_OCP_ACCESS_COLLISION_TEST_SVH
 `define CALIPTRA_SS_USB_OCP_ACCESS_COLLISION_TEST_SVH
 class caliptra_ss_usb_ocp_access_collision_test
-    extends caliptra_ss_usb_basic_utmi_test;
+    extends caliptra_ss_usb_ocp_base_test;
     `uvm_component_utils(caliptra_ss_usb_ocp_access_collision_test)
     function new(string name = "caliptra_ss_usb_ocp_access_collision_test",
                  uvm_component parent = null);
@@ -29,8 +29,5 @@ class caliptra_ss_usb_ocp_access_collision_test
             this, "env.host_agent.virt_sequencer.main_phase", "default_sequence",
             caliptra_ss_usb_ocp_access_collision_sequence::type_id::get());
     endfunction
-    virtual task mcu_halt_monitor_task(uvm_phase phase);
-        phase.drop_objection(this, "Collision firmware traffic has been stopped");
-    endtask
 endclass
 `endif
