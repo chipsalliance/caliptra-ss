@@ -33,8 +33,7 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
     drained_words = 0;
   endfunction
 
-  // Every access is confined to combo.recovery and uses the existing bounded
-  // RAL frontdoor API. No USB, phase, image-size, or payload handoff is used.
+  // Register accesses and DMA reads are confined to combo.recovery.
   task ocp_read_register(string name, output logic [31:0] data);
     uvm_reg r;
     r = p_sequencer.reg_model.combo.recovery.get_reg_by_name(name);
@@ -81,21 +80,69 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
       readback >> capability_shift),UVM_LOW)
   endtask
 
+  task ocp_poll_dma_ready(bit activation, time deadline, logic expected = 1'b1);
+    bit ready;
+    ready = 0;
+    if (ocp_cfg.recovery_vif == null || $time >= deadline)
+      `uvm_fatal("OCP_DMA", "Missing recovery interface or expired DMA deadline")
+    fork
+      begin
+        fork
+          begin
+            wait ((activation ? ocp_cfg.recovery_vif.image_activated :
+                                ocp_cfg.recovery_vif.payload_available) === expected);
+            ready = 1;
+          end
+          begin #(deadline-$time); end
+          begin wait (ocp_cfg.stop_requested === 1'b1); end
+        join_any
+        disable fork;
+      end
+    join
+    if (!ready)
+      `uvm_fatal("OCP_DMA", $sformatf("Architectural %s readiness timeout/teardown",
+                                    activation ? "activation" : "payload"))
+  endtask
+
+  task ocp_do_check_dma_burst(int unsigned words);
+    aaxi_master_tr request;
+    logic [31:0] offset;
+    offset = reg_offset(USB_DEV0_CSR,p_sequencer.reg_model.combo.recovery.INDIRECT_FIFO_DATA);
+    if (words == 0 || words > 16)
+      `uvm_fatal("OCP_DMA", "DMA requires 1..16 DWORD beats")
+    request = create_transaction(USB_DEV0_CSR,offset,0,0);
+    request.len = words-1;
+    request.burst = AAXI_BURST_FIXED;
+    execute_transaction(USB_DEV0_CSR,offset,0,request);
+    if (request.rresp_Q.size() != words || request.data.size() != words*4)
+      `uvm_fatal("OCP_DMA", "DMA burst returned wrong response/data count")
+    foreach (request.rresp_Q[i])
+      if (request.rresp_Q[i] !== AAXI_RESP_OKAY)
+        `uvm_fatal("OCP_DMA", "DMA burst returned unsuccessful AXI response")
+    // Every returned byte is independently reconciled by the passive checker.
+    drained_words += words;
+    `uvm_info("OCP_DMA",$sformatf("FIXED burst_words=%0d total_drained_words=%0d",
+                                words,drained_words),UVM_LOW)
+  endtask
+
   task body();
     logic [31:0] size_words;
     logic [31:0] control;
-    logic [31:0] status;
-    logic [31:0] data;
     logic [31:0] activation;
     time deadline;
-    time service_gap;
     time poll_interval;
+    int unsigned batch_words;
+    int unsigned burst_words;
     ocp_write_register("CALIPTRA_CTRL",0);
     ocp_program_check_capabilities();
     ocp_write_register("RECOVERY_CTRL",0);
     ocp_read_register("RECOVERY_CTRL",activation);
     if (activation[23:16] !== 0)
       `uvm_fatal("OCP_CALIPTRA", "Activation zero baseline missing")
+    if (ocp_cfg.recovery_vif == null ||
+        ocp_cfg.recovery_vif.image_activated !== 1'b0 ||
+        ocp_cfg.recovery_vif.payload_available !== 1'b0)
+      `uvm_fatal("OCP_DMA", "Recovery attempt starts with stale/unknown DMA indications")
     ocp_write_register("DEVICE_STATUS_1",0);
     ocp_write_register("RECOVERY_STATUS",32'(OCP_RECOVERY_STATUS_AWAITING_IMAGE));
     ocp_write_register("DEVICE_STATUS_0",
@@ -113,38 +160,31 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
       ocp_wait_service_interval(poll_interval,deadline,"OCP_CALIPTRA","Image-size register timeout");
       poll_interval = ocp_get_next_idle_poll(poll_interval);
     end while (1);
-    if ($isunknown(size_words) || size_words > 64)
-      `uvm_fatal("OCP_CALIPTRA", "Unexpected small-image register size")
+    if ($isunknown(size_words) || size_words > 1024)
+      `uvm_fatal("OCP_CALIPTRA", "Image-size register exceeds bounded test envelope")
     ocp_read_register("INDIRECT_FIFO_CTRL_0",control);
     while (drained_words < size_words) begin
       if (ocp_cfg.stop_requested === 1'b1)
         `uvm_fatal("OCP_TEARDOWN", "Teardown before recovery image consumption")
       if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "FIFO drain timeout")
-      ocp_read_register("INDIRECT_FIFO_STATUS_0",status);
-      if (status[0] === 1'b0) begin
-        ocp_read_register("INDIRECT_FIFO_DATA",data);
-        // The passive completed-AXI scoreboard checks each returned byte.
-        drained_words++;
-        service_gap = $urandom_range(0,int'(ocp_cfg.service_gap_max/1us))*1us;
-        `uvm_info("OCP_SERVICE",$sformatf("drained_word=%0d gap=%0t",
-                  drained_words,service_gap),UVM_MEDIUM)
-        ocp_wait_service_interval(service_gap,deadline,"OCP_CALIPTRA","FIFO drain timeout");
-      end else
-        ocp_wait_service_interval(ocp_cfg.service_poll,deadline,"OCP_CALIPTRA","FIFO drain timeout");
+      ocp_poll_dma_ready(0,deadline);
+      batch_words = size_words-drained_words;
+      if (batch_words > 64) batch_words = 64;
+      while (batch_words != 0) begin
+        burst_words = (batch_words > 16) ? 16 : batch_words;
+        ocp_do_check_dma_burst(burst_words);
+        batch_words -= burst_words;
+      end
+      // Do not authorize the next batch from the preceding publication level.
+      ocp_poll_dma_ready(0,deadline,1'b0);
     end
     ocp_write_register("DEVICE_STATUS_0",
       (32'(OCP_REC_REASON_FORCED_RECOVERY)<<16) | OCP_DEVICE_STATUS_RECOVERY_PENDING);
-    do begin
-      if (ocp_cfg.stop_requested === 1'b1)
-        `uvm_fatal("OCP_TEARDOWN", "Teardown before fresh activation")
-      if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "Fresh ACTIVATE register timeout")
-      ocp_read_register("RECOVERY_CTRL",activation);
-      if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "Fresh ACTIVATE register timeout")
-      if (activation[23:16] === OCP_RC_ACTIVATE_CODE) break;
-      ocp_wait_service_interval(ocp_cfg.service_poll,deadline,"OCP_CALIPTRA",
-                                "Fresh ACTIVATE register timeout");
-    end while (1);
-    if (activation[7:0] !== control[7:0] ||
+    ocp_poll_dma_ready(1,deadline);
+    ocp_read_register("RECOVERY_CTRL",activation);
+    if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "Fresh ACTIVATE register timeout")
+    if (activation[23:16] !== OCP_RC_ACTIVATE_CODE ||
+        activation[7:0] !== control[7:0] ||
         activation[15:8] !== OCP_RC_IMAGE_SEL_CMS)
       `uvm_fatal("OCP_CALIPTRA", "Activation CMS/image selection mismatch")
     // This is emulated firmware status progression, not authentication or

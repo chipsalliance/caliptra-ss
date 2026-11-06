@@ -295,10 +295,16 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       end
     end
     if (!found) `uvm_fatal("OCP_HOST", "No usable empty recovery FIFO CMS discovered")
-    words = $urandom_range(17,64);
-    if (words > fifo_depth/2) words = (fifo_depth > 1) ? fifo_depth/2 : 1;
+    randcase
+      1: words = $urandom_range(1,63);
+      1: words = 64;
+      2: words = $urandom_range(65,256);
+    endcase
+    void'($value$plusargs("usb_ocp_image_words=%d",words));
+    if (words < 1 || words > 1024)
+      `uvm_fatal("OCP_IMAGE", "Image must contain 1..1024 DWORDs")
     if (!randomize(image) with { image.size() == local::words*4; })
-      `uvm_fatal("OCP_HOST", "Small image randomization failed")
+      `uvm_fatal("OCP_HOST", "Image randomization failed")
     chunk_limit = max_write/4;
     if (chunk_limit > fifo_max) chunk_limit = fifo_max;
     if (chunk_limit > fifo_depth) chunk_limit = fifo_depth;
@@ -310,6 +316,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     while (offset < words) begin
       chunk_words = $urandom_range(1,chunk_limit);
       if (chunk_words > words-offset) chunk_words = words-offset;
+      if (chunk_words > fifo_depth-(offset%fifo_depth))
+        chunk_words = fifo_depth-(offset%fifo_depth);
       chunk.delete();
       for (int i = 0; i < chunk_words*4; i++) chunk.push_back(image[offset*4+i]);
       ocp_do_check_write(OCP_CMD_INDIRECT_FIFO_DATA,chunk);

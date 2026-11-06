@@ -14,6 +14,7 @@
 
 class usb_ocp_base_env_cfg extends usb_env_cfg;
   `uvm_object_utils(usb_ocp_base_env_cfg)
+  virtual usb_ocp_recovery_if recovery_vif;
 
   // Stable VIP slots: hub, downstream port 1, downstream port 2.
   // Unenumerated slots use distinct parking addresses, never shared address 0.

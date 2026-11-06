@@ -179,21 +179,30 @@ class usb_ocp_observer extends uvm_component;
     item.kind = usb_ocp_event::AXI_COMPLETED;
     item.manager = manager;
     item.axi_address = tr.addr;
+    item.axi_id = tr.id;
+    item.axi_instance = tr.get_inst_id();
+    item.axi_beats = int'(tr.len) + 1;
+    item.axi_beat_bytes = 1 << tr.size;
+    item.axi_burst = tr.burst;
     item.write_access = (tr.kind == AAXI_WRITE);
     item.response_ok = 1'b1;
-    if (tr.len != 0 || tr.size != 2)
-      `uvm_fatal("OCP_OBSERVER", "Bringup requires single DWORD AXI operations")
+    if (tr.size != 2 || item.axi_beats > 16 ||
+        (tr.len != 0 && (item.write_access || item.axi_burst !== AAXI_BURST_FIXED)))
+      `uvm_fatal("OCP_OBSERVER", "Recovery accesses require DWORDs and at most 16 FIXED read beats")
     if (item.write_access) begin
       item.response_ok = (tr.resp === AAXI_RESP_OKAY);
+      item.axi_responses.push_back(tr.resp);
       foreach (tr.strobes[i]) item.strobes.push_back({7'b0, tr.strobes[i]});
     end else begin
-      item.response_ok = (tr.rresp_Q.size() == 1);
-      foreach (tr.rresp_Q[i])
+      item.response_ok = (tr.rresp_Q.size() == item.axi_beats);
+      foreach (tr.rresp_Q[i]) begin
+        item.axi_responses.push_back(tr.rresp_Q[i]);
         item.response_ok &= (tr.rresp_Q[i] === AAXI_RESP_OKAY);
+      end
     end
     foreach (tr.data[i]) item.bytes.push_back(tr.data[i]);
-    if (item.bytes.size() != 4)
-      `uvm_fatal("OCP_OBSERVER", "Avery completed DWORD has wrong byte count")
+    if (item.bytes.size() != item.axi_beats*item.axi_beat_bytes)
+      `uvm_fatal("OCP_OBSERVER", "Avery completed transaction has wrong byte count")
     axi_count[manager]++;
     ocp_publish_snapshot(item);
   endfunction
