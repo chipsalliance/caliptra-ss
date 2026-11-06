@@ -1650,6 +1650,7 @@ module caliptra_ss_top
 
 
 
+// synthesis translate_off
 `ifdef CLP_ASSERT_ON
     localparam realtime CPTRA_SS_CLK_MAX_PERIOD = 1us / 60.0;
     localparam realtime CPTRA_SS_I3C_CLK_MAX_PERIOD = 1us / 333.0;
@@ -1670,6 +1671,7 @@ module caliptra_ss_top
 
     `CALIPTRA_ASSERT(CptraSsMinClkFreq_A, cptra_ss_min_clk_freq_p, cptra_ss_clk_i, !cptra_ss_rst_b_i)
 `endif
+// synthesis translate_on
 
     //`CALIPTRA_ASSERT(i3c_payload_available, ($rose(cptra_ss_i3c_recovery_payload_available_i) |-> ##[1:50] cptra_ss_i3c_recovery_payload_available_i == 0),cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
     //`CALIPTRA_ASSERT(i3c_image_activated, ($rose(cptra_ss_i3c_recovery_image_activated_i) |-> ##[1:50] cptra_ss_i3c_recovery_image_activated_i == 0), cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
