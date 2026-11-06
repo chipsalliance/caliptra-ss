@@ -768,3 +768,36 @@ disconnect suppressed its natural `endtransfer`; reconnect reset flushes that
 state. Recovery-local claim, staging, reservation, success-mask, and response
 tracking do not wait for shared DMA retirement. Reset is teardown, not a
 successful transfer completion.
+
+### 10.4 Verification boundaries
+
+`caliptra_ss_usb_ocp_setup_supersession` checks the four legacy/OCP replacement
+and DATA/STATUS-pending combinations using VIP packet observations. The
+scoreboard checks externally visible request stages, response bytes, held
+legacy NAKs, and replacement completion. Firmware command/status messages
+coordinate the responder; they are not proof of DUT correctness. The shared
+legacy EP0 observer remains available to other tests without a reduced API.
+
+Three tests separate the additional responsibilities:
+
+| Test suffix (`caliptra_ss_usb_ocp_`) | Responsibility |
+|---|---|
+| `setup_malformed` | One-attempt short/bad-CRC injection and valid recovery |
+| `setup_stale_negative` | Deliberate premature-clear exposure and fresh service |
+| `setup_debug_csr` | AXI readback, observed-SETUP generation/owner, reserved/RO checks |
+
+Malformed stimulus relies on documented VIP exceptions, actual-transfer
+binding and transmission completion. This is not a claim of independently
+captured DUT-received bytes. Any expected bad-CRC no-response report is scoped
+to that one transfer and reporting interval; unrelated errors remain errors.
+
+Implementation covergroups in
+`src/usb/coverage/usb_cov_if.sv` record internal
+states, replacement context and SETUP-completion disposition locally. They
+export no interface to the scoreboard or sequence. Coverage hits establish
+exercise, not internal correctness; missing bins remain coverage-closure work.
+The `usb_coverage` build dependency supplies an `FCOV`-gated `usb_cov_bind`
+that attaches to the shared USB wrapper in both subsystem and standalone USB
+testbenches. The subsystem instantiates the bind through its TB services.
+Internal SETUP forwarding, DMA/IRQ behavior and SRAM mirroring require their
+own implementation verification and are not inferred from a passing USB test.

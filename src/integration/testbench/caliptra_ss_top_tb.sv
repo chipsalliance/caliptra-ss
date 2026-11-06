@@ -2768,6 +2768,14 @@ module caliptra_ss_top_tb
     // signals so the UVM checker can read them with uvm_hdl_read. See
     // usb_dev_addr_probe.sv for details.
     usb_dev_addr_probe u_usb_dev_addr_probe();
+    caliptra_ss_usb_supersession_csr_if usb_setup_debug_csr_access (
+        .axi_user(cptra_ss_usb_combo_priv_axi_users_i[0])
+    );
+    initial begin
+        uvm_config_db#(virtual caliptra_ss_usb_supersession_csr_if)::set(
+            null, "uvm_test_top*", "usb_supersession_csr_if",
+            usb_setup_debug_csr_access);
+    end
 
 endmodule
 

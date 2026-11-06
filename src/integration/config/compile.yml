@@ -91,6 +91,7 @@ requires:
   - mci_coverage
   - lc_ctrl_coverage
   - fuse_ctrl_coverage
+  - usb_coverage
 targets:
   tb:
     directories:
@@ -130,6 +131,7 @@ targets:
       # - $COMPILE_ROOT/../../../../chipsalliance/caliptra-rtl/src/axi/rtl/caliptra_axi_sram.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv

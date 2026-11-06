@@ -20,6 +20,7 @@
 +incdir+${AVERY_AXI}/src.axi
 +incdir+${CALIPTRA_AXI4PC_DIR}
 +incdir+${AVERY_AXI}/testbench
++incdir+${CALIPTRA_SS_ROOT}/src/usb/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/usb/tb
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest/sverilog/include
@@ -153,6 +154,8 @@ ${AVERY_AXI}/src.VCS/aaxi_busmonitor.v
 ${AVERY_AXI}/src.axi/aaxi_coverage_metrics.sv
 ${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_intf.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_ral_config_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_combo_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_csr_ral_pkg.sv

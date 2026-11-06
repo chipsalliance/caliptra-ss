@@ -1319,6 +1319,7 @@ endtask
     fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
+    usb_cov_bind i_usb_cov_bind();
 `endif
 
 

@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 338;
+  localparam int USB_PKG_VERSION = 356;
 
 
   import uvm_pkg::*;
@@ -362,6 +362,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_recovery_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_arbiter_packet_callback.svh"
   `include "caliptra_ss_usb_ocp_arbiter_checker.svh"
+  `include "caliptra_ss_usb_supersession_evidence.svh"
+  `include "caliptra_ss_usb_supersession_packet_callback.svh"
+  `include "caliptra_ss_usb_supersession_transfer_subscriber.svh"
+  `include "caliptra_ss_usb_supersession_expected_report_catcher.svh"
+  `include "caliptra_ss_usb_supersession_selftest_catcher.svh"
+  `include "caliptra_ss_usb_supersession_checker.svh"
+  `include "caliptra_ss_usb_supersession_fault_callback.svh"
   `include "caliptra_ss_usb_ocp_post_sync_arbiter_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_disconnect_sequence.svh"
   `include "caliptra_ss_usb_ocp_fifo_flow_control_sequence.svh"
@@ -376,7 +383,11 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_firmware_status_ownership_sequence.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_supersession_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_malformed_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_stale_negative_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_debug_csr_sequence.svh"
 
   `include "caliptra_ss_usb_ocp_scoreboard.svh"
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
@@ -398,6 +409,9 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_firmware_status_ownership_test.svh"
   `include "caliptra_ss_usb_ocp_arbiter_test.svh"
   `include "caliptra_ss_usb_ocp_setup_supersession_test.svh"
+  `include "caliptra_ss_usb_ocp_setup_malformed_test.svh"
+  `include "caliptra_ss_usb_ocp_setup_stale_negative_test.svh"
+  `include "caliptra_ss_usb_ocp_setup_debug_csr_test.svh"
   `include "caliptra_ss_usb_ocp_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_dcon_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"

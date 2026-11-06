@@ -151,6 +151,10 @@ module usb_top_tb;
   // --------------------------------------------------------------------------
   // Testbench infrastructure
   // --------------------------------------------------------------------------
+  `ifndef VERILATOR
+  usb_cov_bind i_usb_cov_bind();
+  `endif
+
   // Each connection adapts one Avery manager to the DUT's AXI interface.
   usb_axi_manager_connection #(
     .MANAGER_NAME("combo")

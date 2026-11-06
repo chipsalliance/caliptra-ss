@@ -133,6 +133,7 @@
 +incdir+${AVERY_I3C}/testsuite.i3c/dut_master_stby
 +incdir+${AVERY_I3C}/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/coverage
++incdir+${CALIPTRA_SS_ROOT}/src/usb/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/vip
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
@@ -414,6 +415,10 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_pri
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_cipher_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_sparse_fsm_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim_generic/rtl/abr_prim_generic_flop_en.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim_generic/rtl/abr_prim_generic_flop.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim_generic/rtl/abr_prim_generic_buf.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim_generic/rtl/abr_prim_generic_xor2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_lfsr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_sec_anchor_buf.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_prim/rtl/abr_prim_count.sv
@@ -987,11 +992,14 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv

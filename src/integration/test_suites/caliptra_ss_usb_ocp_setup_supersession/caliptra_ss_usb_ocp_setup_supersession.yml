@@ -27,3 +27,6 @@ pre-exec: |
        cptra_program.hex
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_ocp_setup_supersession_test'
+  # Four owner/direction-by-pending-stage replacement scenarios.
+  # Firmware barriers and USB transfers retain bounded watchdogs.
+  - '+UVM_TIMEOUT=2000000000ps'
