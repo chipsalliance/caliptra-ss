@@ -115,25 +115,8 @@ void main (void) {
 
         // Drain the ISR mailbox. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch
-        // INTSTAT itself. Snapshot then clear by complement so bits the
-        // ISR sets while we are handling this batch are not lost.
-        //usb_events = mcu_intr_rcv.usb;
-        //mcu_intr_rcv.usb &= ~usb_events;
-         {
-             uint32_t saved_mstatus;
-             __asm__ volatile ("csrrc %0, mstatus, %1"
-                               : "=r" (saved_mstatus)
-                               : "r" (MSTATUS_MIE_BIT_MASK)
-                               : "memory");
-             usb_events = mcu_intr_rcv.usb;
-             mcu_intr_rcv.usb &= ~usb_events;
-             if (saved_mstatus & MSTATUS_MIE_BIT_MASK) {
-                 __asm__ volatile ("csrrs zero, mstatus, %0"
-                                   :
-                                   : "r" (MSTATUS_MIE_BIT_MASK)
-                                   : "memory");
-             }
-         }
+        // INTSTAT itself. Atomically snapshot and clear the whole mailbox.
+        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
