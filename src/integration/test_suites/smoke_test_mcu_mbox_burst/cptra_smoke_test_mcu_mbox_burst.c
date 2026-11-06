@@ -95,7 +95,7 @@ void main(void) {
         // Clear execute and re-acquire lock
         // Check that data at written locations is 0'ed out
         cptra_mcu_mbox_write_dlen(mbox_num, dlen);
-        cptra_mcu_mbox_write_execute(mbox_num, 0x1);
+        // EXECUTE=1 would hand the SRAM to MCU and block the release, so release directly.
         cptra_mcu_mbox_write_execute(mbox_num, 0x0);
         cptra_mcu_mbox_acquire_lock(mbox_num, 1000000, true);
 

@@ -191,6 +191,15 @@ initial begin
         else if(cptra_ss_test_name == "MCI_BOOT_FSM_GLITCH") begin
             mci_boot_fsm_glitch();
         end
+        else if(cptra_ss_test_name == "MCI_MBOX0_OWNERSHIP_FLOW") begin
+            mci_mbox0_ownership_flow();
+        end
+        else if(cptra_ss_test_name == "MCI_MBOX1_OWNERSHIP_FLOW") begin
+            mci_mbox1_ownership_flow();
+        end
+        else if(cptra_ss_test_name == "MCI_MBOX_DLEN_WRAP") begin
+            mci_mbox_dlen_wrap();
+        end
         else begin
             $error("ERROR: Test Name from Plusarg: %s not found", cptra_ss_test_name);
             $finish;
