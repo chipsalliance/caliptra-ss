@@ -18,7 +18,8 @@
 // Source-independent checker for OCP Recovery EP0 ownership. Sequences bracket
 // one effective owner class per generation using begin_observation() and
 // finish_observation(). Each claimed window contains exactly one completed
-// control transfer so its mirrored SETUP can be checked byte-for-byte.
+// control transfer so its mirrored SETUP can be checked byte-for-byte. Raw
+// interruption windows declare expected SETUPs without inventing completions.
 class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
 
     `uvm_component_utils(caliptra_ss_usb_ocp_arbiter_checker)
@@ -43,6 +44,11 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
     protected svt_usb_transfer observed_transfers[$];
     protected logic [31:0] baseline_fields[0:SNAPSHOT_FIELD_COUNT-1];
     protected bit observation_active;
+    protected bit packet_only_window;
+    protected bit raw_claimed_setup_window;
+    protected logic [63:0] expected_raw_setup_lines[$];
+    protected bit wire_length_override;
+    protected bit [15:0] expected_wire_length;
     protected bit path_disabled;
     protected logic [15:0] active_generation;
     protected int unsigned windows_checked;
@@ -77,6 +83,7 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         end
 
         observation_active = 1'b0;
+        packet_only_window = 1'b0;
         path_disabled = 1'b0;
         active_generation = '0;
         windows_checked = 0;
@@ -135,7 +142,8 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             bm_request_type
         };
         setup_word1 = {
-            transfer.setup_data_w_length,
+            wire_length_override ? expected_wire_length :
+                transfer.setup_data_w_length,
             transfer.setup_data_w_index
         };
         return {setup_word1, setup_word0};
@@ -216,6 +224,7 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         logic [7:0] setup_byte_coverage;
         int unsigned mirrored_setup_writes;
         int unsigned other_writes;
+        int unsigned allowed_setup_transfers;
 
         mirrored_setup_writes = 0;
         other_writes = 0;
@@ -238,7 +247,9 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         // The architecture always forwards setup_received and the real SETUP
         // SRAM write for every claimed request. Data/status traffic remains
         // exclusively owned by the OCP path.
-        if (observed_transfers.size() != 1) begin
+        if (raw_claimed_setup_window) begin
+            check_raw_setup_mirrors();
+        end else if (observed_transfers.size() != 1) begin
             `uvm_error("OCP_ARB_CHECK",
                 $sformatf({"Claimed observation window requires exactly one ",
                            "completed USB transfer; observed %0d."},
@@ -328,12 +339,15 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             observer_vif.SNAPSHOT_FIELD_TRANSFERS];
         post_transfers = observer_vif.get_snapshot_field(
             observer_vif.SNAPSHOT_FIELD_TRANSFERS);
-        if ((post_transfers - baseline_transfers) > 32'd1) begin
+        allowed_setup_transfers = raw_claimed_setup_window ?
+            expected_raw_setup_lines.size() : 1;
+        if ((post_transfers - baseline_transfers) > allowed_setup_transfers) begin
             `uvm_error("OCP_ARB_CHECK",
                 $sformatf({"Legacy DMA transfer count advanced by %0d ",
-                           "during claimed window; at most one mirrored ",
+                           "during claimed window; at most %0d mirrored ",
                            "SETUP is permitted."},
-                          post_transfers - baseline_transfers))
+                          post_transfers - baseline_transfers,
+                          allowed_setup_transfers))
         end
 
         // Suppressed effects: no claimed successful-SETUP DMA IRQ, no EP0
@@ -352,6 +366,55 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             "Legacy SETUP-dispatch count");
 
         claimed_windows_checked++;
+    endfunction
+
+    protected function void check_raw_setup_mirrors();
+        logic [63:0] setup_line;
+        logic [7:0] coverage;
+        int unsigned setup_index;
+        setup_line = '0;
+        coverage = '0;
+        setup_index = 0;
+        if ((observed_transfers.size() != 0) ||
+            (expected_raw_setup_lines.size() == 0) ||
+            (packet_callback.accepted_setup_count() != expected_raw_setup_lines.size()))
+            `uvm_error("OCP_ARB_CHECK",
+                "Raw claimed window lacks its exact declared/ACKed SETUP boundaries.")
+        for (int unsigned wi = 0; wi < observer_vif.write_count(); wi++) begin
+            logic [63:0] data;
+            logic [7:0] byte_enable;
+            if (observer_vif.get_write_word_address(wi) != USB_SETUP_SRAM_WORD_ADDRESS)
+                continue;
+            data = observer_vif.get_write_data(wi);
+            byte_enable = observer_vif.get_write_byte_enable(wi);
+            if ($isunknown(byte_enable)) begin
+                `uvm_error("OCP_ARB_CHECK", "Raw SETUP mirror has unknown byte enables.")
+                continue;
+            end
+            if (setup_index >= expected_raw_setup_lines.size()) begin
+                `uvm_error("OCP_ARB_CHECK", "Unexpected extra raw SETUP mirror.")
+                continue;
+            end
+            for (int unsigned bi = 0; bi < 8; bi++) begin
+                if (!byte_enable[bi]) continue;
+                if (data[bi * 8 +: 8] !==
+                    expected_raw_setup_lines[setup_index][bi * 8 +: 8])
+                    `uvm_error("OCP_ARB_CHECK",
+                        $sformatf("Raw SETUP mirror[%0d] wrote incorrect byte[%0d].",
+                            setup_index, bi))
+                setup_line[bi * 8 +: 8] = data[bi * 8 +: 8];
+                coverage[bi] = 1'b1;
+            end
+            if (coverage != 8'hFF) continue;
+            if (setup_line !== expected_raw_setup_lines[setup_index])
+                `uvm_error("OCP_ARB_CHECK",
+                    $sformatf("Raw SETUP mirror[%0d] expected=%016h observed=%016h.",
+                        setup_index, expected_raw_setup_lines[setup_index], setup_line))
+            setup_index++;
+            coverage = '0;
+        end
+        if ((coverage != 0) || (setup_index != expected_raw_setup_lines.size()))
+            `uvm_error("OCP_ARB_CHECK", "Missing or incomplete raw SETUP mirror.")
     endfunction
 
     protected virtual function void check_unclaimed_window();
@@ -425,6 +488,60 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         unclaimed_windows_checked++;
     endfunction
 
+    // A stalled token has no SETUP mirror exemption. Use the same firmware
+    // snapshots as claimed transfers, but require every legacy effect stable.
+    function void expect_packet_only_window();
+        if (!observation_active || path_disabled) begin
+            `uvm_fatal("OCP_ARB_CHECK",
+                "Packet-only isolation requires an active recovery window.")
+        end
+        packet_only_window = 1'b1;
+    endfunction
+
+    function void expect_raw_claimed_setup(input svt_usb_transfer request);
+        if (!observation_active || path_disabled || packet_only_window ||
+            (observed_transfers.size() != 0) || !is_claim_candidate(request))
+            `uvm_fatal("OCP_ARB_CHECK",
+                "Raw SETUP expectation requires an active isolated claimed window.")
+        raw_claimed_setup_window = 1'b1;
+        expected_raw_setup_lines.push_back(expected_setup_line(request));
+    endfunction
+
+    // A VIP transfer-format exception changes only the on-wire SETUP, not
+    // the completed transfer descriptor. Preserve byte-exact mirror checking.
+    function void expect_wire_setup_length(input bit [15:0] length);
+        if (!observation_active)
+            `uvm_fatal("OCP_ARB_CHECK", "Wire-length expectation requires an active window.")
+        wire_length_override = 1'b1;
+        expected_wire_length = length;
+    endfunction
+
+    // Pure predicate shared with synthetic checks; reporting belongs to close.
+    function bit packet_history_complete();
+        if (packet_callback == null) return 1'b0;
+        return !packet_callback.overflowed();
+    endfunction
+
+    protected function void check_packet_only_window();
+        if ((observed_transfers.size() != 0) ||
+            (observer_vif.write_count() != 0) ||
+            (packet_callback.packet_count() == 0)) begin
+            `uvm_error("OCP_ARB_CHECK",
+                $sformatf("Packet-only window: transfers=%0d SRAM_writes=%0d packets=%0d.",
+                          observed_transfers.size(), observer_vif.write_count(),
+                          packet_callback.packet_count()))
+        end
+        for (int unsigned field_index = 0;
+             field_index < SNAPSHOT_FIELD_COUNT; field_index++) begin
+            if ((field_index == observer_vif.SNAPSHOT_FIELD_VERSION) ||
+                (field_index == observer_vif.SNAPSHOT_FIELD_PUBLISH_SEQUENCE))
+                continue;
+            check_field_unchanged(field_index,
+                $sformatf("Packet-only legacy field %0d", field_index));
+        end
+        claimed_windows_checked++;
+    endfunction
+
     task begin_observation(
         input  logic [15:0] generation,
         input  bit          disable_recovery_path,
@@ -456,6 +573,10 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
         end
 
         observed_transfers.delete();
+        packet_only_window = 1'b0;
+        raw_claimed_setup_window = 1'b0;
+        expected_raw_setup_lines.delete();
+        wire_length_override = 1'b0;
         active_generation = generation;
         path_disabled = disable_recovery_path;
         ready = observer_vif.start_window(generation);
@@ -498,6 +619,15 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             return;
         end
 
+        if (!packet_history_complete()) begin
+            `uvm_error("OCP_ARB_CHECK",
+                $sformatf({"Packet history for generation %0d is unavailable ",
+                           "or overflowed; isolation cannot be checked from ",
+                           "a truncated trace."}, generation))
+            complete = 1'b0;
+            return;
+        end
+
         baseline_publish_sequence = baseline_fields[
             observer_vif.SNAPSHOT_FIELD_PUBLISH_SEQUENCE];
         post_publish_sequence = observer_vif.get_snapshot_field(
@@ -526,6 +656,16 @@ class caliptra_ss_usb_ocp_arbiter_checker extends uvm_component;
             return;
         end
 
+        if (raw_claimed_setup_window) begin
+            check_claimed_window();
+            windows_checked++;
+            return;
+        end
+        if (packet_only_window) begin
+            check_packet_only_window();
+            windows_checked++;
+            return;
+        end
         if (observed_transfers.size() == 0) begin
             `uvm_error("OCP_ARB_CHECK",
                 "Observation window contained no completed USB transfer.")
