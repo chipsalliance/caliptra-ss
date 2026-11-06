@@ -111,6 +111,12 @@ bool usb_ocp_recovery_program_device_id(void);
 // storage. Returns true when a capability policy was updated.
 bool usb_ocp_recovery_service_capability_policy(void);
 
+// Service USB while awaiting STOP on generic input wire 1 (delta must be zero).
+// Require a generation newer than last_generation using 16-bit serial arithmetic.
+// Mask interrupts, ACK as the final MMIO, fence, and self-halt without returning.
+// Invalid STOP or a bounded wait timeout uses handle_error, never test success.
+void usb_ocp_recovery_wait_for_stop_and_halt(uint16_t last_generation);
+
 // usb_handle_class_request() override for OCP Recovery EP0 traffic. The VHDL
 // PIE arbiter classifies OCP_RECOVERY_TRANSFER SETUPs and routes claimed
 // requests to the recovery RTL, so the MCU path must not claim them here. This

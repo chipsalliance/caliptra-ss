@@ -15,8 +15,15 @@
 
 #include <stddef.h>
 
+#include "caliptra_ss_lib.h"
 #include "printf.h"
+#include "riscv-csr.h"
 #include "usb_ocp_recovery.h"
+#include "veer-csr.h"
+
+#define USB_OCP_RECOVERY_STOP_ITERATION_LIMIT 1000000u
+// MPMC[0] requests halt; keep MPMC[1] clear to preserve masked interrupts.
+#define USB_OCP_RECOVERY_STOP_MPMC_HALT 0x1u
 
 // USB 2.0 Section 9.6.3 Table 9-10: bNumInterfaces for single-interface composite config.
 #define USB_OCP_RECOVERY_CONFIG_NUM_INTERFACES 1u
@@ -156,6 +163,51 @@ bool usb_ocp_recovery_service_capability_policy(void) {
 
     lsu_write_32(SOC_USB_COMBO_RECOVERY_PROT_CAP_2, prot_cap_2);
     return true;
+}
+
+void usb_ocp_recovery_wait_for_stop_and_halt(uint16_t last_generation) {
+    for (uint32_t iteration = 0u;
+         iteration < USB_OCP_RECOVERY_STOP_ITERATION_LIMIT; ++iteration) {
+        usb_event_loop(1u, 0u);
+        const uint32_t command =
+            lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
+        if ((command >> USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) !=
+                USB_LEGACY_EP0_COMMAND_MAGIC) {
+            continue;
+        }
+        const uint32_t opcode =
+            (command >> USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        if (opcode != USB_LEGACY_EP0_COMMAND_STOP) {
+            continue;
+        }
+        const uint32_t expected_delta =
+            (command >> USB_LEGACY_EP0_COMMAND_DELTA_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        const uint16_t generation =
+            (uint16_t)(command & USB_LEGACY_EP0_COMMAND_GENERATION_MASK);
+        const uint16_t distance = (uint16_t)(generation - last_generation);
+        // RFC 1982: reject duplicate/stale generations, accepting wraparound.
+        if ((expected_delta != 0u) || (distance == 0u) ||
+            (distance >= 0x8000u)) {
+            handle_error("MCU: invalid OCP teardown STOP command\n");
+        }
+
+        // No service, diagnostics, release polling, or IRQ I/O after the ACK.
+        csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+            ((uint32_t)USB_LEGACY_EP0_COMMAND_ACK_MAGIC <<
+             USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) |
+            (USB_LEGACY_EP0_COMMAND_STOP <<
+             USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) | generation);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        while (1) {
+            csr_write_mpmc(USB_OCP_RECOVERY_STOP_MPMC_HALT);
+        }
+    }
+    handle_error("MCU: OCP teardown STOP command timed out\n");
+    while (1);
 }
 
 // Strong override of the weak usb.c default class-request hook.

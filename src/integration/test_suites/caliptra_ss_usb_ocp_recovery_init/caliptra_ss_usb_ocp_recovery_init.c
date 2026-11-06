@@ -32,7 +32,7 @@
 #define SS_GENERIC_FW_EXEC_CTRL_GO_MASK (1u << 2)
 #define USB_EVENT_LOOP_SLICE_ITERS 1000u
 // Smaller slice for the post-handoff FW_EXEC_CTRL wait loop: the MCU must notice
-// Caliptra's completion signal (and report the pass) promptly, so it re-checks
+// Caliptra's completion signal promptly, so it re-checks
 // FW_EXEC_CTRL every ~few us instead of once per ~89us USB-servicing slice.
 // (Using the large slice here makes end-of-test latency depend on slice/FW_EXEC
 // alignment, 0..~89us.) Enumeration servicing is unaffected -- this loop runs
@@ -103,7 +103,6 @@ uint8_t main(void) {
     }
 
     usb_dump_state("streaming-boot-complete");
-    VPRINTF(LOW, "MCU: Streaming boot complete; reporting pass to the testbench\n");
-    SEND_STDOUT_CTRL(TB_CMD_TEST_PASS);
-    while(1);
+    VPRINTF(LOW, "MCU: Streaming boot complete; servicing USB until UVM STOP\n");
+    usb_ocp_recovery_wait_for_stop_and_halt(0u);
 }
