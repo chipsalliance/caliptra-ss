@@ -111,7 +111,12 @@ package trace_buffer_csr_pkg;
     } trace_buffer_csr__CTRL__cptra_core_sel__out_t;
 
     typedef struct packed{
+        logic value;
+    } trace_buffer_csr__CTRL__mcu_shadow_sel__out_t;
+
+    typedef struct packed{
         trace_buffer_csr__CTRL__cptra_core_sel__out_t cptra_core_sel;
+        trace_buffer_csr__CTRL__mcu_shadow_sel__out_t mcu_shadow_sel;
     } trace_buffer_csr__CTRL__out_t;
 
     typedef struct packed{

@@ -39,6 +39,8 @@
 `define TRACE_BUFFER_CSR_CTRL                                                                       (32'h14)
 `define TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_LOW                                                    (0)
 `define TRACE_BUFFER_CSR_CTRL_CPTRA_CORE_SEL_MASK                                                   (32'h1)
+`define TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_LOW                                                    (1)
+`define TRACE_BUFFER_CSR_CTRL_MCU_SHADOW_SEL_MASK                                                   (32'h2)
 `endif
 
 

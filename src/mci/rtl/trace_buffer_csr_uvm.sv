@@ -166,8 +166,10 @@ package trace_buffer_csr_uvm;
         protected bit            m_is_read;
 
         trace_buffer_csr__CTRL_bit_cg cptra_core_sel_bit_cg[1];
+        trace_buffer_csr__CTRL_bit_cg mcu_shadow_sel_bit_cg[1];
         trace_buffer_csr__CTRL_fld_cg fld_cg;
         rand uvm_reg_field cptra_core_sel;
+        rand uvm_reg_field mcu_shadow_sel;
 
         function new(string name = "trace_buffer_csr__CTRL");
             super.new(name, 32, build_coverage(UVM_CVR_ALL));
@@ -181,8 +183,11 @@ package trace_buffer_csr_uvm;
         virtual function void build();
             this.cptra_core_sel = new("cptra_core_sel");
             this.cptra_core_sel.configure(this, 1, 0, "RW", 0, 'h0, 1, 1, 0);
+            this.mcu_shadow_sel = new("mcu_shadow_sel");
+            this.mcu_shadow_sel.configure(this, 1, 1, "RW", 0, 'h0, 1, 1, 0);
             if (has_coverage(UVM_CVR_REG_BITS)) begin
                 foreach(cptra_core_sel_bit_cg[bt]) cptra_core_sel_bit_cg[bt] = new();
+                foreach(mcu_shadow_sel_bit_cg[bt]) mcu_shadow_sel_bit_cg[bt] = new();
             end
             if (has_coverage(UVM_CVR_FIELD_VALS))
                 fld_cg = new();
