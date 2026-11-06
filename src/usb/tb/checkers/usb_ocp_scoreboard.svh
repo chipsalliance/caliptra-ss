@@ -22,6 +22,7 @@ class usb_ocp_scoreboard extends uvm_component;
   logic busy;
   bit negative_payload;
   bit negative_activation;
+  bit negative_dma;
   bit negative_payload_applied;
 
   function new(string name = "usb_ocp_scoreboard", uvm_component parent = null);
@@ -35,7 +36,8 @@ class usb_ocp_scoreboard extends uvm_component;
     model = usb_ocp_predictor::type_id::create("model");
     negative_payload = $test$plusargs("usb_ocp_negative_payload");
     negative_activation = $test$plusargs("usb_ocp_negative_activation");
-    if (negative_payload || negative_activation)
+    negative_dma = $test$plusargs("usb_ocp_negative_dma");
+    if (negative_payload || negative_activation || negative_dma)
       `uvm_info("OCP_NEGATIVE_CONTROL", "Checker-only negative control enabled; this run MUST fail", UVM_NONE)
   endfunction
 
@@ -315,6 +317,9 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     if (!model.recovery_register.exists(item.axi_address)) return;
     reg_name = model.recovery_register[item.axi_address];
+    if ((item.axi_beats != 1 || item.bytes.size() != 4) &&
+        (item.write_access || reg_name != "INDIRECT_FIFO_DATA"))
+      `uvm_fatal("OCP_AXI", "Only FIFO DMA reads may use multi-beat recovery accesses")
     if (item.write_access) begin
       case (reg_name)
         "DEVICE_STATUS_0": begin
@@ -339,8 +344,22 @@ class usb_ocp_scoreboard extends uvm_component;
     end else begin
       case (reg_name)
         "INDIRECT_FIFO_DATA": begin
+          int unsigned remaining;
+          int unsigned expected_words;
+          int unsigned observed_words;
+          if (model.returned_bytes >= model.image_words*4 ||
+              item.axi_burst !== AAXI_BURST_FIXED)
+            `uvm_fatal("OCP_DMA", "FIFO DMA overread or non-FIXED burst")
+          remaining = model.image_words-model.returned_bytes/4;
+          expected_words = (remaining > 16) ? 16 : remaining;
+          observed_words = item.axi_beats;
+          if (negative_dma) observed_words--;
+          if (observed_words != expected_words)
+            `uvm_fatal("OCP_DMA", $sformatf(
+              "FIFO DMA burst differs from 64-byte/tail contract: observed=%0d expected=%0d",
+              observed_words,expected_words))
           foreach (item.bytes[i]) model.fifo_actual.push_back(item.bytes[i]);
-          model.returned_bytes += 4;
+          model.returned_bytes += item.bytes.size();
           ocp_check_fifo_bytes();
         end
         "INDIRECT_FIFO_CTRL_1": begin

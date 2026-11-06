@@ -35,7 +35,12 @@ class usb_ocp_base_env extends usb_env;
   endfunction
 
   function void connect_phase(uvm_phase phase);
+    usb_ocp_base_env_cfg ocp_cfg;
     super.connect_phase(phase);
+    if (!$cast(ocp_cfg,cfg) ||
+        !uvm_config_db#(virtual usb_ocp_recovery_if)::get(this,"","ocp_recovery_vif",
+                                                       ocp_cfg.recovery_vif))
+      `uvm_fatal("OCP_ENV", "Missing architectural recovery interface")
     scoreboard.observer = observer;
     scoreboard.model.ocp_configure_map(reg_model);
     packet_callback.observer = observer;

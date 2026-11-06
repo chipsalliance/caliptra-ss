@@ -123,6 +123,7 @@ targets:
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
+      - $COMPILE_ROOT/tb/usb_ocp_recovery_if.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv

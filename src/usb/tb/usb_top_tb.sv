@@ -69,6 +69,12 @@ module usb_top_tb;
   // Testbench interfaces
   // --------------------------------------------------------------------------
   svt_usb_if usb_20_mac_if();
+  logic ocp_payload_available;
+  logic ocp_image_activated;
+  usb_ocp_recovery_if ocp_recovery_if (
+    .payload_available(ocp_payload_available),
+    .image_activated(ocp_image_activated)
+  );
 
   // One AXI USER filter policy interface per wrapper policy input group.
   usb_axi_user_filter_if #(
@@ -278,8 +284,8 @@ module usb_top_tb;
     .dev1_usb_irq(),
     .dev1_usb_fiq(),
     .usb_frametoggle(), // FIXME: DV add functionality
-    .payload_available     (),
-    .ocp_firmware_activated(),
+    .payload_available     (ocp_payload_available),
+    .ocp_firmware_activated(ocp_image_activated),
     // Device-mode VBus indication comes from SVT.
     .USB_VBus(usb_20_mac_if.utmi_dut_mac_if.VbusValid),
     .utmi_clk(usb_20_mac_if.utmi_dut_mac_if.CLK),
@@ -426,6 +432,7 @@ module usb_top_tb;
     uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_csr_vif", dev1_csr_manager_vif);
     uvm_config_db#(virtual aaxi_intf)::set(null, "*.env", "dev1_memory_vif", dev1_memory_manager_vif);
     uvm_config_db#(virtual svt_usb_if)::set(null, "*.env", "usb_20_mac_if", usb_20_mac_if);
+    uvm_config_db#(virtual usb_ocp_recovery_if)::set(null, "*.env", "ocp_recovery_vif", ocp_recovery_if);
     uvm_config_db#(usb_combo_filter_vif_t)::set(null, "*.env", "combo_filter_vif", combo_filter_if);
     uvm_config_db#(usb_dev1_filter_vif_t)::set(null, "*.env", "dev1_filter_vif", dev1_filter_if);
     run_test();

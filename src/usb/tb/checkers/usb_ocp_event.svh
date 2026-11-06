@@ -35,6 +35,12 @@ class usb_ocp_event extends uvm_sequence_item;
   int unsigned manager;
   logic write_access;
   logic [63:0] axi_address;
+  int unsigned axi_id;
+  int unsigned axi_instance;
+  int unsigned axi_beats;
+  int unsigned axi_beat_bytes;
+  logic [1:0] axi_burst;
+  logic [1:0] axi_responses[$];
   logic [7:0] strobes[$];
   logic response_ok;
   // USB device/epoch/SETUP generation lives in usb_ocp_base_control.
