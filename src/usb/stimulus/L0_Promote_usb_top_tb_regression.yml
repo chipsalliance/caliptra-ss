@@ -10,3 +10,4 @@ contents:
         - ../tests/usb_axi_write_backpressure.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_ocp_bringup.yml
