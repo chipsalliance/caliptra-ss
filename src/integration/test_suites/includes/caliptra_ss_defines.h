@@ -31,8 +31,8 @@
 #define CSS_MCU0_VEER_INTR_VEC_MCI         1
 #define CSS_MCU0_VEER_INTR_VEC_I3C         2
 #define CSS_MCU0_VEER_INTR_VEC_USB         3
-#define CSS_MCU0_VEER_INTR_VEC_SPIH        4
-#define CSS_MCU0_VEER_INTR_VEC_UART        5
+#define CSS_MCU0_VEER_INTR_VEC_RSVD4       4
+#define CSS_MCU0_VEER_INTR_VEC_RSVD5       5
 // Used to tie-off undefined upper intr bits
 #define CSS_MCU0_VEER_INTR_EXT_LSB         6
 // usb_hub_compound dual USB device test. VEER_INTR_EXT_LSB (vector 6) is the
@@ -45,8 +45,6 @@
 #define CSS_MCU0_VEER_INTR_PRIO_MCI        8
 #define CSS_MCU0_VEER_INTR_PRIO_I3C        7
 #define CSS_MCU0_VEER_INTR_PRIO_USB        7
-#define CSS_MCU0_VEER_INTR_PRIO_SPIH       7
-#define CSS_MCU0_VEER_INTR_PRIO_UART       7
 // device1 shares device0's priority so the two USB vectors serialize rather
 // than preempt one another (no mutual nesting between the two controllers).
 #define CSS_MCU0_VEER_INTR_PRIO_USB_DEV1   7

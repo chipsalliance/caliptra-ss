@@ -27,7 +27,6 @@
       - [MCI](#mci)
     - [Caliptra 2.2 Subsystem Components HW requirements](#caliptra-22-subsystem-components-hw-requirements)
       - [USB](#usb)
-      - [SPI](#spi)
   - [Caliptra Subsystem Hardware Block Diagram](#caliptra-subsystem-hardware-block-diagram)
 - [Caliptra Subsystem Architectural Flows](#caliptra-subsystem-architectural-flows)
   - [USB Streaming Boot (Caliptra SS 2.2)](#usb-streaming-boot-caliptra-ss-22)
@@ -314,10 +313,6 @@ Stretch Goal (Met in 2.0/2.1): DMA data payload back to destination (Caliptra)
 2. USB2 shall implement two devices - one for Caliptra subsystem usage and one for SOC usage
 3. USB2 access must follow the [ownership and AXI USER filtering policy](#ownership-and-access) and [DWORD-only access requirement](#dword-only-accesses).
 
-#### SPI
-
-SPI shall be supported along with AXI streaming boot block
-
 ## Caliptra Subsystem Hardware Block Diagram
 
 *Figure: Caliptra 2.0/2.1 Subsystem Block Diagram*
@@ -579,13 +574,13 @@ FUSE controller is an RTL module that is responsible for programming and reading
 
 ## Partition Details
 
-The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the LC state required to provision each partition.
+The Fuse Controller is configured a total of **16 partitions** (See [Fuse Controller's Fuse Partition Map](../src/fuse_ctrl/doc/otp_ctrl_mmap.md)), while it can support different number of partitions based on SoC product requirements. Secret FUSE partitions are prefixed with the word "Secret" and are associated with specific Life Cycle (LC) states, such as "MANUF" or "PROD." This naming convention indicates the last LC state in which each partition can be provisioned. This is enforced by each partition's `lc_phase` attribute in the fuse map: a partition is write-locked in RAW and in all LC states after its `lc_phase` (e.g., `SW_TEST_UNLOCK_PARTITION` with `lc_phase: "LcStDev"` can be programmed in TEST_UNLOCKED before entering MANUF). Other access restrictions still apply; for example, the Fuse Controller rejects UDS and Field Entropy writes while Caliptra is in debug mode, which includes the TEST_UNLOCKED states.
 
 ### Key Characteristics of Secret Partitions
 
 1. **Programming Access:**
    - `UDS_SEED` and `FIELD_ENTROPY` partitions can only be programmed by the Caliptra Core.
-   - Secret partitions are buffered, meaning they are stored in registers and are erased (temporarily zeroized) if Caliptra-SS enters debug mode.
+   - Secret partitions are buffered, meaning they are stored in registers. They are not sensed (the registers stay zero) when debug intent is asserted before Fuse Controller initialization, except `SECRET_LC_TRANSITION_PARTITION` (see [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization)).
 2. **Locking Mechanism:**
    - Write access to a partition can be permanently locked when no further updates are required.
    - To lock a partition, an integrity constant is calculated and programmed alongside the data for that partition.
@@ -720,7 +715,7 @@ This enhancement protects the secrets provisioned in the manufacturing and produ
 ## Notes
 
 - **Zeroization of Secret Partitions:**
-  Secret partitions are temporarily zeroized when Caliptra-SS enters debug mode to ensure security.
+  Secret partitions, except `SECRET_LC_TRANSITION_PARTITION`, are not sensed when debug intent is asserted before Fuse Controller initialization.
 - **Debug Intent and Secret Partitions:** See [Debug Intent Secret Zeroization](#debug-intent-secret-zeroization).
 - **Locking Requirement:**
   After the device finishes provisioning and transitions into production, partitions that no longer require updates should be locked to prevent unauthorized modifications.
@@ -1316,12 +1311,12 @@ Trusted users always have read access to the CSRs in the mailbox, but require MB
 
 #### MCU Mailbox Locking
 
-A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requester has read access to the mailbox CSRs and write access to:
+A Requester will read the "LOCK" register to obtain a lock on the mailbox. This is a read-set register, the lock is acquired when read returns 0. The Requester must be a [Trusted user](#mcu-mailbox-limited-trusted-axi-users). Once the lock is obtained the Requester has read access to the mailbox CSRs and, while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership), write access to:
 
-- CMD and EXECUTE registers
-- DLEN register and mailbox SRAM while the Requester is the current [SRAM owner](#mcu-mailbox-sram-ownership)
+- CMD, DLEN and EXECUTE registers
+- mailbox SRAM
 
-Unlocking/releasing occurs when the Requester writes 0 to the EXECUTE register. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
+Unlocking/releasing occurs when the current SRAM owner writes 0 to the EXECUTE register. The Requester can release only while it owns the SRAM: before it writes `EXECUTE=1`, or after ownership returns to it. Once `EXECUTE=1` hands the SRAM to Root, the Requester cannot abort the transaction. After releasing the mailbox the SRAM is zeroed out([MCU Mailbox SRAM Clearing](#mcu-mailbox-sram-clearing)).
 
 On MCI reset release the MCU MBOX is locked for MCU. The MCU shall set the DLEN to the size of the SRAM and release the MBOX, causing the SRAM to be zeroed. This is done to prevent data leaking between warm resets via the SRAM.
 
@@ -1376,10 +1371,10 @@ registers, evaluated in the following precedence order.
 %%{init: {"flowchart": {"curve": "basis"}}}%%
 flowchart TD
     accTitle: MCU mailbox SRAM owner resolution
-    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
+    accDescr: A decision tree resolving the single exclusive SRAM owner from the lock, release, zeroization, EXECUTE, TARGET_USER_VALID, and CMD_STATUS state.
 
     Q1{"MBOX_LOCK set?"}
-    Q2{"SRAM zeroizing?"}
+    Q2{"Releasing or SRAM zeroizing?"}
     Q3{"EXECUTE = 1?"}
     Q4{"TARGET_USER_VALID = 1?"}
     Q5{"CMD_STATUS = BUSY?"}
@@ -1412,15 +1407,21 @@ the exclusive owner from one agent to the next.
 | Root writes `TARGET_USER_VALID=1` while `EXECUTE=1` | The agent named by `TARGET_USER` |
 | Target writes terminal `TARGET_STATUS` | Root, and hardware clears `TARGET_USER` and `TARGET_USER_VALID` |
 | MCU writes non-BUSY `CMD_STATUS` | Lock holder |
-| `EXECUTE=0` | None, and hardware begins zeroization |
+| SRAM owner writes `EXECUTE=0` | None, and hardware begins zeroization |
 | Zeroization completes | None, `LOCK` clears and the mailbox is reusable |
 
-Writing `EXECUTE=0` always revokes all software SRAM access and enters
-zeroization, including while a Target owns the SRAM.
+Writing `EXECUTE=0` revokes all software SRAM access and enters zeroization.
 
-`DLEN` write access follows SRAM ownership. Only the current SRAM owner may
-write `DLEN`, so the agent that produced the data in the SRAM is the agent that
-reports its length.
+`CMD`, `DLEN` and `EXECUTE` write access follows SRAM ownership. Only the
+current SRAM owner may write them, and writes from any other agent are dropped.
+The agent that produced the data in the SRAM is the agent that reports its
+length. The Requester cannot change or abort a request once `EXECUTE=1` hands
+it to Root, while Root or a Target can end the transaction with `EXECUTE=0`
+while it owns the SRAM.
+
+**NOTE**: Neither the Requester nor Root can reclaim the mailbox from a Target
+that never writes a terminal `TARGET_STATUS` or `EXECUTE=0`. Only an MCI reset
+recovers it.
 
 #### MCU Mailbox Status Registers
 
@@ -1526,21 +1527,17 @@ Root is the only agent that may write `TARGET_USER` and
 [MCU Mailbox Target User](#mcu-mailbox-target-user).
 
 When an external Requester holds the lock, MCU is the only agent that may write
-`CMD_STATUS`. The Requester owns `CMD` and `EXECUTE` in this transaction, so
-those registers are read-only to MCU.
+`CMD_STATUS`.
 
-When MCU holds the lock it is the Requester and has Requester write access to
-`CMD` and `EXECUTE`.
-
-`DLEN` follows [SRAM ownership](#mcu-mailbox-sram-ownership). MCU has write
-access to `DLEN` while it is the current SRAM owner, so it can report the length
-of a response it produced.
+`CMD`, `DLEN` and `EXECUTE` follow [SRAM ownership](#mcu-mailbox-sram-ownership).
+MCU has write access to them while it is the current SRAM owner, as the lock
+holder or as Root, so it can report the length of a response it produced.
 
 | CSR | MCU holds the lock | An external Requester holds the lock |
 |---|---|---|
-| `CMD` | RW | RO |
+| `CMD` | RW while MCU owns the SRAM | RW while MCU owns the SRAM |
 | `DLEN` | RW while MCU owns the SRAM | RW while MCU owns the SRAM |
-| `EXECUTE` | RW | RO |
+| `EXECUTE` | RW while MCU owns the SRAM | RW while MCU owns the SRAM |
 | `TARGET_USER` | RW while `TARGET_USER_VALID=0` | RW while `TARGET_USER_VALID=0` |
 | `TARGET_USER_VALID` | RW while 0 | RW while 0 |
 | `CMD_STATUS` | Unused | RW |
