@@ -493,6 +493,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_stall_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence.svh"
   `include "caliptra_ss_usb_ocp_persistent_stall_sequence.svh"
+  `include "caliptra_ss_usb_ocp_fifo_local_behavior_sequence.svh"
   `include "caliptra_ss_usb_ocp_packet_observer_selftest_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
   `include "caliptra_ss_usb_ocp_interrupted_transfer_sequence.svh"
@@ -529,6 +530,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_test.svh"
   `include "caliptra_ss_usb_ocp_interrupted_transfer_test.svh"
+  `include "caliptra_ss_usb_ocp_fifo_local_behavior_test.svh"
 
 endpackage
 

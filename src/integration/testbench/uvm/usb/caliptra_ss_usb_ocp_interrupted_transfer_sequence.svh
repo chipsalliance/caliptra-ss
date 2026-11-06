@@ -43,10 +43,6 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     `uvm_object_utils(caliptra_ss_usb_ocp_interrupted_transfer_sequence)
 
     typedef caliptra_ss_usb_ocp_arbiter_packet_callback cb_t;
-    // Private firmware-service opcodes, not OCP Recovery commands.
-    // Contract: cptra_usb_ocp_interrupted_transfer.c.
-    localparam logic [7:0] FW_READ_FIFO_BYTE = 8'h05;
-    localparam logic [7:0] FW_READ_BATCH_ABORTED = 8'h06;
     localparam int unsigned COMMITTED_DWORDS = 2;
     localparam int unsigned MALFORMED_REQUEST_BYTES = 8;
     // Give maxWr+1 room in the image so rejection tests the USB envelope,
@@ -57,7 +53,6 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     localparam int TRUNCATION_BIT_OFFSET = 3;
     // Same infrastructure liveness budget as the normal transfer waiter.
     localparam time RAW_ACCEPTANCE_BOUND = 2ms;
-    localparam time FW_SERVICE_BOUND = 200us;
     // Pace NAK retries by one HS microframe so bounded capture retains the
     // whole request. Elapsed time never establishes endpoint readiness.
     localparam time RAW_RETRY_INTERVAL = 125us;
@@ -71,19 +66,7 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     protected task ocp_abort_execute_fw_command(
         input logic [7:0] opcode, input logic [7:0] expected_state,
         output logic [7:0] data, input string label);
-        bit acknowledged;
-        semantics_vif.issue_fw_command(opcode, path_generation);
-        semantics_vif.wait_for_fw_state_generation_bounded(
-            expected_state, path_generation, FW_SERVICE_BOUND,
-            acknowledged);
-        data = semantics_vif.get_fw_data();
-        semantics_vif.clear_fw_command();
-        if (!acknowledged)
-            `uvm_fatal("OCP_ABORT_FW",
-                $sformatf("%s command=0x%02h generation=%0d was not acknowledged.",
-                    label, opcode, path_generation))
-        path_generation++;
-        if (path_generation == 0) path_generation++;
+        ocp_stall_execute_fw_command(opcode, expected_state, data, label);
     endtask
 
     protected task ocp_abort_check_batch_aborted(
@@ -208,65 +191,14 @@ class caliptra_ss_usb_ocp_interrupted_transfer_sequence
     protected task ocp_abort_do_setup_and_check_ack(
         input bit dir_in, input ocp_cmd_t command,
         input bit [15:0] length, input string label);
-        bit [7:0] setup_bytes[$], empty_payload[$];
-        bit [15:0] interface_index;
-        bit accepted;
-        int unsigned before_count;
-        svt_usb_transfer expected_setup;
-        interface_index = 16'(ocp_get_iface_num());
-        setup_bytes = '{{dir_in, BMRT_TYPE_CLASS, BMRT_RECIPIENT_IFACE},
-            OCP_BREQUEST_XFER, command, 8'h00,
-            interface_index[7:0], interface_index[15:8],
-            length[7:0], length[15:8]};
-        expected_setup = svt_usb_transfer::type_id::create({label, "_expected_setup"});
-        expected_setup.xfer_type = svt_usb_transfer::CONTROL_TRANSFER;
-        expected_setup.setup_data_bmrequesttype_dir = dir_in ?
-            svt_usb_types::DEVICE_TO_HOST : svt_usb_types::HOST_TO_DEVICE;
-        expected_setup.setup_data_bmrequesttype_type = svt_usb_types::CLASS;
-        expected_setup.setup_data_bmrequesttype_recipient = svt_usb_types::BMREQ_INTERFACE;
-        expected_setup.setup_data_brequest = OCP_BREQUEST_XFER;
-        expected_setup.setup_data_w_value = {8'h00, command};
-        expected_setup.setup_data_w_index = interface_index;
-        expected_setup.setup_data_w_length = length;
-        checker.expect_raw_claimed_setup(expected_setup);
-        before_count = checker.packet_callback.accepted_setup_count();
-        checker.packet_callback.arm_setup_ack_trigger();
-        ocp_stall_do_transmit_packet_and_check_completion(
-            svt_usb_packet::SETUP, empty_payload);
-        ocp_stall_do_transmit_packet_and_check_completion(
-            svt_usb_packet::DATA0, setup_bytes);
-        checker.packet_callback.wait_for_setup_ack_trigger(
-            PACKET_RESPONSE_BOUND, accepted);
-        if (!accepted ||
-            (checker.packet_callback.accepted_setup_count() != before_count + 1))
-            `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": SETUP was not accepted and ACKed."})
-        stall_model.note_accepted_setup();
+        ocp_stall_do_setup_and_check_ack(dir_in, command, length, label);
         raw_requests++;
     endtask
 
     protected task ocp_abort_wait_reply(
         input int unsigned first_record, output cb_t::packet_record_t reply,
         input string label);
-        int unsigned index;
-        bit arrived;
-        time deadline;
-        index = first_record;
-        deadline = $time + PACKET_RESPONSE_BOUND;
-        while ($time < deadline) begin
-            checker.packet_callback.wait_for_packet_count(
-                index + 1, deadline - $time, arrived);
-            if (!arrived) break;
-            reply = checker.packet_callback.get_packet(index);
-            index++;
-            if (reply.pid_name == svt_usb_packet::SOF) continue;
-            if (reply.direction != cb_t::PACKET_RX) continue;
-            if (!reply.target_valid || (reply.device_address != 7'(dev_addr_v)) ||
-                (reply.endpoint_number != 0) || reply.crc_error_detected ||
-                reply.data_error_detected || checker.packet_callback.overflowed())
-                `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": invalid reply attribution/integrity."})
-            return;
-        end
-        `uvm_fatal("OCP_ABORT_EVIDENCE", {label, ": no packet reply within its bound."})
+        ocp_stall_wait_reply(first_record, reply, label);
     endtask
 
     protected task ocp_abort_do_accept_in_data(
