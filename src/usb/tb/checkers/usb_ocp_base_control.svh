@@ -26,6 +26,7 @@ class usb_ocp_base_control extends uvm_object;
   logic status_frozen;
   longint unsigned status_setup_order;
   longint unsigned status_data_order;
+  longint unsigned replaced_at;
   logic [7:0] setup[8];
   logic [7:0] data[$];
   logic [7:0] expected[$];
@@ -51,6 +52,7 @@ class usb_ocp_base_control extends uvm_object;
     status_frozen = 0;
     status_setup_order = 0;
     status_data_order = 0;
+    replaced_at = 0;
   endfunction
 
   function int unsigned ocp_get_length();
