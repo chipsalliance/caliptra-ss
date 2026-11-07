@@ -116,6 +116,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
   endtask
 
   task ocp_service_setup();
+    usb_ocp_base_epn_profile profile;
     logic [31:0] word0;
     logic [31:0] word1;
     logic [7:0] request_type;
@@ -134,13 +135,14 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
     // OCP requests belong solely to hardware. In particular do not clear
     // SETUP, arm a response, or consume endpoint SRAM on its behalf.
     if (device == 1 && request_type inside {8'h21,8'ha1}) return;
+    profile = ocp_cfg.ocp_get_epn_profile(device);
     ocp_write_csr("INTSTAT",ocp_get_mask("INTSTAT","EP0IN"));
     case (request)
       6: begin
         if (request_type !== 8'h80)
           `uvm_fatal("OCP_FIRMWARE", "Unexpected descriptor request type")
-        if (ocp_cfg.epn_profile != null)
-          data = ocp_cfg.epn_profile.ocp_prepare_descriptor(device,value);
+        if (profile != null)
+          data = profile.ocp_prepare_descriptor(device,value);
         else
           data = usb_ocp_base_descriptors::ocp_prepare_descriptor(device,value);
         if (data.size() == 0) `uvm_fatal("OCP_FIRMWARE", "Unsupported descriptor")
@@ -167,14 +169,14 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
         if (request_type !== 0 || length !== 0 || index !== 0 || value > 1)
           `uvm_fatal("OCP_FIRMWARE", "Malformed SET_CONFIGURATION")
         configuration_shadow = value[7:0];
-        if (ocp_cfg.epn_profile != null && ocp_cfg.epn_profile.device == device) begin
+        if (profile != null) begin
           alternate_shadow = 0;
           ocp_cfg.epn_enabled[device-1] = (value == 1 &&
-            ocp_cfg.epn_profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
+            profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
         end
       end
       svt_usb_types::GET_INTERFACE,svt_usb_types::SET_INTERFACE: begin
-        if (ocp_cfg.epn_profile == null || ocp_cfg.epn_profile.device != device ||
+        if (profile == null ||
             configuration_shadow !== 1 || index !== 1)
           `uvm_fatal("OCP_EPN_INTERFACE", "Unsupported/unconfigured firmware interface")
         if (request == svt_usb_types::GET_INTERFACE) begin
@@ -184,11 +186,11 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
         end else begin
           if (request_type !== 8'h01 || length !== 0 || value > 1 ||
               (value == 1 &&
-               ocp_cfg.epn_profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS))
+               profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS))
             `uvm_fatal("OCP_EPN_INTERFACE", "Unadvertised SET_INTERFACE")
           alternate_shadow = value[7:0];
           ocp_cfg.epn_enabled[device-1] = (value == 1 ||
-            ocp_cfg.epn_profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
+            profile.transfer_type != USB_TRANSFER_TYPE_ISOCHRONOUS);
         end
       end
       default: `uvm_fatal("OCP_FIRMWARE", "Unimplemented standard request in bringup")
@@ -206,12 +208,14 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
 
   virtual task body();
     usb_ocp_base_epn_service_seq epn_service;
-    if (ocp_cfg.epn_profile == null || ocp_cfg.epn_profile.device != device) begin
+    usb_ocp_base_epn_profile profile;
+    profile = ocp_cfg.ocp_get_epn_profile(device);
+    if (profile == null) begin
       ocp_do_standard_service();
       return;
     end
     epn_service = usb_ocp_base_epn_service_seq::type_id::create("epn_service");
-    epn_service.profile = ocp_cfg.epn_profile;
+    epn_service.profile = profile;
     epn_service.device = device;
     fork
       ocp_do_standard_service();
@@ -249,7 +253,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
         address_shadow = 0;
         configuration_shadow = 0;
         alternate_shadow = 0;
-        if (ocp_cfg.epn_profile != null && ocp_cfg.epn_profile.device == device)
+        if (ocp_cfg.ocp_get_epn_profile(device) != null)
           ocp_cfg.epn_enabled[device-1] = 0;
         ocp_write_command(ocp_get_mask("DEVCMDSTAT","DRES_C"));
         ocp_initialize_ep0();

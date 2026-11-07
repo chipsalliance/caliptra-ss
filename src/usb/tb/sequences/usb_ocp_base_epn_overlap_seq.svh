@@ -82,7 +82,6 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
   endfunction
 
   task body();
-    string variant;
     usb_ocp_base_epn_profile profile;
     uvm_reg_map memory_map;
     if (!uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
@@ -92,18 +91,7 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     profile = usb_ocp_base_epn_profile::type_id::create("firmware_profile");
     profile.device = epn_device;
     // One type per run, one row. No flags or profile constants discover USB.
-    case ($urandom_range(0,2))
-      0: profile.transfer_type = USB_TRANSFER_TYPE_BULK;
-      1: profile.transfer_type = USB_TRANSFER_TYPE_INTERRUPT;
-      2: profile.transfer_type = USB_TRANSFER_TYPE_ISOCHRONOUS;
-    endcase
-    if ($value$plusargs("usb_ocp_epn_type=%s",variant))
-      case (variant)
-        "BULK": profile.transfer_type = USB_TRANSFER_TYPE_BULK;
-        "INTERRUPT": profile.transfer_type = USB_TRANSFER_TYPE_INTERRUPT;
-        "ISOCHRONOUS": profile.transfer_type = USB_TRANSFER_TYPE_ISOCHRONOUS;
-        default: `uvm_fatal("OCP_EPN_PROFILE", "Supported profiles: BULK, INTERRUPT, ISOCHRONOUS")
-      endcase
+    profile.transfer_type = usb_ocp_base_epn_profile::ocp_prepare_selected_type();
     if (scoreboard.negative_overlap || scoreboard.negative_replacement ||
         scoreboard.negative_abort_prefix)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "EP0-specific injection is unsupported by the EPN profile")
@@ -112,14 +100,10 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
         `uvm_fatal("OCP_NEGATIVE_CONTROL", "NAK checker control requires the INTERRUPT EPN profile")
       ocp_check_nak_probe();
     end
-    ocp_cfg.epn_profile = profile;
-    scoreboard.model.epn_profile = profile;
-    scoreboard.model.epn = usb_ocp_base_epn_model::type_id::create("epn_model");
-    scoreboard.model.epn.device = profile.device;
-    scoreboard.model.epn.list_base = ocp_cfg.endpoint_list_base;
+    ocp_cfg.epn_profiles[epn_device-1] = profile;
     memory_map = map_for((epn_device == 1) ? USB_DEV0_SRAM : USB_DEV1_SRAM);
-    scoreboard.model.epn.memory_base = memory_map.get_base_addr(UVM_NO_HIER);
-    scoreboard.model.epn.negative_payload = scoreboard.negative_epn_payload;
+    scoreboard.model.ocp_configure_epn_profile(profile,ocp_cfg.endpoint_list_base,
+      memory_map.get_base_addr(UVM_NO_HIER),scoreboard.negative_epn_payload);
     `uvm_info("OCP_EPN_PROFILE",$sformatf(
       "Test-owned firmware type=%s; host must discover it over USB",
       profile.transfer_type.name()),UVM_LOW)
