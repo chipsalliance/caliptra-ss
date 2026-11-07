@@ -42,6 +42,12 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
   endfunction
 
+  virtual function void ocp_check_configuration_discovery(int device, bytes_t data);
+  endfunction
+
+  virtual task ocp_do_check_post_enumeration(int device);
+  endtask
+
   virtual task ocp_wait_replaced_prefix(usb_ocp_event observed, output bytes_t prefix);
     `uvm_fatal("OCP_SUPERSESSION", "Native replacement requires checked ACK-prefix routing")
   endtask
@@ -181,6 +187,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     bytes_t data;
     bytes_t empty;
     int total;
+    logic [7:0] discovered_configuration;
     // Only the device being enumerated occupies address zero. Its own slot
     // transitions parking -> default -> assigned; other slot identities stay
     // unchanged and are never used as aliases to switch traffic.
@@ -208,6 +215,10 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (data.size() != total)
       `uvm_fatal("OCP_ENUM", "Short configuration descriptor")
     if (device == 1) ocp_check_discovery(data);
+    discovered_configuration = data[5];
+    if (discovered_configuration === 0)
+      `uvm_fatal("OCP_ENUM", "Configuration descriptor uses reserved value zero")
+    ocp_check_configuration_discovery(device,data);
     if (device == 0) begin
       ocp_do_check_control(0,8'ha0,6,16'h2900,0,9,empty,data);
       if (data.size() != 9 || data[2] !== 2)
@@ -216,11 +227,12 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     ocp_do_check_control(device,8'h80,8,0,0,1,empty,data);
     if (data.size() != 1 || data[0] !== 0)
       `uvm_fatal("OCP_ENUM", "Device unexpectedly configured before SET_CONFIGURATION")
-    ocp_do_check_control(device,0,9,1,0,0,empty,data);
+    ocp_do_check_control(device,0,9,{8'b0,discovered_configuration},0,0,empty,data);
     ocp_do_check_control(device,8'h80,8,0,0,1,empty,data);
-    if (data.size() != 1 || data[0] !== 1)
+    if (data.size() != 1 || data[0] !== discovered_configuration)
       `uvm_fatal("OCP_ENUM", "SET_CONFIGURATION did not take effect")
     configuration_value[device] = data[0];
+    ocp_do_check_post_enumeration(device);
   endtask
 
   task ocp_do_check_port(int port);

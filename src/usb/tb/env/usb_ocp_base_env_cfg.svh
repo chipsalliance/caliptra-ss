@@ -15,6 +15,11 @@
 class usb_ocp_base_env_cfg extends usb_env_cfg;
   `uvm_object_utils(usb_ocp_base_env_cfg)
   virtual usb_ocp_recovery_if recovery_vif;
+  usb_ocp_base_epn_profile epn_profile;
+  // Firmware lifecycle only; never acceptance or overlap evidence.
+  logic epn_enabled[2] = '{default:0};
+  logic epn_ready[2][2][2] = '{default:'{default:'{default:0}}};
+  logic epn_service_finished[2] = '{default:0};
 
   // Stable VIP slots: hub, downstream port 1, downstream port 2.
   // Unenumerated slots use distinct parking addresses, never shared address 0.

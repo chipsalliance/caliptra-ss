@@ -93,6 +93,8 @@ class usb_ocp_predictor extends uvm_object;
   bytes_t checked_replacement_bytes[3];
   longint unsigned checked_replacement_serial[3];
   bit checked_replacement_valid[3];
+  usb_ocp_base_epn_model epn;
+  usb_ocp_base_epn_profile epn_profile;
 
   function new(string name = "usb_ocp_predictor");
     super.new(name);
@@ -252,13 +254,30 @@ class usb_ocp_predictor extends uvm_object;
     c.expected.delete();
     if (c.setup[0] === 8'h80) begin
       case (c.setup[1])
-        6: if (device != 0)
-             c.expected = usb_ocp_base_descriptors::ocp_prepare_descriptor(device, c.ocp_get_value());
+        6: if (device != 0) begin
+             if (epn_profile != null)
+               c.expected = epn_profile.ocp_prepare_descriptor(device,c.ocp_get_value());
+             else
+               c.expected = usb_ocp_base_descriptors::ocp_prepare_descriptor(device,c.ocp_get_value());
+           end
         8: c.expected.push_back(c.configuration);
         0: if (device != 0) c.expected = '{0,0};
         default: begin end
       endcase
       while (c.expected.size() > c.ocp_get_length()) void'(c.expected.pop_back());
+    end
+    // USB 2.0 9.4.4/9.4.10: only configured, advertised interfaces/alternates.
+    if (epn != null && device == epn.device && c.setup[0] inside {8'h81,8'h01}) begin
+      if (!epn.configured || c.ocp_get_index() !== {8'b0,epn.discovery.interface_number})
+        `uvm_fatal("OCP_EPN_INTERFACE", "Interface request before configuration or wrong identity")
+      if (c.setup[0] === 8'h81) begin
+        if (c.setup[1] !== svt_usb_types::GET_INTERFACE ||
+            c.ocp_get_value() !== 0 || c.ocp_get_length() !== 1)
+          `uvm_fatal("OCP_EPN_INTERFACE", "Malformed GET_INTERFACE")
+        c.expected = '{epn.active_alternate};
+      end else if (c.setup[1] !== svt_usb_types::SET_INTERFACE || c.ocp_get_length() !== 0 ||
+                   !(c.ocp_get_value() inside {16'd0,{8'b0,epn.discovery.alternate}}))
+        `uvm_fatal("OCP_EPN_INTERFACE", "SET_INTERFACE selected an unadvertised alternate")
     end
     // OCP requests must use only wire-discovered limits and interface.
     if (device == 1 && c.setup[0] inside {8'h21,8'ha1}) begin
@@ -368,6 +387,21 @@ class usb_ocp_predictor extends uvm_object;
     if (c.setup[0] === 0 && c.setup[1] === 9) begin
       c.configuration = c.setup[2];
       enumerated[device] = (c.configuration === 1);
+      if (epn != null && device == epn.device) begin
+        if (c.ocp_get_value() !== {8'b0,epn.discovery.configuration})
+          `uvm_fatal("OCP_EPN_CONFIGURATION", "Configuration differs from USB discovery")
+        epn.configured = 1;
+        epn.active_alternate = 0;
+        epn.enabled = (epn.discovery.alternate === 0);
+        epn.address = address[device];
+        epn.next_toggle = '{default:0};
+      end
+    end
+    if (epn != null && device == epn.device && c.setup[0] === 8'h01 &&
+        c.setup[1] === svt_usb_types::SET_INTERFACE) begin
+      epn.active_alternate = c.setup[2];
+      epn.enabled = (epn.active_alternate === epn.discovery.alternate);
+      epn.next_toggle = '{default:0};
     end
     if (device == 0 && c.setup[0] === 8'h23 && c.setup[1] === 3 &&
         c.ocp_get_value() === 4) begin
@@ -387,16 +421,26 @@ class usb_ocp_predictor extends uvm_object;
     logic toggle;
     string setup_context;
     int unsigned setup_generation;
-    if (item.pid == svt_usb_packet::SOF) return;
+    if (item.pid == svt_usb_packet::SOF) begin
+      if (epn != null) epn.ocp_check_sof(item);
+      return;
+    end
     if (item.host_tx && item.pid inside {svt_usb_packet::SETUP,
         svt_usb_packet::IN,svt_usb_packet::OUT,svt_usb_packet::PING}) begin
+      if (epn != null) epn.iso_no_handshake = 0;
       token = item;
       candidate = null;
       if (!item.packet_valid) begin token = null; return; end
       token_device = ocp_find_device(item.address);
       token_epoch = control[token_device].epoch;
       token_generation = control[token_device].generation;
-      if (item.endpoint !== 0) `uvm_fatal("OCP_CONTEXT", "Bringup is EP0 only")
+      if (item.endpoint !== 0) begin
+        if (epn == null || token_device != epn.device || item.pid == svt_usb_packet::SETUP)
+          `uvm_fatal("OCP_CONTEXT", "Unexpected/unconfigured EPN token")
+        epn.ocp_observe_packet(item,control[1]);
+        token = epn.token;
+        return;
+      end
       // USB 2.0 5.5.4 permits transactions from independent control pipes
       // between an OCP control's accepted SETUP and completed STATUS.
       if (token_device == 2 && control[1].active) begin
@@ -412,7 +456,19 @@ class usb_ocp_predictor extends uvm_object;
       end
       return;
     end
-    if (token == null) return;
+    if (token == null) begin
+      if (epn != null && epn.iso_no_handshake &&
+          item.pid inside {svt_usb_packet::ACK,svt_usb_packet::NAK,
+                           svt_usb_packet::NYET,svt_usb_packet::STALL})
+        `uvm_fatal("OCP_EPN_ISO", "Handshake after ISO DATA is forbidden")
+      return;
+    end
+    if (token.endpoint !== 0) begin
+      epn.ocp_observe_packet(item,control[1]);
+      token = epn.token;
+      candidate = null;
+      return;
+    end
     c = control[token_device];
     if (c.epoch != token_epoch || c.generation != token_generation)
       `uvm_fatal("OCP_CONTEXT", "Stale token epoch or SETUP generation")
