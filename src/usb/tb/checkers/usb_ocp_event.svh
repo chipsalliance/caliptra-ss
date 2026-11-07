@@ -45,6 +45,10 @@ class usb_ocp_event extends uvm_sequence_item;
   logic [1:0] axi_responses[$];
   logic [7:0] strobes[$];
   logic response_ok;
+  svt_usb_transfer::transfer_type_enum transfer_type;
+  int unsigned completed_bytes;
+  longint unsigned sof_serial;
+  logic [10:0] frame_number;
   // USB device/epoch/SETUP generation lives in usb_ocp_base_control.
   // DATA and handshakes never establish context from their address fields.
 

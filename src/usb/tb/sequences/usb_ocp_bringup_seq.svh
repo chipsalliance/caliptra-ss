@@ -39,6 +39,10 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     if ((scoreboard.negative_replacement || scoreboard.negative_abort_prefix) &&
         !scoreboard.model.require_dev0_ep0_replacement)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "Replacement injection requires a dev0 EP0 interleave scenario")
+    if ((scoreboard.negative_epn_overlap || scoreboard.negative_epn_payload ||
+         scoreboard.negative_epn_native || scoreboard.negative_epn_nak) &&
+        (ocp_cfg.epn_profile == null || scoreboard.model.epn == null))
+      `uvm_fatal("OCP_NEGATIVE_CONTROL", "EPN injection requires the supported EPN profile before actors")
     host = ocp_prepare_host();
     mcu = usb_ocp_base_mcu_seq::type_id::create("mcu");
     caliptra = usb_ocp_base_caliptra_seq::type_id::create("caliptra");

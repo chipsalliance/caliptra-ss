@@ -62,4 +62,8 @@ class usb_ocp_base_control extends uvm_object;
   function logic [15:0] ocp_get_value();
     return {setup[3], setup[2]};
   endfunction
+
+  function logic [15:0] ocp_get_index();
+    return {setup[5], setup[4]};
+  endfunction
 endclass
