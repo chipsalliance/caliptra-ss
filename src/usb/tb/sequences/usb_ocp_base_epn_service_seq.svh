@@ -34,7 +34,7 @@ class usb_ocp_base_epn_service_seq extends usb_ocp_base_seq;
     usb_direction_e direction;
     usb_ocp_base_epn_profile::bytes_t data;
     direction = dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT;
-    data = usb_ocp_base_epn_profile::ocp_prepare_stream(direction,phase[dir]);
+    data = usb_ocp_base_epn_profile::ocp_prepare_stream(direction,phase[dir],profile.data_tag);
     buffer_offset = usb_ocp_base_epn_profile::ocp_get_buffer(direction);
     check_buffer_clear_of_endpoint_list("OCP EPN",buffer_offset,64);
     for (int i = 0; i < data.size(); i += 4) begin
@@ -68,7 +68,7 @@ class usb_ocp_base_epn_service_seq extends usb_ocp_base_seq;
             dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase[dir]))
       `uvm_fatal("OCP_EPN_SERVICE", "Endpoint did not retire with exact short-packet writeback")
     data = usb_ocp_base_epn_profile::ocp_prepare_stream(
-      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase[dir]);
+      dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,phase[dir],profile.data_tag);
     if (dir == 0)
       for (int i = 0; i < data.size(); i += 4) begin
         read32(memory_target,buffer_offset+i,word);

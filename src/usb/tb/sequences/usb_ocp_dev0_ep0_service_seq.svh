@@ -12,23 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-class usb_ocp_dev0_ep0_service_seq extends usb_ocp_base_host_seq;
+class usb_ocp_dev0_ep0_service_seq extends usb_ocp_base_ep0_peer_seq;
   `uvm_object_utils(usb_ocp_dev0_ep0_service_seq)
-  localparam int unsigned PEER_SCHEDULE_PRIORITY = 99;
-  logic [7:0] expected_configuration;
-  bytes_t expected_descriptor;
 
   function new(string name = "usb_ocp_dev0_ep0_service_seq");
     super.new(name);
   endfunction
 
-  virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
-    tr.schedule_priority = PEER_SCHEDULE_PRIORITY;
-  endfunction
-
-  task body();
-    resolve_host_context(1);
-    ocp_do_check_standard_controls(1,expected_configuration,expected_descriptor);
-    completed = 1;
-  endtask
 endclass

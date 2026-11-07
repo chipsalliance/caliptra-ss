@@ -18,10 +18,29 @@ class usb_ocp_base_epn_profile extends uvm_object;
   `uvm_object_utils(usb_ocp_base_epn_profile)
   typedef logic [7:0] bytes_t[$];
   int unsigned device = 1;
+  int unsigned data_tag;
   usb_transfer_type_e transfer_type = USB_TRANSFER_TYPE_BULK;
 
   function new(string name = "usb_ocp_base_epn_profile");
     super.new(name);
+  endfunction
+
+  static function usb_transfer_type_e ocp_prepare_selected_type();
+    string variant;
+    usb_transfer_type_e selected_type;
+    case ($urandom_range(0,2))
+      0: selected_type = USB_TRANSFER_TYPE_BULK;
+      1: selected_type = USB_TRANSFER_TYPE_INTERRUPT;
+      2: selected_type = USB_TRANSFER_TYPE_ISOCHRONOUS;
+    endcase
+    if ($value$plusargs("usb_ocp_epn_type=%s",variant))
+      case (variant)
+        "BULK": selected_type = USB_TRANSFER_TYPE_BULK;
+        "INTERRUPT": selected_type = USB_TRANSFER_TYPE_INTERRUPT;
+        "ISOCHRONOUS": selected_type = USB_TRANSFER_TYPE_ISOCHRONOUS;
+        default: `uvm_fatal("OCP_EPN_PROFILE", "Supported profiles: BULK, INTERRUPT, ISOCHRONOUS")
+      endcase
+    return selected_type;
   endfunction
 
   function usb_endpoint_cfg ocp_prepare_endpoint(usb_direction_e direction);
@@ -63,14 +82,15 @@ class usb_ocp_base_epn_profile extends uvm_object;
   endfunction
 
   // Direction/phase tags are test data, not DUT or descriptor expectations.
-  static function bytes_t ocp_prepare_stream(usb_direction_e direction, int phase);
+  static function bytes_t ocp_prepare_stream(
+      usb_direction_e direction, int phase, int unsigned data_tag = 0);
     bytes_t data;
     int size;
     if (!(phase inside {0,1}))
       `uvm_fatal("OCP_EPN_PROFILE", "Only read/write stream phases are defined")
     size = (phase == 0) ? 31 : 29;
     for (int i = 0; i < size; i++)
-      data.push_back(8'(i*7 + phase*53 +
+      data.push_back(8'(i*7 + phase*53 + data_tag +
         ((direction == USB_DIRECTION_IN) ? 8'ha1 : 8'h12)));
     return data;
   endfunction
