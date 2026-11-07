@@ -40,9 +40,11 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
     bit native_ok;
     bit negative_native;
     if (endpoint == null || !endpoint.anchor_index_valid || observer == null ||
-        ocp_cfg == null || device != 1)
+        ocp_cfg == null || !(device inside {1,2}))
       `uvm_fatal("OCP_EPN_HOST", "Missing discovered endpoint or supported host context")
     resolve_host_context(1);
+    if (device == 2 && address !== usb_cfg.remote_device_cfg[device].device_address)
+      `uvm_fatal("OCP_EPN_HOST", "EPN wire address does not match its enumerated native slot")
     expected = usb_ocp_base_epn_profile::ocp_prepare_stream(endpoint.direction,phase);
     size = expected.size();
     if (size < 1 || size >= endpoint.max_packet_size)
