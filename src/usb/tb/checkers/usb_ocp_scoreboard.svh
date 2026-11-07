@@ -23,6 +23,7 @@ class usb_ocp_scoreboard extends uvm_component;
   bit negative_payload;
   bit negative_activation;
   bit negative_dma;
+  bit negative_overlap;
   bit negative_payload_applied;
 
   function new(string name = "usb_ocp_scoreboard", uvm_component parent = null);
@@ -37,7 +38,8 @@ class usb_ocp_scoreboard extends uvm_component;
     negative_payload = $test$plusargs("usb_ocp_negative_payload");
     negative_activation = $test$plusargs("usb_ocp_negative_activation");
     negative_dma = $test$plusargs("usb_ocp_negative_dma");
-    if (negative_payload || negative_activation || negative_dma)
+    negative_overlap = $test$plusargs("usb_ocp_negative_overlap");
+    if (negative_payload || negative_activation || negative_dma || negative_overlap)
       `uvm_info("OCP_NEGATIVE_CONTROL", "Checker-only negative control enabled; this run MUST fail", UVM_NONE)
   endfunction
 
@@ -463,6 +465,17 @@ class usb_ocp_scoreboard extends uvm_component;
   endfunction
 
   function void ocp_check_complete();
+    // Checker-only injection removes write-window evidence, not USB stimulus
+    // or mandatory packet/transfer checks.
+    if (model.require_dev1_ep0_overlap && negative_overlap)
+      model.dev1_ep0_write_overlap = 0;
+    if (model.require_dev1_ep0_overlap &&
+        (model.dev1_ep0_read_overlap == 0 ||
+         model.dev1_ep0_write_overlap == 0 || observer.reordered_completions == 0))
+      `uvm_fatal("OCP_OVERLAP", $sformatf(
+        "Missing wire overlap or reordered routing: read_tokens=%0d write_tokens=%0d reordered=%0d negative=%0b",
+        model.dev1_ep0_read_overlap,model.dev1_ep0_write_overlap,
+        observer.reordered_completions,negative_overlap))
     if (!ocp_check_drained() || event_count == 0 || observer.packet_count == 0 ||
         !model.hub_enabled || !model.hub_connected || !model.hub_descriptor_seen ||
         !model.discovery_seen || !model.capabilities_seen || !model.fifo_discovered ||
@@ -484,5 +497,10 @@ class usb_ocp_scoreboard extends uvm_component;
       observer.packet_count,model.transfer_crosschecks,observer.axi_count,
       model.accepted_bytes,model.returned_bytes,model.compared_bytes,
       model.recovery_mode_seen,model.activation_observed),UVM_LOW)
+    if (model.require_dev1_ep0_overlap)
+      `uvm_info("OCP_OVERLAP",$sformatf(
+        "Checked dev1 EP0 inside OCP read/write windows: read_tokens=%0d write_tokens=%0d reordered=%0d",
+        model.dev1_ep0_read_overlap,model.dev1_ep0_write_overlap,
+        observer.reordered_completions),UVM_LOW)
   endfunction
 endclass
