@@ -18,6 +18,7 @@ class usb_ocp_scoreboard extends uvm_component;
   usb_ocp_observer observer;
   usb_ocp_predictor model;
   usb_ocp_suspend_model l2_model;
+  usb_ocp_reset_model reset_model;
   usb_ocp_event deferred_axi[$];
   usb_ocp_event deferred_transfer_aborts[$];
   int unsigned event_count;
@@ -274,14 +275,19 @@ class usb_ocp_scoreboard extends uvm_component;
       case (c.setup[2])
         OCP_CMD_PROT_CAP: ocp_check_capabilities(c.data);
         OCP_CMD_INDIRECT_FIFO_CTRL: begin
-          if (l2_model == null)
+          if (l2_model == null && reset_model == null)
             `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
           // OCP 1.1 9.2: readback is checked against accepted USB programming,
           // not a RAL reset value or a host-to-firmware side channel.
           if (c.data.size() != OCP_SPEC_LEN_INDIRECT_FIFO_CTRL ||
               c.data[0] !== model.selected_cms || c.data[1] !== 0 ||
               model.ocp_get_le32(c.data,2) !== model.image_words)
-            `uvm_error("OCP_L2_RETENTION", "USB image control readback lost accepted CMS/image length")
+            begin
+              if (reset_model != null)
+                `uvm_error("OCP_RESET_RETENTION", "USB image control readback lost accepted CMS/image length")
+              else
+                `uvm_error("OCP_L2_RETENTION", "USB image control readback lost accepted CMS/image length")
+            end
         end
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
@@ -377,7 +383,16 @@ class usb_ocp_scoreboard extends uvm_component;
         "RECOVERY_CTRL": begin
           if (word[23:16] !== 0)
             `uvm_fatal("OCP_OWNERSHIP", "Firmware must not synthesize activation")
-          if (model.activation_request) begin
+          if (reset_model != null && reset_model.cfg.attempt == 1 &&
+              reset_model.cfg.caliptra_quiescent && reset_model.cfg.retention_complete &&
+              model.activation_request && !model.activation_observed) begin
+            // Abort retires old activation, not old FIFO bytes. This actual
+            // firmware clear cannot count as fresh activation/clear evidence.
+            model.activation_request = 0;
+            model.activation_status_acked = 0;
+            model.activation_observed = 0;
+            model.activation_cleared = 0;
+          end else if (model.activation_request) begin
             if (!model.activation_observed)
               `uvm_fatal("OCP_ACTIVATION", "Firmware clear before fresh AXI activation read")
             model.activation_cleared = 1;
@@ -420,6 +435,8 @@ class usb_ocp_scoreboard extends uvm_component;
           model.control_reads++;
         end
         "RECOVERY_CTRL": begin
+          if (reset_model != null && reset_model.ocp_check_command_snapshot_read(item))
+            return;
           if (!model.activation_request) begin
             if (word[23:0] !== model.recovery_ctrl)
               `uvm_fatal("OCP_ACTIVATION", "Activation baseline differs from firmware programming")
@@ -495,6 +512,17 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     allowed_results = 0;
     if (!item.setup[0][7]) allowed_results[5] = 1;
+    if (reset_model != null &&
+        (item.results[0] === 1 ||
+         item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1)) begin
+      if (reset_model.ocp_check_interrupted_transfer(item)) return;
+      if (!reset_model.cfg.armed)
+        `uvm_fatal("OCP_RESET_EPOCH", "Native abort outside the armed reset event")
+      if (deferred_transfer_aborts.size() >= 16384)
+        `uvm_fatal("OCP_RESET_EPOCH", "Unretired interrupted-native queue exceeded bound")
+      deferred_transfer_aborts.push_back(item);
+      return;
+    end
     if (item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1) begin
       allowed_results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] = 1;
       if (item.transfer_ok || !model.require_dev0_ep0_replacement || item.endpoint !== 0 ||
@@ -517,11 +545,12 @@ class usb_ocp_scoreboard extends uvm_component;
     // SET_ADDRESS completes at the old address, retained in control context.
     device = -1;
     foreach (model.control[i])
-      if (model.control[i].status_acked && model.control[i].address === item.address &&
+      if (model.control[i].status_acked &&
+          model.control[i].address === item.address &&
           model.control[i].setup === item.setup &&
           model.transfer_crosschecks[i] < model.usb_completions[i]) device = i;
     if (device < 0)
-      `uvm_fatal("OCP_CROSSCHECK", "Transfer completion has no matching ACK-qualified control")
+      `uvm_fatal("OCP_CROSSCHECK", "Transfer completion has no matching observed STATUS acceptance")
     c = model.control[device];
     allowed_results = 0;
     // SVT results bit 5 also describes the IN status ZLP after control-OUT data.
@@ -544,6 +573,7 @@ class usb_ocp_scoreboard extends uvm_component;
       case (item.kind)
         usb_ocp_event::USB_PACKET: begin
           if (l2_model != null) l2_model.ocp_capture_packet(item);
+          if (reset_model != null) reset_model.ocp_capture_packet(item);
           model.ocp_observe_packet(item);
         end
         usb_ocp_event::USB_TRANSFER: begin
@@ -555,6 +585,7 @@ class usb_ocp_scoreboard extends uvm_component;
           // let the later ledger flush move a write backward across USB DATA.
           // FIFO/activation accounting still consumes every deferred actual.
           model.ocp_record_status_programming(item);
+          if (reset_model != null) reset_model.ocp_capture_axi(item);
           if (l2_model != null) l2_model.ocp_capture_axi(item);
           if (deferred_axi.size() >= 16384)
             `uvm_fatal("OCP_DRAIN", "Deferred completed-AXI queue exceeded bound")
@@ -562,14 +593,21 @@ class usb_ocp_scoreboard extends uvm_component;
         end
       endcase
       for (int i = 0; i < deferred_transfer_aborts.size();) begin
-        if (ocp_check_replaced_transfer(deferred_transfer_aborts[i]))
+        if ((reset_model != null &&
+             reset_model.ocp_check_interrupted_transfer(deferred_transfer_aborts[i])) ||
+            (reset_model == null && ocp_check_replaced_transfer(deferred_transfer_aborts[i])))
           deferred_transfer_aborts.delete(i);
         else i++;
       end
       // Hardware may expose a received OUT DWORD before its ACK finishes on
       // the wire. Retain the completed AXI actual, then compare after the
       // transaction's acceptance decision; never discard an early result.
-      if (model.token == null) begin
+      if ((model.token == null ||
+           (reset_model != null && reset_model.ocp_check_command_service())) &&
+          !(reset_model != null && model.control[1].active &&
+            model.control[1].setup[0] === 8'h21 &&
+            model.control[1].setup[2] inside {OCP_CMD_INDIRECT_FIFO_CTRL,OCP_CMD_RECOVERY_CTRL} &&
+            !reset_model.ocp_check_command_service())) begin
         while (deferred_axi.size() != 0) begin
           axi = deferred_axi.pop_front();
           ocp_check_axi(axi);
@@ -579,6 +617,7 @@ class usb_ocp_scoreboard extends uvm_component;
       while (model.ready_controls.size() != 0) begin
         device = model.ready_controls.pop_front();
         ocp_check_control(device);
+        if (reset_model != null) reset_model.ocp_capture_control(device);
       end
       busy = 0;
     end
@@ -588,6 +627,7 @@ class usb_ocp_scoreboard extends uvm_component;
     foreach (model.epn_models[i])
       if (model.epn_models[i] != null && !model.epn_models[i].ocp_check_drained()) return 0;
     if (busy || !observer.ocp_check_drained() || deferred_axi.size() != 0 ||
+        (reset_model != null && reset_model.command_snapshot_reads.num() != 0) ||
         deferred_transfer_aborts.size() != 0 ||
         model.token != null || model.ready_controls.size() != 0 ||
         model.fifo_expected.size() != 0 || model.fifo_actual.size() != 0) return 0;
@@ -648,6 +688,7 @@ class usb_ocp_scoreboard extends uvm_component;
     bit write_epn_window_seen;
     usb_ocp_base_epn_model epn;
     if (l2_model != null) l2_model.ocp_check_complete();
+    if (reset_model != null) reset_model.ocp_check_complete();
     if ($test$plusargs("usb_ocp_control_zlp_canary")) begin
       if (model.control_data_stage_errors != 1)
         `uvm_fatal("OCP_CONTROL_DATA_CANARY", $sformatf(

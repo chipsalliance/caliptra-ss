@@ -43,6 +43,22 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
   endfunction
 
+  // A negative value preserves the existing unconstrained scheduler draw.
+  virtual function int ocp_configure_control_priority(int device);
+    return -1;
+  endfunction
+
+  virtual function void ocp_check_interrupted_result(usb_ocp_event observed);
+    logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed;
+    allowed = 0;
+    if (!observed.setup[0][7]) allowed[5] = 1;
+    allowed[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] = 1;
+    if (observed.transfer_ok ||
+        observed.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] !== 1 ||
+        (observed.results & ~allowed) !== 0)
+      `uvm_fatal("OCP_SUPERSESSION", "Requested clean native abort did not occur")
+  endfunction
+
   virtual function void ocp_check_configuration_discovery(int device, bytes_t data);
   endfunction
 
@@ -62,6 +78,10 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
 
   virtual task ocp_do_check_host_completion();
   endtask
+
+  virtual function bit ocp_check_recovery_restart();
+    return 0;
+  endfunction
 
   virtual task ocp_do_sof(bit on);
     svt_usb_protocol_service_20_sof_on_sequence sof_on;
@@ -92,10 +112,13 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     logic [6:0] addr;
     longint unsigned floor;
     int payload_size;
+    int control_priority;
     int unsigned control_max_packet_size;
     bit aligned_control;
     bit inject_control_zlp;
     bit done;
+    process control_process;
+    process timeout_process;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
     if (device < 0 || device > 2 || observer == null || ocp_cfg == null)
       `uvm_fatal("OCP_HOST", "Missing host context or invalid stable device slot")
@@ -113,8 +136,13 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
               length[7:0],length[15:8]};
     floor = observer.next_order;
     tr = svt_usb_transfer::type_id::create("ocp_control_request");
+    if (tr == null)
+      `uvm_fatal("OCP_HOST", "Control request allocation failed")
     payload_size = write_data.size();
+    control_priority = ocp_configure_control_priority(device);
     done = 0;
+    control_process = null;
+    timeout_process = null;
     read_data.delete();
     `uvm_info("OCP_HOST_START",$sformatf(
       "Submitting slot=%0d addr=%0d ep=0 setup=%p order_floor=%0d",
@@ -123,6 +151,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       begin
         fork
           begin
+            control_process = process::self();
             start_item(tr,-1,p_sequencer.xfer_sequencer);
             tr.cfg = usb_cfg;
             tr.fix_anchors(device,0,0);
@@ -142,6 +171,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                   setup_data_w_length == local::length;
                   payload_start_ix == 0;
                   payload_intended_byte_count == local::length;
+                  if (local::control_priority >= 0)
+                    schedule_priority == local::control_priority;
                   // USB 2.0 5.5.3: wLength exhaustion ends DATA, without an extra ZLP.
                   if (local::aligned_control)
                     aligned_transfer_ends_with_zero_length == local::inject_control_zlp;
@@ -168,22 +199,25 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                 ocp_wait_peer_completion(tr,device);
                 observer.ocp_wait_completion(addr,setup,floor,ocp_cfg.control_transfer_timeout,observed);
                 if (expect_replacement) begin
-                  allowed_results = 0;
-                  if (!bm[7]) allowed_results[5] = 1;
-                  allowed_results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] = 1;
-                  if (observed.transfer_ok ||
-                      observed.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] !== 1 ||
-                      (observed.results & ~allowed_results) !== 0)
-                    `uvm_fatal("OCP_SUPERSESSION", "Requested clean native abort did not occur")
+                  ocp_check_interrupted_result(observed);
                   ocp_wait_replaced_prefix(observed,read_data);
                 end
               end
             join
             done = 1;
           end
-          begin #(ocp_cfg.control_transfer_timeout); end
+          begin
+            timeout_process = process::self();
+            #(ocp_cfg.control_transfer_timeout);
+          end
         join_any
-        disable fork;
+        // Successful reconfiguration may spawn persistent native workers.
+        // Cancel the request tree only on timeout, not after normal completion.
+        if (!done && control_process != null &&
+            control_process.status() != process::FINISHED)
+          control_process.kill();
+        if (timeout_process != null && timeout_process.status() != process::FINISHED)
+          timeout_process.kill();
       end
     join
     if (!done) `uvm_fatal("OCP_HOST", "Bounded control submission/completion timed out")
@@ -444,12 +478,14 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       chunk.delete();
       for (int i = 0; i < chunk_words*4; i++) chunk.push_back(image[offset*4+i]);
       ocp_do_check_write(OCP_CMD_INDIRECT_FIFO_DATA,chunk);
+      if (ocp_check_recovery_restart()) return;
       service_gap = $urandom_range(0,20)*1us;
       `uvm_info("OCP_CHUNK",$sformatf("offset_words=%0d chunk_words=%0d gap=%0t",
                 offset,chunk_words,service_gap),UVM_LOW)
       offset += chunk_words;
       #(service_gap);
       ocp_do_check_image_progress(offset,words);
+      if (ocp_check_recovery_restart()) return;
     end
     deadline = $time + recovery_status_timeout;
     do begin
@@ -465,6 +501,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       `uvm_fatal("OCP_HOST", "FIFO not empty at Recovery Pending")
     chunk = '{cms,OCP_RC_IMAGE_SEL_CMS,OCP_RC_ACTIVATE_CODE};
     ocp_do_check_write(OCP_CMD_RECOVERY_CTRL,chunk);
+    if (ocp_check_recovery_restart()) return;
     deadline = $time + 100ms;
     do begin
       ocp_do_check_read(OCP_CMD_DEVICE_STATUS,data);
