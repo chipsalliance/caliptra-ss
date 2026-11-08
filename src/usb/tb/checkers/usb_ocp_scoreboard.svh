@@ -17,6 +17,7 @@ class usb_ocp_scoreboard extends uvm_component;
   typedef logic [7:0] bytes_t[$];
   usb_ocp_observer observer;
   usb_ocp_predictor model;
+  usb_ocp_suspend_model l2_model;
   usb_ocp_event deferred_axi[$];
   usb_ocp_event deferred_transfer_aborts[$];
   int unsigned event_count;
@@ -192,7 +193,7 @@ class usb_ocp_scoreboard extends uvm_component;
     end else begin
       if (depth != model.fifo_depth_words || max_words != model.fifo_max_words)
         `uvm_fatal("OCP_FIFO_STATUS", "FIFO geometry changed")
-      // This testcase reads FIFO status only before data or after Pending.
+      // Pending-image L2 also reads live status between completed CONTROLs.
       occupancy = (model.accepted_bytes - model.returned_bytes)/4;
       if (occupancy > depth || wr != (model.accepted_bytes/4)%depth ||
           rd != (model.returned_bytes/4)%depth ||
@@ -272,6 +273,16 @@ class usb_ocp_scoreboard extends uvm_component;
     if (device == 1 && c.setup[0] === 8'ha1) begin
       case (c.setup[2])
         OCP_CMD_PROT_CAP: ocp_check_capabilities(c.data);
+        OCP_CMD_INDIRECT_FIFO_CTRL: begin
+          if (l2_model == null)
+            `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
+          // OCP 1.1 9.2: readback is checked against accepted USB programming,
+          // not a RAL reset value or a host-to-firmware side channel.
+          if (c.data.size() != OCP_SPEC_LEN_INDIRECT_FIFO_CTRL ||
+              c.data[0] !== model.selected_cms || c.data[1] !== 0 ||
+              model.ocp_get_le32(c.data,2) !== model.image_words)
+            `uvm_error("OCP_L2_RETENTION", "USB image control readback lost accepted CMS/image length")
+        end
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
           if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS ||
@@ -531,13 +542,20 @@ class usb_ocp_scoreboard extends uvm_component;
       busy = 1;
       event_count++;
       case (item.kind)
-        usb_ocp_event::USB_PACKET: model.ocp_observe_packet(item);
-        usb_ocp_event::USB_TRANSFER: ocp_check_transfer(item);
+        usb_ocp_event::USB_PACKET: begin
+          if (l2_model != null) l2_model.ocp_capture_packet(item);
+          model.ocp_observe_packet(item);
+        end
+        usb_ocp_event::USB_TRANSFER: begin
+          ocp_check_transfer(item);
+          if (l2_model != null) l2_model.ocp_capture_transfer(item);
+        end
         usb_ocp_event::AXI_COMPLETED: begin
           // Record status expectation evidence now, in observer order. Do not
           // let the later ledger flush move a write backward across USB DATA.
           // FIFO/activation accounting still consumes every deferred actual.
           model.ocp_record_status_programming(item);
+          if (l2_model != null) l2_model.ocp_capture_axi(item);
           if (deferred_axi.size() >= 16384)
             `uvm_fatal("OCP_DRAIN", "Deferred completed-AXI queue exceeded bound")
           deferred_axi.push_back(item);
@@ -629,6 +647,7 @@ class usb_ocp_scoreboard extends uvm_component;
     bit read_epn_window_seen;
     bit write_epn_window_seen;
     usb_ocp_base_epn_model epn;
+    if (l2_model != null) l2_model.ocp_check_complete();
     if ($test$plusargs("usb_ocp_control_zlp_canary")) begin
       if (model.control_data_stage_errors != 1)
         `uvm_fatal("OCP_CONTROL_DATA_CANARY", $sformatf(

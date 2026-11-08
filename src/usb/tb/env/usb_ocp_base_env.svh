@@ -19,6 +19,7 @@ class usb_ocp_base_env extends usb_env;
   usb_ocp_base_packet_callback packet_callback;
   usb_ocp_base_transfer_callback transfer_callback;
   usb_ocp_base_service_callback service_callback;
+  usb_ocp_suspend_link_callback l2_link_callback;
   usb_ocp_base_axi_callback axi_callback[4];
 
   function new(string name = "usb_ocp_base_env", uvm_component parent = null);
@@ -26,12 +27,17 @@ class usb_ocp_base_env extends usb_env;
   endfunction
 
   function void build_phase(uvm_phase phase);
+    bit l2_selected;
     super.build_phase(phase);
     observer = usb_ocp_observer::type_id::create("observer",this);
     scoreboard = usb_ocp_scoreboard::type_id::create("scoreboard",this);
     packet_callback = usb_ocp_base_packet_callback::type_id::create("packet_callback");
     transfer_callback = usb_ocp_base_transfer_callback::type_id::create("transfer_callback");
     service_callback = usb_ocp_base_service_callback::type_id::create("service_callback");
+    l2_selected = 0;
+    void'(uvm_config_db#(bit)::get(this,"","ocp_l2_selected",l2_selected));
+    if (l2_selected)
+      l2_link_callback = usb_ocp_suspend_link_callback::type_id::create("l2_link_callback");
     foreach (axi_callback[i])
       axi_callback[i] = usb_ocp_base_axi_callback::type_id::create($sformatf("axi_callback%0d",i));
   endfunction
@@ -48,6 +54,7 @@ class usb_ocp_base_env extends usb_env;
     packet_callback.observer = observer;
     transfer_callback.observer = observer;
     observer.service_callback = service_callback;
+    observer.l2_link_callback = l2_link_callback;
     foreach (axi_callback[i]) begin
       axi_callback[i].observer = observer;
       axi_callback[i].manager = i;
@@ -73,6 +80,13 @@ class usb_ocp_base_env extends usb_env;
     // This OCP topology has one active native host protocol.
     uvm_callbacks#(svt_usb_protocol,svt_usb_protocol_callback)::add(
       null,service_callback);
+    if (l2_link_callback != null) begin
+      if (host_agent.link == null)
+        `uvm_fatal("OCP_ENV", "Selected L2 native link is unavailable")
+      uvm_callbacks#(svt_usb_link)::add(host_agent.link,l2_link_callback);
+      `uvm_info("OCP_L2_DISPATCH", $sformatf(
+        "Native link callback registered on %s",host_agent.link.get_full_name()), UVM_LOW)
+    end
     combo_manager.add_callback(axi_callback[0]);
     dev0_memory_manager.add_callback(axi_callback[1]);
     dev1_csr_manager.add_callback(axi_callback[2]);
