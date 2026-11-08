@@ -23,6 +23,14 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     return usb_ocp_base_host_seq::type_id::create("host");
   endfunction
 
+  virtual function usb_ocp_base_mcu_seq ocp_prepare_mcu();
+    return usb_ocp_base_mcu_seq::type_id::create("mcu");
+  endfunction
+
+  virtual function usb_ocp_base_caliptra_seq ocp_prepare_caliptra();
+    return usb_ocp_base_caliptra_seq::type_id::create("caliptra");
+  endfunction
+
   task body();
     usb_ocp_base_host_seq host;
     usb_ocp_base_mcu_seq mcu;
@@ -35,6 +43,8 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     if (!uvm_config_db#(usb_ocp_observer)::get(p_sequencer,"","ocp_observer",observer) ||
         !uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
       `uvm_fatal("OCP_BRINGUP", "Missing mandatory passive checker")
+    if (scoreboard.reset_model == null && $test$plusargs("usb_ocp_reset"))
+      `uvm_fatal("OCP_RESET_GUARD", "Reset controls require the OCP reset/reinitialization testcase")
     if (scoreboard.l2_model == null &&
         ($test$plusargs("usb_ocp_l2_mode") || $test$plusargs("usb_ocp_l2_negative_retention") ||
          $test$plusargs("usb_ocp_l2_negative_peer") || $test$plusargs("usb_ocp_l2_negative_progress")))
@@ -62,8 +72,8 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
         !epn_configured)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "EPN injection requires the supported EPN profile before actors")
     host = ocp_prepare_host();
-    mcu = usb_ocp_base_mcu_seq::type_id::create("mcu");
-    caliptra = usb_ocp_base_caliptra_seq::type_id::create("caliptra");
+    mcu = ocp_prepare_mcu();
+    caliptra = ocp_prepare_caliptra();
     soc = usb_ocp_base_soc_seq::type_id::create("soc");
     host.ocp_cfg = ocp_cfg;
     host.observer = observer;

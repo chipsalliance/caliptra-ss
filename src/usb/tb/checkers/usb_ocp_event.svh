@@ -32,6 +32,7 @@ class usb_ocp_event extends uvm_sequence_item;
   logic transfer_ok;
   bit native_aborted;
   logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] results;
+  // AXI events retain the completed callback object's native instance here.
   int unsigned vendor_instance;
   longint unsigned transfer_start_order;
   longint unsigned transfer_serial;
@@ -39,6 +40,7 @@ class usb_ocp_event extends uvm_sequence_item;
   logic write_access;
   logic [63:0] axi_address;
   int unsigned axi_id;
+  // Accepted AXI object identity can differ from its completion callback.
   int unsigned axi_instance;
   int unsigned axi_beats;
   int unsigned axi_beat_bytes;

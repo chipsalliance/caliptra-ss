@@ -24,6 +24,10 @@ class usb_ocp_base_service_callback extends svt_usb_protocol_callback;
   bit accepted;
   string status_name;
   realtime command_ended_at;
+  int command_sequence_id;
+  int command_transaction_id;
+  int native_end_sequence_id;
+  int native_end_transaction_id;
   bit capture_mixed_abort;
   logic [6:0] expected_abort_address;
   logic [7:0] expected_abort_setup[8];
@@ -79,6 +83,8 @@ class usb_ocp_base_service_callback extends svt_usb_protocol_callback;
     mixed_native_abort.native_aborted = (transfer.status === svt_sequence_item::ABORTED);
     mixed_native_abort.results = transfer.results_status;
     mixed_native_abort.completed_bytes = transfer.completed_payload_bytes();
+    native_end_sequence_id = transfer.get_sequence_id();
+    native_end_transaction_id = transfer.get_transaction_id();
   endfunction
 
   virtual function void protocol_service_ended(
@@ -112,6 +118,8 @@ class usb_ocp_base_service_callback extends svt_usb_protocol_callback;
     accepted = (protocol_service.status === svt_sequence_item::ACCEPT);
     status_name = protocol_service.status.name();
     command_ended_at = $realtime;
+    command_sequence_id = protocol_service.get_sequence_id();
+    command_transaction_id = protocol_service.get_transaction_id();
     completed_commands++;
     `uvm_info("OCP_EPN_COMMAND",$sformatf(
       "Native completion serial=%0d cmd=%0d addr=%0d ep=%0d mode=%0b status=%s return_status=%0d",

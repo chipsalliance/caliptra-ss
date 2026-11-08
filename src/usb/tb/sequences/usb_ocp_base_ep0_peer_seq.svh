@@ -15,6 +15,7 @@
 class usb_ocp_base_ep0_peer_seq extends usb_ocp_base_host_seq;
   `uvm_object_utils(usb_ocp_base_ep0_peer_seq)
   localparam int unsigned PEER_SCHEDULE_PRIORITY = 99;
+  int unsigned peer_schedule_priority = PEER_SCHEDULE_PRIORITY;
   int unsigned peer_device = 1;
   logic [7:0] expected_configuration;
   bytes_t expected_descriptor;
@@ -23,8 +24,8 @@ class usb_ocp_base_ep0_peer_seq extends usb_ocp_base_host_seq;
     super.new(name);
   endfunction
 
-  virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
-    tr.schedule_priority = PEER_SCHEDULE_PRIORITY;
+  virtual function int ocp_configure_control_priority(int device);
+    return peer_schedule_priority;
   endfunction
 
   task body();
