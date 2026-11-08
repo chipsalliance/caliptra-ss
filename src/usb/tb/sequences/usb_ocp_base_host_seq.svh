@@ -49,6 +49,32 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual task ocp_do_check_post_enumeration(int device);
   endtask
 
+  // Default hooks draw no random numbers and leave the recovery order intact.
+  virtual function void ocp_configure_image_words(ref int words);
+  endfunction
+
+  virtual function void ocp_configure_chunk_words(int offset, int words,
+      int chunk_limit, ref int chunk_words);
+  endfunction
+
+  virtual task ocp_do_check_image_progress(int offset, int words);
+  endtask
+
+  virtual task ocp_do_check_host_completion();
+  endtask
+
+  virtual task ocp_do_sof(bit on);
+    svt_usb_protocol_service_20_sof_on_sequence sof_on;
+    svt_usb_protocol_service_20_sof_off_sequence sof_off;
+    if (on) begin
+      sof_on = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("ocp_sof_on");
+      sof_on.start(p_sequencer.prot_service_sequencer);
+    end else begin
+      sof_off = svt_usb_protocol_service_20_sof_off_sequence::type_id::create("ocp_sof_off");
+      sof_off.start(p_sequencer.prot_service_sequencer);
+    end
+  endtask
+
   virtual task ocp_wait_replaced_prefix(usb_ocp_event observed, output bytes_t prefix);
     `uvm_fatal("OCP_SUPERSESSION", "Native replacement requires checked ACK-prefix routing")
   endtask
@@ -394,6 +420,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       2: words = $urandom_range(65,256);
     endcase
     void'($value$plusargs("usb_ocp_image_words=%d",words));
+    ocp_configure_image_words(words);
     if (words < 1 || words > 1024)
       `uvm_fatal("OCP_IMAGE", "Image must contain 1..1024 DWORDs")
     if (!randomize(image) with { image.size() == local::words*4; })
@@ -413,6 +440,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       if (chunk_words > words-offset) chunk_words = words-offset;
       if (chunk_words > fifo_depth-(offset%fifo_depth))
         chunk_words = fifo_depth-(offset%fifo_depth);
+      ocp_configure_chunk_words(offset,words,chunk_limit,chunk_words);
       chunk.delete();
       for (int i = 0; i < chunk_words*4; i++) chunk.push_back(image[offset*4+i]);
       ocp_do_check_write(OCP_CMD_INDIRECT_FIFO_DATA,chunk);
@@ -421,6 +449,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                 offset,chunk_words,service_gap),UVM_LOW)
       offset += chunk_words;
       #(service_gap);
+      ocp_do_check_image_progress(offset,words);
     end
     deadline = $time + recovery_status_timeout;
     do begin
@@ -452,8 +481,6 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   endtask
 
   task body();
-    svt_usb_protocol_service_20_sof_on_sequence sof_on;
-    svt_usb_protocol_service_20_sof_off_sequence sof_off;
     if (ocp_cfg == null || observer == null)
       `uvm_fatal("OCP_HOST", "Missing host configuration/observer")
     resolve_host_context(1);
@@ -461,8 +488,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       "Scaled USB timers: reset=%0t debounce=%0t reset/address_recovery=%0t",
       usb_cfg.tdrst * 1ps, usb_cfg.tattdb * 1ps, usb_cfg.trstrcy * 1ps), UVM_LOW)
     wait_for_link_enabled(ocp_cfg.link_timeout);
-    sof_on = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("ocp_sof_on");
-    sof_on.start(p_sequencer.prot_service_sequencer);
+    ocp_do_sof(1);
     #(usb_cfg.trstrcy * 1ps);
     ocp_do_check_enumeration(0);
     for (int device = 1; device < 3; device++) begin
@@ -472,8 +498,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     ocp_do_check_recovery();
     if ($test$plusargs("usb_ocp_control_zlp_canary") && !control_zlp_canary_applied)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "Control ZLP canary requires an aligned nonzero OUT request")
-    sof_off = svt_usb_protocol_service_20_sof_off_sequence::type_id::create("ocp_sof_off");
-    sof_off.start(p_sequencer.prot_service_sequencer);
+    ocp_do_sof(0);
+    ocp_do_check_host_completion();
     completed = 1;
     ocp_cfg.actor_finished[0] = 1;
   endtask
