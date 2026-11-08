@@ -541,15 +541,14 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
     // Is the DUT still driving its own resume K right now? Reads UTMI TXValid,
     // a DUT OUTPUT, so nothing the host or the VIP does can forge the answer.
     //
-    // Returns 0 when the path cannot be read, so an unresolvable path just
-    // omits the step-7b log line. The uvm_warning makes that visible instead of
-    // silent. Nothing here can fail the test.
+    // An unreadable path cannot establish that K has ended. Abort rather than
+    // bypassing the ordering required by wait_for_device_k_end().
     // -------------------------------------------------------------------------
     function bit device_k_still_driving();
         logic [63:0] txvalid_val;
         if (!uvm_hdl_read(TXVALID_PATH, txvalid_val)) begin
-            `uvm_warning(MSG_ID,
-                $sformatf("uvm_hdl_read failed for %s, so the takeover-ordering gate is skipped for this run. The test still runs to completion; it just loses the early, specific diagnosis.",
+            `uvm_fatal(MSG_ID,
+                $sformatf("Cannot read %s; cannot safely restart SOF without observing the end of device K.",
                           TXVALID_PATH))
             return 1'b0;
         end
