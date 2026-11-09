@@ -119,6 +119,35 @@ None. Every request in the sequence is either rejected before it can change
 state, or is a read. The downstream ports are deliberately never brought up:
 each leg is decoded from the SETUP fields alone.
 
+## Status - first run (MEASURED)
+
+**PASS.** `UVM_ERROR : 0`, `UVM_FATAL : 0`, `UVM_WARNING : 0`, quit count 0 of 150.
+
+All six stall legs returned a STALL handshake on the first SETUP, and the legal
+leg completed:
+
+| # | Leg | Issued (ns) | Outcome (ns) | Result |
+|---|---|---|---|---|
+| 3 | `ClearPortFeature_badPort` wValue 0x0010 wIndex 0x0003 | 362706 | 364275 | stalled, `ABORTED` |
+| 4 | `ClearPortFeature_badValue` wValue 0x0005 wIndex 0x0001 | 364275 | 365708 | stalled, `ABORTED` |
+| 5 | `SetPortFeature_badPort` wValue 0x0004 wIndex 0x0003 | 365708 | 367142 | stalled, `ABORTED` |
+| 6 | `SetPortFeature_badValue` wValue 0x000a wIndex 0x0001 | 367142 | 368542 | stalled, `ABORTED` |
+| 7 | `GetPortStatus_badPort` wIndex 0x0003 | 368542 | 370008 | stalled, `ABORTED` |
+| 8 | `SetAndTestPortFeature_port0` wValue 0x000a wIndex 0x0000 | 370008 | 371475 | stalled, `ABORTED` |
+| 9 | `GetPortStatus_valid` wIndex 0x0001 | 371475 | 374041 | completed, `ACCEPT` |
+
+Corroborating evidence:
+
+* `env.host_agent.link_mon.20.RX.pkt_trace` shows exactly **six**
+  `HANDSHAKE / STALL` packets, at 364272.9, 365706.2, 367139.5, 368539.4,
+  370006.0 and 371472.6 ns - one per stalled leg and none elsewhere.
+* Step 9 returned the 4-byte status word `0x00010501` (`wPortStatus 0x0501`,
+  `wPortChange 0x0001`), so EP0 is not wedged after six consecutive STALLs and
+  port 1 was not disturbed by the rejected requests.
+* `mcu_console.log` ends with
+  `USB hub class-request STALL test - transfers handled: 0`, confirming the
+  firmware took no part in the decode - every STALL came from the hub hardware.
+
 ## Files
 
 | File | Note |
