@@ -51,6 +51,31 @@ class usb_ocp_base_vip_cfg_builder extends usb_vip_cfg_builder;
       host_cfg.remote_device_cfg.push_back(device);
     end
     host_cfg.remote_device_cfg_size = 3;
+    if (ocp_cfg.full_speed) begin
+      host_cfg.speed = svt_usb_types::FS;
+      device_phy_cfg.speed = svt_usb_types::FS;
+      host_cfg.local_host_cfg.high_speed_capable = 0;
+      foreach (host_cfg.remote_device_cfg[i]) begin
+        host_cfg.remote_device_cfg[i].connected_bus_speed = svt_usb_types::FS;
+        // This firmware profile provides its complete functionality at FS.
+        host_cfg.remote_device_cfg[i].functionality_support = svt_usb_types::FS;
+        foreach (host_cfg.remote_device_cfg[i].endpoint_cfg[j])
+          host_cfg.remote_device_cfg[i].endpoint_cfg[j].speed = svt_usb_types::FS;
+      end
+      `uvm_info("OCP_FS_CONFIG", "Native FS host maximum; HS capability disabled before agent construction", UVM_NONE)
+    end
+  endfunction
+
+  protected virtual function void configure_timers();
+    super.configure_timers();
+    if (host_cfg.speed == svt_usb_types::FS) begin
+      // USB2 7.1.7.5 step8(b): allow no-host-chirp FS fallback before reset ends.
+      host_cfg.tdrst = vip_ps(1250us);
+      device_phy_cfg.tdrst = vip_ps(1250us);
+      // USB2 7.1.7.6: the 1ms FS SOF cadence must not trigger scaled idle suspend.
+      host_cfg.tinactivity = vip_ps(3ms);
+      device_phy_cfg.tinactivity = vip_ps(3ms);
+    end
   endfunction
 
 endclass

@@ -15,6 +15,7 @@
 class usb_ocp_base_env_cfg extends usb_env_cfg;
   `uvm_object_utils(usb_ocp_base_env_cfg)
   virtual usb_ocp_recovery_if recovery_vif;
+  bit full_speed;
   usb_ocp_base_epn_profile epn_profiles[2];
   // Firmware lifecycle only; never acceptance or overlap evidence.
   logic epn_enabled[2] = '{default:0};

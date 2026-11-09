@@ -101,6 +101,7 @@ class usb_ocp_predictor extends uvm_object;
   usb_ocp_base_epn_model epn_models[2];
   usb_ocp_base_epn_profile epn_profiles[2];
   bit require_mixed_epn;
+  bit full_speed;
   int unsigned mixed_generation[2];
 
   function new(string name = "usb_ocp_predictor");
@@ -264,6 +265,8 @@ class usb_ocp_predictor extends uvm_object;
     epn = usb_ocp_base_epn_model::type_id::create("epn_model");
     epn.device = profile.device;
     epn.data_tag = profile.data_tag;
+    epn.full_speed = profile.full_speed;
+    epn.discovery.full_speed = profile.full_speed;
     epn.list_base = list_base;
     epn.memory_base = memory_base;
     epn.negative_payload = negative_payload;
@@ -507,6 +510,14 @@ class usb_ocp_predictor extends uvm_object;
     logic toggle;
     string setup_context;
     int unsigned setup_generation;
+    if (full_speed && item.pid inside {svt_usb_packet::PING,svt_usb_packet::NYET} &&
+        ((item.pid == svt_usb_packet::PING && item.endpoint == 0) ||
+         (item.pid == svt_usb_packet::NYET && token != null && token.endpoint == 0))) begin
+      `uvm_error("OCP_FS_HANDSHAKE", "FS control cannot use HS PING/NYET; no acceptance credit")
+      candidate = null;
+      token = null;
+      return;
+    end
     if (item.pid == svt_usb_packet::SOF) begin
       foreach (epn_models[i])
         if (epn_models[i] != null) epn_models[i].ocp_check_sof(item);
