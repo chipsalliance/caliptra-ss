@@ -60,6 +60,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_fs_hub_test_mode_sequence.svh"
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_sequence.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_sequence.svh"
+  `include "caliptra_ss_usb_hs_hub_int_ep_status_change_sequence.svh"
 
   `include "caliptra_ss_usb_get_device_descriptor_sequence.svh"
 
@@ -417,6 +418,7 @@ package caliptra_ss_usb_test_pkg;
   // usb_ep_config_handler.reg_ep_stall through epconfig_stall.
   `include "caliptra_ss_usb_hs_hub_endpoint_halt_test.svh"
   `include "caliptra_ss_usb_fs_hub_endpoint_halt_test.svh"
+  `include "caliptra_ss_usb_hs_hub_int_ep_status_change_test.svh"
 
   // USBDC1 (device1) replicas of the two remaining hub-descriptor families.
   // Both issue hub-class GET_DESCRIPTOR with wIndex=0, which is a hub-global
