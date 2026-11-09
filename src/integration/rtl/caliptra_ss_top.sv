@@ -1662,9 +1662,10 @@ module caliptra_ss_top
 
     property cptra_ss_min_clk_freq_p;
         realtime clk_edge_time;
-        // Convert the package limit to local time units; allow 1 ps for rounding.
+        // The assertion samples i3c_scl_seen before same-time SCL updates.
+        // Convert limits to local units; 1 ps is a fixed allowance, not timeprecision.
         (1'b1, clk_edge_time = $realtime) |=>
-            ($realtime - clk_edge_time <= (i3c_scl_seen ? CPTRA_SS_I3C_CLK_MAX_PERIOD_NS : CPTRA_SS_CLK_MAX_PERIOD_NS) * 1ns + 1ps);
+            ($realtime - clk_edge_time <= ((i3c_scl_seen ? CPTRA_SS_I3C_CLK_MAX_PERIOD_NS : CPTRA_SS_CLK_MAX_PERIOD_NS) + CPTRA_SS_CLK_PERIOD_TOLERANCE_NS) * 1ns);
     endproperty
 
     `CALIPTRA_ASSERT(CptraSsMinClkFreq_A, cptra_ss_min_clk_freq_p, cptra_ss_clk_i, !cptra_ss_rst_b_i)
