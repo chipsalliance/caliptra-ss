@@ -16,10 +16,9 @@ package caliptra_ss_top_pkg;
 
   localparam int unsigned I3cNumPrivIds = 4;
 
-  // Consumers use the reference to convert these periods to their local time units.
-  localparam realtime CPTRA_SS_TIME_1US = 1us;
-  localparam realtime CPTRA_SS_CLK_MAX_PERIOD = 1us / 60.0;
-  localparam realtime CPTRA_SS_I3C_CLK_MAX_PERIOD = 1us / 333.0;
+  // Maximum clock periods in nanoseconds (1 us = 1000 ns).
+  localparam realtime CPTRA_SS_CLK_MAX_PERIOD_NS = 1000.0 / 60.0;
+  localparam realtime CPTRA_SS_I3C_CLK_MAX_PERIOD_NS = 1000.0 / 333.0;
 
   parameter lc_ctrl_state_pkg::lc_token_t RndCnstRawUnlockTokenHashed = {
     128'h896e4a11_d1c8cbba_de8a30e6_f0930a4d
