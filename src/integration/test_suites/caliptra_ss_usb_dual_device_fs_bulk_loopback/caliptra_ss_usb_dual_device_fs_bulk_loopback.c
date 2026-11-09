@@ -446,8 +446,8 @@ void main(void) {
         uint32_t ev1;
 
         // Atomically snapshot and clear each controller's mailbox.
-        ev0 = usb_mailbox_take(&mcu_intr_rcv.usb);
-        ev1 = usb_mailbox_take(&mcu_intr_rcv.usb_dev1);
+        ev0 = usb_event_vector_take(&mcu_intr_rcv.usb);
+        ev1 = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
         // Service USBDC0 (vector 3) and USBDC1 (vector 6) in parallel.
         usb_service_device(0, ev0, &dev_state[0]);

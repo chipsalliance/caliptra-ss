@@ -358,8 +358,8 @@ void main(void) {
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
         // itself. The take-and-clear must be atomic against the USB vector or
         // an event that arrives mid-sequence is overwritten and lost; see
-        // usb_mailbox_take().
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+        // usb_event_vector_take().
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
 
         // DEV_INT: bus reset change.
@@ -551,7 +551,7 @@ void main(void) {
         // The transfer phase is over; no endpoint/device events are consumed
         // after this point. Drain the whole mailbox, including stale FRAME_INT.
         // INTSTAT itself is owned by service_usb_intr().
-        (void)usb_mailbox_take(&mcu_intr_rcv.usb);
+        (void)usb_event_vector_take(&mcu_intr_rcv.usb);
 
 
         // Enable FRAME_INT interrupt generation.
@@ -570,7 +570,7 @@ void main(void) {
             // Each SOF takes the USB interrupt; the ISR acknowledges INTSTAT
             // and records FRAME_INT in the mailbox. Consume the record here so
             // the next SOF is counted as a separate event.
-            usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+            usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
             if (usb_events & DEV0_CSR_INTSTAT_FRAME_INT_MASK)
                 frame_int_count++;
 

@@ -35,7 +35,7 @@
 //
 // Event model: POLLED, exactly like the HS mix test. INTSTAT is read and
 // write-1-cleared by this loop, and no ISR / mailbox is used. Do not mix in
-// the init_usb_interrupts() + usb_mailbox_take() model of
+// the init_usb_interrupts() + usb_event_vector_take() model of
 // caliptra_ss_usb_fs_dev_iso_out.c: the two are mutually exclusive, because
 // service_usb_intr() acknowledges INTSTAT before the foreground can see it.
 //

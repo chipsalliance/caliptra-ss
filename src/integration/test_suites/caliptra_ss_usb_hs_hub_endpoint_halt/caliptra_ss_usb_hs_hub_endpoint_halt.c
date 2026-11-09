@@ -123,7 +123,7 @@ void main (void) {
         // Drain the ISR mailbox. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch
         // INTSTAT itself. Atomically snapshot and clear the whole mailbox.
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {

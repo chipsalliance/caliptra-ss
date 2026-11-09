@@ -106,7 +106,7 @@ void main(void) {
 
         // Drain the ISR mailbox with interrupts masked; the ISR has already
         // acknowledged INTSTAT. DSUS/DSUS_C are polled through DEVCMDSTAT.
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the
         // device-neutral USB_DEV_* macros, bitfield MASKS use DEV0_CSR_*. The

@@ -25,7 +25,7 @@
 
 // Atomically drain an ISR mailbox, preserving the caller's mstatus.MIE state.
 // Only the snapshot and full-word clear run with interrupts masked.
-static inline uint32_t usb_mailbox_take(volatile uint32_t *mailbox) {
+static inline uint32_t usb_event_vector_take(volatile uint32_t *mailbox) {
     uint32_t saved_mstatus;
     uint32_t events;
 

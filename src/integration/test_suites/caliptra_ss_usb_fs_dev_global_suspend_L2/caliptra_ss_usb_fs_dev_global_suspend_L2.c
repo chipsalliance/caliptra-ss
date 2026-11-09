@@ -150,7 +150,7 @@ void main(void) {
         // DEVCMDSTAT is still read directly above: DSUS_C is a DEVCMDSTAT
         // status bit, not an INTSTAT bit, so it does not travel through the
         // mailbox.
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)

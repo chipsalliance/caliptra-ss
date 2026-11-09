@@ -162,7 +162,7 @@ void main(void) {
         // INTSTAT, so the foreground loop must not touch it. Atomically
         // snapshot and clear the whole mailbox.
         // DSUS/DSUS_C are DEVCMDSTAT bits and do not go through the mailbox.
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb);
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the
         // device-neutral USB_DEV_* macros, bitfield MASKS use DEV0_CSR_*. The

@@ -180,7 +180,7 @@ void main (void) {
         // USBDC0). service_usb_dev1_intr() already read and acknowledged
         // INTSTAT, so the foreground loop must not touch INTSTAT itself.
         // Atomically snapshot and clear the ISR mailbox, preserving prior MIE.
-        usb_events = usb_mailbox_take(&mcu_intr_rcv.usb_dev1);
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
 
         // Check for device-level interrupts (bus reset, connect change)
