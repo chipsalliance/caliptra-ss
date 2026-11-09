@@ -93,19 +93,22 @@
 //      the change bit on the CLEAR, not on the SET (line 233) - confirm bit 18,
 //      then poll EP1 IN and require bit 1. ClearPortFeature(C_PORT_SUSPEND)
 //      afterwards.
-//   7. Idle leg, last. With every change bit acknowledged, poll EP1 IN TWICE
-//      in a row with nothing cleared in between. The FIRST poll is
-//      informational - it may legitimately drain a buffer that was already
-//      armed when the change bits were cleared - and the SECOND poll carries
-//      the verdict: it must return no data. Judged from the payload byte count.
-//      See poll_int_ep_expect_nak() for why one poll is not sufficient.
+//   7. Idle leg, last. With every change bit acknowledged, poll EP1 IN ONCE
+//      and require that it returns no data. Judged from the payload byte count.
+//
+//      KNOWN FAILURE AGAINST THE CURRENT RTL. The designer confirmed that the
+//      hub is required to NAK already on this FIRST token once the change bits
+//      are cleared, so this leg is expected to fail until the RTL is fixed. An
+//      earlier revision of this leg polled twice and passed the verdict to the
+//      second token, which allowed the first token to return a stale buffer;
+//      that tolerance was wrong and has been removed.
 //
 // WHY THE IDLE LEG IS LAST, AND HOW IT IS BOUNDED
 //
 // A NAKed interrupt IN only terminates when the host gives up, so it costs
-// max_retry_due_to_nak tokens, and the idle leg now issues two such polls. The
-// shared configuration raises that budget to 500 for software-polled device
-// endpoints, which here would be 500 wasted tokens per poll and a long run. The
+// max_retry_due_to_nak tokens. The shared configuration raises that budget to
+// 500 for software-polled device
+// endpoints, which here would be 500 wasted tokens and a long run. The
 // test class therefore lowers the budget on THIS endpoint only (see
 // caliptra_ss_usb_hs_hub_int_ep_status_change_test.svh); the hub needs no
 // firmware help to answer an IN token so the large budget buys nothing on this
@@ -113,8 +116,9 @@
 //
 // It is placed last so that, if the VIP ends up complaining at transfer level
 // about the deliberately-NAKed transfer, that noise cannot mask the three
-// bitmap legs, which are the legs that actually close G1. CHECK_NAK_LEG can be
-// set to 0 to drop it without touching anything else.
+// bitmap legs, which are the legs that actually close G1. This also means the
+// known failure of this leg does not affect the three legs that close the gap.
+// CHECK_NAK_LEG can be set to 0 to drop it without touching anything else.
 //
 // PORT_RESET SIDE EFFECT (deliberate, and harmless here)
 //
@@ -354,10 +358,11 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
                               "C_PORT_SUSPEND");
 
         // Step 7: idle leg. Nothing is outstanding now, so
-        // hub_epin_enable_buffer must be 0. Two consecutive polls: the second
-        // one must return no data. See poll_int_ep_expect_nak().
+        // hub_epin_enable_buffer must be 0 and the very first EP1 IN token must
+        // be NAKed. Expected to fail on the current RTL, see
+        // poll_int_ep_expect_nak().
         if (CHECK_NAK_LEG) begin
-            step(7, "idle leg - two consecutive EP1 IN polls, the SECOND must return NO data");
+            step(7, "idle leg - one EP1 IN poll, it must return NO data");
             poll_int_ep_expect_nak(host_agent_h, usb_cfg, "idle");
         end
         else begin
@@ -515,41 +520,27 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // Poll EP1 IN TWICE in a row with no change pending, and require that the
-    // SECOND poll returns no data.
+    // Poll EP1 IN ONCE with no change pending, and require that it returns no
+    // data.
     //
-    // WHY TWO POLLS AND NOT ONE
+    // KNOWN FAILURE AGAINST THE CURRENT RTL
     //
-    // The first version of this leg polled once and failed: with every change
-    // bit acknowledged (confirmed by GetPortStatus returning wPortChange =
-    // 0x0000) the hub still answered the IN token with one byte of 0x00 instead
-    // of NAKing.
+    // With every change bit acknowledged - confirmed by GetPortStatus returning
+    // wPortChange = 0x0000 - the hub still answers this IN token with one byte
+    // of 0x00 instead of NAKing. The designer confirmed the required behaviour:
+    // the NAK must already happen on this FIRST token, so no allowance is made
+    // here for draining a buffer that was armed before the change bits were
+    // cleared. This leg is therefore expected to fail until the RTL is fixed.
     //
-    // That single data point does not identify who is wrong, because two
-    // different mechanisms predict it equally well:
+    // An earlier revision polled twice and took the verdict from the second
+    // token, which tolerated a payload on the first one. That tolerance did not
+    // match the specified behaviour and has been removed; CHECK_NAK_LEG can be
+    // set to 0 to drop the leg entirely while the RTL issue is open.
     //
-    //   (a) the endpoint buffer was already armed and loaded at the moment the
-    //       host cleared the change bits, so this token legitimately drains one
-    //       in-flight buffer. The NEXT token must then NAK.
-    //   (b) the endpoint active bit latches and is never cleared, so EVERY
-    //       later token is answered. The next token also returns 0x00.
-    //
-    // Reading (a) is correct hub behaviour and would make the old one-poll
-    // check simply wrong. Reading (b) would be an RTL defect. Polling once
-    // cannot tell them apart, so the leg now issues two consecutive tokens with
-    // nothing cleared in between and takes its verdict from the second:
-    //
-    //   second poll returns no data -> (a), hub is correct, leg passes
-    //   second poll returns data    -> (b), the endpoint is permanently armed
-    //
-    // The first poll is therefore INFORMATIONAL ONLY and never fails the test -
-    // whatever it returns is allowed, and what it returned is logged so the two
-    // cases stay distinguishable in the log.
-    //
-    // check_xfer_status is deliberately NOT used on either poll: a failing
-    // transfer status is an expected outcome for a NAKed interrupt IN, so the
-    // verdict is taken from the payload byte count, which is the part that is
-    // actually wrong if the endpoint is armed when it should not be.
+    // check_xfer_status is deliberately NOT used: a failing transfer status is
+    // an expected outcome for a NAKed interrupt IN, so the verdict is taken
+    // from the payload byte count, which is the part that is actually wrong if
+    // the endpoint is armed when it should not be.
     // -------------------------------------------------------------------------
     task poll_int_ep_expect_nak(svt_usb_agent         host_agent_h,
                                 svt_usb_configuration usb_cfg,
@@ -557,87 +548,56 @@ class caliptra_ss_usb_hs_hub_int_ep_status_change_sequence
         svt_usb_transfer int_in_req;
         string           label;
         int unsigned     nbytes;
-        int unsigned     first_nbytes;
-        bit [7:0]        first_byte;
 
-        for (int unsigned attempt = 1; attempt <= 2; attempt++) begin
-            label = $sformatf("INT_IN_EP1_nak_%s_poll%0d", tag, attempt);
+        label = {"INT_IN_EP1_nak_", tag};
 
+        `uvm_info(MSG_ID,
+            $sformatf({"%s: polling EP1 IN with every change bit acknowledged. The ",
+                       "endpoint must be inactive and return NO data on this first ",
+                       "token."}, label), UVM_LOW)
+
+        do_data_xfer(
+            .agent_h       (host_agent_h),
+            .usb_cfg       (usb_cfg),
+            .xfer_kind     (svt_usb_transfer::INTERRUPT_IN_TRANSFER),
+            .device_addr   (HUB_ADDR),
+            .ep_num        (INT_EP),
+            .byte_count    (BITMAP_BYTES),
+            .ep_anchor_idx (INT_EP_ANCHOR_IDX),
+            .label         (label),
+            .req           (int_in_req),
+            .obj_name      ({label, "_req"}),
+            .timeout_us    (NAK_LEG_TIMEOUT_US));
+
+        `uvm_info(MSG_ID,
+            $sformatf("%s: EXIT EP1 IN poll, xfer_wait_timed_out=%0b.",
+                      label, xfer_wait_timed_out), UVM_LOW)
+
+        if (int_in_req == null) begin
+            `uvm_error(MSG_ID,
+                $sformatf("%s: no transfer handle returned, so the idle-endpoint check could not be made.",
+                          label))
+            return;
+        end
+
+        nbytes = int_in_req.payload_byte_count();
+
+        if (nbytes != 0) begin
+            `uvm_error(MSG_ID,
+                $sformatf({"%s: EP1 IN returned %0d payload byte(s) (first byte ",
+                           "0x%02h) with no port or hub status change outstanding ",
+                           "(GetPortStatus reported wPortChange = 0). The hub must ",
+                           "NAK the first token once the change bits are cleared, so ",
+                           "the endpoint is staying armed when it should not be. ",
+                           "KNOWN RTL ISSUE: this leg is expected to fail until the ",
+                           "hub clears the endpoint-active bit."},
+                          label, nbytes, int_in_req.payload.data[0]))
+        end
+        else begin
             `uvm_info(MSG_ID,
-                $sformatf({"%s: polling EP1 IN with every change bit acknowledged ",
-                           "(attempt %0d of 2). %s"},
-                          label, attempt,
-                          (attempt == 1)
-                            ? "This first poll is INFORMATIONAL: it may legitimately drain one already-armed buffer, so any payload here is allowed."
-                            : "This second poll is the VERDICT: nothing was cleared since the first poll, so the endpoint must now be inactive and return NO data."),
-                UVM_LOW)
-
-            do_data_xfer(
-                .agent_h       (host_agent_h),
-                .usb_cfg       (usb_cfg),
-                .xfer_kind     (svt_usb_transfer::INTERRUPT_IN_TRANSFER),
-                .device_addr   (HUB_ADDR),
-                .ep_num        (INT_EP),
-                .byte_count    (BITMAP_BYTES),
-                .ep_anchor_idx (INT_EP_ANCHOR_IDX),
-                .label         (label),
-                .req           (int_in_req),
-                .obj_name      ({label, "_req"}),
-                .timeout_us    (NAK_LEG_TIMEOUT_US));
-
-            `uvm_info(MSG_ID,
-                $sformatf("%s: EXIT EP1 IN poll, xfer_wait_timed_out=%0b.",
-                          label, xfer_wait_timed_out), UVM_LOW)
-
-            if (int_in_req == null) begin
-                `uvm_error(MSG_ID,
-                    $sformatf("%s: no transfer handle returned, so the idle-endpoint check could not be made.",
-                              label))
-                return;
-            end
-
-            nbytes = int_in_req.payload_byte_count();
-
-            if (attempt == 1) begin
-                first_nbytes = nbytes;
-                first_byte   = (nbytes != 0) ? int_in_req.payload.data[0] : 8'h00;
-                if (nbytes != 0)
-                    `uvm_info(MSG_ID,
-                        $sformatf({"%s: first idle poll returned %0d byte(s), first ",
-                                   "byte 0x%02h. Allowed - this is consistent with ",
-                                   "draining one buffer that was already armed when ",
-                                   "the change bits were cleared. The next poll ",
-                                   "decides."},
-                                  label, nbytes, first_byte), UVM_LOW)
-                else
-                    `uvm_info(MSG_ID,
-                        $sformatf({"%s: first idle poll already returned no data, so ",
-                                   "the endpoint went inactive as soon as the change ",
-                                   "bits were cleared."}, label), UVM_LOW)
-            end
-            else begin
-                if (nbytes != 0) begin
-                    `uvm_error(MSG_ID,
-                        $sformatf({"%s: SECOND consecutive idle poll returned %0d ",
-                                   "payload byte(s) (first byte 0x%02h) with no port ",
-                                   "or hub status change outstanding and nothing ",
-                                   "cleared since the previous poll (which returned ",
-                                   "%0d byte(s)). The endpoint is not merely draining ",
-                                   "an in-flight buffer - it stays armed, so it must ",
-                                   "be the latched endpoint-active bit that is never ",
-                                   "cleared rather than a pending change bit."},
-                                  label, nbytes, int_in_req.payload.data[0],
-                                  first_nbytes))
-                end
-                else begin
-                    `uvm_info(MSG_ID,
-                        $sformatf({"%s: second consecutive idle poll returned no ",
-                                   "data, as required. The endpoint is inactive once ",
-                                   "the already-armed buffer (first poll returned %0d ",
-                                   "byte(s)) has been drained."},
-                                  label, first_nbytes), UVM_LOW)
-                end
-            end
+                $sformatf({"%s: EP1 IN returned no data, as required. The endpoint ",
+                           "went inactive as soon as the change bits were cleared."},
+                          label), UVM_LOW)
         end
     endtask
 

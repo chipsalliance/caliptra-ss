@@ -33,25 +33,33 @@ Check 2 is the load-bearing one. Check 1 alone only proves the hub latched its
 own bookkeeping; only check 2 forces the hub to arm the endpoint, win the DMA
 grant and return data.
 
-A fourth leg polls EP1 IN with **every change bit acknowledged** and requires
-that no data comes back, so a hub that armed the endpoint unconditionally would
-fail rather than pass all three positive legs by accident. It issues **two
-consecutive polls** and judges only the second - see the debug history for why
-one is not enough.
+A fourth leg polls EP1 IN **once** with **every change bit acknowledged** and
+requires that no data comes back, so a hub that armed the endpoint
+unconditionally would fail rather than pass all three positive legs by accident.
 
 | Leg | Event driven | Port status bit | EP1 IN bitmap |
 |---|---|---|---|
 | connectChange | DCON asserted by firmware during boot | 16 `C_PORT_CONNECTION` | bit 1 set |
 | resetChange   | `SetPortFeature(PORT_RESET)` port 1    | 20 `C_PORT_RESET`      | bit 1 set |
 | suspendChange | `SetPortFeature` then `ClearPortFeature(PORT_SUSPEND)` port 1 | 18 `C_PORT_SUSPEND` | bit 1 set |
-| idle (poll 1)  | nothing outstanding                   | -                      | anything - informational only |
-| idle (poll 2)  | nothing outstanding, nothing cleared since poll 1 | -          | **no data** (NAK) |
+| idle | nothing outstanding | - | **no data** (NAK) - currently FAILS, see Status |
 
 ## Status
 
-**Passing.** 0 UVM_ERROR / 0 UVM_FATAL, run completes at ~459 us. The three
-positive legs each return bitmap `0x02` (bit 1 = port 1) at 366114 / 397196 /
-438728 ns, and the idle leg drains one armed buffer then sees 9 NAKs.
+**The three positive legs pass. The idle leg (step 7) is an EXPECTED FAILURE
+against the current RTL.**
+
+The three positive legs each return bitmap `0x02` (bit 1 = port 1) at
+366114 / 397196 / 438728 ns, so coverage gap G1 is closed by this test
+regardless of the idle leg.
+
+On the idle leg the hub answers the first EP1 IN token with one byte of `0x00`
+even though `GetPortStatus` reports `wPortChange = 0x0000`. The designer
+confirmed that the hub is required to NAK **already on that first token**, so
+this is an RTL issue and the test is left failing to track it. The idle leg is
+deliberately **last**, so its failure cannot mask the legs that close the gap,
+and it can be disabled with `CHECK_NAK_LEG = 0` in the sequence if it becomes
+regression noise before the RTL is fixed.
 
 ## Mechanism (MEASURED from the RTL)
 
@@ -147,7 +155,8 @@ and the status plane is confirmed - `GetPortStatus` returned `0x00010501` at
 first `INT_IN_EP1_connectChange` transfer was issued at 365866 ns and then did
 **not** complete.
 
-Two distinct causes, both now fixed.
+Two distinct testbench causes, both since fixed, plus one open RTL issue on the
+idle leg. All three are recorded below.
 
 **Fixed: the MCU halted mid-sequence.** `USB_POLL_TIMEOUT` was copied as 5000
 from `caliptra_ss_usb_hs_hub_endpoint_halt`, which is EP0-only and finishes
@@ -182,44 +191,46 @@ STOP never arrives - an older sequence, an observer interface not wired into
 the TB, or a host-side failure earlier in the run. That preserves the old
 behaviour of halting on its own rather than hanging the simulation.
 
-**Fixed: the idle leg polled only once, which is not enough.** The one-poll
-version failed: with every change bit acknowledged, and `GetPortStatus`
-returning `wPortChange = 0x0000`, the hub still answered the IN token with one
-byte of `0x00` instead of NAKing.
+**OPEN RTL ISSUE: the idle leg is not NAKed on the first token.** With every
+change bit acknowledged, and `GetPortStatus` returning `wPortChange = 0x0000`,
+the hub still answers the first EP1 IN token with one byte of `0x00` instead of
+NAKing.
 
-I initially read that as an RTL defect - `reg_ep_active(0)` in
-`usb_ep_config_handler.m.vhdl` is set-only on the hub's hardware-armed path
-(line 256 assigns a literal `'1'`), its intended clear is the unimplemented
-`-- TODO : Add code to clear active bit if it was still set !!` at line 310, and
-that TODO's guard `ep_clear_buffer(0)` is tied off anyway by
-`hub_epin_clear_buffer <= '0'` (`usb_app_hw_hub.m.vhdl:436`, wired at
-`structure:2414`). **That conclusion was wrong**, and the designer identified why:
-a single poll cannot distinguish
+Two mechanisms could explain a single answered token:
 
 * (a) the endpoint draining one buffer that was already armed and loaded at the
-  moment the change bits were cleared - correct behaviour, next token NAKs - from
+  moment the change bits were cleared - the next token then NAKs
 * (b) a permanently armed endpoint - every later token answered.
 
-The old leg stopped after exactly one token, so it never asked the question that
-separates them. The leg now issues **two consecutive polls** with nothing cleared
-in between and takes its verdict from the second.
-
-Measured result: **(a) is what happens, and the hub is correct.**
+A two-token experiment was run to separate them, and measured **(a)**:
 
 | Time | Event |
 |---|---|
-| 453811 ns | first idle IN token -> `DATA1`, 1 byte `0x00` (drains the armed buffer) |
-| 454811 ns onward | second poll's tokens |
+| 453811 ns | first idle IN token -> `DATA1`, 1 byte `0x00` |
+| 454811 ns onward | second token |
 | 455227 - 459410 ns | **9 x NAK** from the device |
-| 459412 ns | second poll completes with no payload - leg passes |
+| 459412 ns | second poll completes with no payload |
 
-`reg_ep_active` is therefore being cleared on the hub path by some mechanism
-other than the line-310 TODO, and the TODO is simply not relevant to this
-endpoint. The whole test now passes with **0 UVM_ERROR**, and the run emits 9
-NAKs where the previous run emitted none.
+So the endpoint does de-arm after one token. **However, the designer confirmed
+that this is still not the required behaviour: the NAK must happen on the FIRST
+token once the change bits are cleared.** The two-poll leg was therefore
+tolerating a real defect, and the leg has been reverted to a single poll that
+fails if any payload comes back. The test is expected to fail on this leg until
+the RTL is fixed.
 
-**Fixed earlier: the EP1 IN transfer never terminated.** The SVT transcript settled this
-and exonerates the DUT completely. From `env.host_agent.link_mon.20.*.pkt_trace`:
+A candidate location, offered as a lead rather than a conclusion:
+`reg_ep_active(0)` in `usb_ep_config_handler.m.vhdl` is set-only on the hub's
+hardware-armed path (line 256 assigns a literal `'1'`), its intended clear is
+the unimplemented `-- TODO : Add code to clear active bit if it was still set !!`
+at line 310, and that TODO's guard `ep_clear_buffer(0)` is tied off by
+`hub_epin_clear_buffer <= '0'` (`usb_app_hw_hub.m.vhdl:436`, wired at
+`structure:2414`). The measured 9 NAKs show something else does clear the arm
+after one token, so this is not by itself the explanation.
+
+**Fixed earlier: the EP1 IN transfer never terminated.** The SVT transcript
+settled this and exonerates the DUT on this specific point - it says nothing
+about the open idle-leg issue above. From
+`env.host_agent.link_mon.20.*.pkt_trace`:
 
 | Observation | Value |
 |---|---|
@@ -278,12 +289,11 @@ they were never driven. Use `link_mon.*.pkt_trace` for packet-level truth.
   endpoint is pure hardware and answers immediately, so the large budget buys
   nothing and would cost 501 tokens on the deliberately-NAKed idle leg.
 * The idle leg is placed **last** and can be disabled with `CHECK_NAK_LEG = 0`
-  in the sequence, so any VIP transfer-level noise from the expected abort
-  cannot mask the three bitmap legs.
-* The idle leg polls EP1 IN **twice**, and only the second poll is a check. The
-  first may legitimately return one byte, because a buffer already armed when the
-  change bits were cleared still has to drain. Do not "simplify" this back to a
-  single poll - that is what made the test wrongly accuse the hub.
+  in the sequence, so neither its known failure nor any VIP transfer-level noise
+  from the expected abort can mask the three bitmap legs.
+* The idle leg polls EP1 IN **once** and fails on any payload. Do not relax this
+  to "judge only the second of two polls": that revision existed, and it
+  tolerated the open RTL issue described in the debug history.
 * UVM output goes to `svt_debug.transcript`, not `vcs_sim.log`, when the SVT
   transcript is enabled: `vcs_sim.log` carries only the final summary and ~55 of
   the 55589 UVM_INFO lines. Use
