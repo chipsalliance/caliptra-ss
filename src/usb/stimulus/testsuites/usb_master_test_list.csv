@@ -23,6 +23,7 @@ $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_epn_fs_overlap_interrupt           
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_epn_fs_overlap_iso                      , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_dev1_epn_overlap                             , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_mixed_traffic                                , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
+$CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_protocol_stall_overlap                       , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit                                 , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit_bus_activate                    , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100
 $CALIPTRA_SS_ROOT/src/usb/tests/usb_ocp_reset_reinit_bus_data                        , Random         , Nightly       , None, L1  , usb_top_tb        , None           , None     , 100

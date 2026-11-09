@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_ocp_protocol_stall_overlap
+plusargs:
+  - '+UVM_TESTNAME=usb_ocp_protocol_stall_overlap_test'
+  - '+usb_ocp_cov'
+  - '+usb_ocp_image_words=130'

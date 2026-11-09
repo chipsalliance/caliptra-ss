@@ -65,6 +65,14 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual task ocp_do_check_post_enumeration(int device);
   endtask
 
+  virtual task ocp_do_check_post_capabilities(bytes_t data);
+  endtask
+
+  // Only an owning row may accept a terminal STALL; normal callers stay strict.
+  virtual function void ocp_check_stall_result(usb_ocp_event observed);
+    `uvm_fatal("OCP_STALL_GUARD", "Expected STALL requires an owned protocol-error checker")
+  endfunction
+
   // Default hooks draw no random numbers and leave the recovery order intact.
   virtual function void ocp_configure_image_words(ref int words);
   endfunction
@@ -104,7 +112,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   virtual task ocp_do_check_control(int device, logic [7:0] bm, logic [7:0] request,
                             logic [15:0] value, logic [15:0] index,
                             logic [15:0] length, bytes_t write_data,
-                            output bytes_t read_data, input bit expect_replacement = 0);
+                            output bytes_t read_data, input bit expect_replacement = 0,
+                            input bit expect_protocol_stall = 0);
     svt_usb_transfer tr;
     uvm_sequence_item response;
     usb_ocp_event observed;
@@ -122,6 +131,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
     if (device < 0 || device > 2 || observer == null || ocp_cfg == null)
       `uvm_fatal("OCP_HOST", "Missing host context or invalid stable device slot")
+    if (expect_protocol_stall && (expect_replacement || device != 1))
+      `uvm_fatal("OCP_STALL_GUARD", "STALL is not replacement or an independent-device allowance")
     if (!bm[7] && write_data.size() != length)
       `uvm_fatal("OCP_HOST", "OUT payload does not match wLength")
     addr = usb_cfg.remote_device_cfg[device].device_address;
@@ -223,11 +234,15 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (!done) `uvm_fatal("OCP_HOST", "Bounded control submission/completion timed out")
     allowed_results = 0;
     if (!bm[7]) allowed_results[5] = 1;
-    if (!expect_replacement &&
+    if (expect_protocol_stall) ocp_check_stall_result(observed);
+    if (!expect_replacement && !expect_protocol_stall &&
         (!observed.transfer_ok || (observed.results & ~allowed_results) !== 0))
       `uvm_fatal("OCP_HOST", "VIP reported unsuccessful control completion")
-    if (bm[7] && !expect_replacement) read_data = observed.bytes;
-    if (!bm[7]) begin
+    // Owned probes may return ordinary successful data, but an aborted STALL
+    // must never masquerade as a successful response or byte acceptance.
+    if (bm[7] && !expect_replacement &&
+        (!expect_protocol_stall || observed.transfer_ok === 1)) read_data = observed.bytes;
+    if (!bm[7] && !expect_protocol_stall) begin
       if ((!expect_replacement && observed.bytes.size() != write_data.size()) ||
           observed.bytes.size() > write_data.size())
         `uvm_fatal("OCP_HOST", "Completed OUT byte count differs from request")
@@ -239,6 +254,10 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       `uvm_info("OCP_SUPERSESSION",$sformatf(
         "Native-aborted slot=%0d addr=%0d setup=%p bytes=%0d",
         device,addr,setup,observed.bytes.size()),UVM_LOW)
+    else if (expect_protocol_stall && observed.transfer_ok !== 1)
+      `uvm_info("OCP_HOST",$sformatf(
+        "Retired unsuccessful owned STALL slot=%0d addr=%0d setup=%p native_bytes=%0d",
+        device,addr,setup,observed.bytes.size()),UVM_MEDIUM)
     else
       `uvm_info("OCP_HOST",$sformatf("Completed slot=%0d addr=%0d setup=%p bytes=%0d",
                 device,addr,setup,observed.bytes.size()),UVM_MEDIUM)
@@ -436,6 +455,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (!caps[OCP_CAP_INDIRECT_FIFO] || !caps[OCP_CAP_PUSH_C_IMAGE] || data[12] == 0)
       `uvm_fatal("OCP_HOST", "FIFO recovery support is required, not skipped")
     cms_count = data[12];
+    ocp_do_check_post_capabilities(data);
     found = 0;
     for (int i = 0; i < cms_count; i++) begin
       ocp_do_check_fifo_control(8'(i),0);

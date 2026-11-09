@@ -60,10 +60,13 @@ class usb_ocp_base_replacement_host_seq extends usb_ocp_base_host_seq;
 
   virtual task ocp_do_check_control(int device, logic [7:0] bm, logic [7:0] request,
       logic [15:0] value, logic [15:0] index, logic [15:0] length,
-      bytes_t write_data, output bytes_t read_data, input bit expect_replacement = 0);
+      bytes_t write_data, output bytes_t read_data, input bit expect_replacement = 0,
+      input bit expect_protocol_stall = 0);
     bytes_t accepted;
     bytes_t remaining;
     bit selected;
+    if (expect_protocol_stall)
+      `uvm_fatal("OCP_STALL_GUARD", "Replacement actor does not own protocol STALL")
     if (expect_replacement)
       `uvm_fatal("OCP_SUPERSESSION", "Nested replacement request is unsupported")
     selected = require_replacement && device == 1 && request === OCP_BREQUEST_XFER &&
