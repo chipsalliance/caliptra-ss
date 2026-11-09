@@ -338,6 +338,7 @@ package usb_tb_pkg;
   `include "sequences/usb_ocp_base_epn_overlap_seq.svh"
   `include "sequences/usb_ocp_dev0_epn_overlap_seq.svh"
   `include "sequences/usb_ocp_dev1_epn_overlap_seq.svh"
+  `include "sequences/usb_ocp_dev1_epn_fs_overlap_seq.svh"
   `include "sequences/usb_ocp_mixed_traffic_host_seq.svh"
   `include "sequences/usb_ocp_mixed_traffic_seq.svh"
   `include "tests/usb_ocp_base_test.svh"
@@ -348,5 +349,6 @@ package usb_tb_pkg;
   `include "tests/usb_ocp_dev0_ep0_interleave_test.svh"
   `include "tests/usb_ocp_dev0_epn_overlap_test.svh"
   `include "tests/usb_ocp_dev1_epn_overlap_test.svh"
+  `include "tests/usb_ocp_dev1_epn_fs_overlap_test.svh"
   `include "tests/usb_ocp_mixed_traffic_test.svh"
 endpackage

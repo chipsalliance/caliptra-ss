@@ -22,6 +22,7 @@ class usb_ocp_base_epn_model extends uvm_object;
   usb_ocp_event candidate;
   int unsigned device = 1;
   int unsigned data_tag;
+  bit full_speed;
   logic [6:0] address;
   // Learned from device0 SET_ADDRESS, never the peer's descriptor EP0.
   logic [6:0] control_address;
@@ -103,12 +104,18 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (sof_seen) begin
       gap = item.observed_at-last_sof_at;
       // Packet-end timestamps include bit-stuff/PHY quantization jitter.
-      // A 1 us envelope checks the 125 us cadence without fabricating exact
+      // A 1 us envelope checks the selected cadence without fabricating exact
       // physical edges; parent waveform validation measures actual timing.
-      if (gap < 124us || gap > 126us || item.sof_serial != last_sof_serial+1)
-        `uvm_fatal("OCP_EPN_SOF", "Native HS SOF cadence/ordinal is not 125 us")
+      if (gap < (full_speed ? 999us : 124us) ||
+          gap > (full_speed ? 1001us : 126us) || item.sof_serial != last_sof_serial+1)
+        `uvm_fatal("OCP_EPN_SOF", "Native speed-specific SOF cadence/ordinal is invalid")
       next_frame = last_frame + 11'd1;
-      if (item.frame_number === last_frame) begin
+      if (full_speed) begin
+        if (item.frame_number !== next_frame)
+          `uvm_fatal("OCP_EPN_SOF", "FS SOF must advance exactly one frame")
+        frame_edge_seen = 1;
+        same_frame_sofs = 1;
+      end else if (item.frame_number === last_frame) begin
         same_frame_sofs++;
         if (same_frame_sofs > 8)
           `uvm_fatal("OCP_EPN_SOF", "More than eight HS SOFs in a frame")
@@ -155,9 +162,10 @@ class usb_ocp_base_epn_model extends uvm_object;
     if (ep.transfer_type != USB_TRANSFER_TYPE_BULK &&
         (!sof_seen || token.sof_serial == 0 ||
          token.sof_serial != last_sof_serial || data.sof_serial != token.sof_serial ||
-         token.observed_at < last_sof_at || data.observed_at-last_sof_at >= 125us ||
+         token.observed_at < last_sof_at ||
+         data.observed_at-last_sof_at >= (full_speed ? 1ms : 125us) ||
          (phase != 0 &&
-         token.sof_serial < accepted_sof[dir][phase-1] + (1 << (ep.interval-1)))))
+         token.sof_serial < accepted_sof[dir][phase-1] + discovery.ocp_get_period(ep))))
       `uvm_fatal("OCP_EPN_INTERVAL", "Periodic service violates discovered bInterval")
     accepted_token[dir][phase] = token.order;
     accepted_data[dir][phase] = data.order;
@@ -196,7 +204,7 @@ class usb_ocp_base_epn_model extends uvm_object;
       iso_no_handshake = 0;
       if (ep.transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS) begin
         if (iso_token_seen[token_direction] &&
-            item.sof_serial < last_iso_token[token_direction] + (1 << (ep.interval-1)))
+            item.sof_serial < last_iso_token[token_direction] + discovery.ocp_get_period(ep))
           `uvm_fatal("OCP_EPN_ISO", "ISO retry/multiple tokens in one service opportunity")
         iso_token_seen[token_direction] = 1;
         last_iso_token[token_direction] = item.sof_serial;
@@ -208,6 +216,11 @@ class usb_ocp_base_epn_model extends uvm_object;
             item.sof_serial < interrupt_next_poll[token_direction])
           `uvm_fatal("OCP_EPN_INTERVAL", "Interrupt re-poll before the next NAK service opportunity")
         interrupt_nak_seen[token_direction] = 0;
+      end
+      if (full_speed && item.pid == svt_usb_packet::PING) begin
+        `uvm_error("OCP_FS_HANDSHAKE", "FS endpoint cannot use the HS PING protocol")
+        token = null;
+        return;
       end
       if (item.pid == svt_usb_packet::PING &&
           ep.transfer_type != USB_TRANSFER_TYPE_BULK)
@@ -238,7 +251,7 @@ class usb_ocp_base_epn_model extends uvm_object;
         `uvm_fatal("OCP_EPN_PACKET", "Invalid NAK responder/context")
       if (ep.transfer_type == USB_TRANSFER_TYPE_INTERRUPT) begin
         interrupt_next_poll[token_direction] =
-          token.sof_serial + (1 << (ep.interval-1));
+          token.sof_serial + discovery.ocp_get_period(ep);
         interrupt_nak_seen[token_direction] = 1;
       end
       candidate = null;
@@ -247,6 +260,13 @@ class usb_ocp_base_epn_model extends uvm_object;
     end
     if (item.pid == svt_usb_packet::STALL)
       `uvm_fatal("OCP_EPN_STALL", "Unexpected noncontrol endpoint halt")
+    if (full_speed && item.pid == svt_usb_packet::NYET) begin
+      `uvm_error("OCP_FS_HANDSHAKE", "FS NYET cannot accept endpoint DATA")
+      // No legal FS accepting handshake occurred; retries retain their toggle.
+      candidate = null;
+      token = null;
+      return;
+    end
     if (!(item.pid inside {svt_usb_packet::ACK,svt_usb_packet::NYET}) ||
         item.host_tx !== incoming || (incoming && item.pid != svt_usb_packet::ACK) ||
         (item.pid == svt_usb_packet::NYET && ep.transfer_type != USB_TRANSFER_TYPE_BULK))

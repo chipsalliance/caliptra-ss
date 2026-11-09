@@ -21,6 +21,17 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
   bit read_started;
   bit write_started;
   longint unsigned capture_floor;
+  // USB2 11.23.1 standard FS hub descriptor fields.
+  localparam int OCP_FS_HUB_CLASS_OFFSET = 4;
+  localparam int OCP_FS_HUB_PROTOCOL_OFFSET = 6;
+  localparam int OCP_FS_CONFIG_INTERFACE_COUNT_OFFSET = 4;
+  localparam int OCP_FS_CONFIG_HEADER_BYTES = 9;
+  localparam int OCP_FS_INTERFACE_TYPE = 4;
+  localparam int OCP_FS_INTERFACE_BYTES = 9;
+  localparam int OCP_FS_INTERFACE_CLASS_OFFSET = 5;
+  localparam int OCP_FS_INTERFACE_SUBCLASS_OFFSET = 6;
+  localparam int OCP_FS_INTERFACE_PROTOCOL_OFFSET = 7;
+  localparam logic [7:0] OCP_FS_HUB_CLASS_CODE = 8'h09;
 
   function new(string name = "usb_ocp_base_epn_overlap_host_seq");
     super.new(name);
@@ -33,7 +44,41 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
   endfunction
 
   virtual function void ocp_check_configuration_discovery(int device, bytes_t data);
-    if (ocp_check_selected_device(device)) discoveries[device-1].ocp_check_parse(data);
+    int pos;
+    int interfaces;
+    if (ocp_cfg.full_speed && device == 0) begin
+      // USB2 11.23.1: the FS operating hub uses protocol zero in both descriptors.
+      if (device_descriptor_bytes[0][OCP_FS_HUB_CLASS_OFFSET] !== OCP_FS_HUB_CLASS_CODE ||
+          device_descriptor_bytes[0][OCP_FS_HUB_PROTOCOL_OFFSET] !== 0 ||
+          data[OCP_FS_CONFIG_INTERFACE_COUNT_OFFSET] !== 1)
+        `uvm_error("OCP_FS_HUB", "FS hub device class/protocol/interface count violates USB2 11.23.1")
+      foreach (data[i])
+        if ($isunknown(data[i]))
+          `uvm_fatal("OCP_FS_HUB", "Unknown FS hub configuration byte")
+      interfaces = 0;
+      pos = OCP_FS_CONFIG_HEADER_BYTES;
+      while (pos < data.size()) begin
+        if (pos+2 > data.size() || data[pos] < 2 || pos+data[pos] > data.size())
+          `uvm_fatal("OCP_FS_HUB", "Malformed FS hub descriptor chain")
+        if (data[pos+1] == OCP_FS_INTERFACE_TYPE) begin
+          interfaces++;
+          if (data[pos] != OCP_FS_INTERFACE_BYTES)
+            `uvm_fatal("OCP_FS_HUB", "Malformed FS hub interface")
+          if (data[pos+OCP_FS_INTERFACE_CLASS_OFFSET] !== OCP_FS_HUB_CLASS_CODE ||
+              data[pos+OCP_FS_INTERFACE_SUBCLASS_OFFSET] !== 0 ||
+              data[pos+OCP_FS_INTERFACE_PROTOCOL_OFFSET] !== 0)
+            `uvm_error("OCP_FS_HUB", "FS hub interface class/subclass/protocol violates USB2 11.23.1")
+        end
+        if (interfaces != 1)
+          `uvm_error("OCP_FS_HUB", "FS hub configuration lacks exactly one interface")
+        pos += data[pos];
+      end
+    end
+    if (ocp_check_selected_device(device)) begin
+      discoveries[device-1].full_speed =
+        usb_cfg.remote_device_cfg[device].connected_bus_speed == svt_usb_types::FS;
+      discoveries[device-1].ocp_check_parse(data);
+    end
   endfunction
 
   virtual task ocp_do_check_post_enumeration(int device);
@@ -42,6 +87,20 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
     usb_ocp_base_endpoint_cfg native_ep;
     usb_endpoint_cfg ep;
     usb_ocp_base_epn_descriptor discovery;
+    svt_usb_device_status native_device;
+    if (ocp_cfg.full_speed) begin
+      // Initial status enums default to FS; read only after real enumeration.
+      native_device = shared_status.get_device_status(usb_cfg.remote_device_cfg[device].device_address);
+      if (native_device == null ||
+          native_device.connected_bus_speed !== svt_usb_types::FS ||
+          shared_status.physical_usb_20_working_speed !== svt_usb_types::FS ||
+          shared_status.protocol_usb_20_L0_phy_speed !== svt_usb_types::FS)
+        `uvm_fatal("OCP_FS_SPEED", "Completed enumeration lacks consistent native FS connection/L0/PHY evidence")
+      `uvm_info("OCP_FS_SPEED",$sformatf(
+        "slot=%0d addr=%0d native=FS phy=FS l0=FS settled_fs=%0b settled_hs=%0b",
+        device,usb_cfg.remote_device_cfg[device].device_address,
+        shared_status.full_speed_enabled,shared_status.high_speed_enabled),UVM_NONE)
+    end
     if (!ocp_check_selected_device(device)) return;
     discovery = discoveries[device-1];
     if (configuration_value[device] !== discovery.configuration)
@@ -66,7 +125,7 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
       native_ep = usb_ocp_base_endpoint_cfg::type_id::create("discovered_native_ep");
       native_ep.ep_number = ep.ep_number;
       native_ep.direction = dir ? svt_usb_types::IN : svt_usb_types::OUT;
-      native_ep.speed = svt_usb_types::HS;
+      native_ep.speed = usb_cfg.remote_device_cfg[device].connected_bus_speed;
       native_ep.max_packet_size = ep.max_packet_size;
       native_ep.interval = ep.interval;
       native_ep.isoc_mult = svt_usb_endpoint_configuration::ISOC_MULT_ZERO;
@@ -254,10 +313,12 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_se
       wait (ocp_cfg.epn_ready[port][phase][0] && ocp_cfg.epn_ready[port][phase][1]);
       for (int dir = 0; dir < 2; dir++)
         if (discoveries[port].endpoints[dir].transfer_type != USB_TRANSFER_TYPE_BULK &&
-            period < (1 << (discoveries[port].endpoints[dir].interval-1)))
-          period = 1 << (discoveries[port].endpoints[dir].interval-1);
+            period < discoveries[port].ocp_get_period(discoveries[port].endpoints[dir]))
+          period = discoveries[port].ocp_get_period(discoveries[port].endpoints[dir]);
     end
-    microframe = shared_status.local_host_status.micro_frame_count + 2;
+    // Native windows remain 125us ticks at FS; one FS frame is eight ticks.
+    if (ocp_cfg.full_speed) period *= 8;
+    microframe = shared_status.local_host_status.micro_frame_count + (ocp_cfg.full_speed ? 1 : 2);
     microframe = (((microframe+period-1)/period)*period) & 'h3fff;
     for (int port = 0; port < 2; port++) begin
       if (!ocp_check_selected_device(port+1)) continue;

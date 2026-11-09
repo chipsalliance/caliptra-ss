@@ -19,6 +19,7 @@ class usb_ocp_base_epn_profile extends uvm_object;
   typedef logic [7:0] bytes_t[$];
   int unsigned device = 1;
   int unsigned data_tag;
+  bit full_speed;
   usb_transfer_type_e transfer_type = USB_TRANSFER_TYPE_BULK;
 
   function new(string name = "usb_ocp_base_epn_profile");
@@ -45,7 +46,19 @@ class usb_ocp_base_epn_profile extends uvm_object;
 
   function usb_endpoint_cfg ocp_prepare_endpoint(usb_direction_e direction);
     return usb_endpoint_cfg::create_endpoint("firmware_epn",1,direction,
-      transfer_type,(transfer_type == USB_TRANSFER_TYPE_BULK) ? 512 : 64,1);
+      transfer_type,ocp_get_max_packet_size(),ocp_get_interval());
+  endfunction
+
+  function int ocp_get_max_packet_size();
+    // USB2 5.8.3/5.7.3/5.6.3: 64 bytes is legal for all selected FS types.
+    return (!full_speed && transfer_type == USB_TRANSFER_TYPE_BULK) ? 512 : 64;
+  endfunction
+
+  function int ocp_get_interval();
+    // USB2 9.6.6: exercise linear FS interrupt versus exponential FS ISO.
+    if (full_speed && transfer_type == USB_TRANSFER_TYPE_INTERRUPT) return 3;
+    if (full_speed && transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS) return 2;
+    return 1;
   endfunction
 
   function bytes_t ocp_prepare_descriptor(int slot, logic [15:0] value);
@@ -64,15 +77,15 @@ class usb_ocp_base_epn_profile extends uvm_object;
     extension = '{9,4,1,
       8'(transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS),2,8'hff,0,0,0};
     data = {data,extension};
-    mps = (transfer_type == USB_TRANSFER_TYPE_BULK) ? 512 : 64;
+    mps = ocp_get_max_packet_size();
     case (transfer_type)
       USB_TRANSFER_TYPE_BULK: attributes = 2;
       USB_TRANSFER_TYPE_INTERRUPT: attributes = 3;
       USB_TRANSFER_TYPE_ISOCHRONOUS: attributes = 1;
       default: `uvm_fatal("OCP_EPN_PROFILE", "Unsupported firmware endpoint type")
     endcase
-    extension = '{7,5,8'h01,attributes,8'(mps),8'(mps>>8),1,
-                  7,5,8'h81,attributes,8'(mps),8'(mps>>8),1};
+    extension = '{7,5,8'h01,attributes,8'(mps),8'(mps>>8),8'(ocp_get_interval()),
+                  7,5,8'h81,attributes,8'(mps),8'(mps>>8),8'(ocp_get_interval())};
     data = {data,extension};
     size = data.size();
     data[2] = 8'(size);
