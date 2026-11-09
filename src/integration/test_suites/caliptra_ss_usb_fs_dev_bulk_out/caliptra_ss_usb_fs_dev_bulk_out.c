@@ -83,7 +83,7 @@ static void usb_ep1_out_arm(void) {
 
     // Enable the EP1 OUT interrupt. boot_usb_core_fs() only enables DEV_INT,
     // EP0OUT and EP0IN, and service_usb_intr() masks INTSTAT with INTEN, so
-    // without this the EP1 OUT completion would never reach the mailbox.
+    // without this the EP1 OUT completion would never reach the event_vector.
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
@@ -139,9 +139,9 @@ void main(void) {
 
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself. Atomically snapshot and clear the whole mailbox.
+        // itself. Atomically snapshot and clear the whole event vector.
         usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // One DEVCMDSTAT read per iteration, shared by the bus-reset check and
@@ -160,11 +160,11 @@ void main(void) {
             // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
-        // EP0 dispatch is driven by DEVCMDSTAT.SETUP, not by the mailbox bit.
-        // SETUP is a sticky hardware flag that only firmware clears (via
+        // EP0 dispatch is driven by DEVCMDSTAT.SETUP, not by the event vector
+        // bit. SETUP is a sticky hardware flag that only firmware clears (via
         // usb_clear_setup_bit() at the end of usb_handle_control_transfer()),
         // so servicing it from the register makes the handling idempotent: if
-        // the EP0OUT mailbox event is ever lost or coalesced, the next poll
+        // the EP0OUT event vector bit is ever lost or coalesced, the next poll
         // iteration still services the SETUP instead of wedging forever.
         // Defence in depth - the atomic drain above prevents the loss, this
         // survives it.

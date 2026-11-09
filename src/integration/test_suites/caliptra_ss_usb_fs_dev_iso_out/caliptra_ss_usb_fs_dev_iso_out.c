@@ -295,8 +295,8 @@ static void usb_ep2_in_arm(uint32_t round, uint32_t round_base) {
     // this, EPBUFCFG stays 0, the bufinuse toggle at usb_reg_if.m.vhdl:859-864
     // is gated off, and the Buffer 1 descriptor written just above is never
     // fetched. Read-modify-write so a future endpoint keeps its own bit; this
-    // is outside the ISR mailbox path and EPBUFCFG is not touched by the ISR,
-    // so no atomicity bracket is needed here.
+    // is outside the ISR event vector path and EPBUFCFG is not touched by the
+    // ISR, so no atomicity bracket is needed here.
     uint32_t epbufcfg = lsu_read_32(USB_DEV_EPBUFCFG);
     lsu_write_32(USB_DEV_EPBUFCFG, epbufcfg | USB_EPBUFCFG_EP2_IN_MASK);
 
@@ -354,7 +354,7 @@ void main(void) {
 
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
         // itself. The take-and-clear must be atomic against the USB vector or
         // an event that arrives mid-sequence is overwritten and lost; see
@@ -533,7 +533,7 @@ void main(void) {
     // phase verifies that:
     //   1. Enabling FRAME_INT_EN causes FRAME_INT interrupts to fire regularly.
     //   2. The ISR acknowledges each one (W1C on INTSTAT) so events are
-    //      countable individually out of the mailbox.
+    //      countable individually out of the event vector.
     //   3. At least FRAME_INT_MIN_COUNT events are observed in the poll window.
     //   4. Disabling FRAME_INT_EN stops new events from appearing.
     //
@@ -544,13 +544,13 @@ void main(void) {
     // =========================================================================
     VPRINTF(LOW, "\n--- FRAME_INT test phase ---\n");
 
-    // Step 1: Enable FRAME_INT in INTEN, drain stale mailbox events first.
+    // Step 1: Enable FRAME_INT in INTEN, drain stale event vector events first.
     {
         uint32_t inten_val;
 
         // The transfer phase is over; no endpoint/device events are consumed
-        // after this point. Drain the whole mailbox, including stale FRAME_INT.
-        // INTSTAT itself is owned by service_usb_intr().
+        // after this point. Drain the whole event vector, including stale
+        // FRAME_INT. INTSTAT itself is owned by service_usb_intr().
         (void)usb_event_vector_take(&mcu_intr_rcv.usb);
 
 
@@ -568,8 +568,8 @@ void main(void) {
 
         for (fi = 0; fi < FRAME_INT_POLL_WINDOW; fi++) {
             // Each SOF takes the USB interrupt; the ISR acknowledges INTSTAT
-            // and records FRAME_INT in the mailbox. Consume the record here so
-            // the next SOF is counted as a separate event.
+            // and records FRAME_INT in the event vector. Consume the record
+            // here so the next SOF is counted as a separate event.
             usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
             if (usb_events & DEV0_CSR_INTSTAT_FRAME_INT_MASK)
                 frame_int_count++;

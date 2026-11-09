@@ -23,9 +23,9 @@
 #include "stdint.h"
 #include <stdbool.h>
 
-// Atomically drain an ISR mailbox, preserving the caller's mstatus.MIE state.
-// Only the snapshot and full-word clear run with interrupts masked.
-static inline uint32_t usb_event_vector_take(volatile uint32_t *mailbox) {
+// Atomically drain an ISR event vector, preserving the caller's mstatus.MIE
+// state. Only the snapshot and full-word clear run with interrupts masked.
+static inline uint32_t usb_event_vector_take(volatile uint32_t *event_vector) {
     uint32_t saved_mstatus;
     uint32_t events;
 
@@ -33,8 +33,8 @@ static inline uint32_t usb_event_vector_take(volatile uint32_t *mailbox) {
                       : "=r" (saved_mstatus)
                       : "r" (MSTATUS_MIE_BIT_MASK)
                       : "memory");
-    events = *mailbox;
-    *mailbox = 0u;
+    events = *event_vector;
+    *event_vector = 0u;
     if ((saved_mstatus & MSTATUS_MIE_BIT_MASK) != 0u) {
         __asm__ volatile ("csrrs zero, mstatus, %0"
                           :

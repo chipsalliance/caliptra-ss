@@ -35,11 +35,11 @@
 #include "usb.h"
 #include "stdint.h"
 #include "veer-csr.h"
-// Including mcu_isr.h is what makes the build system compile and link
-// mcu_isr.o for this test (see tools/scripts/Makefile). This test is built
-// with -DUSB_HUB_COMPOUND_DEV1_IRQ, which makes init_usb_interrupts() enable
-// PIC vector 6 (USBDC1's looped IRQ) and mcu_isr.h compile in
-// service_usb_dev1_intr() plus the mcu_intr_rcv.usb_dev1 mailbox field.
+// Including mcu_isr.h is what makes the build system compile and link mcu_isr.o
+// for this test (see tools/scripts/Makefile). This test is built with
+// -DUSB_HUB_COMPOUND_DEV1_IRQ, which makes init_usb_interrupts() enable PIC
+// vector 6 (USBDC1's looped IRQ) and mcu_isr.h compile in
+// service_usb_dev1_intr() plus the mcu_intr_rcv.usb_dev1 event vector field.
 //
 // This test deliberately does NOT use -DUSB_DEV_SEL=1. USBDC1 is selected at
 // RUNTIME instead (see usb_select_device(1) below and the base retargeting
@@ -134,9 +134,9 @@ void main (void) {
     // INTEN and cleared any stale INTSTAT bits. This is a USBDC1 (dev1) test
     // built with -DUSB_HUB_COMPOUND_DEV1_IRQ, so init_usb_interrupts() enables
     // PIC vector 6 (USBDC1's looped IRQ) in addition to vector 3. USBDC1's EP0
-    // SETUP events are therefore delivered to the mcu_intr_rcv.usb_dev1 mailbox.
-    // Deliberately not init_interrupts(): that routine also writes the MCI
-    // and I3C interrupt registers, and this early its I3C write to
+    // SETUP events are therefore delivered to the mcu_intr_rcv.usb_dev1 event
+    // vector. Deliberately not init_interrupts(): that routine also writes the
+    // MCI and I3C interrupt registers, and this early its I3C write to
     // 0x200040a8 does not complete, stalling the LSU pipeline before
     // mstatus.MIE is set. init_usb_interrupts() touches only the USB vectors.
 
@@ -172,12 +172,13 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. This is a USBDC1 (dev1) test whose IRQ is on
-        // PIC vector 6, so events are published to the usb_dev1 mailbox field
-        // (filled by service_usb_dev1_intr()), NOT the usb field (vector 3 /
-        // USBDC0). service_usb_dev1_intr() already read and acknowledged
+        // Drain the ISR event vector. This is a USBDC1 (dev1) test whose IRQ is
+        // on PIC vector 6, so events are published to the usb_dev1 event vector
+        // field (filled by service_usb_dev1_intr()), NOT the usb field (vector
+        // 3 / USBDC0). service_usb_dev1_intr() already read and acknowledged
         // INTSTAT, so the foreground loop must not touch INTSTAT itself.
-        // Atomically snapshot and clear the ISR mailbox, preserving prior MIE.
+        // Atomically snapshot and clear the ISR event vector, preserving prior
+        // MIE.
         usb_events = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
 
@@ -229,8 +230,8 @@ void main (void) {
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
-        // loop stays tight and USB events are picked up within ~1us of the
+        // No mcu_sleep here: the event vector check is a single DCCM load, so
+        // the loop stays tight and USB events are picked up within ~1us of the
         // interrupt being taken.
 
     }

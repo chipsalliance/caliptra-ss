@@ -104,8 +104,9 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-        // Drain the ISR mailbox with interrupts masked; the ISR has already
-        // acknowledged INTSTAT. DSUS/DSUS_C are polled through DEVCMDSTAT.
+        // Drain the ISR event vector with interrupts masked; the ISR has
+        // already acknowledged INTSTAT. DSUS/DSUS_C are polled through
+        // DEVCMDSTAT.
         usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the

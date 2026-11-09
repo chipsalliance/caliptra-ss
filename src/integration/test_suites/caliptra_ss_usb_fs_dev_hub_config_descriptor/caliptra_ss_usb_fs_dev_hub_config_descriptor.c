@@ -16,11 +16,11 @@
 // Description: USB hub CONFIGURATION descriptor test firmware for the
 //              Caliptra Subsystem (Full Speed, interrupt-driven).
 //
-//  Boots the MCU, initializes the USB device controller (EP list, SRAM
-//  buffers, DEVCMDSTAT) in Full-Speed mode via boot_usb_core_fs(), then brings
-//  up Caliptra core. This is the IRQ (interrupt-driven) variant: it enables the
-//  USB interrupt (PIC vector 3) and drains the ISR mailbox (mcu_intr_rcv.usb)
-//  in the main loop rather than polling INTSTAT directly.
+//  Boots the MCU, initializes the USB device controller (EP list, SRAM buffers,
+//  DEVCMDSTAT) in Full-Speed mode via boot_usb_core_fs(), then brings up
+//  Caliptra core. This is the IRQ (interrupt-driven) variant: it enables the
+//  USB interrupt (PIC vector 3) and drains the ISR event vector
+//  (mcu_intr_rcv.usb) in the main loop rather than polling INTSTAT directly.
 //
 //  The protocol exercised by this test (GET_DESCRIPTOR(CONFIGURATION) directed
 //  at the hub at address 1) is answered entirely by the hub-composite RTL ROM,
@@ -29,10 +29,10 @@
 //  the hub.
 //
 //  Full-Speed differences from caliptra_ss_usb_hs_dev_hub_config_descriptor.c:
-//   - Brings up the USB core with boot_usb_core_fs() (sets DEVCMDSTAT.PFSC,
-//     bit 21) so the device suppresses the K-chirp and the link negotiates and
+//   - Brings up the USB core with boot_usb_core_fs() (sets DEVCMDSTAT.PFSC, bit
+//     21) so the device suppresses the K-chirp and the link negotiates and
 //     stays at full speed for the FS-only host VIP (high_speed_capable=0).
-//  The interrupt machinery (mcu_isr.h, init_usb_interrupts(), ISR mailbox
+//  The interrupt machinery (mcu_isr.h, init_usb_interrupts(), ISR event vector
 //  drain) is identical to the HS variant.
 
 #include "soc_address_map.h"
@@ -117,15 +117,15 @@ void main (void) {
     VPRINTF(LOW, "MCU: USB INTSTAT = 0x%x\n", reg_data);
 
 
-    // --- Main USB event loop: interrupt-driven (ISR mailbox drain) ---
+    // --- Main USB event loop: interrupt-driven (ISR event vector drain) ---
     for (poll_count = 0; poll_count < USB_POLL_TIMEOUT; poll_count++) {
 
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch
-        // INTSTAT itself. Atomically snapshot and clear the whole mailbox.
+        // INTSTAT itself. Atomically snapshot and clear the whole event vector.
         usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
@@ -175,8 +175,8 @@ void main (void) {
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
-        // loop stays tight and USB events are picked up within ~1us of the
+        // No mcu_sleep here: the event vector check is a single DCCM load, so
+        // the loop stays tight and USB events are picked up within ~1us of the
         // interrupt being taken.
 
     }
