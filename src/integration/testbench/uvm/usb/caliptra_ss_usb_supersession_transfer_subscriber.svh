@@ -29,7 +29,7 @@ class caliptra_ss_usb_supersession_transfer_subscriber
     virtual function void write(svt_usb_transfer t);
         if ((sink == null) || (t == null))
             `uvm_fatal("SUPERSESSION_PORT", "Null protocol analysis sink or transfer")
-        sink.observe_transfer(t);
+        sink.ocp_supersession_check_transfer(t);
     endfunction
 endclass
 `endif

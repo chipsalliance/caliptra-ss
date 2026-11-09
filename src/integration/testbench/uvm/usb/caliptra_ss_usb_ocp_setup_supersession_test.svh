@@ -68,7 +68,7 @@ class caliptra_ss_usb_ocp_setup_supersession_test
     endfunction
 
     virtual function void final_phase(uvm_phase phase);
-        mixed_checker.expected_report.close();
+        mixed_checker.expected_report.ocp_supersession_configure_report_retirement();
         uvm_callbacks#(svt_usb_link_monitor, svt_usb_link_monitor_callback)::delete(
             env.host_agent.link_mon, mixed_checker.packet_callback);
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::delete(

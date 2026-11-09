@@ -27,51 +27,51 @@ class caliptra_ss_usb_ocp_setup_stale_negative_sequence
 
     virtual task body();
         svt_usb_transfer old_req, ocp_req, probe_req, fresh_req;
-        prepare();
-        old_req = build_request(0, "STALE_ORIGINAL");
-        ocp_req = build_request(1, "STALE_OCP_BYPASS");
-        arm_scenario(4);
-        execute_request(old_req, 1, svt_usb_transfer::SETUP_STAGE, "STALE_ORIGINAL");
-        wait_state(STATE_HELD);
-        mixed_checker.wait_evidence(0, 0, TRANSFER_TIMEOUT);
+        ocp_setup_do_initialize_and_check_capabilities();
+        old_req = ocp_setup_configure_request(0, "STALE_ORIGINAL");
+        ocp_req = ocp_setup_configure_request(1, "STALE_OCP_BYPASS");
+        ocp_setup_arm_scenario(4);
+        ocp_setup_do_request_and_check_result(old_req, 1, svt_usb_transfer::SETUP_STAGE, "STALE_ORIGINAL");
+        ocp_setup_check_mcu_state(STATE_HELD);
+        mixed_checker.ocp_supersession_wait_evidence(0, 0, TRANSFER_TIMEOUT);
         fork
-            execute_request(ocp_req, 0, svt_usb_transfer::SETUP_STAGE, "STALE_OCP_BYPASS");
+            ocp_setup_do_request_and_check_result(ocp_req, 0, svt_usb_transfer::SETUP_STAGE, "STALE_OCP_BYPASS");
             begin
-                mixed_checker.wait_evidence(1, 0, TRANSFER_TIMEOUT);
+                mixed_checker.ocp_supersession_wait_evidence(1, 0, TRANSFER_TIMEOUT);
                 // Publish the obsolete firmware response only after the new
                 // OCP SETUP is externally ACKed. No SRAM inspection is used.
-                command(CMD_STALE);
-                wait_state(STATE_STALE);
+                ocp_setup_issue_mcu_command(CMD_STALE);
+                ocp_setup_check_mcu_state(STATE_STALE);
             end
         join
         transfers_issued++;
-        check_request(0, old_req, 0, 0, 0);
-        check_request(1, ocp_req, 1, 1, 1);
-        mixed_checker.end_window(2);
-        mixed_checker.credit_stale(old_bytes, new_bytes);
+        ocp_setup_check_request(0, old_req, 0, 0, 0);
+        ocp_setup_check_request(1, ocp_req, 1, 1, 1);
+        mixed_checker.ocp_supersession_check_window(2);
+        mixed_checker.ocp_supersession_check_stale_coverage(old_bytes, new_bytes);
 
-        probe_req = build_request(0, "STALE_EXPOSURE");
-        arm_scenario(5);
+        probe_req = ocp_setup_configure_request(0, "STALE_EXPOSURE");
+        ocp_setup_arm_scenario(5);
         fork
-            execute_request(probe_req, 0, svt_usb_transfer::DATA_STAGE, "STALE_EXPOSURE");
-            release_legacy(0, 1);
+            ocp_setup_do_request_and_check_result(probe_req, 0, svt_usb_transfer::DATA_STAGE, "STALE_EXPOSURE");
+            ocp_setup_check_and_release_legacy(0, 1);
         join
         // Premature clear deliberately exposes the obsolete signature. Its
         // exact on-wire payload, not a publication snapshot, proves exposure.
-        check_request(0, probe_req, 0, 1, 1, 1);
-        mixed_checker.end_window(1);
-        mixed_checker.credit_stale(old_bytes, new_bytes);
+        ocp_setup_check_request(0, probe_req, 0, 1, 1, 1);
+        mixed_checker.ocp_supersession_check_window(1);
+        mixed_checker.ocp_supersession_check_stale_coverage(old_bytes, new_bytes);
 
-        fresh_req = build_request(0, "FRESH_AFTER_STALE");
-        arm_scenario(6);
+        fresh_req = ocp_setup_configure_request(0, "FRESH_AFTER_STALE");
+        ocp_setup_arm_scenario(6);
         fork
-            execute_request(fresh_req, 0, svt_usb_transfer::DATA_STAGE, "FRESH_AFTER_STALE");
-            release_legacy(0);
+            ocp_setup_do_request_and_check_result(fresh_req, 0, svt_usb_transfer::DATA_STAGE, "FRESH_AFTER_STALE");
+            ocp_setup_check_and_release_legacy(0);
         join
-        check_request(0, fresh_req, 0, 1, 1);
-        mixed_checker.end_window(1);
-        mixed_checker.credit_stale(old_bytes, new_bytes);
-        finish_stimulus();
+        ocp_setup_check_request(0, fresh_req, 0, 1, 1);
+        mixed_checker.ocp_supersession_check_window(1);
+        mixed_checker.ocp_supersession_check_stale_coverage(old_bytes, new_bytes);
+        ocp_setup_publish_transfer_count();
     endtask
 endclass
 `endif

@@ -33,12 +33,12 @@ class caliptra_ss_usb_supersession_expected_report_catcher extends uvm_report_ca
         super.new(name);
     endfunction
 
-    function void arm(input logic [15:0] gen, input svt_usb_transfer transfer,
+    function void ocp_supersession_configure_report_window(input logic [15:0] gen, input svt_usb_transfer transfer,
                       input svt_usb_packet packet, input realtime data_end,
                       input time response_timeout);
         if ((link_reporter == null) || (sink == null) ||
             (transfer == null) || (packet == null) || installed || armed ||
-            !sink.characterizing_generation(gen) ||
+            !sink.ocp_supersession_check_characterizing_generation(gen) ||
             (transfer.device_address !== sink.address) ||
             (transfer.endpoint_number !== 0) ||
             (transfer.xfer_type !== svt_usb_transfer::CONTROL_TRANSFER) ||
@@ -62,8 +62,8 @@ class caliptra_ss_usb_supersession_expected_report_catcher extends uvm_report_ca
             return THROW;
         if ((sink == null) || (bound_packet == null) ||
             (bound_transfer == null) ||
-            !sink.characterizing_generation(generation) ||
-            !sink.badcrc_silence_context(bound_transfer, bound_packet) ||
+            !sink.ocp_supersession_check_characterizing_generation(generation) ||
+            !sink.ocp_supersession_check_badcrc_silence_context(bound_transfer, bound_packet) ||
             ($realtime <= data_end_at) || ($realtime > expires_at))
             return THROW;
         matched_reports++;
@@ -79,7 +79,7 @@ class caliptra_ss_usb_supersession_expected_report_catcher extends uvm_report_ca
         return THROW;
     endfunction
 
-    function void close();
+    function void ocp_supersession_configure_report_retirement();
         armed = 0;
         if (installed) uvm_report_cb::delete(link_reporter, this);
         installed = 0;

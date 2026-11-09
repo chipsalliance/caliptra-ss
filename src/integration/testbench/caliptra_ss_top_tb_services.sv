@@ -244,9 +244,8 @@ import uvm_pkg::*;
     // was read by no checker and the UVM verdict still came out as
     // TESTCASE PASSED. This checker consumes the same decoded stream and
     // turns any console line containing FAIL into a UVM_ERROR, which is what
-    // caliptra_ss_usb_base_test::final_phase counts. Inert unless
-    // +mcu_console_fail_check is on the simv command line. See
-    // caliptra_ss_mcu_console_fail_checker.sv for the full rationale.
+    // caliptra_ss_usb_base_test::final_phase counts. It is enabled by default.
+    // it can be controlled via +mcu_console_fail_check
     // ---------------------------------------------------------------------
     caliptra_ss_mcu_console_fail_checker i_caliptra_ss_mcu_console_fail_checker (
         .clk        (clk),

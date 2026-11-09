@@ -25,7 +25,7 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         super.new(name);
     endfunction
 
-    protected task characterize(input bit shorten);
+    protected task ocp_malformed_do_injection_and_check_recovery(input bit shorten);
         svt_usb_transfer malformed_req, recovery_req;
         svt_usb_packet active_packets[$];
         int unsigned saved_timeout, saved_error, saved_nak, saved_stall;
@@ -42,14 +42,14 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak = 0;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_stall = 0;
         host_agent_h.reconfigure(usb_cfg);
-        malformed_req = build_request(0, label);
+        malformed_req = ocp_setup_configure_request(0, label);
         scenario_id = shorten ? 7 : 8;
         scenario_generation = command_generation + 1;
-        command(CMD_ARM, scenario_id);
-        wait_state(STATE_READY);
-        mixed_checker.begin_characterization(scenario_generation, dev_addr_v);
-        fault_callback.arm(scenario_generation, dev_addr_v,
-            mixed_checker.setup_line(malformed_req), shorten);
+        ocp_setup_issue_mcu_command(CMD_ARM, scenario_id);
+        ocp_setup_check_mcu_state(STATE_READY);
+        mixed_checker.ocp_supersession_configure_characterization(scenario_generation, dev_addr_v);
+        fault_callback.ocp_supersession_configure_fault_window(scenario_generation, dev_addr_v,
+            mixed_checker.ocp_supersession_get_setup_line(malformed_req), shorten);
         retired = 0;
         fork : bounded_characterization
             begin
@@ -67,11 +67,11 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
                         // prediction or a transient protocol notification.
                         fault_callback.actual_packet.end_event.wait_on();
                         packet_end = $realtime;
-                        fault_callback.close_tx_capture();
-                        mixed_checker.note_fault_transmitted(fault_callback.actual_transfer,
+                        fault_callback.ocp_supersession_configure_tx_capture_completion();
+                        mixed_checker.ocp_supersession_check_fault_transmitted(fault_callback.actual_transfer,
                             fault_callback.actual_packet, packet_end);
                         if (!shorten)
-                            mixed_checker.expected_report.arm(scenario_generation,
+                            mixed_checker.expected_report.ocp_supersession_configure_report_window(scenario_generation,
                                 fault_callback.actual_transfer, fault_callback.actual_packet,
                                 packet_end, TRANSFER_TIMEOUT);
                         // transaction_ended is the end of the transaction loop,
@@ -95,13 +95,13 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         disable bounded_characterization;
         // Never allow an expected-report handler to survive into recovery,
         // retry reconfiguration, firmware commands or the timeout/fatal path.
-        mixed_checker.expected_report.close();
+        mixed_checker.expected_report.ocp_supersession_configure_report_retirement();
         if (!retired)
             `uvm_fatal("SUPERSESSION_MALFORMED", $sformatf(
                 "%s did not retire: bindings=%0d injection=%0d setupEnd=%b transferEnd=%b",
                 label, fault_callback.bindings, fault_callback.injections,
                 fault_callback.setup_ended, fault_callback.transfer_finished))
-        mixed_checker.end_characterization(fault_callback.bindings,
+        mixed_checker.ocp_supersession_check_characterization(fault_callback.bindings,
             fault_callback.injections, fault_callback.tx_bytes,
             fault_callback.tx_sop_seen && fault_callback.tx_eop_seen &&
             fault_callback.tx_capture_closed &&
@@ -112,30 +112,30 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
             fault_callback.tx_sop_seen, fault_callback.tx_eop_seen,
             fault_callback.tx_capture_closed, fault_callback.dropped_descriptors,
             fault_callback.tx_bytes), UVM_NONE)
-        fault_callback.disarm();
+        fault_callback.ocp_supersession_configure_fault_retirement();
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_timeout = saved_timeout;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_error = saved_error;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak = saved_nak;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_stall = saved_stall;
         host_agent_h.reconfigure(usb_cfg);
 
-        recovery_req = build_request(0, {label, "_VALID_RECOVERY"});
-        arm_scenario(shorten ? 9 : 10);
+        recovery_req = ocp_setup_configure_request(0, {label, "_VALID_RECOVERY"});
+        ocp_setup_arm_scenario(shorten ? 9 : 10);
         fork
-            execute_request(recovery_req, 0, svt_usb_transfer::DATA_STAGE,
-                            {label, "_VALID_RECOVERY"});
-            release_legacy(0);
+            ocp_setup_do_request_and_check_result(recovery_req, 0, svt_usb_transfer::DATA_STAGE,
+                                                 {label, "_VALID_RECOVERY"});
+            ocp_setup_check_and_release_legacy(0);
         join
-        check_request(0, recovery_req, 0, 1, 1);
-        mixed_checker.end_window(1);
-        mixed_checker.credit_recovery();
+        ocp_setup_check_request(0, recovery_req, 0, 1, 1);
+        mixed_checker.ocp_supersession_check_window(1);
+        mixed_checker.ocp_supersession_check_recovery_coverage();
     endtask
 
     virtual task body();
-        prepare();
-        characterize(1);
-        characterize(0);
-        finish_stimulus();
+        ocp_setup_do_initialize_and_check_capabilities();
+        ocp_malformed_do_injection_and_check_recovery(1);
+        ocp_malformed_do_injection_and_check_recovery(0);
+        ocp_setup_publish_transfer_count();
     endtask
 endclass
 `endif

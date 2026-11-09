@@ -32,6 +32,8 @@ module fuse_ctrl_filter
     // Sticky (cold-reset only) indication from MCI that the MCU ROM patch SRAM
     // was populated this power cycle. Blocks UDS/FE provisioning.
     input wire mcu_rom_patch_active_i,
+    // OTP byte address held in DIRECT_ACCESS_ADDRESS, i.e. the address the DAI operates on.
+    input logic [OtpByteAddrWidth-1:0] dai_addr_i,
 
     input logic [31:0] cptra_ss_strap_mcu_lsu_axi_user_i,
     input logic [31:0] cptra_ss_strap_cptra_axi_user_i,
@@ -53,9 +55,9 @@ logic first_write_addr, second_write_addr, first_read_addr, second_read_addr, wr
 logic caliptra_secret_access;
 logic [FC_TABLE_NUM_RANGES-1:0] wr_allowed_vec;
 logic wr_req_allowed;
-logic [31:0] latched_fuse_addr;
+logic [31:0] fuse_addr;
 logic [31:0]  req_axi_user_id, latched_data_id0, latched_data_id1, latched_addr_id, latched_cmd_id;
-logic latch_addr, latch_data_id0, latch_data_id1, latch_addr_id, latch_cmd_id, clear_records;
+logic latch_data_id0, latch_data_id1, latch_addr_id, latch_cmd_id, clear_records;
 logic discard_fuse_write;
 
 
@@ -68,33 +70,29 @@ assign req_axi_user_id = core_axi_wr_req.awuser;
 // OR-reduce all the individual allowed bits to obtain the overall write allowed signal.
 assign wr_req_allowed = |wr_allowed_vec;
 
+// The access rules are evaluated on the address the DAI will execute the command on.
+assign fuse_addr              = 32'(dai_addr_i);
+assign caliptra_secret_access = (fuse_addr >= CALIPTRA_SECRET_ACCESS_LOWER_ADDR) &&
+                                (fuse_addr <= CALIPTRA_SECRET_ACCESS_UPPER_ADDR);
+
 always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
         table_fsm_current_st    <= RESET_ST;
-        latched_fuse_addr       <= '0;
         latched_data_id0        <= '0;
         latched_data_id1        <= '0;
         latched_addr_id         <= '0;
         latched_cmd_id          <= '0;
         discard_fuse_write_o    <= '0;
-        caliptra_secret_access  <= '0;
     end else begin
         table_fsm_current_st <= table_fsm_next_st;
         discard_fuse_write_o <= discard_fuse_write;
         // If clear_records is asserted, reset all latched registers
         if (clear_records) begin
-            latched_fuse_addr       <= '0;
             latched_data_id0        <= '0;
             latched_data_id1        <= '0;
             latched_addr_id         <= '0;
             latched_cmd_id          <= '0;
-            caliptra_secret_access  <= '0;
         end else begin
-            if (latch_addr) begin
-                latched_fuse_addr <= core_axi_wr_req.wdata;
-                caliptra_secret_access  <= (core_axi_wr_req.wdata >= CALIPTRA_SECRET_ACCESS_LOWER_ADDR && core_axi_wr_req.wdata <= CALIPTRA_SECRET_ACCESS_UPPER_ADDR) ? 1'b1 : 1'b0;
-            end
-
             if (latch_data_id0) 
                 latched_data_id0 <= req_axi_user_id;
 
@@ -115,7 +113,7 @@ end
 
 //---------------------------------------------------------------------
 // Combinational Block: Generate the allowed vector based on the access control table.
-// For each entry in the table, check if the latched fuse address is within the allowed range
+// For each entry in the table, check if the fuse address is within the allowed range
 // and if the AXI user ID matches the allowed ID. Each bit in wr_allowed_vec corresponds to an entry.
 logic [FC_TABLE_NUM_RANGES-1:0][31:0] AXI_user_id_arr;
 always_comb begin
@@ -124,8 +122,8 @@ always_comb begin
     AXI_user_id_arr[1] = cptra_ss_strap_mcu_lsu_axi_user_i;
     AXI_user_id_arr[2] = cptra_ss_strap_mcu_lsu_axi_user_i;
     for (int i = 0; i < FC_TABLE_NUM_RANGES; i = i + 1) begin : gen_wr_allowed
-        wr_allowed_vec[i] = ( (latched_fuse_addr >= access_control_table[i].lower_addr)
-                             && (latched_fuse_addr <= access_control_table[i].upper_addr)
+        wr_allowed_vec[i] = ( (fuse_addr >= access_control_table[i].lower_addr)
+                             && (fuse_addr <= access_control_table[i].upper_addr)
                              && (latched_cmd_id == AXI_user_id_arr[i]));
     end
 end
@@ -133,7 +131,6 @@ end
 always_comb begin
     case (table_fsm_current_st)
         RESET_ST: begin
-            latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
             latch_addr_id     = 1'b0;
@@ -151,7 +148,6 @@ always_comb begin
         // If a valid address is detected, latch the corresponding data ID and transition to WDATA_ADDR_ST.
         // Otherwise, remain in IDLE.
         IDLE_ST: begin            
-            latch_addr          = 1'b0;
             discard_fuse_write  = 1'b0;
             clear_records       = 1'b0;
             if (first_write_addr) begin
@@ -190,7 +186,6 @@ always_comb begin
         // WDATA_ADDR_ST: Wait for a valid write event that carries the data.
         // Remain in this state until the write event is detected, then move to WDATA_ST.
         WDATA_ADDR_ST: begin
-            latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
             latch_addr_id     = 1'b0;
@@ -208,7 +203,6 @@ always_comb begin
         // If a table check is triggered, latch the address ID and transition to the fuse address phase.
         // Otherwise, if additional data writes occur due to the granulartiy, latch the corresponding data ID.
         WDATA_ST: begin
-            latch_addr        = 1'b0;
             clear_records     = 1'b0;
             discard_fuse_write= 1'b0;
             if (trigger_table_check) begin
@@ -248,7 +242,6 @@ always_comb begin
         // If a table check is triggered, latch the address ID and transition to the fuse address phase.
         // Otherwise, if additional data writes occur due to the granulartiy, latch the corresponding data ID.
         RDATA_ST: begin
-            latch_addr        = 1'b0;
             clear_records     = 1'b0;
             discard_fuse_write= 1'b0;
             if (trigger_table_check) begin
@@ -285,7 +278,7 @@ always_comb begin
         end
         //-------------------------------------------------------------------------
         // FUSE_ADDR_AXI_ADDR_ST: Process the fuse address write phase.
-        // When a write event is detected, latch the fuse address and transition to FUSE_ADDR_AXI_WR_ST.
+        // When the address write data is accepted, transition to FUSE_ADDR_AXI_WR_ST.
         FUSE_ADDR_AXI_ADDR_ST: begin
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
@@ -295,17 +288,14 @@ always_comb begin
             discard_fuse_write= 1'b0;
             if (write_event) begin
                 table_fsm_next_st = FUSE_ADDR_AXI_WR_ST;
-                latch_addr        = 1'b1;
             end else begin
                 table_fsm_next_st = FUSE_ADDR_AXI_ADDR_ST;
-                latch_addr        = 1'b0;
             end
         end         
         //-------------------------------------------------------------------------
         // FUSE_ADDR_AXI_WR_ST: Wait for the command address phase.
         // If the partition command address is detected, latch the command ID and move to FUSE_CMD_AXI_ADDR_ST.       
         FUSE_ADDR_AXI_WR_ST: begin
-            latch_addr        = 1'b0;
             clear_records     = 1'b0;
             discard_fuse_write= 1'b0;
             if (trigger_table_check) begin
@@ -345,7 +335,6 @@ always_comb begin
         // Check if the fuse write is allowed (using both the access control table and a consistency check
         // on all latched AXI IDs). If not allowed, assert discard_fuse_write and move to discard state.   
         FUSE_CMD_AXI_ADDR_ST: begin
-            latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
             latch_addr_id     = 1'b0;
@@ -414,7 +403,6 @@ always_comb begin
         // DISCARD_FUSE_CMD_AXI_WR_ST: Remain in discard state until the external
         // signal indicates that the fuse write has been discarded.
         DISCARD_FUSE_CMD_AXI_WR_ST: begin
-            latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
             latch_addr_id     = 1'b0;
@@ -430,7 +418,6 @@ always_comb begin
         //-------------------------------------------------------------------------
         // Default case: Ensure safe signal assignments and return to IDLE.
         default: begin
-            latch_addr        = 1'b0;
             latch_data_id0    = 1'b0;
             latch_data_id1    = 1'b0;
             latch_addr_id     = 1'b0;

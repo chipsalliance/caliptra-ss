@@ -372,7 +372,7 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_cmd.command.value;
         load_next_c = '0;
-        if(decoded_reg_strb.mbox_cmd && decoded_req_is_wr && hwif_in.valid_requester_req) begin // SW write
+        if(decoded_reg_strb.mbox_cmd && decoded_req_is_wr && hwif_in.valid_sram_owner_req) begin // SW write
             next_c = (field_storage.mbox_cmd.command.value & ~decoded_wr_biten[31:0]) | (decoded_wr_data[31:0] & decoded_wr_biten[31:0]);
             load_next_c = '1;
         end else if(hwif_in.mbox_cmd.command.hwclr) begin // HW Clear
@@ -419,7 +419,7 @@ module mcu_mbox_csr (
         automatic logic load_next_c;
         next_c = field_storage.mbox_execute.execute.value;
         load_next_c = '0;
-        if(decoded_reg_strb.mbox_execute && decoded_req_is_wr && hwif_in.valid_requester_req) begin // SW write
+        if(decoded_reg_strb.mbox_execute && decoded_req_is_wr && hwif_in.valid_sram_owner_req) begin // SW write
             next_c = (field_storage.mbox_execute.execute.value & ~decoded_wr_biten[0:0]) | (decoded_wr_data[0:0] & decoded_wr_biten[0:0]);
             load_next_c = '1;
         end

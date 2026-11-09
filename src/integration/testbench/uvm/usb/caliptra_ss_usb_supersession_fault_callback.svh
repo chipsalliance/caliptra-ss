@@ -35,7 +35,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
         super.new(name);
     endfunction
 
-    function void arm(input logic [15:0] gen, input logic [6:0] addr,
+    function void ocp_supersession_configure_fault_window(input logic [15:0] gen, input logic [6:0] addr,
                       input logic [63:0] setup_bytes, input bit shorten);
         if (armed || (sink == null))
             `uvm_fatal("SUPERSESSION_FAULT", "Overlapping fault window or missing boundary checker")
@@ -65,7 +65,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
         if (!armed || (transfer == null)) return;
         if ((transfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER) ||
             (transfer.endpoint_number != 0) || (transfer.device_address != address) ||
-            (caliptra_ss_usb_supersession_checker::setup_line(transfer) !== expected_setup))
+            (caliptra_ss_usb_supersession_checker::ocp_supersession_get_setup_line(transfer) !== expected_setup))
             `uvm_fatal("SUPERSESSION_FAULT", "Unexpected transfer in serialized fault-binding window")
         if (actual_transfer != null)
             `uvm_fatal("SUPERSESSION_FAULT", "More than one actual transfer started in fault window")
@@ -143,7 +143,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
                 svt_usb_packet_exception_list::type_id::create("setup_exception_list");
         packet.exception_list.add_exception(exception_item);
         actual_packet = packet;
-        sink.bind_fault(generation, actual_transfer, packet, short_setup);
+        sink.ocp_supersession_configure_fault(generation, actual_transfer, packet, short_setup);
         setup_transaction_ix = transaction_ix;
         fired = 1;
         injections++;
@@ -152,7 +152,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
             generation, short_setup, transaction_ix, packet_ix), UVM_NONE)
     endfunction
 
-    function void observe_tx_data(input svt_usb_data data, input bit drop);
+    function void ocp_supersession_check_tx_data(input svt_usb_data data, input bit drop);
         if (!armed || !fired) return;
         tx_items++;
         if ((data == null) || drop)
@@ -177,7 +177,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
         if (data.is_eop) tx_eop_seen = 1;
     endfunction
 
-    function void close_tx_capture();
+    function void ocp_supersession_configure_tx_capture_completion();
         if (!armed || !fired || (actual_packet == null) || tx_capture_closed)
             `uvm_fatal("SUPERSESSION_FAULT", "Invalid serialized TX capture completion")
         tx_capture_closed = 1;
@@ -195,7 +195,7 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
             transfer_finished = 1;
     endfunction
 
-    function void disarm();
+    function void ocp_supersession_configure_fault_retirement();
         if (!setup_ended || !transfer_finished)
             `uvm_fatal("SUPERSESSION_FAULT", "Fault guard removed before transaction/transfer retirement")
         armed = 0;
@@ -216,7 +216,7 @@ class caliptra_ss_usb_supersession_tx_callback extends svt_usb_link_callback;
         svt_usb_link component, int chan_id, svt_usb_data data, ref bit drop);
         if (source == null)
             `uvm_fatal("SUPERSESSION_FAULT", "Missing serialized-byte observation context")
-        source.observe_tx_data(data, drop);
+        source.ocp_supersession_check_tx_data(data, drop);
     endfunction
 endclass
 `endif

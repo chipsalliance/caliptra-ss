@@ -22,6 +22,7 @@
 +incdir+${AVERY_AXI}/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/usb/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/usb/tb
++incdir+${CALIPTRA_SS_ROOT}/src/usb/tb/agents/usb_axi_user_filter
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/usb_svt/latest/sverilog/include
 +incdir+${DESIGNWARE_HOME_USB}/vip/svt/mphy_svt/latest
@@ -156,12 +157,16 @@ ${AVERY_AXI}/src.axi/aaxi_pkg_test.sv
 ${AVERY_AXI}/src.axi/aaxi_intf.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/../integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_ral_config_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_combo_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_csr_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev0_mem_ral_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
-${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_ctrl_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_axi_manager_connection.sv
 ${CALIPTRA_SS_ROOT}/src/usb/tb/usb_top_tb.sv

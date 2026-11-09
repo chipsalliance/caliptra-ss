@@ -36,12 +36,12 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
         super.new(name);
     endfunction
 
-    function int status_completions();
+    function int ocp_supersession_get_status_completions();
         return status_acks + status_nyets;
     endfunction
 
     // Classification uses observed request bytes, not a sequence's label.
-    function bit is_ocp();
+    function bit ocp_supersession_check_is_ocp();
         return (setup_bytes[7:0] === 8'hA1) &&
                (setup_bytes[15:8] === OCP_BREQUEST_XFER) &&
                (setup_bytes[31:16] === {8'h00, OCP_CMD_PROT_CAP});

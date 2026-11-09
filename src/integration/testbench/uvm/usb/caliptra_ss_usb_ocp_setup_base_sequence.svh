@@ -49,7 +49,7 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         super.new(name);
     endfunction
 
-    protected task prepare();
+    protected task ocp_setup_do_initialize_and_check_capabilities();
         bit [7:0] runtime_capabilities[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
         if (!uvm_config_db#(caliptra_ss_usb_supersession_checker)::get(
@@ -61,14 +61,14 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         if (!uvm_config_db#(virtual caliptra_ss_usb_legacy_ep0_observer_if)::get(
             null, "uvm_test_top.env", "usb_legacy_ep0_observer_if", observer_vif))
             `uvm_fatal("SETUP_SUPERSESSION", "Firmware coordination interface not configured")
-        initialize_ocp_transport();
-        ocp_try_read(OCP_CMD_PROT_CAP, runtime_capabilities, result,
-                     "SUPERSESSION_CAPABILITIES");
+        ocp_do_initialize_and_check_transport();
+        ocp_do_read(OCP_CMD_PROT_CAP, runtime_capabilities, result,
+                    "SUPERSESSION_CAPABILITIES", .check_success(0));
         if (result != OCP_XFER_SUCCESS)
             `uvm_fatal("SETUP_SUPERSESSION", $sformatf(
                 "PROT_CAP discovery did not complete (%s); cannot establish a response baseline.",
                 result.name()))
-        check_prot_cap_response(runtime_capabilities, "SUPERSESSION_CAPABILITIES");
+        ocp_check_prot_cap_response(runtime_capabilities, "SUPERSESSION_CAPABILITIES");
         if (runtime_capabilities.size() < OCP_SPEC_LEN_PROT_CAP)
             `uvm_fatal("SETUP_SUPERSESSION",
                 "PROT_CAP response is too short to establish a response baseline.")
@@ -86,8 +86,9 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         host_agent_h.reconfigure(usb_cfg);
     endtask
 
-    protected task command(input logic [3:0] opcode,
-                           input logic [3:0] argument = 0);
+    protected task ocp_setup_issue_mcu_command(
+        input logic [3:0] opcode,
+        input logic [3:0] argument = 0);
         bit acknowledged;
         if (command_generation == 16'hFFFF)
             `uvm_fatal("SETUP_SUPERSESSION", "Firmware command generation exhausted")
@@ -99,7 +100,7 @@ class caliptra_ss_usb_ocp_setup_base_sequence
                 "MCU command op=%h gen=%0d timed out", opcode, command_generation))
     endtask
 
-    protected task wait_state(input logic [3:0] state);
+    protected task ocp_setup_check_mcu_state(input logic [3:0] state);
         bit found;
         logic [31:0] expected;
         expected = {8'hE1, state, scenario_id, scenario_generation};
@@ -118,24 +119,27 @@ class caliptra_ss_usb_ocp_setup_base_sequence
                 scenario_id, scenario_generation))
     endtask
 
-    protected task arm_scenario(input logic [3:0] id);
+    protected task ocp_setup_arm_scenario(input logic [3:0] id);
         scenario_id = id;
         scenario_generation = command_generation + 1;
-        command(CMD_ARM, id);
-        wait_state(STATE_READY);
-        mixed_checker.begin_window(scenario_generation, dev_addr_v);
+        ocp_setup_issue_mcu_command(CMD_ARM, id);
+        ocp_setup_check_mcu_state(STATE_READY);
+        mixed_checker.ocp_supersession_configure_window(scenario_generation, dev_addr_v);
     endtask
 
-    protected task release_legacy(input int wire_index, input bit expose = 0);
-        wait_state(STATE_HELD);
-        mixed_checker.wait_evidence(wire_index, 1, TRANSFER_TIMEOUT);
-        mixed_checker.note_release(wire_index);
-        command(expose ? CMD_EXPOSE : CMD_RELEASE);
-        wait_state(STATE_RELEASED);
+    protected task ocp_setup_check_and_release_legacy(
+        input int wire_index,
+        input bit expose = 0);
+        ocp_setup_check_mcu_state(STATE_HELD);
+        mixed_checker.ocp_supersession_wait_evidence(wire_index, 1, TRANSFER_TIMEOUT);
+        mixed_checker.ocp_supersession_check_release(wire_index);
+        ocp_setup_issue_mcu_command(expose ? CMD_EXPOSE : CMD_RELEASE);
+        ocp_setup_check_mcu_state(STATE_RELEASED);
     endtask
 
-    protected function svt_usb_transfer build_request(input bit ocp,
-                                                      input string label);
+    protected function svt_usb_transfer ocp_setup_configure_request(
+        input bit ocp,
+        input string label);
         svt_usb_transfer req;
         int unsigned length;
         int iface;
@@ -143,7 +147,7 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         req.cfg = usb_cfg;
         req.fix_anchors(0, 0, 0);
         length = ocp ? wMaxRdTransferSize : 18;
-        iface = get_iface_num();
+        iface = ocp_get_iface_num();
         // USB 2.0 9.4.3; OCP Recovery 1.1 8.5.1 read encapsulation.
         if (!req.randomize() with {
             xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
@@ -165,9 +169,11 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         return req;
     endfunction
 
-    protected task execute_request(input svt_usb_transfer req,
+    protected task ocp_setup_do_request_and_check_result(
+        input svt_usb_transfer req,
         input bit interrupt_request,
-        input svt_usb_transfer::xfer_stage_enum completed_stage, input string label);
+        input svt_usb_transfer::xfer_stage_enum completed_stage,
+        input string label);
         bit retired, bounded;
         retired = 0;
         bounded = 0;
@@ -203,20 +209,24 @@ class caliptra_ss_usb_ocp_setup_base_sequence
             `uvm_fatal("SETUP_SUPERSESSION", $sformatf("%s did not retire", label))
         end
         if (interrupt_request) begin
-            if (get_xfer_result(req) != OCP_XFER_ABORTED)
+            if (ocp_get_xfer_result(req) != OCP_XFER_ABORTED)
                 `uvm_error("SETUP_SUPERSESSION", $sformatf("%s was not interrupted", label))
-        end else if (get_xfer_result(req) != OCP_XFER_SUCCESS)
+        end else if (ocp_get_xfer_result(req) != OCP_XFER_SUCCESS)
             `uvm_error("SETUP_SUPERSESSION", $sformatf("%s did not complete", label))
     endtask
 
-    protected task check_request(input int index, input svt_usb_transfer req,
-        input bit ocp, input bit complete, input bit data_completed,
+    protected task ocp_setup_check_request(
+        input int index,
+        input svt_usb_transfer req,
+        input bit ocp,
+        input bit complete,
+        input bit data_completed,
         input bit stale = 0);
-        mixed_checker.check_request(index, req, complete, data_completed,
+        mixed_checker.ocp_supersession_check_request(index, req, complete, data_completed,
             ocp ? ocp_bytes : (stale ? old_bytes : new_bytes), TRANSFER_TIMEOUT);
     endtask
 
-    protected function void finish_stimulus();
+    protected function void ocp_setup_publish_transfer_count();
         uvm_config_db#(int unsigned)::set(
             null, "", "ocp_transfers_issued", transfers_issued);
     endfunction

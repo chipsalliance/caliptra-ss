@@ -23,12 +23,12 @@ interface caliptra_ss_usb_supersession_csr_if(input logic [31:0] axi_user);
     `include "uvm_macros.svh"
     bit enabled = 0;
 
-    function automatic logic [31:0] csr_address(input bit setup_debug);
+    function automatic logic [31:0] ocp_supersession_get_csr_address(input bit setup_debug);
         return setup_debug ? `SOC_USB_COMBO_RECOVERY_CALIPTRA_SETUP_DEBUG :
                              `SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS;
     endfunction
 
-    function automatic void check_map();
+    function automatic void ocp_supersession_check_csr_map();
         if ((`SOC_USB_COMBO_RECOVERY_CALIPTRA_SETUP_DEBUG !==
              (`SOC_USB_COMBO_BASE_ADDR + 32'hA08)) ||
             (`SOC_USB_COMBO_RECOVERY_CALIPTRA_STATUS !==
@@ -42,7 +42,7 @@ interface caliptra_ss_usb_supersession_csr_if(input logic [31:0] axi_user);
             `uvm_fatal("SUPERSESSION_DEBUG_CSR", "Generated addresses/fields disagree with the diagnostic register contract")
     endfunction
 
-    task automatic access(input bit setup_debug, input bit write_access,
+    task automatic ocp_supersession_do_csr_access(input bit setup_debug, input bit write_access,
                           input logic [31:0] write_data,
                           output logic [31:0] read_data,
                           output logic [1:0] response);
@@ -52,10 +52,10 @@ interface caliptra_ss_usb_supersession_csr_if(input logic [31:0] axi_user);
         read_data = 'x;
         if (write_access)
             caliptra_ss_top_tb.u_caliptra_ss_top_tb_soc_bfm.bfm_axi_write_single_response(
-                csr_address(setup_debug), axi_user, write_data, resp);
+                ocp_supersession_get_csr_address(setup_debug), axi_user, write_data, resp);
         else
             caliptra_ss_top_tb.u_caliptra_ss_top_tb_soc_bfm.bfm_axi_read_single_response(
-                csr_address(setup_debug), axi_user, read_data, resp);
+                ocp_supersession_get_csr_address(setup_debug), axi_user, read_data, resp);
         response = resp;
     endtask
 endinterface
