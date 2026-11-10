@@ -59,6 +59,7 @@ class usb_ocp_dev1_epn_fs_overlap_seq extends usb_ocp_dev1_epn_overlap_seq;
       `uvm_fatal("OCP_FS_CANARY", "FS NYET changed private control acceptance")
 
     epn_probe = usb_ocp_base_epn_model::type_id::create("fs_epn_probe");
+    epn_probe.payload_lengths = '{'{31,29},'{31,29}};
     epn_probe.device = 2;
     epn_probe.full_speed = 1;
     epn_probe.discovery.full_speed = 1;
@@ -76,7 +77,8 @@ class usb_ocp_dev1_epn_fs_overlap_seq extends usb_ocp_dev1_epn_overlap_seq;
     request.address = epn_probe.address;
     request.endpoint = 1;
     data.pid = svt_usb_packet::DATA0;
-    data.bytes = usb_ocp_base_epn_profile::ocp_prepare_stream(USB_DIRECTION_OUT,0);
+    data.bytes = usb_ocp_base_epn_profile::ocp_prepare_stream(
+      USB_DIRECTION_OUT,0,epn_probe.payload_lengths[0][0]);
     epn_probe.ocp_observe_packet(request,probe_control);
     epn_probe.ocp_observe_packet(data,probe_control);
     epn_probe.ocp_observe_packet(nyet,probe_control);

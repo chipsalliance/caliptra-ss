@@ -216,7 +216,8 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
       direction = dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT;
       buffer_address = usb_ocp_base_epn_profile::ocp_get_buffer(direction);
       if (offset >= buffer_address && offset < buffer_address+64) begin
-        expected = usb_ocp_base_epn_profile::ocp_prepare_stream(direction,phase,ledger.data_tag);
+        expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
+          direction,phase,ledger.payload_lengths[dir][phase],ledger.data_tag);
         byte_offset = int'(offset-buffer_address);
         if (phase > 1 || byte_offset != sram_bytes[dir] ||
             byte_offset >= expected.size() || item.response_ok !== 1 ||
@@ -234,7 +235,8 @@ class usb_ocp_fifo_backpressure_epn_checker extends usb_ocp_scoreboard;
         if (actual_entry.active !== 1) continue;
         if (phase > 1)
           `uvm_fatal("OCP_FIFO_EPN_SRAM", "Extra EPN arm")
-        expected = usb_ocp_base_epn_profile::ocp_prepare_stream(direction,phase,ledger.data_tag);
+        expected = usb_ocp_base_epn_profile::ocp_prepare_stream(
+          direction,phase,ledger.payload_lengths[dir][phase],ledger.data_tag);
         expected_entry = '0;
         expected_entry.active = 1;
         expected_entry.nbytes = 15'(expected.size());
