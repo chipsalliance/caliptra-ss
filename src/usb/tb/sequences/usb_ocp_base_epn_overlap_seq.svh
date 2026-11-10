@@ -42,7 +42,10 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     profile.device = epn_device;
     profile.full_speed = ocp_cfg.full_speed;
     profile.transfer_type = USB_TRANSFER_TYPE_INTERRUPT;
+    profile.payload_lengths = '{'{31,29},'{31,29}};
+    profile.payload_lengths_selected = 1;
     probe = usb_ocp_base_epn_model::type_id::create("nak_probe");
+    probe.payload_lengths = profile.payload_lengths;
     probe.full_speed = ocp_cfg.full_speed;
     probe.discovery.full_speed = ocp_cfg.full_speed;
     probe.device = epn_device;
@@ -96,6 +99,7 @@ class usb_ocp_base_epn_overlap_seq extends usb_ocp_bringup_seq;
     profile.full_speed = ocp_cfg.full_speed;
     // One type per run, one row. No flags or profile constants discover USB.
     profile.transfer_type = usb_ocp_base_epn_profile::ocp_prepare_selected_type();
+    profile.ocp_prepare_payload_lengths();
     if (scoreboard.negative_overlap || scoreboard.negative_replacement ||
         scoreboard.negative_abort_prefix)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "EP0-specific injection is unsupported by the EPN profile")
