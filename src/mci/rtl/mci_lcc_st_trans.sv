@@ -19,6 +19,7 @@ module mci_lcc_st_trans
     import mci_pkg::*;
     import lc_ctrl_state_pkg::*;
     import soc_ifc_pkg::*;
+    import caliptra_prim_mubi_pkg::*;
  (
     input logic clk_i,
     input logic rst_ni,
@@ -73,9 +74,9 @@ logic                                        MCU_ROM_zeroization_AND;
 assign otp_data_valid               = from_otp_to_lcc_program_i.valid;
 assign lc_otp_prog_req              = from_lcc_to_otp_program_i.req;
 assign lc_alive_state               = from_lcc_to_otp_program_i.state;
-assign SOC_DFT_EN_AND               = (  (|(ss_soc_dbg_unlock_level_i & ss_soc_dft_en_mask_reg0_1))
-                                       | (ss_dbg_manuf_enable_i & ss_soc_dft_en_mask_reg0_1[0])); // Manuf debug unlock has one debug level, unlike production debug unlock.
-assign SOC_HW_DEBUG_EN_AND          = |(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP_unlock_mask_reg0_1);
+assign SOC_DFT_EN_AND               = ((otp_static_state == LcStProd) & (|(ss_soc_dbg_unlock_level_i & ss_soc_dft_en_mask_reg0_1))) |
+                                      ((otp_static_state == LcStDev)  & ss_dbg_manuf_enable_i & ss_soc_dft_en_mask_reg0_1[0]); // Manuf debug unlock has one debug level, unlike production debug unlock.
+assign SOC_HW_DEBUG_EN_AND          = (otp_static_state == LcStProd) & (|(ss_soc_dbg_unlock_level_i & ss_soc_CLTAP_unlock_mask_reg0_1));
 assign CLPTR_PROD_DEBUG_UNLOCK_AND  = |(ss_soc_dbg_unlock_level_i & ss_soc_dbg_unlock_mask_reg0_1);
 assign lcc_valid_SCRAP_req          = (lc_alive_state ==  LcStScrap && lc_otp_prog_req);
 assign MCU_ROM_zeroization_AND      = (&ss_soc_MCU_ROM_zeroization_mask_reg) & FIPS_ZEROIZATION_PPD_i;
@@ -96,8 +97,8 @@ always_ff @(posedge clk_i or negedge rst_ni) begin
             mci_trans_st_current            <= mci_trans_st_next;
             security_state_o                <= early_warm_reset_warn ?'{device_lifecycle: DEVICE_PRODUCTION, debug_locked: MuBi4True} : security_state_comb ;  // Default case
             otp_static_state                <= lc_state_e'(from_otp_to_lcc_program_i.state);
-            SOC_DFT_EN                      <= ((lc_dft_en_i == lc_ctrl_pkg::On) | SOC_DFT_EN_AND) & !lcc_valid_SCRAP_req;
-            SOC_HW_DEBUG_EN                 <= ((lc_hw_debug_en_i == lc_ctrl_pkg::On)  | SOC_HW_DEBUG_EN_AND) & !lcc_valid_SCRAP_req;
+            SOC_DFT_EN                      <= ((lc_dft_en_i == lc_ctrl_pkg::On) | SOC_DFT_EN_AND) & !(lcc_valid_SCRAP_req | (lc_state_e'(from_otp_to_lcc_program_i.state) == LcStScrap) | (otp_static_state == LcStScrap) | state_error);
+            SOC_HW_DEBUG_EN                 <= ((lc_hw_debug_en_i == lc_ctrl_pkg::On) | SOC_HW_DEBUG_EN_AND) & !(lcc_valid_SCRAP_req | (lc_state_e'(from_otp_to_lcc_program_i.state) == LcStScrap) | (otp_static_state == LcStScrap) | state_error);
         end
         else begin
             mci_trans_st_current            <= TRANSLATOR_RESET;
