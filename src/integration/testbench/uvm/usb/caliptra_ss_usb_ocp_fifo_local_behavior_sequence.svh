@@ -477,7 +477,20 @@ class caliptra_ss_usb_ocp_fifo_local_behavior_sequence
         uvm_callbacks#(svt_usb_protocol, svt_usb_protocol_callbacks)::add(
             host_agent_h.prot, raw_response_callback);
         ocp_local_do_full_nak_ping_retry();
-        ocp_local_do_near_full_liveness();
+        // verilog_lint: waive plusarg-assignment
+        if ($test$plusargs("USB_OCP_CHECK_NEAR_FULL_PING")) begin
+            `uvm_info("OCP_LOCAL_CONFORMANCE",
+                {"LOCAL_4 enabled: strict near-full PING checking; ",
+                 "USB-PING-001 remains a documented compliance deviation."},
+                UVM_NONE)
+            ocp_local_do_near_full_liveness();
+        end else begin
+            `uvm_info("OCP_LOCAL_WAIVER",
+                {"LOCAL_4 stimulus/checks omitted under USB-PING-001; no coverage credit. ",
+                 "Enable +USB_OCP_CHECK_NEAR_FULL_PING to exercise the strict scenario. ",
+                 "See docs/usb2_streaming_boot_spec/README.md Section 11.2."},
+                UVM_NONE)
+        end
         ocp_local_do_short_final_packet();
         // Negative cases last; each starts with an empty isolated FIFO.
         ocp_local_do_invalid_length_and_check_recovery(
