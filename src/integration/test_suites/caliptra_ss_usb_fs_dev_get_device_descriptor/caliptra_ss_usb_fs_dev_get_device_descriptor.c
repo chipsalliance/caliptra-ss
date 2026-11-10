@@ -30,8 +30,8 @@
 // needed here beyond the standard poll loop.
 //
 // Structured to mirror caliptra_ss_usb_fs_conn.c: this is a pure polling test
-// with no ISR involvement (no mcu_isr.h, no init_usb_interrupts(), no ISR
-// mailbox). SETUP packets are detected by reading DEVCMDSTAT.SETUP directly.
+// with no ISR involvement (no mcu_isr.h, no init_usb_interrupts(), no ISR event
+// vector). SETUP packets are detected by reading DEVCMDSTAT.SETUP directly.
 
 #include "soc_address_map.h"
 #include "printf.h"

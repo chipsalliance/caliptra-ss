@@ -283,12 +283,9 @@ void main(void) {
         uint32_t ev0;
         uint32_t ev1;
 
-        // Snapshot then clear by complement so bits the ISR sets while we are
-        // handling this batch are not lost.
-        ev0 = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~ev0;
-        ev1 = mcu_intr_rcv.usb_dev1;
-        mcu_intr_rcv.usb_dev1 &= ~ev1;
+        // Atomically snapshot and clear each controller's mailbox.
+        ev0 = usb_event_vector_take(&mcu_intr_rcv.usb);
+        ev1 = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
         // Service USBDC0 (vector 3) and USBDC1 (vector 6) in parallel.
         usb_service_device(0, ev0, &dev_state[0]);

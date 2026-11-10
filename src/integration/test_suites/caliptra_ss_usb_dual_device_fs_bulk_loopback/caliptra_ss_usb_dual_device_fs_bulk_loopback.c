@@ -52,8 +52,8 @@
 //      addresses; the controller firmware is address-agnostic (the host-side
 //      SET_ADDRESS latches the value in each controller's hardware).
 //      Firmware services EP0 SETUP/control transfers for each controller from
-//      the ISR mailbox (mcu_intr_rcv.usb for dev0, mcu_intr_rcv.usb_dev1 for
-//      dev1), retargeting the shared USB library per device with
+//      the ISR event vector (mcu_intr_rcv.usb for dev0, mcu_intr_rcv.usb_dev1
+//      for dev1), retargeting the shared USB library per device with
 //      usb_select_device().
 //   4. Each controller performs an EP1 64-byte bulk OUT -> IN loopback: on the
 //      EP1 OUT completion interrupt, firmware copies the 64 received bytes from
@@ -177,8 +177,8 @@ typedef struct {
 //   such as 0x12634E82 can be read without hand-decoding.
 //
 //   INTSTAT / INTEN: the ISR masks INTSTAT with INTEN before publishing to the
-//   mailbox, so an event that is pending in INTSTAT but masked in INTEN never
-//   reaches the foreground loop and is a common cause of a silent stall.
+//   event vector, so an event that is pending in INTSTAT but masked in INTEN
+//   never reaches the foreground loop and is a common cause of a silent stall.
 //
 // All logging lives in THIS translation unit. Deliberately NOT adding VPRINTF
 // into libs/usb/usb.c: comments there record that logging inside
@@ -250,8 +250,8 @@ static void usb_dbg_dump(const char *tag, int dev) {
             (int)usb_legacy_ep0_get_bus_reset_count());
 }
 
-// Arm EP1 OUT for the currently selected device and enable its EP1OUT
-// interrupt so the EP1 OUT completion is published to the ISR mailbox.
+// Arm EP1 OUT for the currently selected device and enable its EP1OUT interrupt
+// so the EP1 OUT completion is published to the ISR event vector.
 // usb_select_device() must already have selected the target device, so the
 // USB_DEV_* aliases resolve to that controller's aperture.
 static void usb_ep1_out_arm(void) {
@@ -263,7 +263,7 @@ static void usb_ep1_out_arm(void) {
 
     // boot_usb_core_fs() only enables DEV_INT/EP0OUT/EP0IN, and the ISR masks
     // INTSTAT with INTEN, so the EP1 OUT completion would never reach the
-    // mailbox without enabling the EP1OUT interrupt here.
+    // event vector without enabling the EP1OUT interrupt here.
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
@@ -301,20 +301,20 @@ static bool usb_ep1_in_complete(void) {
             & USB_EP_ENTRY_ACTIVE) == 0u;
 }
 
-// Drain the ISR mailbox and advance the loopback state machine for one device.
-// dev selects USBDC0 (0) or USBDC1 (1); usb_events is the snapshot of the
-// matching mailbox field. The ISR has already W1C-acknowledged INTSTAT, so the
-// foreground must not touch INTSTAT itself. EP1 IN completion is detected by
-// polling the EP list Active bit (not INTSTAT), matching the polling loopback
-// reference.
+// Drain the ISR event vector and advance the loopback state machine for one
+// device. dev selects USBDC0 (0) or USBDC1 (1); usb_events is the snapshot of
+// the matching event vector field. The ISR has already W1C-acknowledged
+// INTSTAT, so the foreground must not touch INTSTAT itself. EP1 IN completion
+// is detected by polling the EP list Active bit (not INTSTAT), matching the
+// polling loopback reference.
 static void usb_service_device(int dev, uint32_t usb_events,
                                usb_dev_loopback_state_t *st) {
     usb_select_device(dev);
 
-    // Trace every batch of events the mailbox delivered for this controller.
-    // This is the primary timeline: comparing these timestamps against the
-    // host sequence's transfer timestamps shows whether firmware ever saw the
-    // event for a token the host believes was NAK'd.
+    // Trace every batch of events the event vector delivered for this
+    // controller. This is the primary timeline: comparing these timestamps
+    // against the host sequence's transfer timestamps shows whether firmware
+    // ever saw the event for a token the host believes was NAK'd.
     if (usb_events != 0u)
         VPRINTF(LOW, "MCU: dev%d events=0x%x (dev_int=%d ep0out=%d ep0in=%d "
                 "ep1out=%d ep1in=%d)\n",
@@ -445,12 +445,9 @@ void main(void) {
         uint32_t ev0;
         uint32_t ev1;
 
-        // Snapshot then clear by complement so bits the ISR sets while we are
-        // handling this batch are not lost.
-        ev0 = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~ev0;
-        ev1 = mcu_intr_rcv.usb_dev1;
-        mcu_intr_rcv.usb_dev1 &= ~ev1;
+        // Atomically snapshot and clear each controller's event vector.
+        ev0 = usb_event_vector_take(&mcu_intr_rcv.usb);
+        ev1 = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
         // Service USBDC0 (vector 3) and USBDC1 (vector 6) in parallel.
         usb_service_device(0, ev0, &dev_state[0]);

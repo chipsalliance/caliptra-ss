@@ -51,8 +51,8 @@ Firmware (`caliptra_ss_usb_fs_host_remotewakeup_fromdevice.c`):
    `clk_off_counter` is reloaded every clock instead of counting down, and
    `utmi_suspendm` can never fall - so the controller never reports DSUS and
    there is no suspended state from which to request a wakeup.
-5. Poll `USB_DEV_DEVCMDSTAT`, serving EP0 from the ISR mailbox. On the first
-   `DSUS_C` with `DSUS` set, record the suspend; after
+5. Poll `USB_DEV_DEVCMDSTAT`, serving EP0 from the ISR event vector. On the
+   first `DSUS_C` with `DSUS` set, record the suspend; after
    `USB_WAKEUP_ARM_DELAY_POLLS` more polls call `usb_request_remote_wakeup()`.
    On the `DSUS_C` edge with `DSUS` clear, record the resume.
 6. Keep serving EP0 for `USB_POST_RESUME_GRACE_POLLS`, then halt.
