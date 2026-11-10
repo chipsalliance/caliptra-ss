@@ -42,6 +42,10 @@ class usb_ocp_event extends uvm_sequence_item;
   int unsigned axi_id;
   // Accepted AXI object identity can differ from its completion callback.
   int unsigned axi_instance;
+  // Address callback capture floor, not a new ordered event. Completion may
+  // lag USB acceptance even when the real read has already freed FIFO space.
+  longint unsigned axi_address_order_floor;
+  realtime axi_address_at;
   int unsigned axi_beats;
   int unsigned axi_beat_bytes;
   logic [1:0] axi_burst;

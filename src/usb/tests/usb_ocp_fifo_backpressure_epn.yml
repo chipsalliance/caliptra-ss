@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_ocp_fifo_backpressure_epn
+plusargs:
+  - '+UVM_TESTNAME=usb_ocp_fifo_backpressure_epn_test'
+  - '+usb_ocp_cov'
+  - '+usb_ocp_fifo_epn_peer=DEV0'
+  - '+usb_ocp_epn_type=BULK'
+  - '+usb_ocp_fifo_epn_variant=partial'
