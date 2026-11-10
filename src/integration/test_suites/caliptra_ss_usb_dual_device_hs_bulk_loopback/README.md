@@ -53,7 +53,7 @@ servicing.
 3. `usb_hub_connect()` asserts HUB_CONNECT so the host can enumerate the hub.
 4. The VIP host enumerates the hub (@address 1), brings up downstream ports 1
    and 2, and enumerates USBDC0 and USBDC1 (both @address 2 behind their
-   respective ports). Firmware drains the ISR mailbox
+   respective ports). Firmware drains the ISR event vector
    (`mcu_intr_rcv.usb` / `mcu_intr_rcv.usb_dev1`), servicing EP0 SETUP/control
    transfers for each controller via `usb_select_device()` +
    `usb_handle_control_transfer()`.

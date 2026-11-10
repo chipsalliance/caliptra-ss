@@ -24,9 +24,9 @@
 //  is all handled inside the shared usb.c control-transfer dispatcher. No
 //  test-specific firmware logic is needed here beyond the standard poll loop.
 //
-//  Structured to mirror caliptra_ss_usb_fs_conn.c: this is a pure polling
-//  test with no ISR involvement (no mcu_isr.h, no init_usb_interrupts(), no
-//  ISR mailbox). SETUP packets are detected by reading DEVCMDSTAT.SETUP
+//  Structured to mirror caliptra_ss_usb_fs_conn.c: this is a pure polling test
+//  with no ISR involvement (no mcu_isr.h, no init_usb_interrupts(), no ISR
+//  event vector). SETUP packets are detected by reading DEVCMDSTAT.SETUP
 //  directly.
 
 // -----------------------------------------------------------------------------
