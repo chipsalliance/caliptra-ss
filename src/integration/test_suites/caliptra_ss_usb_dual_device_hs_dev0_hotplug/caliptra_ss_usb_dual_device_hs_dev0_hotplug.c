@@ -465,7 +465,7 @@ static void usb_ep1_out_arm(usb_dev_loopback_state_t *st) {
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
 
     // boot_usb_core_hub() only enables DEV_INT/EP0OUT/EP0IN, and the ISR masks
-    // INTSTAT with INTEN, so the EP1 OUT completion would never reach the vent
+    // INTSTAT with INTEN, so the EP1 OUT completion would never reach the event
     // vector without enabling the EP1OUT interrupt here.
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
