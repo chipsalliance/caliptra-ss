@@ -331,7 +331,6 @@ import css_mcu0_el2_pkg::*;
                                          ( {32{ap_ctz}} & bitmanip_a_reverse_ff[31:0]);
 
    logic        [31:0]    bitmanip_lzd_os;
-   integer                i;
    logic                  found;
 
    always_comb
