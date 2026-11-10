@@ -1,3 +1,13 @@
+// Copyright 2019-2026 Western Digital Corporation or its affiliates.
+// Copyright 2022-2026 Antmicro <www.antmicro.com>
+//
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+//
+// This is an automatically generated file by nasahlpa on Tue Nov 10 11:05:04 AM CET 2026
+//
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dccm_addr_xor=0 -set=dccm_wr_readback=0 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=icache_addr_xor=0 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=1 -set=lockstep_delay=2 -set=lockstep_enable=0 -set=lockstep_regfile_enable=0 -set=lockstep_regfile_read_enable=0 -set=mubi_width=4 -set=mubi_true=0x6 -set=mubi_false=0x9 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=css_mcu0 
+//
 // parameter css_mcu0_el2_param_t pt = '{
 // 	BHT_ADDR_HI            : 8'h09         ,
 // 	BHT_ADDR_LO            : 6'h02         ,
@@ -149,7 +159,10 @@
 // 	INST_ACCESS_MASK5      : 36'h0FFFFFFFF  ,
 // 	INST_ACCESS_MASK6      : 36'h0FFFFFFFF  ,
 // 	INST_ACCESS_MASK7      : 36'h0FFFFFFFF  ,
-// 	LOAD_TO_USE_PLUS1      : 5'h00         ,
+// 	LOAD_TO_USE_PLUS1      : 5'h01         ,
+// 	LOCKSTEP_DELAY         : 7'h00         ,
+// 	LOCKSTEP_ENABLE        : 5'h00         ,
+// 	LOCKSTEP_REGFILE_ENABLE : 5'h00         ,
 // 	LSU2DMA                : 5'h00         ,
 // 	LSU_BUS_ID             : 5'h01         ,
 // 	LSU_BUS_PRTY           : 6'h02         ,
@@ -176,4 +189,4 @@
 // 	TIMER_LEGAL_EN         : 5'h01         ,
 // 	USER_MODE              : 1'h1          
 // }
-parameter css_mcu0_el2_param_t pt = 2291'h04840400010040010840000020908200002840004808220A0C848200060210C00000000000000000000000000000000000000000000000000000000000000000000000000000000003FFFFFFFC3FFFFFFFC3FFFFFFFC3FFFFFFFC3FFFFFFFC3FFFFFFFC3FFFFFFFC3FFFFFFFC103820401C21385010141400000000100820428042010840830C2010281840200081002108E0C0801004040820C01002100400606810104100C08110E00068100080800000000400420300000000000000000000000000000000000000000000000000000000000000000000000000000000000FFFFFFFF0FFFFFFFF0FFFFFFFF0FFFFFFFF0FFFFFFFF0FFFFFFFF0FFFFFFFF0FFFFFFFF00021018101038100006000000007840300803FC200100202100C3
+parameter css_mcu0_el2_param_t pt = 2308'h090808000200800210800000412104000050800090104414190904000C0421800000000000000000000000000000000000000000000000000000000000000000000000000000000007FFFFFFF87FFFFFFF87FFFFFFF87FFFFFFF87FFFFFFF87FFFFFFF87FFFFFFF87FFFFFFF820704080384270A02028280000000020104085008402108106184020503080400102004211C181002008081041802004200800C0D020208201810221C000D0200101000000000800840600000000000000000000000000000000000000000000000000000000000000000000000000000000001FFFFFFFE1FFFFFFFE1FFFFFFFE1FFFFFFFE1FFFFFFFE1FFFFFFFE1FFFFFFFE1FFFFFFFE100000021018101038100006000000007840300803FC200100202100C3

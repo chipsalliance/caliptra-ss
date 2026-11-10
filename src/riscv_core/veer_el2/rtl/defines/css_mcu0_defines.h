@@ -1,7 +1,12 @@
-// NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE NOTE
-// This is an automatically generated file by cwhitehead on Thu Oct  9 09:50:20 PDT 2025
+// Copyright 2019-2026 Western Digital Corporation or its affiliates.
+// Copyright 2022-2026 Antmicro <www.antmicro.com>
 //
-// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=0 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=20251009_ahb_lint_fix_css 
+// SPDX-License-Identifier: Apache-2.0
+// Licensed under the Apache License, Version 2.0, see LICENSE for details.
+//
+// This is an automatically generated file by nasahlpa on Tue Nov 10 11:05:04 AM CET 2026
+//
+// cmd:    veer -target=default -set=ret_stack_size=8 -set=btb_enable=1 -set=btb_fullya=0 -set=btb_size=512 -set=bht_size=512 -set=div_bit=4 -set=div_new=1 -set=dccm_enable=1 -set=dccm_num_banks=4 -set=dccm_region=0x5 -set=dccm_offset=0x00000 -set=dccm_size=16 -set=dccm_addr_xor=0 -set=dccm_wr_readback=0 -set=dma_buf_depth=5 -set=fast_interrupt_redirect=1 -set=icache_enable=1 -set=icache_waypack=1 -set=icache_ecc=1 -set=icache_size=16 -set=icache_2banks=1 -set=icache_num_ways=2 -set=icache_bypass_enable=1 -set=icache_num_bypass=2 -set=icache_num_tag_bypass=2 -set=icache_tag_bypass_enable=1 -set=icache_addr_xor=0 -set=iccm_enable=0 -set=iccm_num_banks=4 -set=iccm_region=0x4 -set=iccm_offset=0x0 -set=iccm_size=128 -set=lsu_stbuf_depth=4 -set=lsu_num_nbload=4 -set=load_to_use_plus1=1 -set=lockstep_delay=2 -set=lockstep_enable=0 -set=lockstep_regfile_enable=0 -set=lockstep_regfile_read_enable=0 -set=mubi_width=4 -set=mubi_true=0x6 -set=mubi_false=0x9 -set=pic_2cycle=0 -set=pic_region=0x6 -set=pic_offset=0 -set=pic_size=32 -set=pic_total_int=255 -set=timer_legal_en=1 -set=bitmanip_zba=1 -set=bitmanip_zbb=1 -set=bitmanip_zbc=1 -set=bitmanip_zbe=0 -set=bitmanip_zbf=0 -set=bitmanip_zbp=0 -set=bitmanip_zbr=0 -set=bitmanip_zbs=1 -set=user_mode=1 -set=pmp_entries=64 -set=smepmp=1 -set=reset_vec=0x80000000 -fpga_optimize=0 -snapshot=css_mcu0 
 //
 #ifndef CSS_MCU0_RV_DEFINES
 #define CSS_MCU0_RV_DEFINES
@@ -19,6 +24,7 @@
 #define CSS_MCU0_RV_DMA_BUF_DEPTH 5
 #define CSS_MCU0_RV_FAST_INTERRUPT_REDIRECT 1
 #define CSS_MCU0_RV_ICACHE_ONLY 1
+#define CSS_MCU0_RV_LOAD_TO_USE_PLUS1 1
 #define CSS_MCU0_RV_LSU2DMA 0
 #define CSS_MCU0_RV_LSU_NUM_NBLOAD 4
 #define CSS_MCU0_RV_LSU_NUM_NBLOAD_WIDTH 2
@@ -46,6 +52,42 @@
 #define CSS_MCU0_RV_DCCM_SIZE_16 
 #define CSS_MCU0_RV_DCCM_WIDTH_BITS 2
 #define CSS_MCU0_RV_LSU_SB_BITS 14
+#define CSS_MCU0_RV_ICACHE_2BANKS 1
+#define CSS_MCU0_RV_ICACHE_BANK_BITS 1
+#define CSS_MCU0_RV_ICACHE_BANK_HI 3
+#define CSS_MCU0_RV_ICACHE_BANK_LO 3
+#define CSS_MCU0_RV_ICACHE_BANK_WIDTH 8
+#define CSS_MCU0_RV_ICACHE_BANKS_WAY 2
+#define CSS_MCU0_RV_ICACHE_BEAT_ADDR_HI 5
+#define CSS_MCU0_RV_ICACHE_BEAT_BITS 3
+#define CSS_MCU0_RV_ICACHE_BYPASS_ENABLE 1
+#define CSS_MCU0_RV_ICACHE_DATA_CELL ram_512x71
+#define CSS_MCU0_RV_ICACHE_DATA_DEPTH 512
+#define CSS_MCU0_RV_ICACHE_DATA_INDEX_LO 4
+#define CSS_MCU0_RV_ICACHE_DATA_WIDTH 64
+#define CSS_MCU0_RV_ICACHE_ECC 1
+#define CSS_MCU0_RV_ICACHE_ENABLE 1
+#define CSS_MCU0_RV_ICACHE_FDATA_WIDTH 71
+#define CSS_MCU0_RV_ICACHE_INDEX_HI 12
+#define CSS_MCU0_RV_ICACHE_LN_SZ 64
+#define CSS_MCU0_RV_ICACHE_NUM_BEATS 8
+#define CSS_MCU0_RV_ICACHE_NUM_BYPASS 2
+#define CSS_MCU0_RV_ICACHE_NUM_BYPASS_WIDTH 2
+#define CSS_MCU0_RV_ICACHE_NUM_LINES 256
+#define CSS_MCU0_RV_ICACHE_NUM_LINES_BANK 64
+#define CSS_MCU0_RV_ICACHE_NUM_LINES_WAY 128
+#define CSS_MCU0_RV_ICACHE_NUM_WAYS 2
+#define CSS_MCU0_RV_ICACHE_SCND_LAST 6
+#define CSS_MCU0_RV_ICACHE_SIZE 16
+#define CSS_MCU0_RV_ICACHE_STATUS_BITS 1
+#define CSS_MCU0_RV_ICACHE_TAG_BYPASS_ENABLE 1
+#define CSS_MCU0_RV_ICACHE_TAG_CELL ram_128x25
+#define CSS_MCU0_RV_ICACHE_TAG_DEPTH 128
+#define CSS_MCU0_RV_ICACHE_TAG_INDEX_LO 6
+#define CSS_MCU0_RV_ICACHE_TAG_LO 13
+#define CSS_MCU0_RV_ICACHE_TAG_NUM_BYPASS 2
+#define CSS_MCU0_RV_ICACHE_TAG_NUM_BYPASS_WIDTH 2
+#define CSS_MCU0_RV_ICACHE_WAYPACK 1
 #define CSS_MCU0_RV_ICCM_BANK_BITS 2
 #define CSS_MCU0_RV_ICCM_BANK_HI 3
 #define CSS_MCU0_RV_ICCM_BANK_INDEX_LO 4
@@ -165,13 +207,13 @@
 #define CSS_MCU0_RV_RESET_VEC 0x80000000
 #endif
 #define CSS_MCU0_RV_TARGET default
-//#define TOP tb_top
-//#define CSS_MCU0_RV_TOP `TOP.rvtop_wrapper.rvtop
-//#define CSS_MCU0_CPU_TOP `CSS_MCU0_RV_TOP.veer
-#define CSS_MCU0_SDVT_AHB 0
+#define CPU_TOP `CSS_MCU0_RV_TOP.veer
+#define CSS_MCU0_RV_TOP `TOP.rvtop_wrapper.rvtop
+#define SDVT_AHB 0
+#define TOP tb_top
 #define CSS_MCU0_RV_BUILD_AXI4 1
 #define CSS_MCU0_RV_BUILD_AXI_NATIVE 1
-#define CSS_MCU0_CLOCK_PERIOD 100
+#define CLOCK_PERIOD 100
 #define CSS_MCU0_RV_EXT_ADDRWIDTH 32
 #define CSS_MCU0_RV_EXT_DATAWIDTH 64
 #define CSS_MCU0_RV_LDERR_ROLLBACK 1
