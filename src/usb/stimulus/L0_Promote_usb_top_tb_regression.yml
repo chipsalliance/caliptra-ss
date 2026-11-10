@@ -10,3 +10,6 @@ contents:
         - ../tests/usb_axi_write_backpressure.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_init.yml
+        - ../tests/usb_ocp_bringup.yml
+        - ../tests/usb_ocp_dev0_epn_overlap.yml
+        - ../tests/usb_ocp_dev1_ep0_overlap.yml
