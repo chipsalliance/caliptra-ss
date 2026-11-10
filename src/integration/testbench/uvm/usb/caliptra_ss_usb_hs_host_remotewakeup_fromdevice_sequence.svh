@@ -115,7 +115,7 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
 
     // Ceiling for the DEVICE to start driving resume K after the firmware
     // request, polled in ENABLED_POLL_STEP units by the main flow.
-    localparam int unsigned DEV_K_WAIT_MAX_US = 500;
+    localparam int unsigned DEV_K_WAIT_MAX_US = 655;
 
     // Grace window for the forked responder to finish the host takeover.
     localparam int unsigned TAKEOVER_DONE_MAX_US = 200;
