@@ -331,8 +331,69 @@ package usb_cov_pkg;
   endfunction
 
   // ---------------------------------------------------------------------------
+  // Interrupt sources (INTSTAT / INTEN / INTROUTE)
+  // ---------------------------------------------------------------------------
+  // usb_reg_if holds the interrupt state as three separate register slices
+  // rather than one flat word, and the word read back at INTSTAT is assembled
+  // from them:
+  //
+  //   reg_ep_int_status(C_NBPHYSEP+1 downto 0)  -> INTSTAT[C_NBPHYSEP+1:0]
+  //   reg_frame_int_status                      -> INTSTAT[30]
+  //   reg_dev_int_status                        -> INTSTAT[31]
+  //
+  // INTEN (word 9) and INTROUTE (word 11) use the same bit positions, so one
+  // source class enumeration describes all three registers. INTSETSTAT
+  // (word 10) is the force-set alias of INTSTAT.
+  localparam int unsigned INT_BIT_FRAME = 30;
+  localparam int unsigned INT_BIT_DEV   = 31;
+
+  // Which class of source raised the interrupt. The endpoint index is carried
+  // separately because it is only meaningful for INT_SRC_EP.
+  typedef enum int {
+    INT_SRC_EP,      // a physical endpoint completed, was skipped or NAKed
+    INT_SRC_FRAME,   // start-of-frame counter
+    INT_SRC_DEV      // device status change: connect, bus reset, suspend, OTG
+  } int_src_class_e;
+
+  // INTROUTE selects the destination pin per source: 0 routes to IRQ, 1 to FIQ.
+  typedef enum int { INT_DEST_IRQ, INT_DEST_FIQ } int_dest_e;
+
+  function automatic int_dest_e int_dest(input logic route_bit);
+    return route_bit ? INT_DEST_FIQ : INT_DEST_IRQ;
+  endfunction
+
+  // How a status bit left the pending state. A write of 1 to INTSTAT clears,
+  // a write of 1 to INTSETSTAT sets, and the two share the same bit layout, so
+  // a test that confuses the two addresses produces a stuck interrupt.
+  typedef enum int {
+    INT_WR_NONE,
+    INT_WR_CLEAR,      // INTSTAT write-1-to-clear
+    INT_WR_FORCE_SET,  // INTSETSTAT write-1-to-set
+    INT_WR_ENABLE,     // INTEN update
+    INT_WR_ROUTE       // INTROUTE update
+  } int_write_kind_e;
+
+  // Number of sources pending at once. Concurrency matters because the pin is
+  // a flat OR: a second source arriving while the first is still pending must
+  // not be lost when firmware clears only the one it serviced.
+  typedef enum int {
+    INT_PENDING_NONE,
+    INT_PENDING_ONE,
+    INT_PENDING_TWO,
+    INT_PENDING_MANY   // three or more
+  } int_pending_count_e;
+
+  function automatic int_pending_count_e int_pending_count(input int unsigned n);
+    if (n == 0) return INT_PENDING_NONE;
+    if (n == 1) return INT_PENDING_ONE;
+    if (n == 2) return INT_PENDING_TWO;
+    return INT_PENDING_MANY;
+  endfunction
+
+  // ---------------------------------------------------------------------------
   // Compound function selection
   // ---------------------------------------------------------------------------
+
   // The PIE is a single shared instance time-multiplexed across the hub and
   // the two software devices, and it exports the current selection as an
   // integer. usbreg_deviceenabled uses the same numbering, so these indices

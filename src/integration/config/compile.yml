@@ -133,6 +133,11 @@ targets:
       - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_addr_cov.sv
       - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_power_cov.sv
       - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_hub_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_dev_link_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_dev_enum_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_dev_ep_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_dev_irq_cov.sv
+      - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_compound_cov.sv
       - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_cov_bind.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
