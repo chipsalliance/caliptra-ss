@@ -302,8 +302,19 @@ import css_mcu0_el2_pkg::*;
    // end clocking section
 
    // Reset logic
-   assign dbg_dm_rst_l = dbg_rst_l & (dmcontrol_reg[0] | scan_mode);
-   assign dbg_core_rst_l = ~dmcontrol_reg[1] | scan_mode;
+   css_mcu0_el2_prim_rst_mux2 u_dbg_dm_rst_mux (
+      .rst0_i(dbg_rst_l & dmcontrol_reg[0]),
+      .rst1_i(dbg_rst_l),
+      .sel_i (scan_mode),
+      .rst_o (dbg_dm_rst_l)
+   );
+
+   css_mcu0_el2_prim_rst_mux2 u_dbg_core_rst_mux (
+      .rst0_i(~dmcontrol_reg[1]),
+      .rst1_i(1'b1),
+      .sel_i (scan_mode),
+      .rst_o (dbg_core_rst_l)
+   );
 
    // synchronize the rst
    css_mcu0_rvsyncss #(1) rstl_syncff (.din(rst_l), .dout(rst_l_sync), .clk(free_clk), .rst_l(dbg_rst_l));

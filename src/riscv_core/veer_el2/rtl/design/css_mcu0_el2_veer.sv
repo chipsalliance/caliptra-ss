@@ -977,7 +977,12 @@ import css_mcu0_el2_pkg::*;
 
    // -----------------   DEBUG END -----------------------------
 
-   assign core_rst_l = rst_l & (dbg_core_rst_l | scan_mode);
+   css_mcu0_el2_prim_rst_mux2 u_core_rst_mux (
+      .rst0_i(rst_l & dbg_core_rst_l),
+      .rst1_i(rst_l),
+      .sel_i (scan_mode),
+      .rst_o (core_rst_l)
+   );
 
 `ifdef css_mcu0_RV_USER_MODE
 
