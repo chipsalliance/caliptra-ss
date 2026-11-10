@@ -590,6 +590,14 @@ class usb_ocp_scoreboard extends uvm_component;
       model.stall_model.ocp_capture_crosscheck(device,c,item.order);
   endfunction
 
+  // Row-owned passive extensions see the same immutable snapshots and the
+  // original ledger. Defaults neither observe extra streams nor alter credit.
+  virtual function void ocp_check_event_before(usb_ocp_event item);
+  endfunction
+
+  virtual function void ocp_check_event_after(usb_ocp_event item);
+  endfunction
+
   task run_phase(uvm_phase phase);
     usb_ocp_event item;
     usb_ocp_event axi;
@@ -599,6 +607,7 @@ class usb_ocp_scoreboard extends uvm_component;
       observer.ocp_wait_snapshot(item);
       busy = 1;
       event_count++;
+      ocp_check_event_before(item);
       case (item.kind)
         usb_ocp_event::USB_PACKET: begin
           if (l2_model != null) l2_model.ocp_capture_packet(item);
@@ -653,6 +662,7 @@ class usb_ocp_scoreboard extends uvm_component;
           model.stall_model.ocp_capture_control(device,model.control[device],model.control[1],item.order);
         if (reset_model != null) reset_model.ocp_capture_control(device);
       end
+      ocp_check_event_after(item);
       busy = 0;
     end
   endtask
@@ -673,7 +683,7 @@ class usb_ocp_scoreboard extends uvm_component;
     return 1;
   endfunction
 
-  function void ocp_check_replacements();
+  virtual function void ocp_check_replacements();
     if (!model.require_dev0_ep0_replacement) return;
     if (negative_replacement)
       model.dev0_ep0_write_replacements = 0;
