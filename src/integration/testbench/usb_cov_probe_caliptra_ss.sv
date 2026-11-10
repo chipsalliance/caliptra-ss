@@ -306,6 +306,28 @@ module usb_cov_probe_caliptra_ss;
   logic        d0_bufinuse_any, d1_bufinuse_any;
   logic        d0_skip_any,    d1_skip_any;
 
+  // Interrupt register slices. usb_reg_if keeps INTSTAT, INTEN and INTROUTE as
+  // three separate signals each (endpoint vector, frame bit, device bit); the
+  // flat register word only exists on the readback path.
+  logic [15:0] d0_ep_int_status,  d1_ep_int_status;
+  logic        d0_frame_int_status, d1_frame_int_status;
+  logic        d0_dev_int_status, d1_dev_int_status;
+  logic [15:0] d0_ep_int_enable,  d1_ep_int_enable;
+  logic        d0_frame_int_enable, d1_frame_int_enable;
+  logic        d0_dev_int_enable, d1_dev_int_enable;
+  logic [15:0] d0_ep_int_route,   d1_ep_int_route;
+  logic        d0_frame_int_route, d1_frame_int_route;
+  logic        d0_dev_int_route,  d1_dev_int_route;
+
+  // CSR write decode, replicating the case on reg_waddr in proc_reg_write.
+  logic        d0_reg_write,   d1_reg_write;
+  logic [3:0]  d0_reg_waddr,   d1_reg_waddr;
+  logic [31:0] d0_reg_wdata,   d1_reg_wdata;
+  logic        d0_wr_intstat,  d1_wr_intstat;
+  logic        d0_wr_inten,    d1_wr_inten;
+  logic        d0_wr_intsetstat, d1_wr_intsetstat;
+  logic        d0_wr_introute, d1_wr_introute;
+
   always_comb d0_usbaddress      = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_usbaddress;
   always_comb d0_deviceenabled   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_deviceenabled;
   always_comb d0_setup           = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_setup;
@@ -336,6 +358,33 @@ module usb_cov_probe_caliptra_ss;
   // is what usb_hub_cov's folded-in cp_phy_test_mode samples.
   always_comb d0_phy_test_mode   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_phy_test_mode;
 
+  // Interrupt register state. These are architecture signals of usb_reg_if,
+  // not ports: INTSTAT, INTEN and INTROUTE have no output pins, they only
+  // appear on reg_rdata during a read. The observer needs the live value on
+  // every cycle, so the internal signals are read directly. They are plain
+  // std_logic / std_logic_vector, so the mixed-language XMR is well defined.
+  always_comb d0_ep_int_status    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_ep_int_status;
+  always_comb d0_frame_int_status = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_frame_int_status;
+  always_comb d0_dev_int_status   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_dev_int_status;
+  always_comb d0_ep_int_enable    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_ep_int_enable;
+  always_comb d0_frame_int_enable = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_frame_int_enable;
+  always_comb d0_dev_int_enable   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_dev_int_enable;
+  always_comb d0_ep_int_route     = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_ep_int_route;
+  always_comb d0_frame_int_route  = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_frame_int_route;
+  always_comb d0_dev_int_route    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_dev_int_route;
+
+  // CSR write port. proc_reg_write qualifies its case on reg_write, so the
+  // same qualification is applied here to produce one strobe per interrupt
+  // register. The word numbers are the "1000" .. "1011" branch labels.
+  always_comb d0_reg_write = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_write;
+  always_comb d0_reg_waddr = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_waddr;
+  always_comb d0_reg_wdata = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_wdata;
+
+  always_comb d0_wr_intstat    = d0_reg_write && (d0_reg_waddr == usb_cov_pkg::DEV_CSR_INTSTAT);
+  always_comb d0_wr_inten      = d0_reg_write && (d0_reg_waddr == usb_cov_pkg::DEV_CSR_INTEN);
+  always_comb d0_wr_intsetstat = d0_reg_write && (d0_reg_waddr == usb_cov_pkg::DEV_CSR_INTSETSTAT);
+  always_comb d0_wr_introute   = d0_reg_write && (d0_reg_waddr == usb_cov_pkg::DEV_CSR_INTROUTE);
+
   always_comb d1_usbaddress      = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_usbaddress;
   always_comb d1_deviceenabled   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_deviceenabled;
   always_comb d1_setup           = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_setup;
@@ -359,6 +408,25 @@ module usb_cov_probe_caliptra_ss;
   always_comb d1_bufinuse_any    = |caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_ep_bufinuse;
   always_comb d1_skip_any        = |caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_ep_skip;
   always_comb d1_phy_test_mode   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_phy_test_mode;
+
+  always_comb d1_ep_int_status    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_ep_int_status;
+  always_comb d1_frame_int_status = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_frame_int_status;
+  always_comb d1_dev_int_status   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_dev_int_status;
+  always_comb d1_ep_int_enable    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_ep_int_enable;
+  always_comb d1_frame_int_enable = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_frame_int_enable;
+  always_comb d1_dev_int_enable   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_dev_int_enable;
+  always_comb d1_ep_int_route     = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_ep_int_route;
+  always_comb d1_frame_int_route  = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_frame_int_route;
+  always_comb d1_dev_int_route    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_dev_int_route;
+
+  always_comb d1_reg_write = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_write;
+  always_comb d1_reg_waddr = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_waddr;
+  always_comb d1_reg_wdata = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_wdata;
+
+  always_comb d1_wr_intstat    = d1_reg_write && (d1_reg_waddr == usb_cov_pkg::DEV_CSR_INTSTAT);
+  always_comb d1_wr_inten      = d1_reg_write && (d1_reg_waddr == usb_cov_pkg::DEV_CSR_INTEN);
+  always_comb d1_wr_intsetstat = d1_reg_write && (d1_reg_waddr == usb_cov_pkg::DEV_CSR_INTSETSTAT);
+  always_comb d1_wr_introute   = d1_reg_write && (d1_reg_waddr == usb_cov_pkg::DEV_CSR_INTROUTE);
 
   // Area A: link power state, per device.
   usb_dev_link_cov #(.DEV_NAME("dev0")) u_dev0_link_cov (
@@ -487,6 +555,63 @@ module usb_cov_probe_caliptra_ss;
     .xfer_sent_nak    (pie_sent_nak),
     .ep_bufinuse_any  (d1_bufinuse_any),
     .ep_skip_any      (d1_skip_any),
+    .usb_irq          (d1_irq),
+    .usb_fiq          (d1_fiq),
+    .dcon             (d1_dev_connect),
+    .dsus             (d1_sync_suspend),
+    .lpm_sus          (d1_lpm_suspend)
+  );
+
+  // Area D2: interrupt registers, per device and per source. Everything here
+  // is genuinely per-device register state, so no PIE qualification applies.
+  // NUM_PHYS_EP is C_NBPHYSEP+2 = 16, the width of the reg_ep_int_* slices.
+  usb_dev_irq_cov #(
+    .DEV_NAME    ("dev0"),
+    .NUM_PHYS_EP (16)
+  ) u_dev0_irq_cov (
+    .clk              (clk),
+    .rst_n            (rst_n),
+    .ep_int_status    (d0_ep_int_status),
+    .frame_int_status (d0_frame_int_status),
+    .dev_int_status   (d0_dev_int_status),
+    .ep_int_enable    (d0_ep_int_enable),
+    .frame_int_enable (d0_frame_int_enable),
+    .dev_int_enable   (d0_dev_int_enable),
+    .ep_int_route     (d0_ep_int_route),
+    .frame_int_route  (d0_frame_int_route),
+    .dev_int_route    (d0_dev_int_route),
+    .wr_intstat       (d0_wr_intstat),
+    .wr_inten         (d0_wr_inten),
+    .wr_intsetstat    (d0_wr_intsetstat),
+    .wr_introute      (d0_wr_introute),
+    .wr_data          (d0_reg_wdata),
+    .usb_irq          (d0_irq),
+    .usb_fiq          (d0_fiq),
+    .dcon             (d0_dev_connect),
+    .dsus             (d0_sync_suspend),
+    .lpm_sus          (d0_lpm_suspend)
+  );
+
+  usb_dev_irq_cov #(
+    .DEV_NAME    ("dev1"),
+    .NUM_PHYS_EP (16)
+  ) u_dev1_irq_cov (
+    .clk              (clk),
+    .rst_n            (rst_n),
+    .ep_int_status    (d1_ep_int_status),
+    .frame_int_status (d1_frame_int_status),
+    .dev_int_status   (d1_dev_int_status),
+    .ep_int_enable    (d1_ep_int_enable),
+    .frame_int_enable (d1_frame_int_enable),
+    .dev_int_enable   (d1_dev_int_enable),
+    .ep_int_route     (d1_ep_int_route),
+    .frame_int_route  (d1_frame_int_route),
+    .dev_int_route    (d1_dev_int_route),
+    .wr_intstat       (d1_wr_intstat),
+    .wr_inten         (d1_wr_inten),
+    .wr_intsetstat    (d1_wr_intsetstat),
+    .wr_introute      (d1_wr_introute),
+    .wr_data          (d1_reg_wdata),
     .usb_irq          (d1_irq),
     .usb_fiq          (d1_fiq),
     .dcon             (d1_dev_connect),
