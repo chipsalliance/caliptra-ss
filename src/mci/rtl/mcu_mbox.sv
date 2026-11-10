@@ -136,6 +136,8 @@ logic mbox_sram_zero_in_progress;
 
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_max_dlen;
 logic [$bits(hwif_out.mbox_dlen.length.value)-1:0] mbox_sram_zero_end_addr_bytes;
+logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_dlen_zero_end_addr;
+logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_max_wr_addr;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mbox_sram_zero_end_addr;
 logic [MCU_MBOX_SRAM_DATA_W-1:0] mcu_mbox_sram_wr_data;
 logic [MCU_MBOX_SRAM_ADDR_W-1:0] mcu_mbox_sram_req_addr;
@@ -323,14 +325,19 @@ generate
         assign mcu_mbox_sram_req_if.req.addr[MCI_MCU_SRAM_IF_ADDR_W-1:MCU_MBOX_SRAM_ADDR_W] = '0;
     end
 endgenerate
-// Track max DLEN during the lock for clearing
+// Track max DLEN and highest written SRAM offset during the lock for clearing
 always_ff @(posedge clk or negedge rst_b) begin
     if (!rst_b) begin
-        mbox_max_dlen <= '0;
+        mbox_max_dlen    <= '0;
+        mbox_max_wr_addr <= '0;
     end else if (mbox_sram_zero_done) begin
-        mbox_max_dlen <= '0;
+        mbox_max_dlen    <= '0;
+        mbox_max_wr_addr <= '0;
     end else begin
         mbox_max_dlen <= (hwif_out.mbox_dlen.length.value > mbox_max_dlen) ? hwif_out.mbox_dlen.length.value : mbox_max_dlen;
+        if (mcu_mbox_sram_req_we && (mcu_mbox_sram_req_addr > mbox_max_wr_addr)) begin
+            mbox_max_wr_addr <= mcu_mbox_sram_req_addr;
+        end
     end
 end
 
@@ -343,12 +350,16 @@ always_ff @(posedge clk or negedge rst_b) begin
 end
 
 
-// DLEN >= SRAM size must wipe the whole SRAM, not wrap.
+// DLEN >= SRAM size must wipe the whole SRAM, not wrap; also wipe up through
+// the highest SRAM offset written during the lock if higher than DLEN.
 always_comb begin
     mbox_sram_zero_end_addr_bytes = mbox_max_dlen - 1;
-    mbox_sram_zero_end_addr = (mbox_max_dlen >= MCU_MBOX_SRAM_SIZE_BYTES) ?
+    mbox_dlen_zero_end_addr = (mbox_max_dlen == '0) ? '0 :
+                              (mbox_max_dlen >= MCU_MBOX_SRAM_SIZE_BYTES) ?
                               MCU_MBOX_SRAM_ADDR_W'(MCU_MBOX_SRAM_DEPTH - 1) :
                               mbox_sram_zero_end_addr_bytes[MCU_MBOX_BYTE_ADDR_W-1:2];
+    mbox_sram_zero_end_addr = (mbox_max_wr_addr > mbox_dlen_zero_end_addr) ?
+                              mbox_max_wr_addr : mbox_dlen_zero_end_addr;
 end
 
 // Release the mailbox after execute has had 0 written to it
