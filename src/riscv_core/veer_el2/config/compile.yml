@@ -69,6 +69,7 @@ targets:
       - $COMPILE_ROOT/rtl/design/lib/css_mcu0_el2_lib.sv
       - $COMPILE_ROOT/rtl/design/lib/css_mcu0_mem_lib.sv
       - $COMPILE_ROOT/rtl/design/lib/css_mcu0_el2_mem_if.sv
+      - $COMPILE_ROOT/rtl/design/lib/css_mcu0_el2_regfile_if.sv
       - $COMPILE_ROOT/rtl/design/lsu/css_mcu0_el2_lsu_addrcheck.sv
       - $COMPILE_ROOT/rtl/design/lsu/css_mcu0_el2_lsu_bus_buffer.sv
       - $COMPILE_ROOT/rtl/design/lsu/css_mcu0_el2_lsu_bus_intf.sv
