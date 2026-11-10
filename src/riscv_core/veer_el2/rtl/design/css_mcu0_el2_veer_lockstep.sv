@@ -16,7 +16,7 @@
 module css_mcu0_el2_veer_lockstep
   import css_mcu0_el2_pkg::*;
   import css_mcu0_el2_mubi_pkg::*;
-  import el2_lockstep_pkg::*;
+  import css_mcu0_el2_lockstep_pkg::*;
 #(
     `include "css_mcu0_el2_param.vh"
 ) (

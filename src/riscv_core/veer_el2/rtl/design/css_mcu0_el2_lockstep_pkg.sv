@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package el2_lockstep_pkg;
+package css_mcu0_el2_lockstep_pkg;
   import css_mcu0_el2_pkg::*;
   `include "css_mcu0_el2_param.vh"
   ;//
