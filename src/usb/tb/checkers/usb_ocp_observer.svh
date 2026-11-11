@@ -29,6 +29,7 @@ class usb_ocp_observer extends uvm_component;
   int unsigned outstanding_axi[4];
   longint unsigned sof_serial;
   usb_ocp_base_service_callback service_callback;
+  usb_ocp_suspend_link_callback l2_link_callback;
   localparam int unsigned QUEUE_LIMIT = 16384;
 
   function new(string name = "usb_ocp_observer", uvm_component parent = null);
@@ -340,5 +341,12 @@ class usb_ocp_observer extends uvm_component;
         started_at.num() != 0 || transfer_starts != transfer_count) return 0;
     foreach (outstanding_axi[i]) if (outstanding_axi[i] != 0) return 0;
     return 1;
+  endfunction
+
+  // Entry barriers must not demand that the continuously polling AXI actors
+  // stop, or that unpublished partial-image bytes have already been consumed.
+  function bit ocp_check_usb_idle();
+    return pending.size() == 0 && completions.size() == 0 &&
+           started_at.num() == 0 && transfer_starts == transfer_count;
   endfunction
 endclass

@@ -35,6 +35,10 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     if (!uvm_config_db#(usb_ocp_observer)::get(p_sequencer,"","ocp_observer",observer) ||
         !uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
       `uvm_fatal("OCP_BRINGUP", "Missing mandatory passive checker")
+    if (scoreboard.l2_model == null &&
+        ($test$plusargs("usb_ocp_l2_mode") || $test$plusargs("usb_ocp_l2_negative_retention") ||
+         $test$plusargs("usb_ocp_l2_negative_peer") || $test$plusargs("usb_ocp_l2_negative_progress")))
+      `uvm_fatal("OCP_L2_NEGATIVE", "L2 mode/checker controls require the OCP suspend/resume testcase")
     if (scoreboard.negative_overlap && !scoreboard.model.require_dev1_ep0_overlap)
       `uvm_fatal("OCP_NEGATIVE_CONTROL", "Overlap injection requires a dev1 EP0 overlap scenario")
     if ((scoreboard.negative_replacement || scoreboard.negative_abort_prefix) &&
