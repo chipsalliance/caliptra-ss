@@ -18,6 +18,7 @@ class usb_ocp_base_env extends usb_env;
   usb_ocp_scoreboard scoreboard;
   usb_ocp_base_packet_callback packet_callback;
   usb_ocp_base_transfer_callback transfer_callback;
+  usb_ocp_base_service_callback service_callback;
   usb_ocp_base_axi_callback axi_callback[4];
 
   function new(string name = "usb_ocp_base_env", uvm_component parent = null);
@@ -30,6 +31,7 @@ class usb_ocp_base_env extends usb_env;
     scoreboard = usb_ocp_scoreboard::type_id::create("scoreboard",this);
     packet_callback = usb_ocp_base_packet_callback::type_id::create("packet_callback");
     transfer_callback = usb_ocp_base_transfer_callback::type_id::create("transfer_callback");
+    service_callback = usb_ocp_base_service_callback::type_id::create("service_callback");
     foreach (axi_callback[i])
       axi_callback[i] = usb_ocp_base_axi_callback::type_id::create($sformatf("axi_callback%0d",i));
   endfunction
@@ -45,6 +47,7 @@ class usb_ocp_base_env extends usb_env;
     scoreboard.model.ocp_configure_map(reg_model);
     packet_callback.observer = observer;
     transfer_callback.observer = observer;
+    observer.service_callback = service_callback;
     foreach (axi_callback[i]) begin
       axi_callback[i].observer = observer;
       axi_callback[i].manager = i;
@@ -67,6 +70,9 @@ class usb_ocp_base_env extends usb_env;
       host_agent.link_mon,packet_callback);
     uvm_callbacks#(svt_usb_protocol_monitor,svt_usb_protocol_monitor_callback)::add(
       host_agent.prot_mon,transfer_callback);
+    // This OCP topology has one active native host protocol.
+    uvm_callbacks#(svt_usb_protocol,svt_usb_protocol_callback)::add(
+      null,service_callback);
     combo_manager.add_callback(axi_callback[0]);
     dev0_memory_manager.add_callback(axi_callback[1]);
     dev1_csr_manager.add_callback(axi_callback[2]);

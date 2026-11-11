@@ -28,6 +28,10 @@ class usb_ocp_scoreboard extends uvm_component;
   bit negative_replacement;
   bit negative_abort_prefix;
   bit negative_payload_applied;
+  bit negative_epn_overlap;
+  bit negative_epn_payload;
+  bit negative_epn_native;
+  bit negative_epn_nak;
 
   function new(string name = "usb_ocp_scoreboard", uvm_component parent = null);
     super.new(name, parent);
@@ -44,8 +48,13 @@ class usb_ocp_scoreboard extends uvm_component;
     negative_overlap = $test$plusargs("usb_ocp_negative_overlap");
     negative_replacement = $test$plusargs("usb_ocp_negative_replacement");
     negative_abort_prefix = $test$plusargs("usb_ocp_negative_abort_prefix");
+    negative_epn_overlap = $test$plusargs("usb_ocp_negative_epn_overlap");
+    negative_epn_payload = $test$plusargs("usb_ocp_negative_epn_payload");
+    negative_epn_native = $test$plusargs("usb_ocp_negative_epn_native");
+    negative_epn_nak = $test$plusargs("usb_ocp_negative_epn_nak");
     if (negative_payload || negative_activation || negative_dma || negative_overlap ||
-        negative_replacement || negative_abort_prefix)
+        negative_replacement || negative_abort_prefix || negative_epn_overlap ||
+        negative_epn_payload || negative_epn_native || negative_epn_nak)
       `uvm_info("OCP_NEGATIVE_CONTROL", "Checker-only negative control enabled; this run MUST fail", UVM_NONE)
   endfunction
 
@@ -237,6 +246,8 @@ class usb_ocp_scoreboard extends uvm_component;
           `uvm_fatal("OCP_DESCRIPTOR", "Configuration descriptor malformed")
         model.config_descriptor_seen[device] = 1;
         if (device == 1) ocp_check_discovery(c.data);
+        if (model.epn != null && device == model.epn.device)
+          model.epn.discovery.ocp_check_parse(c.data);
       end
     end
     if (device == 0 && c.setup[0] === 8'ha0 && c.setup[1] === 6) begin
@@ -302,6 +313,7 @@ class usb_ocp_scoreboard extends uvm_component;
     int dev;
     if (!item.response_ok)
       `uvm_fatal("OCP_AXI", "Completed AXI response is not OKAY")
+    if (model.epn != null) model.epn.ocp_check_axi(item);
     word = model.ocp_get_le32(item.bytes,0);
     if (item.manager inside {0,2} && item.write_access) begin
       dev = (item.manager == 0) ? 0 : 1;
@@ -448,6 +460,11 @@ class usb_ocp_scoreboard extends uvm_component;
     int device;
     usb_ocp_base_control c;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
+    if (item.transfer_type != svt_usb_transfer::CONTROL_TRANSFER) begin
+      if (model.epn == null) `uvm_fatal("OCP_EPN_CORRELATION", "Unexpected EPN transfer")
+      model.epn.ocp_check_transfer(item);
+      return;
+    end
     allowed_results = 0;
     if (!item.setup[0][7]) allowed_results[5] = 1;
     if (item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1) begin
@@ -533,6 +550,7 @@ class usb_ocp_scoreboard extends uvm_component;
   endtask
 
   function bit ocp_check_drained();
+    if (model.epn != null && !model.epn.ocp_check_drained()) return 0;
     if (busy || !observer.ocp_check_drained() || deferred_axi.size() != 0 ||
         deferred_transfer_aborts.size() != 0 ||
         model.token != null || model.ready_controls.size() != 0 ||
@@ -563,7 +581,24 @@ class usb_ocp_scoreboard extends uvm_component;
   endfunction
 
   function void ocp_check_complete();
+    bit read_epn_window_seen;
+    bit write_epn_window_seen;
     ocp_check_replacements();
+    // Remove only a private write-window check operand for this injection.
+    // Canonical packet snapshots, acceptance counters, and SRAM proof survive.
+    if (model.epn != null) begin
+      read_epn_window_seen = (model.epn.accepted[0] >= 1 && model.epn.accepted[1] >= 1);
+      write_epn_window_seen = (model.epn.accepted[0] == 2 && model.epn.accepted[1] == 2);
+      if (negative_epn_overlap) write_epn_window_seen = 0;
+      if (!read_epn_window_seen || !write_epn_window_seen || !model.epn.ocp_check_drained())
+        `uvm_fatal("OCP_EPN_OVERLAP", "Missing checked IN/OUT EPN overlap in both OCP windows")
+      `uvm_info("OCP_EPN_EVIDENCE",$sformatf(
+        "slot=%0d type=%s accepted=%p monitor=%p SRAM=%p token_orders=%p data_orders=%p generations=%p SOFs=%p",
+        model.epn.device,model.epn.discovery.endpoints[0].transfer_type.name(),
+        model.epn.accepted,model.epn.crosschecked,model.epn.memory_checked,
+        model.epn.accepted_token,model.epn.accepted_data,
+        model.epn.accepted_generation,model.epn.accepted_sof),UVM_LOW)
+    end
     // Checker-only injection removes write-window evidence, not USB stimulus
     // or mandatory packet/transfer checks.
     if (model.require_dev1_ep0_overlap && negative_overlap)

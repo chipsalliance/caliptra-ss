@@ -27,6 +27,8 @@ class usb_ocp_observer extends uvm_component;
   int unsigned reordered_completions;
   int unsigned axi_count[4];
   int unsigned outstanding_axi[4];
+  longint unsigned sof_serial;
+  usb_ocp_base_service_callback service_callback;
   localparam int unsigned QUEUE_LIMIT = 16384;
 
   function new(string name = "usb_ocp_observer", uvm_component parent = null);
@@ -109,6 +111,12 @@ class usb_ocp_observer extends uvm_component;
     item.packet_valid = !pkt.crc_error_detected();
     item.address = pkt.device_address;
     item.endpoint = pkt.ept_num;
+    if (item.pid === svt_usb_packet::SOF)
+      item.frame_number = pkt.get_frame_number_val();
+    // A wire SOF ordinal, independent of submitted periodic scheduling.
+    if (host_tx && item.pid === svt_usb_packet::SOF && item.packet_valid)
+      sof_serial++;
+    item.sof_serial = sof_serial;
     if (pkt.get_payload_byte_count() != 0 &&
         (pkt.payload == null || pkt.payload_offset < 0 ||
          pkt.payload_offset + pkt.get_payload_byte_count() > pkt.payload.data.size()))
@@ -124,7 +132,11 @@ class usb_ocp_observer extends uvm_component;
   function void ocp_capture_transfer_start(svt_usb_transfer xfer);
     int unsigned identity;
     if (xfer == null) `uvm_fatal("OCP_OBSERVER", "Null transfer-start callback")
-    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER) return;
+    if (!(xfer.xfer_type inside {svt_usb_transfer::CONTROL_TRANSFER,
+        svt_usb_transfer::BULK_IN_TRANSFER,svt_usb_transfer::BULK_OUT_TRANSFER,
+        svt_usb_transfer::INTERRUPT_IN_TRANSFER,svt_usb_transfer::INTERRUPT_OUT_TRANSFER,
+        svt_usb_transfer::ISOCHRONOUS_IN_TRANSFER,svt_usb_transfer::ISOCHRONOUS_OUT_TRANSFER}))
+      `uvm_fatal("OCP_OBSERVER", "Unsupported transfer type in OCP-only environment")
     identity = xfer.get_inst_id();
     if (started_at.exists(identity))
       `uvm_fatal("OCP_CORRELATION", "Transfer instance started twice without completion")
@@ -135,11 +147,13 @@ class usb_ocp_observer extends uvm_component;
   function void ocp_capture_transfer(svt_usb_transfer xfer);
     usb_ocp_event item;
     if (xfer == null) `uvm_fatal("OCP_OBSERVER", "Null transfer callback")
-    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER) return;
     item = usb_ocp_event::type_id::create("transfer_snapshot");
     item.kind = usb_ocp_event::USB_TRANSFER;
     item.address = xfer.device_address;
     item.endpoint = xfer.endpoint_number;
+    item.transfer_type = xfer.xfer_type;
+    if (xfer.xfer_type != svt_usb_transfer::CONTROL_TRANSFER)
+      item.completed_bytes = xfer.completed_payload_bytes();
     item.vendor_instance = xfer.get_inst_id();
     if (!started_at.exists(item.vendor_instance))
       `uvm_fatal("OCP_CORRELATION", "Ended transfer instance has no matching monitor start")
@@ -149,16 +163,18 @@ class usb_ocp_observer extends uvm_component;
     started_serial.delete(item.vendor_instance);
     item.transfer_ok = (xfer.status === svt_sequence_item::ACCEPT);
     item.results = xfer.results_status;
-    item.setup[0] = ocp_prepare_request_type(xfer.setup_data_bmrequesttype_dir,
-                                            xfer.setup_data_bmrequesttype_type,
-                                            xfer.setup_data_bmrequesttype_recipient);
-    item.setup[1] = xfer.setup_data_brequest;
-    item.setup[2] = xfer.setup_data_w_value[7:0];
-    item.setup[3] = xfer.setup_data_w_value[15:8];
-    item.setup[4] = xfer.setup_data_w_index[7:0];
-    item.setup[5] = xfer.setup_data_w_index[15:8];
-    item.setup[6] = xfer.setup_data_w_length[7:0];
-    item.setup[7] = xfer.setup_data_w_length[15:8];
+    if (xfer.xfer_type == svt_usb_transfer::CONTROL_TRANSFER) begin
+      item.setup[0] = ocp_prepare_request_type(xfer.setup_data_bmrequesttype_dir,
+                                              xfer.setup_data_bmrequesttype_type,
+                                              xfer.setup_data_bmrequesttype_recipient);
+      item.setup[1] = xfer.setup_data_brequest;
+      item.setup[2] = xfer.setup_data_w_value[7:0];
+      item.setup[3] = xfer.setup_data_w_value[15:8];
+      item.setup[4] = xfer.setup_data_w_index[7:0];
+      item.setup[5] = xfer.setup_data_w_index[15:8];
+      item.setup[6] = xfer.setup_data_w_length[7:0];
+      item.setup[7] = xfer.setup_data_w_length[15:8];
+    end
     if (xfer.payload != null) begin
       if (xfer.payload_start_ix < 0 ||
           xfer.payload_start_ix + xfer.payload_byte_count() > xfer.payload.data.size())
@@ -215,6 +231,49 @@ class usb_ocp_observer extends uvm_component;
   task ocp_wait_snapshot(output usb_ocp_event item);
     wait (pending.size() != 0);
     item = pending.pop_front();
+  endtask
+
+  // EPN routing uses actual monitor-local identity plus an unambiguous key.
+  // At most one outstanding transfer of a given endpoint/direction is legal.
+  task ocp_wait_epn_completion(logic [6:0] address, logic [3:0] endpoint,
+      svt_usb_transfer::transfer_type_enum transfer_type,
+      longint unsigned floor, time timeout, output usb_ocp_event result);
+    bit done;
+    int match_index;
+    longint unsigned version;
+    result = null;
+    done = 0;
+    fork
+      begin
+        fork
+          begin
+            while (result == null) begin
+              version = completion_version;
+              match_index = -1;
+              foreach (completions[i])
+                if (completions[i].order >= floor &&
+                    completions[i].transfer_start_order >= floor &&
+                    completions[i].address === address &&
+                    completions[i].endpoint === endpoint &&
+                    completions[i].transfer_type === transfer_type) begin
+                  if (match_index != -1)
+                    `uvm_fatal("OCP_CORRELATION", "Ambiguous EPN monitor completion")
+                  match_index = i;
+                end
+              if (match_index != -1) begin
+                result = completions[match_index];
+                completions.delete(match_index);
+                completion_version++;
+              end else wait (completion_version != version);
+            end
+            done = 1;
+          end
+          begin #(timeout); end
+        join_any
+        disable fork;
+      end
+    join
+    if (!done) `uvm_fatal("OCP_CORRELATION", "EPN monitor completion timeout")
   endtask
 
   function int ocp_find_completion(logic [6:0] address, logic [7:0] setup[8],
