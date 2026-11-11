@@ -394,6 +394,7 @@ class usb_ocp_predictor extends uvm_object;
         epn.active_alternate = 0;
         epn.enabled = (epn.discovery.alternate === 0);
         epn.address = address[device];
+        epn.control_address = address[1];
         epn.next_toggle = '{default:0};
       end
     end
@@ -437,6 +438,10 @@ class usb_ocp_predictor extends uvm_object;
       if (item.endpoint !== 0) begin
         if (epn == null || token_device != epn.device || item.pid == svt_usb_packet::SETUP)
           `uvm_fatal("OCP_CONTEXT", "Unexpected/unconfigured EPN token")
+        // EPN identity is token_device; its overlap epoch/generation belongs
+        // to the original device0 control, not device1's last standard EP0.
+        token_epoch = control[1].epoch;
+        token_generation = control[1].generation;
         epn.ocp_observe_packet(item,control[1]);
         token = epn.token;
         return;

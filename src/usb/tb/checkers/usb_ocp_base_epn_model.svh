@@ -22,6 +22,8 @@ class usb_ocp_base_epn_model extends uvm_object;
   usb_ocp_event candidate;
   int unsigned device = 1;
   logic [6:0] address;
+  // Learned from device0 SET_ADDRESS, never the peer's descriptor EP0.
+  logic [6:0] control_address;
   bit configured;
   bit enabled;
   logic [7:0] active_alternate;
@@ -83,6 +85,7 @@ class usb_ocp_base_epn_model extends uvm_object;
 
   function void ocp_check_window(usb_ocp_base_control c);
     if (!c.active || c.status_acked || c.generation != token_generation ||
+        (device == 2 && c.address !== control_address) ||
         c.setup[0] !== ((token_phase == 0) ? 8'ha1 : 8'h21) ||
         c.ocp_get_value() !== ((token_phase == 0) ?
           16'(OCP_CMD_PROT_CAP) : 16'(OCP_CMD_INDIRECT_FIFO_DATA)))
