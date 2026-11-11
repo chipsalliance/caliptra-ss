@@ -82,6 +82,9 @@ class usb_ocp_predictor extends uvm_object;
   int unsigned fifo_max_words;
   int unsigned image_size_reads;
   int unsigned control_reads;
+  bit require_dev1_ep0_overlap;
+  int unsigned dev1_ep0_read_overlap;
+  int unsigned dev1_ep0_write_overlap;
 
   function new(string name = "usb_ocp_predictor");
     super.new(name);
@@ -130,6 +133,9 @@ class usb_ocp_predictor extends uvm_object;
     fifo_max_words = 0;
     image_size_reads = 0;
     control_reads = 0;
+    require_dev1_ep0_overlap = 0;
+    dev1_ep0_read_overlap = 0;
+    dev1_ep0_write_overlap = 0;
   endfunction
 
   function void ocp_configure_map(usb_reg_model ral);
@@ -359,6 +365,12 @@ class usb_ocp_predictor extends uvm_object;
       token_epoch = control[token_device].epoch;
       token_generation = control[token_device].generation;
       if (item.endpoint !== 0) `uvm_fatal("OCP_CONTEXT", "Bringup is EP0 only")
+      // USB 2.0 5.5.4 permits transactions from independent control pipes
+      // between an OCP control's accepted SETUP and completed STATUS.
+      if (token_device == 2 && control[1].active) begin
+        if (control[1].setup[0] === 8'ha1) dev1_ep0_read_overlap++;
+        if (control[1].setup[0] === 8'h21) dev1_ep0_write_overlap++;
+      end
       if (item.pid == svt_usb_packet::SETUP) begin
         foreach (setup_status_versions[i]) begin
           setup_status_versions[i].delete();
