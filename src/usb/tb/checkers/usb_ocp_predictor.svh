@@ -14,6 +14,9 @@
 
 class usb_ocp_predictor extends uvm_object;
   `uvm_object_utils(usb_ocp_predictor)
+  // OCP Recovery 1.1 9.2, RECOVERY_CTRL image-selection/activation codes.
+  localparam logic [7:0] OCP_RC_IMAGE_SEL_NONE = 8'h00;
+  localparam logic [7:0] OCP_RC_NO_ACTIVATE_CODE = 8'h00;
   typedef logic [7:0] bytes_t[$];
   typedef usb_ocp_base_control::status_version_t status_version_t;
   localparam int unsigned STATUS_VERSION_LIMIT = 64;
@@ -94,6 +97,7 @@ class usb_ocp_predictor extends uvm_object;
   bytes_t checked_replacement_bytes[3];
   longint unsigned checked_replacement_serial[3];
   bit checked_replacement_valid[3];
+  bit reset_commit_at_status;
   usb_ocp_base_epn_model epn_models[2];
   usb_ocp_base_epn_profile epn_profiles[2];
   bit require_mixed_epn;
@@ -226,8 +230,7 @@ class usb_ocp_predictor extends uvm_object;
     end
   endfunction
 
-  // USB reset policy is deliberately limited to transfer state. OCP reset
-  // retention remains unresolved; no reset workload calls this in bringup.
+  // USB 2.0 9.1.1.3: only USB transfer state belongs to this epoch.
   function void ocp_cancel_usb_epoch(int device);
     control[device].epoch++;
     control[device].active = 0;
@@ -378,7 +381,7 @@ class usb_ocp_predictor extends uvm_object;
         foreach (data.bytes[i]) fifo_expected.push_back(data.bytes[i]);
         accepted_bytes += data.bytes.size();
       end
-      if (c.data.size() == c.ocp_get_length()) begin
+      if (c.data.size() == c.ocp_get_length() && !reset_commit_at_status) begin
         case (c.setup[2])
           OCP_CMD_INDIRECT_FIFO_CTRL: begin
             if (c.data.size() != OCP_SPEC_LEN_INDIRECT_FIFO_CTRL ||
@@ -406,6 +409,54 @@ class usb_ocp_predictor extends uvm_object;
     usb_ocp_base_epn_model epn;
     c = control[device];
     epn = ocp_get_epn(device);
+    // Commit protocol completion here. USB 2.0 9.2.6 permits earlier device
+    // processing; reset snapshots check those effects independently.
+    if (reset_commit_at_status && device == 1 && c.setup[0] === 8'h21) begin
+      case (c.setup[2])
+        OCP_CMD_INDIRECT_FIFO_CTRL: begin
+          if (c.data.size() != OCP_SPEC_LEN_INDIRECT_FIFO_CTRL ||
+              !(c.data[1] inside {8'h00,8'h01}))
+            `uvm_fatal("OCP_FIFO", "Malformed FIFO control/reset at STATUS")
+          if (c.data[1] === 1) begin
+            // Only an observed explicit reset can retire old recovery bytes.
+            if (fifo_actual.size() != 0 || fifo_expected.size() != 0 ||
+                returned_bytes != accepted_bytes || compared_bytes != accepted_bytes)
+              `uvm_fatal("OCP_RESET_AXI", "Explicit FIFO reset precedes complete accepted-old-byte reconciliation")
+            fifo_expected.delete();
+            accepted_bytes = 0;
+            returned_bytes = 0;
+            compared_bytes = 0;
+            activation_request = 0;
+            activation_status_acked = 0;
+            activation_observed = 0;
+            activation_cleared = 0;
+            pending_seen = 0;
+            final_status_seen = 0;
+            clear_seen = 0;
+            image_size_reads = 0;
+            control_reads = 0;
+            // OCP 8.2.5: fresh discovery may scan non-recovery CMS entries.
+            fifo_discovered = 0;
+          end else if (accepted_bytes != 0)
+            `uvm_fatal("OCP_FIFO", "New image without observed explicit FIFO reset")
+          selected_cms = c.data[0];
+          image_words = ocp_get_le32(c.data,2);
+        end
+        OCP_CMD_RECOVERY_CTRL: begin
+          if (c.data.size() != OCP_SPEC_LEN_RECOVERY_CTRL ||
+              c.data[0] !== selected_cms || c.data[1] !== OCP_RC_IMAGE_SEL_CMS ||
+              !(c.data[2] inside {OCP_RC_NO_ACTIVATE_CODE,OCP_RC_ACTIVATE_CODE}) ||
+              !pending_seen || !baseline_zero)
+            `uvm_fatal("OCP_ACTIVATION", "Activation lacks pending/baseline or legal payload")
+          recovery_ctrl = {c.data[2],c.data[1],c.data[0]};
+          activation_request = (c.data[2] === OCP_RC_ACTIVATE_CODE);
+        end
+        OCP_CMD_INDIRECT_FIFO_DATA: begin
+          // Accepted FIFO bytes already belong to the packet-level ledger.
+        end
+        default: `uvm_fatal("OCP_RESET_COMMAND", "Unmodeled reset-row non-FIFO command")
+      endcase
+    end
     c.active = 0;
     c.status_acked = 1;
     usb_completions[device]++;
@@ -442,7 +493,9 @@ class usb_ocp_predictor extends uvm_object;
       default_device = c.setup[4];
     end
     if (device == 1 && c.setup[0] === 8'h21 &&
-        c.setup[2] === OCP_CMD_RECOVERY_CTRL)
+        c.setup[2] === OCP_CMD_RECOVERY_CTRL &&
+        c.data.size() == OCP_SPEC_LEN_RECOVERY_CTRL &&
+        c.data[2] === OCP_RC_ACTIVATE_CODE)
       activation_status_acked = 1;
   endfunction
 
@@ -572,6 +625,7 @@ class usb_ocp_predictor extends uvm_object;
             `uvm_fatal("OCP_STATUS", "Status stage must be DATA1 ZLP")
           if (!c.setup[0][7] && c.data.size() != c.ocp_get_length())
             `uvm_fatal("OCP_LENGTH", "OUT status before full data stage")
+          // USB 2.0 8.5.1: HS control OUT Data/Status accept ACK or NYET.
           ocp_accept_status(token_device);
         end else if (toggle === c.next_toggle[incoming]) begin
           // USB 2.0 5.5.3/8.5.3.3: new DATA is not a last-packet retry.

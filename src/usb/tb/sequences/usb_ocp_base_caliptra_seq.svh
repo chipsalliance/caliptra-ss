@@ -80,7 +80,21 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
       readback >> capability_shift),UVM_LOW)
   endtask
 
-  task ocp_poll_dma_ready(bit activation, time deadline, logic expected = 1'b1);
+  virtual function bit ocp_check_attempt_abort();
+    return 0;
+  endfunction
+
+  virtual task ocp_do_check_activation_boundary();
+  endtask
+
+  virtual task ocp_do_check_dma_boundary();
+  endtask
+
+  virtual task ocp_wait_attempt_abort();
+    wait (1'b0);
+  endtask
+
+  virtual task ocp_poll_dma_ready(bit activation, time deadline, logic expected = 1'b1);
     bit ready;
     ready = 0;
     if (ocp_cfg.recovery_vif == null || $time >= deadline)
@@ -95,11 +109,12 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
           end
           begin #(deadline-$time); end
           begin wait (ocp_cfg.stop_requested === 1'b1); end
+          begin ocp_wait_attempt_abort(); end
         join_any
         disable fork;
       end
     join
-    if (!ready)
+    if (!ready && !ocp_check_attempt_abort())
       `uvm_fatal("OCP_DMA", $sformatf("Architectural %s readiness timeout/teardown",
                                     activation ? "activation" : "payload"))
   endtask
@@ -125,7 +140,7 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
                                 words,drained_words),UVM_LOW)
   endtask
 
-  task body();
+  virtual task ocp_do_check_attempt();
     logic [31:0] size_words;
     logic [31:0] control;
     logic [31:0] activation;
@@ -151,6 +166,7 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
     deadline = $time + ocp_cfg.actor_timeout;
     poll_interval = ocp_cfg.service_poll;
     do begin
+      if (ocp_check_attempt_abort()) return;
       if (ocp_cfg.stop_requested === 1'b1)
         `uvm_fatal("OCP_TEARDOWN", "Teardown before recovery image consumption")
       if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "Image-size register timeout")
@@ -164,13 +180,18 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
       `uvm_fatal("OCP_CALIPTRA", "Image-size register exceeds bounded test envelope")
     ocp_read_register("INDIRECT_FIFO_CTRL_0",control);
     while (drained_words < size_words) begin
+      if (ocp_check_attempt_abort()) return;
       if (ocp_cfg.stop_requested === 1'b1)
         `uvm_fatal("OCP_TEARDOWN", "Teardown before recovery image consumption")
       if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "FIFO drain timeout")
+      ocp_do_check_dma_boundary();
+      if (ocp_check_attempt_abort()) return;
       ocp_poll_dma_ready(0,deadline);
+      if (ocp_check_attempt_abort()) return;
       batch_words = size_words-drained_words;
       if (batch_words > 64) batch_words = 64;
       while (batch_words != 0) begin
+        if (ocp_check_attempt_abort()) return;
         burst_words = (batch_words > 16) ? 16 : batch_words;
         ocp_do_check_dma_burst(burst_words);
         batch_words -= burst_words;
@@ -180,7 +201,10 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
     end
     ocp_write_register("DEVICE_STATUS_0",
       (32'(OCP_REC_REASON_FORCED_RECOVERY)<<16) | OCP_DEVICE_STATUS_RECOVERY_PENDING);
+    ocp_do_check_activation_boundary();
+    if (ocp_check_attempt_abort()) return;
     ocp_poll_dma_ready(1,deadline);
+    if (ocp_check_attempt_abort()) return;
     ocp_read_register("RECOVERY_CTRL",activation);
     if ($time >= deadline) `uvm_fatal("OCP_CALIPTRA", "Fresh ACTIVATE register timeout")
     if (activation[23:16] !== OCP_RC_ACTIVATE_CODE ||
@@ -192,6 +216,10 @@ class usb_ocp_base_caliptra_seq extends usb_ocp_base_seq;
     ocp_write_register("RECOVERY_CTRL",activation & 32'hff00ffff);
     ocp_write_register("RECOVERY_STATUS",32'(OCP_RECOVERY_STATUS_SUCCESS));
     ocp_write_register("DEVICE_STATUS_0",32'(OCP_DEVICE_STATUS_RUNNING_RECOVERY));
+  endtask
+
+  task body();
+    ocp_do_check_attempt();
     completed = 1;
     ocp_poll_teardown();
     ocp_cfg.actor_finished[2] = 1;

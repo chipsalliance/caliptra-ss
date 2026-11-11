@@ -206,6 +206,10 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
   virtual task ocp_connect_upstream();
   endtask
 
+  // Called only after the owner's actual DEVCMDSTAT frontdoor detected DRES_C.
+  virtual task ocp_do_check_reset_indication(logic [31:0] command);
+  endtask
+
   virtual task body();
     usb_ocp_base_epn_service_seq epn_service;
     usb_ocp_base_epn_profile profile;
@@ -250,6 +254,7 @@ class usb_ocp_firmware_base_seq extends usb_ocp_base_seq;
       reset_is_set = ((command & ocp_get_mask("DEVCMDSTAT","DRES_C")) != 0);
       if (reset_is_set) begin
         progress = (reset_was_set === 1'b0);
+        ocp_do_check_reset_indication(command);
         address_shadow = 0;
         configuration_shadow = 0;
         alternate_shadow = 0;
