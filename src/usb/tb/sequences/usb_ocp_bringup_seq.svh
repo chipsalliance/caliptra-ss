@@ -43,6 +43,9 @@ class usb_ocp_bringup_seq extends usb_ocp_base_seq;
     if (!uvm_config_db#(usb_ocp_observer)::get(p_sequencer,"","ocp_observer",observer) ||
         !uvm_config_db#(usb_ocp_scoreboard)::get(p_sequencer,"","ocp_scoreboard",scoreboard))
       `uvm_fatal("OCP_BRINGUP", "Missing mandatory passive checker")
+    if (ocp_cfg.full_speed != scoreboard.model.full_speed ||
+        (!ocp_cfg.full_speed && $test$plusargs("usb_ocp_negative_fs_handshake")))
+      `uvm_fatal("OCP_FS_GUARD", "FS configuration/checker controls require the owned FS scenario")
     if (scoreboard.reset_model == null && $test$plusargs("usb_ocp_reset"))
       `uvm_fatal("OCP_RESET_GUARD", "Reset controls require the OCP reset/reinitialization testcase")
     if (scoreboard.l2_model == null &&

@@ -334,8 +334,11 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       if (data[0][4] === 0 && data[0][1] === 1 && data[2][4] === 1) break;
       if ($time >= deadline) `uvm_fatal("OCP_PORT", "Downstream reset completion timeout")
     end while (1);
-    if (data[1][2:1] !== 2'b10)
-      `uvm_fatal("OCP_PORT", "Downstream device did not negotiate high speed")
+    // USB2 11.24.2.7.1.7-.8: enabled FS ports have both speed bits clear.
+    if (data[1][2:1] !== (ocp_cfg.full_speed ? 2'b00 : 2'b10))
+      `uvm_fatal("OCP_PORT", "Downstream device did not negotiate the selected FS/HS topology")
+    if (ocp_cfg.full_speed)
+      `uvm_info("OCP_FS_PORT", $sformatf("port=%0d connected/enabled FS from actual GET_PORT_STATUS",port), UVM_NONE)
     ocp_do_check_control(0,8'h23,1,20,16'(port),0,empty,data);
     #(usb_cfg.trstrcy * 1ps);
   endtask

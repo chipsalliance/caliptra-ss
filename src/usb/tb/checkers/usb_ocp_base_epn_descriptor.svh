@@ -21,9 +21,19 @@ class usb_ocp_base_epn_descriptor extends uvm_object;
   logic [7:0] configuration;
   logic [7:0] interface_number;
   logic [7:0] alternate;
+  bit full_speed;
 
   function new(string name = "usb_ocp_base_epn_descriptor");
     super.new(name);
+  endfunction
+
+  function int ocp_get_period(usb_endpoint_cfg endpoint);
+    if (endpoint == null)
+      `uvm_fatal("OCP_EPN_DESCRIPTOR", "Missing discovered endpoint for period")
+    // USB2 9.6.6: linear FS interrupt, exponential FS ISO/HS periodic.
+    if (full_speed && endpoint.transfer_type == USB_TRANSFER_TYPE_INTERRUPT)
+      return endpoint.interval;
+    return 1 << (endpoint.interval-1);
   endfunction
 
   function void ocp_check_parse(bytes_t data);
@@ -103,8 +113,10 @@ class usb_ocp_base_epn_descriptor extends uvm_object;
           case (data[pos+3][1:0])
             2: begin
               transfer_type = USB_TRANSFER_TYPE_BULK;
-              if (packet_size != 512 || data[pos+3][7:2] !== 0 || alt != 0)
-                `uvm_fatal("OCP_EPN_DESCRIPTOR", "Invalid HS bulk endpoint")
+              if ((!full_speed && packet_size != 512) ||
+                  (full_speed && !(packet_size inside {8,16,32,64})) ||
+                  data[pos+3][7:2] !== 0 || alt != 0)
+                `uvm_fatal("OCP_EPN_DESCRIPTOR", "Invalid speed-specific bulk endpoint")
             end
             3: begin
               transfer_type = USB_TRANSFER_TYPE_INTERRUPT;
@@ -119,9 +131,12 @@ class usb_ocp_base_epn_descriptor extends uvm_object;
             default: `uvm_fatal("OCP_EPN_DESCRIPTOR", "Noncontrol endpoint has CONTROL type")
           endcase
           if (packet_size < 1 || packet_size > 1024 ||
+              (full_speed && transfer_type == USB_TRANSFER_TYPE_INTERRUPT && packet_size > 64) ||
+              (full_speed && transfer_type == USB_TRANSFER_TYPE_ISOCHRONOUS && packet_size > 1023) ||
               (transfer_type != USB_TRANSFER_TYPE_BULK &&
-               !(interval inside {[1:16]})))
-            `uvm_fatal("OCP_EPN_DESCRIPTOR", "Illegal HS size or periodic interval")
+               (interval < 1 || interval >
+                 ((full_speed && transfer_type == USB_TRANSFER_TYPE_INTERRUPT) ? 255 : 16))))
+            `uvm_fatal("OCP_EPN_DESCRIPTOR", "Illegal speed-specific size or periodic interval")
           pair[dir] = usb_endpoint_cfg::create_endpoint("discovered_epn",
             data[pos+2][3:0],dir ? USB_DIRECTION_IN : USB_DIRECTION_OUT,
             transfer_type,packet_size,interval);
