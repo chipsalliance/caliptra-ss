@@ -104,21 +104,10 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-        // Drain the ISR mailbox with interrupts masked; the ISR has already
-        // acknowledged INTSTAT. DSUS/DSUS_C are polled through DEVCMDSTAT.
-        uint32_t saved_mstatus;
-        __asm__ volatile ("csrrc %0, mstatus, %1"
-                          : "=r" (saved_mstatus)
-                          : "r" (0x8u)
-                          : "memory");
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb = 0u;
-        if (saved_mstatus & 0x8u) {
-            __asm__ volatile ("csrrs zero, mstatus, %0"
-                              :
-                              : "r" (0x8u)
-                              : "memory");
-        }
+        // Drain the ISR event vector with interrupts masked; the ISR has
+        // already acknowledged INTSTAT. DSUS/DSUS_C are polled through
+        // DEVCMDSTAT.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the
         // device-neutral USB_DEV_* macros, bitfield MASKS use DEV0_CSR_*. The

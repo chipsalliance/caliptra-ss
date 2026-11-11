@@ -115,27 +115,10 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
-        // acknowledged INTSTAT, so the foreground loop must not touch
-        // INTSTAT itself. Snapshot then clear by complement so bits the
-        // ISR sets while we are handling this batch are not lost.
-        //
-        // The snapshot plus clear is a read-modify-write (lw / and / sw) on
-        // a location the ISR also updates with |=. If the USB interrupt is
-        // taken between the lw and the sw, the bit the ISR just published is
-        // overwritten by the stale value and lost for good, because
-        // service_usb_intr() has already W1C'd INTSTAT so the hardware
-        // source never refires. That loses one EP0OUT event and the SETUP
-        // then sits in DEVCMDSTAT forever. Mask mstatus.MIE (bit 3) across
-        // the pair to make it atomic, and restore only if it was set.
-        {
-            uint32_t prev_mstatus = csr_read_clr_bits_mstatus(0x8u);
-            usb_events = mcu_intr_rcv.usb;
-            mcu_intr_rcv.usb &= ~usb_events;
-            if (prev_mstatus & 0x8u) {
-                csr_set_bits_mstatus(0x8u);
-            }
-        }
+        // Drain the ISR event vector. service_usb_intr() already read and
+        // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
+        // itself. Atomically snapshot and clear the whole event vector.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
@@ -149,10 +132,10 @@ void main (void) {
         }
 
         // Check for EP0 OUT work: either the ISR reported an EP0OUT event,
-        // or the hardware is holding DEVCMDSTAT.SETUP. The second condition
-        // is the recovery path: DEVCMDSTAT.SETUP is a sticky hardware flag
+        // or the hardware is holding DEVCMDSTAT.SETUP. The second condition is
+        // the recovery path: DEVCMDSTAT.SETUP is a sticky hardware flag
         // that only firmware clears (usb_clear_setup_bit()), so polling it
-        // directly means a lost or coalesced EP0OUT mailbox bit can no
+        // directly means a lost or coalesced EP0OUT event vector bit can no
         // longer wedge the loop. Dispatching on the register rather than on
         // the event makes the handling idempotent and self healing.
         {
@@ -192,8 +175,8 @@ void main (void) {
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
-        // loop stays tight and USB events are picked up within ~1us of the
+        // No mcu_sleep here: the event vector check is a single DCCM load, so
+        // the loop stays tight and USB events are picked up within ~1us of the
         // interrupt being taken.
 
     }

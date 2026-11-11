@@ -446,8 +446,8 @@ static bool dev1_isolation_violation = false;
 // inside a fixed time window is a performance mask, not a correctness fix.
 // =============================================================================
 
-// Arm EP1 OUT for the currently selected device and enable its EP1OUT
-// interrupt so the EP1 OUT completion is published to the ISR mailbox.
+// Arm EP1 OUT for the currently selected device and enable its EP1OUT interrupt
+// so the EP1 OUT completion is published to the ISR event vector.
 // usb_select_device() must already have selected the target device, so the
 // USB_DEV_* aliases resolve to that controller's aperture.
 static void usb_ep1_out_arm(usb_dev_loopback_state_t *st) {
@@ -465,8 +465,8 @@ static void usb_ep1_out_arm(usb_dev_loopback_state_t *st) {
     lsu_write_32(USB_DEV_DMA_BASE_ADDR + USB_EP_LIST_EP1_OUT_OFFSET, ep1_out);
 
     // boot_usb_core_hub() only enables DEV_INT/EP0OUT/EP0IN, and the ISR masks
-    // INTSTAT with INTEN, so the EP1 OUT completion would never reach the
-    // mailbox without enabling the EP1OUT interrupt here.
+    // INTSTAT with INTEN, so the EP1 OUT completion would never reach the event
+    // vector without enabling the EP1OUT interrupt here.
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
@@ -575,12 +575,12 @@ static uint32_t usb_get_dev0_address(void) {
     return usb_get_device_address();
 }
 
-// Drain the ISR mailbox and advance the loopback state machine for one device.
-// dev selects USBDC0 (0) or USBDC1 (1); usb_events is the snapshot of the
-// matching mailbox field. The ISR has already W1C-acknowledged INTSTAT, so the
-// foreground must not touch INTSTAT itself. EP1 IN completion is detected by
-// polling the EP list Active bit (not INTSTAT), matching the polling loopback
-// reference.
+// Drain the ISR event vector and advance the loopback state machine for one
+// device. dev selects USBDC0 (0) or USBDC1 (1); usb_events is the snapshot of
+// the matching event vector field. The ISR has already W1C-acknowledged
+// INTSTAT, so the foreground must not touch INTSTAT itself. EP1 IN completion
+// is detected by polling the EP list Active bit (not INTSTAT), matching the
+// polling loopback reference.
 //
 // For dev==1 this also enforces the isolation invariants: once USBDC1 has been
 // enumerated it must never see a bus reset and must never lose its address.
@@ -618,9 +618,9 @@ static void usb_service_device(int dev, uint32_t usb_events,
     //
     // This is deliberately NOT gated on usb_events & DEV_INT_MASK, for the same
     // reason the EP0 SETUP check below is not gated on EP0OUT: DRES_C is a
-    // sticky hardware status bit, whereas the mailbox event is a one-shot that
-    // two equal-priority controllers can lose. Gating a sticky bit behind a
-    // losable event just reintroduces the round-8 class of bug.
+    // sticky hardware status bit, whereas the event vector event is a one-shot
+    // that two equal-priority controllers can lose. Gating a sticky bit behind
+    // a losable event just reintroduces the round-8 class of bug.
     //
     // The EP1 state is cleared UNCONDITIONALLY rather than under
     // "if (st->ep1_armed)". A bus reset invalidates the arm state whether or not
@@ -788,9 +788,9 @@ static void usb_service_device(int dev, uint32_t usb_events,
     // EP1 IN for the loopback.
     //
     // This is driven off the EP1 OUT entry's Active bit (hardware truth), NOT
-    // off the mailbox EP1OUT event bit. The dual-device bulk loopback reference
-    // can use the event bit because it performs exactly ONE loopback per
-    // controller and latches it with a sticky "done" flag, so a spurious or
+    // off the event vector EP1OUT event bit. The dual-device bulk loopback
+    // reference can use the event bit because it performs exactly ONE loopback
+    // per controller and latches it with a sticky "done" flag, so a spurious or
     // stale event can only ever fire once, before any data matters. This test
     // re-arms EP1 OUT repeatedly for USBDC1, which re-opens that window on
     // every iteration: usb_ep1_out_arm() sets INTEN.EP1OUT without first
@@ -1007,12 +1007,9 @@ void main(void) {
         uint32_t ev0;
         uint32_t ev1;
 
-        // Snapshot then clear by complement so bits the ISR sets while we are
-        // handling this batch are not lost.
-        ev0 = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~ev0;
-        ev1 = mcu_intr_rcv.usb_dev1;
-        mcu_intr_rcv.usb_dev1 &= ~ev1;
+        // Atomically snapshot and clear each controller's event vector.
+        ev0 = usb_event_vector_take(&mcu_intr_rcv.usb);
+        ev1 = usb_event_vector_take(&mcu_intr_rcv.usb_dev1);
 
         // Service USBDC0 (vector 3) and USBDC1 (vector 6).
         usb_service_device(0, ev0, &dev_state[0]);

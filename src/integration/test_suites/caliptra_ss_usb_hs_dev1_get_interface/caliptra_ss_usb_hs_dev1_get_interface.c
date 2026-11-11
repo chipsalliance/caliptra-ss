@@ -36,7 +36,7 @@
 // src/integration/test_suites/libs/usb/usb.h and
 // claude_md/15_usb_dev1_replication.md. Like the other dev1 command-value
 // tests this is a pure polling test with no ISR involvement (no mcu_isr.h, no
-// init_usb_interrupts(), no ISR mailbox).
+// init_usb_interrupts(), no ISR event vector).
 // -----------------------------------------------------------------------------
 #include "soc_address_map.h"
 #include "printf.h"

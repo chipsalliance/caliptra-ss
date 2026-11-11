@@ -19,8 +19,31 @@
 #include "soc_address_map.h"
 #include "printf.h"
 #include "riscv_hw_if.h"
+#include "riscv-csr.h"
 #include "stdint.h"
 #include <stdbool.h>
+
+// Atomically drain an ISR event vector, preserving the caller's mstatus.MIE
+// state. Only the snapshot and full-word clear run with interrupts masked.
+static inline uint32_t usb_event_vector_take(volatile uint32_t *event_vector) {
+    uint32_t saved_mstatus;
+    uint32_t events;
+
+    __asm__ volatile ("csrrc %0, mstatus, %1"
+                      : "=r" (saved_mstatus)
+                      : "r" (MSTATUS_MIE_BIT_MASK)
+                      : "memory");
+    events = *event_vector;
+    *event_vector = 0u;
+    if ((saved_mstatus & MSTATUS_MIE_BIT_MASK) != 0u) {
+        __asm__ volatile ("csrrs zero, mstatus, %0"
+                          :
+                          : "r" (MSTATUS_MIE_BIT_MASK)
+                          : "memory");
+    }
+
+    return events;
+}
 
 #ifndef USB_EVENT_LOOP_DIAG_PERIOD
 #define USB_EVENT_LOOP_DIAG_PERIOD 10000u

@@ -35,7 +35,7 @@ by a USB 2.0 Extension capability (`bLength=0x07`, `bDescriptorType=0x10`,
 ## Firmware
 
 Pure polling loop with no ISR involvement (no `mcu_isr.h`, no
-`init_usb_interrupts()`, no ISR mailbox), structured like
+`init_usb_interrupts()`, no ISR event vector), structured like
 `caliptra_ss_usb_fs_conn.c`: INTSTAT is read each iteration and each serviced
 bit (DEV_INT, EP0OUT, EP0IN) is write-1-to-cleared. The BOS request itself is
 answered by the hub EP0 hardware and never reaches the MCU, so there is no

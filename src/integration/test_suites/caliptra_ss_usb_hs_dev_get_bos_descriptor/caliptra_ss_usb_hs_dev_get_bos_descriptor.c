@@ -117,22 +117,8 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Atomically drain the ISR mailbox, preserving the previous MIE state.
-        {
-            uint32_t saved_mstatus;
-            __asm__ volatile ("csrrc %0, mstatus, %1"
-                              : "=r" (saved_mstatus)
-                              : "r" (0x8u)
-                              : "memory");
-            usb_events = mcu_intr_rcv.usb;
-            mcu_intr_rcv.usb = 0u;
-            if (saved_mstatus & 0x8u) {
-                __asm__ volatile ("csrrs zero, mstatus, %0"
-                                  :
-                                  : "r" (0x8u)
-                                  : "memory");
-            }
-        }
+        // Atomically drain the ISR event vector, preserving the previous MIE state.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
@@ -181,7 +167,7 @@ void main (void) {
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
+        // No mcu_sleep here: the event vector check is a single DCCM load, so the
         // loop stays tight and USB events are picked up within ~1us of the
         // interrupt being taken.
 
