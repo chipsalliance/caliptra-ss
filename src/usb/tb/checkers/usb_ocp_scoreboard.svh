@@ -18,12 +18,15 @@ class usb_ocp_scoreboard extends uvm_component;
   usb_ocp_observer observer;
   usb_ocp_predictor model;
   usb_ocp_event deferred_axi[$];
+  usb_ocp_event deferred_transfer_aborts[$];
   int unsigned event_count;
   logic busy;
   bit negative_payload;
   bit negative_activation;
   bit negative_dma;
   bit negative_overlap;
+  bit negative_replacement;
+  bit negative_abort_prefix;
   bit negative_payload_applied;
 
   function new(string name = "usb_ocp_scoreboard", uvm_component parent = null);
@@ -39,7 +42,10 @@ class usb_ocp_scoreboard extends uvm_component;
     negative_activation = $test$plusargs("usb_ocp_negative_activation");
     negative_dma = $test$plusargs("usb_ocp_negative_dma");
     negative_overlap = $test$plusargs("usb_ocp_negative_overlap");
-    if (negative_payload || negative_activation || negative_dma || negative_overlap)
+    negative_replacement = $test$plusargs("usb_ocp_negative_replacement");
+    negative_abort_prefix = $test$plusargs("usb_ocp_negative_abort_prefix");
+    if (negative_payload || negative_activation || negative_dma || negative_overlap ||
+        negative_replacement || negative_abort_prefix)
       `uvm_info("OCP_NEGATIVE_CONTROL", "Checker-only negative control enabled; this run MUST fail", UVM_NONE)
   endfunction
 
@@ -392,10 +398,77 @@ class usb_ocp_scoreboard extends uvm_component;
     end
   endfunction
 
+  function bit ocp_check_replaced_transfer(usb_ocp_event item);
+    int device;
+    int index;
+    usb_ocp_base_control c;
+    logic [7:0] expected_byte;
+    device = -1;
+    index = -1;
+    foreach (model.replaced_controls[d,i])
+      if (model.replaced_controls[d][i].address === item.address &&
+          model.replaced_controls[d][i].setup === item.setup &&
+          item.transfer_start_order < model.replaced_controls[d][i].replaced_at) begin
+        if (device != -1)
+          `uvm_fatal("OCP_SUPERSESSION", "Ambiguous replaced monitor-transfer identity")
+        device = d;
+        index = i;
+      end
+    if (device == -1) return 0;
+    c = model.replaced_controls[device][index];
+    if (c.status_acked)
+      `uvm_fatal("OCP_SUPERSESSION", "Replaced transfer was already STATUS-complete")
+    // An aborted OUT descriptor may retain unaccepted payload. Only the
+    // ACK-qualified packet prefix can advance the host's image offset.
+    if (item.bytes.size() < c.data.size())
+      `uvm_fatal("OCP_SUPERSESSION", "Native abort snapshot omits ACK-qualified bytes")
+    foreach (c.data[i]) begin
+      expected_byte = c.data[i];
+      if (negative_abort_prefix && !c.setup[0][7] && i == 0)
+        expected_byte ^= 8'h01;
+      if (item.bytes[i] !== expected_byte)
+        `uvm_fatal("OCP_SUPERSESSION",$sformatf(
+          "Replaced packet/transfer prefix differs: byte=%0d expected=%02h actual=%02h negative_abort_prefix=%0b",
+          i,expected_byte,item.bytes[i],negative_abort_prefix))
+    end
+    if (model.checked_replacement_valid[device])
+      `uvm_fatal("OCP_SUPERSESSION", "Prior checked prefix was not consumed")
+    model.checked_replacement_bytes[device] = c.data;
+    model.checked_replacement_serial[device] = item.transfer_serial;
+    model.checked_replacement_valid[device] = 1;
+    model.replaced_controls[device].delete(index);
+    model.replacement_crosschecks++;
+    `uvm_info("OCP_SUPERSESSION",$sformatf(
+      "Checked replaced control slot=%0d generation=%0d accepted_bytes=%0d native_ok=%0b results=%h",
+      device,c.generation,c.data.size(),item.transfer_ok,item.results),UVM_LOW)
+    return 1;
+  endfunction
+
   function void ocp_check_transfer(usb_ocp_event item);
     int device;
     usb_ocp_base_control c;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
+    allowed_results = 0;
+    if (!item.setup[0][7]) allowed_results[5] = 1;
+    if (item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1) begin
+      allowed_results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] = 1;
+      if (item.transfer_ok || !model.require_dev0_ep0_replacement || item.endpoint !== 0 ||
+          item.address !== model.address[1] ||
+          !(item.setup[0] inside {8'ha1,8'h21}) ||
+          !(item.setup[2] inside {OCP_CMD_PROT_CAP,OCP_CMD_INDIRECT_FIFO_DATA}) ||
+          (item.results & ~allowed_results) !== 0)
+        `uvm_fatal("OCP_SUPERSESSION", "Unexpected native abort or additional transfer failure")
+      if (ocp_check_replaced_transfer(item)) return;
+      c = model.control[1];
+      if (!c.active || c.address !== item.address || c.setup !== item.setup)
+        `uvm_fatal("OCP_SUPERSESSION", "Native abort lacks a pending matching control context")
+      if (deferred_transfer_aborts.size() >= 16384)
+        `uvm_fatal("OCP_SUPERSESSION", "Unproved native-abort queue exceeded bound")
+      // The monitor may end before the new SETUP. Retain the actual until
+      // accepted wire supersession permits its mandatory prefix cross-check.
+      deferred_transfer_aborts.push_back(item);
+      return;
+    end
     // SET_ADDRESS completes at the old address, retained in control context.
     device = -1;
     foreach (model.control[i])
@@ -436,6 +509,11 @@ class usb_ocp_scoreboard extends uvm_component;
           deferred_axi.push_back(item);
         end
       endcase
+      for (int i = 0; i < deferred_transfer_aborts.size();) begin
+        if (ocp_check_replaced_transfer(deferred_transfer_aborts[i]))
+          deferred_transfer_aborts.delete(i);
+        else i++;
+      end
       // Hardware may expose a received OUT DWORD before its ACK finishes on
       // the wire. Retain the completed AXI actual, then compare after the
       // transaction's acceptance decision; never discard an early result.
@@ -456,15 +534,36 @@ class usb_ocp_scoreboard extends uvm_component;
 
   function bit ocp_check_drained();
     if (busy || !observer.ocp_check_drained() || deferred_axi.size() != 0 ||
+        deferred_transfer_aborts.size() != 0 ||
         model.token != null || model.ready_controls.size() != 0 ||
         model.fifo_expected.size() != 0 || model.fifo_actual.size() != 0) return 0;
     foreach (model.control[i])
       if (model.control[i].active ||
+          model.replaced_controls[i].size() != 0 ||
+          model.checked_replacement_valid[i] ||
           model.transfer_crosschecks[i] != model.usb_completions[i]) return 0;
     return 1;
   endfunction
 
+  function void ocp_check_replacements();
+    if (!model.require_dev0_ep0_replacement) return;
+    if (negative_replacement)
+      model.dev0_ep0_write_replacements = 0;
+    if (model.dev0_ep0_read_replacements == 0 ||
+        model.dev0_ep0_write_replacements == 0 ||
+        model.replacement_crosschecks != model.dev0_ep0_read_replacements +
+                                        model.dev0_ep0_write_replacements)
+      `uvm_fatal("OCP_SUPERSESSION",$sformatf(
+        "Missing ACK-qualified replacement or prefix cross-check: read=%0d write=%0d crosschecks=%0d negative=%0b",
+        model.dev0_ep0_read_replacements,model.dev0_ep0_write_replacements,
+        model.replacement_crosschecks,negative_replacement))
+    if (model.replaced_controls[1].size() != 0 ||
+        model.checked_replacement_valid[1] || deferred_transfer_aborts.size() != 0)
+      `uvm_fatal("OCP_SUPERSESSION", "Replacement phase has unconsumed control/prefix obligations")
+  endfunction
+
   function void ocp_check_complete();
+    ocp_check_replacements();
     // Checker-only injection removes write-window evidence, not USB stimulus
     // or mandatory packet/transfer checks.
     if (model.require_dev1_ep0_overlap && negative_overlap)
@@ -502,5 +601,10 @@ class usb_ocp_scoreboard extends uvm_component;
         "Checked dev1 EP0 inside OCP read/write windows: read_tokens=%0d write_tokens=%0d reordered=%0d",
         model.dev1_ep0_read_overlap,model.dev1_ep0_write_overlap,
         observer.reordered_completions),UVM_LOW)
+    if (model.require_dev0_ep0_replacement)
+      `uvm_info("OCP_SUPERSESSION",$sformatf(
+        "Checked native same-EP0 replacement: read=%0d write=%0d crosschecks=%0d",
+        model.dev0_ep0_read_replacements,model.dev0_ep0_write_replacements,
+        model.replacement_crosschecks),UVM_LOW)
   endfunction
 endclass

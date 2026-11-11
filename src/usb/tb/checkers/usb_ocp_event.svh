@@ -15,6 +15,8 @@
 // Owned snapshots only: no retained vendor transaction or payload handles.
 class usb_ocp_event extends uvm_sequence_item;
   `uvm_object_utils(usb_ocp_event)
+  // svt_usb_transfer::results_status: native CMD abort/flush, not generic abort().
+  localparam int unsigned SERVICE_ABORT_RESULT_BIT = 1;
 
   typedef enum {USB_PACKET, USB_TRANSFER, AXI_COMPLETED} kind_e;
   kind_e kind;
