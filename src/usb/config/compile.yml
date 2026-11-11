@@ -84,12 +84,25 @@ targets:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/ip_xxx_3511_hs_mem_compound_wrapper.sv
     tops: [ip_xxx_3511_hs_mem_compound_wrapper]
 ---
+provides: [usb_coverage]
+schema_version: 2.4.0
+requires:
+  - ip_xxx_3511_hs_mem_compound_wrapper
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/usb_ocp_cov_if.sv
+      - $COMPILE_ROOT/coverage/usb_ocp_cov_bind.sv
+---
 provides: [usb_top_tb]
 schema_version: 2.4.0
 requires:
   - ip_xxx_3511_hs_mem_compound_wrapper
   - usb_compound_pkg
   - ss_avery_axi_vip
+  - usb_coverage
 targets:
   tb:
     directories:
@@ -110,6 +123,7 @@ targets:
       - $COMPILE_ROOT/tb/ral/generated/usb_dev1_mem_ral_pkg.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_if.sv
       - $COMPILE_ROOT/tb/agents/usb_axi_user_filter/usb_axi_user_filter_pkg.sv
+      - $COMPILE_ROOT/tb/usb_ocp_recovery_if.sv
       - $COMPILE_ROOT/tb/usb_tb_pkg.sv
       - $COMPILE_ROOT/tb/usb_axi_manager_connection.sv
       - $COMPILE_ROOT/tb/usb_top_tb.sv
