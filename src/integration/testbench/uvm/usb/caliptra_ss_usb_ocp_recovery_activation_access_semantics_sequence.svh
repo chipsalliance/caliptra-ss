@@ -57,9 +57,31 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
     // cptra_usb_ocp_recovery_activation_access_semantics.c.
     localparam bit [31:0] ACT_FIFO_DWORD = 32'hC0DE0000;
 
+    localparam int unsigned SVT_USB_RESULTS_STALL_BIT = 4;
+    protected bit ra_last_xfer_stalled;
+
     function new(string name =
         "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence");
         super.new(name);
+    endfunction
+
+    protected virtual function void ocp_note_xfer_completed(
+        input svt_usb_transfer request,
+        input caliptra_ss_usb_ocp_xfer_result_e result);
+
+        bit [`SVT_USB_RESULTS_STATUS_SIZE - 1:0] expected_stall_results;
+
+        super.ocp_note_xfer_completed(request, result);
+        expected_stall_results = '0;
+        expected_stall_results[SVT_USB_RESULTS_STALL_BIT] = 1'b1;
+        ra_last_xfer_stalled = 1'b0;
+        if (request != null) begin
+            // SVT reports a USB 2.0 STALL as ABORTED with only result bit 4.
+            ra_last_xfer_stalled =
+                (result == OCP_XFER_ABORTED) &&
+                (request.status === svt_sequence_item::ABORTED) &&
+                (request.results_status === expected_stall_results);
+        end
     endfunction
 
     protected virtual task ocp_ra_poll_fw_state(
@@ -274,9 +296,9 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         payload = '{8'h00};
         ocp_do_write(
             OCP_CMD_PROT_CAP, payload, result, "RA_SEM_ZERO_ARM_TRIGGER", 0);
-        if (result == OCP_XFER_ABORTED) begin
+        if (xfer_wait_timed_out || !ra_last_xfer_stalled) begin
             `uvm_fatal("RA_SEM_SEQ",
-                "Pre-zero protocol-error trigger aborted.")
+                "Pre-zero read-only PROT_CAP write did not terminate with only the expected STALL.")
         end
 
         ocp_ra_poll_fw_state(RA_SEM_STATE_FW_ZERO_ARMED, "RA_SEM_FW_ZERO_ARMED");

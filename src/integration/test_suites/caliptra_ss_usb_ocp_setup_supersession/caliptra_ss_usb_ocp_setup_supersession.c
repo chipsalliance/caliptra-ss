@@ -31,6 +31,8 @@
 #define CMD_RELEASE   0xBu
 #define CMD_STALE     0xCu
 #define CMD_EXPOSE    0xDu
+#define CMD_NEXT      0xEu
+#define CMD_FIFO_DRAIN 0xFu
 #define STATE_READY   1u
 #define STATE_HELD    2u
 #define STATE_RELEASED 3u
@@ -42,7 +44,7 @@
 #define SUPERSESSION_SNAPSHOT_VERSION 2u
 #define SCENARIO_SHORT_SETUP 7u
 #define SCENARIO_BAD_CRC_SETUP 8u
-#define SCENARIO_LAST 10u
+#define SCENARIO_LAST 15u
 
 static uint16_t scenario_generation;
 static uint8_t scenario;
@@ -163,7 +165,7 @@ static void service_ep0(void)
             if ((setup.bmRequestType != 0x80u) ||
                 (setup.bRequest != USB_REQ_GET_DESCRIPTOR) ||
                 (setup.wValue != 0x0100u) || (setup.wIndex != 0u) ||
-                (setup.wLength != 18u)) {
+                ((setup.wLength != 18u) && (setup.wLength != 8u))) {
                 handle_error("MCU: unexpected notified SETUP in supersession epoch\n");
             }
             ++notifications;
@@ -174,6 +176,30 @@ static void service_ep0(void)
         } else {
             ++ordinary_out;
         }
+    }
+}
+
+static void drain_diagnostic_fifo(void)
+{
+    uint32_t words = lsu_read_32(SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_CTRL_1);
+    if ((words == 0u) || (words > POLL_LIMIT)) {
+        handle_error("MCU: invalid diagnostic FIFO drain length\n");
+    }
+    // The host wrote this complete image using runtime-discovered limits.
+    // No implicit consumer runs while AXI checks the diagnostic RO words.
+    for (uint32_t i = 0; i < words; ++i) {
+        if ((lsu_read_32(SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0) &
+             RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK) != 0u) {
+            handle_error("MCU: diagnostic reads consumed FIFO data\n");
+        }
+        if (lsu_read_32(SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_DATA) !=
+            (0x53540000u | i)) {
+            handle_error("MCU: diagnostic FIFO payload mismatch\n");
+        }
+    }
+    if ((lsu_read_32(SOC_USB_COMBO_RECOVERY_INDIRECT_FIFO_STATUS_0) &
+         RECOVERY_INDIRECT_FIFO_STATUS_0_EMPTY_MASK) == 0u) {
+        handle_error("MCU: diagnostic FIFO did not empty after exact drain\n");
     }
 }
 
@@ -284,6 +310,10 @@ uint8_t main(void)
                 handle_error("MCU: release without notified held legacy SETUP\n");
             }
             if (opcode == CMD_RELEASE) {
+                // This notification-qualified call prepares the current
+                // payload and both descriptors before any effective SETUP
+                // clear. DEVCMDSTAT RMWs can also echo the W1C SETUP bit;
+                // the final explicit helper is not an atomic release lock.
                 if (!usb_handle_control_transfer()) {
                     handle_error("MCU: supersession legacy dispatch failed\n");
                 }
@@ -296,6 +326,25 @@ uint8_t main(void)
             held = 0u;
             responder_state = STATE_RELEASED;
             break;
+        case CMD_NEXT:
+            if ((scenario == SCENARIO_SHORT_SETUP) ||
+                (scenario == SCENARIO_BAD_CRC_SETUP) ||
+                (notifications != expected_delta)) {
+                handle_error("MCU: next request has invalid notification epoch\n");
+            }
+            // Host is quiescent after the preceding transfer's retirement.
+            // Retire its notification credit, not SETUP or response SRAM.
+            // Only a subsequent EP0 OUT notification may hold the next work.
+            lsu_write_32(USB_DEV_INTSTAT,
+                         DEV0_CSR_INTSTAT_EP0OUT_MASK | DEV0_CSR_INTSTAT_EP0IN_MASK);
+            if ((lsu_read_32(USB_DEV_INTSTAT) & 3u) != 0u) {
+                handle_error("MCU: old EP0 IRQ did not drain before next request\n");
+            }
+            scenario_generation = generation;
+            held = 0u;
+            expect_new_setup = 1u;
+            responder_state = STATE_READY;
+            break;
         case CMD_STALE:
             if ((scenario != 4u) || (expected_delta != 0u) ||
                 !held || (responder_state != STATE_HELD)) {
@@ -304,6 +353,14 @@ uint8_t main(void)
             usb_ep0_send_data(old_descriptor, 18u);
             // Do not clear SETUP: this response belongs to the superseded work.
             responder_state = STATE_STALE;
+            break;
+        case CMD_FIFO_DRAIN:
+            if ((expected_delta != 0u) || held ||
+                (scenario == SCENARIO_SHORT_SETUP) ||
+                (scenario == SCENARIO_BAD_CRC_SETUP)) {
+                handle_error("MCU: invalid diagnostic FIFO drain command\n");
+            }
+            drain_diagnostic_fifo();
             break;
         case USB_LEGACY_EP0_COMMAND_PUBLISH_BASELINE:
         case USB_LEGACY_EP0_COMMAND_PUBLISH_POST:

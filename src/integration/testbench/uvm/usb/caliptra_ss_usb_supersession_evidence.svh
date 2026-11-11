@@ -22,12 +22,14 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
 
     logic [15:0] generation;
     logic [63:0] setup_bytes;
+    logic [15:0] recovery_interface;
     logic [7:0] data[$], pending_data[$];
     int setup_acks = 0, data_acks = 0, status_acks = 0, status_nyets = 0;
     int in_tokens = 0, out_tokens = 0, ping_tokens = 0, naks = 0, data_packets = 0;
     int ping_acks = 0, status_starts = 0, stalls = 0;
     bit setup_data, data_pending, status_data, checked, valid;
-    bit released;
+    bit released, notified, intentional_stale, fresh_service;
+    logic [15:0] service_generation;
     realtime setup_at, setup_ack_at, data_ack_at, status_complete_at;
     realtime first_status_start_at;
     realtime nak_at, first_data_at, release_at;
@@ -42,9 +44,10 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
 
     // Classification uses observed request bytes, not a sequence's label.
     function bit ocp_supersession_check_is_ocp();
-        return (setup_bytes[7:0] === 8'hA1) &&
+        return setup_data &&
+               ((setup_bytes[7:0] === 8'hA1) || (setup_bytes[7:0] === 8'h21)) &&
                (setup_bytes[15:8] === OCP_BREQUEST_XFER) &&
-               (setup_bytes[31:16] === {8'h00, OCP_CMD_PROT_CAP});
+               (setup_bytes[47:32] === recovery_interface);
     endfunction
 endclass
 `endif

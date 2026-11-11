@@ -216,27 +216,16 @@ bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
         return false;
     }
 
-    // OCP Recovery v1.1 Sec 8.5.1: the recovery class transfer SETUP
-    // (bmRequestType[6:5]=Class, recipient=Interface,
-    //  bRequest=OCP_RECOVERY_TRANSFER, wIndex[7:0]=REC_IFACE_NUM)
-    // is intercepted by the VHDL `usb_ocp_recovery_post_sync_arb` upstream of the
-    // legacy EPCS and answered by the SV-side recovery RTL directly.
-    // The MCU class hook MUST NOT claim the SETUP -- if it does, the
-    // legacy EPCS sends a ZLP that wins the response race and the host
-    // sees an empty payload.  Returning false here lets the MCU stack
-    // STALL or NAK as usual; the arbiter's response on EP0 IN takes
-    // precedence on the wire because PIE's `epinfo_to_pie_*` mux is
-    // owned by the arbiter while `rec_ctrl_claim` is asserted.
-    //
-    // Defensive: if we ever observe this hook firing for an OCP class
-    // SETUP in sim, it means the arbiter is NOT claiming -- log a
-    // visible marker for debug and fall through to STALL.
+    // Claimed OCP transfers are hardware-serviced without legacy dispatch.
+    // A notified OCP-shaped request may instead be legacy fallback when
+    // Recovery is disabled. This hook implements no legacy class response;
+    // returning false selects the common handler's both-direction STALL.
     if ((USB_BMREQTYPE_TYPE(setup->bmRequestType) == USB_TYPE_CLASS)
         && (USB_BMREQTYPE_RECIPIENT(setup->bmRequestType) == USB_RECIP_INTERFACE)
         && (setup->bRequest == USB_OCP_RECOVERY_TRANSFER_REQUEST)
         && ((uint8_t)(setup->wIndex & 0x00FFu) == USB_OCP_RECOVERY_IFACE_NUM)) {
         VPRINTF(LOW,
-                "MCU: WARNING OCP recovery class SETUP reached MCU stack (bmReqType=0x%x bReq=0x%x wVal=0x%x wIdx=0x%x wLen=%u) -- arbiter did not claim; passing through to legacy USB stack which will STALL.\n",
+                "MCU: WARNING OCP recovery class SETUP reached MCU stack (bmReqType=0x%x bReq=0x%x wVal=0x%x wIdx=0x%x wLen=%u) -- routing diagnostic; legacy USB stack will STALL.\n",
                 setup->bmRequestType, setup->bRequest, setup->wValue,
                 setup->wIndex, setup->wLength);
     }

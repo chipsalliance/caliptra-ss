@@ -26,6 +26,8 @@ class caliptra_ss_usb_ocp_setup_base_sequence
     localparam time CHARACTERIZATION_TIMEOUT = 100us;
     localparam logic [3:0] CMD_ARM = 4'hA, CMD_RELEASE = 4'hB;
     localparam logic [3:0] CMD_STALE = 4'hC, CMD_EXPOSE = 4'hD;
+    localparam logic [3:0] CMD_NEXT = 4'hE;
+    localparam logic [3:0] CMD_FIFO_DRAIN = 4'hF;
     localparam logic [3:0] STATE_READY = 1, STATE_HELD = 2;
     localparam logic [3:0] STATE_RELEASED = 3, STATE_STALE = 4;
     protected caliptra_ss_usb_supersession_checker mixed_checker;
@@ -34,6 +36,8 @@ class caliptra_ss_usb_ocp_setup_base_sequence
     protected logic [15:0] command_generation, scenario_generation;
     protected logic [3:0] scenario_id;
     protected logic [7:0] ocp_bytes[$];
+    protected logic [7:0] device_id_bytes[$];
+    protected int unsigned legacy_notifications, legacy_dispatches;
     // Image-owned identity, not RTL values (usb.c and the dedicated MCU image).
     // USB 2.0 9.6.1 defines the 18-byte descriptor layout.
     protected logic [7:0] new_bytes[$] = '{
@@ -74,6 +78,7 @@ class caliptra_ss_usb_ocp_setup_base_sequence
                 "PROT_CAP response is too short to establish a response baseline.")
         ocp_bytes.delete();
         foreach (runtime_capabilities[i]) ocp_bytes.push_back(runtime_capabilities[i]);
+        mixed_checker.recovery_interface = 16'(ocp_get_iface_num());
         command_generation = observer_vif.last_mcu_command_generation;
         if ((usb_cfg.remote_device_cfg.size() == 0) ||
             (usb_cfg.remote_device_cfg[0].endpoint_cfg.size() == 0))
@@ -84,6 +89,22 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].
             max_retry_due_to_nak_before_moving_to_next_ep = 1;
         host_agent_h.reconfigure(usb_cfg);
+    endtask
+
+    protected task ocp_setup_do_discover_and_check_device_id();
+        bit [7:0] response[$];
+        caliptra_ss_usb_ocp_xfer_result_e result;
+        ocp_do_read(OCP_CMD_DEVICE_ID, response, result, "SUPERSESSION_DEVICE_ID");
+        if ((result != OCP_XFER_SUCCESS) ||
+            (response.size() < OCP_SPEC_MIN_LEN_DEVICE_ID) ||
+            (response.size() > OCP_SPEC_MAX_LEN_DEVICE_ID))
+            `uvm_fatal("SETUP_SUPERSESSION", "Cannot establish a DEVICE_ID response baseline")
+        if (!ocp_check_device_id_type(response[OCP_OFF_DID_DESC_TYPE]) ||
+            (response.size() != OCP_OFF_DID_VENDOR_STRING +
+                                response[OCP_OFF_DID_VENDOR_STRING_LEN]))
+            `uvm_fatal("SETUP_SUPERSESSION", "Invalid discovered DEVICE_ID format")
+        device_id_bytes.delete();
+        foreach (response[i]) device_id_bytes.push_back(response[i]);
     endtask
 
     protected task ocp_setup_issue_mcu_command(
@@ -124,29 +145,64 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         scenario_generation = command_generation + 1;
         ocp_setup_issue_mcu_command(CMD_ARM, id);
         ocp_setup_check_mcu_state(STATE_READY);
+        legacy_notifications = 0;
+        legacy_dispatches = 0;
+        ocp_setup_check_service_counts();
         mixed_checker.ocp_supersession_configure_window(scenario_generation, dev_addr_v);
+    endtask
+
+    protected function void ocp_setup_check_service_counts();
+        logic [31:0] expected;
+        expected = (legacy_notifications << 16) | legacy_dispatches;
+        if (observer_vif.fw_snapshot_data !== expected)
+            mixed_checker.ocp_supersession_report_failure($sformatf(
+                "Notified/dispatch count gen=%0d actual=%08h expected=%08h",
+                scenario_generation, observer_vif.fw_snapshot_data, expected));
+    endfunction
+
+    protected task ocp_setup_prepare_next_legacy();
+        if (legacy_notifications > 15)
+            `uvm_fatal("SETUP_SUPERSESSION", "Notification count exceeds mailbox argument")
+        scenario_generation = command_generation + 1;
+        ocp_setup_issue_mcu_command(CMD_NEXT, 4'(legacy_notifications));
+        ocp_setup_check_mcu_state(STATE_READY);
+        ocp_setup_check_service_counts();
+    endtask
+
+    protected task ocp_setup_check_legacy_notification(input int wire_index);
+        ocp_setup_check_mcu_state(STATE_HELD);
+        mixed_checker.ocp_supersession_wait_evidence(wire_index, 0, TRANSFER_TIMEOUT);
+        legacy_notifications++;
+        ocp_setup_check_service_counts();
+        mixed_checker.ocp_supersession_check_notification(wire_index, scenario_generation);
     endtask
 
     protected task ocp_setup_check_and_release_legacy(
         input int wire_index,
         input bit expose = 0);
-        ocp_setup_check_mcu_state(STATE_HELD);
+        ocp_setup_check_legacy_notification(wire_index);
         mixed_checker.ocp_supersession_wait_evidence(wire_index, 1, TRANSFER_TIMEOUT);
-        mixed_checker.ocp_supersession_check_release(wire_index);
+        mixed_checker.ocp_supersession_check_release(wire_index, expose);
         ocp_setup_issue_mcu_command(expose ? CMD_EXPOSE : CMD_RELEASE);
         ocp_setup_check_mcu_state(STATE_RELEASED);
+        if (!expose) legacy_dispatches++;
+        ocp_setup_check_service_counts();
     endtask
 
     protected function svt_usb_transfer ocp_setup_configure_request(
         input bit ocp,
-        input string label);
+        input string label,
+        input ocp_cmd_t command = OCP_CMD_PROT_CAP,
+        input int unsigned legacy_length = 18);
         svt_usb_transfer req;
         int unsigned length;
         int iface;
         req = svt_usb_transfer::type_id::create(label);
         req.cfg = usb_cfg;
         req.fix_anchors(0, 0, 0);
-        length = ocp ? wMaxRdTransferSize : 18;
+        length = ocp ? wMaxRdTransferSize : legacy_length;
+        if (!ocp && !(legacy_length inside {8, 18}))
+            `uvm_fatal("SETUP_SUPERSESSION", "Unsupported fixture descriptor length")
         iface = ocp_get_iface_num();
         // USB 2.0 9.4.3; OCP Recovery 1.1 8.5.1 read encapsulation.
         if (!req.randomize() with {
@@ -159,7 +215,7 @@ class caliptra_ss_usb_ocp_setup_base_sequence
             setup_data_bmrequesttype_recipient ==
                 (ocp ? svt_usb_types::BMREQ_INTERFACE : svt_usb_types::BMREQ_DEVICE);
             setup_data_brequest == (ocp ? OCP_BREQUEST_XFER : 8'h06);
-            setup_data_w_value == (ocp ? {8'h00, OCP_CMD_PROT_CAP} : 16'h0100);
+            setup_data_w_value == (ocp ? {8'h00, command} : 16'h0100);
             setup_data_w_index == (ocp ? 16'(iface) : 16'h0000);
             setup_data_w_length == 16'(length);
             payload_start_ix == 0;
@@ -173,7 +229,8 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         input svt_usb_transfer req,
         input bit interrupt_request,
         input svt_usb_transfer::xfer_stage_enum completed_stage,
-        input string label);
+        input string label,
+        input bit expect_stall = 0);
         bit retired, bounded;
         retired = 0;
         bounded = 0;
@@ -211,6 +268,11 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         if (interrupt_request) begin
             if (ocp_get_xfer_result(req) != OCP_XFER_ABORTED)
                 `uvm_error("SETUP_SUPERSESSION", $sformatf("%s was not interrupted", label))
+        end else if (expect_stall) begin
+            // A non-success result alone is not STALL evidence. The boundary
+            // checker must separately require the observed STALL packet.
+            if (ocp_get_xfer_result(req) == OCP_XFER_SUCCESS)
+                `uvm_error("SETUP_SUPERSESSION", $sformatf("%s did not reject", label))
         end else if (ocp_get_xfer_result(req) != OCP_XFER_SUCCESS)
             `uvm_error("SETUP_SUPERSESSION", $sformatf("%s did not complete", label))
     endtask
@@ -222,8 +284,19 @@ class caliptra_ss_usb_ocp_setup_base_sequence
         input bit complete,
         input bit data_completed,
         input bit stale = 0);
+        logic [7:0] expected[$];
+        if (ocp) begin
+            case (req.setup_data_w_value[7:0])
+                OCP_CMD_PROT_CAP: expected = ocp_bytes;
+                OCP_CMD_DEVICE_ID: expected = device_id_bytes;
+                default: `uvm_fatal("SETUP_SUPERSESSION", "No response baseline for request")
+            endcase
+        end else begin
+            for (int i = 0; i < req.setup_data_w_length; i++)
+                expected.push_back(stale ? old_bytes[i] : new_bytes[i]);
+        end
         mixed_checker.ocp_supersession_check_request(index, req, complete, data_completed,
-            ocp ? ocp_bytes : (stale ? old_bytes : new_bytes), TRANSFER_TIMEOUT);
+            expected, TRANSFER_TIMEOUT);
     endtask
 
     protected function void ocp_setup_publish_transfer_count();

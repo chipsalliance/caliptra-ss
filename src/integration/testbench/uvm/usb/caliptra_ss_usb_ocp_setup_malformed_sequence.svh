@@ -25,14 +25,16 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         super.new(name);
     endfunction
 
-    protected task ocp_malformed_do_injection_and_check_recovery(input bit shorten);
+    protected task ocp_malformed_do_injection_and_check_recovery(
+        input bit shorten, input bit ocp_looking = 0);
         svt_usb_transfer malformed_req, recovery_req;
         svt_usb_packet active_packets[$];
         int unsigned saved_timeout, saved_error, saved_nak, saved_stall;
         bit retired;
         realtime packet_end;
         string label;
-        label = shorten ? "SHORT4_VALIDCRC" : "SETUP8_BADCRC";
+        label = {ocp_looking ? "OCP_LOOKING_" : "LEGACY_",
+                 shorten ? "SHORT4_VALIDCRC" : "SETUP8_BADCRC"};
         saved_timeout = usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_timeout;
         saved_error = usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_error;
         saved_nak = usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak;
@@ -42,7 +44,7 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_nak = 0;
         usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_retry_due_to_stall = 0;
         host_agent_h.reconfigure(usb_cfg);
-        malformed_req = ocp_setup_configure_request(0, label);
+        malformed_req = ocp_setup_configure_request(ocp_looking, label);
         scenario_id = shorten ? 7 : 8;
         scenario_generation = command_generation + 1;
         ocp_setup_issue_mcu_command(CMD_ARM, scenario_id);
@@ -57,6 +59,7 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
                     begin
                         start_item(malformed_req, -1, p_sequencer.xfer_sequencer);
                         finish_item(malformed_req, -1);
+                        if (ocp_looking) transfers_issued++;
                     end
                     begin
                         wait (fault_callback.fired &&
@@ -135,6 +138,8 @@ class caliptra_ss_usb_ocp_setup_malformed_sequence
         ocp_setup_do_initialize_and_check_capabilities();
         ocp_malformed_do_injection_and_check_recovery(1);
         ocp_malformed_do_injection_and_check_recovery(0);
+        ocp_malformed_do_injection_and_check_recovery(1, 1);
+        ocp_malformed_do_injection_and_check_recovery(0, 1);
         ocp_setup_publish_transfer_count();
     endtask
 endclass

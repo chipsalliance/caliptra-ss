@@ -1036,7 +1036,9 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
 //   - Standard/Device GET_STATUS / SET_FEATURE / CLEAR_FEATURE: legacy
 //     self-powered + DEVICE_REMOTE_WAKEUP shadow behaviour.
 //   - Class requests: dispatched to the usb_handle_class_request hook (OCP).
-// usb_clear_setup_bit() is always called last, per Integration Guide 4.2.4.1.1.
+// Current payload and both EP0 descriptors must be ready before the first
+// SETUP-clearing DEVCMDSTAT write, including helper RMWs; the final explicit
+// usb_clear_setup_bit() call is not a unique release operation.
 // Returns true if handled without stall, false otherwise.
 // -------------------------------------------------------------------------
 bool usb_handle_control_transfer(void) {
@@ -1279,10 +1281,8 @@ bool usb_handle_control_transfer(void) {
         usb_ep0_stall();
     }
 
-    // Per Integration Guide 4.2.4.1.1: clear SETUP bit after arming response.
-    // This must happen quickly: host VIP retries IN tokens for only ~5us before
-    // giving up and sending the next SETUP, which will be NAKed by the DUT IP
-    // unless the SETUP bit is already cleared.
+    // Both descriptors and payload must precede any SETUP-clearing helper RMW.
+    // This explicit clear may follow an earlier release; do not delay it.
     usb_clear_setup_bit();
 
     // Post-handler diagnostic logging. Outside the critical timing window

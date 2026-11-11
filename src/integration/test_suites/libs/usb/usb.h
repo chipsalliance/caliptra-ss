@@ -705,8 +705,8 @@ void usb_ep0_stall(void);
 // transaction.
 void usb_ep0_arm_out(void);
 
-// Clear the SETUP bit in DEVCMDSTAT (W1C). Must be called last after
-// responding to a SETUP packet, per USB Integration Guide section 4.2.4.1.1.
+// Clear SETUP in DEVCMDSTAT (W1C). Complete and order the current payload and
+// both EP0 descriptors before this or any earlier SETUP-clearing helper RMW.
 void usb_clear_setup_bit(void);
 
 // Dispatch the current SETUP packet: decode bmRequestType and bRequest,

@@ -86,11 +86,9 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
     localparam int unsigned FW_ERROR_STATE_POLLS      = 20;
     localparam time         FW_ERROR_STATE_POLL_TICK  = 1us;
 
-    // Setup-stage ACK, abort completion, and replacement-SETUP win each
-    // get a 20us bounded window as instructed. USB Chapter 8 turn-around
-    // budgets and SVT VIP scheduler latencies both fit inside this bound
-    // by two orders of magnitude at full speed.
+    // Bound SETUP observation and abort retirement independently.
     localparam time FW_ERROR_TRIGGER_TIMEOUT = 20us;
+    localparam time FW_ERROR_REPLACEMENT_TIMEOUT = 2100us;
 
     localparam logic [7:0] FW_PROTOCOL_ERROR_STATE_READY               = 8'h51;
     localparam logic [7:0] FW_PROTOCOL_ERROR_STATE_BATCH_ABORTED_SEEN  = 8'h52;
@@ -192,10 +190,8 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
 
     // Runnable replacement-SETUP BATCH_ABORTED trigger.
     //
-    // Reuses the arbiter packet-callback window so the post-trigger
-    // proof can inspect packet records for (i) the original SETUP
-    // sequence receiving its RX ACK and (ii) the replacement standard
-    // GET_DESCRIPTOR transfer completing successfully.
+    // Packet records must prove acceptance of both SETUPs. Replacement
+    // DATA/STATUS completion is not required for this abort trigger.
     protected virtual task ocp_fw_error_do_replacement_setup_and_check_trigger(
         input string label);
 
@@ -204,6 +200,9 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         bit transfer_completed;
         bit abort_completion_bounded;
         svt_usb_transfer replacement_req;
+        bit replacement_completed;
+        bit replacement_submission_started;
+        int unsigned replacement_accepted_before;
 
         ocp_fw_error_configure_fifo_data_transfer(label, req);
 
@@ -277,29 +276,52 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
         // required: the replacement SETUP itself is the abort stimulus.
         replacement_req = svt_usb_transfer::type_id::create(
             {label, "_replacement_req"});
-        start_item(replacement_req, -1, p_sequencer.xfer_sequencer);
-        if (usb_cfg != null) begin
-            replacement_req.cfg = usb_cfg;
-        end
-        replacement_req.fix_anchors(0, 0, 0);
-        if (!replacement_req.randomize() with {
-                xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
-                device_address == dev_addr_v;
-                setup_data_bmrequesttype_dir == svt_usb_types::DEVICE_TO_HOST;
-                setup_data_bmrequesttype_type == svt_usb_types::STANDARD;
-                setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
-                setup_data_brequest == 8'h06;
-                setup_data_w_value == 16'h0200;
-                setup_data_w_index == 16'h0000;
-                setup_data_w_length == 16'd9;
-                payload_start_ix == 0;
-                payload_intended_byte_count == 9;
-            }) begin
+        replacement_accepted_before = checker.packet_callback.accepted_setup_count();
+        replacement_completed = 1'b0;
+        replacement_submission_started = 1'b0;
+        fork : fw_error_replacement_wait
+            begin
+                start_item(replacement_req, -1, p_sequencer.xfer_sequencer);
+                if (usb_cfg != null) begin
+                    replacement_req.cfg = usb_cfg;
+                end
+                replacement_req.fix_anchors(0, 0, 0);
+                if (!replacement_req.randomize() with {
+                        xfer_type == svt_usb_transfer::CONTROL_TRANSFER;
+                        device_address == dev_addr_v;
+                        setup_data_bmrequesttype_dir == svt_usb_types::DEVICE_TO_HOST;
+                        setup_data_bmrequesttype_type == svt_usb_types::STANDARD;
+                        setup_data_bmrequesttype_recipient == svt_usb_types::BMREQ_DEVICE;
+                        setup_data_brequest == 8'h06;
+                        setup_data_w_value == 16'h0200;
+                        setup_data_w_index == 16'h0000;
+                        setup_data_w_length == 16'd9;
+                        payload_start_ix == 0;
+                        payload_intended_byte_count == 9;
+                    }) begin
+                    `uvm_fatal("OCP_FIRMWARE_ERROR",
+                        $sformatf("%s replacement SETUP randomization failed.", label))
+                end
+                fork
+                    wait_xfer_done(host_agent_h, {label, "_replacement"});
+                    begin
+                        replacement_submission_started = 1'b1;
+                        finish_item(replacement_req, -1);
+                    end
+                join
+                replacement_completed = !xfer_wait_timed_out;
+            end
+            begin
+                #(FW_ERROR_REPLACEMENT_TIMEOUT);
+            end
+        join_any
+        disable fw_error_replacement_wait;
+        if (!replacement_completed) begin
+            if (replacement_submission_started) replacement_req.abort(1'b1);
             `uvm_fatal("OCP_FIRMWARE_ERROR",
-                $sformatf("%s replacement SETUP randomization failed.", label))
+                $sformatf("%s replacement submission/completion exceeded %0t.",
+                          label, FW_ERROR_REPLACEMENT_TIMEOUT))
         end
-        finish_item(replacement_req, -1);
-        host_agent_h.prot.NOTIFY_USB_TRANSFER_ENDED.wait_trigger();
 
         checker.packet_callback.stop_window();
 
@@ -321,12 +343,14 @@ class caliptra_ss_usb_ocp_firmware_protocol_error_sequence
                            "trigger window; replacement SETUP did not land."},
                           label))
         end
-        if (checker.packet_callback.count_pid(
-                svt_usb_packet::ACK,
-                caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) < 2) begin
+        if (checker.packet_callback.accepted_setup_count() <=
+                replacement_accepted_before) begin
             `uvm_error("OCP_FIRMWARE_ERROR",
-                $sformatf({"[FIRMWARE_PROTOCOL_ERROR] %s: replacement SETUP was not ACKed by ",
-                           "the device."}, label))
+                $sformatf({"[FIRMWARE_PROTOCOL_ERROR] %s: replacement SETUP acceptance ",
+                           "did not advance (%0d -> %0d); result=%s."},
+                          label, replacement_accepted_before,
+                          checker.packet_callback.accepted_setup_count(),
+                          ocp_get_xfer_result(replacement_req).name()))
         end
         `uvm_info("OCP_FIRMWARE_ERROR",
             $sformatf({"[FIRMWARE_PROTOCOL_ERROR] %s: trigger window completed with %0d packets ",

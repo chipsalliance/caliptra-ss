@@ -35,8 +35,16 @@ interface usb_cov_if (
     input logic dma_req_forward_c,
     input logic setup_dma_match_c,
     input logic sync_sieint_endtransfer_o,
-    input logic sync_sieint_success_o
+    input logic sync_sieint_success_o,
+    input logic fifo_empty,
+    input logic fifo_full,
+    input logic fifo_region_reset,
+    input logic fifo_overflow,
+    input logic image_push_done,
+    input logic batch_aborted
 );
+    import uvm_pkg::*;
+    `include "uvm_macros.svh"
 
     localparam logic [2:0] IDLE = 0, MIRROR = 1, META_WAIT = 2,
                            DATA = 3, STATUS = 4, PROT_STALL = 5;
@@ -91,9 +99,48 @@ interface usb_cov_if (
             bins protocol_stall = {PROT_STALL};
         }
         replacement_cp: coverpoint {prior_state, state} iff (history_valid) {
+            bins start_setup = {{IDLE, MIRROR}};
+            bins legacy_accept = {{MIRROR, IDLE}};
+            bins ocp_accept = {{MIRROR, META_WAIT}};
+            bins read_write_data = {{META_WAIT, DATA}};
+            bins no_data_status = {{META_WAIT, STATUS}};
+            bins data_status = {{DATA, STATUS}};
+            bins complete_status = {{STATUS, IDLE}};
+            bins metadata_stall = {{META_WAIT, PROT_STALL}};
+            bins data_stall = {{DATA, PROT_STALL}};
             bins replace_data = {{DATA, MIRROR}};
             bins replace_status = {{STATUS, MIRROR}};
+            bins recover_stall = {{PROT_STALL, MIRROR}};
+            bins retained_data = {{DATA, DATA}};
+            bins retained_status = {{STATUS, STATUS}};
+            bins retained_stall = {{PROT_STALL, PROT_STALL}};
         }
+    endgroup
+
+    covergroup fifo_diagnostic_cg with function sample(
+        logic empty, logic full, logic [3:0] sticky, logic [2:0] state);
+        option.per_instance = 1;
+        occupancy_cp: coverpoint {full, empty} {
+            bins empty = {2'b01};
+            bins partial = {2'b00};
+            bins full = {2'b10};
+        }
+        sticky_cp: coverpoint sticky {
+            bins pristine = {4'b0000};
+            bins region_reset = {4'b0001};
+            bins image_done = {4'b0101};
+            bins aborted = {4'b1001};
+        }
+        state_cp: coverpoint state {
+            bins idle = {IDLE};
+            bins mirror = {MIRROR};
+            bins meta_wait = {META_WAIT};
+            bins data = {DATA};
+            bins status = {STATUS};
+            bins protocol_stall = {PROT_STALL};
+        }
+        fifo_status_cross: cross occupancy_cp, sticky_cp;
+        fifo_state_cross: cross occupancy_cp, state_cp;
     endgroup
 
     covergroup completion_cg with function sample(
@@ -117,6 +164,7 @@ interface usb_cov_if (
     setup_cg setups = new();
     state_cg states = new();
     completion_cg completions = new();
+    fifo_diagnostic_cg fifo_diagnostics = new();
 
     always @(posedge hclk) begin
         if ((hresetn !== 1'b1) ||
@@ -128,6 +176,11 @@ interface usb_cov_if (
         end else begin
             states.sample(post_sync_arb_state_o,
                           last_state, state_history_valid);
+            if (!$isunknown({fifo_empty, fifo_full, fifo_region_reset,
+                             fifo_overflow, image_push_done, batch_aborted}))
+                fifo_diagnostics.sample(fifo_empty, fifo_full,
+                    {batch_aborted, image_push_done, fifo_overflow, fifo_region_reset},
+                    post_sync_arb_state_o);
             last_state = post_sync_arb_state_o;
             state_history_valid = 1;
             if (new_setup_c === 1'b1) begin
@@ -176,9 +229,10 @@ interface usb_cov_if (
     end
 
     final begin
-        $display("USB_IMPLEMENTATION_COVERAGE setup=%0.2f state=%0.2f completion=%0.2f (coverage only, not a correctness verdict)",
-                 setups.get_inst_coverage(), states.get_inst_coverage(),
-                 completions.get_inst_coverage());
+        `uvm_info("USB_IMPLEMENTATION_COVERAGE", $sformatf(
+            "setup=%0.2f state=%0.2f completion=%0.2f fifo=%0.2f (coverage only, not a correctness verdict)",
+            setups.get_inst_coverage(), states.get_inst_coverage(),
+            completions.get_inst_coverage(), fifo_diagnostics.get_inst_coverage()), UVM_NONE)
     end
 
 endinterface

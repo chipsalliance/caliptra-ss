@@ -16,6 +16,7 @@ module usb_cov_bind;
     `ifdef FCOV
     `define USB_COV_ARB u_hub_compound.usb_ocp_recovery_post_sync_arb_1
     `define USB_COV_REG u_hub_compound.usb_reg_if_1
+    `define USB_COV_REC u_ocp_recovery
 
     bind ip_xxx_3511_hs_mem_compound_wrapper usb_cov_if i_usb_cov_if (
         .hclk                       (`USB_COV_ARB.hclk),
@@ -37,10 +38,17 @@ module usb_cov_bind;
         .dma_req_forward_c           (`USB_COV_ARB.dma_req_forward_c),
         .setup_dma_match_c           (`USB_COV_ARB.setup_dma_match_c),
         .sync_sieint_endtransfer_o   (`USB_COV_ARB.sync_sieint_endtransfer_o),
-        .sync_sieint_success_o       (`USB_COV_ARB.sync_sieint_success_o)
+        .sync_sieint_success_o       (`USB_COV_ARB.sync_sieint_success_o),
+        .fifo_empty                 (`USB_COV_REC.u_a4_cms_fifo.fifo_empty),
+        .fifo_full                  (`USB_COV_REC.u_a4_cms_fifo.fifo_full),
+        .fifo_region_reset          (`USB_COV_REC.fifo_region_reset),
+        .fifo_overflow              (`USB_COV_REC.fifo_overflow),
+        .image_push_done            (`USB_COV_REC.image_push_done),
+        .batch_aborted              (`USB_COV_REC.batch_aborted)
     );
 
     `undef USB_COV_ARB
     `undef USB_COV_REG
+    `undef USB_COV_REC
     `endif
 endmodule

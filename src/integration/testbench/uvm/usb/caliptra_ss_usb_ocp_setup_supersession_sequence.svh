@@ -29,10 +29,18 @@ class caliptra_ss_usb_ocp_setup_supersession_sequence
         input logic [3:0] id,
         input bit original_ocp,
         input svt_usb_transfer::xfer_stage_enum completed_stage,
-        input string label);
+        input string label,
+        input bit replacement_ocp,
+        input bit accepted_retry = 0);
         svt_usb_transfer original_req, replacement_req;
         original_req = ocp_setup_configure_request(original_ocp, {label, "_original"});
-        replacement_req = ocp_setup_configure_request(!original_ocp, {label, "_replacement"});
+        // Different legal requests distinguish same-owner replacement bytes.
+        // The retry cases intentionally repeat the complete original header.
+        replacement_req = ocp_setup_configure_request(replacement_ocp,
+            {label, "_replacement"},
+            (original_ocp && replacement_ocp && !accepted_retry) ?
+                OCP_CMD_DEVICE_ID : OCP_CMD_PROT_CAP,
+            (!original_ocp && !replacement_ocp && !accepted_retry) ? 8 : 18);
         ocp_setup_arm_scenario(id);
         fork
             ocp_setup_do_request_and_check_result(original_req, 1, completed_stage, {label, "_original"});
@@ -43,18 +51,19 @@ class caliptra_ss_usb_ocp_setup_supersession_sequence
         join
         mixed_checker.ocp_supersession_wait_evidence(0, 0, TRANSFER_TIMEOUT);
         if (!original_ocp && (completed_stage == svt_usb_transfer::SETUP_STAGE))
-            ocp_setup_check_mcu_state(STATE_HELD);
+            ocp_setup_check_legacy_notification(0);
         if (original_ocp) transfers_issued++;
+        if (!original_ocp && !replacement_ocp) ocp_setup_prepare_next_legacy();
         fork
             ocp_setup_do_request_and_check_result(replacement_req, 0, completed_stage, {label, "_replacement"});
             begin
-                if (original_ocp) ocp_setup_check_and_release_legacy(1);
+                if (!replacement_ocp) ocp_setup_check_and_release_legacy(1);
             end
         join
-        if (!original_ocp) transfers_issued++;
+        if (replacement_ocp) transfers_issued++;
         ocp_setup_check_request(0, original_req, original_ocp, 0,
                                 completed_stage == svt_usb_transfer::DATA_STAGE);
-        ocp_setup_check_request(1, replacement_req, !original_ocp, 1, 1);
+        ocp_setup_check_request(1, replacement_req, replacement_ocp, 1, 1);
         mixed_checker.ocp_supersession_check_window(2);
         mixed_checker.ocp_supersession_check_positive_coverage();
     endtask
@@ -66,10 +75,19 @@ class caliptra_ss_usb_ocp_setup_supersession_sequence
             `uvm_fatal("SETUP_SUPERSESSION", "Boundary scoreboard not configured")
         mixed_checker.ocp_supersession_check_negative_selftest();
         ocp_setup_do_initialize_and_check_capabilities();
-        ocp_supersession_do_scenario_and_check_response(0, 0, svt_usb_transfer::SETUP_STAGE, "L_TO_O_DATA_PENDING");
-        ocp_supersession_do_scenario_and_check_response(1, 1, svt_usb_transfer::SETUP_STAGE, "O_TO_L_DATA_PENDING");
-        ocp_supersession_do_scenario_and_check_response(2, 0, svt_usb_transfer::DATA_STAGE, "L_TO_O_STATUS_PENDING");
-        ocp_supersession_do_scenario_and_check_response(3, 1, svt_usb_transfer::DATA_STAGE, "O_TO_L_STATUS_PENDING");
+        ocp_setup_do_discover_and_check_device_id();
+        ocp_supersession_do_scenario_and_check_response(0, 0, svt_usb_transfer::SETUP_STAGE, "L_TO_O_DATA_PENDING", 1);
+        ocp_supersession_do_scenario_and_check_response(1, 1, svt_usb_transfer::SETUP_STAGE, "O_TO_L_DATA_PENDING", 0);
+        ocp_supersession_do_scenario_and_check_response(2, 0, svt_usb_transfer::DATA_STAGE, "L_TO_O_STATUS_PENDING", 1);
+        ocp_supersession_do_scenario_and_check_response(3, 1, svt_usb_transfer::DATA_STAGE, "O_TO_L_STATUS_PENDING", 0);
+        ocp_supersession_do_scenario_and_check_response(11, 0, svt_usb_transfer::SETUP_STAGE, "L_TO_L_DATA_PENDING", 0);
+        ocp_supersession_do_scenario_and_check_response(12, 1, svt_usb_transfer::SETUP_STAGE, "O_TO_O_DATA_PENDING", 1);
+        ocp_supersession_do_scenario_and_check_response(13, 0, svt_usb_transfer::DATA_STAGE, "L_TO_L_STATUS_PENDING", 0);
+        ocp_supersession_do_scenario_and_check_response(14, 1, svt_usb_transfer::DATA_STAGE, "O_TO_O_STATUS_PENDING", 1);
+        // USB 2.0 5.5.5: SETUP has no original/retry discriminator. These
+        // are controlled accepted reissues, not a lost-ACK fault injection.
+        ocp_supersession_do_scenario_and_check_response(15, 0, svt_usb_transfer::SETUP_STAGE, "LEGACY_ACCEPTED_SETUP_RETRY", 0, 1);
+        ocp_supersession_do_scenario_and_check_response(15, 1, svt_usb_transfer::SETUP_STAGE, "OCP_ACCEPTED_SETUP_RETRY", 1, 1);
         ocp_setup_publish_transfer_count();
     endtask
 endclass

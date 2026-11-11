@@ -32,7 +32,7 @@ class caliptra_ss_usb_ocp_setup_stale_negative_sequence
         ocp_req = ocp_setup_configure_request(1, "STALE_OCP_BYPASS");
         ocp_setup_arm_scenario(4);
         ocp_setup_do_request_and_check_result(old_req, 1, svt_usb_transfer::SETUP_STAGE, "STALE_ORIGINAL");
-        ocp_setup_check_mcu_state(STATE_HELD);
+        ocp_setup_check_legacy_notification(0);
         mixed_checker.ocp_supersession_wait_evidence(0, 0, TRANSFER_TIMEOUT);
         fork
             ocp_setup_do_request_and_check_result(ocp_req, 0, svt_usb_transfer::SETUP_STAGE, "STALE_OCP_BYPASS");
@@ -42,6 +42,7 @@ class caliptra_ss_usb_ocp_setup_stale_negative_sequence
                 // OCP SETUP is externally ACKed. No SRAM inspection is used.
                 ocp_setup_issue_mcu_command(CMD_STALE);
                 ocp_setup_check_mcu_state(STATE_STALE);
+                ocp_setup_check_service_counts();
             end
         join
         transfers_issued++;
