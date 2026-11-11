@@ -19,6 +19,9 @@
 // started transfer, not the submitted sequence item (which may be copied).
 class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callbacks;
     `uvm_object_utils(caliptra_ss_usb_supersession_fault_callback)
+    // USB 2.0 Sec 8.3.1, Table 8-1: PID nibble followed by its complement.
+    localparam logic [7:0] DATA0_PID = 8'hC3;
+    localparam logic [7:0] SOF_PID = 8'hA5;
     bit armed, short_setup, fired, setup_ended, transfer_finished;
     int bindings, injections, dropped_descriptors, setup_transaction_ix;
     logic [15:0] generation;
@@ -30,6 +33,9 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
     logic [7:0] tx_bytes[$];
     bit tx_sop_seen, tx_eop_seen, tx_capture_closed;
     int tx_items;
+    bit tx_frame_active, tx_frame_pid_valid;
+    logic [7:0] tx_frame_pid;
+    int tx_frame_items;
 
     function new(string name = "caliptra_ss_usb_supersession_fault_callback");
         super.new(name);
@@ -153,28 +159,65 @@ class caliptra_ss_usb_supersession_fault_callback extends svt_usb_protocol_callb
     endfunction
 
     function void ocp_supersession_check_tx_data(input svt_usb_data data, input bit drop);
-        if (!armed || !fired) return;
-        tx_items++;
-        if ((data == null) || drop)
-            `uvm_fatal("SUPERSESSION_FAULT", "Null or dropped data in serialized TX window")
-        if (tx_capture_closed)
-            `uvm_fatal("SUPERSESSION_FAULT", "TX output after bound packet completion")
-        // Observe the entire serialized output stream, not a PID-selected
-        // subset. The packet guard and checker require exactly one frame,
-        // exact request bytes, no retries/other TX, and bound TX completion.
-        if (tx_eop_seen)
-            `uvm_fatal("SUPERSESSION_FAULT", "Additional TX output after serialized frame EOP")
+        bit guarded, byte_valid;
+        logic [7:0] value;
+        guarded = armed && fired;
+        if ((data == null) || drop) begin
+            if (guarded)
+                `uvm_fatal("SUPERSESSION_FAULT", "Null or dropped data in serialized TX window")
+            return;
+        end
+        // USB2 descriptors need not populate parent_link_object. Track framing
+        // continuously so even a SOF spanning guard activation is recognized.
+        // Only the first byte after SOP is a PID, never a payload byte.
         if (data.is_sop) begin
-            if (tx_sop_seen)
-                `uvm_fatal("SUPERSESSION_FAULT", "Bound SETUP emitted more than one SOP")
-            tx_sop_seen = 1;
+            if (guarded && tx_frame_active) begin
+                `uvm_fatal("SUPERSESSION_FAULT", "Overlapping SOP in serialized TX window")
+                return;
+            end
+            tx_frame_active = 1;
+            tx_frame_pid_valid = 0;
+            tx_frame_items = 0;
         end
-        if (data.is_byte_data && data.get_data_valid_val()) begin
-            if (!tx_sop_seen || (data.valid_data_field != svt_usb_data::DATA))
-                `uvm_fatal("SUPERSESSION_FAULT", "Bound SETUP byte lacks SOP or byte representation")
-            tx_bytes.push_back(data.get_data_val());
+        if (!tx_frame_active) begin
+            if (guarded)
+                `uvm_fatal("SUPERSESSION_FAULT", "Serialized TX descriptor has no SOP")
+            return;
         end
-        if (data.is_eop) tx_eop_seen = 1;
+        tx_frame_items++;
+        byte_valid = data.is_byte_data && data.get_data_valid_val();
+        if (byte_valid) begin
+            value = data.get_data_val();
+            if (!tx_frame_pid_valid) begin
+                tx_frame_pid = value;
+                tx_frame_pid_valid = 1;
+            end
+        end
+        if (guarded && tx_frame_pid_valid) begin
+            if (tx_frame_pid != SOF_PID) begin
+                if (tx_frame_pid != DATA0_PID) begin
+                    `uvm_fatal("SUPERSESSION_FAULT", "Unexpected packet in serialized TX window")
+                    return;
+                end
+                if (tx_capture_closed || tx_eop_seen) begin
+                    `uvm_fatal("SUPERSESSION_FAULT", "Additional DATA0 output after bound frame completion")
+                    return;
+                end
+                tx_sop_seen = 1;
+                tx_items = tx_frame_items;
+                if (byte_valid) begin
+                    if (data.valid_data_field != svt_usb_data::DATA)
+                        `uvm_fatal("SUPERSESSION_FAULT", "Bound SETUP byte lacks byte representation")
+                    tx_bytes.push_back(value);
+                end
+                if (data.is_eop) tx_eop_seen = 1;
+            end
+        end
+        if (data.is_eop) begin
+            if (guarded && !tx_frame_pid_valid)
+                `uvm_fatal("SUPERSESSION_FAULT", "Serialized TX frame ended without a PID")
+            tx_frame_active = 0;
+        end
     endfunction
 
     function void ocp_supersession_configure_tx_capture_completion();
