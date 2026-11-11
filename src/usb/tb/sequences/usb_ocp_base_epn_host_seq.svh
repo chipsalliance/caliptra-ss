@@ -22,6 +22,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
   logic [6:0] address;
   int unsigned device = 1;
   int unsigned phase;
+  int unsigned data_tag;
   int unsigned scheduled_microframe;
 
   function new(string name = "usb_ocp_base_epn_host_seq");
@@ -45,7 +46,7 @@ class usb_ocp_base_epn_host_seq extends usb_host_base_seq;
     resolve_host_context(1);
     if (device == 2 && address !== usb_cfg.remote_device_cfg[device].device_address)
       `uvm_fatal("OCP_EPN_HOST", "EPN wire address does not match its enumerated native slot")
-    expected = usb_ocp_base_epn_profile::ocp_prepare_stream(endpoint.direction,phase);
+    expected = usb_ocp_base_epn_profile::ocp_prepare_stream(endpoint.direction,phase,data_tag);
     size = expected.size();
     if (size < 1 || size >= endpoint.max_packet_size)
       `uvm_fatal("OCP_EPN_HOST", "Planned short stream exceeds discovered maxpacket")

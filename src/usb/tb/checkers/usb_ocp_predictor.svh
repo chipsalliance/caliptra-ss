@@ -34,6 +34,7 @@ class usb_ocp_predictor extends uvm_object;
   int unsigned token_epoch;
   int unsigned token_generation;
   int unsigned usb_completions[3];
+  int unsigned control_data_stage_errors = 0;
   int unsigned transfer_crosschecks[3];
   logic enumerated[3];
   logic device_descriptor_seen[3];
@@ -93,8 +94,10 @@ class usb_ocp_predictor extends uvm_object;
   bytes_t checked_replacement_bytes[3];
   longint unsigned checked_replacement_serial[3];
   bit checked_replacement_valid[3];
-  usb_ocp_base_epn_model epn;
-  usb_ocp_base_epn_profile epn_profile;
+  usb_ocp_base_epn_model epn_models[2];
+  usb_ocp_base_epn_profile epn_profiles[2];
+  bit require_mixed_epn;
+  int unsigned mixed_generation[2];
 
   function new(string name = "usb_ocp_predictor");
     super.new(name);
@@ -241,6 +244,30 @@ class usb_ocp_predictor extends uvm_object;
     end
   endfunction
 
+  function usb_ocp_base_epn_model ocp_get_epn(int device);
+    if (!(device inside {0,1,2}))
+      `uvm_fatal("OCP_EPN_PROFILE", "Invalid passive endpoint slot")
+    if (device == 0) return null;
+    return epn_models[device-1];
+  endfunction
+
+  function void ocp_configure_epn_profile(usb_ocp_base_epn_profile profile,
+      logic [31:0] list_base, logic [63:0] memory_base, bit negative_payload);
+    usb_ocp_base_epn_model epn;
+    if (profile == null)
+      `uvm_fatal("OCP_EPN_PROFILE", "Missing passive endpoint profile")
+    if (!(profile.device inside {1,2}) || ocp_get_epn(profile.device) != null)
+      `uvm_fatal("OCP_EPN_PROFILE", "Invalid or duplicate passive endpoint ownership")
+    epn = usb_ocp_base_epn_model::type_id::create("epn_model");
+    epn.device = profile.device;
+    epn.data_tag = profile.data_tag;
+    epn.list_base = list_base;
+    epn.memory_base = memory_base;
+    epn.negative_payload = negative_payload;
+    epn_models[profile.device-1] = epn;
+    epn_profiles[profile.device-1] = profile;
+  endfunction
+
   function int ocp_find_device(logic [6:0] addr);
     if (addr === 0) return default_device;
     foreach (address[i]) if (address[i] === addr) return i;
@@ -250,13 +277,15 @@ class usb_ocp_predictor extends uvm_object;
 
   function void ocp_prepare_response(int device);
     usb_ocp_base_control c;
+    usb_ocp_base_epn_model epn;
     c = control[device];
+    epn = ocp_get_epn(device);
     c.expected.delete();
     if (c.setup[0] === 8'h80) begin
       case (c.setup[1])
         6: if (device != 0) begin
-             if (epn_profile != null)
-               c.expected = epn_profile.ocp_prepare_descriptor(device,c.ocp_get_value());
+             if (epn_profiles[device-1] != null)
+               c.expected = epn_profiles[device-1].ocp_prepare_descriptor(device,c.ocp_get_value());
              else
                c.expected = usb_ocp_base_descriptors::ocp_prepare_descriptor(device,c.ocp_get_value());
            end
@@ -374,7 +403,9 @@ class usb_ocp_predictor extends uvm_object;
 
   function void ocp_accept_status(int device);
     usb_ocp_base_control c;
+    usb_ocp_base_epn_model epn;
     c = control[device];
+    epn = ocp_get_epn(device);
     c.active = 0;
     c.status_acked = 1;
     usb_completions[device]++;
@@ -417,22 +448,26 @@ class usb_ocp_predictor extends uvm_object;
 
   function void ocp_observe_packet(usb_ocp_event item);
     usb_ocp_base_control c;
+    usb_ocp_base_epn_model epn;
     logic incoming;
     logic status_stage;
     logic toggle;
     string setup_context;
     int unsigned setup_generation;
     if (item.pid == svt_usb_packet::SOF) begin
-      if (epn != null) epn.ocp_check_sof(item);
+      foreach (epn_models[i])
+        if (epn_models[i] != null) epn_models[i].ocp_check_sof(item);
       return;
     end
     if (item.host_tx && item.pid inside {svt_usb_packet::SETUP,
         svt_usb_packet::IN,svt_usb_packet::OUT,svt_usb_packet::PING}) begin
-      if (epn != null) epn.iso_no_handshake = 0;
+      foreach (epn_models[i])
+        if (epn_models[i] != null) epn_models[i].iso_no_handshake = 0;
       token = item;
       candidate = null;
       if (!item.packet_valid) begin token = null; return; end
       token_device = ocp_find_device(item.address);
+      epn = ocp_get_epn(token_device);
       token_epoch = control[token_device].epoch;
       token_generation = control[token_device].generation;
       if (item.endpoint !== 0) begin
@@ -462,13 +497,17 @@ class usb_ocp_predictor extends uvm_object;
       return;
     end
     if (token == null) begin
-      if (epn != null && epn.iso_no_handshake &&
-          item.pid inside {svt_usb_packet::ACK,svt_usb_packet::NAK,
-                           svt_usb_packet::NYET,svt_usb_packet::STALL})
-        `uvm_fatal("OCP_EPN_ISO", "Handshake after ISO DATA is forbidden")
+      foreach (epn_models[i])
+        if (epn_models[i] != null && epn_models[i].iso_no_handshake &&
+            item.pid inside {svt_usb_packet::ACK,svt_usb_packet::NAK,
+                             svt_usb_packet::NYET,svt_usb_packet::STALL})
+          `uvm_fatal("OCP_EPN_ISO", "Handshake after ISO DATA is forbidden")
       return;
     end
     if (token.endpoint !== 0) begin
+      epn = ocp_get_epn(token_device);
+      if (epn == null)
+        `uvm_fatal("OCP_EPN_CORRELATION", "EPN response lost its selected passive model")
       epn.ocp_observe_packet(item,control[1]);
       token = epn.token;
       candidate = null;
@@ -535,6 +574,14 @@ class usb_ocp_predictor extends uvm_object;
             `uvm_fatal("OCP_LENGTH", "OUT status before full data stage")
           ocp_accept_status(token_device);
         end else if (toggle === c.next_toggle[incoming]) begin
+          // USB 2.0 5.5.3/8.5.3.3: new DATA is not a last-packet retry.
+          if (c.data.size() == c.ocp_get_length()) begin
+            control_data_stage_errors++;
+            `uvm_error("OCP_CONTROL_DATA_STAGE", $sformatf(
+              "New accepted DATA after wLength device=%0d generation=%0d wLength=%0d pid=%s bytes=%0d order=%0d",
+              token_device,c.generation,c.ocp_get_length(),candidate.pid.name(),
+              candidate.bytes.size(),candidate.order))
+          end
           c.next_toggle[incoming] = !toggle;
           foreach (candidate.bytes[i]) c.data.push_back(candidate.bytes[i]);
           if (c.data.size() > c.ocp_get_length())

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_ocp_mixed_traffic
+plusargs:
+  - '+UVM_TESTNAME=usb_ocp_mixed_traffic_test'
+  - '+usb_ocp_cov'

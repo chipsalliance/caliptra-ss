@@ -12,23 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
+class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_replacement_host_seq;
   `uvm_object_utils(usb_ocp_base_epn_overlap_host_seq)
-  usb_ocp_scoreboard scoreboard;
-  usb_ocp_base_epn_descriptor discovery;
+  usb_ocp_base_epn_descriptor discoveries[2];
   // EPN slot is independent of the original OCP control slot (always 1).
   int unsigned epn_device = 1;
+  bit both_epn_devices;
   bit read_started;
   bit write_started;
   longint unsigned capture_floor;
 
   function new(string name = "usb_ocp_base_epn_overlap_host_seq");
     super.new(name);
-    discovery = usb_ocp_base_epn_descriptor::type_id::create("host_discovery");
+    foreach (discoveries[i])
+      discoveries[i] = usb_ocp_base_epn_descriptor::type_id::create("host_discovery");
+  endfunction
+
+  function bit ocp_check_selected_device(int device);
+    return both_epn_devices ? (device inside {1,2}) : device == epn_device;
   endfunction
 
   virtual function void ocp_check_configuration_discovery(int device, bytes_t data);
-    if (device == epn_device) discovery.ocp_check_parse(data);
+    if (ocp_check_selected_device(device)) discoveries[device-1].ocp_check_parse(data);
   endfunction
 
   virtual task ocp_do_check_post_enumeration(int device);
@@ -36,7 +41,9 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
     bytes_t data;
     usb_ocp_base_endpoint_cfg native_ep;
     usb_endpoint_cfg ep;
-    if (device != epn_device) return;
+    usb_ocp_base_epn_descriptor discovery;
+    if (!ocp_check_selected_device(device)) return;
+    discovery = discoveries[device-1];
     if (configuration_value[device] !== discovery.configuration)
       `uvm_fatal("OCP_EPN_DISCOVERY", "GET_CONFIGURATION differs from actual descriptor")
     // USB 2.0 9.4.4/9.4.10. The host learns both interface and alternate
@@ -147,10 +154,16 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
           svt_usb_endpoint_status::IS_PAUSED}))
         `uvm_fatal("OCP_EPN_PAUSE", "Accepted mode0 request did not establish transaction-boundary pause")
     end else begin
-      if (epn_device == 2 && actual.return_status !== 1)
+      if ((epn_device == 2 || both_epn_devices) && actual.return_status !== 1)
         `uvm_fatal("OCP_EPN_PAUSE", "Peer overlap RESUME did not change original EP0 processing state")
       wait (endpoint_status.processing_paused === svt_usb_endpoint_status::NOT_PAUSED);
     end
+  endtask
+
+  virtual task ocp_do_check_paused_continuation(svt_usb_transfer tr,
+      int phase, int generation, output bit resumed_original);
+    ocp_do_check_native_processing(tr,0);
+    resumed_original = 1;
   endtask
 
   virtual task ocp_do_control_interleave(svt_usb_transfer tr, int device);
@@ -174,7 +187,9 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
   endtask
 
   task ocp_do_check_overlap_window(svt_usb_transfer tr, int device);
-    usb_ocp_base_epn_host_seq peers[2];
+    usb_ocp_base_epn_host_seq peers[2][2];
+    usb_ocp_base_epn_model epn_model;
+    usb_ocp_base_epn_profile profile;
     svt_usb_device_status device_status;
     svt_usb_endpoint_status endpoint_status;
     usb_ocp_base_control c;
@@ -184,6 +199,7 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
     int microframe;
     logic [7:0] expected_setup[8];
     longint unsigned setup_order;
+    bit resumed_original;
     phase = -1;
     if (device == 1 && tr.setup_data_w_value == OCP_CMD_PROT_CAP && !read_started)
       phase = 0;
@@ -232,42 +248,61 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
     `uvm_info("OCP_EPN_PAUSED",$sformatf(
       "IS_PAUSED with matching accepted SETUP phase=%0d generation=%0d setup_order=%0d",
       phase,generation,setup_order),UVM_LOW)
-    wait (ocp_cfg.epn_ready[epn_device-1][phase][0] &&
-          ocp_cfg.epn_ready[epn_device-1][phase][1]);
     period = 1;
-    for (int dir = 0; dir < 2; dir++)
-      if (discovery.endpoints[dir].transfer_type != USB_TRANSFER_TYPE_BULK &&
-          period < (1 << (discovery.endpoints[dir].interval-1)))
-        period = 1 << (discovery.endpoints[dir].interval-1);
+    for (int port = 0; port < 2; port++) begin
+      if (!ocp_check_selected_device(port+1)) continue;
+      wait (ocp_cfg.epn_ready[port][phase][0] && ocp_cfg.epn_ready[port][phase][1]);
+      for (int dir = 0; dir < 2; dir++)
+        if (discoveries[port].endpoints[dir].transfer_type != USB_TRANSFER_TYPE_BULK &&
+            period < (1 << (discoveries[port].endpoints[dir].interval-1)))
+          period = 1 << (discoveries[port].endpoints[dir].interval-1);
+    end
     microframe = shared_status.local_host_status.micro_frame_count + 2;
     microframe = (((microframe+period-1)/period)*period) & 'h3fff;
-    for (int dir = 0; dir < 2; dir++) begin
-      peers[dir] = usb_ocp_base_epn_host_seq::type_id::create($sformatf("epn_peer%0d",dir));
-      peers[dir].endpoint = discovery.endpoints[dir];
-      peers[dir].device = epn_device;
-      peers[dir].address = (epn_device == 1) ? tr.device_address :
-        usb_cfg.remote_device_cfg[epn_device].device_address;
-      peers[dir].observer = observer;
-      peers[dir].ocp_cfg = ocp_cfg;
-      peers[dir].phase = phase;
-      peers[dir].scheduled_microframe = microframe;
+    for (int port = 0; port < 2; port++) begin
+      if (!ocp_check_selected_device(port+1)) continue;
+      profile = ocp_cfg.ocp_get_epn_profile(port+1);
+      if (profile == null)
+        `uvm_fatal("OCP_EPN_HOST", "Missing owned test-data profile")
+      for (int dir = 0; dir < 2; dir++) begin
+        peers[port][dir] = usb_ocp_base_epn_host_seq::type_id::create(
+          both_epn_devices ? $sformatf("epn_peer%0d_%0d",port,dir) :
+                             $sformatf("epn_peer%0d",dir));
+        peers[port][dir].endpoint = discoveries[port].endpoints[dir];
+        peers[port][dir].device = port+1;
+        peers[port][dir].address = (port == 0) ? tr.device_address :
+          usb_cfg.remote_device_cfg[port+1].device_address;
+        peers[port][dir].observer = observer;
+        peers[port][dir].ocp_cfg = ocp_cfg;
+        peers[port][dir].phase = phase;
+        peers[port][dir].data_tag = profile.data_tag;
+        peers[port][dir].scheduled_microframe = microframe;
+      end
     end
     fork
-      peers[0].start(p_sequencer);
-      peers[1].start(p_sequencer);
+      begin if (ocp_check_selected_device(1)) peers[0][0].start(p_sequencer); end
+      begin if (ocp_check_selected_device(1)) peers[0][1].start(p_sequencer); end
+      begin if (ocp_check_selected_device(2)) peers[1][0].start(p_sequencer); end
+      begin if (ocp_check_selected_device(2)) peers[1][1].start(p_sequencer); end
     join
-    wait (scoreboard.model.epn.crosschecked[0] > phase &&
-          scoreboard.model.epn.crosschecked[1] > phase &&
-          scoreboard.model.epn.memory_checked[0] > phase &&
-          scoreboard.model.epn.memory_checked[1] > phase);
-    if (!peers[0].completed || !peers[1].completed ||
-        !c.active || c.status_acked || c.generation != generation ||
+    for (int port = 0; port < 2; port++) begin
+      if (!ocp_check_selected_device(port+1)) continue;
+      epn_model = scoreboard.model.ocp_get_epn(port+1);
+      if (epn_model == null)
+        `uvm_fatal("OCP_EPN_HOST", "Missing selected passive endpoint ledger")
+      wait (epn_model.crosschecked[0] > phase && epn_model.crosschecked[1] > phase &&
+            epn_model.memory_checked[0] > phase && epn_model.memory_checked[1] > phase);
+      if (!peers[port][0].completed || !peers[port][1].completed)
+        `uvm_fatal("OCP_EPN_CAPTURE_LATE", "Native endpoint pair returned incomplete")
+    end
+    if (!c.active || c.status_acked || c.generation != generation ||
         endpoint_status.processing_paused !== svt_usb_endpoint_status::IS_PAUSED)
       `uvm_fatal("OCP_EPN_CAPTURE_LATE", "Lost matching paused control before accepted EPN/SRAM proof")
-    ocp_do_check_native_processing(tr,0);
-    `uvm_info("OCP_EPN_RESUMED",$sformatf(
-      "Resumed exact original OCP phase=%0d generation=%0d; STATUS and recovery remain required",
-      phase,generation),UVM_LOW)
+    ocp_do_check_paused_continuation(tr,phase,generation,resumed_original);
+    if (resumed_original)
+      `uvm_info("OCP_EPN_RESUMED",$sformatf(
+        "Resumed exact original OCP phase=%0d generation=%0d; STATUS and recovery remain required",
+        phase,generation),UVM_LOW)
   endtask
 
   task body();
@@ -275,9 +310,14 @@ class usb_ocp_base_epn_overlap_host_seq extends usb_ocp_base_host_seq;
     if (ocp_cfg == null || observer == null || scoreboard == null ||
         shared_status.local_host_status == null)
       `uvm_fatal("OCP_EPN_HOST", "Missing native overlap context")
-    if (!(epn_device inside {1,2}) || scoreboard.model.epn == null ||
-        scoreboard.model.epn.device != epn_device)
+    if (!(epn_device inside {1,2}))
       `uvm_fatal("OCP_EPN_HOST", "EPN slot differs from the selected passive ledger")
+    for (int port = 0; port < 2; port++) begin
+      if (!ocp_check_selected_device(port+1)) continue;
+      if (scoreboard.model.ocp_get_epn(port+1) == null ||
+          scoreboard.model.ocp_get_epn(port+1).device != port+1)
+        `uvm_fatal("OCP_EPN_HOST", "EPN slot differs from the selected passive ledger")
+    end
     ocp_cfg.control_transfer_timeout = 5ms;
     usb_cfg.remote_device_cfg[1].endpoint_cfg[0].
       max_retry_due_to_nak_before_moving_to_next_ep = 1;

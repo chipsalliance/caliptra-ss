@@ -28,6 +28,7 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
   time recovery_status_timeout = 100ms;
   bytes_t device_descriptor_bytes[3];
   logic [7:0] configuration_value[3];
+  bit control_zlp_canary_applied;
 
   function new(string name = "usb_ocp_base_host_seq");
     super.new(name);
@@ -65,6 +66,9 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     logic [6:0] addr;
     longint unsigned floor;
     int payload_size;
+    int unsigned control_max_packet_size;
+    bit aligned_control;
+    bit inject_control_zlp;
     bit done;
     logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] allowed_results;
     if (device < 0 || device > 2 || observer == null || ocp_cfg == null)
@@ -72,6 +76,13 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     if (!bm[7] && write_data.size() != length)
       `uvm_fatal("OCP_HOST", "OUT payload does not match wLength")
     addr = usb_cfg.remote_device_cfg[device].device_address;
+    control_max_packet_size = usb_cfg.remote_device_cfg[device].endpoint_cfg[0].max_packet_size;
+    if (control_max_packet_size == 0)
+      `uvm_fatal("OCP_HOST", "Control endpoint has no maximum packet size")
+    aligned_control = length != 0 && length % control_max_packet_size == 0;
+    inject_control_zlp = $test$plusargs("usb_ocp_control_zlp_canary") &&
+                        !control_zlp_canary_applied && !expect_replacement &&
+                        device == 1 && !bm[7] && aligned_control;
     setup = '{bm,request,value[7:0],value[15:8],index[7:0],index[15:8],
               length[7:0],length[15:8]};
     floor = observer.next_order;
@@ -105,11 +116,20 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
                   setup_data_w_length == local::length;
                   payload_start_ix == 0;
                   payload_intended_byte_count == local::length;
+                  // USB 2.0 5.5.3: wLength exhaustion ends DATA, without an extra ZLP.
+                  if (local::aligned_control)
+                    aligned_transfer_ends_with_zero_length == local::inject_control_zlp;
                   if (!local::bm[7]) {
                     payload.data.size() == local::payload_size;
                     foreach (payload.data[i]) payload.data[i] == local::write_data[i];
                   }
                 }) `uvm_fatal("OCP_HOST", "Control transfer randomization failed")
+            if (inject_control_zlp) begin
+              control_zlp_canary_applied = 1;
+              `uvm_info("OCP_CONTROL_DATA_CANARY", $sformatf(
+                "Deliberately adding excess control DATA ZLP slot=%0d setup=%p",
+                device,setup), UVM_NONE)
+            end
             ocp_configure_control_request(tr,device);
             fork
               ocp_do_control_interleave(tr,device);
@@ -388,6 +408,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
     offset = 0;
     while (offset < words) begin
       chunk_words = $urandom_range(1,chunk_limit);
+      if ($test$plusargs("usb_ocp_control_zlp_canary") && !control_zlp_canary_applied)
+        chunk_words = chunk_limit;
       if (chunk_words > words-offset) chunk_words = words-offset;
       if (chunk_words > fifo_depth-(offset%fifo_depth))
         chunk_words = fifo_depth-(offset%fifo_depth);
@@ -448,6 +470,8 @@ class usb_ocp_base_host_seq extends usb_host_base_seq;
       ocp_do_check_enumeration(device);
     end
     ocp_do_check_recovery();
+    if ($test$plusargs("usb_ocp_control_zlp_canary") && !control_zlp_canary_applied)
+      `uvm_fatal("OCP_NEGATIVE_CONTROL", "Control ZLP canary requires an aligned nonzero OUT request")
     sof_off = svt_usb_protocol_service_20_sof_off_sequence::type_id::create("ocp_sof_off");
     sof_off.start(p_sequencer.prot_service_sequencer);
     completed = 1;

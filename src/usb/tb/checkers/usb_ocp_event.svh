@@ -30,6 +30,7 @@ class usb_ocp_event extends uvm_sequence_item;
   logic [7:0] bytes[$];
   logic [7:0] setup[8];
   logic transfer_ok;
+  bit native_aborted;
   logic [`SVT_USB_RESULTS_STATUS_SIZE-1:0] results;
   int unsigned vendor_instance;
   longint unsigned transfer_start_order;
