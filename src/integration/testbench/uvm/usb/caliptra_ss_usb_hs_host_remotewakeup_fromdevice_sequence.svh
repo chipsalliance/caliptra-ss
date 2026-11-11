@@ -234,19 +234,24 @@ class caliptra_ss_usb_hs_host_remotewakeup_fromdevice_sequence extends caliptra_
         usb_cfg.remote_device_cfg[0].device_address = 7'd1;
         host_agent_h.reconfigure(usb_cfg);
         #CTRL_PACING_GAP;
-        do_control_xfer(
-            .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
-            .bm_request_type_type (svt_usb_types::STANDARD),
-            .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
-            .brequest_val         (BREQ_SET_FEATURE),
-            .wvalue               (FEAT_DEVICE_REMOTE_WAKEUP),
-            .windex               (16'h0000),
-            .wlength              (16'h0000),
-            .device_addr          (1),
-            .label                ("HubSetFeature_DeviceRemoteWakeup"),
-            .usb_cfg              (usb_cfg));
-        wait_xfer_done(.agent_h(host_agent_h),
-                       .label("HubSetFeature_DeviceRemoteWakeup"));
+        begin
+            bit hub_feature_failed;
+            do_control_xfer_and_wait(
+                .agent_h              (host_agent_h),
+                .bm_request_type_dir  (svt_usb_types::HOST_TO_DEVICE),
+                .bm_request_type_type (svt_usb_types::STANDARD),
+                .bm_request_type_recip(svt_usb_types::BMREQ_DEVICE),
+                .brequest_val         (BREQ_SET_FEATURE),
+                .wvalue               (FEAT_DEVICE_REMOTE_WAKEUP),
+                .windex               (16'h0000),
+                .wlength              (16'h0000),
+                .device_addr          (1),
+                .label                ("HubSetFeature_DeviceRemoteWakeup"),
+                .usb_cfg              (usb_cfg),
+                .fail                 (hub_feature_failed));
+            if (hub_feature_failed || xfer_wait_timed_out)
+                return;
+        end
         `uvm_info(MSG_ID,
             "SET_FEATURE(DEVICE_REMOTE_WAKEUP) completed to the hub at address 1; ep0_remote_wake_enabled(0) is now set and the compound can forward the device wakeup request upstream.",
             UVM_LOW)
