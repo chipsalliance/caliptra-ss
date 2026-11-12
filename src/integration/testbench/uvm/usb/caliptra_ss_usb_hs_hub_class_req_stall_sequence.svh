@@ -380,21 +380,22 @@ class caliptra_ss_usb_hs_hub_class_req_stall_sequence
                 $sformatf({"%s: last_ctrl_seq_item is null, the transfer status ",
                            "cannot be checked."}, label))
 
-        observed_stall = (last_ctrl_seq_item.status == svt_sequence_item::ABORTED);
+        observed_stall = (last_ctrl_seq_item.status == svt_sequence_item::ABORTED) &&
+                         (last_ctrl_seq_item.results_status[4] === 1'b1);
 
         if (expect_stalled && !observed_stall) begin
             `uvm_error(MSG_ID,
-                $sformatf({"%s: the request was NOT STALLed. Transfer status is %p, ",
-                           "expected ABORTED. The hub must assert ep0_class_stall ",
-                           "because %s."},
-                          label, last_ctrl_seq_item.status, why_text))
+                $sformatf("%s: expected a STALL handshake because %s; status=%p, results_status=0x%0h.",
+                          label, why_text, last_ctrl_seq_item.status,
+                          last_ctrl_seq_item.results_status))
         end
-        else if (!expect_stalled && observed_stall) begin
+        else if (!expect_stalled &&
+                 ((last_ctrl_seq_item.status != svt_usb_transfer::ACCEPT) ||
+                  ((last_ctrl_seq_item.results_status & ~USB_RESULTS_STATUS_BENIGN_MASK) != 0))) begin
             `uvm_error(MSG_ID,
-                $sformatf({"%s: the request WAS STALLed (status ABORTED) but %s. ",
-                           "Either the decode rejects a legal request, or EP0 was ",
-                           "left wedged by one of the preceding stalled requests."},
-                          label, why_text))
+                $sformatf("%s: supported request did not complete successfully (%s); status=%p, results_status=0x%0h.",
+                          label, why_text, last_ctrl_seq_item.status,
+                          last_ctrl_seq_item.results_status))
         end
         else begin
             `uvm_info(MSG_ID,
