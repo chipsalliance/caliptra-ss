@@ -655,8 +655,6 @@ class usb_ocp_predictor extends uvm_object;
           foreach (candidate.bytes[i]) c.data.push_back(candidate.bytes[i]);
           if (c.data.size() > c.ocp_get_length())
             `uvm_fatal("OCP_LENGTH", "Control data exceeds wLength")
-          if (stall_model != null)
-            stall_model.ocp_capture_probe_data(token_device,c,candidate.bytes.size());
           if (!incoming) ocp_accept_out(token_device, candidate);
         end
         // A retry with the previous toggle has no second acceptance effect.

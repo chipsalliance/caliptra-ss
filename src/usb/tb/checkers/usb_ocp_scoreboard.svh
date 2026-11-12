@@ -284,11 +284,6 @@ class usb_ocp_scoreboard extends uvm_component;
             `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
           model.stall_model.ocp_check_identity(c.data);
         end
-        OCP_CMD_INDIRECT_CTRL: begin
-          if (model.stall_model == null)
-            `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
-          model.stall_model.ocp_check_indirect(c);
-        end
         OCP_CMD_INDIRECT_FIFO_CTRL: begin
           if (l2_model == null && reset_model == null)
             `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
