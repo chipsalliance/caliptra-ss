@@ -219,6 +219,10 @@ class usb_ocp_observer extends uvm_component;
       `uvm_fatal("OCP_AXI_ACCOUNTING", "Accepted AXI ledger overflow")
     item = usb_ocp_event::type_id::create("axi_accept_snapshot");
     item.manager = manager;
+    // Preserve actual address admission without adding queue entries or
+    // advancing next_order. Row-owned joins can tolerate late completions.
+    item.axi_address_order_floor = next_order;
+    item.axi_address_at = $realtime;
     item.axi_instance = tr.get_inst_id();
     item.axi_id = tr.id;
     item.axi_address = tr.addr;
@@ -280,6 +284,8 @@ class usb_ocp_observer extends uvm_component;
     end
     item.vendor_instance = item.axi_instance;
     item.axi_instance = accepted_axi[key].axi_instance;
+    item.axi_address_order_floor = accepted_axi[key].axi_address_order_floor;
+    item.axi_address_at = accepted_axi[key].axi_address_at;
     if (axi_retires[manager] == 0)
       `uvm_info("OCP_AXI_ACCOUNTING", $sformatf(
         "first_retirement manager=%0d accepted_native=%0d completed_native=%0d id=%0h address=%016h beats=%0d write=%0b",
