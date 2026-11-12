@@ -39,5 +39,12 @@ class caliptra_ss_usb_supersession_packet_callback extends svt_usb_link_monitor_
             `uvm_fatal("SUPERSESSION_PORT", "Null analysis sink or object")
         sink.ocp_supersession_check_packet(1, pkt);
     endfunction
+
+    virtual function void usb_20_tx_packet_started(
+        svt_usb_link_monitor link_mon, svt_usb_packet pkt);
+        if ((sink == null) || (pkt == null))
+            `uvm_fatal("SUPERSESSION_PORT", "Null analysis sink or object")
+        sink.ocp_supersession_check_packet_start(pkt);
+    endfunction
 endclass
 `endif

@@ -140,6 +140,46 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         return 1;
     endfunction
 
+    function void ocp_supersession_check_stale_publication(
+        input int index, input logic [15:0] gen);
+        caliptra_ss_usb_supersession_evidence item;
+        if (!active || (mode != "STALE") || (generation !== gen) ||
+            (index != 1) || (evidence.size() != 2))
+            `uvm_fatal("SUPERSESSION", "Publication did not match the active stale window")
+        item = evidence[index];
+        if (!item.ocp_supersession_check_is_ocp() || (item.setup_acks != 1) ||
+            item.stale_published || (item.first_in_at != 0) ||
+            (item.in_tokens != 0) || (item.data_packets != 0) ||
+            (item.setup_ack_at >= $realtime))
+            `uvm_fatal("SUPERSESSION", "Stale publication was not between SETUP ACK and first IN")
+        item.stale_published = 1;
+        item.publication_generation = gen;
+        item.stale_publication_at = $realtime;
+        `uvm_info("SUPERSESSION", $sformatf(
+            "Stale publication confirmed gen=%0d before releasing first IN", gen), UVM_NONE)
+    endfunction
+
+    function void ocp_supersession_check_packet_start(input svt_usb_packet packet);
+        caliptra_ss_usb_supersession_evidence item;
+        if (!active || (packet.pid_name != svt_usb_packet::IN) ||
+            (packet.get_device_address_val() !== address) ||
+            (packet.ept_num !== 0) || (evidence.size() == 0)) return;
+        item = evidence[$];
+        if (item.first_in_at != 0) return;
+        item.first_in_at = $realtime;
+        if ((mode == "STALE") && (evidence.size() == 2) &&
+            item.ocp_supersession_check_is_ocp()) begin
+            // The sticky predicate is sampled at token start. Publication
+            // and the later callback may execute in the same time slot.
+            item.publication_before_first_in = item.stale_published &&
+                (item.publication_generation === item.generation) &&
+                (item.stale_publication_at <= item.first_in_at);
+            if (!item.publication_before_first_in)
+                ocp_supersession_report_failure(
+                    "Replacement OCP IN started before qualified stale publication");
+        end
+    endfunction
+
     function void ocp_supersession_configure_window(input logic [15:0] gen, input logic [6:0] addr);
         if (active || expected_report.installed)
             `uvm_fatal("SUPERSESSION", "Overlapping evidence/report windows")
@@ -557,7 +597,15 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         if (!last_window_valid) return;
         phase = -1;
         if ((evidence.size() == 2) && !evidence[0].ocp_supersession_check_is_ocp() &&
-            evidence[1].ocp_supersession_check_is_ocp()) phase = 0;
+            evidence[1].ocp_supersession_check_is_ocp() &&
+            evidence[1].publication_before_first_in &&
+            (evidence[1].publication_generation === generation)) begin
+            phase = 0;
+            `uvm_info("SUPERSESSION", $sformatf(
+                "Stale bypass gen=%0d SETUP_ACK=%0t publication=%0t first_IN_start=%0t",
+                generation, evidence[1].setup_ack_at,
+                evidence[1].stale_publication_at, evidence[1].first_in_at), UVM_NONE)
+        end
         else if ((evidence.size() == 1) && !evidence[0].ocp_supersession_check_is_ocp()) begin
             if (evidence[0].intentional_stale && !evidence[0].fresh_service &&
                 ocp_supersession_check_bytes_match(evidence[0].data, stale_data)) phase = 1;

@@ -24,11 +24,23 @@ class caliptra_ss_usb_ocp_setup_stale_negative_test
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
+        svt_usb_protocol::type_id::set_inst_override(
+            caliptra_ss_usb_stale_publication_protocol::get_type(),
+            {get_full_name(), ".env.host_agent.prot"});
         super.build_phase(phase);
         mixed_checker.mode = "STALE";
         uvm_config_db#(uvm_object_wrapper)::set(this,
             "env.host_agent.virt_sequencer.main_phase", "default_sequence",
             caliptra_ss_usb_ocp_setup_stale_negative_sequence::type_id::get());
+    endfunction
+
+    virtual function void connect_phase(uvm_phase phase);
+        caliptra_ss_usb_stale_publication_protocol publication_gate;
+        super.connect_phase(phase);
+        if (!$cast(publication_gate, env.host_agent.prot))
+            `uvm_fatal("STALE_PUBLICATION", "Host protocol override was not installed")
+        uvm_config_db#(caliptra_ss_usb_stale_publication_protocol)::set(
+            null, "*", "usb_stale_publication_gate", publication_gate);
     endfunction
 endclass
 `endif

@@ -52,6 +52,7 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
 
     // How many times to confirm ACTIVATE=0x0F remains pending.
     localparam int unsigned ACTIVATE_CONFIRM_READS = 3;
+    localparam logic [15:0] RA_ACTIVATION_ACK_GENERATION = 16'd1;
 
     // Deterministic FIFO DWORD; keep synchronized with the firmware check in
     // cptra_usb_ocp_recovery_activation_access_semantics.c.
@@ -267,6 +268,23 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 "Recovery Agent ACTIVATE=0x0F asserted the activation level.",
                 UVM_NONE)
         end
+
+        // State 0x23 is held until these host observations are complete.
+        // The generation-qualified reply confirms the subsequent firmware
+        // rewrite/readback, not merely receipt of the command.
+        if (sem_vif.get_fw_state() !== RA_SEM_STATE_RA_ACTIVATE_PENDING)
+            `uvm_fatal("RA_SEM_SEQ",
+                "Firmware advanced past pending activation before host acknowledgment.")
+        `uvm_info("RA_SEM_SEQ",
+            "Pending activation checks complete; releasing firmware rewrite.",
+            UVM_NONE)
+        ocp_issue_fw_command_and_wait(
+            sem_vif.FW_COMMAND_FLOW_ADVANCE, RA_ACTIVATION_ACK_GENERATION,
+            RA_SEM_STATE_FW_NONZERO_AFTER_RA, SEM_MAX_POLLS * SEM_POLL_PERIOD,
+            "RA_SEM_PENDING_ACK", "RA_SEM_SEQ");
+        `uvm_info("RA_SEM_SEQ",
+            "Host acknowledged pending activation; firmware rewrite/readback completed.",
+            UVM_NONE)
 
         // Rewriting the activation code while already high maintains the
         // stored-value level and does not require another edge.

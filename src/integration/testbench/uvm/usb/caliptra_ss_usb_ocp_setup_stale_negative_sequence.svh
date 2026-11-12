@@ -27,13 +27,18 @@ class caliptra_ss_usb_ocp_setup_stale_negative_sequence
 
     virtual task body();
         svt_usb_transfer old_req, ocp_req, probe_req, fresh_req;
+        caliptra_ss_usb_stale_publication_protocol publication_gate;
         ocp_setup_do_initialize_and_check_capabilities();
+        if (!uvm_config_db#(caliptra_ss_usb_stale_publication_protocol)::get(
+            null, "", "usb_stale_publication_gate", publication_gate))
+            `uvm_fatal("STALE_PUBLICATION", "Publication gate was not configured")
         old_req = ocp_setup_configure_request(0, "STALE_ORIGINAL");
         ocp_req = ocp_setup_configure_request(1, "STALE_OCP_BYPASS");
         ocp_setup_arm_scenario(4);
         ocp_setup_do_request_and_check_result(old_req, 1, svt_usb_transfer::SETUP_STAGE, "STALE_ORIGINAL");
         ocp_setup_check_legacy_notification(0);
         mixed_checker.ocp_supersession_wait_evidence(0, 0, TRANSFER_TIMEOUT);
+        publication_gate.ocp_stale_configure_gate(ocp_req, scenario_generation);
         fork
             ocp_setup_do_request_and_check_result(ocp_req, 0, svt_usb_transfer::SETUP_STAGE, "STALE_OCP_BYPASS");
             begin
@@ -43,8 +48,12 @@ class caliptra_ss_usb_ocp_setup_stale_negative_sequence
                 ocp_setup_issue_mcu_command(CMD_STALE);
                 ocp_setup_check_mcu_state(STATE_STALE);
                 ocp_setup_check_service_counts();
+                mixed_checker.ocp_supersession_check_stale_publication(
+                    1, scenario_generation);
+                publication_gate.ocp_stale_configure_publication(scenario_generation);
             end
         join
+        publication_gate.ocp_stale_check_and_retire_gate(scenario_generation);
         transfers_issued++;
         ocp_setup_check_request(0, old_req, 0, 0, 0);
         ocp_setup_check_request(1, ocp_req, 1, 1, 1);

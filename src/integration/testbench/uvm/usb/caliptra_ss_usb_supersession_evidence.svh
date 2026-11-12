@@ -30,9 +30,12 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
     bit setup_data, data_pending, status_data, checked, valid;
     bit released, notified, intentional_stale, fresh_service;
     logic [15:0] service_generation;
+    bit stale_published, publication_before_first_in;
+    logic [15:0] publication_generation;
     realtime setup_at, setup_ack_at, data_ack_at, status_complete_at;
     realtime first_status_start_at;
     realtime nak_at, first_data_at, release_at;
+    realtime first_in_at, stale_publication_at;
 
     function new(string name = "caliptra_ss_usb_supersession_evidence");
         super.new(name);
