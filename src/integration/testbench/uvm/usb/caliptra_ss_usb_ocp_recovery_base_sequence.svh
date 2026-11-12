@@ -705,69 +705,87 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         sem_vif.clear_recovery_payload_available_seen();
     endtask
 
+    // OCP Recovery v1.1 9.2 compliance, independent of stimulus prerequisites.
+    protected virtual function void ocp_check_prot_cap_response(
+        input bit [7:0] response[$],
+        input string label);
+
+        bit [15:0] agent_caps;
+        if (response.size() != OCP_SPEC_LEN_PROT_CAP) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP length=%0d, expected %0d per OCP Recovery v1.1 Sec 9.2.",
+                          label, response.size(), OCP_SPEC_LEN_PROT_CAP))
+        end
+        if (response.size() < OCP_SPEC_LEN_PROT_CAP) return;
+
+        for (int i = 0; i < 8; i++) begin
+            if (response[OCP_OFF_PC_MAGIC_START + i] !==
+                    OCP_SPEC_PROT_CAP_MAGIC[i]) begin
+                `uvm_error("OCP_BASE",
+                    $sformatf("%s: PROT_CAP magic byte %0d expected 0x%02h got 0x%02h.",
+                              label, i, OCP_SPEC_PROT_CAP_MAGIC[i],
+                              response[OCP_OFF_PC_MAGIC_START + i]))
+            end
+        end
+        if ((response[OCP_OFF_PC_VERSION_MAJOR] != OCP_SPEC_VERSION_MAJOR) ||
+            (response[OCP_OFF_PC_VERSION_MINOR] != OCP_SPEC_VERSION_MINOR)) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP version=%0d.%0d, expected %0d.%0d.",
+                          label, response[OCP_OFF_PC_VERSION_MAJOR],
+                          response[OCP_OFF_PC_VERSION_MINOR],
+                          OCP_SPEC_VERSION_MAJOR, OCP_SPEC_VERSION_MINOR))
+        end
+        agent_caps = {
+            response[OCP_OFF_PC_AGENT_CAPS_HI],
+            response[OCP_OFF_PC_AGENT_CAPS_LO]};
+        if ((agent_caps & OCP_CAP_RESERVED_MASK) != '0) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP reserved capability bits are nonzero: 0x%04h.",
+                          label, agent_caps & OCP_CAP_RESERVED_MASK))
+        end
+        if (!agent_caps[OCP_CAP_IDENTIFICATION]) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP does not advertise mandatory DEVICE_ID capability.", label))
+        end
+        if (!agent_caps[OCP_CAP_DEVICE_STATUS]) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP does not advertise mandatory DEVICE_STATUS capability.", label))
+        end
+        if (!(agent_caps[OCP_CAP_LOCAL_C_IMAGE] ||
+              agent_caps[OCP_CAP_PUSH_C_IMAGE])) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP advertises neither mandatory Local C-image nor Push C-image support.",
+                          label))
+        end
+        if (agent_caps[OCP_CAP_PUSH_C_IMAGE] &&
+            !agent_caps[OCP_CAP_INDIRECT_CTRL]) begin
+            `uvm_warning("OCP_BASE",
+                $sformatf("%s: PROT_CAP Push C-image requires INDIRECT_CTRL per OCP Recovery v1.1 Sec 9.2 (caps=0x%04h).",
+                          label, agent_caps))
+        end
+        if ((agent_caps[OCP_CAP_INDIRECT_CTRL] ||
+             agent_caps[OCP_CAP_INDIRECT_FIFO]) &&
+            (response[OCP_OFF_PC_CMS_COUNT] == 0)) begin
+            `uvm_error("OCP_BASE",
+                $sformatf("%s: PROT_CAP advertises CMS access but reports zero CMS regions.", label))
+        end
+    endfunction
+
     protected virtual task ocp_do_read_and_check_recovery_capabilities(
         input string label,
         output bit [15:0] initial_agent_caps);
-        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
-        bit [7:0] empty_q[$];
+        caliptra_ss_usb_ocp_xfer_result_e result;
         bit [7:0] prot_cap[$];
-
-        initial_agent_caps = '0;
-        empty_q.delete();
-        ocp_do_class_xfer(.dir_in(1'b1),
-                       .cmd_code(OCP_CMD_PROT_CAP),
-                       .wlength(16'(wMaxRdTransferSize)),
-                       .payload_bytes(empty_q),
-                       .resp_bytes(prot_cap),
-                       .result(ignored_result),
-                       .label(label));
-        if (prot_cap.size() < 8) begin
-            `uvm_error("OCPREC",
-                $sformatf("PROT_CAP returned only %0d bytes; expected >= 8 for magic string.",
-                          prot_cap.size()))
-        end else begin
-            for (int j = 0; j < 8; j++) begin
-                if (prot_cap[j] !== OCP_SPEC_PROT_CAP_MAGIC[j]) begin
-                    `uvm_error("OCPREC",
-                        $sformatf("PROT_CAP magic byte %0d mismatch: exp=0x%02h got=0x%02h",
-                                  j, OCP_SPEC_PROT_CAP_MAGIC[j], prot_cap[j]))
-                end
-            end
+        ocp_do_read(OCP_CMD_PROT_CAP, prot_cap, result, label);
+        ocp_check_prot_cap_response(prot_cap, label);
+        if (prot_cap.size() < OCP_SPEC_LEN_PROT_CAP) begin
+            `uvm_fatal("OCP_BASE",
+                $sformatf("%s: PROT_CAP response is too short to establish recovery capabilities.", label))
         end
-
-        if (prot_cap.size() < 12) begin
-            `uvm_error("OCPREC",
-                $sformatf("PROT_CAP returned only %0d bytes; expected >= 12 for version (8-9) and AGENT_CAPS (10-11).",
-                          prot_cap.size()))
-        end else begin
-            logic [15:0] agent_caps;
-            logic [15:0] prot_version;
-            prot_version = {prot_cap[9], prot_cap[8]};
-            if ((prot_cap[OCP_OFF_PC_VERSION_MAJOR] !==
-                    OCP_SPEC_VERSION_MAJOR) ||
-                (prot_cap[OCP_OFF_PC_VERSION_MINOR] !==
-                    OCP_SPEC_VERSION_MINOR)) begin
-                `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP version mismatch: got=0x%04h expected 1.1.",
-                              prot_version))
-            end
-            agent_caps = {prot_cap[11], prot_cap[10]};
-            initial_agent_caps = agent_caps;
-            if ((agent_caps & OCP_CAP_RESERVED_MASK) != '0) begin
-                `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP reserved capability bits are nonzero: 0x%04h.",
-                              agent_caps & OCP_CAP_RESERVED_MASK))
-            end
-            if (!agent_caps[OCP_CAP_IDENTIFICATION] ||
-                !agent_caps[OCP_CAP_DEVICE_STATUS] ||
-                !(agent_caps[OCP_CAP_LOCAL_C_IMAGE] ||
-                  agent_caps[OCP_CAP_PUSH_C_IMAGE])) begin
-                `uvm_error("OCPREC",
-                    $sformatf("PROT_CAP mandatory capabilities are missing: 0x%04h.",
-                              agent_caps))
-            end
-        end
+        initial_agent_caps = {
+            prot_cap[OCP_OFF_PC_AGENT_CAPS_HI],
+            prot_cap[OCP_OFF_PC_AGENT_CAPS_LO]};
     endtask
 
     protected virtual task ocp_do_read_and_log_device_id(input string label);
@@ -1606,38 +1624,11 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] response[$];
-        int unsigned expected_length;
         ocp_do_read(OCP_CMD_PROT_CAP, response, ignored_result, "OCP_CMD_001_PROT_CAP");
-
-        expected_length = OCP_SPEC_LEN_PROT_CAP;
-        if (response.size() != expected_length) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("PROT_CAP length=%0d, expected %0d per OCP Recovery v1.1 Sec 9.2.",
-                          response.size(), expected_length))
-        end
-        if (response.size() < expected_length) begin
-            agent_caps      = '0;
-            cms_count       = '0;
-            heartbeat_period = '0;
-            return;
-        end
-
-        for (int i = 0; i < 8; i++) begin
-            if (response[OCP_OFF_PC_MAGIC_START + i] !==
-                    OCP_SPEC_PROT_CAP_MAGIC[i]) begin
-                `uvm_error("OCP_BASE",
-                    $sformatf("PROT_CAP magic byte %0d expected 0x%02h got 0x%02h.",
-                              i, OCP_SPEC_PROT_CAP_MAGIC[i],
-                              response[OCP_OFF_PC_MAGIC_START + i]))
-            end
-        end
-        if ((response[OCP_OFF_PC_VERSION_MAJOR] != OCP_SPEC_VERSION_MAJOR) ||
-            (response[OCP_OFF_PC_VERSION_MINOR] != OCP_SPEC_VERSION_MINOR)) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("PROT_CAP version=%0d.%0d, expected %0d.%0d.",
-                          response[OCP_OFF_PC_VERSION_MAJOR],
-                          response[OCP_OFF_PC_VERSION_MINOR],
-                          OCP_SPEC_VERSION_MAJOR, OCP_SPEC_VERSION_MINOR))
+        ocp_check_prot_cap_response(response, "OCP_CMD_001_PROT_CAP");
+        if (response.size() < OCP_SPEC_LEN_PROT_CAP) begin
+            `uvm_fatal("OCP_BASE",
+                "PROT_CAP response is too short to read capabilities, CMS count and heartbeat.")
         end
         agent_caps = {
             response[OCP_OFF_PC_AGENT_CAPS_HI],
@@ -1645,35 +1636,6 @@ class caliptra_ss_usb_ocp_recovery_base_sequence
         cms_count = response[OCP_OFF_PC_CMS_COUNT];
         heartbeat_period = response[OCP_OFF_PC_HEARTBEAT_PERIOD];
 
-        if ((agent_caps & OCP_CAP_RESERVED_MASK) != '0) begin
-            `uvm_error("OCP_BASE",
-                $sformatf("PROT_CAP reserved capability bits are nonzero: 0x%04h.",
-                          agent_caps & OCP_CAP_RESERVED_MASK))
-        end
-        if (!agent_caps[OCP_CAP_IDENTIFICATION]) begin
-            `uvm_error("OCP_BASE",
-                "PROT_CAP does not advertise mandatory DEVICE_ID capability.")
-        end
-        if (!agent_caps[OCP_CAP_DEVICE_STATUS]) begin
-            `uvm_error("OCP_BASE",
-                "PROT_CAP does not advertise mandatory DEVICE_STATUS capability.")
-        end
-        if (!(agent_caps[OCP_CAP_LOCAL_C_IMAGE] ||
-              agent_caps[OCP_CAP_PUSH_C_IMAGE])) begin
-            `uvm_error("OCP_BASE",
-                "PROT_CAP advertises neither mandatory Local C-image nor Push C-image support.")
-        end
-        if (agent_caps[OCP_CAP_PUSH_C_IMAGE] &&
-            !(agent_caps[OCP_CAP_INDIRECT_CTRL] ||
-              agent_caps[OCP_CAP_INDIRECT_FIFO])) begin
-            `uvm_error("OCP_BASE",
-                "PROT_CAP Push C-image capability has no advertised indirect memory transport.")
-        end
-        if ((agent_caps[OCP_CAP_INDIRECT_CTRL] ||
-             agent_caps[OCP_CAP_INDIRECT_FIFO]) && (cms_count == 0)) begin
-            `uvm_error("OCP_BASE",
-                "PROT_CAP advertises CMS access but reports zero CMS regions.")
-        end
     endtask
 
     protected virtual task ocp_do_read_and_check_device_id(
