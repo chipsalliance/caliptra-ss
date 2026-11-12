@@ -52,14 +52,37 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
 
     // How many times to confirm ACTIVATE=0x0F remains pending.
     localparam int unsigned ACTIVATE_CONFIRM_READS = 3;
+    localparam logic [15:0] RA_ACTIVATION_ACK_GENERATION = 16'd1;
 
     // Deterministic FIFO DWORD; keep synchronized with the firmware check in
     // cptra_usb_ocp_recovery_activation_access_semantics.c.
     localparam bit [31:0] ACT_FIFO_DWORD = 32'hC0DE0000;
 
+    localparam int unsigned SVT_USB_RESULTS_STALL_BIT = 4;
+    protected bit ra_last_xfer_stalled;
+
     function new(string name =
         "caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence");
         super.new(name);
+    endfunction
+
+    protected virtual function void ocp_note_xfer_completed(
+        input svt_usb_transfer request,
+        input caliptra_ss_usb_ocp_xfer_result_e result);
+
+        bit [`SVT_USB_RESULTS_STATUS_SIZE - 1:0] expected_stall_results;
+
+        super.ocp_note_xfer_completed(request, result);
+        expected_stall_results = '0;
+        expected_stall_results[SVT_USB_RESULTS_STALL_BIT] = 1'b1;
+        ra_last_xfer_stalled = 1'b0;
+        if (request != null) begin
+            // SVT reports a USB 2.0 STALL as ABORTED with only result bit 4.
+            ra_last_xfer_stalled =
+                (result == OCP_XFER_ABORTED) &&
+                (request.status === svt_sequence_item::ABORTED) &&
+                (request.results_status === expected_stall_results);
+        end
     endfunction
 
     protected virtual task ocp_ra_poll_fw_state(
@@ -246,6 +269,23 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
                 UVM_NONE)
         end
 
+        // State 0x23 is held until these host observations are complete.
+        // The generation-qualified reply confirms the subsequent firmware
+        // rewrite/readback, not merely receipt of the command.
+        if (sem_vif.get_fw_state() !== RA_SEM_STATE_RA_ACTIVATE_PENDING)
+            `uvm_fatal("RA_SEM_SEQ",
+                "Firmware advanced past pending activation before host acknowledgment.")
+        `uvm_info("RA_SEM_SEQ",
+            "Pending activation checks complete; releasing firmware rewrite.",
+            UVM_NONE)
+        ocp_issue_fw_command_and_wait(
+            sem_vif.FW_COMMAND_FLOW_ADVANCE, RA_ACTIVATION_ACK_GENERATION,
+            RA_SEM_STATE_FW_NONZERO_AFTER_RA, SEM_MAX_POLLS * SEM_POLL_PERIOD,
+            "RA_SEM_PENDING_ACK", "RA_SEM_SEQ");
+        `uvm_info("RA_SEM_SEQ",
+            "Host acknowledged pending activation; firmware rewrite/readback completed.",
+            UVM_NONE)
+
         // Rewriting the activation code while already high maintains the
         // stored-value level and does not require another edge.
         ocp_ra_poll_fw_post_ra_nonzero();
@@ -274,9 +314,9 @@ class caliptra_ss_usb_ocp_recovery_activation_access_semantics_sequence
         payload = '{8'h00};
         ocp_do_write(
             OCP_CMD_PROT_CAP, payload, result, "RA_SEM_ZERO_ARM_TRIGGER", 0);
-        if (result == OCP_XFER_ABORTED) begin
+        if (xfer_wait_timed_out || !ra_last_xfer_stalled) begin
             `uvm_fatal("RA_SEM_SEQ",
-                "Pre-zero protocol-error trigger aborted.")
+                "Pre-zero read-only PROT_CAP write did not terminate with only the expected STALL.")
         end
 
         ocp_ra_poll_fw_state(RA_SEM_STATE_FW_ZERO_ARMED, "RA_SEM_FW_ZERO_ARMED");

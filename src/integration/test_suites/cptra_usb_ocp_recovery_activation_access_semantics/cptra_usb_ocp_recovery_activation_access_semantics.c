@@ -24,8 +24,8 @@
 //   0x21 FW_NONZERO_STORED_PRE   - firmware wrote ACTIVATE=0x0F before RA;
 //                                  readback confirms 0x0F stored
 //   0x22 FW_PRE_RA_CLEARED       - firmware cleared ACTIVATE=0 before RA sets
-//   0x23 RA_ACTIVATE_PENDING     - RA has set ACTIVATE=0x0F; firmware reading
-//                                  0x0F repeatedly, confirms pending
+//   0x23 RA_ACTIVATE_PENDING     - RA has set ACTIVATE=0x0F; held until host
+//                                  acknowledges its pending-value checks
 //   0x24 FW_NONZERO_AFTER_RA     - firmware rewrote ACTIVATE=0x0F after RA set;
 //                                  readback still 0x0F and level remains high
 //   0x25 FW_ZERO_ARMED           - firmware observed the RA protocol-error
@@ -61,6 +61,7 @@ enum printf_verbosity verbosity_g = LOW;
 #define RA_FW_STATE_FW_NONZERO_AFTER_RA   0x24u
 #define RA_FW_STATE_FW_ZERO_ARMED         0x25u
 #define RA_FW_STATE_FW_ACTIVATE_CLEARED   0x26u
+#define RA_ACTIVATION_ACK_GENERATION      1u
 
 // OCP Recovery v1.1 Sec 9.2 RECOVERY_CTRL ACTIVATE code.
 #define RA_RC_ACTIVATE_CODE 0x0Fu
@@ -87,6 +88,23 @@ static void ra_state_hold(void)
     for (uint32_t i = 0u; i < RA_STATE_HOLD_CYCLES; ++i) {
         __asm__ volatile ("nop");
     }
+}
+
+static uint8_t ra_wait_activation_ack(void)
+{
+    uint32_t expected = (RA_ACTIVATION_ACK_GENERATION << 16) |
+        (CPTRA_USB_OCP_FW_COMMAND_FLOW_ADVANCE << 8);
+    for (uint32_t i = 0u; i < RA_POLL_LIMIT; ++i) {
+        uint32_t command_word;
+        uint32_t command_magic;
+        cptra_usb_ocp_recovery_read_fw_command(
+            &command_word, &command_magic);
+        if ((command_magic == CPTRA_USB_OCP_FW_COMMAND_MAGIC) &&
+            (command_word == expected)) {
+            return 0u;
+        }
+    }
+    return 1u;
 }
 
 // Poll RECOVERY_CTRL until ACTIVATE field is the target value.
@@ -321,6 +339,11 @@ void main(void)
 
     VPRINTF(LOW, "CPTRA: RA ACTIVATE=0x0F is pending\n");
     cptra_usb_ocp_recovery_signal_state(RA_FW_STATE_RA_ACTIVATE_PENDING, 0u);
+    if (ra_wait_activation_ack() != 0u) {
+        VPRINTF(ERROR, "CPTRA: host activation acknowledgment timed out\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
 
     // -----------------------------------------------------------------
     // Firmware rewrites ACTIVATE after RA has set it. The value remains 0x0F
@@ -353,7 +376,8 @@ void main(void)
 
     VPRINTF(LOW, "CPTRA: RECOVERY_CTRL ACTIVATE=0x%02x after FW nonzero post-RA\n",
             activate_byte);
-    cptra_usb_ocp_recovery_signal_state(RA_FW_STATE_FW_NONZERO_AFTER_RA, 0u);
+    cptra_usb_ocp_recovery_signal_state_generation(
+        RA_FW_STATE_FW_NONZERO_AFTER_RA, 0u, RA_ACTIVATION_ACK_GENERATION);
 
     if (ra_poll_protocol_error(1u) != 0u) {
         VPRINTF(ERROR, "CPTRA: pre-zero protocol-error trigger not observed\n");
