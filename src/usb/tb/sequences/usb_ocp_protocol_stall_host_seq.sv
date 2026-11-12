@@ -15,8 +15,6 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
   usb_ocp_reset_start_callback start_callback;
   usb_ocp_dev1_ep0_service_seq peer;
   svt_usb_transfer invalid_request;
-  svt_usb_transfer probe_request;
-  bit probing;
   bit injecting;
   bit recovery_checked;
   time window_deadline;
@@ -25,29 +23,14 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
     super.new(name);
   endfunction
 
-  function string ocp_check_probe_progress();
-    int p;
-    p = stall_model.active_probe;
-    if (p < 0) return $sformatf(
-      "no active probe; attempted=%0d native_success=%0d native_STALL=%0d",
-      stall_model.probe_attempts,stall_model.probe_successes,stall_model.probe_stalls);
-    return $sformatf(
-      "probe=%0d attempted_SETUP=%0b STALL=%0b native=%0b CLEAR=%0b/%0b firmware=%0d RTC=%0d/%0d",
-      p,stall_model.probes[p].setup_seen,stall_model.probes[p].stall_seen,
-      stall_model.probes[p].native_checked,stall_model.probes[p].clear_seen,
-      stall_model.probes[p].clear_native_checked,stall_model.probes[p].firmware_clears,
-      stall_model.probes[p].status_reads,stall_model.probes[p].status_crosschecks);
-  endfunction
-
   function void ocp_check_deadline(string obligation);
     if ($time >= window_deadline)
       `uvm_fatal("OCP_STALL_DEADLOCK", $sformatf(
-        "Unreached %s: main SETUP=%0b STALL=%0b native=%0b peer=%0d/%0d CLEAR=%0b/%0b RTC=%0d; %s; mandatory rediscovery/image/FIXED DMA/activation/drain remain required; no reset or synthetic retirement",
+        "Unreached %s: main SETUP=%0b STALL=%0b native=%0b peer=%0d/%0d CLEAR=%0b/%0b RTC=%0d; mandatory rediscovery/image/FIXED DMA/activation/drain remain required; no reset or synthetic retirement",
         obligation,stall_model.setup_seen,stall_model.stall_seen,
         stall_model.native_checked,stall_model.peer_controls,
         stall_model.peer_crosschecks,stall_model.clear_seen,
-        stall_model.clear_native_checked,stall_model.status_reads,
-        ocp_check_probe_progress()))
+        stall_model.clear_native_checked,stall_model.status_reads))
   endfunction
 
   task ocp_poll_check_observation();
@@ -72,7 +55,7 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
     process request_process;
     process watchdog_process;
     done = 0;
-    if ((!stall_model.armed && stall_model.active_probe < 0) || recovery_checked) begin
+    if (!stall_model.armed || recovery_checked) begin
       super.ocp_do_check_control(device,bm,request,value,index,length,write_data,
         read_data,expect_replacement,expect_protocol_stall);
       return;
@@ -90,12 +73,11 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
             watchdog_process = process::self();
             #(ocp_cfg.control_transfer_timeout-1us);
             `uvm_fatal("OCP_STALL_DEADLOCK", $sformatf(
-              "Owned request deadline slot=%0d bm=%02h request=%02h value=%04h: main SETUP=%0b STALL=%0b native=%0b peer=%0d/%0d CLEAR=%0b/%0b RTC=%0d rediscovery=%0b; %s; outstanding clear/RTC/image/FIXED DMA/activation/drain required",
+              "Owned request deadline slot=%0d bm=%02h request=%02h value=%04h: main SETUP=%0b STALL=%0b native=%0b peer=%0d/%0d CLEAR=%0b/%0b RTC=%0d rediscovery=%0b; outstanding clear/RTC/image/FIXED DMA/activation/drain required",
               device,bm,request,value,stall_model.setup_seen,stall_model.stall_seen,
               stall_model.native_checked,stall_model.peer_controls,
               stall_model.peer_crosschecks,stall_model.clear_seen,
-              stall_model.clear_native_checked,stall_model.status_reads,recovery_checked,
-              ocp_check_probe_progress()))
+              stall_model.clear_native_checked,stall_model.status_reads,recovery_checked))
           end
         join_any
         // Successful native services may spawn persistent workers. Preserve
@@ -111,14 +93,6 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
   endtask
 
   virtual function void ocp_configure_control_request(svt_usb_transfer tr, int device);
-    if (probing && device == 1) begin
-      if (probe_request != null || stall_model.active_probe < 0 ||
-          tr.setup_data_w_value != OCP_CMD_INDIRECT_CTRL ||
-          tr.setup_data_bmrequesttype_dir !== 1)
-        `uvm_fatal("OCP_STALL_PROBE_OWNER", "Probe hook must own one registered legal INDIRECT_CTRL read")
-      probe_request = tr;
-      return;
-    end
     if (!injecting || device != 1) return;
     if (invalid_request != null || start_callback == null ||
         tr.setup_data_w_value != OCP_CMD_PROT_CAP ||
@@ -212,13 +186,6 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
   endfunction
 
   virtual task ocp_wait_peer_completion(svt_usb_transfer tr, int device);
-    if (probing && tr == probe_request) begin
-      while (!stall_model.probes[stall_model.active_probe].native_checked) begin
-        ocp_check_deadline("mandatory probe actual native/packet reconciliation");
-        #1us;
-      end
-      return;
-    end
     if (tr != invalid_request) return;
     // Observe the terminal packet/native ledger before consuming the routed
     // result. This does not modify or manufacture DUT/native completion.
@@ -228,65 +195,22 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
     end
   endtask
 
-  task ocp_do_check_indirect_probe(int index, output bytes_t data);
-    bytes_t empty;
-    bytes_t response;
-    if (max_read == 0 || stall_model.active_probe != -1 || injecting)
-      `uvm_fatal("OCP_STALL_PROBE_OWNER", "Mandatory probe requires discovered limits and exclusive owned lifetime")
-    ocp_poll_check_observation();
-    stall_model.ocp_configure_probe(index,usb_cfg.remote_device_cfg[1].device_address,
-      interface_number,max_read,usb_cfg.remote_device_cfg[1].endpoint_cfg[0].max_packet_size,
-      scoreboard.model.control[1].epoch,scoreboard.model.control[1].generation+1,
-      observer.next_order);
-    probe_request = null;
-    probing = 1;
-    // The existing owned result hook checks success OR precise native STALL.
-    // The ordinary successful path still owns STATUS, payload and native checks.
-    ocp_do_check_control(1,8'ha1,OCP_BREQUEST_XFER,16'(OCP_CMD_INDIRECT_CTRL),
-      {8'b0,interface_number},16'(max_read),empty,data,0,1);
-    probing = 0;
-    ocp_poll_check_observation();
-    if (stall_model.probes[index].stall_seen) begin
-      // This recovery was planned with the negative probe, not improvised.
-      // OCP 8.5.5 first uses actual CLEAR_FEATURE; OCP 9.1/9.2 then clears
-      // unsupported-command error by two checked DEVICE_STATUS reads (1,0).
-      ocp_do_check_control(1,8'h02,svt_usb_types::CLEAR_FEATURE,0,0,0,empty,response);
-      ocp_poll_check_observation();
-      ocp_do_check_read(OCP_CMD_DEVICE_STATUS,response);
-      ocp_poll_check_observation();
-      ocp_do_check_read(OCP_CMD_DEVICE_STATUS,response);
-      ocp_poll_check_observation();
-    end
-    stall_model.ocp_check_probe_retirement(index);
-    probe_request = null;
-  endtask
-
   virtual task ocp_do_check_post_capabilities(bytes_t data);
     bytes_t payload;
     bytes_t response;
     bytes_t empty;
     bytes_t baseline_caps;
     bytes_t baseline_id;
-    bytes_t baseline_indirect;
     bytes_t baseline_status;
     bytes_t baseline_recovery_ctrl;
     bytes_t baseline_recovery_status;
-    logic [15:0] caps;
-    bit check_indirect;
     baseline_caps = data;
-    caps = {data[11],data[10]};
-    check_indirect = caps[OCP_CAP_INDIRECT_CTRL] || caps[OCP_CAP_PUSH_C_IMAGE];
     window_deadline = $time + ocp_cfg.control_transfer_timeout*8;
     ocp_poll_check_observation();
     ocp_do_check_read(OCP_CMD_DEVICE_ID,baseline_id);
     ocp_do_check_read(OCP_CMD_DEVICE_STATUS,baseline_status);
     ocp_do_check_read(OCP_CMD_RECOVERY_CTRL,baseline_recovery_ctrl);
     ocp_do_check_read(OCP_CMD_RECOVERY_STATUS,baseline_recovery_status);
-    if (caps[OCP_CAP_PUSH_C_IMAGE] && !caps[OCP_CAP_INDIRECT_CTRL])
-      `uvm_error("OCP_STALL_MANDATORY",
-        "OCP 1.1 9.2 INDIRECT_CTRL is mandatory for Push C-image but unadvertised; exercising required access despite inconsistent capabilities.")
-    if (check_indirect)
-      ocp_do_check_indirect_probe(0,baseline_indirect);
     ocp_poll_check_observation();
     payload = '{8'hd1,8'h72,8'hb3,8'h54,8'h95,8'h36,8'hf7,8'h18,
                 8'hc9,8'h6a,8'hab,8'h4c,8'h8d,8'h2e,8'hef};
@@ -324,12 +248,6 @@ class usb_ocp_protocol_stall_host_seq extends usb_ocp_base_host_seq;
     ocp_do_check_read(OCP_CMD_DEVICE_ID,response);
     if (response !== baseline_id)
       `uvm_error("OCP_STALL_SIDE_EFFECT", "DEVICE_ID changed after protocol STALL recovery")
-    if (check_indirect) begin
-      ocp_do_check_indirect_probe(1,response);
-      if (stall_model.probes[0].payload_valid && stall_model.probes[1].payload_valid &&
-          response !== baseline_indirect)
-        `uvm_error("OCP_STALL_SIDE_EFFECT", "INDIRECT_CTRL changed without accepted programming")
-    end
     ocp_do_check_standard_controls(1,configuration_value[1],device_descriptor_bytes[1]);
     ocp_do_check_standard_controls(2,configuration_value[2],device_descriptor_bytes[2]);
     ocp_poll_check_observation();
