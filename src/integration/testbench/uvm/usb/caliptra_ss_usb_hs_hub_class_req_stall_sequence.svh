@@ -118,7 +118,7 @@ class caliptra_ss_usb_hs_hub_class_req_stall_sequence
     localparam bit [7:0] BREQ_GET_STATUS           = 8'h00;
     localparam bit [7:0] BREQ_CLEAR_FEATURE        = 8'h01;
     localparam bit [7:0] BREQ_SET_FEATURE          = 8'h03;
-    localparam bit [7:0] BREQ_SET_AND_TEST_FEATURE = 8'h0D;
+    localparam bit [7:0] BREQ_SET_AND_TEST_FEATURE = 8'h0C;
 
     // Feature selectors (USB 2.0 table 11-17).
     localparam bit [15:0] FEAT_PORT_RESET        = 16'h0004; // 4
