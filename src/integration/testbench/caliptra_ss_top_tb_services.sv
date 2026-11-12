@@ -167,9 +167,17 @@ import uvm_pkg::*;
     // MCU instruction trace dumping (mcu_trace_port.csv / mcu_exec.log) is a
     // per-retired-instruction / per-clock-cycle logging source that dominates
     // sim runtime on poll-loop-heavy tests. It is OFF by default and can be
-    // re-enabled for debug with the +MCU_TRACE runtime plusarg.
-    bit mcu_trace_en = 1'b0;
-    initial mcu_trace_en = $test$plusargs("MCU_TRACE");
+    // re-enabled for debug with the +MCU_TRACE=1 runtime plusarg.
+    function automatic bit mcu_trace_requested();
+        int enabled;
+        if (!$value$plusargs("MCU_TRACE=%d", enabled))
+            return 1'b0;
+        if ((enabled !== 0) && (enabled !== 1))
+            $fatal(1, "MCU_TRACE must be 0 or 1");
+        return enabled == 1;
+    endfunction
+
+    bit mcu_trace_en = mcu_trace_requested();
 
     always @(negedge clk or negedge rst_l) begin
         if(!rst_l) begin
@@ -796,7 +804,7 @@ end
         wb_csr_dest   <= `MCU_DEC.dec_csr_wraddr_r;
         wb_csr_data   <= `MCU_DEC.dec_csr_wrdata_r;
         // The MCU instruction trace $fwrite traffic below is gated by
-        // +MCU_TRACE (see mcu_trace_en above); the wb_* nonblocking
+        // +MCU_TRACE=1 (see mcu_trace_en above); the wb_* nonblocking
         // assignments still run every cycle since gpr[] mirroring relies on
         // them. Only the file writes (tp / el) are conditional.
         if (mcu_trace_en) begin
@@ -870,7 +878,7 @@ end
         $readmemh("mcu_program.hex",  imem.ram);
 
         // Only open the MCU instruction trace files when the trace is enabled;
-        // otherwise these files are never written (see +MCU_TRACE gate above).
+        // otherwise these files are never written (see +MCU_TRACE=1 above).
         if (mcu_trace_en) begin
             tp = $fopen("mcu_trace_port.csv","w");
             el = $fopen("mcu_exec.log","w");
@@ -1318,6 +1326,7 @@ endtask
     fuse_ctrl_cov_bind i_fuse_ctrl_cov_bind();
     mci_top_cov_bind i_mci_top_cov_bind();
     caliptra_ss_top_cov_bind i_caliptra_ss_top_cov_bind();
+    usb_cov_bind i_usb_cov_bind();
 `endif
 
 

@@ -1016,7 +1016,8 @@ package usb_combo_ral_pkg;
         rand uvm_reg_field OVERFLOW;
         rand uvm_reg_field IMAGE_DONE;
         rand uvm_reg_field BATCH_ABORTED;
-        rand uvm_reg_field RESERVED_31_4;
+        rand uvm_reg_field POST_SYNC_ARB_STATE;
+        rand uvm_reg_field RESERVED_31_7;
 
         function new(string name = "usb_combo__recovery__CALIPTRA_STATUS");
             super.new(name, 32, UVM_NO_COVERAGE);
@@ -1031,10 +1032,32 @@ package usb_combo_ral_pkg;
             this.IMAGE_DONE.configure(this, 1, 2, "RO", 1, 'h0, 1, 1, 0);
             this.BATCH_ABORTED = new("BATCH_ABORTED");
             this.BATCH_ABORTED.configure(this, 1, 3, "RO", 1, 'h0, 1, 1, 0);
-            this.RESERVED_31_4 = new("RESERVED_31_4");
-            this.RESERVED_31_4.configure(this, 28, 4, "RO", 1, 'h0, 1, 1, 0);
+            this.POST_SYNC_ARB_STATE = new("POST_SYNC_ARB_STATE");
+            this.POST_SYNC_ARB_STATE.configure(this, 3, 4, "RO", 1, 'h0, 1, 1, 0);
+            this.RESERVED_31_7 = new("RESERVED_31_7");
+            this.RESERVED_31_7.configure(this, 25, 7, "RO", 1, 'h0, 1, 1, 0);
         endfunction : build
     endclass : usb_combo__recovery__CALIPTRA_STATUS
+
+    // Reg - usb_combo.recovery.CALIPTRA_SETUP_DEBUG
+    class usb_combo__recovery__CALIPTRA_SETUP_DEBUG extends uvm_reg;
+        rand uvm_reg_field GENERATION;
+        rand uvm_reg_field OWNER_OCP;
+        rand uvm_reg_field RESERVED_31_13;
+
+        function new(string name = "usb_combo__recovery__CALIPTRA_SETUP_DEBUG");
+            super.new(name, 32, UVM_NO_COVERAGE);
+        endfunction : new
+
+        virtual function void build();
+            this.GENERATION = new("GENERATION");
+            this.GENERATION.configure(this, 12, 0, "RO", 1, 'h0, 1, 1, 0);
+            this.OWNER_OCP = new("OWNER_OCP");
+            this.OWNER_OCP.configure(this, 1, 12, "RO", 1, 'h0, 1, 1, 0);
+            this.RESERVED_31_13 = new("RESERVED_31_13");
+            this.RESERVED_31_13.configure(this, 19, 13, "RO", 0, 'h0, 1, 1, 0);
+        endfunction : build
+    endclass : usb_combo__recovery__CALIPTRA_SETUP_DEBUG
 
     // Reg - usb_combo.recovery.WINDOW_PAD
     class usb_combo__recovery__WINDOW_PAD extends uvm_reg;
@@ -1079,6 +1102,7 @@ package usb_combo_ral_pkg;
         rand usb_combo__recovery__VENDOR VENDOR;
         rand usb_combo__recovery__CALIPTRA_CTRL CALIPTRA_CTRL;
         rand usb_combo__recovery__CALIPTRA_STATUS CALIPTRA_STATUS;
+        rand usb_combo__recovery__CALIPTRA_SETUP_DEBUG CALIPTRA_SETUP_DEBUG;
         rand usb_combo__recovery__WINDOW_PAD WINDOW_PAD;
 
         function new(string name = "usb_combo__recovery");
@@ -1222,6 +1246,11 @@ package usb_combo_ral_pkg;
 
             this.CALIPTRA_STATUS.build();
             this.default_map.add_reg(this.CALIPTRA_STATUS, 'h204);
+            this.CALIPTRA_SETUP_DEBUG = new("CALIPTRA_SETUP_DEBUG");
+            this.CALIPTRA_SETUP_DEBUG.configure(this);
+
+            this.CALIPTRA_SETUP_DEBUG.build();
+            this.default_map.add_reg(this.CALIPTRA_SETUP_DEBUG, 'h208);
             this.WINDOW_PAD = new("WINDOW_PAD");
             this.WINDOW_PAD.configure(this);
 
