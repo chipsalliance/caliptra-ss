@@ -153,6 +153,7 @@ class usb_ocp_scoreboard extends uvm_component;
         "OCP 1.1 Section 9.2 requires INDIRECT_CTRL with Push C-image; capabilities=0x%04h. Continuing with advertised INDIRECT_FIFO.", caps))
     model.cms_count = data[12];
     model.capabilities_seen = 1;
+    if (model.stall_model != null) model.stall_model.ocp_check_capabilities(data);
   endfunction
 
   function void ocp_check_fifo_status(bytes_t data);
@@ -207,7 +208,8 @@ class usb_ocp_scoreboard extends uvm_component;
     model.fifo_discovered = 1;
   endfunction
 
-  function void ocp_check_status_version(usb_ocp_base_control c, logic [31:0] actual);
+  function void ocp_check_status_version(usb_ocp_base_control c, logic [31:0] actual,
+      bit owned_protocol_error = 0);
     logic found;
     if (!c.status_read || !c.status_frozen || c.status_versions.size() == 0 ||
         c.status_data_order <= c.status_setup_order)
@@ -223,7 +225,10 @@ class usb_ocp_scoreboard extends uvm_component;
         `uvm_fatal("OCP_STATUS", "Status expectation version lies outside this read's observation interval")
       if (i != 0 && c.status_versions[i].order <= c.status_versions[i-1].order)
         `uvm_fatal("OCP_STATUS", "Read status versions are not strictly ordered")
-      if (actual === c.status_versions[i].value) found = 1;
+      if ((!owned_protocol_error && actual === c.status_versions[i].value) ||
+          (owned_protocol_error &&
+           (actual & 32'hffff00ff) === (c.status_versions[i].value & 32'hffff00ff)))
+        found = 1;
     end
     if (!found)
       `uvm_fatal("OCP_STATUS",$sformatf(
@@ -274,6 +279,11 @@ class usb_ocp_scoreboard extends uvm_component;
     if (device == 1 && c.setup[0] === 8'ha1) begin
       case (c.setup[2])
         OCP_CMD_PROT_CAP: ocp_check_capabilities(c.data);
+        OCP_CMD_DEVICE_ID: begin
+          if (model.stall_model == null)
+            `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
+          model.stall_model.ocp_check_identity(c.data);
+        end
         OCP_CMD_INDIRECT_FIFO_CTRL: begin
           if (l2_model == null && reset_model == null)
             `uvm_fatal("OCP_MODEL", "Unmodeled bringup OCP read")
@@ -292,9 +302,15 @@ class usb_ocp_scoreboard extends uvm_component;
         OCP_CMD_INDIRECT_FIFO_STATUS: ocp_check_fifo_status(c.data);
         OCP_CMD_DEVICE_STATUS: begin
           if (c.data.size() != OCP_SPEC_MIN_LEN_DEVICE_STATUS ||
-              c.data[1] !== OCP_PROTOCOL_ERROR_NONE || c.data[6] !== 0)
+              (model.stall_model == null && c.data[1] !== OCP_PROTOCOL_ERROR_NONE) ||
+              c.data[6] !== 0)
             `uvm_fatal("OCP_STATUS", "Malformed DEVICE_STATUS or protocol error")
-          ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]});
+          if (model.stall_model != null && model.stall_model.ocp_check_status_owned(c))
+            model.stall_model.ocp_check_status(c);
+          else if (c.data[1] !== OCP_PROTOCOL_ERROR_NONE)
+            `uvm_fatal("OCP_STATUS", "Unexpected DEVICE_STATUS protocol error")
+          ocp_check_status_version(c,{c.data[3],c.data[2],c.data[1],c.data[0]},
+            model.stall_model != null && model.stall_model.ocp_check_status_owned(c));
           if (c.data[OCP_OFF_DS_STATUS] === OCP_DEVICE_STATUS_RECOVERY_MODE)
             model.recovery_mode_seen = 1;
           if (c.data[0] === OCP_DEVICE_STATUS_RECOVERY_PENDING) model.pending_seen = 1;
@@ -512,6 +528,17 @@ class usb_ocp_scoreboard extends uvm_component;
     end
     allowed_results = 0;
     if (!item.setup[0][7]) allowed_results[5] = 1;
+    if (model.stall_model != null &&
+        model.stall_model.ocp_check_terminal_transfer(item)) begin
+      // A matched terminal STALL ends this operation without STATUS success.
+      // No usb_completions/crosscheck credit and no FIFO acceptance is added.
+      c = model.control[1];
+      if (!model.stall_model.ocp_check_terminal_owner(1,c) ||
+          c.active !== 1 || c.status_acked !== 0)
+        `uvm_fatal("OCP_STALL_OWNER", "Terminal STALL lost the registered live control")
+      c.active = 0;
+      return;
+    end
     if (reset_model != null &&
         (item.results[0] === 1 ||
          item.results[usb_ocp_event::SERVICE_ABORT_RESULT_BIT] === 1)) begin
@@ -559,6 +586,8 @@ class usb_ocp_scoreboard extends uvm_component;
       `uvm_fatal("OCP_CROSSCHECK", "VIP control transfer failed")
     ocp_check_bytes(item.bytes,c.data,"packet/transfer cross-check");
     model.transfer_crosschecks[device]++;
+    if (model.stall_model != null)
+      model.stall_model.ocp_capture_crosscheck(device,c,item.order);
   endfunction
 
   task run_phase(uvm_phase phase);
@@ -585,6 +614,9 @@ class usb_ocp_scoreboard extends uvm_component;
           // let the later ledger flush move a write backward across USB DATA.
           // FIFO/activation accounting still consumes every deferred actual.
           model.ocp_record_status_programming(item);
+          if (model.stall_model != null &&
+              model.recovery_register.exists(item.axi_address))
+            model.stall_model.ocp_capture_axi(item,model.recovery_register[item.axi_address]);
           if (reset_model != null) reset_model.ocp_capture_axi(item);
           if (l2_model != null) l2_model.ocp_capture_axi(item);
           if (deferred_axi.size() >= 16384)
@@ -617,6 +649,8 @@ class usb_ocp_scoreboard extends uvm_component;
       while (model.ready_controls.size() != 0) begin
         device = model.ready_controls.pop_front();
         ocp_check_control(device);
+        if (model.stall_model != null)
+          model.stall_model.ocp_capture_control(device,model.control[device],model.control[1],item.order);
         if (reset_model != null) reset_model.ocp_capture_control(device);
       end
       busy = 0;
@@ -689,6 +723,7 @@ class usb_ocp_scoreboard extends uvm_component;
     usb_ocp_base_epn_model epn;
     if (l2_model != null) l2_model.ocp_check_complete();
     if (reset_model != null) reset_model.ocp_check_complete();
+    if (model.stall_model != null) model.stall_model.ocp_check_complete();
     if ($test$plusargs("usb_ocp_control_zlp_canary")) begin
       if (model.control_data_stage_errors != 1)
         `uvm_fatal("OCP_CONTROL_DATA_CANARY", $sformatf(
