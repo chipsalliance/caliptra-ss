@@ -190,9 +190,12 @@ In `usb_dev_ep_cov.sv`, scope DEV0 + DEV1 (**1 type / 2 instances**).
 
 | Covergroup | Coverpoints | Crosses |
 |---|---|---|
-| `usb_interrupt_cg` | `cp_irq` (assert + deassert), `cp_fiq`, `cp_state` | `cross_irq_state` |
+| `usb_interrupt_cg` | `cp_irq` (assert + deassert), `cp_state` | `cross_irq_state` |
 
-Answers: did each device raise IRQ and FIQ, and was an interrupt ever raised
+FIQ is not connected in this design - every source routes to IRQ - so the FIQ
+coverpoint was removed rather than carried as a permanent hole.
+
+Answers: did each device raise IRQ, and was an interrupt ever raised
 while the link was in a low-power state. Both edges matter: the rising edge
 proves the subsystem generated a request, the falling edge proves firmware
 could clear the underlying status.

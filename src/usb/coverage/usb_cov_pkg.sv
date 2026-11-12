@@ -355,13 +355,6 @@ package usb_cov_pkg;
     INT_SRC_DEV      // device status change: connect, bus reset, suspend, OTG
   } int_src_class_e;
 
-  // INTROUTE selects the destination pin per source: 0 routes to IRQ, 1 to FIQ.
-  typedef enum int { INT_DEST_IRQ, INT_DEST_FIQ } int_dest_e;
-
-  function automatic int_dest_e int_dest(input logic route_bit);
-    return route_bit ? INT_DEST_FIQ : INT_DEST_IRQ;
-  endfunction
-
   // How a status bit left the pending state. A write of 1 to INTSTAT clears,
   // a write of 1 to INTSETSTAT sets, and the two share the same bit layout, so
   // a test that confuses the two addresses produces a stuck interrupt.

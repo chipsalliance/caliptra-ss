@@ -20,11 +20,11 @@
 //
 // WHY THIS IS SEPARATE FROM usb_interrupt_cg
 // ------------------------------------------
-// usb_interrupt_cg in usb_dev_ep_cov measures the OUTPUT PINS: did IRQ or FIQ
-// toggle, and in which link state. That answers "was an interrupt delivered"
-// but not "which source raised it", "was it enabled", or "did the write-1-to-
-// clear actually clear it". Those are register-level questions and they need
-// the register-level state, which is what this observer takes.
+// usb_interrupt_cg in usb_dev_ep_cov measures the OUTPUT PIN: did IRQ toggle,
+// and in which link state. That answers "was an interrupt delivered" but not
+// "which source raised it", "was it enabled", or "did the write-1-to-clear
+// actually clear it". Those are register-level questions and they need the
+// register-level state, which is what this observer takes.
 //
 // REGISTER MODEL
 // --------------
@@ -35,17 +35,17 @@
 //   reg_frame_int_status                      -> INTSTAT[30]
 //   reg_dev_int_status                        -> INTSTAT[31]
 //
-// INTEN (word 9) and INTROUTE (word 11) share that bit layout. The pin logic
-// in proc_hw_int_generation is a flat OR over all sources of
-// (status AND enable), steered per source by the route bit:
+// INTEN (word 9) shares that bit layout. The pin logic in
+// proc_hw_int_generation is a flat OR over all sources of
+// (status AND enable), so a source only reaches the pin when it is both
+// pending AND enabled, and the cross of those two is the property worth
+// covering. A pending-but-masked source that still drove the pin, or an
+// enabled-and-pending source that did not, are both real bugs and both
+// invisible to pin-only coverage.
 //
-//   route = 0 -> contributes to IRQ
-//   route = 1 -> contributes to FIQ
-//
-// so a source only reaches a pin when it is both pending AND enabled, and the
-// cross of those two is the property worth covering. A pending-but-masked
-// source that still drove a pin, or an enabled-and-pending source that did
-// not, are both real bugs and both invisible to pin-only coverage.
+// INTROUTE (word 11) steers a source to IRQ or FIQ. FIQ is not connected in
+// this design, so only the write strobe on INTROUTE is observed; the
+// destination itself is not a covered axis.
 //
 // EP INDEXING
 // -----------
@@ -55,12 +55,41 @@
 // the bit (dma_physepnr), and collapsing to logical would hide a direction
 // mix-up.
 //
+// The mapping is confirmed by three independent sources:
+//   1. usb_dma.m.vhdl builds epinfo_addr with epnr in bits 7:4 and epdir in
+//      bit 3, then takes endpoint_nr_dir = epinfo_addr(7 downto 3), i.e.
+//      epnr*2 + epdir, and drives that onto dma_physepnr.
+//   2. soc_address_map.h gives the INTSTAT field map directly:
+//      EP0OUT=0, EP0IN=1, EP1OUT=2, EP1IN=3, EP2OUT=4 ... EP5IN=11.
+//   3. Firmware agrees. caliptra_ss_usb_fs_dev_int_loopback.c unmasks the
+//      completion interrupt for EP(n) OUT with (1 << (2*n)), and the EP
+//      command/status list is a 0x10-byte-per-logical-endpoint table with the
+//      IN word at +8, so the DMA word index is also 2*n + dir.
+//
+// Observed coverage is consistent with this: the only physical indices hit on
+// DEV0 are 0..4 (EP0 both directions, EP1 OUT, EP2 both directions) plus 14
+// and 15 (EP7 OUT/IN), and the int-loopback test randomizes its data endpoint
+// over EP1..EP7 only.
+//
+// WIDTH CAVEAT
+// ------------
+// NUM_PHYS_EP defaults to 16, which covers physical 0..15 = logical EP0..EP7.
+// That is NOT the full slice on this DUT. reg_ep_int_status is declared
+// (C_NBPHYSEP+1 downto 0) and the integration binds C_DEV0_NBPHYSEP =
+// C_DEV1_NBPHYSEP = 28 (caliptra_ss_top.sv, and the testbench passes 28 as
+// well), so the real slice is 30 bits, i.e. physical 0..29 = EP0..EP14. The
+// probe assigns that 30-bit slice into a 16-bit net, which silently drops
+// physical 16..29. Interrupts from EP8..EP14 are therefore invisible to this
+// covergroup. No current test uses an endpoint above EP7, so nothing is being
+// missed today, but widening NUM_PHYS_EP (and the probe nets) to 30 is
+// required before any EP8+ stimulus is added.
+//
 // QUESTIONS ANSWERED
 // ------------------
 //   - Which interrupt sources were ever raised, per device?
 //   - Was each source seen both enabled and masked while pending?
-//   - Was each source routed to IRQ and to FIQ?
-//   - Did firmware exercise write-1-to-clear, and force-set via INTSETSTAT?
+//   - Did firmware exercise write-1-to-clear on INTSTAT, with and without
+//     bits actually set in the written data?
 //   - Was a source re-raised while already pending, and cleared while another
 //     source was still pending?
 //   - Did more than one source ever sit pending at the same time?
@@ -88,11 +117,6 @@ module usb_dev_irq_cov
   input logic                   frame_int_enable,
   input logic                   dev_int_enable,
 
-  // Route: 0 sends the source to IRQ, 1 to FIQ.
-  input logic [NUM_PHYS_EP-1:0] ep_int_route,
-  input logic                   frame_int_route,
-  input logic                   dev_int_route,
-
   // ---------------------------------------------------------------------------
   // Register write strobes, decoded by the probe from the CSR word address
   // ---------------------------------------------------------------------------
@@ -106,9 +130,8 @@ module usb_dev_irq_cov
   input logic        wr_introute,    // word 11
   input logic [31:0] wr_data,
 
-  // Interrupt pins, to confirm the enable/route logic actually drove them.
+  // Interrupt pin, to confirm the enable logic actually drove it.
   input logic usb_irq,
-  input logic usb_fiq,
 
   // Link state, to separate a wakeup interrupt from ordinary traffic.
   input logic dcon,
@@ -129,12 +152,10 @@ module usb_dev_irq_cov
 
   logic [NUM_SRC-1:0] src_status;
   logic [NUM_SRC-1:0] src_enable;
-  logic [NUM_SRC-1:0] src_route;
 
   always_comb begin
     src_status = {dev_int_status, frame_int_status, ep_int_status};
     src_enable = {dev_int_enable, frame_int_enable, ep_int_enable};
-    src_route  = {dev_int_route,  frame_int_route,  ep_int_route};
   end
 
   // Previous status, to detect the set and clear edges per source.
@@ -158,7 +179,6 @@ module usb_dev_irq_cov
   int_src_class_e     set_class;
   int_src_class_e     clr_class;
   logic               set_enabled;
-  int_dest_e          set_dest;
 
   // Number of sources pending right now, and whether another source was still
   // pending when one was cleared.
@@ -190,7 +210,6 @@ module usb_dev_irq_cov
                 (clr_idx == IDX_FRAME) ? INT_SRC_FRAME : INT_SRC_EP;
 
     set_enabled = src_enable[set_idx];
-    set_dest    = int_dest(src_route[set_idx]);
 
     pending_n = 0;
     for (int unsigned i = 0; i < NUM_SRC; i++) begin
@@ -240,7 +259,9 @@ module usb_dev_irq_cov
 
     // The physical endpoint index that raised the interrupt. Per index rather
     // than collapsed, because physical index is 2*logical+dir and a direction
-    // mix-up is exactly the bug this separates out.
+    // mix-up is exactly the bug this separates out. The range stops at 15
+    // because NUM_PHYS_EP is 16; see the WIDTH CAVEAT in the header for why
+    // that is narrower than the DUT slice.
     cp_set_ep: coverpoint set_idx iff (rst_n && any_set && (set_class == INT_SRC_EP)) {
       bins physep[] = {[0:15]};
     }
@@ -253,19 +274,13 @@ module usb_dev_irq_cov
       bins enabled = {1'b1};
     }
 
-    // Where INTROUTE was pointing this source. FIQ is the leg that the pin
-    // coverage shows as never exercised.
-    cp_set_dest: coverpoint set_dest iff (rst_n && any_set);
-
     // Clearing is its own event: a source that sets but never clears is a
     // stuck interrupt.
     cp_clr_class: coverpoint clr_class iff (rst_n && any_clr);
 
     // The functional matrix: every source class, seen both enabled and
-    // masked, routed to both pins.
+    // masked.
     cross_class_enabled: cross cp_set_class, cp_set_enabled;
-    cross_class_dest:    cross cp_set_class, cp_set_dest;
-    cross_enabled_dest:  cross cp_set_enabled, cp_set_dest;
   endgroup
 
   // ---------------------------------------------------------------------------
@@ -275,21 +290,25 @@ module usb_dev_irq_cov
     option.per_instance = 1;
     option.name         = {"usb_irq_regaccess_", DEV_NAME};
 
-    // Which of the four interrupt registers firmware actually touched. A test
-    // suite that never writes INTROUTE leaves the FIQ leg unconfigured, which
-    // is the current state of this regression.
-    cp_write_kind: coverpoint write_kind iff (rst_n && any_write);
-
-    // Write-1-to-clear is only exercised if a write actually carried set bits;
-    // a write of zero is a no-op and must not be counted as a clear.
-    cp_clear_nonzero: coverpoint (|wr_data) iff (rst_n && wr_intstat) {
-      bins no_bits_set   = {1'b0};
-      bins some_bits_set = {1'b1};
+    // Which interrupt register firmware actually touched. Only the three
+    // reachable kinds are binned:
+    //   INT_WR_NONE      is excluded by construction - the iff guard below is
+    //                    any_write, which is defined as write_kind !=
+    //                    INT_WR_NONE, so the bin can never be hit.
+    //   INT_WR_FORCE_SET is excluded because INTSETSTAT is not used by this
+    //                    design's firmware; nothing ever writes that word.
+    // Dropping both also removes the eight corresponding cross_kind_state
+    // bins, which were permanent holes rather than coverage debt.
+    cp_write_kind: coverpoint write_kind iff (rst_n && any_write) {
+      bins clear  = {INT_WR_CLEAR};
+      bins enable = {INT_WR_ENABLE};
+      bins route  = {INT_WR_ROUTE};
     }
 
-    // INTSTAT and INTSETSTAT share a bit layout and differ only in address.
-    // Both must be seen or the force-set path is untested.
-    cp_setstat_nonzero: coverpoint (|wr_data) iff (rst_n && wr_intsetstat) {
+    // Write-1-to-clear is only exercised if a write actually carried set bits;
+    // a write of zero is a no-op and must not be counted as a clear. This is
+    // the INTSTAT path and is the primary interest of this group.
+    cp_clear_nonzero: coverpoint (|wr_data) iff (rst_n && wr_intstat) {
       bins no_bits_set   = {1'b0};
       bins some_bits_set = {1'b1};
     }
@@ -323,14 +342,8 @@ module usb_dev_irq_cov
     // evidence; the mismatch combinations are where a gating bug lands.
     cp_pending_enabled: coverpoint any_pending_enabled iff (rst_n);
     cp_pin_irq:         coverpoint usb_irq             iff (rst_n);
-    cp_pin_fiq:         coverpoint usb_fiq             iff (rst_n);
 
     cross_pending_irq: cross cp_pending_enabled, cp_pin_irq;
-    cross_pending_fiq: cross cp_pending_enabled, cp_pin_fiq;
-
-    // Both pins active at once: legal when two sources are routed differently,
-    // and only reachable if INTROUTE was actually programmed.
-    cross_irq_fiq: cross cp_pin_irq, cp_pin_fiq;
   endgroup
 
   usb_irq_source_cg      usb_irq_source_cg_inst      = new();

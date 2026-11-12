@@ -105,6 +105,41 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_conn_test.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_bulk_out_test.svh"
+  // Error-injection family. Stimulus for usb_transfer_outcome_cg.cp_errortype
+  // in src/usb/coverage/usb_dev_ep_cov.sv, whose bins were all at zero except
+  // timeout (0x6) and sent_received_NAK (0x9) because nothing in the
+  // regression ever drove an error. Include order matters: the packet sequence
+  // is referenced by the base sequence, the base sequence declares the shared
+  // helpers the concrete sequences call, and every test references its
+  // sequence class by name.
+  //
+  // Injection happens at PACKET level: a svt_usb_packet_exception can only
+  // attach to a svt_usb_packet, never to a svt_usb_transfer. See the header of
+  // caliptra_ss_usb_err_inject_packet_sequence.svh.
+  //
+  //   _err_crc_sequence             -> data_crc (0x5), token_crc (0x4)
+  //   _err_pid_sequence             -> pid_encoding (0x1), pid_unknown (0x2)
+  //   _err_length_sequence          -> tr_eop (0x8), overrun (0xB)
+  //   _err_sequence_sequence        -> wrong_data_toggle (0xF)
+  //   _err_stall_sequence           -> sent_stall (0xA), firmware driven
+  //   _err_pkt_unexpected_sequence  -> packet_unexpected (0x3), ISO only
+  `include "caliptra_ss_usb_err_inject_packet_sequence.svh"
+  `include "caliptra_ss_usb_err_inject_base_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_crc_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_length_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_sequence_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_stall_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pkt_unexpected_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_data_crc_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_token_crc_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_illegal_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_short_pkt_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_long_pkt_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_toggle_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_stall_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pkt_unexpected_test.svh"
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.

@@ -87,7 +87,6 @@ module usb_dev_ep_cov
 
   // Interrupt outputs and the link state to qualify them.
   input logic        usb_irq,           // USB_Int_Req_Irq
-  input logic        usb_fiq,           // USB_Int_Req_Fiq
   input logic        dcon,
   input logic        dsus,
   input logic        lpm_sus
@@ -168,9 +167,38 @@ module usb_dev_ep_cov
     cp_outcome: coverpoint outcome iff (xfer_done_for_me);
 
     // The IP's own error taxonomy rather than a single "an error happened"
-    // bit, so a CRC failure is distinguishable from a timeout or a babble.
+    // bit, so a CRC failure is distinguishable from a timeout or an overrun.
+    //
+    // Only the codes the PIE can actually drive are binned. The encoding is
+    // the SetError procedure of usb_pie.m.vhdl (kept there as a comment at
+    // lines 1901-1918 after a lint fix inlined it); the live assignments in
+    // that file are the authority for which codes the design still produces.
+    //
+    // Deliberately NOT binned, because no reachable stimulus can hit them and
+    // an unhittable bin only depresses the score:
+    //
+    //   0x0 NO_ERROR    this coverpoint is qualified on xfer_error, so the
+    //                   "no error" code cannot coincide with a sample
+    //   0x7 BABBLE      no live assignment, the procedure arm is commented out
+    //   0xC EMPTYPACK   no live assignment
+    //   0xD BITSTUFF    no live assignment
+    //   0xE SYNC        no live assignment
+    //
+    // 0xD and 0xE matter for test writing: a wire-level bit-stuffing or SYNC
+    // corruption is never reported through this field, so injecting one is
+    // not a way to close this coverpoint.
     cp_errortype: coverpoint xfer_errortype iff (xfer_done_for_me && xfer_error) {
-      bins errtype[] = {[0:15]};
+      bins pid_encoding      = {4'h1};
+      bins pid_unknown       = {4'h2};
+      bins packet_unexpected = {4'h3};
+      bins token_crc         = {4'h4};
+      bins data_crc          = {4'h5};
+      bins timeout           = {4'h6};
+      bins tr_eop            = {4'h8};
+      bins sent_received_nak = {4'h9};
+      bins sent_stall        = {4'hA};
+      bins overrun           = {4'hB};
+      bins wrong_data_toggle = {4'hF};
     }
 
     // STALL is the endpoint halting itself, which is a protocol response
@@ -254,11 +282,6 @@ module usb_dev_ep_cov
     // Both edges: an interrupt that asserts and never clears is a different
     // and worse bug than one that never asserts.
     cp_irq: coverpoint usb_irq iff (rst_n) {
-      bins assert_edge   = (1'b0 => 1'b1);
-      bins deassert_edge = (1'b1 => 1'b0);
-    }
-
-    cp_fiq: coverpoint usb_fiq iff (rst_n) {
       bins assert_edge   = (1'b0 => 1'b1);
       bins deassert_edge = (1'b1 => 1'b0);
     }

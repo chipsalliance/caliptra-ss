@@ -302,22 +302,27 @@ module usb_cov_probe_caliptra_ss;
   logic [3:0]  d0_hird_hw,     d1_hird_hw;
   logic        d0_lpm_nyet,    d1_lpm_nyet;
   logic        d0_irq,         d1_irq;
-  logic        d0_fiq,         d1_fiq;
   logic        d0_bufinuse_any, d1_bufinuse_any;
   logic        d0_skip_any,    d1_skip_any;
 
-  // Interrupt register slices. usb_reg_if keeps INTSTAT, INTEN and INTROUTE as
-  // three separate signals each (endpoint vector, frame bit, device bit); the
-  // flat register word only exists on the readback path.
+  // Interrupt register slices. usb_reg_if keeps INTSTAT and INTEN as three
+  // separate signals each (endpoint vector, frame bit, device bit); the flat
+  // register word only exists on the readback path. INTROUTE is not probed:
+  // FIQ is unconnected in this design, so only its write strobe is observed.
+  //
+  // WIDTH NOTE: reg_ep_int_status/enable are (C_NBPHYSEP+1 downto 0) and the
+  // integration binds C_DEV0_NBPHYSEP = C_DEV1_NBPHYSEP = 28, so the DUT
+  // slices are 30 bits (physical 0..29 = EP0..EP14). The 16-bit nets below
+  // keep only physical 0..15 (EP0..EP7); physical 16..29 are dropped. That is
+  // adequate today because no test uses an endpoint above EP7, but these nets
+  // and usb_dev_irq_cov's NUM_PHYS_EP must both go to 30 before any EP8+
+  // stimulus is added, or those interrupts will be silently uncovered.
   logic [15:0] d0_ep_int_status,  d1_ep_int_status;
   logic        d0_frame_int_status, d1_frame_int_status;
   logic        d0_dev_int_status, d1_dev_int_status;
   logic [15:0] d0_ep_int_enable,  d1_ep_int_enable;
   logic        d0_frame_int_enable, d1_frame_int_enable;
   logic        d0_dev_int_enable, d1_dev_int_enable;
-  logic [15:0] d0_ep_int_route,   d1_ep_int_route;
-  logic        d0_frame_int_route, d1_frame_int_route;
-  logic        d0_dev_int_route,  d1_dev_int_route;
 
   // CSR write decode, replicating the case on reg_waddr in proc_reg_write.
   logic        d0_reg_write,   d1_reg_write;
@@ -347,7 +352,6 @@ module usb_cov_probe_caliptra_ss;
   always_comb d0_hird_hw         = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.sieint_lpm_hird_hw;
   always_comb d0_lpm_nyet        = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_lpm_nyet;
   always_comb d0_irq             = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.USB_Int_Req_Irq;
-  always_comb d0_fiq             = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.USB_Int_Req_Fiq;
   // EPSKIP and EPBUFINUSE are per-endpoint vectors; the observer only asks
   // whether any endpoint is using a second buffer or has been skipped.
   always_comb d0_bufinuse_any    = |caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.usbreg_ep_bufinuse;
@@ -369,9 +373,6 @@ module usb_cov_probe_caliptra_ss;
   always_comb d0_ep_int_enable    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_ep_int_enable;
   always_comb d0_frame_int_enable = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_frame_int_enable;
   always_comb d0_dev_int_enable   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_dev_int_enable;
-  always_comb d0_ep_int_route     = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_ep_int_route;
-  always_comb d0_frame_int_route  = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_frame_int_route;
-  always_comb d0_dev_int_route    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_1.reg_dev_int_route;
 
   // CSR write port. proc_reg_write qualifies its case on reg_write, so the
   // same qualification is applied here to produce one strobe per interrupt
@@ -404,7 +405,6 @@ module usb_cov_probe_caliptra_ss;
   always_comb d1_hird_hw         = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.sieint_lpm_hird_hw;
   always_comb d1_lpm_nyet        = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_lpm_nyet;
   always_comb d1_irq             = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.USB_Int_Req_Irq;
-  always_comb d1_fiq             = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.USB_Int_Req_Fiq;
   always_comb d1_bufinuse_any    = |caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_ep_bufinuse;
   always_comb d1_skip_any        = |caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_ep_skip;
   always_comb d1_phy_test_mode   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.usbreg_phy_test_mode;
@@ -415,9 +415,6 @@ module usb_cov_probe_caliptra_ss;
   always_comb d1_ep_int_enable    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_ep_int_enable;
   always_comb d1_frame_int_enable = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_frame_int_enable;
   always_comb d1_dev_int_enable   = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_dev_int_enable;
-  always_comb d1_ep_int_route     = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_ep_int_route;
-  always_comb d1_frame_int_route  = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_frame_int_route;
-  always_comb d1_dev_int_route    = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_dev_int_route;
 
   always_comb d1_reg_write = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_write;
   always_comb d1_reg_waddr = caliptra_ss_top_tb.caliptra_ss_dut.usb_core_i.u_hub_compound.usb_reg_if_2.reg_waddr;
@@ -526,7 +523,6 @@ module usb_cov_probe_caliptra_ss;
     .ep_bufinuse_any  (d0_bufinuse_any),
     .ep_skip_any      (d0_skip_any),
     .usb_irq          (d0_irq),
-    .usb_fiq          (d0_fiq),
     .dcon             (d0_dev_connect),
     .dsus             (d0_sync_suspend),
     .lpm_sus          (d0_lpm_suspend)
@@ -556,7 +552,6 @@ module usb_cov_probe_caliptra_ss;
     .ep_bufinuse_any  (d1_bufinuse_any),
     .ep_skip_any      (d1_skip_any),
     .usb_irq          (d1_irq),
-    .usb_fiq          (d1_fiq),
     .dcon             (d1_dev_connect),
     .dsus             (d1_sync_suspend),
     .lpm_sus          (d1_lpm_suspend)
@@ -564,7 +559,9 @@ module usb_cov_probe_caliptra_ss;
 
   // Area D2: interrupt registers, per device and per source. Everything here
   // is genuinely per-device register state, so no PIE qualification applies.
-  // NUM_PHYS_EP is C_NBPHYSEP+2 = 16, the width of the reg_ep_int_* slices.
+  // NUM_PHYS_EP must match the width of the d*_ep_int_* nets above, which is
+  // 16 and covers physical 0..15 (EP0..EP7). See the WIDTH NOTE there: the DUT
+  // slice is actually 30 bits, so this is a deliberate narrowing.
   usb_dev_irq_cov #(
     .DEV_NAME    ("dev0"),
     .NUM_PHYS_EP (16)
@@ -577,16 +574,12 @@ module usb_cov_probe_caliptra_ss;
     .ep_int_enable    (d0_ep_int_enable),
     .frame_int_enable (d0_frame_int_enable),
     .dev_int_enable   (d0_dev_int_enable),
-    .ep_int_route     (d0_ep_int_route),
-    .frame_int_route  (d0_frame_int_route),
-    .dev_int_route    (d0_dev_int_route),
     .wr_intstat       (d0_wr_intstat),
     .wr_inten         (d0_wr_inten),
     .wr_intsetstat    (d0_wr_intsetstat),
     .wr_introute      (d0_wr_introute),
     .wr_data          (d0_reg_wdata),
     .usb_irq          (d0_irq),
-    .usb_fiq          (d0_fiq),
     .dcon             (d0_dev_connect),
     .dsus             (d0_sync_suspend),
     .lpm_sus          (d0_lpm_suspend)
@@ -604,16 +597,12 @@ module usb_cov_probe_caliptra_ss;
     .ep_int_enable    (d1_ep_int_enable),
     .frame_int_enable (d1_frame_int_enable),
     .dev_int_enable   (d1_dev_int_enable),
-    .ep_int_route     (d1_ep_int_route),
-    .frame_int_route  (d1_frame_int_route),
-    .dev_int_route    (d1_dev_int_route),
     .wr_intstat       (d1_wr_intstat),
     .wr_inten         (d1_wr_inten),
     .wr_intsetstat    (d1_wr_intsetstat),
     .wr_introute      (d1_wr_introute),
     .wr_data          (d1_reg_wdata),
     .usb_irq          (d1_irq),
-    .usb_fiq          (d1_fiq),
     .dcon             (d1_dev_connect),
     .dsus             (d1_sync_suspend),
     .lpm_sus          (d1_lpm_suspend)
