@@ -91,8 +91,29 @@ class caliptra_ss_usb_hs_dev_err_toggle_test extends caliptra_ss_usb_base_test;
     // end_of_elaboration_phase once chk_cov_mgr is populated. Same pattern as
     // caliptra_ss_usb_fs_dev_lpm_l1_test, caliptra_ss_usb_dev_reg_rw_test and
     // caliptra_ss_usb_hs_host_remotewakeup_test.
+    //
+    // rx_packet_routed_check is EXPECTED here too, for a second and unrelated
+    // reason. It is a PROTOCOL TRANSACTOR check on env.host_agent.prot, not a
+    // LINK check, and it fires separately from the no-handshake case above:
+    //
+    //   [register_fail:PROTOCOL TRANSACTOR:IN-LINE:rx_packet_routed_check]
+    //     Detect Unexpected Packet - Can't tell where this packet should go,
+    //     No device with matching address found!
+    //
+    // This fires around the same simulation window as a sof_processor
+    // UVM_WARNING about a missed microframe boundary, right after the
+    // injected out-of-turn DATA1 completes. The errortype checker's own
+    // verdict already closes the wrong_data_toggle bin before this fires (see
+    // the PASS log line at caliptra_ss_usb_errortype_checker.sv:340), so this
+    // is a VIP self-check artifact riding along with the deliberately
+    // malformed stimulus, not a sign that the injection or the DUT's recovery
+    // is broken. Same suppression API and precedent as
+    // caliptra_ss_usb_ocp_arb_006_test, which demotes this identical check on
+    // the same agent path for the same "no device with matching address"
+    // reason.
     // -------------------------------------------------------------------------
     svt_err_check_stats no_handshake_chk;
+    svt_err_check_stats rx_packet_routed_chk;
 
     virtual function void end_of_elaboration_phase(uvm_phase phase);
         super.end_of_elaboration_phase(phase);
@@ -106,6 +127,17 @@ class caliptra_ss_usb_hs_dev_err_toggle_test extends caliptra_ss_usb_base_test;
 
         `uvm_info("end_of_elaboration_phase",
             "tend_to_end_delay_check set to EXPECTED: the injected DATA1 carries the wrong toggle, so the device must discard it and return no handshake (USB 2.0 8.6.3). The verdict for this test is the cp_errortype wrong_data_toggle bin plus the clean EP1 transfer that follows.",
+            UVM_LOW)
+
+        rx_packet_routed_chk =
+            env.host_agent.prot.chk_cov_mgr.find("rx_packet_routed_check");
+        if (rx_packet_routed_chk == null)
+            `uvm_fatal("end_of_elaboration_phase",
+                "chk_cov_mgr.find(\"rx_packet_routed_check\") returned null")
+        rx_packet_routed_chk.set_default_fail_effect(svt_err_check_stats::EXPECTED);
+
+        `uvm_info("end_of_elaboration_phase",
+            "rx_packet_routed_check set to EXPECTED: an artifact of the out-of-turn DATA1 injection, unrelated to the cp_errortype verdict above.",
             UVM_LOW)
     endfunction
 

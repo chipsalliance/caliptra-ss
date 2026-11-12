@@ -96,10 +96,18 @@ class caliptra_ss_usb_hs_dev_err_length_sequence
         // fixed length by definition. The payload is exactly one HS bulk max
         // packet so that LONG_PACKET_ERROR pushes it past wMaxPacketSize,
         // which is the condition the overrun path keys on.
+        //
+        // The injected packet must be sent as DATA1, not DATA0: the preceding
+        // do_clean_reference_xfer() above already completes one clean DATA0
+        // bulk OUT transfer, so the endpoint's data toggle next expects
+        // DATA1. Sending DATA0 here creates a toggle mismatch, which makes
+        // the RTL discard the packet via ignore_data_r before it ever
+        // reaches the length/overrun check - the PIE reports
+        // DATA_IGNORED_WRONG_DATA01 (0xF) instead of TR_EOP/OVERRUN.
         inject_error_packet(
             .usb_cfg         (usb_cfg),
             .msg_id          (MSG_ID),
-            .pid             (svt_usb_packet::DATA0),
+            .pid             (svt_usb_packet::DATA1),
             .byte_count      (HS_BULK_MAX_PACKET),
             .kind            (svt_usb_packet_exception::LENGTH_ERROR),
             .use_crc         (1'b0),
