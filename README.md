@@ -1,7 +1,11 @@
 # Caliptra Subsystem Overview
-_*Last Update: 2025/10/12*_
+_*Last Update: 2026/11/13*_
 
 HW Design Collateral for Caliptra Subsystem, which comprises Caliptra RoT IP and additional infrastructure to support manufacturer custom controls.
+
+## Current Release Candidate
+
+This branch prepares Caliptra Subsystem **2.2.0-rc1**, not a final release. See the [release notes](Release_Notes.md) for a summary of release changes. Remaining qualification and release approvals are tracked in the [2.2.0 release signoff checklist](https://github.com/chipsalliance/caliptra-ss/issues/1488).
 
 ## Project Links
 
