@@ -36,6 +36,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_usbd_conn/caliptra_ss_usb_usbd_conn: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_bulk_out/caliptra_ss_usb_hs_dev_bulk_out: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_unsupported_ep/caliptra_ss_usb_hs_dev_unsupported_ep: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_disabled_ep/caliptra_ss_usb_hs_dev_disabled_ep: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_hub_bypass_enum/caliptra_ss_usb_hs_dev_hub_bypass_enum: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_hs_dev_vbus_absent_boot/caliptra_ss_usb_hs_dev_vbus_absent_boot: { weight: 100 }
