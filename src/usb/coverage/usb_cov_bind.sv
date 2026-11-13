@@ -11,44 +11,100 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+//
+// Attaches the USB functional coverage observers to the design.
+//
+// Both binds below target a SystemVerilog MODULE TYPE, not a hierarchy path.
+// A bind resolves its port expressions in the target module's own scope, so
+// every identifier on the right-hand side of a port connection below is a
+// signal or parameter declared inside that target module. Consequences:
+//
+//   - No testbench path appears anywhere in this file, so the same file is
+//     compiled unchanged into the subsystem bench (caliptra_ss_top_tb) and the
+//     compound unit bench (usb_top_tb).
+//   - The observers attach to EVERY instance of the target module, so a future
+//     second compound instance is covered automatically.
+//   - The resulting covergroup and bin names are identical in both benches,
+//     which is what lets URG merge the two coverage databases with no manual
+//     mapping (see tools/merge_coverage.py).
+//
+// VHDL-internal observation is NOT done here: bind cannot target a VHDL
+// entity. Those signals are supplied by a bench-specific probe module that
+// instantiates usb_hub_cov with cross-module references; see
+// src/integration/testbench/usb_cov_probe_caliptra_ss.sv.
+//
+// The whole file is guarded by USB_FCOV so a build without the define carries
+// no coverage instrumentation at all.
 module usb_cov_bind;
-    `ifdef FCOV
-    `define USB_COV_ARB u_hub_compound.usb_ocp_recovery_post_sync_arb_1
-    `define USB_COV_REG u_hub_compound.usb_reg_if_1
-    `define USB_COV_REC u_ocp_recovery
 
-    bind ip_xxx_3511_hs_mem_compound_wrapper usb_cov_if i_usb_cov_if (
-        .hclk                       (`USB_COV_ARB.hclk),
-        .hresetn                    (`USB_COV_ARB.hresetn),
-        .sync_busreset              (`USB_COV_ARB.sync_busreset),
-        .dev0_local_reset_c          (`USB_COV_ARB.dev0_local_reset_c),
-        .new_setup_c                (`USB_COV_ARB.new_setup_c),
-        .setup_owner_ocp_o           (`USB_COV_ARB.setup_owner_ocp_o),
-        .post_sync_arb_state_o       (`USB_COV_ARB.post_sync_arb_state_o),
-        .usbreg_setup               (`USB_COV_REG.usbreg_setup),
-        .ocp_claim_abort_i           (`USB_COV_ARB.ocp_claim_abort_i),
-        .fw_protocol_error_req_i     (`USB_COV_ARB.fw_protocol_error_req_i),
-        .ep0_ocp_owner_r             (`USB_COV_ARB.ep0_ocp_owner_r),
-        .setup_complete_c            (`USB_COV_ARB.setup_complete_c),
-        .setup_valid_c               (`USB_COV_ARB.setup_valid_c),
-        .setup_claim_c               (`USB_COV_ARB.setup_claim_c),
-        .dma_set_int                (`USB_COV_REG.dma_set_int),
-        .dma_txn_done_c              (`USB_COV_ARB.dma_txn_done_c),
-        .dma_req_forward_c           (`USB_COV_ARB.dma_req_forward_c),
-        .setup_dma_match_c           (`USB_COV_ARB.setup_dma_match_c),
-        .sync_sieint_endtransfer_o   (`USB_COV_ARB.sync_sieint_endtransfer_o),
-        .sync_sieint_success_o       (`USB_COV_ARB.sync_sieint_success_o),
-        .fifo_empty                 (`USB_COV_REC.u_a4_cms_fifo.fifo_empty),
-        .fifo_full                  (`USB_COV_REC.u_a4_cms_fifo.fifo_full),
-        .fifo_region_reset          (`USB_COV_REC.fifo_region_reset),
-        .fifo_overflow              (`USB_COV_REC.fifo_overflow),
-        .image_push_done            (`USB_COV_REC.image_push_done),
-        .batch_aborted              (`USB_COV_REC.batch_aborted)
-    );
+`ifdef USB_FCOV
 
-    `undef USB_COV_ARB
-    `undef USB_COV_REG
-    `undef USB_COV_REC
-    `endif
-endmodule
+  // ---------------------------------------------------------------------------
+  // Address space and access semantics
+  // ---------------------------------------------------------------------------
+  // The decoder publishes its own aperture geometry as localparams, so the
+  // observer is parameterized from the target rather than from a duplicated
+  // constant that could drift.
+  bind usb_compound_ahb_decoder usb_addr_cov #(
+    .HUB_WORDS          (C_HUB_FIFO_SIZE),
+    .HUB_APERTURE_BYTES (32'(HUB_APERTURE_BYTES))
+  ) u_usb_addr_cov (
+    .clk                  (clk),
+    .rst_n                (rst_n),
+
+    // Address phase. addr_phase_active and addr_phase_byte_addr are the
+    // decoder's own qualified decode nets, so the observer sees exactly the
+    // address the decoder acted on.
+    .addr_phase_active    (addr_phase_active),
+    .addr_phase_byte_addr (32'(addr_phase_byte_addr)),
+    .hsize                (combo_hsize),
+    .haddr_low            (combo_haddr[1:0]),
+    .hwrite               (combo_hwrite),
+    .hready               (combo_hready),
+
+    // Downstream selects and the hub word address the decoder derived.
+    .dev0_csr_hsel        (dev0_csr_hsel),
+    .hub_hsel             (hub_hsel),
+    .recovery_hsel        (recovery_hsel),
+    .hub_word_addr        (32'(addr_phase_csr_word_addr)),
+
+    // Data phase. The two error phases are decoded from the registered
+    // responder state, which is the only place the architected two-cycle
+    // error sequence is visible.
+    .hresp                (combo_hresp),
+    .hreadyout            (combo_hreadyout),
+    .error_first_phase    (data_phase_select_q == RESP_ERROR_FIRST),
+    .error_final_phase    (data_phase_select_q == RESP_ERROR_FINAL)
+  );
+
+  // ---------------------------------------------------------------------------
+  // Clock gating, reset context and the OCP claim handshake (area H)
+  // ---------------------------------------------------------------------------
+  // Every connection here is a wrapper PORT, which is why this observer needs
+  // no hierarchy access and stays mergeable between the two benches.
+  //
+  // The interrupt, suspend/resume and topology ports this bind used to carry
+  // were removed along with the covergroups that consumed them: those are now
+  // measured per device from usb_reg_if_1/_2 by the probe-fed observers, which
+  // can attribute them to a device where the merged wrapper view cannot.
+  bind ip_xxx_3511_hs_mem_compound_wrapper usb_power_cov u_usb_power_cov (
+    .clk                    (usb_axi_aclk),
+    .rst_n                  (usb_axi_aresetn),
+
+    .payload_available      (payload_available),
+    .ocp_firmware_activated (ocp_firmware_activated),
+
+    .usb_vbus               (USB_VBus),
+    .usb_needclk            (usb_needclk),
+
+    .utmi_suspendm          (utmi_suspendm),
+    .utmi_reset             (utmi_reset),
+    .utmi_txvalid           (utmi_txvalid),
+    .utmi_linestate         (utmi_linestate)
+  );
+
+`endif // USB_FCOV
+
+endmodule : usb_cov_bind
+
+// File contains AI-generated response based on internal company sources

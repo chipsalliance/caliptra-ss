@@ -104,6 +104,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_interface/caliptra_ss_usb_hs_dev1_get_interface.yml
         - ../test_suites/caliptra_ss_usb_hs_hub_endpoint_halt/caliptra_ss_usb_hs_hub_endpoint_halt.yml
         - ../test_suites/caliptra_ss_usb_fs_hub_endpoint_halt/caliptra_ss_usb_fs_hub_endpoint_halt.yml
+        - ../test_suites/caliptra_ss_usb_hs_hub_int_ep_status_change/caliptra_ss_usb_hs_hub_int_ep_status_change.yml
+        - ../test_suites/caliptra_ss_usb_hs_hub_class_req_stall/caliptra_ss_usb_hs_hub_class_req_stall.yml
         - ../test_suites/smoke_test_fc_key_revocation/smoke_test_fc_key_revocation.yml
         - ../test_suites/smoke_test_fc_pk_volatile_lock/smoke_test_fc_pk_volatile_lock.yml
         - ../test_suites/smoke_test_fc_pk_lock_sticky/smoke_test_fc_pk_lock_sticky.yml
@@ -243,3 +245,14 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev1_hub_port_suspend/caliptra_ss_usb_hs_dev1_hub_port_suspend.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_hub_descriptor/caliptra_ss_usb_hs_dev1_get_hub_descriptor.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_hub_config_descriptor/caliptra_ss_usb_hs_dev1_hub_config_descriptor.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_data_crc/caliptra_ss_usb_hs_dev_err_data_crc.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_token_crc/caliptra_ss_usb_hs_dev_err_token_crc.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pid_check/caliptra_ss_usb_hs_dev_err_pid_check.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pid_illegal/caliptra_ss_usb_hs_dev_err_pid_illegal.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_short_pkt/caliptra_ss_usb_hs_dev_err_short_pkt.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_long_pkt/caliptra_ss_usb_hs_dev_err_long_pkt.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_toggle/caliptra_ss_usb_hs_dev_err_toggle.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_stall/caliptra_ss_usb_hs_dev_err_stall.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pkt_unexpected/caliptra_ss_usb_hs_dev_err_pkt_unexpected.yml
+
+# File contains AI-generated response based on internal company sources
