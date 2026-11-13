@@ -1,7 +1,8 @@
 # **Release Notes** #
 
-## Caliptra Subsystem pre-2.2 Release Notes (Draft)
-_*Status: Draft; not a final 2.2 release.*_
+## Caliptra Subsystem 2.2.0-rc1 Release Notes
+_*Status: Release candidate; not a final 2.2.0 release.*_
+_*Prepared: 2026/11/13*_
 
 USB streaming boot support, security hardening, and integration spec updates since 2.1.
 
@@ -13,7 +14,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - Explicit ECC/ML-DSA verification status
 - Dual-iTRNG entropy combiner
 - DMA command limit increased to 2 GiB, with route-specific limits; response-tracking, mailbox ECC, and AXI access fixes
-- Adams Bridge upgraded to v3.0
+- Adams Bridge upgraded to v3.0-rc1
 - Fixed security-state propagation after manufacturing/production debug unlock
 
 ### 2. I3C
