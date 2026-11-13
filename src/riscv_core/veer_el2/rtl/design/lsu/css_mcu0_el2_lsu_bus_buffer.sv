@@ -91,7 +91,7 @@ import css_mcu0_el2_pkg::*;
    output logic                               lsu_nonblock_load_valid_m,     // there is an external load -> put in the cam
    output logic [pt.LSU_NUM_NBLOAD_WIDTH-1:0] lsu_nonblock_load_tag_m,       // the tag of the external non block load
    output logic                               lsu_nonblock_load_inv_r,       // invalidate signal for the cam entry for non block loads
-   output logic [pt.LSU_NUM_NBLOAD_WIDTH-1:0] lsu_nonblock_load_inv_tag_r,   // tag of the enrty which needs to be invalidated
+   output logic [pt.LSU_NUM_NBLOAD_WIDTH-1:0] lsu_nonblock_load_inv_tag_r,   // tag of the entry which needs to be invalidated
    output logic                               lsu_nonblock_load_data_valid,  // the non block is valid - sending information back to the cam
    output logic                               lsu_nonblock_load_data_error,  // non block load has an error
    output logic [pt.LSU_NUM_NBLOAD_WIDTH-1:0] lsu_nonblock_load_data_tag,    // the tag of the non block load sending the data/error
@@ -947,7 +947,7 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvdff #(.WIDTH(1)) lsu_busreq_rff (.din(lsu_busreq_m & ~flush_r & ~ld_full_hit_m),      .dout(lsu_busreq_r), .clk(lsu_c2_r_clk), .*);
    css_mcu0_rvdff #(.WIDTH(1)) lsu_nonblock_load_valid_rff  (.din(lsu_nonblock_load_valid_m),  .dout(lsu_nonblock_load_valid_r), .clk(lsu_c2_r_clk), .*);
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
 
    for (genvar i=0; i<4; i++) begin: GenByte
       assert_ld_byte_hitvecfn_lo_onehot: assert #0 ($onehot0(ld_byte_hitvecfn_lo[i][DEPTH-1:0]));

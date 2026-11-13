@@ -21,6 +21,9 @@
 // Comments:
 //
 //********************************************************************************
+
+`include "css_mcu0_common_defines.vh"
+
 module css_mcu0_el2_veer_wrapper
 import css_mcu0_el2_pkg::*;
  #(
@@ -35,9 +38,10 @@ import css_mcu0_el2_pkg::*;
    input logic [31:1]                      rst_vec,
    /*pragma coverage on*/
    input logic                             nmi_int,
-   // nmi_vec is supposed to be tied to constants in the top level
+   // jtag_id and nmi_vec are supposed to be tied to constants in the top level
    /*pragma coverage off*/
    input logic [31:1]                      nmi_vec,
+   input logic [31:1]                      jtag_id,
    /*pragma coverage on*/
 
 
@@ -333,7 +337,7 @@ import css_mcu0_el2_pkg::*;
    input logic                             lsu_hready,
    input logic                             lsu_hresp,
    /*pragma coverage on*/
-   // Debug Syster Bus AHB
+   // Debug System Bus AHB
    output logic [31:0]                     sb_haddr,
    /* exclude signals that are tied to constant value in css_mcu0_axi4_to_ahb.sv */
    /*pragma coverage off*/
@@ -383,6 +387,7 @@ import css_mcu0_el2_pkg::*;
    output logic                            iccm_ecc_double_error,
    output logic                            dccm_ecc_single_error,
    output logic                            dccm_ecc_double_error,
+   output logic                            dccm_write_readback_error,
 
    // ICache export interface
    css_mcu0_el2_mem_if.veer_icache_src              el2_icache_export,
@@ -403,9 +408,6 @@ import css_mcu0_el2_pkg::*;
    input logic                             jtag_trst_n, // JTAG Reset
    output logic                            jtag_tdo,    // JTAG TDO
    output logic                            jtag_tdoEn,  // JTAG Test Data Output enable
-   // jtag_id is supposed to be tied to a constant at the top level; it forms the
-   // upper 31 bits of the JTAG IDCODE (bit 0 is the mandatory constant 1).
-   input logic [31:1]                      jtag_id,     // JTAG IDCODE
 
    /*pragma coverage off*/
    input logic [31:4] core_id,
@@ -413,6 +415,22 @@ import css_mcu0_el2_pkg::*;
 
    // Memory Export Interface
    css_mcu0_el2_mem_if.veer_sram_src                el2_mem_export,
+
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+   // Shadow Core trace
+   output logic [31:0] shadow_core_trace_rv_i_insn_ip,
+   output logic [31:0] shadow_core_trace_rv_i_address_ip,
+   output logic shadow_core_trace_rv_i_valid_ip,
+   output logic shadow_core_trace_rv_i_exception_ip,
+   output logic [4:0] shadow_core_trace_rv_i_ecause_ip,
+   output logic shadow_core_trace_rv_i_interrupt_ip,
+   output logic [31:0] shadow_core_trace_rv_i_tval_ip,
+
+   // Shadow Core control
+   input css_mcu0_el2_mubi_pkg::el2_mubi_t disable_corruption_detection_i,
+   input css_mcu0_el2_mubi_pkg::el2_mubi_t lockstep_err_injection_en_i,
+   output css_mcu0_el2_mubi_pkg::el2_mubi_t corruption_detected_o,
+`endif
 
    // external MPC halt/run interface
    input logic                             mpc_debug_halt_req, // Async halt request
@@ -475,7 +493,7 @@ import css_mcu0_el2_pkg::*;
    logic [pt.ICACHE_NUM_WAYS-1:0]   ic_rd_hit;      // ic_rd_hit[3:0]
    logic         ic_tag_perr;                       // Ic tag parity error
 
-   logic [pt.ICACHE_INDEX_HI:3]  ic_debug_addr;     // Read/Write addresss to the Icache.
+   logic [pt.ICACHE_INDEX_HI:3]  ic_debug_addr;     // Read/Write address to the Icache.
    logic         ic_debug_rd_en;                    // Icache debug rd
    logic         ic_debug_wr_en;                    // Icache debug wr
    logic         ic_debug_tag_array;                // Debug tag array
@@ -483,15 +501,12 @@ import css_mcu0_el2_pkg::*;
 
    logic [25:0]  ictag_debug_rd_data;               // Debug icache tag.
    logic [pt.ICACHE_BANKS_WAY-1:0][70:0]  ic_wr_data;
-   logic [63:0]  ic_rd_data;
+   logic [141:0] ic_rd_data;
+   logic [1:0]   ic_rd_addr_lo;
+   logic [pt.ICACHE_BANKS_WAY-1:0] ic_rd_bank_check_en;
    logic [70:0]  ic_debug_rd_data;                  // Data read from Icache. 2x64bits + parity bits. F2 stage. With ECC
    logic [70:0]  ic_debug_wr_data;                  // Debug wr cache.
 
-   logic [pt.ICACHE_BANKS_WAY-1:0] ic_eccerr;       // ecc error per bank
-   logic [pt.ICACHE_BANKS_WAY-1:0] ic_parerr;       // parity error per bank
-
-   logic [63:0]  ic_premux_data;
-   logic         ic_sel_premux_data;
 
    // ICCM ports
    logic [pt.ICCM_BITS-1:1]    iccm_rw_addr;
@@ -502,7 +517,6 @@ import css_mcu0_el2_pkg::*;
    logic           iccm_buf_correct_ecc;
    logic           iccm_correction_state;
 
-   logic [63:0]    iccm_rd_data;
    logic [77:0]    iccm_rd_data_ecc;
 
    logic        core_rst_l;                         // Core reset including rst_l and dbg_rst_l
@@ -510,6 +524,7 @@ import css_mcu0_el2_pkg::*;
    logic        dccm_clk_override;
    logic        icm_clk_override;
    logic        dec_tlu_core_ecc_disable;
+   logic        dec_tlu_dccm_wr_readback_disable;
 
 
    // zero out the signals not presented at the wrapper instantiation level
@@ -543,7 +558,7 @@ import css_mcu0_el2_pkg::*;
    logic [63:0]              lsu_hrdata;
    logic                     lsu_hready;
    logic                     lsu_hresp;
-   // Debug Syster Bus AHB
+   // Debug System Bus AHB
    logic [31:0]              sb_haddr;
    logic [2:0]               sb_hburst;
    logic                     sb_hmastlock;
@@ -852,10 +867,10 @@ import css_mcu0_el2_pkg::*;
    assign ifu_axi_bvalid = '0;
    assign ifu_axi_bresp[1:0] = '0;
    assign ifu_axi_bid[pt.IFU_BUS_TAG-1:0] = '0;
- 
+
    /*pragma coverage on*/
 
-`endif //  `ifdef RV_BUILD_AHB_LITE
+`endif //  `ifdef css_mcu0_RV_BUILD_AHB_LITE
 
    // DMI (core)
    logic                   dmi_en;
@@ -871,11 +886,28 @@ import css_mcu0_el2_pkg::*;
    logic [31:0]            dmi_reg_wdata;
    logic [31:0]            dmi_reg_rdata;
 
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+   css_mcu0_el2_regfile_if regfile ();
+`endif
+
    // Instantiate the css_mcu0_el2_veer core
    css_mcu0_el2_veer #(.pt(pt)) veer (
                                 .clk(clk),
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .regfile(regfile.veer_rf_src),
+`endif
                                 .*
                                 );
+
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+   css_mcu0_el2_veer_lockstep #(.pt(pt)) lockstep (
+                                .clk(clk),
+`ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .main_core_regfile(regfile.veer_rf_sink),
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_REGFILE_ENABLE
+                                .*
+                                );
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_ENABLE
 
    // Instantiate the mem
    css_mcu0_el2_mem  #(.pt(pt)) mem (
@@ -897,10 +929,10 @@ import css_mcu0_el2_pkg::*;
     .tdi         (jtag_tdi),        // Test Data Input
     .tdo         (jtag_tdo),        // Test Data Output
     .tdoEnable   (jtag_tdoEn),      // Test Data Output enable
-    .jtag_id     (jtag_id),         // JTAG IDCODE (upper 31 bits)
     // Processor Signals
     .core_rst_n  (dbg_rst_l),       // Debug reset, active low
     .core_clk    (clk),             // Core clock
+    .jtag_id     (jtag_id),         // JTAG ID
     .rd_data     (dmi_rdata),       // Read data from  Processor
     .reg_wr_data (dmi_wdata),       // Write data to Processor
     .reg_wr_addr (dmi_addr),        // Write address to Processor
@@ -935,7 +967,7 @@ import css_mcu0_el2_pkg::*;
 
    always_comb dmi_active = dmi_en;
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
   // to avoid internal assertions failure at time 0
   initial begin
     $assertoff(0, veer);
@@ -943,4 +975,50 @@ import css_mcu0_el2_pkg::*;
   end
 `endif
 
+`ifdef css_mcu0_RV_LOCKSTEP_ENABLE
+`ifdef css_mcu0_RV_ASSERT_ON
+  `define css_mcu0_RV_ASSERT_OR_VERILATOR
+`elsif VERILATOR
+  `define css_mcu0_RV_ASSERT_OR_VERILATOR
+`endif
+`ifdef css_mcu0_RV_ASSERT_OR_VERILATOR
+   logic disable_const_delay_assertion;
+   initial begin
+     disable_const_delay_assertion = 0;
+   end
+
+   if (`css_mcu0_RV_LOCKSTEP_DELAY > 0) begin
+      property p_const_delay;
+      @(posedge clk)
+      disable iff (!core_rst_l || disable_const_delay_assertion)
+       shadow_core_trace_rv_i_valid_ip |-> (
+         $past(trace_rv_i_valid_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_insn_ip      == $past(trace_rv_i_insn_ip,      `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_address_ip   == $past(trace_rv_i_address_ip,   `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_exception_ip == $past(trace_rv_i_exception_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_ecause_ip    == $past(trace_rv_i_ecause_ip,    `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_interrupt_ip == $past(trace_rv_i_interrupt_ip, `css_mcu0_RV_LOCKSTEP_DELAY) &&
+         shadow_core_trace_rv_i_tval_ip      == $past(trace_rv_i_tval_ip,      `css_mcu0_RV_LOCKSTEP_DELAY)
+       );
+      endproperty
+      assert property (p_const_delay) else $fatal("Lockstep constant delay violation");
+    end else begin
+      property p_const_delay;
+      @(posedge clk)
+      disable iff (!core_rst_l || disable_const_delay_assertion)
+       shadow_core_trace_rv_i_valid_ip |-> (
+         trace_rv_i_valid_ip &&
+         shadow_core_trace_rv_i_insn_ip      == trace_rv_i_insn_ip      &&
+         shadow_core_trace_rv_i_address_ip   == trace_rv_i_address_ip   &&
+         shadow_core_trace_rv_i_exception_ip == trace_rv_i_exception_ip &&
+         shadow_core_trace_rv_i_ecause_ip    == trace_rv_i_ecause_ip    &&
+         shadow_core_trace_rv_i_interrupt_ip == trace_rv_i_interrupt_ip &&
+         shadow_core_trace_rv_i_tval_ip      == trace_rv_i_tval_ip
+       );
+      endproperty
+      assert property (p_const_delay) else $fatal("Lockstep constant delay violation");
+    end
+
+`endif // `ifdef css_mcu0_RV_ASSERT_OR_VERILATOR
+`endif // `ifdef css_mcu0_RV_LOCKSTEP_ENABLE
 endmodule

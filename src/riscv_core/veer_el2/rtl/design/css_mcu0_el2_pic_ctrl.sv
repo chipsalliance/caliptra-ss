@@ -42,7 +42,7 @@ import css_mcu0_el2_pkg::*;
                      input  logic [3:0]             meicurpl,             // Current Priority Level
                      input  logic [3:0]             meipt,                // Current Priority Threshold
 
-                     output logic                   mexintpend,           // External Inerrupt request to the core
+                     output logic                   mexintpend,           // External interrupt request to the core
                      output logic [7:0]             claimid,              // Claim Id of the requested interrupt
                      output logic [3:0]             pl,                   // Priority level of the requested interrupt
                      output logic [31:0]            picm_rd_data,         // Read data of the register
@@ -230,7 +230,7 @@ wire grp_clk, grp_clken;
 
     assign grp_clken = |intenable_clk_enable[(p==INT_ENABLE_GRPS?pt.PIC_TOTAL_INT_PLUS1-1:p*4+3) : p*4] | io_clk_override;
 
-  `ifndef RV_FPGA_OPTIMIZE
+  `ifndef css_mcu0_RV_FPGA_OPTIMIZE
     css_mcu0_rvclkhdr intenable_c1_cgc( .en(grp_clken),  .l1clk(grp_clk), .* );
   `else
 /*pragma coverage off*/
@@ -402,8 +402,10 @@ if (pt.PIC_2CYCLE == 1) begin : genblock
 end
 else begin : genblock
 
+        /* pragma coverage off*/
         logic [NUM_LEVELS:0] [pt.PIC_TOTAL_INT_PLUS1+1:0] [INTPRIORITY_BITS-1:0] level_intpend_w_prior_en;
         logic [NUM_LEVELS:0] [pt.PIC_TOTAL_INT_PLUS1+1:0] [ID_BITS-1:0]          level_intpend_id;
+        /* pragma coverage on*/
 
         assign level_intpend_w_prior_en[0][pt.PIC_TOTAL_INT_PLUS1+1:0] = {{2*INTPRIORITY_BITS{1'b0}},intpend_w_prior_en[pt.PIC_TOTAL_INT_PLUS1-1:0]} ;
         assign level_intpend_id[0][pt.PIC_TOTAL_INT_PLUS1+1:0] = {{2*ID_BITS{1'b1}},intpend_id[pt.PIC_TOTAL_INT_PLUS1-1:0]} ;
@@ -531,7 +533,7 @@ logic [14:0] address;
 
 assign address[14:0] = picm_raddr_ff[14:0];
 
-`include "css_mcu0_pic_map_auto.h"
+`include "css_mcu0_pic_map_auto.svh"
 
 endmodule
 
@@ -590,12 +592,3 @@ module css_mcu0_el2_configurable_gw (
   assign extintsrc_req_config =  meigwctrl_type ? ((extintsrc_req_sync ^  meigwctrl_polarity) | gw_int_pending) : (extintsrc_req_sync ^  meigwctrl_polarity) ;
 
 endmodule // configurable_gw
-
-
-
-
-
-
-
-
-

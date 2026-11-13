@@ -18,8 +18,9 @@
 //********************************************************************************
 
 
+interface css_mcu0_el2_mem_if
 import css_mcu0_el2_pkg::*;
-interface css_mcu0_el2_mem_if #(
+#(
     `include "css_mcu0_el2_param.vh"
 ) ();
   //////////////////////////////////////////
