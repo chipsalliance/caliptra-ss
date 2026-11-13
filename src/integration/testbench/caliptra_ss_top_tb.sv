@@ -2006,6 +2006,59 @@ module caliptra_ss_top_tb
         .linestate  (cptra_ss_usb_utmi_linestate_i)
     );
 
+    // --- USB PIE error-code checker ---
+    // Owns the verdict for the caliptra_ss_usb_hs_dev_err_* family. Those nine
+    // suites are stimulus only: nothing in them ever checked that the error
+    // code each exists to produce actually appeared, so a run whose injection
+    // never reached the PIE still reported PASSED, and the real acceptance was
+    // a manual coverage-database inspection. These instances make the absence
+    // of the expected code a test failure.
+    //
+    // Inert unless the suite yaml passes BOTH +usb_errortype_check and
+    // +usb_expect_errortype=<code>, so no other test is affected. Instantiated
+    // here, next to the other USB checkers, rather than inside
+    // usb_cov_probe_caliptra_ss: that file is wholly guarded by `ifdef
+    // USB_FCOV, which would make the verdict exist only in coverage builds.
+    //
+    // MY_SEL is the pie_dev_selected encoding of usb_cov_pkg (USB_SEL_HUB = 0,
+    // USB_SEL_DEV0 = 1, USB_SEL_DEV1 = 2). The values are written literally
+    // because usb_cov_pkg is not imported in this testbench and is part of the
+    // coverage collateral; if that package is ever imported here, replace them
+    // with the named constants.
+    //
+    // The PIE is instantiated once and time-multiplexed across hub, dev0 and
+    // dev1, so pie_errortype is only meaningful for whichever function
+    // pie_dev_selected points at - hence one instance per device, each
+    // ignoring the other's reports. The hierarchy paths below are the same
+    // ones usb_cov_probe_caliptra_ss uses for the identical nets.
+    caliptra_ss_usb_errortype_checker #(
+        .MY_SEL (1),
+        .NAME   ("USB_ERRTYPE_DEV0")
+    ) i_caliptra_ss_usb_errortype_checker_dev0 (
+        .clk              (caliptra_ss_dut.usb_core_i.usb_axi_aclk),
+        .rst_n            (caliptra_ss_dut.usb_core_i.usb_axi_aresetn),
+        .pie_dev_selected (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_ocp_recovery_post_sync_arb_1.pie_dev_selected_i),
+        .pie_endtransfer  (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_endtransfer),
+        .pie_error        (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_error),
+        .pie_errortype    (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_errortype),
+        .pie_epinfo_epnr  (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_epinfo_epnr),
+        .pie_epinfo_epdir (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_epinfo_epdir)
+    );
+
+    caliptra_ss_usb_errortype_checker #(
+        .MY_SEL (2),
+        .NAME   ("USB_ERRTYPE_DEV1")
+    ) i_caliptra_ss_usb_errortype_checker_dev1 (
+        .clk              (caliptra_ss_dut.usb_core_i.usb_axi_aclk),
+        .rst_n            (caliptra_ss_dut.usb_core_i.usb_axi_aresetn),
+        .pie_dev_selected (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_ocp_recovery_post_sync_arb_1.pie_dev_selected_i),
+        .pie_endtransfer  (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_endtransfer),
+        .pie_error        (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_error),
+        .pie_errortype    (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_errortype),
+        .pie_epinfo_epnr  (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_epinfo_epnr),
+        .pie_epinfo_epdir (caliptra_ss_dut.usb_core_i.u_hub_compound.usb_pie_1.pie_epinfo_epdir)
+    );
+
     // --- UTMI+ termination encoding -> legacy UTMI FsPullup / LsPullup ---
     //
     // DUT=DEVICE (TermSelect=1): TB drives FsPullup=1 so the VIP HOST sees DP+
@@ -2575,6 +2628,13 @@ module caliptra_ss_top_tb
     // signals so the UVM checker can read them with uvm_hdl_read. See
     // usb_dev_addr_probe.sv for details.
     usb_dev_addr_probe u_usb_dev_addr_probe();
+
+    // USB compound functional coverage. usb_cov_bind carries the bind
+    // statements for the SystemVerilog observation points; the probe
+    // instantiates usb_hub_cov and feeds it from the VHDL compound, which a
+    // bind cannot target. Both are empty unless USB_FCOV is defined.
+    usb_cov_bind               u_usb_cov_bind();
+    usb_cov_probe_caliptra_ss  u_usb_cov_probe();
 
 endmodule
 
