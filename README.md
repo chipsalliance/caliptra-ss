@@ -130,6 +130,7 @@ Required for Firmware (i.e. Test suites) makefile:<BR>
 ├── docs
 │   ├── Caliptra_Gen2_SS_TestPlan.xlsx
 │   ├── CaliptraSSCoverage.md
+│   ├── CaliptraSSDVSimGuide.md
 │   ├── CaliptraSSHardwareSpecification.md
 │   ├── CaliptraSSIntegrationSpecification.md
 │   ├── CaliptraSSReleaseChecklist.md
@@ -310,3 +311,7 @@ Only tests from existing regression test lists should be run:
 * L1 strict directed tests: [L1_Nightly_Directed_Strict_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L1_Nightly_Directed_Strict_caliptra_ss_top_tb_regression.yml)
 * L1 pseudorandom directed tests: [L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L1_Nightly_Directed_caliptra_ss_top_tb_regression.yml)
 * L1 random tests: [L1_Nightly_Random_caliptra_ss_top_tb_regression.yml](https://github.com/chipsalliance/caliptra-ss/blob/main/src/integration/stimulus/L1_Nightly_Random_caliptra_ss_top_tb_regression.yml)
+
+### Block-Level DVSim Regression ###
+IP block-level UVM regressions and coverage collection run using OpenTitan/Caliptra `dvsim` with Synopsys VCS inside the Nix `caliptra-dvsim` environment ([`flake.nix`](flake.nix)) via [`.github/workflows/nightly-runner.yml`](.github/workflows/nightly-runner.yml).
+See the [Caliptra SS DVSim Guide](docs/CaliptraSSDVSimGuide.md) for step-by-step instructions on running DVSim regressions locally, validating a new IP block on a pull request, or adding a block to the nightly regression.
