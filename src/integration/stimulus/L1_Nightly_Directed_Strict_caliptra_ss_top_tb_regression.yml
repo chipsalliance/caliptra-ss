@@ -241,5 +241,14 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev1_hub_port_suspend/caliptra_ss_usb_hs_dev1_hub_port_suspend.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_hub_descriptor/caliptra_ss_usb_hs_dev1_get_hub_descriptor.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_hub_config_descriptor/caliptra_ss_usb_hs_dev1_hub_config_descriptor.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_data_crc/caliptra_ss_usb_hs_dev_err_data_crc.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_token_crc/caliptra_ss_usb_hs_dev_err_token_crc.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pid_check/caliptra_ss_usb_hs_dev_err_pid_check.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pid_illegal/caliptra_ss_usb_hs_dev_err_pid_illegal.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_short_pkt/caliptra_ss_usb_hs_dev_err_short_pkt.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_long_pkt/caliptra_ss_usb_hs_dev_err_long_pkt.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_toggle/caliptra_ss_usb_hs_dev_err_toggle.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_stall/caliptra_ss_usb_hs_dev_err_stall.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_err_pkt_unexpected/caliptra_ss_usb_hs_dev_err_pkt_unexpected.yml
 
 # File contains AI-generated response based on internal company sources
