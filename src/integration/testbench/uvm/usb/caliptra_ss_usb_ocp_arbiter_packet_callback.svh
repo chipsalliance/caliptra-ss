@@ -313,6 +313,16 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         return records_overflowed;
     endfunction
 
+    function bit ocp_check_no_device_response();
+        if (records_overflowed) return 1'b0;
+        foreach (packet_records[index]) begin
+            if ((packet_records[index].direction == PACKET_RX) &&
+                (packet_records[index].pid_name != svt_usb_packet::SOF))
+                return 1'b0;
+        end
+        return 1'b1;
+    endfunction
+
     // Pure predicate: mutation tests can reject bad evidence without emitting
     // expected UVM_ERRORs. The sequence/scoreboard owns failure reporting.
     // USB 2.0 8.5.3.4: OUT requires its data packet before the STALL.

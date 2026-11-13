@@ -129,6 +129,8 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         #(PACKET_RESPONSE_BOUND);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
         raw_response_callback.enabled = 1'b0;
+        if (!checker.packet_callback.ocp_check_no_device_response())
+            `uvm_error("OCP_STALL", "Corrupt SETUP requires device silence and complete packet history.")
         if ((checker.packet_callback.accepted_setup_count() != 0) ||
             (checker.packet_callback.count_pid(svt_usb_packet::ACK,
                 caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) != 0))
