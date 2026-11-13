@@ -14,11 +14,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//********************************************************************************
-commit 8d9457af9f7966506c871aba1ae4ff8a2a4e17b0 (HEAD -> 2.0-patches, origin/2.0-patches)
-Author: Karol Gugala <kgugala@antmicro.com>
-Date:   Wed Oct 8 19:31:52 2025 +0200
+commit 23f02b623a2f92f84e136171dbc3103956b899f0 (HEAD -> dev/nasahlpa/fixconfig, origin/dev/nasahlpa/fixconfig)
+Author: Pascal Nasahl <nasahlpa@lowrisc.org>
+Date:   Mon Nov 9 09:38:10 2026 +0100
 
-    CI: bump riscv_dv_matrix_include.py
-
-    Signed-off-by: Karol Gugala <kgugala@antmicro.com>
+    configs: Fix packed el2_param_t vector when lockstep options are dropped
+    
+    When lockstep_enable=0 (or lockstep_regfile_enable=0), the lockstep_*
+    keys are deleted from %config, so gen_define() never converts their
+    %verilog_parms entries to binary and they keep the raw field width
+    (e.g. "7"). dump_parms() concatenates these characters into the packed
+    parameter vector and b2h() silently turns the affected nibble into 0,
+    clearing neighbouring fields. For example, with lockstep_enable=0 and
+    load_to_use_plus1=1, pt.LOAD_TO_USE_PLUS1 is 0 although
+    RV_LOAD_TO_USE_PLUS1 is defined and the comment block shows 5'h01.
+    With lockstep_enable=1 and lockstep_regfile_enable=0,
+    pt.LOCKSTEP_ENABLE is 0.
+    
+    - Zero the %verilog_parms entries of dropped lockstep_* keys
+    - Fail in dump_parms() on any non-binary parameter value
+    
+    Signed-off-by: Pascal Nasahl <nasahlpa@lowrisc.org>

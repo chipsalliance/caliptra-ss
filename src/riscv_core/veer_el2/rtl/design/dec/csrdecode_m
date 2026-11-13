@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
-# 
+#
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -281,10 +281,10 @@ csr[ csr_perfvg    ] = { valid_only }
 csr[ csr_perfvh    ] = { valid_only }
 csr[ csr_perfvi    ] = { valid_only }
 
-csr[ csr_pmpcfg    ] = { csr_pmpcfg    }
-csr[ csr_pmpaddr0  ] = { csr_pmpaddr0  }
-csr[ csr_pmpaddr16 ] = { csr_pmpaddr16 }
-csr[ csr_pmpaddr32 ] = { csr_pmpaddr32 }
-csr[ csr_pmpaddr48 ] = { csr_pmpaddr48 }
+csr[ csr_pmpcfg    ] = { csr_pmpcfg postsync }
+csr[ csr_pmpaddr0  ] = { csr_pmpaddr0 postsync }
+csr[ csr_pmpaddr16 ] = { csr_pmpaddr16 postsync }
+csr[ csr_pmpaddr32 ] = { csr_pmpaddr32 postsync }
+csr[ csr_pmpaddr48 ] = { csr_pmpaddr48 postsync }
 
 .end

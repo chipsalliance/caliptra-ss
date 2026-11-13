@@ -131,6 +131,7 @@
 +incdir+${AVERY_I3C}/testsuite.i3c/dut_master_stby
 +incdir+${AVERY_I3C}/testbench
 +incdir+${CALIPTRA_SS_ROOT}/src/mci/coverage
++incdir+${CALIPTRA_SS_ROOT}/src/usb/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/coverage
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/vip
 +incdir+${CALIPTRA_SS_ROOT}/src/integration/testbench
@@ -247,6 +248,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/doe/rtl/doe_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg/caliptra_reg_defines.svh
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg/caliptra_reg_field_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr_pkg.sv
@@ -327,6 +329,8 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_pmp
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_veer.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/el2_prim_generic_buf.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/el2_prim_buf.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/el2_prim_generic_rst_mux2.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/lib/el2_prim_rst_mux2.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_veer_lockstep.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/riscv_core/veer_el2/rtl/el2_veer_wrapper.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/pcrvault/rtl/pv_defines_pkg.sv
@@ -391,8 +395,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_top
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/ntt_top/rtl/ntt_defines_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_1r1w_ram.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_1r1w_be_ram.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_1r1w_512x4_ram.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_ram_regout.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_icg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_2ff_sync.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/submodules/adams-bridge/src/abr_libs/rtl/abr_piso_multi.sv
@@ -607,6 +609,8 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_el2_pdef.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/include/css_mcu0_el2_def.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/defines/css_mcu0_common_defines.vh
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_beh_lib.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_prim_generic_rst_mux2.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_prim_rst_mux2.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_mem.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_dma_ctrl.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/css_mcu0_el2_pmp.sv
@@ -642,6 +646,7 @@ ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_axi4_to_ahb.
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_lib.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_mem_lib.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_mem_if.sv
+${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lib/css_mcu0_el2_regfile_if.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lsu/css_mcu0_el2_lsu_addrcheck.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lsu/css_mcu0_el2_lsu_bus_buffer.sv
 ${CALIPTRA_SS_ROOT}/src/riscv_core/veer_el2/rtl/design/lsu/css_mcu0_el2_lsu_bus_intf.sv
@@ -961,6 +966,8 @@ ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/lc_ctrl/coverage/lc_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_if.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
@@ -976,6 +983,7 @@ ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_compound_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv

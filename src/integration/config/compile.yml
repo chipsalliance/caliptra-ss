@@ -89,6 +89,7 @@ requires:
   - mci_coverage
   - lc_ctrl_coverage
   - fuse_ctrl_coverage
+  - usb_coverage
 targets:
   tb:
     directories:
@@ -141,6 +142,7 @@ targets:
       - $CALIPTRA_SS_ROOT/src/usb/coverage/usb_cov_bind.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
+      - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_if.sv
       - $COMPILE_ROOT/testbench/uvm/usb/caliptra_ss_usb_ocp_collision_bind.sv
@@ -198,6 +200,7 @@ global:
         - '-debug_access+all'
         - +define+CLP_ASSERT_ON
         - +define+ABR_ASSERT_ON
+        - +define+css_mcu0_RV_ASSERT_ON
         # Used in caliptra_top_sva to find signals
         - +define+CPTRA_TB_TOP_NAME=caliptra_ss_top_tb
         - +define+CPTRA_TOP_PATH=caliptra_ss_top_tb.caliptra_ss_dut.caliptra_top_dut
