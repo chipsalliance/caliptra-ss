@@ -5,6 +5,7 @@
 +define+DESIGNWARE_INCDIR=${DESIGNWARE_HOME}
 +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
 +define+SVT_VERSION=latest
++define+USB_FCOV
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
@@ -963,6 +964,16 @@ ${CALIPTRA_SS_ROOT}/src/fuse_ctrl/coverage/fuse_ctrl_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_props.sv
 ${CALIPTRA_SS_ROOT}/src/integration/coverage/caliptra_ss_top_cov_bind.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_pkg.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_addr_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_power_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_hub_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_link_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_enum_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_ep_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_irq_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_compound_cov.sv
+${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_recovery_tb_pkg.sv
@@ -990,7 +1001,9 @@ ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_fs_speed_checker.s
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_vbus_driver.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_suspend_resume_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_device_wakeup_checker.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_usb_errortype_checker.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/usb_dev_addr_probe.sv
+${CALIPTRA_SS_ROOT}/src/integration/testbench/usb_cov_probe_caliptra_ss.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/caliptra_ss_top_tb_soc_bfm.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/sv_tests/mci/mci_boot_fsm_glitch_inject.sv
