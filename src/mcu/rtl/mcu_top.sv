@@ -420,6 +420,8 @@ module mcu_top
       .el2_icache_export(mem_export_icache.veer_icache_src),
       .dmi_core_enable(dmi_core_enable),
       .dmi_active(dmi_active),
+      // DCCM write readback is disabled (dccm_wr_readback=0).
+      .dccm_write_readback_error(),
       .*
   );
 

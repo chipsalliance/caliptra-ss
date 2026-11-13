@@ -18,6 +18,11 @@
 `ifndef CALIPTRA_SS_INCLUDES_SVH
 `define CALIPTRA_SS_INCLUDES_SVH
 
+// Use the shared technology-selected reset mux behind the MCU EL2 wrapper.
+`ifndef css_mcu0_RV_PRIM_RST_MUX2_IMPL
+`define css_mcu0_RV_PRIM_RST_MUX2_IMPL caliptra_prim_rst_mux2
+`endif
+
 // Interrupt Assignments
 // NOTE Vector 0 is reserved by VeeR
 `define VEER_INTR_VEC_MCI                 1
