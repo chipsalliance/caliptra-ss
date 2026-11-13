@@ -39,6 +39,8 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - USB 2.0 virtual hub with two downstream devices: MCU-owned DEV0 and SoC-owned DEV1
 - DEV0 OCP Recovery over EP0 with an Indirect FIFO consumed by Caliptra over AXI
 - USB recovery selection, interrupts, packet-memory interfaces, and AXI USER filtering
+- Full sign-off of RDC and CDC is pending as of RC1 tag
+- Full regression testplan and coverage sign-off is pending as of RC1 tag
 
 ### Integration spec updates
 - Named integration/trademark requirements and exemption-request guidance
