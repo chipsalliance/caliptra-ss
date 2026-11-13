@@ -726,7 +726,7 @@ module caliptra_ss_top
         .trace_rv_i_tval_ip     (cptra_trace_rv_i_tval_ip     ),
 
         // DCLS corruption-detection enable, driven by MCI HW_CAPABILITIES (MCU-provisioned)
-        .ss_dcls_en             (cptra_ss_dcls_en),
+        .dcls_en                (cptra_ss_dcls_en),
 
         .security_state(mci_cptra_security_state),
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
@@ -1392,7 +1392,7 @@ module caliptra_ss_top
         .cptra_trace_rv_i_interrupt_ip,
         .cptra_trace_rv_i_tval_ip     ,
 
-        // Caliptra core DCLS enable (from MCI HW_CAPABILITIES) -> caliptra_top.ss_dcls_en
+        // Caliptra core DCLS enable (from MCI HW_CAPABILITIES) -> caliptra_top.dcls_en
         .ss_dcls_en                 (cptra_ss_dcls_en),
 
 
