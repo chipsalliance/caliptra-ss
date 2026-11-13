@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 369;
+  localparam int USB_PKG_VERSION = 370;
 
 
   import uvm_pkg::*;
