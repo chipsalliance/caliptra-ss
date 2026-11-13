@@ -127,6 +127,55 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA0, 1'b0, 8);
     endfunction
 
+    protected function void ocp_packet_check_corrupt_setup_silence();
+        localparam int unsigned TraceLimit =
+            caliptra_ss_usb_ocp_arbiter_packet_callback::MAX_PACKET_RECORDS;
+        svt_usb_packet::pid_name_enum replies[5] = '{
+            svt_usb_packet::NAK, svt_usb_packet::STALL, svt_usb_packet::ACK,
+            svt_usb_packet::NYET, svt_usb_packet::DATA1};
+
+        for (int unsigned scenario = 0; scenario <= $size(replies); scenario++) begin
+            ocp_packet_open_synthetic_observation_window();
+            ocp_packet_emit_synthetic_packet(
+                .pid(svt_usb_packet::SETUP), .bad_crc(1'b1));
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA0, 1'b0, 8);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF, 1'b1);
+            if (scenario != 0)
+                ocp_packet_emit_synthetic_packet(replies[scenario - 1], 1'b1);
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+            observer.stop_window();
+            ocp_packet_check_true(
+                (observer.accepted_setup_count() == 0) &&
+                (observer.corruption_count() == 1) &&
+                (observer.count_pid(svt_usb_packet::SETUP,
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_TX) == 1),
+                "corrupt SETUP fixture preserves unaccepted SETUP evidence");
+            ocp_packet_check_true(
+                observer.ocp_check_no_device_response() == (scenario == 0),
+                scenario == 0 ? "silent corrupt SETUP with SOF accepted" :
+                    $sformatf("corrupt SETUP RX %s rejected",
+                        replies[scenario - 1].name()));
+        end
+
+        ocp_packet_open_synthetic_observation_window();
+        ocp_packet_emit_synthetic_packet(
+            .pid(svt_usb_packet::SETUP), .bad_crc(1'b1));
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA0, 1'b0, 8);
+        for (int unsigned i = observer.packet_count(); i < TraceLimit; i++)
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+        ocp_packet_check_true(observer.ocp_check_no_device_response(),
+            "complete full trace proves device silence");
+        ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+        observer.stop_window();
+        ocp_packet_check_true(observer.overflowed() &&
+            !observer.ocp_check_no_device_response(),
+            "overflowed silent trace cannot prove device silence");
+        `uvm_info("OCP_PACKET_SELFTEST",
+            "Corrupt SETUP silence: silent/SOF passed; RX NAK, STALL, ACK, NYET, DATA and overflow rejected.",
+            UVM_NONE)
+    endfunction
+
     protected function bit ocp_packet_check_synthetic_stall_probe(input
         svt_usb_packet::pid_name_enum pid);
         return observer.check_stall_probe(pid, 7'd5, 4'd0, "synthetic");
@@ -744,6 +793,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
             "observer");
         model = caliptra_ss_usb_ocp_stall_model::type_id::create("model");
         observer.enable_diagnostics();
+        ocp_packet_check_corrupt_setup_silence();
 
         // -------------------------------------------------------------------------
         // Supply SETUP/DATA0/ACK, wait on recorded packets, then rearm the trigger.
