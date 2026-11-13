@@ -2,8 +2,8 @@
 +define+UVM_REG_DATA_WIDTH=128
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl
-+incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
++incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/entropy_src/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/csrng/rtl
@@ -36,13 +36,6 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/caliptra_icg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/clk_gate.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/ahb_to_reg_adapter.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl/skidbuffer.v
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
-${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_util_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_alert_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_subreg_pkg.sv
@@ -57,6 +50,13 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_esc_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/caliptra_prim_count_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl/keymgr_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_pkg.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_if.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_addr.v
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_rd.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_reg_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_state_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/lc_ctrl/rtl/lc_ctrl_pkg.sv
