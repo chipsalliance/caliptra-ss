@@ -821,3 +821,117 @@ termination, Address-state handoff, and genuinely incomplete/missing-EOP
 packets. Combined Hub/Device1 traffic isolation belongs to the hub-enablement
 workstream. The integration test-plan CSV records executed results separately
 from these planned coverage extensions.
+
+---
+
+## 11. Caliptra-specific requirements
+
+Caliptra transfers a streaming-boot image through a FIFO shared by the USB
+interface and Caliptra firmware. Host writes place image data in the FIFO;
+the `payload_available` signal tells firmware when a batch is ready to read.
+Firmware reads the complete batch before the USB interface accepts the next
+batch. This arrangement supports the existing firmware consumption model
+used for both USB and I3C streaming boot.
+
+Host software should use 64-byte writes to fill each 256-byte batch, with a
+shorter write permitted at the end of the image. Firmware is notified when
+the FIFO is full or the final image data has arrived. For example, 252 bytes
+of an image that still has more data to transfer do not trigger notification.
+A PING request cannot force FIFO draining: `payload_available` depends on
+FIFO occupancy and progress toward the programmed image size, not on host
+readiness queries. Host software must therefore finish each batch rather
+than wait for firmware to consume an incomplete, nonfinal batch.
+
+The two specification deviations below support this batching model and the
+existing firmware interface. They describe Caliptra-specific behavior that
+host software must account for.
+
+### 11.1 USB-OCP-FIFO-001: Full-capacity FIFO with equal indices
+
+**Specification requirement.** OCP Recovery v1.1 Section 8.2.5 requires a
+NACK for a transfer that would advance WRITE_INDEX to equal READ_INDEX.
+These indices identify the next FIFO locations to write and read. Reserving
+one unused entry allows software to interpret equal indices as an empty FIFO.
+
+**Example.** With a 64-DWORD FIFO, READ_INDEX=0 and WRITE_INDEX=48, accepting
+another 16 DWORDs wraps WRITE_INDEX to zero. Under the specification, that
+transfer must receive NACK rather than make the indices equal.
+
+**Caliptra behavior and rationale.** Caliptra accepts the transfer, using
+all 64 DWORD entries to hold a complete 256-byte batch. The FULL and EMPTY
+flags distinguish a full FIFO from an empty one even when the indices are
+equal. This is backwards compatible with the I3C implementation in Caliptra,
+to support host software portability. Requests that do not fit receive NAK 
+without adding data to the FIFO. Accepting the transfer that makes the
+indices equal is the approved deviation USB-OCP-FIFO-001.
+
+**Integration and host requirements.** Use FULL and EMPTY to distinguish
+equal-index states; the specification's reserved-entry calculation does not
+describe Caliptra's usable capacity. The device checks available capacity
+before accepting writes. Once `payload_available` is asserted, new FIFO data
+is blocked until firmware has read the entire batch, even if some space
+becomes free while firmware is reading.
+
+**Verification coverage.** The testcase
+`caliptra_ss_usb_ocp_fifo_local_behavior` exercises this behavior.
+LOCAL1 fills the advertised capacity and checks NYET/FULL/equal indices;
+LOCAL2 and LOCAL3 check full-FIFO NAK, byte-exact drain and same-request retry.
+`caliptra_ss_usb_ocp_fifo_ring` (`OCP_FIFO_014_RING_BOUNDARY_ROLLOVER`),
+`caliptra_ss_usb_ocp_fifo_flow_indices` (`OCP_FIFO_011_FLOW_CTRL_INDICES`) and
+`caliptra_ss_usb_ocp_fifo_flow_status_flags` (`OCP_FIFO_012_FLOW_CTRL_STATUS_FLAGS`)
+tests also exercise full-capacity/equal-index acceptance. These checks validate
+Caliptra's documented behavior rather than enforcing the spec reserved-entry
+calculation.
+
+### 11.2 USB-PING-001: Request-qualified near-full PING ACK
+
+**Specification requirement.** A USB host uses PING to ask whether an
+endpoint can accept OUT data. USB 2.0 Section 8.5.1 requires an ACK response
+only when there is space for the endpoint's maximum packet size
+(`wMaxPacketSize`), which is 64 bytes for high-speed control endpoint EP0.
+This requirement applies even when the pending control write is shorter.
+The OCP descriptor's `wMaxWrTransferSize` separately limits the size of an
+OCP write; both limits are 64 bytes in Caliptra's current configuration.
+
+**Example.** Program a 256-byte image and commit 252 bytes, leaving four
+FIFO bytes and four image bytes remaining. After an accepted
+`INDIRECT_FIFO_DATA` SETUP with `wLength=4`, issue PING before OUT DATA.
+The specification requires NAK because less than one maximum packet fits.
+
+**Caliptra behavior and rationale.** For an OCP FIFO write, Caliptra uses
+the length supplied in the preceding SETUP request (`wLength`) to determine
+whether the write fits. It uses that same decision when responding to PING.
+In this example, it can return ACK because the requested four bytes fit and
+firmware has not yet been notified to drain the FIFO. This request-sized
+readiness decision, rather than a maximum-packet readiness decision, is the
+deviation USB-PING-001.
+
+The SETUP request identifies the OCP command and write length before its
+data stage begins. Because supported writes fit in one control DATA packet,
+a host that sends the declared amount can complete this four-byte write
+without overflowing the FIFO. It completes the final image batch in the
+example above. Keeping the existing request-sized readiness decision avoids
+changing the shared USB packet engine and non-OCP transfer handling.
+
+**Integration and host requirements.** A PING ACK does not authorize the
+host to exceed the write length declared in SETUP. Host software must honor
+that length and should use the 64-byte batching pattern described above.
+The device must still check the request against both physical free space
+and remaining image size; a non-full FIFO alone is not sufficient for ACK.
+It also blocks new writes while firmware drains a notified batch and reserves
+space for an admitted write. These protections are essential to the rationale
+for this deviation. The deviation applies to claimed OCP transfers and must
+be reassessed if writes spanning multiple DATA packets are introduced.
+
+**Verification coverage.** LOCAL4 of
+`caliptra_ss_usb_ocp_fifo_local_behavior` checks the strict USB maximum-packet
+requirement. Enable it with `+USB_OCP_CHECK_NEAR_FULL_PING`. Caliptra's ACK in
+the example produces a test error and an independent FIFO-model rejection,
+preserving visibility of the specification deviation rather than reporting
+a compliance pass.
+
+Without that plusarg, LOCAL4 is omitted and an `OCP_LOCAL_WAIVER` message
+identifies the waiver.
+The remaining scenarios stay enabled, including direct short-write acceptance
+(LOCAL5) and PING readiness after firmware has drained a complete batch
+(LOCAL3).
