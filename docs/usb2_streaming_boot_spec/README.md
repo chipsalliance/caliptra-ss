@@ -821,6 +821,7 @@ Additional standalone coverage is tracked separately:
 | Test suffix (`caliptra_ss_usb_ocp_`) | Scope and current evidence |
 |---|---|
 | `setup_debug_wrap` | Passing 4100-accepted-SETUP campaign crosses modulo-4096 rollover through real legacy/OCP traffic, with complete DATA/STATUS service and AXI checkpoints; no forced counter |
+| `setup_address_handoff` | Passing Address-state campaign uses real deconfiguration, completed and interrupted nonzero SET_ADDRESS, actual token destinations, old-address STATUS, full 2ms address recovery and Configured-state legacy/OCP interleaving |
 
 Other SETUP and Hub/Device1 coverage remains separately tracked in the
 integration test-plan CSV.

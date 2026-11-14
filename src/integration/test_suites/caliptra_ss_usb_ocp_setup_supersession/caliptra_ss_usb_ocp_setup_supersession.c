@@ -33,6 +33,13 @@
 #define CMD_EXPOSE    0xDu
 #define CMD_NEXT      0xEu
 #define CMD_FIFO_DRAIN 0xFu
+// Opcode 9 is fixture-local; the generic command framing/ACK ABI is unchanged.
+#define CMD_TERMINATION 0x9u
+#define ACTION_DISABLE 0u
+#define ACTION_ENABLE 1u
+#define ACTION_ABORT 2u
+#define ACTION_NORMAL_SERVICE 3u
+#define ACTION_FALLBACK 4u
 #define STATE_READY   1u
 #define STATE_HELD    2u
 #define STATE_RELEASED 3u
@@ -56,6 +63,8 @@ static uint32_t ordinary_out;
 static uint32_t ordinary_in;
 static uint32_t dispatch_baseline;
 static uint32_t publish_sequence;
+static uint8_t normal_service;
+static uint8_t fallback_expected;
 
 // A valid device descriptor with deliberately different identity bytes. It is
 // published by an obsolete handler, not by normal GET_DESCRIPTOR dispatch.
@@ -162,7 +171,15 @@ static void service_ep0(void)
               DEV0_CSR_DEVCMDSTAT_SETUP_MASK) != 0u)) {
             usb_setup_pkt_t setup;
             usb_read_setup_packet(&setup);
-            if ((setup.bmRequestType != 0x80u) ||
+            if (fallback_expected) {
+                if ((setup.bmRequestType != 0xA1u) ||
+                    (setup.bRequest != USB_OCP_RECOVERY_TRANSFER_REQUEST) ||
+                    (setup.wValue != 0x0022u) ||
+                    (setup.wIndex != USB_OCP_RECOVERY_IFACE_NUM) ||
+                    (setup.wLength != USB_OCP_RECOVERY_MAX_RD_TRANSFER_SIZE)) {
+                    handle_error("MCU: unexpected notified OCP fallback SETUP\n");
+                }
+            } else if ((setup.bmRequestType != 0x80u) ||
                 (setup.bRequest != USB_REQ_GET_DESCRIPTOR) ||
                 (setup.wValue != 0x0100u) || (setup.wIndex != 0u) ||
                 ((setup.wLength != 18u) && (setup.wLength != 8u))) {
@@ -253,7 +270,7 @@ uint8_t main(void)
 
         // After the first ARM, barriers hold notified legacy work without
         // discovering OCP work from SETUP level.
-        if (scenario_generation == 0u) {
+        if ((scenario_generation == 0u) || normal_service) {
             // Runtime functional-descriptor discovery follows configuration;
             // the first ARM, not SET_CONFIGURATION, ends normal USB service.
             usb_event_loop(1u, 0u);
@@ -293,6 +310,8 @@ uint8_t main(void)
             scenario_generation = generation;
             scenario = expected_delta;
             held = 0u;
+            normal_service = 0u;
+            fallback_expected = 0u;
             expect_new_setup = 1u;
             notifications = ordinary_out = ordinary_in = 0u;
             dispatch_baseline = usb_legacy_ep0_get_setup_dispatch_count();
@@ -314,7 +333,7 @@ uint8_t main(void)
                 // payload and both descriptors before any effective SETUP
                 // clear. DEVCMDSTAT RMWs can also echo the W1C SETUP bit;
                 // the final explicit helper is not an atomic release lock.
-                if (!usb_handle_control_transfer()) {
+                if (usb_handle_control_transfer() == (fallback_expected != 0u)) {
                     handle_error("MCU: supersession legacy dispatch failed\n");
                 }
             } else {
@@ -361,6 +380,51 @@ uint8_t main(void)
                 handle_error("MCU: invalid diagnostic FIFO drain command\n");
             }
             drain_diagnostic_fifo();
+            break;
+        case CMD_TERMINATION: {
+            uint32_t ctrl = lsu_read_32(SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL);
+            // Do not echo a W1 doorbell in an unrelated path-disable RMW.
+            ctrl &= ~RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK;
+            switch (expected_delta) {
+            case ACTION_DISABLE:
+                lsu_write_32(SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL,
+                             ctrl | RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK);
+                break;
+            case ACTION_ENABLE:
+                lsu_write_32(SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL,
+                             ctrl & ~RECOVERY_CALIPTRA_CTRL_OCP_PATH_DISABLE_MASK);
+                break;
+            case ACTION_ABORT:
+                lsu_write_32(SOC_USB_COMBO_RECOVERY_CALIPTRA_CTRL,
+                             ctrl | RECOVERY_CALIPTRA_CTRL_OCP_CLAIM_ABORT_MASK);
+                break;
+            case ACTION_NORMAL_SERVICE:
+                // Host has already checked teardown with no subsequent SETUP.
+                // Resume the common notification-qualified reset/enumeration
+                // service, not an obsolete held handler.
+                held = 0u;
+                expect_new_setup = 0u;
+                normal_service = 1u;
+                break;
+            case ACTION_FALLBACK:
+                if (held || !expect_new_setup) {
+                    handle_error("MCU: fallback without a fresh notification epoch\n");
+                }
+                fallback_expected = 1u;
+                break;
+            default:
+                handle_error("MCU: invalid termination action\n");
+            }
+            // Control outcomes are sampled by the AXI checker, not polled in
+            // the firmware EP0 service hot path. ACK follows the MMIO fence.
+            break;
+        }
+        case USB_LEGACY_EP0_COMMAND_CLEAR_DCON:
+        case USB_LEGACY_EP0_COMMAND_SET_DCON:
+            if (expected_delta != 0u) {
+                handle_error("MCU: invalid termination DCON argument\n");
+            }
+            usb_set_device_connect(opcode == USB_LEGACY_EP0_COMMAND_SET_DCON);
             break;
         case USB_LEGACY_EP0_COMMAND_PUBLISH_BASELINE:
         case USB_LEGACY_EP0_COMMAND_PUBLISH_POST:

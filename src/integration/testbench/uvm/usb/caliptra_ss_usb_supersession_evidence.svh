@@ -27,8 +27,13 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
     int setup_acks = 0, data_acks = 0, status_acks = 0, status_nyets = 0;
     int in_tokens = 0, out_tokens = 0, ping_tokens = 0, naks = 0, data_packets = 0;
     int ping_acks = 0, status_starts = 0, stalls = 0;
+    // Opt-in ADDRESS policy retains actual host token destinations, including
+    // wrong destinations. A zero-data control write has STATUS IN, not DATA.
+    logic [6:0] setup_address, token_addresses[$];
+    int status_in_packets = 0;
     bit setup_data, data_pending, status_data, checked, valid;
     bit released, notified, intentional_stale, fresh_service;
+    bit legacy_fallback;
     logic [15:0] service_generation;
     bit stale_published, publication_before_first_in;
     logic [15:0] publication_generation;
@@ -36,6 +41,7 @@ class caliptra_ss_usb_supersession_evidence extends uvm_sequence_item;
     realtime first_status_start_at;
     realtime nak_at, first_data_at, release_at;
     realtime first_in_at, stale_publication_at;
+    realtime first_stall_at;
 
     function new(string name = "caliptra_ss_usb_supersession_evidence");
         super.new(name);

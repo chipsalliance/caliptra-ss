@@ -22,6 +22,7 @@ contents:
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_setup_stale_negative/caliptra_ss_usb_ocp_setup_stale_negative: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_setup_debug_csr/caliptra_ss_usb_ocp_setup_debug_csr: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_setup_debug_wrap/caliptra_ss_usb_ocp_setup_debug_wrap: { weight: 100 }
+        $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_setup_address_handoff/caliptra_ss_usb_ocp_setup_address_handoff: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix: { weight: 100 }
         $CALIPTRA_SS_ROOT/src/integration/test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_persistent_stall: { weight: 100 }

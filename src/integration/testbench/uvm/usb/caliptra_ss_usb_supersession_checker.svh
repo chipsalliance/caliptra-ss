@@ -31,6 +31,7 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
     // The same SETUP parser also counts helper traffic between DEBUG windows.
     // It never supplies response expectations from diagnostic CSR contents.
     bit track_accepted;
+    bit track_enumeration_addresses;
     caliptra_ss_usb_supersession_evidence unscoped_setup, last_accepted_setup;
     logic [15:0] recovery_interface;
     logic [6:0] address;
@@ -210,10 +211,19 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
     endfunction
 
     function void ocp_supersession_check_transfer(input svt_usb_transfer transfer);
+        if ((mode == "ADDRESS") && track_accepted && !active && (transfer != null))
+            ocp_supersession_report_failure("Late protocol ending outside Address evidence window");
         if (!active || characterizing || (transfer == null)) return;
+        if ((mode == "ADDRESS") &&
+            ((transfer.device_address !== address) || (transfer.endpoint_number !== 0)))
+            ocp_supersession_report_failure("Address campaign protocol ending has wrong destination");
         if ((transfer.xfer_type == svt_usb_transfer::CONTROL_TRANSFER) &&
             (transfer.device_address === address) &&
             (transfer.endpoint_number === 0)) begin
+            if ((mode == "ADDRESS") && (protocol_requests.size() >= 2)) begin
+                ocp_supersession_report_failure("Address protocol evidence exceeded two endings");
+                return;
+            end
             foreach (protocol_ids[i])
                 if ((protocol_ids[i] == transfer.get_inst_id()) &&
                     (protocol_ended_at[i] == $realtime))
@@ -239,6 +249,10 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         int unsigned total;
         bytes.delete();
         length = packet.get_payload_byte_count();
+        if ((mode == "ADDRESS") && (length > 64)) begin
+            ocp_supersession_report_failure("Address payload exceeded the bounded single-packet budget");
+            return;
+        end
         if ((length < 0) || ((length != 0) &&
             ((packet.payload == null) || (packet.payload_offset < 0)))) begin
             ocp_supersession_report_failure("Invalid observed payload descriptor");
@@ -267,6 +281,8 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
             if (tx) observed_sofs++;
             return;
         end
+        if ((mode == "ADDRESS") && (packet.is_pkt_error_free(0, 0) !== 1'b1))
+            ocp_supersession_report_failure("Address campaign observed a corrupt packet");
         if (active) begin
             if (tx) observed_tx_packets++;
             else observed_rx_packets++;
@@ -291,14 +307,34 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         if (tx && (packet.pid_name inside {svt_usb_packet::SETUP,
                     svt_usb_packet::IN, svt_usb_packet::OUT, svt_usb_packet::PING})) begin
             token = NO_TOKEN;
-            if ((packet.get_device_address_val() !== address) ||
+            // Never filter away an unexpected destination in this campaign.
+            // The wire, not the submitted request or VIP address table, is
+            // the SET_ADDRESS oracle (USB 2.0 9.4.6).
+            if (mode == "ADDRESS") begin
+                if (!active)
+                    ocp_supersession_report_failure("Endpoint token outside an Address evidence window");
+                if ((packet.get_device_address_val() !== address) || (packet.ept_num !== 0))
+                    ocp_supersession_report_failure($sformatf(
+                        "Actual TX %s address=%0d EP=%0d expected address=%0d EP0",
+                        packet.pid_name.name(), packet.get_device_address_val(),
+                        packet.ept_num, address));
+            end else if (((packet.get_device_address_val() !== address) &&
+                 !(track_enumeration_addresses && !active &&
+                   (packet.get_device_address_val() === 7'd1))) ||
                 (packet.ept_num !== 0)) return;
             if (packet.pid_name == svt_usb_packet::SETUP) begin
+                if ((mode == "ADDRESS") && (evidence.size() >= 2)) begin
+                    ocp_supersession_report_failure("Address window exceeded two SETUP occurrences");
+                    return;
+                end
                 item = caliptra_ss_usb_supersession_evidence::type_id::create(
                     $sformatf("setup_%0d", evidence.size()));
                 item.generation = generation;
                 item.recovery_interface = recovery_interface;
                 item.setup_at = $realtime;
+                item.setup_address = packet.get_device_address_val();
+                if (mode == "ADDRESS")
+                    item.token_addresses.push_back(packet.get_device_address_val());
                 if (active) evidence.push_back(item);
                 else unscoped_setup = item;
                 token = SETUP_TOKEN;
@@ -306,11 +342,24 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
                 token = NO_TOKEN;
             end else if (evidence.size() != 0) begin
                 item = evidence[$];
+                if (mode == "ADDRESS") begin
+                    if (item.token_addresses.size() >= 1024) begin
+                        ocp_supersession_report_failure("Address token evidence exceeded bounded budget");
+                        return;
+                    end
+                    item.token_addresses.push_back(packet.get_device_address_val());
+                end
                 case (packet.pid_name)
                     svt_usb_packet::IN: begin
                         token = IN_TOKEN;
                         item.in_tokens++;
                         item.data_pending = 0;
+                        if ((mode == "ADDRESS") && (item.setup_bytes[63:48] === 16'd0)) begin
+                            if (item.status_starts == 0)
+                                item.first_status_start_at = $realtime;
+                            item.status_starts++;
+                            item.status_data = 0;
+                        end
                     end
                     svt_usb_packet::OUT: begin
                         token = OUT_TOKEN;
@@ -329,17 +378,53 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
                     end
                     default: ;
                 endcase
-            end
+            end else if (mode == "ADDRESS")
+                ocp_supersession_report_failure("Non-SETUP token without an Address SETUP occurrence");
             return;
         end
         if (active) begin
-            if (evidence.size() == 0) return;
+            if (evidence.size() == 0) begin
+                if (mode == "ADDRESS")
+                    ocp_supersession_report_failure("Address packet before any SETUP occurrence");
+                return;
+            end
             item = evidence[$];
         end else begin
+            if (mode == "ADDRESS")
+                ocp_supersession_report_failure("Late packet outside an Address evidence window");
             if ((token != SETUP_TOKEN) || (unscoped_setup == null)) return;
             item = unscoped_setup;
         end
-        if (!tx && (packet.pid_name == svt_usb_packet::STALL)) item.stalls++;
+        if (!tx && (packet.pid_name == svt_usb_packet::STALL)) begin
+            item.stalls++;
+            if (item.first_stall_at == 0) item.first_stall_at = $realtime;
+        end
+        if (mode == "ADDRESS") begin
+            case (token)
+                SETUP_TOKEN:
+                    if (!((tx && !item.setup_data && (packet.pid_name === svt_usb_packet::DATA0)) ||
+                          (!tx && item.setup_data && (packet.pid_name === svt_usb_packet::ACK))))
+                        ocp_supersession_report_failure("Unexpected/repeated packet in Address SETUP transaction");
+                IN_TOKEN:
+                    if (!((!tx && !item.data_pending && !item.status_data &&
+                           (packet.pid_name inside {svt_usb_packet::DATA0, svt_usb_packet::DATA1,
+                                                    svt_usb_packet::NAK, svt_usb_packet::STALL})) ||
+                          (tx && (item.data_pending || item.status_data) &&
+                           (packet.pid_name === svt_usb_packet::ACK))))
+                        ocp_supersession_report_failure("Unexpected/repeated packet in Address IN transaction");
+                OUT_TOKEN:
+                    if (!((tx && !item.status_data && (packet.pid_name === svt_usb_packet::DATA1) &&
+                           (packet.get_payload_byte_count() == 0)) ||
+                          (!tx && item.status_data &&
+                           (packet.pid_name inside {svt_usb_packet::ACK, svt_usb_packet::NYET,
+                                                    svt_usb_packet::NAK, svt_usb_packet::STALL}))))
+                        ocp_supersession_report_failure("Unexpected/repeated packet in Address STATUS OUT transaction");
+                PING_TOKEN:
+                    if (tx || (packet.pid_name !== svt_usb_packet::ACK))
+                        ocp_supersession_report_failure("Unexpected PING response in bounded Address campaign");
+                default: ;
+            endcase
+        end
         case (token)
             SETUP_TOKEN: begin
                 if (tx && (packet.pid_name == svt_usb_packet::DATA0)) begin
@@ -364,12 +449,27 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
                     token = NO_TOKEN;
                 end else if (!tx && (packet.pid_name inside {
                              svt_usb_packet::DATA0, svt_usb_packet::DATA1})) begin
+                    if ((mode == "ADDRESS") && (item.setup_bytes[63:48] === 16'd0)) begin
+                        item.status_in_packets++;
+                        if ((packet.pid_name !== svt_usb_packet::DATA1) ||
+                            (packet.get_payload_byte_count() != 0))
+                            ocp_supersession_report_failure("Control-write STATUS IN must be a DATA1 ZLP");
+                        item.status_data = (packet.pid_name === svt_usb_packet::DATA1) &&
+                                           (packet.get_payload_byte_count() == 0);
+                        return;
+                    end
                     item.data_packets++;
                     if (item.first_data_at == 0) item.first_data_at = $realtime;
                     if (packet.pid_name != svt_usb_packet::DATA1)
                         ocp_supersession_report_failure("Single control-IN response did not use DATA1 (USB 2.0 8.5.3)");
                     ocp_supersession_check_observed_payload(packet, item.pending_data);
                     item.data_pending = 1;
+                end else if ((mode == "ADDRESS") && tx &&
+                             (packet.pid_name == svt_usb_packet::ACK) && item.status_data) begin
+                    item.status_acks++;
+                    item.status_complete_at = $realtime;
+                    item.status_data = 0;
+                    token = NO_TOKEN;
                 end else if (tx && (packet.pid_name == svt_usb_packet::ACK) &&
                              item.data_pending) begin
                     item.data_acks++;
@@ -401,7 +501,10 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
                 if (!tx && (packet.pid_name == svt_usb_packet::ACK)) item.ping_acks++;
                 if (!tx) token = NO_TOKEN;
             end
-            default: ;
+            default: begin
+                if (mode == "ADDRESS")
+                    ocp_supersession_report_failure("Unassociated/late packet in Address campaign");
+            end
         endcase
     endfunction
 
@@ -418,11 +521,90 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
             #(timeout);
         join_any
         disable bounded_evidence;
-        if (!found)
+        if (!found) begin
+            if (mode == "TERMINATION")
+                ocp_supersession_report_failure("Required on-wire SETUP/NAK evidence was not observed");
             `uvm_fatal("SUPERSESSION", $sformatf(
                 "Evidence timeout gen=%0d index=%0d NAK=%0b records=%0d TX/RX=%0d/%0d token=%s protocol=%0d",
                 generation, index, nak, evidence.size(), observed_tx_packets,
                 observed_rx_packets, token.name(), protocol_requests.size()))
+        end
+    endtask
+
+    // Bounded single-packet reads and zero-data writes only. Other campaigns
+    // continue using the original control-read predicate without relaxation.
+    task ocp_address_check_request(input int index, input svt_usb_transfer req,
+        input bit complete, input logic [7:0] expected_data[$],
+        input time timeout = 100us);
+        caliptra_ss_usb_supersession_evidence item;
+        bit seen, valid, write_status;
+        realtime protocol_end;
+        if ((mode != "ADDRESS") || !active || (index < 0) ||
+            (index >= evidence.size())) begin
+            ocp_supersession_report_failure("Missing Address request evidence");
+            return;
+        end
+        seen = 0;
+        fork : address_protocol_wait
+            begin
+                while (!ocp_supersession_check_protocol_seen(
+                    index, ocp_supersession_get_setup_line(req))) #10ns;
+                seen = 1;
+            end
+            #(timeout);
+        join_any
+        disable address_protocol_wait;
+        item = evidence[index];
+        protocol_end = seen ? protocol_ended_at[index] : 0;
+        write_status = (req.setup_data_w_length === 16'd0);
+        valid = seen && item.setup_data && (item.setup_acks == 1) &&
+                (item.setup_bytes === ocp_supersession_get_setup_line(req)) &&
+                (item.setup_address === address) && (item.stalls == 0) &&
+                (item.token_addresses.size() > 0) &&
+                (item.setup_ack_at >= item.setup_at) && (item.setup_ack_at > 0);
+        foreach (item.token_addresses[i])
+            valid &= (item.token_addresses[i] === address);
+        if (write_status) begin
+            valid &= (req.setup_data_bmrequesttype_dir === svt_usb_types::HOST_TO_DEVICE) &&
+                     (item.data_packets == 0) && (item.data_acks == 0) &&
+                     (item.out_tokens == 0) && (item.ping_tokens == 0) &&
+                     (item.status_in_packets == int'(complete)) &&
+                     (item.status_acks == int'(complete)) && (item.status_nyets == 0);
+            if (complete)
+                valid &= (item.in_tokens > 0) && (item.status_starts > 0) &&
+                         (item.in_tokens == item.naks + item.status_in_packets) &&
+                         (item.first_status_start_at >= item.setup_ack_at) &&
+                         (item.status_complete_at >= item.first_status_start_at) &&
+                         (protocol_end >= item.status_complete_at);
+            else
+                valid &= (item.in_tokens == 0) && (item.status_starts == 0);
+        end else begin
+            valid &= complete && (req.setup_data_w_length <= 64) &&
+                     (req.setup_data_bmrequesttype_dir === svt_usb_types::DEVICE_TO_HOST) &&
+                     (item.in_tokens > 0) && (item.data_packets == 1) &&
+                     (item.in_tokens == item.naks + item.data_packets) &&
+                     (item.data_acks == 1) && (item.status_in_packets == 0) &&
+                     (item.out_tokens == 1) && (item.ping_tokens == item.ping_acks) &&
+                     (item.status_starts == 1 + item.ping_tokens) &&
+                     (item.ocp_supersession_get_status_completions() == 1) &&
+                     (item.first_data_at >= item.setup_ack_at) &&
+                     (item.data_ack_at >= item.first_data_at) &&
+                     (item.first_status_start_at >= item.data_ack_at) &&
+                     (item.status_complete_at >= item.first_status_start_at) &&
+                     (protocol_end >= item.status_complete_at) &&
+                     ocp_supersession_check_bytes_match(item.data, expected_data);
+        end
+        valid &= !item.data_pending && !item.status_data;
+        item.checked = 1;
+        item.valid = valid;
+        if (!valid)
+            ocp_supersession_report_failure("Address SETUP/address/bytes/toggle/stage/protocol mismatch");
+        `uvm_info("SETUP_ADDRESS_WIRE", $sformatf(
+            "gen=%0d index=%0d setup=%016h actual-SETUP-address=%0d all-TX-addresses=%p IN/OUT/PING=%0d/%0d/%0d DATA=%0d/%0d STATUS-IN-ZLP=%0d STATUS-ACK/NYET=%0d/%0d complete=%b valid=%b",
+            generation, index, item.setup_bytes, item.setup_address, item.token_addresses,
+            item.in_tokens, item.out_tokens, item.ping_tokens, item.data_packets,
+            item.data_acks, item.status_in_packets, item.status_acks, item.status_nyets,
+            complete, valid), UVM_NONE)
     endtask
 
     function void ocp_supersession_check_held(input int index);
@@ -432,14 +614,16 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
     endfunction
 
     function void ocp_supersession_check_notification(input int index,
-                                                      input logic [15:0] service_gen);
+                                                      input logic [15:0] service_gen,
+                                                      input bit legacy_fallback = 0);
         if ($isunknown(service_gen) || (service_gen === 16'd0)) begin
             ocp_supersession_report_failure("Legacy notification has no command generation");
             return;
         end
         if ((evidence.size() <= index) || evidence[index].notified ||
             (evidence[index].setup_acks != 1) ||
-            evidence[index].ocp_supersession_check_is_ocp()) begin
+            (evidence[index].ocp_supersession_check_is_ocp() &&
+             !(legacy_fallback && (mode == "TERMINATION")))) begin
             ocp_supersession_report_failure("Legacy notification lacks its own accepted SETUP occurrence");
             return;
         end
@@ -450,6 +634,7 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
                 return;
             end
         evidence[index].notified = 1;
+        evidence[index].legacy_fallback = legacy_fallback;
         evidence[index].service_generation = service_gen;
     endfunction
 
@@ -487,8 +672,10 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         if (item.released && (!item.notified ||
             $isunknown(item.service_generation) || (item.service_generation === 16'd0) ||
             (item.naks == 0) ||
-            (item.first_data_at < item.release_at) ||
-            (item.first_data_at - item.release_at > 20us))) return 0;
+            ((!expect_stall) && ((item.first_data_at < item.release_at) ||
+                                (item.first_data_at - item.release_at > 20us))) ||
+            (expect_stall && ((item.first_stall_at < item.release_at) ||
+                             (item.first_stall_at - item.release_at > 20us))))) return 0;
         return 1;
     endfunction
 

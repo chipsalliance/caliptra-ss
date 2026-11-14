@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 372;
+  localparam int USB_PKG_VERSION = 376;
 
 
   import uvm_pkg::*;
@@ -510,6 +510,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_setup_stale_negative_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_csr_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_wrap_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_address_handoff_sequence.svh"
 
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
 
@@ -534,6 +535,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_setup_stale_negative_test.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_csr_test.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_wrap_test.svh"
+  `include "caliptra_ss_usb_ocp_setup_address_handoff_test.svh"
   `include "caliptra_ss_usb_ocp_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_dcon_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
