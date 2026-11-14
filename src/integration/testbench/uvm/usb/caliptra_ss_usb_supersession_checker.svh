@@ -40,6 +40,7 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
     token_e token;
     int errors = 0, windows = 0, accepted_setups = 0, errors_at_arm = 0;
     int observed_tx_packets, observed_rx_packets;
+    int observed_sofs = 0;
     logic [7:0] scenarios_checked = '0;
     logic [1:0] retries_checked = '0;
     logic [2:0] stale_phases_checked = '0;
@@ -262,7 +263,10 @@ class caliptra_ss_usb_supersession_checker extends uvm_component;
         caliptra_ss_usb_supersession_evidence item;
         logic [7:0] bytes[$];
         if ((!active && !track_accepted) || (packet == null)) return;
-        if (packet.pid_name == svt_usb_packet::SOF) return;
+        if (packet.pid_name == svt_usb_packet::SOF) begin
+            if (tx) observed_sofs++;
+            return;
+        end
         if (active) begin
             if (tx) observed_tx_packets++;
             else observed_rx_packets++;

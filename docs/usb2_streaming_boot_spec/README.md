@@ -816,8 +816,11 @@ testbenches. The subsystem instantiates the bind through its TB services.
 Internal SETUP forwarding, DMA/IRQ behavior and SRAM mirroring require their
 own implementation verification and are not inferred from a passing USB test.
 
-Dedicated follow-up tests cover generation rollover, surprise transfer
-termination, Address-state handoff, and genuinely incomplete/missing-EOP
-packets. Combined Hub/Device1 traffic isolation belongs to the hub-enablement
-workstream. The integration test-plan CSV records executed results separately
-from these planned coverage extensions.
+Additional standalone coverage is tracked separately:
+
+| Test suffix (`caliptra_ss_usb_ocp_`) | Scope and current evidence |
+|---|---|
+| `setup_debug_wrap` | Passing 4100-accepted-SETUP campaign crosses modulo-4096 rollover through real legacy/OCP traffic, with complete DATA/STATUS service and AXI checkpoints; no forced counter |
+
+Other SETUP and Hub/Device1 coverage remains separately tracked in the
+integration test-plan CSV.

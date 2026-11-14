@@ -14,6 +14,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_setup_malformed/caliptra_ss_usb_ocp_setup_malformed.yml
         - ../test_suites/caliptra_ss_usb_ocp_setup_stale_negative/caliptra_ss_usb_ocp_setup_stale_negative.yml
         - ../test_suites/caliptra_ss_usb_ocp_setup_debug_csr/caliptra_ss_usb_ocp_setup_debug_csr.yml
+        - ../test_suites/caliptra_ss_usb_ocp_setup_debug_wrap/caliptra_ss_usb_ocp_setup_debug_wrap.yml
         - ../test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_persistent_stall.yml

@@ -509,6 +509,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_setup_malformed_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_stale_negative_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_csr_sequence.svh"
+  `include "caliptra_ss_usb_ocp_setup_debug_wrap_sequence.svh"
 
   `include "caliptra_ss_usb_ocp_recovery_env.svh"
 
@@ -532,6 +533,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_setup_malformed_test.svh"
   `include "caliptra_ss_usb_ocp_setup_stale_negative_test.svh"
   `include "caliptra_ss_usb_ocp_setup_debug_csr_test.svh"
+  `include "caliptra_ss_usb_ocp_setup_debug_wrap_test.svh"
   `include "caliptra_ss_usb_ocp_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_dcon_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
