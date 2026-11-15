@@ -73,7 +73,9 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         input int unsigned bytes = 0,
         input bit [6:0] address = 7'd5,
         input bit [3:0] endpoint = 4'd0,
-        input bit bad_crc = 1'b0);
+        input bit bad_crc = 1'b0,
+        input bit override_type = 1'b0,
+        input svt_usb_packet::pid_type_enum packet_type = svt_usb_packet::TOKEN);
 
         svt_usb_packet pkt;
         svt_usb_packet_exception crc_exception;
@@ -91,6 +93,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
                 pkt.pid_type = svt_usb_packet::DATA;
             default: pkt.pid_type = svt_usb_packet::HANDSHAKE;
         endcase
+        if (override_type) pkt.pid_type = packet_type;
         // DATA/handshake address fields deliberately differ from the token.
         // The observer must use the token, not these irrelevant fields.
         carries_target = (pkt.pid_type === svt_usb_packet::TOKEN) ||
@@ -125,6 +128,106 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
     protected function void ocp_packet_emit_synthetic_setup_pair();
         ocp_packet_emit_synthetic_packet(svt_usb_packet::SETUP);
         ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA0, 1'b0, 8);
+    endfunction
+
+    protected function void ocp_packet_check_synthetic_legacy_out();
+        string labels[21] = '{
+            "NAK then PING/ACK", "STALL then replacement SETUP/DATA0/ACK",
+            "abort then late ACK", "competing IN/ACK", "corrupt DATA/ACK",
+            "corrupt OUT/DATA/ACK", "corrupt handshake then late ACK",
+            "OUT with wrong packet type", "RX OUT", "DATA with wrong packet type",
+            "RX DATA", "ACK with wrong packet type", "TX ACK then RX ACK",
+            "DATA2/ACK", "IN between OUT and DATA", "PING between OUT and DATA",
+            "SETUP between OUT and DATA", "duplicate DATA before ACK",
+            "abort between OUT and DATA", "fresh OUT consumes old DATA candidate",
+            "corrupt SOF before ACK"};
+        svt_usb_packet::pid_name_enum toggles[2] = '{
+            svt_usb_packet::DATA0, svt_usb_packet::DATA1};
+        svt_usb_packet::pid_name_enum replies[2] = '{
+            svt_usb_packet::ACK, svt_usb_packet::NYET};
+
+        foreach (labels[scenario]) begin
+            ocp_packet_open_synthetic_observation_window();
+            ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::OUT),
+                .rx(scenario == 8), .bad_crc(scenario == 5),
+                .override_type(scenario == 7), .packet_type(svt_usb_packet::SPECIAL));
+            case (scenario)
+                14: ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+                15: ocp_packet_emit_synthetic_packet(svt_usb_packet::PING);
+                16: ocp_packet_emit_synthetic_packet(svt_usb_packet::SETUP);
+                18: observer.note_abort();
+                default: begin end
+            endcase
+            ocp_packet_emit_synthetic_packet(
+                .pid(scenario == 13 ? svt_usb_packet::DATA2 : svt_usb_packet::DATA1),
+                .rx(scenario == 10), .bytes(4), .bad_crc(scenario == 4),
+                .override_type(scenario == 9), .packet_type(svt_usb_packet::HANDSHAKE));
+            case (scenario)
+                0: begin
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::NAK, 1'b1);
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::PING);
+                end
+                1: begin
+                    ocp_packet_emit_synthetic_packet(svt_usb_packet::STALL, 1'b1);
+                    ocp_packet_emit_synthetic_setup_pair();
+                end
+                2: observer.note_abort();
+                3: ocp_packet_emit_synthetic_packet(svt_usb_packet::IN);
+                6: ocp_packet_emit_synthetic_packet(
+                    .pid(svt_usb_packet::ACK), .rx(1'b1), .bad_crc(1'b1));
+                12: ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK);
+                17: ocp_packet_emit_synthetic_packet(svt_usb_packet::DATA1, 1'b0, 4);
+                19: ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+                20: ocp_packet_emit_synthetic_packet(
+                    .pid(svt_usb_packet::SOF), .bad_crc(1'b1));
+                default: begin end
+            endcase
+            // Handshakes have no on-wire CRC. bad_crc above is a synthetic
+            // exception marker exercising the observer's available API check.
+            ocp_packet_emit_synthetic_packet(.pid(svt_usb_packet::ACK), .rx(1'b1),
+                .override_type(scenario == 11), .packet_type(svt_usb_packet::SPECIAL));
+            ocp_packet_check_true(!observer.legacy_out_stage_completed(),
+                {labels[scenario], ": no false OUT completion BEFORE clean retry"});
+            if (scenario == 1)
+                ocp_packet_check_true(observer.accepted_setup_count() == 1,
+                    "replacement SETUP acceptance independent of rejected OUT");
+
+            // A clean retry must recover in the same window after cancellation.
+            // Exercise both DATA toggles, both accepting replies and transparent
+            // TX/RX SOF at each adjacency boundary.
+            foreach (replies[i]) begin
+                if (i != 0) ocp_packet_open_synthetic_observation_window();
+                ocp_packet_check_true(!observer.legacy_out_stage_completed(),
+                    {labels[scenario], ": retry starts without completed evidence"});
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::OUT);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF, 1'b1);
+                ocp_packet_emit_synthetic_packet(toggles[i], 1'b0, 4);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF);
+                ocp_packet_emit_synthetic_packet(svt_usb_packet::SOF, 1'b1);
+                ocp_packet_check_true(!observer.legacy_out_stage_completed(),
+                    "clean DATA remains pending until RX acceptance");
+                ocp_packet_emit_synthetic_packet(replies[i], 1'b1);
+                ocp_packet_check_true(observer.legacy_out_stage_completed(),
+                    $sformatf("%s: clean %s/%s retry completes",
+                        labels[scenario], toggles[i].name(), replies[i].name()));
+                observer.note_abort();
+                ocp_packet_check_true(observer.legacy_out_stage_completed(),
+                    "explicit abort preserves completed OUT summary");
+                observer.stop_window();
+                ocp_packet_check_true(observer.legacy_out_stage_completed(),
+                    "close preserves completed OUT summary");
+            end
+            ocp_packet_open_synthetic_observation_window();
+            ocp_packet_emit_synthetic_packet(svt_usb_packet::ACK, 1'b1);
+            ocp_packet_check_true(!observer.legacy_out_stage_completed(),
+                "fresh window clears completion and candidate; late ACK cannot restore it");
+        end
+        observer.stop_window();
+        `uvm_info("OCP_PACKET_SELFTEST",
+            {"Legacy OUT: 21 cancellation controls rejected before clean retry; ",
+             "ACK/NYET, DATA0/1, SOF boundaries and sticky-summary lifecycle checked."},
+            UVM_NONE)
     endfunction
 
     protected function void ocp_packet_check_corrupt_setup_silence();
@@ -794,6 +897,7 @@ class caliptra_ss_usb_ocp_packet_observer_selftest_sequence
         model = caliptra_ss_usb_ocp_stall_model::type_id::create("model");
         observer.enable_diagnostics();
         ocp_packet_check_corrupt_setup_silence();
+        ocp_packet_check_synthetic_legacy_out();
 
         // -------------------------------------------------------------------------
         // Supply SETUP/DATA0/ACK, wait on recorded packets, then rearm the trigger.
