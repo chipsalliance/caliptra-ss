@@ -152,6 +152,10 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_ping_stall_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_iso_stalled_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_err_iso_stalled_test.svh"
+  // Closes pid_unknown (0x2) at line 2632 (PID_MDATA unexpected on a
+  // single-buffer, non high-bandwidth ISO endpoint).
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh"
 
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
