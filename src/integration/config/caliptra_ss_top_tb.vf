@@ -5,7 +5,6 @@
 +define+DESIGNWARE_INCDIR=${DESIGNWARE_HOME}
 +define+SVT_LOADER_UTIL_ENABLE_DWHOME_INCDIRS
 +define+SVT_VERSION=latest
-+define+USB_FCOV
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/libs/rtl
 +incdir+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/caliptra_prim/rtl
