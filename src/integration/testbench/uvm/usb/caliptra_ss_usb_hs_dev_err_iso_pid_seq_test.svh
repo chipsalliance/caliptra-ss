@@ -82,7 +82,43 @@ class caliptra_ss_usb_hs_dev_err_iso_pid_seq_test extends caliptra_ss_usb_base_t
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction
 
+    // -------------------------------------------------------------------------
+    // tend_to_end_delay_check is EXPECTED in this test.
+    //
+    // The sequence sends a directed OUT token followed by a well formed
+    // MDATA data packet with no exception attached (see the sequence header,
+    // "NO HANDSHAKE IS EXPECTED"). usb_pie.m.vhdl's PID_MDATA-unexpected
+    // branch (line 2632) reports pid_unknown and returns the FSM to WF_IDLE
+    // without ever reaching a DMA/ACK step, so nothing on the wire answers
+    // the MDATA packet - isochronous transfers carry no handshake at all
+    // (USB 2.0 section 8.5.5).
+    //
+    // The VIP link layer does not know the packet was deliberately
+    // unanswered, so it starts its End-to-end Signal Delay timer on the
+    // MDATA and fails when nothing answers. Same suppression API and
+    // precedent as caliptra_ss_usb_hs_dev_err_toggle_test, which documents
+    // the full rationale and the SVT API constraints (chk_cov_mgr.find() +
+    // set_default_fail_effect(), run in end_of_elaboration_phase).
+    // -------------------------------------------------------------------------
+    svt_err_check_stats no_handshake_chk;
+
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+
+        no_handshake_chk =
+            env.host_agent.link.chk_cov_mgr.find("tend_to_end_delay_check");
+        if (no_handshake_chk == null)
+            `uvm_fatal("end_of_elaboration_phase",
+                "chk_cov_mgr.find(\"tend_to_end_delay_check\") returned null")
+        no_handshake_chk.set_default_fail_effect(svt_err_check_stats::EXPECTED);
+
+        `uvm_info("end_of_elaboration_phase",
+            "tend_to_end_delay_check set to EXPECTED: the injected MDATA packet is unexpected on this endpoint, and isochronous transfers never carry a handshake, so the VIP's end-to-end delay timer on it is an expected artifact, not a sign the DUT or injection is broken.",
+            UVM_LOW)
+    endfunction
+
 endclass
+
 
 `endif // CALIPTRA_SS_USB_HS_DEV_ERR_ISO_PID_SEQ_TEST_SV
 

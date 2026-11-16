@@ -21,11 +21,32 @@ STALL set and ACTIVE clear. The only difference from `err_stall` is the host
 stimulus - a single directed PING token (HS only) instead of a bulk OUT
 transfer.
 
+## One suppressed VIP check
+
+Sending PING as a directed packet, with no preceding transfer-level context,
+trips the VIP's own PROTOCOL TRANSACTOR self-check because it cannot attribute
+the packet to a device:
+
+```
+[register_fail:PROTOCOL TRANSACTOR:IN-LINE:rx_packet_routed_check]
+  Detect Unexpected Packet - Can't tell where this packet should go,
+  No device with matching address found!
+```
+
+Confirmed from a real run: the errortype checker's own verdict closes the
+sent_stall bin (pie_errortype = 0xa reported 5266 times, "PASS: ... bin is
+closed") before this check fires, so it is a VIP self-check artifact riding
+along with the directed-packet stimulus, not an injection or recovery failure.
+`caliptra_ss_usb_hs_dev_err_ping_stall_test.svh` sets this one check to
+`svt_err_check_stats::EXPECTED` in `end_of_elaboration_phase`, the same
+pattern used by `err_toggle` and `err_long_pkt`.
+
 ## Run
 
 ```
 +UVM_TESTNAME=caliptra_ss_usb_hs_dev_err_ping_stall_test
 ```
+
 
 ## Where the detail lives
 

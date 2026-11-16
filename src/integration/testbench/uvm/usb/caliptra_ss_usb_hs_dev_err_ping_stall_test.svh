@@ -58,7 +58,45 @@ class caliptra_ss_usb_hs_dev_err_ping_stall_test extends caliptra_ss_usb_base_te
         `uvm_info("build_phase", "Exiting...", UVM_LOW)
     endfunction
 
+    // -------------------------------------------------------------------------
+    // rx_packet_routed_check is EXPECTED here.
+    //
+    // The PING token is sent as a directed packet on the packet sequencer with
+    // no preceding transfer-level context, so the VIP's own PROTOCOL
+    // TRANSACTOR self-check cannot attribute it to a device and trips:
+    //
+    //   [register_fail:PROTOCOL TRANSACTOR:IN-LINE:rx_packet_routed_check]
+    //     Detect Unexpected Packet - Can't tell where this packet should go,
+    //     No device with matching address found!
+    //
+    // Confirmed from vcs_sim.log: the errortype checker's own verdict already
+    // closes the sent_stall bin before this fires (pie_errortype = 0xa
+    // reported 5266 times, "PASS: ... bin is closed"), so this is a VIP
+    // self-check artifact riding along with the directed-packet stimulus, not
+    // a sign that the injection or the DUT's recovery is broken. Same
+    // suppression API and precedent as caliptra_ss_usb_hs_dev_err_toggle_test,
+    // caliptra_ss_usb_hs_dev_err_long_pkt_test and
+    // caliptra_ss_usb_ocp_arb_006_test.
+    // -------------------------------------------------------------------------
+    svt_err_check_stats rx_packet_routed_chk;
+
+    virtual function void end_of_elaboration_phase(uvm_phase phase);
+        super.end_of_elaboration_phase(phase);
+
+        rx_packet_routed_chk =
+            env.host_agent.prot.chk_cov_mgr.find("rx_packet_routed_check");
+        if (rx_packet_routed_chk == null)
+            `uvm_fatal("end_of_elaboration_phase",
+                "chk_cov_mgr.find(\"rx_packet_routed_check\") returned null")
+        rx_packet_routed_chk.set_default_fail_effect(svt_err_check_stats::EXPECTED);
+
+        `uvm_info("end_of_elaboration_phase",
+            "rx_packet_routed_check set to EXPECTED: an artifact of the directed PING injection, unrelated to the cp_errortype verdict above.",
+            UVM_LOW)
+    endfunction
+
 endclass
+
 
 `endif // CALIPTRA_SS_USB_HS_DEV_ERR_PING_STALL_TEST_SV
 

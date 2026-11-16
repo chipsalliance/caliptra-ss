@@ -14,14 +14,23 @@ USBDC0, High Speed.
 
 MDATA is legal only on a HIGH-BANDWIDTH isochronous endpoint (USB 2.0 section
 5.9.2): one that can carry up to 3 x 1024-byte transactions per microframe
-(OUT: MDATA, MDATA, DATA2). `iso_transact_cnt_down` is loaded from epinfo when
-the first OUT data packet of a fresh transfer is accepted. This test's EP2 OUT
-endpoint is the same single 1024-byte-buffer configuration
-`caliptra_ss_usb_hs_dev_err_pkt_unexpected` / `err_iso_stalled` already use -
-one NBYTES entry, no high-bandwidth setup - so `iso_transact_cnt_down` loads
-to `"00"` (single transaction) on that first packet. Sending MDATA as that
-first data packet therefore always hits the `iso_transact_cnt_down = '00'`
-branch and reports `ERROR_PID_UNKNOWN`.
+(OUT: MDATA, MDATA, DATA2). `iso_transact_cnt_down` is loaded from
+`epinfo_nbytes(11 downto 10)` when the first OUT data packet of a fresh
+transfer is accepted (`usb_pie.m.vhdl` line ~3911). This test's EP2 OUT
+endpoint uses a single-entry NBYTES descriptor with NO high-bandwidth setup,
+so the intent is for `iso_transact_cnt_down` to load to `"00"` (single
+transaction) on that first packet.
+
+NBYTES has to be chosen carefully to get there: NBYTES=1024
+(`epinfo_nbytes = "010000000000"`) has bits `[11:10] = "01"`, which lands in
+the TWO-transaction high-bandwidth bucket instead - PID_MDATA is then legal
+as the first of two HBW transactions and `pid_unknown` never fires. The
+firmware therefore arms the endpoint for 1023 bytes instead
+(`epinfo_nbytes = "001111111111"`, bits `[11:10] = "00"`), which is the
+single-transaction case the test is modeling. The MDATA packet's PID is
+checked before any payload byte is consumed, so the sequence's 1024-byte
+MDATA payload is unaffected by the one-byte-smaller armed buffer.
+
 
 ## Why a directed packet sequence, not the transfer sequencer
 
@@ -61,6 +70,16 @@ reaching a DMA/ACK step. The coverage bin closing is the evidence. If the
 firmware instead logs an "UNEXPECTED EP2 OUT (ISO) completion", the RTL
 accepted the MDATA packet as ordinary data and the bin did not close.
 
+## Suppressed VIP check
+
+`tend_to_end_delay_check` (LINK 20 TIMING CHECKS:COMMON) is set to
+`svt_err_check_stats::EXPECTED` in `end_of_elaboration_phase` of
+`caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh`. The injected MDATA packet
+is, by design, never answered (see "Expected outcome" above), and the VIP
+link layer starts its End-to-end Signal Delay timer on it regardless. Same
+suppression API and precedent as `caliptra_ss_usb_hs_dev_err_toggle_test`,
+which documents the full rationale.
+
 ## Usage
 
 ```
@@ -69,5 +88,6 @@ accepted the MDATA packet as ordinary data and the bin did not close.
 +usb_errortype_check_sel=1
 +usb_expect_errortype=2
 ```
+
 
 <!-- File contains AI-generated response based on internal company sources -->
