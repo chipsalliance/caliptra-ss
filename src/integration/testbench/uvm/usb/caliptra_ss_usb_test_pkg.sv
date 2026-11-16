@@ -158,6 +158,13 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_err_iso_pid_seq_test.svh"
 
+  // Token-direction mismatch while an ISO transaction is pending.
+  // Closes RTL line/branch coverage of usb_pie.m.vhdl lines
+  // 2192/2211/2231/2251 (packet_unexpected 0x3, same bin as
+  // err_pkt_unexpected / err_iso_stalled - see sequence header).
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_token_mismatch_test.svh"
+
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
 

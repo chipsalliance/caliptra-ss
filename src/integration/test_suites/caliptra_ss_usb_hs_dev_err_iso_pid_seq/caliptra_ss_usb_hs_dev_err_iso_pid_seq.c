@@ -58,8 +58,21 @@
 #define USB_SRAM_EP2_OUT_BUF_OFFSET    0x600u
 #define USB_EP_LIST_EP2_OUT_OFFSET     0x020u
 
-// HS isochronous max packet (USB 2.0 table 5-7).
-#define USB_ISO_TRANSFER_BYTES         1024u
+// Deliberately one byte under the HS isochronous max packet (USB 2.0 table
+// 5-7, 1024 bytes). usb_pie.m.vhdl loads iso_transact_cnt_down from
+// epinfo_nbytes(11 downto 10) (see the RTL assignment near
+// USB_PROT_OUT_SETUP_WF_EP_INFO_VALID / load_iso_transact_cnt_down, line
+// ~3911 of usb_pie.m.vhdl): NBYTES=1024 ("010000000000") has bits [11:10] =
+// "01", which lands in the TWO-transaction high-bandwidth bucket rather than
+// the single-transaction "00" bucket this test needs - PID_MDATA is then
+// legal as the first of two HBW transactions and pid_unknown (0x2) never
+// fires. NBYTES=1023 ("001111111111") has bits [11:10] = "00", matching the
+// single-buffer, non-high-bandwidth endpoint the test is actually modeling.
+// The MDATA packet's PID is checked before any payload byte is consumed, so
+// the sequence's 1024-byte MDATA payload is unaffected by this one-byte
+// reduction in the armed buffer size.
+#define USB_ISO_TRANSFER_BYTES         1023u
+
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
