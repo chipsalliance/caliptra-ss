@@ -141,6 +141,15 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_toggle_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_stall_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_pkt_unexpected_test.svh"
+  // Extended error-injection coverage (closing additional usb_pie.m.vhdl
+  // live sites of codes already partly covered by the nine suites above).
+  // See docs/CaliptraSSUSBErrorInjection.md "Additional PIE error-path
+  // tests" section.
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_pid_check_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_missing_data_test.svh"
+
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.
