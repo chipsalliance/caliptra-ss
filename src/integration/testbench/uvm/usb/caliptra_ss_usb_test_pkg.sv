@@ -148,6 +148,8 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_pid_check_data_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_missing_data_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_err_missing_data_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_ping_stall_test.svh"
 
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
