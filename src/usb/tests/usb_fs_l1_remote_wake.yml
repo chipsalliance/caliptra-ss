@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Positive FS L1 entry, permitted software wake and checked recovery.
+---
+seed: 1
+testname: usb_fs_l1_remote_wake
+plusargs:
+  - '+UVM_TESTNAME=usb_l1_remote_wake_test'
+  - '+usb_speed=FS'

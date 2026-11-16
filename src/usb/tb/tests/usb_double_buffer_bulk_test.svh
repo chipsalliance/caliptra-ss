@@ -37,6 +37,10 @@ class usb_double_buffer_bulk_test extends usb_base_test;
                         response_stress_count, test_timeout), UVM_LOW)
   endfunction
 
+  virtual function time full_speed_timeout();
+    return USB_FS_ENUMERATION_BUDGET + (4 + 2 * response_stress_count) * USB_FS_BULK_PAIR_TIMEOUT + USB_FS_FRAME_PERIOD;
+  endfunction
+
   task run_phase(uvm_phase phase);
     usb_double_buffer_bulk_seq double_buffer_sequence;
 

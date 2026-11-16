@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+---
+seed: 1
+testname: usb_fs_double_buffer_bulk
+plusargs:
+  - '+UVM_TESTNAME=usb_double_buffer_bulk_test'
+  - '+usb_speed=FS'

@@ -17,13 +17,13 @@ contents:
         - ../tests/usb_bad_pid.yml
         - ../tests/usb_bulk_ping.yml
         - ../tests/usb_bulk_response_stress.yml
-        - ../tests/usb_dev_skip.yml
+        - ../tests/usb_hs_dev_skip.yml
         - ../tests/usb_dev_skip_during_rx.yml
-        - ../tests/usb_double_buffer_bulk.yml
+        - ../tests/usb_hs_double_buffer_bulk.yml
         - ../tests/usb_endpoint_rw.yml
         - ../tests/usb_high_bandwidth_interrupt.yml
         - ../tests/usb_high_bandwidth_iso.yml
-        - ../tests/usb_init.yml
+        - ../tests/usb_hs_init.yml
         - ../tests/usb_ocp_ep0_retry.yml
         - ../tests/usb_ocp_ep0_retry_control.yml
         - ../tests/usb_ocp_ep0_retry_read.yml
@@ -33,8 +33,19 @@ contents:
         - ../tests/usb_test_packet.yml
         - ../tests/usb_test_se0_nak.yml
         - ../tests/usb_unsupported_request.yml
-        - ../tests/usb_l1_host_resume.yml
-        - ../tests/usb_l2_host_resume.yml
-        - ../tests/usb_l1_remote_wake.yml
-        - ../tests/usb_l2_remote_wake.yml
+        - ../tests/usb_hs_l1_host_resume.yml
+        - ../tests/usb_hs_l2_host_resume.yml
+        - ../tests/usb_hs_l1_remote_wake.yml
+        - ../tests/usb_hs_l2_remote_wake.yml
         - ../tests/usb_utility_timeout.yml
+        - ../tests/usb_hs_interrupt.yml
+        - ../tests/usb_hs_iso.yml
+        - ../tests/usb_fs_init.yml
+        - ../tests/usb_fs_dev_skip.yml
+        - ../tests/usb_fs_double_buffer_bulk.yml
+        - ../tests/usb_fs_interrupt.yml
+        - ../tests/usb_fs_iso.yml
+        - ../tests/usb_fs_l1_host_resume.yml
+        - ../tests/usb_fs_l2_host_resume.yml
+        - ../tests/usb_fs_l1_remote_wake.yml
+        - ../tests/usb_fs_l2_remote_wake.yml

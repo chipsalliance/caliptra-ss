@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+# Positive FS L1 entry, host resume and checked recovery on the fixed USB2 core.
+---
+seed: 1
+testname: usb_fs_l1_host_resume
+plusargs:
+  - '+UVM_TESTNAME=usb_l1_host_resume_test'
+  - '+usb_speed=FS'
