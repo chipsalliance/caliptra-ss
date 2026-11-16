@@ -150,9 +150,12 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_hs_dev_err_missing_data_test.svh"
   `include "caliptra_ss_usb_hs_dev_err_ping_stall_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_err_ping_stall_test.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_err_iso_stalled_test.svh"
 
   // BULK OUT token to an endpoint number with no physical endpoint behind it
   // (EP15 for C_DEV0_NBPHYSEP = 28): the device must not respond at all (no
+
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
