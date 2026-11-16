@@ -36,16 +36,18 @@ class usb_l2_host_resume_host_seq extends usb_host_base_seq;
     end
     observed = 1'b0;
     `uvm_info(report_id(), $sformatf("Waiting up to %0t for DUT suspend observation", link_state_timeout), UVM_LOW)
-    fork
-      begin
-        dut_suspend_observed.wait_on();
-        observed = 1'b1;
-      end
-      begin
-        #(link_state_timeout);
-      end
-    join_any
-    disable fork;
+    fork begin
+      fork
+        begin
+          dut_suspend_observed.wait_on();
+          observed = 1'b1;
+        end
+        begin
+          #(link_state_timeout);
+        end
+      join_any
+      disable fork;
+    end join
     if (!observed) begin
       `uvm_fatal(report_id(), $sformatf("DUT suspend was not observed within %0t", link_state_timeout))
     end
@@ -57,6 +59,8 @@ class usb_l2_host_resume_host_seq extends usb_host_base_seq;
     svt_usb_protocol_service_20_sof_on_sequence sof_on_sequence;
     svt_usb_link_service_clear_suspend_sequence resume_sequence;
     bit suspended;
+    int saved_protocol_action;
+    int saved_link_action;
 
     completed = 1'b0;
     resolve_host_context(1'b1);
@@ -64,23 +68,26 @@ class usb_l2_host_resume_host_seq extends usb_host_base_seq;
     // ".*" pattern to uvm_re_match(), which UVM 1800.2 routes to uvm_glob_match()
     // where "." is literal. Suppress "Sequencer" warnings here to restore SVT's
     // intended default suppression for asynchronous service responses.
+    saved_protocol_action = p_sequencer.prot_service_sequencer.get_report_action(UVM_WARNING, "Sequencer");
     p_sequencer.prot_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", UVM_NO_ACTION);
-    p_sequencer.link_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", UVM_NO_ACTION);
     `uvm_info(report_id(), "Stopping SOF generation to enter L2 suspend", UVM_LOW)
     sof_off_sequence = svt_usb_protocol_service_20_sof_off_sequence::type_id::create("sof_off_sequence");
     sof_off_sequence.start(p_sequencer.prot_service_sequencer);
+    p_sequencer.prot_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", saved_protocol_action);
 
     suspended = 1'b0;
-    fork
-      begin
-        wait (shared_status.link_usb_20_state === svt_usb_types::SUSPENDED);
-        suspended = 1'b1;
-      end
-      begin
-        #(link_state_timeout);
-      end
-    join_any
-    disable fork;
+    fork begin
+      fork
+        begin
+          wait (shared_status.link_usb_20_state === svt_usb_types::SUSPENDED);
+          suspended = 1'b1;
+        end
+        begin
+          #(link_state_timeout);
+        end
+      join_any
+      disable fork;
+    end join
     if (!suspended) begin
       `uvm_fatal(report_id(), $sformatf("Host link did not reach SUSPENDED within %0t; state=%s", link_state_timeout, shared_status.link_usb_20_state.name()))
     end
@@ -89,9 +96,15 @@ class usb_l2_host_resume_host_seq extends usb_host_base_seq;
 
     `uvm_info(report_id(), "Driving host resume signaling and restarting SOF", UVM_LOW)
     resume_sequence = svt_usb_link_service_clear_suspend_sequence::type_id::create("resume_sequence");
+    saved_link_action = p_sequencer.link_service_sequencer.get_report_action(UVM_WARNING, "Sequencer");
+    p_sequencer.link_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", UVM_NO_ACTION);
     resume_sequence.start(p_sequencer.link_service_sequencer);
+    p_sequencer.link_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", saved_link_action);
     sof_on_sequence = svt_usb_protocol_service_20_sof_on_sequence::type_id::create("sof_on_sequence");
+    saved_protocol_action = p_sequencer.prot_service_sequencer.get_report_action(UVM_WARNING, "Sequencer");
+    p_sequencer.prot_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", UVM_NO_ACTION);
     sof_on_sequence.start(p_sequencer.prot_service_sequencer);
+    p_sequencer.prot_service_sequencer.set_report_severity_id_action(UVM_WARNING, "Sequencer", saved_protocol_action);
     wait_for_link_enabled(link_state_timeout);
 
     completed = 1'b1;

@@ -21,15 +21,34 @@ class usb_l2_host_resume_test extends usb_base_test;
     test_timeout = 3ms;
   endfunction
 
+  virtual function void configure_env_cfg(usb_env_cfg cfg);
+    if (cfg.speed == USB_SPEED_FULL) begin
+      usb_vip_cfg_builder::type_id::set_type_override(usb_host_resume_cfg_builder::get_type());
+    end
+  endfunction
+
+  virtual function time full_speed_timeout();
+    return USB_FS_ENUMERATION_BUDGET + USB_FS_L2_HOST_CYCLE_TIMEOUT + USB_FS_FRAME_PERIOD;
+  endfunction
+
   task run_phase(uvm_phase phase);
     usb_l2_host_resume_seq resume_sequence;
 
     phase.raise_objection(this);
     `uvm_info("USB_L2_TEST", $sformatf("Starting L2 host-resume test; timeout=%0t", test_timeout), UVM_LOW)
     env.wait_for_reset();
-    resume_sequence = usb_l2_host_resume_seq::type_id::create("resume_sequence");
-    resume_sequence.start(env.virtual_sequencer);
-    scenario_completed = resume_sequence.completed;
+    if (env_cfg.speed == USB_SPEED_FULL) begin
+      usb_host_resume_seq shared_sequence;
+      shared_sequence = usb_host_resume_seq::type_id::create("resume_sequence");
+      shared_sequence.l1 = 1'b0;
+      shared_sequence.suspend_timeout = USB_FS_L2_HOST_CYCLE_TIMEOUT;
+      shared_sequence.start(env.virtual_sequencer);
+      scenario_completed = shared_sequence.completed;
+    end else begin
+      resume_sequence = usb_l2_host_resume_seq::type_id::create("resume_sequence");
+      resume_sequence.start(env.virtual_sequencer);
+      scenario_completed = resume_sequence.completed;
+    end
     `uvm_info("USB_L2_TEST", "L2 host-resume sequence returned; entering final UVM checks", UVM_LOW)
     phase.drop_objection(this);
   endtask
