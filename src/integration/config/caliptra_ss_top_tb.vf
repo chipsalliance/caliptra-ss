@@ -980,7 +980,6 @@ ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_enum_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_ep_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_dev_irq_cov.sv
 ${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_compound_cov.sv
-${CALIPTRA_SS_ROOT}/src/usb/coverage/usb_cov_bind.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_ocp_access_semantics_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_legacy_ep0_observer_if.sv
 ${CALIPTRA_SS_ROOT}/src/integration/testbench/uvm/usb/caliptra_ss_usb_supersession_csr_if.sv
