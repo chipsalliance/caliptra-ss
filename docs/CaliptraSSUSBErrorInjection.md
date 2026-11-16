@@ -424,7 +424,7 @@ PIDs the same way for its synthetic packet builder.
 
 ### 10.1 Remaining candidate sites: investigated, not implemented
 
-Five further live sites were investigated and judged to need testbench
+Six further live sites were investigated and judged to need testbench
 capability the packet-sequencer framework above does not yet provide. Each is
 recorded here, with the specific gap, so the next pass does not have to
 re-derive the RTL analysis.
@@ -479,6 +479,28 @@ legitimate ISO traffic; no attempt was made this session to adapt that
 SOF-synchronization for a directed mismatched token, so this is unattempted
 rather than ruled out.
 
+**`tr_eop` 0x8, lines 2145/2166/2321/2791 (mid-packet truncation: host drops
+`rxactive` before the packet is fully received).** `err_short_pkt` already
+closes this bin, but at a **different** site: it sends a full, well formed
+token/data packet and shortens the DATA payload with
+`LENGTH_ERROR`/`SHORT_PACKET_ERROR`, which is answered inside the DATA-PID
+case arms once the packet has already been accepted. The four sites found
+here are earlier in the same state machine and fire on `elsif rxactive = '0'`
+guards reached **while still waiting for bytes that never arrive at all**:
+2145 and 2166 are `USB_PROT_WF_TOKEN_BYTE1`/`BYTE2` (the host stops driving
+partway through a 2-byte token), 2321 is the equivalent guard in the 3rd-byte
+token path, and 2791 is `USB_PROT_WF_DATA_PID` (the host stops driving before
+even the DATA PID byte is complete). All four need the VIP to physically
+de-assert `rxactive` mid-packet rather than deliver a complete packet with a
+field exception - that is a `PHYSICAL_ERROR`/`EOP_ERROR` or
+`BYTE_BOUNDARY_ERROR` injection (section 3's `physical_error_enum`), not the
+`LENGTH_ERROR` mechanism `err_short_pkt` already uses, and no suite in this
+family has yet driven a `PHYSICAL_ERROR` exception of that kind on a
+directed packet. Not attempted this session; recorded here because the
+pre-existing testplan (`UNCOVERED_LINES_TESTPLAN_20261116.md` section 7)
+flags these as distinct from the line `err_short_pkt` already covers and this
+analysis had omitted them.
+
 **`timeout` 0x6, lines 3000/3039 (IN-side underrun cluster) and `overrun` 0xB,
 line 2468 (early OUT overrun).** Lower-confidence, Priority-B candidates per
 the original task scoping. Not investigated this session; no RTL read was done
@@ -490,7 +512,7 @@ None of the above required or received any change to shared code
 `caliptra_ss_usb_err_inject_packet_sequence.svh`) beyond the MDATA/DATA2 case
 arms already covered in section 10. The thirteen tests that do exist (nine
 original plus four extended, `err_iso_pid_seq` being the fifth extended test)
-are unaffected by leaving these five sites open.
+are unaffected by leaving these six sites open.
 
 <!-- File contains AI-generated response based on internal company sources -->
 
