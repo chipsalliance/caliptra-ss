@@ -1519,8 +1519,8 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_seed_hw_rd_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
-    caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
-    assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
+    caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
+    assign scanmode_mubi = caliptra_prim_mubi_pkg::mubi4_bool_to_mubi(cptra_ss_cptra_core_scan_mode_i);
     assign caliptra_ss_volatile_raw_unlock_success_o = lcc_volatile_raw_unlock_success;
 
     always_comb begin
@@ -1555,7 +1555,7 @@ module caliptra_ss_top
             
             .scan_rst_ni(cptra_ss_lc_ctrl_scan_rst_ni_i),
             
-            .scanmode_i(lc_ctrl_scanmode_i),
+            .scanmode_i(scanmode_mubi),
 
             .alerts(lc_alerts_o),
 
@@ -1644,7 +1644,7 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
+        .scanmode_i                 (scanmode_mubi)
     ); 
 
 
