@@ -18,6 +18,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_persistent_stall.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_packet_observer_selftest.yml
+        - ../test_suites/caliptra_ss_usb_ocp_interrupted_transfer/caliptra_ss_usb_ocp_interrupted_transfer.yml
         - ../test_suites/caliptra_ss_usb_ocp_firmware_protocol_error/caliptra_ss_usb_ocp_firmware_protocol_error.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_001/caliptra_ss_usb_ocp_arb_001.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_002/caliptra_ss_usb_ocp_arb_002.yml

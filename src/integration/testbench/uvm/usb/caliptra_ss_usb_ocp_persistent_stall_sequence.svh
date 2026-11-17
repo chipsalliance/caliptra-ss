@@ -33,7 +33,10 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
 
     protected task ocp_stall_do_transmit_packet_and_check_completion(
         input svt_usb_packet::pid_name_enum pid,
-        ref bit [7:0] payload[$], input bit corrupt_crc = 1'b0);
+        ref bit [7:0] payload[$], input bit corrupt_crc = 1'b0,
+        input bit truncate_data = 1'b0,
+        input int unsigned truncation_byte_offset = 0,
+        input int truncation_bit_offset = 0);
         caliptra_ss_usb_ocp_directed_packet_sequence packet_sequence;
         bit transmitted;
         packet_sequence =
@@ -44,6 +47,9 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         packet_sequence.endpoint_number = 0;
         packet_sequence.payload_bytes = payload;
         packet_sequence.corrupt_crc = corrupt_crc;
+        packet_sequence.truncate_data = truncate_data;
+        packet_sequence.truncation_byte_offset = truncation_byte_offset;
+        packet_sequence.truncation_bit_offset = truncation_bit_offset;
         packet_sequence.packet_configuration = usb_cfg;
         transmitted = 1'b0;
         fork : bounded_packet_transmission
@@ -123,6 +129,8 @@ class caliptra_ss_usb_ocp_persistent_stall_sequence
         #(PACKET_RESPONSE_BOUND);
         ocp_arb_check_and_close_observation_window(generation, 4'h0);
         raw_response_callback.enabled = 1'b0;
+        if (!checker.packet_callback.ocp_check_no_device_response())
+            `uvm_error("OCP_STALL", "Corrupt SETUP requires device silence and complete packet history.")
         if ((checker.packet_callback.accepted_setup_count() != 0) ||
             (checker.packet_callback.count_pid(svt_usb_packet::ACK,
                 caliptra_ss_usb_ocp_arbiter_packet_callback::PACKET_RX) != 0))

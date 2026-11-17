@@ -309,7 +309,8 @@ class caliptra_ss_usb_ocp_stall_base_sequence
         fifo_packet_model.configure(
             ocp_get_le32(status_bytes, OCP_OFF_IFS_FIFO_SIZE_B0),
             ocp_get_le32(status_bytes, OCP_OFF_IFS_MAX_TRANSFER_B0),
-            HS_CONTROL_PACKET_BYTES, 1'b1, wMaxWrTransferSize, image_dwords);
+            usb_cfg.remote_device_cfg[0].endpoint_cfg[0].max_packet_size,
+            1'b1, wMaxWrTransferSize, image_dwords);
         fifo_model_configured = 1'b1;
         fifo_scoreboard.enable_packet_fifo_checking();
         if (!fifo_packet_model.indices_match(
