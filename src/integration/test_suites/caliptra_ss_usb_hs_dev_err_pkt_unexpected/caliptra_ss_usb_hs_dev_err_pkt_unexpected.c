@@ -82,8 +82,20 @@
 #define USB_SRAM_EP2_OUT_BUF_OFFSET    0x600u
 #define USB_EP_LIST_EP2_OUT_OFFSET     0x020u
 
+// EP2 IN buffer and list offsets, needed for item-1 phase B (ISO IN pending).
+// Same layout convention as caliptra_ss_usb_hs_dev_iso_out.c: EP2 IN buffer 0
+// at list offset 0x028, buffer 1 at 0x02C, SRAM buffer placed after the OUT
+// buffer (0x600-0x9FF) at 0xA00-0xDFF so the two never overlap.
+#define USB_SRAM_EP2_IN_BUF_OFFSET     0xA00u
+#define USB_EP_LIST_EP2_IN_BUF0_OFFSET 0x028u
+#define USB_EP_LIST_EP2_IN_BUF1_OFFSET 0x02Cu
+
 // HS isochronous max packet (USB 2.0 table 5-7).
 #define USB_ISO_TRANSFER_BYTES         1024u
+// Each IN buffer entry carries half the total transfer (512 bytes), same
+// split as caliptra_ss_usb_hs_dev_iso_out.c.
+#define USB_HS_ISO_IN_BUF_BYTES        (USB_ISO_TRANSFER_BYTES / 2u)
+
 
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
 
@@ -117,6 +129,39 @@ static uint32_t usb_ep2_out_read(void) {
     return lsu_read_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_OUT_OFFSET);
 }
 
+// Arm EP2 IN as isochronous, needed only for item-1 phase B (ISO IN pending
+// at the moment a mismatching PID_OUT token arrives). Mirrors the arming
+// style of caliptra_ss_usb_hs_dev_iso_out.c's usb_ep2_in_arm(): both IN
+// buffers are armed with ACTIVE set and no USB_EP_ENTRY_TYPE_PERIODIC bit (IN
+// descriptors on this RTL do not carry the periodic/RF selector - see that
+// file's comment on Integration Guide section 4.2.3).
+static void usb_ep2_in_arm_iso(void) {
+    uint32_t inten;
+
+    for (uint32_t i = 0; i < USB_ISO_TRANSFER_BYTES; i += 4) {
+        uint32_t w = 0x11223344u + i;
+        lsu_write_32(USB_DMA_BASE_ADDR + USB_SRAM_EP2_IN_BUF_OFFSET + i, w);
+    }
+
+    uint32_t ep2_in_buf0 = USB_EP_ENTRY_ACTIVE
+                         | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR
+                                                  + USB_SRAM_EP2_IN_BUF_OFFSET);
+    uint32_t ep2_in_buf1 = USB_EP_ENTRY_ACTIVE
+                         | USB_EP_ENTRY_NBYTES(USB_HS_ISO_IN_BUF_BYTES)
+                         | USB_EP_ENTRY_ABS_ADDR(USB_DMA_BASE_ADDR
+                                                  + USB_SRAM_EP2_IN_BUF_OFFSET
+                                                  + USB_HS_ISO_IN_BUF_BYTES);
+    lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF0_OFFSET, ep2_in_buf0);
+    lsu_write_32(USB_DMA_BASE_ADDR + USB_EP_LIST_EP2_IN_BUF1_OFFSET, ep2_in_buf1);
+
+    inten = lsu_read_32(SOC_USB_COMBO_DEV0_CSR_INTEN);
+    lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTEN,
+                 inten | DEV0_CSR_INTSTAT_EP2IN_MASK);
+    VPRINTF(LOW, "MCU: EP2 IN (ISO) armed for phase B (iso_in_pending)\n");
+}
+
+
 // Has the host told us it is finished with the device?
 //
 // Reuses the MCI generic-wire command channel from the OCP-recovery work, the
@@ -147,8 +192,21 @@ void main(void) {
     uint32_t poll_count;
     uint32_t transfers_handled = 0;
     uint32_t ep2_completions   = 0;
+    uint32_t ep2_in_completions = 0;
     bool     ep2_armed_once    = false;
     bool     host_stop_seen    = false;
+
+    // phase_mode: once the original two-transfer EP2-OUT-unarmed leg has
+    // produced its one completion (the "line 2879" scenario this test
+    // originally targeted), firmware switches to keeping BOTH EP2 OUT and
+    // EP2 IN continuously armed as ISO. This is what phases A-D (the four
+    // token-mismatch blocks at lines 2192-2261) need: a live, repeatedly
+    // re-armed ISO stream so the sequence can start a fresh ISO transaction
+    // and inject a mismatching token before it completes, at a time of its
+    // own choosing. The original un-armed-EP2-OUT leg is left completely
+    // unchanged above this point.
+    bool     phase_mode         = false;
+
 
     VPRINTF(LOW, "=================\nMCU: USB error injection - unexpected packet (ISO)\n=================\n\n");
 
@@ -210,11 +268,19 @@ void main(void) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP0IN_MASK);
         }
 
-        // EP2 OUT completion of the FIRST transfer. The interrupt is
-        // acknowledged and the descriptor is reported, but the endpoint is
-        // deliberately left un-armed: that is the whole stimulus. Exactly one
-        // completion is expected; a second would mean the endpoint had somehow
-        // been re-armed and the bin would not close.
+        // EP2 OUT completion. The interrupt is acknowledged and the
+        // descriptor is reported. For the FIRST completion the endpoint is
+        // deliberately left un-armed, which is the original line-2879
+        // stimulus (an ISO OUT data packet arriving with ACTIVE clear).
+        //
+        // From the SECOND completion onward, firmware switches into
+        // phase_mode and re-arms EP2 OUT immediately: phases A, C and D
+        // (item 1) need a live, continuously-cycling ISO OUT stream so the
+        // sequence can start a fresh ISO transaction (which sets
+        // iso_out_pending_r) and inject a mismatching token into it before
+        // the microframe/SOF boundary clears that pending flag. Phase B
+        // (ISO IN pending) additionally needs EP2 IN kept armed, done here
+        // once on entry to phase_mode via usb_ep2_in_arm_iso().
         if (reg_data & DEV0_CSR_INTSTAT_EP2OUT_MASK) {
             lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP2OUT_MASK);
             uint32_t ep2_entry = usb_ep2_out_read();
@@ -225,8 +291,28 @@ void main(void) {
                 "MCU: EP2 OUT (ISO) completion %d - received %d bytes, entry 0x%x (ACTIVE=%d)\n",
                 ep2_completions, USB_ISO_TRANSFER_BYTES - residual, ep2_entry,
                 (ep2_entry & USB_EP_ENTRY_ACTIVE) ? 1 : 0);
-            VPRINTF(LOW, "MCU: leaving EP2 un-armed on purpose - the next ISO OUT must be unexpected\n");
+
+            if (ep2_completions == 1) {
+                VPRINTF(LOW, "MCU: leaving EP2 un-armed on purpose - the next ISO OUT must be unexpected\n");
+            } else {
+                if (!phase_mode) {
+                    phase_mode = true;
+                    usb_ep2_in_arm_iso();
+                    VPRINTF(LOW, "MCU: entering phase_mode - EP2 OUT/IN kept continuously armed for item-1 phases A-D\n");
+                }
+                usb_ep2_out_arm_iso();
+            }
         }
+
+        // EP2 IN completion, phase B only. Re-armed so the sequence has a
+        // repeated ISO IN stream to inject a mismatching PID_OUT token into.
+        if (reg_data & DEV0_CSR_INTSTAT_EP2IN_MASK) {
+            lsu_write_32(SOC_USB_COMBO_DEV0_CSR_INTSTAT, DEV0_CSR_INTSTAT_EP2IN_MASK);
+            ep2_in_completions++;
+            if (phase_mode)
+                usb_ep2_in_arm_iso();
+        }
+
 
         if (poll_count % 10000 == 0 && poll_count > 0) {
             VPRINTF(LOW, "MCU: [poll %d] DEVCMDSTAT=0x%x INTSTAT=0x%x EP2=0x%x completions=%d\n",
