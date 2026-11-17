@@ -1,0 +1,10 @@
+---
+seed: 1
+testname: mcu_pmp_rom_patch
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [mcu_pmp_rom_patch]"
+  make -f "$CALIPTRA_SS_ROOT/tools/scripts/Makefile" \
+    TESTNAME=mcu_pmp_rom_patch CALIPTRA_TESTNAME=cptra_bringup \
+    CALIPTRA_TEST_DIR="$CALIPTRA_SS_ROOT/src/integration/test_suites/mcu_lmem_exe" \
+    mcu_program.hex cptra_program.hex
