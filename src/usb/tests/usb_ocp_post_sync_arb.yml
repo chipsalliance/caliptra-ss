@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+seed: 1
+testname: usb_ocp_post_sync_arb_test
+plusargs:
+  - '+UVM_TESTNAME=usb_ocp_post_sync_arb_test'
