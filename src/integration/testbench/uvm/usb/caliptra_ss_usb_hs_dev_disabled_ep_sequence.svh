@@ -319,9 +319,13 @@ class caliptra_ss_usb_hs_dev_disabled_ep_sequence extends caliptra_ss_usb_base_s
         // only the VIP device_timeout can produce here), so submission alone
         // must never be mistaken for stimulus. Only the link monitor can tell
         // us the OUT token and its DATA packet really left the host.
-        fork : WAIT_PROBE_STIMULUS
+        fork
             begin
-                // Poll the callback state until the probe reaches the wire.
+                // Polled, not wait(): the observation flag lives inside the
+                // callback class, so a wait() expression built from an
+                // accessor function would have no sensitivity to it. One HS
+                // microframe of granularity is far finer than the windows
+                // involved here.
                 while (!caliptra_ss_usb_handshake_counter_callback::probe_data_observed())
                     #125ns;
             end
@@ -329,7 +333,10 @@ class caliptra_ss_usb_hs_dev_disabled_ep_sequence extends caliptra_ss_usb_base_s
                 #(`USB_HS_DISABLED_EP_STIMULUS_TIMEOUT_US * 1us);
             end
         join_any
-        disable WAIT_PROBE_STIMULUS;
+        // "disable fork" is a statement, so it needs its own semicolon.
+        // Without it the parser folds the next statement into this one and
+        // reports a syntax error on the following line.
+        disable fork;
 
         if (!caliptra_ss_usb_handshake_counter_callback::probe_data_observed()) begin
             // Missing stimulus. Reporting bus silence here would be a false
