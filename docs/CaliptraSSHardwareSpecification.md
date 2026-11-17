@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Hardware Specification </h1>
-<h3 align="center"> Version 2p2 (WIP) </h3>
+<h3 align="center"> Version 2.2.0-rc1 (Release Candidate) </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -150,6 +150,7 @@ This document defines technical specifications for a subsystem design utilizing 
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
 | Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifcations updated with:<br> - Updated details on component features (MCU mailbox, MCU trace buffer, MCI error aggregation, FC fuse zeroization)<br> - Details on design connectivity with top-level ports<br> - Port and register updates  |
 | Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
+| Nov 13th, 2026  |   v2.2.0-rc1       | Release candidate documentation for Caliptra Subsystem 2.2.0; see the [release notes](../Release_Notes.md) for pinned dependencies and known issues. |
 
 </div>
 

@@ -135,8 +135,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         token_target_valid = 1'b0;
         token_address = '0;
         token_endpoint = '0;
-        legacy_out_token_seen = 1'b0;
-        legacy_out_data_seen = 1'b0;
+        ocp_arb_clear_pending_legacy_out();
         stage_observed.reset();
         setup_ack_observed.reset();
     endfunction
@@ -234,6 +233,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         if (diagnostics_enabled) explicit_aborts++;
         pending_setup_token = 1'b0;
         pending_setup_data = 1'b0;
+        ocp_arb_clear_pending_legacy_out();
         token_target_valid = 1'b0;
         setup_ack_seen = 1'b0;
         data_stage_started = 1'b0;
@@ -311,6 +311,16 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
 
     function bit overflowed();
         return records_overflowed;
+    endfunction
+
+    function bit ocp_check_no_device_response();
+        if (records_overflowed) return 1'b0;
+        foreach (packet_records[index]) begin
+            if ((packet_records[index].direction == PACKET_RX) &&
+                (packet_records[index].pid_name != svt_usb_packet::SOF))
+                return 1'b0;
+        end
+        return 1'b1;
     endfunction
 
     // Pure predicate: mutation tests can reject bad evidence without emitting
@@ -464,6 +474,45 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
         return legacy_out_completed;
     endfunction
 
+    protected function void ocp_arb_clear_pending_legacy_out();
+        legacy_out_token_seen = 1'b0;
+        legacy_out_data_seen = 1'b0;
+    endfunction
+
+    protected function void ocp_arb_check_legacy_out_packet(
+        input packet_record_t record);
+        // USB 2.0 8.5.2/8.5.3: acceptance belongs only to the adjacent
+        // clean OUT/DATA transaction. Keep completed evidence sticky, but
+        // consume or cancel the candidate on every non-SOF reply/competitor.
+        if ((record.pid_name === svt_usb_packet::SOF) &&
+            (record.pid_type === svt_usb_packet::TOKEN) &&
+            !record.crc_error_detected && !record.data_error_detected)
+            return;
+        if ((record.direction === PACKET_TX) &&
+            (record.pid_type === svt_usb_packet::TOKEN) &&
+            (record.pid_name === svt_usb_packet::OUT) &&
+            !record.crc_error_detected && !record.data_error_detected) begin
+            legacy_out_token_seen = 1'b1;
+            legacy_out_data_seen = 1'b0;
+        end else if (legacy_out_token_seen && !legacy_out_data_seen &&
+                     (record.direction === PACKET_TX) &&
+                     (record.pid_type === svt_usb_packet::DATA) &&
+                     ((record.pid_name === svt_usb_packet::DATA0) ||
+                      (record.pid_name === svt_usb_packet::DATA1)) &&
+                     !record.crc_error_detected && !record.data_error_detected) begin
+            legacy_out_data_seen = 1'b1;
+        end else begin
+            if (legacy_out_data_seen &&
+                (record.direction === PACKET_RX) &&
+                (record.pid_type === svt_usb_packet::HANDSHAKE) &&
+                ((record.pid_name === svt_usb_packet::ACK) ||
+                 (record.pid_name === svt_usb_packet::NYET)) &&
+                !record.crc_error_detected && !record.data_error_detected)
+                legacy_out_completed = 1'b1;
+            ocp_arb_clear_pending_legacy_out();
+        end
+    endfunction
+
     protected function void record_packet(
         input packet_direction_e direction,
         input svt_usb_packet pkt);
@@ -550,21 +599,7 @@ class caliptra_ss_usb_ocp_arbiter_packet_callback
             first_setup_timestamp = record.observed_at;
         end
         if (record.accepted_setup) accepted_setups++;
-        if ((direction == PACKET_TX) &&
-            (record.pid_name == svt_usb_packet::OUT)) begin
-            legacy_out_token_seen = 1'b1;
-            legacy_out_data_seen = 1'b0;
-        end else if (legacy_out_token_seen &&
-                     (direction == PACKET_TX) &&
-                     ((record.pid_name == svt_usb_packet::DATA0) ||
-                      (record.pid_name == svt_usb_packet::DATA1))) begin
-            legacy_out_data_seen = 1'b1;
-        end else if (legacy_out_data_seen &&
-                     (direction == PACKET_RX) &&
-                     ((record.pid_name == svt_usb_packet::ACK) ||
-                      (record.pid_name == svt_usb_packet::NYET))) begin
-            legacy_out_completed = 1'b1;
-        end
+        ocp_arb_check_legacy_out_packet(record);
 
         // Retain a bounded prefix; incomplete histories cannot prove isolation.
         if (packet_records.size() < MAX_PACKET_RECORDS) begin

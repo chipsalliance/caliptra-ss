@@ -25,7 +25,7 @@
 package caliptra_ss_usb_test_pkg;
 
   // Force VCS recompile when USB UVM package contents change.
-  localparam int USB_PKG_VERSION = 369;
+  localparam int USB_PKG_VERSION = 372;
 
 
   import uvm_pkg::*;
@@ -146,6 +146,14 @@ package caliptra_ss_usb_test_pkg;
   // ACK/NAK/STALL), checked by a bounded bus-silence observation.
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_unsupported_ep_test.svh"
+  // BULK OUT token to a DISABLED endpoint (EP4, a real hardware-backed
+  // endpoint whose EP command/status list word carries D = 1): same observable
+  // as the unsupported-endpoint pair above - no ACK/NAK/STALL - but a
+  // different RTL cause. Enable/disable is NOT a register operation on this
+  // controller: EPSKIP/EPINUSE/EPBUFCFG are buffer controls and the only
+  // per-endpoint enable is the D field, bit 30, of the EP list word.
+  `include "caliptra_ss_usb_hs_dev_disabled_ep_sequence.svh"
+  `include "caliptra_ss_usb_hs_dev_disabled_ep_test.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_sequence.svh"
   `include "caliptra_ss_usb_hs_dev_disconnect_test.svh"
   `include "caliptra_ss_usb_hs_dev_vbus_absent_boot_sequence.svh"
@@ -534,6 +542,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_persistent_stall_sequence.svh"
   `include "caliptra_ss_usb_ocp_packet_observer_selftest_sequence.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_sequence.svh"
+  `include "caliptra_ss_usb_ocp_interrupted_transfer_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_base_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_supersession_sequence.svh"
   `include "caliptra_ss_usb_ocp_setup_malformed_sequence.svh"
@@ -566,6 +575,7 @@ package caliptra_ss_usb_test_pkg;
   `include "caliptra_ss_usb_ocp_dcon_disconnect_test.svh"
   `include "caliptra_ss_usb_ocp_protocol_stall_matrix_test.svh"
   `include "caliptra_ss_usb_ocp_firmware_protocol_error_test.svh"
+  `include "caliptra_ss_usb_ocp_interrupted_transfer_test.svh"
 
 endpackage
 

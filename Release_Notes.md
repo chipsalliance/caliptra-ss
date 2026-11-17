@@ -1,7 +1,8 @@
 # **Release Notes** #
 
-## Caliptra Subsystem pre-2.2 Release Notes (Draft)
-_*Status: Draft; not a final 2.2 release.*_
+## Caliptra Subsystem 2.2.0-rc1 Release Notes
+_*Status: Release candidate; not a final 2.2.0 release.*_
+_*Prepared: 2026/11/13*_
 
 USB streaming boot support, security hardening, and integration spec updates since 2.1.
 
@@ -13,7 +14,7 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - Explicit ECC/ML-DSA verification status
 - Dual-iTRNG entropy combiner
 - DMA command limit increased to 2 GiB, with route-specific limits; response-tracking, mailbox ECC, and AXI access fixes
-- Adams Bridge upgraded to v3.0
+- Adams Bridge upgraded to v3.0-rc1
 - Fixed security-state propagation after manufacturing/production debug unlock
 
 ### 2. I3C
@@ -38,6 +39,8 @@ USB streaming boot support, security hardening, and integration spec updates sin
 - USB 2.0 virtual hub with two downstream devices: MCU-owned DEV0 and SoC-owned DEV1
 - DEV0 OCP Recovery over EP0 with an Indirect FIFO consumed by Caliptra over AXI
 - USB recovery selection, interrupts, packet-memory interfaces, and AXI USER filtering
+- Full sign-off of RDC and CDC is pending as of RC1 tag
+- Full regression testplan and coverage sign-off is pending as of RC1 tag
 
 ### Integration spec updates
 - Named integration/trademark requirements and exemption-request guidance

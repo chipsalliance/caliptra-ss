@@ -3,7 +3,7 @@
 </div>
 
 <h1 align="center"> Caliptra Subsystem Integration Specification </h1>
-<h3 align="center"> Version 2p2 (WIP) </h3>
+<h3 align="center"> Version 2.2.0-rc1 (Release Candidate) </h3>
 
 - [Scope](#scope)
   - [Document Version](#document-version)
@@ -190,6 +190,7 @@ For Caliptra Subsystem, this document serves as a hardware integration specifica
 | Jan 31st, 2025  |   v0p8             | Work in progress  |
 | Apr 30th, 2025  |   v1p0-rc1         | Initial release candidate of Caliptra Gen 2.0 Subsystem Documents.<br>Specifications updated with:<br> - Detail on usage of all Subsystem flows such as Streaming Boot, Mailbox operation, and Debug Unlock<br> - Details on design connectivity with top-level ports<br> - Requirements and recommendations for integrators when adding Caliptra Subsystem to SoC designs  |
 | Oct 12th, 2025  |   v2p1             | Final release of Caliptra Subsystem 2.1 |
+| Nov 13th, 2026  |   v2.2.0-rc1       | Release candidate documentation for Caliptra Subsystem 2.2.0; see the [release notes](../Release_Notes.md) for pinned dependencies and known issues. |
 
 </div>
 
@@ -3214,7 +3215,7 @@ These are undriven signals and deemed to be OK. If exposed to SoC leave unconnec
 
 ## SoC Integration Requirements
 
-This section defines a table of integration requirements that are mandatory for an integrator's design to receive the Caliptra Subsystem Trademark. Integrators must read and comply with the guidance defined through this specification and in the [Caliptra Subsystem Hardware Specification](./CaliptraSSHardwareSpecification.md) to successfully integrate Caliptra Subsystem in their design. The purpose of this table is to remove ambiguity around integration requirements and to provide a deterministic reference for confirming compliance.
+This section defines a table of integration requirements that are mandatory for an integrator's design to receive the Caliptra Subsystem Trademark. Integrators must read and comply with the guidance defined through this specification and in the [Caliptra Subsystem Hardware Specification](./CaliptraSSHardwareSpecification.md) to successfully integrate Caliptra Subsystem in their design. The purpose of this table is to remove ambiguity around integration requirements and to provide a deterministic reference for confirming compliance. Adherence to these integration requirements does not solely guarantee a secure integration of Caliptra Subsystem. In addition to following these requirements, integrators must complete a security audit of their integrated design to verify the security of their design.
 
 | Category          | Originating Block     | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Rationale     |
 | :--               | :--                   | :--                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | :--           |
