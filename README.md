@@ -47,6 +47,13 @@ Synthesis:
  - Synopsys Design Compiler (R) NXT 
     - Version U-2022.12-SP6
 
+The shared Caliptra testbench does not generate randomized ML-KEM vectors by
+default. Tests that use those vectors must explicitly enable
+`+CLP_MLKEM_TEST_VECTORS`, stage the public model from the Caliptra core's
+`submodules/adams-bridge/src/abr_top/uvmf/ML_KEM_ref/ml-kem` directory as
+`ml-kem` in the run directory, and create `ml-kem/tv`. Only those tests require
+Python 3.9 or newer available as `python3` for ML-KEM vector generation.
+
 Scripts:
  - Python
     - tools/scripts/fuse_ctrl_script/gen_fuse_ctrl_vmem.py
