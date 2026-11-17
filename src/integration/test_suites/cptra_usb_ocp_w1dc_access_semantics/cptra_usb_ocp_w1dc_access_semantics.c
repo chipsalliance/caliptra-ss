@@ -36,6 +36,9 @@
 //   0x14 USB_FIFO_RESET_OBSERVED - RA USB RESET: indices match, empty, zero
 //                                  data = CALIPTRA_STATUS[0] (REGION_RESET bit)
 //   0x15 FW_FIFO_RESET_OBSERVED  - CPUif RESET: indices match, empty
+//
+// MCU completion is released only after UVM finishes its final readbacks
+// and completes the generation-qualified FLOW_COMPLETE handshake.
 // ==========================================================================
 
 #include <stdint.h>
@@ -93,6 +96,52 @@ enum printf_verbosity verbosity_g = LOW;
 
 // Maximum polling iterations.
 #define W1DC_POLL_LIMIT 200000u
+
+static void w1dc_complete_after_uvm_checks(void)
+{
+    uint32_t command_word = 0u;
+    uint32_t command_magic = 0u;
+    uint16_t generation = 0u;
+
+    for (uint32_t poll = 0u; poll < W1DC_POLL_LIMIT; ++poll) {
+        cptra_usb_ocp_recovery_read_fw_command(
+            &command_word, &command_magic);
+        generation = (uint16_t)(command_word >> 16);
+        if ((command_magic == CPTRA_USB_OCP_FW_COMMAND_MAGIC) &&
+            (generation != 0u) &&
+            ((uint8_t)(command_word >> 8) ==
+                CPTRA_USB_OCP_FW_COMMAND_FLOW_COMPLETE)) {
+            break;
+        }
+        generation = 0u;
+    }
+    if (generation == 0u) {
+        VPRINTF(ERROR, "CPTRA: timed out waiting for UVM completion command\n");
+        SEND_STDOUT_CTRL(0x1);
+        while (1) {}
+    }
+
+    cptra_usb_ocp_recovery_signal_state_generation(
+        CPTRA_USB_OCP_FW_STATE_FLOW_COMPLETE, 0u, generation);
+
+    // Keep GO low until UVM has observed the acknowledgment and released
+    // the command, so MCU-driven $finish cannot interrupt the handshake.
+    for (uint32_t poll = 0u; poll < W1DC_POLL_LIMIT; ++poll) {
+        cptra_usb_ocp_recovery_read_fw_command(
+            &command_word, &command_magic);
+        if (command_magic != CPTRA_USB_OCP_FW_COMMAND_MAGIC) {
+            lsu_write_32(
+                CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
+                lsu_read_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0) |
+                    W1DC_FW_EXEC_CTRL_GO_MASK);
+            while (1) {}
+        }
+    }
+
+    VPRINTF(ERROR, "CPTRA: timed out waiting for UVM completion command release\n");
+    SEND_STDOUT_CTRL(0x1);
+    while (1) {}
+}
 
 // Poll INDIRECT_FIFO_STATUS_0 until EMPTY flag is clear (FIFO nonempty).
 // Returns write_index, read_index via pointers. Returns 0 on success.
@@ -300,7 +349,7 @@ void main(void)
         if ((prot_cap_2 & W1DC_FIFO_CAP_MASK) == 0u) {
             cptra_usb_ocp_recovery_signal_state(
                 W1DC_FW_STATE_FIFO_UNSUPPORTED, 0u);
-            while (1) {}
+            w1dc_complete_after_uvm_checks();
         }
     }
 
@@ -460,11 +509,5 @@ void main(void)
     VPRINTF(LOW,
             "CPTRA: post-reset distinct payload drained without stale data\n");
 
-    lsu_write_32(
-        CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
-        lsu_read_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0) |
-            W1DC_FW_EXEC_CTRL_GO_MASK);
-
-    // MCU owns final test completion after observing the GO indication.
-    while (1) {}
+    w1dc_complete_after_uvm_checks();
 }

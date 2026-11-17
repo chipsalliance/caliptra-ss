@@ -158,12 +158,11 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-        // Drain the ISR mailbox: service_usb_intr() already acknowledged
-        // INTSTAT, so the foreground loop must not touch it. Snapshot then
-        // clear by complement so bits the ISR sets meanwhile are not lost.
-        // DSUS/DSUS_C are DEVCMDSTAT bits and do not go through the mailbox.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        // Drain the ISR event vector: service_usb_intr() already acknowledged
+        // INTSTAT, so the foreground loop must not touch it. Atomically
+        // snapshot and clear the whole event vector. DSUS/DSUS_C are DEVCMDSTAT
+        // bits and do not go through the event vector.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Prefix convention (see libs/usb/usb.h): register ADDRESSES use the
         // device-neutral USB_DEV_* macros, bitfield MASKS use DEV0_CSR_*. The

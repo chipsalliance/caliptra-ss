@@ -37,8 +37,6 @@ class caliptra_ss_usb_ocp_fifo_flow_indices_test
             this, "*", "max_polls", 20);
         uvm_config_db#(int unsigned)::set(
             this, "*", "max_retries", 20);
-        uvm_config_db#(time)::set(
-            this, "*", "completion_wait", 2ms);
         super.build_phase(phase);
     endfunction
 

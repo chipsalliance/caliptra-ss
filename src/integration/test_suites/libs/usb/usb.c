@@ -114,6 +114,13 @@ static uint32_t usb_ep0_out_irq_count = 0;
 static uint32_t usb_ep0_in_irq_count = 0;
 static uint32_t usb_setup_dispatch_count = 0;
 static uint32_t usb_snapshot_publish_sequence = 0;
+
+// Snapshot of the SETUP packet most recently dispatched by
+// usb_handle_control_transfer(), taken before EP0 is armed. Exists so a caller
+// can classify a request after the handler returns without re-reading the SRAM
+// SETUP buffer, which the hardware overwrites on the next SETUP.
+usb_setup_pkt_t usb_last_setup = {0};
+
 static uint8_t usb_baseline_ready_pending = 0;
 static uint16_t usb_baseline_ready_generation = 0;
 
@@ -1029,7 +1036,9 @@ uint32_t usb_event_loop(uint32_t max_iters, uint32_t expected_transfers) {
 //   - Standard/Device GET_STATUS / SET_FEATURE / CLEAR_FEATURE: legacy
 //     self-powered + DEVICE_REMOTE_WAKEUP shadow behaviour.
 //   - Class requests: dispatched to the usb_handle_class_request hook (OCP).
-// usb_clear_setup_bit() is always called last, per Integration Guide 4.2.4.1.1.
+// Current payload and both EP0 descriptors must be ready before the first
+// SETUP-clearing DEVCMDSTAT write, including helper RMWs; the final explicit
+// usb_clear_setup_bit() call is not a unique release operation.
 // Returns true if handled without stall, false otherwise.
 // -------------------------------------------------------------------------
 bool usb_handle_control_transfer(void) {
@@ -1039,6 +1048,11 @@ bool usb_handle_control_transfer(void) {
 
     usb_setup_dispatch_count++;
     usb_read_setup_packet(&pkt);
+    // Publish the packet before anything else touches EP0, so a caller can
+    // classify this request after the handler returns. Re-reading the SRAM
+    // SETUP buffer at that point races the next SETUP and is unreliable at
+    // high speed, where the inter-SETUP gap is only a few microseconds.
+    usb_last_setup = pkt;
 
     uint8_t req_type  = USB_BMREQTYPE_TYPE(pkt.bmRequestType);
     uint8_t recipient = USB_BMREQTYPE_RECIPIENT(pkt.bmRequestType);
@@ -1267,10 +1281,8 @@ bool usb_handle_control_transfer(void) {
         usb_ep0_stall();
     }
 
-    // Per Integration Guide 4.2.4.1.1: clear SETUP bit after arming response.
-    // This must happen quickly: host VIP retries IN tokens for only ~5us before
-    // giving up and sending the next SETUP, which will be NAKed by the DUT IP
-    // unless the SETUP bit is already cleared.
+    // Both descriptors and payload must precede any SETUP-clearing helper RMW.
+    // This explicit clear may follow an earlier release; do not delay it.
     usb_clear_setup_bit();
 
     // Post-handler diagnostic logging. Outside the critical timing window

@@ -84,12 +84,25 @@ targets:
       - $COMPILE_ROOT/../../third_party/usb2/src/integration/rtl/ip_xxx_3511_hs_mem_compound_wrapper.sv
     tops: [ip_xxx_3511_hs_mem_compound_wrapper]
 ---
+provides: [usb_coverage]
+schema_version: 2.4.0
+requires:
+  - ip_xxx_3511_hs_mem_compound_wrapper
+targets:
+  tb:
+    directories:
+      - $COMPILE_ROOT/coverage
+    files:
+      - $COMPILE_ROOT/coverage/usb_cov_if.sv
+      - $COMPILE_ROOT/coverage/usb_cov_bind.sv
+---
 provides: [usb_top_tb]
 schema_version: 2.4.0
 requires:
   - ip_xxx_3511_hs_mem_compound_wrapper
   - usb_compound_pkg
   - ss_avery_axi_vip
+  - usb_coverage
 targets:
   tb:
     directories:

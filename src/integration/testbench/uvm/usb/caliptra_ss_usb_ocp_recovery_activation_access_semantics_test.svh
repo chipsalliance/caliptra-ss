@@ -25,7 +25,7 @@
 //   +UVM_TESTNAME=caliptra_ss_usb_ocp_recovery_activation_access_semantics_test
 // =============================================================================
 class caliptra_ss_usb_ocp_recovery_activation_access_semantics_test
-    extends caliptra_ss_usb_basic_utmi_test;
+    extends caliptra_ss_usb_ocp_base_test;
 
     `uvm_component_utils(
         caliptra_ss_usb_ocp_recovery_activation_access_semantics_test)

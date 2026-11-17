@@ -20,6 +20,7 @@
 #include "soc_ifc.h"
 
 #define CPTRA_USB_OCP_RECOVERY_BYTE0_MASK 0xFFu
+#define CPTRA_USB_OCP_FW_EXEC_CTRL_GO_MASK (1u << 2)
 
 static void cptra_usb_ocp_recovery_delay(uint32_t cycles)
 {
@@ -493,6 +494,13 @@ void cptra_usb_ocp_recovery_signal_state(uint8_t state, uint8_t data)
 {
     uint32_t val = ((uint32_t)state << 3) | ((uint32_t)data << 11);
     lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0, val);
+}
+
+void cptra_usb_ocp_recovery_publish_completion(void)
+{
+    lsu_write_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0,
+        lsu_read_32(CLP_SOC_IFC_REG_SS_GENERIC_FW_EXEC_CTRL_0) |
+            CPTRA_USB_OCP_FW_EXEC_CTRL_GO_MASK);
 }
 
 void cptra_usb_ocp_recovery_signal_state_generation(uint8_t state,

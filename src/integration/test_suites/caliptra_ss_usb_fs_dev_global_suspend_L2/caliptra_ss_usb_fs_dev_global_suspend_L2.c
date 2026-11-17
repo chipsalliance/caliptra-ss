@@ -144,14 +144,13 @@ void main(void) {
         usb_handle_bus_reset();
         reg_data = lsu_read_32(USB_DEV_DEVCMDSTAT);
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself. Snapshot then clear by complement so bits the ISR sets while
-        // we are handling this batch are not lost. DEVCMDSTAT is still read
-        // directly above: DSUS_C is a DEVCMDSTAT status bit, not an INTSTAT
-        // bit, so it does not travel through the mailbox.
-        usb_events = mcu_intr_rcv.usb;
-        mcu_intr_rcv.usb &= ~usb_events;
+        // itself. Atomically snapshot and clear the whole event vector.
+        // DEVCMDSTAT is still read directly above: DSUS_C is a DEVCMDSTAT
+        // status bit, not an INTSTAT bit, so it does not travel through the
+        // event vector.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         if (usb_events & DEV0_CSR_INTSTAT_EP0OUT_MASK) {
             if (reg_data & DEV0_CSR_DEVCMDSTAT_SETUP_MASK)

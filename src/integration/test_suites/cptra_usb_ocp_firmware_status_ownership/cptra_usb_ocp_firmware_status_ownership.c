@@ -222,6 +222,7 @@ void main(void)
         STATUS_OWNERSHIP_STATE_DONE, 0u,
         (uint16_t)(sizeof(status_ownership_milestones) /
                    sizeof(status_ownership_milestones[0])));
+    cptra_usb_ocp_recovery_publish_completion();
     while (1) {
     }
 }

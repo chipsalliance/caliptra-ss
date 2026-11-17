@@ -62,7 +62,7 @@ Firmware side:
   `USB_DEV_EPBUFCFG` bit 5 is set to enable EP2 IN ping-pong. RF must select ISO
   or the 64 B FS bulk maxpacket truncates the 512 B buffer.
 - The event model is the same POLLED `INTSTAT` / entry-Active-bit model as the HS
-  mix firmware (not the ISR mailbox model of `fs_dev_iso_out.c`).
+  mix firmware (not the ISR event vector model of `fs_dev_iso_out.c`).
 - Budgets: `USB_POLL_TIMEOUT = 150000` spins, `ISO_IN_READ_WINDOW = 2000` spins,
   test `device_timeout = 35000 us`.
 

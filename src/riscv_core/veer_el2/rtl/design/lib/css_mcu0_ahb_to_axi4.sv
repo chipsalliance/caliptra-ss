@@ -205,7 +205,7 @@ import css_mcu0_el2_pkg::*;
    assign ahb_htrans_in[1:0]  = {2{ahb_hsel}} & ahb_htrans[1:0];
    assign ahb_hrdata[63:0]    = buf_rdata[63:0];
 
-   if (CHECK_RANGES) begin
+   if (CHECK_RANGES) begin: GenCheckRanges
        // Miscellaneous signals
        logic                    ahb_addr_in_dccm, ahb_addr_in_iccm, ahb_addr_in_pic;
        logic                    ahb_addr_in_dccm_region_nc, ahb_addr_in_iccm_region_nc, ahb_addr_in_pic_region_nc;
@@ -247,7 +247,7 @@ import css_mcu0_el2_pkg::*;
          .in_range(ahb_addr_in_pic),
          .in_region(ahb_addr_in_pic_region_nc)
       );
-   end else begin // !CHECK_RANGES
+   end else begin: GenNoCheckRanges // !CHECK_RANGES
        assign ahb_hresp    = ((ahb_htrans_q[1:0] != 2'b0) & (buf_state != IDLE)  &
                              (((ahb_hsize_q[2:0] == 3'h1) & ahb_haddr_q[0]) |       // HW size but unaligned
                              ((ahb_hsize_q[2:0] == 3'h2) & (|ahb_haddr_q[1:0])) |   // W size but unaligned
@@ -309,7 +309,7 @@ import css_mcu0_el2_pkg::*;
    assign ahb_addr_clk_en = bus_clk_en & (ahb_hready & ahb_htrans[1]);
    assign buf_rdata_clk_en    = bus_clk_en & buf_rdata_en;
 
-`ifdef RV_FPGA_OPTIMIZE
+`ifdef css_mcu0_RV_FPGA_OPTIMIZE
    assign bus_clk = 1'b0;
    assign ahb_addr_clk = 1'b0;
    assign buf_rdata_clk = 1'b0;
@@ -319,7 +319,7 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvclkhdr buf_rdata_cgc (.en(buf_rdata_clk_en), .l1clk(buf_rdata_clk), .*);
 `endif
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
    property ahb_error_protocol;
       @(posedge bus_clk) (ahb_hready & ahb_hresp) |-> (~$past(ahb_hready) & $past(ahb_hresp));
    endproperty

@@ -100,7 +100,6 @@ package mcu_mbox_csr_pkg;
         logic rst_b;
         logic valid_sram_owner_req;
         logic valid_target_req;
-        logic valid_requester_req;
         logic valid_root_req;
         logic target_cfg_write_en;
         mcu_mbox_csr__MBOX_SRAM__external__in_t MBOX_SRAM;

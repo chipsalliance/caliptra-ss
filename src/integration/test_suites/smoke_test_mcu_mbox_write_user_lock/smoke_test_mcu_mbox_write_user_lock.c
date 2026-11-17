@@ -88,22 +88,16 @@ void mcu_mbox_check_root_access(uint32_t mbox_num, uint32_t target_axi_user) {
         while(1);
     }
 
-    // CMD and EXECUTE belong to the external Requester, not Root.
+    // CMD follows SRAM ownership, so Root can change it while it owns the SRAM.
+    // EXECUTE is checked after the grant: clearing it now would release the mailbox.
     value_before = mcu_mbox_read_cmd(mbox_num);
     mcu_mbox_write_cmd(mbox_num, ~value_before);
-    if (mcu_mbox_read_cmd(mbox_num) != value_before) {
-        VPRINTF(FATAL, "MCU: Mbox%x Root changed Requester-owned CMD\n", mbox_num);
+    if (mcu_mbox_read_cmd(mbox_num) != ~value_before) {
+        VPRINTF(FATAL, "MCU: Wasn't able to write Mbox%x CMD as SRAM owner\n", mbox_num);
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
-
-    value_before = mcu_mbox_read_execute(mbox_num);
-    mcu_mbox_clear_execute(mbox_num);
-    if ((value_before != 1) || (mcu_mbox_read_execute(mbox_num) != value_before)) {
-        VPRINTF(FATAL, "MCU: Mbox%x Root changed Requester-owned EXECUTE\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
-    }
+    mcu_mbox_write_cmd(mbox_num, value_before);
 
     // USER, LOCK, and HW_STATUS are read-only.
     test_data = xorshift32();
@@ -170,14 +164,30 @@ void mcu_mbox_check_root_access(uint32_t mbox_num, uint32_t target_axi_user) {
         SEND_STDOUT_CTRL(0x1);
         while(1);
     }
+
+    // The Target owns the SRAM, so Root's CMD and EXECUTE writes are dropped.
+    value_before = mcu_mbox_read_cmd(mbox_num);
+    mcu_mbox_write_cmd(mbox_num, ~value_before);
+    if (mcu_mbox_read_cmd(mbox_num) != value_before) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root changed CMD while the Target owns the SRAM\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
+
+    mcu_mbox_clear_execute(mbox_num);
+    if (mcu_mbox_read_execute(mbox_num) != 1) {
+        VPRINTF(FATAL, "MCU: Mbox%x Root cleared EXECUTE while the Target owns the SRAM\n", mbox_num);
+        SEND_STDOUT_CTRL(0x1);
+        while(1);
+    }
 }
 
 // Test (in conjunction with Caliptra uC C code) checks MCU Root access while an
 // external Requester holds the mailbox lock.
 // 1. Caliptra uC acquires mailbox, writes data to SRAM, sets EXECUTE
 // 2. MCU waits for execute
-// 3. MCU verifies Root can write response SRAM/DLEN, target configuration, and
-//    CMD_STATUS, but cannot write Requester-owned CMD/EXECUTE or TARGET_STATUS
+// 3. MCU verifies Root can write response SRAM/DLEN, CMD, target configuration, and
+//    CMD_STATUS, but cannot write TARGET_STATUS, or CMD/EXECUTE once the Target owns the SRAM
 
 void main (void) {
     int argc=0;

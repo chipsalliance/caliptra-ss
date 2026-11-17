@@ -2,7 +2,7 @@
 
 <p style="text-align: center;">Caliptra Subsystem Release Checklist</p>
 
-<p style="text-align: center;">Version 2p2 (WIP)</p>
+<p style="text-align: center;">Version 2.2.0-rc1 (Release Candidate)</p>
 
 <div style="page-break-after: always"></div>
 
@@ -80,10 +80,11 @@ For each release, the following steps are followed to ensure code functionality 
 - Submodule updates:
   - i3c-core
   - caliptra-rtl
+  - usb2
 - Register updates:
   - [HW_REV_ID](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_REV_ID): Update version information according to the defined field mapping to match current release
-  - [HW_CONFIG0](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.CPTRA_HW_CONFIG): Update any fields to indicate a change in Caliptra capabilities
-  - [HW_CONFIG1](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.CPTRA_HW_CONFIG): Update any fields to indicate a change in Caliptra capabilities
+  - [HW_CONFIG0](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_CONFIG0): Update any fields to indicate a change in Caliptra capabilities
+  - [HW_CONFIG1](https://chipsalliance.github.io/caliptra-ss/main/regs/?p=soc.mci_top.mci_reg.HW_CONFIG1): Update any fields to indicate a change in Caliptra capabilities
 - Lint review:
   - Lint must be completely clean after applying policies and waivers described in [Caliptra Subsystem Integration Specification](./CaliptraSSIntegrationSpecification.md#Recommended-LINT-rules)
 - CDC review:
@@ -99,4 +100,4 @@ For each release, the following steps are followed to ensure code functionality 
   - Add latest synthesis results to the [CaliptraSSIntegrationSpecification](./CaliptraSSIntegrationSpecification.md##synthesis)
   - Update [Release_Notes](../Release_Notes.md)
   - Tag the main branch on GitHub to generate an official release
-  - Generate version-specific registers documentation page in the [Register Documentation Workflow](./.github/workflows/doc-gen.yml)
+  - Generate version-specific registers documentation from the published release ref in the [Register Documentation Workflow](../.github/workflows/doc-gen.yml)

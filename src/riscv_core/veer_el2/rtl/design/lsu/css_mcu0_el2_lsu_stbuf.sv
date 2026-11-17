@@ -54,7 +54,7 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.LSU_SB_BITS-1:0]     stbuf_addr_any,              // address
    output logic [pt.DCCM_DATA_WIDTH-1:0] stbuf_data_any,              // stbuf data
 
-   input  logic                          lsu_stbuf_commit_any,        // pop the stbuf as it commite
+   input  logic                          lsu_stbuf_commit_any,        // pop the stbuf as it commits
    output logic                          lsu_stbuf_full_any,          // stbuf is full
    output logic                          lsu_stbuf_empty_any,         // stbuf is empty
    output logic                          ldst_stbuf_reqvld_r,         // needed for clocking
@@ -339,7 +339,7 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvdffs #(.WIDTH(DEPTH_LOG2)) WrPtrff (.din(NxtWrPtr[DEPTH_LOG2-1:0]), .dout(WrPtr[DEPTH_LOG2-1:0]), .en(WrPtrEn), .clk(lsu_stbuf_c1_clk), .*);
    css_mcu0_rvdffs #(.WIDTH(DEPTH_LOG2)) RdPtrff (.din(NxtRdPtr[DEPTH_LOG2-1:0]), .dout(RdPtr[DEPTH_LOG2-1:0]), .en(RdPtrEn), .clk(lsu_stbuf_c1_clk), .*);
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
 
    assert_stbuf_overflow: assert #0 (stbuf_specvld_any[2:0] <= DEPTH);
    property stbuf_wren_store_dccm;

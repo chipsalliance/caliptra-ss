@@ -123,7 +123,7 @@ servicing.
    their respective ports. Because the VIP models a single remote device, the
    sequence re-anchors onto one controller at a time by mutating
    `remote_device_cfg[0].device_address` and calling `reconfigure()`. Firmware
-   drains the ISR mailbox (`mcu_intr_rcv.usb` / `mcu_intr_rcv.usb_dev1`),
+   drains the ISR event vector (`mcu_intr_rcv.usb` / `mcu_intr_rcv.usb_dev1`),
    servicing EP0 SETUP/control transfers for each controller via
    `usb_select_device()` + `usb_handle_control_transfer()`.
 5. Once a controller reaches the Configured state, firmware arms its EP1 OUT

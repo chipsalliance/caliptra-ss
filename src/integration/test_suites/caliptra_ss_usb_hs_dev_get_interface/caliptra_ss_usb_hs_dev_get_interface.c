@@ -113,27 +113,10 @@ void main (void) {
         // Direct DEVCMDSTAT poll for bus reset (fallback - INTSTAT may not report DEV_INT)
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
-        // acknowledged INTSTAT, so the foreground loop must not touch
-        // INTSTAT itself. Snapshot then clear by complement so bits the
-        // ISR sets while we are handling this batch are not lost.
-        //usb_events = mcu_intr_rcv.usb;
-        //mcu_intr_rcv.usb &= ~usb_events;
-         {
-             uint32_t saved_mstatus;
-             __asm__ volatile ("csrrc %0, mstatus, %1"
-                               : "=r" (saved_mstatus)
-                               : "r" (MSTATUS_MIE_BIT_MASK)
-                               : "memory");
-             usb_events = mcu_intr_rcv.usb;
-             mcu_intr_rcv.usb &= ~usb_events;
-             if (saved_mstatus & MSTATUS_MIE_BIT_MASK) {
-                 __asm__ volatile ("csrrs zero, mstatus, %0"
-                                   :
-                                   : "r" (MSTATUS_MIE_BIT_MASK)
-                                   : "memory");
-             }
-         }
+        // Drain the ISR event vector. service_usb_intr() already read and
+        // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
+        // itself. Atomically snapshot and clear the whole event vector.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // Check for device-level interrupts (bus reset, connect change)
         if (usb_events & DEV0_CSR_INTSTAT_DEV_INT_MASK) {
@@ -178,8 +161,8 @@ void main (void) {
                     poll_count, diag_cmd, diag_int, ep0_out, ep0_in_diag, transfers_handled, intr_count);
         }
 
-        // No mcu_sleep here: the mailbox check is a single DCCM load, so the
-        // loop stays tight and USB events are picked up within ~1us of the
+        // No mcu_sleep here: the event vector check is a single DCCM load, so
+        // the loop stays tight and USB events are picked up within ~1us of the
         // interrupt being taken.
 
     }

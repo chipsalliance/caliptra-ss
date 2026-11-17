@@ -226,7 +226,7 @@ import css_mcu0_el2_pkg::*;
    logic                       axi_mstr_priority;
    logic                       axi_mstr_sel;
 
-   logic                       axi_rsp_valid, axi_rsp_sent;
+   logic                       axi_rsp_valid;
    logic                       axi_rsp_write;
    logic [pt.DMA_BUS_TAG-1:0]  axi_rsp_tag;
    logic [1:0]                 axi_rsp_error;
@@ -421,7 +421,7 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvoclkhdr dma_buffer_c1cgc ( .en(dma_buffer_c1_clken), .l1clk(dma_buffer_c1_clk), .* );
    css_mcu0_rvoclkhdr dma_free_cgc (.en(dma_free_clken), .l1clk(dma_free_clk), .*);
 
-`ifdef RV_FPGA_OPTIMIZE
+`ifdef css_mcu0_RV_FPGA_OPTIMIZE
    assign dma_bus_clk = 1'b0;
 `else
    css_mcu0_rvclkhdr  dma_bus_cgc (.en(dma_bus_clk_en), .l1clk(dma_bus_clk), .*);
@@ -499,7 +499,7 @@ import css_mcu0_el2_pkg::*;
    assign dma_active  = wrbuf_vld | rdbuf_vld | (|fifo_valid[DEPTH-1:0]);
 
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
 
    for (genvar i=0; i<DEPTH; i++) begin
       assert_fifo_done_and_novalid: assert #0 (~fifo_done[i] | fifo_valid[i]);

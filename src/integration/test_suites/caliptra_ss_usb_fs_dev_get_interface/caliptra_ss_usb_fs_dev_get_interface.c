@@ -31,11 +31,11 @@
 //  caliptra_ss_usb_data_check_api.
 //
 //  This is a pure polling test with no ISR involvement (no mcu_isr.h, no
-//  init_usb_interrupts(), no ISR mailbox), matching the other FS
+//  init_usb_interrupts(), no ISR event vector), matching the other FS
 //  command-value-check tests: each iteration reads INTSTAT and
 //  write-1-to-clears every serviced bit (DEV_INT, EP0OUT, EP0IN). The poll
-//  budget is 4x the HS variant because an FS frame is 1 ms versus the 125 us
-//  HS microframe, so enumeration plus the two control reads take proportionally
+//  budget is 4x the HS variant because an FS frame is 1 ms versus the 125 us HS
+//  microframe, so enumeration plus the two control reads take proportionally
 //  longer in bus time.
 
 #include "soc_address_map.h"

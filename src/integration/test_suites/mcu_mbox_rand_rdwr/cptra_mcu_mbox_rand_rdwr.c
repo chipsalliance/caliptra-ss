@@ -84,7 +84,7 @@ void main(void) {
 
     // Write Dlen
     cptra_mcu_mbox_write_dlen(mbox_num, 1);
-    cptra_mcu_mbox_write_execute(mbox_num, 0x1);
+    // EXECUTE=1 would hand the SRAM to MCU and block the release, so release directly.
     cptra_mcu_mbox_write_execute(mbox_num, 0x0);
     cptra_mcu_mbox_acquire_lock(mbox_num, 1000000, true);
 
@@ -120,7 +120,7 @@ void main(void) {
     // Check that data at written locations is 0'ed out
     // Subtract a value from 0-3 from dlen to check that non-4 byte aligned dlen still 0 the whole dword
     cptra_mcu_mbox_write_dlen(mbox_num, dlen - (xorshift32() % 4));
-    cptra_mcu_mbox_write_execute(mbox_num, 0x1);
+    // EXECUTE=1 would hand the SRAM to MCU and block the release, so release directly.
     cptra_mcu_mbox_write_execute(mbox_num, 0x0);
     cptra_mcu_mbox_acquire_lock(mbox_num, 1000000, true);
 
@@ -148,7 +148,7 @@ void main(void) {
     // Set and Clear execute and re-acquire lock
     // Check that data at written locations is 0'ed out
     cptra_mcu_mbox_write_dlen(mbox_num, sram_size_kb * 1024);
-    cptra_mcu_mbox_write_execute(mbox_num, 0x1);
+    // EXECUTE=1 would hand the SRAM to MCU and block the release, so release directly.
     cptra_mcu_mbox_write_execute(mbox_num, 0x0);
     cptra_mcu_mbox_acquire_lock(mbox_num, 1000000, true);
 

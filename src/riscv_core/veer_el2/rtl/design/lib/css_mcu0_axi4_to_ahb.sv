@@ -161,7 +161,6 @@ import css_mcu0_el2_pkg::*;
    logic                       trxn_done;
    logic [2:0]                 buf_cmd_byte_ptr, buf_cmd_byte_ptrQ, buf_cmd_nxtbyte_ptr;
    logic                       buf_cmd_byte_ptr_en;
-   logic                       found;
 
    logic                       slave_valid_pre;
    logic                       ahb_hready_q;
@@ -374,7 +373,7 @@ import css_mcu0_el2_pkg::*;
                                  ((buf_cmd_byte_ptrQ == 3'b111) | (buf_byteen[get_nxtbyte_ptr(buf_cmd_byte_ptrQ[2:0],buf_byteen[7:0],1'b1)] == 1'b0))));
                   bypass_en       = buf_state_en & buf_write_in & (buf_nxtstate == CMD_WR);   // Only bypass for writes for the time being
                   ahb_htrans[1:0] = {2{(~(cmd_done | cmd_doneQ) | bypass_en)}} & 2'b10;
-                  slave_valid_pre  = buf_state_en & (buf_nxtstate != DONE_WR);
+                  slave_valid_pre  = buf_state_en & ~(ahb_hresp_q);
 
                   trxn_done = ahb_hready_q & ahb_hwrite_q & (ahb_htrans_q[1:0] != 2'b0);
                   buf_cmd_byte_ptr_en = trxn_done | bypass_en;
@@ -475,7 +474,7 @@ import css_mcu0_el2_pkg::*;
    assign buf_clken       = bus_clk_en & (buf_wr_en | slvbuf_wr_en | clk_override);
    assign ahbm_data_clken = bus_clk_en & ((buf_state != IDLE) | clk_override);
 
-`ifdef RV_FPGA_OPTIMIZE
+`ifdef css_mcu0_RV_FPGA_OPTIMIZE
    assign bus_clk = 1'b0;
    assign buf_clk = 1'b0;
    assign ahbm_data_clk = 1'b0;
@@ -485,7 +484,7 @@ import css_mcu0_el2_pkg::*;
    css_mcu0_rvclkhdr ahbm_data_cgc (.en(ahbm_data_clken), .l1clk(ahbm_data_clk), .*);
 `endif
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
    property ahb_trxn_aligned;
      @(posedge bus_clk) ahb_htrans[1]  |-> ((ahb_hsize[2:0] == 3'h0)                              |
                                         ((ahb_hsize[2:0] == 3'h1) & (ahb_haddr[0] == 1'b0))   |

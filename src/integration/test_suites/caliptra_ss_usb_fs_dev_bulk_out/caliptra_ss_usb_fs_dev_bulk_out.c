@@ -83,7 +83,7 @@ static void usb_ep1_out_arm(void) {
 
     // Enable the EP1 OUT interrupt. boot_usb_core_fs() only enables DEV_INT,
     // EP0OUT and EP0IN, and service_usb_intr() masks INTSTAT with INTEN, so
-    // without this the EP1 OUT completion would never reach the mailbox.
+    // without this the EP1 OUT completion would never reach the event_vector.
     lsu_write_32(USB_DEV_INTEN,
                  lsu_read_32(USB_DEV_INTEN) | DEV0_CSR_INTSTAT_EP1OUT_MASK);
 
@@ -139,33 +139,10 @@ void main(void) {
 
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
-        // itself.
-        //
-        // The snapshot/clear pair MUST be atomic with respect to the USB
-        // interrupt. service_usb_intr() publishes with "mcu_intr_rcv.usb |=
-        // act" and then immediately write-1-clears INTSTAT. A plain
-        // read-modify-write here (lw / and / sw) that is interrupted between
-        // the load and the store writes back the stale value and destroys the
-        // bit the ISR just published - and because the hardware source has
-        // already been acknowledged, that event never refires. The observed
-        // consequence was a SET_ADDRESS SETUP latched in DEVCMDSTAT.SETUP and
-        // never dispatched: the controller sat at DEV_ADDR=0 with
-        // DEVCMDSTAT=0x10414F80 and intr_cnt frozen for the rest of the run,
-        // so the host saw SET_ADDRESS abort and every later transfer was
-        // addressed to a device nobody owned. Masking mstatus.MIE (bit 3)
-        // across the pair closes the window. See
-        // docs/handover/claude_md/26_usb_hs_get_status_clear_feature_drop.md
-        // Failure 2 for the original diagnosis of this race.
-        {
-            uint32_t prev_mstatus = csr_read_clr_bits_mstatus(0x8u);
-            usb_events = mcu_intr_rcv.usb;
-            mcu_intr_rcv.usb &= ~usb_events;
-            if (prev_mstatus & 0x8u) {
-                csr_set_bits_mstatus(0x8u);
-            }
-        }
+        // itself. Atomically snapshot and clear the whole event vector.
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
         // One DEVCMDSTAT read per iteration, shared by the bus-reset check and
         // the EP0 dispatch below.
@@ -183,11 +160,11 @@ void main(void) {
             // No INTSTAT write here: service_usb_intr() already cleared it.
         }
 
-        // EP0 dispatch is driven by DEVCMDSTAT.SETUP, not by the mailbox bit.
-        // SETUP is a sticky hardware flag that only firmware clears (via
+        // EP0 dispatch is driven by DEVCMDSTAT.SETUP, not by the event vector
+        // bit. SETUP is a sticky hardware flag that only firmware clears (via
         // usb_clear_setup_bit() at the end of usb_handle_control_transfer()),
         // so servicing it from the register makes the handling idempotent: if
-        // the EP0OUT mailbox event is ever lost or coalesced, the next poll
+        // the EP0OUT event vector bit is ever lost or coalesced, the next poll
         // iteration still services the SETUP instead of wedging forever.
         // Defence in depth - the atomic drain above prevents the loss, this
         // survives it.

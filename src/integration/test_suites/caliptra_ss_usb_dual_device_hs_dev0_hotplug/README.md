@@ -324,8 +324,8 @@ poll loop, and do not move the isolation check behind an interrupt-event test.
 
 
 EP0 control transfers are serviced from **`DEVCMDSTAT.SETUP`** (bit 8), **not**
-from `INTSTAT.EP0OUT` latched into the foreground mailbox. This is not a style
-preference - the event-gated form deadlocks, and it did so in this test.
+from `INTSTAT.EP0OUT` latched into the foreground event vector. This is not a
+style preference - the event-gated form deadlocks, and it did so in this test.
 
 The EP0 OUT `Active` bit (`usb_ep0_out_unarmed()`) is used only as a secondary
 re-arm condition. **The two signals are not interchangeable**; see
@@ -341,9 +341,9 @@ below, where swapping them produced a worse deadlock.
    one device's ISR can run while the other device's event is pending.
 2. The ISR W1C-acknowledges `INTSTAT` unconditionally. If the acknowledge lands
    between hardware asserting the bit and the ISR ORing it into the foreground
-   mailbox - or if `main()` snapshots and clears the mailbox in the same
-   iteration the bit was set - the **single** `EP0OUT` event for that packet is
-   lost.
+   event vector - or if `main()` snapshots and clears the event vector in the
+   same iteration the bit was set - the **single** `EP0OUT` event for that
+   packet is lost.
 3. The SETUP packet is still sitting in the SETUP buffer and EP0 OUT is left
    **un-armed**. An un-armed EP0 OUT is exactly the condition under which the
    controller **NAKs** the next incoming SETUP. A NAK generates no new `EP0OUT`
@@ -418,9 +418,9 @@ if (cmd & DEV0_CSR_DEVCMDSTAT_SETUP_MASK) {
 
 `DEVCMDSTAT.SETUP` is checked **unconditionally**. It is a hardware status bit
 that stays set until `usb_handle_control_transfer()` W1C-clears it, so it does
-not depend on the `EP0OUT` interrupt event ever reaching the mailbox - which is
-what fixes the round-8 lost-event deadlock. A lost interrupt now costs **one
-extra poll iteration** instead of the endpoint.
+not depend on the `EP0OUT` interrupt event ever reaching the event vector -
+which is what fixes the round-8 lost-event deadlock. A lost interrupt now costs
+**one extra poll iteration** instead of the endpoint.
 
 The un-armed test survives only as the **secondary** case: with no SETUP
 pending, an un-armed EP0 OUT means a control-read status-stage ZLP OUT completed
@@ -533,8 +533,9 @@ the change rather than perturbing every existing USB test. **If
 
 `caliptra_ss_usb_dual_device_hs_bulk_loopback` performs exactly **one** EP1
 loopback per controller and latches it with a sticky `done` flag. That lets it
-drive the OUT -> IN copy straight off the mailbox `INTSTAT.EP1OUT` event bit:
-a stale or spurious event can only ever fire once, before any payload matters.
+drive the OUT -> IN copy straight off the event vector `INTSTAT.EP1OUT` event
+bit: a stale or spurious event can only ever fire once, before any payload
+matters.
 
 This test re-arms EP1 OUT **repeatedly** for USBDC1, so that window re-opens on
 every iteration. `usb_ep1_out_arm()` sets `INTEN.EP1OUT` without first clearing
@@ -545,7 +546,7 @@ finally lands - the host's BULK IN reads back 64 zero bytes. This is exactly the
 `USBDC1_baseline loopback mismatch ... received=0x00` failure mode.
 
 The fix is to drive both halves of the handshake off the EP command/status list
-`Active` bit (bit 31) rather than the mailbox event bit, because that bit is
+`Active` bit (bit 31) rather than the event vector bit, because that bit is
 hardware truth:
 
 * `usb_ep1_out_complete()` - EP1 OUT `Active` cleared means the received bytes

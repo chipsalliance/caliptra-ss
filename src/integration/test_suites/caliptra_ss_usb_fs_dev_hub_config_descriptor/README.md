@@ -31,10 +31,10 @@ the HS `hub_config_descriptor` firmware:
 
 - Includes `mcu_isr.h` (this is what links `mcu_isr.o`).
 - Calls `init_usb_interrupts()` to enable the USB interrupt (PIC vector 3).
-- The main loop drains the ISR mailbox (`mcu_intr_rcv.usb`) instead of reading
-  and write-1-clearing INTSTAT directly. `service_usb_intr()` acknowledges
-  INTSTAT in the ISR, so the foreground loop only snapshots and clears the
-  mailbox bits.
+- The main loop drains the ISR event vector (`mcu_intr_rcv.usb`) instead of
+  reading and write-1-clearing INTSTAT directly. `service_usb_intr()`
+  acknowledges INTSTAT in the ISR, so the foreground loop only snapshots and
+  clears the event vector bits.
 
 The only functional difference from the HS firmware is Full-Speed bring-up:
 `boot_usb_core_fs()` (instead of `boot_usb_core()`) sets `DEVCMDSTAT.PFSC`

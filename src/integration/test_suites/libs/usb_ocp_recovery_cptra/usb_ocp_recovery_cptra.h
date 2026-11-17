@@ -159,6 +159,11 @@ uint8_t cptra_usb_ocp_recovery_drain_fifo_configured(
 
 void cptra_usb_ocp_recovery_signal_state(uint8_t state, uint8_t data);
 
+// Publish firmware completion through FW_EXEC_CTRL_0[2] without changing the
+// last state, data, or generation. Call only after all firmware work finishes.
+// This releases the MCU's GO wait; UVM, not firmware, owns simulation success.
+void cptra_usb_ocp_recovery_publish_completion(void);
+
 uint8_t cptra_usb_ocp_recovery_read_device_status_word(uint32_t *word);
 
 uint8_t cptra_usb_ocp_recovery_read_device_reset(uint32_t *val);

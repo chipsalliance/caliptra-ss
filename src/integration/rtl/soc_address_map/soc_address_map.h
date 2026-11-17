@@ -467,8 +467,20 @@
 #define RECOVERY_CALIPTRA_STATUS_IMAGE_DONE_MASK                                                    (0x4)
 #define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_LOW                                                  (3)
 #define RECOVERY_CALIPTRA_STATUS_BATCH_ABORTED_MASK                                                 (0x8)
-#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_LOW                                                  (4)
-#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_4_MASK                                                 (0xfffffff0)
+#define RECOVERY_CALIPTRA_STATUS_POST_SYNC_ARB_STATE_LOW                                            (4)
+#define RECOVERY_CALIPTRA_STATUS_POST_SYNC_ARB_STATE_MASK                                           (0x70)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_7_LOW                                                  (7)
+#define RECOVERY_CALIPTRA_STATUS_RESERVED_31_7_MASK                                                 (0xffffff80)
+#endif
+#define SOC_USB_COMBO_RECOVERY_CALIPTRA_SETUP_DEBUG                                                 (0x20000a08)
+#ifndef RECOVERY_CALIPTRA_SETUP_DEBUG
+#define RECOVERY_CALIPTRA_SETUP_DEBUG                                                               (0x208)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_GENERATION_LOW                                                (0)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_GENERATION_MASK                                               (0xfff)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_OWNER_OCP_LOW                                                 (12)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_OWNER_OCP_MASK                                                (0x1000)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_RESERVED_31_13_LOW                                            (13)
+#define RECOVERY_CALIPTRA_SETUP_DEBUG_RESERVED_31_13_MASK                                           (0xffffe000)
 #endif
 #define SOC_USB_COMBO_RECOVERY_WINDOW_PAD                                                           (0x20000ffc)
 #ifndef RECOVERY_WINDOW_PAD

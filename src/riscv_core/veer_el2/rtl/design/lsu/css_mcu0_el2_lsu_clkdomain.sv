@@ -134,7 +134,7 @@ import css_mcu0_el2_pkg::*;
 
    assign lsu_busm_clken = (~lsu_bus_buffer_empty_any | lsu_busreq_r | clk_override) & lsu_bus_clk_en;
 
-`ifdef RV_FPGA_OPTIMIZE
+`ifdef css_mcu0_RV_FPGA_OPTIMIZE
    assign lsu_busm_clk = 1'b0;
    assign lsu_bus_obuf_c1_clk = 1'b0;
 `else

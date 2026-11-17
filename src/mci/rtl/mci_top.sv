@@ -140,7 +140,7 @@ module mci_top
     input logic [31:0] cptra_trace_rv_i_tval_ip,
 
     // Caliptra core DCLS corruption-detection enable (MCU-provisioned via
-    // HW_CAPABILITIES); drives the Caliptra core ss_dcls_en input.
+    // HW_CAPABILITIES); drives the Caliptra core dcls_en input.
     output logic        ss_dcls_en,
 
     // Caliptra MBOX

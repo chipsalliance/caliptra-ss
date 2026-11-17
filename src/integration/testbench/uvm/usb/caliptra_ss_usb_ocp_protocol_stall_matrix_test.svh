@@ -30,12 +30,44 @@ class caliptra_ss_usb_ocp_protocol_stall_matrix_test
     endfunction
 
     virtual function void build_phase(uvm_phase phase);
+        string sequence_args[$];
+        string sequence_name;
+        uvm_object_wrapper sequence_type;
         super.build_phase(phase);
+        sequence_type =
+            caliptra_ss_usb_ocp_protocol_stall_matrix_sequence::get_type();
+        if (uvm_cmdline_processor::get_inst().get_arg_values(
+                "+USB_SEQ=", sequence_args) > 1) begin
+            `uvm_fatal("OCP_STALL_SELECT", "Specify +USB_SEQ only once.")
+        end
+        if (sequence_args.size() != 0) begin
+            sequence_name = sequence_args[0];
+            case (sequence_name)
+                "protocol_stall_matrix",
+                "caliptra_ss_usb_ocp_protocol_stall_matrix_sequence":
+                    sequence_type =
+                        caliptra_ss_usb_ocp_protocol_stall_matrix_sequence::get_type();
+                "persistent_stall",
+                "caliptra_ss_usb_ocp_persistent_stall_sequence":
+                    sequence_type =
+                        caliptra_ss_usb_ocp_persistent_stall_sequence::get_type();
+                "packet_observer_selftest",
+                "caliptra_ss_usb_ocp_packet_observer_selftest_sequence":
+                    sequence_type =
+                        caliptra_ss_usb_ocp_packet_observer_selftest_sequence::get_type();
+                default:
+                    `uvm_fatal("OCP_STALL_SELECT",
+                        $sformatf("Unknown USB_SEQ '%s'. Use protocol_stall_matrix, persistent_stall, or packet_observer_selftest.",
+                                  sequence_name))
+            endcase
+        end
         uvm_config_db#(uvm_object_wrapper)::set(
             this,
             "env.host_agent.virt_sequencer.main_phase",
             "default_sequence",
-            caliptra_ss_usb_ocp_protocol_stall_matrix_sequence::type_id::get());
+            sequence_type);
+        `uvm_info("OCP_STALL_SELECT",
+            {"Selected ", sequence_type.get_type_name()}, UVM_NONE)
     endfunction
 
 endclass

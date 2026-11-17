@@ -1,0 +1,59 @@
+seed: 1
+testname: caliptra_ss_usb_dual_device_hs_hub_port_l1
+
+# Hub-request L1 test: the host issues SetAndTestPortFeature(PORT_L1) naming hub
+# port 1 and then hub port 2, and checks that each request affects only its own
+# port (and only its own device controller).
+#
+# This is one of the two L1 scenarios this IP has; the other is the direct
+# EXT+LPM token, covered by caliptra_ss_usb_hs_dev_lpm_l1. Both target a DEVICE:
+# SetAndTestPortFeature(PORT_L1) against the hub itself (wIndex port field 0)
+# STALLs in usb_app_hw_hub.m.vhdl, and this test asserts that as a negative
+# case, so there is no third "hub-targeted L1" test.
+#
+# This .yml runs the SUCCESS leg. The refusal legs need a different firmware
+# build, because the hub resolves its answer from the per-port DEVICE CSRs:
+#   NYET       : BUILD_CFLAGS="-DUSB_HUB_L1_RESPONSE_MODE=1" + '+usb_hub_l1_expect=1'
+#   STALL-code : BUILD_CFLAGS="-DUSB_HUB_L1_RESPONSE_MODE=2" + '+usb_hub_l1_expect=2'
+# The define and the plusarg must always be changed together - the firmware
+# decides the outcome and the plusarg tells the sequence what to require.
+#
+# NOTE: this is a DUAL-DEVICE image. It addresses BOTH USBDC0 (0x2000_0000 /
+# 0x3000_0000) and USBDC1 (0x2000_2000 / 0x3001_0000) apertures via the runtime
+# usb_select_device() context, and MUST NOT be built with -DUSB_DEV_SEL=1 (that
+# would compile-time pin the shared library to a single controller and the
+# port-2 leg would have no device behind it).
+#
+# Unlike caliptra_ss_usb_dual_device_hs_bulk_loopback this image needs NO
+# -DUSB_HUB_COMPOUND_DEV1_IRQ and no +USB_HUB_COMPOUND_DEV1_IRQ plusarg: it
+# polls both controllers from one loop instead of relying on USBDC1's IRQ being
+# looped back onto cptra_ss_mcu_ext_int[6] in the testbench. Hence a plain
+# pre-exec with no BUILD_CFLAGS.
+#
+# NOTE: +usb_suspend_resume_check is deliberately NOT set. That checker watches
+# the single shared UTMI SuspendM for the whole compound IP, so it cannot
+# attribute a suspend to one port; arming it in a per-port test would either be
+# meaningless or pass for the wrong reason. The "a real low-power link state was
+# entered" claim against the shared SuspendM belongs to
+# caliptra_ss_usb_hs_dev_lpm_l1, which does arm it. Here the per-port evidence is
+# the two controllers' own DEVCMDSTAT.LPM_SUS bits plus the host sequence's
+# per-port PORT_L1 / C_PORT_L1 status checks.
+
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for test caliptra_ss_usb_dual_device_hs_hub_port_l1"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile \
+       TESTNAME=caliptra_ss_usb_dual_device_hs_hub_port_l1 \
+       CALIPTRA_TESTNAME=cptra_bringup \
+       CALIPTRA_AUX=soc_ifc_ss \
+       CALIPTRA_SS_CLK_FREQ=400 \
+       mcu_program.hex \
+       cptra_program.hex
+plusargs:
+  - '+UVM_TESTNAME=caliptra_ss_usb_dual_device_hs_hub_port_l1_test'
+  # Must match the firmware's USB_HUB_L1_RESPONSE_MODE (0 here, the default).
+  # Note run_caliptra_test.py only forwards plusargs matching +NAME=VALUE, so
+  # the "=0" form is required.
+  - '+usb_hub_l1_expect=0'
+
+# File contains AI-generated response based on internal company sources

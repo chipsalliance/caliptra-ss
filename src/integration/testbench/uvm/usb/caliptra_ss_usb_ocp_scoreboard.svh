@@ -23,6 +23,75 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
 
     uvm_analysis_imp #(svt_usb_transfer, caliptra_ss_usb_ocp_scoreboard)
         transfer_imp;
+    caliptra_ss_usb_ocp_stall_model stall_model;
+    caliptra_ss_usb_ocp_fifo_packet_model fifo_packet_model;
+    protected bit packet_fifo_checking;
+
+    // Opt-in retains the legacy content checker for older sequences. Once
+    // selected, whole-transfer success is never used as FIFO write evidence.
+    function void enable_packet_fifo_checking();
+        packet_fifo_checking = 1'b1;
+    endfunction
+
+    function void observe_fifo_window(
+        input caliptra_ss_usb_ocp_arbiter_packet_callback packets,
+        input logic [15:0] generation,
+        input bit [6:0] address,
+        input int unsigned byte_count,
+        input bit acceptance_allowed,
+        input bit owner_abort = 1'b0,
+        input bit unrelated_abort = 1'b0);
+        if (!packet_fifo_checking ||
+            !fifo_packet_model.observe_window(packets, generation, address,
+                byte_count, acceptance_allowed, owner_abort, unrelated_abort)) begin
+            `uvm_error("OCP_FIFO_PACKET",
+                $sformatf("Invalid FIFO history/capacity/lifecycle: generation=%0d address=%0d length=%0d allowed=%0b owner_abort=%0b unrelated_abort=%0b committed=%0d partial=%0d.",
+                    generation, address, byte_count, acceptance_allowed,
+                    owner_abort, unrelated_abort,
+                    fifo_packet_model.committed_byte_count(),
+                    fifo_packet_model.partial_byte_count()))
+            if (packets != null) begin
+                for (int unsigned i = 0; i < packets.packet_count(); i++) begin
+                    caliptra_ss_usb_ocp_arbiter_packet_callback::packet_record_t r;
+                    r = packets.get_packet(i);
+                    `uvm_info("OCP_FIFO_PACKET",
+                        $sformatf("record=%0d generation=%0d time=%0t direction=%s pid=%s bytes=%0d target_valid=%0b address=%0d endpoint=%0d accepted_setup=%0b crc_bad=%0b data_bad=%0b.",
+                            i, r.generation, r.observed_at, r.direction.name(),
+                            r.pid_name.name(), r.data_length, r.target_valid,
+                            r.device_address, r.endpoint_number, r.accepted_setup,
+                            r.crc_error_detected, r.data_error_detected), UVM_NONE)
+                end
+            end
+        end else
+            `uvm_info("OCP_FIFO_PACKET",
+                $sformatf("Consumed FIFO generation=%0d length=%0d allowed=%0b committed=%0d partial=%0d.",
+                    generation, byte_count, acceptance_allowed,
+                    fifo_packet_model.committed_byte_count(),
+                    fifo_packet_model.partial_byte_count()), UVM_LOW)
+    endfunction
+
+    function void observe_fifo_drain(input int unsigned independently_drained_dwords);
+        if (!packet_fifo_checking ||
+            !fifo_packet_model.observe_drain(independently_drained_dwords))
+            `uvm_error("OCP_FIFO_PACKET", "Invalid independent FIFO drain evidence.")
+    endfunction
+
+    function void observe_fifo_abort(input bit owns_fifo_data);
+        if (!packet_fifo_checking ||
+            !fifo_packet_model.observe_abort(owns_fifo_data))
+            `uvm_error("OCP_FIFO_PACKET", "Invalid FIFO abort lifecycle.")
+    endfunction
+
+    function void observe_fifo_reset();
+        if (!packet_fifo_checking || !fifo_packet_model.observe_reset())
+            `uvm_error("OCP_FIFO_PACKET", "Unconfigured FIFO reset evidence.")
+    endfunction
+
+    function void check_phase(uvm_phase phase);
+        super.check_phase(phase);
+        if (packet_fifo_checking && !fifo_packet_model.lifecycle_idle())
+            `uvm_error("OCP_FIFO_PACKET", "FIFO owner left active without completion/abort/reset.")
+    endfunction
 
     protected bit [7:0] pending_fifo_bytes[$];
     protected int unsigned pending_write_dwords[$];
@@ -61,6 +130,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             uvm_event_pool::get_global("ocp_fifo_model_reset");
         forever begin
             fifo_model_reset_event.wait_trigger();
+            if (packet_fifo_checking) observe_fifo_reset();
             reset_fifo_model();
             `uvm_info("OCPREC_MARK",
                 "FIFO passive model reset from externally observed firmware reset completion.",
@@ -70,7 +140,17 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
 
     function void build_phase(uvm_phase phase);
         super.build_phase(phase);
+        uvm_config_db#(caliptra_ss_usb_ocp_scoreboard)::set(
+            null, "*", "ocp_fifo_scoreboard", this);
         transfer_imp = new("transfer_imp", this);
+        stall_model = caliptra_ss_usb_ocp_stall_model::type_id::create(
+            "stall_model");
+        uvm_config_db#(caliptra_ss_usb_ocp_stall_model)::set(
+            null, "*", "ocp_stall_model", stall_model);
+        fifo_packet_model = caliptra_ss_usb_ocp_fifo_packet_model::type_id::create(
+            "fifo_packet_model");
+        uvm_config_db#(caliptra_ss_usb_ocp_fifo_packet_model)::set(
+            null, "*", "ocp_fifo_packet_model", fifo_packet_model);
         reset_fifo_model();
         fifo_baseline_valid = 1'b0;
         total_class_xfers          = 0;
@@ -338,7 +418,8 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
         end
 
         foreach (pending_write_dwords[i]) begin
-            if (pending_write_dwords[i] > max_transfer_dwords) begin
+            if (pending_write_success[i] &&
+                (pending_write_dwords[i] > max_transfer_dwords)) begin
                 `uvm_error("OCPREC_MARK",
                     $sformatf("FIFO DATA attempt %0d contains %0d DWORDs, exceeding advertised MAX_TRANSFER_SIZE=%0d.",
                               i, pending_write_dwords[i],
@@ -451,9 +532,9 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             end
 
             OCP_CMD_INDIRECT_FIFO_CTRL: begin
-                if (!dir_in &&
+                if (!dir_in && xfer_ok &&
                     caliptra_ss_usb_out_payload_complete(transfer) &&
-                    (transfer.setup_data_w_length >=
+                    (transfer.setup_data_w_length ==
                         OCP_SPEC_LEN_INDIRECT_FIFO_CTRL)) begin
                     int start_index;
                     int end_index;
@@ -462,6 +543,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
                         (transfer.payload.data[
                             start_index + OCP_OFF_IFC_RESET] == 8'h01)) begin
                         reset_fifo_model();
+                        if (packet_fifo_checking) observe_fifo_reset();
                         `uvm_info("OCPREC_MARK",
                             "INDIRECT_FIFO_CTRL RESET established an empty FIFO model baseline.",
                             UVM_NONE)
@@ -470,6 +552,7 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             end
 
             OCP_CMD_INDIRECT_FIFO_DATA: begin
+                if (packet_fifo_checking) return;
                 if (!dir_in) begin
                     if (caliptra_ss_usb_out_payload_complete(transfer))
                         queue_fifo_write_attempt(transfer, xfer_ok);
@@ -481,6 +564,9 @@ class caliptra_ss_usb_ocp_scoreboard extends uvm_component;
             end
 
             OCP_CMD_INDIRECT_FIFO_STATUS: begin
+                // The sequence checks these indices against the packet model
+                // after closing its observation window. Never infer drains.
+                if (packet_fifo_checking) return;
                 if (dir_in && xfer_ok) check_fifo_status(transfer);
             end
 

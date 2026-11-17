@@ -1,0 +1,12 @@
+---
+seed: ${PLAYBOOK_RANDOM_SEED}
+testname: mci_mbox1_ownership_flow
+# Run with caliptra_ss_lib::caliptra_ss_top_tb. Reuse the AXI-miss firmware,
+# which leaves mailbox handling to the SV sequence after boot.
+pre-exec: |
+  set -eu
+  echo "Running pre_exec for [mci_mbox1_ownership_flow]"
+  make -f $CALIPTRA_SS_ROOT/tools/scripts/Makefile TESTNAME=smoke_test_mci_axi_miss CALIPTRA_TESTNAME=cptra_smoke_test_mci_axi_miss CALIPTRA_AUX=soc_ifc_ss mcu_program.hex cptra_program.hex
+plusargs:
+    - '+cptra_ss_sv_test=MCI_MBOX1_OWNERSHIP_FLOW'
+    - '+CLP_MAX_CYCLES=3000000'

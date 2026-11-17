@@ -19,7 +19,7 @@
 // scoreboard enabled. Strategy-specific tests configure this class indirectly
 // through the sequence configuration database.
 class caliptra_ss_usb_ocp_fifo_flow_control_test
-    extends caliptra_ss_usb_basic_utmi_test;
+    extends caliptra_ss_usb_ocp_base_test;
 
     `uvm_component_utils(caliptra_ss_usb_ocp_fifo_flow_control_test)
 

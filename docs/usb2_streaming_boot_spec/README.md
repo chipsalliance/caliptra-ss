@@ -421,6 +421,12 @@ CPUif decode, but are unsupported and trigger a simulation assertion.
 Address normalization does not relax the integrator alignment requirement.
 Software side effects occur exactly once.
 
+Each EXT `INDIRECT_FIFO_STATUS_0` through `INDIRECT_FIFO_STATUS_4` read
+returns the live value for that individual access. Firmware treats separate
+status reads as independent samples, not an atomic multiword snapshot.
+The USB `INDIRECT_FIFO_STATUS` command retains its own coherent response
+snapshot; EXT reads do not capture or retain one.
+
 Non-32-bit EXT reads and writes are unsupported. `ahb_slv_sif` can present byte or
 halfword data, but the adapter drives all CPUif write bit-enables, so sub-word
 writes can overwrite other fields in the addressed DWORD. The integrator must
@@ -504,23 +510,25 @@ calls out the streaming-boot-specific requirements:
 - **Advertise the Recovery interface.** Install the OCP Recovery
   configuration/interface/functional descriptors before connecting Device 0,
   so the host discovers the interface during enumeration. Validation OCP v1.1
-  firmware enumeration uses the descriptor returned by
-  `usb_ocp_recovery_get_v1p1_config_descriptor()`; the
-  `usb_ocp_recovery_get_config_descriptor()` helper retains the compatibility
-  field order.
+  firmware supplies this descriptor through the shared
+  `usb_get_config_descriptor()` hook implemented in `usb_ocp_recovery.c`.
 - **Apply platform capability policy before connection.** The current platform
   clears Forced Recovery, Management Reset, Device Reset, Interface Isolation,
   and Flashless Boot. The resulting runtime `AGENT_CAPS` value is `0x1691`.
-- **Do not service claimed OCP commands through the MCU class hook.** Hardware
-  owns claimed DATA/STATUS/PING stages. The legacy class hook returns false for
-  the OCP envelope and logs a warning if such a request unexpectedly reaches
-  MCU dispatch.
+  This still advertises Push C-image without its required INDIRECT_CTRL
+  dependency (OCP Recovery v1.1 Section 9.2). Shared validation reports that
+  known compliance finding as a warning; other capability violations remain
+  errors.
+- **Keep legacy dispatch notification-qualified.** Hardware services claimed
+  OCP commands without MCU class-hook dispatch. A notified unsupported legacy
+  class request follows normal current-request STALL preparation; an
+  OCP-shaped request can legitimately use that path when Recovery is disabled.
 
 `DEVICE_RESET` command support follows the live reset-related capability
 fields. With all five unsupported platform capabilities cleared, the command
 is rejected as unsupported. If firmware later advertises any of those
-capabilities, the implemented command accepts reads requesting 3 through
-64 bytes and exact 3-byte writes.
+capabilities, the implemented command accepts reads requesting the advertised
+`wMaxRdTransferSize` (OCP Recovery v1.1 Section 8.5.1) and exact 3-byte writes.
 
 Only after Device 0 is configured are Recovery-class control transfers
 serviceable. The OCP path itself needs no separate enable and remains active
@@ -579,7 +587,38 @@ The aperture includes the OCP commands `PROT_CAP`, `DEVICE_ID`,
 `DEVICE_STATUS`, `DEVICE_RESET`, `RECOVERY_CTRL`, `RECOVERY_STATUS`,
 `HW_STATUS`, `INDIRECT_FIFO_CTRL`, `INDIRECT_FIFO_STATUS`,
 `INDIRECT_FIFO_DATA`, and `VENDOR`, plus Caliptra-specific
-`CALIPTRA_CTRL` and `CALIPTRA_STATUS`.
+`CALIPTRA_CTRL`, `CALIPTRA_STATUS`, and `CALIPTRA_SETUP_DEBUG`.
+
+### 7.1 Diagnostic SETUP and arbiter visibility
+
+These Caliptra-only words are outside the USB command set. Both are read-only,
+non-destructive, and in the same clock domain as the post-sync arbiter.
+Offsets below are relative to the Recovery aperture (add `0x800` for the
+shared Combo-local address). Use generated register/field symbols in software.
+
+| Register | Recovery offset | Fields |
+|---|---|---|
+| `CALIPTRA_STATUS` | `0x204` | Existing FIFO status `[3:0]`; live `POST_SYNC_ARB_STATE[6:4]`; `[31:7]` zero |
+| `CALIPTRA_SETUP_DEBUG` | `0x208` | `GENERATION[11:0]`; `OWNER_OCP[12]`; `[31:13]` zero |
+
+`GENERATION` advances modulo 4096 once per accepted complete, successful,
+eight-byte Device0 EP0 SETUP, for both legacy and OCP owners. Accepted retries
+count separately, including valid requests whose command later STALLs.
+Bad-CRC, incomplete, wrong-length, DATA, and STATUS packets do not advance it.
+`OWNER_OCP` updates atomically with the generation: one for the current accepted
+OCP classification, zero for legacy (including the path-disabled fallback),
+not the previous retained owner. Both reset to zero on global reset, USB bus
+reset, Device0 port reset, or Device0 disconnect; reset wins acceptance.
+Claim abort, protocol error, path-disable writes, and unrelated Hub/Device1
+activity do not by themselves reset the word.
+
+`POST_SYNC_ARB_STATE` reports registered state with explicit encoding:
+0 IDLE, 1 MIRROR, 2 META_WAIT, 3 DATA, 4 STATUS, 5 PROT_STALL; 6-7 are reserved.
+It follows the real FSM's reset/transition behavior without separate retention.
+The live state and last-accepted-SETUP word are not an atomic cross-register
+snapshot. Neither certifies SETUP SRAM validity/coherency or firmware readiness;
+the mirror write drain may finish later. Neither changes notification timing
+or authorizes firmware dispatch.
 
 ---
 
@@ -647,30 +686,38 @@ OCP-owned; Hub, Device 1, and non-EP0 transactions remain legacy-owned.
 ### 10.1 Supersession and firmware responsibility
 
 A replacement SETUP supersedes the preceding EP0 operation (USB 2.0 Section
-5.5.5). Obsolete requests are not queued for later firmware execution. The
-architecture does not add a hardware authorization/session mechanism that can
-cancel CPU instructions or prevent a stale firmware write already in flight.
-
+5.5.5). Obsolete requests are not queued for later firmware execution.
 Production MCU firmware must:
 
-1. Retain its legacy responsibility to handle a new SETUP superseding an
-   unfinished legacy EP0 request, including discarding the obsolete request.
-2. Recognize the OCP request envelope and active Recovery interface. Leave
-   claimed requests to hardware: do not execute them, arm a legacy response,
-   or issue a legacy STALL merely because they are class requests.
-3. Consume or clear legacy SETUP-pending bookkeeping using the existing
-   interface and SETUP-buffer coherence rules. Clearing the software flag does
-   not clear hardware OCP ownership.
-4. Not require a legacy SETUP interrupt to service OCP Streaming Boot. Hardware
-   services claimed control transfers; Caliptra firmware uses Recovery
-   registers and `payload_available`.
-5. Apply existing shared-SETUP-buffer supersession discipline. A newer SETUP
-   payload may overwrite an earlier payload while firmware is active.
+1. Discover new legacy SETUP work only from its corresponding EP0 OUT
+   new-transfer interrupt/ISR-mailbox notification, not by polling
+   `DEVCMDSTAT.SETUP`. Preserve events during ISR handoff and
+   distinguish DATA/STATUS completion and old sticky IRQs.
+   If SETUP is observed without that notification, leave it set: do not
+   dispatch, clear it, or rearm descriptors solely because its level is one.
+   A subsequent legacy SETUP supplies the normal service opportunity.
+2. Prepare the current request's payload and BOTH EP0 OUT/IN descriptors:
+   buffer addresses, byte counts, ACTIVE, and STALL for the current
+   DATA/STATUS phases. Set unused directions intentionally inactive/stalled
+   as appropriate. Preserve the SETUP pointer at ECL offset `0x04`; OUT and IN
+   descriptors are at `0x00` and `0x08`.
+3. Complete and order all preparation before the FIRST SETUP-clearing
+   `DEVCMDSTAT` write, including helper RMWs that echo the W1C SETUP bit.
+   A final explicit `usb_clear_setup_bit()` is not a unique release operation.
+   Preserve the owning controller's staged address shadow on every such RMW;
+   reads return the live address, not the staged value.
+4. Keep response preparation/release within protocol and host retry timing
+   budgets; defer logging, sleeps, and slow operations until afterwards.
+
+The legacy DMA NAK-gates DATA/STATUS while SETUP is pending, while SETUP
+acceptance remains available. Recovery-owned responses bypass legacy
+descriptors. Each later legacy SETUP reasserts that gate: current payload
+and both-direction preparation replace the preceding response before release,
+so retained SRAM contents cannot supply the compliant current response.
 
 The MCU legacy dispatcher and Caliptra Recovery library are separate flows.
 Suppressing a claimed SETUP's successful legacy interrupt does not prevent
-Recovery service. Any legacy flag cleanup is bookkeeping, not a new
-per-OCP-command firmware dispatch requirement.
+Recovery service.
 
 `DEVCMDSTAT.SETUP` is a sticky pending bit, not a counter or generation
 number. If it is already one, another SETUP leaves it one. Forwarding
@@ -696,9 +743,9 @@ The implemented hardware boundaries are:
 - Non-EP0, Hub, and Device 1 responses, success, and interrupts are selected
   by current transaction identity and are not suppressed by retained Device 0
   EP0 claim or stall state.
-- Late preparation of an obsolete legacy response cannot drive the wire while
-  Recovery owns Device 0 EP0. Firmware remains responsible for not exposing
-  stale prepared state when a later legacy SETUP returns ownership.
+- Late legacy response preparation cannot drive the wire while Recovery owns
+  Device 0 EP0. The next legacy SETUP gate and both-direction current-request
+  preparation govern subsequent legacy service as specified in Section 10.1.
 - Response metadata remains transaction-stable. Late register or error changes
   affect a later request, not the transaction already on the wire.
 - FIFO packet capacity is reserved before ACK/PING acceptance, and an accepted
@@ -706,7 +753,7 @@ The implemented hardware boundaries are:
 
 ### 10.3 Relationship to Caliptra firmware and error recovery
 
-The legacy SETUP observation/ignore requirement concerns MCU device firmware,
+Notification-qualified legacy EP0 service concerns MCU device firmware,
 not per-command service of OCP Streaming Boot. Caliptra's FIFO drain and
 firmware-owned Recovery status obligations in Sections 3.7 and 6 remain.
 
@@ -731,3 +778,46 @@ disconnect suppressed its natural `endtransfer`; reconnect reset flushes that
 state. Recovery-local claim, staging, reservation, success-mask, and response
 tracking do not wait for shared DMA retirement. Reset is teardown, not a
 successful transfer completion.
+
+### 10.4 Verification boundaries
+
+`caliptra_ss_usb_ocp_setup_supersession` checks all eight legacy/OCP owner-pair
+and DATA/STATUS-pending combinations, plus an identical accepted SETUP reissue
+for each owner, using VIP packet observations. Reissues are accepted SETUP
+occurrences, not lost-ACK injection. Each occurrence requires its own ordered
+transfer ending; identical headers cannot reuse an earlier completion.
+The scoreboard checks externally visible request stages, response bytes,
+notification-qualified legacy service, held legacy NAKs, release-to-response
+timing, and replacement completion. Firmware command/status messages
+coordinate the responder; they are not proof of DUT correctness. The shared
+legacy EP0 observer remains available to other tests without a reduced API.
+
+Three tests separate the additional responsibilities:
+
+| Test suffix (`caliptra_ss_usb_ocp_`) | Responsibility |
+|---|---|
+| `setup_malformed` | Four one-attempt short/bad-CRC injections using legacy and runtime-discovered OCP-looking bytes, each followed by valid recovery |
+| `setup_stale_negative` | Deliberate premature-clear exposure and fresh service |
+| `setup_debug_csr` | AXI generation/owner and reserved/RO checks in retained DATA/STATUS and observed-STALL windows; runtime FIFO empty/partial/full/drained and payload preservation |
+
+Malformed stimulus relies on documented VIP exceptions, actual-transfer
+binding and transmission completion. This is not a claim of independently
+captured DUT-received bytes. Any expected bad-CRC no-response report is scoped
+to that one transfer and reporting interval; unrelated errors remain errors.
+
+Implementation covergroups in
+`src/usb/coverage/usb_cov_if.sv` record internal
+states, replacement context and SETUP-completion disposition locally. They
+export no interface to the scoreboard or sequence. Coverage hits establish
+exercise, not internal correctness; missing bins remain coverage-closure work.
+The `usb_coverage` build dependency supplies an `FCOV`-gated `usb_cov_bind`
+that attaches to the shared USB wrapper in both subsystem and standalone USB
+testbenches. The subsystem instantiates the bind through its TB services.
+Internal SETUP forwarding, DMA/IRQ behavior and SRAM mirroring require their
+own implementation verification and are not inferred from a passing USB test.
+
+Dedicated follow-up tests cover generation rollover, surprise transfer
+termination, Address-state handoff, and genuinely incomplete/missing-EOP
+packets. Combined Hub/Device1 traffic isolation belongs to the hub-enablement
+workstream. The integration test-plan CSV records executed results separately
+from these planned coverage extensions.

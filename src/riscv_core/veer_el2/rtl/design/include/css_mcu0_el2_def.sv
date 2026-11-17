@@ -15,7 +15,7 @@
 
 // performance monitor stuff
 //`ifndef EL2_DEF_SV
-//`define EL2_DEF_SV
+//`define css_mcu0_EL2_DEF_SV
 package css_mcu0_el2_pkg;
 
 `include "css_mcu0_el2_pdef.vh"

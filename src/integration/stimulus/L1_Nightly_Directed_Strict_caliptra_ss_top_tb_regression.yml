@@ -10,8 +10,15 @@ contents:
         - ../test_suites/caliptra_ss_usb_ocp_recovery_init/caliptra_ss_usb_ocp_recovery_init.yml
         - ../test_suites/smoke_test_usb_axi_filter/smoke_test_usb_axi_filter.yml
         - ../test_suites/caliptra_ss_usb_ocp_cmd_handling/caliptra_ss_usb_ocp_cmd_handling.yml
+        - ../test_suites/caliptra_ss_usb_ocp_setup_supersession/caliptra_ss_usb_ocp_setup_supersession.yml
+        - ../test_suites/caliptra_ss_usb_ocp_setup_malformed/caliptra_ss_usb_ocp_setup_malformed.yml
+        - ../test_suites/caliptra_ss_usb_ocp_setup_stale_negative/caliptra_ss_usb_ocp_setup_stale_negative.yml
+        - ../test_suites/caliptra_ss_usb_ocp_setup_debug_csr/caliptra_ss_usb_ocp_setup_debug_csr.yml
         - ../test_suites/caliptra_ss_usb_ocp_device_status_access_semantics/caliptra_ss_usb_ocp_device_status_access_semantics.yml
         - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_protocol_stall_matrix.yml
+        - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_persistent_stall.yml
+        - ../test_suites/caliptra_ss_usb_ocp_protocol_stall_matrix/caliptra_ss_usb_ocp_packet_observer_selftest.yml
+        - ../test_suites/caliptra_ss_usb_ocp_interrupted_transfer/caliptra_ss_usb_ocp_interrupted_transfer.yml
         - ../test_suites/caliptra_ss_usb_ocp_firmware_protocol_error/caliptra_ss_usb_ocp_firmware_protocol_error.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_001/caliptra_ss_usb_ocp_arb_001.yml
         - ../test_suites/caliptra_ss_usb_ocp_arb_002/caliptra_ss_usb_ocp_arb_002.yml
@@ -23,6 +30,7 @@ contents:
         - ../test_suites/caliptra_ss_usb_usbd_conn/caliptra_ss_usb_usbd_conn.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_bulk_out/caliptra_ss_usb_hs_dev_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_unsupported_ep/caliptra_ss_usb_hs_dev_unsupported_ep.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_disabled_ep/caliptra_ss_usb_hs_dev_disabled_ep.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_disconnect/caliptra_ss_usb_hs_dev_disconnect.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_bypass_enum/caliptra_ss_usb_hs_dev_hub_bypass_enum.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_vbus_absent_boot/caliptra_ss_usb_hs_dev_vbus_absent_boot.yml
@@ -33,6 +41,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_conn/caliptra_ss_usb_hs_conn.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_global_suspend_L2/caliptra_ss_usb_hs_dev_global_suspend_L2.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_lpm_l1/caliptra_ss_usb_hs_dev_lpm_l1.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_hs_dev_lpm_l1_dev_wakeup.yml
+        - ../test_suites/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup/caliptra_ss_usb_fs_dev_lpm_l1_dev_wakeup.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_port_suspend/caliptra_ss_usb_hs_dev_hub_port_suspend.yml
         - ../test_suites/caliptra_ss_usb_hs_clock/caliptra_ss_usb_hs_clock.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_bulk_loopback/caliptra_ss_usb_hs_dev_bulk_loopback.yml
@@ -42,6 +52,8 @@ contents:
         - ../test_suites/caliptra_ss_usb_dual_device_hs_bulk_loopback/caliptra_ss_usb_dual_device_hs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_dual_device_fs_bulk_loopback/caliptra_ss_usb_dual_device_fs_bulk_loopback.yml
         - ../test_suites/caliptra_ss_usb_dual_device_hs_dev0_hotplug/caliptra_ss_usb_dual_device_hs_dev0_hotplug.yml
+        - ../test_suites/caliptra_ss_usb_dual_device_hs_hub_port_l1/caliptra_ss_usb_dual_device_hs_hub_port_l1.yml
+        - ../test_suites/caliptra_ss_usb_dual_device_fs_hub_port_l1/caliptra_ss_usb_dual_device_fs_hub_port_l1.yml
         - ../test_suites/caliptra_ss_usb_fs_conn/caliptra_ss_usb_fs_conn.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_bulk_out/caliptra_ss_usb_fs_dev_bulk_out.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_unsupported_ep/caliptra_ss_usb_fs_dev_unsupported_ep.yml
@@ -72,12 +84,14 @@ contents:
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_qualifier/caliptra_ss_usb_hs_dev_hub_qualifier.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_get_hub_status/caliptra_ss_usb_hs_dev_get_hub_status.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_get_hub_descriptor/caliptra_ss_usb_hs_dev_get_hub_descriptor.yml
+        - ../test_suites/caliptra_ss_usb_hs_dev_get_bos_descriptor/caliptra_ss_usb_hs_dev_get_bos_descriptor.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_get_device_descriptor/caliptra_ss_usb_hs_dev_get_device_descriptor.yml
         - ../test_suites/caliptra_ss_usb_hs_dev_hub_config_descriptor/caliptra_ss_usb_hs_dev_hub_config_descriptor.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_status/caliptra_ss_usb_fs_dev_get_status.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_hub_qualifier/caliptra_ss_usb_fs_dev_hub_qualifier.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_hub_status/caliptra_ss_usb_fs_dev_get_hub_status.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_hub_descriptor/caliptra_ss_usb_fs_dev_get_hub_descriptor.yml
+        - ../test_suites/caliptra_ss_usb_fs_dev_get_bos_descriptor/caliptra_ss_usb_fs_dev_get_bos_descriptor.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_get_device_descriptor/caliptra_ss_usb_fs_dev_get_device_descriptor.yml
         - ../test_suites/caliptra_ss_usb_fs_dev_hub_config_descriptor/caliptra_ss_usb_fs_dev_hub_config_descriptor.yml
         - ../test_suites/caliptra_ss_usb_hs_dev1_get_status/caliptra_ss_usb_hs_dev1_get_status.yml
@@ -128,6 +142,9 @@ contents:
         - ../test_suites/mcu_mbox_lock_return_one_during_zeroize/mcu_mbox1_lock_return_one_during_zeroize.yml
         - ../test_suites/smoke_test_mbox_csr_zeros_after_release/smoke_test_mbox0_csr_zeros_after_release.yml
         - ../test_suites/smoke_test_mbox_csr_zeros_after_release/smoke_test_mbox1_csr_zeros_after_release.yml
+        - ../test_suites/mci_mbox_ownership_flow/mci_mbox0_ownership_flow.yml
+        - ../test_suites/mci_mbox_ownership_flow/mci_mbox1_ownership_flow.yml
+        - ../test_suites/mci_mbox_dlen_wrap/mci_mbox_dlen_wrap.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_escalation/caliptra_ss_fuse_ctrl_escalation.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_writeblank/caliptra_ss_fuse_ctrl_writeblank.yml
         - ../test_suites/caliptra_ss_fuse_ctrl_zeroization/caliptra_ss_fuse_ctrl_zeroization.yml

@@ -98,11 +98,8 @@ void main (void) {
         while(1);
     }
 
-    // MBOX: Execute
-    lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, MCU_MBOX0_CSR_MBOX_EXECUTE_EXECUTE_MASK);
-    VPRINTF(LOW, "MCU: Mbox%x execute\n", mbox_num);
-
     // MBOX: Clear Execute
+    // EXECUTE=1 would hand the SRAM to the Target and block the release, so release directly.
     lsu_write_32(SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_EXECUTE + MCU_MBOX_NUM_STRIDE * mbox_num, 0);
     VPRINTF(LOW, "MCU: Mbox%x execute clear\n", mbox_num);
 

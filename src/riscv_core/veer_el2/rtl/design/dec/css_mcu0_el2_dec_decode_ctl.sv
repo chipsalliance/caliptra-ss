@@ -50,7 +50,7 @@ import css_mcu0_el2_pkg::*;
 
    input logic [3:0]  lsu_trigger_match_m,            // lsu trigger matches
 
-   input logic lsu_pmu_misaligned_m,                  // perf mon: load/store misalign
+   input logic lsu_pmu_misaligned_m,                  // perf mon: load/store misalignment
    input logic dec_tlu_debug_stall,                   // debug stall decode
    input logic dec_tlu_flush_leak_one_r,              // leak1 instruction
 
@@ -68,7 +68,7 @@ import css_mcu0_el2_pkg::*;
    input logic [pt.BTB_ADDR_HI:pt.BTB_ADDR_LO] dec_i0_bp_index,   // i0 branch index
    input logic [pt.BHT_GHR_SIZE-1:0] dec_i0_bp_fghr,  // BP FGHR
    input logic [pt.BTB_BTAG_SIZE-1:0] dec_i0_bp_btag, // BP tag
-   input logic [$clog2(pt.BTB_SIZE)-1:0] dec_i0_bp_fa_index,          // Fully associt btb index
+   input logic [$clog2(pt.BTB_SIZE)-1:0] dec_i0_bp_fa_index,          // Fully associative btb index
 
    input logic lsu_idle_any,                          // lsu idle: if fence instr & ~lsu_idle then stall decode
 
@@ -179,7 +179,7 @@ import css_mcu0_el2_pkg::*;
    output logic [pt.BTB_ADDR_HI:pt.BTB_ADDR_LO] i0_predict_index_d, // i0 predict index
    output logic [pt.BTB_BTAG_SIZE-1:0] i0_predict_btag_d, // i0_predict branch tag
 
-   output logic [$clog2(pt.BTB_SIZE)-1:0] dec_fa_error_index, // Fully associt btb error index
+   output logic [$clog2(pt.BTB_SIZE)-1:0] dec_fa_error_index, // Fully associative btb error index
 
    output logic [1:0] dec_data_en,                    // clock-gating logic
    output logic [1:0] dec_ctl_en,
@@ -251,9 +251,6 @@ import css_mcu0_el2_pkg::*;
    logic               nonblock_div_cancel;
 
    logic               i0_legal;
-   logic               shift_illegal;
-   logic               illegal_inst_en;
-   logic               illegal_lockout_in, illegal_lockout;
    logic               i0_legal_decode_d;
    logic               i0_exulegal_decode_d, i0_exudecode_d, i0_exublock_d;
 
@@ -433,10 +430,10 @@ import css_mcu0_el2_pkg::*;
    el2_reg_pkt_t i0r;
 
 
-   css_mcu0_rvdffie  #(8) misc1ff (.*,
+   css_mcu0_rvdffie  #(.WIDTH(7), .OVERRIDE(1)) misc1ff (.*,
                           .clk(free_l2clk),
-                          .din( {leak1_i1_stall_in,leak1_i0_stall_in,dec_tlu_flush_extint,pause_state_in ,dec_tlu_wr_pause_r, tlu_wr_pause_r1,illegal_lockout_in,ps_stall_in}),
-                          .dout({leak1_i1_stall,   leak1_i0_stall,   dec_extint_stall,    pause_state,       tlu_wr_pause_r1,tlu_wr_pause_r2,illegal_lockout,   ps_stall   })
+                          .din( {leak1_i1_stall_in,leak1_i0_stall_in,dec_tlu_flush_extint,pause_state_in ,dec_tlu_wr_pause_r, tlu_wr_pause_r1,ps_stall_in}),
+                          .dout({leak1_i1_stall,   leak1_i0_stall,   dec_extint_stall,    pause_state,       tlu_wr_pause_r1,tlu_wr_pause_r2, ps_stall   })
                           );
 
    css_mcu0_rvdffie  #(8) misc2ff (.*,
@@ -632,7 +629,7 @@ end // else: !if(pt.BTB_ENABLE==1)
 
    // checks
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
    assert_dec_data_valid_data_error_onehot:    assert #0 ($onehot0({lsu_nonblock_load_data_valid,lsu_nonblock_load_data_error}));
    assert_dec_cam_inv_reset_onehot:            assert #0 ($onehot0(cam_inv_reset_val[NBLOAD_SIZE_MSB:0]));
    assert_dec_cam_data_reset_onehot:           assert #0 ($onehot0(cam_data_reset_val[NBLOAD_SIZE_MSB:0]));
@@ -690,7 +687,7 @@ end : cam_array
 
    assign load_data_tag[NBLOAD_TAG_MSB:0] = lsu_nonblock_load_data_tag[NBLOAD_TAG_MSB:0];
 
-`ifdef RV_ASSERT_ON
+`ifdef css_mcu0_RV_ASSERT_ON
    assert_dec_cam_nonblock_load_write_onehot:   assert #0 ($onehot0(nonblock_load_write[NBLOAD_SIZE_MSB:0]));
 `endif
 
@@ -1133,18 +1130,8 @@ end : cam_array
 
 
 
-   // illegal inst handling
-
-
-   assign shift_illegal      = dec_i0_decode_d & ~i0_legal;
-
-   assign illegal_inst_en    = shift_illegal & ~illegal_lockout;
-
-   css_mcu0_rvdffe #(32) illegal_any_ff (.*, .en(illegal_inst_en), .din(i0_inst_d[31:0]), .dout(dec_illegal_inst[31:0]));
-
-   assign illegal_lockout_in = (shift_illegal | illegal_lockout) & ~flush_final_r;
-
-
+   // illegal/trap inst handling
+   css_mcu0_rvdffe #(32) trap_inst_x_ff (.*, .en(i0_x_ctl_en & (~i0_legal | i0_dp.mret)), .din(i0_inst_d[31:0]), .dout(dec_illegal_inst[31:0]));
 
    // allow illegals to flow down the pipe
    assign dec_i0_decode_d = i0_valid_d & ~i0_block_d    & ~dec_tlu_flush_lower_r & ~flush_final_r;
@@ -1816,13 +1803,11 @@ module css_mcu0_el2_dec_dec_ctl
     i[14]&i[6]&i[5]&!i[4]&!i[3]&!i[2]&i[1]&i[0]) | (!i[14]&!i[13]&i[5]
     &!i[4]&!i[3]&!i[2]&i[1]&i[0]) | (!i[12]&!i[6]&!i[5]&i[4]&!i[3]&i[1]
     &i[0]) | (!i[13]&i[12]&i[6]&i[5]&!i[3]&!i[2]&i[1]&i[0]) | (i[13]&i[6]
-    &i[5]&i[4]&!i[3]&!i[2]&i[1]&i[0]) | (!i[30]&!i[29]&!i[28]&!i[14]
-    &!i[13]&!i[6]&!i[5]&!i[4]&i[3]&i[2]&i[1]&i[0]) | (!i[31]&!i[30]&!i[28]
-    &!i[26]&!i[25]&i[14]&!i[12]&!i[6]&i[4]&!i[3]&i[1]&i[0]) | (!i[14]
-    &!i[13]&i[12]&!i[6]&!i[5]&!i[4]&i[3]&i[2]&i[1]&i[0]) | (i[6]&i[5]
-    &!i[4]&i[3]&i[2]&i[1]&i[0]) | (!i[14]&!i[12]&!i[6]&!i[4]&!i[3]&!i[2]
-    &i[1]&i[0]) | (!i[13]&!i[6]&!i[5]&!i[4]&!i[3]&!i[2]&i[1]&i[0]) | (
-    i[13]&!i[6]&!i[5]&i[4]&!i[3]&i[1]&i[0]) | (!i[6]&i[4]&!i[3]&i[2]&i[1]
-    &i[0]);
+    &i[5]&i[4]&!i[3]&!i[2]&i[1]&i[0]) | (!i[14]&!i[13]&!i[6]&!i[5]&!i[4]
+    &i[3]&i[2]&i[1]&i[0]) | (!i[31]&!i[30]&!i[28]&!i[26]&!i[25]&i[14]
+    &!i[12]&!i[6]&i[4]&!i[3]&i[1]&i[0]) | (i[6]&i[5]&!i[4]&i[3]&i[2]&i[1]
+    &i[0]) | (!i[14]&!i[12]&!i[6]&!i[4]&!i[3]&!i[2]&i[1]&i[0]) | (!i[13]
+    &!i[6]&!i[5]&!i[4]&!i[3]&!i[2]&i[1]&i[0]) | (i[13]&!i[6]&!i[5]&i[4]
+    &!i[3]&i[1]&i[0]) | (!i[6]&i[4]&!i[3]&i[2]&i[1]&i[0]);
 
 endmodule  // css_mcu0_el2_dec_dec_ctl

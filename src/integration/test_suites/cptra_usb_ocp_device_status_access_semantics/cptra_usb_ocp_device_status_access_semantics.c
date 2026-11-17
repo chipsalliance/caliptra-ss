@@ -220,6 +220,7 @@ void main(void)
     }
 
     VPRINTF(LOW, "CPTRA: device-status access-semantics firmware complete\n");
+    cptra_usb_ocp_recovery_publish_completion();
 
     // UVM sequence owns completion. Firmware remains alive.
     while (1) {}

@@ -87,7 +87,7 @@ void cptra_mcu_mbox_get_and_check_sram_data_and_csrs(uint32_t mbox_num, uint32_t
 }
 
 // Write to the MBOX SRAM and CSRs and check to see if the writes were successful or not
-// For SRAM and DLEN it will depend on the can_write flag. If can_write is true, the writes should be successful.
+// For SRAM, CMD and DLEN it will depend on the can_write flag. If can_write is true, the writes should be successful.
 void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_dlen, uint32_t *clptra_write_data, bool can_write) {
     bool error;
     uint32_t data_length;
@@ -120,15 +120,18 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
         }
     }
 
-    VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x Execute write\n", mbox_num);
-    mbox_wr_data = 0;
-    cptra_mcu_mbox_write_execute(mbox_num, mbox_wr_data);
+    // As SRAM owner the Target could clear EXECUTE, which would release the mailbox, so only try it as a non-owner.
+    if (!can_write) {
+        VPRINTF(LOW, "CALIPTRA: Attempting MBOX%x Execute write\n", mbox_num);
+        mbox_wr_data = 0;
+        cptra_mcu_mbox_write_execute(mbox_num, mbox_wr_data);
 
-    mbox_rd_data = cptra_mcu_mbox_read_execute(mbox_num);
-    if (mbox_rd_data == 0) {
-        VPRINTF(FATAL, "Mbox%x MBOX EXECUTE was changed\n", mbox_num);
-        SEND_STDOUT_CTRL(0x1);
-        while(1);
+        mbox_rd_data = cptra_mcu_mbox_read_execute(mbox_num);
+        if (mbox_rd_data == 0) {
+            VPRINTF(FATAL, "Mbox%x MBOX EXECUTE was changed\n", mbox_num);
+            SEND_STDOUT_CTRL(0x1);
+            while(1);
+        }
     }
 
 
@@ -153,10 +156,15 @@ void cptra_mcu_mbox_target_write_sram_and_csrs(uint32_t mbox_num, uint32_t mbox_
     cptra_mcu_mbox_write_cmd(mbox_num, mbox_wr_data);
     mbox_rd_data = cptra_mcu_mbox_read_cmd(mbox_num);
 
-    if (mbox_rd_data == 0xDEADBEEF) {
-        VPRINTF(FATAL, "Mbox%x CMD was changed unexpectedly: 0x%x\n", mbox_num, mbox_rd_data);
+    error = (can_write) ? (mbox_rd_data != 0xDEADBEEF) : (mbox_rd_data == 0xDEADBEEF);
+    if (error) {
+        VPRINTF(FATAL, "Mbox%x CMD was not expected value: 0x%x\n", mbox_num, mbox_rd_data);
         SEND_STDOUT_CTRL(0x1);
         while(1);
+    }
+    // Restore CMD so MCU sees only SRAM and DLEN changed.
+    if (can_write) {
+        cptra_mcu_mbox_write_cmd(mbox_num, mbox_cmd);
     }
 
     mbox_wr_data = 0xDEADBEEF;
@@ -302,8 +310,8 @@ void main(void) {
                                         0x12345678,
                                         0x86754321};
 
-        // Attempt writes again (SRAM and DLEN should succeed)
-        // CSRs should not be able to be written to - can_write is set
+        // Attempt writes again (SRAM, CMD and DLEN should succeed)
+        // Other CSRs should not be able to be written to - can_write is set
         target_valid = true;
         cptra_mcu_mbox_target_write_sram_and_csrs(mbox_num, sizeof(clptra_write_data), clptra_write_data, target_valid);
 

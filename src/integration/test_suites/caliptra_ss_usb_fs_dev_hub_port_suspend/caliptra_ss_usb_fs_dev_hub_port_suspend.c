@@ -25,21 +25,20 @@
 // the downstream port suspend, and none is attempted here. This firmware is a
 // passive device-side observer, exactly as in caliptra_ss_usb_hs_dev_global_suspend_L2.
 //
-// NO DSUS_C IS EXPECTED, AND THAT IS NOT A FAILURE
-// Hub downstream port suspend is a status-only feature on this IP by design:
-// the request is decoded and correctly reported in the port status word, but it
-// is never propagated downstream, so the device controller never suspends and
-// DSUS_C never fires. This is an accepted deviation, documented in
-// docs/usb_hub_port_suspend_not_wired_report.md and README.md in this
-// directory.
+// DSUS_C IS NEVER A VERDICT HERE, WHETHER IT FIRES OR NOT
+// Hub downstream port suspend was characterised as a status-only feature on
+// this IP, i.e. the request is decoded and reported in the port status word;
+// see README.md in this directory. In practice, since USB Hub Release 2.6 of
+// third_party/usb2, the device controller does report the transitions: the
+// regression logs show two DSUS_C events, one on SetPortFeature(PORT_SUSPEND)
+// and one on ClearPortFeature(PORT_SUSPEND). Either outcome is accepted.
 //
-// The DSUS_C counting below is therefore pure logging, never a verdict. It is
-// kept for two reasons: it makes the device-side view visible in the log next
-// to the host-side status ladder, and if per-port suspend actuation is ever
-// implemented this firmware already reports it without needing changes. The
-// pass/fail for this test lives entirely in the UVM sequence, which checks the
-// port status ladder and then proves the device still answers control traffic
-// after ClearPortFeature(PORT_SUSPEND).
+// The DSUS_C counting below is therefore pure logging, never a verdict, and it
+// must not decide when this firmware stops serving EP0. It is kept because it
+// makes the device-side view visible in the log next to the host-side status
+// ladder. The pass/fail for this test lives entirely in the UVM sequence, which
+// checks the port status ladder and then proves the device still answers
+// control traffic after ClearPortFeature(PORT_SUSPEND).
 //
 // Hub-composite IP: USBDC0 is an embedded downstream device of the on-chip
 // 2-port hub, so its registers live at USB_DEV_* (base 0x20001000), not at the
@@ -106,9 +105,12 @@
 // there is nothing left to serve.
 #define USB_POST_CHECK_GRACE_POLLS 500
 
-// Number of DSUS_C events after which the log loop stops early: one for entering
-// suspend, one for leaving. On this IP neither occurs, so this is only an upper
-// bound on logging, not an expectation. It is deliberately not named EXPECTED.
+// Number of DSUS_C events that completes the device-side picture: one for
+// entering suspend, one for leaving. This only bounds logging, it does not end
+// the poll loop, and it is not an expectation. It is deliberately not named
+// EXPECTED. Ending the loop on this count is what used to make the post-resume
+// GetDescriptor(Device) fail, because the firmware halted before the host
+// issued that request.
 #define USB_DSUS_EVENTS_LOG_LIMIT 2
 
 
@@ -196,10 +198,11 @@ void main(void) {
                 // handler must arm EP0 IN within a few microseconds of the
                 // SETUP-ACK or the host VIP gives up on polling IN (see the
                 // hot-path notes in libs/usb/usb.c), so nothing is inserted
-                // ahead of it. The SETUP buffer in SRAM is not consumed by the
-                // handler, so re-reading it here yields the same packet.
-                usb_setup_pkt_t pkt;
-                usb_read_setup_packet(&pkt);
+                // ahead of it. The packet is taken from usb_last_setup, the
+                // snapshot the handler took before arming EP0; re-reading the
+                // SRAM SETUP buffer here would race the next SETUP, which at
+                // high speed arrives only a few microseconds later.
+                usb_setup_pkt_t pkt = usb_last_setup;
 
                 if (USB_BMREQTYPE_TYPE(pkt.bmRequestType) == USB_TYPE_STANDARD &&
                     USB_BMREQTYPE_RECIPIENT(pkt.bmRequestType) == USB_RECIP_DEVICE) {
@@ -239,7 +242,6 @@ void main(void) {
             if (suspend_seen >= USB_DSUS_EVENTS_LOG_LIMIT) {
                 VPRINTF(LOW, "MCU: both DSUS_C events observed after %d polls; ending poll loop\n",
                         poll_count + 1);
-                break;
             }
         }
 
@@ -256,10 +258,10 @@ void main(void) {
         }
     }
 
-    // Logged, never a firmware-side pass or fail. On this IP the count is 0,
-    // which is the correct and accepted behaviour: per-port suspend is not
-    // actuated. The line exists so the device-side view is on record next to the
-    // host-side status ladder in the same log.
+    // Logged, never a firmware-side pass or fail. A count below the limit is
+    // accepted behaviour, since per-port suspend was characterised as
+    // status-only. The line exists so the device-side view is on record next to
+    // the host-side status ladder in the same log.
     if (suspend_seen < USB_DSUS_EVENTS_LOG_LIMIT)
         VPRINTF(LOW, "MCU: ending with %d of %d DSUS_C events; 0 is expected because hub port suspend is status-only on this IP, see docs/usb_hub_port_suspend_not_wired_report.md\n",
                 suspend_seen, USB_DSUS_EVENTS_LOG_LIMIT);

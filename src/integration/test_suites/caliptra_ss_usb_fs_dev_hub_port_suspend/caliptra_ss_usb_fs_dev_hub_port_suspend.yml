@@ -13,9 +13,8 @@ pre-exec: |
 plusargs:
   - '+UVM_TESTNAME=caliptra_ss_usb_fs_dev_hub_port_suspend_test'
   # No other plusargs. In particular usb_suspend_resume_check is deliberately
-  # NOT enabled here: per-port suspend actuation is an accepted deviation on
-  # this IP, and that checker is a hard pass/fail for the global_suspend_L2
-  # tests, so it must not be relaxed. See
-  # docs/usb_hub_port_suspend_not_wired_report.md.
+  # NOT enabled here: that checker watches UTMI SuspendM and is a hard
+  # pass/fail for the global_suspend_L2 tests, so it must not be relaxed. See
+  # the README.md in this directory.
 
 # File contains AI-generated response based on internal company sources

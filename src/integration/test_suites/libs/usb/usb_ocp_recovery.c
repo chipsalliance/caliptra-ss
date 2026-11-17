@@ -15,8 +15,15 @@
 
 #include <stddef.h>
 
+#include "caliptra_ss_lib.h"
 #include "printf.h"
+#include "riscv-csr.h"
 #include "usb_ocp_recovery.h"
+#include "veer-csr.h"
+
+#define USB_OCP_RECOVERY_STOP_ITERATION_LIMIT 1000000u
+// MPMC[0] requests halt; keep MPMC[1] clear to preserve masked interrupts.
+#define USB_OCP_RECOVERY_STOP_MPMC_HALT 0x1u
 
 // USB 2.0 Section 9.6.3 Table 9-10: bNumInterfaces for single-interface composite config.
 #define USB_OCP_RECOVERY_CONFIG_NUM_INTERFACES 1u
@@ -158,33 +165,67 @@ bool usb_ocp_recovery_service_capability_policy(void) {
     return true;
 }
 
+void usb_ocp_recovery_wait_for_stop_and_halt(uint16_t last_generation) {
+    for (uint32_t iteration = 0u;
+         iteration < USB_OCP_RECOVERY_STOP_ITERATION_LIMIT; ++iteration) {
+        usb_event_loop(1u, 0u);
+        const uint32_t command =
+            lsu_read_32(SOC_MCI_TOP_MCI_REG_GENERIC_INPUT_WIRES_1);
+        if ((command >> USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) !=
+                USB_LEGACY_EP0_COMMAND_MAGIC) {
+            continue;
+        }
+        const uint32_t opcode =
+            (command >> USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        if (opcode != USB_LEGACY_EP0_COMMAND_STOP) {
+            continue;
+        }
+        const uint32_t expected_delta =
+            (command >> USB_LEGACY_EP0_COMMAND_DELTA_SHIFT) &
+            USB_LEGACY_EP0_COMMAND_NIBBLE_MASK;
+        const uint16_t generation =
+            (uint16_t)(command & USB_LEGACY_EP0_COMMAND_GENERATION_MASK);
+        const uint16_t distance = (uint16_t)(generation - last_generation);
+        // RFC 1982: reject duplicate/stale generations, accepting wraparound.
+        if ((expected_delta != 0u) || (distance == 0u) ||
+            (distance >= 0x8000u)) {
+            handle_error("MCU: invalid OCP teardown STOP command\n");
+        }
+
+        // No service, diagnostics, release polling, or IRQ I/O after the ACK.
+        csr_clr_bits_mstatus(MSTATUS_MIE_BIT_MASK);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        lsu_write_32(SOC_MCI_TOP_MCI_REG_GENERIC_OUTPUT_WIRES_1,
+            ((uint32_t)USB_LEGACY_EP0_COMMAND_ACK_MAGIC <<
+             USB_LEGACY_EP0_COMMAND_MAGIC_SHIFT) |
+            (USB_LEGACY_EP0_COMMAND_STOP <<
+             USB_LEGACY_EP0_COMMAND_OPCODE_SHIFT) | generation);
+        __asm__ volatile ("fence iorw, iorw" ::: "memory");
+        while (1) {
+            csr_write_mpmc(USB_OCP_RECOVERY_STOP_MPMC_HALT);
+        }
+    }
+    handle_error("MCU: OCP teardown STOP command timed out\n");
+    while (1);
+}
+
 // Strong override of the weak usb.c default class-request hook.
 bool usb_handle_class_request(const usb_setup_pkt_t *setup) {
     if (setup == NULL) {
         return false;
     }
 
-    // OCP Recovery v1.1 Sec 8.5.1: the recovery class transfer SETUP
-    // (bmRequestType[6:5]=Class, recipient=Interface,
-    //  bRequest=OCP_RECOVERY_TRANSFER, wIndex[7:0]=REC_IFACE_NUM)
-    // is intercepted by the VHDL `usb_ocp_recovery_post_sync_arb` upstream of the
-    // legacy EPCS and answered by the SV-side recovery RTL directly.
-    // The MCU class hook MUST NOT claim the SETUP -- if it does, the
-    // legacy EPCS sends a ZLP that wins the response race and the host
-    // sees an empty payload.  Returning false here lets the MCU stack
-    // STALL or NAK as usual; the arbiter's response on EP0 IN takes
-    // precedence on the wire because PIE's `epinfo_to_pie_*` mux is
-    // owned by the arbiter while `rec_ctrl_claim` is asserted.
-    //
-    // Defensive: if we ever observe this hook firing for an OCP class
-    // SETUP in sim, it means the arbiter is NOT claiming -- log a
-    // visible marker for debug and fall through to STALL.
+    // Claimed OCP transfers are hardware-serviced without legacy dispatch.
+    // A notified OCP-shaped request may instead be legacy fallback when
+    // Recovery is disabled. This hook implements no legacy class response;
+    // returning false selects the common handler's both-direction STALL.
     if ((USB_BMREQTYPE_TYPE(setup->bmRequestType) == USB_TYPE_CLASS)
         && (USB_BMREQTYPE_RECIPIENT(setup->bmRequestType) == USB_RECIP_INTERFACE)
         && (setup->bRequest == USB_OCP_RECOVERY_TRANSFER_REQUEST)
         && ((uint8_t)(setup->wIndex & 0x00FFu) == USB_OCP_RECOVERY_IFACE_NUM)) {
         VPRINTF(LOW,
-                "MCU: WARNING OCP recovery class SETUP reached MCU stack (bmReqType=0x%x bReq=0x%x wVal=0x%x wIdx=0x%x wLen=%u) -- arbiter did not claim; passing through to legacy USB stack which will STALL.\n",
+                "MCU: WARNING OCP recovery class SETUP reached MCU stack (bmReqType=0x%x bReq=0x%x wVal=0x%x wIdx=0x%x wLen=%u) -- routing diagnostic; legacy USB stack will STALL.\n",
                 setup->bmRequestType, setup->bRequest, setup->wValue,
                 setup->wIndex, setup->wLength);
     }

@@ -31,7 +31,7 @@
 // needed here beyond the standard poll loop.
 //
 // This is a pure polling test with no ISR involvement (no mcu_isr.h, no
-// init_usb_interrupts(), no ISR mailbox). It follows the canonical
+// init_usb_interrupts(), no ISR event vector). It follows the canonical
 // Category-B pure-polling loop used by the working polling tests
 // (caliptra_ss_usb_fs_dev_bulk_loopback.c, caliptra_ss_usb_usbd_conn.c):
 // each iteration reads INTSTAT and write-1-to-clears every serviced bit

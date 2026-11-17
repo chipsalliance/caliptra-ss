@@ -125,6 +125,7 @@ ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_wr.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub_arb.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/axi/rtl/axi_sub.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg/caliptra_reg_defines.svh
+${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/integration/rtl/caliptra_reg/caliptra_reg_field_defines.svh
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/soc_ifc_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_pkg.sv
 ${CALIPTRA_SS_ROOT}/third_party/caliptra-rtl/src/soc_ifc/rtl/mbox_csr_pkg.sv

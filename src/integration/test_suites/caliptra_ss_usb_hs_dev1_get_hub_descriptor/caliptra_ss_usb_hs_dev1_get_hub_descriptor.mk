@@ -33,7 +33,7 @@
 # ---------------------------------------------------------------------------
 # -DUSB_HUB_COMPOUND_DEV1_IRQ makes init_usb_interrupts() enable PIC vector 6
 # (USBDC1's looped IRQ) and makes mcu_isr.h compile in
-# service_usb_dev1_intr() plus the mcu_intr_rcv.usb_dev1 mailbox field.
+# service_usb_dev1_intr() plus the mcu_intr_rcv.usb_dev1 event vector field.
 #
 # -DUSB_DEV_SEL=1 is deliberately NOT set. service_usb_intr() is an inline
 # function in mcu_isr.h that resolves USB_DEV_INTSTAT / USB_DEV_INTEN through

@@ -58,10 +58,6 @@ module css_mcu0_el2_pmp
   logic [    PMP_CHANNELS-1:0][pt.PMP_ENTRIES-1:0] region_basic_perm_check;
   logic [    PMP_CHANNELS-1:0][pt.PMP_ENTRIES-1:0] region_perm_check;
 
-`ifdef css_mcu0_RV_USER_MODE
-  logic any_region_enabled;
-`endif
-
   ///////////////////////
   // Functions for PMP //
   ///////////////////////
@@ -116,8 +112,7 @@ module css_mcu0_el2_pmp
              (pmp_req_type == EXEC) |
             ((pmp_req_type == READ) & ~priv_mode);
         /* pragma coverage off */
-        default: begin
-        end
+        default: result = 1'b0;
         /* pragma coverage on */
       endcase
     end else begin
@@ -148,7 +143,6 @@ module css_mcu0_el2_pmp
   function automatic logic access_fault_check(el2_mseccfg_pkt_t          csr_pmp_mseccfg,
                                               el2_pmp_type_pkt_t         req_type,
                                               logic [pt.PMP_ENTRIES-1:0] match_all,
-                                              logic any_region_en,
                                               logic priv_mode,
                                               logic [pt.PMP_ENTRIES-1:0] final_perm_check);
 
@@ -159,8 +153,9 @@ module css_mcu0_el2_pmp
     logic access_fail = csr_pmp_mseccfg.MMWP | priv_mode |
                        (csr_pmp_mseccfg.MML && (req_type == EXEC));
   `else
-    // When in user mode and at least one PMP region is enabled deny access by default.
-    logic access_fail = any_region_en & priv_mode;
+    // Deny unmatched U-mode accesses if any PMP entry is implemented
+    // (see Section 3.7.1 of the RISC-V Privileged specification).
+    logic access_fail = (pt.PMP_ENTRIES > 0) & priv_mode;
   `endif
 `else
     logic access_fail = 1'b0;
@@ -182,14 +177,6 @@ module css_mcu0_el2_pmp
   // ---------------
   // Access checking
   // ---------------
-
-`ifdef css_mcu0_RV_USER_MODE
-  logic [pt.PMP_ENTRIES-1:0] region_enabled;
-  for (genvar r = 0; r < pt.PMP_ENTRIES; r++) begin : g_reg_ena
-    assign region_enabled[r] = pmp_pmpcfg[r].mode != OFF;
-  end
-  assign any_region_enabled = |region_enabled;
-`endif
 
   for (genvar r = 0; r < pt.PMP_ENTRIES; r++) begin : g_addr_exp
     assign csr_pmp_addr_i[r] = {
@@ -301,10 +288,8 @@ module css_mcu0_el2_pmp
         pmp_chan_type[c],
         region_match_all[c],
 `ifdef css_mcu0_RV_USER_MODE
-        any_region_enabled,
         pmp_priv_mode_eff[c],
 `else
-        1'b0,
         1'b0,
 `endif
         region_perm_check[c]);

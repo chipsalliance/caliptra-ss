@@ -231,16 +231,76 @@ task mcu_trace_buffer_force_num_entires(input int num_entries);
     $display("%t] MCU trace buffer forced to have %d entries", $time, num_entries);
 endtask
 
-task get_mcu_mbox_lock_address(output logic [AXI_AW-1:0] addr);
-    addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK;
+task get_mcu_mbox_lock_address(output logic [AXI_AW-1:0] addr, input int mbox_num = 0);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_LOCK;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_LOCK;
+        default: $fatal(1, "get_mcu_mbox_lock_address: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
 endtask
 
-task get_mcu_mbox_valid_axi_user_address(output logic [AXI_AW-1:0] addr);
-    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0;
+task get_mcu_mbox_valid_axi_user_address(output logic [AXI_AW-1:0] addr, input int mbox_num = 0, input int slot = 0);
+    if ($isunknown(slot) || slot < 0 || slot > 4)
+        $fatal(1, "get_mcu_mbox_valid_axi_user_address: invalid slot %0d (expected 0 through 4)", slot);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0 +
+                  slot * (`SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_1 - `SOC_MCI_TOP_MCI_REG_MBOX0_VALID_AXI_USER_0);
+        1: addr = `SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_0 +
+                  slot * (`SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_1 - `SOC_MCI_TOP_MCI_REG_MBOX1_VALID_AXI_USER_0);
+        default: $fatal(1, "get_mcu_mbox_valid_axi_user_address: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
 endtask
 
-task get_mcu_mbox_axi_user_lock_address(output logic [AXI_AW-1:0] addr);
-    addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0;
+task get_mcu_mbox_axi_user_lock_address(output logic [AXI_AW-1:0] addr, input int mbox_num = 0, input int slot = 0);
+    if ($isunknown(slot) || slot < 0 || slot > 4)
+        $fatal(1, "get_mcu_mbox_axi_user_lock_address: invalid slot %0d (expected 0 through 4)", slot);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0 +
+                  slot * (`SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_1 - `SOC_MCI_TOP_MCI_REG_MBOX0_AXI_USER_LOCK_0);
+        1: addr = `SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0 +
+                  slot * (`SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_1 - `SOC_MCI_TOP_MCI_REG_MBOX1_AXI_USER_LOCK_0);
+        default: $fatal(1, "get_mcu_mbox_axi_user_lock_address: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
+endtask
+
+task get_mcu_mbox_user_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_USER;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_USER;
+        default: $fatal(1, "get_mcu_mbox_user_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
+endtask
+
+task get_mcu_mbox_target_user_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER;
+        default: $fatal(1, "get_mcu_mbox_target_user_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
+endtask
+
+task get_mcu_mbox_target_user_valid_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_USER_VALID;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_USER_VALID;
+        default: $fatal(1, "get_mcu_mbox_target_user_valid_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
+endtask
+
+task get_mcu_mbox_target_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_TARGET_STATUS;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_TARGET_STATUS;
+        default: $fatal(1, "get_mcu_mbox_target_status_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
+endtask
+
+task get_mcu_mbox_hw_status_addr(output logic [AXI_AW-1:0] addr, input int mbox_num);
+    case (mbox_num)
+        0: addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_HW_STATUS;
+        1: addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_HW_STATUS;
+        default: $fatal(1, "get_mcu_mbox_hw_status_addr: invalid mailbox %0d (expected 0 or 1)", mbox_num);
+    endcase
 endtask
 
 task get_mcu_mbox_sram_base_addr(output logic [AXI_AW-1:0] addr, input int mbox_num = 0);
@@ -286,6 +346,152 @@ task get_mbox_mcu_cmd_status_addr(output logic [AXI_AW-1:0] addr, input int mbox
         addr = `SOC_MCI_TOP_MCU_MBOX0_CSR_MBOX_CMD_STATUS;
     else if (mbox_num == 1)
         addr = `SOC_MCI_TOP_MCU_MBOX1_CSR_MBOX_CMD_STATUS;
+endtask
+
+// ---------------------------------------------------------------------------
+// MCU mailbox helpers for SV tests where the AXI BFM drives every mailbox agent.
+// Root is the MCU (LSU AXI user), which can always read the mailbox CSRs.
+// Failed checks are reported with $error and counted in mcu_mbox_err_cnt; a test using these helpers must $fatal
+// instead of calling end_test_successful_req() when the count is non-zero, so it never reports TESTCASE PASSED.
+// ---------------------------------------------------------------------------
+
+int unsigned mcu_mbox_err_cnt = 0;
+
+// Write `data` to `addr` as `user`; counts an error unless the response is OKAY.
+task automatic mcu_mbox_write(input logic [AXI_AW-1:0] addr, input logic [31:0] user, input logic [31:0] data);
+    axi_resp_e resp;
+    bfm_axi_write_single_response(addr, user, data, resp);
+    if (resp !== AXI_RESP_OKAY) begin
+        mcu_mbox_err_cnt++;
+        $error("MCU_MBOX write addr=%08x user=%08x data=%08x resp=%s", addr, user, data, resp.name());
+    end
+endtask
+
+// Read `addr` as `user`; counts an error unless the response is OKAY.
+task automatic mcu_mbox_read(input logic [AXI_AW-1:0] addr, input logic [31:0] user, output logic [31:0] data);
+    axi_resp_e resp;
+    bfm_axi_read_single_response(addr, user, data, resp);
+    if (resp !== AXI_RESP_OKAY) begin
+        mcu_mbox_err_cnt++;
+        $error("MCU_MBOX read addr=%08x user=%08x resp=%s", addr, user, resp.name());
+    end
+endtask
+
+// Read `addr` as `user`; counts an error unless it returns `exp`. Never use on MBOX_LOCK: reading LOCK acquires it.
+task automatic mcu_mbox_read_check(input logic [AXI_AW-1:0] addr, input logic [31:0] user, input logic [31:0] exp);
+    logic [31:0] data;
+    mcu_mbox_read(addr, user, data);
+    if (data !== exp) begin
+        mcu_mbox_err_cnt++;
+        $error("MCU_MBOX read addr=%08x user=%08x expected=%08x actual=%08x", addr, user, exp, data);
+    end
+endtask
+
+// MBOX_HW_STATUS.sram_owner encoding.
+typedef mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e_e mcu_mbox_sram_owner_e;
+localparam mcu_mbox_sram_owner_e MCU_MBOX_OWNER_NONE      = mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__NONE;
+localparam mcu_mbox_sram_owner_e MCU_MBOX_OWNER_REQUESTER = mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__REQUESTER;
+localparam mcu_mbox_sram_owner_e MCU_MBOX_OWNER_ROOT      = mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__ROOT;
+localparam mcu_mbox_sram_owner_e MCU_MBOX_OWNER_TARGET    = mcu_mbox_csr__mbox_hw_status__sram_owner__mbox_owner_e__TARGET;
+
+// Release Caliptra with CPTRA_BOOT_GO and wait until both cores are up.
+task automatic mci_boot_mcu_and_caliptra();
+    wait_mci_rst_b_deassert();
+    wait_mci_boot_fsm_in_state(BOOT_WAIT_CPTRA_GO);
+    bfm_axi_write_single_mcu_lsu(`SOC_MCI_TOP_MCI_REG_CPTRA_BOOT_GO, `MCI_REG_CPTRA_BOOT_GO_GO_MASK);
+    bring_ctra_core_up();
+endtask
+
+// Pick `count` distinct random AXI users that collide with neither the MCU/MCI straps nor the default mailbox user.
+task automatic mcu_mbox_pick_soc_users(output logic [31:0] users [$], input int count);
+    logic [31:0] candidate;
+    users = {};
+    while (users.size() < count) begin
+        candidate = $urandom();
+        if (candidate inside {cptra_ss_strap_mcu_lsu_axi_user_i, cptra_ss_strap_mcu_ifu_axi_user_i,
+                              cptra_ss_strap_mci_soc_config_axi_user_i, MCU_DEF_MBOX_VALID_AXI_USER} ||
+            candidate inside {users})
+            continue;
+        users.push_back(candidate);
+    end
+endtask
+
+// Program valid-user slots 0..N-1 of the mailbox with `users`. Each slot is locked, since HW ignores unlocked slots.
+task automatic mcu_mbox_set_trusted_users(input int mbox_num, input logic [31:0] users [$]);
+    logic [AXI_AW-1:0] valid_addr, lock_addr;
+    if (users.size() > 5)
+        $fatal(1, "mcu_mbox_set_trusted_users: %0d users exceed the 5 valid-user slots", users.size());
+    foreach (users[slot]) begin
+        get_mcu_mbox_valid_axi_user_address(valid_addr, mbox_num, slot);
+        get_mcu_mbox_axi_user_lock_address(lock_addr, mbox_num, slot);
+        mcu_mbox_write(valid_addr, cptra_ss_strap_mcu_lsu_axi_user_i, users[slot]);
+        mcu_mbox_write(lock_addr, cptra_ss_strap_mcu_lsu_axi_user_i, 1);
+    end
+endtask
+
+// `user`, which must hold LOCK and own the SRAM, sets a short DLEN, then writes EXECUTE=0 to wipe and unlock the
+// mailbox. A zero DLEN would make the wipe cover the whole SRAM. Out of reset, Root (the MCU) holds LOCK.
+task automatic mcu_mbox_release(input int mbox_num, input logic [31:0] user, input logic [31:0] dlen = 32);
+    logic [AXI_AW-1:0] user_addr, dlen_addr, execute_addr;
+    get_mcu_mbox_user_addr(user_addr, mbox_num);
+    get_mcu_mbox_dlen_addr(dlen_addr, mbox_num);
+    get_mbox_mcu_execute_addr(execute_addr, mbox_num);
+    mcu_mbox_read_check(user_addr, user, user);
+    mcu_mbox_write(dlen_addr, user, dlen);
+    mcu_mbox_write(execute_addr, user, 0);
+endtask
+
+// Poll LOCK as `user` until it reads 0, which acquires the mailbox, then check USER names `user`.
+task automatic mcu_mbox_acquire_lock(input int mbox_num, input logic [31:0] user, input int max_polls = 20000);
+    logic [AXI_AW-1:0] lock_addr, user_addr;
+    logic [31:0] data;
+    get_mcu_mbox_lock_address(lock_addr, mbox_num);
+    get_mcu_mbox_user_addr(user_addr, mbox_num);
+    for (int poll = 0; poll < max_polls; poll++) begin
+        mcu_mbox_read(lock_addr, user, data);
+        if (data === 0) begin
+            mcu_mbox_read_check(user_addr, user, user);
+            return;
+        end
+        repeat (8) @(posedge core_clk);
+    end
+    $fatal(1, "mcu_mbox_acquire_lock: mbox=%0d user=%08x timed out", mbox_num, user);
+endtask
+
+// Counts an error unless MBOX_HW_STATUS.sram_owner reads `exp`.
+task automatic mcu_mbox_check_sram_owner(input int mbox_num, input mcu_mbox_sram_owner_e exp, input string what);
+    logic [AXI_AW-1:0] addr;
+    logic [31:0] data;
+    get_mcu_mbox_hw_status_addr(addr, mbox_num);
+    mcu_mbox_read(addr, cptra_ss_strap_mcu_lsu_axi_user_i, data);
+    data = (data & `MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_MASK) >> `MCU_MBOX0_CSR_MBOX_HW_STATUS_SRAM_OWNER_LOW;
+    if (data !== exp) begin
+        mcu_mbox_err_cnt++;
+        $error("%s: mbox=%0d sram_owner expected=%s actual=%0d", what, mbox_num, exp.name(), data);
+    end
+endtask
+
+// Mailbox notifications to Root in MCI NOTIF0.
+typedef enum {MCU_MBOX_NOTIF_CMD_AVAIL, MCU_MBOX_NOTIF_TARGET_DONE} mcu_mbox_notif_e;
+
+// Wait until the mailbox's `notif` bit is set in MCI NOTIF0 (skipped when do_wait=0), then clear it (W1C).
+task automatic mcu_mbox_wait_clear_notif(input int mbox_num, input mcu_mbox_notif_e notif, input bit do_wait = 1,
+                                         input int max_polls = 1000);
+    logic [31:0] mask, data;
+    if (notif == MCU_MBOX_NOTIF_CMD_AVAIL)
+        mask = mbox_num ? `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_CMD_AVAIL_STS_MASK :
+                          `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_CMD_AVAIL_STS_MASK;
+    else
+        mask = mbox_num ? `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX1_TARGET_DONE_STS_MASK :
+                          `MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R_NOTIF_MBOX0_TARGET_DONE_STS_MASK;
+    for (int poll = 0; do_wait; poll++) begin
+        mcu_mbox_read(`SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, cptra_ss_strap_mcu_lsu_axi_user_i, data);
+        if ((data & mask) === mask) break;
+        if (poll == max_polls)
+            $fatal(1, "mcu_mbox_wait_clear_notif: mbox=%0d %s never set, NOTIF0=%08x", mbox_num, notif.name(), data);
+        repeat (8) @(posedge core_clk);
+    end
+    mcu_mbox_write(`SOC_MCI_TOP_MCI_REG_INTR_BLOCK_RF_NOTIF0_INTERNAL_INTR_R, cptra_ss_strap_mcu_lsu_axi_user_i, mask);
 endtask
 
 task mcu_trace_buffer_random_inject_trace_data();

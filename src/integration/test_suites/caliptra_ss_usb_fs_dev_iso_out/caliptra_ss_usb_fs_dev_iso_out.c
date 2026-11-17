@@ -199,81 +199,7 @@
 #define USB_EPBUFCFG_EP2_IN_MASK        (1u << USB_PHYS_EP2_IN)
 
 
-// mstatus.MIE is bit 3. Used to bracket the mailbox read-modify-write below.
-#define MSTATUS_MIE_MASK                0x8u
-
 volatile char* stdout = (char *)SOC_MCI_TOP_MCI_REG_DEBUG_OUT;
-
-// Atomically take everything the ISR has posted in the mailbox and clear it.
-//
-// The obvious form of this drain,
-//     usb_events = mcu_intr_rcv.usb;
-//     mcu_intr_rcv.usb &= ~usb_events;
-// is a read-modify-write executed with interrupts enabled. The compiler emits
-// load / and-not / store, and if the USB interrupt is taken between the load
-// and the store then the "mcu_intr_rcv.usb |= act" performed by
-// service_usb_intr() is overwritten by the stale value that the foreground had
-// already loaded. The event is destroyed silently: no error, no halt, and the
-// endpoint is never re-armed. That is exactly how the round 0 token 1 ISO OUT
-// completion was lost, with the waveform showing reg_ep_int_status(4) set,
-// irq_int asserted and the ISR W1C ack on reg_waddr 0x8, while the foreground
-// never saw the EP2OUT bit.
-//
-// Clearing mstatus.MIE around the sequence makes the read and the clear
-// indivisible with respect to the USB vector. csrrc returns the previous
-// mstatus, so the enable state is restored rather than assumed. Note that the
-// value is restored only if it was set on entry, which keeps the helper usable
-// from a context that already had interrupts masked.
-static inline uint32_t usb_mailbox_take(void) {
-    uint32_t events;
-    uint32_t saved;
-
-    __asm__ volatile ("csrrc %0, mstatus, %1"
-                      : "=r" (saved)
-                      : "r" (MSTATUS_MIE_MASK)
-                      : "memory");
-
-    events = mcu_intr_rcv.usb;
-    mcu_intr_rcv.usb &= ~events;
-
-
-    if (saved & MSTATUS_MIE_MASK) {
-        __asm__ volatile ("csrrs zero, mstatus, %0"
-                          :
-                          : "r" (MSTATUS_MIE_MASK)
-                          : "memory");
-    }
-
-    return events;
-}
-
-// Atomically test and consume a single mailbox bit. Returns true if the bit was
-// posted by the ISR, in which case it is cleared. Same atomicity argument as
-// usb_mailbox_take(): a bare "mcu_intr_rcv.usb &= ~mask" would race the ISR and
-// drop an unrelated event that happened to be posted mid-sequence.
-static inline bool usb_mailbox_take_bit(uint32_t mask) {
-    uint32_t saved;
-    bool     seen;
-
-    __asm__ volatile ("csrrc %0, mstatus, %1"
-                      : "=r" (saved)
-                      : "r" (MSTATUS_MIE_MASK)
-                      : "memory");
-
-    seen = (mcu_intr_rcv.usb & mask) != 0u;
-    mcu_intr_rcv.usb &= ~mask;
-
-    if (saved & MSTATUS_MIE_MASK) {
-        __asm__ volatile ("csrrs zero, mstatus, %0"
-                          :
-                          : "r" (MSTATUS_MIE_MASK)
-                          : "memory");
-    }
-
-    return seen;
-}
-
-
 
 // Storage for the symbols the ISR library declares extern.
 volatile uint32_t intr_count;
@@ -369,8 +295,8 @@ static void usb_ep2_in_arm(uint32_t round, uint32_t round_base) {
     // this, EPBUFCFG stays 0, the bufinuse toggle at usb_reg_if.m.vhdl:859-864
     // is gated off, and the Buffer 1 descriptor written just above is never
     // fetched. Read-modify-write so a future endpoint keeps its own bit; this
-    // is outside the ISR mailbox path and EPBUFCFG is not touched by the ISR,
-    // so no atomicity bracket is needed here.
+    // is outside the ISR event vector path and EPBUFCFG is not touched by the
+    // ISR, so no atomicity bracket is needed here.
     uint32_t epbufcfg = lsu_read_32(USB_DEV_EPBUFCFG);
     lsu_write_32(USB_DEV_EPBUFCFG, epbufcfg | USB_EPBUFCFG_EP2_IN_MASK);
 
@@ -428,12 +354,12 @@ void main(void) {
 
         usb_handle_bus_reset();
 
-        // Drain the ISR mailbox. service_usb_intr() already read and
+        // Drain the ISR event vector. service_usb_intr() already read and
         // acknowledged INTSTAT, so the foreground loop must not touch INTSTAT
         // itself. The take-and-clear must be atomic against the USB vector or
         // an event that arrives mid-sequence is overwritten and lost; see
-        // usb_mailbox_take().
-        usb_events = usb_mailbox_take();
+        // usb_event_vector_take().
+        usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
 
 
         // DEV_INT: bus reset change.
@@ -607,7 +533,7 @@ void main(void) {
     // phase verifies that:
     //   1. Enabling FRAME_INT_EN causes FRAME_INT interrupts to fire regularly.
     //   2. The ISR acknowledges each one (W1C on INTSTAT) so events are
-    //      countable individually out of the mailbox.
+    //      countable individually out of the event vector.
     //   3. At least FRAME_INT_MIN_COUNT events are observed in the poll window.
     //   4. Disabling FRAME_INT_EN stops new events from appearing.
     //
@@ -618,13 +544,14 @@ void main(void) {
     // =========================================================================
     VPRINTF(LOW, "\n--- FRAME_INT test phase ---\n");
 
-    // Step 1: Enable FRAME_INT in INTEN, clear any pending mailbox bit first.
+    // Step 1: Enable FRAME_INT in INTEN, drain stale event vector events first.
     {
         uint32_t inten_val;
 
-        // Drop any stale FRAME_INT record from the mailbox. INTSTAT itself is
-        // owned by service_usb_intr() and must not be written here.
-        (void)usb_mailbox_take_bit(DEV0_CSR_INTSTAT_FRAME_INT_MASK);
+        // The transfer phase is over; no endpoint/device events are consumed
+        // after this point. Drain the whole event vector, including stale
+        // FRAME_INT. INTSTAT itself is owned by service_usb_intr().
+        (void)usb_event_vector_take(&mcu_intr_rcv.usb);
 
 
         // Enable FRAME_INT interrupt generation.
@@ -641,9 +568,10 @@ void main(void) {
 
         for (fi = 0; fi < FRAME_INT_POLL_WINDOW; fi++) {
             // Each SOF takes the USB interrupt; the ISR acknowledges INTSTAT
-            // and records FRAME_INT in the mailbox. Consume the record here so
-            // the next SOF is counted as a separate event.
-            if (usb_mailbox_take_bit(DEV0_CSR_INTSTAT_FRAME_INT_MASK))
+            // and records FRAME_INT in the event vector. Consume the record
+            // here so the next SOF is counted as a separate event.
+            usb_events = usb_event_vector_take(&mcu_intr_rcv.usb);
+            if (usb_events & DEV0_CSR_INTSTAT_FRAME_INT_MASK)
                 frame_int_count++;
 
         }

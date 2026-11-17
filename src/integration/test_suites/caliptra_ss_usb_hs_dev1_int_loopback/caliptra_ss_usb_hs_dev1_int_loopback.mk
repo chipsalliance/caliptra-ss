@@ -35,9 +35,9 @@
 # 0x2000_2000, MEM 0x3001_0000) at compile time, so every USB_DEV_* macro in
 # the firmware resolves to device1.
 #
-# -DUSB_HUB_COMPOUND_DEV1_IRQ is deliberately NOT set: this test drives
-# USBDC1 by POLLING and never enables PIC vector 6, so no interrupt mailbox
-# is involved and the vector 3 / USB_DEV_SEL aliasing hazard that affects the
+# -DUSB_HUB_COMPOUND_DEV1_IRQ is deliberately NOT set: this test drives USBDC1
+# by POLLING and never enables PIC vector 6, so no interrupt event vector is
+# involved and the vector 3 / USB_DEV_SEL aliasing hazard that affects the
 # interrupt-driven dev1 tests does not apply here.
 #
 # BUILD_CFLAGS reaches gcc via TEST_CFLAGS; this fragment is included after

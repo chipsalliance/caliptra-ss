@@ -726,7 +726,7 @@ module caliptra_ss_top
         .trace_rv_i_tval_ip     (cptra_trace_rv_i_tval_ip     ),
 
         // DCLS corruption-detection enable, driven by MCI HW_CAPABILITIES (MCU-provisioned)
-        .ss_dcls_en             (cptra_ss_dcls_en),
+        .dcls_en                (cptra_ss_dcls_en),
 
         .security_state(mci_cptra_security_state),
         .scan_mode     (cptra_ss_cptra_core_scan_mode_i)
@@ -1392,7 +1392,7 @@ module caliptra_ss_top
         .cptra_trace_rv_i_interrupt_ip,
         .cptra_trace_rv_i_tval_ip     ,
 
-        // Caliptra core DCLS enable (from MCI HW_CAPABILITIES) -> caliptra_top.ss_dcls_en
+        // Caliptra core DCLS enable (from MCI HW_CAPABILITIES) -> caliptra_top.dcls_en
         .ss_dcls_en                 (cptra_ss_dcls_en),
 
 
@@ -1519,8 +1519,8 @@ module caliptra_ss_top
     lc_ctrl_pkg::lc_tx_t lc_seed_hw_rd_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_escalate_en_internal;
     lc_ctrl_pkg::lc_tx_t lc_check_byp_en_internal;
-    caliptra_prim_mubi_pkg::mubi4_t lc_ctrl_scanmode_i;
-    assign lc_ctrl_scanmode_i = caliptra_prim_mubi_pkg::MuBi4False;
+    caliptra_prim_mubi_pkg::mubi4_t scanmode_mubi;
+    assign scanmode_mubi = caliptra_prim_mubi_pkg::mubi4_bool_to_mubi(cptra_ss_cptra_core_scan_mode_i);
     assign caliptra_ss_volatile_raw_unlock_success_o = lcc_volatile_raw_unlock_success;
 
     always_comb begin
@@ -1555,7 +1555,7 @@ module caliptra_ss_top
             
             .scan_rst_ni(cptra_ss_lc_ctrl_scan_rst_ni_i),
             
-            .scanmode_i(lc_ctrl_scanmode_i),
+            .scanmode_i(scanmode_mubi),
 
             .alerts(lc_alerts_o),
 
@@ -1644,11 +1644,33 @@ module caliptra_ss_top
         .otp_lc_data_o(from_otp_to_lcc_data_i),
 
         .otp_broadcast_o            (from_otp_to_clpt_core_broadcast),
-        .scanmode_i                 (caliptra_prim_mubi_pkg::MuBi4False)
+        .scanmode_i                 (scanmode_mubi)
     ); 
 
 
 
+
+// synthesis translate_off
+`ifdef CLP_ASSERT_ON
+    bit i3c_scl_seen = 1'b0;
+
+    // Any SCL change outside reset selects 333 MHz for the rest of the simulation.
+    always @(cptra_ss_i3c_scl_i) begin
+        if (cptra_ss_rst_b_i === 1'b1)
+            i3c_scl_seen = 1'b1;
+    end
+
+    property cptra_ss_min_clk_freq_p;
+        realtime clk_edge_time;
+        // The assertion samples i3c_scl_seen before same-time SCL updates.
+        // Convert limits to local units; 1 ps is a fixed allowance, not timeprecision.
+        (1'b1, clk_edge_time = $realtime) |=>
+            ($realtime - clk_edge_time <= ((i3c_scl_seen ? CPTRA_SS_I3C_CLK_MAX_PERIOD_NS : CPTRA_SS_CLK_MAX_PERIOD_NS) + CPTRA_SS_CLK_PERIOD_TOLERANCE_NS) * 1ns);
+    endproperty
+
+    `CALIPTRA_ASSERT(CptraSsMinClkFreq_A, cptra_ss_min_clk_freq_p, cptra_ss_clk_i, !cptra_ss_rst_b_i)
+`endif
+// synthesis translate_on
 
     //`CALIPTRA_ASSERT(i3c_payload_available, ($rose(cptra_ss_i3c_recovery_payload_available_i) |-> ##[1:50] cptra_ss_i3c_recovery_payload_available_i == 0),cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix
     //`CALIPTRA_ASSERT(i3c_image_activated, ($rose(cptra_ss_i3c_recovery_image_activated_i) |-> ##[1:50] cptra_ss_i3c_recovery_image_activated_i == 0), cptra_ss_clk_i, cptra_ss_rst_b_i) - Nilesh to explain/fix

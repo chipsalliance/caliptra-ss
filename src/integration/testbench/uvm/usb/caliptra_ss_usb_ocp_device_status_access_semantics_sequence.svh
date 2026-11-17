@@ -67,9 +67,9 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     endfunction
 
     // -------------------------------------------------------------------------
-    // get_arb_chk: obtain the observation handles from config_db.
+    // ocp_ds_configure_arbiter_checker: obtain the observation handles from config_db.
     // -------------------------------------------------------------------------
-    protected virtual function bit get_arb_chk();
+    protected virtual function bit ocp_ds_configure_arbiter_checker();
         if (!uvm_config_db#(
                 caliptra_ss_usb_ocp_arbiter_checker)::get(
                     null, "", "ocp_arbiter_checker", arb_checker)) begin
@@ -81,10 +81,10 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     endfunction
 
     // -------------------------------------------------------------------------
-    // wait_fw_state: bounded wait for a specific firmware state code.
+    // ocp_ds_poll_fw_state: bounded wait for a specific firmware state code.
     // Emits UVM_ERROR if the state is not observed within the timeout.
     // -------------------------------------------------------------------------
-    protected virtual task wait_fw_state(
+    protected virtual task ocp_ds_poll_fw_state(
         input logic [7:0] target_state,
         input string      label);
 
@@ -98,7 +98,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         end
     endtask
 
-    protected virtual task wait_fw_state_data(
+    protected virtual task ocp_ds_poll_fw_state_data(
         input logic [7:0] target_state,
         input logic [7:0] target_data,
         input string      label);
@@ -115,11 +115,11 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // trigger_protocol_error: issue a legal negative USB write to the
+    // ocp_ds_do_write_and_check_protocol_stall: issue a legal negative USB write to the
     // host-RO PROT_CAP command (1-byte payload). Per OCP Recovery v1.1
     // Sec 9.1, this causes PROT_ERROR=0x01 (Unsupported Command/Write).
     // -------------------------------------------------------------------------
-    protected virtual task trigger_protocol_error(input string label);
+    protected virtual task ocp_ds_do_write_and_check_protocol_stall(input string label);
         bit [7:0] payload[$];
         caliptra_ss_usb_ocp_xfer_result_e result;
         int unsigned stall_count;
@@ -127,7 +127,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         payload = '{8'h00};
         arb_checker.packet_callback.start_window(packet_window_generation);
         packet_window_generation++;
-        ocp_try_write(OCP_CMD_PROT_CAP, payload, result, label);
+        ocp_do_write(OCP_CMD_PROT_CAP, payload, result, label, 0);
         arb_checker.packet_callback.stop_window();
         stall_count = arb_checker.packet_callback.count_pid(
             svt_usb_packet::STALL,
@@ -151,17 +151,18 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
     endtask
 
     // -------------------------------------------------------------------------
-    // read_device_status_prot_error: read DEVICE_STATUS via USB and return
+    // ocp_ds_do_read_protocol_error_and_check_length: read DEVICE_STATUS via USB and return
     // the PROT_ERROR byte. Verifies response length. Does NOT check status
     // code legality here since PROT_ERROR presence is the focus.
     // -------------------------------------------------------------------------
-    protected virtual task read_device_status_prot_error(
+    protected virtual task ocp_ds_do_read_protocol_error_and_check_length(
         output logic [7:0] prot_error_out,
         input  string      label);
+        caliptra_ss_usb_ocp_xfer_result_e ignored_result;
 
         bit [7:0] resp[$];
         prot_error_out = 8'h00;
-        ocp_read(OCP_CMD_DEVICE_STATUS, resp, label);
+        ocp_do_read(OCP_CMD_DEVICE_STATUS, resp, ignored_result, label);
         if (resp.size() < (OCP_OFF_DS_PROT_ERROR + 1)) begin
             `uvm_fatal("DS_SEM_SEQ",
                 $sformatf("%s: DEVICE_STATUS response too short (%0d bytes).",
@@ -180,22 +181,22 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         logic [7:0] observed_error2;
         bit [15:0] initial_agent_caps;
 
-        if (!get_sem_vif()) return;
-        if (!get_arb_chk()) return;
+        if (!ocp_configure_sem_vif()) return;
+        if (!ocp_ds_configure_arbiter_checker()) return;
 
-        initialize_ocp_transport();
+        ocp_do_initialize_and_check_transport();
 
         // Step 1: Wait for firmware READY.
-        wait_fw_state(DS_SEM_STATE_READY, "DS_SEM_READY");
+        ocp_ds_poll_fw_state(DS_SEM_STATE_READY, "DS_SEM_READY");
         `uvm_info("DS_SEM_SEQ", "Firmware READY observed.", UVM_NONE)
-        read_check_recovery_capabilities(
+        ocp_do_read_and_check_recovery_capabilities(
             "DS_SEM_PROT_CAP_BASELINE", initial_agent_caps);
 
         // Step 2: Trigger PROTOCOL_ERROR.
-        trigger_protocol_error("DS_SEM_NEGATIVE_CMD");
+        ocp_ds_do_write_and_check_protocol_stall("DS_SEM_NEGATIVE_CMD");
 
         // Step 3: Wait CPU_READ_PRESERVED; verify data = 0x01.
-        wait_fw_state(DS_SEM_STATE_CPU_READ_PRESERVED,
+        ocp_ds_poll_fw_state(DS_SEM_STATE_CPU_READ_PRESERVED,
                       "DS_SEM_CPU_READ_PRESERVED");
         prot_error_code = sem_vif.get_fw_data();
         if (prot_error_code !== OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND) begin
@@ -212,7 +213,7 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
 
         // Step 4: USB read DEVICE_STATUS; verify PROT_ERROR=0x01.
         // This is the clearing read per OCP Recovery v1.1 Sec 9.1.
-        read_device_status_prot_error(observed_error, "DS_SEM_USB_READ_1");
+        ocp_ds_do_read_protocol_error_and_check_length(observed_error, "DS_SEM_USB_READ_1");
         if (observed_error !== OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND) begin
             `uvm_error("DS_SEM_SEQ",
                 $sformatf("First USB DEVICE_STATUS read PROT_ERROR=0x%02h, expected 0x%02h.",
@@ -221,11 +222,11 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         end
 
         // Step 5: Wait firmware USB_CLEAR_OBSERVED.
-        wait_fw_state(DS_SEM_STATE_USB_CLEAR_OBSERVED,
+        ocp_ds_poll_fw_state(DS_SEM_STATE_USB_CLEAR_OBSERVED,
                       "DS_SEM_USB_CLEAR_OBSERVED");
 
         // Step 6: Second USB read; verify PROT_ERROR=0x00.
-        read_device_status_prot_error(observed_error2, "DS_SEM_USB_READ_2");
+        ocp_ds_do_read_protocol_error_and_check_length(observed_error2, "DS_SEM_USB_READ_2");
         if (observed_error2 !== OCP_PROTOCOL_ERROR_NONE) begin
             `uvm_error("DS_SEM_SEQ",
                 $sformatf("Second USB DEVICE_STATUS read PROT_ERROR=0x%02h, expected 0x00.",
@@ -239,17 +240,17 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
         // Step 7: Stress loop.
         for (int unsigned iter = 1; iter <= STRESS_ITERATIONS; iter++) begin
             // Issue negative command.
-            trigger_protocol_error(
+            ocp_ds_do_write_and_check_protocol_stall(
                 $sformatf("DS_SEM_STRESS_%0d_CMD", iter));
 
             // Wait firmware SET_SEEN (firmware confirmed PROT_ERROR set and
             // persists across two CPUif reads).
-            wait_fw_state_data(
+            ocp_ds_poll_fw_state_data(
                 DS_SEM_STATE_STRESS_SET_SEEN, 8'(iter),
                 $sformatf("DS_SEM_STRESS_%0d_SET", iter));
 
             // First USB read (clearing read); require PROT_ERROR=0x01.
-            read_device_status_prot_error(observed_error,
+            ocp_ds_do_read_protocol_error_and_check_length(observed_error,
                 $sformatf("DS_SEM_STRESS_%0d_USB_READ_1", iter));
             if (observed_error !== OCP_PROTOCOL_ERROR_UNSUPPORTED_COMMAND) begin
                 `uvm_error("DS_SEM_SEQ",
@@ -259,12 +260,12 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
             end
 
             // Wait firmware CLEAR_SEEN.
-            wait_fw_state_data(
+            ocp_ds_poll_fw_state_data(
                 DS_SEM_STATE_STRESS_CLEAR_SEEN, 8'(iter),
                 $sformatf("DS_SEM_STRESS_%0d_CLEAR", iter));
 
             // Second USB read; require PROT_ERROR=0x00.
-            read_device_status_prot_error(observed_error2,
+            ocp_ds_do_read_protocol_error_and_check_length(observed_error2,
                 $sformatf("DS_SEM_STRESS_%0d_USB_READ_2", iter));
             if (observed_error2 !== OCP_PROTOCOL_ERROR_NONE) begin
                 `uvm_error("DS_SEM_SEQ",
@@ -277,13 +278,13 @@ class caliptra_ss_usb_ocp_device_status_access_semantics_sequence
             end
         end
 
-        check_rejected_prot_cap_write(
+        ocp_do_prot_cap_write_and_check_rejection(
             initial_agent_caps, "DS_SEM_RO", "DS_SEM_SEQ");
-        check_rejected_fifo_status_write(
+        ocp_do_fifo_status_write_and_check_rejection(
             "DS_SEM_RO", "DS_SEM_SEQ", 1'b1, 1'b1);
 
-        wait_mcu_axi_idle_before_finish("DEVICE_STATUS_SEMANTICS");
-        publish_transfer_count();
+        ocp_poll_mcu_axi_idle("DEVICE_STATUS_SEMANTICS");
+        ocp_publish_transfer_count();
 
         `uvm_info("DS_SEM_SEQ",
             $sformatf({"OCP_SEM_001/OCP_NEG_002 complete: %0d stress ",
